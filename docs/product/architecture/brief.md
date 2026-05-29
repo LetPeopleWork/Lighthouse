@@ -1371,9 +1371,13 @@ No external integrations are *introduced* by this target architecture (the conne
 ## Application Architecture — remove-action-buttons
 
 Feature: remove-action-buttons (ADO #5077)
-Wave: DESIGN
+Wave: DESIGN -> DELIVER (SHIPPED 2026-05-29, HEAD `2770d739`)
 Date: 2026-05-29
 Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+
+**Status: SHIPPED.** All six surfaces converted; full Vitest suite (3090) green; mutation 81.82%
+(above the 80% gate); walking skeleton verified live against demo scenario 0. Both stopgap Alerts
+deleted. See `docs/evolution/remove-action-buttons-evolution.md`.
 
 This section is **additive** to all prior `## Application Architecture` deltas. Architectural pattern (ports-and-adapters), paradigm (OOP backend + functional-leaning React frontend), and core invariants are unchanged. The change is **frontend-only**: no backend port, no endpoint, no DTO touched (cross-cutting checklist confirms). It extends the already-shared `useModifySettings` hook with an opt-in auto-save capability and a save-state machine, reuses the shipped `TeamForecastView` auto-run orchestration for the forecast surfaces, and conforms to ADR-001 (`useRbac()`-only UI gating).
 
@@ -1404,9 +1408,10 @@ No backend change; the FE continues to talk to the same Lighthouse API. The feat
 
 See `docs/feature/remove-action-buttons/feature-delta.md` → **Wave: DESIGN / [REF] Component decomposition** for the full table (real paths + EXTEND/CREATE NEW/NO CHANGE). Headline:
 
-- **CREATE NEW (frontend, 2 small presentational components)**: `SaveStateIndicator` (passive status affordance), `ReloadDependentDataAction` (one-click reload for the expensive surface).
-- **EXTEND (frontend)**: `useModifySettings` (opt-in `autoSave` + save-state machine), `ModifyTeamSettings`, `ModifyProjectSettings`, `StateMappingsEditor`, `ForecastSettingsComponent`, `TeamForecastView`, `NewItemForecaster`, `BacktestForecaster`.
+- **CREATE NEW (frontend, 2 small presentational components) — SHIPPED**: `SaveStateIndicator` (passive status affordance), `ReloadDependentDataAction` (one-click reload for the expensive surface).
+- **EXTEND (frontend) — SHIPPED**: `useModifySettings` (opt-in `autoSave` + save-state machine), `ModifyTeamSettings`, `ModifyProjectSettings`, `StateMappingsEditor`, `ForecastSettingsComponent`, `TeamForecastView`, `NewItemForecaster`, `BacktestForecaster`.
 - **NO CHANGE**: `ValidationActions` (retained for its ~6 non-settings callers), `ForecastFilterEditor` (`readOnly` gate already correct), all backend.
+- **SHIPPED surfaces (6/6)**: general team settings (Save button removed), state mappings (auto-save + silent auto-refresh), forecast filter (auto-save + one-click "Reload throughput now"; `forecast-filter-takeeffect-hint` Alert deleted), portfolio settings (`canUpdatePortfolioData` parity), new-item forecast auto-run, backtest auto-run (empty rolling window on load). Both stopgap Alerts deleted.
 
 ### Save-state machine
 

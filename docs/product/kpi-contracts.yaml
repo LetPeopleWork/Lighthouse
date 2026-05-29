@@ -346,12 +346,19 @@ outcomes:
   # (no explicit commit click) and KPI 2 (stopgap Alerts removed) are asserted
   # at build time via the acceptance suite + grep. KPIs 5-6 (lost-edit -50%,
   # recompute +30%) stay blocked on Epic 5015 and are NOT registered here.
+  #
+  # GA BASELINE (DELIVER finalize 2026-05-29, HEAD 2770d739) — MEASURED:
+  #   KPI 1: surfaces requiring an explicit Save/Run click for valid input = 0/6 (was 6/6).
+  #   KPI 2: stopgap "you must refresh" Alerts remaining = 0 (was 2).
+  #   KPI 3: surfaces exhibiting valid-input-acts-immediately = 6/6 (was 1/6).
+  #   Verified: Vitest 3090 passing; mutation 81.82%; walking skeleton live (demo scenario 0).
   # ─────────────────────────────────────────────────────────────────────────
 
   - id: OUT-remove-action-buttons-no-explicit-commit-click
     feature: remove-action-buttons
     title: No settings/forecast surface requires an explicit Save/Run click for valid input
     target: "0 of 6 settings/forecast surfaces require an explicit Save/Run click for valid input (baseline 6/6)"
+    ga_baseline: "0 of 6 (MEASURED at DELIVER finalize 2026-05-29, HEAD 2770d739)"
     measurement_scope: per_instance
     acceptance_scenarios:
       - file: Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts
@@ -362,8 +369,8 @@ outcomes:
         scenario: "@US-05 recomputes the new-item forecast automatically after a valid input change"
         tag: "@kpi"
         gate_type: hard
-      - file: Lighthouse.EndToEndTests/tests/specs/teams/AutoSaveTeamSettings.spec.ts
-        scenario: "@walking_skeleton a team-admin's valid settings edit persists with All changes saved and no Save button"
+      - file: Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts
+        scenario: "@walking_skeleton a team-admin's valid settings edit persists with All changes saved and no Save button (walking skeleton folded in; AutoSaveTeamSettings.spec.ts deleted)"
         tag: "@kpi"
         gate_type: hard
     instrumentation_status: >
@@ -376,6 +383,7 @@ outcomes:
     feature: remove-action-buttons
     title: Both "you must refresh" stopgap Alerts are removed
     target: "0 stopgap reload-instruction Alerts remain (baseline 2: StateMappings must-reload + forecast-filter-takeeffect-hint)"
+    ga_baseline: "0 stopgap Alerts (MEASURED at DELIVER finalize 2026-05-29; both deleted, grep-confirmed)"
     measurement_scope: per_instance
     acceptance_scenarios:
       - file: Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts

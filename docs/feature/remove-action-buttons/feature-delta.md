@@ -536,3 +536,120 @@ with NEW typed contracts), the skip is correct, not a gap. KPI tag-links are rec
   errors. The "no save on initial load" scenario passes against the inert scaffold (the no-op-on-mount
   guarantee the scaffold already satisfies; DELIVER keeps it green). Skip markers restored after the
   dry-run.
+
+---
+---
+
+# DELIVER wave (Apex/crafter). Density: lean (Tier-1 [REF] only). Frontend-only; ~30 commits on
+`main` (local, unpushed) atop planning baseline `f977e949`; HEAD `2770d739`. 32 DES-monitored steps
+(3-phase canon), integrity 32/32.
+
+## Wave: DELIVER / [REF] Implementation summary
+
+The auto-save mechanism landed exactly as designed: an opt-in `autoSave` capability inside
+`useModifySettings` (debounce 300ms; `idle → saving → saved | error` machine; validity-gate on
+`formValid`; injected `canSave` for RBAC parity; monotonic `requestSeq` stale-guard; opt-in
+`refreshOnSave` + `refreshFailed` + `reloadDependentData`; no-save-on-mount), plus the two new
+presentational components `SaveStateIndicator` and `ReloadDependentDataAction`. All six surfaces
+were converted with no API/DTO change. The forecast track reused the shipped `TeamForecastView`
+auto-run orchestration (`hasInteractedRef`/`requestSeqRef`/`DEBOUNCE_MS`). Both stopgap Alerts
+(`forecast-filter-takeeffect-hint`; StateMappings "must reload") were deleted. The single walking
+skeleton was folded into the existing team-settings E2E spec to keep the suite lean.
+
+## Wave: DELIVER / [REF] Files modified
+
+Production (frontend):
+- `src/hooks/useModifySettings.ts` — opt-in `autoSave` + save-state machine + `requestSeq` stale-guard + `refreshOnSave`/`reloadDependentData`; no save on mount.
+- `src/components/Common/ValidationActions/SaveStateIndicator.tsx` — NEW passive status affordance ("Saving…" / "All changes saved" / "Couldn't save — Retry" / "Reloading…").
+- `src/components/Common/StateMappings/ReloadDependentDataAction.tsx` — NEW one-click "Reload throughput now" tied to `saved`.
+- `src/components/Common/Team/ModifyTeamSettings.tsx` — opt into `autoSave`; Save button removed; renders `SaveStateIndicator`.
+- `src/components/Common/ProjectSettings/ModifyProjectSettings.tsx` — `canSave = canUpdatePortfolioData` parity; Save button removed.
+- `src/components/Common/StateMappings/StateMappingsEditor.tsx` — auto-save + silent metrics auto-refresh; retired "must reload" Alert; one-click fallback on refresh failure.
+- `src/pages/Teams/Edit/ForecastSettingsComponent.tsx` — auto-save + one-click "Reload throughput now"; retired `forecast-filter-takeeffect-hint` Alert.
+- `src/pages/Teams/Detail/TeamForecastView.tsx` — lifted debounced auto-run for new-item + backtest.
+- `src/pages/Teams/Detail/NewItemForecaster.tsx` — Run button removed; inputs lifted; auto-run on valid input.
+- `src/pages/Teams/Detail/BacktestForecaster.tsx` — Run button removed; inputs lifted; auto-run; empty rolling window on load (see Changed Assumptions).
+
+Tests:
+- `src/hooks/useModifySettings.autosave.test.ts` — Slices 1-4 hook driving-port specs (debounce/stale-guard/validity/RBAC/refresh).
+- `src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx` — Slices 5-6 auto-run orchestration specs.
+- `src/components/Common/ValidationActions/SaveStateIndicator.test.tsx`, `src/components/Common/StateMappings/ReloadDependentDataAction.test.tsx` — component specs.
+- `Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts` — walking skeleton folded in; `AutoSaveTeamSettings.spec.ts` deleted.
+
+Stryker config:
+- `stryker.config.remove-action-buttons.mjs`, `vitest.stryker.remove-action-buttons.config.ts` — mutation harness for the feature surface.
+
+Docs/SSOT:
+- `docs/product/architecture/adr-029-*.md`, `adr-030-*.md` (DESIGN); `docs/product/architecture/brief.md` (SHIPPED status); `docs/product/kpi-contracts.yaml` (GA baseline).
+
+## Wave: DELIVER / [REF] Scenarios green
+
+- Vitest: full suite **3090 passing** (incl. the 23 in-memory acceptance scenarios un-skipped one-at-a-time per Outside-In TDD + the two new component suites).
+- E2E (Playwright, live against demo scenario 0): the one auto-save walking skeleton green inside `ForecastFilter.spec.ts` (team-settings auto-save), run locally. Two team-settings-related E2E checks green live.
+
+## Wave: DELIVER / [REF] DoD check (against DISCUSS Definition of Done)
+
+| DoD item | Result | Evidence |
+|---|---|---|
+| All six slices' UAT pass green | PASS | 24 DISTILL scenarios un-skipped + green; Vitest 3090 passing. |
+| 0 of 6 surfaces require explicit Save/Run click for valid input | PASS | All 6 surfaces converted (KPI 1 = 0/6); Save/Run buttons removed; per-surface tests + grep. |
+| Both stopgap Alerts removed | PASS | `forecast-filter-takeeffect-hint` + StateMappings "must reload" deleted; grep + absence assertions (KPI 2 = 0). |
+| RBAC parity (no auto-save where button disabled) | PASS | `canSave` injected (`disableSave`/`canUpdatePortfolioData`/`isTeamAdmin`); hook never re-derives authz; viewer-suppressed scenarios green. |
+| No API contract / DTO change; Clients untouched | PASS | Reuse `PUT /api/teams/{id}`, portfolio PUT, `runItemPrediction`, `runBacktest`; cross-cutting checklist confirms. |
+| Each slice demoable on a local instance | PASS | Walking skeleton verified live against demo scenario 0 (Team Zenith). |
+
+DoD: **6/6 PASS.**
+
+## Wave: DELIVER / [REF] Demo evidence
+
+Live walking skeleton (demo scenario 0, Team Zenith): edit Throughput History on the team
+settings surface → the page shows "All changes saved" with no Save button → the value persists
+across a full page reload. Proves the real-io loop end-to-end (debounced PUT via the UI → persisted →
+reflected). Run locally via `loadDemoScenario(0)` + `waitForBackgroundUpdates`, POM-based.
+
+## Wave: DELIVER / [REF] Quality gates (per-phase)
+
+- `pnpm test` (Vitest): GREEN — 3090 passing.
+- `pnpm build`: GREEN — Biome zero-warnings on `./src`, `tsc -b` strict clean, `vite build` succeeded.
+- DES integrity: 32/32 monitored steps EXECUTED PASS.
+- Adversarial review: APPROVED — 0 findings, testing-theater pass.
+- Walking skeleton: verified live against demo scenario 0.
+- Mutation (Stryker, frontend): **81.82% overall** — above the 80% project minimum.
+
+| File | Mutation score | Survivor classification |
+|---|---|---|
+| `useModifySettings` (autoSave surface) | 82.23% | Justified — survivors are presentational/equivalent (MUI `sx`/`color`). |
+| `ReloadDependentDataAction` | 83.33% | Justified — presentational MUI props. |
+| `SaveStateIndicator` | 78.57% | Justified — survivors are presentational MUI `sx`/`color` mutants (no behaviour change). |
+| **Overall** | **81.82%** | Meets the 80% kill-rate minimum. |
+
+## Wave: DELIVER / [REF] Cross-cutting (verified at delivery)
+
+- **RBAC**: no new authorization surface — parity via `useRbac()` / `IRbacAdministrationService`; `canSave` injected, never re-derived.
+- **Lighthouse-Clients (CLI + MCP)**: unaffected — no API/DTO change, no new endpoint, no version-gate needed.
+- **Website**: N/A — pure UX polish on already-marketed flows.
+
+## Wave: DELIVER / [REF] Pre-requisites (met)
+
+- Slice 1 linchpin (`useModifySettings` auto-save) shipped and reviewed before Slices 2-4 consumed it.
+- Forecast track (5-6) reused the already-shipped `TeamForecastView` orchestration — no new abstraction.
+- Premium license seeding was not needed for the single WS (general team settings, non-premium surface).
+
+## Wave: DELIVER / [WHY] Changed Assumptions
+
+**Backtest empty-rolling-window-on-load (user slice-review feedback).** The original DISTILL/DESIGN
+framing for Slice 6 (and step 06-03) was *"No backtest run on page load"* — the guard `hasInteractedRef`
+must suppress a run on mount. The 06-03 AC scenario read: *"No backtest run on page load"* (DISTILL
+scenario #24), framed as a guard against the *complete* default inputs auto-firing.
+
+**New behavior (user review):** the backtest now initializes with an **EMPTY rolling window**, so on
+load its inputs are genuinely *incomplete* — identical to the new-item forecast and the manual run.
+The user enters a value, and the first run fires on that first valid change.
+
+**Rationale:** during slice review the user observed that backtest loaded with a complete default
+window felt inconsistent with new-item/manual (which start incomplete and wait for input). Making the
+window start empty makes all three forecast surfaces behave uniformly. The no-run-on-mount guard stays
+correct and unchanged — the inputs are now *legitimately* incomplete rather than complete-but-suppressed,
+so the no-run-on-mount behaviour is now achieved by incompleteness rather than (only) the interaction
+guard. This is a back-propagation against the original "no run on mount" framing: same observable
+outcome (no run on load), more honest mechanism.

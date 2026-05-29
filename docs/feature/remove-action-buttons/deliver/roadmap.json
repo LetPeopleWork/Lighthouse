@@ -1,0 +1,676 @@
+{
+  "roadmap": {
+    "project_id": "remove-action-buttons",
+    "created_at": "2026-05-29T00:00:00Z",
+    "total_steps": 32
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Linchpin: auto-save mechanism + general team settings (US-01)",
+      "description": "Slice 1 (LINCHPIN, locked). Introduce the reusable auto-save mechanism inside useModifySettings (save-state machine idle -> savingDebounced -> saving -> saved | error, 300ms debounce, validity-gate, injected canSave, monotonic stale-guard, dirty/hasInteracted no-save-on-mount), implement the real SaveStateIndicator passive status component, and wire it into ModifyTeamSettings (remove the Save button, RBAC parity via disableSave -> canSave). Reviewed before Slices 2-4 build on it. Covers the 7 hook scenarios (#2-8) plus the single real-io Playwright walking skeleton (#1). No API/DTO change.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Auto-save machine: persist a valid edit after the team-admin stops typing (debounce + validity-gate + canSave)",
+          "criteria": [
+            "Opting useModifySettings into autoSave { enabled, canSave, debounceMs } arms a debounce timer when the form becomes valid, dirty, and the caller is permitted to save",
+            "After the debounce elapses with no further edit, the injected saveSettings callback is invoked exactly once with the latest settings",
+            "Existing manual callers (autoSave default off / absent) keep their prior behaviour: the 29 existing useModifySettings.test.ts tests stay green",
+            "@US-01 hook scenario 'persists a valid edit automatically after the team-admin stops typing' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 persists a valid edit automatically after the team-admin stops typing",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (the TS-row of the polyglot matrix governs, not the Python/Hypothesis pilot per the DISTILL Infrastructure Policy note); Hypothesis/assert_state_delta do NOT apply and this is config-shaped (Mandate 10 skip Tier B). These are renderHook unit tests with faked callbacks + vi.useFakeTimers() that verify the mechanism, single-example per the mandate. This is the LINCHPIN cycle: build the core of the save-state machine inside useModifySettings (ADR-029 D-SA-MACHINE) - a debounced effect that fires saveSettings(latest) only when formValid && canSave && dirty. EXTEND useModifySettings (the typed-option scaffold already added SaveState + AutoSaveOptions + inert saveState + no-op retry per DISTILL Scaffolds); this step makes the machine live. Debounce via setTimeout cleanup in a useEffect keyed on the settings + a dirty/hasInteracted flag (OQ-3: recommend a hasInteracted flag set in the existing updateSettings/list handlers, mirroring TeamForecastView; leave exact dirty detection to GREEN). DEBOUNCE_MS = 300 (the shipped constant). Inject canSave - the hook NEVER re-derives authorization (ADR-029 D-SA-RBAC-INPUT, conforms to ADR-001). Mock only abstractions you own - the injected saveSettings/validateForm/getSettings callbacks - never fetch/axios directly (CLAUDE.md). CRITICAL (project memory project_react185_loop_unstable_useeffect_dep + ci-learnings 2026-05-25): do NOT put an inline new Date()/[]/{} in the useEffect dependency array; useMemo/useRef-stabilise the debounce dep and the requestSeq ref. Strict TS, no any (narrow unknown with a guard). Immutable: spread/with for settings updates, never mutate. <=2 nesting, early returns, no else chains. Biome zero warnings on ./src; pnpm build clean (tsc -b then vite build). RED handoff: un-skip ONLY this one describe.skip -> it; confirm RED-for-right-reason (saveSettings never called against the inert scaffold = MISSING_FUNCTIONALITY, not an import/fixture error) before implementing; restore other skip markers untouched. One RED -> GREEN -> REFACTOR; refactor commit separate from the feature commit."
+        },
+        {
+          "id": "01-02",
+          "name": "Save-state progression: idle -> saving -> all-changes-saved",
+          "criteria": [
+            "saveState is 'idle' on initial load",
+            "A valid debounced edit transitions saveState through to 'saved' after the save callback resolves",
+            "@US-01 hook scenario 'reports calm progress: idle, then saving, then all-changes-saved' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 reports calm progress: idle, then saving, then all-changes-saved",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example per the mandate (config-shaped, Tier B skipped). EXTEND useModifySettings to expose the observable saveState transitions per the ADR-029 machine (idle -> savingDebounced -> saving -> saved). The 'saved' persisted-state copy surfaced by SaveStateIndicator is 'All changes saved' (OQ-1 RESOLVED, locked) - that string lives in the indicator component (01-08), not the hook; the hook exposes the 'saved' enum value. Reuse the debounced effect from 01-01; this cycle only adds the intermediate 'saving' observable and the terminal 'saved'. CRITICAL: no inline unstable useEffect dep (project_react185); useMemo-stabilise. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "01-03",
+          "name": "Validity-gate: hold back an invalid edit so the inline error is the only feedback",
+          "criteria": [
+            "An edit that makes the form invalid (validateForm false) fires no save",
+            "formValid is false and the existing inline validationError Alert remains the primary failure affordance (no Save button to gate against)",
+            "@US-01 hook scenario 'holds back an invalid edit so the inline error is the only feedback' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 @error holds back an invalid edit so the inline error is the only feedback",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. The validity-gate is invariant (a) of the machine (ADR-029): a save fires ONLY from a fully-valid, dirty, permitted form. EXTEND the debounced effect's guard so a validateForm===false edit re-arms nothing and emits no save; the existing validationError / validationTechnicalDetails channel (ModifyTeamSettings.tsx:230-244) becomes the PRIMARY error affordance once the button is gone (DESIGN Constraints) - but THIS hook cycle only asserts no-save + formValid===false. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting, early return on invalid. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "01-04",
+          "name": "Failure handling: keep the edit and offer a retry when the save fails",
+          "criteria": [
+            "A rejected saveSettings transitions saveState to 'error' and retains the edited settings value (no rollback / no lost edit)",
+            "Calling retry() re-issues the same save payload; on the second (resolved) attempt saveSettings has been called twice",
+            "@US-01 hook scenario 'keeps the edit and offers a retry when the save fails' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 @error keeps the edit and offers a retry when the save fails",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Invariant (c) of the machine (ADR-029): a failed save retains the edit and offers Retry. EXTEND useModifySettings: on a rejected saveSettings move to 'error' (the SaveStateIndicator later renders 'Couldn't save - Retry'), keep the latest settings intact, and implement the real retry() (the scaffold had it as a no-op) to re-issue the SAME payload through the saving path. The test mockRejectedValueOnce then mockResolvedValueOnce; assert saveState==='error', settings unchanged, then retry() -> saveSettings called twice. Async all the way - never .Result/.Wait equivalent dangling promise; await the rejection in act. CRITICAL: no inline unstable useEffect dep. Strict TS no any (narrow the caught error as unknown with a guard, do NOT type it as any). Immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "01-05",
+          "name": "RBAC parity: a viewer who lacks canSave never auto-saves",
+          "criteria": [
+            "With autoSave.canSave === false, a valid dirty edit fires no save",
+            "saveState stays 'idle' (read-only; no transition, no indicator) - parity with today's disableSave-gated button",
+            "@US-01 hook scenario 'never auto-saves for a viewer who lacks the right to save' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 @error never auto-saves for a viewer who lacks the right to save",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Invariant (d) of the machine (ADR-029 / D-RBAC-PARITY): canSave===false => read-only, zero saveSettings calls, saveState stays 'idle', no indicator. EXTEND the debounced effect guard to short-circuit when canSave is false (the hook NEVER re-derives authorization - it consumes the injected canSave that the parent computes from useRbac()/disableSave per ADR-001). No new authorization surface. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting, early return when !canSave. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "01-06",
+          "name": "Stale-guard: only the latest value persists when edits arrive in rapid succession",
+          "criteria": [
+            "Three rapid edits within one debounce window collapse to a single save",
+            "The single save carries the LAST value (monotonic requestSeq stale-guard - an earlier in-flight response never overwrites a fresher one)",
+            "@US-01 hook scenario 'persists only the latest value when edits arrive in rapid succession' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 @error persists only the latest value when edits arrive in rapid succession",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook with vi.useFakeTimers + vi.advanceTimersByTime(300); single-example. Invariant (b) of the machine (ADR-029): only the latest sequence's response is applied. EXTEND useModifySettings with a monotonic requestSeqRef incremented on each save dispatch; rapid edits re-arm the single debounce timer (so only one save fires) AND each in-flight save captures its seq so a stale resolution is discarded - mirrors the shipped TeamForecastView requestSeqRef stale-guard (D-SA-MACHINE / D-REUSE-SHIPPED-PATTERN). Assert saveSettings called once with the last value. CRITICAL: requestSeqRef is a useRef (stable), not a state dep; no inline unstable useEffect dep (project_react185). Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "01-07",
+          "name": "No-save-on-mount: initial page load fires no save",
+          "criteria": [
+            "Rendering the hook and advancing past two debounce windows with no user edit fires no save",
+            "@US-01 hook scenario 'does not fire any save on the initial page load' is un-skipped and green (the scaffold already satisfies the no-op-on-mount guarantee; keep it green)"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 does not fire any save on the initial page load",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Guardrail: no run/save on mount (the dirty/hasInteracted flag from 01-01 must start false so the initial getSettings hydration does NOT count as a user edit). DISTILL notes the inert scaffold already passes the no-save-on-mount dry-run; this cycle keeps it green after the machine is live - the risk is that hydrating settings into state could trip the dirty flag, so assert it does not. EXTEND useModifySettings only if the hasInteracted flag needs explicit guarding against the load hydration. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: confirm GREEN-for-right-reason (no save across 2x debounce) - if it was already green from 01-01, this is a confirmation + commit cycle, not new production code; refactor commit separate."
+        },
+        {
+          "id": "01-08",
+          "name": "Real SaveStateIndicator + wire into ModifyTeamSettings (remove Save button, RBAC parity via disableSave -> canSave)",
+          "criteria": [
+            "SaveStateIndicator renders the passive status copy per saveState: 'Saving...' / 'All changes saved' (OQ-1 locked) / 'Couldn't save - Retry' (Retry invokes the passed retry handler) / 'Reloading...'; nothing rendered when canSave is false (read-only parity)",
+            "ModifyTeamSettings opts useModifySettings into autoSave (passing disableSave -> canSave), removes the ValidationActions onSave block (lines 250-255) and renders SaveStateIndicator in its place; the inline validationError Alert (230-244) is retained as the primary error channel",
+            "No Save button is rendered on the general team settings surface; ValidationActions remains untouched for its other callers",
+            "pnpm build clean (tsc -b + vite build); Biome zero warnings on ./src; existing ModifyTeamSettings tests green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-01 reports calm progress: idle, then saving, then all-changes-saved",
+          "deps": [
+            "01-02",
+            "01-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/ValidationActions/SaveStateIndicator.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/ValidationActions/SaveStateIndicator.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL; single-example component render assertions, not quantified invariants. This step has its OWN component-level RED scenario - author a SaveStateIndicator.test.tsx (colocated, mirrors the project's component-test style) driving each saveState -> rendered copy + Retry click; the autosave hook scenario referenced is the integration anchor already green from 01-02 (this step does not re-own it, it wires the indicator the user sees). IMPLEMENT the real SaveStateIndicator (the DISTILL scaffold body throws 'RED scaffold'): a passive STATUS affordance per ADR-029 D-SA-INDICATOR (NOT an extension of ValidationActions which is action-shaped - conflating breaks SRP and disturbs its ~6 other callers). Copy strings: 'Saving...', 'All changes saved' (OQ-1 RESOLVED, locked - use verbatim across all four settings surfaces), 'Couldn't save - Retry' (Retry button calls the retry() from the hook), 'Reloading...' (used by Slice 2). Render nothing when canSave is false (RBAC parity - no indicator for a viewer). EXTEND ModifyTeamSettings.tsx: opt into autoSave passing disableSave (line 253) -> canSave; REPLACE the ValidationActions onSave block (250-255) with SaveStateIndicator; KEEP the inline validationError Alert (230-244). Use MUI for the indicator visuals (no new dependency). Skip framework renders-without-crashing tests (CLAUDE.md) - assert the status copy + Retry behaviour, real business behaviour. CI-LEARNINGS PRE-APPLY: Biome zero-warnings is the prebuild hook; grep docs/ci-learnings.md for TS/Biome families before editing. Strict TS no any; immutable; <=2 nesting. No comments. Biome clean; pnpm build clean. RED handoff: write the SaveStateIndicator.test.tsx RED first (scaffold throws) -> implement -> GREEN; refactor commit separate."
+        },
+        {
+          "id": "01-09",
+          "name": "Walking skeleton (real-io): a valid team-settings edit persists with 'All changes saved' and no Save button",
+          "criteria": [
+            "The @walking_skeleton @real-io @US-01 test.fixme in AutoSaveTeamSettings.spec.ts is un-fixme'd and runs in the E2E suite",
+            "Driving demo scenario 0 (Team Zenith): open team detail -> edit team -> set Throughput History -> the 'All changes saved' indicator appears -> no Save button present -> after page reload the value persists",
+            "All element access stays in the TeamEditPage POM (setThroughputHistory / waitForChangesSaved / hasSaveButton / getThroughputHistory); no inline page.locator",
+            "The scenario was RUN against a locally-started app loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/AutoSaveTeamSettings.spec.ts",
+          "scenario_name": "@walking_skeleton @real-io @US-01 a team-admin's valid settings edit persists with All changes saved and no Save button",
+          "deps": [
+            "01-08"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/AutoSaveTeamSettings.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/teams/TeamEditPage.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking-skeleton (single-shot real-io UI flow over the production app); the mandate keeps E2E single-example - they verify wiring, not invariants. The save-machine invariants live in the 01-01..07 hook unit tests (faster, deterministic). The spec + POM are already authored test.fixme; this is the ONE Playwright WS (user-confirmed one WS only), proving the full real-io loop on the linchpin surface (general team settings). USER/AGENT RUNS LIVE per project memory (feedback_e2e_run_locally_by_user: Claude runs the live Playwright itself - creds in env, do NOT punt to the user; feedback_run_playwright_before_commit: never commit a spec/POM not RUN against a locally-started app - pnpm build only type-checks locators, not validity; feedback_e2e_page_object_model: POM-only, no inline page.locator; feedback_e2e_use_demo_data: drive from seeded demo data via loadDemoScenario(0) + waitForBackgroundUpdates, never live connector syncs). Add/confirm the TeamEditPage POM methods setThroughputHistory / waitForChangesSaved / hasSaveButton / getThroughputHistory match the real accessible names/testids 01-08 shipped (the indicator copy 'All changes saved'). CI-LEARNINGS PRE-APPLY: Playwright getByRole({name}) is case-insensitive substring - pass exact:true for single-verb labels (2026-05-16); a POM action that triggers a client-side redirect MUST waitForURL the settled pattern (2026-05-25); for the async-settled indicator use expect.poll / toBeVisible auto-retry, never one-shot expect(await getX()) (2026-05-25). Procedure: un-fixme, start the app locally (dotnet run backend + frontend), load demo scenario 0, run the scenario, confirm green; adjust the POM ONLY if a real accessible name/testid differs. ORCHESTRATOR NOTE: REQUIRES A RUNNING APP - cannot be self-certified from a type-check; the agent runs the live Playwright and reports the live-run result. Biome/lint clean on the E2E project."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Forecast filter auto-save + one-click reload (US-03, premium)",
+      "description": "Slice 3 (depends on Slice 1 mechanism). Forecast filter rule auto-save reusing the linchpin machine, the real ReloadDependentDataAction one-click 'Reload throughput now' (the expensive recompute NEVER auto-fires, OQ-2 locked), removal of the forecast-filter-takeeffect-hint Alert, premium + isTeamAdmin gating preserved via injected canSave. Settings track order: runs after Slice 1. No API/DTO change.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Forecast filter rule auto-saves; throughput recompute never auto-fires (OQ-2)",
+          "criteria": [
+            "A valid forecast filter rule edit auto-saves once through the linchpin machine",
+            "No automatic throughput recompute is triggered by the save - the expensive recompute is never auto-fired (OQ-2 locked)",
+            "@US-03 hook scenario 'auto-saves a valid filter rule and never triggers an automatic throughput recompute' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-03 auto-saves a valid filter rule and never triggers an automatic throughput recompute",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example (config-shaped, Tier B skipped). The forecast filter reuses the SAME shared useModifySettings auto-save machine from Slice 1 (the rule edit is just another field on the same form / PUT /api/teams/{id}); this hook cycle asserts a valid rule edit auto-saves AND that no throughput recompute callback fires automatically (ADR-030 D-RELOAD-SPLIT: expensive recompute is one-click only, OQ-2 locked 'always requires the click'). The recompute is an EXISTING surface refresh path, NOT a hook concern beyond NOT calling it - assert the test's recomputeThroughput fake is never invoked. Likely no NEW production code in the hook here (the machine already saves the field) - this may be a confirmation cycle that the generic machine handles the forecastFilterRuleSetJson field. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason (or document it is green-by-reuse); refactor commit separate."
+        },
+        {
+          "id": "03-02",
+          "name": "Unknown filter field rejected without clobbering the existing rule set",
+          "criteria": [
+            "An edit producing an unknown/invalid filter field (validateForm false) fires no save",
+            "The prior valid rule set is left intact (no partial/invalid persistence)",
+            "@US-03 hook scenario 'rejects an unknown filter field without clobbering the existing rule set' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-03 @error rejects an unknown filter field without clobbering the existing rule set",
+          "deps": [
+            "01-03",
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Reuses the validity-gate invariant (a) from 01-03 applied to the forecast filter rule set: a validateForm===false edit fires no save and the prior rule set is not clobbered. Likely green-by-reuse of the Slice-1 gate; if so, this is a confirmation + commit cycle. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable (never mutate the existing rule set). <=2 nesting, early return on invalid. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "03-03",
+          "name": "Viewer sees filter read-only, no auto-save",
+          "criteria": [
+            "With canSave false (viewer / non-team-admin), a filter rule edit fires no save",
+            "@US-03 hook scenario 'keeps the filter editor read-only with no auto-save for a viewer' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-03 @error keeps the filter editor read-only with no auto-save for a viewer",
+          "deps": [
+            "01-05",
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Reuses the RBAC-parity invariant (d) from 01-05 applied to the forecast filter: ForecastFilterEditor's readOnly = !isTeamAdmin(teamId) (ForecastFilterEditor.tsx:70) maps to canSave at the parent; canSave===false => zero saves. The filter editor is also premium-gated (isPremium, ForecastSettingsComponent.tsx:70) - that gate is a separate parent concern injected as part of canSave. Likely green-by-reuse; confirmation cycle. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "03-04",
+          "name": "Real ReloadDependentDataAction + wire ForecastSettingsComponent (remove takeeffect-hint Alert, one-click 'Reload throughput now')",
+          "criteria": [
+            "ReloadDependentDataAction renders an inline one-click 'Reload throughput now' action tied to the machine's 'saved' state; clicking it invokes the surface's existing throughput recompute path exactly once; it never auto-fires (OQ-2)",
+            "ForecastSettingsComponent deletes the forecast-filter-takeeffect-hint Alert (lines 100-109) and renders ReloadDependentDataAction on 'saved'; the premium gate (isPremium, line 70) is unchanged",
+            "grep confirms the forecast-filter-takeeffect-hint Alert is gone",
+            "pnpm build clean; Biome zero warnings; existing ForecastSettingsComponent tests green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-03 auto-saves a valid filter rule and never triggers an automatic throughput recompute",
+          "deps": [
+            "01-08",
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/StateMappings/ReloadDependentDataAction.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Edit/ForecastSettingsComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/StateMappings/ReloadDependentDataAction.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL; single-example component assertions. This step has its OWN component RED: author ReloadDependentDataAction.test.tsx (colocated) asserting the action renders on 'saved', a click invokes the passed recompute handler exactly once, and it never fires without a click. The referenced hook scenario is the integration anchor (green from 03-01). IMPLEMENT the real ReloadDependentDataAction (the DISTILL scaffold body throws 'RED scaffold'): a small inline one-click 'Reload throughput now' control per ADR-030 D-RELOAD-ACTION for the EXPENSIVE case; it calls the surface's EXISTING throughput recompute path (no new endpoint/service) and is gated on the machine's 'saved' state. Honour D-RELOAD (never instruct the user to navigate elsewhere) AND OQ-2 (the expensive recompute always requires the click). EXTEND ForecastSettingsComponent.tsx: DELETE the forecast-filter-takeeffect-hint Alert (100-109, commit 53e6287e) - this retires KPI-2 stopgap #1; render ReloadDependentDataAction on 'saved'; premium gate (line 70) unchanged. Do NOT reuse MUI Alert for the action (that re-introduces the retired text-first shape - ADR-030). NOTE the file lives under components/Common/StateMappings/ per DESIGN (shared reload action); it is consumed by the forecast surface here and reused by Slice 2's StateMappings. CI-LEARNINGS PRE-APPLY: grep docs/ci-learnings.md for TS/Biome families; typescript:S6582 (optional chaining in predicates). Skip framework renders-without-crashing tests. Strict TS no any; immutable; <=2 nesting. No comments. Biome clean; pnpm build clean. RED handoff: write the component test RED first (scaffold throws) -> implement -> GREEN; refactor commit separate."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "State mappings auto-save + auto-refresh dependent metrics (US-02)",
+      "description": "Slice 2 (depends on Slice 1 mechanism; settings track order 1 -> 3 -> 2). State mapping change auto-saves and dependent metrics auto-refresh silently (cheap case), with a one-click reload fallback when the refresh fails, and the StateMappingsEditor 'must reload' Alert removed. No API/DTO change.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Mapping change auto-saves and dependent metrics auto-refresh",
+          "criteria": [
+            "A valid mapping change (e.g. adding a Doing state) auto-saves once through the machine",
+            "On 'saved', the injected additionalFetch dependent-data refresh is invoked once (silent auto-refresh, the cheap case)",
+            "@US-02 hook scenario 'auto-saves a valid mapping change and refreshes the dependent metrics' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-02 auto-saves a valid mapping change and refreshes the dependent metrics",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. EXTEND useModifySettings so that after a successful save (machine reaches 'saved'), if an additionalFetch refresh callback is provided it is invoked once - the CHEAP auto-refresh case per ADR-030 D-RELOAD-SPLIT (State Mappings: client metrics re-fetch is cheap -> silent auto-refresh). The mapping change uses the existing doingHandlers.onAdd list handler (same form / PUT /api/teams/{id}); mark dirty/hasInteracted in the list handlers too (OQ-3). The refresh path is an existing teamMetrics re-fetch injected as additionalFetch - no new adapter (DISTILL adapter table). CRITICAL: no inline unstable useEffect dep; the additionalFetch must be a stable ref/useCallback to avoid re-trigger loops (project_react185). Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason (additionalFetch not called against the pre-02 hook); refactor commit separate."
+        },
+        {
+          "id": "02-02",
+          "name": "Empty mapping group name fires no save",
+          "criteria": [
+            "A mapping edit that leaves the form invalid (validateForm false, e.g. empty group name) fires no save",
+            "@US-02 hook scenario 'fires no save when a mapping group name is left empty' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-02 @error fires no save when a mapping group name is left empty",
+          "deps": [
+            "01-03",
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Reuses the validity-gate invariant (a) from 01-03 applied to mapping edits: an invalid mapping (empty group name -> validateForm false) fires no save and no auto-refresh. Likely green-by-reuse of the Slice-1 gate; confirmation cycle if so. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting, early return on invalid. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "02-03",
+          "name": "Failed auto-refresh offers a one-click reload; wire StateMappingsEditor (remove 'must reload' Alert)",
+          "criteria": [
+            "When the automatic dependent-data refresh fails, the save still reaches 'saved' and a one-click reload (ReloadDependentDataAction) is offered as the fallback - the user is never told to navigate elsewhere (D-RELOAD)",
+            "StateMappingsEditor deletes the 'must reload' Alert (lines 109-111) and, on 'saved', triggers the silent auto-refresh (cheap case) with the one-click reload as the failure fallback; inline mapping validation errors stay",
+            "grep confirms the StateMappingsEditor 'must reload' Alert is gone",
+            "@US-02 hook scenario 'offers a one-click reload when the automatic refresh fails' is un-skipped and green; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-02 @error offers a one-click reload when the automatic refresh fails",
+          "deps": [
+            "01-08",
+            "02-01",
+            "03-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.tsx",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook + RTL wiring; single-example. Two coupled changes for one observable behaviour: (1) EXTEND useModifySettings so a REJECTED additionalFetch after a successful save keeps saveState at 'saved' (the SAVE succeeded - only the dependent refresh failed) and surfaces the failure such that the surface can offer the one-click reload fallback (do NOT flip saveState to 'error' - the data was saved; the test asserts saveState==='saved' even when the refresh rejects). (2) EXTEND StateMappingsEditor.tsx: DELETE the 'must reload' Alert (109-111) - retires KPI-2 stopgap #2; on 'saved' run the silent auto-refresh (cheap) and, if it fails, render the REUSED ReloadDependentDataAction (built in 03-04) as the one-click fallback (D-RELOAD: never 'go elsewhere and refresh'). Keep inline mapping validation errors. The refresh path is the existing teamMetrics re-fetch (no new adapter). CRITICAL: no inline unstable useEffect dep; stabilise the additionalFetch + reload callbacks (project_react185). CI-LEARNINGS PRE-APPLY: grep ci-learnings TS/Biome families. Skip framework renders-without-crashing tests. Strict TS no any (narrow the caught refresh error as unknown). Immutable; <=2 nesting. No comments. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "02-04",
+          "name": "Wire ModifyTeamSettings to activate team state-mappings auto-refresh + one-click reload fallback",
+          "criteria": [
+            "ModifyTeamSettings passes refreshOnSave:true into useModifySettings autoSave and forwards refreshFailed + reloadDependentData (+ the mappings dependent-data additionalFetch) into StateMappingsEditor",
+            "On a valid team state-mapping edit the dependent metrics auto-refresh silently; on refresh failure the one-click ReloadDependentDataAction fallback is shown (no navigate-away)",
+            "pnpm build clean; Biome zero warnings; existing ModifyTeamSettings tests green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+          "scenario_name": "auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure",
+          "deps": [
+            "02-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx"
+          ],
+          "implementation_notes": "Activates the 02-01/02-03 hook capability on the live team settings page. ModifyProjectSettings (portfolio) is wired in 04-01."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Portfolio settings auto-save (US-04)",
+      "description": "Slice 4 (depends on Slice 1 mechanism; settings track order 1 -> 3 -> 2 -> 4). Portfolio settings auto-save via ModifyProjectSettings with canUpdatePortfolioData parity, reusing the linchpin machine and the Slice-2 state-mapping auto-refresh for its embedded State Mappings. No API/DTO change.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Valid portfolio field auto-saves; wire ModifyProjectSettings (canSave = canUpdatePortfolioData, SaveStateIndicator, no Save button)",
+          "criteria": [
+            "A valid portfolio field edit auto-saves once through the machine the moment it is valid",
+            "ModifyProjectSettings opts useModifySettings into autoSave with canSave = canUpdatePortfolioData (line 276), removes its Save button and renders SaveStateIndicator; its embedded State Mappings reuse the Slice-2 auto-refresh",
+            "@US-04 hook scenario 'auto-saves a valid portfolio field the moment it is valid' is un-skipped and green; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-04 auto-saves a valid portfolio field the moment it is valid",
+          "deps": [
+            "01-08",
+            "02-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook + RTL wiring; single-example. The portfolio surface reuses the SAME shared useModifySettings machine (the hook is provider-agnostic - it takes injected saveSettings = portfolio PUT and validateForm). EXTEND ModifyProjectSettings.tsx mirroring the ModifyTeamSettings wiring from 01-08: opt into autoSave with canSave = canUpdatePortfolioData (ModifyProjectSettings.tsx:276 disableSave={!canUpdatePortfolioData}); swap the Save button for SaveStateIndicator; its embedded State Mappings editor reuses the Slice-2 auto-refresh + ReloadDependentDataAction (hence the dep on 02-03). The hook itself likely needs no new production code (green-by-reuse of the generic machine); the load is in the parent wiring. CRITICAL: no inline unstable useEffect dep. CI-LEARNINGS PRE-APPLY: grep ci-learnings TS/Biome families. Skip framework renders-without-crashing tests. Strict TS no any; immutable; <=2 nesting. No comments. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "04-02",
+          "name": "Auto-save suppressed where canUpdatePortfolioData is false",
+          "criteria": [
+            "With canSave false (canUpdatePortfolioData false), a valid portfolio field edit fires no save",
+            "@US-04 hook scenario 'suppresses auto-save where portfolio data updates are not permitted' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-04 @error suppresses auto-save where portfolio data updates are not permitted",
+          "deps": [
+            "01-05",
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Reuses the RBAC-parity invariant (d) from 01-05 applied to the portfolio: canUpdatePortfolioData false -> canSave false -> zero saves (parity with today's disableSave={!canUpdatePortfolioData} button). Likely green-by-reuse; confirmation cycle. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "04-03",
+          "name": "Invalid portfolio form fires no save",
+          "criteria": [
+            "An invalid portfolio form (validateForm false, e.g. empty name) fires no save",
+            "@US-04 hook scenario 'fires no save while the portfolio form is invalid' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "@US-04 @error fires no save while the portfolio form is invalid",
+          "deps": [
+            "01-03",
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest renderHook; single-example. Reuses the validity-gate invariant (a) from 01-03 applied to the portfolio form: validateForm false -> no save. Likely green-by-reuse; confirmation cycle. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting, early return on invalid. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "New-item forecast auto-run (US-05)",
+      "description": "Slice 5 (forecast track, parallel - gated only on the already-shipped TeamForecastView auto-run pattern, NOT on Slice 1). Lift NewItemForecaster input state up into TeamForecastView, drive the new-item forecast via a debounced useEffect reusing hasInteractedRef / requestSeqRef / DEBOUNCE_MS, and remove the 'Forecast' button. No API/DTO change.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "New-item forecast recomputes on a valid input change; lift inputs up + remove Forecast button",
+          "criteria": [
+            "A valid new-item input change triggers exactly one runItemPrediction after the debounce",
+            "NewItemForecaster's 'Forecast' ActionButton (lines 197-206) is removed; input state is lifted to TeamForecastView which drives the debounced run; incomplete inputs clear the prior result (existing onClearForecastResult)",
+            "@US-05 component scenario 'recomputes the new-item forecast automatically after a valid input change' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-05 recomputes the new-item forecast automatically after a valid input change",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/NewItemForecaster.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL component test with vi.useFakeTimers; single-example (the forecast auto-run is example-based RTL, not a quantified invariant). This track REUSES the shipped TeamForecastView orchestration (D-FC-REUSE / D-REUSE-SHIPPED-PATTERN): add a debounced useEffect + hasInteractedRef + requestSeqRef + DEBOUNCE_MS (300) driving runItemPrediction, mirroring the already-shipped manual-run effect (TeamForecastView.tsx:181-196). EXTEND NewItemForecaster.tsx: REMOVE the 'Forecast' ActionButton (197-206); lift input state up / notify TeamForecastView via an onInputChange(complete: boolean) callback on every valid change (the test mock fires onInputChange(true) for 'widen window'); clear the result on incomplete inputs via the existing onClearForecastResult. EXTEND TeamForecastView.tsx to own the new-item inputs and the debounced run trigger. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into the useEffect dep array - reuse stable refs; requestSeqRef/hasInteractedRef are useRef (stable). Strict TS no any; immutable; <=2 nesting. No comments. Skip framework renders-without-crashing tests. Biome clean; pnpm build clean. RED handoff: un-skip only this it within the @US-05 describe; confirm RED-for-right-reason (runItemPrediction not called); refactor commit separate."
+        },
+        {
+          "id": "05-02",
+          "name": "No new-item run on page load until an input changes",
+          "criteria": [
+            "Rendering the view and advancing past two debounce windows with no input change fires no runItemPrediction",
+            "@US-05 component scenario 'fires no run on page load until an input changes' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-05 @error fires no run on page load until an input changes",
+          "deps": [
+            "05-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL; single-example. Guardrail: no run on mount. The hasInteractedRef from 05-01 must start false so the initial render + candidate fetch does NOT count as an input change. EXTEND TeamForecastView only if the no-run-on-mount guard needs hardening; this mirrors the shipped manual-run's hasInteractedRef behaviour. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED/GREEN-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "05-03",
+          "name": "Incomplete inputs fire no new-item run",
+          "criteria": [
+            "An input change that makes the new-item inputs incomplete (onInputChange(false)) fires no runItemPrediction",
+            "@US-05 component scenario 'fires no run when the inputs become incomplete' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-05 @error fires no run when the inputs become incomplete",
+          "deps": [
+            "05-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL; single-example. Validity-gate for the forecast run: the debounced effect must only fire runItemPrediction when the inputs are COMPLETE (the test mock's 'clear work item types' fires onInputChange(false)). EXTEND TeamForecastView's run guard to require complete inputs and to clear the prior result on incomplete (existing onClearForecastResult). CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting, early return on incomplete. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "05-04",
+          "name": "Rapid new-item changes show only the latest run (stale guard)",
+          "criteria": [
+            "Two rapid valid input changes within one debounce window collapse to a single runItemPrediction (only the latest)",
+            "@US-05 component scenario 'shows only the latest run when input changes arrive in rapid succession' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-05 @error shows only the latest run when input changes arrive in rapid succession",
+          "deps": [
+            "05-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL with vi.advanceTimersByTime(300); single-example. Stale-guard for the forecast run: rapid changes re-arm the single debounce timer (one run) and the requestSeqRef discards a stale in-flight response - reusing the shipped TeamForecastView stale-guard (D-FC-REUSE). Assert runItemPrediction called once. CRITICAL: requestSeqRef is a useRef (stable); no inline unstable useEffect dep (project_react185). Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Backtest auto-run (US-06)",
+      "description": "Slice 6 (forecast track; depends on Slice 5's lifted TeamForecastView orchestration). Drive the backtest via the same debounced auto-run, guard a mid-edit mode toggle from firing a half-config run, and remove the 'Run Backtest' button. No API/DTO change.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Backtest recomputes on a valid input change; lift inputs up + remove Run Backtest button",
+          "criteria": [
+            "A valid backtest input change triggers exactly one runBacktest after the debounce",
+            "BacktestForecaster's 'Run Backtest' ActionButton (lines 361-364) is removed; input state is lifted to TeamForecastView which drives the debounced backtest run",
+            "@US-06 component scenario 'recomputes the backtest automatically after a valid input change' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-06 recomputes the backtest automatically after a valid input change",
+          "deps": [
+            "05-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL with vi.useFakeTimers; single-example. REUSE the same lifted TeamForecastView debounced-run orchestration established for new-item in Slice 5 (D-FC-REUSE), now driving runBacktest. EXTEND BacktestForecaster.tsx: REMOVE the 'Run Backtest' ActionButton (361-364); lift input state up / notify TeamForecastView via onInputChange(complete: boolean) on every valid change (the test mock fires onInputChange(true) for 'adjust window'). EXTEND TeamForecastView.tsx to own the backtest inputs + debounced run trigger alongside the new-item one (separate hasInteractedRef/requestSeqRef per run-kind, or a keyed pair - crafter's GREEN detail; do NOT cross-fire). CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into the useEffect dep array; stable refs. Strict TS no any; immutable; <=2 nesting. No comments. Skip framework renders-without-crashing tests. Biome clean; pnpm build clean. RED handoff: un-skip only this it within the @US-06 describe; confirm RED-for-right-reason (runBacktest not called); refactor commit separate."
+        },
+        {
+          "id": "06-02",
+          "name": "Mode toggle mid-edit fires no half-config run",
+          "criteria": [
+            "Switching the backtest mode while inputs are incomplete (onInputChange(false)) fires no runBacktest",
+            "@US-06 component scenario 'fires no run when the mode is switched while inputs are incomplete' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-06 @error fires no run when the mode is switched while inputs are incomplete",
+          "deps": [
+            "06-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL; single-example. Validity-gate specific to the backtest: a mode toggle mid-edit that leaves the config incomplete (the test mock 'switch mode mid-edit' fires onInputChange(false)) must fire NO run. EXTEND the backtest run guard so the debounced effect only fires on FULL validity, and a mode change that invalidates the config does not trigger a half-config run. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting, early return on incomplete. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "06-03",
+          "name": "No backtest run on page load until an input changes",
+          "criteria": [
+            "Rendering the view and advancing past two debounce windows with no backtest input change fires no runBacktest",
+            "@US-06 component scenario 'fires no backtest run on page load until an input changes' is un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-06 @error fires no backtest run on page load until an input changes",
+          "deps": [
+            "06-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: TS-row + Vitest/RTL; single-example. Guardrail: no backtest run on mount. The backtest hasInteractedRef must start false so the initial render + candidate fetch does NOT fire runBacktest. EXTEND TeamForecastView only if the backtest no-run-on-mount guard needs hardening; mirrors the new-item guard from 05-02. CRITICAL: no inline unstable useEffect dep. Strict TS no any; immutable; <=2 nesting. Biome clean; pnpm build clean. RED handoff: un-skip only this it; confirm RED/GREEN-for-right-reason; refactor commit separate."
+        },
+        {
+          "id": "06-04",
+          "name": "Backtest starts with no predefined rolling window (consistent empty->enter->run with new-item/manual)",
+          "criteria": [
+            "The backtest rolling-window input has NO predefined default (starts empty); on page load the backtest inputs are incomplete so no run fires (consistent with new-item/manual which start empty)",
+            "Entering a valid rolling window (the first valid input) triggers the debounced backtest run - matching the user's mental model across all three forecasts",
+            "Existing backtest scenarios still hold (06-01 valid-change->run; 06-02 mode-toggle-mid-edit->no run; 06-03 no-run-on-mount); pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "@US-06 starts with no forecast until a rolling window is entered (no predefined window)",
+          "deps": [
+            "06-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx"
+          ],
+          "implementation_notes": "User feedback (slice review): backtest pre-filled all inputs so nothing ran until the user nudged a field - confusing. Remove the predefined rolling window so backtest starts incomplete like new-item/manual. Back-propagates against 06-03's framing (no-run-on-mount stays correct, now because inputs are genuinely incomplete)."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Refactor (L1-L6, behavior-preserving)",
+      "description": "DELIVER Phase 3 refactor pass across the feature's production files. Behavior-preserving; full suite stays green.",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "L1/L2 refactor: extract useDebouncedRevisionRun in TeamForecastView; remove banned comments",
+          "criteria": [
+            "TeamForecastView's new-item and backtest revision-gated debounced-run effects are deduplicated behind one small helper (useDebouncedRevisionRun); the differently-gated manual-forecast effect is unchanged",
+            "Banned comments removed from TeamForecastView.tsx and BacktestForecaster.tsx; useModifySettings.ts empty-deps comment tightened to one WHY line",
+            "Full Vitest suite stays green (3090+); pnpm build clean; Biome zero warnings; no behavior/API change"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "(refactor) all existing autorun + forecast scenarios stay green",
+          "deps": [
+            "06-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/BacktestForecaster.tsx",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts"
+          ],
+          "implementation_notes": "Behavior-preserving RPP L1/L2. Do not abstract ModifyTeamSettings vs ModifyProjectSettings (different concepts). Keep useEffect deps stabilized (React #185)."
+        },
+        {
+          "id": "07-02",
+          "name": "Kill mutation survivors: handleSave ApiError-catch + updateListField/list-handler coverage (>=80%)",
+          "criteria": [
+            "Tests added for the handleSave ApiError catch branch: an ApiError reject sets validationError=error.message and validationTechnicalDetails; a non-ApiError reject rethrows; validateSettings false sets the 'Validation failed...' message",
+            "Tests added for updateListField: remove actually removes the matching value; add/remove are no-ops when prev is null; onRemove/onReorder mark the form interacted (drive autosave); retry() is a no-op when no prior payload",
+            "Re-running Stryker (stryker.config.remove-action-buttons.mjs) shows useModifySettings.ts and overall >=80% on real surface; remaining survivors are only equivalent (React dep-arrays, useState seeds, ??->&& on truthy, seq-direction) or presentational (MUI sx/color)"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "(coverage) handleSave error path + list-field mutation + retry no-op are asserted",
+          "deps": [
+            "07-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.test.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+          ],
+          "implementation_notes": "Test-only. Targets the Phase-5 real-gap clusters in useModifySettings.ts. No production change. Behavior asserted through the hook's public surface (driving port)."
+        },
+        {
+          "id": "07-03",
+          "name": "Merge auto-save walking-skeleton into the team-settings E2E spec (reduce suite footprint)",
+          "criteria": [
+            "The auto-save walking-skeleton test is moved into the team-settings E2E spec alongside the forecast-filter test (same demo scenario 0 / Team Zenith); AutoSaveTeamSettings.spec.ts is deleted",
+            "Per-test isolation preserved (each test loads demo scenario 0 itself); all element access stays in POMs (no inline page.locator)",
+            "The merged spec was RUN live against a locally-started app loaded with demo scenario 0 and passes before commit"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts",
+          "scenario_name": "@walking_skeleton @real-io @US-01 a team-admin's valid settings edit persists with All changes saved and no Save button",
+          "deps": [
+            "07-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/teams/AutoSaveTeamSettings.spec.ts"
+          ],
+          "implementation_notes": "User request: reduce E2E run footprint. Fold the single auto-save WS into the existing team-settings spec (ForecastFilter, same scenario 0). Keep isolation (no serial/shared-load). Must run Playwright live before commit per project rule."
+        },
+        {
+          "id": "07-04",
+          "name": "Fix ForecastFilter E2E: drop obsolete takeeffect-hint assertion (slice-3 retired it)",
+          "criteria": [
+            "ForecastFilter.spec.ts no longer asserts the forecast-filter-takeeffect-hint is visible (slice 3 / step 03-04 deliberately removed that Alert in production); the takeEffectHint POM getter is removed from ForecastFilterEditor.ts",
+            "The forecast-filter E2E test still verifies its original value (configure exclude-bugs rule + the filter toggle wired on the charts); it passes live against demo scenario 0",
+            "Both team-settings E2E tests (forecast filter + auto-save WS) pass live; E2E tsc + Biome clean"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts",
+          "scenario_name": "forecast filter: configure exclude-bugs rule on team settings, see quick-settings indicator, and verify the filter toggle is wired on Throughput Run Chart, Throughput PBC, and Predictability Score Details",
+          "deps": [
+            "07-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/ForecastFilter.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/teams/ForecastFilterEditor.ts"
+          ],
+          "implementation_notes": "Regression from 03-04: production removed the takeeffect-hint Alert (replaced by auto-save + one-click 'Reload throughput now'); the Vitest test was updated but this Playwright assertion + POM getter were missed, leaving ForecastFilter.spec.ts red. Remove them. Must run live before commit."
+        }
+      ]
+    }
+  ]
+}
