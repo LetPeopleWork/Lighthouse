@@ -46,6 +46,8 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	autoSave?: AutoSaveOptions;
 }
 
+const DEBOUNCE_MS = 300;
+
 const NULLABLE_FIELDS = new Set([
 	"sizeEstimateAdditionalFieldDefinitionId",
 	"featureOwnerAdditionalFieldDefinitionId",
@@ -89,12 +91,12 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	additionalFetch,
 	autoSave,
 }: UseModifySettingsOptions<TSettings>) {
-	void autoSave;
 	const [saveState] = useState<SaveState>("idle");
 	const retry = () => {
-		// RED scaffold (DISTILL): auto-save mechanism not yet implemented.
+		// RED scaffold (DISTILL): auto-save retry not yet implemented.
 	};
 	const [loading, setLoading] = useState(false);
+	const hasInteractedRef = useRef(false);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -110,9 +112,11 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const getSettingsRef = useRef(getSettings);
 	const getWorkTrackingSystemsRef = useRef(getWorkTrackingSystems);
 	const additionalFetchRef = useRef(additionalFetch);
+	const saveSettingsRef = useRef(saveSettings);
 	getSettingsRef.current = getSettings;
 	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
 	additionalFetchRef.current = additionalFetch;
+	saveSettingsRef.current = saveSettings;
 
 	useEffect(() => {
 		if (settings) {
@@ -129,6 +133,38 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		selectedWorkTrackingSystem,
 		modifyDefaultSettings,
 		validateForm,
+	]);
+
+	const autoSaveEnabled = autoSave?.enabled ?? false;
+	const autoSaveCanSave = autoSave?.canSave ?? false;
+	const autoSaveDebounceMs = autoSave?.debounceMs ?? DEBOUNCE_MS;
+	const selectedConnectionId = selectedWorkTrackingSystem?.id ?? 0;
+
+	useEffect(() => {
+		if (!autoSaveEnabled || !autoSaveCanSave || !formValid) {
+			return;
+		}
+		if (!hasInteractedRef.current || !settings) {
+			return;
+		}
+
+		const settingsToSave = {
+			...settings,
+			workTrackingSystemConnectionId: selectedConnectionId,
+		} as TSettings;
+
+		const timer = setTimeout(() => {
+			void saveSettingsRef.current(settingsToSave);
+		}, autoSaveDebounceMs);
+
+		return () => clearTimeout(timer);
+	}, [
+		autoSaveEnabled,
+		autoSaveCanSave,
+		autoSaveDebounceMs,
+		formValid,
+		settings,
+		selectedConnectionId,
 	]);
 
 	useEffect(() => {
@@ -164,6 +200,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		value: TSettings[K] | null,
 	) => {
 		if (value === null && !NULLABLE_FIELDS.has(key as string)) return;
+		hasInteractedRef.current = true;
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
 		setSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -224,13 +261,19 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const getListHandlers = (
 		key: "workItemTypes" | "toDoStates" | "doingStates" | "doneStates",
 	) => ({
-		onAdd: (val: string) =>
-			val.trim() &&
-			setSettings((prev) => updateListField(prev, key, "add", val)),
-		onRemove: (val: string) =>
-			setSettings((prev) => updateListField(prev, key, "remove", val)),
-		onReorder: (vals: string[]) =>
-			setSettings((prev) => updateListField(prev, key, "reorder", vals)),
+		onAdd: (val: string) => {
+			if (!val.trim()) return;
+			hasInteractedRef.current = true;
+			setSettings((prev) => updateListField(prev, key, "add", val));
+		},
+		onRemove: (val: string) => {
+			hasInteractedRef.current = true;
+			setSettings((prev) => updateListField(prev, key, "remove", val));
+		},
+		onReorder: (vals: string[]) => {
+			hasInteractedRef.current = true;
+			setSettings((prev) => updateListField(prev, key, "reorder", vals));
+		},
 	});
 
 	return {

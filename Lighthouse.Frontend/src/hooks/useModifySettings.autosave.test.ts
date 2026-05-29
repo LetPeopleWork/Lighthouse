@@ -84,9 +84,9 @@ const viewerCannotSave: AutoSaveOptions = {
 	debounceMs: DEBOUNCE_MS,
 };
 
-describe.skip("@US-01 @in-memory auto-save general team settings", () => {
+describe("@US-01 @in-memory auto-save general team settings", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -108,7 +108,7 @@ describe.skip("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 	});
 
-	it("@US-01 reports calm progress: idle, then saving, then all-changes-saved", async () => {
+	it.skip("@US-01 reports calm progress: idle, then saving, then all-changes-saved", async () => {
 		const args = makeArgs({}, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
@@ -122,7 +122,7 @@ describe.skip("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
 	});
 
-	it("@US-01 @error holds back an invalid edit so the inline error is the only feedback", async () => {
+	it.skip("@US-01 @error holds back an invalid edit so the inline error is the only feedback", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -137,7 +137,7 @@ describe.skip("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.formValid).toBe(false);
 	});
 
-	it("@US-01 @error keeps the edit and offers a retry when the save fails", async () => {
+	it.skip("@US-01 @error keeps the edit and offers a retry when the save fails", async () => {
 		const saveSettings = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("server unavailable"))
@@ -159,7 +159,7 @@ describe.skip("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
 	});
 
-	it("@US-01 @error never auto-saves for a viewer who lacks the right to save", async () => {
+	it.skip("@US-01 @error never auto-saves for a viewer who lacks the right to save", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -174,7 +174,7 @@ describe.skip("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("idle");
 	});
 
-	it("@US-01 @error persists only the latest value when edits arrive in rapid succession", async () => {
+	it.skip("@US-01 @error persists only the latest value when edits arrive in rapid succession", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -193,7 +193,7 @@ describe.skip("@US-01 @in-memory auto-save general team settings", () => {
 		expect(lastSaved.dataRetrievalValue).toBe("60");
 	});
 
-	it("@US-01 does not fire any save on the initial page load", async () => {
+	it.skip("@US-01 does not fire any save on the initial page load", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		renderHook(() => useModifySettings(args));
