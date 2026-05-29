@@ -37,8 +37,8 @@ Widgets are organized into four dashboard categories. Each category groups relat
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
-| **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Load Balance Matrix, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
+| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
+| **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Cumulative Time per State, Load Balance Matrix, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
 | **Predictability** | Can we trust our forecasts? | Predictability Score Details, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
 | **Portfolio & Features** | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
 
@@ -108,6 +108,30 @@ This widget is **not affected** by the date filtering. It always shows the **cur
 | 🔴 Act | No blocked indicators are configured, *or* 2 or more items are blocked. |
 | 🟡 Observe | Exactly 1 item is blocked. |
 | 🟢 Sustain | No items are blocked. |
+
+# Stale Items Overview
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Work Item Age |
+| **Affected by Filtering** | No |
+
+This widget shows how many in-progress items have been sitting in their current state longer than the configured **staleness threshold** — items that may be silently stuck even though no one flagged them.
+
+![Stale Items Overview](../assets/features/metrics/staleOverview.png)
+
+The staleness threshold (in days) is configured in your Team or Portfolio settings. Blocked items are **not** counted here — they are reported by the [Blocked Overview](#blocked-overview) instead, so a single item is never counted as both blocked and stale. The target is always zero stale items. Use the **View Data** button to see all currently stale items.
+
+{: .important}
+This widget is **not affected** by date filtering. It always reflects the **current** stale state.
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No staleness threshold is configured, *or* 2 or more items are stale. |
+| 🟡 Observe | Exactly 1 item is stale. |
+| 🟢 Sustain | No items are stale. |
 
 # Features Worked On Overview
 
@@ -187,6 +211,17 @@ If there is a blocked item, it will appear as a red dot in the chart.
 {: .note}
 Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Portfolios. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
 
+## Pace Percentile Bands
+
+Toggle the **pace percentiles** control in the top-right of the chart to overlay per-state background bands.
+
+![Work Item Aging Chart with pace percentile bands](../assets/features/metrics/aging_pace_percentiles.png)
+
+For each *Doing* state, Lighthouse draws horizontal background bands at that state's historical cycle-time percentiles, shaded from cool (faster than typical) at the bottom to red (slower than typical) at the top. Unlike the SLE line — which is a single threshold across the whole chart — these bands let you judge whether an item is aging faster or slower than your usual pace **for the specific state it is currently in**. States without their own percentile data inherit the bands carried over from the previous state.
+
+{: .note}
+A **stale** item (one that has been in its current state longer than the configured staleness threshold) appears red in the chart, just like a blocked item. Clicking its bubble shows the item's **Time in State** highlighted in red. An item that is blocked *and* over the threshold is treated as blocked, not stale.
+
 ## Status Indicator
 
 | Status | Condition |
@@ -194,6 +229,38 @@ Jira note: Lighthouse identifies blocked items using the blocked tags or blocked
 | 🔴 Act | No SLE is configured, *or* no blocked indicators are configured, *or* the percentage of items exceeding the SLE is greater than the allowed percentage (100% − SLE percentile) *and* at least one item is also blocked. |
 | 🟡 Observe | Some items exceed the SLE or at least one item is blocked, but not both conditions together. |
 | 🟢 Sustain | All in-progress items are within the SLE and no items are blocked. |
+
+# Cumulative Time per State
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Work Item Age, Cycle Time |
+| **Affected by Filtering** | Yes |
+
+This chart shows how much **total time** your work spends in each workflow state, making it easy to see where work waits and where bottlenecks form.
+
+![Cumulative Time per State](../assets/features/metrics/stateTimeCumulative.png)
+
+Each bar represents one *Doing* state. Every item that accumulated time in that state within the selected range contributes to the bar, split into two segments:
+
+- **Completed segment** (solid): time contributed by items that have since moved out of the state.
+- **Ongoing segment** (hatched): time still accumulating on items that are currently in the state.
+
+Hovering over a state shows its breakdown — total, completed, and ongoing time, plus the mean, median, and item counts. Clicking the constraint (tallest) bar opens a drill-in dialog listing the items that contributed to it.
+
+## Filtering to specific items
+
+Use the work-item picker above the chart to scope it to one or more selected items. This is useful to trace how a specific item — or a small set of them — spent its time across the states.
+
+![Cumulative Time per State scoped to a filtered item](../assets/features/metrics/stateTimeCumulative_filtered.png)
+
+## Status Indicator
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | One state holds more than 60% of the total time, *or* no time is in scope. Investigate the bottleneck or widen the filter. |
+| 🟡 Observe | One state holds between 40% and 60% of the total time. |
+| 🟢 Sustain | No single state holds 40% or more of the total time. |
 
 # Load Balance Matrix
 
