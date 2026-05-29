@@ -100,4 +100,16 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	get legacyFlowSignalsGroupHeader(): Locator {
 		return this.page.getByText("Flow Signals", { exact: true });
 	}
+
+	get savedIndicator(): Locator {
+		return this.page.getByText("All changes saved", { exact: true });
+	}
+
+	async waitForChangesSaved(): Promise<void> {
+		await expect(this.savedIndicator).toBeVisible({ timeout: 15_000 });
+	}
+
+	async hasSaveButton(): Promise<boolean> {
+		return this.saveButton.isVisible();
+	}
 }

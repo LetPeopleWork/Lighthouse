@@ -1,0 +1,368 @@
+schema_version: 1
+feature_id: remove-action-buttons
+
+journey:
+  name: "Commit intent and recompute forecasts without a ceremonial button"
+  goal: >
+    A delivery forecaster (wearing the team-admin / portfolio-admin hat) expresses a
+    valid change in settings or forecast inputs and Lighthouse acts on it the moment
+    it is valid — persisting settings (and refreshing dependent data) or recomputing
+    a forecast — without making the user hunt for and click a Save / Run button, while
+    keeping the user MORE sure their change took, not less.
+  persona: "delivery-forecaster (often the same person as team-admin / portfolio-admin)"
+
+  emotional_arc:
+    start: >
+      Trained habit doubt — "I'll change it, then click Save / Run." Mild unease that
+      the button is gone ("is this form broken / read-only? did it save? where does my
+      error show without a Save button?").
+    middle: >
+      Reassured by the calm save-state indicator ("Saving…" → "All changes saved") and
+      by forecast numbers that recompute live as inputs are shaped; the vanished ritual
+      is replaced by continuous feedback.
+    end: >
+      Quiet, continuous confidence — "I changed it, it took, the screen is current; the
+      obsolete 'you must refresh' hints are gone; the numbers tracked my thinking and
+      stale runs never overwrote fresh ones."
+
+  locked_decisions:
+    - id: D-RELOAD
+      decision: >
+        When a settings change requires a data reload, the in-place alert MUST carry a
+        one-click "Reload now" action — NEVER instruct the user to navigate elsewhere
+        and refresh manually. Auto-refresh where safe and cheap (State Mappings reload);
+        where the recompute is expensive (Forecast Filter throughput), surface a single
+        one-click "Reload throughput now" action embedded in the in-place alert. Both
+        the State Mappings "must reload" Alert and the Forecast Filter stopgap Alert
+        (commit 53e6287e) are replaced by: silent auto-save + (auto-refresh OR one-click
+        Reload now).
+    - id: D-RBAC-PARITY
+      decision: >
+        Auto-save / auto-run is gated EXACTLY where the Save / Run button is gated today
+        (team-admin via useRbac().isTeamAdmin(teamId); portfolio via canUpdatePortfolioData;
+        forecast filter read-only via !isTeamAdmin). No new authorization surface. UI
+        gating derives from useRbac(); business logic flows through IRbacAdministrationService.
+    - id: D-LINCHPIN
+      decision: >
+        Slice 1 introduces the reusable auto-save mechanism (debounced auto-fire of
+        handleSave when formValid, a save-state machine, inline-error-as-primary-feedback)
+        in useModifySettings AND ships it end-to-end on the simplest real surface (general
+        team settings). It is reviewed carefully before Slices 2-4 build on it.
+
+steps:
+
+  - id: step-autosave-general-settings
+    name: "Auto-save general team settings on valid input (Slice 1, linchpin)"
+    command: "Edit a field on /teams/{teamId}/settings (e.g. name, throughput history)"
+    job: job-commit-intent-no-button
+    tui_mockup: |
+      +-- Team Settings: Atlas ------------------------------------------+
+      |  Name           [ Atlas Delivery Team            ]               |
+      |  Throughput hist[ 90 ] days                                      |
+      |                                 ${saveState}  <- "All changes saved"
+      |                                 (was: [ Save ] button)          |
+      +-----------------------------------------------------------------+
+    shared_artifacts:
+      - name: formValid
+        source: "useModifySettings (validateForm)"
+        displayed_as: "auto-save gate"
+        consumers: ["auto-save trigger", "save-state indicator"]
+      - name: saveState
+        source: "NEW save-state machine in useModifySettings"
+        displayed_as: "${saveState}"
+        consumers: ["settings save indicator (replaces ValidationActions icons)"]
+      - name: disableSave
+        source: "useRbac() via IRbacAdministrationService"
+        displayed_as: "RBAC suppression"
+        consumers: ["auto-save suppression", "read-only rendering"]
+    emotional_state:
+      entry: "habitual edit; mild unease at no Save button"
+      exit: "confident — 'Saved' appeared without a click; persists across refresh"
+    integration_checkpoint: |
+      Save-state machine + auto-save gate reviewed before Slices 2-4 consume it.
+      RBAC parity: no auto-save fires where disableSave is true.
+    failure_modes:
+      - "Field becomes invalid mid-edit (empty name) → no save fires; inline error is primary feedback; last valid value stays persisted."
+      - "Save request fails (network/500) → save-state shows failure + Retry; edits not lost."
+      - "Rapid edits → debounce + stale-response guard; only the latest valid state persists."
+      - "Non-admin opens settings → read-only; no auto-save (parity with disabled Save today)."
+    gherkin: |
+      Scenario: General team settings persist the moment they are valid, with no Save button
+        Given Priya Raman is a team-admin editing the Atlas team settings on /teams/42/settings
+        And the form currently shows name "Atlas Delivery Team" and throughput history "90"
+        When Priya changes throughput history to "60" and stops typing
+        Then a save-state indicator shows "Saving…" then "All changes saved" within the debounce window
+        And the value "60" is persisted and still present after Priya refreshes the page
+        And there is no Save button on the form
+
+      Scenario: An invalid edit is held back and the inline error is the primary feedback
+        Given Priya is editing the Atlas team settings with a valid name "Atlas Delivery Team"
+        When Priya clears the name field so the form becomes invalid
+        Then no save is fired
+        And an inline error "Name is required" is shown next to the field
+        And the previously persisted name "Atlas Delivery Team" is unchanged after refresh
+
+      Scenario: A failed save keeps the edit and offers a one-click retry
+        Given Priya changes throughput history to "60" on a valid form
+        And the server returns an error when the change is saved
+        When the save attempt completes
+        Then the save-state indicator shows "Couldn't save" with a Retry action
+        And Priya's edit "60" is still present in the form
+        And clicking Retry re-attempts the save
+
+      Scenario: A viewer cannot trigger an auto-save (RBAC parity)
+        Given Sam Lee is a viewer (non-team-admin) on /teams/42/settings
+        When Sam opens the Atlas team settings
+        Then the fields are read-only
+        And no save-state indicator is shown
+        And no auto-save fires (parity with the disabled Save button today)
+
+  - id: step-autosave-refresh-state-mappings
+    name: "Auto-save + auto-refresh State Mappings (Slice 2, D-RELOAD)"
+    command: "Edit a state mapping on /teams/{teamId}/settings"
+    job: job-commit-intent-no-button
+    tui_mockup: |
+      +-- State Mappings -----------------------------------------------+
+      |  [ Doing+Review → "In Progress" ]   (auto-saved)                |
+      |  ✓ Saved. Reloading metrics…   <- auto-refresh (cheap)          |
+      |  (REMOVED: "After saving, a data reload is needed…" Alert)      |
+      +-----------------------------------------------------------------+
+    shared_artifacts:
+      - name: saveState
+        source: "useModifySettings save-state machine (Slice 1)"
+        displayed_as: "${saveState}"
+        consumers: ["mappings save indicator"]
+      - name: reloadCost
+        source: "per-surface D-RELOAD decision (mappings = cheap → auto)"
+        displayed_as: "auto-refresh"
+        consumers: ["dependent metrics/data view"]
+    emotional_state:
+      entry: "two-step ceremony dread ('save then go refresh')"
+      exit: "confident — data is current automatically; the reminder Alert is gone"
+    integration_checkpoint: |
+      D-RELOAD: mappings reload is cheap → auto-refresh. The "must reload" Alert is removed.
+    failure_modes:
+      - "Mapping with empty group name → invalid → no save; inline mapping error shown."
+      - "Save succeeds but reload fails → alert offers one-click Reload now (D-RELOAD fallback)."
+    gherkin: |
+      Scenario: A state-mapping change auto-saves and the dependent data refreshes without a manual step
+        Given Priya is a team-admin editing State Mappings on /teams/42/settings
+        When Priya groups the "Doing" and "Review" states into "In Progress" and stops editing
+        Then the change auto-saves and the dependent metrics refresh automatically
+        And the data reflects the new mapping with no manual refresh step
+        And the "After saving, a data reload is needed" alert is no longer shown
+
+      Scenario: An invalid mapping is held back with an inline error
+        Given Priya is editing State Mappings
+        When Priya adds a mapping group with an empty name
+        Then no save is fired
+        And an inline error explains the group name is required
+
+  - id: step-autosave-refresh-forecast-filter
+    name: "Auto-save + auto-refresh Forecast Filter (Slice 3, D-RELOAD, premium)"
+    command: "Edit a forecast filter rule on /teams/{teamId}/settings (premium tenant)"
+    job: job-commit-intent-no-button
+    tui_mockup: |
+      +-- Forecast Filter (Premium) ------------------------------------+
+      |  Exclude items where [ Type ][ equals ][ Bug ]  (auto-saved)    |
+      |  ✓ Saved. [ Reload throughput now ]  <- D-RELOAD (expensive)    |
+      |  (REMOVED: forecast-filter-takeeffect-hint Alert, 53e6287e)     |
+      +-----------------------------------------------------------------+
+    shared_artifacts:
+      - name: saveState
+        source: "useModifySettings save-state machine (Slice 1)"
+        displayed_as: "${saveState}"
+        consumers: ["forecast-filter save indicator"]
+      - name: reloadCost
+        source: "per-surface D-RELOAD decision (throughput recompute = expensive → one-click)"
+        displayed_as: "[ Reload throughput now ]"
+        consumers: ["throughput chart", "forecast surfaces"]
+      - name: isTeamAdmin(teamId)
+        source: "useRbac() via IRbacAdministrationService"
+        displayed_as: "read-only gate"
+        consumers: ["ForecastFilterEditor readOnly", "auto-save suppression"]
+      - name: licenseStatus.isPremium
+        source: "useLicense() hook"
+        displayed_as: "premium gate"
+        consumers: ["ForecastSettingsComponent rendering"]
+    emotional_state:
+      entry: "explicit-debt friction ('save settings, then go refresh throughput')"
+      exit: "confident — one click reloads throughput; the stopgap hint is deleted"
+    integration_checkpoint: |
+      D-RELOAD: throughput recompute is expensive → one-click "Reload throughput now"
+      embedded in the in-place alert (never "go to the team page and refresh"). The
+      53e6287e stopgap Alert is removed. Premium gating reused unchanged.
+    failure_modes:
+      - "Invalid rule (unknown field key) → PUT 400 → no persist; inline error; prior rule set intact."
+      - "Non-team-admin → rule editor read-only; no auto-save (RBAC parity, err-non-team-admin-attempts-edit)."
+      - "License downgrade → editor + auto-save hidden; persisted rule set preserved (err-license-downgrade)."
+    gherkin: |
+      Scenario: A forecast-filter change auto-saves and offers a one-click throughput reload
+        Given Priya is a team-admin on a premium tenant editing the Forecast Filter on /teams/42/settings
+        When Priya adds the rule "Exclude items where Type equals Bug" and stops editing
+        Then the rule auto-saves with a "Saved" indicator and no Save button
+        And the alert offers a single-click "Reload throughput now" action in place
+        And the user is never instructed to navigate to another page and refresh manually
+        And the "forecast-filter-takeeffect-hint" alert is no longer shown
+
+      Scenario: Reloading throughput in one click reflects the new filter
+        Given Priya has just auto-saved an "Exclude Type = Bug" rule
+        When Priya clicks "Reload throughput now"
+        Then the throughput chart and forecasts recompute against the filtered throughput
+        And no separate save or navigation step was required
+
+      Scenario: A non-team-admin sees the filter read-only with no auto-save
+        Given Sam Lee is a viewer on a premium tenant on /teams/42/settings
+        When Sam opens the Forecast Filter section
+        Then the rule editor is read-only
+        And no auto-save fires (parity with today's disabled Save / read-only editor)
+
+  - id: step-autosave-portfolio-settings
+    name: "Auto-save general portfolio settings + RBAC parity (Slice 4)"
+    command: "Edit a field on a portfolio's settings (ModifyProjectSettings)"
+    job: job-commit-intent-no-button
+    tui_mockup: |
+      +-- Portfolio Settings: Atlas Program ----------------------------+
+      |  Name           [ Atlas Program                  ]              |
+      |  ...                                                            |
+      |                                 ${saveState}  <- "All changes saved"
+      |  (auto-save gated on canUpdatePortfolioData)                    |
+      +-----------------------------------------------------------------+
+    shared_artifacts:
+      - name: saveState
+        source: "useModifySettings save-state machine (Slice 1)"
+        displayed_as: "${saveState}"
+        consumers: ["portfolio save indicator"]
+      - name: canUpdatePortfolioData
+        source: "useRbac() via IRbacAdministrationService"
+        displayed_as: "RBAC suppression"
+        consumers: ["auto-save suppression (parity with disableSave={!canUpdatePortfolioData})"]
+    emotional_state:
+      entry: "same save ceremony as team settings, at portfolio scope"
+      exit: "confident — mechanism generalises; RBAC parity preserved"
+    integration_checkpoint: |
+      Confirms the Slice-1 mechanism is genuinely reusable across the parallel
+      useModifySettings consumer (portfolio). Portfolio also embeds StateMappingsEditor
+      → reuse Slice 2's auto-refresh.
+    failure_modes:
+      - "Non-portfolio-admin (free tier beyond limit) → disableSave true → no auto-save (parity)."
+      - "Invalid portfolio form → no save; inline error."
+    gherkin: |
+      Scenario: Portfolio settings auto-save the moment they are valid
+        Given Priya is a portfolio-admin editing the Atlas Program settings
+        When Priya changes a valid field and stops typing
+        Then the change auto-saves with a "Saved" indicator and no Save button
+
+      Scenario: Auto-save is suppressed where portfolio data updates are not permitted
+        Given Priya is on a portfolio where canUpdatePortfolioData is false
+        When Priya attempts to edit a field
+        Then no auto-save fires (parity with the disabled Save button and its tooltip today)
+
+  - id: step-autorun-new-item-forecast
+    name: "Auto-run the new-item-creation forecast on valid input (Slice 5)"
+    command: "Adjust new-item forecast inputs in TeamForecastView"
+    job: job-see-forecast-update-live
+    tui_mockup: |
+      +-- New Work Items Creation Forecast -----------------------------+
+      |  From [2026-04-01] To [2026-05-01] Target [2026-07-01]          |
+      |  Work item types: [x] Story [ ] Bug                             |
+      |  (was: [ Forecast ] button — REMOVED)                          |
+      |  ► P85: 42 items by target   <- recomputes live                |
+      +-----------------------------------------------------------------+
+    shared_artifacts:
+      - name: hasInteractedRef
+        source: "TeamForecastView (shipped reference pattern)"
+        displayed_as: "on-mount run suppression"
+        consumers: ["new-item auto-run"]
+      - name: requestSeqRef + DEBOUNCE_MS
+        source: "TeamForecastView (shipped reference pattern)"
+        displayed_as: "debounce + stale-response guard"
+        consumers: ["new-item auto-run"]
+    emotional_state:
+      entry: "stop-start tweak-click-read rhythm; jarring vs sibling auto-forecast"
+      exit: "in flow — numbers track thinking; consistent with How Many / When forecast"
+    integration_checkpoint: |
+      Reuses the already-shipped TeamForecastView auto-run orchestration. No on-mount
+      run; stale responses discarded.
+    failure_modes:
+      - "Incomplete inputs (no work-item type) → no run; prior result cleared; reason shown."
+      - "Forecast page just loaded → no run until the user changes an input (hasInteractedRef)."
+      - "Rapid input changes → debounce + requestSeqRef; stale runs never overwrite fresh."
+    gherkin: |
+      Scenario: The new-item forecast recomputes live as inputs are shaped, with no Run button
+        Given Priya is on the Atlas team forecast page with valid new-item inputs
+        And the "Forecast" button has been removed
+        When Priya widens the historical window (a valid change)
+        Then the new-item forecast recomputes automatically after the debounce window
+        And stale results never overwrite a fresher run
+
+      Scenario: No forecast runs on page load until the user engages
+        Given Priya has just opened the Atlas team forecast page
+        When no input has been changed yet
+        Then no new-item forecast run fires
+        And no result is shown until Priya changes an input
+
+      Scenario: Incomplete inputs produce no run
+        Given Priya has cleared all selected work-item types
+        When the inputs are incomplete
+        Then no run fires and the prior result is cleared
+
+  - id: step-autorun-backtest
+    name: "Auto-run backtesting on valid input (Slice 6)"
+    command: "Adjust backtest inputs in TeamForecastView"
+    job: job-see-forecast-update-live
+    tui_mockup: |
+      +-- Forecast Backtesting -----------------------------------------+
+      |  Mode: ( ) Rolling (•) Date range                              |
+      |  Start [2026-01-01] End [2026-04-01] Hist window [90d]          |
+      |  (was: [ Run Backtest ] button — REMOVED)                      |
+      |  ► MAPE 12% over window   <- recomputes live                   |
+      +-----------------------------------------------------------------+
+    shared_artifacts:
+      - name: hasInteractedRef
+        source: "TeamForecastView (shipped reference pattern)"
+        displayed_as: "on-mount run suppression"
+        consumers: ["backtest auto-run"]
+      - name: requestSeqRef + DEBOUNCE_MS
+        source: "TeamForecastView (shipped reference pattern)"
+        displayed_as: "debounce + stale-response guard"
+        consumers: ["backtest auto-run"]
+    emotional_state:
+      entry: "tweak-click-read loop on a richer input set (rolling vs date-range)"
+      exit: "in flow — scenario exploration is continuous; no mid-edit flash"
+    integration_checkpoint: |
+      Backtest's richer input set (mode toggle, historical window) driven by the same
+      debounced valid-input auto-run; mode toggle mid-edit must not fire a half-config run.
+    failure_modes:
+      - "Mode toggle mid-edit (rolling↔date-range) → no half-configured run fires."
+      - "Partial inputs (missing window) → no run until all inputs valid and stable."
+      - "Backtest page just loaded → no run until input change (hasInteractedRef)."
+    gherkin: |
+      Scenario: The backtest recomputes live as inputs are shaped, with no Run button
+        Given Priya is on the Atlas team forecast page with a valid backtest configuration
+        And the "Run Backtest" button has been removed
+        When Priya adjusts the historical window to a new valid value
+        Then the backtest recomputes automatically after the debounce window
+        And stale runs never overwrite a fresher run
+
+      Scenario: Switching backtest mode mid-edit does not fire a half-configured run
+        Given Priya is configuring a backtest
+        When Priya switches from "Rolling" to "Date range" mode while inputs are incomplete
+        Then no run fires until all inputs for the chosen mode are valid and stable
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: saveState
+      must_match_across: [step-autosave-general-settings, step-autosave-refresh-state-mappings, step-autosave-refresh-forecast-filter, step-autosave-portfolio-settings]
+      failure_message: "Save-state semantics must be identical across all settings surfaces; one source in useModifySettings."
+    - artifact: "RBAC gate (disableSave / canUpdatePortfolioData / isTeamAdmin)"
+      must_match_across: [step-autosave-general-settings, step-autosave-refresh-forecast-filter, step-autosave-portfolio-settings]
+      failure_message: "Auto-save must be suppressed exactly where the Save button is disabled today; no new authz surface."
+    - artifact: "auto-run guards (hasInteractedRef / requestSeqRef / DEBOUNCE_MS)"
+      must_match_across: [step-autorun-new-item-forecast, step-autorun-backtest]
+      failure_message: "Forecast auto-run must reuse the shipped TeamForecastView orchestration; no divergent debounce/stale-guard."
+
+changelog:
+  - date: "2026-05-29"
+    feature: "remove-action-buttons"
+    change: "Initial journey for the two new jobs (commit-intent-no-button, see-forecast-update-live) covering the 6 confirmed slices, with D-RELOAD threaded through Slices 2 & 3."

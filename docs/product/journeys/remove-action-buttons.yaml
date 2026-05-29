@@ -1,0 +1,135 @@
+schema_version: 1
+feature_id: remove-action-buttons
+updated: 2026-05-29
+
+journeys:
+
+  - name: commit-intent-without-a-button
+    goal: A delivery forecaster (wearing the team-admin / portfolio-admin hat) expresses a valid change in settings — general team/portfolio settings, state mappings, or the forecast filter — and Lighthouse persists it the moment it is valid, refreshing dependent data automatically where cheap or via a one-click in-place "Reload now" where expensive, with no ceremonial Save button.
+    persona: delivery-forecaster (often the same person as team-admin / portfolio-admin)
+
+    emotional_arc:
+      start: Trained habit doubt — "I'll change it, then click Save"; mild unease that the button is gone ("is this form broken / read-only? did it save? where does my error show?")
+      middle: Reassured by the calm save-state indicator ("Saving…" → "All changes saved"); the vanished click ritual is replaced by continuous feedback
+      end: Quiet confidence — "I changed it, it took, the screen is current; the obsolete 'you must refresh' hints are gone"
+
+    locked_decisions:
+      - id: D-RELOAD
+        decision: When a settings change requires a data reload, the in-place alert MUST carry a one-click "Reload now" action — NEVER instruct the user to navigate elsewhere and refresh manually. Auto-refresh where cheap (State Mappings); one-click "Reload throughput now" where expensive (Forecast Filter throughput). Both stopgap Alerts (StateMappings "must reload"; forecast-filter-takeeffect-hint, commit 53e6287e) are removed.
+      - id: D-RBAC-PARITY
+        decision: Auto-save is suppressed exactly where the Save button is gated today — team via useRbac().isTeamAdmin(teamId); portfolio via canUpdatePortfolioData; forecast filter read-only via !isTeamAdmin. No new authorization surface; UI gating derives from useRbac(); business logic flows through IRbacAdministrationService.
+      - id: D-LINCHPIN
+        decision: Slice 1 introduces the reusable auto-save mechanism (debounced auto-fire of handleSave when formValid, a save-state machine, inline-error-as-primary-feedback) in useModifySettings AND ships it on the simplest real surface (general team settings). Reviewed before Slices 2-4 build on it.
+
+    steps:
+      - id: autosave-general-team-settings
+        slice: 1
+        action: Team-admin edits a field on /teams/{teamId}/settings (e.g. throughput history) and stops typing
+        expected_output: Save-state indicator shows "Saving…" then "All changes saved"; the value persists across refresh; no Save button
+        emotional_state: habitual edit then confident — "Saved" appeared without a click
+        shared_artifacts:
+          - formValid — single source: useModifySettings (validateForm)
+          - saveState — single source: NEW save-state machine in useModifySettings
+          - disableSave — single source: useRbac() via IRbacAdministrationService
+
+      - id: autosave-refresh-state-mappings
+        slice: 2
+        action: Team-admin groups two workflow states into a named group and stops editing
+        expected_output: The mapping auto-saves and the dependent metrics refresh automatically (D-RELOAD cheap → auto); the "After saving, a data reload is needed" Alert is gone
+        emotional_state: relieved — data is current automatically; reminder Alert gone
+        shared_artifacts:
+          - saveState — single source: useModifySettings save-state machine (Slice 1)
+          - reloadCost — single source: per-surface D-RELOAD decision (mappings = cheap → auto)
+
+      - id: autosave-refresh-forecast-filter
+        slice: 3
+        action: Team-admin on a premium tenant adds a forecast-filter rule ("Exclude Type = Bug") and stops editing
+        expected_output: The rule auto-saves with a "Saved" indicator; an in-place "Reload throughput now" one-click action recomputes throughput + forecasts (D-RELOAD expensive → one-click); the forecast-filter-takeeffect-hint Alert is gone
+        emotional_state: confident — one click reloads throughput; the stopgap hint is deleted
+        shared_artifacts:
+          - saveState — single source: useModifySettings save-state machine (Slice 1)
+          - reloadCost — single source: per-surface D-RELOAD decision (throughput = expensive → one-click)
+          - isTeamAdmin(teamId) — single source: useRbac() via IRbacAdministrationService
+          - licenseStatus.isPremium — single source: useLicense() hook
+
+      - id: autosave-portfolio-settings
+        slice: 4
+        action: Portfolio-admin edits a valid field on the portfolio settings form and stops typing
+        expected_output: The change auto-saves with a "Saved" indicator and no Save button; auto-save is suppressed where canUpdatePortfolioData is false (RBAC parity)
+        emotional_state: confident — mechanism generalises; RBAC parity preserved
+        shared_artifacts:
+          - saveState — single source: useModifySettings save-state machine (Slice 1)
+          - canUpdatePortfolioData — single source: useRbac() via IRbacAdministrationService
+
+    error_paths:
+      - id: err-invalid-edit-held
+        trigger: A field becomes invalid mid-edit (e.g. empty team name, empty mapping group name)
+        recovery: No save fires; the inline error is the PRIMARY feedback channel; the last valid value remains persisted
+        owner: useModifySettings (validity gate + validationError)
+      - id: err-save-failed
+        trigger: A save request fails (network / 500)
+        recovery: Save-state indicator shows "Couldn't save" with a one-click Retry; the user's edits are not lost
+        owner: useModifySettings save-state machine
+      - id: err-reload-needed
+        trigger: A settings change requires a data reload
+        recovery: D-RELOAD — auto-refresh where cheap (mappings); one-click in-place "Reload now" where expensive (forecast throughput); never an instruction to navigate away and refresh manually
+        owner: DESIGN wave per-surface
+      - id: err-non-admin-no-autosave
+        trigger: A non-admin (viewer / lacking canUpdatePortfolioData) opens settings
+        recovery: Fields read-only; no save-state indicator; no auto-save (parity with the disabled Save button today)
+        owner: RBAC gating via useRbac()
+      - id: err-concurrent-rapid-edits
+        trigger: Rapid successive edits
+        recovery: Debounce + stale-response guard; only the latest valid state persists
+        owner: useModifySettings auto-save mechanism
+
+  - name: see-forecast-update-as-i-shape-inputs
+    goal: A delivery forecaster shapes the inputs of a new-item-creation forecast or a backtest and the forecast recomputes itself each time the inputs become valid — the same way the How Many / When forecast already does — with no Run button, no run on page load, and stale runs discarded.
+    persona: delivery-forecaster
+
+    emotional_arc:
+      start: Stop-start tweak-click-read rhythm; jarring next to the sibling auto-running How Many / When forecast on the same page
+      middle: Exploratory — numbers recompute live as inputs are shaped, debounced
+      end: In flow — the numbers tracked my thinking; stale runs never overwrote fresh ones
+
+    locked_decisions:
+      - id: D-REUSE-SHIPPED-PATTERN
+        decision: Reuse the already-shipped TeamForecastView auto-run orchestration — hasInteractedRef (no run on mount) + requestSeqRef (stale-response guard) + DEBOUNCE_MS (300ms) + run-only-when-valid. No new abstraction; no API contract change.
+
+    steps:
+      - id: autorun-new-item-forecast
+        slice: 5
+        action: Forecaster adjusts new-item inputs (from/to/target dates + ≥1 work-item type) on the team forecast page
+        expected_output: The new-item forecast recomputes automatically after the debounce window; no "Forecast" button; no run on mount; stale results discarded
+        emotional_state: in flow — numbers track thinking; consistent with How Many / When forecast
+        shared_artifacts:
+          - hasInteractedRef — single source: TeamForecastView (shipped reference pattern)
+          - requestSeqRef + DEBOUNCE_MS — single source: TeamForecastView (shipped reference pattern)
+
+      - id: autorun-backtest
+        slice: 6
+        action: Forecaster adjusts backtest inputs (mode toggle, start/end, historical window)
+        expected_output: The backtest recomputes automatically after the debounce window; no "Run Backtest" button; a mode toggle mid-edit does NOT fire a half-configured run; stale runs discarded
+        emotional_state: in flow — scenario exploration is continuous; no mid-edit flash
+        shared_artifacts:
+          - hasInteractedRef — single source: TeamForecastView (shipped reference pattern)
+          - requestSeqRef + DEBOUNCE_MS — single source: TeamForecastView (shipped reference pattern)
+
+    error_paths:
+      - id: err-no-run-on-mount
+        trigger: The forecast page has just loaded
+        recovery: No new-item / backtest run fires until the user changes an input (hasInteractedRef)
+        owner: TeamForecastView orchestration
+      - id: err-incomplete-inputs
+        trigger: Required inputs are incomplete (no work-item type; missing backtest window; mode toggled mid-edit)
+        recovery: No run fires; the prior result is cleared; the reason is visible
+        owner: run-only-when-valid gate
+      - id: err-stale-run
+        trigger: Rapid input changes produce overlapping in-flight runs
+        recovery: requestSeqRef discards stale responses; only the latest run's result is shown
+        owner: TeamForecastView stale-guard
+
+changelog:
+  - date: "2026-05-29"
+    feature: "remove-action-buttons"
+    change: "Initial SSOT journey for the two new jobs (commit-intent-without-a-button, see-forecast-update-as-i-shape-inputs) across the 6 confirmed slices; D-RELOAD threaded through the settings journey."

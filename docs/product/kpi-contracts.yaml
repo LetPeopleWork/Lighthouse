@@ -338,3 +338,57 @@ outcomes:
       Tracked via issue-tracker label `feature-request-aging-pace` + community Slack mentions.
       Directional only (vendor_demo_only); no automated measurement.
     alerting: []
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # remove-action-buttons (ADO #5077). Added by DISTILL wave 2026-05-29.
+  # Frontend-only UX coherence + debt retirement. KPIs are repo/test/grep-
+  # verifiable (NOT telemetry): customer instances do not phone home, so KPI 1
+  # (no explicit commit click) and KPI 2 (stopgap Alerts removed) are asserted
+  # at build time via the acceptance suite + grep. KPIs 5-6 (lost-edit -50%,
+  # recompute +30%) stay blocked on Epic 5015 and are NOT registered here.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  - id: OUT-remove-action-buttons-no-explicit-commit-click
+    feature: remove-action-buttons
+    title: No settings/forecast surface requires an explicit Save/Run click for valid input
+    target: "0 of 6 settings/forecast surfaces require an explicit Save/Run click for valid input (baseline 6/6)"
+    measurement_scope: per_instance
+    acceptance_scenarios:
+      - file: Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts
+        scenario: "@US-01 persists a valid edit automatically after the team-admin stops typing"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx
+        scenario: "@US-05 recomputes the new-item forecast automatically after a valid input change"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.EndToEndTests/tests/specs/teams/AutoSaveTeamSettings.spec.ts
+        scenario: "@walking_skeleton a team-admin's valid settings edit persists with All changes saved and no Save button"
+        tag: "@kpi"
+        gate_type: hard
+    instrumentation_status: >
+      Repo/test/grep-verifiable (KPI 1 + KPI 3 from DISCUSS outcome-kpis). Asserted at build time
+      via the acceptance suite (auto-save + auto-run scenarios) plus a grep for absence of Save/Run
+      buttons on the six converted surfaces. No runtime telemetry; not dependent on Epic 5015.
+    alerting: []
+
+  - id: OUT-remove-action-buttons-stopgap-alerts-removed
+    feature: remove-action-buttons
+    title: Both "you must refresh" stopgap Alerts are removed
+    target: "0 stopgap reload-instruction Alerts remain (baseline 2: StateMappings must-reload + forecast-filter-takeeffect-hint)"
+    measurement_scope: per_instance
+    acceptance_scenarios:
+      - file: Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts
+        scenario: "@US-02 auto-saves a valid mapping change and refreshes the dependent metrics"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts
+        scenario: "@US-03 auto-saves a valid filter rule and never triggers an automatic throughput recompute"
+        tag: "@kpi"
+        gate_type: hard
+    instrumentation_status: >
+      Repo/test/grep-verifiable (KPI 2 from DISCUSS outcome-kpis). Asserted at build time: a grep
+      confirms the absence of the two retired Alerts ("After saving, a data reload is needed";
+      `forecast-filter-takeeffect-hint`), and the auto-save + reload scenarios cover the replacement
+      behaviour. No runtime telemetry.
+    alerting: []

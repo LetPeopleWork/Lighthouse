@@ -1366,3 +1366,120 @@ Hard-gate summary: **of 14 rows, 9 are EXTEND/reuse and 5 are CREATE-NEW** — a
 
 No external integrations are *introduced* by this target architecture (the connectors to Jira/ADO/Linear already exist and already carry their own contract-test annotation from prior features). Nothing here changes that boundary.
 
+---
+
+## Application Architecture — remove-action-buttons
+
+Feature: remove-action-buttons (ADO #5077)
+Wave: DESIGN
+Date: 2026-05-29
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+
+This section is **additive** to all prior `## Application Architecture` deltas. Architectural pattern (ports-and-adapters), paradigm (OOP backend + functional-leaning React frontend), and core invariants are unchanged. The change is **frontend-only**: no backend port, no endpoint, no DTO touched (cross-cutting checklist confirms). It extends the already-shared `useModifySettings` hook with an opt-in auto-save capability and a save-state machine, reuses the shipped `TeamForecastView` auto-run orchestration for the forecast surfaces, and conforms to ADR-001 (`useRbac()`-only UI gating).
+
+### Architectural Pattern
+
+**Ports-and-Adapters (Hexagonal)** — unchanged. On the frontend the relevant seam is the `useModifySettings` hook (the application-state port for settings forms) and the existing API services (`teamService`, `forecastService`, `teamMetricsService` — the driven adapters). Auto-save changes only *when* an existing driven call fires (on debounced validity), never *what* it sends.
+
+### Key invariants introduced
+
+- **One save mechanism, one indicator, one state machine** for all four settings surfaces — `useModifySettings` is the single owner. Enforced by a frontend guard test that no settings surface renders a bespoke save indicator (realises journey `integration_validation.saveState`). See ADR-029.
+- **RBAC permission is injected, never re-derived.** `useModifySettings` receives `canSave: boolean`; it does not call `useRbac()` itself. Parent pages compute it from `useRbac()`/`useRbacGate` (`EditTeam.tsx:35`, `TeamDetail.tsx:543`, `ModifyProjectSettings.tsx:276`) exactly as they do for today's `disableSave`. Conforms to ADR-001. See ADR-029.
+- **A save fires only from a fully-valid, dirty, permitted form; only the latest sequence's response is applied; a failed save retains the edit.** The stale-guard (`requestSeqRef`) and validity-gate (`formValid`) have a single owner in the hook. See ADR-029.
+- **Dependent-data reload after auto-save is cost-based:** cheap (State Mappings) → silent auto-refresh; expensive (Forecast Filter throughput) → one-click in-place "Reload throughput now". Never a navigate-away instruction (D-RELOAD). Both stopgap Alerts deleted. See ADR-030.
+- **Forecast auto-run reuses the shipped pattern** (`hasInteractedRef` + `requestSeqRef` + `DEBOUNCE_MS=300`, `TeamForecastView.tsx:70-72,181-196`) — no divergent debounce/stale-guard. D-REUSE-SHIPPED-PATTERN.
+
+### System Context and Capabilities
+
+No backend change; the FE continues to talk to the same Lighthouse API. The feature retires the explicit Save/Run click on six surfaces:
+
+1. General team settings — debounced auto-save on valid (linchpin).
+2. State Mappings — auto-save + silent metrics auto-refresh.
+3. Forecast Filter (premium) — auto-save + one-click throughput reload; `forecast-filter-takeeffect-hint` Alert deleted.
+4. Portfolio settings — auto-save with `canUpdatePortfolioData` parity.
+5. New-item forecast — auto-run on valid input (reuses shipped orchestration).
+6. Backtest — auto-run on valid input (reuses shipped orchestration).
+
+### Component Decomposition
+
+See `docs/feature/remove-action-buttons/feature-delta.md` → **Wave: DESIGN / [REF] Component decomposition** for the full table (real paths + EXTEND/CREATE NEW/NO CHANGE). Headline:
+
+- **CREATE NEW (frontend, 2 small presentational components)**: `SaveStateIndicator` (passive status affordance), `ReloadDependentDataAction` (one-click reload for the expensive surface).
+- **EXTEND (frontend)**: `useModifySettings` (opt-in `autoSave` + save-state machine), `ModifyTeamSettings`, `ModifyProjectSettings`, `StateMappingsEditor`, `ForecastSettingsComponent`, `TeamForecastView`, `NewItemForecaster`, `BacktestForecaster`.
+- **NO CHANGE**: `ValidationActions` (retained for its ~6 non-settings callers), `ForecastFilterEditor` (`readOnly` gate already correct), all backend.
+
+### Save-state machine
+
+```
+idle --(formValid && canSave && dirty)--> savingDebounced --(300ms quiet)--> saving
+saving --(success, seq current)--> saved        saving --(fail)--> error --(retry)--> saving
+saved  --(cheap)--> auto-refresh    saved --(expensive)--> one-click "Reload throughput now"
+any --(!formValid)--> idle  (inline error is primary)    any --(!canSave)--> suppressed (read-only)
+```
+
+### Driving Ports (UI actions) — unchanged
+
+Reuse `PUT /api/teams/{id}`, portfolio PUT, `POST runItemPrediction`, `POST runBacktest`. Auto-save/auto-run change only the trigger (debounced validity), not the contract.
+
+### Driven Ports
+
+| Port | Adapter | Status |
+|---|---|---|
+| Settings persist (`saveSettings` callback) | `teamService` / portfolio update | NO CHANGE (reuse) |
+| New-item / backtest run | `forecastService.runItemPrediction` / `runBacktest` | NO CHANGE (reuse) |
+| Dependent-data refresh | `teamMetricsService` / existing throughput recompute | NO CHANGE (reuse) |
+| RBAC gating | `useRbac()` / `useRbacGate` (parent pages) | NO CHANGE (ADR-001) |
+
+### ADR References (this feature)
+
+- [ADR-029](./adr-029-autosave-on-valid-mechanism-placement-and-save-state-machine.md): Auto-save-on-valid mechanism placement (extend `useModifySettings`) + save-state machine + RBAC-by-injection.
+- [ADR-030](./adr-030-dependent-data-reload-after-autosave-cost-based-split.md): Dependent-data reload after auto-save — cost-based auto vs one-click split (D-RELOAD).
+
+### Architectural Enforcement (this feature)
+
+| Rule | Enforcement Mechanism |
+|---|---|
+| Auto-save fires only on `formValid && canSave && dirty`; rapid edits persist only the latest (stale-guard); failed save retains edit; `canSave=false` → zero `saveSettings` calls | Vitest fault-injection suite on `useModifySettings` (reject / rapid-edit / RBAC-suppressed scenarios) |
+| One save mechanism + one indicator across all four settings surfaces | Vitest/Biome guard test: no settings surface renders a bespoke save indicator (realises `integration_validation.saveState`) |
+| Forecast auto-run reuses `hasInteractedRef`/`requestSeqRef`/`DEBOUNCE_MS` — no divergent debounce | Vitest test asserting no-run-on-mount + stale-discard on both forecast surfaces |
+| Both stopgap Alerts removed | grep + Vitest absence assertions (`forecast-filter-takeeffect-hint`, "a data reload is needed") |
+| RBAC gating derives only from `useRbac()` (no direct `/my-summary` fetch); `useModifySettings` does not import `useRbac` | Biome/grep guard (ADR-001 invariant) |
+
+### C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — remove-action-buttons (frontend-only delta)
+  Person(priya, "Delivery Forecaster / Team-or-Portfolio Admin", "Edits settings & forecast inputs")
+  Person(sam, "Viewer", "Read-only")
+  System(fe, "Lighthouse Frontend", "React 18 + TS SPA")
+  System_Ext(api, "Lighthouse API", "ASP.NET Core — UNCHANGED by this feature")
+  Rel(priya, fe, "Edits a valid field / forecast input")
+  Rel(sam, fe, "Views settings read-only")
+  Rel(fe, api, "Persists settings / runs forecasts via existing PUT/POST", "no new endpoint")
+```
+
+### C4 — Component (L3, frontend save + forecast flow)
+
+```mermaid
+C4Component
+  title Component Diagram — auto-save + auto-run (frontend)
+  Container_Boundary(fe, "Lighthouse Frontend") {
+    Component(useRbac, "useRbac / useRbacGate", "hook", "Computes canSave / canUpdatePortfolioData / isTeamAdmin")
+    Component(parent, "Settings page (EditTeam / TeamDetail / ModifyProjectSettings)", "component", "Derives canSave, passes down")
+    Component(hook, "useModifySettings (EXTEND)", "hook", "settings + formValid + save-state machine + stale-guard")
+    Component(indicator, "SaveStateIndicator (NEW)", "component", "Saving… / All changes saved / Couldn't save — Retry")
+    Component(reload, "ReloadDependentDataAction (NEW)", "component", "One-click Reload throughput now")
+    Component(tfv, "TeamForecastView (EXTEND)", "component", "Debounced auto-run, hasInteractedRef, requestSeqRef")
+    Component(nif, "NewItemForecaster / BacktestForecaster (EXTEND)", "component", "Inputs lifted up; Run buttons removed")
+  }
+  System_Ext(api, "Lighthouse API", "existing PUT/POST")
+  Rel(useRbac, parent, "provides permission to")
+  Rel(parent, hook, "passes canSave + saveSettings to")
+  Rel(hook, indicator, "drives state of")
+  Rel(hook, reload, "enables on saved (expensive surface)")
+  Rel(hook, api, "auto-saves valid form via")
+  Rel(nif, tfv, "notifies input change to")
+  Rel(tfv, api, "auto-runs forecast via")
+```
+

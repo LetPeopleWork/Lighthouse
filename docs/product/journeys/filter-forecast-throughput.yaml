@@ -1,6 +1,23 @@
 schema_version: 1
 feature_id: filter-forecast-throughput
-updated: 2026-05-20
+updated: 2026-05-29
+
+# == Changed Assumptions (back-propagated, do NOT mutate the DISCOVER steps below) ==
+# Source: feature remove-action-buttons (ADO #5077), DISCUSS wave, 2026-05-29.
+# Only ONE step's interaction assumption changed; the journey's goal/scope/decisions are intact.
+#
+# step-configure-filter-rules — ORIGINAL (quoted verbatim, unchanged below):
+#   action: 'Forecaster clicks "Add rule" twice ... then Save'
+#   expected_output: 'PUT /api/teams/{teamId} returns 200; "Saved" toast; rules persisted ...'
+#
+# CHANGED BY remove-action-buttons Slice 3 (US-5077-03): the explicit Save click and the
+# "Saved" toast are replaced by debounced AUTO-SAVE on a valid rule edit (no Save button), plus
+# a one-click in-place "Reload throughput now" action (D-RELOAD: the throughput recompute is
+# expensive, so it is user-initiated as a single click, never "navigate away and refresh
+# manually"). The forecast-filter-takeeffect-hint Alert (commit 53e6287e) is REMOVED. The PUT
+# endpoint, the rule-set JSON shape (D7 invariant), and RBAC/premium gating are UNCHANGED — this
+# is a frontend interaction change only. See docs/feature/remove-action-buttons/discuss/
+# journey-remove-action-buttons.yaml (step-autosave-refresh-forecast-filter) for the new behavior.
 
 journeys:
 

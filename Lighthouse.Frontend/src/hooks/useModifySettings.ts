@@ -20,6 +20,14 @@ export interface ModifySettingsBase {
 	stateMappings: unknown[];
 }
 
+export type SaveState = "idle" | "saving" | "saved" | "error";
+
+export interface AutoSaveOptions {
+	enabled: boolean;
+	canSave: boolean;
+	debounceMs?: number;
+}
+
 interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
 	getSettings: () => Promise<TSettings>;
@@ -35,6 +43,7 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 		wts: WorkTrackingSystemType,
 	) => TSettings["dataRetrievalSchema"];
 	additionalFetch?: () => Promise<void>;
+	autoSave?: AutoSaveOptions;
 }
 
 const NULLABLE_FIELDS = new Set([
@@ -78,7 +87,13 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	validateForm,
 	getSchemaForSystem,
 	additionalFetch,
+	autoSave,
 }: UseModifySettingsOptions<TSettings>) {
+	void autoSave;
+	const [saveState] = useState<SaveState>("idle");
+	const retry = () => {
+		// RED scaffold (DISTILL): auto-save mechanism not yet implemented.
+	};
 	const [loading, setLoading] = useState(false);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
@@ -229,6 +244,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		updateSettings,
 		handleWorkTrackingSystemChange,
 		handleSave,
+		saveState,
+		retry,
 		workItemTypeHandlers: getListHandlers("workItemTypes"),
 		toDoHandlers: getListHandlers("toDoStates"),
 		doingHandlers: getListHandlers("doingStates"),

@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-05-24
+updated: 2026-05-29
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -8,6 +8,7 @@ feature_context:
   - filter-forecast-throughput
   - aging-pace-percentiles
   - state-time-cumulative-view
+  - remove-action-buttons
 
 jobs:
   - id: job-rbac-bootstrap
@@ -598,3 +599,129 @@ jobs:
         1 — no per-item distribution view exists today. Gap: 2 — real but secondary to the
         systemic constraint job; this is why B2 was post-MVP originally and is now absorbed as a
         secondary lens of B3 rather than a standalone feature.
+
+  - id: job-commit-intent-no-button
+    title: Commit my intent without a ceremonial button
+    persona: delivery-forecaster
+    feature_context: remove-action-buttons
+    created: 2026-05-29
+    note: >
+      NEW in remove-action-buttons (ADO #5077). Honest framing: these flows already work
+      (satisfaction 2, not 1) — this is polish / debt-retirement, not a capability gap. The
+      convergence value (retiring the two stopgap "you must refresh" Alerts, one uniform
+      interaction law) is the multiplier, not raw importance.
+    job_story: >
+      When I have just finished expressing a valid change in Lighthouse — edited a team/portfolio
+      setting, adjusted a state mapping, tuned a forecast filter —
+      I want Lighthouse to act on my intent the moment it is valid (persist it, and refresh
+      whatever data depends on it) instead of making me hunt for and click a Save button,
+      so I can stay in the flow of the decision I am actually making rather than managing the
+      tool's save/refresh ceremony — and trust that what I see on screen reflects what I changed.
+    dimensions:
+      functional: >
+        As soon as inputs are valid, the change is persisted without a button press; if the
+        dependent data view needs a refresh (state mappings, forecast filter) that refresh
+        happens automatically where cheap or via a one-click in-place "Reload now" action where
+        expensive (D-RELOAD) — never an instruction to navigate away and refresh manually. When
+        inputs are invalid the change is held back and the specific problem is shown inline; the
+        absence of a Save button must not hide the error. Auto-save is suppressed exactly where
+        the Save button is disabled today (RBAC parity; no new authz surface).
+      emotional: >
+        Move from low-grade friction and doubt ("did that actually save?", "do I need to refresh
+        now?", "where did my error go without a Save button?") to quiet confidence ("I changed
+        it, it took, the screen is current") — the calm save-state indicator carries the
+        reassurance the Save click used to.
+      social: >
+        Present Lighthouse as a tool that "just keeps up" with the user — no awkward "hang on, let
+        me click save and refresh" mid-demo. Consistency across every settings surface reads as polish.
+    forces:
+      push: >
+        After editing a long settings form the user must scroll/hunt to a single Save button
+        (ValidationActions); easy to forget, easy to navigate away and lose the edit. State
+        Mappings and the Forecast Filter make it worse: a two-step "save then manually refresh"
+        ceremony, explicit in two stopgap Alerts (StateMappingsEditor "must reload"; the
+        forecast-filter-takeeffect-hint added in commit 53e6287e).
+      pull: >
+        Change it, it sticks, the screen is current — no button, no second step. The proof
+        already exists elsewhere (How Many / When auto-forecasts), so the pull is "make the rest
+        of the app behave like the part that already feels good."
+      anxiety: >
+        "Did it actually save?" (removing the click removes the confirmation — need a calm
+        save-state signal). "What if it auto-saves something half-typed?" (validators gate the
+        auto-save; debounced; only fire on fully-valid form). "Where did the error go without a
+        Save button?" (inline error becomes the primary, always-visible feedback channel).
+        "Did my auto-save clobber a colleague's concurrent edit?" (low-concurrency; red card for DESIGN).
+      habit: >
+        Every form on the web trains "make changes, then click Save"; the absent button can read
+        as "broken / read-only." Mitigation: the save-state indicator and the disappearance of
+        the now-obsolete "you must refresh" Alerts.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        A recurring papercut on flows used by every team/portfolio admin, sharpened by the
+        two-step save-then-refresh on state mappings and the forecast filter (the 53e6287e
+        stopgap Alert is explicit debt). The flows DO work today (satisfaction 2, not 1). Gap is
+        real but small; this is polish, and the convergence value (retiring the stopgap hints,
+        one uniform behavior) is the multiplier, not raw importance.
+
+  - id: job-see-forecast-update-live
+    title: See my forecast update as I shape its inputs
+    persona: delivery-forecaster
+    feature_context: remove-action-buttons
+    created: 2026-05-29
+    note: >
+      NEW in remove-action-buttons (ADO #5077). Distinct from job-commit-intent-no-button: this
+      is recompute-on-valid (ephemeral, re-runnable, with stale-response and on-mount concerns)
+      vs commit-on-valid (persist + refresh). The abstraction is ALREADY SHIPPED (the How Many /
+      When forecast auto-run in TeamForecastView); this job applies it to the two forecast
+      surfaces that have not yet adopted it (new-item-creation, backtest).
+    job_story: >
+      When I am sizing up a new-item-creation forecast or a backtest and I am adjusting the
+      historical window, the target date, or the work-item-type selection,
+      I want the forecast to recompute itself each time my inputs become valid — the same way
+      the How Many / When forecast already does —
+      so I can explore "what if the window were wider / the target later" as a continuous
+      conversation with the numbers, instead of tweaking, clicking Run, reading, tweaking,
+      clicking Run again.
+    dimensions:
+      functional: >
+        When the required inputs are valid (new-item: from/to/target + ≥1 work-item type;
+        backtest: start/end + valid historical window), the run fires automatically on change,
+        debounced, with stale-response guarding (the requestSeqRef + DEBOUNCE_MS pattern already
+        in TeamForecastView). Auto-run does NOT fire on first mount (hasInteractedRef gate).
+        Invalid/incomplete inputs produce no run and show why.
+      emotional: >
+        Move from a stop-start tweak-click-read rhythm to a fluid "the numbers track my thinking"
+        feel — the same delight the How Many / When forecast already delivers.
+      social: >
+        In a planning session, exploring scenarios live ("watch what happens to the backtest if
+        I widen the window") is more credible than narrating clicks.
+    forces:
+      push: >
+        NewItemForecaster and BacktestForecaster each force a tweak → click Forecast / Run
+        Backtest → read → tweak → click again loop; the How Many / When forecast right above them
+        on the same page already auto-runs, so the inconsistency is jarring within one screen.
+      pull: >
+        The numbers track the user's thinking; scenario exploration becomes continuous — the
+        exact, already-shipped, already-trusted feel of the manual forecaster.
+      anxiety: >
+        "Will it fire while I'm still picking dates/types and burn requests or flash
+        half-results?" (debounce + requestSeqRef stale-discard + only-run-when-all-valid).
+        "Will a forecast run on page load before I've touched anything?" (hasInteractedRef
+        on-mount suppression). "Will auto-run make stale vs fresh harder to tell?" (existing
+        clear-on-input-change is kept; auto-run replaces the button, not the clearing).
+      habit: >
+        Same "I expect to click Run" muscle memory as the Save habit; eased because the sibling
+        forecaster on the same page already behaves this way — a live, on-screen model.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        The tweak-click-read loop on new-item and backtest is friction, and the inconsistency
+        with the auto-running How Many / When forecast ON THE SAME PAGE is a visible polish
+        defect. Satisfaction is 2 (the forecasts work, and the proof-pattern exists for the user
+        to compare against), so the gap is small. The leverage is consistency: half the page
+        already feels right; this makes the rest match.
