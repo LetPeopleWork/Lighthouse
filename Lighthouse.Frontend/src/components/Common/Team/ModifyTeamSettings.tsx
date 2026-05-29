@@ -6,13 +6,14 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useMemo } from "react";
+import { useCallback, useContext, useMemo, useRef } from "react";
 import { useModifySettings } from "../../../hooks/useModifySettings";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -44,6 +45,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	modifyDefaultSettings = false,
 	disableSave = false,
 }) => {
+	const { teamService } = useContext(ApiServiceContext);
+	const teamIdRef = useRef(0);
+
+	const refreshDependentData = useCallback(async () => {
+		if (teamIdRef.current > 0) {
+			await teamService.updateTeamData(teamIdRef.current);
+		}
+	}, [teamService]);
+
 	const {
 		loading,
 		settings: teamSettings,
@@ -52,6 +62,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		validationError,
 		validationTechnicalDetails,
 		saveState,
+		refreshFailed,
+		reloadDependentData,
 		retry,
 		updateSettings,
 		handleWorkTrackingSystemChange,
@@ -66,7 +78,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		validateSettings: validateTeamSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultTeamSchema,
-		autoSave: { enabled: true, canSave: !disableSave },
+		additionalFetch: refreshDependentData,
+		autoSave: { enabled: true, canSave: !disableSave, refreshOnSave: true },
 		validateForm: (s, system, isDefault) => {
 			if (!s) return false;
 			const schema = s.dataRetrievalSchema;
@@ -86,6 +99,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 			);
 		},
 	});
+
+	teamIdRef.current = teamSettings?.id ?? 0;
 
 	const stateMappingErrors = useMemo(() => {
 		if (!teamSettings) return [];
@@ -169,6 +184,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								updateSettings("doingStates", reconciledDoing);
 							}}
 							validationErrors={stateMappingErrors}
+							refreshFailed={refreshFailed}
+							onReloadDependentData={reloadDependentData}
 						/>
 
 						<FlowMetricsConfigurationComponent

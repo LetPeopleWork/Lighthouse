@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	ApiServiceContext,
+	type IApiServiceContext,
+} from "../../../services/Api/ApiServiceContext";
+import type { ITeamService } from "../../../services/Api/TeamService";
+import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
@@ -188,6 +194,7 @@ describe("ModifyTeamSettings", () => {
 	const mockGetTeamSettings = vi.fn();
 	const mockSaveTeamSettings = vi.fn();
 	const mockValidateTeamSettings = vi.fn();
+	const mockUpdateTeamData = vi.fn();
 
 	const teamSettings = createMockTeamSettings();
 	teamSettings.id = 1;
@@ -217,14 +224,23 @@ describe("ModifyTeamSettings", () => {
 	];
 
 	const renderModifyTeamSettings = async () => {
+		const context: IApiServiceContext = createMockApiServiceContext({
+			teamService: {
+				updateTeamData: mockUpdateTeamData,
+				getForecastFilterSchema: vi.fn().mockResolvedValue(null),
+			} as unknown as ITeamService,
+		});
+
 		render(
-			<ModifyTeamSettings
-				title="Modify Team Settings"
-				getWorkTrackingSystems={mockGetWorkTrackingSystems}
-				getTeamSettings={mockGetTeamSettings}
-				saveTeamSettings={mockSaveTeamSettings}
-				validateTeamSettings={mockValidateTeamSettings}
-			/>,
+			<ApiServiceContext.Provider value={context}>
+				<ModifyTeamSettings
+					title="Modify Team Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getTeamSettings={mockGetTeamSettings}
+					saveTeamSettings={mockSaveTeamSettings}
+					validateTeamSettings={mockValidateTeamSettings}
+				/>
+			</ApiServiceContext.Provider>,
 		);
 
 		// Wait for all async operations to complete
@@ -247,10 +263,13 @@ describe("ModifyTeamSettings", () => {
 		mockSaveTeamSettings.mockClear();
 		mockValidateTeamSettings.mockClear();
 
+		mockUpdateTeamData.mockClear();
+
 		mockGetWorkTrackingSystems.mockResolvedValue(workTrackingSystems);
 		mockGetTeamSettings.mockResolvedValue(teamSettings);
 		mockSaveTeamSettings.mockResolvedValue(undefined);
 		mockValidateTeamSettings.mockResolvedValue(true);
+		mockUpdateTeamData.mockResolvedValue(undefined);
 	});
 
 	it("renders loading state initially", () => {
@@ -376,6 +395,34 @@ describe("ModifyTeamSettings", () => {
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 		});
 	}
+
+	it("auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure", async () => {
+		const validTeamSettings = createMockTeamSettings();
+		validTeamSettings.id = 42;
+		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
+
+		await renderModifyTeamSettings();
+
+		mockUpdateTeamData.mockClear();
+
+		fireEvent.click(screen.getByText("Add State Mapping"));
+
+		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
+		await waitFor(() =>
+			expect(mockUpdateTeamData).toHaveBeenCalledExactlyOnceWith(42),
+		);
+		expect(
+			screen.queryByRole("button", { name: "Reload now" }),
+		).not.toBeInTheDocument();
+
+		mockUpdateTeamData.mockRejectedValueOnce(new Error("refresh failed"));
+
+		fireEvent.click(screen.getByText("Add State Mapping"));
+
+		expect(
+			await screen.findByRole("button", { name: "Reload now" }),
+		).toBeInTheDocument();
+	});
 
 	describe("Linear schema-driven behavior", () => {
 		it("hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false", async () => {
