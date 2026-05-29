@@ -21,7 +21,7 @@ import EstimationFieldComponent from "../EstimationField/EstimationFieldComponen
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import StatesList from "../StatesList/StatesList";
-import ValidationActions from "../ValidationActions/ValidationActions";
+import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 
 interface ModifyTeamSettingsProps {
@@ -43,19 +43,18 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	validateTeamSettings,
 	modifyDefaultSettings = false,
 	disableSave = false,
-	saveTooltip = "",
 }) => {
 	const {
 		loading,
 		settings: teamSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
-		formValid,
 		validationError,
 		validationTechnicalDetails,
+		saveState,
+		retry,
 		updateSettings,
 		handleWorkTrackingSystemChange,
-		handleSave,
 		workItemTypeHandlers,
 		toDoHandlers,
 		doingHandlers,
@@ -67,6 +66,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		validateSettings: validateTeamSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultTeamSchema,
+		autoSave: { enabled: true, canSave: !disableSave },
 		validateForm: (s, system, isDefault) => {
 			if (!s) return false;
 			const schema = s.dataRetrievalSchema;
@@ -247,11 +247,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							size={{ xs: 12 }}
 							sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}
 						>
-							<ValidationActions
-								onSave={handleSave}
-								inputsValid={formValid}
-								disableSave={disableSave}
-								saveTooltip={saveTooltip}
+							<SaveStateIndicator
+								saveState={saveState}
+								canSave={!disableSave}
+								onRetry={retry}
 							/>
 						</Grid>
 					</Grid>

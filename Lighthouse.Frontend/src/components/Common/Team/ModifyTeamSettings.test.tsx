@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { ApiError } from "../../../services/Api/ApiError";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
@@ -250,6 +249,8 @@ describe("ModifyTeamSettings", () => {
 
 		mockGetWorkTrackingSystems.mockResolvedValue(workTrackingSystems);
 		mockGetTeamSettings.mockResolvedValue(teamSettings);
+		mockSaveTeamSettings.mockResolvedValue(undefined);
+		mockValidateTeamSettings.mockResolvedValue(true);
 	});
 
 	it("renders loading state initially", () => {
@@ -318,58 +319,34 @@ describe("ModifyTeamSettings", () => {
 		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
 	});
 
-	it("handles save action with validate-on-save", async () => {
+	it("auto-saves a valid change after the debounce window", async () => {
+		const validTeamSettings = createMockTeamSettings();
+		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
+
 		await renderModifyTeamSettings();
-		mockValidateTeamSettings.mockResolvedValue(true);
 
-		fireEvent.click(screen.getByText("Save"));
+		fireEvent.click(screen.getByText("Add ToDo"));
 
-		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
 		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
 	});
 
-	it("does not save when validation fails", async () => {
+	it("does not auto-save while no field has been edited", async () => {
+		const validTeamSettings = createMockTeamSettings();
+		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
+
 		await renderModifyTeamSettings();
-		mockValidateTeamSettings.mockResolvedValue(false);
 
-		fireEvent.click(screen.getByText("Save"));
+		await new Promise((resolve) => setTimeout(resolve, 500));
 
-		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	it("shows validation message and details when validate throws ApiError", async () => {
-		await renderModifyTeamSettings();
-		mockValidateTeamSettings.mockRejectedValue(
-			new ApiError(400, "No work items were found.", "Check your query."),
-		);
-
-		fireEvent.click(screen.getByText("Save"));
-
-		await waitFor(() => expect(mockValidateTeamSettings).toHaveBeenCalled());
-		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
-		expect(screen.getByText("No work items were found.")).toBeInTheDocument();
-		expect(screen.getByText("Check your query.")).toBeInTheDocument();
-	});
-
-	it("does not render a standalone Validate button", async () => {
+	it("does not render a Save button", async () => {
 		await renderModifyTeamSettings();
 		expect(screen.queryByText("Validate")).not.toBeInTheDocument();
-		expect(screen.getByText("Save")).toBeInTheDocument();
-	});
-
-	it("sets inputsValid to true when all inputs are valid", async () => {
-		const validTeamSettings = createMockTeamSettings();
-
-		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
-		mockValidateTeamSettings.mockResolvedValueOnce(true);
-
-		await renderModifyTeamSettings();
-
-		await waitFor(() => {
-			const saveButton = screen.getByText("Save");
-			expect(saveButton).not.toBeDisabled();
-		});
+		expect(
+			screen.queryByRole("button", { name: "Save" }),
+		).not.toBeInTheDocument();
 	});
 
 	const scenarios = [
@@ -383,7 +360,7 @@ describe("ModifyTeamSettings", () => {
 	];
 
 	for (const scenario of scenarios) {
-		it(`sets inputValid to false when ${scenario.invalidValue} is invalid`, async () => {
+		it(`does not auto-save when ${scenario.invalidValue} is invalid`, async () => {
 			const invalidTeamSettings = {
 				...teamSettings,
 				...scenario,
@@ -393,7 +370,10 @@ describe("ModifyTeamSettings", () => {
 
 			await renderModifyTeamSettings();
 
-			expect(screen.getByText("Save")).toBeDisabled();
+			fireEvent.click(screen.getByText("Remove ToDo"));
+			await new Promise((resolve) => setTimeout(resolve, 500));
+
+			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 		});
 	}
 
@@ -440,10 +420,10 @@ describe("ModifyTeamSettings", () => {
 			expect(screen.getByText("WorkItemTypesComponent")).toBeInTheDocument();
 		});
 
-		it("validates successfully without work item types when schema says not required", async () => {
+		it("auto-saves without work item types when schema says not required", async () => {
 			const linearTeamSettings = {
 				...createMockTeamSettings(),
-				workItemTypes: [], // Empty - normally invalid
+				workItemTypes: [],
 				dataRetrievalSchema: {
 					key: "linear.team",
 					displayLabel: "Linear Team",
@@ -455,14 +435,12 @@ describe("ModifyTeamSettings", () => {
 			};
 
 			mockGetTeamSettings.mockResolvedValueOnce(linearTeamSettings);
-			mockValidateTeamSettings.mockResolvedValueOnce(true);
 
 			await renderModifyTeamSettings();
 
-			await waitFor(() => {
-				const saveButton = screen.getByText("Save");
-				expect(saveButton).not.toBeDisabled();
-			});
+			fireEvent.click(screen.getByText("Add ToDo"));
+
+			await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
 		});
 	});
 });
