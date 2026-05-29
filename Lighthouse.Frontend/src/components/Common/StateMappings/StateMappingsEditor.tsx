@@ -15,6 +15,7 @@ import type React from "react";
 import { useRef, useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import InputGroup from "../InputGroup/InputGroup";
+import ReloadDependentDataAction from "./ReloadDependentDataAction";
 
 interface StateMappingsEditorProps {
 	stateMappings: IStateMapping[];
@@ -22,6 +23,8 @@ interface StateMappingsEditorProps {
 	doingStates: string[];
 	onChange: (mappings: IStateMapping[]) => void;
 	validationErrors?: string[];
+	refreshFailed?: boolean;
+	onReloadDependentData?: () => void;
 }
 
 const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
@@ -29,6 +32,8 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 	doingStates,
 	onChange,
 	validationErrors = [],
+	refreshFailed = false,
+	onReloadDependentData,
 }) => {
 	const [newStateInputs, setNewStateInputs] = useState<{
 		[index: number]: string;
@@ -106,10 +111,6 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 				group, its states are removed from your Doing list and replaced by the
 				group name. Removing a group restores the original states.
 			</Typography>
-			<Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
-				After saving, a data reload is needed for these changes to take effect.
-			</Alert>
-
 			{validationErrors.length > 0 && (
 				<Stack spacing={1} sx={{ mb: 2 }}>
 					{validationErrors.map((error) => (
@@ -210,6 +211,12 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 			>
 				Add State Mapping
 			</Button>
+
+			<ReloadDependentDataAction
+				visible={refreshFailed && onReloadDependentData !== undefined}
+				label="Reload now"
+				onReload={() => onReloadDependentData?.()}
+			/>
 		</InputGroup>
 	);
 };

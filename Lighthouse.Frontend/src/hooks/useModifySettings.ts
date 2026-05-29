@@ -93,6 +93,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	autoSave,
 }: UseModifySettingsOptions<TSettings>) {
 	const [saveState, setSaveState] = useState<SaveState>("idle");
+	const [refreshFailed, setRefreshFailed] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const lastSavePayloadRef = useRef<TSettings | null>(null);
 	const requestSeqRef = useRef(0);
@@ -151,11 +152,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				if (isLatest()) setSaveState(next);
 			};
 			setSaveState("saving");
+			if (isLatest()) setRefreshFailed(false);
 			return saveSettingsRef.current(payload).then(
 				() => {
 					applyIfLatest("saved");
 					if (autoRefreshOnSave && isLatest()) {
-						void additionalFetchRef.current?.();
+						void Promise.resolve(additionalFetchRef.current?.()).catch(() => {
+							if (isLatest()) setRefreshFailed(true);
+						});
 					}
 				},
 				() => applyIfLatest("error"),
@@ -163,6 +167,13 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		},
 		[autoRefreshOnSave],
 	);
+
+	const reloadDependentData = useCallback(() => {
+		setRefreshFailed(false);
+		void Promise.resolve(additionalFetchRef.current?.()).catch(() => {
+			setRefreshFailed(true);
+		});
+	}, []);
 
 	const retry = useCallback(() => {
 		const payload = lastSavePayloadRef.current;
@@ -319,6 +330,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		handleWorkTrackingSystemChange,
 		handleSave,
 		saveState,
+		refreshFailed,
+		reloadDependentData,
 		retry,
 		workItemTypeHandlers: getListHandlers("workItemTypes"),
 		toDoHandlers: getListHandlers("toDoStates"),

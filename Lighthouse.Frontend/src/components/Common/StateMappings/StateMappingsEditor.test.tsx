@@ -37,16 +37,35 @@ describe("StateMappingsEditor", () => {
 		expect(screen.getByText(/group/i)).toBeInTheDocument();
 	});
 
-	it("renders a reload guidance notice in the State Mappings section", () => {
+	it("shows no reload prompt while the automatic refresh is succeeding", () => {
 		render(
 			<StateMappingsEditor
 				stateMappings={[]}
 				doingStates={[]}
 				onChange={mockOnChange}
+				onReloadDependentData={vi.fn()}
 			/>,
 		);
 
-		expect(screen.getByText(/reload/i)).toBeInTheDocument();
+		expect(screen.queryByText(/reload/i)).not.toBeInTheDocument();
+	});
+
+	it("offers a one-click reload that re-runs the refresh when it failed", async () => {
+		const onReloadDependentData = vi.fn();
+		render(
+			<StateMappingsEditor
+				stateMappings={[]}
+				doingStates={[]}
+				onChange={mockOnChange}
+				refreshFailed
+				onReloadDependentData={onReloadDependentData}
+			/>,
+		);
+
+		const reloadButton = screen.getByRole("button", { name: /reload now/i });
+		await userEvent.click(reloadButton);
+
+		expect(onReloadDependentData).toHaveBeenCalledTimes(1);
 	});
 
 	it("renders existing mappings", () => {

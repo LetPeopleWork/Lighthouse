@@ -318,9 +318,9 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity 
 	});
 });
 
-describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pending)", () => {
+describe("@US-02 @in-memory auto-save and auto-refresh state mappings (reload fallback)", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -336,10 +336,11 @@ describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pend
 			.mockRejectedValueOnce(new Error("refresh failed"));
 		const args = makeArgs(
 			{ saveSettings, additionalFetch: refreshDependentData },
-			teamAdminCanSave,
+			teamAdminCanSaveAndRefresh,
 		);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		refreshDependentData.mockClear();
 
 		act(() => result.current.doingHandlers.onAdd("Review"));
 		await act(async () => {
@@ -347,6 +348,7 @@ describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pend
 		});
 
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+		await waitFor(() => expect(result.current.refreshFailed).toBe(true));
 	});
 });
 
