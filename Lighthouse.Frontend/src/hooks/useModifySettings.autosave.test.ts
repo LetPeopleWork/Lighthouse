@@ -316,9 +316,9 @@ describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings", () 
 	});
 });
 
-describe.skip("@US-03 @in-memory auto-save forecast filter rules", () => {
+describe("@US-03 @in-memory auto-save forecast filter rules", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -329,9 +329,13 @@ describe.skip("@US-03 @in-memory auto-save forecast filter rules", () => {
 	it("@US-03 auto-saves a valid filter rule and never triggers an automatic throughput recompute", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const recomputeThroughput = vi.fn().mockResolvedValue(undefined);
-		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const args = makeArgs(
+			{ saveSettings, additionalFetch: recomputeThroughput },
+			teamAdminCanSave,
+		);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		recomputeThroughput.mockClear();
 
 		act(() =>
 			result.current.updateSettings(
@@ -345,6 +349,17 @@ describe.skip("@US-03 @in-memory auto-save forecast filter rules", () => {
 
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 		expect(recomputeThroughput).not.toHaveBeenCalled();
+	});
+});
+
+describe.skip("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
 	});
 
 	it("@US-03 @error rejects an unknown filter field without clobbering the existing rule set", async () => {
