@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { Team } from "../../../models/Team/Team";
@@ -206,7 +206,7 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 	});
 });
 
-describe.skip("@US-06 @in-memory auto-run backtest", () => {
+describe("@US-06 @in-memory auto-run backtest", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.clearAllMocks();
@@ -215,22 +215,22 @@ describe.skip("@US-06 @in-memory auto-run backtest", () => {
 
 	it("@US-06 recomputes the backtest automatically after a valid input change", async () => {
 		renderForecastView();
-		await screen.findByTestId("backtest-forecaster");
+		await act(async () => {
+			await vi.runAllTimersAsync();
+		});
 		forecastService.runBacktest.mockClear();
 
 		act(() => {
 			screen.getByTestId("adjust-backtest-window").click();
 		});
-		await act(async () => {
+		act(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
-		await waitFor(() =>
-			expect(forecastService.runBacktest).toHaveBeenCalledTimes(1),
-		);
+		expect(forecastService.runBacktest).toHaveBeenCalledTimes(1);
 	});
 
-	it("@US-06 @error fires no run when the mode is switched while inputs are incomplete", async () => {
+	it.skip("@US-06 @error fires no run when the mode is switched while inputs are incomplete", async () => {
 		renderForecastView();
 		await screen.findByTestId("backtest-forecaster");
 		forecastService.runBacktest.mockClear();
@@ -245,7 +245,7 @@ describe.skip("@US-06 @in-memory auto-run backtest", () => {
 		expect(forecastService.runBacktest).not.toHaveBeenCalled();
 	});
 
-	it("@US-06 @error fires no backtest run on page load until an input changes", async () => {
+	it.skip("@US-06 @error fires no backtest run on page load until an input changes", async () => {
 		renderForecastView();
 		await screen.findByTestId("backtest-forecaster");
 

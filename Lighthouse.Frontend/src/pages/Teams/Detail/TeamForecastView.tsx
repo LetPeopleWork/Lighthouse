@@ -21,7 +21,7 @@ import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
-import BacktestForecaster from "./BacktestForecaster";
+import BacktestForecaster, { type HistoricalMode } from "./BacktestForecaster";
 import ManualForecaster from "./ManualForecaster";
 import NewItemForecaster from "./NewItemForecaster";
 
@@ -65,6 +65,24 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(
 		null,
 	);
+
+	const [backtestStartDate, setBacktestStartDate] =
+		useState<dayjs.Dayjs | null>(() => dayjs().subtract(31, "day"));
+	const [backtestEndDate, setBacktestEndDate] = useState<dayjs.Dayjs | null>(
+		() => dayjs().subtract(1, "day"),
+	);
+	const [backtestHistoricalMode, setBacktestHistoricalMode] =
+		useState<HistoricalMode>("rolling");
+	const [backtestHistoricalWindowDays, setBacktestHistoricalWindowDays] =
+		useState<number | "">(30);
+	const [
+		backtestHistoricalFixedStartDate,
+		setBacktestHistoricalFixedStartDate,
+	] = useState<dayjs.Dayjs | null>(() => dayjs().subtract(90, "day"));
+	const [backtestHistoricalFixedEndDate, setBacktestHistoricalFixedEndDate] =
+		useState<dayjs.Dayjs | null>(() => dayjs().subtract(60, "day"));
+	const [backtestForecastRevision, setBacktestForecastRevision] = useState(0);
+	const backtestRequestSeqRef = useRef(0);
 
 	// Track whether the user has made at least one change (auto-run does NOT fire on mount)
 	const hasInteractedRef = useRef(false);
@@ -121,6 +139,27 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			cancelled = true;
 		};
 	}, [team?.id, teamService]);
+
+	useEffect(() => {
+		try {
+			const rollingThroughputWindow =
+				dayjs(team.throughputEndDate).diff(
+					dayjs(team.throughputStartDate),
+					"day",
+				) + 1;
+
+			if (team.useFixedDatesForThroughput) {
+				setBacktestHistoricalMode("dateRange");
+				setBacktestHistoricalFixedStartDate(dayjs(team.throughputStartDate));
+				setBacktestHistoricalFixedEndDate(dayjs(team.throughputEndDate));
+			} else {
+				setBacktestHistoricalMode("rolling");
+				setBacktestHistoricalWindowDays(rollingThroughputWindow);
+			}
+		} catch {
+			// Keep default values on error
+		}
+	}, [team]);
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -301,15 +340,34 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		setNewItemForecastRevision((revision) => revision + 1);
 	}, []);
 
-	const onRunBacktest = async (
-		startDate: Date,
-		endDate: Date,
-		historicalStartDate: Date,
-		historicalEndDate: Date,
-	) => {
-		if (!team?.id) {
+	const runBacktest = useCallback(async () => {
+		if (!team?.id || !backtestStartDate || !backtestEndDate) {
 			return;
 		}
+
+		let historicalStartDate: Date;
+		let historicalEndDate: Date;
+
+		if (
+			backtestHistoricalMode === "dateRange" &&
+			backtestHistoricalFixedStartDate &&
+			backtestHistoricalFixedEndDate
+		) {
+			historicalStartDate = backtestHistoricalFixedStartDate.toDate();
+			historicalEndDate = backtestHistoricalFixedEndDate.toDate();
+		} else {
+			const effectiveWindow =
+				typeof backtestHistoricalWindowDays === "number" &&
+				Number.isFinite(backtestHistoricalWindowDays)
+					? backtestHistoricalWindowDays
+					: 30;
+			historicalEndDate = backtestStartDate.subtract(1, "day").toDate();
+			historicalStartDate = backtestStartDate
+				.subtract(effectiveWindow, "day")
+				.toDate();
+		}
+
+		const seq = ++backtestRequestSeqRef.current;
 
 		try {
 			const filterOverride = isPremiumFilterActive
@@ -317,21 +375,58 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				: undefined;
 			const result = await forecastService.runBacktest(
 				team.id,
-				startDate,
-				endDate,
+				backtestStartDate.toDate(),
+				backtestEndDate.toDate(),
 				historicalStartDate,
 				historicalEndDate,
 				filterOverride,
 			);
-			setBacktestResult(result);
+			if (seq === backtestRequestSeqRef.current) {
+				setBacktestResult(result);
+			}
 		} catch (error) {
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: "Failed to run backtest. Please try again.";
-			showError(errorMessage);
+			if (seq === backtestRequestSeqRef.current) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Failed to run backtest. Please try again.";
+				showError(errorMessage);
+			}
 		}
-	};
+	}, [
+		team?.id,
+		forecastService,
+		showError,
+		backtestStartDate,
+		backtestEndDate,
+		backtestHistoricalMode,
+		backtestHistoricalWindowDays,
+		backtestHistoricalFixedStartDate,
+		backtestHistoricalFixedEndDate,
+		isPremiumFilterActive,
+		applyBacktestFilterOverride,
+	]);
+
+	useEffect(() => {
+		if (backtestForecastRevision === 0) {
+			return;
+		}
+
+		const timer = setTimeout(() => {
+			runBacktest();
+		}, DEBOUNCE_MS);
+
+		return () => clearTimeout(timer);
+	}, [backtestForecastRevision, runBacktest]);
+
+	const handleBacktestInputChange = useCallback((complete: boolean) => {
+		if (!complete) {
+			setBacktestResult(null);
+			return;
+		}
+
+		setBacktestForecastRevision((revision) => revision + 1);
+	}, []);
 
 	return (
 		<Grid container spacing={3}>
@@ -370,12 +465,24 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			<InputGroup title="Forecast Backtesting">
 				<BacktestForecaster
 					team={team}
-					onRunBacktest={onRunBacktest}
 					backtestResult={backtestResult}
 					onClearBacktestResult={() => setBacktestResult(null)}
 					hasForecastFilter={hasForecastFilter}
 					applyFilterOverride={applyBacktestFilterOverride}
 					onApplyFilterOverrideChange={setApplyBacktestFilterOverride}
+					startDate={backtestStartDate}
+					endDate={backtestEndDate}
+					historicalMode={backtestHistoricalMode}
+					historicalWindowDays={backtestHistoricalWindowDays}
+					historicalFixedStartDate={backtestHistoricalFixedStartDate}
+					historicalFixedEndDate={backtestHistoricalFixedEndDate}
+					onStartDateChange={setBacktestStartDate}
+					onEndDateChange={setBacktestEndDate}
+					onHistoricalModeChange={setBacktestHistoricalMode}
+					onHistoricalWindowDaysChange={setBacktestHistoricalWindowDays}
+					onHistoricalFixedStartDateChange={setBacktestHistoricalFixedStartDate}
+					onHistoricalFixedEndDateChange={setBacktestHistoricalFixedEndDate}
+					onInputChange={handleBacktestInputChange}
 				/>
 			</InputGroup>
 		</Grid>

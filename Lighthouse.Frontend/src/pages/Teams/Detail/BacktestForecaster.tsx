@@ -16,7 +16,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
@@ -49,31 +48,50 @@ function getLocaleDateFormat(): string {
 	return format;
 }
 
-type HistoricalMode = "rolling" | "dateRange";
+export type HistoricalMode = "rolling" | "dateRange";
 
 interface BacktestForecasterProps {
 	team: ITeam;
-	onRunBacktest: (
-		startDate: Date,
-		endDate: Date,
-		historicalStartDate: Date,
-		historicalEndDate: Date,
-	) => Promise<void>;
 	backtestResult: BacktestResult | null;
 	onClearBacktestResult: () => void;
 	hasForecastFilter?: boolean;
 	applyFilterOverride?: boolean;
 	onApplyFilterOverrideChange?: (apply: boolean) => void;
+	startDate: dayjs.Dayjs | null;
+	endDate: dayjs.Dayjs | null;
+	historicalMode: HistoricalMode;
+	historicalWindowDays: number | "";
+	historicalFixedStartDate: dayjs.Dayjs | null;
+	historicalFixedEndDate: dayjs.Dayjs | null;
+	onStartDateChange: (value: dayjs.Dayjs | null) => void;
+	onEndDateChange: (value: dayjs.Dayjs | null) => void;
+	onHistoricalModeChange: (mode: HistoricalMode) => void;
+	onHistoricalWindowDaysChange: (value: number | "") => void;
+	onHistoricalFixedStartDateChange: (value: dayjs.Dayjs | null) => void;
+	onHistoricalFixedEndDateChange: (value: dayjs.Dayjs | null) => void;
+	onInputChange: (complete: boolean) => void;
 }
 
 const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	team,
-	onRunBacktest,
 	backtestResult,
 	onClearBacktestResult,
 	hasForecastFilter = false,
 	applyFilterOverride = true,
 	onApplyFilterOverrideChange,
+	startDate,
+	endDate,
+	historicalMode,
+	historicalWindowDays,
+	historicalFixedStartDate,
+	historicalFixedEndDate,
+	onStartDateChange,
+	onEndDateChange,
+	onHistoricalModeChange,
+	onHistoricalWindowDaysChange,
+	onHistoricalFixedStartDateChange,
+	onHistoricalFixedEndDateChange,
+	onInputChange,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
@@ -81,21 +99,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const filterToggleLabel = `Use filtered ${throughputTerm}`;
-	const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(
-		dayjs().subtract(31, "day"),
-	);
-	const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(
-		dayjs().subtract(1, "day"),
-	);
-	const [historicalWindowDays, setHistoricalWindowDays] = useState<number | "">(
-		30,
-	);
-	const [historicalMode, setHistoricalMode] =
-		useState<HistoricalMode>("rolling");
-	const [historicalFixedStartDate, setHistoricalFixedStartDate] =
-		useState<dayjs.Dayjs | null>(dayjs().subtract(90, "day"));
-	const [historicalFixedEndDate, setHistoricalFixedEndDate] =
-		useState<dayjs.Dayjs | null>(dayjs().subtract(60, "day"));
 	const [activeTab, setActiveTab] = useState<number>(0);
 
 	// Historical Throughput state
@@ -116,27 +119,95 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 
 	const { teamMetricsService } = useContext(ApiServiceContext);
 
-	// Fetch team settings on mount to pre-fill the historical window
-	useEffect(() => {
-		try {
-			const rollingThroughputWindow =
-				dayjs(team.throughputEndDate).diff(
-					dayjs(team.throughputStartDate),
-					"day",
-				) + 1;
+	const reportInputChange = (
+		nextStartDate: dayjs.Dayjs | null,
+		nextEndDate: dayjs.Dayjs | null,
+		nextMode: HistoricalMode,
+		nextWindowDays: number | "",
+		nextFixedStartDate: dayjs.Dayjs | null,
+		nextFixedEndDate: dayjs.Dayjs | null,
+	) => {
+		const datesComplete = nextStartDate !== null && nextEndDate !== null;
+		const historicalComplete =
+			nextMode === "dateRange"
+				? nextFixedStartDate !== null && nextFixedEndDate !== null
+				: typeof nextWindowDays === "number" &&
+					Number.isFinite(nextWindowDays) &&
+					nextWindowDays > 0;
+		onInputChange(datesComplete && historicalComplete);
+	};
 
-			if (team.useFixedDatesForThroughput) {
-				setHistoricalMode("dateRange");
-				setHistoricalFixedStartDate(dayjs(team.throughputStartDate));
-				setHistoricalFixedEndDate(dayjs(team.throughputEndDate));
-			} else {
-				setHistoricalMode("rolling");
-				setHistoricalWindowDays(rollingThroughputWindow);
-			}
-		} catch {
-			// Keep default values on error
-		}
-	}, [team]);
+	const handleStartDateChange = (value: dayjs.Dayjs | null) => {
+		onStartDateChange(value);
+		reportInputChange(
+			value,
+			endDate,
+			historicalMode,
+			historicalWindowDays,
+			historicalFixedStartDate,
+			historicalFixedEndDate,
+		);
+	};
+
+	const handleEndDateChange = (value: dayjs.Dayjs | null) => {
+		onEndDateChange(value);
+		reportInputChange(
+			startDate,
+			value,
+			historicalMode,
+			historicalWindowDays,
+			historicalFixedStartDate,
+			historicalFixedEndDate,
+		);
+	};
+
+	const handleHistoricalModeChange = (mode: HistoricalMode) => {
+		onHistoricalModeChange(mode);
+		reportInputChange(
+			startDate,
+			endDate,
+			mode,
+			historicalWindowDays,
+			historicalFixedStartDate,
+			historicalFixedEndDate,
+		);
+	};
+
+	const handleHistoricalWindowDaysChange = (value: number | "") => {
+		onHistoricalWindowDaysChange(value);
+		reportInputChange(
+			startDate,
+			endDate,
+			historicalMode,
+			value,
+			historicalFixedStartDate,
+			historicalFixedEndDate,
+		);
+	};
+
+	const handleHistoricalFixedStartDateChange = (value: dayjs.Dayjs | null) => {
+		onHistoricalFixedStartDateChange(value);
+		reportInputChange(
+			startDate,
+			endDate,
+			historicalMode,
+			historicalWindowDays,
+			value,
+			historicalFixedEndDate,
+		);
+	};
+
+	const handleHistoricalFixedEndDateChange = (value: dayjs.Dayjs | null) => {
+		onHistoricalFixedEndDateChange(value);
+		reportInputChange(
+			startDate,
+			endDate,
+			historicalMode,
+			historicalWindowDays,
+			historicalFixedStartDate,
+			value,
+		);
+	};
 
 	// Fetch historical and actual period data when backtest result changes
 	useEffect(() => {
@@ -198,43 +269,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 		isPremium,
 	]);
 
-	const handleRunBacktest = async () => {
-		if (!startDate || !endDate) {
-			return;
-		}
-
-		onClearBacktestResult();
-
-		let effectiveHistoricalStartDate: Date;
-		let effectiveHistoricalEndDate: Date;
-
-		if (
-			historicalMode === "dateRange" &&
-			historicalFixedStartDate &&
-			historicalFixedEndDate
-		) {
-			effectiveHistoricalStartDate = historicalFixedStartDate.toDate();
-			effectiveHistoricalEndDate = historicalFixedEndDate.toDate();
-		} else {
-			const effectiveWindow =
-				typeof historicalWindowDays === "number" &&
-				Number.isFinite(historicalWindowDays)
-					? historicalWindowDays
-					: 30;
-			effectiveHistoricalEndDate = startDate.subtract(1, "day").toDate();
-			effectiveHistoricalStartDate = startDate
-				.subtract(effectiveWindow, "day")
-				.toDate();
-		}
-
-		await onRunBacktest(
-			startDate.toDate(),
-			endDate.toDate(),
-			effectiveHistoricalStartDate,
-			effectiveHistoricalEndDate,
-		);
-	};
-
 	const minStartDate = dayjs().subtract(365, "day");
 	const maxStartDate = dayjs().subtract(14, "day");
 	const maxEndDate = dayjs();
@@ -248,7 +282,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 							<DatePicker
 								label="Backtest Start Date"
 								value={startDate}
-								onChange={(value) => setStartDate(value as dayjs.Dayjs | null)}
+								onChange={(value) =>
+									handleStartDateChange(value as dayjs.Dayjs | null)
+								}
 								minDate={minStartDate}
 								maxDate={endDate?.subtract(14, "day") ?? maxStartDate}
 								format={getLocaleDateFormat()}
@@ -261,7 +297,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 							<DatePicker
 								label="Backtest End Date"
 								value={endDate}
-								onChange={(value) => setEndDate(value as dayjs.Dayjs | null)}
+								onChange={(value) =>
+									handleEndDateChange(value as dayjs.Dayjs | null)
+								}
 								minDate={startDate?.add(14, "day") ?? minStartDate}
 								maxDate={maxEndDate}
 								format={getLocaleDateFormat()}
@@ -276,7 +314,7 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 								exclusive
 								onChange={(_event, newMode: HistoricalMode | null) => {
 									if (newMode !== null) {
-										setHistoricalMode(newMode);
+										handleHistoricalModeChange(newMode);
 									}
 								}}
 								size="small"
@@ -308,14 +346,16 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 									value={historicalWindowDays}
 									onChange={(e) => {
 										const raw = e.target.value;
-										setHistoricalWindowDays(raw === "" ? "" : Number(raw));
+										handleHistoricalWindowDaysChange(
+											raw === "" ? "" : Number(raw),
+										);
 									}}
 									onBlur={() => {
 										const n =
 											typeof historicalWindowDays === "number"
 												? historicalWindowDays
 												: 30;
-										setHistoricalWindowDays(
+										handleHistoricalWindowDaysChange(
 											Math.max(1, Math.min(365, Number.isFinite(n) ? n : 30)),
 										);
 									}}
@@ -330,7 +370,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 											label="Historical Start Date"
 											value={historicalFixedStartDate}
 											onChange={(value) =>
-												setHistoricalFixedStartDate(value as dayjs.Dayjs | null)
+												handleHistoricalFixedStartDateChange(
+													value as dayjs.Dayjs | null,
+												)
 											}
 											maxDate={
 												historicalFixedEndDate?.subtract(1, "day") ??
@@ -343,7 +385,9 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 											label="Historical End Date"
 											value={historicalFixedEndDate}
 											onChange={(value) =>
-												setHistoricalFixedEndDate(value as dayjs.Dayjs | null)
+												handleHistoricalFixedEndDateChange(
+													value as dayjs.Dayjs | null,
+												)
 											}
 											minDate={
 												historicalFixedStartDate?.add(1, "day") ?? minStartDate
@@ -356,12 +400,6 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 								</LocalizationProvider>
 							)}
 						</Box>
-					</Grid>
-					<Grid size={{ xs: 3 }}>
-						<ActionButton
-							onClickHandler={handleRunBacktest}
-							buttonText="Run Backtest"
-						/>
 					</Grid>
 					{showFilterToggle && (
 						<Grid size={{ xs: 12 }}>

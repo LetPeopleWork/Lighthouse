@@ -206,38 +206,27 @@ vi.mock("./NewItemForecaster", () => ({
 
 vi.mock("./BacktestForecaster", () => ({
 	default: ({
-		onRunBacktest,
+		onInputChange,
 		onClearBacktestResult,
 	}: {
-		onRunBacktest: (
-			startDate: Date,
-			endDate: Date,
-			historicalStartDate: Date,
-			historicalEndDate: Date,
-		) => void;
+		onInputChange: (complete: boolean) => void;
 		backtestResult: unknown;
 		onClearBacktestResult?: () => void;
 	}) => (
 		<div data-testid="backtest-forecaster">
 			<button
 				type="button"
-				onClick={() => {
-					const startDate = new Date();
-					startDate.setDate(startDate.getDate() - 60);
-					const endDate = new Date();
-					endDate.setDate(endDate.getDate() - 30);
-					const historicalStartDate = new Date();
-					historicalStartDate.setDate(historicalStartDate.getDate() - 90);
-					const historicalEndDate = new Date(startDate);
-					onRunBacktest(
-						startDate,
-						endDate,
-						historicalStartDate,
-						historicalEndDate,
-					);
-				}}
+				onClick={() => onInputChange(true)}
+				data-testid="backtest-valid-change"
 			>
-				Run Backtest
+				Valid backtest input change
+			</button>
+			<button
+				type="button"
+				onClick={() => onInputChange(false)}
+				data-testid="backtest-incomplete-change"
+			>
+				Incomplete backtest input change
 			</button>
 			<button
 				type="button"
@@ -631,7 +620,7 @@ describe("TeamForecastView component", () => {
 			expect(screen.getByTestId("backtest-forecaster")).toBeInTheDocument();
 		});
 
-		it("should call runBacktest service when backtest button is clicked", async () => {
+		it("should auto-run the backtest service after a valid input change", async () => {
 			const mockBacktestResult = {
 				startDate: new Date(),
 				endDate: new Date(),
@@ -648,12 +637,19 @@ describe("TeamForecastView component", () => {
 			};
 			mockForecastService.runBacktest.mockResolvedValueOnce(mockBacktestResult);
 
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
 
-			const runBacktestButton = screen.getByText("Run Backtest");
-			fireEvent.click(runBacktestButton);
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("backtest-valid-change"));
+				});
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
 
-			await waitFor(() => {
 				expect(mockForecastService.runBacktest).toHaveBeenCalledWith(
 					mockTeam.id,
 					expect.any(Date),
@@ -662,55 +658,102 @@ describe("TeamForecastView component", () => {
 					expect.any(Date),
 					undefined,
 				);
-			});
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 
-		it("should display error snackbar when backtest service fails", async () => {
+		it("should display error snackbar when the auto-run backtest service fails", async () => {
 			const errorMessage = "Backtest service failed";
 			mockForecastService.runBacktest.mockRejectedValueOnce(
 				new Error(errorMessage),
 			);
 
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
 
-			const runBacktestButton = screen.getByText("Run Backtest");
-			fireEvent.click(runBacktestButton);
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("backtest-valid-change"));
+				});
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
 
-			await waitFor(() => {
 				expect(screen.getByText(errorMessage)).toBeInTheDocument();
-			});
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 
-		it("should display generic error message for non-Error objects in backtest", async () => {
+		it("should display generic error message for non-Error objects in the auto-run backtest", async () => {
 			mockForecastService.runBacktest.mockRejectedValueOnce(
 				"String error message",
 			);
 
-			renderWithProviders(<TeamForecastView team={mockTeam} />);
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
 
-			const runBacktestButton = screen.getByText("Run Backtest");
-			fireEvent.click(runBacktestButton);
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("backtest-valid-change"));
+				});
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
 
-			await waitFor(() => {
 				expect(
 					screen.getByText("Failed to run backtest. Please try again."),
 				).toBeInTheDocument();
-			});
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("should not run the backtest while inputs are incomplete", async () => {
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={mockTeam} />);
+				});
+
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("backtest-incomplete-change"));
+				});
+				act(() => {
+					vi.advanceTimersByTime(300);
+				});
+
+				expect(mockForecastService.runBacktest).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 
 		it("should not run backtest when team is missing", async () => {
 			const nullTeam = {} as Team;
-			await act(async () => {
-				renderWithProviders(<TeamForecastView team={nullTeam} />);
-			});
 
-			const runBacktestButton = screen.queryByText("Run Backtest");
+			vi.useFakeTimers();
+			try {
+				await act(async () => {
+					renderWithProviders(<TeamForecastView team={nullTeam} />);
+				});
 
-			if (runBacktestButton) {
-				fireEvent.click(runBacktestButton);
+				await act(async () => {
+					fireEvent.click(screen.getByTestId("backtest-valid-change"));
+				});
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+
+				expect(mockForecastService.runBacktest).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
 			}
-
-			expect(mockForecastService.runBacktest).not.toHaveBeenCalled();
 		});
 
 		it("should provide onClearBacktestResult callback to BacktestForecaster", () => {

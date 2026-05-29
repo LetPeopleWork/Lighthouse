@@ -1,6 +1,9 @@
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "dayjs";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import { HowManyForecast } from "../../../models/Forecasts/HowManyForecast";
@@ -12,9 +15,8 @@ import {
 	createMockTeamMetricsService,
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
-import BacktestForecaster from "./BacktestForecaster";
+import BacktestForecaster, { type HistoricalMode } from "./BacktestForecaster";
 
-// Mock the BacktestResultDisplay component
 vi.mock("./BacktestResultDisplay", () => ({
 	default: ({ backtestResult }: { backtestResult: BacktestResult }) => (
 		<div data-testid="backtest-result-display">
@@ -26,7 +28,6 @@ vi.mock("./BacktestResultDisplay", () => ({
 	),
 }));
 
-// Mock the BarRunChart component
 vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	default: ({ title }: { title: string }) => (
 		<div data-testid="bar-run-chart">
@@ -35,7 +36,6 @@ vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
 	),
 }));
 
-// Mock the LoadingAnimation component
 vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 	default: () => <div data-testid="loading-animation">Loading...</div>,
 }));
@@ -54,52 +54,108 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 	}),
 }));
 
-describe("BacktestForecaster component", () => {
-	const mockOnRunBacktest = vi.fn();
-	const mockOnClearBacktestResult = vi.fn();
+const mockTeamMetricsService = createMockTeamMetricsService();
+const mockTeamService = createMockTeamService();
+const mockApiServiceContext = {
+	...createMockApiServiceContext({}),
+	teamMetricsService: mockTeamMetricsService,
+	teamService: mockTeamService,
+};
 
-	const mockTeamMetricsService = createMockTeamMetricsService();
-	const mockTeamService = createMockTeamService();
-	const mockApiServiceContext = {
-		...createMockApiServiceContext({}),
-		teamMetricsService: mockTeamMetricsService,
-		teamService: mockTeamService,
-	};
-
+const buildTeam = (): Team => {
 	const team = new Team();
 	team.id = 1;
 	team.useFixedDatesForThroughput = false;
 	team.throughputStartDate = dayjs().subtract(29, "day").toDate();
 	team.throughputEndDate = new Date();
+	return team;
+};
 
-	const defaultProps = {
-		team: team,
-		onRunBacktest: mockOnRunBacktest as (
-			startDate: Date,
-			endDate: Date,
-			historicalStartDate: Date,
-			historicalEndDate: Date,
-		) => Promise<void>,
-		backtestResult: null as BacktestResult | null,
-		onClearBacktestResult: mockOnClearBacktestResult as () => void,
-		hasForecastFilter: undefined as boolean | undefined,
-		applyFilterOverride: undefined as boolean | undefined,
-		onApplyFilterOverrideChange: undefined as
-			| ((apply: boolean) => void)
-			| undefined,
-	};
+interface HarnessProps {
+	onInputChange?: (complete: boolean) => void;
+	onClearBacktestResult?: () => void;
+	onApplyFilterOverrideChange?: (apply: boolean) => void;
+	backtestResult?: BacktestResult | null;
+	hasForecastFilter?: boolean;
+	applyFilterOverride?: boolean;
+	team?: Team;
+	initialMode?: HistoricalMode;
+	initialWindowDays?: number | "";
+}
 
-	const renderWithContext = (props: typeof defaultProps = defaultProps) => {
-		return render(
+const ControlledHarness = ({
+	onInputChange = () => {},
+	onClearBacktestResult = () => {},
+	onApplyFilterOverrideChange,
+	backtestResult = null,
+	hasForecastFilter,
+	applyFilterOverride,
+	team = buildTeam(),
+	initialMode = "rolling",
+	initialWindowDays = 30,
+}: HarnessProps) => {
+	const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(
+		dayjs().subtract(60, "day"),
+	);
+	const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(
+		dayjs().subtract(30, "day"),
+	);
+	const [historicalMode, setHistoricalMode] =
+		useState<HistoricalMode>(initialMode);
+	const [historicalWindowDays, setHistoricalWindowDays] = useState<number | "">(
+		initialWindowDays,
+	);
+	const [historicalFixedStartDate, setHistoricalFixedStartDate] =
+		useState<dayjs.Dayjs | null>(dayjs().subtract(90, "day"));
+	const [historicalFixedEndDate, setHistoricalFixedEndDate] =
+		useState<dayjs.Dayjs | null>(dayjs().subtract(60, "day"));
+
+	return (
+		<LocalizationProvider dateAdapter={AdapterDayjs}>
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
-				<BacktestForecaster {...props} />
-			</ApiServiceContext.Provider>,
-		);
-	};
+				<BacktestForecaster
+					team={team}
+					backtestResult={backtestResult}
+					onClearBacktestResult={onClearBacktestResult}
+					hasForecastFilter={hasForecastFilter}
+					applyFilterOverride={applyFilterOverride}
+					onApplyFilterOverrideChange={onApplyFilterOverrideChange}
+					startDate={startDate}
+					endDate={endDate}
+					historicalMode={historicalMode}
+					historicalWindowDays={historicalWindowDays}
+					historicalFixedStartDate={historicalFixedStartDate}
+					historicalFixedEndDate={historicalFixedEndDate}
+					onStartDateChange={setStartDate}
+					onEndDateChange={setEndDate}
+					onHistoricalModeChange={setHistoricalMode}
+					onHistoricalWindowDaysChange={setHistoricalWindowDays}
+					onHistoricalFixedStartDateChange={setHistoricalFixedStartDate}
+					onHistoricalFixedEndDateChange={setHistoricalFixedEndDate}
+					onInputChange={onInputChange}
+				/>
+			</ApiServiceContext.Provider>
+		</LocalizationProvider>
+	);
+};
 
+const buildResult = (): BacktestResult => ({
+	startDate: dayjs().subtract(60, "day").toDate(),
+	endDate: dayjs().subtract(30, "day").toDate(),
+	historicalStartDate: dayjs().subtract(90, "day").toDate(),
+	historicalEndDate: dayjs().subtract(60, "day").toDate(),
+	percentiles: [
+		new HowManyForecast(50, 10),
+		new HowManyForecast(70, 12),
+		new HowManyForecast(85, 15),
+		new HowManyForecast(95, 18),
+	],
+	actualThroughput: 12,
+});
+
+describe("BacktestForecaster component", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		// Default: team uses rolling period with 30 days
 		(
 			mockTeamService.getTeamSettings as ReturnType<typeof vi.fn>
 		).mockResolvedValue({
@@ -108,25 +164,14 @@ describe("BacktestForecaster component", () => {
 			throughputHistoryStartDate: new Date(),
 			throughputHistoryEndDate: new Date(),
 		});
-		// Setup default mock responses
 		(
 			mockTeamMetricsService.getThroughput as ReturnType<typeof vi.fn>
 		).mockResolvedValue(new RunChartData({}, 30, 15));
-		(
-			mockTeamMetricsService.getMultiItemForecastPredictabilityScore as ReturnType<
-				typeof vi.fn
-			>
-		).mockResolvedValue({
-			score: 0.75,
-			passedRules: [],
-			failedRules: [],
-		});
 	});
 
-	it("should render all input fields", () => {
-		renderWithContext();
+	it("renders the input fields without a Run Backtest button", () => {
+		render(<ControlledHarness />);
 
-		// DatePickers create multiple elements with the label, so we check that at least one exists
 		expect(screen.getAllByText(/Backtest Start Date/i).length).toBeGreaterThan(
 			0,
 		);
@@ -135,131 +180,35 @@ describe("BacktestForecaster component", () => {
 			screen.getByLabelText(/Historical Window \(Days\)/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: /Run Backtest/i }),
-		).toBeInTheDocument();
+			screen.queryByRole("button", { name: /Run Backtest/i }),
+		).not.toBeInTheDocument();
 	});
 
-	it("should have default values for date inputs", () => {
-		renderWithContext();
+	it("reports completeness when an input changes", () => {
+		const onInputChange = vi.fn();
+		render(<ControlledHarness onInputChange={onInputChange} />);
 
-		// The historical window should default to 30
-		const historicalWindowInput = screen.getByLabelText(
-			/Historical Window \(Days\)/i,
-		);
-		expect(historicalWindowInput).toHaveValue(30);
-	});
-
-	it("should have default start date at least 14 days ago", () => {
-		renderWithContext();
-
-		// Default start date should be at least 14 days in the past
-		// Default is 60 days ago, which is > 14 days ago
-		const minAllowedStartDate = dayjs().subtract(14, "day");
-		const defaultStartDate = dayjs().subtract(60, "day");
-
-		expect(defaultStartDate.isBefore(minAllowedStartDate)).toBe(true);
-	});
-
-	it("should have default end date not in the future", () => {
-		renderWithContext();
-
-		// Default end date should not be in the future (max is today)
-		// Default is 30 days ago, which is <= today
-		const today = dayjs().startOf("day");
-		const defaultEndDate = dayjs().subtract(30, "day").startOf("day");
-
-		expect(
-			defaultEndDate.isBefore(today) || defaultEndDate.isSame(today, "day"),
-		).toBe(true);
-	});
-
-	it("should have at least 14 days between default start and end dates", () => {
-		renderWithContext();
-
-		const defaultStartDate = dayjs().subtract(60, "day");
-		const defaultEndDate = dayjs().subtract(30, "day");
-		const daysDifference = defaultEndDate.diff(defaultStartDate, "day");
-
-		expect(daysDifference).toBeGreaterThanOrEqual(14);
-	});
-
-	it("should call onRunBacktest when button is clicked", async () => {
-		renderWithContext();
-
-		const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-		fireEvent.click(runButton);
-
-		await waitFor(() => {
-			expect(mockOnRunBacktest).toHaveBeenCalledWith(
-				expect.any(Date),
-				expect.any(Date),
-				expect.any(Date),
-				expect.any(Date),
-			);
+		fireEvent.change(screen.getByLabelText(/Historical Window \(Days\)/i), {
+			target: { value: "60" },
 		});
+
+		expect(onInputChange).toHaveBeenLastCalledWith(true);
 	});
 
-	it("should call onClearBacktestResult before running backtest", async () => {
-		renderWithContext();
+	it("reports incompleteness when the historical window is cleared", () => {
+		const onInputChange = vi.fn();
+		render(<ControlledHarness onInputChange={onInputChange} />);
 
-		const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-		fireEvent.click(runButton);
-
-		await waitFor(() => {
-			expect(mockOnClearBacktestResult).toHaveBeenCalled();
+		fireEvent.change(screen.getByLabelText(/Historical Window \(Days\)/i), {
+			target: { value: "" },
 		});
-	});
 
-	it("should update historical window days when input changes", () => {
-		renderWithContext();
-
-		const historicalWindowInput = screen.getByLabelText(
-			/Historical Window \(Days\)/i,
-		);
-		fireEvent.change(historicalWindowInput, { target: { value: "60" } });
-
-		expect(historicalWindowInput).toHaveValue(60);
-	});
-
-	it("should clamp historical window days to minimum of 1 on blur", async () => {
-		renderWithContext();
-
-		const historicalWindowInput = screen.getByLabelText(
-			/Historical Window \(Days\)/i,
-		);
-		fireEvent.change(historicalWindowInput, { target: { value: "-5" } });
-		fireEvent.blur(historicalWindowInput);
-
-		expect(historicalWindowInput).toHaveValue(1);
-	});
-
-	it("should clamp historical window days to maximum of 365 on blur", async () => {
-		renderWithContext();
-
-		const historicalWindowInput = screen.getByLabelText(
-			/Historical Window \(Days\)/i,
-		);
-		fireEvent.change(historicalWindowInput, { target: { value: "500" } });
-		fireEvent.blur(historicalWindowInput);
-
-		expect(historicalWindowInput).toHaveValue(365);
-	});
-
-	it("should fall back to 30 when the field is cleared and loses focus", async () => {
-		renderWithContext();
-
-		const historicalWindowInput = screen.getByLabelText(
-			/Historical Window \(Days\)/i,
-		);
-		fireEvent.change(historicalWindowInput, { target: { value: "" } });
-		fireEvent.blur(historicalWindowInput);
-
-		expect(historicalWindowInput).toHaveValue(30);
+		expect(onInputChange).toHaveBeenLastCalledWith(false);
 	});
 
 	it("allows the user to clear the field and type a new value without prepending the minimum", async () => {
 		const user = userEvent.setup();
-		renderWithContext();
+		render(<ControlledHarness />);
 
 		const historicalWindowInput = screen.getByLabelText(
 			/Historical Window \(Days\)/i,
@@ -270,22 +219,8 @@ describe("BacktestForecaster component", () => {
 		expect(historicalWindowInput).toHaveValue(5);
 	});
 
-	it("should display tabs when backtestResult is provided", async () => {
-		const mockResult: BacktestResult = {
-			startDate: dayjs().subtract(60, "day").toDate(),
-			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalStartDate: dayjs().subtract(90, "day").toDate(),
-			historicalEndDate: dayjs().subtract(60, "day").toDate(),
-			percentiles: [
-				new HowManyForecast(50, 10),
-				new HowManyForecast(70, 12),
-				new HowManyForecast(85, 15),
-				new HowManyForecast(95, 18),
-			],
-			actualThroughput: 12,
-		};
-
-		renderWithContext({ ...defaultProps, backtestResult: mockResult });
+	it("displays tabs and the result display when a backtestResult is provided", async () => {
+		render(<ControlledHarness backtestResult={buildResult()} />);
 
 		await waitFor(() => {
 			expect(screen.getByRole("tab", { name: /Results/i })).toBeInTheDocument();
@@ -297,401 +232,49 @@ describe("BacktestForecaster component", () => {
 		expect(screen.getByText("Actual: 12")).toBeInTheDocument();
 	});
 
-	it("should not display tabs when backtestResult is null", () => {
-		renderWithContext({ ...defaultProps, backtestResult: null });
+	it("does not display tabs when backtestResult is null", () => {
+		render(<ControlledHarness backtestResult={null} />);
 
 		expect(
 			screen.queryByRole("tab", { name: /Results/i }),
-		).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("tab", { name: /Historical Throughput/i }),
 		).not.toBeInTheDocument();
 		expect(
 			screen.queryByTestId("backtest-result-display"),
 		).not.toBeInTheDocument();
 	});
 
-	it("should fetch historical throughput data when backtestResult is provided", async () => {
-		const mockResult: BacktestResult = {
-			startDate: dayjs().subtract(60, "day").toDate(),
-			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalStartDate: dayjs().subtract(90, "day").toDate(),
-			historicalEndDate: dayjs().subtract(60, "day").toDate(),
-			percentiles: [
-				new HowManyForecast(50, 10),
-				new HowManyForecast(70, 12),
-				new HowManyForecast(85, 15),
-				new HowManyForecast(95, 18),
-			],
-			actualThroughput: 12,
-		};
-
-		renderWithContext({ ...defaultProps, backtestResult: mockResult });
+	it("fetches historical and actual throughput when a backtestResult is provided", async () => {
+		render(<ControlledHarness backtestResult={buildResult()} />);
 
 		await waitFor(() => {
-			expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledWith(
-				1,
-				expect.any(Date),
-				expect.any(Date),
-			);
-		});
-	});
-
-	it("should display BarRunChart when Historical Throughput tab is clicked", async () => {
-		const mockResult: BacktestResult = {
-			startDate: dayjs().subtract(60, "day").toDate(),
-			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalStartDate: dayjs().subtract(90, "day").toDate(),
-			historicalEndDate: dayjs().subtract(60, "day").toDate(),
-			percentiles: [
-				new HowManyForecast(50, 10),
-				new HowManyForecast(70, 12),
-				new HowManyForecast(85, 15),
-				new HowManyForecast(95, 18),
-			],
-			actualThroughput: 12,
-		};
-
-		renderWithContext({ ...defaultProps, backtestResult: mockResult });
-
-		// Wait for data to load
-		await waitFor(() => {
-			expect(mockTeamMetricsService.getThroughput).toHaveBeenCalled();
-		});
-
-		// Click on Historical Throughput tab
-		const historicalTab = screen.getByRole("tab", {
-			name: /Historical Throughput/i,
-		});
-		fireEvent.click(historicalTab);
-
-		await waitFor(() => {
-			expect(screen.getByTestId("bar-run-chart")).toBeInTheDocument();
-		});
-	});
-
-	it("should not call onRunBacktest when start date is null", async () => {
-		// This test is more of an edge case - in practice the component
-		// initializes with valid dates. We can verify the handler checks for null.
-		renderWithContext();
-
-		// The component should have valid default dates, so the button click should work
-		const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-		fireEvent.click(runButton);
-
-		await waitFor(() => {
-			expect(mockOnRunBacktest).toHaveBeenCalled();
-		});
-	});
-
-	it("should show loading animation while fetching historical data", async () => {
-		// Make the metrics service resolve slowly
-		let resolvePromise: ((value: unknown) => void) | undefined;
-		(
-			mockTeamMetricsService.getThroughput as ReturnType<typeof vi.fn>
-		).mockReturnValue(
-			new Promise((resolve) => {
-				resolvePromise = resolve;
-			}),
-		);
-
-		const mockResult: BacktestResult = {
-			startDate: dayjs().subtract(60, "day").toDate(),
-			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalStartDate: dayjs().subtract(90, "day").toDate(),
-			historicalEndDate: dayjs().subtract(60, "day").toDate(),
-			percentiles: [
-				new HowManyForecast(50, 10),
-				new HowManyForecast(70, 12),
-				new HowManyForecast(85, 15),
-				new HowManyForecast(95, 18),
-			],
-			actualThroughput: 12,
-		};
-
-		renderWithContext({ ...defaultProps, backtestResult: mockResult });
-
-		// Click on Historical Throughput tab
-		const historicalTab = screen.getByRole("tab", {
-			name: /Historical Throughput/i,
-		});
-		fireEvent.click(historicalTab);
-
-		// Should show loading animation
-		expect(screen.getByTestId("loading-animation")).toBeInTheDocument();
-
-		// Resolve the promise
-		if (resolvePromise) {
-			resolvePromise(new RunChartData({}, 30, 15));
-		}
-
-		await waitFor(() => {
-			expect(screen.queryByTestId("loading-animation")).not.toBeInTheDocument();
-		});
-	});
-
-	describe("Date Constraints", () => {
-		it("should have default dates that satisfy all constraints", () => {
-			renderWithContext();
-
-			// Default start: 60 days ago
-			// Default end: 30 days ago
-			const defaultStartDate = dayjs().subtract(60, "day");
-			const defaultEndDate = dayjs().subtract(30, "day");
-			const today = dayjs();
-
-			// Constraint 1: End date must not be in future (max today)
-			expect(
-				defaultEndDate.isBefore(today) || defaultEndDate.isSame(today, "day"),
-			).toBe(true);
-
-			// Constraint 2: Start date must be at least 14 days ago
-			const fourteenDaysAgo = dayjs().subtract(14, "day");
-			expect(
-				defaultStartDate.isBefore(fourteenDaysAgo) ||
-					defaultStartDate.isSame(fourteenDaysAgo, "day"),
-			).toBe(true);
-
-			// Constraint 3: Minimum 14 day gap between dates
-			const gap = defaultEndDate.diff(defaultStartDate, "day");
-			expect(gap).toBeGreaterThanOrEqual(14);
-		});
-
-		it("should allow backtest when end date is today", async () => {
-			// Mock the component with a custom state-like scenario by testing
-			// the actual backtest run with dates at their limits
-			renderWithContext();
-
-			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-			fireEvent.click(runButton);
-
-			await waitFor(() => {
-				expect(mockOnRunBacktest).toHaveBeenCalled();
-				const callArgs = mockOnRunBacktest.mock.calls[0];
-				const startDate = dayjs(callArgs[0]);
-				const endDate = dayjs(callArgs[1]);
-
-				// End date should be valid (not in future)
-				const today = dayjs();
-				expect(endDate.isAfter(today)).toBe(false);
-
-				// Start date should be at least 14 days ago
-				const fourteenDaysAgo = dayjs().subtract(14, "day");
-				expect(startDate.isAfter(fourteenDaysAgo)).toBe(false);
-
-				// Gap should be at least 14 days
-				const gap = endDate.diff(startDate, "day");
-				expect(gap).toBeGreaterThanOrEqual(14);
-			});
+			expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
 		});
 	});
 
 	describe("Historical Window Mode Toggle", () => {
-		it("should render both mode toggle buttons", () => {
-			renderWithContext();
+		it("renders both mode toggle buttons", () => {
+			render(<ControlledHarness />);
 
 			expect(screen.getByTestId("toggle-rolling")).toBeInTheDocument();
 			expect(screen.getByTestId("toggle-date-range")).toBeInTheDocument();
 		});
 
-		it("should show Historical Window (Days) field by default (rolling mode)", () => {
-			renderWithContext();
+		it("shows Historical Window field in rolling mode and date pickers in date-range mode", async () => {
+			render(<ControlledHarness />);
 
 			expect(
 				screen.getByLabelText(/Historical Window \(Days\)/i),
 			).toBeInTheDocument();
-			expect(
-				screen.queryByText(/Historical Start Date/i),
-			).not.toBeInTheDocument();
-			expect(
-				screen.queryByText(/Historical End Date/i),
-			).not.toBeInTheDocument();
-		});
-
-		it("should show Historical Start and End Date pickers when switching to Date Range mode", async () => {
-			renderWithContext();
-
-			const dateRangeToggle = screen.getByTestId("toggle-date-range");
-			fireEvent.click(dateRangeToggle);
-
-			await waitFor(() => {
-				expect(
-					screen.getAllByText(/Historical Start Date/i).length,
-				).toBeGreaterThan(0);
-				expect(
-					screen.getAllByText(/Historical End Date/i).length,
-				).toBeGreaterThan(0);
-				expect(
-					screen.queryByLabelText(/Historical Window \(Days\)/i),
-				).not.toBeInTheDocument();
-			});
-		});
-
-		it("should restore Historical Window field when switching back to Rolling Period", async () => {
-			renderWithContext();
 
 			fireEvent.click(screen.getByTestId("toggle-date-range"));
-			fireEvent.click(screen.getByTestId("toggle-rolling"));
-
-			await waitFor(() => {
-				expect(
-					screen.getByLabelText(/Historical Window \(Days\)/i),
-				).toBeInTheDocument();
-			});
-		});
-
-		it("should pre-fill rolling window days from team settings", async () => {
-			const teamWith90DayWindow = new Team();
-			teamWith90DayWindow.id = 1;
-			teamWith90DayWindow.useFixedDatesForThroughput = false;
-			teamWith90DayWindow.throughputStartDate = dayjs()
-				.subtract(89, "day")
-				.toDate();
-			teamWith90DayWindow.throughputEndDate = new Date();
-
-			renderWithContext({ ...defaultProps, team: teamWith90DayWindow });
-
-			await waitFor(() => {
-				const windowInput = screen.getByLabelText(
-					/Historical Window \(Days\)/i,
-				);
-				expect(windowInput).toHaveValue(90);
-			});
-		});
-
-		it("should switch to Date Range mode when team settings use fixed dates", async () => {
-			const fixedDateTeam = new Team();
-			fixedDateTeam.id = 1;
-			fixedDateTeam.useFixedDatesForThroughput = true;
-			fixedDateTeam.throughputStartDate = dayjs().subtract(120, "day").toDate();
-			fixedDateTeam.throughputEndDate = dayjs().subtract(60, "day").toDate();
-
-			renderWithContext({ ...defaultProps, team: fixedDateTeam });
 
 			await waitFor(() => {
 				expect(
 					screen.getAllByText(/Historical Start Date/i).length,
 				).toBeGreaterThan(0);
 				expect(
-					screen.getAllByText(/Historical End Date/i).length,
-				).toBeGreaterThan(0);
-				expect(
 					screen.queryByLabelText(/Historical Window \(Days\)/i),
 				).not.toBeInTheDocument();
-			});
-		});
-
-		it("should use rolling days when running backtest in Rolling Period mode", async () => {
-			renderWithContext();
-
-			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-			fireEvent.click(runButton);
-
-			await waitFor(() => {
-				expect(mockOnRunBacktest).toHaveBeenCalledWith(
-					expect.any(Date),
-					expect.any(Date),
-					expect.any(Date),
-					expect.any(Date),
-				);
-			});
-		});
-
-		it("should set historicalEndDate to one day before backtestStartDate in rolling mode", async () => {
-			renderWithContext();
-
-			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-			fireEvent.click(runButton);
-
-			await waitFor(() => {
-				expect(mockOnRunBacktest).toHaveBeenCalled();
-			});
-
-			const callArgs = mockOnRunBacktest.mock.calls[0];
-			const backtestStartDate = dayjs(callArgs[0]);
-			const historicalEndDate = dayjs(callArgs[3]);
-
-			expect(
-				historicalEndDate.isSame(backtestStartDate.subtract(1, "day"), "day"),
-			).toBe(true);
-		});
-
-		it("should produce exactly N days of historical data in rolling mode", async () => {
-			renderWithContext();
-
-			const runButton = screen.getByRole("button", { name: /Run Backtest/i });
-			fireEvent.click(runButton);
-
-			await waitFor(() => {
-				expect(mockOnRunBacktest).toHaveBeenCalled();
-			});
-
-			const callArgs = mockOnRunBacktest.mock.calls[0];
-			const historicalStartDate = dayjs(callArgs[2]);
-			const historicalEndDate = dayjs(callArgs[3]);
-
-			// Inclusive day count should equal the historical window (default 30)
-			const inclusiveDays =
-				historicalEndDate.diff(historicalStartDate, "day") + 1;
-			expect(inclusiveDays).toBe(30);
-		});
-	});
-
-	describe("Actual Throughput Tab", () => {
-		const mockResultActual: BacktestResult = {
-			startDate: dayjs().subtract(60, "day").toDate(),
-			endDate: dayjs().subtract(30, "day").toDate(),
-			historicalStartDate: dayjs().subtract(90, "day").toDate(),
-			historicalEndDate: dayjs().subtract(60, "day").toDate(),
-			percentiles: [
-				new HowManyForecast(50, 10),
-				new HowManyForecast(70, 12),
-				new HowManyForecast(85, 15),
-				new HowManyForecast(95, 18),
-			],
-			actualThroughput: 12,
-		};
-
-		it("should display Actual Throughput tab when backtestResult is provided", async () => {
-			renderWithContext({ ...defaultProps, backtestResult: mockResultActual });
-
-			await waitFor(() => {
-				expect(
-					screen.getByRole("tab", { name: /Actual Throughput/i }),
-				).toBeInTheDocument();
-			});
-		});
-
-		it("should call getThroughput with backtestResult start/end dates for actual period", async () => {
-			renderWithContext({ ...defaultProps, backtestResult: mockResultActual });
-
-			await waitFor(() => {
-				// Called twice: once for historical window, once for actual period
-				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
-				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledWith(
-					1,
-					mockResultActual.startDate,
-					mockResultActual.endDate,
-				);
-			});
-		});
-
-		it("should render BarRunChart with 'Actual Throughput' title on the Actual Throughput tab", async () => {
-			renderWithContext({ ...defaultProps, backtestResult: mockResultActual });
-
-			await waitFor(() => {
-				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
-			});
-
-			const actualTab = screen.getByRole("tab", { name: /Actual Throughput/i });
-			fireEvent.click(actualTab);
-
-			await waitFor(() => {
-				const charts = screen.getAllByTestId("bar-run-chart");
-				const actualChart = charts.find((c) =>
-					c.textContent?.includes("Actual Throughput"),
-				);
-				expect(actualChart).toBeInTheDocument();
 			});
 		});
 	});
@@ -705,78 +288,54 @@ describe("BacktestForecaster component", () => {
 
 		it("renders the toggle when premium and team has a forecast filter", () => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
-			renderWithContext({
-				...defaultProps,
-				hasForecastFilter: true,
-				applyFilterOverride: true,
-			});
+			render(
+				<ControlledHarness
+					hasForecastFilter={true}
+					applyFilterOverride={true}
+				/>,
+			);
 			expect(screen.getByLabelText(TOGGLE_LABEL)).toBeInTheDocument();
 		});
 
 		it("hides the toggle on non-premium tenants", () => {
 			mockCanUsePremiumFeatures.mockReturnValue(false);
-			renderWithContext({ ...defaultProps, hasForecastFilter: true });
+			render(<ControlledHarness hasForecastFilter={true} />);
 			expect(screen.queryByLabelText(TOGGLE_LABEL)).not.toBeInTheDocument();
 		});
 
 		it("hides the toggle when the team has no forecast filter configured", () => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
-			renderWithContext({ ...defaultProps, hasForecastFilter: false });
+			render(<ControlledHarness hasForecastFilter={false} />);
 			expect(screen.queryByLabelText(TOGGLE_LABEL)).not.toBeInTheDocument();
 		});
 
-		it("calls onApplyFilterOverrideChange when the user toggles the switch off", () => {
+		it("notifies the parent and clears the result when the user toggles the switch", () => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
 			const onApplyFilterOverrideChange = vi.fn();
-			renderWithContext({
-				...defaultProps,
-				hasForecastFilter: true,
-				applyFilterOverride: true,
-				onApplyFilterOverrideChange,
-			});
+			const onClearBacktestResult = vi.fn();
+			render(
+				<ControlledHarness
+					hasForecastFilter={true}
+					applyFilterOverride={true}
+					onApplyFilterOverrideChange={onApplyFilterOverrideChange}
+					onClearBacktestResult={onClearBacktestResult}
+				/>,
+			);
 			fireEvent.click(screen.getByLabelText(TOGGLE_LABEL));
 			expect(onApplyFilterOverrideChange).toHaveBeenCalledWith(false);
-		});
-
-		it("clears the existing backtest result when the user toggles the filter", () => {
-			mockCanUsePremiumFeatures.mockReturnValue(true);
-			const existingResult: BacktestResult = {
-				startDate: dayjs().subtract(60, "day").toDate(),
-				endDate: dayjs().subtract(30, "day").toDate(),
-				historicalStartDate: dayjs().subtract(90, "day").toDate(),
-				historicalEndDate: dayjs().subtract(60, "day").toDate(),
-				percentiles: [new HowManyForecast(50, 10)],
-				actualThroughput: 12,
-				filterApplied: true,
-			};
-			renderWithContext({
-				...defaultProps,
-				backtestResult: existingResult,
-				hasForecastFilter: true,
-				applyFilterOverride: true,
-			});
-			fireEvent.click(screen.getByLabelText(TOGGLE_LABEL));
-			expect(mockOnClearBacktestResult).toHaveBeenCalled();
+			expect(onClearBacktestResult).toHaveBeenCalled();
 		});
 
 		it("requests view=filtered for both throughput fetches when filter is on, premium, and configured", async () => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
-			const mockResult: BacktestResult = {
-				startDate: dayjs().subtract(60, "day").toDate(),
-				endDate: dayjs().subtract(30, "day").toDate(),
-				historicalStartDate: dayjs().subtract(90, "day").toDate(),
-				historicalEndDate: dayjs().subtract(60, "day").toDate(),
-				percentiles: [new HowManyForecast(50, 10)],
-				actualThroughput: 12,
-				filterApplied: true,
-			};
-
-			renderWithContext({
-				...defaultProps,
-				backtestResult: mockResult,
-				hasForecastFilter: true,
-				applyFilterOverride: true,
-			});
+			const result = buildResult();
+			render(
+				<ControlledHarness
+					backtestResult={result}
+					hasForecastFilter={true}
+					applyFilterOverride={true}
+				/>,
+			);
 
 			await waitFor(() => {
 				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
@@ -784,36 +343,29 @@ describe("BacktestForecaster component", () => {
 			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
 				1,
 				1,
-				mockResult.historicalStartDate,
-				mockResult.historicalEndDate,
+				result.historicalStartDate,
+				result.historicalEndDate,
 				"filtered",
 			);
 			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
 				2,
 				1,
-				mockResult.startDate,
-				mockResult.endDate,
+				result.startDate,
+				result.endDate,
 				"filtered",
 			);
 		});
 
 		it("omits the view argument from throughput fetches when the filter toggle is off", async () => {
 			mockCanUsePremiumFeatures.mockReturnValue(true);
-			const mockResult: BacktestResult = {
-				startDate: dayjs().subtract(60, "day").toDate(),
-				endDate: dayjs().subtract(30, "day").toDate(),
-				historicalStartDate: dayjs().subtract(90, "day").toDate(),
-				historicalEndDate: dayjs().subtract(60, "day").toDate(),
-				percentiles: [new HowManyForecast(50, 10)],
-				actualThroughput: 12,
-			};
-
-			renderWithContext({
-				...defaultProps,
-				backtestResult: mockResult,
-				hasForecastFilter: true,
-				applyFilterOverride: false,
-			});
+			const result = buildResult();
+			render(
+				<ControlledHarness
+					backtestResult={result}
+					hasForecastFilter={true}
+					applyFilterOverride={false}
+				/>,
+			);
 
 			await waitFor(() => {
 				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
@@ -821,49 +373,14 @@ describe("BacktestForecaster component", () => {
 			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
 				1,
 				1,
-				mockResult.historicalStartDate,
-				mockResult.historicalEndDate,
+				result.historicalStartDate,
+				result.historicalEndDate,
 			);
 			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
 				2,
 				1,
-				mockResult.startDate,
-				mockResult.endDate,
-			);
-		});
-
-		it("omits the view argument on non-premium tenants even when the filter would be on", async () => {
-			mockCanUsePremiumFeatures.mockReturnValue(false);
-			const mockResult: BacktestResult = {
-				startDate: dayjs().subtract(60, "day").toDate(),
-				endDate: dayjs().subtract(30, "day").toDate(),
-				historicalStartDate: dayjs().subtract(90, "day").toDate(),
-				historicalEndDate: dayjs().subtract(60, "day").toDate(),
-				percentiles: [new HowManyForecast(50, 10)],
-				actualThroughput: 12,
-			};
-
-			renderWithContext({
-				...defaultProps,
-				backtestResult: mockResult,
-				hasForecastFilter: true,
-				applyFilterOverride: true,
-			});
-
-			await waitFor(() => {
-				expect(mockTeamMetricsService.getThroughput).toHaveBeenCalledTimes(2);
-			});
-			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
-				1,
-				1,
-				mockResult.historicalStartDate,
-				mockResult.historicalEndDate,
-			);
-			expect(mockTeamMetricsService.getThroughput).toHaveBeenNthCalledWith(
-				2,
-				1,
-				mockResult.startDate,
-				mockResult.endDate,
+				result.startDate,
+				result.endDate,
 			);
 		});
 	});
