@@ -1,16 +1,16 @@
 ---
 description: Draft release notes for the next Lighthouse release by aggregating ADO work items tagged "Release Notes", cross-checking commits since the last tag, attributing community reporters, and adding first-time contributors.
-allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion, mcp__azure-devops__wit_query_by_wiql, mcp__azure-devops__wit_get_work_items_batch_by_ids
+allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion
 ---
 
 # /release-notes — draft the next release section
 
-You are drafting the next release-notes block at the top of `docs/releasenotes/releasenotes.md`. Goal: a complete first draft the user can polish, with community reporters correctly attributed and any first-time contributor added to `CONTRIBUTORS.md`.
+You are drafting the next release-notes block at the top of `docs/releasenotes/releasenotes.md`. Goal: a complete first draft the user can polish, with community reporters correctly attributed and any first-time contributor added to the canonical contributors page `docs/contributions/contributions.md`.
 
 ## Fixed context (do NOT ask)
 
 - **Release notes file**: `docs/releasenotes/releasenotes.md` — new block goes at the top, ABOVE the current top section.
-- **Contributors file**: `CONTRIBUTORS.md` — append first-timers under `## Individual Contributors`.
+- **Contributors file**: `docs/contributions/contributions.md` — the canonical, published contributor list (the docs-site "Contributions" page). Append first-timers under `## Individual Contributors`. NOTE: the root `CONTRIBUTORS.md` is only a pointer stub — do NOT read names from it or write names to it; it is intentionally not the source of truth.
 - **GitHub repo**: `LetPeopleWork/Lighthouse` — used for the `compare/<old>...<new>` changelog link.
 - **Azure DevOps**:
   - Org: `dev.azure.com/letpeoplework`
@@ -27,9 +27,9 @@ You are drafting the next release-notes block at the top of `docs/releasenotes/r
 
 Read in parallel:
 1. `docs/releasenotes/releasenotes.md` (at least the top ~250 lines — enough to learn the structure: `# Lighthouse vX.Y.Z.W` heading, `## <Feature Name>` sections with prose & images, a `## Bugfixes and Improvements` bullet list, a `## Contributions ❤️` section listing reporters with LinkedIn URLs, and a `**Full Changelog**` compare link).
-2. `CONTRIBUTORS.md` — collect every name + URL already listed under `## Individual Contributors`. You will reuse those URLs verbatim if the same person appears again, and only ask the user for a URL when the reporter is genuinely new.
+2. `docs/contributions/contributions.md` — collect every name + URL already listed under `## Individual Contributors`. You will reuse those URLs verbatim if the same person appears again, and only ask the user for a URL when the reporter is genuinely new.
 
-Also harvest reporter-name → LinkedIn-URL pairs from prior `## Contributions ❤️` sections in the release notes — many community members are listed there but not in `CONTRIBUTORS.md`, and the URL is the same.
+Also harvest reporter-name → LinkedIn-URL pairs from prior `## Contributions ❤️` sections in the release notes — the URL is the same. (The root `CONTRIBUTORS.md` is just a pointer stub; ignore it.)
 
 ## Step 1 — anchor "since"
 
@@ -42,29 +42,51 @@ If `$ARGUMENTS` names a tag, use it. Otherwise use the latest. Report to the use
 
 ## Step 2 — pull the ADO release-notes items
 
-Use `mcp__azure-devops__wit_query_by_wiql` against project `Lighthouse`. The ClosedDate cutoff is the tag's commit date from Step 1, in `YYYY-MM-DDTHH:mm:ssZ` form (WIQL accepts ISO 8601):
+All ADO access is via the **`az` CLI** (`azure-devops` extension) through `Bash` — **not** the ADO MCP server, which is not in use here (do not assume `mcp__azure-devops__*` tools exist). See `.claude/commands/ado-sync.md` for the full cookbook.
 
-```sql
-SELECT [System.Id], [System.Title], [System.WorkItemType], [System.Tags], [System.State]
-FROM WorkItems
-WHERE [System.TeamProject] = 'Lighthouse'
-  AND [System.Tags] CONTAINS 'Release Notes'
-  AND [System.State] = 'Closed'
-  AND [Microsoft.VSTS.Common.ClosedDate] >= '<cutoff>'
-ORDER BY [Microsoft.VSTS.Common.ClosedDate] ASC
+Preflight once (silently): `az devops configure -l` should show `organization = https://dev.azure.com/letpeoplework` and `project = Lighthouse`; if not, `az devops configure -d organization=https://dev.azure.com/letpeoplework project=Lighthouse`. If `az account show` fails, stop and ask the user to run `az login` themselves — never attempt an interactive login from a tool call.
+
+`az boards query --wiql` is flat and returns the SELECTed fields inline — no separate "batch get by ID" step. The cutoff is the tag's commit date from Step 1, but **WIQL `ClosedDate` is date-precision only: pass `YYYY-MM-DD`, never a time component** (a time raises `You cannot supply a time with the date`). Quote WIQL with single quotes; double any inner single quote.
+
+```bash
+az boards query --wiql "
+  SELECT [System.Id], [System.Title], [System.WorkItemType], [System.Tags], [System.State], [Microsoft.VSTS.Common.ClosedDate]
+  FROM WorkItems
+  WHERE [System.TeamProject] = 'Lighthouse'
+    AND [System.Tags] CONTAINS 'Release Notes'
+    AND [System.State] = 'Closed'
+    AND [Microsoft.VSTS.Common.ClosedDate] >= '<YYYY-MM-DD>'
+  ORDER BY [Microsoft.VSTS.Common.ClosedDate] ASC
+" -o json | jq -r '.[] | "\(.id)\t\(.fields."System.WorkItemType")\t\(.fields."Microsoft.VSTS.Common.ClosedDate"[0:10])\t\(.fields."System.Title")"'
 ```
 
-Then fetch full bodies via `mcp__azure-devops__wit_get_work_items_batch_by_ids` with these fields:
+(If `jq` chokes with `Invalid numeric literal`, `az` wrote an error to stdout instead of JSON — re-run without the `| jq` to read it. The date-with-time error above is the usual culprit.)
 
+Then fetch each item's body + reporter. `az boards work-item show --query "fields.\"<field>\""` can fail to parse when piped through `jq` (HTML in the description), so pull single fields with `-o tsv` and strip tags:
+
+```bash
+az boards work-item show --id <id> --query "fields.\"Custom.ReportedBy\"" -o tsv
+az boards work-item show --id <id> --query "fields.\"System.Description\"" -o tsv | sed -e 's/<[^>]*>//g'
+# Bugs keep their body in ReproSteps instead:
+az boards work-item show --id <id> --query "fields.\"Microsoft.VSTS.TCM.ReproSteps\"" -o tsv | sed -e 's/<[^>]*>//g'
 ```
-["System.Id", "System.Title", "System.WorkItemType", "System.State",
- "System.Tags", "System.Description", "Microsoft.VSTS.TCM.ReproSteps",
- "Microsoft.VSTS.Common.ClosedDate", "Custom.ReportedBy"]
+
+(Bugs put their body in `Microsoft.VSTS.TCM.ReproSteps`, Stories/Epics in `System.Description`. `Custom.ReportedBy` is a plain string, often HTML-wrapped and sometimes comma-separated.)
+
+**Closed-only is the strict rule, but watch for `Resolved` umbrella Epics.** A user-visible feature is often an Epic tagged `Release Notes` sitting in `Resolved` (merged, awaiting *this* release) with its child Stories already `Closed`. The `State = 'Closed'` query above will miss that Epic. So also run a second pass for tagged items not yet shipped, and treat any `Resolved` ones whose children are `Closed` as **gap candidates** for Step 5:
+
+```bash
+az boards query --wiql "
+  SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State]
+  FROM WorkItems
+  WHERE [System.TeamProject] = 'Lighthouse'
+    AND [System.Tags] CONTAINS 'Release Notes'
+    AND [System.State] NOT IN ('Closed','Done','Removed')
+  ORDER BY [System.ChangedDate] DESC
+" -o json | jq -r '.[] | "\(.id)\t\(.fields."System.WorkItemType")\t\(.fields."System.State")\t\(.fields."System.Title")"'
 ```
 
-(Bugs put their body in `Microsoft.VSTS.TCM.ReproSteps`, Stories/Epics in `System.Description`.)
-
-If the result set is empty: tell the user, and skip to Step 4 anyway — there are usually dependency bumps + commit-only items worth mentioning.
+Exclude `Removed` items always (cancelled). If both queries are empty: tell the user, and skip to Step 4 anyway — there are usually dependency bumps + commit-only items worth mentioning.
 
 ## Step 3 — normalize community reporters
 
@@ -77,7 +99,7 @@ For every item with a non-empty `Custom.ReportedBy`:
 Build the dedup'd list `reporters = [name1, name2, ...]` preserving first-seen order.
 
 For each reporter, resolve their LinkedIn URL in this priority:
-1. Exact name match in `CONTRIBUTORS.md` → reuse that URL.
+1. Exact name match in `docs/contributions/contributions.md` → reuse that URL.
 2. Exact name match in any prior `## Contributions ❤️` block in `releasenotes.md` → reuse that URL.
 3. Otherwise → mark as **first-timer**, no URL yet. Carry them into Step 6.
 
@@ -145,22 +167,22 @@ Drafting rules:
 - Don't fabricate image links. Reuse images already in `docs/releasenotes/` only when the ADO description or commit clearly references that asset; otherwise leave images out and let the user add them.
 - Tone matches prior releases: pragmatic, mildly enthusiastic, no marketing fluff.
 
-## Step 7 — update CONTRIBUTORS.md for first-timers
+## Step 7 — update docs/contributions/contributions.md for first-timers
 
-For each first-timer the user gave a LinkedIn URL for in Step 5, append to `CONTRIBUTORS.md` under `## Individual Contributors`, matching the existing list style:
+For each first-timer the user gave a LinkedIn URL for in Step 5, append to `docs/contributions/contributions.md` under `## Individual Contributors`, matching the existing list style:
 
 ```markdown
 - [**<Name>**](<LinkedIn URL>)
 ```
 
-Keep the trailing horizontal-rule + Supporting Companies sections untouched. If the user did NOT provide a URL for a first-timer (left it blank or skipped), still add them to the release-notes `## Contributions ❤️` block as plain text `- <Name>` (no link) but do NOT add them to `CONTRIBUTORS.md` — that file is link-only.
+Keep the trailing `## Supporting Companies` section untouched. If the user did NOT provide a URL for a first-timer (left it blank or skipped), still add them to the release-notes `## Contributions ❤️` block as plain text `- <Name>` (no link) but do NOT add them to `docs/contributions/contributions.md` — that list is link-only. Never write to the root `CONTRIBUTORS.md` (pointer stub).
 
 ## Step 8 — final report
 
 End with a 4-line summary:
 1. Anchor tag + ADO item count + commit count since tag.
 2. Headline sections drafted vs. bullets drafted.
-3. Reporters credited (count) + first-timers added to `CONTRIBUTORS.md` (count + names).
+3. Reporters credited (count) + first-timers added to `docs/contributions/contributions.md` (count + names).
 4. Files written. Suggest the user review the draft and tell you the version when they have one — offer to do a follow-up `/release-notes` pass to swap `vNext` → real version + `HEAD` → real tag in both the heading and the compare URL.
 
 ## Guardrails
@@ -171,4 +193,4 @@ End with a 4-line summary:
 - Don't include `Removed`-state items, no matter how interesting the title looks — those are explicitly cancelled.
 - Don't bundle bumps into the catch-all line if a dependency upgrade was actually a *behaviour change worth calling out* (rare, but happens — e.g. a major React or .NET runtime bump). Surface as its own bullet then.
 - Don't commit or push. Leave the diff for the user to review.
-- If the ADO MCP fails or returns 0 items, say so plainly — don't paper over it by inferring everything from commit messages alone.
+- If the `az` CLI fails (not logged in, extension missing) or the queries return 0 items, say so plainly — don't paper over it by inferring everything from commit messages alone.
