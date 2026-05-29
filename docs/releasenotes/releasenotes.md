@@ -4,6 +4,53 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.5.29.5
+
+## See How Long Work Has Been Sitting — Time in State & Stale Items
+Cycle Time tells you how long *finished* work took. It says nothing about the item that's been parked in *Testing* for three weeks **right now**. This release makes "how long has this been sitting here?" a first-class signal across Lighthouse.
+
+- **Time in State** — every work item now shows how long it has been in its current state, directly in the team and portfolio work-item views.
+- **Staleness threshold** — set a per-team and per-portfolio threshold (in days) under *Flow Signals* in your settings. Any in-progress item that has sat in its state longer than the threshold is flagged **stale**, and its Time-in-State indicator turns red so it stands out.
+- **Stale Items Overview** — a new *Flow Overview* widget counts how many in-progress items are currently stale, with a RAG status that targets zero. Blocked items are deliberately excluded, so a single item is never double-counted as both blocked and stale.
+
+To make this accurate, Lighthouse now captures the full state-transition history of your items from **Azure DevOps**, **Jira**, and **Linear** — plus an optional *Current State Since* column for **CSV** imports — so "time in state" is grounded in real transitions rather than a guess.
+
+![Stale Items Overview](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/staleOverview.png)
+
+## Cumulative Time per State
+The new **Cumulative Time per State** chart (under *Flow Metrics*) shows where your work actually spends its time — the total days items have accumulated in each workflow state. Units adapt to the scale of the data, and you can click any bar to drill into exactly which work items contributed to it.
+
+Need to focus? A built-in item picker scopes the chart to specific work items, so you can trace a single feature's journey through your process instead of reading the whole board at once.
+
+![Cumulative Time per State](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/stateTimeCumulative.png)
+
+## Pace Percentile Bands on the Aging Chart
+The **Work Item Aging** chart can now draw **per-state pace-percentile bands** behind your in-progress items. Each state column is shaded green at the floor to red at the top, derived from your own historical age-at-exit percentiles — so at a glance you can tell whether an item is aging within its normal range or running hot. Flip the bands on or off with a single chip; the choice is remembered across sessions.
+
+![Pace Percentile Bands](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/aging_pace_percentiles.png)
+
+All three of these live alongside the rest of the [Metrics widgets](https://docs.lighthouse.letpeople.work/metrics/widgets.html).
+
+## Save and Run — Without the Buttons
+Editing a team or portfolio used to mean: make a change, then remember to hit **Save**. Forecasting meant filling in the inputs, then hitting **Forecast** or **Run Backtest**. This release removes that ceremony.
+
+- **Settings auto-save.** General team and portfolio settings, state mappings, and the forecast filter now save automatically the moment your input is valid — no Save button. A quiet *All changes saved* indicator confirms it landed. Validation still runs first; invalid input is held back and shown to you instead of being saved.
+- **Forecasts auto-run.** The *New Item* creation forecast and *Backtesting* now run on their own as soon as the inputs are valid — matching the *How Many / When* forecast that already worked this way. The **Forecast** and **Run Backtest** buttons are gone.
+
+For the forecast filter, the expensive throughput recompute stays under your control: a rule edit saves silently, and a one-click **Reload throughput now** action recomputes when you're ready.
+
+## Bugfixes and Improvements
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Sascha Lucius](https://www.linkedin.com/in/sascha-lucius/)
+- [Myriam Greger](https://www.linkedin.com/in/myriam-greger/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.24.10...v26.5.29.5)
+
+
 # Lighthouse v26.5.24.10
 
 ## Exclude Items for Throughput (Premium)
