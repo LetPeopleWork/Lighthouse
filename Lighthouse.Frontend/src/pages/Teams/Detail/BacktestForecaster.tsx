@@ -348,12 +348,14 @@ const BacktestForecaster: React.FC<BacktestForecasterProps> = ({
 										);
 									}}
 									onBlur={() => {
-										const n =
-											typeof historicalWindowDays === "number"
-												? historicalWindowDays
-												: 30;
+										if (
+											typeof historicalWindowDays !== "number" ||
+											!Number.isFinite(historicalWindowDays)
+										) {
+											return;
+										}
 										handleHistoricalWindowDaysChange(
-											Math.max(1, Math.min(365, Number.isFinite(n) ? n : 30)),
+											Math.max(1, Math.min(365, historicalWindowDays)),
 										);
 									}}
 									slotProps={{

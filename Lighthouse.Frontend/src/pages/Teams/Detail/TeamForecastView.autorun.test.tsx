@@ -66,11 +66,14 @@ vi.mock("./NewItemForecaster", () => ({
 	},
 }));
 
+const backtestWindowSpy = vi.fn<(value: number | "") => void>();
+
 vi.mock("./BacktestForecaster", () => ({
 	default: (props: Record<string, unknown>) => {
 		const onInputChange = props.onInputChange as
 			| ((complete: boolean) => void)
 			| undefined;
+		backtestWindowSpy(props.historicalWindowDays as number | "");
 		return (
 			<div data-testid="backtest-forecaster">
 				<button
@@ -255,5 +258,24 @@ describe("@US-06 @in-memory auto-run backtest", () => {
 		});
 
 		expect(forecastService.runBacktest).not.toHaveBeenCalled();
+	});
+
+	it("@US-06 starts with no forecast until a rolling window is entered (no predefined window)", async () => {
+		renderForecastView();
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(DEBOUNCE_MS * 2);
+		});
+
+		expect(backtestWindowSpy).toHaveBeenLastCalledWith("");
+		expect(forecastService.runBacktest).not.toHaveBeenCalled();
+
+		act(() => {
+			screen.getByTestId("adjust-backtest-window").click();
+		});
+		act(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		expect(forecastService.runBacktest).toHaveBeenCalledTimes(1);
 	});
 });

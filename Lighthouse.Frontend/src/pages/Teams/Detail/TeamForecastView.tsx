@@ -85,7 +85,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const [backtestHistoricalMode, setBacktestHistoricalMode] =
 		useState<HistoricalMode>("rolling");
 	const [backtestHistoricalWindowDays, setBacktestHistoricalWindowDays] =
-		useState<number | "">(30);
+		useState<number | "">("");
 	const [
 		backtestHistoricalFixedStartDate,
 		setBacktestHistoricalFixedStartDate,
@@ -150,23 +150,12 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	}, [team?.id, teamService]);
 
 	useEffect(() => {
-		try {
-			const rollingThroughputWindow =
-				dayjs(team.throughputEndDate).diff(
-					dayjs(team.throughputStartDate),
-					"day",
-				) + 1;
-
-			if (team.useFixedDatesForThroughput) {
-				setBacktestHistoricalMode("dateRange");
-				setBacktestHistoricalFixedStartDate(dayjs(team.throughputStartDate));
-				setBacktestHistoricalFixedEndDate(dayjs(team.throughputEndDate));
-			} else {
-				setBacktestHistoricalMode("rolling");
-				setBacktestHistoricalWindowDays(rollingThroughputWindow);
-			}
-		} catch {
-			// Defaults already initialise the backtest window; nothing to recover.
+		if (team.useFixedDatesForThroughput) {
+			setBacktestHistoricalMode("dateRange");
+			setBacktestHistoricalFixedStartDate(dayjs(team.throughputStartDate));
+			setBacktestHistoricalFixedEndDate(dayjs(team.throughputEndDate));
+		} else {
+			setBacktestHistoricalMode("rolling");
 		}
 	}, [team]);
 
