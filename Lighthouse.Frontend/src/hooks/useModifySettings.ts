@@ -91,7 +91,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	additionalFetch,
 	autoSave,
 }: UseModifySettingsOptions<TSettings>) {
-	const [saveState] = useState<SaveState>("idle");
+	const [saveState, setSaveState] = useState<SaveState>("idle");
 	const retry = () => {
 		// RED scaffold (DISTILL): auto-save retry not yet implemented.
 	};
@@ -154,7 +154,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		} as TSettings;
 
 		const timer = setTimeout(() => {
-			void saveSettingsRef.current(settingsToSave);
+			setSaveState("saving");
+			void saveSettingsRef.current(settingsToSave).then(() => {
+				setSaveState("saved");
+			});
 		}, autoSaveDebounceMs);
 
 		return () => clearTimeout(timer);

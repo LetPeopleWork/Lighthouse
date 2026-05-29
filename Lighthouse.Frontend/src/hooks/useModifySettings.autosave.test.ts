@@ -108,7 +108,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 	});
 
-	it.skip("@US-01 reports calm progress: idle, then saving, then all-changes-saved", async () => {
+	it("@US-01 reports calm progress: idle, then saving, then all-changes-saved", async () => {
 		const args = makeArgs({}, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
