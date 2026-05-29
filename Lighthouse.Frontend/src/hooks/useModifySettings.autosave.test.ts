@@ -229,10 +229,12 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("saved");
 	});
 
-	it.skip("@US-01 does not fire any save on the initial page load", async () => {
+	it("@US-01 does not fire any save on the initial page load", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
-		renderHook(() => useModifySettings(args));
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		await waitFor(() => expect(result.current.formValid).toBe(true));
 
 		await act(async () => {
 			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
