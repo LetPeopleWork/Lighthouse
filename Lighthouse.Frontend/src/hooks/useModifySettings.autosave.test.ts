@@ -395,7 +395,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 		expect(result.current.formValid).toBe(false);
 	});
 
-	it.skip("@US-03 @error keeps the filter editor read-only with no auto-save for a viewer", async () => {
+	it("@US-03 @error keeps the filter editor read-only with no auto-save for a viewer", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
