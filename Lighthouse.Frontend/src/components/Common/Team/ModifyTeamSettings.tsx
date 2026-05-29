@@ -122,6 +122,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							teamSettings={teamSettings}
 							onTeamSettingsChange={updateSettings}
 							isDefaultSettings={modifyDefaultSettings}
+							saveState={saveState}
 						/>
 
 						{teamSettings.dataRetrievalSchema?.isWorkItemTypesRequired !==

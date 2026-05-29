@@ -278,25 +278,8 @@ describe("ForecastSettingsComponent — Exclude Items for Throughput sub-section
 		).not.toBeInTheDocument();
 	});
 
-	it("shows a take-effect hint beneath the editor on premium tenants", () => {
+	it("no longer renders the retired take-effect hint on premium tenants", () => {
 		mockCanUsePremiumFeatures.mockReturnValue(true);
-
-		renderWithContext(
-			<ForecastSettingsComponent
-				teamSettings={teamSettings}
-				isDefaultSettings={false}
-				onTeamSettingsChange={onTeamSettingsChange}
-			/>,
-		);
-
-		const hint = screen.getByTestId("forecast-filter-takeeffect-hint");
-		expect(hint).toBeInTheDocument();
-		expect(hint).toHaveTextContent(/save these settings/i);
-		expect(hint).toHaveTextContent(/refresh throughput data/i);
-	});
-
-	it("does not render the take-effect hint on non-premium tenants", () => {
-		mockCanUsePremiumFeatures.mockReturnValue(false);
 
 		renderWithContext(
 			<ForecastSettingsComponent
@@ -308,6 +291,40 @@ describe("ForecastSettingsComponent — Exclude Items for Throughput sub-section
 
 		expect(
 			screen.queryByTestId("forecast-filter-takeeffect-hint"),
+		).not.toBeInTheDocument();
+	});
+
+	it("offers a one-click throughput reload once the filter rule set is saved", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+				saveState="saved"
+			/>,
+		);
+
+		expect(
+			await screen.findByRole("button", { name: "Reload throughput now" }),
+		).toBeInTheDocument();
+	});
+
+	it("does not offer the throughput reload before a save settles", () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+				saveState="idle"
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("button", { name: "Reload throughput now" }),
 		).not.toBeInTheDocument();
 	});
 

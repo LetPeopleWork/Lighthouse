@@ -1,3 +1,5 @@
+import RefreshIcon from "@mui/icons-material/Refresh";
+import { Button } from "@mui/material";
 import type React from "react";
 
 export interface ReloadDependentDataActionProps {
@@ -6,13 +8,26 @@ export interface ReloadDependentDataActionProps {
 	onReload: () => void;
 }
 
-const NOT_IMPLEMENTED =
-	"ReloadDependentDataAction not yet implemented — RED scaffold (DISTILL)";
+const ReloadDependentDataAction: React.FC<ReloadDependentDataActionProps> = ({
+	visible,
+	label,
+	onReload,
+}) => {
+	if (!visible) {
+		return null;
+	}
 
-const ReloadDependentDataAction: React.FC<
-	ReloadDependentDataActionProps
-> = () => {
-	throw new Error(NOT_IMPLEMENTED);
+	return (
+		<Button
+			size="small"
+			variant="outlined"
+			startIcon={<RefreshIcon fontSize="small" />}
+			onClick={onReload}
+			sx={{ mt: 2 }}
+		>
+			{label}
+		</Button>
+	);
 };
 
 export default ReloadDependentDataAction;

@@ -1,5 +1,4 @@
 import {
-	Alert,
 	FormControlLabel,
 	Link,
 	Switch,
@@ -8,14 +7,18 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
+import { useContext } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import type { DeliveryRuleGroupMode } from "../../../components/Common/DeliveryRuleBuilder/types";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
+import ReloadDependentDataAction from "../../../components/Common/StateMappings/ReloadDependentDataAction";
 import ForecastFilterEditor from "../../../components/Teams/ForecastFilterEditor/ForecastFilterEditor";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import type { SaveState } from "../../../hooks/useModifySettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
@@ -57,6 +60,7 @@ interface PremiumGatedForecastFilterProps {
 	mode: DeliveryRuleGroupMode;
 	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
 	onModeChange: (mode: DeliveryRuleGroupMode) => void;
+	saveState: SaveState;
 }
 
 const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
@@ -65,13 +69,17 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 	mode,
 	onRulesChange,
 	onModeChange,
+	saveState,
 }) => {
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? true;
 	const { getTerm } = useTerminology();
+	const { teamService } = useContext(ApiServiceContext);
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
-	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const heading = `Exclude Items for ${throughputTerm}`;
+	const reloadThroughput = () => {
+		void teamService.updateTeamData(teamId);
+	};
 
 	return (
 		<Grid size={{ xs: 12 }}>
@@ -97,16 +105,11 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 						onChange={onRulesChange}
 						onModeChange={onModeChange}
 					/>
-					<Alert
-						severity="info"
-						sx={{ mt: 2 }}
-						data-testid="forecast-filter-takeeffect-hint"
-					>
-						Filter changes only take effect after you{" "}
-						<strong>save these settings</strong> and then{" "}
-						<strong>refresh {throughputTerm.toLowerCase()} data</strong> on the{" "}
-						{teamTerm.toLowerCase()} page.
-					</Alert>
+					<ReloadDependentDataAction
+						visible={saveState === "saved"}
+						label={`Reload ${throughputTerm.toLowerCase()} now`}
+						onReload={reloadThroughput}
+					/>
 				</>
 			) : (
 				<Typography variant="body2" sx={{ mt: 1 }}>
@@ -125,12 +128,14 @@ interface ForecastSettingsComponentProps {
 		key: keyof ITeamSettings,
 		value: string | number | boolean | Date | null,
 	) => void;
+	saveState?: SaveState;
 }
 
 const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 	teamSettings,
 	isDefaultSettings,
 	onTeamSettingsChange,
+	saveState = "idle",
 }) => {
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
@@ -244,6 +249,7 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 							onModeChange={(mode) =>
 								persistRuleSet({ rules: currentRuleSet.rules, mode })
 							}
+							saveState={saveState}
 						/>
 					);
 				})()}
