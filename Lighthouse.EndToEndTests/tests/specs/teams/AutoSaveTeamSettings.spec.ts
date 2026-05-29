@@ -7,7 +7,7 @@ import {
 const DEMO_SCENARIO_ID = 0;
 const TEAM_NAME = "Team Zenith";
 
-test.fixme("@walking_skeleton @real-io @US-01 a team-admin's valid settings edit persists with All changes saved and no Save button", async ({
+test("@walking_skeleton @real-io @US-01 a team-admin's valid settings edit persists with All changes saved and no Save button", async ({
 	page,
 	request,
 	overviewPage,
