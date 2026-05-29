@@ -5,8 +5,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import type React from "react";
-import { useState } from "react";
-import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ForecastInfoList from "../../../components/Common/Forecasts/ForecastInfoList";
 import ItemListManager from "../../../components/Common/ItemListManager/ItemListManager";
 import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
@@ -15,78 +13,76 @@ import { useTerminology } from "../../../services/TerminologyContext";
 
 interface NewItemForecasterProps {
 	newItemForecastResult: ManualForecast | null;
-	onRunNewItemForecast: (
-		startDate: Date,
-		endDate: Date,
-		targetDate: Date,
-		workItemTypes: string[],
-	) => Promise<void>;
-	onClearForecastResult?: () => void;
+	startDate: dayjs.Dayjs | null;
+	endDate: dayjs.Dayjs | null;
+	targetDate: dayjs.Dayjs | null;
+	selectedWorkItemTypes: string[];
+	onStartDateChange: (value: dayjs.Dayjs | null) => void;
+	onEndDateChange: (value: dayjs.Dayjs | null) => void;
+	onTargetDateChange: (value: dayjs.Dayjs | null) => void;
+	onWorkItemTypesChange: (types: string[]) => void;
+	onInputChange: (complete: boolean) => void;
 	workItemTypes: string[];
 }
 
 const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 	newItemForecastResult,
-	onRunNewItemForecast,
-	onClearForecastResult,
+	startDate,
+	endDate,
+	targetDate,
+	selectedWorkItemTypes,
+	onStartDateChange,
+	onEndDateChange,
+	onTargetDateChange,
+	onWorkItemTypesChange,
+	onInputChange,
 	workItemTypes,
 }) => {
-	const [startDate, setStartDate] = useState<dayjs.Dayjs | null>(
-		dayjs().subtract(30, "day"),
-	);
-	const [endDate, setEndDate] = useState<dayjs.Dayjs | null>(dayjs());
-	const [targetDate, setTargetDate] = useState<dayjs.Dayjs | null>(
-		dayjs().add(30, "day"),
-	);
-	const [selectedWorkItemTypes, setSelectedWorkItemTypes] = useState<string[]>(
-		[],
-	);
-
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
-	// Wrapper functions to clear forecast results when parameters change
-	const handleStartDateChange = (value: unknown) => {
-		setStartDate(value as dayjs.Dayjs | null);
-		onClearForecastResult?.();
+	const reportInputChange = (
+		nextStartDate: dayjs.Dayjs | null,
+		nextEndDate: dayjs.Dayjs | null,
+		nextTargetDate: dayjs.Dayjs | null,
+		nextWorkItemTypes: string[],
+	) => {
+		onInputChange(
+			nextStartDate !== null &&
+				nextEndDate !== null &&
+				nextTargetDate !== null &&
+				nextWorkItemTypes.length > 0,
+		);
 	};
 
-	const handleEndDateChange = (value: unknown) => {
-		setEndDate(value as dayjs.Dayjs | null);
-		onClearForecastResult?.();
+	const handleStartDateChange = (value: dayjs.Dayjs | null) => {
+		onStartDateChange(value);
+		reportInputChange(value, endDate, targetDate, selectedWorkItemTypes);
 	};
 
-	const handleTargetDateChange = (value: unknown) => {
-		setTargetDate(value as dayjs.Dayjs | null);
-		onClearForecastResult?.();
+	const handleEndDateChange = (value: dayjs.Dayjs | null) => {
+		onEndDateChange(value);
+		reportInputChange(startDate, value, targetDate, selectedWorkItemTypes);
 	};
 
-	const handleRunForecast = async () => {
-		if (
-			!targetDate ||
-			!startDate ||
-			!endDate ||
-			selectedWorkItemTypes.length === 0
-		)
-			return;
-
-		const start = startDate.toDate();
-		const end = endDate.toDate();
-		const target = targetDate.toDate();
-
-		await onRunNewItemForecast(start, end, target, selectedWorkItemTypes);
+	const handleTargetDateChange = (value: dayjs.Dayjs | null) => {
+		onTargetDateChange(value);
+		reportInputChange(startDate, endDate, value, selectedWorkItemTypes);
 	};
 
 	const handleAddWorkItemType = (type: string) => {
-		if (!selectedWorkItemTypes.includes(type)) {
-			setSelectedWorkItemTypes([...selectedWorkItemTypes, type]);
-			onClearForecastResult?.();
+		if (selectedWorkItemTypes.includes(type)) {
+			return;
 		}
+		const next = [...selectedWorkItemTypes, type];
+		onWorkItemTypesChange(next);
+		reportInputChange(startDate, endDate, targetDate, next);
 	};
 
 	const handleRemoveWorkItemType = (type: string) => {
-		setSelectedWorkItemTypes(selectedWorkItemTypes.filter((t) => t !== type));
-		onClearForecastResult?.();
+		const next = selectedWorkItemTypes.filter((t) => t !== type);
+		onWorkItemTypesChange(next);
+		reportInputChange(startDate, endDate, targetDate, next);
 	};
 
 	function getLocaleDateFormat(): string {
@@ -115,7 +111,6 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 		<Grid container spacing={3}>
 			<Grid size={{ xs: 12 }}>
 				<Grid container spacing={3}>
-					{/* Historical Data Section */}
 					<Grid size={{ xs: 6 }}>
 						<Typography variant="h6" gutterBottom>
 							Historical Data
@@ -129,7 +124,9 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 									<DatePicker
 										label="From"
 										value={startDate}
-										onChange={handleStartDateChange}
+										onChange={(value) =>
+											handleStartDateChange(value as dayjs.Dayjs | null)
+										}
 										maxDate={endDate || undefined}
 										format={getLocaleDateFormat()}
 										sx={{ width: "100%" }}
@@ -141,7 +138,9 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 									<DatePicker
 										label="To"
 										value={endDate}
-										onChange={handleEndDateChange}
+										onChange={(value) =>
+											handleEndDateChange(value as dayjs.Dayjs | null)
+										}
 										minDate={startDate || undefined}
 										maxDate={targetDate || undefined}
 										format={getLocaleDateFormat()}
@@ -151,7 +150,6 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							</Grid>
 						</Grid>
 
-						{/* Target Date Section */}
 						<Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
 							Target Date
 						</Typography>
@@ -162,7 +160,9 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							<DatePicker
 								label="Target Date"
 								value={targetDate}
-								onChange={handleTargetDateChange}
+								onChange={(value) =>
+									handleTargetDateChange(value as dayjs.Dayjs | null)
+								}
 								minDate={endDate || dayjs()}
 								format={getLocaleDateFormat()}
 								sx={{ width: "100%" }}
@@ -170,7 +170,6 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 						</LocalizationProvider>
 					</Grid>
 
-					{/* Work Item Types Section */}
 					<Grid size={{ xs: 6 }}>
 						<Typography variant="h6" gutterBottom>
 							Work Item Types
@@ -188,27 +187,7 @@ const NewItemForecaster: React.FC<NewItemForecasterProps> = ({
 							isLoading={false}
 						/>
 
-						{/* Forecast Button - Fixed Position */}
-						<Grid container sx={{ mt: 3, mb: 2 }}>
-							<Grid
-								size={{ xs: 12 }}
-								sx={{ display: "flex", justifyContent: "flex-end" }}
-							>
-								<ActionButton
-									onClickHandler={handleRunForecast}
-									buttonText="Forecast"
-									disabled={
-										!startDate ||
-										!endDate ||
-										!targetDate ||
-										selectedWorkItemTypes.length === 0
-									}
-								/>
-							</Grid>
-						</Grid>
-
-						{/* Forecast Results */}
-						<Grid container spacing={2}>
+						<Grid container spacing={2} sx={{ mt: 1 }}>
 							<Grid size={{ xs: 12 }}>
 								{newItemForecastResult && selectedWorkItemTypes.length > 0 && (
 									<ForecastInfoList

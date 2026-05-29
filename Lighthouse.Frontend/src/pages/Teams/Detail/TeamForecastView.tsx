@@ -1,5 +1,5 @@
 import { Grid } from "@mui/material";
-import type dayjs from "dayjs";
+import dayjs from "dayjs";
 import type React from "react";
 import {
 	useCallback,
@@ -70,6 +70,20 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 	const hasInteractedRef = useRef(false);
 	// Sequence counter to guard against stale responses
 	const requestSeqRef = useRef(0);
+
+	const [newItemStartDate, setNewItemStartDate] = useState<dayjs.Dayjs | null>(
+		() => dayjs().subtract(30, "day"),
+	);
+	const [newItemEndDate, setNewItemEndDate] = useState<dayjs.Dayjs | null>(() =>
+		dayjs(),
+	);
+	const [newItemTargetDate, setNewItemTargetDate] =
+		useState<dayjs.Dayjs | null>(() => dayjs().add(30, "day"));
+	const [newItemWorkItemTypes, setNewItemWorkItemTypes] = useState<string[]>(
+		[],
+	);
+	const [newItemForecastRevision, setNewItemForecastRevision] = useState(0);
+	const newItemRequestSeqRef = useRef(0);
 
 	const { forecastService, teamMetricsService, teamService } =
 		useContext(ApiServiceContext);
@@ -224,33 +238,68 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 		setApplyFilterOverride(apply);
 	}, []);
 
-	const onRunNewItemForecast = async (
-		startDate: Date,
-		endDate: Date,
-		targetDate: Date,
-		workItemTypes: string[],
-	) => {
-		if (!team?.id) {
+	const runNewItemForecast = useCallback(async () => {
+		if (
+			!team?.id ||
+			!newItemStartDate ||
+			!newItemEndDate ||
+			!newItemTargetDate
+		) {
 			return;
 		}
+
+		const seq = ++newItemRequestSeqRef.current;
 
 		try {
 			const newItemForecast = await forecastService.runItemPrediction(
 				team.id,
-				startDate,
-				endDate,
-				targetDate,
-				workItemTypes,
+				newItemStartDate.toDate(),
+				newItemEndDate.toDate(),
+				newItemTargetDate.toDate(),
+				newItemWorkItemTypes,
 			);
-			setNewItemForecastResult(newItemForecast);
+			if (seq === newItemRequestSeqRef.current) {
+				setNewItemForecastResult(newItemForecast);
+			}
 		} catch (error) {
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: "Failed to run new item forecast. Please try again.";
-			showError(errorMessage);
+			if (seq === newItemRequestSeqRef.current) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Failed to run new item forecast. Please try again.";
+				showError(errorMessage);
+			}
 		}
-	};
+	}, [
+		team?.id,
+		forecastService,
+		showError,
+		newItemStartDate,
+		newItemEndDate,
+		newItemTargetDate,
+		newItemWorkItemTypes,
+	]);
+
+	useEffect(() => {
+		if (newItemForecastRevision === 0) {
+			return;
+		}
+
+		const timer = setTimeout(() => {
+			runNewItemForecast();
+		}, DEBOUNCE_MS);
+
+		return () => clearTimeout(timer);
+	}, [newItemForecastRevision, runNewItemForecast]);
+
+	const handleNewItemInputChange = useCallback((complete: boolean) => {
+		if (!complete) {
+			setNewItemForecastResult(null);
+			return;
+		}
+
+		setNewItemForecastRevision((revision) => revision + 1);
+	}, []);
 
 	const onRunBacktest = async (
 		startDate: Date,
@@ -306,8 +355,15 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 			<InputGroup title={`New ${workItemsTerm} Creation Forecast`}>
 				<NewItemForecaster
 					newItemForecastResult={newItemForecastResult}
-					onRunNewItemForecast={onRunNewItemForecast}
-					onClearForecastResult={() => setNewItemForecastResult(null)}
+					startDate={newItemStartDate}
+					endDate={newItemEndDate}
+					targetDate={newItemTargetDate}
+					selectedWorkItemTypes={newItemWorkItemTypes}
+					onStartDateChange={setNewItemStartDate}
+					onEndDateChange={setNewItemEndDate}
+					onTargetDateChange={setNewItemTargetDate}
+					onWorkItemTypesChange={setNewItemWorkItemTypes}
+					onInputChange={handleNewItemInputChange}
 					workItemTypes={team.workItemTypes || []}
 				/>
 			</InputGroup>
