@@ -78,12 +78,10 @@ export class TeamDetailPage {
 
 			await this.page.keyboard.press("Enter");
 		}
-
-		await this.page.getByRole("button", { name: "Forecast" }).click();
 	}
 
 	async runBacktest(): Promise<void> {
-		await this.page.getByRole("button", { name: "Run Backtest" }).click();
+		await this.page.getByLabel("Historical Window (Days)").fill("30");
 	}
 
 	get backtestResultsSection(): Locator {
