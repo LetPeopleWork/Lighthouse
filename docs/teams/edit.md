@@ -114,18 +114,15 @@ Match: Any (OR)
 
 That excludes both Bug-typed items AND orphan items (work items with no parent) from forecast throughput — a useful default for teams whose Monte Carlo history would otherwise be skewed by these two categories.
 
-### Save and refresh — making changes take effect
-Changes to the filter only take effect after **two** steps:
+### Save and reload — making changes take effect
+A valid rule edit is **saved automatically** — there is no Save button. Once the change is persisted, the editor shows an *All changes saved* indicator.
 
-1. **Save** the team settings. This persists the rule set to the team configuration.
-2. **Refresh Throughput data** on the team page. The cached throughput is recomputed against the new filter.
-
-The editor surfaces an inline reminder for this directly below the rule list. Without the refresh, forecasts on the team detail page continue to use the cached unfiltered throughput.
+The cached throughput is **not** recomputed automatically, because that is an expensive backend operation. After editing the filter, use the one-click **Reload throughput now** action in the editor to recompute throughput against the new rule set. Until you do, forecasts on the team detail page continue to use the previously cached throughput.
 
 ### Where the filter applies
 - **Feature Forecasts** — always use the filter when one is configured.
 - **Team Forecast** (How Many / When) — per-run toggle labeled **"Use filtered Throughput"**, on by default.
-- **Backtest** — per-run toggle labeled **"Use filtered Throughput"**, on by default. Toggling clears any prior backtest result, so the user clicks *Run Backtest* again to see the new values.
+- **Backtest** — per-run toggle labeled **"Use filtered Throughput"**, on by default. Toggling clears any prior backtest result and the backtest re-runs automatically against the new setting.
 - **Throughput Run Chart**, **Throughput PBC**, and **Predictability Score Details** — per-view toggle labeled **"Use filtered Throughput"**, off by default (raw view is the default; the filtered view is opt-in for these visualisations).
 
 ### Quick-settings indicator
