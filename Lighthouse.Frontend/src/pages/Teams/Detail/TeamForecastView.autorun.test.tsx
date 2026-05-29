@@ -155,12 +155,11 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 		expect(forecastService.runItemPrediction).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip("@US-05 @error fires no run on page load until an input changes", async () => {
+	it("@US-05 @error fires no run on page load until an input changes", async () => {
 		renderForecastView();
-		await screen.findByTestId("new-item-forecaster");
 
 		await act(async () => {
-			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+			await vi.advanceTimersByTimeAsync(DEBOUNCE_MS * 2);
 		});
 
 		expect(forecastService.runItemPrediction).not.toHaveBeenCalled();
