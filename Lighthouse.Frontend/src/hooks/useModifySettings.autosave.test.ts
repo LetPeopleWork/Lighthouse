@@ -78,6 +78,13 @@ const teamAdminCanSave: AutoSaveOptions = {
 	debounceMs: DEBOUNCE_MS,
 };
 
+const teamAdminCanSaveAndRefresh: AutoSaveOptions = {
+	enabled: true,
+	canSave: true,
+	debounceMs: DEBOUNCE_MS,
+	refreshOnSave: true,
+};
+
 const viewerCannotSave: AutoSaveOptions = {
 	enabled: true,
 	canSave: false,
@@ -244,9 +251,9 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 	});
 });
 
-describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
+describe("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -259,7 +266,7 @@ describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings", () 
 		const refreshDependentData = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{ saveSettings, additionalFetch: refreshDependentData },
-			teamAdminCanSave,
+			teamAdminCanSaveAndRefresh,
 		);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
@@ -272,6 +279,17 @@ describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings", () 
 
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 		await waitFor(() => expect(refreshDependentData).toHaveBeenCalledTimes(1));
+	});
+});
+
+describe.skip("@US-02 @in-memory auto-save and auto-refresh state mappings (pending)", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
 	});
 
 	it("@US-02 @error fires no save when a mapping group name is left empty", async () => {

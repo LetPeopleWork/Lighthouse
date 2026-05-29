@@ -26,6 +26,7 @@ export interface AutoSaveOptions {
 	enabled: boolean;
 	canSave: boolean;
 	debounceMs?: number;
+	refreshOnSave?: boolean;
 }
 
 interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
@@ -137,21 +138,31 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const autoSaveEnabled = autoSave?.enabled ?? false;
 	const autoSaveCanSave = autoSave?.canSave ?? false;
 	const autoSaveDebounceMs = autoSave?.debounceMs ?? DEBOUNCE_MS;
+	const autoRefreshOnSave = autoSave?.refreshOnSave ?? false;
 	const selectedConnectionId = selectedWorkTrackingSystem?.id ?? 0;
 
-	const dispatchSave = useCallback((payload: TSettings) => {
-		lastSavePayloadRef.current = payload;
-		requestSeqRef.current += 1;
-		const seq = requestSeqRef.current;
-		const applyIfLatest = (next: SaveState) => {
-			if (seq === requestSeqRef.current) setSaveState(next);
-		};
-		setSaveState("saving");
-		return saveSettingsRef.current(payload).then(
-			() => applyIfLatest("saved"),
-			() => applyIfLatest("error"),
-		);
-	}, []);
+	const dispatchSave = useCallback(
+		(payload: TSettings) => {
+			lastSavePayloadRef.current = payload;
+			requestSeqRef.current += 1;
+			const seq = requestSeqRef.current;
+			const isLatest = () => seq === requestSeqRef.current;
+			const applyIfLatest = (next: SaveState) => {
+				if (isLatest()) setSaveState(next);
+			};
+			setSaveState("saving");
+			return saveSettingsRef.current(payload).then(
+				() => {
+					applyIfLatest("saved");
+					if (autoRefreshOnSave && isLatest()) {
+						void additionalFetchRef.current?.();
+					}
+				},
+				() => applyIfLatest("error"),
+			);
+		},
+		[autoRefreshOnSave],
+	);
 
 	const retry = useCallback(() => {
 		const payload = lastSavePayloadRef.current;
