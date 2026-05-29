@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
@@ -92,10 +92,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	autoSave,
 }: UseModifySettingsOptions<TSettings>) {
 	const [saveState, setSaveState] = useState<SaveState>("idle");
-	const retry = () => {
-		// RED scaffold (DISTILL): auto-save retry not yet implemented.
-	};
 	const [loading, setLoading] = useState(false);
+	const lastSavePayloadRef = useRef<TSettings | null>(null);
 	const hasInteractedRef = useRef(false);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
@@ -140,6 +138,21 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const autoSaveDebounceMs = autoSave?.debounceMs ?? DEBOUNCE_MS;
 	const selectedConnectionId = selectedWorkTrackingSystem?.id ?? 0;
 
+	const dispatchSave = useCallback((payload: TSettings) => {
+		lastSavePayloadRef.current = payload;
+		setSaveState("saving");
+		return saveSettingsRef.current(payload).then(
+			() => setSaveState("saved"),
+			() => setSaveState("error"),
+		);
+	}, []);
+
+	const retry = useCallback(() => {
+		const payload = lastSavePayloadRef.current;
+		if (!payload) return;
+		void dispatchSave(payload);
+	}, [dispatchSave]);
+
 	useEffect(() => {
 		if (!autoSaveEnabled || !autoSaveCanSave || !formValid) {
 			return;
@@ -154,10 +167,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		} as TSettings;
 
 		const timer = setTimeout(() => {
-			setSaveState("saving");
-			void saveSettingsRef.current(settingsToSave).then(() => {
-				setSaveState("saved");
-			});
+			void dispatchSave(settingsToSave);
 		}, autoSaveDebounceMs);
 
 		return () => clearTimeout(timer);
@@ -168,6 +178,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		formValid,
 		settings,
 		selectedConnectionId,
+		dispatchSave,
 	]);
 
 	useEffect(() => {

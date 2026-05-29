@@ -138,7 +138,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("idle");
 	});
 
-	it.skip("@US-01 @error keeps the edit and offers a retry when the save fails", async () => {
+	it("@US-01 @error keeps the edit and offers a retry when the save fails", async () => {
 		const saveSettings = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("server unavailable"))
