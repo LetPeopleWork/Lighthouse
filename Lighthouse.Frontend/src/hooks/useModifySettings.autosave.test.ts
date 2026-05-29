@@ -451,6 +451,95 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 	});
 });
 
+describe("@US-02 @in-memory list-handler interaction marks the form as edited", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
+	});
+
+	it("@US-02 auto-saves after a state is removed", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.doingHandlers.onRemove("Active"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+	});
+
+	it("@US-02 auto-saves after a state list is reordered", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.doingHandlers.onReorder(["Active", "Review"]));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+	});
+});
+
+describe("@US-01 @in-memory retry and in-flight progress", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
+	});
+
+	it("@US-01 retry does nothing before any save has happened", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		await act(async () => {
+			result.current.retry();
+		});
+
+		expect(saveSettings).not.toHaveBeenCalled();
+	});
+
+	it("@US-01 reports a transient saving state while a save is in flight", async () => {
+		let resolveSave: (() => void) | undefined;
+		const saveSettings = vi.fn().mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveSave = resolve;
+				}),
+		);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		expect(result.current.saveState).toBe("saving");
+
+		await act(async () => {
+			resolveSave?.();
+		});
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+	});
+});
+
 describe("@US-04 @in-memory auto-save portfolio settings", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });

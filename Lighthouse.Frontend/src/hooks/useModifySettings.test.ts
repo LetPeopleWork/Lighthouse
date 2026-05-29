@@ -4,6 +4,7 @@ import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../services/Api/ApiError";
 import {
 	type ModifySettingsBase,
 	useModifySettings,
@@ -309,6 +310,59 @@ describe("useModifySettings", () => {
 			expect(saveSettings).not.toHaveBeenCalled();
 		});
 
+		it("surfaces the validation-failed message when validation returns false", async () => {
+			const validateSettings = vi.fn().mockResolvedValue(false);
+			const args = makeHookArgs({ validateSettings });
+			const { result } = renderHook(() => useModifySettings(args));
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			await act(() => result.current.handleSave());
+
+			expect(result.current.validationError).toBe(
+				"Validation failed. Check your configuration and try again.",
+			);
+			expect(result.current.validationTechnicalDetails).toBeNull();
+		});
+
+		it("surfaces an ApiError message and its technical details without saving", async () => {
+			const saveSettings = vi.fn().mockResolvedValue(undefined);
+			const validateSettings = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(
+						409,
+						"Connection rejected the configuration",
+						"WIQL query referenced an unknown field",
+					),
+				);
+			const args = makeHookArgs({ validateSettings, saveSettings });
+			const { result } = renderHook(() => useModifySettings(args));
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			await act(() => result.current.handleSave());
+
+			expect(result.current.validationError).toBe(
+				"Connection rejected the configuration",
+			);
+			expect(result.current.validationTechnicalDetails).toBe(
+				"WIQL query referenced an unknown field",
+			);
+			expect(saveSettings).not.toHaveBeenCalled();
+		});
+
+		it("re-throws a non-ApiError validation failure instead of swallowing it", async () => {
+			const validateSettings = vi
+				.fn()
+				.mockRejectedValue(new Error("network down"));
+			const args = makeHookArgs({ validateSettings });
+			const { result } = renderHook(() => useModifySettings(args));
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			await expect(act(() => result.current.handleSave())).rejects.toThrow(
+				"network down",
+			);
+		});
+
 		it("injects the selected system id into the saved DTO", async () => {
 			const saveSettings = vi.fn().mockResolvedValue(undefined);
 			const args = makeHookArgs({ saveSettings });
@@ -361,13 +415,31 @@ describe("useModifySettings", () => {
 				expect(result.current.settings?.workItemTypes.length).toBe(before);
 			});
 
-			it("onRemove removes a matching value", async () => {
+			it("onRemove removes only the matching value and keeps the rest", async () => {
 				const args = makeHookArgs();
 				const { result } = renderHook(() => useModifySettings(args));
 				await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 				act(() => result.current.workItemTypeHandlers.onRemove("Story"));
-				expect(result.current.settings?.workItemTypes).not.toContain("Story");
+				expect(result.current.settings?.workItemTypes).toEqual(["Bug"]);
+			});
+
+			it("onAdd and onRemove are no-ops while the list field is absent", async () => {
+				const args = makeHookArgs({
+					getSettings: vi.fn().mockResolvedValue(
+						makeSettings({
+							workItemTypes: undefined as unknown as string[],
+						}),
+					),
+				});
+				const { result } = renderHook(() => useModifySettings(args));
+				await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.workItemTypeHandlers.onAdd("Story"));
+				expect(result.current.settings?.workItemTypes).toEqual(["Story"]);
+
+				act(() => result.current.workItemTypeHandlers.onRemove("Story"));
+				expect(result.current.settings?.workItemTypes).toEqual([]);
 			});
 
 			it("onReorder replaces the list", async () => {
