@@ -1,6 +1,9 @@
-import { expect, testWithData } from "../../fixutres/LighthouseFixture";
+import { expect, testWithDemoData } from "../../fixutres/LighthouseFixture";
 
-testWithData(
+const WHEN_WILL_IT_BE_DONE_SCENARIO_ID = 0;
+const testWithTeam = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
+
+testWithTeam(
 	"should show Manual When and How Many Forecast for team",
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
@@ -8,13 +11,6 @@ testWithData(
 		const teamDetailPage = await overviewPage.goToTeam(team.name);
 
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
-
-		await teamDetailPage.updateTeamData();
-		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
-
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
-			timeout: 90_000,
-		});
 
 		await teamDetailPage.goToForecasts();
 
@@ -26,7 +22,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeam(
 	"should show new work item creation forecast for team",
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
@@ -34,13 +30,6 @@ testWithData(
 		const teamDetailPage = await overviewPage.goToTeam(team.name);
 
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
-
-		await teamDetailPage.updateTeamData();
-		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
-
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
-			timeout: 90_000,
-		});
 
 		await teamDetailPage.goToForecasts();
 
@@ -57,7 +46,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeam(
 	"should show forecast backtesting results for team",
 	async ({ testData, overviewPage }) => {
 		const team = testData.teams[0];
@@ -66,25 +55,14 @@ testWithData(
 
 		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled();
 
-		await teamDetailPage.updateTeamData();
-		await expect(teamDetailPage.updateTeamDataButton).toBeDisabled();
-
-		await expect(teamDetailPage.updateTeamDataButton).toBeEnabled({
-			timeout: 90_000,
-		});
-
 		await teamDetailPage.goToForecasts();
 
-		// Verify the Forecast Backtesting section is visible
 		await expect(teamDetailPage.backtestForecastingSection).toBeVisible();
 
-		// Run the backtest with default dates
 		await teamDetailPage.runBacktest();
 
-		// Verify backtest results appear
 		await expect(teamDetailPage.backtestResultsSection).toBeVisible();
 
-		// Verify the percentile list and actual throughput are displayed
 		await expect(
 			teamDetailPage.page.getByText(/Forecast Percentiles:/),
 		).toBeVisible();

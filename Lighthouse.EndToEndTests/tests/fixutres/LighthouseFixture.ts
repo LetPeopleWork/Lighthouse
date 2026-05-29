@@ -3,6 +3,10 @@ import {
 	test as base,
 	type Page,
 } from "@playwright/test";
+import {
+	loadDemoScenario,
+	waitForBackgroundUpdates,
+} from "../helpers/api/demo";
 import { createPortfolio } from "../helpers/api/portfolios";
 import { createTeam, updateTeam } from "../helpers/api/teams";
 import {
@@ -208,6 +212,40 @@ export const testWithData = test.extend<LighthouseWithDataFixtures>({
 		await clearConfiguration(request);
 	},
 });
+
+async function fetchIdentifiers(
+	request: APIRequestContext,
+	path: string,
+): Promise<ModelIdentifier[]> {
+	const response = await request.get(path);
+	const entities = (await response.json()) as ModelIdentifier[];
+	return entities.map(({ id, name }) => ({ id, name }));
+}
+
+async function readSeededData(request: APIRequestContext): Promise<TestData> {
+	const [teams, portfolios, connections] = await Promise.all([
+		fetchIdentifiers(request, "/api/latest/teams"),
+		fetchIdentifiers(request, "/api/latest/portfolios"),
+		fetchIdentifiers(request, "/api/latest/worktrackingsystemconnections"),
+	]);
+
+	return { teams, portfolios, connections };
+}
+
+export function testWithDemoData(scenarioId: number) {
+	return test.extend<LighthouseWithDataFixtures>({
+		testData: async ({ request }, use) => {
+			await loadDemoScenario(request, scenarioId);
+			await waitForBackgroundUpdates(request);
+
+			const data = await readSeededData(request);
+
+			await use(data);
+
+			await clearConfiguration(request);
+		},
+	});
+}
 
 export { expect } from "@playwright/test";
 

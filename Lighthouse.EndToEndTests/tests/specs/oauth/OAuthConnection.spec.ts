@@ -209,15 +209,4 @@ test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking sk
 			}
 		},
 	);
-
-	testWithAuth.skip(
-		"[@deferred @Story-5018 @OQ-5018-3] Webkit gold-test for window.opener retention across same-origin landing (Safari ITP) — DELIVER-owned",
-		async () => {
-			// DEFERRED to DELIVER per Story #5018 OQ-5018-3:
-			// the Safari/iOS Safari Webkit project is configured in DELIVER; failure on
-			// the handshake-never-reaches-opener criterion auto-triggers the pre-approved
-			// Option B (BroadcastChannel) swap from ADR-011. NOT in this DISTILL pass.
-			throw new Error("Deferred to DELIVER — see feature-delta OQ-5018-3");
-		},
-	);
 });

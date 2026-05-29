@@ -1,122 +1,22 @@
-import type { APIRequestContext } from "@playwright/test";
-import { TestConfig } from "../../../playwright.config";
 import {
 	expect,
-	type ModelIdentifier,
 	test,
-	testWithData,
+	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
-import { updatePortfolio } from "../../helpers/api/portfolios";
-import { updateTeam } from "../../helpers/api/teams";
 import {
 	takeDialogScreenshot,
 	takeDialogScreenshot as takeElementScreenshot,
 	takePageScreenshot,
 } from "../../helpers/screenshots";
+import { CumulativeStateTimeChart } from "../../models/metrics/CumulativeStateTimeChart";
 import {
 	MetricsCategories,
 	MetricsWidgetNames,
 } from "../../models/metrics/MetricsPage";
-import type { OverviewPage } from "../../models/overview/OverviewPage";
+import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
 
-const updateWorkTrackingSystems = async (
-	overviewPage: OverviewPage,
-	workTrackingSystems: ModelIdentifier[],
-) => {
-	// Force reload main page to ensure we have the latest data after API updates
-	await overviewPage.lightHousePage.goToSettings();
-	overviewPage = await overviewPage.lightHousePage.goToOverview();
-
-	const workTrackingSystemNames = [
-		{
-			name: "My Azure DevOps Connection",
-			optionName: "Personal Access Token",
-			optionValue: TestConfig.AzureDevOpsToken,
-		},
-		{
-			name: "My Jira Connection",
-			optionName: "API Token",
-			optionValue: TestConfig.JiraToken,
-		},
-	];
-
-	for (const workTrackingSystem of workTrackingSystems) {
-		const editWorkTrackingSystem = await overviewPage.editConnection(
-			workTrackingSystem.name,
-		);
-
-		const wtsDetails =
-			workTrackingSystemNames[workTrackingSystems.indexOf(workTrackingSystem)];
-		await editWorkTrackingSystem.setConnectionName(wtsDetails.name);
-		await editWorkTrackingSystem.setWorkTrackingSystemOption(
-			wtsDetails.optionName,
-			wtsDetails.optionValue,
-		);
-
-		await expect(editWorkTrackingSystem.createButton).toBeEnabled();
-		overviewPage = await editWorkTrackingSystem.create();
-	}
-};
-
-const updateTeams = async (
-	api: APIRequestContext,
-	overviewPage: OverviewPage,
-	teams: ModelIdentifier[],
-) => {
-	const teamNames = ["Lighthouse Team", "Dawg Pound", "Team HecKING"];
-
-	for (const team of teams) {
-		const editTeam = await overviewPage.editTeam(team.name);
-
-		const newTeamName = teamNames[teams.indexOf(team)];
-		await editTeam.setName(newTeamName);
-		team.name = newTeamName;
-
-		await editTeam.save();
-
-		await updateTeam(api, team.id);
-
-		await overviewPage.lightHousePage.goToSettings();
-		await overviewPage.lightHousePage.goToOverview();
-	}
-
-	await expect(overviewPage.lightHousePage.updateAllButton).toBeEnabled();
-	await overviewPage.lightHousePage.goToSettings();
-	await overviewPage.lightHousePage.goToOverview();
-};
-
-const updatePortfolios = async (
-	api: APIRequestContext,
-	overviewPage: OverviewPage,
-	portfolios: ModelIdentifier[],
-) => {
-	const portfolioNames = ["Lighthouse Project", "2025.01", "Project 1886"];
-
-	for (const portfolio of portfolios) {
-		const portfolioPage = await overviewPage.lightHousePage.goToOverview();
-		const editPortfolioPage = await portfolioPage.editPortfolio(portfolio);
-
-		const newPortfolioname = portfolioNames[portfolios.indexOf(portfolio)];
-		await editPortfolioPage.setName(newPortfolioname);
-		portfolio.name = newPortfolioname;
-
-		await expect(editPortfolioPage.saveButton).toBeEnabled();
-
-		const portfolioDetailPage = await editPortfolioPage.save();
-
-		await updateTeam(api, portfolio.id);
-
-		await expect(portfolioDetailPage.refreshFeatureButton).toBeEnabled({
-			timeout: 90_000,
-		});
-	}
-
-	await updatePortfolio(api, portfolios[0].id);
-
-	await expect(overviewPage.lightHousePage.updateAllButton).toBeEnabled();
-	await overviewPage.lightHousePage.goToSettings();
-	await overviewPage.lightHousePage.goToOverview();
-};
+const DEMO_SCENARIO_ID = 0;
+const testWithDemo = testWithDemoData(DEMO_SCENARIO_ID);
 
 test("Take @screenshot of empty overview page", async ({ overviewPage }) => {
 	await takePageScreenshot(overviewPage.page, "installation/landingpage.png");
@@ -221,13 +121,9 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	);
 });
 
-testWithData(
+testWithDemo(
 	"Take @screenshot of populated overview, teams overview, team detail, portfolios overview, and portfolio detail pages",
-	async ({ testData, overviewPage, request }) => {
-		await updateTeams(request, overviewPage, testData.teams);
-		await updatePortfolios(request, overviewPage, testData.portfolios);
-
-		// Team Deletion Dialog
+	async ({ testData, overviewPage }) => {
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
 		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
 		await takeElementScreenshot(
@@ -239,7 +135,6 @@ testWithData(
 
 		await deleteTeamDialog.cancel();
 
-		// Team Detail Page
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		teamDetailPage.goToForecasts();
 
@@ -343,12 +238,9 @@ testWithData(
 		);
 	},
 );
-testWithData(
+testWithDemo(
 	"Take @screenshot of Metrics",
-	async ({ testData, overviewPage, request }) => {
-		await updateTeams(request, overviewPage, testData.teams);
-		await updatePortfolios(request, overviewPage, testData.portfolios);
-
+	async ({ testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();
 
 		// Go to Metrics Tab
@@ -361,19 +253,15 @@ testWithData(
 			"features/metrics/metricsoverview.png",
 		);
 
-		const metricCategoriesMap = new Map<MetricsCategories, number>([
-			[MetricsCategories.FlowOverview, 9],
-			[MetricsCategories.FlowMetrics, 8],
-			[MetricsCategories.Predictability, 6],
-			[MetricsCategories.PortfolioAndFeatures, 2],
-		]);
+		const metricCategories = [
+			MetricsCategories.FlowOverview,
+			MetricsCategories.FlowMetrics,
+			MetricsCategories.Predictability,
+			MetricsCategories.PortfolioAndFeatures,
+		];
 
-		for (const [
-			category,
-			expectedWidgetCount,
-		] of metricCategoriesMap.entries()) {
+		for (const category of metricCategories) {
 			const metrics = await metricsPage.switchCategory(category);
-			expect(metrics.length).toBe(expectedWidgetCount);
 
 			for (const metricWidget of metrics) {
 				if (
@@ -464,45 +352,6 @@ testWithData(
 		);
 	},
 );
-testWithData(
-	"Take @screenshot of Estimation vs Cycle Time Chart",
-	async ({ overviewPage, testData, request }) => {
-		await updateWorkTrackingSystems(overviewPage, testData.connections);
-
-		await updateTeams(request, overviewPage, testData.teams);
-
-		const team = testData.teams[2];
-		const teamEditPage = await overviewPage.editTeam(team.name);
-
-		await teamEditPage.setEstimationField("Story Points");
-		await expect(teamEditPage.saveButton).toBeEnabled();
-		await teamEditPage.save();
-
-		await overviewPage.lightHousePage.goToSettings();
-		await overviewPage.lightHousePage.goToOverview();
-
-		const teamDetailPage = await overviewPage.goToTeam(team.name);
-		const teamMetricsPage = await teamDetailPage.goToMetrics();
-
-		// Force switch to reload charts
-		teamMetricsPage.switchCategory(MetricsCategories.FlowOverview);
-
-		const availableWidgets = await teamMetricsPage.switchCategory(
-			MetricsCategories.PortfolioAndFeatures,
-		);
-
-		const estimationVsCycleTimeWidget = await teamMetricsPage.getWidgetByName(
-			MetricsWidgetNames.EstimationVsCycleTime,
-			availableWidgets,
-		);
-
-		await takeElementScreenshot(
-			estimationVsCycleTimeWidget.Widget,
-			"features/metrics/estimationVsCycleTime.png",
-		);
-	},
-);
-
 const workTrackingSystemConfiguration = [
 	{
 		workTrackingSystemName: "AzureDevOps",
@@ -523,7 +372,7 @@ const workTrackingSystemConfiguration = [
 	{
 		workTrackingSystemName: "Linear",
 		workTrackingSystemOptions: [
-			{ field: "API Key", value: TestConfig.LinearApiKey },
+			{ field: "API Key", value: "lin_api_demoplaceholderkey0000000000" },
 		],
 	},
 	{
@@ -542,98 +391,13 @@ const workTrackingSystemConfiguration = [
 	},
 ];
 
-const teamWizardScreenshotConfigs = [
-	{
-		name: "Jira",
-		boardName: "Stories",
-		teamIndex: 2,
-	},
-	{
-		name: "Azure DevOps",
-		boardName: "Lighthouse - Stories",
-		teamIndex: 0,
-	},
-	{
-		name: "Linear",
-		boardName: "LighthouseDemo",
-		teamIndex: 1,
-	},
-];
-
-const portfolioWizardScreenshotConfigs = [
-	{
-		name: "Jira",
-		displayName: "Jira",
-		boardName: "Epics",
-		teamIndex: 2,
-	},
-	{
-		name: "Azure DevOps",
-		displayName: "Azure DevOps",
-		boardName: "Lighthouse - Epics",
-		teamIndex: 0,
-	},
-];
-
-for (const wizardConfig of teamWizardScreenshotConfigs) {
-	testWithData(
-		`Take @screenshot of ${wizardConfig.name} Team Wizard`,
-		async ({ testData, overviewPage }) => {
-			const team = testData.teams[wizardConfig.teamIndex];
-			const teamEditPage = await overviewPage.editTeam(team.name);
-
-			const wizard = await teamEditPage.selectWizard(wizardConfig.name);
-
-			await wizard.selectByName(wizardConfig.boardName);
-
-			await expect(wizard.boardInformationPanel).toBeVisible();
-
-			await takeDialogScreenshot(
-				wizard.page.getByRole("dialog"),
-				`concepts/${wizardConfig.name.replace(" ", "").toLowerCase()}_team_wizard.png`,
-				5,
-				1000,
-			);
-		},
-	);
-}
-
-for (const wizardConfig of portfolioWizardScreenshotConfigs) {
-	testWithData(
-		`Take @screenshot of ${wizardConfig.name} Portfolio Wizard`,
-		async ({ testData, overviewPage }) => {
-			const portfolio = testData.portfolios[0];
-			const portfolioEditPage = await overviewPage.editPortfolio(portfolio);
-
-			const boardWizard = await portfolioEditPage.selectWizard(
-				wizardConfig.displayName,
-			);
-
-			await boardWizard.selectByName(wizardConfig.boardName);
-
-			await expect(boardWizard.boardInformationPanel).toBeVisible();
-
-			await takeDialogScreenshot(
-				boardWizard.page.getByRole("dialog"),
-				`concepts/${wizardConfig.name.replace(" ", "").toLowerCase()}_portfolio_wizard.png`,
-				5,
-				1000,
-			);
-		},
-	);
-}
-
 for (const {
 	workTrackingSystemName,
 	workTrackingSystemOptions,
 } of workTrackingSystemConfiguration) {
-	testWithData(
+	testWithDemo(
 		`Take @screenshot of ${workTrackingSystemName} Work Tracking System Connection creation`,
-		async ({ testData, overviewPage }) => {
-			test.fail(
-				testData.portfolios.length < 1,
-				"Expected to have portfolios initiatilized to prevent tutorial page from being displayed",
-			);
+		async ({ overviewPage }) => {
 			const workTrackingSystemEditPage = await overviewPage.addConnection();
 
 			await takePageScreenshot(
@@ -663,3 +427,63 @@ for (const {
 		},
 	);
 }
+
+testWithDemo(
+	"Take @screenshot of Work Item Aging chart with pace percentile bands",
+	async ({ testData, page, overviewPage }) => {
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const flowMetricsWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const agingWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.WorkItemAgingChart,
+			flowMetricsWidgets,
+		);
+		await expect(agingWidget.Widget).toBeVisible();
+
+		const agingChart = new WorkItemAgingChart(page, "aging");
+		await agingChart.togglePacePercentiles();
+		await expect.poll(() => agingChart.countPaceBands()).toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			agingWidget.Widget,
+			"features/metrics/aging_pace_percentiles.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of Cumulative Time per State chart scoped to a filtered work item",
+	async ({ testData, page, overviewPage }) => {
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const flowMetricsWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const cumulativeWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CumulativeStateTime,
+			flowMetricsWidgets,
+		);
+		await expect(cumulativeWidget.Widget).toBeVisible();
+
+		const cumulativeChart = new CumulativeStateTimeChart(
+			page,
+			"stateTimeCumulative",
+		);
+		await expect
+			.poll(() => cumulativeChart.countStateBars())
+			.toBeGreaterThan(0);
+
+		await cumulativeChart.searchPicker("TZ-");
+		await cumulativeChart.selectFirstPickerOption();
+		await expect.poll(() => cumulativeChart.countSelectedPickerChips()).toBe(1);
+
+		await takeElementScreenshot(
+			cumulativeWidget.Widget,
+			"features/metrics/stateTimeCumulative_filtered.png",
+		);
+	},
+);

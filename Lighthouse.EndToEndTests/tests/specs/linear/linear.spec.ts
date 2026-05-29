@@ -1,6 +1,7 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test } from "../../fixutres/LighthouseFixture";
 import { generateRandomName } from "../../helpers/names";
+import { takeDialogScreenshot } from "../../helpers/screenshots";
 import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
 import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
@@ -48,6 +49,13 @@ test("should be able to handle a team defined in Linear", async ({
 
 			await expect(linearTeamWizard.boardInformationPanel).toBeVisible();
 			expect(await linearTeamWizard.confirmButton.isEnabled()).toBeTruthy();
+
+			await takeDialogScreenshot(
+				linearTeamWizard.page.getByRole("dialog"),
+				"concepts/linear_team_wizard.png",
+				5,
+				1000,
+			);
 
 			newTeamPage = await linearTeamWizard.confirm();
 		});

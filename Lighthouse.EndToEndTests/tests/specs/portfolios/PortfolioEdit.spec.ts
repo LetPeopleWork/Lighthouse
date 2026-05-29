@@ -1,10 +1,16 @@
-import { expect, test, testWithData } from "../../fixutres/LighthouseFixture";
+import {
+	expect,
+	test,
+	testWithDemoData,
+} from "../../fixutres/LighthouseFixture";
 
-testWithData(
+const PRODUCT_LAUNCH_SCENARIO_ID = 2;
+const testWithPortfolio = testWithDemoData(PRODUCT_LAUNCH_SCENARIO_ID);
+
+testWithPortfolio(
 	"should handle Owning Team correctly",
 	async ({ testData, overviewPage }) => {
 		const portfolio = testData.portfolios[0];
-		const [team1, team2, team3] = testData.teams;
 
 		const portfolioEditPage = await overviewPage.editPortfolio(portfolio);
 
@@ -20,9 +26,9 @@ testWithData(
 				await portfolioEditPage.getPotentialOwningTeams();
 
 			expect(availableOptions).toContain("None");
-			expect(availableOptions).toContain(team1.name);
-			expect(availableOptions).toContain(team2.name);
-			expect(availableOptions).toContain(team3.name);
+			for (const team of testData.teams) {
+				expect(availableOptions).toContain(team.name);
+			}
 		});
 	},
 );

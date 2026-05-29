@@ -1,6 +1,7 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test } from "../../fixutres/LighthouseFixture";
 import { generateRandomName } from "../../helpers/names";
+import { takeDialogScreenshot } from "../../helpers/screenshots";
 import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
 import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
@@ -58,6 +59,13 @@ test("should be able to handle a team and portfolio defined in Jira", async ({
 			await expect(wizard.boardInformationPanel).toBeVisible();
 			expect(await wizard.confirmButton.isEnabled()).toBeTruthy();
 
+			await takeDialogScreenshot(
+				wizard.page.getByRole("dialog"),
+				"concepts/jira_team_wizard.png",
+				5,
+				1000,
+			);
+
 			newTeamPage = await wizard.confirm();
 		});
 
@@ -98,6 +106,13 @@ test("should be able to handle a team and portfolio defined in Jira", async ({
 
 			await expect(boardWizard.boardInformationPanel).toBeVisible();
 			expect(await boardWizard.confirmButton.isEnabled()).toBeTruthy();
+
+			await takeDialogScreenshot(
+				boardWizard.page.getByRole("dialog"),
+				"concepts/jira_portfolio_wizard.png",
+				5,
+				1000,
+			);
 
 			newPortfolioPage = await boardWizard.confirm();
 		});

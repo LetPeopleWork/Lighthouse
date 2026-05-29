@@ -1,21 +1,25 @@
-import { expect, test, testWithData } from "../../fixutres/LighthouseFixture";
+import {
+	expect,
+	test,
+	testWithDemoData,
+} from "../../fixutres/LighthouseFixture";
 
-testWithData(
+const PRODUCT_LAUNCH_SCENARIO_ID = 2;
+const testWithTeams = testWithDemoData(PRODUCT_LAUNCH_SCENARIO_ID);
+
+testWithTeams(
 	"should show all teams on Teams Overview",
 	async ({ testData, overviewPage }) => {
-		const [team1, team2, team3] = testData.teams;
+		expect(testData.teams.length).toBeGreaterThan(1);
 
-		const teamLink1 = await overviewPage.getTeamLink(team1.name);
-		const teamLink2 = await overviewPage.getTeamLink(team2.name);
-		const teamLink3 = await overviewPage.getTeamLink(team3.name);
-
-		await expect(teamLink1).toBeVisible();
-		await expect(teamLink2).toBeVisible();
-		await expect(teamLink3).toBeVisible();
+		for (const team of testData.teams) {
+			const teamLink = await overviewPage.getTeamLink(team.name);
+			await expect(teamLink).toBeVisible();
+		}
 	},
 );
 
-testWithData(
+testWithTeams(
 	"should filter teams on Teams Overview",
 	async ({ testData, overviewPage }) => {
 		const [team1, team2] = testData.teams;
@@ -52,7 +56,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeams(
 	"should open Team Info when clicking on Team",
 	async ({ testData, overviewPage }) => {
 		const [team1] = testData.teams;
@@ -62,7 +66,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeams(
 	"should open Team Edit Page when clicking on Edit Icon",
 	async ({ testData, overviewPage }) => {
 		const [team1] = testData.teams;
@@ -72,7 +76,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeams(
 	"should delete Team when clicking on Delete Icon and confirming",
 	async ({ testData, overviewPage }) => {
 		const [team1] = testData.teams;
@@ -91,7 +95,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeams(
 	"should not delete Team when clicking on Delete Icon and cancelling",
 	async ({ testData, overviewPage }) => {
 		const [team1] = testData.teams;
@@ -110,7 +114,7 @@ testWithData(
 	},
 );
 
-testWithData(
+testWithTeams(
 	"should clone team when clicking on Clone icon",
 	async ({ testData, overviewPage }) => {
 		const team1 = testData.teams[0];
@@ -118,11 +122,9 @@ testWithData(
 		await test.step(`Clone Team ${team1.name}`, async () => {
 			const teamEditPage = await overviewPage.cloneTeam(team1.name);
 
-			// Verify we're on the new team page with cloneFrom parameter
 			expect(teamEditPage.page.url()).toContain("/teams/new");
 			expect(teamEditPage.page.url()).toContain(`cloneFrom=${team1.id}`);
 
-			// Verify the team name is prefixed with "Copy of"
 			const nameField = await teamEditPage.getName();
 			expect(nameField).toBe(`Copy of ${team1.name}`);
 		});
