@@ -352,9 +352,9 @@ describe("@US-03 @in-memory auto-save forecast filter rules", () => {
 	});
 });
 
-describe.skip("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
+describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -363,10 +363,17 @@ describe.skip("@US-03 @in-memory auto-save forecast filter rules (pending)", () 
 	});
 
 	it("@US-03 @error rejects an unknown filter field without clobbering the existing rule set", async () => {
+		const persistedRuleSet =
+			'{"rules":[{"field":"Type","op":"equals","value":"Bug","exclude":true}]}';
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{
 				saveSettings,
+				getSettings: vi.fn().mockResolvedValue(
+					atlasSettings({
+						forecastFilterRuleSetJson: persistedRuleSet,
+					} as Partial<SimpleSettings>),
+				),
 				validateForm: vi.fn().mockReturnValue(false),
 			},
 			teamAdminCanSave,
@@ -385,9 +392,10 @@ describe.skip("@US-03 @in-memory auto-save forecast filter rules (pending)", () 
 		});
 
 		expect(saveSettings).not.toHaveBeenCalled();
+		expect(result.current.formValid).toBe(false);
 	});
 
-	it("@US-03 @error keeps the filter editor read-only with no auto-save for a viewer", async () => {
+	it.skip("@US-03 @error keeps the filter editor read-only with no auto-save for a viewer", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
