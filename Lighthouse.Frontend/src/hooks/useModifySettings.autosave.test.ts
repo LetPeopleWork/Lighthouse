@@ -175,7 +175,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("idle");
 	});
 
-	it.skip("@US-01 @error persists only the latest value when edits arrive in rapid succession", async () => {
+	it("@US-01 @error persists only the latest value when edits arrive in rapid succession", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -192,6 +192,41 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		const calls = saveSettings.mock.calls;
 		const lastSaved = calls[calls.length - 1][0] as SimpleSettings;
 		expect(lastSaved.dataRetrievalValue).toBe("60");
+	});
+
+	it("@US-01 @error ignores a stale in-flight response so it cannot overwrite the latest save outcome", async () => {
+		let rejectFirst: ((reason: Error) => void) | undefined;
+		const saveSettings = vi
+			.fn()
+			.mockImplementationOnce(
+				() =>
+					new Promise<void>((_, reject) => {
+						rejectFirst = reject;
+					}),
+			)
+			.mockResolvedValueOnce(undefined);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "50"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+
+		await act(async () => {
+			rejectFirst?.(new Error("stale server response"));
+		});
+
+		expect(result.current.saveState).toBe("saved");
 	});
 
 	it.skip("@US-01 does not fire any save on the initial page load", async () => {

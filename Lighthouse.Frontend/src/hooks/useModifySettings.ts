@@ -94,6 +94,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const [saveState, setSaveState] = useState<SaveState>("idle");
 	const [loading, setLoading] = useState(false);
 	const lastSavePayloadRef = useRef<TSettings | null>(null);
+	const requestSeqRef = useRef(0);
 	const hasInteractedRef = useRef(false);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
@@ -140,10 +141,15 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 
 	const dispatchSave = useCallback((payload: TSettings) => {
 		lastSavePayloadRef.current = payload;
+		requestSeqRef.current += 1;
+		const seq = requestSeqRef.current;
+		const applyIfLatest = (next: SaveState) => {
+			if (seq === requestSeqRef.current) setSaveState(next);
+		};
 		setSaveState("saving");
 		return saveSettingsRef.current(payload).then(
-			() => setSaveState("saved"),
-			() => setSaveState("error"),
+			() => applyIfLatest("saved"),
+			() => applyIfLatest("error"),
 		);
 	}, []);
 
