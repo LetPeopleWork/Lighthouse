@@ -230,15 +230,17 @@ describe("@US-06 @in-memory auto-run backtest", () => {
 		expect(forecastService.runBacktest).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip("@US-06 @error fires no run when the mode is switched while inputs are incomplete", async () => {
+	it("@US-06 @error fires no run when the mode is switched while inputs are incomplete", async () => {
 		renderForecastView();
-		await screen.findByTestId("backtest-forecaster");
+		await act(async () => {
+			await vi.runAllTimersAsync();
+		});
 		forecastService.runBacktest.mockClear();
 
 		act(() => {
 			screen.getByTestId("toggle-backtest-mode-incomplete").click();
 		});
-		await act(async () => {
+		act(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
