@@ -76,6 +76,8 @@ pnpm run dev      # connect to the local backend or set VITE_API_BASE_URL
 pnpm run dev-demo # run UI with demo/mock data
 ```
 
+2. Understand the codebase: read **[ARCHITECTURE.md](ARCHITECTURE.md)** — a single, readable overview of how Lighthouse is built (modular monolith, ports-and-adapters, the seven enforced modules, the in-process domain-event dispatcher, CQRS-lite, concurrency, persistence, deployment topologies). It links out to the ADRs and C4 diagrams under `docs/product/architecture/` for depth.
+
 ## Core features
 
 - Monte Carlo forecasting (How Many / When)
