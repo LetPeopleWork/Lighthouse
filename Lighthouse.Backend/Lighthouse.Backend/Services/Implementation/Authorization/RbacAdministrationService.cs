@@ -938,7 +938,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             if (concurrencyToken.HasValue)
             {
-                context.SetOriginalConcurrencyToken(mapping, concurrencyToken.Value);
+                context.ApplyConcurrencyTokenForEdit(mapping, concurrencyToken.Value);
             }
 
             await context.SaveChangesAsync(cancellationToken);

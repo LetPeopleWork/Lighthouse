@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.API
 
                 if (portfolioSetting.ConcurrencyToken.HasValue)
                 {
-                    portfolioRepository.SetOriginalConcurrencyToken(portfolio, portfolioSetting.ConcurrencyToken.Value);
+                    portfolioRepository.ApplyConcurrencyTokenForEdit(portfolio, portfolioSetting.ConcurrencyToken.Value);
                 }
 
                 await portfolioRepository.Save();

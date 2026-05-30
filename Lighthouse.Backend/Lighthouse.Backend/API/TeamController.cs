@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.API
 
                 if (teamSetting.ConcurrencyToken.HasValue)
                 {
-                    teamRepository.SetOriginalConcurrencyToken(team, teamSetting.ConcurrencyToken.Value);
+                    teamRepository.ApplyConcurrencyTokenForEdit(team, teamSetting.ConcurrencyToken.Value);
                 }
 
                 await teamRepository.Save();

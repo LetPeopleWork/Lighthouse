@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
     {
         void Add(T item);
 
-        void SetOriginalConcurrencyToken(IConcurrencyTokenEntity entity, Guid clientToken);
+        void ApplyConcurrencyTokenForEdit(IConcurrencyTokenEntity entity, Guid clientToken);
 
         IEnumerable<T> GetAll();
 

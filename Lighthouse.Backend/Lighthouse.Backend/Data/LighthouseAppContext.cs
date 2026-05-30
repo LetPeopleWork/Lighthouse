@@ -378,8 +378,10 @@ namespace Lighthouse.Backend.Data
             }
         }
 
-        public void SetOriginalConcurrencyToken(IConcurrencyTokenEntity entity, Guid clientToken)
+        public void ApplyConcurrencyTokenForEdit(IConcurrencyTokenEntity entity, Guid clientToken)
         {
+            entity.ConcurrencyToken = Guid.NewGuid();
+
             Entry(entity)
                 .Property(nameof(IConcurrencyTokenEntity.ConcurrencyToken))
                 .OriginalValue = clientToken;
@@ -400,7 +402,7 @@ namespace Lighthouse.Backend.Data
         private void RegenerateConcurrencyTokens()
         {
             foreach (var entry in ChangeTracker.Entries<IConcurrencyTokenEntity>()
-                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+                .Where(e => e.State == EntityState.Added))
             {
                 entry.Entity.ConcurrencyToken = Guid.NewGuid();
             }

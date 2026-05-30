@@ -39,7 +39,22 @@ namespace Lighthouse.Backend.Tests
         }
 
         [Test]
-        public async Task SaveModifiedTeam_AdvancesConcurrencyToken()
+        public void AddedTeam_GetsNonEmptyInitialConcurrencyToken()
+        {
+            var teamId = SeedTeam();
+
+            Guid initialToken;
+            using (var scope = factory.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                initialToken = context.Teams.Single(t => t.Id == teamId).ConcurrencyToken;
+            }
+
+            Assert.That(initialToken, Is.Not.EqualTo(Guid.Empty), "A newly added team must receive a non-empty initial concurrency token.");
+        }
+
+        [Test]
+        public async Task SaveModifiedTeam_WithoutEditApply_LeavesConcurrencyTokenUnchanged()
         {
             var teamId = SeedTeam();
 
@@ -50,7 +65,7 @@ namespace Lighthouse.Backend.Tests
                 var team = context.Teams.Single(t => t.Id == teamId);
                 tokenBefore = team.ConcurrencyToken;
 
-                team.Name = "Advanced Token Team";
+                team.Name = "System Save Team";
                 await context.SaveChangesAsync();
             }
 
@@ -64,8 +79,35 @@ namespace Lighthouse.Backend.Tests
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(tokenBefore, Is.Not.EqualTo(Guid.Empty), "A persisted team must carry a non-empty token.");
-                Assert.That(tokenAfter, Is.Not.EqualTo(tokenBefore), "Saving a modified team must advance its concurrency token.");
+                Assert.That(tokenAfter, Is.EqualTo(tokenBefore), "A plain system/background save must NOT churn the concurrency token.");
             }
+        }
+
+        [Test]
+        public async Task ApplyConcurrencyTokenForEdit_OnHumanEditPath_AdvancesConcurrencyToken()
+        {
+            var teamId = SeedTeam();
+
+            Guid tokenBefore;
+            using (var scope = factory.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var team = context.Teams.Single(t => t.Id == teamId);
+                tokenBefore = team.ConcurrencyToken;
+
+                team.Name = "Human Edit Team";
+                context.ApplyConcurrencyTokenForEdit(team, tokenBefore);
+                await context.SaveChangesAsync();
+            }
+
+            Guid tokenAfter;
+            using (var scope = factory.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                tokenAfter = context.Teams.Single(t => t.Id == teamId).ConcurrencyToken;
+            }
+
+            Assert.That(tokenAfter, Is.Not.EqualTo(tokenBefore), "The human-edit path must advance the concurrency token so read-your-writes holds.");
         }
 
         [Test]
@@ -83,11 +125,12 @@ namespace Lighthouse.Backend.Tests
                 var winnerContext = winnerScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
                 var winnerTeam = winnerContext.Teams.Single(t => t.Id == teamId);
                 winnerTeam.Name = "Winner";
+                winnerContext.ApplyConcurrencyTokenForEdit(winnerTeam, staleToken);
                 await winnerContext.SaveChangesAsync();
             }
 
             staleTeam.Name = "Loser";
-            staleContext.SetOriginalConcurrencyToken(staleTeam, staleToken);
+            staleContext.ApplyConcurrencyTokenForEdit(staleTeam, staleToken);
 
             Assert.That(
                 async () => await staleContext.SaveChangesAsync(),

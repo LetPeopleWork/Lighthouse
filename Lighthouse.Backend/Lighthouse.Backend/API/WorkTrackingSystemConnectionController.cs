@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.API
 
                     if (updatedConnection.ConcurrencyToken.HasValue)
                     {
-                        repository.SetOriginalConcurrencyToken(existingConnection, updatedConnection.ConcurrencyToken.Value);
+                        repository.ApplyConcurrencyTokenForEdit(existingConnection, updatedConnection.ConcurrencyToken.Value);
                     }
 
                     await repository.Save();

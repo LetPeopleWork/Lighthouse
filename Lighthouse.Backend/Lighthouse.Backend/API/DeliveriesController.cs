@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.API
 
             if (request.ConcurrencyToken.HasValue)
             {
-                deliveryRepository.SetOriginalConcurrencyToken(existingDelivery, request.ConcurrencyToken.Value);
+                deliveryRepository.ApplyConcurrencyTokenForEdit(existingDelivery, request.ConcurrencyToken.Value);
             }
 
             await deliveryRepository.Save();
