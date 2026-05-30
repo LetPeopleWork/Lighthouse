@@ -159,6 +159,12 @@ Each entry follows:
 
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
 
+### 2026-05-30 — csharpsquid:S3218: a nested type's member must not share a name with an outer-class member
+- **Symptom**: `sonar-gates` `new_violations = 1` (CRITICAL) on `WorkItemService.cs:191` — "Rename this property to not shadow the outer class' member with the same name." E2E + Verify Backend were green; SonarCloud-only.
+- **Root cause**: #5122 added a private nested `record SyncedItem(..., bool WasBlocked)` inside `WorkItemService`, which already has a `private static bool WasBlocked(Team, WorkItem?)` method. S3218 flags the nested record's `WasBlocked` property as shadowing the outer static member of the same name (a readability/ambiguity hazard), regardless of the different kinds (property vs method).
+- **Fix**: renamed the record property `WasBlocked` → `WasBlockedBeforeSync` (positional record, so only the declaration + the `syncedItem.WasBlocked` read site changed; construction is positional, untouched).
+- **Rule going forward**: when adding a nested type (record/class/struct) inside a service, its property/field/method names must NOT collide with ANY member name of the enclosing class — including private static helper methods. S3218 is CRITICAL and SonarCloud-only (a clean `dotnet build` won't catch it). Pre-flight: for a new nested `record Foo(...)`, grep the enclosing class for each positional property name; if any matches an existing member, suffix the record property (e.g. `WasBlockedBeforeSync`).
+
 ### 2026-05-12 — Shared validate endpoints must not gate on a single workflow's permission
 - **Symptom**: Manual testing surfaced a 403 on `POST /api/latest/teams/validate` and `POST /api/latest/portfolios/validate` when a scoped Team/Portfolio Admin clicked Save in the Edit Settings UI. The endpoints were guarded by `[RbacGuard(CanCreateTeam)]` / `[RbacGuard(CanCreatePortfolio)]`, which under v1 RBAC = sysadmin only.
 - **Root cause**: The validate endpoints are shared by TWO different workflows: (1) the System-Admin-only Create flow, and (2) the Team-Admin / Portfolio-Admin Edit-and-Save flow. Gating them on the Create requirement broke the Edit path for scoped admins. The downstream write endpoints (`POST /teams` for create, `PUT /teams/{id}` for edit) already enforce the correct per-workflow scope.

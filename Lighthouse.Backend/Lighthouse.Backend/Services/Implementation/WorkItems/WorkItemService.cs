@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var events = new List<IDomainEvent>();
             events.AddRange(newTransitions.Select(transition => new WorkItemTransitioned(workItem.Id, transition.FromState, transition.ToState)));
 
-            if (!syncedItem.WasBlocked && workItem.IsBlocked)
+            if (!syncedItem.WasBlockedBeforeSync && workItem.IsBlocked)
             {
                 events.Add(new WorkItemBlocked(workItem.Id, ResolveBlockReason(team, workItem)));
             }
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private sealed record SyncedItem(WorkItem PersistedItem, IReadOnlyList<WorkItemStateTransition> SyncedTransitions, bool WasBlocked);
+        private sealed record SyncedItem(WorkItem PersistedItem, IReadOnlyList<WorkItemStateTransition> SyncedTransitions, bool WasBlockedBeforeSync);
 
         private static IReadOnlyList<WorkItemStateTransition> WithSyncDeltaTransition(
             IWorkTrackingConnector connector,
