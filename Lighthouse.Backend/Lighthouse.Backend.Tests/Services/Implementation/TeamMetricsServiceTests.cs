@@ -13,6 +13,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [TestFixture]
+    [NonParallelizable]
     public class TeamMetricsServiceTests
     {
         private Mock<IWorkItemRepository> workItemRepositoryMock;
