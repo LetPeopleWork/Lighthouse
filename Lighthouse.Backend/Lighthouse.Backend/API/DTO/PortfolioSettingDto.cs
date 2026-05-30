@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API.DTO
             PercentileHistoryInDays = portfolio.PercentileHistoryInDays;
             OverrideRealChildCountStates = portfolio.OverrideRealChildCountStates;
             DoneItemsCutoffDays = portfolio.DoneItemsCutoffDays;
+            ConcurrencyToken = portfolio.ConcurrencyToken;
 
             InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos(readableTeamIds));
 

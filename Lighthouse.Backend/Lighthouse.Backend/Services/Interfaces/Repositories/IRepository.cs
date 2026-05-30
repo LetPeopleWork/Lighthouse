@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
     {
         void Add(T item);
 
+        void SetOriginalConcurrencyToken(IConcurrencyTokenEntity entity, Guid clientToken);
+
         IEnumerable<T> GetAll();
 
         T? GetById(int id);

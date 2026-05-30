@@ -2,9 +2,11 @@ using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models.Auth
 {
-    public class ApiKey : IEntity
+    public class ApiKey : IConcurrencyTokenEntity
     {
         public int Id { get; set; }
+
+        public Guid ConcurrencyToken { get; set; }
 
         public string Name { get; set; } = string.Empty;
 

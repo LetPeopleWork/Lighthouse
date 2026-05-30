@@ -1,10 +1,13 @@
 ﻿using Lighthouse.Backend.Extensions;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
-    public abstract class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner
+    public abstract class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner, IConcurrencyTokenEntity
     {
         public int Id { get; set; }
+
+        public Guid ConcurrencyToken { get; set; }
 
         public string Name { get; set; }
 

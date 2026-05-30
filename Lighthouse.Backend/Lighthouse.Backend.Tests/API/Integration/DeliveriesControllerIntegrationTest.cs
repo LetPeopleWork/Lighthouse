@@ -259,6 +259,86 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetDeliveries_ExposesNonEmptyConcurrencyToken_ForClientToEchoOnSave()
+        {
+            var portfolio = await AddPortfolio();
+            var features = await AddFeatures(portfolio);
+
+            var created = await CreateDeliveryAndFetch(portfolio.Id, "Tokened Release", features[0].Id);
+
+            Assert.That(created.ConcurrencyToken, Is.Not.EqualTo(Guid.Empty),
+                "A persisted delivery must expose a non-empty concurrency token so clients can echo it back on save.");
+        }
+
+        [Test]
+        public async Task UpdateDelivery_WithStaleConcurrencyToken_Returns409_FirstWriterValuePreserved()
+        {
+            var portfolio = await AddPortfolio();
+            var features = await AddFeatures(portfolio);
+
+            var created = await CreateDeliveryAndFetch(portfolio.Id, "Concurrent Release", features[0].Id);
+            var staleToken = created.ConcurrencyToken;
+
+            var adminAResponse = await PutDeliveryWithNameAndToken(created.Id, "Renamed By Admin A", features[0].Id, staleToken);
+            Assert.That(adminAResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), await adminAResponse.Content.ReadAsStringAsync());
+
+            var adminBResponse = await PutDeliveryWithNameAndToken(created.Id, "Renamed By Admin B", features[0].Id, staleToken);
+            var adminBBody = await adminBResponse.Content.ReadAsStringAsync();
+
+            var deliveriesAfter = await GetDeliveries(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(adminBResponse.StatusCode, Is.EqualTo(HttpStatusCode.Conflict), adminBBody);
+                Assert.That(adminBBody, Does.Contain("concurrency-conflict"),
+                    $"409 body must carry the distinguishable concurrency code. Body: {adminBBody}");
+                Assert.That(deliveriesAfter.Single().Name, Is.EqualTo("Renamed By Admin A"),
+                    "Admin A's write must be preserved; Admin B's stale write must not overwrite it.");
+            }
+        }
+
+        private async Task<List<DeliveryWithLikelihoodDto>> GetDeliveries(int portfolioId)
+        {
+            var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolioId}");
+            getResponse.EnsureSuccessStatusCode();
+            return JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!;
+        }
+
+        private async Task<DeliveryWithLikelihoodDto> CreateDeliveryAndFetch(int portfolioId, string name, int featureId)
+        {
+            var createRequest = new UpdateDeliveryRequest
+            {
+                Name = name,
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [featureId],
+                SelectionMode = DeliverySelectionMode.Manual,
+            };
+
+            var createContent = new StringContent(JsonSerializer.Serialize(createRequest), Encoding.UTF8, "application/json");
+            var createResponse = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolioId}", createContent);
+            createResponse.EnsureSuccessStatusCode();
+
+            var deliveries = await GetDeliveries(portfolioId);
+            return deliveries.Single(d => d.Name == name);
+        }
+
+        private async Task<HttpResponseMessage> PutDeliveryWithNameAndToken(int deliveryId, string name, int featureId, Guid token)
+        {
+            var updateRequest = new UpdateDeliveryRequest
+            {
+                Name = name,
+                Date = DateTime.UtcNow.AddDays(35),
+                FeatureIds = [featureId],
+                SelectionMode = DeliverySelectionMode.Manual,
+                ConcurrencyToken = token,
+            };
+
+            var updateContent = new StringContent(JsonSerializer.Serialize(updateRequest), Encoding.UTF8, "application/json");
+            return await Client.PutAsync($"/api/latest/deliveries/{deliveryId}", updateContent);
+        }
+
+        [Test]
         public async Task UpdateDelivery_ManualSelection_NameOnlyChange_ReturnsOk()
         {
             // Arrange - create portfolio with team and features

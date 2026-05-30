@@ -2,7 +2,7 @@ using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
-    public class Delivery : IEntity
+    public class Delivery : IConcurrencyTokenEntity
     {
         public Delivery(string name, DateTime date, int portfolioId)
         {
@@ -27,7 +27,9 @@ namespace Lighthouse.Backend.Models
         }
 
         public int Id { get; set; }
-        
+
+        public Guid ConcurrencyToken { get; set; }
+
         public string Name { get; set; }
         
         public DateTime Date { get; set; }

@@ -94,6 +94,10 @@ namespace Lighthouse.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -140,6 +144,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -207,6 +215,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("GroupValue")
                         .IsRequired()
@@ -287,6 +299,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
@@ -606,6 +622,10 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DataRetrievalValue")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -759,6 +779,10 @@ namespace Lighthouse.Backend.Migrations
 
                     b.PrimitiveCollection<string>("BlockedTags")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DataRetrievalValue")
@@ -988,6 +1012,10 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<string>("AuthenticationMethodKey")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

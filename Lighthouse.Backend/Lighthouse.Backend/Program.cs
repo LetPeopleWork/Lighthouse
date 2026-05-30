@@ -61,6 +61,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
 using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API.Swagger;
+using Lighthouse.Backend.API.Filters;
 
 namespace Lighthouse.Backend
 {
@@ -244,6 +245,8 @@ namespace Lighthouse.Backend
             builder.Services
                 .AddControllers(options =>
                 {
+                    options.Filters.Add<ConcurrencyConflictExceptionFilter>();
+
                     if (authConfig.Enabled)
                     {
                         options.Filters.Add<BlockedModeFilter>();

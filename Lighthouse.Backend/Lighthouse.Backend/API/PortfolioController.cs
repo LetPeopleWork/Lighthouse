@@ -110,6 +110,12 @@ namespace Lighthouse.Backend.API
                 portfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);
 
                 portfolioRepository.Update(portfolio);
+
+                if (portfolioSetting.ConcurrencyToken.HasValue)
+                {
+                    portfolioRepository.SetOriginalConcurrencyToken(portfolio, portfolioSetting.ConcurrencyToken.Value);
+                }
+
                 await portfolioRepository.Save();
 
                 var updatedPortfolioSettings = new PortfolioSettingDto(portfolio);

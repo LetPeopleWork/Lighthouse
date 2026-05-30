@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API.DTO
             AutomaticallyAdjustFeatureWIP = team.AutomaticallyAdjustFeatureWIP;
             DoneItemsCutoffDays = team.DoneItemsCutoffDays;
             ForecastFilterRuleSetJson = team.ForecastFilterRuleSetJson;
+            ConcurrencyToken = team.ConcurrencyToken;
 
             if (team.WorkTrackingSystemConnection != null)
             {

@@ -82,6 +82,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<RbacOperationResult> RemoveGroupMappingAsync(int mappingId, CancellationToken cancellationToken = default);
 
+        Task<RbacOperationResult> UpdateGroupMappingRoleAsync(
+            int mappingId,
+            UserRole role,
+            Guid? concurrencyToken,
+            CancellationToken cancellationToken = default);
+
         Task<RbacOperationResult> GrantCreatorTeamAdminAsync(
             int userProfileId,
             int teamId,

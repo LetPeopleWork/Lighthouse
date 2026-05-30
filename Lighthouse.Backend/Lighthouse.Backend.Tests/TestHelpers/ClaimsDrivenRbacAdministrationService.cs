@@ -150,6 +150,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public Task<RbacOperationResult> RemoveGroupMappingAsync(int mappingId, CancellationToken cancellationToken = default)
             => Task.FromResult(RbacOperationResult.Success());
 
+        public Task<RbacOperationResult> UpdateGroupMappingRoleAsync(int mappingId, UserRole role, Guid? concurrencyToken, CancellationToken cancellationToken = default)
+            => Task.FromResult(RbacOperationResult.Success());
+
         public Task<RbacOperationResult> GrantCreatorTeamAdminAsync(int userProfileId, int teamId, CancellationToken cancellationToken = default)
             => Task.FromResult(RbacOperationResult.Success());
 

@@ -43,6 +43,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public string Mode { get; set; } = WorkItemRuleSet.ModeAnd;
 
+        public Guid ConcurrencyToken { get; set; }
+
         public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
         {
             var featureLikelihoods = CalculateFeatureLikelihoods(delivery);
@@ -76,6 +78,7 @@ namespace Lighthouse.Backend.API.DTO
                 SelectionMode = delivery.SelectionMode,
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
+                ConcurrencyToken = delivery.ConcurrencyToken,
             };
         }
 

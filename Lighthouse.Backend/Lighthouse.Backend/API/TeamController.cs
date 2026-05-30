@@ -154,6 +154,12 @@ namespace Lighthouse.Backend.API
                 team.SyncTeamWithTeamSettings(teamSetting);
 
                 teamRepository.Update(team);
+
+                if (teamSetting.ConcurrencyToken.HasValue)
+                {
+                    teamRepository.SetOriginalConcurrencyToken(team, teamSetting.ConcurrencyToken.Value);
+                }
+
                 await teamRepository.Save();
 
                 var teamSettingDto = new TeamSettingDto(team);

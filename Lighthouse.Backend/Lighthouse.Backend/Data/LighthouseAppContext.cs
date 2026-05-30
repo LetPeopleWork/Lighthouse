@@ -173,6 +173,34 @@ namespace Lighthouse.Backend.Data
                 .WithMany(p => p.Features);
 
             modelBuilder.Entity<Team>()
+                .Property(t => t.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<Portfolio>()
+                .Property(p => p.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<WorkTrackingSystemConnection>()
+                .Property(c => c.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<Delivery>()
+                .Property(d => d.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<UserProfile>()
+                .Property(up => up.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<RbacGroupMapping>()
+                .Property(m => m.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<ApiKey>()
+                .Property(k => k.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<Team>()
                 .HasMany(t => t.Portfolios)
                 .WithMany(p => p.Teams);
 
@@ -337,7 +365,7 @@ namespace Lighthouse.Backend.Data
                     logger.LogDebug("Attempting to save changes, attempt {RetryCount}", retryCount + 1);
                     return await base.SaveChangesAsync(cancellationToken);
                 }
-                catch (DbUpdateConcurrencyException ex) when (retryCount < maxRetryCount)
+                catch (DbUpdateConcurrencyException ex) when (retryCount < maxRetryCount && !InvolvesConcurrencyTokenEntity(ex))
                 {
                     retryCount++;
                     logger.LogWarning(ex, "Concurrency exception occurred, retrying {RetryCount}/{MaxRetryCount}", retryCount, maxRetryCount);
@@ -350,10 +378,32 @@ namespace Lighthouse.Backend.Data
             }
         }
 
+        public void SetOriginalConcurrencyToken(IConcurrencyTokenEntity entity, Guid clientToken)
+        {
+            Entry(entity)
+                .Property(nameof(IConcurrencyTokenEntity.ConcurrencyToken))
+                .OriginalValue = clientToken;
+        }
+
+        private static bool InvolvesConcurrencyTokenEntity(DbUpdateConcurrencyException exception)
+        {
+            return exception.Entries.Any(entry => entry.Entity is IConcurrencyTokenEntity);
+        }
+
         private void PreprocessDataBeforeSave()
         {
             logger.LogDebug("Preprocessing data before save");
+            RegenerateConcurrencyTokens();
             EncryptSecrets();
+        }
+
+        private void RegenerateConcurrencyTokens()
+        {
+            foreach (var entry in ChangeTracker.Entries<IConcurrencyTokenEntity>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
+            {
+                entry.Entity.ConcurrencyToken = Guid.NewGuid();
+            }
         }
 
         private void EncryptSecrets()

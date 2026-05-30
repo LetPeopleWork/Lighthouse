@@ -27,6 +27,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             dbSetGetter(Context).Add(item);
         }
 
+        public void SetOriginalConcurrencyToken(IConcurrencyTokenEntity entity, Guid clientToken)
+        {
+            Context.SetOriginalConcurrencyToken(entity, clientToken);
+        }
+
         public bool Exists(int id)
         {
             logger.LogDebug("Check if item exists with id {Id}", id);

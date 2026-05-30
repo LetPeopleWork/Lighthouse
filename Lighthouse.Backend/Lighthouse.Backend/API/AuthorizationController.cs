@@ -389,6 +389,47 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
+        [HttpPut("group-mappings/{mappingId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> UpdateGroupMappingRole(
+            int mappingId,
+            [FromBody] RbacGroupMappingRoleUpdateRequest request,
+            CancellationToken cancellationToken)
+        {
+            var canManage = await rbacAdministrationService.CanManageRbacAsync(User, cancellationToken);
+            if (!canManage)
+            {
+                return Forbid();
+            }
+
+            if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
+            {
+                return BadRequest("Role is invalid for group mapping.");
+            }
+
+            var result = await rbacAdministrationService.UpdateGroupMappingRoleAsync(
+                mappingId,
+                role,
+                request.ConcurrencyToken,
+                cancellationToken);
+
+            if (result.Succeeded)
+            {
+                return NoContent();
+            }
+
+            if (result.ErrorCode == RbacOperationErrorCodes.GroupMappingNotFound)
+            {
+                return NotFound(result.Message);
+            }
+
+            return BadRequest(result.Message);
+        }
+
         [HttpDelete("group-mappings/{mappingId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

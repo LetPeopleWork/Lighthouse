@@ -20,5 +20,7 @@ namespace Lighthouse.Backend.API.DTO
         public List<WorkItemRuleCondition>? Rules { get; set; }
 
         public string? Mode { get; set; }
+
+        public Guid? ConcurrencyToken { get; set; }
     }
 }

@@ -4,9 +4,11 @@ using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
-    public class WorkTrackingSystemConnection : IEntity
+    public class WorkTrackingSystemConnection : IConcurrencyTokenEntity
     {
         public int Id { get; set; }
+
+        public Guid ConcurrencyToken { get; set; }
 
         public string Name { get; set; }
 

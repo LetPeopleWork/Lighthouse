@@ -83,6 +83,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
 
+        public Guid? ConcurrencyToken { get; set; }
+
         [JsonRequired]
         public int StalenessThresholdDays { get; set; }
 

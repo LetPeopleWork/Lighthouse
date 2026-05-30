@@ -911,6 +911,41 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return RbacOperationResult.Success();
         }
 
+        public async Task<RbacOperationResult> UpdateGroupMappingRoleAsync(
+            int mappingId,
+            UserRole role,
+            Guid? concurrencyToken,
+            CancellationToken cancellationToken = default)
+        {
+            var mapping = await context.RbacGroupMappings
+                .SingleOrDefaultAsync(x => x.Id == mappingId, cancellationToken);
+
+            if (mapping is null)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.GroupMappingNotFound,
+                    "Group mapping was not found.");
+            }
+
+            if (!IsValidGroupMappingScope(role, mapping.ScopeType, mapping.ScopeId))
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.InvalidScopeForRole,
+                    "Role is invalid for the provided scope.");
+            }
+
+            mapping.Role = role;
+
+            if (concurrencyToken.HasValue)
+            {
+                context.SetOriginalConcurrencyToken(mapping, concurrencyToken.Value);
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+
+            return RbacOperationResult.Success();
+        }
+
         /// <summary>
         /// Computes the effective permissions for the current principal. When an
         /// <c>api_key_id</c> claim is present (request authenticated via API key), the

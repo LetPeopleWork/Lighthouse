@@ -42,6 +42,8 @@ namespace Lighthouse.Backend.API.DTO
             {
                 Status: OAuthCredentialStatus.RefreshFailed or OAuthCredentialStatus.Disconnected
             };
+
+            ConcurrencyToken = workTrackingSystemConnection.ConcurrencyToken;
         }
 
         [JsonRequired]
@@ -66,5 +68,7 @@ namespace Lighthouse.Backend.API.DTO
         public List<WriteBackMappingDefinitionDto> WriteBackMappingDefinitions { get; set; } = [];
 
         public bool? RequiresReconnect { get; set; }
+
+        public Guid? ConcurrencyToken { get; set; }
     }
 }

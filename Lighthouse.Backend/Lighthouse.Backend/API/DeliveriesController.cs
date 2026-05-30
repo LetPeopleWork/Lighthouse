@@ -155,6 +155,11 @@ namespace Lighthouse.Backend.API
                     throw new NotSupportedException($"Delivery Mode {existingDelivery.SelectionMode} is not supported");
             }
 
+            if (request.ConcurrencyToken.HasValue)
+            {
+                deliveryRepository.SetOriginalConcurrencyToken(existingDelivery, request.ConcurrencyToken.Value);
+            }
+
             await deliveryRepository.Save();
 
             return Ok();
