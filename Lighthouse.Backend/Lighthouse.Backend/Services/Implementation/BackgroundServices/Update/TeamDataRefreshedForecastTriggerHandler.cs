@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class TeamDataRefreshedForecastTriggerHandler(
         IRepository<Team> teamRepository,

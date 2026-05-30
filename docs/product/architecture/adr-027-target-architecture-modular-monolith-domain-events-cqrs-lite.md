@@ -137,6 +137,8 @@ The dispatcher **must not persist** (D2: thin router, recovery via re-sync — n
 
 Family E is the slice where the dispatcher graduates from OAuth-only plumbing to a general spine — it is the *precedent* #5017 anticipated when it deferred "a broader event-log abstraction… can come later if precedent shows value."
 
+**Realization note (Family C handler placement, #5099, 2026-05-30).** This addendum's Family-C row says the `TeamDataRefreshed` reaction is "a Forecasting-module handler". On delivery, `TeamDataRefreshedForecastTriggerHandler` was placed in **Portfolio/Delivery** (`Services.Implementation.BackgroundServices.Update`), NOT Forecasting — because the trigger it performs (`IForecastUpdater.TriggerUpdate`) already lives in Portfolio/Delivery, so hosting the handler there introduces **zero new cross-module edges** (it only depends on the `Models.Events` kernel event + the in-module updater), whereas a Forecasting-module handler would create a new `Forecasting → Portfolio/Delivery` dependency. It is also consistent with #5099 Family B's `TeamDeletedForecastRetriggerHandler`, which lives in the same module for the same reason. The intent of the row (cross-module decoupling: `Sync` no longer calls Forecasting/updater directly — it publishes; a handler reacts) is fully preserved; only the handler's owning module differs from the row's wording.
+
 **Lower value / leave alone:** SignalR `GlobalUpdateNotification` (`UpdateQueueService`) is already centralised in the queue — no decoupling win from eventising it.
 
 ### Confirming (non-bug) asymmetry
