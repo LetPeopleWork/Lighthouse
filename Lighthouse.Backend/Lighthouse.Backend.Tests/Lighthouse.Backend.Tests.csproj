@@ -25,6 +25,8 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="TngTech.ArchUnitNET" Version="0.13.3" />
+		<PackageReference Include="TngTech.ArchUnitNET.NUnit" Version="0.13.3" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,5 +1,9 @@
 using System.Reflection;
+using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
+using ArchitectureModel = ArchUnitNET.Domain.Architecture;
+using ArchLoader = ArchUnitNET.Loader.ArchLoader;
+using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -17,47 +21,30 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AgeInStatePercentilesHelperName = "ComputeAgeInStatePercentiles";
 
+        private static readonly ArchitectureModel Architecture = new ArchLoader()
+            .LoadAssemblies(typeof(BaseMetricsService).Assembly)
+            .Build();
+
         [Test]
         public void CumulativeHelpers_AreProtected_AndNotExposedViaAnyInterface()
         {
-            var notProtected = new List<string>();
-            var bindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-
-            foreach (var helperName in CumulativeHelperNames)
-            {
-                var helper = typeof(BaseMetricsService).GetMethod(helperName, bindingFlags);
-
-                if (helper is null)
-                {
-                    notProtected.Add($"{helperName} (method not found on BaseMetricsService)");
-                    continue;
-                }
-
-                if (helper.IsPublic || !helper.IsFamily)
-                {
-                    notProtected.Add($"{helperName} ({AccessModifierOf(helper)})");
-                }
-            }
-
-            var interfaceMembersExposingHelpers = ProductionInterfaceMembersNamed(CumulativeHelperNames);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(notProtected, Is.Empty,
+            MethodMembers().That().AreDeclaredIn(typeof(BaseMetricsService)).And().HaveNameContaining("ComputeCumulativeStateTime")
+                .Should().BeProtected()
+                .Because(
                     "ADR-024 architectural enforcement: the cumulative-state-time helpers " +
-                    "BaseMetricsService.ComputeCumulativeStateTime and ComputeCumulativeStateTimeItems must be " +
-                    "protected (intra-inheritance only), never public, so they cannot be promoted to a shared " +
-                    "interface (no IPerStateAggregationService). The following helpers have the wrong access modifier: " +
-                    string.Join(", ", notProtected) + ". " +
-                    "Keep the helpers protected, or update ADR-024 first and amend this test.");
+                    "BaseMetricsService.ComputeCumulativeStateTime and ComputeCumulativeStateTimeItems must be protected " +
+                    "(intra-inheritance only), never public, so they cannot be promoted to a shared interface " +
+                    "(no IPerStateAggregationService). Keep the helpers protected, or update ADR-024 first and amend this test.")
+                .Check(Architecture);
 
-                Assert.That(interfaceMembersExposingHelpers, Is.Empty,
+            MethodMembers().That().AreDeclaredIn(Interfaces())
+                .Should().NotHaveNameContaining("ComputeCumulativeStateTime")
+                .Because(
                     "ADR-024 architectural enforcement: no interface in the production assembly may declare a member " +
                     "named ComputeCumulativeStateTime or ComputeCumulativeStateTimeItems. The cumulative helpers are " +
-                    "intra-inheritance only; the service surface exposes scope-specific GetCumulativeStateTimeFor* " +
-                    "methods, not the shared helpers. Offending interface members: " +
-                    string.Join(", ", interfaceMembersExposingHelpers) + ".");
-            }
+                    "intra-inheritance only; the service surface exposes scope-specific GetCumulativeStateTimeFor* methods, " +
+                    "not the shared helpers.")
+                .Check(Architecture);
         }
 
         [Test]
@@ -92,18 +79,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "cumulative helpers call ComputeAgeInStatePercentiles: " +
                 string.Join(", ", helpersCallingAgeInStatePercentiles) + ". " +
                 "Keep the computations independent, or update ADR-024 first and amend this test.");
-        }
-
-        private static List<string> ProductionInterfaceMembersNamed(IReadOnlyCollection<string> memberNames)
-        {
-            var productionAssembly = typeof(BaseMetricsService).Assembly;
-
-            return productionAssembly.GetTypes()
-                .Where(type => type.IsInterface)
-                .SelectMany(type => type.GetMembers()
-                    .Where(member => memberNames.Contains(member.Name))
-                    .Select(member => $"{type.FullName ?? type.Name}.{member.Name}"))
-                .ToList();
         }
 
         private static bool MethodCalls(MethodInfo caller, MethodInfo callee)
@@ -174,26 +149,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return type.GetGenericArguments();
-        }
-
-        private static string AccessModifierOf(MethodInfo method)
-        {
-            if (method.IsPublic)
-            {
-                return "public";
-            }
-
-            if (method.IsFamily)
-            {
-                return "protected";
-            }
-
-            if (method.IsPrivate)
-            {
-                return "private";
-            }
-
-            return "internal";
         }
     }
 }

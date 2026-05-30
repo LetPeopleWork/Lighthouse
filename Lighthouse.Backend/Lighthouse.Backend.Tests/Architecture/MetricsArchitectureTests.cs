@@ -1,7 +1,11 @@
 using System.Reflection;
+using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
 using Microsoft.EntityFrameworkCore;
+using ArchitectureModel = ArchUnitNET.Domain.Architecture;
+using ArchLoader = ArchUnitNET.Loader.ArchLoader;
+using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -27,23 +31,44 @@ namespace Lighthouse.Backend.Tests.Architecture
             typeof(PortfolioMetricsService)
         ];
 
+        private static readonly ArchitectureModel Architecture = new ArchLoader()
+            .LoadAssemblies(typeof(BaseMetricsService).Assembly)
+            .Build();
+
         [Test]
         public void NoPerStateAggregationServiceExists_InProductionAssembly()
         {
-            var productionAssembly = typeof(BaseMetricsService).Assembly;
+            Types().That().HaveNameContaining("PerStateAggregation")
+                .Should().NotExist()
+                .Because(
+                    "ADR-021 / DDD-10 architectural enforcement: the repositories are the shared per-state seam, " +
+                    "so no class or interface named *PerStateAggregation* may exist. Per-state percentiles are " +
+                    "computed independently inside TeamMetricsService and PortfolioMetricsService via the protected " +
+                    "BaseMetricsService.ComputeAgeInStatePercentiles helper. Remove the aggregation service, or " +
+                    "update ADR-021 first and amend this test.")
+                .Check(Architecture);
+        }
 
-            var perStateAggregationTypes = productionAssembly.GetTypes()
-                .Where(type => type.Name.Contains("PerStateAggregation", StringComparison.Ordinal))
-                .Select(type => type.FullName ?? type.Name)
-                .ToList();
+        [Test]
+        public void ComputeAgeInStatePercentiles_IsProtected_AndNoPublicPerStateAggregationMemberIsExposed()
+        {
+            MethodMembers().That().AreDeclaredIn(typeof(BaseMetricsService)).And().HaveNameStartingWith("ComputeAgeInStatePercentiles(")
+                .Should().BeProtected()
+                .Because(
+                    "DDD-9 architectural enforcement: BaseMetricsService.ComputeAgeInStatePercentiles must be the single " +
+                    "intra-inheritance per-state aggregation helper and must be protected (intra-inheritance only), not " +
+                    "public and not an interface member. Keep the helper protected, or update ADR-021 first and amend this test.")
+                .Check(Architecture);
 
-            Assert.That(perStateAggregationTypes, Is.Empty,
-                "ADR-021 / DDD-10 architectural enforcement: the repositories are the shared per-state seam, " +
-                "so no class or interface named *PerStateAggregation* may exist. Per-state percentiles are " +
-                "computed independently inside TeamMetricsService and PortfolioMetricsService via the protected " +
-                "BaseMetricsService.ComputeAgeInStatePercentiles helper. The following types violate this: " +
-                string.Join(", ", perStateAggregationTypes) + ". " +
-                "Remove the aggregation service, or update ADR-021 first and amend this test.");
+            MethodMembers().That().AreDeclaredIn(typeof(BaseMetricsService)).And().ArePublic()
+                .Should().NotHaveNameContaining("PerStateAggregation").AndShould().NotHaveNameContaining("ComputeAgeInStatePercentiles")
+                .Because(
+                    "DDD-9 architectural enforcement: no public member named *PerStateAggregation* or " +
+                    "*ComputeAgeInStatePercentiles* may be exposed on BaseMetricsService (the helper is " +
+                    "intra-inheritance only; the service surface exposes scope-specific GetAgeInStatePercentilesFor* methods, " +
+                    "not the shared helper).")
+                .WithoutRequiringPositiveResults()
+                .Check(Architecture);
         }
 
         [Test]
@@ -62,68 +87,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "The following services reference a transition DbSet directly: " +
                 string.Join(", ", servicesTouchingTransitionDbSets) + ". " +
                 "Route transition reads through the repository port, or update the architectural decision record first and amend this test.");
-        }
-
-        [Test]
-        public void ComputeAgeInStatePercentiles_IsProtected_AndNoPublicPerStateAggregationMemberIsExposed()
-        {
-            var computeHelper = typeof(BaseMetricsService).GetMethod(
-                "ComputeAgeInStatePercentiles",
-                BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(computeHelper, Is.Not.Null,
-                    "DDD-9 architectural enforcement: BaseMetricsService.ComputeAgeInStatePercentiles must exist " +
-                    "as the single intra-inheritance per-state aggregation helper.");
-
-                Assert.That(computeHelper!.IsFamily, Is.True,
-                    "DDD-9 architectural enforcement: BaseMetricsService.ComputeAgeInStatePercentiles must be protected " +
-                    "(intra-inheritance only), not public and not an interface member. Found access modifier: " +
-                    AccessModifierOf(computeHelper) + ". " +
-                    "Keep the helper protected, or update ADR-021 first and amend this test.");
-
-                Assert.That(PublicPerStateAggregationMembers(), Is.Empty,
-                    "DDD-9 architectural enforcement: no public member named *PerStateAggregation* or " +
-                    "*AgeInStatePercentiles* may be exposed on the metrics services or BaseMetricsService " +
-                    "(the helper is intra-inheritance only; the service surface exposes scope-specific " +
-                    "GetAgeInStatePercentilesFor* methods, not the shared helper). Offending public members: " +
-                    string.Join(", ", PublicPerStateAggregationMembers()) + ".");
-            }
-        }
-
-        private static List<string> PublicPerStateAggregationMembers()
-        {
-            return PublicMembersDeclaredOn(typeof(BaseMetricsService))
-                .Where(member => member.Name.Contains("PerStateAggregation", StringComparison.Ordinal)
-                                 || member.Name.Contains("ComputeAgeInStatePercentiles", StringComparison.Ordinal))
-                .Select(member => $"{member.DeclaringType?.Name}.{member.Name}")
-                .ToList();
-        }
-
-        private static MemberInfo[] PublicMembersDeclaredOn(Type type)
-        {
-            return type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
-        }
-
-        private static string AccessModifierOf(MethodInfo method)
-        {
-            if (method.IsPublic)
-            {
-                return "public";
-            }
-
-            if (method.IsFamily)
-            {
-                return "protected";
-            }
-
-            if (method.IsPrivate)
-            {
-                return "private";
-            }
-
-            return "internal";
         }
 
         private static bool ReferencesTransitionDbSet(Type type)
