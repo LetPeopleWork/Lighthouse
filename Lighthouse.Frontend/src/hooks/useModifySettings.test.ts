@@ -529,4 +529,422 @@ describe("useModifySettings", () => {
 			expect(result.current.settings?.name).toBe("Edited Name");
 		});
 	});
+
+	describe("auto-save with optimistic concurrency", () => {
+		const autoSaveArgs = (
+			overrides: Partial<
+				Parameters<typeof useModifySettings<SimpleSettings>>[0]
+			> = {},
+		) =>
+			makeHookArgs({
+				autoSave: { enabled: true, canSave: true, debounceMs: 300 },
+				...overrides,
+			});
+
+		it("debounces an edit then auto-saves once after the debounce window", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi.fn().mockResolvedValue(undefined);
+				const args = autoSaveArgs({ saveSettings });
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				expect(saveSettings).not.toHaveBeenCalled();
+
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(299);
+				});
+				expect(saveSettings).not.toHaveBeenCalled();
+
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(1);
+				});
+				expect(saveSettings).toHaveBeenCalledTimes(1);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("does not auto-save when the form has not been interacted with", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi.fn().mockResolvedValue(undefined);
+				const args = autoSaveArgs({ saveSettings });
+				renderHook(() => useModifySettings(args));
+
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(1000);
+				});
+				expect(saveSettings).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("does not auto-save while canSave is false", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi.fn().mockResolvedValue(undefined);
+				const args = autoSaveArgs({
+					saveSettings,
+					autoSave: { enabled: true, canSave: false, debounceMs: 300 },
+				});
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+				act(() => result.current.updateSettings("name", "Edited" as never));
+
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(1000);
+				});
+				expect(saveSettings).not.toHaveBeenCalled();
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("reports the saving then saved transition and advances the concurrency token from the save result", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi
+					.fn()
+					.mockResolvedValue(makeSettings({ concurrencyToken: "token-v2" }));
+				const args = autoSaveArgs({
+					saveSettings,
+					getSettings: vi
+						.fn()
+						.mockResolvedValue(makeSettings({ concurrencyToken: "token-v1" })),
+				});
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() =>
+					expect(result.current.settings?.concurrencyToken).toBe("token-v1"),
+				);
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+
+				expect(saveSettings).toHaveBeenCalledTimes(1);
+				expect(result.current.saveState).toBe("saved");
+				expect(result.current.settings?.concurrencyToken).toBe("token-v2");
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("echoes the latest token back when a queued edit flushes after the in-flight save resolves", async () => {
+			vi.useFakeTimers();
+			try {
+				let resolveFirst: (value: SimpleSettings) => void = () => {};
+				const saveSettings = vi
+					.fn()
+					.mockImplementationOnce(
+						() =>
+							new Promise<SimpleSettings>((resolve) => {
+								resolveFirst = resolve;
+							}),
+					)
+					.mockResolvedValue(makeSettings({ concurrencyToken: "token-v3" }));
+				const args = autoSaveArgs({
+					saveSettings,
+					getSettings: vi
+						.fn()
+						.mockResolvedValue(makeSettings({ concurrencyToken: "token-v1" })),
+				});
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.updateSettings("name", "First" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(saveSettings).toHaveBeenCalledTimes(1);
+
+				act(() => result.current.updateSettings("name", "Second" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(saveSettings).toHaveBeenCalledTimes(1);
+
+				await act(async () => {
+					resolveFirst(makeSettings({ concurrencyToken: "token-v2" }));
+				});
+
+				expect(saveSettings).toHaveBeenCalledTimes(2);
+				const queuedPayload = saveSettings.mock.calls[1][0] as SimpleSettings;
+				expect(queuedPayload.concurrencyToken).toBe("token-v2");
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("enters the conflict state on a 409 and stops auto-saving further edits", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi
+					.fn()
+					.mockRejectedValueOnce(new ApiError(409, "stale"))
+					.mockResolvedValue(undefined);
+				const args = autoSaveArgs({ saveSettings });
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(result.current.saveState).toBe("conflict");
+
+				act(() =>
+					result.current.updateSettings("name", "Edited Again" as never),
+				);
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(saveSettings).toHaveBeenCalledTimes(1);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("treats a non-409 save failure as a recoverable error, not a conflict", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi
+					.fn()
+					.mockRejectedValue(new ApiError(500, "server"));
+				const args = autoSaveArgs({ saveSettings });
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(result.current.saveState).toBe("error");
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("reloadAfterConflict fetches fresh settings, clears the conflict and returns to idle", async () => {
+			vi.useFakeTimers();
+			try {
+				const getSettings = vi
+					.fn()
+					.mockResolvedValueOnce(makeSettings({ name: "Original" }))
+					.mockResolvedValue(makeSettings({ name: "Server Truth" }));
+				const saveSettings = vi
+					.fn()
+					.mockRejectedValueOnce(new ApiError(409, "stale"))
+					.mockResolvedValue(undefined);
+				const args = autoSaveArgs({ getSettings, saveSettings });
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() =>
+					expect(result.current.settings?.name).toBe("Original"),
+				);
+
+				act(() => result.current.updateSettings("name", "My Edit" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(result.current.saveState).toBe("conflict");
+
+				await act(async () => {
+					await result.current.reloadAfterConflict();
+				});
+
+				expect(result.current.settings?.name).toBe("Server Truth");
+				expect(result.current.saveState).toBe("idle");
+
+				act(() => result.current.updateSettings("name", "Re-applied" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(saveSettings).toHaveBeenCalledTimes(2);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("retry re-dispatches the last save payload", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi
+					.fn()
+					.mockRejectedValueOnce(new ApiError(500, "server"))
+					.mockResolvedValue(undefined);
+				const args = autoSaveArgs({ saveSettings });
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(result.current.saveState).toBe("error");
+
+				await act(async () => {
+					result.current.retry();
+				});
+
+				expect(saveSettings).toHaveBeenCalledTimes(2);
+				expect(result.current.saveState).toBe("saved");
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("refreshes dependent data after a save and flags refreshFailed when that refresh rejects", async () => {
+			vi.useFakeTimers();
+			try {
+				const additionalFetch = vi
+					.fn()
+					.mockResolvedValueOnce(undefined)
+					.mockRejectedValue(new Error("refresh down"));
+				const args = autoSaveArgs({
+					additionalFetch,
+					autoSave: {
+						enabled: true,
+						canSave: true,
+						debounceMs: 300,
+						refreshOnSave: true,
+					},
+				});
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() => expect(result.current.settings).not.toBeNull());
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+
+				expect(additionalFetch).toHaveBeenCalledTimes(2);
+				expect(result.current.refreshFailed).toBe(true);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("reloadDependentData re-runs additionalFetch and surfaces a failure via refreshFailed", async () => {
+			const additionalFetch = vi
+				.fn()
+				.mockResolvedValueOnce(undefined)
+				.mockRejectedValue(new Error("refresh down"));
+			const args = makeHookArgs({ additionalFetch });
+			const { result } = renderHook(() => useModifySettings(args));
+
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			await act(async () => {
+				result.current.reloadDependentData();
+			});
+
+			await waitFor(() => expect(result.current.refreshFailed).toBe(true));
+			expect(additionalFetch).toHaveBeenCalledTimes(2);
+		});
+
+		it.each([
+			"sizeEstimateAdditionalFieldDefinitionId",
+			"featureOwnerAdditionalFieldDefinitionId",
+			"parentOverrideAdditionalFieldDefinitionId",
+			"estimationAdditionalFieldDefinitionId",
+			"estimationUnit",
+			"owningTeam",
+			"forecastFilterRuleSetJson",
+		])("clears the nullable field %s to null", async (field) => {
+			type Nullable = SimpleSettings & Record<string, unknown>;
+			const args = makeHookArgs({
+				getSettings: vi
+					.fn()
+					.mockResolvedValue({ ...makeSettings(), [field]: "preset" }),
+			});
+			const { result } = renderHook(() =>
+				useModifySettings<Nullable>(args as never),
+			);
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			act(() => result.current.updateSettings(field as never, null));
+
+			expect((result.current.settings as Nullable)[field]).toBeNull();
+		});
+
+		it("keeps the existing token when a save resolves without a fresh token", async () => {
+			vi.useFakeTimers();
+			try {
+				const saveSettings = vi.fn().mockResolvedValue(makeSettings());
+				const args = autoSaveArgs({
+					saveSettings,
+					getSettings: vi
+						.fn()
+						.mockResolvedValue(
+							makeSettings({ concurrencyToken: "token-keep" }),
+						),
+				});
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() =>
+					expect(result.current.settings?.concurrencyToken).toBe("token-keep"),
+				);
+
+				act(() => result.current.updateSettings("name", "Edited" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+
+				expect(saveSettings).toHaveBeenCalledTimes(1);
+				expect(result.current.settings?.concurrencyToken).toBe("token-keep");
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it("reselects the work tracking system that matches the reloaded settings after a conflict", async () => {
+			vi.useFakeTimers();
+			try {
+				const getSettings = vi
+					.fn()
+					.mockResolvedValueOnce(
+						makeSettings({ workTrackingSystemConnectionId: 1 }),
+					)
+					.mockResolvedValue(
+						makeSettings({ workTrackingSystemConnectionId: 2 }),
+					);
+				const saveSettings = vi
+					.fn()
+					.mockRejectedValueOnce(new ApiError(409, "stale"))
+					.mockResolvedValue(undefined);
+				const args = autoSaveArgs({ getSettings, saveSettings });
+				const { result } = renderHook(() => useModifySettings(args));
+
+				await vi.waitFor(() =>
+					expect(result.current.selectedWorkTrackingSystem?.id).toBe(1),
+				);
+
+				act(() => result.current.updateSettings("name", "My Edit" as never));
+				await act(async () => {
+					await vi.advanceTimersByTimeAsync(300);
+				});
+				expect(result.current.saveState).toBe("conflict");
+
+				await act(async () => {
+					await result.current.reloadAfterConflict();
+				});
+
+				expect(result.current.selectedWorkTrackingSystem?.id).toBe(2);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+	});
 });

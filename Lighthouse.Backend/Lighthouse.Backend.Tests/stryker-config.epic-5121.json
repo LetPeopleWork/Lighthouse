@@ -1,0 +1,33 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/DomainEvents/DomainEventDispatcher.cs",
+      "**/Services/Implementation/DomainEvents/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs",
+      "**/Services/Implementation/DomainEvents/TeamDeletedRefreshLogCleanupHandler.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandler.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamDeletedForecastRetriggerHandler.cs",
+      "**/API/Filters/ConcurrencyConflictExceptionFilter.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~DomainEventDispatcherTest|FullyQualifiedName~PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest|FullyQualifiedName~TeamDeletedRefreshLogCleanupHandlerTest|FullyQualifiedName~TeamDataRefreshedForecastTriggerHandlerTest|FullyQualifiedName~TeamDeletedForecastRetriggerHandlerTest|FullyQualifiedName~ConcurrencyConflictExceptionFilterTest|FullyQualifiedName~TeamConcurrencyTokenIntegrationTest",
+    "reporters": [
+      "progress",
+      "html",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 1,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

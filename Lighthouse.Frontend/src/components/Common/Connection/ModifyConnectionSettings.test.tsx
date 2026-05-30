@@ -532,6 +532,60 @@ describe("ModifyConnectionSettings", () => {
 			});
 			expect(defaultProps.saveConnectionSettings).toHaveBeenCalled();
 		});
+
+		it("shows the plan-limit fallback copy for a 403 ApiError with no server message", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockRejectedValue(
+				new ApiError(403, ""),
+			);
+
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/exceeded the number of additional fields/i),
+				).toBeInTheDocument();
+			});
+			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
+		});
+
+		it("shows the generic connection-failed copy when validation throws a non-ApiError", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockRejectedValue(
+				new Error("socket hangup"),
+			);
+
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(
+						/Could not connect to the .* with the provided settings/i,
+					),
+				).toBeInTheDocument();
+			});
+			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
+		});
 	});
 
 	describe("disableSave prop", () => {
