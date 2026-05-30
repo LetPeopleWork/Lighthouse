@@ -197,7 +197,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			};
 			setSaveState("saving");
 			if (isLatest()) setRefreshFailed(false);
-			return saveSettingsRef.current(payload).then(
+			void saveSettingsRef.current(payload).then(
 				(result) => {
 					hasInteractedRef.current = false;
 					applyRefreshedToken(result);
