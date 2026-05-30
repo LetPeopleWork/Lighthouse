@@ -2,10 +2,12 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -24,6 +26,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -921,6 +924,9 @@ namespace Lighthouse.Backend
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
+
+            builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
+            builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
 
             // Authentication
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));

@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -20,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
         private Mock<IForecastService> forecastServiceMock;
-        private Mock<IPortfolioMetricsService> projectMetricsServiceMock;
+        private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
@@ -37,7 +39,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
             workItemServiceMock = new Mock<IWorkItemService>();
-            projectMetricsServiceMock = new Mock<IPortfolioMetricsService>();
+            domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<PortfolioFeaturesRefreshed>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
@@ -49,7 +54,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(workItemServiceMock.Object);
-            SetupServiceProviderMock(projectMetricsServiceMock.Object);
             SetupServiceProviderMock(licenseServiceMock.Object);
             SetupServiceProviderMock(deliveryRepositoryMock.Object);
             SetupServiceProviderMock(deliveryRuleServiceMock.Object);
@@ -96,25 +100,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
 
             await subject.StartAsync(CancellationToken.None);
+            await WaitForEnqueue(project.Id);
 
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project.Id, It.IsAny<Func<IServiceProvider, Task>>()));
         }
 
         [Test]
-        public async Task ExecuteAsync_InvalidatesProjectMetricsAfterUpdate()
+        public async Task ExecuteAsync_PublishesPortfolioFeaturesRefreshedAfterUpdate()
         {
             var project = CreateProject(DateTime.Now.AddDays(-1));
             SetupProjects(project);
             var subject = CreateSubject();
 
             var tcs = new TaskCompletionSource<bool>();
-            projectMetricsServiceMock.Setup(x => x.InvalidatePortfolioMetrics(project))
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.Is<PortfolioFeaturesRefreshed>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
                 .Callback(() => tcs.TrySetResult(true));
 
             await subject.StartAsync(CancellationToken.None);
 
             var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
-            Assert.That(completedTask, Is.EqualTo(tcs.Task), "InvalidateProjectMetrics was not called within timeout");
+            Assert.That(completedTask, Is.EqualTo(tcs.Task), "PortfolioFeaturesRefreshed was not published within timeout");
         }
 
         [Test]
@@ -127,6 +134,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
 
             await subject.StartAsync(CancellationToken.None);
+            await WaitForEnqueue(project1.Id);
+            await WaitForEnqueue(project2.Id);
 
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()));
@@ -145,6 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
 
             await subject.StartAsync(CancellationToken.None);
+            await WaitForEnqueue(project1.Id);
 
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project1.Id, It.IsAny<Func<IServiceProvider, Task>>()));
             Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, project2.Id, It.IsAny<Func<IServiceProvider, Task>>()), Times.Never);
@@ -281,6 +291,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             cleanupServiceMock.Verify(c => c.CleanupAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        private async Task WaitForEnqueue(int projectId)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(2);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (EnqueueWasRecorded(projectId))
+                {
+                    return;
+                }
+
+                await Task.Delay(10);
+            }
+        }
+
+        private bool EnqueueWasRecorded(int projectId)
+        {
+            try
+            {
+                Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, projectId, It.IsAny<Func<IServiceProvider, Task>>()));
+                return true;
+            }
+            catch (MockException)
+            {
+                return false;
+            }
+        }
+
         private void SetupProjects(params Portfolio[] projects)
         {
             projectRepoMock.Setup(x => x.GetAll()).Returns(projects);
@@ -341,7 +378,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private PortfolioUpdater CreateSubject()
         {
-            return new PortfolioUpdater(Mock.Of<ILogger<PortfolioUpdater>>(), ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object);
+            return new PortfolioUpdater(Mock.Of<ILogger<PortfolioUpdater>>(), ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object);
         }
     }
 }

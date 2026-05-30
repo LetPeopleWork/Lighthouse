@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -14,7 +16,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         ILogger<PortfolioUpdater> logger,
         IServiceScopeFactory serviceScopeFactory,
         IUpdateQueueService updateQueueService,
-        IOrphanedFeatureCleanupService cleanupService)
+        IOrphanedFeatureCleanupService cleanupService,
+        IDomainEventDispatcher domainEventDispatcher)
         : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Features),
             IPortfolioUpdater
     {
@@ -63,12 +66,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 {
                     var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
                     var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
-                    var projectMetricsService = serviceProvider.GetRequiredService<IPortfolioMetricsService>();
                     var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
                     var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
 
                     await workItemService.UpdateFeaturesForPortfolio(project);
-                    projectMetricsService.InvalidatePortfolioMetrics(project);
+                    await domainEventDispatcher.PublishAsync(new PortfolioFeaturesRefreshed(project.Id));
 
                     var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
                     deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
