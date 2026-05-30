@@ -457,3 +457,4 @@ test-results/
 # - deliver/execution-log.json: DES audit log, harness-protected
 **/.develop-progress.json
 **/deliver/execution-log.json
+social-posts/.slack-cache.json
