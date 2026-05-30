@@ -1,4 +1,4 @@
-using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Tests.TestHelpers;
 using System.Net;
 using System.Net.Http.Json;

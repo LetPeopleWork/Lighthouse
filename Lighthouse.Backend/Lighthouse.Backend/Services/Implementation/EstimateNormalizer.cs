@@ -1,14 +1,8 @@
 using System.Globalization;
+using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public enum EstimateNormalizationStatus
-    {
-        Mapped,
-        Unmapped,
-        Invalid,
-    }
-
     public record EstimateNormalizationResult(
         EstimateNormalizationStatus Status,
         double NumericValue,

@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models.Metrics
 {
     public record FeatureEstimationDataPoint(
         int FeatureId,

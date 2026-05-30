@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using Lighthouse.Backend.Services.Implementation;
 
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models.Metrics
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum BaselineStatus

@@ -1,4 +1,3 @@
-using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.Tests.API.DTO

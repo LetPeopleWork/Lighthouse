@@ -1,4 +1,4 @@
-using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {

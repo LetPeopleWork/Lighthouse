@@ -1,6 +1,4 @@
-using Lighthouse.Backend.Services.Implementation;
-
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models.Metrics
 {
     public enum EstimationVsCycleTimeStatus
     {

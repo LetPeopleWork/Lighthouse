@@ -1,14 +1,7 @@
+using Lighthouse.Backend.Models.Metrics;
+
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public enum SpecialCauseType
-    {
-        None,
-        LargeChange,
-        ModerateChange,
-        ModerateShift,
-        SmallShift,
-    }
-
     public record XmRResult(
         int Average,
         int UpperNaturalProcessLimit,

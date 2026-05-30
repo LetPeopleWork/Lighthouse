@@ -1,4 +1,3 @@
-using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;

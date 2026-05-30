@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Forecast;

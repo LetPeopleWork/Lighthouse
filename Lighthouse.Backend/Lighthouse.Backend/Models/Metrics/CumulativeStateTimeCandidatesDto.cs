@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models.Metrics
 {
     public sealed record CumulativeStateTimeCandidateRowDto(
         int WorkItemId,

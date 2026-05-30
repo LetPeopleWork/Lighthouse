@@ -1,5 +1,5 @@
-using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Microsoft.AspNetCore.Authorization;

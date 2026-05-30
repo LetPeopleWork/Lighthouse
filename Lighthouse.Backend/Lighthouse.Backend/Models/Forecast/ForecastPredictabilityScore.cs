@@ -1,7 +1,6 @@
-﻿using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models.Forecast
 {
     public class ForecastPredictabilityScore
     {

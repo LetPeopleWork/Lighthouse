@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models.OAuth
 {
     public sealed record OAuthHealthDto(
         int TotalOAuthConnections,

@@ -1,4 +1,4 @@
-using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.API.DTO

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Lighthouse.Backend.API.DTO
+namespace Lighthouse.Backend.Models
 {
     public class BlackoutPeriodDto
     {

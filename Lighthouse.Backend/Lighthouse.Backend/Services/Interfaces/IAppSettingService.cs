@@ -1,5 +1,4 @@
-﻿using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.Models.AppSettings;
+﻿using Lighthouse.Backend.Models.AppSettings;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
