@@ -217,6 +217,77 @@ describe("DeliveriesChips", () => {
 		});
 	});
 
+	describe("never presents a portfolio delivery forecast as a certainty", () => {
+		it("reads Likelihood: >95% for a delivery above 95% with work left", async () => {
+			const mockDeliveries = [
+				getMockDelivery({
+					id: 1,
+					name: "Q1 Release",
+					likelihoodPercentage: 100,
+					remainingWork: 25,
+					portfolioId: 100,
+				}),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+
+			renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Q1 Release.*Likelihood: >95%/),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText(/Likelihood: 100%/)).not.toBeInTheDocument();
+		});
+
+		it("keeps the precise Likelihood: 95% for a delivery at the boundary", async () => {
+			const mockDeliveries = [
+				getMockDelivery({
+					id: 1,
+					name: "Q1 Release",
+					likelihoodPercentage: 95,
+					remainingWork: 25,
+					portfolioId: 100,
+				}),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+
+			renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Q1 Release.*Likelihood: 95%/),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText(/Likelihood: >95%/)).not.toBeInTheDocument();
+		});
+
+		it("still reads Likelihood: 100% for a completed delivery with no work left", async () => {
+			const mockDeliveries = [
+				getMockDelivery({
+					id: 1,
+					name: "Q1 Release",
+					likelihoodPercentage: 100,
+					remainingWork: 0,
+					portfolioId: 100,
+				}),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+
+			renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Q1 Release.*Likelihood: 100%/),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText(/Likelihood: >95%/)).not.toBeInTheDocument();
+		});
+	});
+
 	it("should not fetch deliveries when portfolioId is 0 or undefined", () => {
 		renderWithProviders(<DeliveriesChips portfolioId={0} />);
 

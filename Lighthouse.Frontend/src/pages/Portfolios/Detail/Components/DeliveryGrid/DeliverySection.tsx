@@ -38,6 +38,7 @@ import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../utils/featureName";
+import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
 
 interface DeliverySectionProps {
 	delivery: Delivery;
@@ -179,7 +180,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						.map((fl) => (
 							<Chip
 								key={fl.featureId}
-								label={`${Math.round(fl.likelihoodPercentage)}%`}
+								label={formatLikelihood(fl.likelihoodPercentage, {
+									hasRemainingWork: row.getRemainingWorkForFeature() > 0,
+									precision: "round",
+								})}
 								size="small"
 								sx={{
 									bgcolor: new ForecastLevel(fl.likelihoodPercentage).color,
@@ -334,7 +338,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											Delivery Date: {delivery.getFormattedDate()}
 										</Typography>
 										<Chip
-											label={`Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
+											label={`Likelihood: ${formatLikelihood(
+												delivery.likelihoodPercentage,
+												{
+													hasRemainingWork: delivery.remainingWork > 0,
+													precision: "round",
+												},
+											)}`}
 											size="small"
 											sx={{
 												bgcolor: forecastLevel.color,

@@ -6,6 +6,7 @@ import type { Delivery } from "../../../models/Delivery";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { formatLikelihood } from "../../../utils/forecast/formatLikelihood";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 
 export interface DeliveriesChipsProps {
@@ -59,7 +60,13 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 						style={{ textDecoration: "none" }}
 					>
 						<Chip
-							label={`${delivery.name} | ${delivery.getFeatureCount()} ${featuresTerm} | Likelihood: ${Math.round(delivery.likelihoodPercentage)}%`}
+							label={`${delivery.name} | ${delivery.getFeatureCount()} ${featuresTerm} | Likelihood: ${formatLikelihood(
+								delivery.likelihoodPercentage,
+								{
+									hasRemainingWork: delivery.remainingWork > 0,
+									precision: "round",
+								},
+							)}`}
 							size="small"
 							sx={{
 								bgcolor: forecastLevel.color,

@@ -218,6 +218,139 @@ describe("DeliverySection", () => {
 		expect(mockProps.onToggleExpanded).not.toHaveBeenCalled();
 	});
 
+	describe("never presents a delivery forecast as a certainty", () => {
+		it("reads >95% on the delivery chip above 95% with work left", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "Test Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 100;
+			delivery.progress = 60;
+			delivery.remainingWork = 4;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [];
+			delivery.completionDates = [];
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} delivery={delivery} />
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText("Likelihood: >95%")).toBeInTheDocument();
+			expect(screen.queryByText("Likelihood: 100%")).not.toBeInTheDocument();
+		});
+
+		it("reads >95% on a per-feature chip above 95% with work left", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "Test Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 75;
+			delivery.progress = 60;
+			delivery.remainingWork = 4;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [
+				{ featureId: 1, likelihoodPercentage: 100 },
+			];
+			delivery.completionDates = [];
+
+			const feature = new Feature();
+			feature.id = 1;
+			feature.name = "Test Feature";
+			feature.remainingWork = { "1": 5 };
+			feature.totalWork = { "1": 10 };
+			feature.forecasts = [];
+
+			render(
+				<MemoryRouter>
+					<DeliverySection
+						{...mockProps}
+						delivery={delivery}
+						features={[feature]}
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText(">95%")).toBeInTheDocument();
+			expect(screen.queryByText("100%")).not.toBeInTheDocument();
+		});
+
+		it("still reads 100% on a per-feature chip for a completed feature with no work left", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "Test Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 75;
+			delivery.progress = 100;
+			delivery.remainingWork = 0;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [
+				{ featureId: 1, likelihoodPercentage: 100 },
+			];
+			delivery.completionDates = [];
+
+			const feature = new Feature();
+			feature.id = 1;
+			feature.name = "Test Feature";
+			feature.remainingWork = { "1": 0 };
+			feature.totalWork = { "1": 10 };
+			feature.forecasts = [];
+
+			render(
+				<MemoryRouter>
+					<DeliverySection
+						{...mockProps}
+						delivery={delivery}
+						features={[feature]}
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText("100%")).toBeInTheDocument();
+			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
+		});
+
+		it("keeps the precise likelihood on a per-feature chip at or below 95% with work left", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "Test Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 75;
+			delivery.progress = 60;
+			delivery.remainingWork = 4;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [
+				{ featureId: 1, likelihoodPercentage: 87 },
+			];
+			delivery.completionDates = [];
+
+			const feature = new Feature();
+			feature.id = 1;
+			feature.name = "Test Feature";
+			feature.remainingWork = { "1": 5 };
+			feature.totalWork = { "1": 10 };
+			feature.forecasts = [];
+
+			render(
+				<MemoryRouter>
+					<DeliverySection
+						{...mockProps}
+						delivery={delivery}
+						features={[feature]}
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText("87%")).toBeInTheDocument();
+			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
+		});
+	});
+
 	describe("WorkItemsDialog", () => {
 		it("should not show WorkItemsDialog by default", () => {
 			render(
