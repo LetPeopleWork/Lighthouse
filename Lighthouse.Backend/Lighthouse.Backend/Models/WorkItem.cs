@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Models
 
         public int TeamId { get; set; }
 
+        public bool WasStaleAtLastSync { get; set; }
+
         public override bool IsBlocked => Team != null && (Team.BlockedStates.IsItemInList(State) || Tags.Any(Team.BlockedTags.IsItemInList));
 
         internal void Update(WorkItem item)

@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -18,7 +20,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IPortfolioMetricsService portfolioMetricsService,
         IRepository<Team> teamRepository,
         IWorkItemStateTransitionRepository stateTransitionRepository,
-        IFeatureStateTransitionRepository featureStateTransitionRepository)
+        IFeatureStateTransitionRepository featureStateTransitionRepository,
+        IDomainEventDispatcher domainEventDispatcher)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -62,17 +65,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
             var actualWorkItems = await workItemService.GetWorkItemsForTeam(team);
 
-            var itemsWithTransitions = new List<(WorkItem persistedItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
+            var itemsWithTransitions = new List<SyncedItem>();
 
             foreach (var item in actualWorkItems)
             {
                 var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
                 var priorState = existingItem?.State;
+                var wasBlocked = WasBlocked(team, existingItem);
                 var persistedItem = SyncWorkItem(item, existingItem);
                 storedWorkItems.RemoveAll(wi => wi.ReferenceId == item.ReferenceId);
 
                 var syncedTransitions = WithSyncDeltaTransition(workItemService, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
-                itemsWithTransitions.Add((persistedItem, syncedTransitions));
+                itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, wasBlocked));
             }
 
             foreach (var itemToRemove in storedWorkItems)
@@ -83,14 +87,108 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await workItemRepository.Save();
 
-            foreach (var (persistedItem, syncedTransitions) in itemsWithTransitions)
+            var events = new List<IDomainEvent>();
+            foreach (var syncedItem in itemsWithTransitions)
             {
-                SyncStateTransitions(persistedItem, syncedTransitions);
+                var newTransitions = SyncStateTransitions(syncedItem.PersistedItem, syncedItem.SyncedTransitions);
+                events.AddRange(CollectDomainEvents(team, syncedItem, newTransitions, syncTime));
             }
 
             await stateTransitionRepository.Save();
             await workItemRepository.Save();
+
+            await PublishDomainEvents(events);
         }
+
+        private static bool WasBlocked(Team team, WorkItem? existingItem)
+        {
+            if (existingItem == null)
+            {
+                return false;
+            }
+
+            return team.BlockedStates.IsItemInList(existingItem.State)
+                || existingItem.Tags.Any(team.BlockedTags.IsItemInList);
+        }
+
+        private static List<IDomainEvent> CollectDomainEvents(Team team, SyncedItem syncedItem, IReadOnlyList<WorkItemStateTransition> newTransitions, DateTime syncTime)
+        {
+            var workItem = syncedItem.PersistedItem;
+
+            var events = new List<IDomainEvent>();
+            events.AddRange(newTransitions.Select(transition => new WorkItemTransitioned(workItem.Id, transition.FromState, transition.ToState)));
+
+            if (!syncedItem.WasBlocked && workItem.IsBlocked)
+            {
+                events.Add(new WorkItemBlocked(workItem.Id, ResolveBlockReason(team, workItem)));
+            }
+
+            AddStalenessEventIfThresholdCrossed(team, workItem, syncTime, events);
+
+            return events;
+        }
+
+        private static void AddStalenessEventIfThresholdCrossed(Team team, WorkItem workItem, DateTime syncTime, List<IDomainEvent> events)
+        {
+            var isStaleNow = IsStale(team, workItem, syncTime);
+            if (isStaleNow && !workItem.WasStaleAtLastSync)
+            {
+                workItem.WasStaleAtLastSync = true;
+                events.Add(new WorkItemBecameStale(workItem.Id, team.StalenessThresholdDays));
+                return;
+            }
+
+            if (!isStaleNow)
+            {
+                workItem.WasStaleAtLastSync = false;
+            }
+        }
+
+        private static string ResolveBlockReason(Team team, WorkItem workItem)
+        {
+            if (team.BlockedStates.IsItemInList(workItem.State))
+            {
+                return workItem.State;
+            }
+
+            return workItem.Tags.First(team.BlockedTags.IsItemInList);
+        }
+
+        private static bool IsStale(Team team, WorkItem workItem, DateTime syncTime)
+        {
+            if (workItem.StateCategory != StateCategories.Doing || !workItem.CurrentStateEnteredAt.HasValue)
+            {
+                return false;
+            }
+
+            return (syncTime - workItem.CurrentStateEnteredAt.Value).TotalDays > team.StalenessThresholdDays;
+        }
+
+        private async Task PublishDomainEvents(IReadOnlyList<IDomainEvent> events)
+        {
+            foreach (var domainEvent in events)
+            {
+                await PublishDomainEvent(domainEvent);
+            }
+        }
+
+        private async Task PublishDomainEvent(IDomainEvent domainEvent)
+        {
+            switch (domainEvent)
+            {
+                case WorkItemTransitioned transitioned:
+                    await domainEventDispatcher.PublishAsync(transitioned);
+                    break;
+                case WorkItemBlocked blocked:
+                    await domainEventDispatcher.PublishAsync(blocked);
+                    break;
+                case WorkItemBecameStale becameStale:
+                    await domainEventDispatcher.PublishAsync(becameStale);
+                    break;
+            }
+        }
+
+        private sealed record SyncedItem(WorkItem PersistedItem, IReadOnlyList<WorkItemStateTransition> SyncedTransitions, bool WasBlocked);
 
         private static IReadOnlyList<WorkItemStateTransition> WithSyncDeltaTransition(
             IWorkTrackingConnector connector,
@@ -135,7 +233,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return existingItem;
         }
 
-        private void SyncStateTransitions(WorkItem workItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
+        private List<WorkItemStateTransition> SyncStateTransitions(WorkItem workItem, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
         {
             var existingTransitions = stateTransitionRepository
                 .GetAllByPredicate(transition => transition.WorkItemId == workItem.Id)
@@ -156,6 +254,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             newTransitions.ForEach(stateTransitionRepository.Add);
 
             workItem.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(workItem, existingTransitions.Concat(newTransitions));
+
+            return newTransitions;
         }
 
         private static DateTime? DeriveCurrentStateEnteredAt(WorkItem workItem, IEnumerable<WorkItemStateTransition> transitions)

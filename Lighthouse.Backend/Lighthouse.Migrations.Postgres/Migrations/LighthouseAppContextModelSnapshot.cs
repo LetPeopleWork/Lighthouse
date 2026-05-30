@@ -1016,6 +1016,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("Url")
                         .HasColumnType("text");
 
+                    b.Property<bool>("WasStaleAtLastSync")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TeamId");

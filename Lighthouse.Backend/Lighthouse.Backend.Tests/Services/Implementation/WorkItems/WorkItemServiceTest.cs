@@ -1,8 +1,10 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
         private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepositoryMock;
+        private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
 
         private int idCounter;
         private List<WorkItem> workItems;
@@ -36,6 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             teamRepositoryMock = new Mock<IRepository<Team>>();
             stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
             featureStateTransitionRepositoryMock = new Mock<IFeatureStateTransitionRepository>();
+            domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
 
             featureStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
                 .Returns(new List<FeatureStateTransition>().AsQueryable());
@@ -1039,6 +1043,169 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             }
         }
 
+        [Test]
+        public async Task UpdateWorkItemsForTeam_StateChanges_PublishesWorkItemTransitionedWithFromAndToState()
+        {
+            var team = CreateTeam();
+            var existing = CreateWorkItemWithTransitions(team, "To Do");
+            existing.State = "To Do";
+            existing.StateCategory = StateCategories.ToDo;
+            workItems.Add(existing);
+
+            var incoming = CreateIncomingFor(existing, "Doing", StateCategories.Doing);
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemTransitioned>(e => e.WorkItemId == existing.Id && e.FromState == "To Do" && e.ToState == "Doing"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_StateUnchanged_PublishesNoWorkItemTransitioned()
+        {
+            var team = CreateTeam();
+            var existing = CreateWorkItemWithTransitions(team, "Doing");
+            existing.State = "Doing";
+            existing.StateCategory = StateCategories.Doing;
+            workItems.Add(existing);
+
+            var incoming = CreateIncomingFor(existing, "Doing", StateCategories.Doing);
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<WorkItemTransitioned>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_StalenessThresholdCrossed_PublishesWorkItemBecameStaleOnceWithThreshold()
+        {
+            var team = CreateTeam();
+            team.StalenessThresholdDays = 5;
+
+            var enteredDoing = DateTime.UtcNow.AddDays(-30);
+            var incoming = CreateWorkItemWithTransitions(team, "Doing", ("To Do", "Doing", enteredDoing));
+            incoming.StateCategory = StateCategories.Doing;
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemBecameStale>(e => e.WorkItemId == incoming.Id && e.ThresholdDays == 5),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ItemLeavesDoingThenReentersStale_ResetsFlagAndRepublishesOnSecondCrossing()
+        {
+            var team = CreateTeam();
+            team.StalenessThresholdDays = 5;
+            workTrackingConnectorMock.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
+
+            var firstStaleEntered = DateTime.UtcNow.AddDays(-30);
+            var existing = CreateWorkItemWithTransitions(team, "Doing", ("To Do", "Doing", firstStaleEntered));
+            existing.StateCategory = StateCategories.Doing;
+            workItems.Add(existing);
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([existing]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            var movedToReview = CreateIncomingFor(existing, "Review", StateCategories.Doing, ("Doing", "Review", DateTime.UtcNow.AddDays(-1)));
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([movedToReview]);
+            await subject.UpdateWorkItemsForTeam(team);
+
+            var reenteredDoingStale = CreateIncomingFor(existing, "Doing", StateCategories.Doing, ("Review", "Doing", DateTime.UtcNow.AddDays(-20)));
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([reenteredDoingStale]);
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemBecameStale>(e => e.WorkItemId == existing.Id),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_BlockTransition_PublishesWorkItemBlockedOnceWhileStillBlockedPublishesNoMore()
+        {
+            var team = CreateTeam();
+            team.BlockedStates.Add("Blocked");
+
+            var existing = CreateWorkItemWithTransitions(team, "Doing");
+            existing.State = "Doing";
+            existing.StateCategory = StateCategories.Doing;
+            workItems.Add(existing);
+
+            var blocked = CreateIncomingFor(existing, "Blocked", StateCategories.Doing);
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([blocked]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemBlocked>(e => e.WorkItemId == existing.Id && e.Reason == "Blocked"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_NeverBlocked_PublishesNoWorkItemBlocked()
+        {
+            var team = CreateTeam();
+            team.BlockedStates.Add("Blocked");
+
+            var existing = CreateWorkItemWithTransitions(team, "To Do");
+            existing.State = "To Do";
+            existing.StateCategory = StateCategories.ToDo;
+            workItems.Add(existing);
+
+            var incoming = CreateIncomingFor(existing, "Doing", StateCategories.Doing);
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([incoming]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<WorkItemBlocked>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        private static WorkItem CreateIncomingFor(WorkItem existing, string newState, StateCategories stateCategory, params (string fromState, string toState, DateTime transitionedAt)[] transitions)
+        {
+            var syncedTransitions = transitions
+                .Select(t => new WorkItemStateTransition { FromState = t.fromState, ToState = t.toState, TransitionedAt = t.transitionedAt })
+                .ToList();
+
+            return new WorkItem
+            {
+                ReferenceId = existing.ReferenceId,
+                State = newState,
+                StateCategory = stateCategory,
+                Team = existing.Team,
+                TeamId = existing.TeamId,
+                SyncedTransitions = syncedTransitions,
+            };
+        }
+
         private void SetupWorkForFeature(Feature feature, int doneItems, int toDoItems)
         {
             SetupWorkForFeature(feature, doneItems, toDoItems, null);
@@ -1155,7 +1322,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
 
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object, featureStateTransitionRepositoryMock.Object);
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object, featureStateTransitionRepositoryMock.Object, domainEventDispatcherMock.Object);
         }
     }
 }
