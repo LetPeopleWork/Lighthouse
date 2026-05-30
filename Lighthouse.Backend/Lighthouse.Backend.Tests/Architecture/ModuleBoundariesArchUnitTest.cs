@@ -1,5 +1,4 @@
-using ArchUnitNET.Domain;
-using ArchUnitNET.Fluent;
+using ArchUnitNET.Fluent.Syntax.Elements.Types;
 using ArchUnitNET.Loader;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
@@ -32,22 +31,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             .LoadAssemblies(typeof(BaseMetricsService).Assembly)
             .Build();
 
-        private static readonly IObjectProvider<IType> WorkTrackingIntegrationModule =
+        private static readonly GivenTypesConjunctionWithDescription WorkTrackingIntegrationModule =
             Types().That().ResideInNamespaceMatching(WorkTrackingIntegrationPattern).As("WorkTracking-Integration");
 
-        private static readonly IObjectProvider<IType> WorkItemsSyncModule =
+        private static readonly GivenTypesConjunctionWithDescription WorkItemsSyncModule =
             Types().That().ResideInNamespaceMatching(WorkItemsSyncPattern).As("WorkItems/Sync");
 
-        private static readonly IObjectProvider<IType> ForecastingModule =
+        private static readonly GivenTypesConjunctionWithDescription ForecastingModule =
             Types().That().ResideInNamespaceMatching(ForecastingPattern).As("Forecasting");
 
-        private static readonly IObjectProvider<IType> PortfolioDeliveryModule =
+        private static readonly GivenTypesConjunctionWithDescription PortfolioDeliveryModule =
             Types().That().ResideInNamespaceMatching(PortfolioDeliveryPattern).As("Portfolio/Delivery");
 
-        private static readonly IObjectProvider<IType> RbacIdentityModule =
+        private static readonly GivenTypesConjunctionWithDescription RbacIdentityModule =
             Types().That().ResideInNamespaceMatching(RbacIdentityPattern).As("RBAC/Identity");
 
-        private static readonly IObjectProvider<IType> PlatformPersistenceModule =
+        private static readonly GivenTypesConjunctionWithDescription PlatformPersistenceModule =
             Types().That().ResideInNamespaceMatching(PlatformPersistencePattern).As("Platform/Persistence");
 
         [Test]
