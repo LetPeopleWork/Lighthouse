@@ -115,6 +115,7 @@ const EditPortfolio: React.FC = () => {
 			savedSettings = await portfolioService.updatePortfolio(updatedSettings);
 			navigate(`/portfolios/${savedSettings.id}`);
 		}
+		return savedSettings;
 	};
 
 	const getConnections = async () => {

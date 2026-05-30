@@ -534,9 +534,9 @@ const TeamDetail: React.FC = () => {
 											workTrackingSystemService.getConfiguredWorkTrackingSystems()
 										}
 										getTeamSettings={() => teamService.getTeamSettings(team.id)}
-										saveTeamSettings={async (settings) => {
-											await teamService.updateTeam(settings);
-										}}
+										saveTeamSettings={(settings) =>
+											teamService.updateTeam(settings)
+										}
 										validateTeamSettings={(settings) =>
 											teamService.validateTeamSettings(settings)
 										}

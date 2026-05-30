@@ -29,7 +29,7 @@ interface ModifyTeamSettingsProps {
 	title: string;
 	getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
 	getTeamSettings: () => Promise<ITeamSettings>;
-	saveTeamSettings: (settings: ITeamSettings) => Promise<void>;
+	saveTeamSettings: (settings: ITeamSettings) => Promise<ITeamSettings>;
 	validateTeamSettings: (settings: ITeamSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
 	disableSave?: boolean;

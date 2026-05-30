@@ -201,14 +201,14 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(lastSaved.dataRetrievalValue).toBe("60");
 	});
 
-	it("@US-01 @error ignores a stale in-flight response so it cannot overwrite the latest save outcome", async () => {
-		let rejectFirst: ((reason: Error) => void) | undefined;
+	it("@US-01 @error holds the next save until the in-flight one resolves, then lands on saved", async () => {
+		let resolveFirst: (() => void) | undefined;
 		const saveSettings = vi
 			.fn()
 			.mockImplementationOnce(
 				() =>
-					new Promise<void>((_, reject) => {
-						rejectFirst = reject;
+					new Promise<void>((resolve) => {
+						resolveFirst = resolve;
 					}),
 			)
 			.mockResolvedValueOnce(undefined);
@@ -226,14 +226,14 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await act(async () => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
-		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
-		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+		expect(saveSettings).toHaveBeenCalledTimes(1);
 
 		await act(async () => {
-			rejectFirst?.(new Error("stale server response"));
+			resolveFirst?.();
 		});
 
-		expect(result.current.saveState).toBe("saved");
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
 	});
 
 	it("@US-01 does not fire any save on the initial page load", async () => {

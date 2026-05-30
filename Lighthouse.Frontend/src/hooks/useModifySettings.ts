@@ -7,6 +7,7 @@ import { ApiError } from "../services/Api/ApiError";
 
 export interface ModifySettingsBase {
 	name: string;
+	concurrencyToken?: string;
 	workTrackingSystemConnectionId: number;
 	dataRetrievalValue?: string;
 	dataRetrievalSchema?: {
@@ -32,7 +33,7 @@ export interface AutoSaveOptions {
 interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
 	getSettings: () => Promise<TSettings>;
-	saveSettings: (settings: TSettings) => Promise<void>;
+	saveSettings: (settings: TSettings) => Promise<TSettings | undefined>;
 	validateSettings: (settings: TSettings) => Promise<boolean>;
 	modifyDefaultSettings: boolean;
 	validateForm: (
@@ -66,6 +67,14 @@ const NULLABLE_FIELDS = new Set([
 	"owningTeam",
 	"forecastFilterRuleSetJson",
 ]);
+
+function withToken<T extends ModifySettingsBase>(
+	payload: T,
+	token: string | undefined,
+): T {
+	if (token === undefined) return payload;
+	return { ...payload, concurrencyToken: token };
+}
 
 function updateListField<T extends ModifySettingsBase>(
 	prev: T | null,
@@ -107,6 +116,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const requestSeqRef = useRef(0);
 	const hasInteractedRef = useRef(false);
 	const hasConflictRef = useRef(false);
+	const isSavingRef = useRef(false);
+	const pendingPayloadRef = useRef<TSettings | null>(null);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -123,10 +134,12 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const getWorkTrackingSystemsRef = useRef(getWorkTrackingSystems);
 	const additionalFetchRef = useRef(additionalFetch);
 	const saveSettingsRef = useRef(saveSettings);
+	const tokenRef = useRef<string | undefined>(undefined);
 	getSettingsRef.current = getSettings;
 	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
 	additionalFetchRef.current = additionalFetch;
 	saveSettingsRef.current = saveSettings;
+	tokenRef.current = settings?.concurrencyToken;
 
 	useEffect(() => {
 		if (settings) {
@@ -151,8 +164,15 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const autoRefreshOnSave = autoSave?.refreshOnSave ?? false;
 	const selectedConnectionId = selectedWorkTrackingSystem?.id ?? 0;
 
+	const dispatchSaveRef = useRef<(payload: TSettings) => void>(() => {});
+
 	const dispatchSave = useCallback(
 		(payload: TSettings) => {
+			if (isSavingRef.current) {
+				pendingPayloadRef.current = payload;
+				return;
+			}
+			isSavingRef.current = true;
 			lastSavePayloadRef.current = payload;
 			requestSeqRef.current += 1;
 			const seq = requestSeqRef.current;
@@ -160,18 +180,38 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			const applyIfLatest = (next: SaveState) => {
 				if (isLatest()) setSaveState(next);
 			};
+			const applyRefreshedToken = (result: TSettings | undefined) => {
+				const newToken = result?.concurrencyToken;
+				if (newToken === undefined) return;
+				tokenRef.current = newToken;
+				setSettings((prev) =>
+					prev ? { ...prev, concurrencyToken: newToken } : prev,
+				);
+			};
+			const flushPending = () => {
+				isSavingRef.current = false;
+				const pending = pendingPayloadRef.current;
+				if (!pending || hasConflictRef.current) return;
+				pendingPayloadRef.current = null;
+				dispatchSaveRef.current(withToken(pending, tokenRef.current));
+			};
 			setSaveState("saving");
 			if (isLatest()) setRefreshFailed(false);
 			return saveSettingsRef.current(payload).then(
-				() => {
+				(result) => {
+					hasInteractedRef.current = false;
+					applyRefreshedToken(result);
 					applyIfLatest("saved");
 					if (autoRefreshOnSave && isLatest()) {
 						void Promise.resolve(additionalFetchRef.current?.()).catch(() => {
 							if (isLatest()) setRefreshFailed(true);
 						});
 					}
+					flushPending();
 				},
 				(error: unknown) => {
+					pendingPayloadRef.current = null;
+					isSavingRef.current = false;
 					if (isConcurrencyConflict(error)) {
 						hasConflictRef.current = true;
 						applyIfLatest("conflict");
@@ -183,6 +223,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		},
 		[autoRefreshOnSave],
 	);
+
+	dispatchSaveRef.current = dispatchSave;
 
 	const reloadDependentData = useCallback(() => {
 		setRefreshFailed(false);

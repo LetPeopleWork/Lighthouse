@@ -43,6 +43,29 @@ const CONCURRENCY_CONFLICT_COPY =
 const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
 	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
 
+function resolveValidationErrorMessage(
+	error: unknown,
+	workTrackingSystemTerm: string,
+): { message: string; details: string | null } {
+	if (error instanceof ApiError && error.code === 403) {
+		return {
+			message:
+				error.message ||
+				"You've exceeded the number of additional fields allowed on your plan.",
+			details: error.technicalDetails ?? null,
+		};
+	}
+
+	if (error instanceof ApiError) {
+		return { message: error.message, details: error.technicalDetails ?? null };
+	}
+
+	return {
+		message: `Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
+		details: null,
+	};
+}
+
 interface ModifyConnectionSettingsProps {
 	title: string;
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
@@ -389,21 +412,12 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					return;
 				}
 			} catch (error) {
-				if (error instanceof ApiError && error.code === 403) {
-					setValidationErrorMessage(
-						error.message ||
-							"You've exceeded the number of additional fields allowed on your plan.",
-					);
-					setValidationTechnicalDetails(error.technicalDetails ?? null);
-				} else if (error instanceof ApiError) {
-					setValidationErrorMessage(error.message);
-					setValidationTechnicalDetails(error.technicalDetails ?? null);
-				} else {
-					setValidationErrorMessage(
-						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
-					);
-					setValidationTechnicalDetails(null);
-				}
+				const { message, details } = resolveValidationErrorMessage(
+					error,
+					workTrackingSystemTerm,
+				);
+				setValidationErrorMessage(message);
+				setValidationTechnicalDetails(details);
 				return;
 			}
 

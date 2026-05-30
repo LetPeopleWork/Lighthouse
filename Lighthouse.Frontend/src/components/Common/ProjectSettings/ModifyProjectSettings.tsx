@@ -33,7 +33,9 @@ interface ModifyProjectSettingsProps {
 	getWorkTrackingSystems: () => Promise<IWorkTrackingSystemConnection[]>;
 	getProjectSettings: () => Promise<IPortfolioSettings>;
 	getAllTeams: () => Promise<ITeam[]>;
-	saveProjectSettings: (settings: IPortfolioSettings) => Promise<void>;
+	saveProjectSettings: (
+		settings: IPortfolioSettings,
+	) => Promise<IPortfolioSettings>;
 	validateProjectSettings: (settings: IPortfolioSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
 }

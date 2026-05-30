@@ -111,6 +111,80 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		expect(saved.concurrencyToken).toBe("token-from-server");
 	});
 
+	it("chains the refreshed token from the previous save into the next sequential save", async () => {
+		const saveSettings = vi
+			.fn()
+			.mockResolvedValueOnce(makeSettings({ concurrencyToken: "token-2" }))
+			.mockResolvedValueOnce(makeSettings({ concurrencyToken: "token-3" }));
+		const args = makeArgs({
+			saveSettings,
+			getSettings: vi
+				.fn()
+				.mockResolvedValue(makeSettings({ concurrencyToken: "token-1" })),
+		});
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "first"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "second"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+
+		const firstSaved = saveSettings.mock.calls[0][0] as TokenedSettings;
+		const secondSaved = saveSettings.mock.calls[1][0] as TokenedSettings;
+		expect(firstSaved.concurrencyToken).toBe("token-1");
+		expect(secondSaved.concurrencyToken).toBe("token-2");
+	});
+
+	it("never sends two concurrent saves carrying the same stale token while one is in flight", async () => {
+		let resolveFirst: ((value: TokenedSettings) => void) | undefined;
+		const saveSettings = vi
+			.fn()
+			.mockImplementationOnce(
+				() =>
+					new Promise<TokenedSettings>((resolve) => {
+						resolveFirst = resolve;
+					}),
+			)
+			.mockResolvedValueOnce(makeSettings({ concurrencyToken: "token-3" }));
+		const args = makeArgs({
+			saveSettings,
+			getSettings: vi
+				.fn()
+				.mockResolvedValue(makeSettings({ concurrencyToken: "token-1" })),
+		});
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "first"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "second"));
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		expect(saveSettings).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			resolveFirst?.(makeSettings({ concurrencyToken: "token-2" }));
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+
+		const secondSaved = saveSettings.mock.calls[1][0] as TokenedSettings;
+		expect(secondSaved.concurrencyToken).toBe("token-2");
+	});
+
 	it("surfaces a distinct conflict state instead of the generic error when the save returns 409", async () => {
 		const saveSettings = vi.fn().mockRejectedValue(conflict());
 		const args = makeArgs({ saveSettings });

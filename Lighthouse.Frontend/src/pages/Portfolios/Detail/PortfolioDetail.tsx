@@ -517,9 +517,9 @@ const PortfolioDetail: React.FC = () => {
 											portfolioService.getPortfolioSettings(portfolio.id)
 										}
 										getAllTeams={() => teamService.getTeams()}
-										saveProjectSettings={async (settings) => {
-											await portfolioService.updatePortfolio(settings);
-										}}
+										saveProjectSettings={(settings) =>
+											portfolioService.updatePortfolio(settings)
+										}
 										validateProjectSettings={(settings) =>
 											portfolioService.validatePortfolioSettings(settings)
 										}
