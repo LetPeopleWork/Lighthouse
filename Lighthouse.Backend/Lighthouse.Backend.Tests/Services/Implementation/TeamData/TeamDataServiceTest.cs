@@ -1,9 +1,9 @@
-﻿using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.TeamData;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
     {
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
-        private Mock<IForecastUpdater> forecastUpdaterMock;
+        private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
 
         private int idCounter = 0;
 
@@ -23,7 +23,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         {
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             workItemServiceMock = new Mock<IWorkItemService>();
-            forecastUpdaterMock = new Mock<IForecastUpdater>();
+            domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<TeamDataRefreshed>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         [Test]
@@ -39,38 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         }
 
         [Test]
-        public async Task ExecuteAsync_TeamPartOfProject_TriggersForecastForProject()
-        {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
-            team.Portfolios.Add(new Portfolio { Id = 1, Name = "Project" });
-
-
-            var subject = CreateSubject();
-
-            await subject.UpdateTeamData(team);
-
-            forecastUpdaterMock.Verify(x => x.TriggerUpdate(1), Times.Once);
-        }
-
-        [Test]
-        public async Task ExecuteAsync_TeamPartOfMultipleProjects_TriggersForecastForEachProject()
-        {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
-            team.Portfolios.Add(new Portfolio { Id = 1, Name = "Project" });
-            team.Portfolios.Add(new Portfolio { Id = 2, Name = "Project" });
-
-
-            var subject = CreateSubject();
-
-            await subject.UpdateTeamData(team);
-
-            forecastUpdaterMock.Verify(x => x.TriggerUpdate(1), Times.Once);
-            forecastUpdaterMock.Verify(x => x.TriggerUpdate(2), Times.Once);
-            forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Exactly(2));
-        }
-
-        [Test]
-        public async Task ExecuteAsync_TeamNotPartOfProject_DoesNotTriggerForecastUpdate()
+        public async Task ExecuteAsync_PublishesTeamDataRefreshedForTeam()
         {
             var team = CreateTeam(DateTime.Now.AddDays(-1));
 
@@ -78,7 +50,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
 
             await subject.UpdateTeamData(team);
 
-            forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.Is<TeamDataRefreshed>(e => e.TeamId == team.Id), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         private Team CreateTeam(DateTime lastThroughputUpdateTime)
@@ -98,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
 
         private TeamDataService CreateSubject()
         {
-            return new TeamDataService(Mock.Of<ILogger<TeamDataService>>(), teamMetricsServiceMock.Object, workItemServiceMock.Object, forecastUpdaterMock.Object);
+            return new TeamDataService(Mock.Of<ILogger<TeamDataService>>(), teamMetricsServiceMock.Object, workItemServiceMock.Object, domainEventDispatcherMock.Object);
         }
     }
 }
