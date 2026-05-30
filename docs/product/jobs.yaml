@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-05-29
+updated: 2026-05-30
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -9,6 +9,7 @@ feature_context:
   - aging-pace-percentiles
   - state-time-cumulative-view
   - remove-action-buttons
+  - epic-5121-domain-events-cqrs-concurrency
 
 jobs:
   - id: job-rbac-bootstrap
@@ -725,3 +726,153 @@ jobs:
         defect. Satisfaction is 2 (the forecasts work, and the proof-pattern exists for the user
         to compare against), so the gap is small. The leverage is consistency: half the page
         already feels right; this makes the rest match.
+
+  - id: job-config-edit-no-silent-lost-update
+    title: Save a config edit without silently clobbering a colleague's concurrent change
+    persona: config-admin
+    feature_context: epic-5121-domain-events-cqrs-concurrency
+    created: 2026-05-30
+    note: >
+      NEW in epic-5121 (ADO #5100). User-visible value story. Closes the one genuine
+      correctness gap ADR-027 names: two humans editing the same config aggregate
+      (Team/Portfolio/Connection/RBAC/Delivery) today produces a SILENT last-writer-wins lost
+      update, because there is no optimistic-concurrency token anywhere and the blanket
+      SaveWithRetry reloads-and-retries. Scope is the human-edited config roots ONLY — NOT the
+      high-churn single-writer sync entities (WorkItem/Feature/FeatureWork/transition).
+    job_story: >
+      When I am editing a shared Lighthouse configuration aggregate — a Team's settings, a
+      Portfolio, a work-tracking Connection, an RBAC role/group/API-key assignment, or a
+      Delivery — and another administrator may have changed that same aggregate since I loaded
+      it,
+      I want Lighthouse to refuse my save with a clear "someone else changed this, reload and
+      re-apply" signal instead of silently overwriting their change (or having mine silently
+      overwritten),
+      so I can trust that no configuration change is ever quietly lost, and recover from a
+      conflict by reloading the current value rather than discovering days later that my edit
+      vanished.
+    dimensions:
+      functional: >
+        Human-edited config aggregate roots (Team, Portfolio, WorkTrackingSystemConnection,
+        RBAC — UserProfile/RbacGroupMapping/ApiKey, Delivery) carry an optimistic-concurrency
+        token. A save made against a stale token is rejected with HTTP 409 instead of being
+        applied. Read-your-writes holds for a user's own successful edit. The blanket
+        save-and-retry is scoped to BYPASS tokened aggregates so it cannot silently swallow
+        the conflict. High-churn sync entities are deliberately NOT tokened.
+      emotional: >
+        Move from quiet unease ("did my change actually stick, or did someone else's save eat
+        it?") to confidence ("if there's a conflict I'll be told plainly and I can reload — no
+        change ever vanishes silently").
+      social: >
+        Demonstrate to fellow administrators that Lighthouse is a trustworthy shared
+        control-plane — concurrent edits are coordinated, not a race where the loser never
+        finds out they lost.
+    forces:
+      push: >
+        Two admins hitting Save on the same Team/Portfolio/Connection within the same window
+        clobber each other with no warning; the first edit is silently gone. The motivating
+        bug class (#4778 "Delivery Team Update Issue") lives in exactly this space, and ADR-027
+        verified there is zero optimistic-concurrency token in the codebase today.
+      pull: >
+        A clear, immediate 409 "this changed since you loaded it — reload and re-apply" lets
+        the second editor see the fresh value and merge intentionally, instead of a silent
+        last-writer-wins overwrite. The protection is surgical: only the ~5 human-edited config
+        roots, never the high-churn sync path.
+      anxiety: >
+        What if the 409 is so noisy that routine single-admin edits start failing? (Mitigated:
+        the token only bites on a genuinely concurrent stale write; a lone editor never sees
+        it.)
+        What if scoping SaveWithRetry away from tokened saves accidentally re-hides the
+        conflict it is meant to surface? (This is the careful change ADR-027 flags; the gold
+        integration test — two stale writes → second gets 409 — guards it.)
+        What if the 409 also starts firing on work-item sync and breaks refresh? (Mitigated:
+        sync entities are explicitly out of scope, never tokened.)
+      habit: >
+        Admins are used to "edit form, click Save, it always succeeds" — a refused save is a
+        new interaction they must learn. Eased because the failure is explicit and actionable
+        ("reload"), not a cryptic error, and because it only appears in the genuinely-concurrent
+        case they would WANT to be warned about.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — silent lost updates on shared config are a real correctness defect
+        (the #4778 bug class) and erode trust in the control plane, even though they are
+        infrequent. Current satisfaction: 1 — there is NO concurrency protection at all today
+        (verified zero tokens in ADR-027); the blanket last-writer-wins actively hides the
+        problem. Gap: 3 — a genuine missing safety capability, surgically scoped to the config
+        roots so the cost stays small.
+
+  - id: job-react-proactively-to-workitem-change
+    title: React the moment a work item transitions, goes stale, or gets blocked — instead of only at read time
+    persona: flow-coach
+    feature_context: epic-5121-domain-events-cqrs-concurrency
+    created: 2026-05-30
+    note: >
+      NEW in epic-5121 (ADO #5122). User-visible value story — the value delivered HERE is
+      that the three signals (transitioned / became-stale / blocked) become published in-process
+      domain events off the sync delta, making proactive reactions an "add-a-handler" capability.
+      The downstream reactions themselves — SignalR push, in-app/external notifications
+      (#4754/#4755), webhooks — are OUT of scope for this epic. GUARDRAIL (ADR-027 D7): the
+      dispatcher is TRANSPORT only, not Event Sourcing; WorkItemStateTransition history stays a
+      read-time projection of the external changelog; any persisted event history is a separate
+      sink (#5017-style), never the dispatcher.
+    job_story: >
+      When a work item I care about changes state, crosses my team's staleness threshold, or
+      becomes blocked during a Lighthouse sync,
+      I want Lighthouse to recognise that change as a first-class event at the moment it
+      happens — rather than only surfacing it the next time I happen to open a chart —
+      so the tool can proactively react to the things I currently have to go looking for, and I
+      stop missing the window where acting early would have mattered.
+    dimensions:
+      functional: >
+        Off the WorkItemService.SyncStateTransitions sync delta, Lighthouse publishes
+        in-process domain events when an item transitions state (WorkItemTransitioned), crosses
+        the configured staleness threshold (WorkItemBecameStale), or becomes blocked
+        (WorkItemBlocked). The events carry enough identity (work item, from/to state,
+        threshold, blocked reason) for any future handler to react. THIS epic delivers the
+        event emission and the seam; it does NOT build the push/notification reactions.
+      emotional: >
+        Move from "I only find out an item went stale when I next open the aging chart, which
+        might be days later" to "the moment it happens, the system knows — and reacting to it is
+        now a small, additive step away."
+      social: >
+        Be the flow coach whose tooling can be wired to nudge the team proactively ("this item
+        just crossed 11 days in Review") rather than relying on everyone remembering to check —
+        a capability the team can grow into without re-plumbing.
+    forces:
+      push: >
+        Today the three signals exist ONLY as read-time projections (time-in-state, aging-pace,
+        blocked, cumulative-state-time) — nothing fires when the change actually occurs, so
+        every proactive reaction is blocked on someone opening a screen. There is no seam to
+        hang a SignalR push or a notification off, so #4754/#4755 cannot land cleanly.
+      pull: >
+        Publishing the transition/stale/blocked moments as in-process events makes every future
+        proactive reaction "add a handler" — SignalR, notifications, webhooks become additive
+        subscribers rather than edits to the sync engine.
+      anxiety: >
+        Will this turn the transition history into an event-sourced system of record? (No —
+        ADR-027 D7 explicitly rejects ES; the dispatcher is transport-only, recovered via next
+        re-sync; persisted history stays a separate projection/sink.)
+        Will emitting events slow the sync or lose facts if a handler throws? (Mitigated by the
+        #5098 gold test: a throwing handler does not lose the committed fact and recovers on the
+        next re-sync.)
+        Will events double-fire on every re-sync and spam future handlers? (The events are
+        derived from the sync DELTA — a real change — not re-emitted for unchanged items.)
+      habit: >
+        The team is used to information being pull-only ("open Lighthouse to check"); a tool
+        that can push proactively is a new posture. Eased because this epic only lays the rail —
+        the push experience itself arrives later (#4754/#4755) once the seam is trusted.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — proactive reaction to stuck/blocked/transitioned work is the
+        difference between catching a flow problem in the acting-early window versus at the
+        retro; it unlocks the long-requested notification/push capabilities (#4754/#4755).
+        Current satisfaction: 1 — the signals are read-time only; nothing fires at the moment of
+        change, so no proactive reaction is possible at all today. Gap: 3 — the enabling
+        capability (event emission) is genuinely missing; this epic closes the emission gap,
+        the reactions follow downstream.
+

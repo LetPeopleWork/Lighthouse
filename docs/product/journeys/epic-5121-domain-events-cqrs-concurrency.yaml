@@ -1,0 +1,433 @@
+schema_version: 1
+feature_id: epic-5121-domain-events-cqrs-concurrency
+updated: 2026-05-30
+note: >
+  Lightweight journey coverage for the TWO user-visible stories of Epic #5121 only — #5100
+  (optimistic-concurrency 409 on config edits) and #5122 (emit work-item domain events on
+  state transitions). The three pure refactors (#5098 dispatcher first slice, #5099 migrate
+  reactions, #5101 ArchUnitNET module boundaries) are infrastructure-only and get a
+  one-paragraph developer-experience note in feature-delta.md, not a journey here. SSOT for all
+  scope/guardrails is ADR-027 (incl. the 2026-05-29 event-family addendum). The dispatcher is
+  TRANSPORT only (D2/D7): not Event Sourcing, no outbox, recovery via next re-sync.
+
+journeys:
+
+  - name: config-edit-conflict-surfaces-as-409
+    goal: >
+      A configuration administrator saves an edit to a shared config aggregate (Team, Portfolio,
+      work-tracking Connection, RBAC assignment, or Delivery) and — when another administrator
+      has changed that same aggregate since it was loaded — receives a clear "this changed,
+      reload and re-apply" 409 conflict instead of silently overwriting (or being overwritten
+      by) the other change.
+    persona: "config-admin"
+    job_id: job-config-edit-no-silent-lost-update
+
+    emotional_arc:
+      start: >
+        Quietly uneasy — "two of us admin this Team; if we both edit it, does the tool even
+        notice? Could my change just vanish?" Today the honest answer is: it can, silently.
+      middle: >
+        Reassured at the moment of conflict — instead of a fake "saved!", the save is plainly
+        refused: "Someone else changed this Team since you loaded it. Reload to see the current
+        values, then re-apply your change." The refusal is the feature, not a bug.
+      end: >
+        Confident — after reloading and re-saving, the value sticks (read-your-writes). No edit
+        was lost on either side; the conflict was named and resolved deliberately.
+
+    design_decisions_resolved:
+      - id: J1
+        question: Which aggregates get optimistic-concurrency tokens?
+        decision: >
+          ONLY the human-edited config aggregate roots: Team, Portfolio,
+          WorkTrackingSystemConnection, RBAC (UserProfile / RbacGroupMapping / ApiKey), Delivery.
+          High-churn single-writer sync entities (WorkItem, Feature, FeatureWork,
+          WorkItemStateTransition) are deliberately NOT tokened — they are machine-written by a
+          single writer and have no human-conflict surface. (ADR-027 concurrency section.)
+      - id: J2
+        question: How does a stale edit surface?
+        decision: >
+          As HTTP 409 Conflict on the save (PUT/POST) of the tokened aggregate. The response
+          must be distinguishable from a generic error so the UI (and the CLI/MCP clients) can
+          render the "reload and re-apply" recovery affordance rather than a cryptic failure.
+      - id: J3
+        question: What about the blanket SaveWithRetry reload-and-retry?
+        decision: >
+          LighthouseAppContext.SaveWithRetry must be SCOPED TO BYPASS tokened-aggregate saves.
+          Its reload-and-retry is last-writer-wins; if it ran on a tokened save it would reload
+          the fresh row and silently re-apply the stale edit on top — swallowing the 409 the
+          token is meant to raise. (ADR-027: "getting it wrong re-hides the lost update.")
+      - id: J4
+        question: What consistency contract does the user get?
+        decision: >
+          Read-your-writes for a user's own successful config edit (reload shows MY value).
+          Conflicting concurrent edits are surfaced, never silently merged or lost. Sync-derived
+          metrics/forecasts remain eventual/"as-of last sync" (unchanged, honestly labelled).
+      - id: J5
+        question: RBAC interaction?
+        decision: >
+          Config edits are already authorization-gated; this change adds a 409 path, not a new
+          authz surface. RBAC-aggregate edits (UserProfile/RbacGroupMapping/ApiKey) flow through
+          IRbacAdministrationService and UI gating derives from useRbac() (per Architecture).
+          The 409 is a concurrency outcome, orthogonal to whether the actor is authorized — an
+          unauthorized actor still gets the existing 403, not a 409.
+
+    steps:
+      - id: 1
+        name: Two admins load the same config aggregate
+        command: "Open /teams/{teamId}/settings (Admin A) and the same page (Admin B)"
+
+        tui_mockup: |
+          +-- Team Settings: "Zenith" (loaded by Admin A and Admin B) ----------+
+          | Name:               [ Zenith                    ]                    |
+          | Staleness threshold:[ 7 ] days                                       |
+          | Forecast filter:    [ Type != Bug               ]                    |
+          | (concurrency token vT loaded with the form — not shown to the user)  |
+          |                                          [ Save ]                    |
+          +---------------------------------------------------------------------+
+
+        shared_artifacts:
+          - name: concurrency_token
+            source: "the tokened aggregate row (Postgres xmin / SQLite rowversion-style) — DESIGN picks the exact mechanism"
+            displayed_as: "vT (opaque, carried on load and echoed on save)"
+            consumers: ["GET config payload", "PUT/POST save request", "409 comparison in the save path"]
+
+        emotional_state:
+          entry: "Routine — both admins think they are the only editor."
+          exit: "Unaware of each other; both hold token vT."
+
+        integration_checkpoint: |
+          The GET that renders the form returns the current concurrency token; the client must
+          echo it on save. If the token is not surfaced on read, the 409 cannot be raised.
+
+        failure_modes:
+          - "Token not returned on read → save cannot detect staleness → silent lost update persists."
+          - "Token returned but client drops it → every save looks stale or none does."
+
+        gherkin: |
+          Scenario: Loading a config aggregate carries its concurrency token
+            Given the Team "Zenith" exists with concurrency token vT
+            When an administrator opens the Team settings
+            Then the settings payload includes the current concurrency token
+            And the token is echoed unchanged on the next save request
+
+      - id: 2
+        name: Admin A saves first (succeeds, token advances)
+        command: "Admin A edits threshold 7 -> 5 and clicks Save"
+
+        tui_mockup: |
+          +-- Save succeeded (Admin A) -----------------------------------------+
+          | Staleness threshold: 5 days                                         |
+          | Saved. (the aggregate's token advanced vT -> vT')                   |
+          +---------------------------------------------------------------------+
+
+        shared_artifacts:
+          - name: concurrency_token
+            source: "the tokened aggregate row"
+            displayed_as: "vT -> vT' (advances on every successful tokened write)"
+            consumers: ["save path of Admin A (matches vT, succeeds, advances to vT')", "Admin B still holds stale vT"]
+
+        emotional_state:
+          entry: "Confident — a normal edit."
+          exit: "Satisfied — read-your-writes: reloading shows 5 days."
+
+        integration_checkpoint: |
+          The successful tokened save advances the token. Admin B now holds a stale token (vT)
+          relative to the new server value (vT').
+
+        failure_modes:
+          - "Token does not advance on write → a later stale save would be wrongly accepted."
+
+        gherkin: |
+          Scenario: A config edit with the current token succeeds and advances the token
+            Given the Team "Zenith" has concurrency token vT
+            And administrator Anita loaded the settings holding token vT
+            When Anita saves the staleness threshold as 5 days
+            Then the save succeeds
+            And reloading the Team shows the staleness threshold is 5 days
+            And the Team's concurrency token has advanced past vT
+
+      - id: 3
+        name: Admin B saves stale (gets 409, reloads, recovers)
+        command: "Admin B (still holding vT) edits filter and clicks Save"
+
+        tui_mockup: |
+          +-- Conflict (Admin B) -- HTTP 409 -----------------------------------+
+          | This Team was changed by someone else since you loaded it.          |
+          | Your edit was NOT saved (so nothing was overwritten).               |
+          |                                  [ Reload current values ]          |
+          +---------------------------------------------------------------------+
+          (after Reload: threshold shows 5, Admin B re-applies the filter edit, Save succeeds)
+
+        shared_artifacts:
+          - name: concurrency_token
+            source: "the tokened aggregate row"
+            displayed_as: "vT (Admin B's stale token) vs vT' (server)"
+            consumers: ["save path of Admin B (vT != vT' -> 409, no write)", "reload re-fetches vT'"]
+
+        emotional_state:
+          entry: "About to save, unaware Admin A already saved."
+          exit: "Relieved and in control — told plainly, reloaded, re-applied; nothing lost."
+
+        integration_checkpoint: |
+          The stale save must NOT be silently retried by SaveWithRetry. It must short-circuit to
+          409 with no write. After reload, Admin B holds vT' and a re-save succeeds.
+
+        failure_modes:
+          - "SaveWithRetry reloads and re-applies B's stale edit on top of A's -> A's change silently lost (the exact bug)."
+          - "409 returned but indistinguishable from a generic 5xx -> UI/clients show a cryptic error, no recovery affordance."
+
+        gherkin: |
+          Scenario: A stale config edit is refused with a 409 instead of silently winning
+            Given administrator Anita has saved the Team "Zenith" staleness threshold as 5 days
+            And administrator Bruno still holds the older token vT from before Anita's save
+            When Bruno saves a forecast-filter change against token vT
+            Then the save is refused with HTTP 409 Conflict
+            And no change is written to the Team
+            And Anita's staleness threshold of 5 days is preserved
+
+          Scenario: After a conflict the administrator reloads and re-applies successfully
+            Given Bruno received a 409 on his stale save
+            When Bruno reloads the Team and re-applies his forecast-filter change
+            Then the save succeeds against the current token
+            And reloading shows both Anita's 5-day threshold and Bruno's filter change
+
+          @property
+          Scenario: High-churn sync entities are never blocked by concurrency tokens
+            Given the work-item sync is writing WorkItem, Feature, and WorkItemStateTransition rows
+            When the sync engine saves those entities repeatedly
+            Then no concurrency token is required and no 409 is ever raised on them
+            And the sync throughput is unaffected by the config-aggregate token mechanism
+
+      - id: 4
+        name: RBAC-aggregate edits get the same protection through the RBAC port
+        command: "Admin assigns an SSO group to a role (RbacGroupMapping edit)"
+
+        tui_mockup: |
+          +-- RBAC: assign group "platform-admins" -> System Admin --------------+
+          | (two RBAC admins editing the same mapping concurrently)              |
+          | Second save -> HTTP 409 "changed since you loaded it, reload"        |
+          +---------------------------------------------------------------------+
+
+        shared_artifacts:
+          - name: concurrency_token
+            source: "the RBAC aggregate row (UserProfile / RbacGroupMapping / ApiKey)"
+            displayed_as: "vT (per RBAC aggregate)"
+            consumers: ["IRbacAdministrationService save path", "409 surfaced to the RBAC admin UI gated by useRbac()"]
+
+        emotional_state:
+          entry: "Managing access — high-stakes; a silent lost update here is worst-case."
+          exit: "Confident that RBAC assignments are conflict-protected like other config."
+
+        integration_checkpoint: |
+          RBAC-aggregate concurrency MUST flow through IRbacAdministrationService (no component
+          bypasses the RBAC port). The 409 is a concurrency outcome, NOT a new authorization
+          decision — an unauthorized actor still receives 403, an authorized stale writer 409.
+
+        failure_modes:
+          - "RBAC save bypasses IRbacAdministrationService to apply the token -> violates the RBAC port boundary (ADR-001)."
+          - "409 and 403 conflated -> admin cannot tell 'reload' from 'you lack permission'."
+
+        gherkin: |
+          Scenario: A stale RBAC group-mapping edit is refused with 409 through the RBAC port
+            Given two RBAC administrators loaded the same group-to-role mapping
+            And the first administrator has already saved a change to it
+            When the second administrator saves a conflicting change against the stale token
+            Then the save is refused with HTTP 409 Conflict through IRbacAdministrationService
+            And the first administrator's mapping is preserved
+            And an unauthorized actor attempting the same edit still receives HTTP 403, not 409
+
+  - name: workitem-change-published-as-domain-event
+    goal: >
+      When the Lighthouse sync detects that a work item changed state, crossed its team's
+      staleness threshold, or became blocked, that moment is published as an in-process domain
+      event (WorkItemTransitioned / WorkItemBecameStale / WorkItemBlocked) so that proactive
+      reactions can be added later as independent handlers — without changing the sync engine.
+    persona: "flow-coach"
+    job_id: job-react-proactively-to-workitem-change
+
+    emotional_arc:
+      start: >
+        Resigned to pull-only — "I only learn an item went stale or got blocked when I next open
+        a chart; by then the early-action window may be gone."
+      middle: >
+        Hopeful — the change is now recognised the INSTANT the sync sees it; the system has a
+        first-class 'this just happened' fact to react to.
+      end: >
+        Forward-looking confidence — proactive reactions (push, notifications, webhooks) are now
+        an additive step away, not a sync-engine rewrite. (Those reactions are downstream
+        #4754/#4755, OUT of scope here — this journey ends at reliable emission.)
+
+    design_decisions_resolved:
+      - id: J6
+        question: What events are emitted and from where?
+        decision: >
+          Off the WorkItemService.SyncStateTransitions sync DELTA: WorkItemTransitioned (state
+          changed), WorkItemBecameStale (crossed the configured staleness threshold),
+          WorkItemBlocked (became blocked). Events are POCO records in Models/Events/, published
+          after-commit via the #5098 dispatcher onto the existing UpdateQueueService channel.
+      - id: J7
+        question: Is this Event Sourcing? Does the dispatcher persist anything?
+        decision: >
+          NO. ADR-027 D7 rejects Event Sourcing. The dispatcher is TRANSPORT only — transient,
+          in-process, recovered via the next re-sync; no outbox, no persisted log. The
+          WorkItemStateTransition history stays a read-time projection of the EXTERNAL changelog,
+          NOT a system of record. Any persisted event history is a SEPARATE subscriber/sink
+          (#5017-style) with its own retention/PII rules — never the dispatcher itself.
+      - id: J8
+        question: What is IN scope for THIS epic vs downstream?
+        decision: >
+          IN: reliable emission of the three events off the sync delta, with enough identity
+          for any handler to react. OUT: the SignalR push, in-app/external notifications
+          (#4754/#4755), webhooks, and any persisted event sink — those are downstream
+          subscribers added later as handlers. The value delivered here is the rail + a
+          demonstrable test that publishing fires handlers and survives a throwing handler.
+      - id: J9
+        question: Do events double-fire on every re-sync?
+        decision: >
+          No — events derive from the sync DELTA (a genuine change since the last sync), not a
+          re-emission for unchanged items. Idempotent/id-keyed handling and recovery-via-re-sync
+          (the #5098 gold-test contract) keep a transient handler failure from losing or
+          duplicating the user-visible signal.
+
+    steps:
+      - id: 1
+        name: Sync detects a state change in the delta
+        command: "(automatic) work-item sync runs; SyncStateTransitions computes the delta"
+
+        tui_mockup: |
+          +-- Sync delta (internal) --------------------------------------------+
+          | ZEN-118  In Progress -> Review   (transitioned)                     |
+          | ZEN-104  In Review 11d  >= threshold 7d   (became stale)            |
+          | ZEN-090  flagged Blocked                  (blocked)                 |
+          | -> publish: WorkItemTransitioned, WorkItemBecameStale, WorkItemBlocked|
+          +---------------------------------------------------------------------+
+
+        shared_artifacts:
+          - name: sync_delta
+            source: "WorkItemService.SyncStateTransitions (the external changelog delta)"
+            displayed_as: "the set of (item, change-kind) tuples for this sync"
+            consumers: ["domain-event publication", "existing read-time projections (time-in-state, aging-pace, blocked)"]
+
+        emotional_state:
+          entry: "(machine) — sync running as usual."
+          exit: "A first-class 'this changed' fact now exists for each delta entry."
+
+        integration_checkpoint: |
+          Events are derived from the DELTA, not from a full re-scan; an unchanged item in a
+          re-sync produces no event. The transition history projection is unaffected (D7).
+
+        failure_modes:
+          - "Events re-emitted for unchanged items on every re-sync -> future handlers spam."
+          - "Event publication coupled INTO the sync transaction such that a handler failure rolls back the sync (must be after-commit per D2)."
+
+        gherkin: |
+          Scenario: A state change in the sync delta is published as a domain event
+            Given the previous sync recorded ZEN-118 in "In Progress"
+            And the current sync detects ZEN-118 has moved to "Review"
+            When the sync delta is processed
+            Then a WorkItemTransitioned event is published for ZEN-118 from "In Progress" to "Review"
+            And the event is published after the sync data is committed
+
+          Scenario: An unchanged item in a re-sync publishes no transition event
+            Given ZEN-118 is already recorded in "Review"
+            And the current sync detects no state change for ZEN-118
+            When the sync delta is processed
+            Then no WorkItemTransitioned event is published for ZEN-118
+
+      - id: 2
+        name: Staleness and blocked moments publish their own events
+        command: "(automatic) delta crosses threshold / sets blocked flag"
+
+        tui_mockup: |
+          +-- Threshold + blocked detection (internal) -------------------------+
+          | ZEN-104 crossed 7d staleness threshold -> WorkItemBecameStale       |
+          | ZEN-090 became blocked                  -> WorkItemBlocked          |
+          +---------------------------------------------------------------------+
+
+        shared_artifacts:
+          - name: staleness_threshold
+            source: "Team/Portfolio staleness threshold config (job-team-admin-tune-staleness)"
+            displayed_as: "the integer day threshold the event references"
+            consumers: ["WorkItemBecameStale event payload", "existing staleness badge projection"]
+
+        emotional_state:
+          entry: "(machine)"
+          exit: "Stale/blocked moments are now reactable, not just renderable."
+
+        integration_checkpoint: |
+          WorkItemBecameStale fires on the CROSSING (threshold transition), not on every sync
+          while the item remains stale, so a handler is not re-triggered indefinitely.
+
+        failure_modes:
+          - "BecameStale re-fires every sync while the item stays stale -> handler spam / duplicate notifications downstream."
+          - "Blocked event fires on every sync while still blocked rather than on the block transition."
+
+        gherkin: |
+          Scenario: Crossing the staleness threshold publishes a became-stale event once
+            Given Team "Zenith" has a staleness threshold of 7 days
+            And ZEN-104 has just crossed 7 days in its current state in this sync delta
+            When the sync delta is processed
+            Then a WorkItemBecameStale event is published for ZEN-104 referencing the 7-day threshold
+            And a subsequent sync where ZEN-104 remains stale publishes no further WorkItemBecameStale event
+
+          Scenario: Becoming blocked publishes a blocked event on the transition
+            Given ZEN-090 was not blocked in the previous sync
+            And the current sync delta shows ZEN-090 is now blocked
+            When the sync delta is processed
+            Then a WorkItemBlocked event is published for ZEN-090
+            And no WorkItemBlocked event is published on later syncs while it stays blocked
+
+      - id: 3
+        name: Publishing fires handlers and survives a throwing handler (the seam contract)
+        command: "(test-observable) publish -> all registered handlers run; recovery on re-sync"
+
+        tui_mockup: |
+          +-- Gold test (publish -> handlers fire; throwing handler recovers) --+
+          | publish WorkItemTransitioned                                        |
+          |   handler X ran [ok]   handler Y throws [caught]                    |
+          | committed fact NOT lost; recovers on next scheduled re-sync         |
+          +---------------------------------------------------------------------+
+
+        shared_artifacts:
+          - name: dispatcher_seam
+            source: "IDomainEventDispatcher / IDomainEventHandler<TEvent> (#5098)"
+            displayed_as: "the publish call + typed IEnumerable<handler> resolution"
+            consumers: ["#5122 producers", "future SignalR/notification/webhook handlers (#4754/#4755, out of scope)"]
+
+        emotional_state:
+          entry: "(test/dev) — proving the rail is trustworthy."
+          exit: "Confidence that emission is reliable enough to build reactions on later."
+
+        integration_checkpoint: |
+          A throwing handler must NOT lose the committed fact; the work recovers on the next
+          re-sync (the #5098 gold-test contract). No persisted outbox (D2).
+
+        failure_modes:
+          - "A throwing handler aborts the publish loop so later handlers never run."
+          - "A throwing handler loses the committed fact with no recovery path."
+
+        gherkin: |
+          Scenario: Publishing a work-item event runs all handlers and survives one that throws
+            Given two handlers are registered for WorkItemTransitioned
+            And the second handler throws when invoked
+            When a WorkItemTransitioned event is published
+            Then the first handler still runs to completion
+            And the committed work-item fact is not lost
+            And the work recovers on the next scheduled re-sync
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: concurrency_token
+      must_match_across: ["config GET payload", "config save request", "409 comparison"]
+      failure_message: "If the token surfaced on read does not match the token checked on save, the 409 cannot be raised and the silent lost update returns."
+    - artifact: sync_delta
+      must_match_across: ["domain-event publication", "read-time projections"]
+      failure_message: "If events are not derived from the same delta the projections use, emission and the on-screen signal can disagree."
+    - artifact: dispatcher_seam
+      must_match_across: ["#5098 dispatcher", "#5122 producers", "future reaction handlers"]
+      failure_message: "If #5122 publishes through anything other than the #5098 dispatcher seam, the transport guarantees (after-commit, throwing-handler recovery, no GetRequiredService) are not inherited."
+
+changelog:
+  - date: "2026-05-30"
+    feature: "epic-5121-domain-events-cqrs-concurrency"
+    change: "Created lightweight journey for the two user-visible stories (#5100 config-edit 409, #5122 work-item domain events). Refactors #5098/#5099/#5101 intentionally omitted (infrastructure-only, DX note in feature-delta)."

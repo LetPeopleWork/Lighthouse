@@ -1,0 +1,68 @@
+schema_version: 1
+id: config-admin
+created: 2026-05-30
+created_in_feature: epic-5121-domain-events-cqrs-concurrency
+
+display_name: Configuration Administrator
+aliases:
+  - system-admin
+  - team-admin
+  - portfolio-admin
+  - connector-admin
+  - rbac-admin
+
+short_description: >
+  Edits Lighthouse's human-curated configuration aggregates — Team settings, Portfolio
+  settings, work-tracking-system Connections, RBAC role/group/API-key assignments, and
+  Deliveries. The person who opens a settings form, changes a value, and saves it. Often the
+  same human as a flow-coach or delivery-lead-rte wearing an admin hat; what makes them THIS
+  persona is the act of editing shared, low-churn configuration that other admins may be
+  editing at the same time. Distinct from the sync pipeline (machine-owned, high-churn work
+  items) and from read-only viewers.
+
+primary_jobs:
+  - job-config-edit-no-silent-lost-update
+
+goals:
+  - Save a configuration change and trust that what I saved is what persisted
+  - Never silently overwrite a colleague's concurrent edit to the same Team / Portfolio /
+    Connection / RBAC assignment
+  - When a conflict does happen, understand it immediately and recover by reloading the
+    current value, rather than discovering days later that my change vanished
+
+frustrations:
+  - Two admins editing the same Team settings can clobber each other with no warning — the
+    last save silently wins and the first edit is gone
+  - There is no signal that "someone else changed this since you loaded it"; the form looks
+    like it saved successfully
+  - The blanket save-and-retry behaviour means a stale write is reloaded and re-applied on
+    top of fresh data instead of being surfaced as a conflict
+
+mental_model:
+  - A config aggregate (this Team, this Connection) is a single shared document; editing it is
+    like editing a shared file
+  - If someone else changed the document while I had it open, my save should be refused with a
+    clear "it changed — reload" message, not accepted blindly
+  - Read-your-writes: once MY save succeeds, reloading the page must show MY value
+  - High-churn machine-synced data (work items, features) is NOT my concern — that is the
+    sync engine's, single-writer, and does not need this protection
+
+vocabulary:
+  - "stale edit" — an edit made against a version of the config that someone else has since
+    changed
+  - "lost update" — the silent loss of the first writer's change when the second writer saves
+    over it (the bug this persona fears)
+  - "conflict" / "409" — the explicit "someone else changed this, reload and retry" response
+  - "config aggregate" — Team, Portfolio, WorkTrackingSystemConnection, RBAC
+    (UserProfile/RbacGroupMapping/ApiKey), Delivery — the human-edited roots that get tokens
+  - "sync entity" — WorkItem, Feature, FeatureWork, WorkItemStateTransition — high-churn,
+    machine-written, deliberately NOT tokened
+
+related_personas:
+  - delivery-lead-rte (often the same person at portfolio scope; owns Portfolio config)
+  - flow-coach (often the same person; admins the team's staleness threshold — a Team edit)
+  - delivery-forecaster (edits forecast filter config on a Team)
+
+not_this_persona:
+  - Viewer (read-only; never saves config, so never hits a 409)
+  - The sync engine (machine writer of work items; single-writer, no human-conflict surface)
