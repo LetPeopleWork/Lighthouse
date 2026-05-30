@@ -9,5 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         Forecasts,
 
         PortfolioDelete,
+
+        TeamDelete,
     }
 }

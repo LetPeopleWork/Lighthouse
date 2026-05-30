@@ -2,14 +2,18 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Security.Claims;
 
@@ -22,9 +26,9 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepoMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
-        private Mock<IPortfolioUpdater> portfolioUpdaterMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
-        private Mock<IRefreshLogService> refreshLogServiceMock;
+        private Mock<IUpdateQueueService> updateQueueServiceMock;
+        private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
         private Mock<IForecastFilterRuleService> forecastFilterRuleServiceMock;
 
@@ -35,15 +39,23 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
-            portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
-            refreshLogServiceMock = new Mock<IRefreshLogService>();
+            updateQueueServiceMock = new Mock<IUpdateQueueService>();
+            domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
+
+            var scopedServiceProvider = new Mock<IServiceProvider>();
+            scopedServiceProvider.Setup(x => x.GetService(typeof(IRepository<Team>))).Returns(teamRepositoryMock.Object);
+            scopedServiceProvider.Setup(x => x.GetService(typeof(IDomainEventDispatcher))).Returns(domainEventDispatcherMock.Object);
+
+            updateQueueServiceMock
+                .Setup(x => x.EnqueueAndAwaitAsync(It.IsAny<UpdateType>(), It.IsAny<int>(), It.IsAny<Func<IServiceProvider, Task>>(), It.IsAny<CancellationToken>()))
+                .Returns((UpdateType _, int _, Func<IServiceProvider, Task> updateTask, CancellationToken _) => updateTask(scopedServiceProvider.Object));
         }
 
         [Test]
@@ -53,26 +65,28 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            await subject.DeleteTeam(teamId);
+            await subject.DeleteTeam(teamId, CancellationToken.None);
 
             teamRepositoryMock.Verify(x => x.Remove(teamId));
             teamRepositoryMock.Verify(x => x.Save());
         }
 
         [Test]
-        public async Task Delete_RemovesTeamRefreshLogs()
+        public async Task Delete_PublishesTeamDeletedEvent()
         {
             const int teamId = 12;
 
             var subject = CreateSubject();
 
-            await subject.DeleteTeam(teamId);
+            await subject.DeleteTeam(teamId, CancellationToken.None);
 
-            refreshLogServiceMock.Verify(x => x.RemoveRefreshLogsForEntity(RefreshType.Team, teamId), Times.Once);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.Is<TeamDeleted>(e => e.TeamId == teamId), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Test]
-        public async Task Delete_WhenTeamIsInvolvedInPortfolios_TriggersPortfolioUpdates()
+        public async Task Delete_WhenTeamIsInvolvedInPortfolios_PublishesTeamDeletedWithAffectedPortfolioIds()
         {
             const int teamId = 42;
 
@@ -86,10 +100,13 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject(portfolios: [portfolio1, portfolio2]);
 
-            await subject.DeleteTeam(teamId);
+            await subject.DeleteTeam(teamId, CancellationToken.None);
 
-            portfolioUpdaterMock.Verify(x => x.TriggerUpdate(portfolio1.Id), Times.Once);
-            portfolioUpdaterMock.Verify(x => x.TriggerUpdate(portfolio2.Id), Times.Never);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<TeamDeleted>(e => e.TeamId == teamId && e.AffectedPortfolioIds.SequenceEqual(new[] { portfolio1.Id })),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Test]
@@ -720,7 +737,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, portfolioUpdaterMock.Object, blackoutPeriodRepositoryMock.Object, refreshLogServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodRepositoryMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object);
         }
     }
 }

@@ -3,16 +3,20 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.API
 {
@@ -24,9 +28,8 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> projectRepository,
         IWorkItemRepository workItemRepository,
         ITeamUpdater teamUpdateService,
-        IPortfolioUpdater portfolioUpdater,
         IRepository<BlackoutPeriod> blackoutPeriodRepository,
-        IRefreshLogService refreshLogService,
+        IUpdateQueueService updateQueueService,
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService)
         : ControllerBase
@@ -82,7 +85,7 @@ namespace Lighthouse.Backend.API
 
         [HttpDelete]
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
-        public async Task<IActionResult> DeleteTeam(int teamId)
+        public async Task<IActionResult> DeleteTeam(int teamId, CancellationToken cancellationToken)
         {
             var team = teamRepository.GetById(teamId);
             var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];
@@ -92,17 +95,21 @@ namespace Lighthouse.Backend.API
                 .Select(p => p.Id)
                 .ToList();
 
-            var allAffectedIds = affectedPortfolioIds.Union(owningPortfolioIds).Distinct().ToList();
+            IReadOnlyList<int> allAffectedIds = affectedPortfolioIds.Union(owningPortfolioIds).Distinct().ToList();
 
-            teamRepository.Remove(teamId);
-            await teamRepository.Save();
+            await updateQueueService.EnqueueAndAwaitAsync(
+                UpdateType.TeamDelete,
+                teamId,
+                async serviceProvider =>
+                {
+                    var teams = serviceProvider.GetRequiredService<IRepository<Team>>();
+                    teams.Remove(teamId);
+                    await teams.Save();
 
-            await refreshLogService.RemoveRefreshLogsForEntity(RefreshType.Team, teamId);
-
-            foreach (var portfolioId in allAffectedIds)
-            {
-                portfolioUpdater.TriggerUpdate(portfolioId);
-            }
+                    var dispatcher = serviceProvider.GetRequiredService<IDomainEventDispatcher>();
+                    await dispatcher.PublishAsync(new TeamDeleted(teamId, allAffectedIds), cancellationToken);
+                },
+                cancellationToken);
 
             return NoContent();
         }
