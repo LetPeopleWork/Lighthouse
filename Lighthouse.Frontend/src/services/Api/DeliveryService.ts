@@ -7,6 +7,17 @@ import {
 } from "../../models/WorkItemRules";
 import { BaseApiService } from "./BaseApiService";
 
+export interface IDeliveryUpdateOptions {
+	deliveryId: number;
+	name: string;
+	date: Date;
+	featureIds: number[];
+	selectionMode?: DeliverySelectionMode;
+	rules?: IWorkItemRuleCondition[];
+	mode?: "and" | "or";
+	concurrencyToken?: string;
+}
+
 export interface IDeliveryService {
 	getByPortfolio(portfolioId: number): Promise<Delivery[]>;
 	create(
@@ -18,15 +29,7 @@ export interface IDeliveryService {
 		rules?: IWorkItemRuleCondition[],
 		mode?: "and" | "or",
 	): Promise<void>;
-	update(
-		deliveryId: number,
-		name: string,
-		date: Date,
-		featureIds: number[],
-		selectionMode?: DeliverySelectionMode,
-		rules?: IWorkItemRuleCondition[],
-		mode?: "and" | "or",
-	): Promise<void>;
+	update(options: IDeliveryUpdateOptions): Promise<void>;
 	delete(deliveryId: number): Promise<void>;
 	getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema>;
 	validateRules(
@@ -70,15 +73,16 @@ export class DeliveryService
 		});
 	}
 
-	async update(
-		deliveryId: number,
-		name: string,
-		date: Date,
-		featureIds: number[],
-		selectionMode: DeliverySelectionMode = DeliverySelectionMode.Manual,
-		rules?: IWorkItemRuleCondition[],
-		mode?: "and" | "or",
-	): Promise<void> {
+	async update({
+		deliveryId,
+		name,
+		date,
+		featureIds,
+		selectionMode = DeliverySelectionMode.Manual,
+		rules,
+		mode,
+		concurrencyToken,
+	}: IDeliveryUpdateOptions): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.put<void>(`/deliveries/${deliveryId}`, {
 				name,
@@ -87,6 +91,7 @@ export class DeliveryService
 				selectionMode,
 				rules,
 				mode,
+				concurrencyToken,
 			});
 		});
 	}

@@ -28,6 +28,25 @@ describe("SaveStateIndicator", () => {
 		expect(onRetry).toHaveBeenCalledTimes(1);
 	});
 
+	it("explains the concurrency conflict and offers a Reload action instead of a Retry", () => {
+		const onReload = vi.fn();
+		render(
+			<SaveStateIndicator
+				saveState="conflict"
+				canSave={true}
+				onReload={onReload}
+			/>,
+		);
+
+		expect(screen.getByText(/changed by someone else/i)).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Retry" }),
+		).not.toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Reload" }));
+		expect(onReload).toHaveBeenCalledTimes(1);
+	});
+
 	const hidden: Array<{ saveState: SaveState; canSave: boolean }> = [
 		{ saveState: "idle", canSave: true },
 		{ saveState: "saving", canSave: false },

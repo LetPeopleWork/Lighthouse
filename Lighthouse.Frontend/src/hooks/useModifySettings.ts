@@ -20,7 +20,7 @@ export interface ModifySettingsBase {
 	stateMappings: unknown[];
 }
 
-export type SaveState = "idle" | "saving" | "saved" | "error";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "conflict";
 
 export interface AutoSaveOptions {
 	enabled: boolean;
@@ -48,6 +48,14 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 }
 
 const DEBOUNCE_MS = 300;
+
+const CONCURRENCY_CONFLICT_STATUS = 409;
+
+function isConcurrencyConflict(error: unknown): boolean {
+	return (
+		error instanceof ApiError && error.code === CONCURRENCY_CONFLICT_STATUS
+	);
+}
 
 const NULLABLE_FIELDS = new Set([
 	"sizeEstimateAdditionalFieldDefinitionId",
@@ -98,6 +106,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const lastSavePayloadRef = useRef<TSettings | null>(null);
 	const requestSeqRef = useRef(0);
 	const hasInteractedRef = useRef(false);
+	const hasConflictRef = useRef(false);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -162,7 +171,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 						});
 					}
 				},
-				() => applyIfLatest("error"),
+				(error: unknown) => {
+					if (isConcurrencyConflict(error)) {
+						hasConflictRef.current = true;
+						applyIfLatest("conflict");
+						return;
+					}
+					applyIfLatest("error");
+				},
 			);
 		},
 		[autoRefreshOnSave],
@@ -175,6 +191,20 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		});
 	}, []);
 
+	const reloadAfterConflict = useCallback(async () => {
+		requestSeqRef.current += 1;
+		const freshSettings = await getSettingsRef.current();
+		hasConflictRef.current = false;
+		hasInteractedRef.current = false;
+		setSettings(freshSettings);
+		setSelectedWorkTrackingSystem(
+			workTrackingSystems.find(
+				(s) => s.id === freshSettings.workTrackingSystemConnectionId,
+			) ?? null,
+		);
+		setSaveState("idle");
+	}, [workTrackingSystems]);
+
 	const retry = useCallback(() => {
 		const payload = lastSavePayloadRef.current;
 		if (!payload) return;
@@ -185,7 +215,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		if (!autoSaveEnabled || !autoSaveCanSave || !formValid) {
 			return;
 		}
-		if (!hasInteractedRef.current || !settings) {
+		if (!hasInteractedRef.current || !settings || hasConflictRef.current) {
 			return;
 		}
 
@@ -331,6 +361,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		saveState,
 		refreshFailed,
 		reloadDependentData,
+		reloadAfterConflict,
 		retry,
 		workItemTypeHandlers: getListHandlers("workItemTypes"),
 		toDoHandlers: getListHandlers("toDoStates"),

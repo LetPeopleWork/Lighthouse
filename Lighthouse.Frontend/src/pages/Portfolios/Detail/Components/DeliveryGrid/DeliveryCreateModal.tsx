@@ -51,6 +51,7 @@ interface DeliveryCreateModalProps {
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
 		mode?: "and" | "or";
+		concurrencyToken?: string;
 	}) => void;
 }
 
@@ -552,7 +553,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		};
 
 		if (isEditMode && editingDelivery && onUpdate) {
-			onUpdate({ id: editingDelivery.id, ...basePayload });
+			onUpdate({
+				id: editingDelivery.id,
+				...basePayload,
+				concurrencyToken: editingDelivery.concurrencyToken,
+			});
 			return;
 		}
 

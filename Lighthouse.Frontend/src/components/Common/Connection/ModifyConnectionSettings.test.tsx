@@ -505,6 +505,33 @@ describe("ModifyConnectionSettings", () => {
 
 			expect(defaultProps.saveConnectionSettings).not.toHaveBeenCalled();
 		});
+
+		it("shows a reload-and-reapply message when the save is rejected with a 409 conflict", async () => {
+			const user = userEvent.setup();
+			defaultProps.validateConnectionSettings.mockResolvedValue(true);
+			defaultProps.saveConnectionSettings.mockRejectedValue(
+				new ApiError(409, "This record was modified by someone else."),
+			);
+
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
+			});
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Save/i }),
+				).not.toBeDisabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /Save/i }));
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/changed by someone else/i),
+				).toBeInTheDocument();
+			});
+			expect(defaultProps.saveConnectionSettings).toHaveBeenCalled();
+		});
 	});
 
 	describe("disableSave prop", () => {

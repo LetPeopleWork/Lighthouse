@@ -63,6 +63,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		saveState,
 		refreshFailed,
 		reloadDependentData,
+		reloadAfterConflict,
 		retry,
 		updateSettings,
 		handleWorkTrackingSystemChange,
@@ -268,6 +269,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								saveState={saveState}
 								canSave={!disableSave}
 								onRetry={retry}
+								onReload={() => void reloadAfterConflict()}
 							/>
 						</Grid>
 					</Grid>

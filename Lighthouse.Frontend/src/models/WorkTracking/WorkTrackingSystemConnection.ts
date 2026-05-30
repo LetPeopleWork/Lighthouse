@@ -42,6 +42,7 @@ export interface IWorkTrackingSystemConnection {
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 	requiresReconnect?: boolean;
+	concurrencyToken?: string;
 }
 
 export class WorkTrackingSystemConnection
@@ -57,6 +58,7 @@ export class WorkTrackingSystemConnection
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	writeBackMappingDefinitions: IWriteBackMappingDefinition[];
 	requiresReconnect?: boolean;
+	concurrencyToken?: string;
 
 	constructor(data: {
 		name: string;
@@ -69,6 +71,7 @@ export class WorkTrackingSystemConnection
 		additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 		writeBackMappingDefinitions?: IWriteBackMappingDefinition[];
 		requiresReconnect?: boolean;
+		concurrencyToken?: string;
 	}) {
 		this.id = data.id ?? null;
 		this.name = data.name;
@@ -80,6 +83,7 @@ export class WorkTrackingSystemConnection
 		this.additionalFieldDefinitions = data.additionalFieldDefinitions ?? [];
 		this.writeBackMappingDefinitions = data.writeBackMappingDefinitions ?? [];
 		this.requiresReconnect = data.requiresReconnect;
+		this.concurrencyToken = data.concurrencyToken;
 	}
 
 	workTrackingSystemGetDataRetrievalDisplayName(): string {

@@ -163,19 +163,21 @@ export const useDeliveryManagement = ({
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
 		mode?: "and" | "or";
+		concurrencyToken?: string;
 	}) => {
 		try {
 			const wasExpanded = expandedDeliveries.has(deliveryData.id);
 
-			await deliveryService.update(
-				deliveryData.id,
-				deliveryData.name,
-				new Date(deliveryData.date),
-				deliveryData.featureIds,
-				deliveryData.selectionMode,
-				deliveryData.rules,
-				deliveryData.mode,
-			);
+			await deliveryService.update({
+				deliveryId: deliveryData.id,
+				name: deliveryData.name,
+				date: new Date(deliveryData.date),
+				featureIds: deliveryData.featureIds,
+				selectionMode: deliveryData.selectionMode,
+				rules: deliveryData.rules,
+				mode: deliveryData.mode,
+				concurrencyToken: deliveryData.concurrencyToken,
+			});
 			setSelectedDelivery(null);
 			setLoadedFeatures((prev) => {
 				const next = new Map(prev);

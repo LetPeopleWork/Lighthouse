@@ -26,4 +26,5 @@ export interface IBaseSettings {
 	useNonNumericEstimation: boolean;
 	estimationCategoryValues: string[];
 	dataRetrievalSchema?: IDataRetrievalSchema | null;
+	concurrencyToken?: string;
 }

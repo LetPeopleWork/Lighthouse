@@ -72,6 +72,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		saveState,
 		refreshFailed,
 		reloadDependentData,
+		reloadAfterConflict,
 		retry,
 		updateSettings,
 		handleWorkTrackingSystemChange,
@@ -292,6 +293,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								saveState={saveState}
 								canSave={canUpdatePortfolioData}
 								onRetry={retry}
+								onReload={() => void reloadAfterConflict()}
 							/>
 						</Grid>
 					</Grid>

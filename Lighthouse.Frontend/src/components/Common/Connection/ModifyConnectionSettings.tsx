@@ -36,6 +36,10 @@ import ValidationActions from "../ValidationActions/ValidationActions";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
 
+const CONCURRENCY_CONFLICT_STATUS = 409;
+const CONCURRENCY_CONFLICT_COPY =
+	"This connection was changed by someone else since you opened it. Reload to get the latest values, then re-apply your change.";
+
 const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
 	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
 
@@ -403,7 +407,19 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				return;
 			}
 
-			await saveConnectionSettings(connection);
+			try {
+				await saveConnectionSettings(connection);
+			} catch (error_) {
+				if (
+					error_ instanceof ApiError &&
+					error_.code === CONCURRENCY_CONFLICT_STATUS
+				) {
+					setValidationErrorMessage(CONCURRENCY_CONFLICT_COPY);
+					setValidationTechnicalDetails(null);
+					return;
+				}
+				throw error_;
+			}
 		}
 	};
 

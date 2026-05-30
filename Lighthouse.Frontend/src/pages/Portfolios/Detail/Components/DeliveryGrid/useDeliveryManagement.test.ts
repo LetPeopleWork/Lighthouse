@@ -486,15 +486,16 @@ describe("useDeliveryManagement", () => {
 				await result.current.handleUpdateDelivery(deliveryData);
 			});
 
-			expect(updateSpy).toHaveBeenCalledWith(
-				deliveryData.id,
-				deliveryData.name,
-				new Date("2025-12-25"),
-				[1, 2],
-				undefined,
-				undefined,
-				undefined,
-			);
+			expect(updateSpy).toHaveBeenCalledWith({
+				deliveryId: deliveryData.id,
+				name: deliveryData.name,
+				date: new Date("2025-12-25"),
+				featureIds: [1, 2],
+				selectionMode: undefined,
+				rules: undefined,
+				mode: undefined,
+				concurrencyToken: undefined,
+			});
 
 			expect(result.current.selectedDelivery).toBeNull();
 			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2); // Initial load + refresh
@@ -610,15 +611,16 @@ describe("useDeliveryManagement", () => {
 			});
 
 			// Verify update was called
-			expect(updateSpy).toHaveBeenCalledWith(
-				deliveryData.id,
-				deliveryData.name,
-				new Date("2025-12-25"),
-				[3, 4],
-				undefined,
-				undefined,
-				undefined,
-			);
+			expect(updateSpy).toHaveBeenCalledWith({
+				deliveryId: deliveryData.id,
+				name: deliveryData.name,
+				date: new Date("2025-12-25"),
+				featureIds: [3, 4],
+				selectionMode: undefined,
+				rules: undefined,
+				mode: undefined,
+				concurrencyToken: undefined,
+			});
 
 			// Should have called getByPortfolio twice more (fetchDeliveries + direct call)
 			expect(getByPortfolioCallCount).toBe(3);

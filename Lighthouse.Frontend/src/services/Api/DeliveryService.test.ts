@@ -105,7 +105,6 @@ describe("DeliveryService", () => {
 
 	describe("update", () => {
 		it("should update a delivery with correct data", async () => {
-			// Arrange
 			const deliveryId = 1;
 			const name = "Updated Delivery";
 			const date = new Date("2025-12-25");
@@ -113,10 +112,8 @@ describe("DeliveryService", () => {
 
 			mockedAxios.put.mockResolvedValue({});
 
-			// Act
-			await deliveryService.update(deliveryId, name, date, featureIds);
+			await deliveryService.update({ deliveryId, name, date, featureIds });
 
-			// Assert
 			expect(mockedAxios.put).toHaveBeenCalledWith(
 				`/deliveries/${deliveryId}`,
 				{
@@ -125,16 +122,35 @@ describe("DeliveryService", () => {
 					featureIds,
 					selectionMode: 0,
 					rules: undefined,
+					mode: undefined,
+					concurrencyToken: undefined,
 				},
 			);
 		});
 
-		it("should handle API errors gracefully", async () => {
-			// Arrange
-			const deliveryId = 1;
-			const name = "Test Delivery";
+		it("threads the concurrency token into the update body so the server can detect a stale edit", async () => {
+			const deliveryId = 7;
 			const date = new Date("2025-12-25");
-			const featureIds = [1];
+
+			mockedAxios.put.mockResolvedValue({});
+
+			await deliveryService.update({
+				deliveryId,
+				name: "Token Carrier",
+				date,
+				featureIds: [9],
+				concurrencyToken: "token-abc",
+			});
+
+			expect(mockedAxios.put).toHaveBeenCalledWith(
+				`/deliveries/${deliveryId}`,
+				expect.objectContaining({ concurrencyToken: "token-abc" }),
+			);
+		});
+
+		it("should handle API errors gracefully", async () => {
+			const deliveryId = 1;
+			const date = new Date("2025-12-25");
 			const errorResponse = {
 				response: {
 					status: 400,
@@ -144,9 +160,13 @@ describe("DeliveryService", () => {
 
 			mockedAxios.put.mockRejectedValue(errorResponse);
 
-			// Act & Assert
 			await expect(
-				deliveryService.update(deliveryId, name, date, featureIds),
+				deliveryService.update({
+					deliveryId,
+					name: "Test Delivery",
+					date,
+					featureIds: [1],
+				}),
 			).rejects.toThrow();
 		});
 	});
