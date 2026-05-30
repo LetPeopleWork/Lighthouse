@@ -197,29 +197,32 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			};
 			setSaveState("saving");
 			if (isLatest()) setRefreshFailed(false);
-			void saveSettingsRef.current(payload).then(
-				(result) => {
-					hasInteractedRef.current = false;
-					applyRefreshedToken(result);
-					applyIfLatest("saved");
-					if (autoRefreshOnSave && isLatest()) {
-						void Promise.resolve(additionalFetchRef.current?.()).catch(() => {
-							if (isLatest()) setRefreshFailed(true);
-						});
-					}
-					flushPending();
-				},
-				(error: unknown) => {
-					pendingPayloadRef.current = null;
-					isSavingRef.current = false;
-					if (isConcurrencyConflict(error)) {
-						hasConflictRef.current = true;
-						applyIfLatest("conflict");
-						return;
-					}
-					applyIfLatest("error");
-				},
-			);
+			saveSettingsRef
+				.current(payload)
+				.then(
+					(result) => {
+						hasInteractedRef.current = false;
+						applyRefreshedToken(result);
+						applyIfLatest("saved");
+						if (autoRefreshOnSave && isLatest()) {
+							Promise.resolve(additionalFetchRef.current?.()).catch(() => {
+								if (isLatest()) setRefreshFailed(true);
+							});
+						}
+						flushPending();
+					},
+					(error: unknown) => {
+						pendingPayloadRef.current = null;
+						isSavingRef.current = false;
+						if (isConcurrencyConflict(error)) {
+							hasConflictRef.current = true;
+							applyIfLatest("conflict");
+							return;
+						}
+						applyIfLatest("error");
+					},
+				)
+				.catch(() => undefined);
 		},
 		[autoRefreshOnSave],
 	);
@@ -228,7 +231,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 
 	const reloadDependentData = useCallback(() => {
 		setRefreshFailed(false);
-		void Promise.resolve(additionalFetchRef.current?.()).catch(() => {
+		Promise.resolve(additionalFetchRef.current?.()).catch(() => {
 			setRefreshFailed(true);
 		});
 	}, []);
@@ -250,7 +253,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const retry = useCallback(() => {
 		const payload = lastSavePayloadRef.current;
 		if (!payload) return;
-		void dispatchSave(payload);
+		dispatchSave(payload);
 	}, [dispatchSave]);
 
 	useEffect(() => {
@@ -267,7 +270,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		} as TSettings;
 
 		const timer = setTimeout(() => {
-			void dispatchSave(settingsToSave);
+			dispatchSave(settingsToSave);
 		}, autoSaveDebounceMs);
 
 		return () => clearTimeout(timer);
