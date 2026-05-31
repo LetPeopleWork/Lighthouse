@@ -39,4 +39,55 @@ describe("ForecastLikelihood component", () => {
 		expect(iconElement).toBeInTheDocument();
 		expect(iconElement).toHaveStyle("color: rgb(76, 175, 80)");
 	});
+
+	describe("never presents a manual forecast above 95% as a certainty", () => {
+		it.each([
+			{ scenario: "a perfect likelihood with work left", likelihood: 100 },
+			{ scenario: "a high likelihood with work left", likelihood: 96.5 },
+		])("reads >95% for $scenario", ({ likelihood: computedLikelihood }) => {
+			render(
+				<ForecastLikelihood
+					remainingItems={5}
+					targetDate={when}
+					likelihood={computedLikelihood}
+				/>,
+			);
+
+			expect(screen.getByText(">95%")).toBeInTheDocument();
+			expect(screen.queryByText("100.00%")).not.toBeInTheDocument();
+			expect(screen.queryByText("96.50%")).not.toBeInTheDocument();
+		});
+
+		it.each([
+			{ likelihood: 95, expected: "95.00%" },
+			{ likelihood: 94.8, expected: "94.80%" },
+		])("keeps the precise $expected for a likelihood of $likelihood with work left", ({
+			likelihood: computedLikelihood,
+			expected,
+		}) => {
+			render(
+				<ForecastLikelihood
+					remainingItems={5}
+					targetDate={when}
+					likelihood={computedLikelihood}
+				/>,
+			);
+
+			expect(screen.getByText(`${expected}`)).toBeInTheDocument();
+			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
+		});
+
+		it("still reads 100.00% for a completed forecast with no work left", () => {
+			render(
+				<ForecastLikelihood
+					remainingItems={0}
+					targetDate={when}
+					likelihood={100}
+				/>,
+			);
+
+			expect(screen.getByText("100.00%")).toBeInTheDocument();
+			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
+		});
+	});
 });

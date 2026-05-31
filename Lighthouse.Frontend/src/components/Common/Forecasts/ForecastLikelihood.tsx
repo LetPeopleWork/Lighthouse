@@ -1,6 +1,7 @@
 import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
+import { formatLikelihood } from "../../../utils/forecast/formatLikelihood";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { ForecastLevel } from "./ForecastLevel";
 
@@ -18,7 +19,10 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({
 	showText = true,
 }) => {
 	const forecastLevel = new ForecastLevel(likelihood);
-	const formattedLikelihood = likelihood.toFixed(2);
+	const formattedLikelihood = formatLikelihood(likelihood, {
+		hasRemainingWork: remainingItems > 0,
+		precision: "fixed2",
+	});
 
 	return (
 		<Grid container sx={{ width: "100%", flexDirection: "column" }}>
@@ -44,7 +48,7 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({
 					style={{ fontSize: 32, color: forecastLevel.color, marginRight: 8 }}
 					data-testid="forecast-level-icon"
 				/>
-				{formattedLikelihood}%
+				{formattedLikelihood}
 			</Typography>
 		</Grid>
 	);
