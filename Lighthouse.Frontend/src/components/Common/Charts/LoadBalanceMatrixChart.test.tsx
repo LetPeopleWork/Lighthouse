@@ -63,10 +63,15 @@ describe("LoadBalanceMatrixChart", () => {
 		expect(screen.getByText("Load Balance Matrix")).toBeInTheDocument();
 		expect(screen.getByText("Total Work Item Age")).toBeInTheDocument();
 		expect(screen.getByText("WIP")).toBeInTheDocument();
-		expect(screen.getByTestId("load-balance-matrix-svg")).toHaveAttribute(
-			"preserveAspectRatio",
-			"none",
-		);
+		expect(screen.getByTestId("load-balance-matrix-svg")).toBeInTheDocument();
+	});
+
+	it("scales uniformly so matrix points stay circular on any container ratio", () => {
+		renderWithTheme(<LoadBalanceMatrixChart data={createData()} />);
+
+		const svg = screen.getByTestId("load-balance-matrix-svg");
+		expect(svg).toHaveAttribute("preserveAspectRatio", "xMidYMid meet");
+		expect(svg.getAttribute("preserveAspectRatio")).not.toBe("none");
 	});
 
 	it("renders baseline divider labels and lines when baseline is available", () => {

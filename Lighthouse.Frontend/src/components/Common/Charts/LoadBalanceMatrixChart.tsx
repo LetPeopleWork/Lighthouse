@@ -203,7 +203,7 @@ const LoadBalanceMatrixChart: React.FC<LoadBalanceMatrixChartProps> = ({
 						viewBox={`0 0 ${chartGeometry.width} ${chartGeometry.height}`}
 						width="100%"
 						height="100%"
-						preserveAspectRatio="none"
+						preserveAspectRatio="xMidYMid meet"
 						aria-hidden="true"
 					>
 						{yTicks.map((tick) => {
