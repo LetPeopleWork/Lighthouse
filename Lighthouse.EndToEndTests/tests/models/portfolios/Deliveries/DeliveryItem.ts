@@ -41,7 +41,7 @@ export class DeliveryItem {
 
 	async getLikelihood(): Promise<number | null> {
 		const text = await this.container.textContent();
-		const match = text?.match(/Likelihood:\s*(\d+)%/);
+		const match = text?.match(/Likelihood:\s*>?(\d+)%/);
 		return match ? Number.parseInt(match[1], 10) : null;
 	}
 
@@ -77,7 +77,7 @@ export class DeliveryItem {
 		for (let i = 0; i < count; i++) {
 			const text = await likelihoodCells.nth(i).textContent();
 			if (text) {
-				const number = Number.parseInt(text.trim().replace("%", ""), 10);
+				const number = Number.parseInt(text.trim().replace(/[^0-9]/g, ""), 10);
 				if (!Number.isNaN(number)) {
 					likelihoods.push(number);
 				}

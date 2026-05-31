@@ -63,7 +63,9 @@ export class TeamDetailPage {
 		const likelihood =
 			(await this.page.getByRole("heading", { name: "%" }).textContent()) ??
 			"0";
-		const parsedLikelihood = Number.parseFloat(likelihood.replace("%", ""));
+		const parsedLikelihood = Number.parseFloat(
+			likelihood.replace(/[^0-9.]/g, ""),
+		);
 
 		return parsedLikelihood;
 	}
