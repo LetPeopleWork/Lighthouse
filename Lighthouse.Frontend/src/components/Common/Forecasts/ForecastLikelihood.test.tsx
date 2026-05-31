@@ -21,9 +21,8 @@ describe("ForecastLikelihood component", () => {
 				likelihood={likelihood}
 			/>,
 		);
-		const formattedLikelihood = likelihood.toFixed(2);
 
-		expect(screen.getByText(`${formattedLikelihood}%`)).toBeInTheDocument();
+		expect(screen.getByText("75.12%")).toBeInTheDocument();
 	});
 
 	it("should render the correct icon and color based on the likelihood", () => {
