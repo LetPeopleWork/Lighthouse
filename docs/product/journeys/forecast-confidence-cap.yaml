@@ -1,0 +1,72 @@
+schema_version: 1
+feature_id: forecast-confidence-cap
+updated: 2026-05-30
+ado: "#5126"
+
+journeys:
+
+  - name: present-an-honest-forecast-number
+    goal: >
+      A delivery-forecaster shares a Lighthouse forecast (portfolio delivery or a manual
+      "when" forecast) with leadership and the headline likelihood reads ">95%" rather than
+      "100%" (or a deceptively-precise 96-99%), so deterministic-thinking stakeholders see
+      "very likely, not guaranteed" and plan for possible slippage instead of locking the date.
+    persona: delivery-forecaster
+
+    emotional_arc:
+      start: Wary — "The forecast says 100%. A leader will screenshot that and treat it as a
+        promise; I'll be the one explaining the miss later."
+      middle: Reassured — "It now reads '>95%'. That carries the honest message on its own —
+        very likely, but there's still a chance it moves."
+      end: Confident — "I can present the number as-is, without the ritual 'it's not really
+        100%' caveat. The figure does the honest framing for me."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How should a too-certain forecast likelihood be displayed?
+        decision: >
+          Bucket — any forecast likelihood strictly greater than 95% (with remaining work)
+          renders as the label ">95%" with the existing "Certain" styling; anything at or below
+          95% shows its precise value unchanged. Chosen over a 99.9% numeric clamp because it
+          also removes the deterministic feel of 97/98/99.
+      - id: D2
+        question: Where does the rule live — value or display?
+        decision: >
+          The numeric DTO fields (ManualForecastDto.Likelihood,
+          DeliveryWithLikelihoodDto.LikelihoodPercentage) stay unchanged for API stability; ">95%"
+          is a display label applied consistently across surfaces. DESIGN decides shared formatter
+          vs domain-level signal so frontend and CLI/MCP clients do not drift.
+      - id: D3
+        question: Does this feature also suppress forecasts for teams with too little data?
+        decision: >
+          NO — that is a distinct job tracked in ADO #5125 "Don't Forecast with too little Data".
+          5126 is the cap only.
+      - id: D4
+        question: Does the cap apply to genuinely completed items (no remaining work)?
+        decision: >
+          NO — a finished item is a fact, not a forecast. Feature.GetLikelhoodForDate returns 100
+          when there is no remaining work; that path is exempt and still reads 100%/Done. The cap
+          applies only to likelihoods computed from remaining work plus a target date.
+
+    surfaces:
+      - portfolio-delivery: DeliverySection chip + DeliveriesChips overview + per-feature
+        likelihood (FeatureLikelihoodDto) — the reporter's "most important" surface.
+      - manual-forecast: ForecastLikelihood headline.
+
+    out_of_scope:
+      - Minimum-throughput-data guard (ADO #5125).
+      - Monte Carlo computation and percentile date forecasts (50/70/85/95).
+      - ForecastLevel RAG band thresholds (unchanged).
+      - The numeric likelihood DTO values (formatting only).
+
+    cross_cutting:
+      rbac: >
+        N/A — changes the rendered value of an existing forecast, not who may access it. No new
+        operation, no IRbacAdministrationService interaction; useRbac() gating untouched.
+      clients: >
+        Impacted, presentation-only, non-blocking. Likelihood is exposed on existing DTOs the
+        CLI/MCP consume; no new endpoint so no version gate. Clients should apply the same ">95%"
+        rendering where they print a likelihood to a human — DESIGN to confirm whether they render
+        to humans or only emit raw JSON (if raw JSON only, N/A).
+      website: >
+        N/A — in-app forecasting nuance, not a marketed/premium capability.

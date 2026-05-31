@@ -1,0 +1,95 @@
+{
+  "roadmap": {
+    "project_id": "forecast-confidence-cap",
+    "created_at": "2026-05-30T00:00:00Z",
+    "total_steps": 3
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Forecast-confidence cap (>95%) across every likelihood surface (US-1, US-2)",
+      "description": "ADO #5126 'Never show 100% Confidence'. ADR-038 Option A: one pure FE helper formatLikelihood(value, { hasRemainingWork, precision }) owns the D1 cap rule (value > 95 && hasRemainingWork -> '>95%'; else precise) and is routed through all four likelihood render sites; numeric DTOs stay double (D2). Step 01-01 (slice 01 portfolio deliveries) introduces the helper + its boundary unit tests and wires the three delivery surfaces (the reporter's most-important surface, carries the learning hypothesis). Step 01-02 (slice 02 manual) propagates the validated rule to the manual forecast headline. Step 01-03 is the ADR-038 DES-5 enforcement close-out (FE structural drift guard + NUnit DTO-stability reflection guard). No backend production code changes; no new dependencies (fast-check intentionally absent per ADR-038). OOP project -> @nw-software-crafter; mutation per-feature >=80% on formatLikelihood.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Create formatLikelihood helper + boundary unit tests; route the three delivery surfaces through it",
+          "criteria": [
+            "formatLikelihood(value: number, opts: { hasRemainingWork: boolean; precision: 'round' | 'fixed2' }) returns '>95%' when value > 95 && hasRemainingWork, otherwise Math.round(value)+'%' for precision 'round' and value.toFixed(2)+'%' for precision 'fixed2' (D1 + the surface's existing precision preserved)",
+            "formatLikelihood.test.ts is a table-based it.each over the boundary matrix 94.9 / 95 / 95.01 / 100 crossed with hasRemainingWork true and false, for both precision values, matching the style of utils/date/formatDuration.test.ts; the >95 cap fires only above the strict 95 boundary and only with remaining work (94.9 and exactly 95 stay precise; any value with hasRemainingWork=false stays precise -> D4 exemption)",
+            "DeliverySection.tsx delivery header chip routes delivery.likelihoodPercentage through formatLikelihood with hasRemainingWork: delivery.remainingWork > 0 and precision: 'round'; no inline Math.round(...)% remains on that chip",
+            "DeliverySection.tsx per-feature likelihood column routes fl.likelihoodPercentage (from delivery.featureLikelihoods) through formatLikelihood with hasRemainingWork: row.getRemainingWorkForFeature() > 0 and precision: 'round' (the cell joins likelihood from featureLikelihoods with remaining-work from the bound IFeature row); no inline Math.round(...)% remains on that cell",
+            "DeliveriesChips.tsx routes delivery.likelihoodPercentage through formatLikelihood with hasRemainingWork: delivery.remainingWork > 0 and precision: 'round'; no inline Math.round(...)% remains",
+            "The three RED acceptance scenarios are un-skipped and pass: DeliveriesChips.test.tsx 'reads Likelihood: >95% for a delivery above 95% with work left'; DeliverySection.test.tsx 'reads >95% on the delivery chip above 95% with work left' and 'reads >95% on a per-feature chip above 95% with work left'",
+            "The existing active regression guards stay green (boundary 95 precise, completed-with-no-work-left 100%/Done D4-exempt, per-feature <=95 precise); pnpm test green; pnpm build clean (tsc -b then vite build); Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.test.tsx",
+          "scenario_name": "reads Likelihood: >95% for a delivery above 95% with work left (+ DeliverySection.test.tsx 'reads >95% on the delivery chip above 95% with work left' and 'reads >95% on a per-feature chip above 95% with work left')",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/forecast/formatLikelihood.ts",
+            "Lighthouse.Frontend/src/utils/forecast/formatLikelihood.test.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.tsx",
+            "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DeliveriesChips.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (the TS-row of the polyglot matrix governs, not the Python/Hypothesis pilot); Hypothesis/assert_state_delta/Universe do NOT apply and fast-check is intentionally absent (ADR-038: no new dependencies). The acceptance scenarios enter through the public component render (RTL render + screen.getByText) and assert user-observable text, never formatLikelihood directly (DISTILL Architecture-of-Reference: driving port = the component render). Compensate for the no-PBT constraint with the table-based it.each boundary matrix on the pure helper (94.9 / 95 / 95.01 / 100 x hasRemainingWork true|false x precision round|fixed2) - this is the strongest oracle for the D1 strict-> boundary and the D4 exemption and is the per-feature >=80% mutation target. NEW formatLikelihood.ts (WHY-NEW-FILE per ADR-038 component-decomposition table: no existing shared likelihood formatter; the rule is currently inlined 4x as Math.round(...)% / toFixed(2)%; a neutral utils/forecast home avoids coupling the four consumers to any one of them; co-locate boundary tests beside it mirroring utils/date/formatDuration.test.ts). EXACT contract (ADR-038, do NOT redesign): value > 95 && hasRemainingWork -> '>95%'; else precision==='round' ? Math.round(value)+'%' : value.toFixed(2)+'%'. The helper owns BOTH branches (precision enum) so one function owns the whole decision (ADR-038 OQ-2 resolution). EXTEND the three delivery render sites per the ADR-038 D4-signal table: DeliverySection delivery header chip uses delivery.remainingWork; DeliverySection per-feature column renderCell joins likelihood from delivery.featureLikelihoods with remaining-work from the bound IFeature row via row.getRemainingWorkForFeature() (DISTILL notable finding: two different objects combined in that one cell - the test already wires both a featureLikelihoods entry AND a Feature with matching remainingWork); DeliveriesChips uses delivery.remainingWork. ForecastLevel.ts is fed the RAW numeric likelihoodPercentage and stays UNCHANGED (D5 - the cap label and the RAG band are orthogonal, both from the same raw number). DTOs UNCHANGED (D2). RBAC N/A (alters a rendered value, not access). Mock only abstractions you own - DeliveriesChips reads via the existing mocked deliveryService driven port already faked in its test; never mock fetch/axios. Strict TS, no any (narrow unknown with a guard); type for the options record; immutable; <=2 nesting, early returns, no else chains. No comments. CI-LEARNINGS PRE-APPLY (grep docs/ci-learnings.md before writing): Biome zero-warnings is the prebuild hook; typescript:S6582 (collapse to optional chaining in any predicate); skip framework renders-without-crashing tests (CLAUDE.md - every test asserts a business behaviour). RED handoff: un-skip the three named .skip acceptance scenarios ONE at a time and confirm RED-for-right-reason (TestingLibraryElementError: Unable to find element with text >95% - the MISSING_FUNCTIONALITY assertion miss documented in DISTILL, NOT an import/fixture/provider error) before implementing; one RED -> GREEN -> REFACTOR cycle at a time; refactor commit separate from the feature commit."
+        },
+        {
+          "id": "01-02",
+          "name": "Route the manual forecast headline (ForecastLikelihood) through formatLikelihood",
+          "criteria": [
+            "ForecastLikelihood.tsx renders the likelihood via formatLikelihood(likelihood, { hasRemainingWork: remainingItems > 0, precision: 'fixed2' }), replacing the inline likelihood.toFixed(2)+'%'; remainingItems is already a prop",
+            "The two RED capped scenarios in the it.skip.each block are un-skipped and pass: 'reads >95% for a perfect likelihood with work left' (likelihood=100, remainingItems=5) and 'reads >95% for a high likelihood with work left' (likelihood=96.5, remainingItems=5); neither 100.00% nor 96.50% is rendered when capped",
+            "The existing active regression guards stay green: 95.00% and 94.80% with work left stay precise (<=95 boundary), and 100.00% with remainingItems=0 stays precise (D4 completed-forecast exemption); the forecast-level icon/colour (ForecastLevel) is unchanged (D5)",
+            "pnpm test green; pnpm build clean; Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastLikelihood.test.tsx",
+          "scenario_name": "never presents a manual forecast above 95% as a certainty / reads >95% for $scenario (likelihood=100 and likelihood=96.5, remainingItems=5)",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastLikelihood.tsx",
+            "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastLikelihood.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply and fast-check is absent (ADR-038). The scenario enters through the public <ForecastLikelihood> render and asserts the user-observable text (screen.getByText('>95%')) - never formatLikelihood directly (driving port = component render). This slice is pure propagation of the rule validated in 01-01 to the second surface (DISCUSS prioritisation: slice 02 follows slice 01). EXTEND ForecastLikelihood.tsx per the ADR-038 decomposition table: replace likelihood.toFixed(2) (rendered as `${...}%`) with formatLikelihood(likelihood, { hasRemainingWork: remainingItems > 0, precision: 'fixed2' }). remainingItems is already a prop (from ManualForecastDto.RemainingItems) - the D4 signal is local, no DTO change (D2). ForecastLevel construction from the raw numeric likelihood is UNCHANGED so the 'Certain' styling/icon/colour is preserved (D5); the 'should render the correct icon and color' regression test must stay green. Do NOT touch formatLikelihood.ts (it shipped in 01-01); this step only re-points one call site. Strict TS, no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY: Biome zero-warnings prebuild; typescript:S6582; skip framework renders-without-crashing tests. RED handoff: un-skip ONLY the it.skip.each capped block (the two scenarios) and confirm RED-for-right-reason (Unable to find element with text >95% = MISSING_FUNCTIONALITY per DISTILL) before implementing; keep the active precise/exempt guards untouched; one RED -> GREEN -> REFACTOR; refactor commit separate from the feature commit."
+        },
+        {
+          "id": "01-03",
+          "name": "ADR-038 DES-5 enforcement: FE structural drift guard + NUnit DTO-stability reflection guard",
+          "criteria": [
+            "A new FE structural Vitest test asserts all four likelihood-render surfaces route through formatLikelihood and that no inline forecast-likelihood formatting remains (no Math.round(<likelihood>)+'%' / .toFixed(2)+'%' on a forecast likelihood in DeliverySection.tsx, DeliveriesChips.tsx, ForecastLikelihood.tsx) - reading the component source text and asserting the formatLikelihood call is present and the inline pattern is absent",
+            "A new NUnit reflection test asserts ManualForecastDto.Likelihood, DeliveryWithLikelihoodDto.LikelihoodPercentage, and FeatureLikelihoodDto.LikelihoodPercentage are each typed System.Double and that no new cap/band sibling field was added (D2 stability guard)",
+            "pnpm test green; pnpm build clean; Biome zero warnings on ./src; dotnet build zero-warning; dotnet test (NUnit) green; no backend production code was changed (test-project-only on the backend)"
+          ],
+          "test_file": "Lighthouse.Frontend/src/utils/forecast/formatLikelihood.enforcement.test.ts",
+          "scenario_name": "all four forecast-likelihood surfaces route through formatLikelihood and the numeric DTO fields remain double (ADR-038 DES-5)",
+          "deps": [
+            "01-01",
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/forecast/formatLikelihood.enforcement.test.ts",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/ForecastLikelihoodCapDtoStabilityTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: enforcement/structural guards (the ADR-038 DES-5 brownfield drift guards) - they are themselves invariant-style ('for all four surfaces, route through formatLikelihood'; 'for all three numeric likelihood DTO fields, type stays double') but expressed as a source-grep Vitest assertion and an NUnit reflection assertion, not Hypothesis. This is the ONE infra-only/hardening step (acceptable as the final close-out per the constraint); no new acceptance scenario - it locks the locked design invariants. (1) NEW FE structural test formatLikelihood.enforcement.test.ts: read the source text of DeliverySection.tsx, DeliveriesChips.tsx, ForecastLikelihood.tsx (e.g. via fs/readFileSync on the resolved paths or import.meta.glob raw), assert each contains a formatLikelihood( call and assert NONE still contains an inline forecast-likelihood format (a Math.round(...likelihood...)+'%' or .toFixed(2)...% applied to the likelihood) - this is the ADR-038 'no raw Math.round(likelihood)% / toFixed(2)% on a forecast likelihood' rule. Keep the regex narrow and commented-free; it asserts the four call sites established in 01-01/01-02. (2) NEW NUnit reflection test ForecastLikelihoodCapDtoStabilityTest.cs in the DTO test folder (precedent: DeliveryWithLikelihoodDtoTest.cs lives there): use typeof(ManualForecastDto).GetProperty(nameof(ManualForecastDto.Likelihood)).PropertyType == typeof(double) for all three fields (ManualForecastDto.Likelihood, DeliveryWithLikelihoodDto.LikelihoodPercentage, FeatureLikelihoodDto.LikelihoodPercentage) and assert no added IsCapped/LikelihoodBand-style sibling field (D2). This is a TEST-PROJECT-ONLY backend change - NO production .cs is touched (the whole feature is FE per ADR-038 Option A; backend stays untouched, D2). CI-LEARNINGS PRE-APPLY (grep docs/ci-learnings.md): NUnit4002 (Is.Zero not Is.EqualTo(0)); NUnit2045/2056 (two+ consecutive Assert.That at one scope -> wrap in using (Assert.EnterMultipleScope())) - the three-field check is a natural multiple-assert block; keep cognitive complexity low; Biome zero-warnings prebuild on the FE test. No comments. Strict TS no any on the FE side; nullable enabled / TreatWarningsAsErrors zero-warning build on the backend. This step has no RED acceptance scenario to un-skip; if either guard fails at first run, the FIX is in the 01-01/01-02 production wiring (a missed call site or a stray inline format), never a relaxation of the guard."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Frontend/src",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-quality-gate",
+    "verdict": "approved",
+    "blocker_count": 0,
+    "reviewed_at": "2026-05-30",
+    "note": "3 steps in 1 phase, mapping the 5 DISTILL RED scenarios across 3 acceptance files plus the ADR-038 DES-5 enforcement close-out. 01-01 (slice 01 portfolio deliveries) introduces formatLikelihood + its boundary unit tests and turns 3 RED scenarios green (DeliveriesChips 'reads Likelihood: >95%...' + DeliverySection delivery-chip + per-feature-chip capped scenarios). 01-02 (slice 02 manual) turns the 2 it.skip.each capped scenarios green (likelihood=100 and 96.5, remainingItems=5). 01-03 is the single infra-only hardening step (ADR-038 DES-5: FE structural drift guard + NUnit DTO-stability reflection guard) - acceptable as a final close-out per the constraint. Component set matches ADR-038's decomposition table exactly: 1 CREATE NEW helper + its tests, 4 EXTEND render sites (DeliverySection delivery chip + per-feature column, DeliveriesChips, ForecastLikelihood), 3 NO CHANGE (ForecastLevel, all backend DTOs), plus 2 new enforcement tests. No backend production code change (D2). No new dependencies / fast-check absent (ADR-038). OOP project -> @nw-software-crafter; mutation per-feature >=80% targets formatLikelihood. Step decomposition ratio 3 steps / 5 production+helper files <= 2.5. All step IDs NN-NN; every step carries test_file + scenario_name (singular per schema; 01-01 co-drives 3 scenarios across 2 files, named with the representative + the co-driven in parentheses). Awaiting orchestrator quality gate."
+  }
+}

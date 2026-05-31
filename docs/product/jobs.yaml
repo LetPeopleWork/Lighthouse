@@ -10,6 +10,7 @@ feature_context:
   - state-time-cumulative-view
   - remove-action-buttons
   - epic-5121-domain-events-cqrs-concurrency
+  - forecast-confidence-cap
 
 jobs:
   - id: job-rbac-bootstrap
@@ -875,4 +876,52 @@ jobs:
         change, so no proactive reaction is possible at all today. Gap: 3 — the enabling
         capability (event emission) is genuinely missing; this epic closes the emission gap,
         the reactions follow downstream.
+
+  - id: job-forecast-no-false-certainty
+    title: Present a forecast that leaders won't read as a guarantee
+    persona: delivery-forecaster
+    feature_context: forecast-confidence-cap
+    created: 2026-05-30
+    note: >
+      ADO #5126 "Never show 100% Confidence". The sibling concern — don't forecast a team with too
+      little throughput data — is a DISTINCT job tracked in ADO #5125 and is OUT of this feature.
+    job_story: >
+      When I share a Lighthouse forecast likelihood with leadership and the number reads as 100%
+      (or a high deterministic-looking figure),
+      I want the number itself to express honest uncertainty rather than apparent certainty,
+      so deterministic-thinking stakeholders don't lock onto it as a committed date and hold me to a
+      certainty that probability never promised.
+    dimensions:
+      functional: >
+        Forecast likelihoods above a high threshold render as ">95%" instead of a precise 96-100%
+        figure; a genuinely complete item (no remaining work) still reads as done/100%.
+      emotional: >
+        Move from the dread of a leader screenshotting "100%" and treating it as a promise, to
+        confidence that the headline number itself signals "there is still a chance this moves".
+      social: >
+        Be seen as a forecaster who communicates probability honestly — not someone who over-promised
+        a date and then missed it.
+    forces:
+      push: >
+        Lighthouse currently shows 100% (and 96-99%) on forecasts; deterministic-thinking leaders read
+        100% as "that's the date" and are blindsided when it slips.
+      pull: >
+        A ">95%" band reads as "very likely, not guaranteed" — the honest message in one glance, with
+        no verbal caveat speech required when presenting.
+      anxiety: >
+        Will capping make the tool look less precise or less credible?
+        Will it hide a real difference between 96% and 99%?
+        (Mitigated: anything at or below 95% still shows its precise value; only the deceptively-certain
+        top band collapses, and completed items keep 100%.)
+      habit: >
+        Forecasters verbally caveat the 100% ("it's not really certain...") every time they present —
+        a ritual the number itself should make unnecessary.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Real credibility/trust pain in the forecaster's leadership conversation, but a
+        communication-honesty refinement rather than a blocking capability gap — the forecast already
+        works, this makes its headline number honest. Hence gap 2, not 4.
 

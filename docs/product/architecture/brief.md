@@ -1488,3 +1488,72 @@ C4Component
   Rel(tfv, api, "auto-runs forecast via")
 ```
 
+---
+
+## Application Architecture — forecast-confidence-cap
+
+Feature: forecast-confidence-cap (ADO #5126 "Never show 100% Confidence")
+Wave: DESIGN
+Date: 2026-05-30
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+
+This section is **additive** to all prior `## Application Architecture` deltas. Architectural pattern (ports-and-adapters), paradigm (OOP backend + functional-leaning React frontend), and core invariants are unchanged. **This feature is frontend-only**: it adds no endpoint, no DTO change, no domain rule, no driven adapter. It plugs into one new pure view-layer helper consumed by four existing render sites.
+
+### Architectural Pattern
+
+Ports-and-Adapters (Hexagonal) — **no port change**. The cap is a presentation policy, not a domain concern. The Monte Carlo likelihood (`ForecastBase.GetLikelihood`, `Feature.GetLikelhoodForDate`) and its semantics — including returning `100` when no remaining work — are the domain truth and are untouched (D2, D4 exempt path preserved at source).
+
+### Key decision
+
+The `">95%"` rule lives in a single frontend pure helper `formatLikelihood(value, { hasRemainingWork, precision })`, consumed by all four likelihood-rendering surfaces. Numeric DTOs (`ManualForecastDto.Likelihood`, `DeliveryWithLikelihoodDto.LikelihoodPercentage`, `FeatureLikelihoodDto.LikelihoodPercentage`) stay `double` and unchanged. See **ADR-038**.
+
+The decisive finding: **the D4 remaining-work signal is already available at every frontend call site** — `remainingItems` (manual), `delivery.remainingWork` (delivery + overview chips), `row.getRemainingWorkForFeature()` (per-feature chip, via the feature row already bound in the cell). No DTO field is needed to enforce the completed-item exemption. This is what makes the FE-only design (Option A) strictly better than a backend display field (Option B, redundant once the old-server fallback is considered) or a hybrid DTO field (Option C, an unnecessary contract change).
+
+### Component Decomposition
+
+See `docs/feature/forecast-confidence-cap/feature-delta.md` → **Wave: DESIGN / [REF] Component decomposition** for the full table. Headline: **1 CREATE NEW** (`formatLikelihood`), **4 EXTEND** (`ForecastLikelihood`, `DeliverySection` delivery chip + per-feature chip, `DeliveriesChips`), **3 NO CHANGE** (`ForecastLevel`, all backend DTOs). No backend code touched.
+
+### Driving / Driven Ports
+
+None changed. No new/changed HTTP route, no new driven adapter.
+
+### ADR References (this feature)
+
+- [ADR-038](./adr-038-forecast-confidence-cap-display-formatter.md): Cap lives in a FE shared formatter, not a backend display field — D2-preserving; D4 sourced locally per call site.
+
+### Architectural Enforcement (this feature)
+
+| Rule | Enforcement Mechanism |
+|---|---|
+| Every likelihood-rendering FE surface routes through `formatLikelihood` (no raw `Math.round(likelihood)%` / `toFixed(2)%` on a forecast likelihood) | Vitest structural/grep test asserting the four call sites call `formatLikelihood`; no inline likelihood formatting remains |
+| Numeric DTO fields unchanged (D2) | NUnit reflection test asserting `ManualForecastDto.Likelihood`, `DeliveryWithLikelihoodDto.LikelihoodPercentage`, `FeatureLikelihoodDto.LikelihoodPercentage` remain `double` with no new band/cap field |
+| D4 exemption (completed items still read 100%/Done) | Vitest boundary tests on `formatLikelihood` at 94.9 / 95.0 / 95.01 / 100 with `hasRemainingWork` true and false |
+
+### Clients consistency
+
+No new endpoint → no `FEATURE_REQUIRES_SERVER_NEWER_THAN` version gate. CLI/MCP clients adopt the `">95%"` rule **only if** they render a likelihood to a human; raw-JSON-only ⇒ N/A. Non-blocking follow-up in the clients repo. The numeric value clients receive is unchanged, so a client that does nothing remains correct.
+
+### C4 — Component (L3, forecast-likelihood render path)
+
+System Context (L1) and Container (L2) for Lighthouse exist in earlier `brief.md` sections / `c4-diagrams.md` — referenced, not recreated.
+
+```mermaid
+C4Component
+  title Component — forecast-likelihood render path (forecast-confidence-cap)
+  Container_Boundary(fe, "Lighthouse Frontend (React/TS)") {
+    Component(fmt, "formatLikelihood", "Pure TS helper (NEW)", "D1: >95 && hasRemainingWork -> '>95%'; else precise")
+    Component(fl, "ForecastLikelihood", "React (EXTEND)", "Manual forecast headline")
+    Component(ds, "DeliverySection", "React (EXTEND)", "Delivery chip + per-feature chip")
+    Component(dc, "DeliveriesChips", "React (EXTEND)", "Portfolio overview chips")
+    Component(lvl, "ForecastLevel", "TS class (NO CHANGE)", "RAG band/colour from raw number")
+  }
+  Container(api, "Lighthouse Backend API", ".NET 8", "Numeric likelihood DTOs unchanged (D2)")
+  Rel(fl, fmt, "formats likelihood via", "hasRemainingWork = remainingItems > 0")
+  Rel(ds, fmt, "formats delivery + per-feature via", "delivery.remainingWork / row.getRemainingWorkForFeature()")
+  Rel(dc, fmt, "formats delivery via", "delivery.remainingWork")
+  Rel(fl, lvl, "derives colour/icon from raw value via")
+  Rel(ds, lvl, "derives colour from raw value via")
+  Rel(api, fl, "supplies Likelihood + RemainingItems to")
+  Rel(api, ds, "supplies LikelihoodPercentage + RemainingWork to")
+```
+
