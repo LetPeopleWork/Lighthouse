@@ -1178,6 +1178,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<bool>("FilterApplied")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("HasSufficientData")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("NumberOfItems")
                         .HasColumnType("integer");
 

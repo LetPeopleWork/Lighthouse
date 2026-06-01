@@ -27,6 +27,6 @@
 
         public string? ExcludedSummary { get; set; }
 
-        public bool HasSufficientData { get; set; } = true;
+        public bool HasSufficientData { get; set; }
     }
 }
