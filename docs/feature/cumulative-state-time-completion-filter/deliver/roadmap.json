@@ -1,0 +1,64 @@
+{
+  "roadmap": {
+    "project_id": "cumulative-state-time-completion-filter",
+    "created_at": "2026-06-01T00:00:00Z",
+    "total_steps": 2
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Completion-class legend toggle (US-5144-01)",
+      "description": "Slice 01 (the whole feature). Add a click-to-toggle Completed/Ongoing legend to the shipped CumulativeStateTimeChart by REUSING the in-house LegendChip + useTypesVisibility mechanic, gated on a new completionFilterEnabled prop; then wire BaseMetricsView to enable it only when no work item is picked. Drives the 7 component acceptance scenarios (CumulativeStateTimeChart.test.tsx) plus a host-wiring test (BaseMetricsView.test.tsx).",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "CumulativeStateTimeChart Completed/Ongoing legend toggle via LegendChip + useTypesVisibility",
+          "criteria": [
+            "When completionFilterEnabled is true, the chart renders two LegendChip chips labelled 'Completed' and 'Ongoing', both active by default; both stacked series are passed to <BarChart> (scenario 1 / AC a)",
+            "Clicking the 'Completed' chip removes the completed series from the series passed to <BarChart> (ongoing-only); aria-pressed on that chip becomes false; the value axis rescales to the remaining series (scenario 2 / AC b)",
+            "Clicking the 'Ongoing' chip removes the ongoing series (completed-only) (scenario 3 / AC c)",
+            "Re-clicking a hidden chip restores its series (scenario 4 / AC d)",
+            "At least one segment always remains visible: with one already hidden, clicking the other is a no-op (useTypesVisibility last-visible guard) (scenario 5 / D8 guard)",
+            "When completionFilterEnabled is false (or omitted), NO chips render and BOTH series are always passed to <BarChart> (scenario 6 / AC e)",
+            "Toggling Completed/Ongoing issues no network request: the chart filters the already-supplied series prop; it does not fetch (D7 guardrail)",
+            "All 7 scenarios in the describe.skip('...US-5144-01') block are un-skipped one at a time and green; the existing CumulativeStateTimeChart tests remain green; Biome zero warnings; tsc clean for the touched files"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+          "scenario_name": "CumulativeStateTimeChart completion-class legend toggle (US-5144-01) — 7 scenarios",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (the TS row of the polyglot matrix governs, not the Python/Hypothesis pilot); Hypothesis/assert_state_delta do NOT apply. These are component-level acceptance tests authored by DISTILL (describe.skip block already present) — DELIVER un-skips them one at a time, it does NOT re-author them. RED handoff already verified by DISTILL: un-skipped, 6/7 fail MISSING_FUNCTIONALITY ('Unable to find button \"Completed visibility toggle\"'), 1/7 passes as the disabled-filter invariant. REUSE, do not build new (D8): import LegendChip from './LegendChip' and useTypesVisibility from '../../../hooks/useChartVisibility' — the SAME mechanic CycleTimeScatterPlotChart.tsx (lines 268-273) uses for work-item types. Call useTypesVisibility(['Completed','Ongoing']) -> { visibleTypes, toggleTypeVisibility }; the hook already prevents hiding the last visible type (scenario 5 needs no extra code). Render the two LegendChip chips in the existing header Stack (beside pickerSlot) ONLY when completionFilterEnabled — Completed color theme.palette.primary.main, Ongoing color theme.palette.primary.light (representative of the hatch). Build the series array, then pass only series whose visibleTypes[label] !== false to <BarChart> (keep the stable label keys 'Completed'/'Ongoing' for visibility lookup; the BarChart series label may still carry the unit suffix). When completionFilterEnabled is false: render no chips and ALWAYS pass both series; ALSO ensure visibility resets to both-on for the next enable (scenario 7 is covered by step 01-02's rerender path, but the chart must not leak hide-state while disabled). Existing test mock: <BarChart> is mocked to expose data-series as JSON; chips are queried via getByRole('button', { name: 'Completed visibility toggle' }) per LegendChip's aria-label. Keep the existing hidden display:none tooltip Box unchanged (test-only, never visible — D7). IMMUTABILITY: derive the filtered series with .filter/.map, no mutation; max 2 nesting, early returns, no comments. TS strict, no any. CI-LEARNINGS / Biome pre-apply: no unused imports/vars (the SurveyNudge tsc TS6133 is a PRE-EXISTING unrelated file — do NOT touch it); useMemo-stabilise any derived array fed to a hook dep to avoid the React #185 inline-new-object loop (project_react185 memory); pnpm biome check ./src must be clean. Conventional commit 'feat(metrics): ...' with trailer 'Step-ID: 01-01'. POST-GREEN wiring smell check: the chips + filtering are exercised by the un-skipped ATs (not test-only code)."
+        },
+        {
+          "id": "01-02",
+          "name": "Wire BaseMetricsView to enable the completion toggle only when no work item is selected",
+          "criteria": [
+            "BaseMetricsView passes completionFilterEnabled={selectedItemIds.length === 0} to <CumulativeStateTimeChart> so the chips appear only when the item picker has no selection (AC e/f)",
+            "When an item is selected (selectedItemIds non-empty) the chart receives completionFilterEnabled=false; clearing the selection restores it to true (AC f reset path)",
+            "A Vitest test on BaseMetricsView asserts the wiring (chart receives completionFilterEnabled reflecting selection state) so the host wiring cannot ship Tested-But-Unwired (Sentinel TBU finding)",
+            "Behaviour is identical on team and portfolio detail (same component + same wiring) (AC g)",
+            "Full frontend suite green; Biome zero warnings; tsc clean for the touched files"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "passes completionFilterEnabled to the cumulative chart reflecting item-picker selection state",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (TS row governs); Hypothesis/assert_state_delta do NOT apply. This step closes the TBU gap Sentinel flagged: the chips are useless unless BaseMetricsView gates them on the picker. WIRING: in the stateTimeCumulative widget render (BaseMetricsView.tsx around line 927-938 where <CumulativeStateTimeChart> is rendered with data + onBarClick + pickerSlot), add completionFilterEnabled={ctx.cumulativeStateTimeSelectedItemIds.length === 0} (the selectedItemIds already flow through ctx — see cumulativeStateTimeSelectedItemIds and the host state at ~line 1049/1284). Do NOT change the item picker behaviour, the narrowed fetch, or displayedCumulativeStateTime. TEST: extend BaseMetricsView.test.tsx — render the view, assert the chart gets completionFilterEnabled=true with no selection; simulate a picker selection (selectedItemIds non-empty) and assert it becomes false; clearing restores true. Reuse the existing BaseMetricsView test harness/mocks (do NOT mock fetch directly; mock the abstractions the suite already mocks). Port-to-port: the assertion goes through the rendered chart's received prop, not internal state. PORTFOLIO PARITY (AC g): BaseMetricsView backs both team and portfolio detail, so one wiring covers both; no portfolio-specific code. CI-LEARNINGS / Biome pre-apply: no unused imports/vars; do NOT introduce an inline new object/array into a useEffect dep (React #185); keep <=2 nesting; no comments; TS strict no any; pnpm biome check ./src clean; pnpm build zero warnings (note: a PRE-EXISTING unrelated TS6133 in SurveyNudge.cadence.test.tsx is out of scope — do not fix or be blocked by it; build the frontend test/typecheck scoped to touched files if needed). Conventional commit 'feat(metrics): ...' with trailer 'Step-ID: 01-02'."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "orchestrator (proportionate self-validation: 2-step slice, all 7 DISTILL scenarios map to 01-01, host wiring + TBU test in 01-02; schema verified via des-verify-integrity --roadmap-only)",
+    "approved_at": "2026-06-01T00:00:00Z"
+  }
+}
