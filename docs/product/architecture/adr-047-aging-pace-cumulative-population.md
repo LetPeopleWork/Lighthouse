@@ -92,6 +92,43 @@ population walk in `BaseMetricsService` and the two leaf `GetAgeInStatePercentil
 `BuildWorkflowStateOrder` is pace-exclusive; the sibling cumulative-state-time chart never calls
 it and is provably untouched.
 
+### Monotonicity safety clamp (backend, final defensive layer)
+
+Option A makes the metric genuinely monotonic **only given a correct user-configured `DoingStates`
+order**. The team configures that order, and Lighthouse cannot guarantee its correctness: a
+**misconfigured** order — a logically-left state placed right in config — could still produce a
+downward band even after the Option A data fix. This is **not** the cause of bug #5145's
+screenshots (those came from the per-state-exit population flaw, which Option A fixes), but it is a
+**residual path** that remains open while the order is a user-supplied input we do not validate.
+
+**Decision (binding).** As the **FINAL step** of `ComputeAgeInStatePercentiles` — **after** the
+cumulative reached-at-least-this-state percentiles are computed and the states are in
+`doingStatesInWorkflowOrder` — walk the ordered states and **clamp each percentile value to the
+running maximum of that SAME percentile rank seen so far**. Each rank is clamped independently:
+p50 to the max prior p50, p70 to the max prior p70, p85→p85, p95→p95. A state's clamped value
+`= max(itsTrueValue, runningMaxForThatRank)`. **Omitted states** (no observations — DDD-4) are
+**skipped**, and the running max **carries across the gap** to the next present state.
+
+**Result.** The API itself **guarantees** non-decreasing per-rank bands across the returned
+workflow-ordered states. The frontend stays faithful — **no FE logic change** (consistent with the
+existing no-FE-change decision; the FE renders exactly what the API returns). CLI/MCP and any
+future API consumer **inherit** the guarantee, because it is enforced at the single source of truth
+(the API), not re-implemented per consumer. The clamp is **connector-agnostic**: it operates only
+on the normalized, already-ordered percentile output, with no `switch (WorkTrackingSystem)`.
+
+**No-op under correct config.** With a correct `DoingStates` order, Option A's superset-population
+argument already yields monotonic values, so `runningMaxForThatRank` never exceeds `itsTrueValue`
+and the clamp **never adjusts anything**. It only ever **raises** values, and only in the
+misconfigured-order (or any residual degenerate) case.
+
+**Last-column invariant is NOT broken.** The "last mapped Doing column ≈ cycle-time lines"
+invariant holds under the clamp: in the normal (correct-config) case the rightmost column is the
+largest value in a monotonic series, so the running-max clamp leaves it unchanged. In a
+misconfigured case the alignment is already moot (the order itself is wrong). The clamp is applied
+to the **same workflow order the chart renders** (the returned state order), so the backend and the
+chart agree on both the ordering and the values — there is no divergence between what is clamped and
+what is drawn.
+
 ---
 
 ## Implementation Notes (binding contract for DELIVER; impl/fixtures are DELIVER's)
@@ -163,6 +200,31 @@ already uses — read every "`FromState != null`" below as "`!string.IsNullOrEmp
   precisely why the last (rightmost) mapped column's band is **≈** the cycle-time percentile line, not
   **=** it: items that finished without reaching the last mapped state are not in its population.
 
+### Monotonicity safety clamp — helper shape and purity
+
+The clamp runs once, as the last step of `ComputeAgeInStatePercentiles`, over the already-computed
+ordered `AgeInStatePercentilesDto` list (states in `doingStatesInWorkflowOrder`, omitted states
+absent). It is **pure**: it reads only the in-memory ordered DTOs, performs **no repository access**
+and **no query** (so the ArchUnit transition-repo rule continues to hold unchanged), and returns a
+new ordered list (immutability per CLAUDE.md — no in-place mutation of the input DTOs). To keep
+`ComputeAgeInStatePercentiles` under McCabe ≤ 15 / `S3776`, extract a small named helper. Suggested
+signature (DELIVER may adjust names but keep the shape, purity, and the per-rank-independent
+running-max semantics):
+
+```csharp
+// returns the same states in the same order, each percentile value raised (if needed) to the
+// running max of that SAME percentile rank seen across prior states; omitted states do not reset
+// the running max. Pure: no repository, no query, no mutation of the input DTOs.
+protected static IReadOnlyList<AgeInStatePercentilesDto> ClampPercentilesNonDecreasing(
+    IReadOnlyList<AgeInStatePercentilesDto> orderedPercentilesByState)
+```
+
+The running max is kept **per percentile rank** (a small immutable map `percentile → maxSeen`,
+rebuilt functionally as the walk proceeds — e.g. via an `Aggregate` over the ordered states), so
+each rank (50/70/85/95) is clamped independently and a higher rank is never pulled up by a lower
+one. The helper must tolerate states whose `Percentiles` list omits a rank (defensive) without
+throwing.
+
 ### Pre-window transitions are NOT clipped
 
 Transition timestamps feeding the cumulative age are **not** clipped to the history window: an item's
@@ -186,10 +248,21 @@ discarded.
 
 **Option C — frontend clamp (`cummax`).** Leave the backend metric as-is and have the chart force
 each band to `max(thisBand, previousBand)` so it *looks* monotonic. **Rejected as semantically
-dishonest**: the clamped value is no longer a real percentile of any population — it manufactures
-a number the data does not support, which is precisely the kind of "lie to the user" the
-methodology forbids. Acceptable only as an *interim* visual stopgap if a backend fix had to wait;
-since Option A is a contained pace-path change with no migration, no interim clamp is warranted.
+dishonest in that form**: with the real per-state-population flaw still in place, a clamp *across
+the board* would manufacture numbers the data does not support and mask the actual defect — the
+"lie to the user" the methodology forbids.
+
+> **Note — the once-rejected clamp returns as a defensive layer, not a substitute.** The backend
+> Monotonicity safety clamp adopted in §Decision is the **same mechanical operation** as Option C
+> but plays a **fundamentally different, defensible role**, and is deliberately placed in the
+> **backend** rather than the FE. Option-C-alone was dishonest because it substituted fabricated
+> values for a real, broken metric across every team. With **Option A now fixing the real
+> per-state-population flaw**, the clamp fires **only** when the user-supplied `DoingStates` order
+> is misconfigured (or some residual degenerate case) — an **input error where the "true" per-state
+> value is itself meaningless**. In that case flattening a drop to the previous level (at worst, the
+> same level) is the **lesser evil** versus rendering a confusing dip from a known-bad input. It is
+> a safety net layered **on top of** the honest data fix, never in place of it — which is why the
+> mechanism rejected above is correct here.
 
 ---
 
@@ -243,11 +316,33 @@ since Option A is a contained pace-path change with no migration, no interim cla
   helper stays repo-free) continues to hold unchanged. Apply the `docs/ci-learnings.md` rule families
   (notably `S3776`, `S107`, `S3267`, `CA1859`) pre-emptively.
 
+- **Monotonicity safety clamp — net consequences.**
+  - *No-op under correct config*: with a correct `DoingStates` order Option A already produces
+    monotonic values, so the clamp never adjusts anything; it adds a single ordered pass with no
+    behavioural change for correctly-configured teams.
+  - *Honesty reframing (record explicitly)*: this is the **same** clamp previously **declined as
+    "Option C — dishonest"**. Its role is now different and defensible — a **safety net layered on
+    top of** the honest Option A data fix, not a substitute. Option-C-alone masked the real
+    per-state-population flaw with fabricated values across the board; now, with Option A fixing that
+    flaw, the clamp fires **only** on a misconfigured `DoingStates` order (an input error where the
+    "true" per-state value is meaningless), so flattening a drop to the previous level is the lesser
+    evil versus rendering a confusing dip. A future reader should understand from this note **why the
+    once-rejected clamp is now correct as a defensive layer**.
+  - *Last-column non-interaction*: the clamp does NOT break the "last mapped Doing column ≈
+    cycle-time lines" invariant — the rightmost column is the largest in a monotonic series, so the
+    running-max clamp leaves it unchanged in the normal case; in a misconfigured case alignment is
+    already moot. The clamp operates on the **same workflow order the chart renders**, so backend and
+    chart agree.
+  - *FE faithful*: no FE logic change — the guarantee is enforced at the API; the chart renders what
+    the API returns. CLI / MCP / any future consumer inherit the guarantee.
+
 **Neutral / preserved**
 
 - The **ArchUnit transition-repo rule is preserved**: metrics services still read transitions only
   via `IWorkItemStateTransitionRepository` / `IFeatureStateTransitionRepository` (the
-  `BaseMetricsService` helper stays repo-free, taking pre-loaded transitions). No new port.
+  `BaseMetricsService` helper stays repo-free, taking pre-loaded transitions). No new port. The
+  Monotonicity safety clamp is **pure** — it operates on the already-computed ordered DTOs with no
+  repository access and no query — so it does not perturb this rule.
 - **Sibling `state-time-cumulative-view` is provably unaffected** — it uses a different membership
   rule and never calls `BuildWorkflowStateOrder` or the pace population walk; the ADR-024 reflection
   rule (sibling helpers do not cross-call) continues to hold.

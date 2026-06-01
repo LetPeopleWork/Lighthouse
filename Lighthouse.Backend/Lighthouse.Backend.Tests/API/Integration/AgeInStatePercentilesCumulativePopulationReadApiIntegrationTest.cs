@@ -181,6 +181,40 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        [Ignore("RED scaffold — pending #5145 DDD-1b non-decreasing clamp; DELIVER un-ignores")]
+        public async Task GetAgeInStatePercentiles_MisconfiguredDoingStatesOrder_BandsNeverDropBelowThePreviousState()
+        {
+            var teamId = SeedMisconfiguredDoingStatesOrder();
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(PercentilesUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+                var states = OrderedStateNames(body);
+                Assert.That(states, Is.EqualTo(new[] { Review, InProgress, Test }),
+                    $"States must be returned in the configured (misconfigured) DoingStates order. Body: {body}");
+
+                foreach (var percentile in new[] { 50, 70, 85, 95 })
+                {
+                    var first = PercentilesForState(body, Review)[percentile];
+                    var dipping = PercentilesForState(body, InProgress)[percentile];
+                    var last = PercentilesForState(body, Test)[percentile];
+
+                    Assert.That(dipping, Is.GreaterThanOrEqualTo(first),
+                        $"Misconfigured-order In Progress p{percentile} ({dipping}) must not fall below the preceding Review p{percentile} ({first}) — the band is clamped up to at least the previous state. Body: {body}");
+                    Assert.That(last, Is.GreaterThanOrEqualTo(dipping),
+                        $"Test p{percentile} ({last}) must not fall below the clamped In Progress p{percentile} ({dipping}). Body: {body}");
+                    Assert.That(dipping, Is.EqualTo(first),
+                        $"In Progress p{percentile} ({dipping}) genuinely sits below Review on this seed (exit-from-In-Progress age < exit-from-Review age); the clamp must raise it to EXACTLY the previous Review value ({first}), not leave the unclamped dip. Body: {body}");
+                }
+            }
+        }
+
+        [Test]
         [Ignore(RedScaffoldReason)]
         public async Task GetAgeInStatePercentiles_UnmappedStatusInTransitions_IsExcludedFromPacePath()
         {
@@ -354,6 +388,31 @@ namespace Lighthouse.Backend.Tests.API.Integration
             AddExitTransition(transitionRepository, item, InProgress, Review, 11, startedDate);
             AddExitTransition(transitionRepository, item, Review, Test, 14, startedDate);
             AddExitTransition(transitionRepository, item, Test, Done, 17, startedDate);
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        // misconfigured order [Review, In Progress, Test]: true per-state values are [Review=20, In Progress=10, Test=30] (exit-from-In-Progress age 10 < exit-from-Review age 20) → unclamped output dips at In Progress; DDD-1b clamps In Progress up to EXACTLY the previous Review value (20).
+        private int SeedMisconfiguredDoingStatesOrder()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeamWithDoingStates(sp, WorkTrackingSystems.AzureDevOps, [Review, InProgress, Test]);
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            for (var i = 0; i < 6; i++)
+            {
+                var startedDate = windowStart.AddDays(10 + i);
+                var item = AddCompletedItem(workItemRepository, team, $"MISCFG-{i}", startedDate, closedAfterTestAgeDays: 30);
+
+                AddExitTransition(transitionRepository, item, InProgress, Review, 10, startedDate);
+                AddExitTransition(transitionRepository, item, Review, Test, 20, startedDate);
+                AddExitTransition(transitionRepository, item, Test, Done, 30, startedDate);
+            }
 
             workItemRepository.Save().GetAwaiter().GetResult();
             transitionRepository.Save().GetAwaiter().GetResult();
