@@ -218,7 +218,9 @@ describe("CumulativeStateTimeChart completion-class legend toggle (US-5144-01)",
 	];
 
 	it("offers no completion chips unless the filter is explicitly enabled", () => {
-		render(<CumulativeStateTimeChart data={{ states: stateWithBothClasses }} />);
+		render(
+			<CumulativeStateTimeChart data={{ states: stateWithBothClasses }} />,
+		);
 
 		expect(
 			screen.queryByRole("button", { name: "Completed visibility toggle" }),
