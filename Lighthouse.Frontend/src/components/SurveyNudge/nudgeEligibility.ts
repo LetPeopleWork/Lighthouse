@@ -1,7 +1,7 @@
 export interface NudgeEligibilityInput {
 	isPremium: boolean | undefined | null;
 	installTimestamp: string | undefined | null;
-	nextEligibleAt?: string | undefined | null;
+	nextEligibleAt?: string | null;
 	now?: Date;
 }
 

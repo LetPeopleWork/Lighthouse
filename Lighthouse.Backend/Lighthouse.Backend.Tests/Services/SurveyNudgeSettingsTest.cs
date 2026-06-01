@@ -86,6 +86,14 @@ namespace Lighthouse.Backend.Tests.Services
         }
 
         [Test]
+        public void GetInstallTimestamp_WhenAbsent_ReturnsNull()
+        {
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            Assert.That(service.GetInstallTimestamp(), Is.Null);
+        }
+
+        [Test]
         public void GetInstallTimestamp_StoredValueUnparseable_ReturnsNullForFailClosed()
         {
             store.Add(new AppSetting { Key = AppSettingKeys.InstallTimestamp, Value = "not-a-timestamp" });
@@ -136,6 +144,18 @@ namespace Lighthouse.Backend.Tests.Services
         }
 
         [Test]
+        public async Task RecordSurveyNudgeAction_SecondRemindLater_StillQuietsForAboutOneWeek()
+        {
+            EnableUpdate();
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddDays(7)));
+        }
+
+        [Test]
         public async Task RecordSurveyNudgeAction_ThirdRemindLater_BacksOffToAboutSixMonths()
         {
             EnableUpdate();
@@ -161,6 +181,18 @@ namespace Lighthouse.Backend.Tests.Services
             await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
 
             Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddDays(7)));
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_RemindLaterThenNoInterest_UpdatesPersistedNextEligibleInstant()
+        {
+            EnableUpdate();
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.NoInterest);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddMonths(6)));
         }
 
         [Test]
