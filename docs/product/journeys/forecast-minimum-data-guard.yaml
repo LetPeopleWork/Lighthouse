@@ -1,0 +1,111 @@
+schema_version: 1
+feature_id: forecast-minimum-data-guard
+updated: 2026-05-31
+ado: "#5125"
+
+journeys:
+
+  - name: dont-forecast-on-too-little-data
+    goal: >
+      A delivery-forecaster opens a forecast for a new or low-volume team whose throughput window
+      holds completions on only a day or two, and instead of a confident-looking date (often a high
+      likelihood on a far-future day) the surface shows "Not enough throughput data yet — Lighthouse
+      needs at least 5 days with completed work items before it can forecast", so neither the
+      forecaster nor leadership anchors on a number the history cannot honestly support.
+    persona: delivery-forecaster
+
+    emotional_arc:
+      start: Embarrassed — "This new team has barely closed anything, yet Lighthouse shows a 100%
+        chance on a 2027 date. If I present that, it looks fake and I'll be the one explaining it."
+      middle: Relieved — "It now says there isn't enough data yet and names exactly what unblocks it
+        (5 days with completed items). That's the honest answer, and it's the one I was hand-rolling
+        on my dashboard myself."
+      end: Confident — "I trust that any number Lighthouse DOES show rests on enough history; the
+        empty state is a feature, not a gap. When the team matures, the forecast returns on its own."
+
+    design_decisions_resolved:
+      - id: D1
+        question: What counts as "enough" throughput data?
+        decision: >
+          Sufficiency = the count of DISTINCT days within the team's throughput history window that
+          each had at least one completed work item, must be >= 5. The datapoint is a day; only days
+          with a completion count toward the 5. Chosen (reporter, 2026-05-31) over total-closed-items
+          and over configured-window-length because it directly addresses the "throughput of one"
+          failing case while staying "not too restrictive".
+      - id: D2
+        question: What is shown below the threshold?
+        decision: >
+          SUPPRESS the forecast output (likelihood / percentile dates) and show an explicit
+          plain-language "not enough throughput data yet (need >=5 days with completed items)" state.
+          Chosen over rendering the unreliable number behind a warning chip, because a number on
+          screen still gets screenshotted as truth — the reporter's own workaround hides the number
+          entirely.
+      - id: D3
+        question: Which surfaces does the guard apply to?
+        decision: >
+          ALL forecast surfaces — manual When (days for N items) and How-Many (items by a date) team
+          forecasts, portfolio delivery likelihood, and per-feature likelihood. No forecast surface
+          shows a number built on too little data.
+      - id: D4
+        question: Does the guard fire for genuinely completed items (no remaining work)?
+        decision: >
+          NO — a completed item is a fact, not a forecast; there is nothing to suppress, so it still
+          reads 100% / Done. The guard applies only where a probabilistic forecast is actually
+          computed from throughput (remaining work > 0). Mirrors the sibling cap's D4 exemption and
+          composes with it.
+      - id: D5
+        question: Is the threshold configurable per team?
+        decision: >
+          NO — a single fixed constant (5 active days) for this feature. Keeps scope thin: no new
+          settings field, no DTO config, no RBAC-gated config surface. Revisit a per-team override
+          only on explicit demand.
+      - id: D6
+        question: How does this compose with filter-forecast-throughput's empty-filtered-sample fallback?
+        decision: >
+          Sufficiency is evaluated on the throughput series the forecast ACTUALLY samples — i.e.
+          AFTER the existing empty-filtered-sample fallback (which already reverts to unfiltered with
+          a warning). The two features compose; the guard never double-counts a filter exclusion as
+          missing data.
+      - id: D7
+        question: Where does the sufficiency signal live (backend vs frontend)?
+        decision: >
+          DEFER to DESIGN. Unlike the sibling cap (whose remaining-work signal was already at every
+          FE call site), the "active-days" count is NOT currently on the FE-facing forecast DTOs, so
+          a backend-computed sufficiency signal carried on the existing forecast DTOs is the likely
+          shape. DESIGN picks the exact carrier (boolean flag vs. active-day count + message). The
+          numeric likelihood DTO values are otherwise unchanged.
+
+    surfaces:
+      - manual-forecast: ManualForecaster When + How-Many headline (ForecastLikelihood) — the
+        reporter's primary surface.
+      - portfolio-delivery: DeliverySection delivery chip + per-feature likelihood column +
+        DeliveriesChips overview chip.
+
+    out_of_scope:
+      - Per-team configurable threshold (D5 — fixed 5; revisit on demand).
+      - Changing the Monte Carlo computation or the percentile date math.
+      - The >95% confidence cap itself (sibling forecast-confidence-cap / ADO #5126 — this composes
+        with it; suppression takes precedence over both the number and the cap).
+      - Non-forecast metrics that also read throughput (cycle time, aging, run charts) — the guard is
+        forecast-only.
+      - A dashboard-wide data-quality indicator beyond the forecast surfaces.
+
+    cross_cutting:
+      rbac: >
+        N/A — the guard changes WHETHER and WHAT a forecast renders, not who may access it. No new
+        operation, no IRbacAdministrationService interaction; the fixed threshold (D5) adds no
+        RBAC-gated config surface. Viewers who see forecasts today continue to, now including the
+        suppressed "not enough data" state. useRbac() gating untouched.
+      clients: >
+        Impacted, additive, non-blocking. The forecast DTOs (ManualForecastDto and the
+        delivery/feature likelihood DTOs) gain a sufficiency signal field consumed by CLI/MCP. It is
+        an ADDITIVE field on EXISTING endpoints (no new endpoint) — an old server simply omits it and
+        the client behaves as today (shows the number), an acceptable degradation, so no hard
+        FEATURE_REQUIRES_SERVER_NEWER_THAN gate is required; record the current latest release as the
+        baseline. Clients that render a likelihood to a human SHOULD honour the suppression (print the
+        "not enough data" message instead of a number). DESIGN to confirm whether the clients render
+        to humans or emit raw JSON only (if raw JSON only, N/A). File a follow-up clients task; do not
+        block #5125.
+      website: >
+        N/A — in-app forecasting honesty nuance, not a marketed/premium capability. ("Lighthouse
+        won't forecast on too little data" is a good trust talking point, but no site change required.)

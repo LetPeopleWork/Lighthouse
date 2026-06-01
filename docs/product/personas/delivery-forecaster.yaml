@@ -21,6 +21,7 @@ primary_jobs:
   - job-commit-intent-no-button
   - job-see-forecast-update-live
   - job-forecast-no-false-certainty
+  - job-forecast-only-with-enough-data
 
 goals:
   - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work

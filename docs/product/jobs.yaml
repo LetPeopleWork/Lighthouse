@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-05-30
+updated: 2026-05-31
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -11,6 +11,7 @@ feature_context:
   - remove-action-buttons
   - epic-5121-domain-events-cqrs-concurrency
   - forecast-confidence-cap
+  - forecast-minimum-data-guard
 
 jobs:
   - id: job-rbac-bootstrap
@@ -924,4 +925,74 @@ jobs:
         Real credibility/trust pain in the forecaster's leadership conversation, but a
         communication-honesty refinement rather than a blocking capability gap — the forecast already
         works, this makes its headline number honest. Hence gap 2, not 4.
+
+  - id: job-forecast-only-with-enough-data
+    title: Trust a forecast only when it rests on enough throughput history
+    persona: delivery-forecaster
+    feature_context: forecast-minimum-data-guard
+    created: 2026-05-31
+    note: >
+      ADO #5125 "Don't Forecast with too little Data". The sibling concern — never display a
+      deceptively-certain 100% — is a DISTINCT job tracked in ADO #5126 / feature
+      forecast-confidence-cap and is OUT of this feature. This job is the data-sufficiency GATE the
+      cap's D3 explicitly deferred here. Rule basis chosen by the reporter (2026-05-31): a forecast
+      is allowed only when the team's throughput window has at least 5 distinct days that each had
+      ≥1 completed work item; below that the forecast output is SUPPRESSED and a plain-language "not
+      enough data yet" message is shown across every forecast surface.
+    job_story: >
+      When I open a forecast for a new (or low-volume) team whose throughput history holds only a
+      day or two of actual completions,
+      I want Lighthouse to tell me there is not yet enough data to forecast — and show nothing in
+      place of a number — rather than handing me a confident-looking date (often 100% on a far-future
+      day) built on one or two data points,
+      so I never present, and leadership never anchors on, a forecast that the underlying history
+      cannot honestly support.
+    dimensions:
+      functional: >
+        Below the sufficiency threshold (fewer than 5 distinct days with ≥1 completion in the
+        team's throughput window) every forecast surface — manual When and How-Many, portfolio
+        delivery likelihood, per-feature likelihood — replaces the number with an explicit
+        "not enough throughput data yet (need ≥5 days with completed items)" state. At or above the
+        threshold the forecast renders exactly as today. A genuinely completed item (no remaining
+        work) is exempt — there is no forecast to suppress.
+      emotional: >
+        Move from quiet embarrassment ("I'm showing a 100% chance on a 2027 date from a team that
+        has barely closed anything — this looks fake") to confidence ("Lighthouse won't hand me a
+        number it can't stand behind; the empty state is the honest answer").
+      social: >
+        Be the forecaster who doesn't get caught presenting a date built on one data point —
+        and who can point to the tool's own "not enough data yet" message as the reason to wait.
+    forces:
+      push: >
+        A brand-new team with a throughput of one still gets a forecast — a far-future date at an
+        apparently high likelihood — because the Monte Carlo path only guards `Total > 0`, never the
+        DEPTH of the history. The reporter (Liz) hit exactly this and now hand-rolls a workaround:
+        she hides the forecast on her dashboard and waits until the team has accumulated enough data.
+      pull: >
+        One sufficiency rule, evaluated server-side off the throughput the forecast actually uses,
+        suppresses every forecast surface at once with a plain message that names what unblocks it —
+        no dashboard hand-editing, no mental "is this team mature enough to trust?" check.
+      anxiety: >
+        What if the threshold hides a forecast a user actually wanted to see for a sparse team?
+        (Mitigated: the message is explicit about the rule and the number returns the moment the
+        team crosses 5 active days; the threshold is deliberately low / not-too-restrictive.)
+        What if it fights the empty-filtered-sample fallback from filter-forecast-throughput?
+        (Mitigated: sufficiency is evaluated on the post-fallback throughput series the forecast
+        actually samples, so the two features compose.)
+      habit: >
+        Forecasters are used to Lighthouse always producing a number; an intentional "no forecast,
+        here's why" state is a new posture. Eased because the message is actionable (gather more
+        history) rather than an error, and because the reporter already performs this suppression
+        manually — the tool is adopting her own rule.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — a forecast built on one or two data points actively misleads the leadership
+        conversation (the same trust surface as the sibling cap), and a direct customer (Liz) is
+        already working around its absence. Current satisfaction: 1 — Lighthouse has NO minimum-data
+        guard today; it forecasts from any non-empty throughput, however thin. Gap: 3 — a genuine
+        missing safety capability; kept thin by a fixed threshold (no per-team config) and by
+        reusing the throughput series already computed for the forecast.
 
