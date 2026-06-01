@@ -25,6 +25,8 @@ const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
 
 const COMPLETED_CLASS = "Completed";
 const ONGOING_CLASS = "Ongoing";
+const COMPLETION_CLASSES = [COMPLETED_CLASS, ONGOING_CLASS];
+const NO_COMPLETION_CLASSES: string[] = [];
 
 interface CumulativeStateTimeChartProps {
 	data: ICumulativeStateTimeResponse;
@@ -93,7 +95,7 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	const theme = useTheme();
 
 	const completionClasses = useMemo(
-		() => (completionFilterEnabled ? [COMPLETED_CLASS, ONGOING_CLASS] : []),
+		() => (completionFilterEnabled ? COMPLETION_CLASSES : NO_COMPLETION_CLASSES),
 		[completionFilterEnabled],
 	);
 	const { visibleTypes, toggleTypeVisibility } =
