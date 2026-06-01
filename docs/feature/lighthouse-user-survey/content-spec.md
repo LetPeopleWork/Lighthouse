@@ -80,11 +80,42 @@ Prompt: **How did you hear about Lighthouse?**
 
 ## 2. Survey start hook (survey page intro + in-app nudge)
 
+Survey-page intro (website):
+
 > Lighthouse never tracks how you use it, by design. That privacy is the point, but it also means
 > we're flying blind on what to improve next, unless you tell us. This short survey is how we learn
 > what's working and what's missing. It's completely anonymous and takes about two minutes. At the
 > end you can opt in to a free one-month Premium trial as a thank-you, the only step where we'd ask
 > for your email and organization.
+
+### In-app nudge (Lighthouse FE) — three-choice, two-tier cadence
+
+Refined 2026-06-01 (user slice review). The nudge is a small, non-blocking, dismissible card in
+Lighthouse's own design system. It links OUT to `/survey` (never embeds the questions). Copy makes
+the ask explicitly optional, explains why feedback matters, and hints at the trial thank-you.
+
+Heading:
+
+> Help shape Lighthouse
+
+Body:
+
+> Lighthouse never tracks how you use it, so your feedback is the only way we learn what to improve.
+> This short survey is completely optional and anonymous, and takes about two minutes. As a
+> thank-you you can opt in to a free one-month Premium trial at the end.
+
+Actions (three buttons) + the card's ✕:
+
+- **Take the survey** — opens `https://letpeople.work/survey` in the browser; quiets the nudge for ~6 months.
+- **Remind me later** — closes the nudge; reappears after ~1 week. Backs off to ~6 months after the
+  member has been reminded twice (so it never becomes a weekly nag).
+- **Not interested** — closes the nudge; quiets it for ~6 months.
+- **✕ (top-right)** — treated as *Remind me later* (never a refusal), so no one is pushed into
+  declining out of guilt.
+
+Cadence + the remind-later counter are persisted server-side (per-instance AppSettings, ADR-045), so
+the choice survives a restart. The trial hint is a soft pointer to the EXISTING survey trial opt-in
+(section 3 / US-04) — the nudge grants no entitlement itself.
 
 ---
 

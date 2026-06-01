@@ -313,34 +313,51 @@ premium user — so I'm asked at a sensible time and paying customers are never 
 - Given install-age comparison, when the system clock has timezone or backward-jump skew, then a
   not-yet-eligible instance is never made eligible early (UTC-stable comparison).
 
-### US-07 — Nudge links out to `/survey`, is dismissible, and recurs only ~6-monthly (Lighthouse FE + BE)
+### US-07 — Nudge is an opt-in three-choice invitation with a two-tier cadence (Lighthouse FE + BE)
 
-**Story**: As a `community-respondent`, I want the nudge to be a non-blocking link to the survey
-that I can dismiss, and to not reappear for ~6 months after I've seen or dismissed it, so it
-feels like an invitation rather than a nag.
+**Story**: As a `community-respondent`, I want the nudge to be a non-blocking, opt-in link to the
+survey with three clear choices (take it, remind me later, not interested), so it feels like an
+invitation rather than a nag and respects that I might simply lack time right now.
 
 **Job-id**: `job-give-product-feedback-and-raise-hand`
 
+> **Refined 2026-06-01 (user slice review).** Supersedes the original single ~6-month cadence.
+> Drivers: (a) make the feedback ask explicitly OPTIONAL while explaining WHY it matters (Lighthouse
+> never tracks usage, so feedback is the only signal); (b) hint at the free Premium trial as a
+> thank-you (tied to the existing survey opt-in, US-04 — no new entitlement logic); (c) give a
+> low-guilt "remind me later" path so a time-poor-but-willing user is not lost; (d) treat the X as
+> "remind me later", never as a refusal. See the DELIVER Upstream Issues note for the back-prop and
+> the write-surface consequence to ADR-044/045.
+
 #### Elevator Pitch
 
-- **Before**: in-app prompts that reappear every session are why users reflexively ignore nags.
-- **After**: the nudge shows once, with a clear "open the survey" button (which opens `/survey` in
-  the browser) and a clear dismiss; whether I click through or dismiss, it stays gone for ~6
-  months.
-- **Decision enabled**: I decide to engage or decline once, trusting Lighthouse to respect that
-  choice and leave me alone for a good while.
+- **Before**: in-app prompts that reappear every session are why users reflexively ignore nags; a
+  single dismiss=6-months model also loses the willing-but-busy user and risks a "guilt-decline".
+- **After**: the nudge shows once, completely optional, explaining that feedback is how Lighthouse
+  improves and hinting at a free Premium trial. Three choices: **Take the survey** (opens `/survey`,
+  quiet ~6 months), **Remind me later** (quiet ~1 week), **Not interested** (quiet ~6 months). The
+  ✕ counts as *remind me later*, never a refusal. The ~1-week reminder backs off to ~6 months after
+  two reminders so it never becomes a weekly nag.
+- **Decision enabled**: I engage, defer without guilt, or decline once — trusting Lighthouse to
+  respect the choice and leave me alone for the right amount of time.
 
 **AC**:
 
-- Given the nudge is shown, when I click its primary action, then the standalone `/survey` page
-  opens at the stable route, and the nudge does not reappear until `lastShownAt` + ~6 months.
-- Given the nudge is shown, when I dismiss it, then it closes without side effects and does not
-  reappear until `lastShownAt` + ~6 months (dismissal is persisted server-side, not just
-  client-side).
-- Given the nudge, when it renders, then it is non-blocking and dismissible and follows
-  Lighthouse's own frontend design system (D7) — it does NOT embed the survey, only links to it.
-- Given either click-through or dismissal, then `lastShownAt` is set/confirmed so the ~6-month
-  cadence holds regardless of which path was taken.
+- Given the nudge is shown, when I choose **Take the survey**, then the standalone `/survey` page
+  opens at the stable route, and the nudge does not reappear for ~6 months.
+- Given the nudge is shown, when I choose **Not interested**, then it closes without opening the
+  survey, and the nudge does not reappear for ~6 months.
+- Given the nudge is shown, when I choose **Remind me later** (or close it with the ✕), then it
+  closes without opening the survey, and the nudge reappears after ~1 week.
+- Given I have already been reminded later twice, when I choose **Remind me later** again, then the
+  cadence backs off and the nudge does not reappear for ~6 months.
+- Given any of the three choices (incl. the ✕-as-remind-later), then the choice is persisted
+  server-side so the cadence survives a restart, not just the session.
+- Given the nudge, when it renders, then it is non-blocking and dismissible, follows Lighthouse's
+  own frontend design system (D7), states the survey is completely optional, hints at the free
+  trial, and links OUT to `/survey` — it does NOT embed the survey.
+- Given install-age/cadence comparison, when the clock is skewed or jumps backward, then a quieted
+  nudge is never re-shown early (UTC-stable; the server computes the next-eligible instant).
 
 ## Wave: DISCUSS / [REF] Shared Platform (reuses 5123's)
 
@@ -1131,3 +1148,37 @@ US-08 per-submission team alert, degrade-open ✓; /survey HIDDEN (no nav/sitema
 `deploy-supabase-functions.yml`) + AI-2 (`survey.answer@letpeople.work` inbox + Mailgun secrets) →
 then ADO #5133 Active→Resolved. Trial opt-in (US-04) + trial-requests view = Slice 03; the nudge =
 Slices 04-05 (Lighthouse repo).
+
+## Wave: DELIVER / [WHY] Upstream Issues — nudge UX refinement (user slice review, 2026-06-01)
+
+During the slice review of the shipped 04-01/04-02 nudge, the user refined US-07's cadence model.
+This supersedes the single ~6-month cadence in US-07, `distill/nudge-cadence-dismissal.feature`, and
+the cadence assumptions behind ADR-044/045. Folded into step 05-01; specs back-propagated.
+
+**What changed**
+- The nudge becomes an explicitly OPTIONAL, three-choice invitation: **Take the survey** (~6mo quiet),
+  **Remind me later** (~1wk quiet), **Not interested** (~6mo quiet). The card ✕ is treated as
+  *Remind me later*, never a refusal (avoids guilt-decline).
+- Two-tier cadence with back-off: ~1-week reminder falls to ~6 months after the member has been
+  reminded twice — bounding the weekly-nag risk against KPI-3 (keep dismiss-without-clickthrough low).
+- Copy gains the opt-in framing + a soft trial-license hint pointing at the EXISTING survey opt-in
+  (US-04). No new entitlement logic.
+
+**Consequence to ADR-044/045 (write-surface gap)**
+ADR-044 stated "FE-derived eligibility ⇒ no new feature endpoint ⇒ CLI/MCP N/A". That holds for the
+*eligibility computation*, but persisting the member's choice server-side (required by US-07 — "not
+just the session") needs a non-admin WRITE surface, which ADR-045 named only a non-admin READ surface.
+05-01 therefore adds a non-admin nudge-action write path (the cadence/back-off is computed server-side
+into a next-eligible instant + a remind-later counter, persisted on the existing AppSettings
+mechanism). This is a deliberate, recorded extension of ADR-045, not a redesign.
+
+**Cross-cutting re-assessment (DoR Item 7)**
+- **RBAC**: the new nudge-state read + action-write surface is `[Authorize]` (authenticated, any
+  signed-in user) — NOT `[RbacGuard]`-admin and NOT routed through `IRbacAdministrationService`,
+  because showing/snoozing a feedback nudge is not an authorization-gated operation. Premium gating is
+  a license-tier check (`canUsePremiumFeatures`), not RBAC. Recorded N/A-for-RBAC with reason.
+- **Lighthouse-Clients (CLI + MCP)**: N/A. No CLI/MCP client renders or snoozes the in-app nudge, so
+  no client method wraps the new endpoint and there is nothing to version-gate
+  (`FEATURE_REQUIRES_SERVER_NEWER_THAN` untouched). Recorded explicitly per the cross-cutting rule.
+- **Website**: N/A for new work. The trial hint reuses the already-shipped survey trial opt-in
+  (US-04); the nudge only links out to the existing stable `/survey` route.
