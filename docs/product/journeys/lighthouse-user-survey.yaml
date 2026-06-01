@@ -1,0 +1,282 @@
+schema_version: 1
+feature_id: lighthouse-user-survey
+updated: 2026-05-30
+
+# Two arcs, COMPREHENSIVE depth (locked D5): (a) the in-app NUDGE journey inside Lighthouse,
+# and (b) the WEBSITE survey-completion journey. They meet at the stable /survey link: the
+# nudge's only job is to deliver the user to /survey; the survey page does the actual work.
+# The standalone (shared-link) entry into arc (b) needs NO Lighthouse app at all — that is the
+# walking-skeleton value. Multi-surface: arc (a) = Lighthouse FE + small Lighthouse BE; arc (b)
+# = website React page + Supabase (the platform 5123 establishes — see feature-delta D6).
+
+shared_artifacts:
+  installTimestamp:
+    source_of_truth: "Lighthouse backend per-instance setting (first-run/install timestamp), persisted server-side"
+    consumers: ["nudge eligibility check (is install age >= ~2 weeks?)", "the in-app nudge component"]
+    owner: "lighthouse-user-survey (Lighthouse backend)"
+    integration_risk: "HIGH — if unset or wrong, the nudge could fire on day 0 (violates the ~2-week rule)"
+    validation: "On a fresh instance, the nudge must NOT appear before installTimestamp + ~14 days"
+  lastShownAt:
+    source_of_truth: "Lighthouse backend per-instance setting (last time the nudge was shown / dismissed)"
+    consumers: ["nudge eligibility check (has ~6 months elapsed since last shown?)", "the in-app nudge component"]
+    owner: "lighthouse-user-survey (Lighthouse backend)"
+    integration_risk: "MEDIUM — if not persisted, the nudge re-appears every session (annoyance)"
+    validation: "After dismissal, the nudge must not reappear until lastShownAt + ~6 months"
+  isPremium:
+    source_of_truth: "existing Lighthouse license signal — canUsePremiumFeatures (useRbac()/license tier)"
+    consumers: ["nudge eligibility check (premium users are excluded entirely)"]
+    owner: "existing Lighthouse licensing (reused, not built here)"
+    integration_risk: "HIGH — a wrong read here surveys a paying customer; bothered-premium count MUST be 0"
+    validation: "With a premium license imported, the nudge never renders, regardless of install age"
+  surveyUrl:
+    source_of_truth: "stable public website route /survey (a constant in the Lighthouse FE nudge config)"
+    consumers: ["the in-app nudge link", "shared links on Slack / email / LinkedIn", "website footer/nav entry (D7)"]
+    owner: "website (route), referenced by Lighthouse FE"
+    integration_risk: "HIGH — the link must NOT change when questions change (D1); a moved route breaks every shared link"
+    validation: "Questions edited -> /survey still resolves; no link change required (capability KPI)"
+  responses:
+    source_of_truth: "shared Supabase table established by 5123, written with a survey source/kind discriminator (D6)"
+    consumers: ["the internal results/admin dashboard (5123's dashboard, extended with a survey view)"]
+    owner: "5123 shared platform (extended by this feature)"
+    integration_risk: "MEDIUM — schema must accept the survey kind without redesign; PII must never be written here"
+    validation: "A submitted response appears in the dashboard's survey view; no PII column populated"
+  wantsTrial:
+    source_of_truth: "shared Supabase lead-capture row (5123), flagged as a trial-request signal (D4)"
+    consumers: ["the dashboard's trial-requests view; a human who issues the license out-of-band"]
+    owner: "5123 shared platform (extended by this feature)"
+    integration_risk: "HIGH — must NOT auto-issue a license; it is a SIGNAL only (D4)"
+    validation: "Opting in records the signal + email; NO license is created automatically"
+  email:
+    source_of_truth: "user-volunteered free-text on /survey (the ONLY PII stored, only when trial opt-in is chosen, D3)"
+    consumers: ["the trial-request lead row; the human issuer contacts the user"]
+    owner: "5123 shared platform lead-capture (extended)"
+    integration_risk: "HIGH — stored only on explicit opt-in; never collected from non-opting respondents"
+    validation: "A response with no trial opt-in stores NO email; the response stays anonymous"
+
+journeys:
+
+  - name: in-app-survey-nudge
+    goal: >
+      A non-premium Community user who has been running Lighthouse for at least ~2 weeks sees a
+      calm, dismissible in-app nudge inviting them to share feedback, and either clicks through
+      to the standalone /survey page or dismisses it without resentment — and is not asked again
+      for ~6 months. Premium users never see it at all.
+    persona: community-respondent
+
+    emotional_arc:
+      start: At ease — using Lighthouse for real work; NOT expecting (or dreading) an interruption.
+      middle: Mildly flattered, not cornered — "they want my opinion, and they waited until I'd
+        actually used it; I can take it or leave it."
+      end: Respected — either I clicked through feeling my voice matters, or I dismissed it once
+        and trust it will leave me alone for a good while.
+
+    steps:
+
+      - id: step-install-and-use
+        action: User installs Lighthouse Community and uses it normally; the backend records installTimestamp on first run
+        expected_output: >
+          No nudge appears. For the first ~2 weeks the user simply uses the tool. installTimestamp
+          is persisted server-side once, on first run, per instance.
+        emotional_state: At ease — "just doing my flow work; nothing is nagging me"
+        shared_artifacts:
+          - installTimestamp (written once, server-side)
+          - isPremium (read; if premium, this whole journey is inert forever)
+        integration_checkpoint: |
+          installTimestamp must be set exactly once per instance and never reset by app restarts.
+        failure_modes:
+          - "Clock/timezone skew makes install age compute negative or jump — eligibility must use a monotonic/UTC-stable comparison, never local wall-clock that can move."
+          - "installTimestamp never written (first-run hook missed) — nudge then never fires; must default to 'not yet eligible', never 'fire immediately'."
+
+      - id: step-eligibility-evaluated
+        action: On a later session, the Lighthouse frontend asks the backend "should I show the survey nudge?"
+        expected_output: >
+          Backend answers YES only if ALL hold: not premium (isPremium == false), install age >=
+          ~14 days, and (never shown OR lastShownAt older than ~6 months). Otherwise NO. A premium
+          instance always gets NO.
+        emotional_state: (invisible to user) — the gate runs quietly
+        shared_artifacts:
+          - isPremium (read)
+          - installTimestamp (read)
+          - lastShownAt (read)
+        integration_checkpoint: |
+          The premium exclusion is evaluated FIRST and is absolute — no install-age or cadence
+          path can override it. Bothered-premium count must be 0.
+        failure_modes:
+          - "Premium read fails open (treated as non-premium) and a paying customer is surveyed — must fail CLOSED (no nudge) on any uncertainty about license tier."
+          - "Eligibility computed purely client-side and spoofable — the authoritative dates live server-side."
+
+      - id: step-nudge-shown
+        action: Eligible -> Lighthouse renders a small, calm, dismissible nudge (Lighthouse's own design system, D7), with one primary action (open the survey) and a clear dismiss
+        expected_output: >
+          A non-blocking dialog/banner: a short friendly ask ("Got two minutes? Tell us what's
+          working and what's missing.") + a primary button linking OUT to surveyUrl (/survey) +
+          a dismiss control. It does NOT embed the survey. lastShownAt is recorded when shown.
+        emotional_state: Mildly flattered, not cornered — "fair enough, I have used this a while"
+        shared_artifacts:
+          - surveyUrl (the link out)
+          - lastShownAt (written when shown)
+        integration_checkpoint: |
+          The nudge must be dismissible without side effects and must follow Lighthouse's FE
+          design system, NOT the website's (D7). It is a nudge-with-a-link, never the survey.
+        failure_modes:
+          - "Nudge is modal/blocking and interrupts work — it must be dismissible and non-blocking (annoyance proxy KPI must stay low)."
+          - "lastShownAt not recorded on show -> nudge reappears next session (the exact habit-pain users hate)."
+
+      - id: step-clickthrough-or-dismiss
+        action: User either clicks the primary action (opens /survey in the browser) OR dismisses the nudge
+        expected_output: >
+          Click -> the standalone website survey page opens at the stable /survey route (arc b
+          begins). Dismiss -> the nudge closes and does not return until lastShownAt + ~6 months.
+          Either way the user is not asked again soon.
+        emotional_state: Respected — "my choice was honored either way"
+        shared_artifacts:
+          - surveyUrl (consumed on click)
+          - lastShownAt (gates the next appearance)
+        integration_checkpoint: |
+          Dismiss and click-through must BOTH set/confirm lastShownAt so the ~6-month cadence holds
+          regardless of which path the user took.
+        failure_modes:
+          - "Dismiss does not persist (only client-side) -> reappears after refresh."
+          - "Offline / website unreachable when clicking through -> the browser shows its own error; the nudge has done its job (delivered the link); no Lighthouse-side failure state needed, but the click should still count as 'shown/acted'."
+
+    error_paths_summary:
+      - Premium user mistakenly evaluated as non-premium: hard defect; the gate must fail closed.
+        Guardrail KPI 'bothered-premium count' MUST be 0; any nonzero value is a release blocker.
+      - Clock/timezone edge on install age: eligibility uses UTC-stable, monotonic-safe comparison;
+        a backwards clock jump must never make a not-yet-eligible instance suddenly eligible early.
+      - lastShownAt not persisted: nudge re-nags; treated as a correctness bug, not cosmetic.
+      - Backend unreachable when the FE asks "should I show?": fail closed (do not show) — never
+        guess YES, because guessing YES risks both nagging and surveying a premium user.
+
+    success_signal:
+      - A meaningful share of survey responses arrive via the in-app nudge (vs the standalone link).
+      - Dismiss-without-clickthrough rate stays LOW (annoyance proxy) — the nudge feels like an
+        invitation, not a nag.
+      - Zero premium users ever report seeing the nudge.
+
+  - name: website-survey-completion
+    goal: >
+      A Community user lands on the standalone /survey page (via the in-app nudge OR a shared
+      Slack/email/LinkedIn link), answers the questions, optionally volunteers an email to request
+      a premium trial, and reaches a thank-you — with their answers stored anonymously in Supabase
+      and (if they opted in) a trial-request signal recorded for a human to action.
+    persona: community-respondent
+
+    emotional_arc:
+      start: Curious / slightly guarded — "what are they asking, and is this going to want my data?"
+      middle: Reassured — "no login, no name required, clear questions, and the email is clearly
+        optional and only for a trial I'm choosing to ask for."
+      end: Heard — "that was quick, my voice is in, and I raised my hand for a trial on my own terms."
+
+    steps:
+
+      - id: step-land-on-survey
+        action: User opens /survey (stable route, D1) — from the nudge link, a shared link, or the website nav/footer (D7)
+        expected_output: >
+          The survey page renders the current question set (questions are data/config — editable
+          without changing the route, D1), styled in the website's new visual language (scroll-reveal
+          idiom, restyled Navigation, consistent section styling — D7). No login, no account, no
+          name asked up front.
+        emotional_state: Curious / slightly guarded — "let's see what they're asking"
+        shared_artifacts:
+          - surveyUrl (the stable entry; never changes when questions change)
+        integration_checkpoint: |
+          /survey must resolve identically whether reached from the nudge, a shared link, or nav.
+          Editing questions must NOT change the route (capability KPI).
+        failure_modes:
+          - "Questions edited in a way that changes the route -> every shared link breaks (must be prevented by treating questions as data, route as constant)."
+          - "Page fails to load the question config -> show a graceful 'survey temporarily unavailable' rather than a blank page."
+
+      - id: step-answer-questions
+        action: >
+          User answers the confirmed questions (Q1 team count, Q2 role, Q3 discovery channel, Q4
+          interest in the free Flow Assessment); single-select, validation light and forgiving
+        expected_output: >
+          Answers captured client-side (react-hook-form + zod). No PII fields among the questions
+          themselves. The user can complete without revealing identity. Q4 doubles as a demand gate
+          for Epic 5123.
+        emotional_state: Reassured — "clear questions, nothing creepy, no sign-up wall"
+        shared_artifacts: []
+        integration_checkpoint: |
+          The question set is rendered from config so it can change later without a code/route change.
+        failure_modes:
+          - "Validation too strict blocks honest free-text -> keep validation forgiving."
+          - "Accidental double-submit (double-click / back) -> must be idempotent or de-duplicated so one person's answers are not double-counted."
+
+      - id: step-optional-trial-optin
+        action: User optionally ticks "I'd like a free premium trial" and provides an email
+        expected_output: >
+          The email field is clearly OPTIONAL and clearly labeled as the ONLY place personal data
+          is asked, and only for the trial request. Leaving it blank keeps the response fully
+          anonymous (D3).
+        emotional_state: In control — "I'm choosing to share my email, just for the trial"
+        shared_artifacts:
+          - wantsTrial (the trial-request signal, set only on opt-in)
+          - email (stored ONLY when opt-in is chosen — the single PII datum, D3)
+        integration_checkpoint: |
+          No opt-in -> no email is collected or stored; the response remains anonymous.
+          Opt-in -> a trial-request signal + email are recorded; NO license is auto-issued (D4).
+        failure_modes:
+          - "Email stored even when opt-in is unchecked -> PII leak; must be impossible by construction."
+          - "Opt-in silently triggers license creation -> violates D4; it is a signal only."
+          - "Invalid email on opt-in -> friendly inline validation; do not lose the rest of the answers."
+
+      - id: step-submit-to-supabase
+        action: User submits; answers (and the optional trial signal/email) are written to the shared Supabase platform
+        expected_output: >
+          A response row is written with a survey source/kind discriminator (D6); if opted in, a
+          lead-capture row carrying wantsTrial + email is written too. Write happens via the
+          platform 5123 established (RLS-guarded insert or an edge function).
+        emotional_state: Almost done — "submitting; hope it goes through"
+        shared_artifacts:
+          - responses (written with the survey kind)
+          - wantsTrial (written on opt-in)
+          - email (written on opt-in only)
+        integration_checkpoint: |
+          The survey response maps onto 5123's response table via the source/kind discriminator;
+          the trial opt-in extends 5123's lead-capture. The platform is REUSED, not redesigned (D6).
+        failure_modes:
+          - "Supabase write fails (network / RLS / function down) -> show a clear retry-able error; do NOT show a thank-you for a write that did not land; do not silently drop the response."
+          - "Partial write (response saved, lead row failed) -> surface that the trial request specifically did not go through, so the user can retry the opt-in."
+          - "User offline at submit -> a clear 'could not submit, check your connection and retry' (answers preserved in the form for retry)."
+
+      - id: step-thank-you
+        action: On a successful write, the user sees a thank-you confirmation
+        expected_output: >
+          A thank-you message confirms the response landed (and, if applicable, that a human will
+          follow up about the trial). No account, no further asks.
+        emotional_state: Heard — "done, my voice is in, on my terms"
+        shared_artifacts: []
+        integration_checkpoint: |
+          The thank-you is shown ONLY after a confirmed successful write (never on a failed/partial write).
+        failure_modes:
+          - "Thank-you shown despite a failed write -> the user believes feedback landed when it did not; must be gated on write success."
+
+    error_paths_summary:
+      - Supabase write failure: clear, retry-able error; no false thank-you; response preserved.
+      - Double-submit: idempotent / de-duplicated so one respondent is not counted twice.
+      - PII discipline: email stored ONLY on explicit trial opt-in; otherwise the response is anonymous.
+      - Trial opt-in never auto-issues a license (D4) — it records a signal for a human.
+      - Question config unavailable: graceful 'temporarily unavailable', not a blank page.
+
+    success_signal:
+      - Responses accumulate in the dashboard's survey view, anonymous unless trial opt-in chosen.
+      - Trial-request signals appear for a human to action, each with the volunteered email.
+      - Questions can be edited later with NO change to the /survey link (capability holds).
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: surveyUrl
+      must_match_across: ["in-app-survey-nudge", "website-survey-completion"]
+      failure_message: "The nudge's link and the shared/nav links must all resolve to the same stable /survey route; a mismatch breaks shared links when questions change."
+    - artifact: isPremium
+      must_match_across: ["in-app-survey-nudge"]
+      failure_message: "Premium exclusion must read the existing canUsePremiumFeatures signal; any divergent source risks surveying a paying customer (guardrail KPI = 0)."
+    - artifact: email
+      must_match_across: ["website-survey-completion"]
+      failure_message: "Email is stored ONLY on explicit trial opt-in; a non-opt-in response storing email is a PII-discipline violation."
+
+changelog:
+  - date: "2026-05-30"
+    feature: "lighthouse-user-survey"
+    change: "Initial two-arc journey (in-app nudge + website survey completion) authored in DISCUSS. Comprehensive depth per locked D5; multi-surface/cross-repo (Lighthouse FE+BE nudge, website page+Supabase) per D2/D6."

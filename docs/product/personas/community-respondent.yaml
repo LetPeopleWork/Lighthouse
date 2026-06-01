@@ -1,0 +1,59 @@
+schema_version: 1
+id: community-respondent
+created: 2026-05-30
+created_in_feature: lighthouse-user-survey
+
+display_name: Community Respondent
+
+aliases:
+  - community-user
+  - free-tier-user
+  - feedback-respondent
+  - would-be-trialist
+
+short_description: >
+  An EXISTING Lighthouse Community (non-premium) user who has used the tool long enough to
+  form opinions and is willing to feed them back — anonymously and on their own terms. Same
+  human as a flow-coach / delivery-forecaster INSIDE the tool, but here acting in an OUTBOUND
+  "tell us what you think / I might try premium" role rather than doing their day-to-day flow
+  work. They are reached either by an in-app nudge inside Lighthouse or by a shared link
+  (Slack / email / LinkedIn) to the standalone survey page on the website.
+
+primary_jobs:
+  - job-give-product-feedback-and-raise-hand
+
+goals:
+  - Tell the makers what works and what is missing, without filling in a long form or signing up
+  - Stay anonymous — give honest opinions without my identity or usage being tracked back to me
+  - Optionally raise my hand for a premium trial WITHOUT being auto-enrolled or spammed
+  - Not be interrupted while I am actually using Lighthouse to do real work
+
+frustrations:
+  - Most "give us feedback" prompts appear the moment I install, before I have anything to say
+  - Feedback tools want my name, company, and email before they will even show me the questions
+  - I worry an in-app survey is quietly phoning home my usage data
+  - Once I dismiss a nag it often comes back next session — I cannot make it stop
+
+mental_model:
+  - A survey is a web page I open, answer, and submit — not something that lives inside the app
+  - "Anonymous" means no login, no account, and nothing that ties my answers to me personally
+  - If I want a trial I should have to ASK — a human can then decide; I do not expect instant access
+  - An in-app pop-up is a NUDGE — a short message with a link — not the survey itself
+  - Premium customers are paying; they should never be bothered with a community feedback ask
+
+vocabulary:
+  - "the survey" — the standalone web page with the questions (lives on the website, stable link)
+  - "the pop-up" / "the nudge" — the small in-app dialog inside Lighthouse that links out to the survey
+  - "Community" — the free tier; the opposite of "Premium" (the licensed, paid tier)
+  - "trial" — a time-limited premium license I have to request, not one that is granted automatically
+  - "anonymous" — no PII stored; the only personal datum is an email I VOLUNTEER for a trial
+
+related_personas:
+  - flow-coach (often the same human, but doing flow work INSIDE the tool — different job)
+  - delivery-forecaster (same human in a forecasting role inside the tool — different job)
+  - config-admin (the person who imports a license; the trial they request lands with this role)
+
+not_this_persona:
+  - Premium user (paying customer — MUST NOT be surveyed; explicitly excluded, hard rule)
+  - Brand-new installer (< ~2 weeks of use — too early to have opinions; the nudge waits for them)
+  - The Lighthouse maintainer reading the responses (that is an internal results-dashboard viewer)

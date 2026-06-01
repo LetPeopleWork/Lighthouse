@@ -1,0 +1,395 @@
+{
+  "roadmap": {
+    "project_id": "lighthouse-user-survey",
+    "created_at": "2026-05-31T00:00:00Z",
+    "total_steps": 17
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 — shareable /survey page -> anonymous store -> dashboard read (US-01, US-02, US-05 read, US-08)",
+      "description": "Website repo. EXTENDS 5123's live Supabase platform per ADR-040/042/046. Hidden /survey renders question config, submits via the NEW service_role submit-survey Edge Fn (response write + per-submission team email), readable in a dashboard survey tab. NO Lighthouse app change.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Survey content module + pure answer types",
+          "criteria": [
+            "features/survey/content/surveyContent.ts exports a zod-validated single-select question config for Q1 team-count, Q2 role, Q3 discovery-channel, Q4 assessment-interest (options per feature-delta Survey questions table); types derived via z.infer",
+            "A core answer type (SurveyAnswers) represents one selected option per question; no scoring, no score/raw_sum/band fields exist anywhere in the survey core",
+            "surveyContent.test.ts validates the config against the production zod schema (factory getMockSurveyAnswers(overrides?) validated, not redefined) and asserts every question has >=2 options and a stable id",
+            "core contains no @supabase / window / I/O imports (functional-core purity, ADR-035 idiom)",
+            "bun run test green; bun run build clean; eslint . clean on the new files"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/content/surveyContent.test.ts",
+          "scenario_name": "survey content config is schema-valid and renders the confirmed questions (survey-page.feature support)",
+          "deps": [],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/survey/content/surveyContent.ts",
+            "/storage/repos/website/src/features/survey/content/surveyContent.test.ts",
+            "/storage/repos/website/src/features/survey/core/answers.ts",
+            "/storage/repos/website/src/features/survey/core/answers.test.ts"
+          ],
+          "implementation_notes": "WEBSITE repo /storage/repos/website (bun NOT pnpm; CI bun build-only; lint ESLint NOT Biome; React 19 + Vite 7 + TS loose-strict + zod). EXEMPT FROM PARADIGM: TS-row of the polyglot matrix governs (Vitest + zod), NOT the Python/Hypothesis pilot; no assert_state_delta/Universe. MIRROR 5123's assessmentContent.ts idiom (read /storage/repos/website/src/features/assessment/content/assessmentContent.ts first): a single zod-validated content module is the SSOT for questions; editing it never touches the route (US-03 capability, hardened in slice 02). Questions are CONFIRMED in feature-delta 'Survey questions' (Q1 Just-mine/2-5/6-10/>10; Q2 roles list; Q3 channels list; Q4 interest scale or yes/no - accommodate either with a discriminated option list, see open question Q4). NO email/exchange field in slice 01 (that is slice 03). Use a factory getMockSurveyAnswers(overrides?) validated against the schema; never redefine the schema in tests. Strict TS, no any (narrow unknown via guard); immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY: grep docs/ci-learnings.md for the TS/website families; skip framework-only tests (assert business behaviour). RED handoff: write surveyContent.test.ts asserting schema validity + option invariants and confirm RED-for-right-reason (module/exports missing) before implementing; one RED->GREEN->REFACTOR; refactor commit separate."
+        },
+        {
+          "id": "01-02",
+          "name": "Hidden /survey route renders from config",
+          "criteria": [
+            "A /survey route is added to App.tsx ABOVE the catch-all, rendering the survey flow from surveyContent (intro -> single-select questions -> submit), no login/account required",
+            "Reaching /survey directly and via a (simulated) shared link render the identical page",
+            "If the question config fails to load/validate, the page shows a graceful 'survey temporarily unavailable' message, never a blank page",
+            "/survey is HIDDEN: no nav/footer link added, not in any sitemap, NO robots.txt Disallow added; .github/workflows/deploy.yml SPA fallback copies dist/index.html to dist/survey/ (mirror the /assessment fallback)",
+            "RTL component tests cover render-from-config + the unavailable fallback; bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/Survey.flow.test.tsx",
+          "scenario_name": "Visitor lands on /survey and sees the current questions with no login (survey-page.feature)",
+          "deps": ["01-01"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/survey/components/SurveyIntro.tsx",
+            "/storage/repos/website/src/features/survey/components/SurveyQuestion.tsx",
+            "/storage/repos/website/src/features/survey/components/SurveyForm.tsx",
+            "/storage/repos/website/src/features/survey/Survey.flow.test.tsx",
+            "/storage/repos/website/src/App.tsx",
+            "/storage/repos/website/.github/workflows/deploy.yml"
+          ],
+          "implementation_notes": "WEBSITE repo; TS-row exempt. MIRROR 5123's assessment components (IntroStep/QuestionStep) + App.tsx route registration + the deploy.yml SPA-fallback step (read .github/workflows/deploy.yml: 5123 added cp dist/index.html into dist/assessment/ and dist/admin/assessment/; add dist/survey/ the same way). The submit action is injected as a port (a no-op/stub double in this step's tests) - the real submit-survey adapter lands in 01-03; do NOT wire Supabase here. Render single-select questions from surveyContent (config-driven, NOT hardcoded) so slice 02 can prove editability without a route change. Graceful-unavailable = catch a content load/validate failure and show a calm message (failure_mode from journey step-land-on-survey). HIDDEN route: confirm no Navigation entry + no sitemap edit + NO robots Disallow (robots is public -> would advertise the path; see ADR-043). Use react-hook-form + the existing shadcn primitives like 5123. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED handoff: render test asserting questions appear from config + the unavailable fallback; confirm RED-for-right-reason (route/components missing) before implementing; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "01-03",
+          "name": "Ports widening + submit-survey edge fn (anonymous response write)",
+          "criteria": [
+            "ports widened: ResponseSource union admits 'user-survey'; a SurveySubmission.submit(answers) driving port + EdgeFunctionSurveySubmission adapter invoke the new submit-survey function; 5123's assessment ResponseSource/CapturedResponse non-null-scored invariant stays intact (regression test)",
+            "supabase/functions/submit-survey/index.ts (service_role) validates the payload, rejects stray score/band, inserts the anonymous response into 5123's responses table (source='user-survey', answers jsonb, raw_sum/score/band = null) and returns recorded:true",
+            "The survey response is written via service_role only; responses_anon_insert is NOT widened to 'user-survey' (a structural test / the absence of any 0003 migration asserts the anon policy stays 'readiness-assessment'-only)",
+            "Thank-you is shown ONLY on a confirmed successful write; a write failure shows a retry-able error with answers preserved and NO thank-you; a double-submit records one logical response (idempotent/dedup)",
+            "submit-and-store.feature in-memory scenarios pass; @real-io live-POST scenarios stay describe.skip (no website CI creds); bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/Survey.capture.test.tsx",
+          "scenario_name": "Visitor submits and the anonymous response is stored; thank-you only on success; retry-able error; dedup (submit-and-store.feature)",
+          "deps": ["01-02"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/assessment/ports/index.ts",
+            "/storage/repos/website/src/features/survey/adapters/edgeFunctionSurveySubmission.ts",
+            "/storage/repos/website/supabase/functions/submit-survey/index.ts",
+            "/storage/repos/website/src/features/survey/Survey.capture.test.tsx",
+            "/storage/repos/website/src/features/survey/components/SurveyForm.tsx"
+          ],
+          "implementation_notes": "WEBSITE repo; TS-row exempt (Deno edge fn is plain TS). ADR-040 + ADR-046 are authoritative; the slice-01 brief predates ADR-046 (it said anon-INSERT) - FOLLOW ADR-046: the write goes through the service_role submit-survey Edge Fn, NOT the anon key, because every submission must also trigger the team email (01-04). MIRROR 5123's supabase/functions/capture-lead/index.ts (CORS, createClient with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, parsePayload fail-closed, 400 on bad shape) and src/features/assessment/adapters/* + ports/index.ts. Read those first. Widen ResponseSource in ports/index.ts to 'readiness-assessment' | 'user-survey' and add a SurveySubmission port + the survey adapter (invoke('submit-survey', { body })); keep CapturedResponse's non-null scored shape for the assessment and add a guarded non-scored survey shape (ADR-040) - add a regression assertion that the assessment path still requires score/band. submit-survey inserts source='user-survey', answers jsonb, raw_sum/score/band null; reject any payload carrying score/band (fail closed). Dedup: a client-side idempotency guard (disable submit after first success / single in-flight) is sufficient for slice 01 (note dedup limits if server-side later). Degrade/thank-you: thank-you ONLY after recorded:true; on non-200 show retry-able error and keep answers in the form (journey failure_modes). The team email is 01-04 (do not add Mailgun here yet; submit-survey gains it next step). 5123 platform IS live (responses table exists). Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY (System.Text.Json N/A here; watch ESLint + TS-strict). RED handoff: in-memory capture test (injected SurveySubmission double) asserting thank-you-on-success / error-on-failure / dedup; confirm RED-for-right-reason before implementing; one RED->GREEN->REFACTOR; @real-io live POST stays describe.skip."
+        },
+        {
+          "id": "01-04",
+          "name": "Per-submission team notification email (degrade-open)",
+          "criteria": [
+            "supabase/_shared/surveyNotificationEmail.ts renders a team alert (subject + text/html) summarising the answers; recipient constant survey.answer@letpeople.work",
+            "submit-survey sends ONE notification via the existing _shared/mailgun.ts transport after the response is recorded; a NO-opt-in submission states 'no trial requested' and carries NO email address",
+            "The send is degrade-open: a Mailgun failure is caught/logged and the submission still returns recorded:true and the visitor still sees the thank-you (mirror 5123 sendResultsEmail)",
+            "Unit tests cover the renderer (answers summary + 'no trial requested') and a degrade test (send throws -> submission still succeeds); a parity test guards the answer-label mirror if any",
+            "@real-io live-POST contract stays describe.skip; bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/core/surveyNotificationEmail.test.ts",
+          "scenario_name": "A submission notifies the team; no-opt-in alert states no trial and carries no email; Mailgun failure is degrade-open (submit-and-store.feature US-08)",
+          "deps": ["01-03"],
+          "files_to_modify": [
+            "/storage/repos/website/supabase/_shared/surveyNotificationEmail.ts",
+            "/storage/repos/website/supabase/functions/submit-survey/index.ts",
+            "/storage/repos/website/src/features/survey/core/surveyNotificationEmail.test.ts",
+            "/storage/repos/website/src/features/survey/adapters/Survey.notification.real-io.test.ts"
+          ],
+          "implementation_notes": "WEBSITE repo; TS-row exempt. ADR-046 authoritative. MIRROR 5123's supabase/_shared/resultsEmail.ts (Deno-canonical pure renderer) + _shared/mailgun.ts (readMailgunConfig((k)=>Deno.env.get(k)) | sendViaMailgun(config,{to,subject,text,html,replyTo})) - read both first; REUSE mailgun.ts, do NOT add a new transport or dependency. The renderer is TEAM-facing (an ops alert), distinct from the visitor results email: subject like 'New Lighthouse survey response'; body = a readable answers summary + a trial line. Slice 01 has NO trial opt-in, so the line is always 'No trial requested' and NO email is included (the email + 'Trial requested - <email>' branch lands in slice 03). AI-5 (resolved): when the trial branch arrives, answers + email go together in one alert, no submission-time notice - but that is slice 03; slice 01 only emits the no-trial form. Degrade-open: wrap the send in a non-throwing helper exactly like 5123's sendResultsEmail (try/catch, console.error, return); submit-survey still returns 200/recorded:true. Recipient survey.answer@letpeople.work is a const in surveyNotificationEmail.ts. USER MANUAL STEP (AI-2): the inbox + Mailgun secrets are provisioned out-of-band; the @real-io live POST test stays describe.skip until creds. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED handoff: renderer + degrade unit tests RED-for-right-reason first; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "01-05",
+          "name": "Dashboard survey view (read) + summarizeSurvey",
+          "criteria": [
+            "core/summarizeSurvey.ts (pure) reduces survey responses to per-question option tallies + a total count; NO band distribution (the survey has no bands)",
+            "A survey tab/section is added to 5123's AdminDashboard reusing its Supabase Auth + Card/Table shell; DashboardRepository.load('user-survey') returns the survey responses (authenticated SELECT)",
+            "The maintainer opens the survey view and sees responses listed/tallied, anonymous (no PII column populated); unauthenticated access returns no data (reuses 5123 auth fail-closed)",
+            "The walking-skeleton scenario passes end-to-end (in-memory composition): shared link -> /survey -> submit -> recorded -> team notified -> maintainer sees it in the survey view",
+            "dashboard-survey-view.feature in-memory scenarios pass; @real-io authenticated-SELECT stays describe.skip; bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/core/summarizeSurvey.test.ts",
+          "scenario_name": "Maintainer sees survey responses tallied and anonymous in the dashboard survey view (dashboard-survey-view.feature + walking-skeleton.feature)",
+          "deps": ["01-04"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/survey/core/summarizeSurvey.ts",
+            "/storage/repos/website/src/features/survey/core/summarizeSurvey.test.ts",
+            "/storage/repos/website/src/features/assessment/ports/index.ts",
+            "/storage/repos/website/src/features/assessment/adapters/supabaseDashboardRepository.ts",
+            "/storage/repos/website/src/features/assessment/components/AdminDashboard.tsx",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.test.tsx"
+          ],
+          "implementation_notes": "WEBSITE repo; TS-row exempt. ADR-042 authoritative (dashboard survey view STANDS; only the RLS-widen seam was superseded). MIRROR 5123's core/dashboardSummary.ts (summarizeDashboard) + adapters/supabaseDashboardRepository.ts + components/AdminDashboard.tsx - read first. CREATE NEW summarizeSurvey (NOT reuse summarizeDashboard: the survey has no bands/scores -> band-distribution reuse renders a misleading all-zero grid; ADR-042 evidence). It computes per-question option tallies + total. EXTEND DashboardRepository.load to accept the 'user-survey' source (already parameterized by source in 5123) and the dashboard to render a survey tab beside the assessment view, reusing the existing Supabase Auth (benjamin@/peter@) + Card/Table primitives (no new auth, ADR-033). Responses are anonymous (no email column for survey responses; the trial-requests view is slice 03). Add a structural guard that summarizeDashboard/bandOfScore is never called on a survey (null-band) response. This step closes the walking-skeleton loop in-memory. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED handoff: summarizeSurvey unit tests (tallies) + the dashboard render test RED-for-right-reason first; un-skip the walking-skeleton scenario LAST and confirm it goes green; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "01-06",
+          "name": "UX revision: one-question-per-screen survey reusing a shared stepper",
+          "criteria": [
+            "A shared generic presentational stepper component (string-valued options, configurable total/progress/next-label) is extracted; both the assessment and the survey render through it",
+            "The assessment's QuestionStep delegates to the shared component (or uses it directly) with NO change to its observable behaviour; all existing assessment tests stay green",
+            "The survey steps ONE question per screen (intro -> Q1..Q4 advancing on Next/selection -> submit), with a progress indicator and Back navigation, replacing the all-on-one-page SurveyForm; a survey step reducer (core/surveyMachine.ts) drives phase/index/answers",
+            "Submit (thank-you-on-success / retry-able error / dedup from 01-03) fires at the end of the stepped flow; survey answers preserved across Back/Next",
+            "bun run test green (assessment + survey); bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/core/surveyMachine.test.ts",
+          "scenario_name": "Visitor advances one question per screen and submits at the end (survey-page.feature one-at-a-time)",
+          "deps": ["01-05"],
+          "files_to_modify": [
+            "/storage/repos/website/src/components/quiz/QuestionStepCard.tsx",
+            "/storage/repos/website/src/features/assessment/components/QuestionStep.tsx",
+            "/storage/repos/website/src/features/survey/core/surveyMachine.ts",
+            "/storage/repos/website/src/features/survey/core/surveyMachine.test.ts",
+            "/storage/repos/website/src/features/survey/components/SurveyForm.tsx",
+            "/storage/repos/website/src/features/survey/Survey.flow.test.tsx",
+            "/storage/repos/website/src/features/survey/Survey.capture.test.tsx"
+          ],
+          "implementation_notes": "WEBSITE repo; TS-row exempt. USER UX CORRECTION 2026-05-31: the survey currently renders all questions on one page; it must match the assessment's ONE-QUESTION-PER-SCREEN flow and REUSE that component (jump to the next page after each answer). READ FIRST: src/features/assessment/components/QuestionStep.tsx (the presentational card: progress bar + RadioGroup options + Back/Next) and core/quizMachine.ts (the intro->question->teaser reducer). EXTRACT a SHARED generic presentational stepper (e.g. src/components/quiz/QuestionStepCard.tsx) with props { prompt; options:{value:string;label:string}[]; questionNumber; totalQuestions; selected:string|null; progressLabel; nextLabel?; onSelect(value:string); onBack; onNext }. The assessment's QuestionStep becomes a thin adapter over it (its options.value is numeric -> map to String() and parse back on select; QUESTION_COUNT -> totalQuestions; last-button 'See my result') so the assessment's observable behaviour + tests are UNCHANGED (regression guard: assessment suite green). DO NOT force-share quizMachine - the survey gets its own core/surveyMachine.ts mirroring quizMachine's shape but with phases intro->question->submit (no scoring/teaser), answers as readonly (string|null)[] of length = survey question count, actions start/answer/next/back/submit, progress 'N of 4'. Rewrite SurveyForm to drive surveyMachine: render the shared stepper one question at a time, advance on Next (selection enables Next; mirror the assessment UX exactly), Back navigation preserves prior answers, and on the last question's submit run the existing SurveySubmission port flow (thank-you-on-success / retry-able error / dedup from 01-03). Update Survey.flow.test.tsx + Survey.capture.test.tsx for the stepped flow (still enter through the public render, assert observable per-screen behaviour). This is a refinement commit on top of shipped slice 01 (push after verify). Strict TS no any; immutable (reducer returns new state, no mutation); <=2 nesting, early returns; no comments. CI-LEARNINGS PRE-APPLY. RED handoff: surveyMachine.test.ts (advance/back/submit/answer-preservation) + the stepped flow test RED-for-right-reason first; keep the assessment green throughout; one RED->GREEN->REFACTOR; the shared-component extraction + assessment delegation is the REFACTOR (separate concern from the survey behaviour - keep assessment tests green at every step)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 — questions editable without a link change (US-03)",
+      "description": "Harden the questions-as-config guarantee end-to-end: edit surveyContent, /survey serves the new questions at the same URL, old shared links still resolve, dashboard reads old + new responses.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Editable-questions capability + link-stability guard",
+          "criteria": [
+            "Editing surveyContent changes /survey's rendered questions with no route/URL change; a structural test asserts the route constant is independent of the content module",
+            "Old responses (prior question set) and new responses both remain readable in the dashboard survey view (no schema break for the survey kind)",
+            "bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/Survey.editable.test.tsx",
+          "scenario_name": "Questions are editable without a link change (survey-page.feature)",
+          "deps": ["01-05"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/survey/Survey.editable.test.tsx"
+          ],
+          "implementation_notes": "REFINE WHEN REACHED. Mostly a guarding/capability slice on top of slice 01's config-driven render; likely few/no new production files. Confirm the route constant + content-module separation; assert old+new response read-compat."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 — trial opt-in (US-04, US-05 trial view, US-08 trial branch)",
+      "description": "Optional email-for-trial exchange screen; submit-survey writes a leads row (source='user-survey-trial', wants_trial) via service_role; team alert now carries the email; dashboard gains a trial-requests view. No auto-issuance (D4).",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Trial opt-in capture (email -> leads) + no auto-issue",
+          "criteria": [
+            "Optional opt-in + valid email -> submit-survey writes a leads row (source='user-survey-trial', wants_trial=true, email; score/band null) via service_role; no opt-in -> NO email stored anywhere",
+            "Opt-in never creates a license automatically (D4); invalid email -> friendly inline validation, rest of answers preserved",
+            "The team alert now includes 'Trial requested - <email>' alongside the answers (AI-5); no submission-time privacy notice",
+            "trial-optin.feature in-memory scenarios pass; @real-io stays describe.skip; bun run test green; build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/Survey.trial.test.tsx",
+          "scenario_name": "Trial opt-in records a lead + email, no auto-issue, invalid email validated (trial-optin.feature)",
+          "deps": ["02-01"],
+          "files_to_modify": [
+            "/storage/repos/website/supabase/functions/submit-survey/index.ts",
+            "/storage/repos/website/supabase/_shared/surveyNotificationEmail.ts",
+            "/storage/repos/website/src/features/survey/components/SurveyForm.tsx",
+            "/storage/repos/website/src/features/survey/Survey.trial.test.tsx"
+          ],
+          "implementation_notes": "REFINE WHEN REACHED. ADR-046 trial branch; mirror 5123 leads handling + EMAIL_PATTERN. Partial-write (response ok, lead failed) -> surface trial-specific failure (journey failure_mode)."
+        },
+        {
+          "id": "03-02",
+          "name": "Dashboard trial-requests view",
+          "criteria": [
+            "The dashboard survey view lists trial requests with their emails (authenticated SELECT on leads source='user-survey-trial')",
+            "Reuses 5123 auth/layout; no platform redesign (D6); bun run test green; build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/SurveyDashboard.trial.test.tsx",
+          "scenario_name": "Maintainer sees trial requests with emails (dashboard-survey-view.feature)",
+          "deps": ["03-01"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/assessment/components/AdminDashboard.tsx",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.trial.test.tsx"
+          ],
+          "implementation_notes": "REFINE WHEN REACHED."
+        },
+        {
+          "id": "03-03",
+          "name": "Dashboard answer visualizations + date-range filter",
+          "criteria": [
+            "The survey dashboard view renders simple per-question visualizations (recharts bar charts via the existing shadcn chart component) of the answer tallies, beside/instead of the raw table",
+            "A date-range filter (last 7 / 30 / 90 days / all time) scopes the survey view; changing it recomputes the tallies + charts client-side from the loaded responses' createdAt",
+            "The trial-requests list is also scoped by the same filter; 'all time' shows everything; default is a sensible range (e.g. 30 days)",
+            "No new dependency (recharts already present); UTC-stable date math (no inline new Date() in a useEffect dep — useMemo-stabilize per the React #185 lesson)",
+            "bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/core/filterResponsesByRange.test.ts",
+          "scenario_name": "Maintainer filters the survey view by date range and sees answer visualizations (dashboard-survey-view.feature)",
+          "deps": ["03-02"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/survey/core/filterByDateRange.ts",
+            "/storage/repos/website/src/features/survey/core/filterByDateRange.test.ts",
+            "/storage/repos/website/src/features/survey/components/SurveyCharts.tsx",
+            "/storage/repos/website/src/features/assessment/components/AdminDashboard.tsx",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.charts.test.tsx"
+          ],
+          "implementation_notes": "USER REQUIREMENT 2026-05-31: the dashboard should show the answers with SIMPLE visualizations + a date filter (last XX days or everything). recharts + src/components/ui/chart.tsx ARE already in the project — REUSE them, NO new dependency. READ FIRST: src/features/survey/core/summarizeSurvey.ts (per-question OptionTally), src/features/assessment/components/AdminDashboard.tsx (the SurveyView added in 01-05 + the trial-requests sub-section from 03-02), src/components/ui/chart.tsx, and how the assessment band-distribution is charted if at all. Build a PURE core `filterByDateRange(responses, range, now)` (range = '7d'|'30d'|'90d'|'all'; now passed IN as a param — do NOT call Date.now() inside; UTC-stable) that returns the responses whose createdAt is within the window; the dashboard recomputes summarizeSurvey on the filtered set. Add a `SurveyCharts` component rendering one simple bar chart per question from the OptionTally data (recharts BarChart via the shadcn ChartContainer). Wire a range selector (shadcn Select/ToggleGroup) into AdminDashboard's survey view defaulting to 30 days; the same range scopes the trial-requests list. CRITICAL React #185 lesson (memory project_react185_loop_unstable_useeffect_dep): a `new Date()` default feeding a useEffect dep caused an infinite re-render that blanked the metrics view — so compute `now` once (useMemo/module constant at render) and NEVER put an unstable Date in a useEffect dependency array. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED: filterByDateRange unit tests (windowing boundaries, 'all') + a dashboard charts/filter render test RED-for-right-reason first; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "03-04",
+          "name": "Wire the survey dashboard view into the live admin page",
+          "criteria": [
+            "AdminAssessment.tsx (the production /admin/assessment container) loads the 'user-survey' source in addition to 'readiness-assessment' and passes surveyResponses + surveyTrialRequests + a stable now to AdminDashboard",
+            "After sign-in the maintainer ACTUALLY sees the survey view (tallies + charts + date filter + trial-requests) on the live page - closing the TBU gap latent since 01-05",
+            "A test renders AdminAssessment with an injected repository returning BOTH assessment and survey data and asserts the survey sections render (port-to-port through the page)",
+            "Assessment view unchanged/green; bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/pages/AdminAssessment.test.tsx",
+          "scenario_name": "Maintainer sees the survey view on the live admin page (walking-skeleton.feature wiring)",
+          "deps": ["03-03"],
+          "files_to_modify": [
+            "/storage/repos/website/src/pages/AdminAssessment.tsx",
+            "/storage/repos/website/src/pages/AdminAssessment.test.tsx"
+          ],
+          "implementation_notes": "TBU FIX (orchestrator wiring smoke check). The survey dashboard (SurveyView tallies 01-05, trial-requests 03-02, charts+filter 03-03) is built in the AdminDashboard COMPONENT + tested with injected doubles, but the production PAGE container AdminAssessment.tsx only loads source='readiness-assessment' and never passes survey props - so the survey view is INVISIBLE in prod. READ FIRST: src/pages/AdminAssessment.tsx (loads DASHBOARD_SOURCE then summarizeDashboard + passes summary to <AdminDashboard>), src/features/assessment/components/AdminDashboard.tsx (optional props surveyResponses/surveyTrialRequests/now drive the date-filtered summarize+charts itself), supabaseDashboardRepository.load('user-survey') (returns surveyResponses + surveyTrialRequests). FIX: in AdminAssessment, after/alongside the assessment load, ALSO repository.load('user-survey'); pass the RAW surveyResponses + surveyTrialRequests + a stable now to AdminDashboard (the component does the filter/summarize/charts when raw responses are supplied - pass RAW, not pre-summarized). Compute now once via useMemo(()=>new Date().toISOString(),[]) - React #185 safety, never in a useEffect dep. Keep the assessment path untouched (its summarizeDashboard guard throws on null-band rows - load survey via the 'user-survey' branch which returns surveyResponses, NEVER feed survey rows to summarizeDashboard). Guard active-flag like the existing effects. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED handoff: extend AdminAssessment.test.tsx - injected repository returns assessment + survey data, assert BOTH the assessment summary AND the survey sections (tallies/charts/trial-requests testids) render after sign-in; RED-for-right-reason (survey sections absent) first; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "03-05",
+          "name": "Survey answers visual-only + consolidate admin dashboard route",
+          "criteria": [
+            "The survey dashboard view shows answers ONLY as charts (the per-question text tally TABLE from 01-05 is removed); the total-responses count, the date-range filter, and the trial-requests list remain",
+            "The admin dashboard is served at /admin/dashboard (canonical); /admin/assessment redirects to it (preserve old bookmarks) and /admin redirects to it; deploy.yml SPA fallback covers /admin/dashboard",
+            "The assessment view (band distribution + captured-lead emails) is KEPT unchanged on that page (user decision: it is the only surface for assessment leads)",
+            "SEO/page title reflects a unified admin dashboard (not 'Assessment results' only)",
+            "bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/SurveyDashboard.charts.test.tsx",
+          "scenario_name": "Survey answers render only as charts under the consolidated admin dashboard route (dashboard-survey-view.feature)",
+          "deps": ["03-04"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/assessment/components/AdminDashboard.tsx",
+            "/storage/repos/website/src/App.tsx",
+            "/storage/repos/website/src/pages/AdminAssessment.tsx",
+            "/storage/repos/website/.github/workflows/deploy.yml",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.charts.test.tsx",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.test.tsx"
+          ],
+          "implementation_notes": "USER FEEDBACK 2026-05-31 (after live review): (1) survey answers appear TWICE - a text tally table (SurveyView, 01-05) AND charts (SurveyCharts, 03-03); keep ONLY the visual (charts). (2) Keep the ASSESSMENT dashboard (it is the only surface for assessment leads - no team email for those). (3) Serve everything under a unified /admin/dashboard route. READ FIRST: src/features/assessment/components/AdminDashboard.tsx (the SurveyView text table + SurveyCharts + SurveyTrialRequestsView + the range filter), src/App.tsx (current /admin/assessment route + the /assessment etc. routes; how redirects are done with react-router v7 - use <Navigate replace> or a redirect route), src/pages/AdminAssessment.tsx (SEO title 'Assessment results'), .github/workflows/deploy.yml (the SPA fallback step that cp dist/index.html into dist/assessment, dist/admin/assessment, dist/survey - add dist/admin/dashboard). CHANGES: (a) In AdminDashboard remove the per-question survey TALLY TABLE rendering (SurveyView's table) but KEEP SurveyCharts, the total-responses count, the date-range filter control, and SurveyTrialRequestsView; the assessment band-distribution + leads sections stay untouched. (b) App.tsx: add canonical route path '/admin/dashboard' rendering the existing admin page; redirect '/admin/assessment' -> '/admin/dashboard' (Navigate replace) and '/admin' -> '/admin/dashboard'; keep them all working. (c) deploy.yml: add the dist/admin/dashboard SPA fallback mirroring the existing dist/admin/assessment one (keep the old one too for the redirect shell). (d) Update the page SEO/title to e.g. 'Admin dashboard'. Do NOT rename the page file (low-value churn) - just repoint the route + title. Keep the assessment path/summarizeDashboard exactly as-is. Update the survey dashboard tests to assert the table is gone and the charts remain; update any routing test. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED: a test asserting the survey text table is absent while charts/total/filter/trials render + (if present) a routing assertion that /admin/dashboard serves the dashboard and /admin/assessment redirects; RED-for-right-reason first; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "03-06",
+          "name": "Clear/mark trial requests as fulfilled in the admin panel",
+          "criteria": [
+            "Migration 0003_leads_fulfilled_at.sql adds a nullable fulfilled_at timestamptz to leads + an authenticated UPDATE RLS policy (USER applies it manually in Supabase, like the 5123 migrations)",
+            "Each trial request in the dashboard has a 'Mark as sent' action; clicking it sets fulfilled_at=now via an authenticated UPDATE and the request leaves the active to-action list (shown as sent / de-emphasized)",
+            "The active trial-requests list shows only unfulfilled (fulfilled_at null) requests; a fulfilled one does not reappear after reload",
+            "If the UPDATE fails (e.g. migration not yet applied), the UI shows a non-blocking error and does NOT crash or falsely mark it sent",
+            "bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/SurveyDashboard.fulfill.test.tsx",
+          "scenario_name": "Maintainer marks a trial request as sent and it clears from the active list (dashboard-survey-view.feature)",
+          "deps": ["03-05"],
+          "files_to_modify": [
+            "/storage/repos/website/supabase/migrations/0003_leads_fulfilled_at.sql",
+            "/storage/repos/website/src/features/assessment/ports/index.ts",
+            "/storage/repos/website/src/features/assessment/adapters/supabaseDashboardRepository.ts",
+            "/storage/repos/website/src/features/assessment/components/AdminDashboard.tsx",
+            "/storage/repos/website/src/pages/AdminAssessment.tsx",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.fulfill.test.tsx"
+          ],
+          "implementation_notes": "USER REQUEST 2026-05-31: 'clear' trial requests in the admin panel so we know we shipped them a license. MARK as fulfilled (keep the record), do NOT delete. READ FIRST: supabase/migrations/0002_assessment_leads.sql (leads table + authenticated SELECT policy - mirror its style for the new UPDATE policy), src/features/assessment/adapters/supabaseDashboardRepository.ts (load('user-survey') maps leads -> DashboardSurveyTrialRequest; authenticated client), src/features/assessment/components/AdminDashboard.tsx (SurveyTrialRequestsView), src/pages/AdminAssessment.tsx (loads + passes survey props; wire the new callback here). DESIGN: (a) migration 0003_leads_fulfilled_at.sql: `alter table public.leads add column if not exists fulfilled_at timestamptz;` + `create policy leads_authenticated_update on public.leads for update to authenticated using (true) with check (true);` (authenticated = the trusted benjamin@/peter@ dashboard accounts; mirrors the authenticated SELECT trust model - acceptable for an internal admin action). USER MANUAL STEP: apply this in the Supabase SQL editor (flag it like AI-2). (b) ports: DashboardSurveyTrialRequest gains `id` + `fulfilledAt: string | null`; DashboardRepository gains `markTrialFulfilled(id: string): Promise<void>`. (c) repository: load also selects id + fulfilled_at for user-survey-trial leads; markTrialFulfilled = authenticated `update({ fulfilled_at: new ISO }).eq('id', id)` (throw on error). (d) AdminDashboard SurveyTrialRequestsView: show only fulfilled_at===null requests in the active list with a 'Mark as sent' button per row; an onMarkTrialFulfilled(id) callback prop drives it; on success the row leaves the active list (optimistic update or reload). (e) AdminAssessment: pass onMarkTrialFulfilled={(id)=>repository.markTrialFulfilled(id).then(reload)} - reload the user-survey data after success; keep `now` stable (React #185). Degrade: if markTrialFulfilled rejects, surface a non-blocking error (role=alert), do NOT optimistically remove the row permanently. Strict TS no any; immutable; <=2 nesting; no comments. CI-LEARNINGS PRE-APPLY. RED handoff: SurveyDashboard.fulfill.test.tsx through the public AdminDashboard render with an injected onMarkTrialFulfilled double + a fulfilled vs unfulfilled fixture: assert only unfulfilled show, clicking calls the callback with the id, the row clears on success, and a rejecting callback shows an error without removing the row; RED-for-right-reason first; one RED->GREEN->REFACTOR."
+        },
+        {
+          "id": "03-07",
+          "name": "Keep sent trial requests in the list with a sent indicator",
+          "criteria": [
+            "Fulfilled (sent) trial requests REMAIN visible in the trial-requests list (no longer filtered out), shown with a green checkmark / 'Sent' indicator instead of the 'Mark as sent' button",
+            "Unfulfilled requests still show the 'Mark as sent' button; clicking it flips that row to the sent indicator (optimistic, confirmed by reload)",
+            "On UPDATE failure the row stays unfulfilled with its button and a non-blocking error (unchanged degrade behaviour)",
+            "bun run test green; bun run build clean; eslint clean"
+          ],
+          "test_file": "/storage/repos/website/src/features/survey/SurveyDashboard.fulfill.test.tsx",
+          "scenario_name": "Sent trial requests stay listed with a sent checkmark (dashboard-survey-view.feature)",
+          "deps": ["03-06"],
+          "files_to_modify": [
+            "/storage/repos/website/src/features/assessment/components/AdminDashboard.tsx",
+            "/storage/repos/website/src/features/survey/SurveyDashboard.fulfill.test.tsx"
+          ],
+          "implementation_notes": "USER FEEDBACK 2026-05-31: instead of REMOVING a request from the list when marked sent (03-06 behaviour), KEEP it in the list with a green checkmark / 'Sent' indicator. READ FIRST: src/features/assessment/components/AdminDashboard.tsx (SurveyTrialRequestsView from 03-06 - it currently filters to fulfilledAt===null + tracks optimistically-removed ids). CHANGE: stop filtering out fulfilled rows - render ALL trial requests; for fulfilledAt!==null show a green check + 'Sent' (optionally the sent date via fulfilledAt) and NO button; for fulfilledAt===null show the 'Mark as sent' button. Replace the optimistic-REMOVAL set with an optimistic-FULFILL (locally set the row's fulfilledAt on click so it flips to the sent indicator immediately; the page reload then confirms it). On rejection revert to unfulfilled + the role=alert error (keep 03-06 degrade behaviour). Optional nicety: sort unfulfilled (actionable) before sent. Keep markTrialFulfilled / migration / ports unchanged. Strict TS no any; immutable; <=2 nesting; no comments. Use an accessible indicator (e.g. an aria-label/text 'Sent', not color alone). CI-LEARNINGS PRE-APPLY. RED handoff: update SurveyDashboard.fulfill.test.tsx - a fulfilled fixture row renders WITH a 'Sent' indicator and NO button; an unfulfilled row shows the button; clicking flips it to Sent (still listed); rejection keeps it unfulfilled with an error. RED-for-right-reason first; one RED->GREEN->REFACTOR."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 — in-app nudge visible for eligible non-premium users (US-06)",
+      "description": "LIGHTHOUSE repo (.NET 8 + React 18). Per-instance installTimestamp on AppSettings; FE-derived eligibility (premium-first/fail-closed/UTC-stable); nudge shown for non-premium, install age >= ~14d.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Per-instance install timestamp + non-admin settings read",
+          "criteria": [
+            "AppSettingKeys gains a write-once installTimestamp; AppSettingService.EnsureInstallTimestamp sets it once on first run; a non-admin read surface exposes it (existing AppSettingsController is [RbacGuard]-admin)",
+            "EF migration generated via the CreateMigration PowerShell script (Sqlite + Postgres); dotnet build zero-warning; dotnet test green",
+            "Startup probe verifies write-once durability + UTC read-after-write; fault degrades to not-eligible (fail closed)"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/SurveyNudgeSettingsTest.cs",
+          "scenario_name": "install timestamp is write-once and readable (nudge-eligibility.feature)",
+          "deps": ["01-05"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/AppSettings/AppSettingKeys.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/AppSettingService.cs"
+          ],
+          "implementation_notes": "REFINE WHEN REACHED. LIGHTHOUSE repo (OOP, NUnit+EF). ADR-045. Use CreateMigration script (NOT dotnet ef migrations add). AI-4/AI-6."
+        },
+        {
+          "id": "04-02",
+          "name": "FE-derived eligibility + nudge component (premium-first/fail-closed)",
+          "criteria": [
+            "A pure eligibility fn returns show only if not premium AND install age >= ~14d (UTC-stable) AND not recently shown; premium evaluated FIRST and absolute; any uncertainty -> fail closed (no nudge)",
+            "A deterministic test asserts a premium instance NEVER renders the nudge at any install age (guardrail KPI 5 = 0)",
+            "The nudge component (Lighthouse design system) is non-blocking, dismissible, links out to /survey; pnpm test green; pnpm build clean (Biome)"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/SurveyNudge/nudgeEligibility.test.ts",
+          "scenario_name": "premium never nudged; <14d no nudge; >=14d non-premium shown (nudge-eligibility.feature)",
+          "deps": ["04-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/SurveyNudge/nudgeEligibility.ts",
+            "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx"
+          ],
+          "implementation_notes": "REFINE WHEN REACHED. LIGHTHOUSE FE (React 18 + Vitest + Biome). ADR-044 FE-derived (user-confirmed). @property via fast-check candidate for the boundary/premium guard."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 — nudge cadence + persisted dismissal (US-07)",
+      "description": "lastShownAt persisted server-side; ~6-month cadence; dismiss + click-through both set lastShownAt; no reappear until +~6mo; links to /survey.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "lastShownAt cadence + persisted dismissal",
+          "criteria": [
+            "lastShownAt persisted server-side on show AND dismiss; nudge does not reappear until lastShownAt + ~6 months; click-through opens /survey and also sets lastShownAt",
+            "nudge-cadence-dismissal.feature scenarios pass; pnpm test green; pnpm build clean; dotnet build/test green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.cadence.test.tsx",
+          "scenario_name": "dismiss/click-through persist lastShownAt; no reappear until +6mo (nudge-cadence-dismissal.feature)",
+          "deps": ["04-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/AppSettingService.cs",
+            "Lighthouse.Frontend/src/components/SurveyNudge/SurveyNudge.tsx"
+          ],
+          "implementation_notes": "REFINE WHEN REACHED. ADR-045 lastShownAt; both paths set/confirm lastShownAt."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "orchestrator (slice-01 detailed; slices 02-05 coarse, refined when reached)",
+    "approved_at": "2026-05-31T00:00:00Z",
+    "notes": "Slice 01 (phase 01) is fully decomposed and is the only slice executed now; user reviews before push. Phases 02-05 carry headline steps to be refined at slice start. Per ADR-046, slice-01 brief's anon-INSERT is superseded by the service_role submit-survey edge fn."
+  }
+}
