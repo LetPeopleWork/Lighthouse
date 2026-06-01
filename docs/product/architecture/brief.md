@@ -1603,3 +1603,44 @@ No new routes. `forecast/manual` and the deliveries response gain the additive `
 
 Additive boolean on existing endpoints → no new endpoint, **no `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate**; FE defaults a missing field to `hasSufficientData = true` (old server degrades to today's behaviour). Clients adopt the suppression only if they render a likelihood to a human — non-blocking follow-up.
 
+## Application Architecture — lighthouse-user-survey (ADO Epic #5124)
+
+This section is **additive** to all prior `## Application Architecture` deltas. It is a **multi-surface / cross-repo** feature; most production code lands in the **WEBSITE repo** (`/storage/repos/website`), with a small **LIGHTHOUSE-repo** in-app nudge. It **EXTENDS the 5123 shared Supabase platform** (ADR-031..037) without redesigning it (D6). ADRs: **ADR-040..046**.
+
+### Cross-repo split
+
+- **WEBSITE repo** (functional-core/imperative-shell hexagonal idiom continued from 5123, ADR-035): the stable hidden `/survey` page + zod-validated survey content module (ADR-043); a single `service_role` **`submit-survey` Edge Function** that writes the anonymous response, the optional trial lead, AND sends a per-submission team-notification email to `survey.answer@letpeople.work` (ADR-046, consolidating what ADR-040/041/042 first split); the survey view on 5123's internal dashboard (ADR-042). Paradigm: functional React (website is a separate codebase from the OOP Lighthouse product — recorded, not re-decided).
+- **LIGHTHOUSE repo** (OOP, ports-and-adapters): the in-app nudge FE component (Lighthouse's own design system, D7) + two per-instance settings on the existing AppSettings mechanism (`installTimestamp`, `lastShownAt`, ADR-045). Eligibility is **FE-derived** from existing signals (ADR-044, user-confirmed 2026-05-31).
+
+### Platform reuse (EXTEND, not redesign — D6)
+
+| Concern | Verdict | How |
+|---|---|---|
+| `responses` table | EXTEND | new `source='user-survey'`; nullable `raw_sum/score/band` reused; written via `service_role` (ADR-040/046) |
+| Survey write path | CREATE NEW | one `service_role` `submit-survey` Edge Fn: response + optional trial lead + team email (ADR-046); supersedes the anon-INSERT path + migration `0003` RLS-widen + the separate `capture-survey-lead` |
+| Team notification email | CREATE NEW renderer / EXTEND transport | `surveyNotificationEmail` to `survey.answer@letpeople.work` via the shared `_shared/mailgun.ts`; degrade-open (ADR-046) |
+| `leads` table | EXTEND | reuse nullable `score/band` + `wants_trial`; `source='user-survey-trial'`, `service_role`-only (ADR-046) |
+| Shared ports (`ports/index.ts`) | EXTEND | widen `ResponseSource` union + guarded non-scored shape + `SurveySubmission.submit` port (ADR-040/046) |
+| Dashboard auth/layout | EXTEND | reuse 5123 Supabase Auth + `Card`/`Table` shell; new survey tab + `summarizeSurvey` core (ADR-042/033) |
+| `/survey` route + content module | CREATE NEW | unscored single-page survey; mirrors the ADR-035/036 idiom, not the scoring machine (ADR-043) |
+| Per-instance settings | EXTEND | two keys on the existing `AppSetting`/`AppSettingService` mechanism (ADR-045) |
+| Nudge FE component | CREATE NEW | Lighthouse design system; nudge-with-a-link, never embeds the survey (ADR-044) |
+| Non-admin nudge settings read | CREATE NEW | the existing `AppSettingsController` is `[RbacGuard]`-admin; the community-user nudge needs a non-admin read (ADR-045) |
+
+### Invariants (test-anchored)
+
+- **Premium fails CLOSED** — a premium instance NEVER renders the nudge at any install age; enforced by a deterministic test, not telemetry (KPI 5 = 0). Premium evaluated FIRST, absolute (ADR-044).
+- **UTC-stable install age** — comparisons on server-supplied UTC instants; a backward clock jump never fires a nudge early; on any anomaly/uncertainty, fail closed = no nudge (ADR-044/045).
+- **PII discipline** — the only PII is the trial email, via the `service_role` `submit-survey` Edge Fn, never anon, in the separate `leads` table with NO join to `responses` (structural anonymity, ADR-034/046). The team-notification email correlates answers↔email ONLY for trial opt-ins (who chose to identify); anonymous-only submissions carry no identity (ADR-046).
+- **No auto-issuance** — trial opt-in records a signal + email only; never creates a license (D4, ADR-041/046).
+- **Notification degrade-open** — a Mailgun failure never blocks a submission; the response is recorded and the thank-you shown regardless (ADR-046).
+- **Stable hidden route** — `/survey` never changes when questions change; ships hidden (no nav, no sitemap, no robots Disallow); `deploy.yml` SPA fallback `cp dist/index.html dist/survey/` (ADR-043).
+
+### Earned Trust
+
+The per-instance settings store is a driven adapter (EF over Sqlite/Postgres). A **startup probe** asserts write-once durability + read-after-write UTC-stability of `installTimestamp`; a failed/uncertain probe degrades the nudge to **not eligible (fail closed)** — never a day-0 fire or a bothered premium user — without blocking core app startup (ADR-045).
+
+### Clients consistency
+
+Under ADR-044 Option (a) FE-derived eligibility, **no new feature endpoint** → CLI/MCP clients **N/A**, no `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate. If the user selects ADR-044 Option (b) (server-side eligibility endpoint), the clients version-gate rule applies and is added to the DEVOPS handoff.
+
