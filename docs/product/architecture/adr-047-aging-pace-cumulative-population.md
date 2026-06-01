@@ -155,14 +155,27 @@ leaking into each other; narrowing the consumer is the smaller, provably pace-lo
 The sibling cumulative chart uses the separate `BuildCumulativeWorkflowStateOrder` and is untouched
 either way.
 
-**Empty / unconfigured `DoingStates` fallback.** `DoingStates` lives on
+**Empty / unconfigured / mismatched `DoingStates` fallback.** `DoingStates` lives on
 `WorkTrackingSystemOptionsOwner` (the base of `Team` and `Portfolio`) as a `List<string>` that is
 `[Required]` and ships a non-empty default (`["Active", "Resolved", "In Progress", "Committed"]`), so
-in practice it is never empty. For defensive correctness the contract is: **if the scope's mapped
-`DoingStates` is empty, the pace path falls back to the observed order** that
-`BuildWorkflowStateOrder` already produces (i.e. the filter is a no-op when there is nothing to filter
-against) — matching today's behaviour for any team that somehow has no configured `DoingStates`. The
-filter compares against the mapped category names in `DoingStates`; the existing state-category
+in practice it is never empty — but it is also not guaranteed to match the workflow the data actually
+exhibits (a team may run on the default while its real statuses are e.g. `In Progress / Review / Test`).
+The binding fallback contract therefore has **two** triggers, both implemented in
+`RestrictToMappedDoingStates`:
+
+1. **Empty** — if the scope's mapped `DoingStates` is empty (or no exit states were observed at all),
+   the filter is a no-op and the pace path uses the observed order `BuildWorkflowStateOrder` produced.
+2. **Mismatched (majority-coverage guard)** — the filter is applied only when the configured
+   `DoingStates` **cover the majority of the observed exit states** (`observedCoveredByConfig * 2 >
+   observedStates.Count`). When the configured set covers half or fewer of the observed states, the
+   config clearly does not describe this team's real workflow, so filtering to it would drop most of
+   the chart's columns; the pace path falls back to the observed order instead. This keeps a stale or
+   default `DoingStates` from silently emptying the chart, while still excluding stray
+   unmapped/intermediate statuses for any team whose config genuinely describes its workflow (the
+   common case, and the one the unmapped-status-exclusion acceptance test pins). The DDD-1b clamp
+   guarantees non-decreasing bands either way, so the fallback never reintroduces a visible drop.
+
+The filter compares against the mapped category names in `DoingStates`; the existing state-category
 mapping (`GetRawStatesForCategory` / `MapStateToStateCategory`) already collapses raw statuses into
 those categories, so no second mapping pass is introduced here.
 
