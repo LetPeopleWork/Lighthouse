@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.API
 
     public class SurveyNudgeActionRequest
     {
-        public SurveyNudgeAction Action { get; set; }
+        public SurveyNudgeAction? Action { get; set; }
     }
 
     [Route("api/v1/[controller]")]
@@ -29,7 +29,12 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> RecordAction([FromBody] SurveyNudgeActionRequest request)
         {
-            await appSettingService.RecordSurveyNudgeAction(request.Action);
+            if (request.Action is null)
+            {
+                return BadRequest();
+            }
+
+            await appSettingService.RecordSurveyNudgeAction(request.Action.Value);
             return NoContent();
         }
     }

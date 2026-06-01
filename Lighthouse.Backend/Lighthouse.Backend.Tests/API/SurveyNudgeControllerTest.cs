@@ -74,6 +74,20 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task RecordAction_WithoutAnAction_ReturnsBadRequestAndDoesNotRecord()
+        {
+            var subject = CreateSubject();
+
+            var response = await subject.RecordAction(new SurveyNudgeActionRequest());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response, Is.InstanceOf<BadRequestResult>());
+                appSettingServiceMock.Verify(service => service.RecordSurveyNudgeAction(It.IsAny<SurveyNudgeAction>()), Times.Never);
+            }
+        }
+
         private SurveyNudgeController CreateSubject()
         {
             return new SurveyNudgeController(appSettingServiceMock.Object);
