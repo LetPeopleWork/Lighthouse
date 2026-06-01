@@ -95,7 +95,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	const theme = useTheme();
 
 	const completionClasses = useMemo(
-		() => (completionFilterEnabled ? COMPLETION_CLASSES : NO_COMPLETION_CLASSES),
+		() =>
+			completionFilterEnabled ? COMPLETION_CLASSES : NO_COMPLETION_CLASSES,
 		[completionFilterEnabled],
 	);
 	const { visibleTypes, toggleTypeVisibility } =
@@ -192,13 +193,13 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 					direction="row"
 					sx={{
 						justifyContent: "space-between",
-						alignItems: "flex-start",
+						alignItems: "center",
 						minHeight: 56,
 						mb: 1,
 					}}
 				>
-					<Typography variant="h6">Cumulative Time per State</Typography>
 					<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+						<Typography variant="h6">Cumulative Time per State</Typography>
 						{completionFilterEnabled && (
 							<>
 								<LegendChip
@@ -215,8 +216,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 								/>
 							</>
 						)}
-						{pickerSlot}
 					</Stack>
+					{pickerSlot}
 				</Stack>
 
 				<Box sx={{ flex: 1, minHeight: 0 }}>
