@@ -43,7 +43,7 @@
 		"remark-gfm": "^4.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.15",
+		"@biomejs/biome": "2.4.16",
 		"@stryker-mutator/core": "^9.6.1",
 		"@stryker-mutator/typescript-checker": "^9.6.1",
 		"@stryker-mutator/vitest-runner": "^9.6.1",
