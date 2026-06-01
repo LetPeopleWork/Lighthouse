@@ -1,0 +1,61 @@
+schema_version: 1
+id: forecasting-prospect
+created: 2026-05-30
+created_in_feature: flow-forecasting-readiness-assessment
+
+display_name: Forecasting Prospect
+aliases:
+  - delivery-lead-evaluating
+  - engineering-manager-prospect
+  - coach-evaluating-maturity
+  - website-visitor-prospect
+
+short_description: >
+  A delivery lead, engineering manager, or agile/flow coach who lands on the LetPeopleWork
+  website and does NOT yet use Lighthouse. They want an honest, fast read on how mature their
+  team's delivery really is — across BOTH what they measure (flow metrics) AND how they forecast
+  (deterministic vs probabilistic). Top-of-funnel: curious and slightly self-critical, willing to
+  spend ~5 minutes for a credible, framework-backed number they can bring to their team. From the
+  business side this is a lead-gen / qualification persona; the read they get must be genuinely
+  useful or they will not trust the next step.
+
+primary_jobs:
+  - job-assess-forecasting-flow-maturity
+
+goals:
+  - Get a defensible, framework-grounded read on delivery maturity without booking a call or installing anything
+  - See where they stand on BOTH axes — flow-metrics maturity and forecasting maturity — not a single vague label
+  - Walk away knowing the concrete next rung to climb, in language they can repeat to leadership
+
+frustrations:
+  - Most "maturity assessments" are thinly disguised sales funnels with no real substance
+  - They suspect their team is "output-focused" but have no honest, named yardstick to confirm it
+  - Generic agile-maturity quizzes ignore the distinction between estimating and probabilistic forecasting
+  - They do not want to hand over an email before seeing that the assessment is worth anything
+
+mental_model:
+  - "Maturity" has two separate axes — what you measure (cycle time, throughput, WIP, item age, flow health)
+    and how you forecast (gut estimate vs deterministic date vs Monte Carlo probability)
+  - A credible score must be anchored in a named body of work (Kanban flow metrics, Vacanti / ProKanban
+    probabilistic forecasting) — otherwise it is just an opinion
+  - One memorable number (0-100) plus a named band is shareable; a wall of sub-metrics is not
+  - "Where do we stand and what is the next step" matters more than a perfect diagnosis
+
+vocabulary:
+  - "forecasting readiness" — how prepared the team is to make probabilistic delivery predictions
+  - "flying blind" — managing delivery with no metrics and gut-feel dates (lowest band)
+  - "output-focused" — counting things done rather than measuring flow (low band)
+  - "flow-aware" — actively watching flow metrics, starting to forecast (sweet-spot band)
+  - "probabilistic" — running Monte Carlo / percentile forecasts and steering by them (top band)
+  - "Monte Carlo" — probabilistic forecasting by simulation, the ProKanban / Vacanti school
+  - "WIP" — work in progress; limiting it is a flow-maturity signal
+
+related_personas:
+  - flow-coach (the SAME role once they adopt Lighthouse — in-tool flow diagnosis; this persona is the pre-adoption, top-of-funnel version)
+  - delivery-forecaster (the SAME role once they adopt Lighthouse — in-tool forecast tuning; this persona has not yet started)
+  - delivery-lead-rte (in-tool counterpart at release-train scope)
+
+not_this_persona:
+  - Authenticated in-tool Lighthouse user (already past this funnel stage; uses the product personas)
+  - A buyer looking for pricing only (this persona wants a diagnosis first, price second)
+  - A casual visitor with no delivery-leadership responsibility (will not invest 5 minutes or share an email)
