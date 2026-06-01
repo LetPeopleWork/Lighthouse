@@ -8,7 +8,8 @@ import {
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import type React from "react";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
+import { useTypesVisibility } from "../../../hooks/useChartVisibility";
 import type {
 	ICumulativeStateTimeResponse,
 	ICumulativeStateTimeStateRow,
@@ -18,13 +19,18 @@ import {
 	type DurationUnit,
 	formatDuration,
 } from "../../../utils/date/formatDuration";
+import LegendChip from "./LegendChip";
 
 const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
+
+const COMPLETED_CLASS = "Completed";
+const ONGOING_CLASS = "Ongoing";
 
 interface CumulativeStateTimeChartProps {
 	data: ICumulativeStateTimeResponse;
 	onBarClick?: (stateName: string) => void;
 	pickerSlot?: ReactNode;
+	completionFilterEnabled?: boolean;
 }
 
 const orderByWorkflow = (
@@ -82,8 +88,16 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	data,
 	onBarClick,
 	pickerSlot,
+	completionFilterEnabled = false,
 }) => {
 	const theme = useTheme();
+
+	const completionClasses = useMemo(
+		() => (completionFilterEnabled ? [COMPLETED_CLASS, ONGOING_CLASS] : []),
+		[completionFilterEnabled],
+	);
+	const { visibleTypes, toggleTypeVisibility } =
+		useTypesVisibility(completionClasses);
 
 	if (data.states.length === 0) {
 		return (
@@ -140,6 +154,33 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	const valueFormatter = (value: number | null): string =>
 		value === null ? "" : formatDuration(value, unit);
 
+	const allSeries = [
+		{
+			completionClass: COMPLETED_CLASS,
+			data: completedData,
+			label: `Completed (${unitLabel})`,
+			stack: "stateTime",
+			color: theme.palette.primary.main,
+			valueFormatter,
+		},
+		{
+			completionClass: ONGOING_CLASS,
+			data: ongoingData,
+			label: `Ongoing (${unitLabel})`,
+			stack: "stateTime",
+			color: `url(#${HATCH_PATTERN_ID})`,
+			valueFormatter,
+		},
+	];
+
+	const series = allSeries
+		.filter(
+			(entry) =>
+				!completionFilterEnabled ||
+				visibleTypes[entry.completionClass] !== false,
+		)
+		.map(({ completionClass: _completionClass, ...entry }) => entry);
+
 	return (
 		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
 			<CardContent
@@ -155,7 +196,25 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 					}}
 				>
 					<Typography variant="h6">Cumulative Time per State</Typography>
-					{pickerSlot}
+					<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+						{completionFilterEnabled && (
+							<>
+								<LegendChip
+									label={COMPLETED_CLASS}
+									color={theme.palette.primary.main}
+									visible={visibleTypes[COMPLETED_CLASS] !== false}
+									onToggle={() => toggleTypeVisibility(COMPLETED_CLASS)}
+								/>
+								<LegendChip
+									label={ONGOING_CLASS}
+									color={theme.palette.primary.light}
+									visible={visibleTypes[ONGOING_CLASS] !== false}
+									onToggle={() => toggleTypeVisibility(ONGOING_CLASS)}
+								/>
+							</>
+						)}
+						{pickerSlot}
+					</Stack>
 				</Stack>
 
 				<Box sx={{ flex: 1, minHeight: 0 }}>
@@ -178,22 +237,7 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 							},
 						]}
 						yAxis={[{ valueFormatter, label: unitLabel }]}
-						series={[
-							{
-								data: completedData,
-								label: `Completed (${unitLabel})`,
-								stack: "stateTime",
-								color: theme.palette.primary.main,
-								valueFormatter,
-							},
-							{
-								data: ongoingData,
-								label: `Ongoing (${unitLabel})`,
-								stack: "stateTime",
-								color: `url(#${HATCH_PATTERN_ID})`,
-								valueFormatter,
-							},
-						]}
+						series={series}
 					>
 						<defs>
 							<pattern

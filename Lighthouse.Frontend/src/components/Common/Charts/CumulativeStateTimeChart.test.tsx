@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ICumulativeStateTimeStateRow } from "../../../models/Metrics/CumulativeStateTime";
 import { testTheme } from "../../../tests/testTheme";
@@ -193,5 +194,151 @@ describe("CumulativeStateTimeChart", () => {
 		);
 
 		expect(screen.getByTestId("picker-slot")).toBeInTheDocument();
+	});
+});
+
+const seriesOf = (): { label?: string }[] => {
+	const chart = screen.getByTestId("mock-bar-chart");
+	return JSON.parse(chart.getAttribute("data-series") ?? "[]");
+};
+
+const completedChip = (): HTMLElement =>
+	screen.getByRole("button", { name: "Completed visibility toggle" });
+
+const ongoingChip = (): HTMLElement =>
+	screen.getByRole("button", { name: "Ongoing visibility toggle" });
+
+describe("CumulativeStateTimeChart completion-class legend toggle (US-5144-01)", () => {
+	const stateWithBothClasses = [
+		getMockStateRow({
+			state: "Doing",
+			completedContributionDays: 12,
+			ongoingContributionDays: 20,
+		}),
+	];
+
+	it("shows both Completed and Ongoing chips active by default when the filter is enabled", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		expect(completedChip()).toHaveAttribute("aria-pressed", "true");
+		expect(ongoingChip()).toHaveAttribute("aria-pressed", "true");
+		expect(seriesOf()).toHaveLength(2);
+	});
+
+	it("hides the completed segment when the Completed chip is clicked", async () => {
+		const user = userEvent.setup();
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		await user.click(completedChip());
+
+		const series = seriesOf();
+		expect(series).toHaveLength(1);
+		expect(series[0].label).toContain("Ongoing");
+		expect(completedChip()).toHaveAttribute("aria-pressed", "false");
+	});
+
+	it("hides the ongoing segment when the Ongoing chip is clicked", async () => {
+		const user = userEvent.setup();
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		await user.click(ongoingChip());
+
+		const series = seriesOf();
+		expect(series).toHaveLength(1);
+		expect(series[0].label).toContain("Completed");
+	});
+
+	it("restores a hidden segment when its chip is clicked again", async () => {
+		const user = userEvent.setup();
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		await user.click(completedChip());
+		await user.click(completedChip());
+
+		expect(seriesOf()).toHaveLength(2);
+		expect(completedChip()).toHaveAttribute("aria-pressed", "true");
+	});
+
+	it("keeps at least one segment visible when the user tries to hide both", async () => {
+		const user = userEvent.setup();
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		await user.click(completedChip());
+		await user.click(ongoingChip());
+
+		const series = seriesOf();
+		expect(series).toHaveLength(1);
+		expect(series[0].label).toContain("Ongoing");
+	});
+
+	it("offers no chips and shows both segments when the filter is disabled (an item is picked)", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled={false}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("button", { name: "Completed visibility toggle" }),
+		).toBeNull();
+		expect(seriesOf()).toHaveLength(2);
+	});
+
+	it("resets hide-state when the filter is disabled and re-enabled (selection clears prior hide)", async () => {
+		const user = userEvent.setup();
+		const { rerender } = render(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		await user.click(completedChip());
+		expect(seriesOf()).toHaveLength(1);
+
+		rerender(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled={false}
+			/>,
+		);
+		expect(seriesOf()).toHaveLength(2);
+
+		rerender(
+			<CumulativeStateTimeChart
+				data={{ states: stateWithBothClasses }}
+				completionFilterEnabled
+			/>,
+		);
+
+		expect(completedChip()).toHaveAttribute("aria-pressed", "true");
+		expect(ongoingChip()).toHaveAttribute("aria-pressed", "true");
+		expect(seriesOf()).toHaveLength(2);
 	});
 });
