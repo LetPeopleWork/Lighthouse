@@ -928,6 +928,9 @@ function buildWidgetNodes(ctx: {
 			<CumulativeStateTimeChart
 				data={ctx.displayedCumulativeStateTime}
 				onBarClick={ctx.onCumulativeStateTimeBarClick}
+				completionFilterEnabled={
+					ctx.cumulativeStateTimeSelectedItemIds.length === 0
+				}
 				pickerSlot={
 					<CumulativeStateTimeItemPicker
 						candidates={ctx.cumulativeStateTimeCandidates}

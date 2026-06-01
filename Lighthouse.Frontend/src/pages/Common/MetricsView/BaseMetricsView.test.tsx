@@ -115,10 +115,12 @@ vi.mock("../../../components/Common/Charts/CumulativeStateTimeChart", () => ({
 		data,
 		onBarClick,
 		pickerSlot,
+		completionFilterEnabled = false,
 	}: {
 		data: { states: { state: string }[] };
 		onBarClick?: (stateName: string) => void;
 		pickerSlot?: ReactNode;
+		completionFilterEnabled?: boolean;
 	}) => (
 		<div data-testid="cumulative-state-time-chart">
 			<div data-testid="cumulative-displayed-state-count">
@@ -134,6 +136,16 @@ vi.mock("../../../components/Common/Charts/CumulativeStateTimeChart", () => ({
 			>
 				bar
 			</button>
+			{completionFilterEnabled && (
+				<>
+					<button type="button" aria-label="Completed visibility toggle">
+						Completed
+					</button>
+					<button type="button" aria-label="Ongoing visibility toggle">
+						Ongoing
+					</button>
+				</>
+			)}
 			{pickerSlot}
 		</div>
 	),
@@ -3995,6 +4007,55 @@ describe("BaseMetricsView component", () => {
 					[42],
 				);
 			});
+		});
+
+		it("shows the completion toggle only while no work item is picked", async () => {
+			const team = new Team();
+			team.name = "Toggle Team";
+			team.id = 888;
+			team.systemWIPLimit = 6;
+			team.lastUpdated = new Date();
+
+			const service = buildCumulativePickerService();
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${team.id}:category`,
+				"flow-metrics",
+			);
+
+			const user = userEvent.setup();
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["Doing", "Review"]}
+				/>,
+			);
+
+			expect(
+				await screen.findByRole("button", {
+					name: "Completed visibility toggle",
+				}),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("button", { name: "Ongoing visibility toggle" }),
+			).toBeInTheDocument();
+
+			await selectFirstCandidate(user);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("cumulative-displayed-state-count"),
+				).toHaveTextContent("1");
+			});
+
+			expect(
+				screen.queryByRole("button", { name: "Completed visibility toggle" }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: "Ongoing visibility toggle" }),
+			).not.toBeInTheDocument();
 		});
 
 		it("maps the drill-down payload into rows with a linked name and rounded days contributed", async () => {
