@@ -10,8 +10,11 @@ feature_context:
   - state-time-cumulative-view
   - remove-action-buttons
   - epic-5121-domain-events-cqrs-concurrency
+  - flow-forecasting-readiness-assessment
+  - lighthouse-user-survey
   - forecast-confidence-cap
   - forecast-minimum-data-guard
+  - cumulative-state-time-completion-filter
 
 jobs:
   - id: job-rbac-bootstrap
@@ -457,6 +460,8 @@ jobs:
     title: Spot which workflow state is the systemic constraint on the team's throughput
     persona: delivery-lead-rte
     feature_context: state-time-cumulative-view
+    refined_by:
+      - cumulative-state-time-completion-filter  # 2026-06-01: legend toggle isolates Completed-only vs Ongoing-only segments to sharpen the constraint read
     job_story: >
       When I am preparing a retrospective, an improvement-planning meeting, or a leadership
       review for my team (or release train) and the conversation is about WHERE to invest
@@ -543,6 +548,8 @@ jobs:
     persona: product-owner
     feature_context: state-time-cumulative-view
     created: 2026-05-26
+    refined_by:
+      - cumulative-state-time-completion-filter  # 2026-06-01: completion-class legend toggle (suppressed when an item is picked, so this job's narrowed view is unaffected)
     note: >
       Absorbed from former Epic 4144 feature B2 (work-item-state-history-view) on 2026-05-26
       (feature-delta D15). Served by the US-05 in-chart item picker narrowed to a single item
@@ -877,6 +884,104 @@ jobs:
         change, so no proactive reaction is possible at all today. Gap: 3 — the enabling
         capability (event emission) is genuinely missing; this epic closes the emission gap,
         the reactions follow downstream.
+
+  - id: job-assess-forecasting-flow-maturity
+    title: Self-assess delivery maturity across flow metrics and forecasting, and learn the next step
+    persona: forecasting-prospect
+    feature_context: flow-forecasting-readiness-assessment
+    created: 2026-05-30
+    note: >
+      Top-of-funnel LEAD-GEN instrument (honest framing). The business-primary objective is to
+      qualify and route a website visitor (Lighthouse Community / consulting / paid); the visitor's
+      own job is genuine but light — a credible two-axis read plus one teaching moment. Funnel
+      metrics lead the outcome KPIs. The two axes are flow-metrics maturity (what they measure) AND
+      forecasting maturity (deterministic vs probabilistic).
+    job_story: >
+      When I want an honest, fast read on how mature our delivery really is, I want a credible
+      self-assessment covering BOTH what we measure (flow metrics) AND how we forecast (deterministic
+      vs probabilistic), so I can see where we stand on both axes and what concrete step comes next.
+    dimensions:
+      functional: >
+        Obtain a defensible, framework-grounded 0-100 read on delivery maturity across two axes
+        without installing anything or booking a call, and learn the concrete next rung to climb.
+      emotional: >
+        Replace the vague "we're probably output-focused but I have no honest yardstick" unease with
+        a named, defensible position.
+      social: >
+        Carry one memorable number and a named band, anchored in Vacanti / ProKanban, into a team or
+        leadership conversation.
+    forces:
+      push: >
+        Low-grade unease about delivery predictability; generic agile-maturity quizzes that ignore
+        the estimate-vs-probabilistic distinction; missed dates with no honest explanation.
+      pull: >
+        One memorable, framework-backed number in ~5 minutes; a two-axis read; a concrete free next
+        step.
+      anxiety: >
+        Fear this is a thin sales funnel; reluctance to give an email before seeing value; fear of a
+        generic platitude result.
+      habit: >
+        Relying on gut-feel dates, a spreadsheet, or a half-remembered generic agile-maturity model.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        HONESTLY conversion-weighted. Visitor pain is mild-to-moderate (curiosity plus low-grade
+        unease), so importance is 3, not high. Current satisfaction with existing options (generic
+        agile-maturity quizzes) is 2 because some exist but none separate flow-metrics maturity from
+        forecasting maturity or anchor in probabilistic forecasting. The real value is qualifying and
+        routing warm leads; the gap that justifies building is the absence of a credible, two-axis,
+        framework-backed self-read on the market — not an acute unmet visitor need. This is a
+        top-of-funnel lead instrument that must still earn trust, not a deep-pain product job.
+
+  - id: job-give-product-feedback-and-raise-hand
+    title: Give product feedback and optionally raise a hand for a trial
+    persona: community-respondent
+    feature_context: lighthouse-user-survey
+    created: 2026-05-30
+    note: >
+      Outbound, occasional feedback job for an EXISTING community (non-premium) user. Anonymous by
+      default; an opt-in email is the only PII, volunteered solely to request a manually-issued
+      trial. The in-app nudge that surfaces this job must exclude premium users, wait ~2 weeks after
+      install, and recur only ~6-monthly so it earns a click instead of being reflexively dismissed.
+    job_story: >
+      When I have used Lighthouse Community for a while and have opinions about what works and what
+      is missing,
+      I want a low-friction, anonymous way to feed them back — and to optionally raise my hand for a
+      premium trial by volunteering my email,
+      so I can shape the tool without exposing personal data or being nagged, and ask for a trial on
+      my own terms.
+    dimensions:
+      functional: >
+        Answer a short survey on a standalone page; submit anonymously; optionally request a trial by
+        giving an email; be reachable by a respectful in-app nudge or a shared link.
+      emotional: >
+        Feel heard, not surveilled — anonymous by default, not nagged, and confident a non-paying
+        user's opinion is genuinely wanted.
+      social: >
+        Contribute to a community tool I rely on and share the survey link with peers (Slack /
+        LinkedIn / email).
+    forces:
+      push: >
+        I have opinions after weeks of use but no easy, anonymous channel; existing prompts ask for
+        identity first or appear too early.
+      pull: >
+        A two-minute, no-login, anonymous page plus a self-serve, no-strings way to ask for a trial.
+      anxiety: >
+        Is this spying on my usage?
+        Will dismissing the in-app nudge just bring it back?
+        If I give my email for a trial, where does it go and will I be spammed?
+      habit: >
+        Users reflexively ignore and dismiss in-app nags; the nudge must be calm, well-timed
+        (~2 weeks in) and rare (~6-monthly) to earn a click.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Moderately important and currently poorly served (no anonymous feedback channel), but not a
+        daily blocker; an outbound, occasional job, so the honest gap is 2, not 4.
 
   - id: job-forecast-no-false-certainty
     title: Present a forecast that leaders won't read as a guarantee
