@@ -105,7 +105,7 @@ export class ForecastService
 		const howManyForecasts = manualForecastData.howManyForecasts.map(
 			(forecast) => new HowManyForecast(forecast.probability, forecast.value),
 		);
-		return new ManualForecast(
+		const manualForecast = new ManualForecast(
 			manualForecastData.remainingItems,
 			new Date(manualForecastData.targetDate),
 			whenForecasts,
@@ -113,8 +113,10 @@ export class ForecastService
 			manualForecastData.likelihood,
 			manualForecastData.filterApplied ?? false,
 			manualForecastData.excludedSummary,
-			manualForecastData.hasSufficientData ?? true,
 		);
+		manualForecast.hasSufficientData =
+			manualForecastData.hasSufficientData ?? true;
+		return manualForecast;
 	}
 
 	async runBacktest(
