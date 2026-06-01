@@ -1,0 +1,277 @@
+schema_version: 1
+feature_id: flow-forecasting-readiness-assessment
+updated: 2026-05-30
+
+journeys:
+
+  - name: assess-forecasting-and-flow-maturity
+    goal: >
+      A website visitor who does not yet use Lighthouse gets an honest, ~5-minute, framework-backed
+      read on how mature their delivery really is — across BOTH what they measure (flow metrics) AND
+      how they forecast (deterministic vs probabilistic) — distilled to one memorable 0-100 score and
+      a named band, then walks away knowing the concrete next rung to climb.
+    persona: forecasting-prospect
+
+    business_primary_objective: >
+      This is a lead-generation instrument (D1). Its business job is to qualify the visitor and route
+      them to Lighthouse Community (free), a consulting call, or paid tiers. It must serve a genuine
+      visitor purpose to earn the email and the click — funnel metrics LEAD the outcome KPIs but a
+      "served-a-purpose" value proxy guards against a hollow funnel.
+
+    emotional_arc:
+      start: >
+        Curiosity with a thread of mild concern — "I think we're probably output-focused, but I have
+        no honest yardstick. Is this just another sales quiz?"
+      middle: >
+        Engaged and increasingly self-aware — each question names a real practice ladder; the visitor
+        recognizes their team on a rung and starts forming an opinion before the score even lands.
+      end: >
+        Oriented and slightly motivated — "We're 'Flow-aware', here's exactly the gap, and here's a
+        free, credible next step I can bring to my team." A named, defensible two-axis read they can
+        repeat to leadership.
+
+    design_decisions_resolved:
+      - id: D1
+        question: Is this primarily a visitor-help tool or a lead-gen instrument?
+        decision: >
+          Honestly a LEAD-GEN instrument, business-primary — qualify and route the visitor to
+          Community / consulting / paid. BUT it must serve a genuine visitor purpose. Funnel metrics
+          LEAD the outcome KPIs; a value proxy (breakdown dwell / CTA engagement) honors "serve a purpose".
+      - id: D2
+        question: What does the assessment cover?
+        decision: >
+          Two pillars, deliberately explicit — flow-metrics maturity (what they measure: cycle time,
+          throughput, WIP, work-item age, flow health, data activation) AND forecasting maturity
+          (deterministic estimates vs probabilistic/Monte Carlo, predictability, steering). Q2/Q3/Q5
+          lean metrics & flow-health; Q1/Q4/Q6 lean forecasting/predictability/steering. Band and CTA
+          copy must speak to both axes.
+      - id: D3
+        question: What is the genuine visitor job?
+        decision: >
+          "When I want an honest, fast read on how mature our delivery really is, I want a credible
+          self-assessment covering BOTH what we measure AND how we forecast, so I can see where we
+          stand on both axes and what concrete step comes next." Social dimension = a credible
+          framework-backed number to bring to the team/leadership.
+      - id: D4
+        question: Results granularity for v1?
+        decision: >
+          SINGLE 0-100 score + band + band-specific CTA. Band copy speaks to BOTH pillars. Per-pillar
+          sub-scores are an explicit FAST-FOLLOW, NOT v1. No "how you compare / benchmark" line in v1
+          (no data source yet).
+      - id: D5
+        question: UX research depth?
+        decision: COMPREHENSIVE — full emotional arc per step plus key error paths.
+      - id: D6
+        question: Where does data live and what platform does this establish?
+        decision: >
+          This feature ships FIRST and establishes the shared platform on the EXISTING Supabase in the
+          website repo — response/lead capture tables, email-capture handling, and a minimal internal
+          results/admin dashboard. A source/kind discriminator generalizes the schema so sibling epic
+          5124 (User Survey) can reuse it. Store NO personal info beyond the opt-in email the visitor
+          volunteers.
+      - id: D7
+        question: How does this coexist with the landing-page redesign branch?
+        decision: >
+          Work against main. The alt/redesign-2026 branch is style-only and touches no quiz/dashboard
+          files — no collision. The assessment pages must ADOPT the new visual language (scroll-reveal
+          idiom, restyled Navigation with a new assessment nav entry, consistent section styling).
+          Recorded as a DESIGN-wave styling constraint, not a blocker.
+
+    scoring_model:
+      questions: 6
+      answer_ladder: 0-3 per question
+      raw_sum_range: 0-18
+      normalization: "score = round(rawSum / 18 * 100)"
+      bands:
+        - range: "0-25"
+          name: "Flying blind"
+          pillar_read: "No flow metrics, no probabilistic forecasting — dates are gut-feel."
+          primary_cta: "Start with Lighthouse Community (free)"
+          secondary_cta: "Book a consulting call"
+        - range: "26-50"
+          name: "Drifting"
+          pillar_read: "Counting output, not measuring flow; estimates over forecasts."
+          primary_cta: "Use Community to shift output→flow and run a first probabilistic forecast"
+          secondary_cta: "Light coaching"
+        - range: "51-75"
+          name: "Flow-aware"
+          pillar_read: "Watching flow metrics, starting to forecast — the sweet-spot lead, closest to converting."
+          primary_cta: "Use Community to operationalize forecasting"
+          secondary_cta: null
+        - range: "76-100"
+          name: "Predictable"
+          pillar_read: "Running Monte Carlo / percentile forecasts and steering by them."
+          primary_cta: "Lighthouse paid / portfolio tiers"
+          secondary_cta: "Community to validate / advanced consulting"
+      cta_invariant: "The free Lighthouse Community CTA appears in EVERY band."
+      credibility_anchor: "Based on Kanban flow metrics and probabilistic forecasting principles (Vacanti / ProKanban)."
+
+    steps:
+
+      - id: step-discover-assessment
+        action: >
+          Visitor arrives on the assessment landing intro (route /assessment) from the restyled
+          Navigation entry, a homepage link, or a shared URL.
+        expected_output: >
+          A short framed intro: the promise ("an honest read on your delivery maturity in ~5 minutes"),
+          the two-pillar framing (what you measure AND how you forecast), the credibility anchor
+          (${credibilityAnchor}), and a single "Start the assessment" action. No email asked yet.
+        emotional_state:
+          entry: Curious, mildly skeptical — "is this just a sales quiz?"
+          exit: Willing — "five minutes, named framework, no email up front. Fine."
+        shared_artifacts:
+          - name: credibilityAnchor
+            source: assessment question/band content module (single source in website repo)
+            displayed_as: "${credibilityAnchor}"
+            consumers: ["intro page", "results teaser", "breakdown page", "framework attribution footer"]
+        failure_modes:
+          - Visitor bounces at intro because the promise reads salesy — mitigated by leading with the value read, not the product.
+
+      - id: step-answer-questions
+        action: >
+          Visitor answers the six questions one-at-a-time (Q1 forecasting method; Q2 delivery metrics
+          reviewed; Q3 WIP management; Q4 likelihood of hitting a committed date; Q5 where delivery data
+          lives & is it used; Q6 what happens when a deadline is at risk). Each question offers a 0-3
+          answer ladder; one selection advances.
+        expected_output: >
+          One question on screen at a time with a progress indicator (e.g. "Question 3 of 6"). The
+          selected answer's ordinal (0-3) is appended to ${answers}. Back navigation preserves prior
+          answers. Mobile-friendly single-column layout.
+        emotional_state:
+          entry: Engaged — "let's see what they actually ask."
+          exit: Self-aware — "I recognize my team on these rungs; I have a hunch where this lands."
+        shared_artifacts:
+          - name: answers
+            source: client-side assessment session state (in-memory + sessionStorage), authoritative until submit
+            displayed_as: "${answers}"
+            consumers: ["progress indicator", "score computation", "Supabase response row on submit"]
+        integration_checkpoint: >
+          On submit, ${answers} must contain exactly 6 ordinals each in 0..3 before score computation.
+        failure_modes:
+          - Visitor refreshes mid-quiz — answers restored from sessionStorage; if cleared, restart from Q1 with a gentle notice.
+          - Visitor reaches the end with fewer than 6 answers (deep link / tampering) — block scoring, return to first unanswered question.
+
+      - id: step-compute-score-and-band
+        action: Visitor submits the sixth answer; the system computes the score and assigns the band.
+        expected_output: >
+          ${rawSum} = sum of the six 0-3 answers (0-18). ${score} = round(${rawSum}/18*100) (0-100).
+          ${band} = the band whose range contains ${score} (0-25 Flying blind, 26-50 Drifting,
+          51-75 Flow-aware, 76-100 Predictable). Computation is deterministic and client-evaluable.
+        emotional_state:
+          entry: Anticipation — "here comes the number."
+          exit: Recognition — "okay, that lands about where I feared/hoped."
+        shared_artifacts:
+          - name: rawSum
+            source: pure function of ${answers} (single scoring module in website repo)
+            displayed_as: "${rawSum}"
+            consumers: ["score computation", "Supabase response row"]
+          - name: score
+            source: "round(${rawSum}/18*100), same scoring module"
+            displayed_as: "${score}"
+            consumers: ["teaser", "breakdown page", "Supabase response row", "admin dashboard"]
+          - name: band
+            source: band-mapping table in the scoring module (single source)
+            displayed_as: "${band}"
+            consumers: ["teaser", "breakdown page", "band-specific CTA", "Supabase response row", "admin dashboard"]
+        integration_checkpoint: >
+          Band boundaries must be exhaustive and non-overlapping over 0-100; every score maps to exactly one band.
+        failure_modes:
+          - Boundary scores (25, 26, 50, 51, 75, 76) must land in the documented band — covered by AC boundary examples.
+
+      - id: step-see-teaser
+        action: Visitor lands on the results teaser immediately after computation, with NO email required.
+        expected_output: >
+          The memorable number ${score} / 100 and the band name ${band} are shown prominently, with the
+          credibility anchor. The FULL breakdown (band explanation speaking to both pillars + band-specific
+          CTA) is visibly gated behind a single email-capture form: "Enter your email to see your full
+          breakdown and your recommended next step."
+        emotional_state:
+          entry: Satisfied curiosity — "there's my number."
+          exit: Motivated tension — "I want the why and the next step; the email is a fair trade now that I've seen the number."
+        shared_artifacts:
+          - name: score
+            source: scoring module
+            displayed_as: "${score}"
+            consumers: ["teaser", "breakdown page"]
+          - name: band
+            source: scoring module
+            displayed_as: "${band}"
+            consumers: ["teaser", "breakdown page"]
+        failure_modes:
+          - Visitor leaves at the teaser without giving an email — acceptable; teaser-completion is itself logged so the funnel is measurable even without capture.
+
+      - id: step-capture-email
+        action: >
+          Visitor enters their email in the gate form and submits to unlock the breakdown. The submission
+          persists the response (answers, rawSum, score, band) and the volunteered email to Supabase.
+        expected_output: >
+          On valid email: the form succeeds, ${email} and the full response are written to Supabase
+          (source/kind discriminator marks it as a readiness-assessment response), and the breakdown
+          unlocks in place. On invalid email: inline validation, no submission, focus returned to field.
+        emotional_state:
+          entry: Slight reluctance — "do I trust them with this?"
+          exit: Reassured — "one field, instant unlock, no spam promise honored."
+        shared_artifacts:
+          - name: email
+            source: email-gate form input (validated client-side via zod, server-side via insert constraint)
+            displayed_as: "${email}"
+            consumers: ["Supabase lead/response row", "admin dashboard"]
+          - name: answers
+            source: client-side session state at submit
+            displayed_as: "${answers}"
+            consumers: ["Supabase response row"]
+        integration_checkpoint: >
+          ${email} must pass validation; the response row must carry the source/kind discriminator and
+          the full ${answers}/${rawSum}/${score}/${band} so the admin dashboard and any later per-pillar
+          fast-follow can recompute without re-asking.
+        failure_modes:
+          - Invalid email format — inline error, no write, no unlock.
+          - Supabase write fails (network / RLS / outage) — the visitor still gets the breakdown (degrade open) and the failure is surfaced non-blockingly so a lead is never lost behind a hard error; retry once. The breakdown must not be held hostage to the write.
+          - Duplicate email re-takes — allowed; each response is a distinct row (de-dup is a dashboard concern, not a gate).
+
+      - id: step-read-breakdown-and-act
+        action: >
+          Visitor reads the band-specific breakdown and clicks a CTA (Community always present; consulting
+          on low bands; paid on the top band).
+        expected_output: >
+          ${breakdownContent}: the band explanation speaking to BOTH pillars (what your score says about
+          what you measure AND how you forecast), the named next rung, and the band-specific CTA set —
+          Flying blind → Community + consulting; Drifting → Community + light coaching; Flow-aware →
+          Community (operationalize forecasting); Predictable → paid/portfolio + Community/consulting.
+          The free Community CTA appears in EVERY band.
+        emotional_state:
+          entry: Eager — "tell me why and what's next."
+          exit: Oriented — "I know our gap and a credible free next step I can bring to the team."
+        shared_artifacts:
+          - name: breakdownContent
+            source: band content module keyed by ${band} (single source, same module as questions/anchor)
+            displayed_as: "${breakdownContent}"
+            consumers: ["breakdown page"]
+          - name: band
+            source: scoring module
+            displayed_as: "${band}"
+            consumers: ["breakdown content selection", "CTA selection"]
+        integration_checkpoint: >
+          The CTA set rendered must match ${band} per the locked mapping; Community CTA presence is asserted in all four bands.
+        failure_modes:
+          - Breakdown content missing for a band (content gap) — never ship; every band has authored content, asserted by test.
+
+    error_paths_summary:
+      - Refresh mid-quiz — answers restored from sessionStorage; if storage is empty, restart at Q1 with a notice. No server round-trip is needed before submit, so a refresh never loses a server record.
+      - Partial completion / deep link to results without 6 answers — scoring blocked; redirect to the first unanswered question.
+      - Invalid email at the gate — inline validation, no Supabase write, no unlock.
+      - Supabase write failure at capture — degrade open: show the breakdown anyway, retry the write once, surface a non-blocking notice; a transient outage must never cost the visitor their result or the business the obvious goodwill.
+      - Boundary scores — deterministic band mapping; boundary examples (25/26, 50/51, 75/76) are explicit ACs.
+      - Admin dashboard accessed by an unauthenticated party — dashboard is gated (Supabase auth / protected route in the website repo); no PII beyond opt-in email is ever stored, limiting blast radius.
+
+    success_signal:
+      - Visitor completes all six questions and sees a memorable number + named band in under ~5 minutes on mobile or desktop.
+      - A meaningful share of teaser-viewers trade an email to unlock the breakdown (email-capture rate KPI).
+      - Band-specific CTA click-through occurs, especially the Flow-aware sweet-spot → Community path.
+      - Breakdown dwell / CTA engagement confirms the instrument served a genuine purpose (value-proxy KPI), not just a hollow funnel.
+      - Leads flow into Supabase with the source/kind discriminator so the platform is ready to be reused by epic 5124 without rework.
+
+changelog:
+  - date: "2026-05-30"
+    feature: "flow-forecasting-readiness-assessment"
+    change: "Initial journey authored in DISCUSS wave for the free website Forecasting Readiness Assessment (ADO #5123)."
