@@ -16,7 +16,11 @@ This skill is invocable (`/ado-sync ...`) but the rules also apply **proactively
 - **Work item types in use**: `Epic`, `User Story` (often referred to as "story"), `Bug`. (Tasks exist but the user does not track work at that level here.)
 - **State models**:
   - **Epic**: `Planned` → `Active` → `Resolved` (work merged, awaiting release) → `Done` (released).
-  - **User Story / Bug**: `New` → `Active` (work in progress) → `Resolved` (committed + pushed, awaiting CI green on `main`) → `Done` (released / shipped). The "Closed" state in ADO is `Done` for this project.
+  - **User Story / Bug**: `New` → `Active` (work in progress) → `Resolved` → `Closed`.
+  - **⚠️ The two triggers — do not conflate them (a recurring mistake):**
+    - **Push to `origin main` is the trigger for `Resolved`.** The act of pushing resolves the item — you do NOT wait for CI to resolve it.
+    - **CI green on `main` is the trigger for `Closed`.** Once the pushed commits pass CI, the Story/Bug goes `Closed` (Epic goes `Done`).
+    - Never phrase it as "push, then resolve when CI is green." Resolve at push; Close at green. Two events, two transitions.
 - **Release notes tag**: `Release Notes`. The existing `/release-notes` skill picks up `Closed`-state items with this tag. Suggest adding it when the user-visible change merits it; never add it silently.
 - **Community reporter field**: `Custom.ReportedBy` — plain string (often HTML-wrapped), used only when a community member raised the work. Not your job to populate unless the user explicitly tells you.
 
