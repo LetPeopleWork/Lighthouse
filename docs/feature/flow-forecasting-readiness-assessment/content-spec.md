@@ -1,8 +1,12 @@
-# Content Spec — Flow & Forecasting Readiness Assessment (ADO #5123)
+# Content Spec — Delivery Predictability Assessment (ADO #5123)
 
-Status: content LOCKED 2026-06-01 (refinement session). This is the SSOT for the assessment
-questions, band copy, results email, and email-gate copy. Implementation lands in the **website**
-repo (`/storage/repos/website`). Sibling: [lighthouse-user-survey content-spec](../lighthouse-user-survey/content-spec.md).
+Status: content LOCKED + SHIPPED 2026-06-01. This is the SSOT for the assessment questions, band
+copy, results email, and on-page copy. Implementation is live in the **website** repo
+(`/storage/repos/website`). Sibling: [lighthouse-user-survey content-spec](../lighthouse-user-survey/content-spec.md).
+
+Public name: **Delivery Predictability Assessment** (route `/assessment` unchanged; the internal
+source discriminator stays `readiness-assessment`). Section 9 records the changes made after the
+first draft.
 
 House rules for all product copy below: no em-dashes; "We …" / "you" voice; metric names title-cased.
 
@@ -65,7 +69,7 @@ Prompt: **What happens when a target date starts to look at risk?**
 - `rawSum` = sum of six 0-3 answers (0-18).
 - `score = round(rawSum / 18 * 100)` (0-100).
 - Bands exhaustive / non-overlapping: 0-25, 26-50, 51-75, 76-100.
-- `credibilityAnchor` (unchanged): "Based on Kanban flow metrics and probabilistic forecasting principles (Vacanti / ProKanban)."
+- No credibility anchor: the "Based on … (Vacanti / ProKanban)" line was REMOVED (read as filler).
 
 ---
 
@@ -82,39 +86,40 @@ gives "where you are + your next move" on one pillar.
 - tagline: Start measuring flow and run your first forecast.
 - measureRead: You're not measuring flow yet, so you can't see how work moves. Add your team in Lighthouse and start watching your flow metrics. It's easy to get the data flowing and learn from it.
 - forecastRead: Forecasting is gut feel today. Run a forecast for your next iteration and see how it performs. The goal right now is to experiment, not to overhaul how you work.
-- on-page CTAs: ① Start with Lighthouse Community (free) → `https://letpeople.work/lighthouse`
+- on-page CTAs: ① Start with Lighthouse (free) → `https://letpeople.work/lighthouse`
 
 ### Band 2 · Drifting (26-50)
 - tagline: Swap guesses for real data and start steering.
 - measureRead: You're tracking output like Velocity or Story Points, not the flow metrics that show how predictably work moves. Start watching Throughput and Cycle Time, and set improvement goals like a Service Level Expectation (SLE) or WIP limits.
 - forecastRead: You forecast by adding up estimates, betting on what you thought would happen rather than what actually does, and a single date leaves no room to manage risk. Compare your estimates against what really happened (Cycle Time), and backtest a Monte Carlo forecast to see how it would have performed.
-- on-page CTAs: ① Start with Lighthouse Community (free)
+- on-page CTAs: ① Start with Lighthouse (free)
 
 ### Band 3 · Flow-aware (51-75) — sweet spot
 - tagline: Start acting to get more predictable.
 - measureRead: You're already watching flow metrics. Now sharpen predictability: act on leading indicators like Work Item Age, use your Service Level Expectation to drive improvements, and analyse how stable your delivery is with Process Behaviour Charts.
 - forecastRead: Your forecasting works at team level. Now extend it to the portfolio, and keep checking the trend of your deliveries over time rather than a single date.
-- on-page CTAs: ① Use Community to operationalize forecasting (free) ② Book a workshop → `https://letpeople.work/#workshops`
+- on-page CTAs: ① Use Lighthouse to operationalize forecasting (free) ② Book a workshop → `https://letpeople.work/#workshops`
 
 ### Band 4 · Predictable (76-100)
 - tagline: Fine-tune the details and scale across your portfolio.
 - measureRead: Flow metrics are second nature. Now fine-tune: study your workflow to find bottlenecks, set more ambitious Service Level Expectations and bring your percentiles closer together, and use Process Behaviour Charts to keep improving.
 - forecastRead: You forecast probabilistically and steer by it. Sharpen it further by right-sizing your features and accounting for feature WIP, then scale forecasting across teams and your portfolio.
-- on-page CTAs: ① Use Community to scale your forecasting (free) ② Book a workshop → `https://letpeople.work/#workshops`
+- on-page CTAs: ① Use Lighthouse to scale your forecasting (free) ② Book a workshop → `https://letpeople.work/#workshops`
 
-CTA invariant PRESERVED: the free Community CTA appears in all four bands. Consulting/coaching/premium
+CTA invariant PRESERVED: the free Lighthouse CTA appears in all four bands. Consulting/coaching/premium
 CTAs are removed from the on-page breakdown (they live in the email kit instead).
 
 ---
 
 ## 4. Results email (band-specific "starter kit")
 
-The on-page breakdown stays LEAN (just the reads + Community CTA). The rich kit lives ONLY in the
-email — that is the payoff that justifies the email gate. Sent via the `capture-lead` edge function
-after a valid email; copy duplicated band copy must stay in sync with section 3.
+The on-page result shows the FULL breakdown immediately (score, band, both reads, the CTAs) as the
+teaser. The email is the bonus: a band-specific starter kit (curated links + workshops + consulting)
+that is the payoff for leaving an email. Sent via the `capture-lead` edge function after a valid
+email; the duplicated band copy (tagline/reads/ctas) must stay in sync with section 3.
 
 ### Email structure
-1. Subject: `Your Flow & Forecasting Readiness results`
+1. Subject: `Your Delivery Predictability results`
 2. Greeting: `Hi there,`
 3. Intro: `Here's where you stand on flow and forecasting. Keep this for yourself, or forward it to your team.`
 4. Result block: `Your result: {score} / 100 · {band}` + the band tagline (note: middot separator, NOT an em-dash).
@@ -123,7 +128,7 @@ after a valid email; copy duplicated band copy must stay in sync with section 3.
 7. **Your starter kit** → band-specific basics links (below)
 8. **Workshops for where you are** → 2 named workshops (below) linking to `https://letpeople.work/#workshops`
 9. **Want hands-on help?** → the 3 consulting offers (same every band) linking to `https://letpeople.work/#services`
-10. Community CTA (from section 3)
+10. The free Lighthouse CTA (from section 3)
 11. `Just reply to this email and we'll point you to the right next step.`
 12. Footer: logo, `LetPeopleWork`, `contact@letpeople.work`, `https://letpeople.work`. Reply-to `contact@letpeople.work`.
 
@@ -181,13 +186,17 @@ Short descriptions (from the offerings page):
 
 ---
 
-## 5. Email-gate copy (on-page, after the teaser)
+## 5. Email invite copy (on-page, below the breakdown)
 
-Replaces the current "Enter your email to see your full breakdown and your recommended next step.":
+The breakdown is NOT gated; it shows immediately. Below it, an optional invite trades an email for
+the starter kit. Card title + body:
 
-> Want the full picture? Leave your email and we'll send your Flow & Forecasting starter kit: your
-> complete breakdown across both pillars, plus hand-picked articles, Lighthouse how-tos, and the
-> workshops that match where you are right now. No spam, just the kit.
+> Want a starter kit to go further?
+> Leave your email and we'll send hand-picked articles, Lighthouse how-tos, and the workshops that
+> match where you are right now. No spam, just the kit.
+
+On submit: record the lead, send the starter-kit email, and swap the card for a "Your starter kit is
+on its way, check your inbox" confirmation. Degrade-open on capture failure.
 
 ---
 
@@ -215,7 +224,27 @@ is purely "get your starter kit".
 ## 8. Docs / SSOT ripples (Lighthouse repo)
 
 - `docs/product/journeys/flow-forecasting-readiness-assessment.yaml` — band names, dropped nextRung,
-  CTA mapping (Community + workshop; no consulting on-page), email-as-payoff, survey-only trial.
+  CTA mapping (Lighthouse + workshop; no consulting on-page), email-as-payoff, survey-only trial.
 - `docs/feature/flow-forecasting-readiness-assessment/feature-delta.md` & `distill/scoring.feature` —
   band names in the boundary tables.
 - ADO #5123 sync per `/ado-sync`.
+
+## 9. Changes after the first draft (all SHIPPED 2026-06-01)
+
+Reconciled here so this doc matches production:
+
+- **Renamed** to **Delivery Predictability Assessment** (page title, SEO, intro, teaser label, admin
+  SEO, results-email subject `Your Delivery Predictability results`). Route + source unchanged.
+- **Credibility anchor removed** (the Vacanti / ProKanban line) from intro + teaser.
+- **CTAs say "Lighthouse", not "Community"** across page + email, keeping "(free)".
+- **Breakdown is no longer gated** — it shows immediately as the teaser. The email card became an
+  optional starter-kit invite with an "on its way" confirmation after submit (section 5).
+- **`wantsTrial` fully removed** from 5123 (UI + `capture-lead` payload + leads insert writes
+  `wants_trial: false`).
+- **Migrations** (apply with `supabase db push`; CI does NOT run migrations):
+  - `0004_leads_organization.sql` — `organization` column (used by the 5124 survey trial).
+  - `0005_responses_insert_authenticated.sql` — widen the responses anon-insert RLS policy to
+    `anon, authenticated` so a signed-in teammate taking the public assessment isn't 403'd.
+  - `0006_rename_bands_historical.sql` — rename historical rows `Output-focused`→`Drifting`,
+    `Probabilistic`→`Predictable` so they tally in the dashboard.
+- **Dashboard hardened**: `summarizeDashboard` skips unknown/old bands instead of throwing.

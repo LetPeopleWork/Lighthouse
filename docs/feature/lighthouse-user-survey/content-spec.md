@@ -97,6 +97,9 @@ Prompt: **How did you hear about Lighthouse?**
 ### Fields
 - `email` (required when opting in; zod-validated).
 - `organization` (required when opting in) — **NEW**. Needed to issue the license.
+- SHIPPED refinement: the email + organization inputs are **hidden until the trial checkbox is
+  ticked** (they otherwise read as required). Validation enforces a valid email + non-empty org only
+  on opt-in.
 
 ### Rules
 - Trial is OPT-IN; the survey submits anonymously without it.
