@@ -368,6 +368,12 @@ Each entry follows:
 
 ## Infra & flakes
 
+### 2026-06-01 — Suspected flake: `ForecastServiceTest.When_RealData_RunRealForecast_ExpectCorrectResults` boundary drift
+- **Symptom**: `Verify Backend / backend` red (run 26768739413, commit `c9f78775`) with `2718 passed, 1 failed`. The one failure: `Assert.That(forecast.GetProbability(70), Is.InRange(29, 31))` → `But was: 32`. The push that triggered it (survey-nudge S6964 fix + #5144 metrics docs) touches nothing in the Monte Carlo forecast engine.
+- **Root cause**: `ForecastService` runs a seedless Monte Carlo simulation; `ForecastServiceTest` asserts the resulting percentiles with narrow `Is.InRange(...)` windows (2-3 wide, e.g. lines 99-187, 201). A probability landing one outside the window (32 vs 29-31) is stochastic boundary drift, not a regression. Single failure in 2720, passes on re-run.
+- **Fix**: re-ran the failed job only (`gh run rerun <id> --failed`) on the same commit — passed. Did NOT quarantine or widen the range (would be an unrelated edit + commit cycle). NOT caused by the survey-nudge or #5144 changes.
+- **Rule going forward**: a single red `Verify Backend / backend` test that is a `ForecastService*` / `*RunRealForecast*` / Monte Carlo `GetProbability(...) Is.InRange(...)` assertion off-by-one outside its window, with 2700+ others green and a diff that doesn't touch `Services/Implementation/Forecast/**`, is a stochastic flake — re-run the failed job, don't hunt for a code cause. If the SAME percentile flakes repeatedly (Recurrence climbs), THEN propose seeding the simulation RNG or widening that window as a deliberate, separately-committed fix. Recurrence: 1.
+
 ### 2026-06-01 — `verifyauth` "Run keycloak" can fail on a quay.io registry outage (external, not our code)
 - **Symptom**: `Verify Authentication / verifyauth` red at the **"Run keycloak"** step (`docker compose up -d` in `examples/keycloak`), cascading into "Wait for Lighthouse to restart (RBAC tests)" and "Run RBAC Playwright tests". Two consecutive runs failed with DIFFERENT gateway errors pulling the image: `502 Bad Gateway` then `504 Gateway Time-out` from `quay.io` while pulling `quay.io/keycloak/keycloak:latest`.
 - **Root cause**: quay.io (the Red Hat container registry that hosts the official Keycloak image) had a degradation window. The compose file is unchanged by our code; the step only pulls + starts a container, so no application code runs. Two *different* gateway codes across runs is the signature of an unstable registry, not a deterministic/code failure.
