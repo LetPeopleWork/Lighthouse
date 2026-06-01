@@ -568,6 +568,28 @@ namespace Lighthouse.Backend.Tests.API
 
         #endregion
 
+        [Test]
+        public async Task RunManualForecast_TeamHasInsufficientData_DtoFlagsInsufficientData()
+        {
+            var expectedTeam = new Team();
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
+                .Returns(new HowManyForecast());
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(expectedTeam, It.IsAny<ThroughputFilterMode>()))
+                .Returns(new ForecastThroughputStatus(new RunChartData(), false, null, HasSufficientData: false));
+
+            var subject = CreateSubject();
+
+            var input = new ForecastController.ManualForecastInputDto { TargetDate = DateTime.Now.AddDays(3) };
+            var result = await subject.RunManualForecastAsync(12, input);
+
+            var okResult = result.Result as OkObjectResult;
+            var manualForecast = okResult?.Value as ManualForecastDto;
+            Assert.That(manualForecast?.HasSufficientData, Is.False);
+        }
+
         private ForecastController CreateSubject()
         {
             return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object);

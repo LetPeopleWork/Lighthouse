@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -110,7 +111,8 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetFromCacheIfExists(team, $"{ForecastStatusMetricIdentifier}_{mode}", () =>
             {
                 var unfiltered = ComputeBlackoutAwareThroughput(team);
-                return ApplyForecastFilter(team, unfiltered, mode);
+                var status = ApplyForecastFilter(team, unfiltered, mode);
+                return status with { HasSufficientData = ForecastDataSufficiencyPolicy.HasEnoughData(status.Throughput) };
             }, logger);
         }
 

@@ -89,4 +89,49 @@ describe("ForecastLikelihood component", () => {
 			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
 		});
 	});
+
+	describe("suppresses a manual forecast built on too little throughput data", () => {
+		it("shows a not-enough-data message instead of a likelihood when the team lacks throughput history", () => {
+			render(
+				<ForecastLikelihood
+					remainingItems={5}
+					targetDate={when}
+					likelihood={100}
+					hasSufficientData={false}
+				/>,
+			);
+
+			expect(screen.getByText(/not enough.*data/i)).toBeInTheDocument();
+			expect(screen.queryByText("100.00%")).not.toBeInTheDocument();
+			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
+		});
+
+		it("renders the likelihood as usual when the team has enough throughput data", () => {
+			render(
+				<ForecastLikelihood
+					remainingItems={5}
+					targetDate={when}
+					likelihood={70}
+					hasSufficientData={true}
+				/>,
+			);
+
+			expect(screen.getByText("70.00%")).toBeInTheDocument();
+			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();
+		});
+
+		it("does not suppress a completed forecast with no remaining work even when flagged insufficient", () => {
+			render(
+				<ForecastLikelihood
+					remainingItems={0}
+					targetDate={when}
+					likelihood={100}
+					hasSufficientData={false}
+				/>,
+			);
+
+			expect(screen.getByText("100.00%")).toBeInTheDocument();
+			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();
+		});
+	});
 });

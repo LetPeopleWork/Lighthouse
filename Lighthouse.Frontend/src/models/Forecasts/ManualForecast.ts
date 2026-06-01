@@ -9,6 +9,7 @@ export interface IManualForecast {
 	likelihood: number;
 	filterApplied: boolean;
 	excludedSummary?: string;
+	hasSufficientData?: boolean;
 }
 
 export class ManualForecast implements IManualForecast {
@@ -19,6 +20,7 @@ export class ManualForecast implements IManualForecast {
 	targetDate: Date;
 	filterApplied: boolean;
 	excludedSummary?: string;
+	hasSufficientData: boolean;
 
 	constructor(
 		remainingItems: number,
@@ -28,6 +30,7 @@ export class ManualForecast implements IManualForecast {
 		likelihood = 0,
 		filterApplied = false,
 		excludedSummary?: string,
+		hasSufficientData = true,
 	) {
 		this.remainingItems = remainingItems;
 		this.targetDate = targetDate;
@@ -36,5 +39,6 @@ export class ManualForecast implements IManualForecast {
 		this.likelihood = likelihood;
 		this.filterApplied = filterApplied;
 		this.excludedSummary = excludedSummary;
+		this.hasSufficientData = hasSufficientData;
 	}
 }

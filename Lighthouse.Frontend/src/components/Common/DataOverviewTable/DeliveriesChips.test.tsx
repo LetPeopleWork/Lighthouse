@@ -288,6 +288,79 @@ describe("DeliveriesChips", () => {
 		});
 	});
 
+	describe("suppresses a portfolio delivery forecast built on too little throughput data", () => {
+		it("shows a not-enough-data indicator instead of a percentage when the owning team lacks throughput history", async () => {
+			const mockDeliveries = [
+				getMockDelivery({
+					id: 1,
+					name: "New Team Release",
+					likelihoodPercentage: 100,
+					remainingWork: 25,
+					hasSufficientData: false,
+					portfolioId: 100,
+				}),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+
+			renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+			await waitFor(() => {
+				expect(screen.getByText(/not enough.*data/i)).toBeInTheDocument();
+			});
+			expect(screen.queryByText(/Likelihood: 100%/)).not.toBeInTheDocument();
+			expect(screen.queryByText(/Likelihood: >95%/)).not.toBeInTheDocument();
+		});
+
+		it("still shows the precise likelihood when the owning team has enough throughput data", async () => {
+			const mockDeliveries = [
+				getMockDelivery({
+					id: 1,
+					name: "Mature Team Release",
+					likelihoodPercentage: 80,
+					remainingWork: 25,
+					hasSufficientData: true,
+					portfolioId: 100,
+				}),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+
+			renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Mature Team Release.*Likelihood: 80%/),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();
+		});
+
+		it("does not suppress a completed delivery with no remaining work even when flagged insufficient", async () => {
+			const mockDeliveries = [
+				getMockDelivery({
+					id: 1,
+					name: "Done Release",
+					likelihoodPercentage: 100,
+					remainingWork: 0,
+					hasSufficientData: false,
+					portfolioId: 100,
+				}),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+
+			renderWithProviders(<DeliveriesChips portfolioId={100} />);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText(/Done Release.*Likelihood: 100%/),
+				).toBeInTheDocument();
+			});
+			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();
+		});
+	});
+
 	it("should not fetch deliveries when portfolioId is 0 or undefined", () => {
 		renderWithProviders(<DeliveriesChips portfolioId={0} />);
 

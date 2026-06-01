@@ -1653,6 +1653,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         #endregion
 
+        [Test]
+        public void GetForecastThroughputStatus_FewerThanFiveDaysWithClosedItems_HasSufficientDataIsFalse()
+        {
+            testTeam.ThroughputHistory = 10;
+            foreach (var daysAgo in new[] { 1, 2, 3, 4 })
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-daysAgo);
+            }
+
+            var status = subject.GetForecastThroughputStatus(testTeam);
+
+            Assert.That(status.HasSufficientData, Is.False);
+        }
+
+        [Test]
+        public void GetForecastThroughputStatus_ExactlyFiveDaysWithClosedItems_HasSufficientDataIsTrue()
+        {
+            testTeam.ThroughputHistory = 10;
+            foreach (var daysAgo in new[] { 1, 2, 3, 4, 5 })
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-daysAgo);
+            }
+
+            var status = subject.GetForecastThroughputStatus(testTeam);
+
+            Assert.That(status.HasSufficientData, Is.True);
+        }
+
         private WorkItem AddWorkItem(StateCategories stateCategory, int teamId, string parentReference)
         {
             var workItem = new WorkItem

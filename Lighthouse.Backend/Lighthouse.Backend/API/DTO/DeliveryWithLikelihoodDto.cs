@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.API.DTO
         public double LikelihoodPercentage { get; set; }
 
         public List<WhenForecastDto> CompletionDates { get; set; } = [];
+
+        public bool HasSufficientData { get; set; } = true;
     }
 
     public class DeliveryWithLikelihoodDto
@@ -36,7 +38,9 @@ namespace Lighthouse.Backend.API.DTO
         public List<int> Features { get; set; } = [];
 
         public List<FeatureLikelihoodDto> FeatureLikelihoods { get; set; } = [];
-        
+
+        public bool HasSufficientData { get; set; } = true;
+
         public DeliverySelectionMode SelectionMode { get; set; }
 
         public List<WorkItemRuleCondition> Rules { get; set; } = [];
@@ -75,6 +79,7 @@ namespace Lighthouse.Backend.API.DTO
                 TotalWork = totalWork,
                 Features = delivery.Features.Select(f => f.Id).ToList(),
                 FeatureLikelihoods = featureLikelihoods,
+                HasSufficientData = leastLikelyFeature?.HasSufficientData ?? true,
                 SelectionMode = delivery.SelectionMode,
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
@@ -145,6 +150,7 @@ namespace Lighthouse.Backend.API.DTO
                     FeatureId = feature.Id,
                     LikelihoodPercentage = likelihood,
                     CompletionDates = completionDates.ToList(),
+                    HasSufficientData = feature.Forecast.HasSufficientData,
                 });
             }
 

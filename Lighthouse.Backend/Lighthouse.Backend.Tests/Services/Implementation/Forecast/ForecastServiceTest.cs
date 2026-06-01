@@ -524,6 +524,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [Test]
+        public async Task When_TeamHasInsufficientData_FlagsForecastAsInsufficient()
+        {
+            var team = CreateTeam(1, [1, 0, 1, 0, 1, 0, 1]);
+            var thinThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 0, 1, 0, 1, 0, 1]));
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting))
+                .Returns(new ForecastThroughputStatus(thinThroughput, false, null, HasSufficientData: false));
+
+            var subject = CreateSubjectWithRealThroughput();
+
+            var forecast = await subject.When(team, 5);
+
+            Assert.That(forecast.HasSufficientData, Is.False);
+        }
+
         private Feature SetupFeature(Team team, int remainingItems)
         {
             return SetupFeature([(team, remainingItems, remainingItems)]);

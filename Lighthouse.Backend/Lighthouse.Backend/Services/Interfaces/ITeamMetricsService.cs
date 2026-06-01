@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
-    public sealed record ForecastThroughputStatus(RunChartData Throughput, bool FilterApplied, string? ExcludedSummary);
+    public sealed record ForecastThroughputStatus(RunChartData Throughput, bool FilterApplied, string? ExcludedSummary, bool HasSufficientData = true);
 
     public interface ITeamMetricsService
     {

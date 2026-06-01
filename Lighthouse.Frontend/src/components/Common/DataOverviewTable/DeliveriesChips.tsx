@@ -7,7 +7,9 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { formatLikelihood } from "../../../utils/forecast/formatLikelihood";
+import { isForecastDataInsufficient } from "../../../utils/forecast/isForecastDataInsufficient";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
+import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../Forecasts/InsufficientForecastDataIndicator";
 
 export interface DeliveriesChipsProps {
 	portfolioId: number;
@@ -52,6 +54,15 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 		<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
 			{deliveries.map((delivery) => {
 				const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
+				const forecastSummary = isForecastDataInsufficient({
+					hasRemainingWork: delivery.remainingWork > 0,
+					hasSufficientData: delivery.hasSufficientData,
+				})
+					? INSUFFICIENT_FORECAST_DATA_SHORT
+					: `Likelihood: ${formatLikelihood(delivery.likelihoodPercentage, {
+							hasRemainingWork: delivery.remainingWork > 0,
+							precision: "round",
+						})}`;
 
 				return (
 					<Link
@@ -60,13 +71,7 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 						style={{ textDecoration: "none" }}
 					>
 						<Chip
-							label={`${delivery.name} | ${delivery.getFeatureCount()} ${featuresTerm} | Likelihood: ${formatLikelihood(
-								delivery.likelihoodPercentage,
-								{
-									hasRemainingWork: delivery.remainingWork > 0,
-									precision: "round",
-								},
-							)}`}
+							label={`${delivery.name} | ${delivery.getFeatureCount()} ${featuresTerm} | ${forecastSummary}`}
 							size="small"
 							sx={{
 								bgcolor: forecastLevel.color,

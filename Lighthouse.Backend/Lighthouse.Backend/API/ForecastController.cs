@@ -86,6 +86,7 @@ namespace Lighthouse.Backend.API
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
                     manualForecast.FilterApplied = whenForecast.FilterApplied;
                     manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
+                    manualForecast.HasSufficientData = whenForecast.HasSufficientData;
 
                     if (timeToTargetDate > 0)
                     {
@@ -104,6 +105,7 @@ namespace Lighthouse.Backend.API
                 manualForecast.HowManyForecasts.AddRange(howManyForecast.CreateForecastDtos(50, 70, 85, 95));
                 manualForecast.FilterApplied = status.FilterApplied;
                 manualForecast.ExcludedSummary = status.ExcludedSummary;
+                manualForecast.HasSufficientData = status.HasSufficientData;
 
                 return manualForecast;
             });

@@ -21,6 +21,7 @@
             }
 
             FilterApplied = materialized.Any(f => f.FilterApplied);
+            HasSufficientData = materialized.Count == 0 || materialized.All(f => f.HasSufficientData);
             var summaries = materialized
                 .Where(f => !string.IsNullOrWhiteSpace(f.ExcludedSummary))
                 .Select(f => f.ExcludedSummary!)

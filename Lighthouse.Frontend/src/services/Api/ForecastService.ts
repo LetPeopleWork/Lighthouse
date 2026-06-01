@@ -113,6 +113,7 @@ export class ForecastService
 			manualForecastData.likelihood,
 			manualForecastData.filterApplied ?? false,
 			manualForecastData.excludedSummary,
+			manualForecastData.hasSufficientData ?? true,
 		);
 	}
 

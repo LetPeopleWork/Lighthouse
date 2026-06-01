@@ -157,6 +157,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 forecast.FilterApplied = status.FilterApplied;
                 forecast.ExcludedSummary = status.ExcludedSummary;
+                forecast.HasSufficientData = status.HasSufficientData;
             }
             return forecast;
         }

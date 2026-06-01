@@ -414,6 +414,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 							remainingItems={manualForecastResult.remainingItems}
 							targetDate={manualForecastResult.targetDate}
 							likelihood={manualForecastResult.likelihood}
+							hasSufficientData={manualForecastResult.hasSufficientData}
 						/>
 					</Grid>
 				)}

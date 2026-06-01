@@ -8,6 +8,7 @@ import {
 export interface IFeatureLikelihood {
 	featureId: number;
 	likelihoodPercentage: number;
+	hasSufficientData?: boolean;
 }
 
 export interface IDelivery {
@@ -26,6 +27,7 @@ export interface IDelivery {
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
+	hasSufficientData?: boolean;
 }
 
 export class Delivery implements IDelivery {
@@ -44,6 +46,7 @@ export class Delivery implements IDelivery {
 	rules?: WorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
+	hasSufficientData!: boolean;
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -57,6 +60,7 @@ export class Delivery implements IDelivery {
 		delivery.remainingWork = data.remainingWork || 0;
 		delivery.totalWork = data.totalWork || 0;
 		delivery.featureLikelihoods = data.featureLikelihoods || [];
+		delivery.hasSufficientData = data.hasSufficientData ?? true;
 		delivery.selectionMode = data.selectionMode ?? DeliverySelectionMode.Manual;
 		delivery.rules = data.rules?.map((r) =>
 			WorkItemRuleCondition.fromBackend(r),

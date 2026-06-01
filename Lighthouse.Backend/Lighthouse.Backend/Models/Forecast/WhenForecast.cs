@@ -26,5 +26,7 @@
         public bool FilterApplied { get; set; }
 
         public string? ExcludedSummary { get; set; }
+
+        public bool HasSufficientData { get; set; } = true;
     }
 }

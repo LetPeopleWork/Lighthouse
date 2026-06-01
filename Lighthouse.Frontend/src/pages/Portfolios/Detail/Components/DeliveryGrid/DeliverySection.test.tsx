@@ -351,6 +351,105 @@ describe("DeliverySection", () => {
 		});
 	});
 
+	describe("suppresses a delivery forecast built on too little throughput data", () => {
+		it("shows a not-enough-data label on the delivery header instead of a likelihood", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "New Team Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 100;
+			delivery.progress = 10;
+			delivery.remainingWork = 4;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [];
+			delivery.completionDates = [];
+			delivery.hasSufficientData = false;
+
+			render(
+				<MemoryRouter>
+					<DeliverySection {...mockProps} delivery={delivery} />
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText(/not enough data/i)).toBeInTheDocument();
+			expect(screen.queryByText("Likelihood: 100%")).not.toBeInTheDocument();
+			expect(screen.queryByText("Likelihood: >95%")).not.toBeInTheDocument();
+		});
+
+		it("shows a not-enough-data label on a per-feature chip instead of a percentage", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "Test Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 75;
+			delivery.progress = 10;
+			delivery.remainingWork = 4;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [
+				{ featureId: 1, likelihoodPercentage: 100, hasSufficientData: false },
+			];
+			delivery.completionDates = [];
+
+			const feature = new Feature();
+			feature.id = 1;
+			feature.name = "Test Feature";
+			feature.remainingWork = { "1": 5 };
+			feature.totalWork = { "1": 10 };
+			feature.forecasts = [];
+
+			render(
+				<MemoryRouter>
+					<DeliverySection
+						{...mockProps}
+						delivery={delivery}
+						features={[feature]}
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText(/not enough data/i)).toBeInTheDocument();
+			expect(screen.queryByText("100%")).not.toBeInTheDocument();
+		});
+
+		it("keeps the per-feature percentage for a completed feature with no work left even when flagged insufficient", () => {
+			const delivery = new Delivery();
+			delivery.id = 1;
+			delivery.name = "Test Delivery";
+			delivery.date = new Date("2025-01-31").toISOString();
+			delivery.features = [1];
+			delivery.likelihoodPercentage = 75;
+			delivery.progress = 100;
+			delivery.remainingWork = 0;
+			delivery.totalWork = 10;
+			delivery.featureLikelihoods = [
+				{ featureId: 1, likelihoodPercentage: 100, hasSufficientData: false },
+			];
+			delivery.completionDates = [];
+
+			const feature = new Feature();
+			feature.id = 1;
+			feature.name = "Test Feature";
+			feature.remainingWork = { "1": 0 };
+			feature.totalWork = { "1": 10 };
+			feature.forecasts = [];
+
+			render(
+				<MemoryRouter>
+					<DeliverySection
+						{...mockProps}
+						delivery={delivery}
+						features={[feature]}
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(screen.getByText("100%")).toBeInTheDocument();
+			expect(screen.queryByText(/not enough data/i)).not.toBeInTheDocument();
+		});
+	});
+
 	describe("WorkItemsDialog", () => {
 		it("should not show WorkItemsDialog by default", () => {
 			render(

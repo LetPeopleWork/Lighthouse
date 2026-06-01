@@ -207,5 +207,51 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(deliveryDto.FeatureLikelihoods[2].CompletionDates, Has.Count.EqualTo(3)); // Even without forecast
             }
         }
+
+        [Test]
+        public void Should_Mirror_Insufficient_Data_From_Governing_Feature()
+        {
+            var deliveryDate = DateTime.UtcNow.AddDays(30);
+
+            var sufficientForecast = CreateForecastWithLikelihood(80);
+            var insufficientForecast = CreateForecastWithLikelihood(60);
+            insufficientForecast.HasSufficientData = false;
+
+            var sufficientFeature = new Feature { Id = 1 };
+            sufficientFeature.Forecasts.Add(sufficientForecast);
+            sufficientFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
+            var governingFeature = new Feature { Id = 2 };
+            governingFeature.Forecasts.Add(insufficientForecast);
+            governingFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+
+            var delivery = new Delivery { Id = 1, Name = "Q1 Release", Date = deliveryDate };
+            delivery.Features.Add(sufficientFeature);
+            delivery.Features.Add(governingFeature);
+
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveryDto.HasSufficientData, Is.False);
+                Assert.That(deliveryDto.FeatureLikelihoods[0].HasSufficientData, Is.True);
+                Assert.That(deliveryDto.FeatureLikelihoods[1].HasSufficientData, Is.False);
+            }
+        }
+
+        private static WhenForecast CreateForecastWithLikelihood(int percentInThirtyDays)
+        {
+            var remainder = 100 - percentInThirtyDays;
+            var simulationResult = new Dictionary<int, int>
+            {
+                { 30, percentInThirtyDays },
+                { 40, remainder },
+            };
+            var forecast = new WhenForecast();
+            forecast.GetType()
+                .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                .Invoke(forecast, [simulationResult]);
+            return forecast;
+        }
     }
 }
