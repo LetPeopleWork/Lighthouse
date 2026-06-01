@@ -6,22 +6,14 @@ export const INSUFFICIENT_FORECAST_DATA_MESSAGE =
 
 export const INSUFFICIENT_FORECAST_DATA_SHORT = "Not enough data";
 
-interface InsufficientForecastDataIndicatorProps {
-	variant?: "full" | "compact";
-}
-
-const InsufficientForecastDataIndicator: React.FC<
-	InsufficientForecastDataIndicatorProps
-> = ({ variant = "full" }) => {
+const InsufficientForecastDataIndicator: React.FC = () => {
 	return (
 		<Typography
-			variant={variant === "compact" ? "caption" : "body2"}
+			variant="body2"
 			sx={{ fontStyle: "italic", color: "text.secondary" }}
 			data-testid="insufficient-forecast-data"
 		>
-			{variant === "compact"
-				? INSUFFICIENT_FORECAST_DATA_SHORT
-				: INSUFFICIENT_FORECAST_DATA_MESSAGE}
+			{INSUFFICIENT_FORECAST_DATA_MESSAGE}
 		</Typography>
 	);
 };

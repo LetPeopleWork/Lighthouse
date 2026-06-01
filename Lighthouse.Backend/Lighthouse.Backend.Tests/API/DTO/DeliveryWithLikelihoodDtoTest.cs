@@ -214,6 +214,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var deliveryDate = DateTime.UtcNow.AddDays(30);
 
             var sufficientForecast = CreateForecastWithLikelihood(80);
+            sufficientForecast.HasSufficientData = true;
             var insufficientForecast = CreateForecastWithLikelihood(60);
             insufficientForecast.HasSufficientData = false;
 
