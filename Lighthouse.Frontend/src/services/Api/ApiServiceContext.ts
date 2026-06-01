@@ -38,6 +38,10 @@ import {
 	SuggestionService,
 } from "./SuggestionService";
 import {
+	type ISurveyNudgeService,
+	SurveyNudgeService,
+} from "./SurveyNudgeService";
+import {
 	type ISystemInfoService,
 	SystemInfoService,
 } from "./SystemInfoService";
@@ -77,6 +81,7 @@ export interface IApiServiceContext {
 	deliveryService: IDeliveryService;
 	wizardService: IWizardService;
 	systemInfoService: ISystemInfoService;
+	surveyNudgeService: ISurveyNudgeService;
 	blackoutPeriodService: IBlackoutPeriodService;
 	databaseManagementService: IDatabaseManagementService;
 	oauthService: IOAuthService;
@@ -105,6 +110,7 @@ const defaultServices: IApiServiceContext = {
 	deliveryService: new DeliveryService(),
 	wizardService: new WizardService(),
 	systemInfoService: new SystemInfoService(),
+	surveyNudgeService: new SurveyNudgeService(),
 	blackoutPeriodService: new BlackoutPeriodService(),
 	databaseManagementService: new DatabaseManagementService(),
 	oauthService: new OAuthService(),

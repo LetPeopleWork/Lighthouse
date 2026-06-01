@@ -10,6 +10,12 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const string RoundtripFormat = "O";
 
+        private const int RemindLaterBackOffThreshold = 2;
+
+        private static readonly TimeSpan RemindLaterCadence = TimeSpan.FromDays(7);
+
+        private const int QuietCadenceInMonths = 6;
+
         public RefreshSettings GetFeatureRefreshSettings()
         {
             return CreateRefreshSettings(
@@ -79,6 +85,73 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return parsed;
+        }
+
+        public DateTimeOffset? GetSurveyNudgeNextEligibleAt()
+        {
+            var setting = repository.GetByPredicate(s => s.Key == AppSettingKeys.SurveyNudgeNextEligibleAt);
+            if (setting == null)
+            {
+                return null;
+            }
+
+            if (!DateTimeOffset.TryParse(setting.Value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+            {
+                return null;
+            }
+
+            return parsed;
+        }
+
+        public async Task RecordSurveyNudgeAction(SurveyNudgeAction action)
+        {
+            var now = timeProvider.GetUtcNow().ToUniversalTime();
+            var remindLaterCount = action == SurveyNudgeAction.RemindLater ? GetRemindLaterCount() + 1 : 0;
+            var nextEligibleAt = ComputeNextEligibleAt(action, now, remindLaterCount);
+
+            UpsertSetting(AppSettingKeys.SurveyNudgeNextEligibleAt, nextEligibleAt.ToString(RoundtripFormat, CultureInfo.InvariantCulture));
+            UpsertSetting(AppSettingKeys.SurveyNudgeRemindLaterCount, remindLaterCount.ToString(CultureInfo.InvariantCulture));
+
+            await repository.Save();
+        }
+
+        private static DateTimeOffset ComputeNextEligibleAt(SurveyNudgeAction action, DateTimeOffset now, int remindLaterCount)
+        {
+            if (action != SurveyNudgeAction.RemindLater)
+            {
+                return now.AddMonths(QuietCadenceInMonths);
+            }
+
+            if (remindLaterCount > RemindLaterBackOffThreshold)
+            {
+                return now.AddMonths(QuietCadenceInMonths);
+            }
+
+            return now.Add(RemindLaterCadence);
+        }
+
+        private int GetRemindLaterCount()
+        {
+            var setting = repository.GetByPredicate(s => s.Key == AppSettingKeys.SurveyNudgeRemindLaterCount);
+            if (setting == null || !int.TryParse(setting.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count))
+            {
+                return 0;
+            }
+
+            return count;
+        }
+
+        private void UpsertSetting(string key, string value)
+        {
+            var existing = repository.GetByPredicate(s => s.Key == key);
+            if (existing == null)
+            {
+                repository.Add(new AppSetting { Key = key, Value = value });
+                return;
+            }
+
+            existing.Value = value;
+            repository.Update(existing);
         }
 
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)

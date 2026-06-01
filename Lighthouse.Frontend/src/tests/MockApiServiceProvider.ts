@@ -16,6 +16,7 @@ import type { IPortfolioService } from "../services/Api/PortfolioService";
 import type { IRbacService } from "../services/Api/RbacService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
+import type { ISurveyNudgeService } from "../services/Api/SurveyNudgeService";
 import type { ISystemInfoService } from "../services/Api/SystemInfoService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { ITerminologyService } from "../services/Api/TerminologyService";
@@ -55,6 +56,7 @@ export const createMockApiServiceContext = (
 		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
 		systemInfoService: createMockSystemInfoService(),
+		surveyNudgeService: createMockSurveyNudgeService(),
 		blackoutPeriodService:
 			null as unknown as IApiServiceContext["blackoutPeriodService"],
 		databaseManagementService:
@@ -354,6 +356,13 @@ export const createMockSystemInfoService = (): ISystemInfoService => {
 		getRefreshLogs: vi.fn(),
 		getBackendSbom: vi.fn(),
 		getFrontendSbom: vi.fn(),
+	};
+};
+
+export const createMockSurveyNudgeService = (): ISurveyNudgeService => {
+	return {
+		getState: vi.fn().mockResolvedValue({ nextEligibleAt: null }),
+		recordAction: vi.fn().mockResolvedValue(undefined),
 	};
 };
 

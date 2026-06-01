@@ -1,7 +1,7 @@
 export interface NudgeEligibilityInput {
 	isPremium: boolean | undefined | null;
 	installTimestamp: string | undefined | null;
-	lastShownAt?: string | undefined | null;
+	nextEligibleAt?: string | undefined | null;
 	now?: Date;
 }
 
@@ -34,6 +34,11 @@ export const evaluateNudgeEligibility = (
 
 	const now = (input.now ?? new Date()).getTime();
 	if (now - installedAt < TWO_WEEKS_IN_MILLISECONDS) {
+		return { shouldShow: false };
+	}
+
+	const nextEligibleAt = parseInstant(input.nextEligibleAt);
+	if (nextEligibleAt !== null && now < nextEligibleAt) {
 		return { shouldShow: false };
 	}
 

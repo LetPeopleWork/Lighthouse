@@ -17,5 +17,9 @@
         public const string RefreshLogRetentionRuns = "RefreshLog:RetentionRuns";
 
         public const string InstallTimestamp = "Install:Timestamp";
+
+        public const string SurveyNudgeNextEligibleAt = "SurveyNudge:NextEligibleAt";
+
+        public const string SurveyNudgeRemindLaterCount = "SurveyNudge:RemindLaterCount";
     }
 }

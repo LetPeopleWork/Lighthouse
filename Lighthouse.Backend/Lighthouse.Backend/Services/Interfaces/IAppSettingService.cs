@@ -17,5 +17,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task EnsureInstallTimestamp();
 
         DateTimeOffset? GetInstallTimestamp();
+
+        DateTimeOffset? GetSurveyNudgeNextEligibleAt();
+
+        Task RecordSurveyNudgeAction(SurveyNudgeAction action);
     }
 }

@@ -94,6 +94,98 @@ namespace Lighthouse.Backend.Tests.Services
             Assert.That(service.GetInstallTimestamp(), Is.Null);
         }
 
+        [Test]
+        public void GetSurveyNudgeNextEligibleAt_NeverActedUpon_ReturnsNull()
+        {
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.Null);
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_TakeSurvey_QuietsForAboutSixMonths()
+        {
+            EnableUpdate();
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.TakeSurvey);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddMonths(6)));
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_NoInterest_QuietsForAboutSixMonths()
+        {
+            EnableUpdate();
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.NoInterest);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddMonths(6)));
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_RemindLater_QuietsForAboutOneWeek()
+        {
+            EnableUpdate();
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddDays(7)));
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_ThirdRemindLater_BacksOffToAboutSixMonths()
+        {
+            EnableUpdate();
+            var timeProvider = new FakeTimeProvider(FirstRunInstant);
+            var service = CreateService(timeProvider);
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddMonths(6)));
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_TakeSurveyAfterReminders_ResetsTheRemindLaterBackOff()
+        {
+            EnableUpdate();
+            var service = CreateService(new FakeTimeProvider(FirstRunInstant));
+
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.TakeSurvey);
+            await service.RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+
+            Assert.That(service.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddDays(7)));
+        }
+
+        [Test]
+        public async Task RecordSurveyNudgeAction_PersistsChoiceSoCadenceSurvivesRestart()
+        {
+            EnableUpdate();
+            var timeProvider = new FakeTimeProvider(FirstRunInstant);
+            await CreateService(timeProvider).RecordSurveyNudgeAction(SurveyNudgeAction.RemindLater);
+
+            var serviceAfterRestart = CreateService(new FakeTimeProvider(FirstRunInstant.AddDays(1)));
+
+            Assert.That(serviceAfterRestart.GetSurveyNudgeNextEligibleAt(), Is.EqualTo(FirstRunInstant.AddDays(7)));
+        }
+
+        private void EnableUpdate()
+        {
+            repositoryMock
+                .Setup(repository => repository.Update(It.IsAny<AppSetting>()))
+                .Callback<AppSetting>(setting =>
+                {
+                    store.RemoveAll(existing => existing.Key == setting.Key);
+                    store.Add(setting);
+                });
+        }
+
         private AppSettingService CreateService(TimeProvider timeProvider)
         {
             return new AppSettingService(repositoryMock.Object, timeProvider);

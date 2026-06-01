@@ -85,4 +85,46 @@ describe("evaluateNudgeEligibility", () => {
 
 		expect(decision.shouldShow).toBe(true);
 	});
+
+	it.each([
+		[1, false],
+		[7, false],
+		[180, false],
+	])("stays quiet while the server-computed next-eligible instant is still in the future (in %i days)", (daysAhead, expected) => {
+		const nextEligibleAt = new Date(
+			FIXED_NOW.getTime() + daysAhead * 24 * 60 * 60 * 1000,
+		).toISOString();
+
+		const decision = evaluateNudgeEligibility(getMockInput({ nextEligibleAt }));
+
+		expect(decision.shouldShow).toBe(expected);
+	});
+
+	it.each([
+		[1, true],
+		[7, true],
+	])("shows again once the next-eligible instant has passed (%i days ago)", (daysAgo, expected) => {
+		const nextEligibleAt = new Date(
+			FIXED_NOW.getTime() - daysAgo * 24 * 60 * 60 * 1000,
+		).toISOString();
+
+		const decision = evaluateNudgeEligibility(getMockInput({ nextEligibleAt }));
+
+		expect(decision.shouldShow).toBe(expected);
+	});
+
+	it.each([
+		["a backward clock skew", "2026-05-15T00:00:00.000Z"],
+		["an epoch reset", "1970-01-01T00:00:00.000Z"],
+	])("never re-shows a quieted nudge early when the clock jumps backward (%s)", (_description, skewedNow) => {
+		const nextEligibleAt = new Date(
+			FIXED_NOW.getTime() + 180 * 24 * 60 * 60 * 1000,
+		).toISOString();
+
+		const decision = evaluateNudgeEligibility(
+			getMockInput({ nextEligibleAt, now: new Date(skewedNow) }),
+		);
+
+		expect(decision.shouldShow).toBe(false);
+	});
 });

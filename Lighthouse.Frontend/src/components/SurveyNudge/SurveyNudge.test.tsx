@@ -1,11 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../models/ILicenseStatus";
 import type { SystemInfo } from "../../models/SystemInfo/SystemInfo";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
-import SurveyNudge, { SURVEY_URL } from "./SurveyNudge";
+import SurveyNudge from "./SurveyNudge";
 
 const FIXED_NOW = new Date("2026-06-01T00:00:00.000Z");
 
@@ -58,25 +57,10 @@ const renderNudge = (options: {
 	);
 };
 
-describe("SurveyNudge", () => {
-	it.each([
-		0, 14, 100, 3650,
-	])("never renders for a premium instance at install age %i days", async (installAgeInDays) => {
-		renderNudge({
-			licenseStatus: getMockLicenseStatus({ canUsePremiumFeatures: true }),
-			systemInfo: getMockSystemInfo({
-				installTimestamp: daysBefore(installAgeInDays),
-			}),
-		});
+const queryHeading = () =>
+	screen.queryByRole("heading", { name: /help shape lighthouse/i });
 
-		await waitFor(() => {
-			expect(
-				screen.queryByRole("button", { name: /dismiss/i }),
-			).not.toBeInTheDocument();
-		});
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-	});
-
+describe("SurveyNudge eligibility gating", () => {
 	it("does not render for a non-premium instance younger than two weeks", async () => {
 		renderNudge({
 			licenseStatus: getMockLicenseStatus(),
@@ -84,31 +68,19 @@ describe("SurveyNudge", () => {
 		});
 
 		await waitFor(() => {
-			expect(
-				screen.queryByRole("button", { name: /dismiss/i }),
-			).not.toBeInTheDocument();
+			expect(queryHeading()).not.toBeInTheDocument();
 		});
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
-	it("renders a dismissible link-out for a non-premium instance at least two weeks old", async () => {
+	it("renders for a non-premium instance at least two weeks old", async () => {
 		renderNudge({
 			licenseStatus: getMockLicenseStatus(),
 			systemInfo: getMockSystemInfo({ installTimestamp: daysBefore(20) }),
 		});
 
-		const alert = await screen.findByRole("alert");
-		const surveyLink = within(alert).getByRole("link");
-
-		expect(surveyLink).toHaveAttribute("href", SURVEY_URL);
-		expect(alert).not.toHaveTextContent(/how many years/i);
-
-		await userEvent.click(
-			within(alert).getByRole("button", { name: /dismiss/i }),
-		);
-
-		await waitFor(() => {
-			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-		});
+		expect(await queryHeadingFound()).toBeInTheDocument();
 	});
 });
+
+const queryHeadingFound = () =>
+	screen.findByRole("heading", { name: /help shape lighthouse/i });
