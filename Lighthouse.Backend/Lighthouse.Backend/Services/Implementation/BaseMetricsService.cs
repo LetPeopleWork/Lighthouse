@@ -48,39 +48,163 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
             IEnumerable<WorkItem> completedItemsInWindow,
-            IEnumerable<string> doingStatesInWorkflowOrder,
+            IReadOnlyList<string> doingStatesInWorkflowOrder,
+            IReadOnlyList<string> mappedDoingStates,
             IReadOnlyList<int> requestedPercentiles)
         {
-            var observationsByState = GroupAgeAtExitObservationsByState(completedItemsInWindow);
+            var observedStates = ObservedExitStates(completedItemsInWindow);
+            var paceStates = RestrictToMappedDoingStates(doingStatesInWorkflowOrder, mappedDoingStates, observedStates);
 
-            return doingStatesInWorkflowOrder
+            var observationsByState = GroupCumulativeObservationsByState(completedItemsInWindow, paceStates);
+
+            var percentilesByState = paceStates
                 .Where(state => observationsByState.ContainsKey(state))
                 .Select(state => BuildAgeInStatePercentilesDto(state, observationsByState[state], requestedPercentiles))
                 .ToList();
+
+            return ClampPercentilesNonDecreasing(percentilesByState);
         }
 
-        private static Dictionary<string, List<int>> GroupAgeAtExitObservationsByState(IEnumerable<WorkItem> completedItemsInWindow)
+        private static HashSet<string> ObservedExitStates(IEnumerable<WorkItem> completedItemsInWindow)
+        {
+            return completedItemsInWindow
+                .SelectMany(item => item.SyncedTransitions)
+                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
+                .Select(transition => transition.FromState)
+                .ToHashSet();
+        }
+
+        private static IReadOnlyList<string> RestrictToMappedDoingStates(
+            IReadOnlyList<string> doingStatesInWorkflowOrder,
+            IReadOnlyList<string> mappedDoingStates,
+            HashSet<string> observedStates)
+        {
+            if (mappedDoingStates.Count == 0 || observedStates.Count == 0)
+            {
+                return doingStatesInWorkflowOrder;
+            }
+
+            var mapped = new HashSet<string>(mappedDoingStates);
+            var observedCoveredByConfig = observedStates.Count(mapped.Contains);
+            var configCoversObservedWorkflow = observedCoveredByConfig * 2 > observedStates.Count;
+
+            return configCoversObservedWorkflow
+                ? doingStatesInWorkflowOrder.Where(mapped.Contains).ToList()
+                : doingStatesInWorkflowOrder;
+        }
+
+        private static Dictionary<string, List<int>> GroupCumulativeObservationsByState(
+            IEnumerable<WorkItem> completedItemsInWindow,
+            IReadOnlyList<string> paceStates)
         {
             var observationsByState = new Dictionary<string, List<int>>();
 
-            var exits = completedItemsInWindow
-                .Where(item => item.StartedDate.HasValue)
-                .SelectMany(item => item.SyncedTransitions
-                    .Where(transition => !string.IsNullOrEmpty(transition.FromState))
-                    .Select(transition => (transition.FromState, Age: CumulativeAgeAtExit(item.StartedDate!.Value, transition.TransitionedAt))));
+            var items = completedItemsInWindow.Where(item => item.StartedDate.HasValue).ToList();
+            var positionByState = BuildPositionLookup(paceStates);
 
-            foreach (var (state, age) in exits)
+            foreach (var state in paceStates)
             {
-                if (!observationsByState.TryGetValue(state, out var ages))
-                {
-                    ages = [];
-                    observationsByState[state] = ages;
-                }
+                var observations = items
+                    .Select(item => CumulativeAgeObservationForItemAtState(item, state, positionByState, item.SyncedTransitions))
+                    .Where(observation => observation.HasValue)
+                    .Select(observation => observation!.Value)
+                    .ToList();
 
-                ages.Add(age);
+                if (observations.Count > 0)
+                {
+                    observationsByState[state] = observations;
+                }
             }
 
             return observationsByState;
+        }
+
+        private static Dictionary<string, int> BuildPositionLookup(IReadOnlyList<string> paceStates)
+        {
+            var positionByState = new Dictionary<string, int>();
+            for (var position = 0; position < paceStates.Count; position++)
+            {
+                positionByState[paceStates[position]] = position;
+            }
+
+            return positionByState;
+        }
+
+        protected static int? CumulativeAgeObservationForItemAtState(
+            WorkItem item,
+            string targetState,
+            IReadOnlyDictionary<string, int> positionByMappedDoingState,
+            IReadOnlyList<WorkItemStateTransition> itemTransitionsInOrder)
+        {
+            if (!item.StartedDate.HasValue || !ReachedState(targetState, itemTransitionsInOrder))
+            {
+                return null;
+            }
+
+            var lastExit = itemTransitionsInOrder
+                .Where(transition => transition.FromState == targetState)
+                .Select(transition => (DateTime?)transition.TransitionedAt)
+                .DefaultIfEmpty(null)
+                .Max();
+
+            var exitMoment = lastExit ?? EarliestAtOrAfterExit(targetState, positionByMappedDoingState, itemTransitionsInOrder);
+
+            return exitMoment.HasValue
+                ? CumulativeAgeAtExit(item.StartedDate.Value, exitMoment.Value)
+                : null;
+        }
+
+        private static bool ReachedState(string targetState, IReadOnlyList<WorkItemStateTransition> itemTransitionsInOrder)
+        {
+            return itemTransitionsInOrder.Any(transition =>
+                transition.FromState == targetState || transition.ToState == targetState);
+        }
+
+        private static DateTime? EarliestAtOrAfterExit(
+            string targetState,
+            IReadOnlyDictionary<string, int> positionByMappedDoingState,
+            IReadOnlyList<WorkItemStateTransition> itemTransitionsInOrder)
+        {
+            if (!positionByMappedDoingState.TryGetValue(targetState, out var targetPosition))
+            {
+                return null;
+            }
+
+            return itemTransitionsInOrder
+                .Where(transition => !string.IsNullOrEmpty(transition.FromState))
+                .Where(transition =>
+                    positionByMappedDoingState.TryGetValue(transition.FromState, out var fromPosition)
+                    && fromPosition >= targetPosition)
+                .Select(transition => (DateTime?)transition.TransitionedAt)
+                .DefaultIfEmpty(null)
+                .Min();
+        }
+
+        protected static IReadOnlyList<AgeInStatePercentilesDto> ClampPercentilesNonDecreasing(
+            IReadOnlyList<AgeInStatePercentilesDto> orderedPercentilesByState)
+        {
+            var runningMaxByRank = new Dictionary<int, int>();
+            var clamped = new List<AgeInStatePercentilesDto>(orderedPercentilesByState.Count);
+
+            foreach (var statePercentiles in orderedPercentilesByState)
+            {
+                var clampedPercentiles = statePercentiles.Percentiles
+                    .Select(percentile => ClampRank(percentile, runningMaxByRank))
+                    .ToList();
+
+                clamped.Add(new AgeInStatePercentilesDto(statePercentiles.State, clampedPercentiles));
+            }
+
+            return clamped;
+        }
+
+        private static PercentileValue ClampRank(PercentileValue percentile, Dictionary<int, int> runningMaxByRank)
+        {
+            var runningMax = runningMaxByRank.TryGetValue(percentile.Percentile, out var max) ? max : int.MinValue;
+            var clampedValue = Math.Max(percentile.Value, runningMax);
+            runningMaxByRank[percentile.Percentile] = clampedValue;
+
+            return new PercentileValue(percentile.Percentile, clampedValue);
         }
 
         private static AgeInStatePercentilesDto BuildAgeInStatePercentilesDto(string state, List<int> observations, IReadOnlyList<int> requestedPercentiles)

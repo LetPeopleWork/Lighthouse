@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ComputeAgeInStatePercentiles_ItemRevisitsState_ContributesOneObservationPerVisit()
+        public void ComputeAgeInStatePercentiles_ItemRevisitsState_RecordsOnlyTheLastExitCumulativeAge()
         {
             var item = ItemStartedAtFixtureStart();
             item = WithTransitions(item,
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var result = TestableBaseMetricsService.Compute([item], WorkflowOrder, RequestedPercentiles).ToList();
 
-            AssertPercentiles(result, "Review", (50, 3), (70, 6), (85, 6), (95, 6));
+            AssertPercentiles(result, "Review", (50, 9), (70, 9), (85, 9), (95, 9));
         }
 
         private static void AssertPercentiles(
@@ -378,10 +378,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             public static IEnumerable<AgeInStatePercentilesDto> Compute(
                 IEnumerable<WorkItem> completedItemsInWindow,
-                IEnumerable<string> doingStatesInWorkflowOrder,
+                IReadOnlyList<string> doingStatesInWorkflowOrder,
                 IReadOnlyList<int> requestedPercentiles)
             {
-                return ComputeAgeInStatePercentiles(completedItemsInWindow, doingStatesInWorkflowOrder, requestedPercentiles);
+                return ComputeAgeInStatePercentiles(completedItemsInWindow, doingStatesInWorkflowOrder, doingStatesInWorkflowOrder, requestedPercentiles);
             }
 
             public static IReadOnlyList<CumulativeStateTimeStateRowDto> ComputeBars(

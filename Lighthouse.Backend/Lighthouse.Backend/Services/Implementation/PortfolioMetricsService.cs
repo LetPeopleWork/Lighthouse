@@ -271,7 +271,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedFeatures);
                 var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(portfolio.DoingStates, completedItemsWithTransitions);
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, DefaultPacePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, portfolio.DoingStates, DefaultPacePercentiles).ToList();
             }, logger);
         }
 

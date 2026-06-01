@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedItems);
                 var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(team.DoingStates, completedItemsWithTransitions);
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, DefaultPacePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, team.DoingStates, DefaultPacePercentiles).ToList();
             }, logger);
         }
 

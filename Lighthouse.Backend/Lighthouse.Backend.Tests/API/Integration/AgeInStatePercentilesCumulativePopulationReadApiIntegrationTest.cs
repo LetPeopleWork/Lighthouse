@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public void Init()
         {
             var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset) * 400;
-            windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
+            windowEnd = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
             windowStart = windowEnd.AddDays(-180);
 
             rootFactory = new TestWebApplicationFactory<Program>();
@@ -72,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [TestCase(WorkTrackingSystems.AzureDevOps)]
         [TestCase(WorkTrackingSystems.Jira)]
         [TestCase(WorkTrackingSystems.Linear)]
-        [Ignore(RedScaffoldReason + " — RCA-regression fixture for #5145: the exact faster-downstream-cohort shape the old per-state-exit metric rendered non-monotonic")]
         public async Task GetAgeInStatePercentiles_OldMetricNonMonotonicOnFasterDownstreamCohort_OptionACorrectsToRiseMonotonicallyAcrossEveryConnector(WorkTrackingSystems system)
         {
             var teamId = SeedFasterDownstreamCohort(system);
@@ -103,7 +102,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [TestCase(WorkTrackingSystems.AzureDevOps)]
         [TestCase(WorkTrackingSystems.Jira)]
         [TestCase(WorkTrackingSystems.Linear)]
-        [Ignore(RedScaffoldReason)]
         public async Task GetAgeInStatePercentiles_AllItemsCloseFromLastMappedState_LastStateMatchesCycleTimePercentilesAcrossEveryConnector(WorkTrackingSystems system)
         {
             var teamId = SeedAllItemsClosingFromLastMappedState(system);
@@ -131,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(RedScaffoldReason)]
         public async Task GetAgeInStatePercentiles_ItemsSkipReview_ReviewPopulationIncludesSkippersByImputation()
         {
             var teamId = SeedReviewSkippersAlongsideReviewVisitors();
@@ -155,7 +152,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(RedScaffoldReason)]
         public async Task GetAgeInStatePercentiles_ReworkItemReentersReview_ReviewRecordsOnlyTheLastExit()
         {
             var teamId = SeedSingleReworkItemWithTwoReviewExits();
@@ -181,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("RED scaffold — pending #5145 DDD-1b non-decreasing clamp; DELIVER un-ignores")]
         public async Task GetAgeInStatePercentiles_MisconfiguredDoingStatesOrder_BandsNeverDropBelowThePreviousState()
         {
             var teamId = SeedMisconfiguredDoingStatesOrder();
@@ -215,7 +210,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(RedScaffoldReason)]
         public async Task GetAgeInStatePercentiles_UnmappedStatusInTransitions_IsExcludedFromPacePath()
         {
             var teamId = SeedTeamWithUnmappedWaitingStatus();
