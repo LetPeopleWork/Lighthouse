@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private AppSettingService CreateService()
         {
-            return new AppSettingService(repositoryMock.Object);
+            return new AppSettingService(repositoryMock.Object, TimeProvider.System);
         }
 
         private void SetupRepositoryForKeys(params string[] keyValuePairs)

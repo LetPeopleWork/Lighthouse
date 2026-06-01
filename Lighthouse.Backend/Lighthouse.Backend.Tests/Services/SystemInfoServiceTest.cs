@@ -1,6 +1,8 @@
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services
@@ -211,7 +213,17 @@ namespace Lighthouse.Backend.Tests.Services
 
         private SystemInfoService CreateSubject()
         {
-            return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object, serviceConfigMock.Object);
+            return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object, serviceConfigMock.Object, BuildScopeFactory(), NullLogger<SystemInfoService>.Instance);
+        }
+
+        private static IServiceScopeFactory BuildScopeFactory()
+        {
+            var appSettingService = new Mock<IAppSettingService>();
+            appSettingService.Setup(service => service.GetInstallTimestamp()).Returns((DateTimeOffset?)null);
+
+            var services = new ServiceCollection();
+            services.AddScoped(_ => appSettingService.Object);
+            return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
         }
 
         [Test]
@@ -322,7 +334,7 @@ namespace Lighthouse.Backend.Tests.Services
 
         private SystemInfoService CreateSubjectWithConfiguration(IConfiguration configuration)
         {
-            return new SystemInfoService(configuration, logConfigurationMock.Object, serviceConfigMock.Object);
+            return new SystemInfoService(configuration, logConfigurationMock.Object, serviceConfigMock.Object, BuildScopeFactory(), NullLogger<SystemInfoService>.Instance);
         }
     }
 }

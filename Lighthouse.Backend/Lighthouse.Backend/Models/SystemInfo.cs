@@ -13,5 +13,6 @@ namespace Lighthouse.Backend.Models
         [property: JsonPropertyName("authenticationEnabled")] bool IsAuthenticationEnabled,
         [property: JsonPropertyName("authorizationEnabled")] bool IsAuthorizationEnabled,
         IReadOnlyList<string> EmergencyAdminSubjects,
-        string BaseUrl);
+        string BaseUrl,
+        string? InstallTimestamp);
 }

@@ -15,5 +15,7 @@
         public const string FeaturesRefreshStartDelay = "PeriodicRefresh:Features:StartDelay";
 
         public const string RefreshLogRetentionRuns = "RefreshLog:RetentionRuns";
+
+        public const string InstallTimestamp = "Install:Timestamp";
     }
 }

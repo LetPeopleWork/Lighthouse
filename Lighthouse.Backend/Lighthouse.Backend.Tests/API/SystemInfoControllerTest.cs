@@ -44,7 +44,8 @@ namespace Lighthouse.Backend.Tests.API
                 IsAuthenticationEnabled: false,
                 IsAuthorizationEnabled: false,
                 EmergencyAdminSubjects: Array.Empty<string>(),
-                BaseUrl: string.Empty);
+                BaseUrl: string.Empty,
+                InstallTimestamp: null);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -78,7 +79,8 @@ namespace Lighthouse.Backend.Tests.API
                 IsAuthenticationEnabled: false,
                 IsAuthorizationEnabled: false,
                 EmergencyAdminSubjects: Array.Empty<string>(),
-                BaseUrl: string.Empty);
+                BaseUrl: string.Empty,
+                InstallTimestamp: null);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -110,7 +112,8 @@ namespace Lighthouse.Backend.Tests.API
                 IsAuthenticationEnabled: false,
                 IsAuthorizationEnabled: false,
                 EmergencyAdminSubjects: Array.Empty<string>(),
-                BaseUrl: "https://lighthouse.example.com");
+                BaseUrl: "https://lighthouse.example.com",
+                InstallTimestamp: null);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 
@@ -137,7 +140,8 @@ namespace Lighthouse.Backend.Tests.API
                 IsAuthenticationEnabled: true,
                 IsAuthorizationEnabled: true,
                 EmergencyAdminSubjects: ["alice@example.com", "bob@example.com"],
-                BaseUrl: string.Empty);
+                BaseUrl: string.Empty,
+                InstallTimestamp: null);
 
             systemInfoServiceMock.Setup(x => x.GetSystemInfo()).Returns(expectedSystemInfo);
 

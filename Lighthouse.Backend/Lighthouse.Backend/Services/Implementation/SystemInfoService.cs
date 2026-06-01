@@ -2,6 +2,8 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -16,12 +18,16 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IConfiguration configuration;
         private readonly ILogConfiguration logConfiguration;
         private readonly IServiceConfig serviceConfig;
+        private readonly IServiceScopeFactory scopeFactory;
+        private readonly ILogger<SystemInfoService> logger;
 
-        public SystemInfoService(IConfiguration configuration, ILogConfiguration logConfiguration, IServiceConfig serviceConfig)
+        public SystemInfoService(IConfiguration configuration, ILogConfiguration logConfiguration, IServiceConfig serviceConfig, IServiceScopeFactory scopeFactory, ILogger<SystemInfoService> logger)
         {
             this.configuration = configuration;
             this.logConfiguration = logConfiguration;
             this.serviceConfig = serviceConfig;
+            this.scopeFactory = scopeFactory;
+            this.logger = logger;
         }
 
         public SystemInfo GetSystemInfo()
@@ -43,7 +49,23 @@ namespace Lighthouse.Backend.Services.Implementation
                 IsAuthenticationEnabled: authentication.Enabled,
                 IsAuthorizationEnabled: authorization.Enabled,
                 EmergencyAdminSubjects: authorization.EmergencySystemAdminSubjects,
-                BaseUrl: serviceConfig.BaseUrl);
+                BaseUrl: serviceConfig.BaseUrl,
+                InstallTimestamp: GetInstallTimestamp());
+        }
+
+        private string? GetInstallTimestamp()
+        {
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var appSettingService = scope.ServiceProvider.GetRequiredService<IAppSettingService>();
+                return appSettingService.GetInstallTimestamp()?.ToString("O", CultureInfo.InvariantCulture);
+            }
+            catch (Exception readFailure)
+            {
+                logger.LogWarning(readFailure, "Install timestamp could not be read; reporting it as absent so the feedback nudge fails closed");
+                return null;
+            }
         }
 
         private static string? GetSafeDatabaseConnection(string provider, string? connectionString)

@@ -859,6 +859,7 @@ namespace Lighthouse.Backend
 
             // Seeding Services - Register in order they should run
             builder.Services.AddScoped<ISeeder, AppSettingSeeder>();
+            builder.Services.AddScoped<ISeeder, InstallTimestampSeeder>();
             builder.Services.AddScoped<ISeeder, OptionalFeatureSeeder>();
             builder.Services.AddScoped<ISeeder, TerminologySeeder>();
             builder.Services.AddScoped<ISeeder, RefreshLogSeeder>();

@@ -13,5 +13,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task UpdateFeatureRefreshSettings(RefreshSettings refreshSettings);
 
         int GetRefreshLogRetentionRuns();
+
+        Task EnsureInstallTimestamp();
+
+        DateTimeOffset? GetInstallTimestamp();
     }
 }

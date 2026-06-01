@@ -2,11 +2,14 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class AppSettingService(IRepository<AppSetting> repository) : IAppSettingService
+    public class AppSettingService(IRepository<AppSetting> repository, TimeProvider timeProvider) : IAppSettingService
     {
+        private const string RoundtripFormat = "O";
+
         public RefreshSettings GetFeatureRefreshSettings()
         {
             return CreateRefreshSettings(
@@ -42,6 +45,40 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return Math.Clamp(value, 10, 200);
+        }
+
+        public async Task EnsureInstallTimestamp()
+        {
+            var existing = repository.GetByPredicate(s => s.Key == AppSettingKeys.InstallTimestamp);
+            if (existing != null)
+            {
+                return;
+            }
+
+            var installedAt = timeProvider.GetUtcNow().ToUniversalTime();
+            repository.Add(new AppSetting
+            {
+                Key = AppSettingKeys.InstallTimestamp,
+                Value = installedAt.ToString(RoundtripFormat, CultureInfo.InvariantCulture),
+            });
+
+            await repository.Save();
+        }
+
+        public DateTimeOffset? GetInstallTimestamp()
+        {
+            var setting = repository.GetByPredicate(s => s.Key == AppSettingKeys.InstallTimestamp);
+            if (setting == null)
+            {
+                return null;
+            }
+
+            if (!DateTimeOffset.TryParse(setting.Value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+            {
+                return null;
+            }
+
+            return parsed;
         }
 
         private async Task UpdateRefreshSettingsAsync(RefreshSettings refreshSettings, string intervalKey, string refreshAfterKey, string delayKey)
