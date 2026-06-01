@@ -1253,6 +1253,7 @@ describe("WorkItemAgingChart component", () => {
 			]);
 		});
 
+		// Color is keyed off band position, not percentile value, so when adjacent percentiles coincide the zero-height band drops and no surviving band shifts color.
 		it("collapses zero-height bands and keeps the surviving 50-70 band green when upper percentiles coincide", () => {
 			const rects = computePaceBandRects({
 				perStatePercentileValues: [

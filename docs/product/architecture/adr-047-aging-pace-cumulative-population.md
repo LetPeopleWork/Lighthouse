@@ -69,7 +69,8 @@ observation: its **last-exit cumulative age** — `(TransitionedAt of the item's
 - **Mapped-state filter (B folded in).** Only states in the team's mapped `DoingStates` participate;
   unmapped / intermediate statuses are collapsed into the surrounding mapped span by the existing
   state-category mapping. This filter is **scoped to the pace path only** — it does not touch the
-  cumulative-state-time chart or any other metric.
+  cumulative-state-time chart or any other metric. The concrete location and mechanism of this
+  restriction is specified in **§Implementation Notes → Mapped-state restriction** below.
 - **Percentiles, window membership, day-counting, caching** — unchanged from ADR-019
   (`PercentileCalculator.CalculatePercentile`, defaults 50/70/85/95; `ClosedDate ∈ window`;
   `GetDateDifference` day convention; `GetFromCacheIfExists`).
@@ -90,6 +91,85 @@ This decision lives entirely on the **pace path** (`BuildWorkflowStateOrder` + t
 population walk in `BaseMetricsService` and the two leaf `GetAgeInStatePercentilesFor*` methods).
 `BuildWorkflowStateOrder` is pace-exclusive; the sibling cumulative-state-time chart never calls
 it and is provably untouched.
+
+---
+
+## Implementation Notes (binding contract for DELIVER; impl/fixtures are DELIVER's)
+
+These notes resolve the precision gaps the DESIGN review flagged. They constrain DELIVER without
+prescribing internal structure beyond the named helper signature in §Consequences.
+
+### Mapped-state restriction — location and mechanism
+
+**Problem.** The current `BaseMetricsService.BuildWorkflowStateOrder` (lines 31-47) seeds the order
+from the team's `doingStates` and then **APPENDS observed unmapped exit states** —
+`orderedStates.AddRange(observedExitStates.Where(state => knownStates.Add(state)))`. Left as-is, the
+cumulative walk would produce a band for every unmapped/intermediate status the data happens to
+contain, which is exactly the spurious non-monotonicity Option B's filter is meant to remove.
+
+**Decision (binding).** The pace path MUST restrict its state set to the team's mapped `DoingStates`
+**at the point the cumulative population walk consumes the order**, NOT by changing
+`BuildWorkflowStateOrder`. Concretely: `ComputeAgeInStatePercentiles` filters its
+`doingStatesInWorkflowOrder` input down to the states that are in the scope's mapped `DoingStates`
+(category names), preserving that configured order, **before** iterating. `BuildWorkflowStateOrder`
+itself is left untouched — it is also called by the cumulative-state-time path's neighbours, and the
+project convention (CLAUDE.md, ADR-024 cross-call rule) is to keep pace-vs-cumulative logic from
+leaking into each other; narrowing the consumer is the smaller, provably pace-local blast radius.
+The sibling cumulative chart uses the separate `BuildCumulativeWorkflowStateOrder` and is untouched
+either way.
+
+**Empty / unconfigured `DoingStates` fallback.** `DoingStates` lives on
+`WorkTrackingSystemOptionsOwner` (the base of `Team` and `Portfolio`) as a `List<string>` that is
+`[Required]` and ships a non-empty default (`["Active", "Resolved", "In Progress", "Committed"]`), so
+in practice it is never empty. For defensive correctness the contract is: **if the scope's mapped
+`DoingStates` is empty, the pace path falls back to the observed order** that
+`BuildWorkflowStateOrder` already produces (i.e. the filter is a no-op when there is nothing to filter
+against) — matching today's behaviour for any team that somehow has no configured `DoingStates`. The
+filter compares against the mapped category names in `DoingStates`; the existing state-category
+mapping (`GetRawStatesForCategory` / `MapStateToStateCategory`) already collapses raw statuses into
+those categories, so no second mapping pass is introduced here.
+
+### Imputation rule boundaries (precise definitions)
+
+The cumulative walk's "reached at least this state" + "skip / never-exited imputation" wording is made
+exact here. All predicates read **only** the pre-loaded `IReadOnlyList<WorkItemStateTransition>` the
+repository supplied for the item (no new query, no connector branch). Note
+`WorkItemStateTransition.FromState` / `ToState` are non-nullable `string` (default `string.Empty`); an
+"exit" is therefore detected via `!string.IsNullOrEmpty(FromState)`, the predicate the existing code
+already uses — read every "`FromState != null`" below as "`!string.IsNullOrEmpty(FromState)`".
+
+- **"reached state `S`"** = `item.SyncedTransitions.Any(t => t.FromState == S || t.ToState == S)`
+  (entry OR exit touches `S`).
+- **"last exit from `S`"** = `max(t.TransitionedAt where t.FromState == S)`, or none if the item never
+  exited `S`. This is the item's observation for `S` when it exists:
+  `lastExit.TransitionedAt − item.StartedDate` (via the existing `CumulativeAgeAtExit` day convention).
+- **"earliest at-or-after exit"** (the imputation source for an item that reached `S` but has no exit
+  *from* `S`) = `min(t.TransitionedAt where t.FromState is a mapped Doing state whose position in the
+  filtered `DoingStates` order is ≥ the position of `S`)`. This is the first moment we can prove the
+  item had already passed `S`.
+- **Tie-break.** "earliest" / "latest" are over `TransitionedAt`: "earliest" = smallest
+  `TransitionedAt`, "last/latest exit" = largest `TransitionedAt`. Ties (identical timestamps) are
+  immaterial to the percentile because the contributed age is identical.
+- **Completeness invariant (assert in tests).** A completed item always has ≥1 exit transition
+  (`!string.IsNullOrEmpty(FromState)` for at least one transition — a finished item left at least one
+  state), so for any `S` the item is proven to have reached, imputation **always** finds a candidate
+  at-or-after `S`. The walk never produces a "reached but no observation" gap.
+- **Monotonicity under backward moves.** Using the **last** exit from `S` (largest `TransitionedAt`)
+  means a backward move that re-enters and re-exits `S` later only ever raises the observation —
+  cumulative age is non-decreasing, so the superset-population monotonicity argument still holds.
+- **Item closing from an intermediate state.** An item that completes from a state partway through the
+  mapped `Doing` order contributes (via real exit or imputation) to every state **≤** its
+  furthest-reached state, and is simply **absent** from states it never reached. That absence is
+  precisely why the last (rightmost) mapped column's band is **≈** the cycle-time percentile line, not
+  **=** it: items that finished without reaching the last mapped state are not in its population.
+
+### Pre-window transitions are NOT clipped
+
+Transition timestamps feeding the cumulative age are **not** clipped to the history window: an item's
+cumulative age runs from its `StartedDate` and may include transitions that occurred **before** the
+window's `startDate`. This mirrors the existing `cycleTimePercentiles`, which measures whole cycle
+time even for items that started before the window. The window governs **membership**
+(`ClosedDate ∈ window`, ADR-019 §2), not the per-item age clock.
 
 ---
 
@@ -141,10 +221,27 @@ since Option A is a contained pace-path change with no migration, no interim cla
     window. Bumping it would be dead ceremony.
 - **Sonar new-violations = 0** must hold. The cumulative-population walk (reached-at-least filter +
   skip/never-exited imputation) is more branch-dense than the old per-state-exit loop and is a
-  cognitive-complexity risk (`S3776`). **Extract a named helper** for the per-item cumulative
-  observation (and keep the imputation in its own well-named method) so neither the walk nor the
-  leaf service methods cross the threshold. Apply the `docs/ci-learnings.md` rule families
-  pre-emptively.
+  cognitive-complexity risk (`S3776`, McCabe ≤ 15). **Extract a named helper** for the per-item
+  cumulative observation (and keep the imputation in its own well-named nested method) so neither the
+  walk nor the leaf service methods cross the threshold. Suggested signature (DELIVER may adjust names
+  but keep the shape and the ≤ 15 budget):
+
+  ```csharp
+  // returns the item's cumulative-age observation for targetState, or null if the item never reached it
+  protected static int? CumulativeAgeObservationForItemAtState(
+      WorkItem item,
+      string targetState,
+      IReadOnlyList<string> mappedDoingStatesInOrder,
+      IReadOnlyList<WorkItemStateTransition> itemTransitionsInOrder)
+  ```
+
+  The skip/imputation lives in a small nested helper (e.g. `EarliestAtOrAfterExit`) so each method
+  stays under McCabe 15. The signature takes the item's transitions **as a pre-loaded
+  `IReadOnlyList<WorkItemStateTransition>`** — it does NOT take a repository and performs no query, so
+  the existing ArchUnit transition-repo rule (metrics services read transitions only via
+  `IWorkItemStateTransitionRepository` / `IFeatureStateTransitionRepository`; the `BaseMetricsService`
+  helper stays repo-free) continues to hold unchanged. Apply the `docs/ci-learnings.md` rule families
+  (notably `S3776`, `S107`, `S3267`, `CA1859`) pre-emptively.
 
 **Neutral / preserved**
 
@@ -174,3 +271,21 @@ fixture hid.
 DELIVER owns the fixtures, the imputation implementation, and the helper extraction. DESIGN's
 responsibility is this contract: **the replacement verification must run the non-linear shape on
 the normalized model, and the live check must use a path every connector shares.**
+
+### Merge gate (binding)
+
+- **REQUIRED before merge (block CI green): the non-linear-flow NUnit integration fixtures.** The
+  replacement non-linear fixtures (skips, backward moves, unmapped/intermediate statuses,
+  faster-downstream cohorts) MUST exist and pass before the change merges. The synthetic
+  perfectly-linear fixture that masked the bug is replaced, not merely supplemented.
+- **REQUIRED before merge: the live walking-skeleton on the CSV / demo-data non-linear path.** The
+  demo CSV can express the non-linear shape via its `StateEnteredDate_<state>` state-history columns
+  (per the demo-data time-in-state work), so the live check MUST drive a non-linear demo journey
+  (skip / backward-move / unmapped status) and confirm the bands render monotonically. Per this
+  project's convention, **Claude runs this live walking-skeleton locally itself** — it is not punted
+  to the user.
+- **STRONGLY RECOMMENDED, deferrable: a live real-Jira connector check.** A real-connector smoke
+  against a Jira sandbox is the highest-fidelity probe of the non-linear shape, but if no Jira sandbox
+  is available during DELIVER it MAY be deferred to a post-release validation. **Any such deferral
+  MUST be recorded** (in the DELIVER notes and back here under §Verification) with the reason and the
+  follow-up owner; it is not silently skipped.
