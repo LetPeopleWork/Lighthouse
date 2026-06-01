@@ -217,6 +217,15 @@ describe("CumulativeStateTimeChart completion-class legend toggle (US-5144-01)",
 		}),
 	];
 
+	it("offers no completion chips unless the filter is explicitly enabled", () => {
+		render(<CumulativeStateTimeChart data={{ states: stateWithBothClasses }} />);
+
+		expect(
+			screen.queryByRole("button", { name: "Completed visibility toggle" }),
+		).toBeNull();
+		expect(seriesOf()).toHaveLength(2);
+	});
+
 	it("shows both Completed and Ongoing chips active by default when the filter is enabled", () => {
 		render(
 			<CumulativeStateTimeChart
@@ -261,6 +270,7 @@ describe("CumulativeStateTimeChart completion-class legend toggle (US-5144-01)",
 		const series = seriesOf();
 		expect(series).toHaveLength(1);
 		expect(series[0].label).toContain("Completed");
+		expect(ongoingChip()).toHaveAttribute("aria-pressed", "false");
 	});
 
 	it("restores a hidden segment when its chip is clicked again", async () => {
