@@ -10,4 +10,5 @@ export interface SystemInfo {
 	authorizationEnabled?: boolean;
 	emergencyAdminSubjects?: string[];
 	baseUrl?: string;
+	installTimestamp?: string;
 }

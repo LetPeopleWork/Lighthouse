@@ -23,6 +23,7 @@ import OverviewDashboard from "./pages/Overview/OverviewDashboard";
 import Settings from "./pages/Settings/Settings";
 import "./App.css";
 import OAuthPopupComplete from "./components/Common/Connections/OAuthPopupComplete";
+import SurveyNudge from "./components/SurveyNudge/SurveyNudge";
 import EditConnection from "./pages/Connections/Edit/EditConnection";
 import PortfolioDetail from "./pages/Portfolios/Detail/PortfolioDetail";
 import EditPortfolio from "./pages/Portfolios/Edit/EditPortfolio";
@@ -208,6 +209,7 @@ const App: React.FC = () => {
 								</Routes>
 							</Box>
 							<Footer />
+							<SurveyNudge />
 						</Box>
 					</TerminologyProvider>
 				</ApiServiceContext.Provider>
