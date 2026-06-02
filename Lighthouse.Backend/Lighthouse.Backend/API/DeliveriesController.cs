@@ -8,7 +8,6 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
-using Lighthouse.Backend.Services.Implementation.Licensing;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("{deliveryId:int}/metrics-history")]
-        [LicenseGuard(RequirePremium = true)]
         [ProducesResponseType<DeliveryMetricsHistoryDto>(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMetricsHistory(int deliveryId)
         {

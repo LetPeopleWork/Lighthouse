@@ -113,18 +113,21 @@ describe("DeliverySection Metrics tab", () => {
 		mockGetMetricsHistory.mockResolvedValue(getHistory());
 	});
 
-	it("offers the Metrics tab only to premium users", () => {
-		setPremium(true);
+	it("offers the Metrics tab to community users without a premium license", () => {
+		setPremium(false);
 		renderSection();
 		expect(screen.getByRole("tab", { name: "Metrics" })).toBeInTheDocument();
 	});
 
-	it("hides the Metrics tab from non-premium users", () => {
+	it("renders the burnup chart for community users without a premium license", async () => {
 		setPremium(false);
 		renderSection();
-		expect(
-			screen.queryByRole("tab", { name: "Metrics" }),
-		).not.toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Metrics" }));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("burnup-chart")).toBeInTheDocument();
+		});
 	});
 
 	it("does not fetch metrics history while the Work Items tab is active", () => {

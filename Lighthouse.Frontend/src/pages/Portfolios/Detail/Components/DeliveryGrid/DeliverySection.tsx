@@ -33,7 +33,6 @@ import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../components/Comm
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
-import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
@@ -71,8 +70,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	canEdit = true,
 }) => {
 	const { featureService, deliveryService } = useContext(ApiServiceContext);
-	const { licenseStatus } = useLicenseRestrictions();
-	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
@@ -452,7 +449,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							sx={{ px: 2, borderBottom: 1, borderColor: "divider" }}
 						>
 							<Tab label={workItemsTerm} value="workItems" />
-							{canUsePremiumFeatures && <Tab label="Metrics" value="metrics" />}
+							<Tab label="Metrics" value="metrics" />
 						</Tabs>
 						{activeTab === "workItems" && (
 							<WorkItemsTab
@@ -464,7 +461,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								deliveryTerm={deliveryTerm}
 							/>
 						)}
-						{activeTab === "metrics" && canUsePremiumFeatures && (
+						{activeTab === "metrics" && (
 							<MetricsTab
 								isLoading={isLoadingMetrics}
 								history={metricsHistory}

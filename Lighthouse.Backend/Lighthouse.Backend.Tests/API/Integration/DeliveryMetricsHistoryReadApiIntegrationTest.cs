@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetMetricsHistory_NonPremiumInstance_DoesNotExposeTheHistory()
+        public async Task GetMetricsHistory_NonPremiumInstance_StillReadsTheHistory()
         {
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
             var (portfolioId, deliveryId) = SeedDeliveryWithSnapshotSeries();
@@ -107,7 +107,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             client.AsPortfolioViewer(portfolioId);
             var response = await client.GetAsync(MetricsHistoryUrl(deliveryId));
 
-            Assert.That(response.StatusCode, Is.AnyOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound));
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(PointCount(body), Is.EqualTo(3), body);
+            }
         }
 
         [Test]
