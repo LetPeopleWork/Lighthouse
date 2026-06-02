@@ -82,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("step 02-03 — read-API coverage")]
         public async Task GetMetricsHistory_NoSnapshotsRecordedYet_ReturnsEmptySeriesNotError()
         {
             var (portfolioId, deliveryId) = SeedDeliveryWithoutSnapshots();
@@ -100,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("step 02-03 — read-API coverage")]
         public async Task GetMetricsHistory_NonPremiumInstance_DoesNotExposeTheHistory()
         {
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
@@ -183,7 +181,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         private (int portfolioId, int deliveryId) SeedDeliveryWithoutSnapshots()
-            => throw new AssertionException("pending — DELIVER seeds a delivery with no DeliveryMetricSnapshot rows");
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var delivery = new Delivery("Release 3", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id);
+        }
 
         private (int portfolioId, int deliveryId) SeedDeliveryWithEverySeriesRecorded()
         {
@@ -249,7 +257,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
             => Points(body).Count;
 
         private static bool FirstSnapshotDateIsAbsent(string body)
-            => throw new AssertionException("pending — DELIVER parses the metrics-history first-snapshot date");
+        {
+            var dto = JsonSerializer.Deserialize<HistoryView>(body, CaseInsensitiveJson);
+            return dto?.FirstSnapshotDate is null;
+        }
 
         private static bool BodyCarriesEverySeries(string body)
         {
@@ -266,7 +277,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return dto?.Points ?? [];
         }
 
-        private sealed record HistoryView(IReadOnlyList<HistoryPointView> Points);
+        private sealed record HistoryView(DateTime? FirstSnapshotDate, IReadOnlyList<HistoryPointView> Points);
 
         private sealed record HistoryPointView(
             DateTime Date,
