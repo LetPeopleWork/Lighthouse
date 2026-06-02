@@ -330,6 +330,47 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("Deliveries");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryMetricSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DeliveryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DoneWork")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("EstimatedTotalWork")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ForecastHowMany")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("LikelihoodPercentage")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RemainingWork")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalWork")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("WhenDistributionJson")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId", "RecordedAt")
+                        .IsUnique();
+
+                    b.ToTable("DeliveryMetricSnapshots");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Feature", b =>
                 {
                     b.Property<int>("Id")
@@ -1216,6 +1257,15 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Portfolio");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryMetricSnapshot", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureStateTransition", b =>

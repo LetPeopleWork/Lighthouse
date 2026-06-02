@@ -43,6 +43,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<Delivery> Deliveries { get; set; } = null!;
 
+        public DbSet<DeliveryMetricSnapshot> DeliveryMetricSnapshots { get; set; } = null!;
+
         public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; } = null!;
 
         public DbSet<RefreshLog> RefreshLogs { get; set; } = null!;
@@ -308,6 +310,19 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<Delivery>()
                 .HasMany(d => d.Features)
                 .WithMany();
+
+            modelBuilder.Entity<DeliveryMetricSnapshot>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+
+                entity.HasOne<Delivery>()
+                      .WithMany()
+                      .HasForeignKey(s => s.DeliveryId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(s => new { s.DeliveryId, s.RecordedAt })
+                      .IsUnique();
+            });
 
             modelBuilder.Entity<BlackoutPeriod>().HasKey(bp => bp.Id);
             modelBuilder.Entity<BlackoutPeriod>()
