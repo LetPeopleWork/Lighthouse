@@ -13,7 +13,6 @@ export class DeliveryItem {
 
 	async modifyDelivery(): Promise<ModifyDeliveriesDialog> {
 		await this.container
-			.page()
 			.getByRole("button", { name: "edit", exact: true })
 			.click();
 
@@ -100,14 +99,10 @@ export class DeliveryItem {
 	}
 
 	get EditButton(): Locator {
-		return this.container
-			.page()
-			.getByRole("button", { name: "edit", exact: true });
+		return this.container.getByRole("button", { name: "edit", exact: true });
 	}
 
 	get DeleteButton(): Locator {
-		return this.container
-			.page()
-			.getByRole("button", { name: "delete", exact: true });
+		return this.container.getByRole("button", { name: "delete", exact: true });
 	}
 }
