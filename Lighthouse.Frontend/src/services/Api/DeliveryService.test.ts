@@ -187,4 +187,38 @@ describe("DeliveryService", () => {
 			);
 		});
 	});
+
+	describe("getMetricsHistory", () => {
+		it("reads the metrics-history endpoint for the delivery and returns the parsed history", async () => {
+			const deliveryId = 42;
+			mockedAxios.get.mockResolvedValue({
+				data: {
+					deliveryDate: "2026-06-10T00:00:00Z",
+					firstSnapshotDate: "2026-06-01T00:00:00Z",
+					points: [
+						{
+							date: "2026-06-01T00:00:00Z",
+							totalWork: 20,
+							doneWork: 5,
+							remainingWork: 15,
+							estimatedTotalWork: null,
+							forecastHowMany: null,
+							likelihoodPercentage: null,
+							whenDistribution: null,
+						},
+					],
+				},
+			});
+
+			const result = await deliveryService.getMetricsHistory(deliveryId);
+
+			expect(mockedAxios.get).toHaveBeenCalledWith(
+				`/deliveries/${deliveryId}/metrics-history`,
+			);
+			expect(result.deliveryDate).toEqual(new Date("2026-06-10T00:00:00Z"));
+			expect(result.points).toHaveLength(1);
+			expect(result.points[0].totalWork).toBe(20);
+			expect(result.points[0].doneWork).toBe(5);
+		});
+	});
 });
