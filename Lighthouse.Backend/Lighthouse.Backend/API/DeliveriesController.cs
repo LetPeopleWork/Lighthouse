@@ -271,7 +271,6 @@ namespace Lighthouse.Backend.API
 
         private IActionResult? VerifyDeliveryRequest(int portfolioId, UpdateDeliveryRequest request)
         {
-            // Rule-based selection requires premium license
             if (request.SelectionMode == DeliverySelectionMode.RuleBased)
             {
                 var errorStatus = CheckRuleBasedDeliveryPrerequisites(request);
