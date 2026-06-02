@@ -1,0 +1,221 @@
+{
+  "roadmap": {
+    "project_id": "delivery-metrics",
+    "created_at": "2026-06-02T08:30:59Z",
+    "total_steps": 9
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Snapshot store, forward recorder, and dispatch wiring (backend persistence + recording pipeline)",
+      "description": "Stand up the DeliveryMetricSnapshot store as the single forward-recorded time-series source of truth, its EF repository, and the event-driven recorder that writes one row per delivery per day, dispatched exactly once after each portfolio forecast completes. Forward-only: no backfill, idempotent on (deliveryId, recordedAt.Date) via get-or-create overwrite, never a sentinel.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "DeliveryMetricSnapshot model, DbSet config, and EF migration across providers",
+          "criteria": [
+            "DeliveryMetricSnapshot persists Id, DeliveryId, RecordedAt, TotalWork, DoneWork, RemainingWork plus nullable forward columns EstimatedTotalWork, ForecastHowMany, LikelihoodPercentage, WhenDistributionJson",
+            "FK DeliveryId to Delivery is ON DELETE CASCADE so snapshot rows never orphan when a delivery is deleted",
+            "A unique index on (DeliveryId, RecordedAt) backstops daily idempotency at the database",
+            "WhenDistributionJson uses the existing JSON value-converter idiom; no =true or CLR-initializer sentinels on persisted properties",
+            "The migration applies cleanly on a real Sqlite and Postgres provider, not just InMemory"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricSnapshotCascadeDeleteIntegrationTest.cs",
+          "scenario_name": "Deleting a delivery cascades away its snapshot rows",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/DeliveryMetricSnapshot.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/"
+          ],
+          "implementation_notes": "CREATE the model as a wide row; provision ALL nullable forward columns now so Slices 2-4 add no further migration. EXTEND LighthouseAppContext: DbSet<DeliveryMetricSnapshot>, FK DeliveryId->Delivery ON DELETE CASCADE (ADR-048), UNIQUE index on (DeliveryId, RecordedAt) (ADR-050), WhenDistributionJson value-converter mirroring the existing AdditionalFieldValues/StateMappings JSON-column converter. Generate the migration ONLY via Lighthouse.Backend/Create-Migration.ps1 -MigrationName <Name> (does sqlite + throwaway-postgres); NEVER dotnet ef migrations add. EF MIGRATION TRAP: a new column on a persisted model needs a real migration; InMemory tests stay green but real sqlite/postgres verify jobs FATAL on PendingModelChangesWarning at startup, so the migration-applies-on-real-provider check is mandatory (add regenerate-after-model-change to the pre-push checklist). NO =true / CLR sentinel on persisted props (sentinel non-idempotency + EF-migration lesson). nullable enabled, no dynamic, immutable record where viable. The cascade-delete AT mirrors DeliveriesControllerIntegrationTest / IntegrationTestBase. Tests: NUnit4002 Is.Zero not Is.EqualTo(0); CA1861 hoist constant array literals to private static readonly fields; no decorative/structural/provenance comments.",
+          "deps": []
+        },
+        {
+          "id": "01-02",
+          "name": "IDeliveryMetricSnapshotRepository and EF adapter with get-or-create by (deliveryId, date)",
+          "criteria": [
+            "IDeliveryMetricSnapshotRepository extends IRepository<DeliveryMetricSnapshot> and exposes get-or-create by (deliveryId, recordedAt.Date)",
+            "The EF adapter returns the existing row for a (deliveryId, date) pair instead of inserting a duplicate",
+            "Reads return snapshots for a delivery ordered by RecordedAt ascending",
+            "The repository is registered in DI alongside the existing repositories"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+          "scenario_name": "Re-handling the same day is idempotent on delivery and date",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IDeliveryMetricSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/DeliveryMetricSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "implementation_notes": "CREATE the port + EF adapter following the existing IRepository<T> + EF adapter pattern (RefreshLog/Delivery precedent). Get-or-create keys on recordedAt.Date (UTC date grain) so a same-day re-run overwrites in place; idempotency is structural (the unique index from 01-01 is the DB backstop), NOT a =true sentinel. Register in DI where sibling repositories are registered. CA1859: a private member returning an interface for a single concrete type should use the concrete type. Immutability: no mutating LINQ; order with .OrderBy, not in-place sort. Async all the way with CancellationToken; never .Result/.Wait(). The idempotency facet of the recorder handler test exercises this repo through the real EF context.",
+          "deps": ["01-01"]
+        },
+        {
+          "id": "01-03",
+          "name": "PortfolioForecastsUpdated event and DeliveryMetricSnapshotRecordingHandler (the sole feed)",
+          "criteria": [
+            "PortfolioForecastsUpdated(int PortfolioId) is a domain event record implementing IDomainEvent, mirroring PortfolioFeaturesRefreshed",
+            "The handler records each delivery's then-current TotalWork, DoneWork, and RemainingWork = TotalWork - DoneWork into today's row",
+            "Re-handling the same event the same day overwrites in place (idempotent on deliveryId and date), never duplicating rows",
+            "A re-opened item leaving Done lowers the next recorded day's DoneWork; forward columns are left null in Slice 1",
+            "The handler emits structured logging of duration, per-portfolio daily snapshot count, and exceptions"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+          "scenario_name": "Recorder upserts one row per delivery per day",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Events/PortfolioForecastsUpdated.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "implementation_notes": "CREATE the event as a record mirroring Models/Events/PortfolioFeaturesRefreshed.cs (the ONLY new event Epic 3993 introduces, ADR-049). CREATE the handler modeled on PortfolioFeaturesRefreshedMetricsInvalidationHandler: HandleAsync loads the portfolio's deliveries, projects each via DeliveryWithLikelihoodDto.FromDelivery (DRY of metric KNOWLEDGE), upserts today's row via the 01-02 get-or-create. Idempotency = get-or-create + overwrite-in-place, NOT a =true sentinel (forecast-minimum-data-guard lesson). Register in DI alongside the precedent handler. Structured logging per DELIVER action item 5 (duration + daily snapshot count + exception logging) so KPI-4 is inspectable. The recorder test sits beside PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest / TeamDeletedRefreshLogCleanupHandlerTest and uses a real EF context via the test factory scope. FOLDED SCENARIO (no separate scenario_name slot — schema allows one per step): also un-Ignore + implement milestone-1 'A re-opened item lowers the next recorded done count' in the SAME test file — yesterday's recorder run records a higher DoneWork, an item leaves Done, today's run records a lower DoneWork with unchanged backlog. Tests: NUnit2056 prefer Assert.EnterMultipleScope; NUnit2045 independent asserts inside the multiple-scope; CA1861 hoist constant arrays. Records/with, early returns, max 2 nesting, no comments.",
+          "deps": ["01-02"]
+        },
+        {
+          "id": "01-04",
+          "name": "Dispatch PortfolioForecastsUpdated once per completion on both update paths",
+          "criteria": [
+            "PortfolioUpdater dispatches PortfolioForecastsUpdated AFTER UpdateForecastsForPortfolio and the forecast write-back, not the stale pre-forecast event",
+            "ForecastUpdater gains an IDomainEventDispatcher dependency and dispatches after its forecast write-back",
+            "The event is dispatched exactly once per portfolio-forecast-completion on each path (no missing dispatch, no double dispatch)",
+            "The recorded snapshot values are the fresh post-forecast figures, not the pre-forecast stale ones"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+          "scenario_name": "Recorder records fresh post-forecast figures, not stale",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs"
+          ],
+          "implementation_notes": "DELIVER action item 1 (dispatch-once invariant, high). EXTEND PortfolioUpdater.Update: dispatch via IDomainEventDispatcher.PublishAsync AFTER UpdateForecastsForPortfolio + forecast write-back (after ~line 84) — NOT the stale pre-forecast PortfolioFeaturesRefreshed at line 73. EXTEND ForecastUpdater.Update: it does NOT yet depend on IDomainEventDispatcher — ADD the constructor dependency, then dispatch after its UpdateForecastsForPortfolio + write-back. Exactly ONCE per portfolio-forecast-completion on EACH path: a missing dispatch is a silent KPI-4 gap, a double dispatch double-counts. FOLDED SCENARIO (no separate scenario_name slot): this step OWNS both integration-checkpoints scenarios — 'Recorder records fresh post-forecast figures, not stale' (the scenario_name) AND 'The forecasts-updated event is dispatched once per portfolio forecast completion' (both paths). A gated integration test asserts exactly one dispatch per completion on EACH of PortfolioUpdater.Update and ForecastUpdater.Update, and freshness (values are post-forecast, not the stale pre-forecast PortfolioFeaturesRefreshed figures). The pre-slice SPIKE (optional) confirms the exact dispatch lines. If the ctor crosses 7 params after adding the dispatcher, wrap the ctor declaration in #pragma warning disable/restore S107 (or an options object). S2325 make-static where applicable. Async all the way, CancellationToken passed through, no .Result/.Wait().",
+          "deps": ["01-03"]
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "metrics-history read endpoint (DTO + controller + read-API coverage)",
+      "description": "Expose ONE consolidated metrics-history endpoint that reads the snapshot store ordered by date, returns an honest empty series when no snapshots exist, and is gated by portfolio-read RBAC plus the inherited premium gate. Forward forecasting fields are null in Slice 1.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "DeliveryMetricsHistoryDto and point record (ADR-050 response shape)",
+          "criteria": [
+            "DeliveryMetricsHistoryDto carries deliveryDate, nullable firstSnapshotDate, and a points array",
+            "Each point carries date, totalWork, doneWork, remainingWork plus nullable estimatedTotalWork, forecastHowMany, likelihoodPercentage, whenDistribution",
+            "The DTO projects from DeliveryMetricSnapshot rows with forward fields left null in Slice 1",
+            "Points are ordered by date ascending"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs",
+          "scenario_name": "One endpoint carries every series",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DeliveryMetricsHistoryDto.cs"
+          ],
+          "implementation_notes": "CREATE the DTO + point record in API/DTO/ to the ADR-050 shape: { deliveryDate, firstSnapshotDate (nullable), points: [{ date, totalWork, doneWork, remainingWork, estimatedTotalWork?, forecastHowMany?, likelihoodPercentage?, whenDistribution? }] }. ONE endpoint carries every series (no separate /forecast endpoint, ADR-050); forward fields are null in Slice 1, populated by Slices 2-4. Use records, immutable construction, nullable enabled. The integration-checkpoints 'one endpoint carries every series' facet asserts the consolidated shape. CA1861 hoist constant arrays in tests.",
+          "deps": ["01-01"]
+        },
+        {
+          "id": "02-02",
+          "name": "GET metrics-history endpoint, RBAC + premium gated, reads store",
+          "criteria": [
+            "GET /api/v1/deliveries/{deliveryId:int}/metrics-history (and api/latest) returns the recorded series in date order",
+            "An empty store yields an honest empty points array, never an error or fabricated zeros",
+            "The endpoint carries [RbacGuard(PortfolioRead)] and a portfolio viewer can read the history",
+            "A non-premium instance does not expose the history (inherited premium gate)"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs",
+          "scenario_name": "Endpoint returns the recorded backlog and done series in date order",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs"
+          ],
+          "implementation_notes": "EXTEND DeliveriesController (DELIVER may instead create a thin DeliveryMetricsController if controller cohesion warrants — open question, no architectural impact). Route GET /api/v1/deliveries/{deliveryId:int}/metrics-history + api/latest, [RbacGuard(PortfolioRead)], premium-gated by inheritance from the delivery surface. Read FROM the store ordered by date via the 01-02 repository; return empty points: [] honestly when no snapshots (D6 forward-only). RBAC: authorization flows through IRbacAdministrationService; no new write surface. CLIENTS follow-up (not a code step here): ONE new endpoint => version-gate obligation in the separate clients repo (FEATURE_REQUIRES_SERVER_NEWER_THAN, strictly newer than last released). The read AT mirrors CumulativeStateTimeReadApiIntegrationTest (WebApplicationFactory<Program> + EnsureDeleted/EnsureCreated + As* auth + Mock<ILicenseService>). Async all the way, early returns, no comments.",
+          "deps": ["02-01", "01-02"]
+        },
+        {
+          "id": "02-03",
+          "name": "Read-API coverage: empty store, RBAC viewer, premium gate, consolidated series",
+          "criteria": [
+            "An empty store returns an empty series with a null firstSnapshotDate, not an error",
+            "A portfolio viewer (read access) can read the history; an unauthorized caller cannot",
+            "A non-premium instance is denied the history via the inherited premium gate",
+            "The consolidated response carries the backlog/done/remaining series with forward fields null"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs",
+          "scenario_name": "Empty store yields an honest empty series, not an error",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "Un-Ignore and flesh out the remaining facets of the pre-scaffolded read-API AT (currently [Ignore(\"pending — DELIVER (delivery-metrics)\")]): empty-store honest empty series (@error), AsPortfolioViewer read (@rbac — milestone-1 'A portfolio viewer can read the delivery metrics history'), non-premium denied via Mock<ILicenseService> returning false (@premium @error — milestone-1 'A non-premium instance does not expose...' AND integration-checkpoints 'The read is gated by premium and portfolio read access'), consolidated-series shape (@integration). WebApplicationFactory<Program> + real EF context + EnsureDeleted/EnsureCreated. NUnit: Is.Zero not Is.EqualTo(0) (NUnit4002); Assert.EnterMultipleScope (NUnit2056) with independent asserts (NUnit2045); CA1861 hoist any constant array literal to a private static readonly field; S3267/S6608 LINQ idioms. No decorative/structural/provenance comments in the test. Factory functions getMockX-style for fixture rows, validated against the production model; never redefine the schema in the test.",
+          "deps": ["02-02"]
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Frontend Metrics tab, burnup chart, and E2E walking skeleton",
+      "description": "Surface the burnup in a new Metrics tab on the per-delivery DeliverySection accordion: a Zod-parsed fetch, a MUI-X burnup chart with backlog and done lines plus a forward-only empty state, lazily loaded on first tab open behind the inherited premium gate, proven end-to-end by a demo-data-seeded Playwright walking skeleton.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Zod schema, fetch method, and DeliveryBurnupChart with Metrics tab",
+          "criteria": [
+            "deliveryMetricsHistorySchema parses the endpoint response with forward fields nullable; the type is z.infer-derived",
+            "The fetch method requests metrics-history and parses the body through the schema",
+            "DeliveryBurnupChart renders a backlog line and a done line over a time axis with a delivery-date marker",
+            "The forward-only empty state reads 'builds forward from today — no snapshots recorded yet' when no snapshots exist",
+            "DeliverySection splits into a Work Items tab (existing grid) and a Metrics tab that lazily fetches on first open behind the premium gate"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/DeliveryBurnupChart.test.tsx",
+          "scenario_name": "Burnup renders backlog and done lines and the forward-only empty state",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Delivery/DeliveryMetricsHistory.ts",
+            "Lighthouse.Frontend/src/services/Api/DeliveryService.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/DeliveryBurnupChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/DeliveryBurnupChart.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx"
+          ],
+          "implementation_notes": "CREATE the Zod schema + z.infer type under src/models/Delivery/ with forward fields .nullable() (schema-first at the FE/BE trust boundary; the contract is probed by the schema, no Pact). EXTEND DeliveryService.ts with the GET parsed by the schema. CREATE DeliveryBurnupChart.tsx with MUI-X LineChart (reuse the StackedAreaChart area+line + scaleType:'time' idiom): backlog line + done line, delivery-date marker, forward-only empty state per D6. EXTEND DeliverySection.tsx: split AccordionDetails into a 'Work Items' tab (existing grid) + a 'Metrics' tab (charts), lazily fetch metrics-history on first Metrics-tab open, inherit canUsePremiumFeatures gate. FE Vitest+RTL test is DELIVER's to CREATE: renders backlog+done from a mocked endpoint response, and the forward-only empty state; assert BUSINESS behavior, not 'renders without crashing'. TS strict, never any (narrow unknown). S107 options-object when a function takes >3 params/any optional; S3776/S3358 extract axis-config helpers, no nested ternaries in JSX. UPPER_SNAKE_CASE module consts. Mock only abstractions you own (the DeliveryService), never fetch directly. No decorative/structural/provenance comments in prod or test.",
+          "deps": ["02-02"]
+        },
+        {
+          "id": "03-02",
+          "name": "E2E walking skeleton: demo-snapshot seeding, spec, and POM",
+          "criteria": [
+            "Demo-data seeding includes DeliveryMetricSnapshot rows so a fresh demo instance renders a populated burnup",
+            "A forecaster opens a delivery's Metrics tab and sees the backlog and done lines",
+            "The forecaster can switch back to the Work Items tab",
+            "The spec runs green against the locally started app with seeded demo data on a premium instance"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/portfolios/DeliveryMetrics.spec.ts",
+          "scenario_name": "Forecaster opens a delivery's Metrics tab and sees the backlog and done lines",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/portfolios/DeliveryMetrics.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/portfolios/Deliveries/DeliveryMetricsTab.ts",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DemoData/"
+          ],
+          "implementation_notes": "DELIVER action item 3 (demo-snapshot seeding, medium): a fresh demo instance is forward-only/empty, so EXTEND demo-data seeding with deterministic DeliveryMetricSnapshot rows (reuse the demo-data-time-in-state CSV-column precedent, MEMORY project_demo_data_time_in_state_via_csv_column) so the WS renders a POPULATED burnup — the single hard WS green-able pre-requisite. Un-fixme DeliveryMetrics.spec.ts (currently test.fixme) and flesh out the DeliveryMetricsTab POM. E2E uses DEMO data via loadDemoScenario, never live syncs; premium instance (license import recipe). ALL locators go through the POM (no inline page.locator in the spec); add a POM method when an element is needed. RUN the spec locally (dotnet run backend + license import + playwright) before committing — pnpm build only type-checks, not locator validity; do not punt to the user. Push implementation-invariant assertions into the backend integration / read-API tests, keep E2E minimal (one walking-skeleton scenario). Confirm the exact demo-seeding source location during DELIVER (DemoData services directory).",
+          "deps": ["03-01"]
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/",
+      "Lighthouse.Frontend/src/",
+      "Lighthouse.EndToEndTests/tests/"
+    ],
+    "test_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/",
+      "Lighthouse.Frontend/src/",
+      "Lighthouse.EndToEndTests/tests/"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "approved_at": "2026-06-02",
+    "notes": "Reviewer flagged 3 folded-scenario traceability concerns; resolved by annotating implementation_notes (schema permits one scenario_name per step). 01-03 owns the re-open facet, 01-04 owns dispatch-once+freshness on both paths, 02-03 owns the premium+RBAC gate. All Slice-1 in-scope scenarios mapped; milestone-2/3/4/5 correctly excluded; deps form a clean DAG."
+  }
+}

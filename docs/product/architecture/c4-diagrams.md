@@ -765,3 +765,100 @@ The amend makes four additional commitments visible:
 3. **Units are an FE concern** — the backend contract stays `totalDays` (double); `formatDuration` picks the display unit at render time (D16). Cross-endpoint numeric comparability with sibling F and `cycleTimePercentiles` is preserved.
 4. **RAG is decoupled from the picker** — the FE holds the systemic response as the RAG source; the picker fetch drives only the rendered bars (D18).
 
+---
+
+# C4 Architecture Diagrams — delivery-metrics
+
+Feature: delivery-metrics (Epic 3993 — over-time delivery metrics: backlog/done/inferred-estimate/forecast burnup, likelihood/when-distribution predictability trend, stretch fever chart, all read from one `DeliveryMetricSnapshot` store fed by a forward recorder — forward-only, no backfill; the chart accrues from the day recording begins)
+Wave: DESIGN
+Date: 2026-06-02
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Status: PROPOSED (six forking decisions pending user confirmation; locked DISCUSS decisions D1-D12 inherited)
+
+---
+
+## C4 Level 1 — System Context (delta)
+
+No new external actors and no new external systems. The `Delivery Forecaster / RTE` persona (primary) and `Product Owner` (secondary, scope-cut lens) consume the same read-only chart-glance relationship with Lighthouse that existing forecasting personas use. No L1 diagram is added — the prior System Contexts cover this feature's actors and systems unchanged.
+
+---
+
+## C4 Level 2 — Container (delta)
+
+No new containers. The Backend API gains ONE new endpoint plus a new persistence object, a new `PortfolioForecastsUpdated` domain event, and an event-driven recorder (a domain-event handler) reacting to it on the existing in-process domain-event bus; the Frontend SPA gains up to three new chart components and a Zod schema; the Database container gains ONE new table (`DeliveryMetricSnapshot`) — the first delivery time-series store.
+
+```mermaid
+C4Container
+    title Container Diagram - Delivery Metrics (delta over the state-time-cumulative-view baseline)
+
+    Person(forecaster, "Delivery Forecaster / RTE", "Opens a delivery on the Portfolio detail surface; reads backlog/done/forecast over time to tell an honest trend story to leadership")
+    Person(po, "Product Owner", "Secondary - uses the same forecast-vs-backlog trend for a scope-cut decision")
+
+    Container(spa, "Frontend SPA", "React 18 + TypeScript + MUI + MUI-X-charts", "NEW DeliveryBurnupChart (MUI-X LineChart, area+line series, time axis, delivery-date marker; done + actual-backlog + inferred-estimate + forecast band). NEW DeliveryPredictabilityChart (likelihood-over-time line, getLikelihoodLevel RAG bands, when-distribution toggle). Stretch DeliveryFeverChart. NEW deliveryMetricsHistorySchema (Zod) parsed at the trust boundary. Charts render inside the existing per-delivery DeliverySection accordion behind the inherited canUsePremiumFeatures gate + useRbac() read gate.")
+    Container(api, "Backend API", "C# .NET 8 ASP.NET Core Web API", "ONE new endpoint GET /api/v1/deliveries/{deliveryId}/metrics-history ([RbacGuard(PortfolioRead)]) returning all series from the store. NEW PortfolioForecastsUpdated domain event dispatched after the forecast update + write-back in PortfolioUpdater.Update and ForecastUpdater.Update. NEW DeliveryMetricSnapshotRecordingHandler (IDomainEventHandler) reacts to it — the SOLE feed — recording the day's current backlog/done counts plus the forward-only inferred-estimate/forecast/likelihood, reusing the DeliveryWithLikelihoodDto.FromDelivery projection. Reads/writes via IDeliveryMetricSnapshotRepository.")
+    ContainerDb(db, "Database", "SQLite (dev/test) / PostgreSQL (prod) via EF Core", "ONE new table DeliveryMetricSnapshot (wide row per (deliveryId, recordedAt.Date); unique index; nullable forward columns; WhenDistributionJson value-converted). EF migration via the CreateMigration script across all providers. Forward-recorded only — no read of historical item dates to reconstruct.")
+    Container(e2e, "E2E Test Runner", "Playwright + TypeScript", "One new spec: open a delivery, see the burnup render from recorded snapshots (or the forward-only empty state before any recording). Recorder arithmetic + idempotency live in NUnit.")
+
+    Rel(forecaster, spa, "Opens a delivery and reads its over-time charts via", "HTTPS")
+    Rel(po, spa, "Reads the forecast-vs-backlog trend for a scope-cut via", "HTTPS")
+    Rel(spa, api, "GET /api/v1/deliveries/{deliveryId}/metrics-history", "HTTPS / JSON")
+    Rel(api, db, "Reads/writes DeliveryMetricSnapshot; reads WorkItem + FeatureStateTransition via", "EF Core")
+    Rel(e2e, spa, "Drives browser interactions against", "Playwright CDP")
+    Rel(e2e, api, "Calls API helpers for test setup against", "HTTPS / JSON")
+```
+
+---
+
+## C4 Level 3 — Component: Snapshot Store and Forward-Recorder Domain
+
+The store + single forward feed (ADR-048), the event-driven recorder trigger + idempotency (ADR-049), and the endpoint/schema shape (ADR-050) are the architecturally significant decisions. This diagram makes the persistence model and the recorder's event-driven trigger explicit: `PortfolioUpdater`/`ForecastUpdater` dispatch a NEW `PortfolioForecastsUpdated` event after the forecast update + write-back; the `DeliveryMetricSnapshotRecordingHandler` reacts on the existing domain-event bus, reuses the current-snapshot projection, and writes through one driven port keyed `(deliveryId, recordedAt.Date)`; charts read one endpoint parsed by one Zod schema. There is no reconstruction path — every series accrues forward from the day recording begins.
+
+```mermaid
+C4Component
+    title Component Diagram - Delivery Metrics Snapshot Store and Event-Driven Forward Recorder (Backend + Frontend)
+
+    Container_Boundary(api, "Backend API") {
+        Component(deliveriesCtrl, "DeliveriesController (existing, EXTENDED) or DeliveryMetricsController (NEW)", "ASP.NET Core ApiController", "GET /api/v1/deliveries/{deliveryId}/metrics-history (+ api/latest). [RbacGuard(PortfolioRead)] scoped via the delivery's portfolio. Projects DeliveryMetricsHistoryDto from the store.")
+        Component(portfolioUpdater, "PortfolioUpdater / ForecastUpdater (existing, EXTENDED)", "C# UpdateServiceBase<Portfolio>", "After UpdateForecastsForPortfolio + forecast write-back, dispatch PortfolioForecastsUpdated via IDomainEventDispatcher.PublishAsync (ADR-049). Once per portfolio-forecast-completion on both paths. NOT before the forecast (unlike PortfolioFeaturesRefreshed at line 73).")
+        Component(forecastsUpdatedEvt, "PortfolioForecastsUpdated(int PortfolioId) (NEW)", "C# record : IDomainEvent", "The genuinely-fresh post-forecast trigger. Mirrors PortfolioFeaturesRefreshed's shape. The ONLY new event Epic 3993 introduces.")
+        Component(recordingHandler, "DeliveryMetricSnapshotRecordingHandler (NEW)", "C# IDomainEventHandler<PortfolioForecastsUpdated>", "The sole feed. On HandleAsync: load the portfolio's deliveries, project today's current backlog/done counts AND forward-only figures (estimatedTotalWork/forecastHowMany/likelihoodPercentage/whenDistribution), upsert today's row idempotent on (deliveryId, recordedAt.Date). Reuses DeliveryWithLikelihoodDto.FromDelivery. Modeled on PortfolioFeaturesRefreshedMetricsInvalidationHandler.")
+        Component(forecastSvc, "IForecastService / ForecastService (existing, REUSE)", "C# class", "Provides the fresh Feature.Forecasts the recorder reads for forecastHowMany / likelihood.")
+        Component(snapshotRepo, "IDeliveryMetricSnapshotRepository + DeliveryMetricSnapshotRepository (NEW)", "C# port + EF impl", "IRepository<DeliveryMetricSnapshot> over the new DbSet (FK DeliveryId -> Delivery, ON DELETE CASCADE). Sole data-layer touchpoint for the store. Get-or-create by (deliveryId, recordedAt.Date).")
+        Component(historyDto, "DeliveryMetricsHistoryDto + DeliveryMetricPointDto (NEW)", "C# records", "{ deliveryDate, firstSnapshotDate, points: [{ date, totalWork, doneWork, remainingWork, estimatedTotalWork?, forecastHowMany?, likelihoodPercentage?, whenDistribution? }] } (ADR-050).")
+    }
+
+    Container_Boundary(spa, "Frontend SPA") {
+        Component(deliveryHistorySvc, "DeliveryMetricsService.ts (NEW or EXTENDED)", "TypeScript HTTP adapter", "getDeliveryMetricsHistory(deliveryId) -> parsed via deliveryMetricsHistorySchema.")
+        Component(historySchema, "deliveryMetricsHistorySchema (NEW)", "Zod schema + z.infer type", "Parses the metrics-history response at the trust boundary; forward fields .nullable().")
+        Component(deliverySection, "DeliverySection (existing, EXTENDED)", "React component", "Renders the charts in AccordionDetails behind the inherited premium gate; fetches history lazily on expand. (Placement PROPOSED - Decision 5.)")
+        Component(burnup, "DeliveryBurnupChart (NEW)", "React component", "MUI-X LineChart area+line, time x-axis, delivery-date marker. Series: done, actual-backlog, inferred-estimate (Slice 2), forecast band (Slice 3). On-track read is geometric (D8). D6 forward-only annotation when forward series null.")
+        Component(predictability, "DeliveryPredictabilityChart (NEW, Slice 4)", "React component", "Likelihood-over-time line, RAG-banded via getLikelihoodLevel (<50/<70/<85/>=85); when-distribution spread is a toggle on the same chart (D12).")
+        Component(fever, "DeliveryFeverChart (NEW, Slice 5 stretch)", "React component", "Buffer-consumed vs schedule-consumed bubble + trail. Greenlight-gated, out of committed MVP.")
+        Component(historyModel, "IDeliveryMetricsHistory + IDeliveryMetricPoint (NEW)", "TypeScript types", "z.infer from the Zod schema; mirror the backend DTO.")
+    }
+
+    Rel(deliveriesCtrl, snapshotRepo, "reads stored rows for the delivery via")
+    Rel(deliveriesCtrl, historyDto, "projects response via")
+    Rel(portfolioUpdater, forecastSvc, "refreshes Feature.Forecasts via UpdateForecastsForPortfolio")
+    Rel(portfolioUpdater, forecastsUpdatedEvt, "dispatches after forecast write-back via IDomainEventDispatcher")
+    Rel(forecastsUpdatedEvt, recordingHandler, "handled by")
+    Rel(recordingHandler, forecastSvc, "reads fresh Feature.Forecasts for forward figures")
+    Rel(recordingHandler, snapshotRepo, "upserts the day's row by (deliveryId, recordedAt.Date) via")
+
+    Rel(deliverySection, deliveryHistorySvc, "fetches history on expand via")
+    Rel(deliveryHistorySvc, historySchema, "parses response at the boundary via")
+    Rel(deliverySection, burnup, "renders with parsed history")
+    Rel(deliverySection, predictability, "renders with parsed history (Slice 4)")
+    Rel(deliverySection, fever, "renders with parsed history (Slice 5 stretch)")
+    Rel(burnup, historyModel, "consumes via props")
+    Rel(predictability, historyModel, "consumes via props")
+```
+
+The diagram makes five architectural commitments visible:
+
+1. **One store, one driven port, one feed, one read path** — the `DeliveryMetricSnapshotRecordingHandler` is the sole writer through `IDeliveryMetricSnapshotRepository`; the endpoint reads it; no live request-time reconstruction and no historical reconstruction path — every series accrues forward (ADR-048). ArchUnitNET-enforceable.
+2. **Recorder is event-driven, fired post-forecast** — `PortfolioUpdater`/`ForecastUpdater` dispatch the NEW `PortfolioForecastsUpdated` event after `UpdateForecastsForPortfolio` + write-back; the handler reacts on the existing domain-event bus (Epic 5121 / ADR-027). NOT the stale pre-forecast `PortfolioFeaturesRefreshed` (line 73), and NOT an inline step in the updater. Fresh-by-construction, no second schedule, no GET side effect (ADR-049).
+3. **Date-keyed idempotency** — get-or-create by `(deliveryId, recordedAt.Date)` with a unique index; safe under re-run/restart; NOT a `=true` sentinel (ADR-048/049).
+4. **One endpoint, schema-first FE boundary** — all series in one response, parsed by one Zod schema; forward fields null until accrued render as the D6 honest forward-only state, never zero (ADR-050).
+5. **Snapshot delete lifecycle = FK cascade** — `DeliveryMetricSnapshot.DeliveryId` → `Delivery` is `ON DELETE CASCADE`; deleting a delivery removes its rows at the DB, no orphans, no `DeliveryDeleted` event (ADR-048).
+

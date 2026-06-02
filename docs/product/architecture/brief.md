@@ -881,6 +881,138 @@ The 2026-05-26 DISCUSS revision (D13–D18) is reconciled into this feature's DE
 
 ---
 
+## Application Architecture — delivery-metrics
+
+Feature: delivery-metrics (Epic 3993 — over-time delivery metrics on the Portfolio → Delivery detail surface: a backlog/done/inferred-estimate/forecast burnup, a likelihood/when-distribution predictability trend, and a stretch fever chart, all read from one snapshot store)
+Wave: DESIGN
+Date: 2026-06-02
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Status: PROPOSED — the six forking decisions below are pending user confirmation (see `docs/feature/delivery-metrics/design/wave-decisions.md`); the locked DISCUSS decisions (D1-D12) are inherited.
+
+This section is **additive** to the prior `## Application Architecture` deltas. Architectural pattern (ports-and-adapters), paradigm (OOP backend + functional-leaning React frontend), and core invariants are unchanged. Unlike the sibling `state-time-cumulative-view` (a pure downstream reader, no new persistence), this feature **introduces the first delivery time-series persistence**: ONE `DeliveryMetricSnapshot` store fed by ONE feed — the **forward recorder**. Every series (backlog, done, inferred-estimate, forecast, likelihood/when-distribution) is forward-only: it accrues daily from the day recording begins, exactly like the forecast/likelihood trends. There is NO retroactive reconstruction of history from item dates; the chart starts empty at launch and fills one day at a time. All three charts read from the one store. Surfaced via ONE new endpoint and rendered as up to three new chart components on the existing per-delivery `DeliverySection` accordion. Charts live in a **"Metrics" tab inside the per-delivery `DeliverySection` accordion** (the existing feature grid becomes a "Work Items" tab); the Metrics tab is the lazy fetch trigger for `metrics-history`. Premium-gated by inheritance (the delivery surface already gates on `canUsePremiumFeatures`); RBAC by inheritance (existing `PortfolioRead` path + `useRbac()`); NO new top-level route; NO new external integration; NO new external library.
+
+### Architectural Pattern
+
+**Ports-and-Adapters (Hexagonal)** — unchanged. New driving port: ONE HTTP endpoint `GET .../deliveries/{deliveryId}/metrics-history` (ADR-050). New driven port: `IDeliveryMetricSnapshotRepository : IRepository<DeliveryMetricSnapshot>` over EF (the store, ADR-048). New application-service responsibility: a `DeliveryMetricSnapshotRecordingHandler : IDomainEventHandler<PortfolioForecastsUpdated>` owning the forward-recording projection (the sole feed), reacting to the new `PortfolioForecastsUpdated` domain event dispatched after the portfolio forecast update completes (ADR-049). The forward recorder reuses the current-snapshot projection logic in `DeliveryWithLikelihoodDto.FromDelivery` (DRY of the metric KNOWLEDGE) rather than duplicating the likelihood/forecast math.
+
+### Key invariants introduced
+
+- **One store, one feed (ADR-048)**: `DeliveryMetricSnapshot` is the single time-series source of truth, fed solely by the forward recorder (the `DeliveryMetricSnapshotRecordingHandler`). Each day the recorder records the then-current actual-item `totalWork`/`doneWork`/`remainingWork` (re-opens handled naturally — the next day's snapshot reflects the then-current count) plus the forward-only `estimatedTotalWork`/`forecastHowMany`/`likelihoodPercentage`/`whenDistribution`. No live-query read path and no historical reconstruction; every series accrues forward from the first recorded day.
+- **Date-keyed idempotency (ADR-049)**: row identity is `(deliveryId, recordedAt.Date)` with a unique index; the recorder upserts on that key. NOT a `=true` sentinel (the forecast-minimum-data-guard non-idempotency trap). At most one row per delivery per day.
+- **Forward-only honesty (D6, now universal)**: the whole series starts empty at launch — ALL charts (burnup included) render the forward-only empty state "builds forward from today — no snapshots recorded yet", and forward-only forecasting columns are null before the recorder began. Never rendered as zero.
+- **Recorder is event-driven (ADR-049)**: the recorder is a domain-event handler reacting to a NEW `PortfolioForecastsUpdated(int PortfolioId) : IDomainEvent`, dispatched at the genuinely-fresh moment — AFTER `UpdateForecastsForPortfolio` + the forecast write-back in BOTH `PortfolioUpdater.Update` (after ~line 84) and `ForecastUpdater.Update`. It is NOT an inline step in the updater. The existing `PortfolioFeaturesRefreshed` event is NOT reused because it fires pre-forecast (line 73, before the recompute + forecast at lines 76/82/84) and would record stale forecast/likelihood. The recorder is modeled on the precedent handlers `PortfolioFeaturesRefreshedMetricsInvalidationHandler` and `TeamDeletedRefreshLogCleanupHandler` on the Epic 5121 / ADR-027 bus — fresh-by-construction, no second cadence, no GET-with-side-effect.
+- **Snapshot delete lifecycle = EF FK cascade (ADR-048)**: `DeliveryMetricSnapshot.DeliveryId` → `Delivery` is `ON DELETE CASCADE`, so deleting a delivery (`DeliveriesController.DeleteDelivery`) removes its snapshot rows at the DB. No `DeliveryDeleted` event is introduced — FK cascade is the simplest correct cleanup.
+- **Event scope for Epic 3993**: the ONLY new domain event 3993 introduces is `PortfolioForecastsUpdated`. Retrofitting events onto existing delivery CRUD (create/update/delete) is out of scope (Epic 5121's remit; no 3993 consumer — delete cleanup is the FK cascade above).
+- **One endpoint, all series, wide nullable schema (ADR-050)**: `metrics-history` returns every series; the snapshot is one wide row per (delivery, day) with nullable forward columns; `whenDistribution` is a value-converted JSON column (the established `AdditionalFieldValues`/`StateMappings` pattern). One endpoint = one Lighthouse-Clients version-gate entry from Slice 1.
+- **Three charts, not five (D12)**: `DeliveryBurnupChart` (enriched across Slices 1-3: done + actual-backlog + inferred-estimate + forecast band against the delivery-date marker), `DeliveryPredictabilityChart` (likelihood-over-time RAG-banded via the existing `getLikelihoodLevel` thresholds + a when-distribution toggle, Slice 4), and a stretch fever-chart widget (Slice 5). Each of Slices 1-3 adds a SERIES to the burnup, not a new component.
+- **On-track read is geometric (D8)**: no new RAG endpoint in MVP; "done + forecast ≥ backlog at the delivery-date marker ⇒ on track" is read off burnup geometry.
+- **Charts placement (PROPOSED, Decision 5)**: TABS inside the per-delivery `DeliverySection` accordion `AccordionDetails` — a "Work Items" tab (the existing feature grid) and a "Metrics" tab (the charts), behind the inherited premium gate. The Metrics tab is the lazy fetch trigger for `metrics-history`. The when-distribution is a TOGGLE on `DeliveryPredictabilityChart` (D12), not a separate view.
+
+### System Context and Capabilities
+
+Adds, for premium instances only (inheriting the delivery surface's `canUsePremiumFeatures` gate):
+
+1. New `DeliveryMetricSnapshot` table (DbSet + EF migration via the `CreateMigration` script across all providers) — the single delivery time-series store.
+2. New `PortfolioForecastsUpdated` domain event + **forward recorder** `DeliveryMetricSnapshotRecordingHandler` (the sole feed) recording each delivery's current backlog/done counts (Slice 1) plus the forward-only inferred-estimate (Slice 2), forecast-how-many (Slice 3), likelihood/when-distribution (Slice 4) per delivery per day, reacting to the new event dispatched after the portfolio forecast update completes. No backfill — the store accrues forward from the day recording begins.
+3. New `GET /api/v1/deliveries/{deliveryId}/metrics-history` (+ `api/latest/…`) endpoint returning all series from the store (ADR-050), `[RbacGuard(PortfolioRead)]`.
+4. New `DeliveryBurnupChart` widget on the per-delivery `DeliverySection` "Metrics" tab — backlog + done + inferred-estimate + forecast band on one count axis against the delivery-date marker; forward-only (empty until recording accrues).
+5. New `DeliveryPredictabilityChart` widget (Slice 4) — likelihood-over-time line, RAG-banded, with a when-distribution-spread toggle.
+6. Stretch `DeliveryFeverChart` widget (Slice 5) — buffer-consumed vs schedule-consumed bubble + trail (greenlight-gated, out of committed MVP).
+
+See `docs/product/architecture/c4-diagrams.md` → "C4 Architecture Diagrams — delivery-metrics" for L1 (no-delta), L2 (container delta: new store + endpoint + new `PortfolioForecastsUpdated` event + its recording handler + chart widgets), and L3 (component diagram for the snapshot store / event-driven forward-recorder subsystem — the complex part).
+
+### Component Decomposition
+
+See `docs/feature/delivery-metrics/feature-delta.md` → **Wave: DESIGN / [REF] Component decomposition** for the full table. Headline elements:
+
+- **NEW (backend)**: `DeliveryMetricSnapshot` model + DbSet + EF migration (all providers via `CreateMigration`); `IDeliveryMetricSnapshotRepository` + `DeliveryMetricSnapshotRepository` (driven port + EF adapter); `PortfolioForecastsUpdated(int PortfolioId) : IDomainEvent` (the recorder's trigger, mirroring `PortfolioFeaturesRefreshed`); `DeliveryMetricSnapshotRecordingHandler : IDomainEventHandler<PortfolioForecastsUpdated>` (the forward-record projection, the sole feed — modeled on `PortfolioFeaturesRefreshedMetricsInvalidationHandler`); `DeliveryMetricsHistoryDto` (+ point record); a new endpoint on `DeliveriesController` (or a thin `DeliveryMetricsController` mirroring the controller precedent); NUnit integration tests (recorder count/forecast exactness + idempotency + migration-on-real-provider + recorder freshness + event dispatched once on both update paths).
+- **EXTEND (backend)**: `PortfolioUpdater.Update` and `ForecastUpdater.Update` (dispatch `PortfolioForecastsUpdated` via `IDomainEventDispatcher.PublishAsync` after `UpdateForecastsForPortfolio` + the forecast write-back — once per portfolio-forecast-completion on each path); `LighthouseAppContext` (DbSet + `OnModelCreating` config: cascade-delete FK `DeliveryMetricSnapshot.DeliveryId` → `Delivery`, unique `(DeliveryId, RecordedAt)` index, `WhenDistributionJson` value converter). Reuse the `DeliveryWithLikelihoodDto.FromDelivery` projection for the recorder's forward figures. (`ForecastUpdater` is no longer the recorder host — it only dispatches the event.)
+- **NEW (frontend)**: `DeliveryBurnupChart.tsx`, `DeliveryPredictabilityChart.tsx`, (stretch) `DeliveryFeverChart.tsx`; `deliveryMetricsHistorySchema` (Zod) + inferred `IDeliveryMetricsHistory` model; `DeliveryMetricsService` methods (or extend the existing delivery service); Vitest tests; one E2E spec.
+- **EXTEND (frontend)**: `DeliverySection.tsx` (split into a "Work Items" tab and a "Metrics" tab in `AccordionDetails` behind the inherited premium gate; the Metrics tab lazily fetches the history on first open); the delivery API service / context (add the history fetch).
+- **REUSE AS-IS**: `IRepository<T>` base port + EF repository pattern; `ForecastUpdater` / `UpdateServiceBase<Portfolio>` cadence; `IForecastService` + `Feature.Forecasts`; `DeliveryWithLikelihoodDto.FromDelivery` projection (recorder source); `Feature.EstimatedSize`/`IsUsingDefaultFeatureSize` (inferred-estimate source); the JSON value-converter pattern in `LighthouseAppContext`; MUI-X `LineChart` (the `StackedAreaChart` idiom — area + line series, `scaleType: "time"` x-axis); `getLikelihoodLevel` / `ForecastLevel` RAG thresholds; `useRbac()`; `useLicenseRestrictions` / `canUsePremiumFeatures` gate; existing empty-chart tone.
+
+### Driving Ports (HTTP)
+
+| Method | Route | Auth | Status |
+|---|---|---|---|
+| GET | `/api/v1/deliveries/{deliveryId:int}/metrics-history` (+ `api/latest/…`) | `[RbacGuard(PortfolioRead)]` (scope resolved from the delivery's portfolio) | NEW (Slice 1; Slices 2-4 add nullable series, no new route) |
+
+Response shape: ADR-050 (`{ deliveryDate, firstSnapshotDate, points: [{ date, totalWork, doneWork, remainingWork, estimatedTotalWork?, forecastHowMany?, likelihoodPercentage?, whenDistribution? }] }`). Empty `points: []` for a delivery with no items. Forward fields null until the recorder accrues them (D6). One endpoint → one Lighthouse-Clients version-gate entry. No new top-level route.
+
+### Driven Ports
+
+| Port | Adapter | Status |
+|---|---|---|
+| `IDeliveryMetricSnapshotRepository : IRepository<DeliveryMetricSnapshot>` | `DeliveryMetricSnapshotRepository` (EF, over the new DbSet) | NEW (Slice 1) |
+| `IForecastService` (for the recorder's forward figures, via the existing `Feature.Forecasts` refreshed by the pipeline) | `ForecastService` (existing) | REUSE AS-IS |
+| `Feature.FeatureWork` / `Feature.EstimatedSize` read (the recorder's current backlog/done + inferred-estimate source) | existing model / repositories | REUSE AS-IS (read-only) |
+
+External integrations introduced by this feature: **NONE**. The endpoint and recorder read only Lighthouse-internal persisted data. **No contract tests recommended** at the platform-architect handoff — there is no external integration to verify. (The FE↔BE contract is probed by the Zod schema at the trust boundary, ADR-050.)
+
+### Technology Stack
+
+| Component | Technology | Version | License | Rationale |
+|---|---|---|---|---|
+| Backend framework | ASP.NET Core Web API | .NET 8 | MIT | Established; no change |
+| Backend ORM | Entity Framework Core | 8.x | MIT | Established; the new store + migration use it via the `CreateMigration` script (Sqlite + Postgres assemblies) |
+| Backend test framework | NUnit 4.6 + Moq + EF InMemory + `Microsoft.AspNetCore.Mvc.Testing` | per Lighthouse.Backend.Tests.csproj | MIT / Apache 2.0 | Established; migration test runs on a REAL provider (InMemory misses the migration trap) |
+| Backend mutation testing | Stryker.NET | current | MIT | Per-feature gate ≥80% kill rate |
+| Frontend framework | React | 18 | MIT | Established |
+| Frontend language | TypeScript (strict) | 5.x | Apache 2.0 | Established |
+| Frontend UI / charts | Material UI + MUI-X-charts (`LineChart`) | 5.x / current | MIT | Established — burnup/predictability reuse the `StackedAreaChart` area+line idiom |
+| Frontend schema validation | Zod | current | MIT | Established trust-boundary pattern; parses the metrics-history response |
+| Frontend test framework | Vitest + React Testing Library | current | MIT | Established |
+| Frontend mutation testing | Stryker (TS) | current | Apache 2.0 | Per-feature gate ≥80% kill rate |
+| E2E test framework | Playwright (Page Object Model) | 1.x | Apache 2.0 | Established |
+
+NO new technology, library dependency, or third-party service is introduced.
+
+### Reuse Analysis
+
+See `docs/feature/delivery-metrics/feature-delta.md` → **Wave: DESIGN / [REF] Reuse Analysis** for the full table. The two unavoidable CREATE-NEWs are the `DeliveryMetricSnapshot` store/recorder (no time-series persistence exists for deliveries — verified) and the three chart components (the existing charts are run-charts/scatter/aging over a different unit; the burnup is delivery-count over calendar time against a target-date marker — a different question, like state-time-cumulative-view's chart was). Both are justified against the closest in-repo analogs (the `RefreshLog`/`UpdateServiceBase` persisted-recorder pattern for the store/recorder; the `state-time-cumulative-view` new-chart-+-endpoint precedent for the charts).
+
+### Integration Patterns
+
+**Frontend → Backend**: synchronous REST over HTTPS; one GET, parsed by Zod at the boundary.
+**Recording**: event-driven on the in-process domain-event bus (Epic 5121 / ADR-027). `PortfolioUpdater.Update` and `ForecastUpdater.Update` dispatch the new `PortfolioForecastsUpdated` event after the forecast update + write-back; the `DeliveryMetricSnapshotRecordingHandler` reacts and records the day's current counts plus the forward figures from the just-saved fresh `Feature.Forecasts`. No external message queue, no second schedule, no backfill pass — the same in-process cadence, decoupled via the existing event bus.
+
+### Quality Attribute Strategies
+
+**Performance Efficiency**: charts read pre-stored ordered rows (no per-request reconstruction over item history — the reason the live-query alternative was rejected, ADR-048). The recorder is one projection + one upsert per delivery per pipeline run; there is no one-time backfill cost. A Slice-1 SPIKE validates per-day-per-delivery row volume on real data.
+**Reliability**: date-keyed idempotency makes the recorder safe under re-run, restart, and concurrent triggers (DB unique index backstop). A failing/disabled forecast update simply records no rows that day — the chart shows the honest forward-only empty/sparse state, no crash.
+**Maintainability**: one store, one endpoint, one recorder, one feed; each ADR carries enforcement rules (below). Slices 2-4 add a populated column, not a migration or a route.
+**Testability**: the recorder unit-tests against EF InMemory fixtures; the migration test runs on a real provider; charts test in Vitest off the parsed schema; mutation ≥80% (DoD).
+**Security**: the endpoint inherits `[RbacGuard(PortfolioRead)]`; the recorder is server-side (no user action, no GET side effect). No new auth surface. Premium gating inherited.
+**Observability**: recorder runs adjacent to the existing `RefreshLog` write in the pipeline; the KPI-4 row-count guardrail is a backend integration assertion.
+
+### Deployment Architecture
+
+ONE new persistence object (`DeliveryMetricSnapshot` + EF migration across Sqlite/Postgres via `CreateMigration`). The endpoint deploys with the next backend image; the charts with the next FE bundle. Backwards-compatible by construction (Type-A additive walking skeleton, D10): absent endpoint ⇒ empty chart slot, no regression to the current-snapshot delivery metrics; forward fields null until accrued.
+
+### ADR References (this feature)
+
+- [ADR-048](./adr-048-delivery-metric-snapshot-store.md): Unified `DeliveryMetricSnapshot` Store Fed by a Forward Recorder (forward-only, no backfill)
+- [ADR-049](./adr-049-forward-recorder-hook-point-and-idempotency.md): Forward-Recorder Hook Point (forecast-update pipeline) and Date-Keyed Idempotency
+- [ADR-050](./adr-050-metrics-history-endpoint-and-snapshot-schema.md): Single `metrics-history` Endpoint and Wide Nullable-Column Snapshot Schema
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Recorder writes the day's exact current `totalWork`/`doneWork`/`remainingWork` for a fixture delivery; a re-open lowers the next recorded `doneWork` | NUnit fixture test (ADR-048) |
+| Recorder is idempotent on `(deliveryId, recordedAt.Date)`; NO `=true` sentinel; unique index enforced | NUnit + DB-index test (ADR-048/049) |
+| EF migration applies on a REAL provider (Sqlite + Postgres), not just InMemory | Migration test (ADR-048) |
+| Recorder reacts to `PortfolioForecastsUpdated` (post-forecast), NOT `PortfolioFeaturesRefreshed` (pre-forecast); recorded forward values match the just-computed forecast, not the stale pre-forecast values | NUnit integration test (ADR-049) |
+| `PortfolioForecastsUpdated` is dispatched exactly once per portfolio-forecast-completion on BOTH `PortfolioUpdater.Update` and `ForecastUpdater.Update` | NUnit integration test (ADR-049) |
+| Deleting a delivery cascade-deletes its `DeliveryMetricSnapshot` rows (FK `ON DELETE CASCADE`); no orphans, no `DeliveryDeleted` event | NUnit integration test (ADR-048) |
+| Metrics access flows through `IDeliveryMetricSnapshotRepository` — charts read the store, never a live reconstruction | ArchUnitNET + integration test (ADR-048) |
+| ONE `metrics-history` endpoint returns all series; forward fields null until accrued; empty `points` for no-item delivery | Integration test (ADR-050) |
+| FE parses the response via the `deliveryMetricsHistorySchema` Zod schema at the boundary | Vitest test (ADR-050) |
+| Charts render the D6 forward-only annotation when forward fields are null (no zero-render) | Vitest test (ADR-050) |
+| Predictability RAG bands reuse the existing `getLikelihoodLevel` thresholds (<50/<70/<85/≥85) | Vitest test (D12) |
+
+---
+
 ## System Architecture — target-architecture-4618 (analysis)
 
 Story: ADO #4618 "Analyze best target Architecture" (Active, **analysis-only** — "This is just about analyzing where we are now, and where we want to go in future. Not the implementation.")

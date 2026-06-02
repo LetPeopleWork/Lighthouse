@@ -15,6 +15,7 @@ feature_context:
   - forecast-confidence-cap
   - forecast-minimum-data-guard
   - cumulative-state-time-completion-filter
+  - delivery-metrics
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1100,4 +1101,134 @@ jobs:
         guard today; it forecasts from any non-empty throughput, however thin. Gap: 3 — a genuine
         missing safety capability; kept thin by a fixed threshold (no per-team config) and by
         reusing the throughput series already computed for the forecast.
+
+  - id: job-forecast-delivery-trend-over-time
+    title: Tell an honest over-time trend story for a delivery, not a point-in-time number
+    persona: delivery-forecaster
+    feature_context: delivery-metrics
+    created: 2026-06-02
+    note: >
+      Epic 3993 "Delivery Metrics". The delivery detail view shows only the CURRENT snapshot today
+      (likelihood, progress, remaining/total work, Monte-Carlo completion dates — all point-in-time).
+      Verified in code (Delivery.ts, LighthouseAppContext.cs): no historical/time-series persistence
+      exists. Backlog and done over time are reconstructable retroactively from WorkItem created/closed
+      dates (zero new persistence); forecast and likelihood over time are NOT reconstructable (a
+      Monte-Carlo forecast depends on throughput-as-of-that-day) and need a forward-only snapshot table.
+    job_story: >
+      When I am tracking a delivery toward its target date and preparing to report status to
+      leadership,
+      I want to see how the delivery's backlog, completion, and forecast have moved OVER TIME — not
+      just today's snapshot — including whether our predictability is improving or degrading,
+      so I can tell an honest trend story ("we were on track until scope was added in week 3; the
+      forecast has held since") rather than defending a single point-in-time number that leaders
+      read as a guarantee.
+    dimensions:
+      functional: >
+        See a burnup of backlog vs done across the delivery's whole life (reconstructed from
+        existing item dates, full history day one); a forecast band stacked on Done against the
+        backlog line for the on-track read; a likelihood/forecast-spread trend for the
+        predictability read. Features not yet broken down contribute an estimated size so the
+        backlog isn't artificially low. Charts live on the existing Portfolio → Delivery detail
+        surface, inheriting its premium gate and portfolio read-access RBAC. Forecast/likelihood
+        history is forward-only and says so honestly when empty.
+      emotional: >
+        Move from defending a bare snapshot number ("it says 80%, trust me") that a leader can
+        screenshot and hold me to, toward narrating a trend with evidence ("here's where scope
+        jumped, here's the forecast holding steady since") — confidence grounded in the shape of
+        the history rather than a single figure.
+      social: >
+        Be the forecaster/RTE who walks into the leadership review with a delivery's trend story —
+        where it's been, where it's headed, whether predictability is firming up — instead of a
+        point-in-time percentage that invites "is that a promise?". Frames status as a defensible
+        narrative leadership can act on.
+    forces:
+      push: >
+        Today nothing in Lighthouse shows a delivery's metrics over time — the delivery view is
+        snapshot-only. To answer "how did we get here? when did scope jump? is the forecast
+        holding?" the forecaster exports work-item history to a spreadsheet and rebuilds the
+        burnup by hand every status meeting, losing the integrated-tool advantage.
+      pull: >
+        Open the delivery, read its history and forecast trend off charts that are already there —
+        backlog vs done reconstructed instantly, forecast-over-time building forward from the day
+        recording starts, predictability firming or slipping at a glance. One surface, the trend
+        story told without a spreadsheet.
+      anxiety: >
+        Will the retroactively-reconstructed history match what actually happened (re-opened items,
+        bulk-import date skew)? (Surfaced as Slice 1's explicit learning hypothesis, validated
+        against a real delivery before later slices build on it.)
+        Will the forecast trend look broken when it's empty just because it's new? (Mitigated: the
+        empty state reads "forecast trend builds forward from today — no snapshots recorded yet";
+        forward-only is honest, not a defect.)
+        Will an early-stage delivery's backlog read artificially small? (Mitigated: features not yet
+        broken down contribute an estimated size, annotated as such.)
+      habit: >
+        Forecasters reach for a spreadsheet to build a burnup; the new charts ask them to adopt an
+        in-tool answer to a question they've answered offline. Eased by the burnup being a familiar
+        chart shape and by the history appearing on first open (no setup, no recording wait for the
+        backlog/done view).
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — delivery status reporting to leadership is a recurring, high-stakes
+        forecaster conversation, and the trend story is materially more honest and defensible than a
+        snapshot number (same trust surface as the forecast-honesty jobs). Current satisfaction: 1 —
+        the delivery view is snapshot-only today; over-time tracking means a hand-built spreadsheet.
+        Gap: 3 — a genuine missing capability; kept tractable because backlog/done reconstruct from
+        data already in the DB (zero persistence) and forecast/likelihood trends reuse the existing
+        Monte-Carlo engine via a thin forward-only snapshot.
+
+  - id: job-po-scope-cut-from-delivery-trend
+    title: Decide which features to cut when a delivery's forecast won't meet the backlog
+    persona: product-owner
+    feature_context: delivery-metrics
+    created: 2026-06-02
+    note: >
+      Epic 3993 secondary persona/job. The Product Owner is a scope-cut decision-maker on the SAME
+      delivery-metrics over-time charts as the forecaster (no bespoke chart). Distinct from the
+      forecaster's report-the-trend job: the PO acts ON the trend by cutting scope.
+    job_story: >
+      When a delivery I own is approaching its target date and the forecast band on the over-time
+      chart won't meet the backlog line in time,
+      I want to see the trend clearly enough to justify a scope cut — which features to drop so the
+      rest can still land on date,
+      so I can make the cut decision with evidence the team and leadership accept, rather than a
+      gut-feel "let's drop something".
+    dimensions:
+      functional: >
+        Read the forecast-over-time chart's gap between done+forecast and the backlog at the target
+        date; use the burnup's scope-jump history to identify what was added; decide which features
+        to cut to close the gap. Uses the same charts as the forecaster — no separate PO view.
+      emotional: >
+        Move from the discomfort of an arbitrary-feeling cut ("we just have to drop something") to a
+        defensible one ("the forecast won't meet the backlog by the date; cutting these two closes
+        the gap") — confidence the team will accept the call.
+      social: >
+        Be the PO who cuts scope with evidence rather than authority — the trend chart, not rank,
+        justifies the decision in front of the team and leadership.
+    forces:
+      push: >
+        Without an over-time view, a PO judges "will it land?" from a single snapshot likelihood and
+        cuts scope on gut feel, which the team resists and leadership questions.
+      pull: >
+        The forecast-vs-backlog trend makes the gap (and what closes it) visible, turning a
+        contentious cut into an evidence-backed one read off the same chart the forecaster uses.
+      anxiety: >
+        Will the chart over-attribute the gap to scope I can't actually cut? (Mitigated: the burnup's
+        scope-jump history shows what was added and when, and the per-feature breakdown remains
+        available on the snapshot view.)
+      habit: >
+        POs negotiate scope verbally; the chart asks them to ground the cut in the trend — eased
+        because it reuses the same delivery surface they already open to check likelihood.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — scope-cut decisions are real and recurring but lower-frequency and less
+        leadership-facing than the forecaster's status reporting; this is a secondary lens on the
+        same charts, not the spine of the feature. Current satisfaction: 1 — no over-time view exists
+        to ground the cut today. Gap: 2 — valuable but served entirely by the forecaster's charts
+        (no bespoke PO build), hence a smaller gap than the lead job.
 

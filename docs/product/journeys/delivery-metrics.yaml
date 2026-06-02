@@ -1,0 +1,268 @@
+schema_version: 1
+feature_id: delivery-metrics
+updated: 2026-06-02
+note: >
+  Epic 3993 Delivery Metrics. Over-time metrics for a Portfolio's Deliveries. Grounded in a
+  pre-DISCUSS code reality check (Delivery.cs, Delivery.ts, LighthouseAppContext.cs): the delivery
+  view is snapshot-only today. D11 (2026-06-02, backfill dropped) unifies on ONE DeliveryMetricSnapshot
+  store as the single time-series source of truth, fed by ONE feed: a forward recorder — a domain-event
+  handler (DeliveryMetricSnapshotRecordingHandler) reacting to a new PortfolioForecastsUpdated event
+  dispatched after the portfolio forecast update completes — that records every series (backlog, done,
+  inferred estimate of not-yet-broken-down features, forecast, likelihood/when-distribution) for the
+  then-current day. The event fires post-forecast precisely because the existing PortfolioFeaturesRefreshed
+  fires pre-forecast (stale). All charts read from the one store; the
+  chart starts empty at launch and fills one day at a time. There is no backfill and no retroactive
+  reconstruction — every series is forward-only. Charts live in a "Metrics" tab inside the per-delivery
+  DeliverySection accordion (the feature grid is a "Work Items" tab). That single forward-recorded
+  store is the spine of the 5-slice split. See the feature-delta Changed Assumptions for the
+  backfill-drop record.
+
+journeys:
+
+  - name: tell-an-honest-delivery-trend-story
+    goal: >
+      Delivery Forecaster / RTE opens a delivery on the Portfolio → Delivery detail view while
+      preparing to report status to leadership, reads how the delivery's backlog, completion, and
+      forecast have moved OVER TIME (not just today's snapshot), judges whether it is on track and
+      whether predictability is firming or slipping, and walks into the review with a defensible
+      trend narrative instead of a point-in-time number leaders read as a guarantee.
+    persona: "delivery-forecaster (also: delivery-lead-rte secondary for release-train framing; product-owner secondary for the scope-cut decision on the same charts — job-po-scope-cut-from-delivery-trend)"
+
+    emotional_arc:
+      start: Searching — "the delivery view shows 80% today, but how did we get here? Did scope
+        jump? Is the forecast holding? I have to rebuild this in a spreadsheet before I can tell
+        the story."
+      middle: Focused — "the burnup shows backlog stepped up in week 3 when scope was added, and
+        done has climbed steadily since; the forecast band is tracking toward the backlog at the
+        target date. This is a story, not just a number."
+      end: Confident — "I can show leadership where we've been, where we're headed, and that
+        predictability has firmed up over the last three weeks — screenshot the charts, the trend
+        is the evidence, no spreadsheet."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Why is the epic built on a single forward-recorded store?
+        decision: >
+          Verified in code: LighthouseAppContext.cs persists only CURRENT state (Deliveries,
+          WorkItems, WorkItemStateTransitions, FeatureStateTransitions); there is NO history table.
+          Backlog/done COULD in principle be reconstructed from WorkItem CreatedDate/ClosedDate, but
+          the product decision (user, 2026-06-02) is forward-only for every series: a forward recorder
+          (a domain-event handler reacting to the new post-forecast PortfolioForecastsUpdated event)
+          records backlog, done, inferred estimate, forecast, and likelihood/when-distribution for the
+          then-current day into ONE DeliveryMetricSnapshot store. The chart starts empty and accrues.
+          There is no backfill and no reconstruction. Originally framed as a reconstructable-by-backfill
+          vs forward-only seam (then revised by D11 to a dual-feed store); both are superseded — the
+          store is fed by one forward recorder. See the feature-delta Changed Assumptions.
+      - id: D2
+        question: Chart placement?
+        decision: >
+          A "Metrics" tab inside the per-delivery DeliverySection accordion (the existing feature grid
+          becomes a "Work Items" tab); the Metrics tab is the lazy fetch trigger for metrics-history.
+          On the existing Portfolio → Delivery detail surface (PortfolioDeliveryView.tsx /
+          DeliverySection.tsx). No new top-level route — delivery tracking is already done from this
+          view; a new route would fragment the mental model.
+      - id: D3
+        question: Walking skeleton?
+        decision: >
+          Slice 1 (snapshot store + forward recorder + backlog+done burnup, forward-only) IS the
+          thinnest end-to-end user-visible slice; there is no separate WS slice. It ships the store
+          (the single source of truth all later slices read) and the forward-recorder pipeline (the
+          sole feed). Lighter (~1-1.5 days) now that there is no backfill component (D11).
+      - id: D4
+        question: Premium gating?
+        decision: >
+          Inherited. Deliveries are already premium — verified: DeliveryCreateModal.tsx gates on
+          licenseStatus?.canUsePremiumFeatures via useLicenseRestrictions(). The over-time charts sit
+          behind that same gate; a non-premium instance never sees them. No new premium gate invented.
+      - id: D5
+        question: Can the snapshot foundation ship as a slice alone?
+        decision: >
+          Moot under D11 — there is no standalone @infrastructure foundation slice anymore. The
+          DeliveryMetricSnapshot store + forward recorder folds INTO Slice 1 alongside the user-visible
+          burnup chart, so the slice-composition gate is satisfied by construction (the store is the
+          shared abstraction shipped first, in the same slice as a chart that consumes it). The former
+          US-02 @infrastructure story and the US-02b "forecast captured today" marker are dissolved —
+          the burnup chart itself proves the store works.
+      - id: D6
+        question: How is history handled when empty?
+        decision: >
+          Forward-only and honest about it — now universal across ALL charts, the burnup included (not
+          just forecast/likelihood), because the store is forward-recorded with no backfill. Every
+          chart starts empty and builds forward from the day recording begins; the empty state reads
+          "builds forward from today — no snapshots recorded yet" rather than implying data is missing.
+          Inherited from the forecaster persona's forecast-honesty jobs.
+      - id: D7
+        question: Who owns estimated size for not-yet-broken-down features?
+        decision: >
+          Slice 2 (US-01b), IN MVP, forward-fed like every series. A feature with zero child work items
+          contributes its configured default/estimated size to the backlog line, annotated as estimated
+          — without it the backlog reads artificially low for early-stage deliveries (the common case
+          the epic calls out). It is one more forward-recorded column on the Slice-1 recorder; US-01b
+          is its own slice because it is a distinct backlog lens, not because of any data-source
+          difference.
+      - id: D11
+        question: Why unify on one store, and what moved?
+        decision: >
+          One store, forward-recorded only (2026-06-02, backfill dropped). Build ONE
+          DeliveryMetricSnapshot store as the single time-series source of truth, fed by ONE feed — a
+          forward recorder that records every series for the then-current day (backlog/done counts,
+          inferred estimate, forecast, likelihood/when-distribution). All charts read from the one
+          store; the chart starts empty at launch and fills one day at a time. The store is unified
+          because all series share the same (delivery, day) grain and the same forward-recorded
+          lifecycle. This dissolves the standalone @infrastructure foundation slice (former Slice 2 /
+          US-02) by folding the store into Slice 1, and supersedes the earlier dual-feed (backfill +
+          forward recorder) revision — there is no backfill. Cost accepted: no immediate history (value
+          accrues over weeks). Benefit: a lighter Slice 1 (~1-1.5 days, no backfill component) and a
+          uniformly forward-only, honest model with no reconstruction-trustworthiness risk.
+      - id: D8
+        question: How is the on-track read computed?
+        decision: >
+          Geometrically (MVP), not via a new RAG endpoint. Slice 3 stacks the daily forecast on Done;
+          "done + forecast >= backlog at the target date => on track" is read off chart geometry. A
+          badge/RAG endpoint is a follow-up only if the geometric read tests poorly.
+      - id: D9
+        question: Status of the fever chart?
+        decision: >
+          STRETCH, gated behind Slices 2-4. Slice 5 is OUT of committed MVP; it ships only on an
+          explicit greenlight after Slice 4 and is the only slice with no internal reference class
+          (requires a pre-slice SPIKE if greenlit).
+      - id: D10
+        question: Any change to the current-snapshot delivery metrics?
+        decision: >
+          No. likelihoodPercentage, progress, remainingWork, totalWork, completionDates on Delivery.ts
+          are unchanged; the over-time charts are purely additive (Type-A walking skeleton). Absent
+          endpoints leave an empty chart slot — no regression.
+
+    steps:
+
+      - id: step-open-delivery-detail
+        action: >
+          Delivery Forecaster navigates to /portfolios/{portfolioId}, opens a delivery, and selects the
+          "Metrics" tab before a status report, on a premium instance
+        expected_output: >
+          The delivery's "Metrics" tab (lazily fetching on first open) renders a new "Burnup" chart
+          showing the backlog line and the done line as they have accrued, read from the
+          DeliveryMetricSnapshot store. The series is forward-only — it begins from the day recording
+          started and fills one day at a time; on a delivery with no recorded snapshots yet the chart
+          shows the forward-only empty state ("builds forward from today — no snapshots recorded yet"),
+          NOT full history on first open. The "Work Items" tab still holds the existing feature grid.
+        emotional_state: Curious — "let's see how this delivery has been progressing"
+        shared_artifacts:
+          - DeliveryMetricSnapshot store (new, single source of truth; written by the
+            DeliveryMetricSnapshotRecordingHandler reacting to PortfolioForecastsUpdated; forward-recorded
+            backlog/done in Slice 1; inferred estimate / forecast / likelihood in Slices 2-4; no backfill)
+          - deliveryMetricsHistory (new, from GET
+            /api/portfolios/{portfolioId}/deliveries/{deliveryId}/metrics-history — reads the store)
+          - currentDeliverySnapshot (existing — likelihood, progress, remaining/total work)
+
+      - id: step-read-backlog-done-history
+        action: >
+          Forecaster reads the burnup once history has accrued: where the backlog line stepped up
+          (scope added) and how the done line climbed
+        expected_output: >
+          After a few weeks of forward recording, a scope jump shows as a visible step in the backlog
+          line and the done line's slope shows delivery pace. Until then the chart is short and reads
+          "builds forward from today". Once the Slice-2 recorder has accrued data, features not yet
+          broken down contribute an estimated size on an inferred-estimate line (annotated, forward-fed)
+          so the backlog isn't artificially low; before that it shows the actual-item backlog only.
+        emotional_state: Focused — "scope jumped here; we've burned steadily since"
+        shared_artifacts:
+          - rendered burnup geometry (backlog line, done line; inferred-estimate line + estimated-
+            portion annotation once Slice-2 forward data accrues)
+
+      - id: step-read-forecast-trend
+        action: >
+          Forecaster reads the forecast band stacked on Done against the backlog line to judge
+          on-track-vs-at-risk
+        expected_output: >
+          Where done + projected forecast meets or exceeds the backlog at the target date, the
+          delivery reads on track at a glance; where it falls short, the gap is visible. The band is
+          short and annotated for deliveries with few snapshots (forward-only, builds from the first
+          recorded day).
+        emotional_state: Reading-the-signal — "done + forecast meets the backlog by the date — on
+          track"
+        shared_artifacts:
+          - deliveryForecastHistory (the forecast series of the single GET .../metrics-history
+            endpoint — per-snapshot recorded projection; forward-fed, null until Slice 3 accrues)
+          - DeliveryMetricSnapshot rows (the unified store from Slice 1; forecast field forward-fed in
+            Slice 3)
+
+      - id: step-read-predictability-trend
+        action: >
+          Forecaster reads the predictability chart in two views — the likelihood-over-time line
+          ("How Likely?") and the when view (forecast completion-date percentiles over time vs the
+          dashed target-delivery-date line, "When will it be done?") — to judge whether predictability
+          is improving or degrading. Both views mirror the customer Excel example.
+        expected_output: >
+          An improving delivery reads as likelihood stabilising high and the when-spread narrowing
+          toward/under the target date; a slipping one as a widening spread or forecast dates crossing
+          above the target. A different question from on-track-today — "is our forecast firming up?"
+        emotional_state: Assessing — "predictability has firmed up over three weeks; I can commit to
+          this date"
+        shared_artifacts:
+          - likelihoodTrend (likelihood view) + whenPercentileLines/spreadBand vs targetDate (when
+            view) — both from the single metrics-history endpoint's forward-fed columns (US-04)
+
+      - id: step-glance-risk-signal
+        action: >
+          (US-05, STRETCH) For a leadership glance, the forecaster opens the fever chart to see the
+          delivery's buffer-vs-schedule bubble move through green/amber/red zones over time
+        expected_output: >
+          A red bubble is the one-glance "this delivery is in trouble" signal; an on-track delivery's
+          trail stays green/amber. Only present if the stretch slice is greenlit after Slice 4 (D9).
+        emotional_state: Triaging — "the red deliveries are where the review should focus"
+        shared_artifacts:
+          - fever-chart bubble + trail (Slice 5 stretch, from snapshot history)
+
+      - id: step-tell-the-trend-story
+        action: >
+          Forecaster screenshots the charts and frames the leadership status report as a trend
+          narrative; a Product Owner facing a gap decides which features to cut
+        expected_output: >
+          The forecaster can say "we were on track until scope was added in week 3 (point to the
+          step); the forecast has held since and predictability has firmed up — on track for the
+          date" — vs. the previous best, a bare snapshot likelihood. A PO can justify a scope cut
+          from the forecast-vs-backlog gap (job-po-scope-cut-from-delivery-trend).
+        emotional_state: Confident — "the trend is the evidence; the status story tells itself"
+        shared_artifacts: []
+
+    error_paths_summary:
+      - Delivery with no items or no snapshots recorded yet: every chart, the burnup included, renders
+        the forward-only empty state "builds forward from today — no snapshots recorded yet" (D6) in
+        the tone of existing Lighthouse empty charts; no crash. This is the universal launch state since
+        the store is forward-recorded with no backfill.
+      - Non-premium instance: the over-time charts do not render at all — they inherit the existing
+        delivery surface's canUsePremiumFeatures gate (D4), same as the rest of the delivery feature.
+      - Sparse snapshots (recording just started): the burnup / forecast band / likelihood line is short
+        and annotated "builds forward from {first snapshot date}"; not misread as a defect.
+      - Item re-opened (leaves Done): handled naturally — each day records the then-current count, so a
+        re-open simply lowers the next recorded doneWork; no reconstruction logic to get wrong.
+      - Early-stage delivery (features not broken down): once the Slice-2 forward recorder has accrued
+        data, the inferred-estimate line uses estimated feature size (US-01b) and annotates the
+        estimated portion, so the delivery doesn't read artificially small; before that the actual-item
+        backlog line shows with an honest "estimated total builds forward from today" note.
+      - Duplicate snapshot risk (PortfolioForecastsUpdated handled twice in a day): the recording handler
+        is idempotent on (deliveryId, recordedAt) — not a =true sentinel — so a same-day re-handle overwrites
+        today's row in place; at most one row per delivery per day.
+      - Delivery deleted: its DeliveryMetricSnapshot rows are removed by the FK ON DELETE CASCADE
+        (DeliveriesController.DeleteDelivery); no orphaned snapshot rows, and no DeliveryDeleted event is
+        introduced — the cascade suffices.
+
+    success_signal:
+      - Forecasters/POs report delivery status to leadership using the over-time trend charts as the
+        evidence base; >=40% of delivery-detail review sessions consult an over-time chart within 8
+        weeks of launch (KPI 1).
+      - The "rebuild the burnup in a spreadsheet" workaround drops by >=50% among interviewed users
+        (KPI 2).
+      - At-risk-delivery scope-cut decisions cite the forecast-vs-backlog trend in >=1 of 3 reviews
+        (KPI 3).
+      - The snapshot recording handler (reacting to PortfolioForecastsUpdated) captures a daily
+        forward-only snapshot per active delivery with zero duplicates (KPI 4 guardrail).
+      - Measurement caveat: cross-instance behavioral telemetry is blocked on Epic 5015 (opt-in
+        telemetry, no timeline); KPIs 1-3 are measured via dogfood + user interviews until 5015,
+        KPI 4 via backend integration assertions today.
+      - Forward-only timing caveat: because the store is forward-recorded with no backfill, the charts
+        are empty at launch and only become useful as snapshots accrue, so KPIs 1-3 (chart consultation,
+        spreadsheet-workaround reduction, scope-cut citations) can only be measured after enough forward
+        history accrues per delivery (on the order of weeks) — the 8-week window starts from when a
+        delivery first has a usable trend, not from launch day.
