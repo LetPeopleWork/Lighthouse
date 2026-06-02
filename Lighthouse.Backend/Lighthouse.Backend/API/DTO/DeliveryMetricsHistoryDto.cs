@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.API.DTO
@@ -19,6 +20,8 @@ namespace Lighthouse.Backend.API.DTO
         DateTime? FirstSnapshotDate,
         IReadOnlyList<DeliveryMetricsHistoryPointDto> Points)
     {
+        private static readonly JsonSerializerOptions WhenDistributionJsonOptions = new() { PropertyNameCaseInsensitive = true };
+
         public static DeliveryMetricsHistoryDto From(DateTime deliveryDate, IEnumerable<DeliveryMetricSnapshot> snapshots)
         {
             var points = snapshots
@@ -41,7 +44,17 @@ namespace Lighthouse.Backend.API.DTO
                 snapshot.EstimatedTotalWork,
                 snapshot.ForecastHowMany,
                 snapshot.LikelihoodPercentage,
-                null);
+                ParseWhenDistribution(snapshot.WhenDistributionJson));
+        }
+
+        private static IReadOnlyList<WhenDistributionPointDto>? ParseWhenDistribution(string? whenDistributionJson)
+        {
+            if (string.IsNullOrWhiteSpace(whenDistributionJson))
+            {
+                return null;
+            }
+
+            return JsonSerializer.Deserialize<List<WhenDistributionPointDto>>(whenDistributionJson, WhenDistributionJsonOptions);
         }
     }
 }

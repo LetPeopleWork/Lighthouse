@@ -43,7 +43,8 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioRepository.Object,
                 licenseService.Object,
                 Mock.Of<IDeliveryRuleService>(),
-                rbacAdministrationService.Object);
+                rbacAdministrationService.Object,
+                Mock.Of<IDeliveryMetricSnapshotRepository>());
         }
 
         [Test]

@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -20,7 +21,8 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> portfolioRepository,
         ILicenseService licenseService,
         IDeliveryRuleService deliveryRuleService,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository)
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
@@ -31,6 +33,30 @@ namespace Lighthouse.Backend.API
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
             var deliveryDtos = deliveries.Select(DeliveryWithLikelihoodDto.FromDelivery);
             return Ok(deliveryDtos.OrderBy(d => d.Date));
+        }
+
+        [HttpGet("{deliveryId:int}/metrics-history")]
+        [LicenseGuard(RequirePremium = true)]
+        [ProducesResponseType<DeliveryMetricsHistoryDto>(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMetricsHistory(int deliveryId)
+        {
+            var delivery = deliveryRepository.GetById(deliveryId);
+            if (delivery == null)
+            {
+                return NotFound();
+            }
+
+            if (!await rbacAdministrationService.CanSatisfyRequirementAsync(
+                    User,
+                    RbacGuardRequirement.PortfolioRead,
+                    delivery.PortfolioId,
+                    HttpContext?.RequestAborted ?? default))
+            {
+                return Forbid();
+            }
+
+            var snapshots = deliveryMetricSnapshotRepository.GetByDelivery(deliveryId);
+            return Ok(DeliveryMetricsHistoryDto.From(delivery.Date, snapshots));
         }
 
         [HttpPost("portfolio/{portfolioId:int}")]
