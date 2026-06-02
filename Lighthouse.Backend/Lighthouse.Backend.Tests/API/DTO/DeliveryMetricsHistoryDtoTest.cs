@@ -81,6 +81,30 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
+        public void From_ParsesCamelCaseWhenDistributionJson_IntoProbabilityAndExpectedDatePoints()
+        {
+            var deliveryDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+            var snapshots = new[]
+            {
+                new DeliveryMetricSnapshot
+                {
+                    RecordedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    WhenDistributionJson = "[{\"probability\":0.85,\"expectedDate\":\"2026-04-10T00:00:00Z\"}]",
+                },
+            };
+
+            var dto = DeliveryMetricsHistoryDto.From(deliveryDate, snapshots);
+
+            var distribution = dto.Points[0].WhenDistribution;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(distribution, Has.Count.EqualTo(1));
+                Assert.That(distribution![0].Probability, Is.EqualTo(0.85));
+                Assert.That(distribution[0].ExpectedDate, Is.EqualTo(new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc)));
+            }
+        }
+
+        [Test]
         public void From_LeavesFirstSnapshotDateNull_AndPointsEmpty_WhenNoSnapshotsRecorded()
         {
             var deliveryDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);

@@ -67,6 +67,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(orderedDates, Is.Ordered.Ascending);
         }
 
+        [Test]
+        public async Task GetOrCreateForDay_SnapshotAtNextMidnightBoundary_IsExcludedSoANewRowIsCreated()
+        {
+            var deliveryId = await GivenPersistedDelivery();
+
+            var nextMidnight = new DateTime(2026, 5, 26, 0, 0, 0, DateTimeKind.Utc);
+            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = deliveryId,
+                RecordedAt = nextMidnight,
+            });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+            var sameDayMorning = new DateTime(2026, 5, 25, 9, 0, 0, DateTimeKind.Utc);
+            var snapshot = subject.GetOrCreateForDay(deliveryId, sameDayMorning);
+            await subject.Save();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.RecordedAt, Is.EqualTo(sameDayMorning.Date));
+                Assert.That(subject.GetByDelivery(deliveryId).Count(), Is.EqualTo(2));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateForDay_TwoSnapshotsSameDay_ReturnsTheEarliestRecorded()
+        {
+            var deliveryId = await GivenPersistedDelivery();
+
+            var earlier = new DateTime(2026, 5, 25, 6, 0, 0, DateTimeKind.Utc);
+            var later = new DateTime(2026, 5, 25, 18, 0, 0, DateTimeKind.Utc);
+            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedAt = later });
+            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedAt = earlier });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+            var snapshot = subject.GetOrCreateForDay(deliveryId, new DateTime(2026, 5, 25, 12, 0, 0, DateTimeKind.Utc));
+
+            Assert.That(snapshot.RecordedAt, Is.EqualTo(earlier));
+        }
+
         private async Task<int> GivenPersistedDelivery()
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };

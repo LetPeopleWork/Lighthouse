@@ -1,12 +1,15 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
@@ -66,6 +69,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_DeliverySpanningMultipleFeatures_RecordsSummedWorkAcrossThemNotASingleFeature()
+        {
+            var fixture = await SeedDeliveryWithTwoFeatures();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.TotalWork, Is.EqualTo(fixture.ExpectedTotalWork));
+                Assert.That(snapshot.RemainingWork, Is.EqualTo(fixture.ExpectedTotalWork - fixture.ExpectedDoneWork));
+                Assert.That(snapshot.DoneWork, Is.EqualTo(fixture.ExpectedDoneWork));
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_WhenSnapshotPersistenceFails_PropagatesTheException()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+            var snapshotRepository = new Mock<IDeliveryMetricSnapshotRepository>();
+            snapshotRepository
+                .Setup(repository => repository.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateTime>()))
+                .Returns(new DeliveryMetricSnapshot { DeliveryId = fixture.DeliveryId });
+            snapshotRepository
+                .Setup(repository => repository.Save())
+                .ThrowsAsync(new InvalidOperationException("snapshot store unavailable"));
+
+            var handler = new DeliveryMetricSnapshotRecordingHandler(
+                scope.ServiceProvider.GetRequiredService<IDeliveryRepository>(),
+                snapshotRepository.Object,
+                Mock.Of<ILogger<DeliveryMetricSnapshotRecordingHandler>>());
+
+            Assert.That(
+                async () => await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None),
+                Throws.InstanceOf<InvalidOperationException>());
+        }
+
+        [Test]
         public async Task HandleAsync_ItemReopenedSinceYesterday_LowersTodaysRecordedDone()
         {
             var fixture = await SeedDeliveryRecordedYesterdayThenReopenedAnItem();
@@ -119,6 +160,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 DeliveryId = delivery.Id,
                 ExpectedTotalWork = 10,
                 ExpectedDoneWork = 4,
+            };
+        }
+
+        private async Task<RecorderFixture> SeedDeliveryWithTwoFeatures()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+            var delivery = await SeedDeliveryWithFeatures(
+                portfolio,
+                team,
+                (remainingWork: 6, totalWork: 10),
+                (remainingWork: 3, totalWork: 5));
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+                ExpectedTotalWork = 15,
+                ExpectedDoneWork = 6,
             };
         }
 
@@ -241,6 +300,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
             delivery.Features.Add(feature);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return delivery;
+        }
+
+        private async Task<Delivery> SeedDeliveryWithFeatures(Portfolio portfolio, Team team, params (int remainingWork, int totalWork)[] featureWork)
+        {
+            var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            var features = featureWork
+                .Select((work, index) => new Feature([(team, work.remainingWork, work.totalWork)])
+                {
+                    Name = $"Feature {index}",
+                    Order = index.ToString(),
+                })
+                .ToList();
+
+            foreach (var feature in features)
+            {
+                featureRepository.Add(feature);
+            }
+            await featureRepository.Save();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            delivery.Features.AddRange(features);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);

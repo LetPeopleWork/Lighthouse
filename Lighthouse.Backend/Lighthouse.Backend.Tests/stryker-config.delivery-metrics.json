@@ -1,0 +1,34 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/DeliveryMetricsHistoryDto.cs",
+      "**/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs",
+      "**/Services/Implementation/Repositories/DeliveryMetricSnapshotRepository.cs",
+      "**/API/DeliveriesController.cs{38..60}",
+      "**/API/DeliveriesController.cs{299..312}",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs{86..86}",
+      "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs{46..46}"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~DeliveryMetricsHistoryReadApiIntegrationTest|FullyQualifiedName~DeliveryMetricSnapshotCascadeDeleteIntegrationTest|FullyQualifiedName~DeliveryMetricsHistoryDtoTest|FullyQualifiedName~DeliveryMetricSnapshotRecordingHandlerTest|FullyQualifiedName~DeliveryMetricSnapshotRepositoryTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~ForecastUpdaterTest|FullyQualifiedName~DeliveriesControllerTest|FullyQualifiedName~DeliveriesControllerUtcTest",
+    "reporters": [
+      "progress",
+      "html",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
