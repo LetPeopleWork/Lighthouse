@@ -1,0 +1,271 @@
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
+
+namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
+{
+    [TestFixture]
+    [NonParallelizable]
+    public class DeliveryMetricSnapshotRecordingHandlerTest
+    {
+        private TestWebApplicationFactory<Program> factory = null!;
+        private IServiceScope scope = null!;
+
+        [SetUp]
+        public void Init()
+        {
+            factory = new TestWebApplicationFactory<Program>();
+            scope = factory.Services.CreateScope();
+
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            dbContext.Database.EnsureDeleted();
+            dbContext.Database.EnsureCreated();
+        }
+
+        [TearDown]
+        public void Cleanup()
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            dbContext.Database.EnsureDeleted();
+            scope.Dispose();
+            factory.Dispose();
+        }
+
+        [Test]
+        public async Task HandleAsync_DeliveryWithKnownCounts_RecordsTodaysBacklogDoneAndRemaining()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.TotalWork, Is.EqualTo(fixture.ExpectedTotalWork));
+                Assert.That(snapshot.DoneWork, Is.EqualTo(fixture.ExpectedDoneWork));
+                Assert.That(snapshot.RemainingWork, Is.EqualTo(fixture.ExpectedTotalWork - fixture.ExpectedDoneWork));
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_RunTwiceSameDay_IsIdempotentOnDeliveryAndDate()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task HandleAsync_ItemReopenedSinceYesterday_LowersTodaysRecordedDone()
+        {
+            var fixture = await SeedDeliveryRecordedYesterdayThenReopenedAnItem();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var (yesterday, today) = await YesterdayAndTodaySnapshots(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(today.DoneWork, Is.LessThan(yesterday.DoneWork));
+                Assert.That(today.TotalWork, Is.EqualTo(yesterday.TotalWork));
+            }
+        }
+
+        [Test]
+        [Ignore("Slice 2 — US-01b inferred estimate (EstimatedTotalWork)")]
+        public async Task HandleAsync_NotBrokenDownFeature_RecordsInferredEstimateAboveActualBacklog()
+        {
+            var fixture = await SeedDeliveryWithNotBrokenDownFeature();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            Assert.That(snapshot.EstimatedTotalWork, Is.GreaterThan(snapshot.TotalWork));
+        }
+
+        [Test]
+        [Ignore("Slice 3 — US-03 forecast freshness (ForecastHowMany)")]
+        public async Task HandleAsync_AfterForecastUpdate_RecordsFreshPostForecastFiguresNotStaleOnes()
+        {
+            var fixture = await SeedDeliveryWhoseForecastChangesOnUpdate();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.ForecastHowMany, Is.EqualTo(fixture.FreshForecastHowMany));
+                Assert.That(snapshot.ForecastHowMany, Is.Not.EqualTo(fixture.StalePreForecastHowMany));
+            }
+        }
+
+        private async Task<RecorderFixture> SeedDeliveryWithKnownCounts()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+            var delivery = await SeedDeliveryWithWork(portfolio, team, remainingWork: 6, totalWork: 10);
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+                ExpectedTotalWork = 10,
+                ExpectedDoneWork = 4,
+            };
+        }
+
+        private async Task<RecorderFixture> SeedDeliveryRecordedYesterdayThenReopenedAnItem()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+            var delivery = await SeedDeliveryWithWork(portfolio, team, remainingWork: 6, totalWork: 10);
+
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = DateTime.UtcNow.Date.AddDays(-1),
+                TotalWork = 10,
+                DoneWork = 6,
+                RemainingWork = 4,
+            });
+            await dbContext.SaveChangesAsync();
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+                ExpectedTotalWork = 10,
+                ExpectedDoneWork = 4,
+            };
+        }
+
+        private Task<RecorderFixture> SeedDeliveryWhoseForecastChangesOnUpdate()
+            => throw new AssertionException("pending — DELIVER seeds a delivery whose forecast changes when the update runs");
+
+        private Task<RecorderFixture> SeedDeliveryWithNotBrokenDownFeature()
+            => throw new AssertionException("pending — DELIVER seeds a delivery with a not-broken-down feature");
+
+        private async Task HandlePortfolioForecastsUpdated(RecorderFixture fixture)
+        {
+            var handler = scope.ServiceProvider.GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>();
+            await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);
+        }
+
+        private async Task<SnapshotView> TodaysSnapshot(RecorderFixture fixture)
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var today = DateTime.UtcNow.Date;
+            var snapshot = await dbContext.DeliveryMetricSnapshots
+                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today && s.RecordedAt < today.AddDays(1));
+
+            return ToView(snapshot);
+        }
+
+        private async Task<int> TodaysSnapshotRowCount(RecorderFixture fixture)
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var today = DateTime.UtcNow.Date;
+            return await dbContext.DeliveryMetricSnapshots
+                .CountAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today && s.RecordedAt < today.AddDays(1));
+        }
+
+        private async Task<(SnapshotView Yesterday, SnapshotView Today)> YesterdayAndTodaySnapshots(RecorderFixture fixture)
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var today = DateTime.UtcNow.Date;
+
+            var yesterday = await dbContext.DeliveryMetricSnapshots
+                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today.AddDays(-1) && s.RecordedAt < today);
+            var todaySnapshot = await dbContext.DeliveryMetricSnapshots
+                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today && s.RecordedAt < today.AddDays(1));
+
+            return (ToView(yesterday), ToView(todaySnapshot));
+        }
+
+        private static SnapshotView ToView(DeliveryMetricSnapshot snapshot)
+            => new()
+            {
+                TotalWork = snapshot.TotalWork,
+                DoneWork = snapshot.DoneWork,
+                RemainingWork = snapshot.RemainingWork,
+                EstimatedTotalWork = snapshot.EstimatedTotalWork,
+                ForecastHowMany = snapshot.ForecastHowMany,
+            };
+
+        private async Task<(Portfolio Portfolio, Team Team)> SeedPortfolioWithTeam()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+
+            var team = new Team
+            {
+                Name = "Test Team",
+                WorkTrackingSystemConnection = workTrackingSystemConnection,
+            };
+
+            var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            teamRepository.Add(team);
+            await teamRepository.Save();
+
+            var portfolio = new Portfolio
+            {
+                Name = "Test Portfolio",
+                WorkTrackingSystemConnection = workTrackingSystemConnection,
+            };
+
+            var portfolioRepository = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
+            portfolioRepository.Add(portfolio);
+            await portfolioRepository.Save();
+
+            return (portfolio, team);
+        }
+
+        private async Task<Delivery> SeedDeliveryWithWork(Portfolio portfolio, Team team, int remainingWork, int totalWork)
+        {
+            var feature = new Feature([(team, remainingWork, totalWork)])
+            {
+                Name = "Feature",
+                Order = "1",
+            };
+
+            var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            featureRepository.Add(feature);
+            await featureRepository.Save();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            delivery.Features.Add(feature);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return delivery;
+        }
+
+        private sealed record RecorderFixture
+        {
+            public int PortfolioId { get; init; }
+            public int DeliveryId { get; init; }
+            public int ExpectedTotalWork { get; init; }
+            public int ExpectedDoneWork { get; init; }
+            public int FreshForecastHowMany { get; init; }
+            public int StalePreForecastHowMany { get; init; }
+        }
+
+        private sealed record SnapshotView
+        {
+            public int TotalWork { get; init; }
+            public int DoneWork { get; init; }
+            public int RemainingWork { get; init; }
+            public int? EstimatedTotalWork { get; init; }
+            public int? ForecastHowMany { get; init; }
+        }
+    }
+}
