@@ -130,16 +130,20 @@ namespace Lighthouse.Backend.Services.Implementation
         private void SeedBurnupSnapshots(int deliveryId)
         {
             const int totalWork = DemoBurnupDays;
+            const int initialEstimatedItemCount = 8;
 
             for (var daysAgo = DemoBurnupDays; daysAgo >= 0; daysAgo--)
             {
                 var recordedAt = DateTime.UtcNow.Date.AddDays(-daysAgo);
-                var doneWork = DemoBurnupDays - daysAgo;
+                var elapsedDays = DemoBurnupDays - daysAgo;
+                var doneWork = elapsedDays;
+                var estimatedItemCount = initialEstimatedItemCount - elapsedDays;
 
                 var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, recordedAt);
                 snapshot.TotalWork = totalWork;
                 snapshot.DoneWork = doneWork;
                 snapshot.RemainingWork = totalWork - doneWork;
+                snapshot.EstimatedItemCount = estimatedItemCount > 0 ? estimatedItemCount : null;
             }
         }
 

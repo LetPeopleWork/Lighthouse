@@ -28,6 +28,10 @@ test("@walking_skeleton @US-01 forecaster opens a delivery's Metrics tab and see
 
 	await expect(metricsTab.burnupChart).toBeVisible();
 	await expect.poll(() => metricsTab.countSeriesLines()).toBeGreaterThan(0);
+	await expect(metricsTab.estimatedItemsCaption).toBeVisible();
+	await expect
+		.poll(() => metricsTab.countDrawnSeriesLines())
+		.toBeGreaterThanOrEqual(3);
 
 	await metricsTab.openWorkItemsTab();
 	await expect(page.getByText("Feature Name")).toBeVisible();
