@@ -64,7 +64,10 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 	);
 
 	return (
-		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
+		<Card
+			data-testid="delivery-burnup-chart"
+			sx={{ p: 2, borderRadius: 2, height: "100%" }}
+		>
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>

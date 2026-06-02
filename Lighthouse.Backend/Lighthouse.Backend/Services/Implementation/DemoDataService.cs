@@ -1,6 +1,8 @@
-﻿using Lighthouse.Backend.Factories;
+﻿using System.Text.Json;
+using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DemoData;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
@@ -8,19 +10,27 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class DemoDataService : IDemoDataService
     {
+        private const string DemoDeliveryPortfolioName = "Project Apollo";
+        private const string DemoDeliveryName = "Apollo Release";
+        private const int DemoBurnupDays = 14;
+
         private readonly List<DemoDataScenario> scenarios = [];
 
         private readonly IRepository<Portfolio> projectRepository;
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo;
+        private readonly IDeliveryRepository deliveryRepository;
+        private readonly IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository;
         private readonly IDemoDataFactory demoDataFactory;
 
         public DemoDataService(
-            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDemoDataFactory demoDataFactory)
+            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDeliveryRepository deliveryRepository, IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository, IDemoDataFactory demoDataFactory)
         {
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
             this.workTrackingSystemConnectionRepo = workTrackingSystemConnectionRepo;
+            this.deliveryRepository = deliveryRepository;
+            this.deliveryMetricSnapshotRepository = deliveryMetricSnapshotRepository;
             this.demoDataFactory = demoDataFactory;
 
             scenarios.AddRange(GetFreeScenarios());
@@ -39,12 +49,14 @@ namespace Lighthouse.Backend.Services.Implementation
             var workTrackingSystemConnection = await AddDemoWorkTrackingSystemConnection();
             await AddTeamsForScenarios(scenariosToLoad, workTrackingSystemConnection);
 
-            await AddProjectsForSceanrios(scenariosToLoad, workTrackingSystemConnection);
+            var addedPortfolios = await AddProjectsForSceanrios(scenariosToLoad, workTrackingSystemConnection);
+
+            await SeedDemoDeliveryWithBurnup(addedPortfolios);
         }
 
-        private async Task AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
+        private async Task<IReadOnlyDictionary<string, Portfolio>> AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            var addedProjects = new List<string>();
+            var addedProjects = new Dictionary<string, Portfolio>();
 
             foreach (var scenario in scenariosToLoad)
             {
@@ -52,13 +64,15 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             await projectRepository.Save();
+
+            return addedProjects;
         }
 
-        private void AddPortfoliosForScenario(WorkTrackingSystemConnection workTrackingSystemConnection, List<string> addedProjects, DemoDataScenario scenario)
+        private void AddPortfoliosForScenario(WorkTrackingSystemConnection workTrackingSystemConnection, Dictionary<string, Portfolio> addedProjects, DemoDataScenario scenario)
         {
             var projectNames = scenario.Projects.Distinct();
 
-            var notAddedProjects = projectNames.Where(p => !addedProjects.Contains(p)).ToList();
+            var notAddedProjects = projectNames.Where(p => !addedProjects.ContainsKey(p)).ToList();
 
             foreach (var projectName in notAddedProjects)
             {
@@ -68,7 +82,64 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 projectRepository.Add(project);
 
-                addedProjects.Add(projectName);
+                addedProjects.Add(projectName, project);
+            }
+        }
+
+        private async Task SeedDemoDeliveryWithBurnup(IReadOnlyDictionary<string, Portfolio> addedPortfolios)
+        {
+            if (!addedPortfolios.TryGetValue(DemoDeliveryPortfolioName, out var portfolio))
+            {
+                return;
+            }
+
+            var delivery = new Delivery(DemoDeliveryName, DateTime.UtcNow.Date.AddDays(DemoBurnupDays), portfolio.Id)
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                RuleSchemaVersion = WorkItemRuleSet.SchemaVersion,
+                RuleDefinitionJson = BuildAllFeaturesRuleDefinition(),
+            };
+
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            SeedBurnupSnapshots(delivery.Id);
+            await deliveryMetricSnapshotRepository.Save();
+        }
+
+        private static string BuildAllFeaturesRuleDefinition()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Version = WorkItemRuleSet.SchemaVersion,
+                Mode = WorkItemRuleSet.ModeAnd,
+                Conditions =
+                [
+                    new WorkItemRuleCondition
+                    {
+                        FieldKey = "feature.name",
+                        Operator = RuleOperators.IsNotEmpty,
+                        Value = string.Empty,
+                    },
+                ],
+            };
+
+            return JsonSerializer.Serialize(ruleSet);
+        }
+
+        private void SeedBurnupSnapshots(int deliveryId)
+        {
+            const int totalWork = DemoBurnupDays;
+
+            for (var daysAgo = DemoBurnupDays; daysAgo >= 0; daysAgo--)
+            {
+                var recordedAt = DateTime.UtcNow.Date.AddDays(-daysAgo);
+                var doneWork = DemoBurnupDays - daysAgo;
+
+                var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, recordedAt);
+                snapshot.TotalWork = totalWork;
+                snapshot.DoneWork = doneWork;
+                snapshot.RemainingWork = totalWork - doneWork;
             }
         }
 

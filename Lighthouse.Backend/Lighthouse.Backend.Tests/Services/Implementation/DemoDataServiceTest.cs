@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionsRepoMock;
+        private Mock<IDeliveryRepository> deliveryRepoMock;
+        private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepoMock;
 
         private Mock<IDemoDataFactory> demoDataFactoryMock;
 
@@ -20,11 +22,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             projectRepoMock = new Mock<IRepository<Portfolio>>();
             teamRepoMock = new Mock<IRepository<Team>>();
             workTrackingSystemConnectionsRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            deliveryRepoMock = new Mock<IDeliveryRepository>();
+            deliveryMetricSnapshotRepoMock = new Mock<IDeliveryMetricSnapshotRepository>();
             demoDataFactoryMock = new Mock<IDemoDataFactory>();
 
             projectRepoMock.Setup(x => x.GetAll()).Returns(new List<Portfolio>());
             teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
             workTrackingSystemConnectionsRepoMock.Setup(x => x.GetAll()).Returns(new List<WorkTrackingSystemConnection>());
+            deliveryMetricSnapshotRepoMock
+                .Setup(x => x.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateTime>()))
+                .Returns((int deliveryId, DateTime recordedAt) => new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedAt = recordedAt.Date });
 
             demoDataFactoryMock.Setup(x => x.CreateDemoWorkTrackingSystemConnection()).Returns(new WorkTrackingSystemConnection { Id = 18 });
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(new Team { Id = 86 });
@@ -270,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private DemoDataService CreateSubject()
         {
-            return new DemoDataService(projectRepoMock.Object, teamRepoMock.Object, workTrackingSystemConnectionsRepoMock.Object, demoDataFactoryMock.Object);
+            return new DemoDataService(projectRepoMock.Object, teamRepoMock.Object, workTrackingSystemConnectionsRepoMock.Object, deliveryRepoMock.Object, deliveryMetricSnapshotRepoMock.Object, demoDataFactoryMock.Object);
         }
     }
 }
