@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.API.DTO
                 ParseWhenDistribution(snapshot.WhenDistributionJson));
         }
 
-        private static IReadOnlyList<WhenDistributionPointDto>? ParseWhenDistribution(string? whenDistributionJson)
+        private static List<WhenDistributionPointDto>? ParseWhenDistribution(string? whenDistributionJson)
         {
             if (string.IsNullOrWhiteSpace(whenDistributionJson))
             {

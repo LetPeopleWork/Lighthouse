@@ -85,25 +85,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
-        public async Task HandleAsync_WhenSnapshotPersistenceFails_PropagatesTheException()
+        public async Task HandleAsync_WhenSnapshotPersistenceFails_SwallowsAndLogsTheError()
         {
             var fixture = await SeedDeliveryWithKnownCounts();
+            var persistenceFailure = new InvalidOperationException("snapshot store unavailable");
             var snapshotRepository = new Mock<IDeliveryMetricSnapshotRepository>();
             snapshotRepository
                 .Setup(repository => repository.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateTime>()))
                 .Returns(new DeliveryMetricSnapshot { DeliveryId = fixture.DeliveryId });
             snapshotRepository
                 .Setup(repository => repository.Save())
-                .ThrowsAsync(new InvalidOperationException("snapshot store unavailable"));
+                .ThrowsAsync(persistenceFailure);
 
+            var logger = new Mock<ILogger<DeliveryMetricSnapshotRecordingHandler>>();
             var handler = new DeliveryMetricSnapshotRecordingHandler(
                 scope.ServiceProvider.GetRequiredService<IDeliveryRepository>(),
                 snapshotRepository.Object,
-                Mock.Of<ILogger<DeliveryMetricSnapshotRecordingHandler>>());
+                logger.Object);
 
-            Assert.That(
-                async () => await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None),
-                Throws.InstanceOf<InvalidOperationException>());
+            await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);
+
+            logger.Verify(
+                log => log.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    persistenceFailure,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
         }
 
         [Test]

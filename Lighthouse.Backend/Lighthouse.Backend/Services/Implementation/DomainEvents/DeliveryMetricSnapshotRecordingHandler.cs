@@ -42,9 +42,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 stopwatch.Stop();
                 logger.LogError(
                     exception,
-                    "Failed to record delivery metric snapshots for Portfolio {PortfolioId} after {ElapsedMilliseconds}ms",
+                    "Failed to record delivery metric snapshots for Portfolio {PortfolioId} after {ElapsedMilliseconds}ms; snapshot recording is best-effort and the next forecast update will retry",
                     domainEvent.PortfolioId, stopwatch.ElapsedMilliseconds);
-                throw;
             }
         }
     }
