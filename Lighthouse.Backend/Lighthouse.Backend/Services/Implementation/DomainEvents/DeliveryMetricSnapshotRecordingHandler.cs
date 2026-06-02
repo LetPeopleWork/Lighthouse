@@ -23,11 +23,16 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 {
                     var totalWork = delivery.Features.SelectMany(feature => feature.FeatureWork).Sum(work => work.TotalWorkItems);
                     var remainingWork = delivery.Features.SelectMany(feature => feature.FeatureWork).Sum(work => work.RemainingWorkItems);
+                    var estimatedPortion = delivery.Features
+                        .Where(feature => feature.IsUsingDefaultFeatureSize)
+                        .SelectMany(feature => feature.FeatureWork)
+                        .Sum(work => work.TotalWorkItems);
 
                     var snapshot = snapshotRepository.GetOrCreateForDay(delivery.Id, recordedAt);
                     snapshot.TotalWork = totalWork;
                     snapshot.DoneWork = totalWork - remainingWork;
                     snapshot.RemainingWork = remainingWork;
+                    snapshot.EstimatedItemCount = estimatedPortion > 0 ? estimatedPortion : null;
                 }
 
                 await snapshotRepository.Save();

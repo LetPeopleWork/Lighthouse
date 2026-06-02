@@ -131,15 +131,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
-        [Ignore("Slice 2 — US-01b inferred estimate (EstimatedItemCount)")]
-        public async Task HandleAsync_NotBrokenDownFeature_RecordsInferredEstimateAboveActualBacklog()
+        public async Task HandleAsync_NotBrokenDownFeature_RecordsExtrapolatedItemsAsEstimatedPortion()
         {
             var fixture = await SeedDeliveryWithNotBrokenDownFeature();
 
             await HandlePortfolioForecastsUpdated(fixture);
 
             var snapshot = await TodaysSnapshot(fixture);
-            Assert.That(snapshot.EstimatedItemCount, Is.GreaterThan(snapshot.TotalWork));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.EstimatedItemCount, Is.EqualTo(fixture.ExpectedEstimatedItemCount));
+                Assert.That(snapshot.EstimatedItemCount, Is.LessThan(snapshot.TotalWork));
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_FullyBrokenDownDelivery_RecordsNoEstimatedPortion()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            Assert.That(snapshot.EstimatedItemCount, Is.Null);
+        }
+
+        [Test]
+        public async Task HandleAsync_NotBrokenDownFeatureRunTwiceSameDay_KeepsSingleRowWithSameEstimatedPortion()
+        {
+            var fixture = await SeedDeliveryWithNotBrokenDownFeature();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
+                Assert.That(snapshot.EstimatedItemCount, Is.EqualTo(fixture.ExpectedEstimatedItemCount));
+            }
         }
 
         [Test]
@@ -218,8 +248,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private Task<RecorderFixture> SeedDeliveryWhoseForecastChangesOnUpdate()
             => throw new AssertionException("pending — DELIVER seeds a delivery whose forecast changes when the update runs");
 
-        private Task<RecorderFixture> SeedDeliveryWithNotBrokenDownFeature()
-            => throw new AssertionException("pending — DELIVER seeds a delivery with a not-broken-down feature");
+        private async Task<RecorderFixture> SeedDeliveryWithNotBrokenDownFeature()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+
+            var brokenDownFeature = new Feature([(team, 4, 12)])
+            {
+                Name = "Broken Down Feature",
+                Order = "1",
+                IsUsingDefaultFeatureSize = false,
+            };
+
+            var extrapolatedFeature = new Feature([(team, 8, 8)])
+            {
+                Name = "Not Broken Down Feature",
+                Order = "2",
+                IsUsingDefaultFeatureSize = true,
+            };
+
+            var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            featureRepository.Add(brokenDownFeature);
+            featureRepository.Add(extrapolatedFeature);
+            await featureRepository.Save();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            delivery.Features.Add(brokenDownFeature);
+            delivery.Features.Add(extrapolatedFeature);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+                ExpectedTotalWork = 20,
+                ExpectedDoneWork = 8,
+                ExpectedEstimatedItemCount = 8,
+            };
+        }
 
         private async Task HandlePortfolioForecastsUpdated(RecorderFixture fixture)
         {
@@ -350,6 +418,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public int DeliveryId { get; init; }
             public int ExpectedTotalWork { get; init; }
             public int ExpectedDoneWork { get; init; }
+            public int? ExpectedEstimatedItemCount { get; init; }
             public int FreshForecastHowMany { get; init; }
             public int StalePreForecastHowMany { get; init; }
         }
