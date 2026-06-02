@@ -817,6 +817,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<LicenseInformation>, LicenseInformationRepository>();
             builder.Services.AddScoped<IRepository<BlackoutPeriod>, BlackoutPeriodRepository>();
             builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+            builder.Services.AddScoped<IDeliveryMetricSnapshotRepository, DeliveryMetricSnapshotRepository>();
             builder.Services.AddScoped<IRepository<RefreshLog>, RefreshLogRepository>();
             builder.Services.AddScoped<IRepository<UserProfile>, UserProfileRepository>();
             builder.Services.AddScoped<IRepository<ApiKeyPermission>, ApiKeyPermissionRepository>();
