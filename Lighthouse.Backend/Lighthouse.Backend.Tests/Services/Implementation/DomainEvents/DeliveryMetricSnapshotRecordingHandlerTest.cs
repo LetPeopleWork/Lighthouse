@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
-        [Ignore("Slice 2 — US-01b inferred estimate (EstimatedTotalWork)")]
+        [Ignore("Slice 2 — US-01b inferred estimate (EstimatedItemCount)")]
         public async Task HandleAsync_NotBrokenDownFeature_RecordsInferredEstimateAboveActualBacklog()
         {
             var fixture = await SeedDeliveryWithNotBrokenDownFeature();
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await HandlePortfolioForecastsUpdated(fixture);
 
             var snapshot = await TodaysSnapshot(fixture);
-            Assert.That(snapshot.EstimatedTotalWork, Is.GreaterThan(snapshot.TotalWork));
+            Assert.That(snapshot.EstimatedItemCount, Is.GreaterThan(snapshot.TotalWork));
         }
 
         [Test]
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 TotalWork = snapshot.TotalWork,
                 DoneWork = snapshot.DoneWork,
                 RemainingWork = snapshot.RemainingWork,
-                EstimatedTotalWork = snapshot.EstimatedTotalWork,
+                EstimatedItemCount = snapshot.EstimatedItemCount,
                 ForecastHowMany = snapshot.ForecastHowMany,
             };
 
@@ -359,7 +359,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public int TotalWork { get; init; }
             public int DoneWork { get; init; }
             public int RemainingWork { get; init; }
-            public int? EstimatedTotalWork { get; init; }
+            public int? EstimatedItemCount { get; init; }
             public int? ForecastHowMany { get; init; }
         }
     }

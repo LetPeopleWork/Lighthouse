@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.API.DTO
         int TotalWork,
         int DoneWork,
         int RemainingWork,
-        int? EstimatedTotalWork,
+        int? EstimatedItemCount,
         int? ForecastHowMany,
         double? LikelihoodPercentage,
         IReadOnlyList<WhenDistributionPointDto>? WhenDistribution);
@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.API.DTO
                 snapshot.TotalWork,
                 snapshot.DoneWork,
                 snapshot.RemainingWork,
-                snapshot.EstimatedTotalWork,
+                snapshot.EstimatedItemCount,
                 snapshot.ForecastHowMany,
                 snapshot.LikelihoodPercentage,
                 ParseWhenDistribution(snapshot.WhenDistributionJson));

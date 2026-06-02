@@ -8,7 +8,7 @@ export interface DeliveryMetricsHistoryPoint {
 	totalWork: number;
 	doneWork: number;
 	remainingWork: number;
-	estimatedTotalWork: number | null;
+	estimatedItemCount: number | null;
 	forecastHowMany: number | null;
 	likelihoodPercentage: number | null;
 	whenDistribution: WhenDistributionPoint[] | null;
@@ -84,9 +84,9 @@ function parsePoint(value: unknown): DeliveryMetricsHistoryPoint {
 		totalWork: asNumber(point.totalWork, "point.totalWork"),
 		doneWork: asNumber(point.doneWork, "point.doneWork"),
 		remainingWork: asNumber(point.remainingWork, "point.remainingWork"),
-		estimatedTotalWork: asNullableNumber(
-			point.estimatedTotalWork,
-			"point.estimatedTotalWork",
+		estimatedItemCount: asNullableNumber(
+			point.estimatedItemCount,
+			"point.estimatedItemCount",
 		),
 		forecastHowMany: asNullableNumber(
 			point.forecastHowMany,

@@ -201,7 +201,7 @@ describe("DeliveryService", () => {
 							totalWork: 20,
 							doneWork: 5,
 							remainingWork: 15,
-							estimatedTotalWork: null,
+							estimatedItemCount: null,
 							forecastHowMany: null,
 							likelihoodPercentage: null,
 							whenDistribution: null,

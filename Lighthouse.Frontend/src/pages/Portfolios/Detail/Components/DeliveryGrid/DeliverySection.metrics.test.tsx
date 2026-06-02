@@ -49,7 +49,7 @@ const getHistory = (): DeliveryMetricsHistory => ({
 			totalWork: 20,
 			doneWork: 4,
 			remainingWork: 16,
-			estimatedTotalWork: null,
+			estimatedItemCount: null,
 			forecastHowMany: null,
 			likelihoodPercentage: null,
 			whenDistribution: null,

@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 TotalWork = 12,
                 DoneWork = 4,
                 RemainingWork = 8,
-                EstimatedTotalWork = 15,
+                EstimatedItemCount = 15,
                 ForecastHowMany = 6,
                 LikelihoodPercentage = 72.5,
                 WhenDistributionJson = whenDistributionJson,
@@ -270,7 +270,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private static bool BodyCarriesEverySeries(string body)
         {
             var point = Points(body).Single();
-            return point.EstimatedTotalWork.HasValue
+            return point.EstimatedItemCount.HasValue
                 && point.ForecastHowMany.HasValue
                 && point.LikelihoodPercentage.HasValue
                 && point.WhenDistribution is { Count: > 0 };
@@ -289,7 +289,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             int TotalWork,
             int DoneWork,
             int RemainingWork,
-            int? EstimatedTotalWork,
+            int? EstimatedItemCount,
             int? ForecastHowMany,
             double? LikelihoodPercentage,
             IReadOnlyList<WhenDistributionView>? WhenDistribution);

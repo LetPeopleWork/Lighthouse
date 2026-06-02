@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Models
 
         public int RemainingWork { get; set; }
 
-        public int? EstimatedTotalWork { get; set; }
+        public int? EstimatedItemCount { get; set; }
 
         public int? ForecastHowMany { get; set; }
 

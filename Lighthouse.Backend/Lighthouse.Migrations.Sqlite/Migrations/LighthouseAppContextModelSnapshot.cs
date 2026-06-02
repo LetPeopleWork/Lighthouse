@@ -342,7 +342,7 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("DoneWork")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("EstimatedTotalWork")
+                    b.Property<int?>("EstimatedItemCount")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("ForecastHowMany")

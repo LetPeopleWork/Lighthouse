@@ -9,7 +9,7 @@ const getValidPoint = (overrides?: Record<string, unknown>) => ({
 	totalWork: 20,
 	doneWork: 3,
 	remainingWork: 17,
-	estimatedTotalWork: 25,
+	estimatedItemCount: 25,
 	forecastHowMany: 18,
 	likelihoodPercentage: 84,
 	whenDistribution: [{ probability: 70, expectedDate: "2026-06-08T00:00:00Z" }],
@@ -41,7 +41,7 @@ describe("parseDeliveryMetricsHistory", () => {
 		expect(point.totalWork).toBe(20);
 		expect(point.doneWork).toBe(3);
 		expect(point.remainingWork).toBe(17);
-		expect(point.estimatedTotalWork).toBe(25);
+		expect(point.estimatedItemCount).toBe(25);
 		expect(point.forecastHowMany).toBe(18);
 		expect(point.likelihoodPercentage).toBe(84);
 		expect(point.date).toEqual(new Date("2026-06-01T00:00:00Z"));
@@ -63,7 +63,7 @@ describe("parseDeliveryMetricsHistory", () => {
 						totalWork: 1,
 						doneWork: 0,
 						remainingWork: 1,
-						estimatedTotalWork: null,
+						estimatedItemCount: null,
 						forecastHowMany: null,
 						likelihoodPercentage: null,
 						whenDistribution: [
@@ -98,7 +98,7 @@ describe("parseDeliveryMetricsHistory", () => {
 						totalWork: 0,
 						doneWork: 0,
 						remainingWork: 0,
-						estimatedTotalWork: null,
+						estimatedItemCount: null,
 						forecastHowMany: null,
 						likelihoodPercentage: null,
 						whenDistribution: null,
@@ -108,7 +108,7 @@ describe("parseDeliveryMetricsHistory", () => {
 		);
 
 		expect(result.firstSnapshotDate).toBeNull();
-		expect(result.points[0].estimatedTotalWork).toBeNull();
+		expect(result.points[0].estimatedItemCount).toBeNull();
 		expect(result.points[0].forecastHowMany).toBeNull();
 		expect(result.points[0].likelihoodPercentage).toBeNull();
 		expect(result.points[0].whenDistribution).toBeNull();
@@ -120,7 +120,7 @@ describe("parseDeliveryMetricsHistory", () => {
 				firstSnapshotDate: undefined,
 				points: [
 					getValidPoint({
-						estimatedTotalWork: undefined,
+						estimatedItemCount: undefined,
 						forecastHowMany: undefined,
 						likelihoodPercentage: undefined,
 						whenDistribution: undefined,
@@ -130,7 +130,7 @@ describe("parseDeliveryMetricsHistory", () => {
 		);
 
 		expect(result.firstSnapshotDate).toBeNull();
-		expect(result.points[0].estimatedTotalWork).toBeNull();
+		expect(result.points[0].estimatedItemCount).toBeNull();
 		expect(result.points[0].forecastHowMany).toBeNull();
 		expect(result.points[0].likelihoodPercentage).toBeNull();
 		expect(result.points[0].whenDistribution).toBeNull();
@@ -185,9 +185,9 @@ describe("parseDeliveryMetricsHistory", () => {
 			"point.remainingWork",
 		],
 		[
-			"point.estimatedTotalWork",
-			responseWithPoint({ estimatedTotalWork: "lots" }),
-			"point.estimatedTotalWork",
+			"point.estimatedItemCount",
+			responseWithPoint({ estimatedItemCount: "lots" }),
+			"point.estimatedItemCount",
 		],
 		[
 			"point.forecastHowMany",
