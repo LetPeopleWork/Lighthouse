@@ -41,7 +41,10 @@ interface SeriesEntry {
 	area?: boolean;
 	showMark?: boolean;
 	color?: string;
+	lineStyle?: { strokeDasharray?: string };
 }
+
+const ESTIMATED_SERIES_LABEL = "Estimated (not broken down)";
 
 interface AxisEntry {
 	data?: Date[];
@@ -152,6 +155,58 @@ describe("DeliveryBurnupChart", () => {
 
 		expect(screen.getByText("Custom Title")).toBeInTheDocument();
 		expect(screen.queryByText("Delivery Burnup")).not.toBeInTheDocument();
+	});
+
+	it("plots the dotted estimated-items line and the caption when points carry an estimated count", () => {
+		const history = getMockHistory();
+		history.points[0].estimatedItemCount = 12;
+		history.points[1].estimatedItemCount = 7;
+
+		render(<DeliveryBurnupChart history={history} />);
+
+		const props = getLatestChartProps();
+		const estimated = props?.series?.find(
+			(entry) => entry.label === ESTIMATED_SERIES_LABEL,
+		);
+		expect(estimated?.data).toEqual([12, 7]);
+		expect(estimated?.lineStyle?.strokeDasharray).toBeTruthy();
+		expect(estimated?.color).not.toBe(testTheme.palette.text.secondary);
+		expect(estimated?.color).not.toBe(testTheme.palette.primary.main);
+
+		expect(
+			screen.getByText(
+				/7 of 20 backlog items are estimated \(features not yet broken down\)/i,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("gaps the dotted line where a point is fully broken down and captions the latest estimated point", () => {
+		const history = getMockHistory();
+		history.points[0].estimatedItemCount = 9;
+		history.points[1].estimatedItemCount = 0;
+
+		render(<DeliveryBurnupChart history={history} />);
+
+		const props = getLatestChartProps();
+		const estimated = props?.series?.find(
+			(entry) => entry.label === ESTIMATED_SERIES_LABEL,
+		);
+		expect(estimated?.data).toEqual([9, null]);
+
+		expect(
+			screen.getByText(
+				/9 of 20 backlog items are estimated \(features not yet broken down\)/i,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("renders no estimated series and no caption when no point carries an estimated count", () => {
+		render(<DeliveryBurnupChart history={getMockHistory()} />);
+
+		const props = getLatestChartProps();
+		const labels = props?.series?.map((entry) => entry.label) ?? [];
+		expect(labels).not.toContain(ESTIMATED_SERIES_LABEL);
+		expect(screen.queryByText(/are estimated/i)).not.toBeInTheDocument();
 	});
 
 	it("shows the forward-only empty state when no snapshots exist", () => {

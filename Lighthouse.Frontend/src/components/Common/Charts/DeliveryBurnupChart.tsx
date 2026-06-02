@@ -15,27 +15,77 @@ interface DeliveryBurnupChartProps {
 const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no snapshots recorded yet.";
 
+const ESTIMATED_SERIES_LABEL = "Estimated (not broken down)";
+
 const formatDate = (date: Date): string => date.toLocaleDateString();
+
+const estimatedValue = (point: DeliveryMetricsHistoryPoint): number | null =>
+	point.estimatedItemCount && point.estimatedItemCount > 0
+		? point.estimatedItemCount
+		: null;
+
+const latestEstimatedPoint = (
+	points: DeliveryMetricsHistoryPoint[],
+): DeliveryMetricsHistoryPoint | undefined => {
+	const estimated = points.filter((point) => estimatedValue(point) !== null);
+	return estimated[estimated.length - 1];
+};
+
+const estimatedCaption = (
+	points: DeliveryMetricsHistoryPoint[],
+): string | null => {
+	const latest = latestEstimatedPoint(points);
+	if (latest === undefined) {
+		return null;
+	}
+	return `${latest.estimatedItemCount} of ${latest.totalWork} backlog items are estimated (features not yet broken down)`;
+};
+
+interface BurnupColors {
+	backlog: string;
+	done: string;
+	estimated: string;
+}
 
 const buildSeries = (
 	points: DeliveryMetricsHistoryPoint[],
-	backlogColor: string,
-	doneColor: string,
-) => [
-	{
-		label: "Backlog",
-		data: points.map((point) => point.totalWork),
-		showMark: false,
-		color: backlogColor,
-	},
-	{
-		label: "Done",
-		data: points.map((point) => point.doneWork),
-		area: true,
-		showMark: false,
-		color: doneColor,
-	},
-];
+	colors: BurnupColors,
+) => {
+	const series: Array<{
+		label: string;
+		data: Array<number | null>;
+		showMark: boolean;
+		color: string;
+		area?: boolean;
+		lineStyle?: { strokeDasharray: string };
+	}> = [
+		{
+			label: "Backlog",
+			data: points.map((point) => point.totalWork),
+			showMark: false,
+			color: colors.backlog,
+		},
+		{
+			label: "Done",
+			data: points.map((point) => point.doneWork),
+			area: true,
+			showMark: false,
+			color: colors.done,
+		},
+	];
+
+	if (latestEstimatedPoint(points) !== undefined) {
+		series.push({
+			label: ESTIMATED_SERIES_LABEL,
+			data: points.map(estimatedValue),
+			showMark: false,
+			color: colors.estimated,
+			lineStyle: { strokeDasharray: "5 5" },
+		});
+	}
+
+	return series;
+};
 
 const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 	history,
@@ -57,11 +107,12 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 	}
 
 	const dates = history.points.map((point) => point.date);
-	const series = buildSeries(
-		history.points,
-		theme.palette.text.secondary,
-		theme.palette.primary.main,
-	);
+	const series = buildSeries(history.points, {
+		backlog: theme.palette.text.secondary,
+		done: theme.palette.primary.main,
+		estimated: theme.palette.warning.main,
+	});
+	const caption = estimatedCaption(history.points);
 
 	return (
 		<Card
@@ -97,6 +148,11 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 						lineStyle={{ stroke: theme.palette.error.main }}
 					/>
 				</LineChart>
+				{caption !== null ? (
+					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+						{caption}
+					</Typography>
+				) : null}
 			</CardContent>
 		</Card>
 	);
