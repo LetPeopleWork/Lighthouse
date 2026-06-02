@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private int idCounter;
 
+        private static readonly string[] ForecastThenEventDispatchOrder = ["forecastWriteBack", "forecastsUpdatedEvent"];
+
         [SetUp]
         public void SetUp()
         {
@@ -42,6 +44,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             domainEventDispatcherMock
                 .Setup(x => x.PublishAsync(It.IsAny<PortfolioFeaturesRefreshed>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
@@ -249,6 +254,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(project.Id);
 
             writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(project), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_PublishesPortfolioForecastsUpdatedExactlyOnce_AfterForecastWriteBack()
+        {
+            var team = CreateTeam();
+
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var dispatchSequence = new List<string>();
+            writeBackTriggerServiceMock
+                .Setup(x => x.TriggerForecastWriteBackForPortfolio(project))
+                .Callback(() => dispatchSequence.Add("forecastWriteBack"))
+                .Returns(Task.CompletedTask);
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()))
+                .Callback(() => dispatchSequence.Add("forecastsUpdatedEvent"))
+                .Returns(Task.CompletedTask);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            domainEventDispatcherMock.Verify(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()), Times.Once);
+            Assert.That(dispatchSequence, Is.EqualTo(ForecastThenEventDispatchOrder));
         }
 
         [Test]

@@ -1,6 +1,8 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -10,7 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     public class ForecastUpdater(
         ILogger<ForecastUpdater> logger,
         IServiceScopeFactory serviceScopeFactory,
-        IUpdateQueueService updateQueueService)
+        IUpdateQueueService updateQueueService,
+        IDomainEventDispatcher domainEventDispatcher)
         : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts),
             IForecastUpdater
     {
@@ -39,6 +42,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(portfolio);
+
+            await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
         }
     }
 }

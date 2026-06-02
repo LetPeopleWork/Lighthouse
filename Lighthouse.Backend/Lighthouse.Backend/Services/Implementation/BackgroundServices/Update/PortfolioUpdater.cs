@@ -83,6 +83,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
                     await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
 
+                    await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(project.Id));
+
                     itemCount = project.Features.Count;
                     success = true;
                 }
