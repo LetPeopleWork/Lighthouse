@@ -142,6 +142,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task GetMetricsHistory_SnapshotsRecordedBeforeEstimatedPortion_CarryBacklogTotalButNoEstimatedItemCount()
+        {
+            var (portfolioId, deliveryId) = SeedDeliveryWithOnlyBacklogTotals();
+
+            client.AsPortfolioViewer(portfolioId);
+            var response = await client.GetAsync(MetricsHistoryUrl(deliveryId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(EveryPointCarriesBacklogTotal(body), Is.True, body);
+                Assert.That(NoPointCarriesEstimatedItemCount(body), Is.True, body);
+            }
+        }
+
         private static string MetricsHistoryUrl(int deliveryId)
             => $"/api/latest/deliveries/{deliveryId}/metrics-history";
 
@@ -193,6 +210,38 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var portfolio = AddPortfolio(scope.ServiceProvider);
             var delivery = new Delivery("Release 3", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id);
+        }
+
+        private (int portfolioId, int deliveryId) SeedDeliveryWithOnlyBacklogTotals()
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var delivery = new Delivery("Release 4", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            var firstDay = DateTime.UtcNow.Date.AddDays(-1);
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = firstDay,
+                TotalWork = 14,
+                DoneWork = 3,
+                RemainingWork = 11,
+            });
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = firstDay.AddDays(1),
+                TotalWork = 14,
+                DoneWork = 6,
+                RemainingWork = 8,
+            });
             dbContext.SaveChanges();
 
             return (portfolio.Id, delivery.Id);
@@ -266,6 +315,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dto = JsonSerializer.Deserialize<HistoryView>(body, CaseInsensitiveJson);
             return dto?.FirstSnapshotDate is null;
         }
+
+        private static bool EveryPointCarriesBacklogTotal(string body)
+        {
+            var points = Points(body);
+            return points.Count > 0 && points.All(point => point.TotalWork > 0);
+        }
+
+        private static bool NoPointCarriesEstimatedItemCount(string body)
+            => Points(body).All(point => point.EstimatedItemCount is null);
 
         private static bool BodyCarriesEverySeries(string body)
         {
