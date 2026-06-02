@@ -339,6 +339,11 @@ export const createMockDeliveryService = (): IDeliveryService => {
 		delete: vi.fn().mockResolvedValue(undefined),
 		getRuleSchema: vi.fn().mockResolvedValue({ fields: [] }),
 		validateRules: vi.fn().mockResolvedValue([]),
+		getMetricsHistory: vi.fn().mockResolvedValue({
+			deliveryDate: new Date(),
+			firstSnapshotDate: null,
+			points: [],
+		}),
 	};
 };
 

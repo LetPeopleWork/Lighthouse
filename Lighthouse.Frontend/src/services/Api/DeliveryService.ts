@@ -1,4 +1,8 @@
 import { Delivery, type IDelivery } from "../../models/Delivery";
+import {
+	type DeliveryMetricsHistory,
+	parseDeliveryMetricsHistory,
+} from "../../models/Delivery/DeliveryMetricsHistory";
 import type { Feature } from "../../models/Feature";
 import {
 	DeliverySelectionMode,
@@ -37,6 +41,7 @@ export interface IDeliveryService {
 		rules: IWorkItemRuleCondition[],
 		mode?: "and" | "or",
 	): Promise<Feature[]>;
+	getMetricsHistory(deliveryId: number): Promise<DeliveryMetricsHistory>;
 }
 
 export class DeliveryService
@@ -126,6 +131,15 @@ export class DeliveryService
 				},
 			);
 			return response.data;
+		});
+	}
+
+	async getMetricsHistory(deliveryId: number): Promise<DeliveryMetricsHistory> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`/deliveries/${deliveryId}/metrics-history`,
+			);
+			return parseDeliveryMetricsHistory(response.data);
 		});
 	}
 }

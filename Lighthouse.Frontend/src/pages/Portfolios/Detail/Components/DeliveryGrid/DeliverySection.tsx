@@ -11,12 +11,15 @@ import {
 	Chip,
 	IconButton,
 	Paper,
+	Tab,
+	Tabs,
 	Tooltip,
 	Typography,
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
+import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
@@ -30,7 +33,9 @@ import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../components/Comm
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { Delivery } from "../../../../../models/Delivery";
+import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -65,11 +70,39 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	teams,
 	canEdit = true,
 }) => {
-	const { featureService } = useContext(ApiServiceContext);
+	const { featureService, deliveryService } = useContext(ApiServiceContext);
+	const { licenseStatus } = useLicenseRestrictions();
+	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
+
+	const [activeTab, setActiveTab] = useState<"workItems" | "metrics">(
+		"workItems",
+	);
+	const [metricsHistory, setMetricsHistory] =
+		useState<DeliveryMetricsHistory | null>(null);
+	const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+
+	const handleTabChange = useCallback(
+		(_event: React.SyntheticEvent, nextTab: "workItems" | "metrics") => {
+			setActiveTab(nextTab);
+			if (
+				nextTab !== "metrics" ||
+				metricsHistory !== null ||
+				isLoadingMetrics
+			) {
+				return;
+			}
+			setIsLoadingMetrics(true);
+			deliveryService
+				.getMetricsHistory(delivery.id)
+				.then(setMetricsHistory)
+				.finally(() => setIsLoadingMetrics(false));
+		},
+		[deliveryService, delivery.id, metricsHistory, isLoadingMetrics],
+	);
 
 	const handleShowFeatureDetails = useCallback(
 		async (feature: IFeature) => {
@@ -412,44 +445,31 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						</Box>
 					</AccordionSummary>
 					<AccordionDetails sx={{ p: 0 }}>
-						{(() => {
-							let content: React.ReactNode;
-							if (isLoadingFeatures) {
-								content = (
-									<Typography
-										variant="body2"
-										color="text.secondary"
-										sx={{ p: 2 }}
-									>
-										{`Loading ${featuresTerm}...`}
-									</Typography>
-								);
-							} else if (features.length === 0) {
-								content = (
-									<Typography
-										variant="body2"
-										color="text.secondary"
-										sx={{ p: 2 }}
-									>
-										No {featuresTerm} in this {deliveryTerm}.
-									</Typography>
-								);
-							} else {
-								content = (
-									<Box sx={{ mx: 2, mb: 2 }}>
-										<FeatureListDataGrid
-											features={features}
-											columns={columns}
-											storageKey={`delivery-features-${delivery.id}`}
-											hideCompletedStorageKey={`lighthouse_hide_completed_features_delivery_${delivery.id}`}
-											loading={false}
-											emptyStateMessage={`No ${featuresTerm} found`}
-										/>
-									</Box>
-								);
-							}
-							return content;
-						})()}
+						<Tabs
+							value={activeTab}
+							onChange={handleTabChange}
+							aria-label="delivery view tabs"
+							sx={{ px: 2, borderBottom: 1, borderColor: "divider" }}
+						>
+							<Tab label={workItemsTerm} value="workItems" />
+							{canUsePremiumFeatures && <Tab label="Metrics" value="metrics" />}
+						</Tabs>
+						{activeTab === "workItems" && (
+							<WorkItemsTab
+								isLoadingFeatures={isLoadingFeatures}
+								features={features}
+								columns={columns}
+								deliveryId={delivery.id}
+								featuresTerm={featuresTerm}
+								deliveryTerm={deliveryTerm}
+							/>
+						)}
+						{activeTab === "metrics" && canUsePremiumFeatures && (
+							<MetricsTab
+								isLoading={isLoadingMetrics}
+								history={metricsHistory}
+							/>
+						)}
 					</AccordionDetails>
 				</Accordion>
 			</Box>
@@ -462,6 +482,74 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				/>
 			)}
 		</Paper>
+	);
+};
+
+interface WorkItemsTabProps {
+	isLoadingFeatures: boolean;
+	features: IFeature[];
+	columns: DataGridColumn<IFeature & GridValidRowModel>[];
+	deliveryId: number;
+	featuresTerm: string;
+	deliveryTerm: string;
+}
+
+const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
+	isLoadingFeatures,
+	features,
+	columns,
+	deliveryId,
+	featuresTerm,
+	deliveryTerm,
+}) => {
+	if (isLoadingFeatures) {
+		return (
+			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+				{`Loading ${featuresTerm}...`}
+			</Typography>
+		);
+	}
+
+	if (features.length === 0) {
+		return (
+			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+				No {featuresTerm} in this {deliveryTerm}.
+			</Typography>
+		);
+	}
+
+	return (
+		<Box sx={{ mx: 2, mb: 2, mt: 2 }}>
+			<FeatureListDataGrid
+				features={features}
+				columns={columns}
+				storageKey={`delivery-features-${deliveryId}`}
+				hideCompletedStorageKey={`lighthouse_hide_completed_features_delivery_${deliveryId}`}
+				loading={false}
+				emptyStateMessage={`No ${featuresTerm} found`}
+			/>
+		</Box>
+	);
+};
+
+interface MetricsTabProps {
+	isLoading: boolean;
+	history: DeliveryMetricsHistory | null;
+}
+
+const MetricsTab: React.FC<MetricsTabProps> = ({ isLoading, history }) => {
+	if (isLoading || history === null) {
+		return (
+			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+				Loading metrics...
+			</Typography>
+		);
+	}
+
+	return (
+		<Box sx={{ mx: 2, mb: 2, mt: 2 }}>
+			<DeliveryBurnupChart history={history} />
+		</Box>
 	);
 };
 
