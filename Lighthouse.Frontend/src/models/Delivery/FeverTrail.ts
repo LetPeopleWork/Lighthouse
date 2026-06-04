@@ -7,8 +7,8 @@ export type FeverZone = "green" | "amber" | "red";
 
 export type FeverPoint = {
 	date: Date;
-	x: number;
-	y: number;
+	completion: number;
+	chanceOfLate: number;
 	zone: FeverZone;
 };
 
@@ -17,56 +17,81 @@ export type FeverTrail = {
 	empty: boolean;
 };
 
-const GREEN_MAX_DEVIATION = 5;
-const AMBER_MAX_DEVIATION = 20;
+export const BAND_SLOPE = 2 / 3;
+export const GREEN_AMBER_INTERCEPT = 0;
+export const AMBER_RED_INTERCEPT = 100 / 3;
 
 const clamp = (value: number, min: number, max: number): number =>
 	Math.min(Math.max(value, min), max);
 
-const zoneFor = (deviation: number): FeverZone => {
-	if (deviation <= GREEN_MAX_DEVIATION) {
-		return "green";
+const greenAmberBoundary = (completion: number): number =>
+	GREEN_AMBER_INTERCEPT + BAND_SLOPE * completion;
+
+const amberRedBoundary = (completion: number): number =>
+	AMBER_RED_INTERCEPT + BAND_SLOPE * completion;
+
+const zoneFor = (completion: number, chanceOfLate: number): FeverZone => {
+	if (chanceOfLate >= amberRedBoundary(completion)) {
+		return "red";
 	}
-	if (deviation <= AMBER_MAX_DEVIATION) {
+	if (chanceOfLate >= greenAmberBoundary(completion)) {
 		return "amber";
 	}
-	return "red";
+	return "green";
 };
 
-const emptyTrail: FeverTrail = { points: [], empty: true };
+const isPlottable = (point: DeliveryMetricsHistoryPoint): boolean =>
+	point.totalWork > 0 && point.likelihoodPercentage !== null;
+
+const toFeverPoint = (point: DeliveryMetricsHistoryPoint): FeverPoint => {
+	const completion = clamp((point.doneWork / point.totalWork) * 100, 0, 100);
+	const chanceOfLate = clamp(100 - (point.likelihoodPercentage ?? 0), 0, 100);
+	return {
+		date: point.date,
+		completion,
+		chanceOfLate,
+		zone: zoneFor(completion, chanceOfLate),
+	};
+};
 
 export function deriveFeverTrail(history: DeliveryMetricsHistory): FeverTrail {
-	const firstSnapshotDate = history.firstSnapshotDate;
-	if (!firstSnapshotDate || history.points.length === 0) {
-		return emptyTrail;
-	}
-
-	const span = history.deliveryDate.getTime() - firstSnapshotDate.getTime();
-	if (span <= 0) {
-		return emptyTrail;
-	}
-
-	const startTime = firstSnapshotDate.getTime();
-	const points = history.points
-		.filter((point) => point.totalWork > 0)
-		.map((point) => toFeverPoint(point, startTime, span));
-
+	const points = history.points.filter(isPlottable).map(toFeverPoint);
 	return { points, empty: points.length === 0 };
 }
 
-function toFeverPoint(
-	point: DeliveryMetricsHistoryPoint,
-	startTime: number,
-	span: number,
-): FeverPoint {
-	const scheduleConsumed =
-		clamp((point.date.getTime() - startTime) / span, 0, 1) * 100;
-	const remaining = (point.remainingWork / point.totalWork) * 100;
-	const deviation = remaining - (100 - scheduleConsumed);
-	return {
-		date: point.date,
-		x: scheduleConsumed,
-		y: remaining,
-		zone: zoneFor(deviation),
-	};
+export type ZonePolygon = {
+	zone: FeverZone;
+	points: Array<[number, number]>;
+};
+
+export function feverZonePolygons(): ZonePolygon[] {
+	const greenAmberAtFull = greenAmberBoundary(100);
+	const amberRedAtZero = amberRedBoundary(0);
+	return [
+		{
+			zone: "green",
+			points: [
+				[0, 0],
+				[100, 0],
+				[100, greenAmberAtFull],
+			],
+		},
+		{
+			zone: "amber",
+			points: [
+				[0, 0],
+				[100, greenAmberAtFull],
+				[100, 100],
+				[0, amberRedAtZero],
+			],
+		},
+		{
+			zone: "red",
+			points: [
+				[0, amberRedAtZero],
+				[100, 100],
+				[0, 100],
+			],
+		},
+	];
 }

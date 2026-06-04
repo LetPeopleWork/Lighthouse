@@ -27,6 +27,11 @@ vi.mock("@mui/x-charts/ScatterChart", () => ({
 	ScatterChart: scatterChartMock,
 }));
 
+vi.mock("@mui/x-charts/hooks", () => ({
+	useXScale: () => (value: number) => value,
+	useYScale: () => (value: number) => value,
+}));
+
 import DeliveryFeverChart from "./DeliveryFeverChart";
 
 interface ScatterDatum {
@@ -39,6 +44,7 @@ interface SeriesEntry {
 	id?: string;
 	label?: string;
 	color?: string;
+	markerSize?: number;
 	data?: ScatterDatum[];
 }
 
@@ -66,53 +72,46 @@ const seriesById = (id: string): SeriesEntry | undefined =>
 type RawPoint = {
 	date: string;
 	totalWork?: number;
-	remainingWork?: number;
+	doneWork?: number;
+	likelihoodPercentage?: number | null;
 };
 
 const getMockPoint = (overrides: RawPoint) => ({
 	date: overrides.date,
 	totalWork: overrides.totalWork ?? 20,
-	doneWork: 0,
-	remainingWork: overrides.remainingWork ?? 20,
+	doneWork: overrides.doneWork ?? 0,
+	remainingWork: (overrides.totalWork ?? 20) - (overrides.doneWork ?? 0),
 	estimatedItemCount: null,
 	forecastHowMany: null,
-	likelihoodPercentage: null,
+	likelihoodPercentage:
+		overrides.likelihoodPercentage === undefined
+			? 90
+			: overrides.likelihoodPercentage,
 	whenDistribution: null,
 });
 
 const getMockHistory = (overrides: {
-	firstSnapshotDate?: string | null;
-	deliveryDate?: string;
 	points: RawPoint[];
 }): DeliveryMetricsHistory =>
 	parseDeliveryMetricsHistory({
-		deliveryDate: overrides.deliveryDate ?? "2026-06-11T00:00:00Z",
-		firstSnapshotDate:
-			overrides.firstSnapshotDate === undefined
-				? "2026-06-01T00:00:00Z"
-				: overrides.firstSnapshotDate,
+		deliveryDate: "2026-06-21T00:00:00Z",
+		firstSnapshotDate: "2026-06-01T00:00:00Z",
 		points: overrides.points.map(getMockPoint),
 	});
 
-const onTrackHistory = getMockHistory({
+const trailHistory = getMockHistory({
 	points: [
-		{ date: "2026-06-01T00:00:00Z", totalWork: 20, remainingWork: 20 },
-		{ date: "2026-06-04T00:00:00Z", totalWork: 20, remainingWork: 13 },
-		{ date: "2026-06-08T00:00:00Z", totalWork: 20, remainingWork: 6 },
-		{ date: "2026-06-11T00:00:00Z", totalWork: 20, remainingWork: 0 },
+		{ date: "2026-06-01T00:00:00Z", doneWork: 5, likelihoodPercentage: 98 },
+		{ date: "2026-06-08T00:00:00Z", doneWork: 10, likelihoodPercentage: 60 },
+		{ date: "2026-06-15T00:00:00Z", doneWork: 15, likelihoodPercentage: 10 },
 	],
 });
 
-const degradingHistory = getMockHistory({
+const noLikelihoodHistory = getMockHistory({
 	points: [
-		{ date: "2026-06-01T00:00:00Z", totalWork: 20, remainingWork: 20 },
-		{ date: "2026-06-04T00:00:00Z", totalWork: 20, remainingWork: 18 },
-		{ date: "2026-06-08T00:00:00Z", totalWork: 20, remainingWork: 18 },
-		{ date: "2026-06-11T00:00:00Z", totalWork: 20, remainingWork: 16 },
+		{ date: "2026-06-01T00:00:00Z", doneWork: 4, likelihoodPercentage: null },
 	],
 });
-
-const emptyHistory = getMockHistory({ firstSnapshotDate: null, points: [] });
 
 const SETTLE_MS = 60_000;
 
@@ -133,59 +132,29 @@ describe("DeliveryFeverChart", () => {
 		vi.useRealTimers();
 	});
 
-	it("partitions the degrading trail into green, amber and red series coloured by zone", () => {
-		renderSettled(degradingHistory);
+	it("plots the snapshots as a trail series mapping completion to x and chance of late to y", () => {
+		renderSettled(trailHistory);
 
-		const green = seriesById("green");
-		const amber = seriesById("amber");
-		const red = seriesById("red");
-
-		expect(green?.color).toBe(testTheme.palette.success.main);
-		expect(amber?.color).toBe(testTheme.palette.warning.main);
-		expect(red?.color).toBe(testTheme.palette.error.main);
-
-		const total =
-			(green?.data?.length ?? 0) +
-			(amber?.data?.length ?? 0) +
-			(red?.data?.length ?? 0);
-		expect(total).toBe(degradingHistory.points.length);
-		expect(green?.data?.length).toBeGreaterThan(0);
-		expect(amber?.data?.length).toBeGreaterThan(0);
-		expect(red?.data?.length).toBeGreaterThan(0);
+		const trail = seriesById("trail");
+		expect(trail?.data).toEqual([
+			{ x: 25, y: 2, id: 0 },
+			{ x: 50, y: 40, id: 1 },
+			{ x: 75, y: 90, id: 2 },
+		]);
+		expect(trail?.color).toBe(testTheme.palette.primary.main);
 	});
 
-	it("places every on-track bubble in the green series and none in red", () => {
-		renderSettled(onTrackHistory);
-
-		const green = seriesById("green");
-		const red = seriesById("red");
-
-		expect(green?.data?.length).toBe(onTrackHistory.points.length);
-		expect(red?.data?.length ?? 0).toBe(0);
-	});
-
-	it("plots each bubble at schedule-consumed x and work-remaining y", () => {
-		renderSettled(onTrackHistory);
-
-		const allData = (getLatestChartProps()?.series ?? [])
-			.filter((entry) => entry.id !== "latest")
-			.flatMap((entry) => entry.data ?? []);
-		const byX = [...allData].sort((left, right) => left.x - right.x);
-
-		expect(byX[0]).toMatchObject({ x: 0, y: 100 });
-		expect(byX[byX.length - 1]).toMatchObject({ x: 100, y: 0 });
-	});
-
-	it("emphasises the latest bubble as its own series", () => {
-		renderSettled(degradingHistory);
+	it("emphasises the latest snapshot as its own larger series", () => {
+		renderSettled(trailHistory);
 
 		const latest = seriesById("latest");
-		expect(latest?.data?.length).toBe(1);
-		expect(latest?.data?.[0]).toMatchObject({ x: 100 });
+		const trail = seriesById("trail");
+		expect(latest?.data).toEqual([{ x: 75, y: 90, id: 2 }]);
+		expect((latest?.markerSize ?? 0) > (trail?.markerSize ?? 0)).toBe(true);
 	});
 
-	it("fixes both axes to a zero-to-hundred percentage scale with labels", () => {
-		render(<DeliveryFeverChart history={degradingHistory} />);
+	it("labels the axes as completion rate and chance of being late on a 0-100 scale", () => {
+		render(<DeliveryFeverChart history={trailHistory} />);
 
 		const props = getLatestChartProps();
 		const xAxis = props?.xAxis?.[0];
@@ -193,72 +162,38 @@ describe("DeliveryFeverChart", () => {
 
 		expect(xAxis?.min).toBe(0);
 		expect(xAxis?.max).toBe(100);
-		expect(xAxis?.label).toBe("% schedule consumed");
+		expect(xAxis?.label).toMatch(/completion/i);
 		expect(yAxis?.min).toBe(0);
 		expect(yAxis?.max).toBe(100);
-		expect(yAxis?.label).toBe("% work remaining");
+		expect(yAxis?.label).toMatch(/late/i);
 	});
 
-	it("names the green, amber and red zones in a caption", () => {
-		render(<DeliveryFeverChart history={degradingHistory} />);
+	it("never dispatches a series with no points mid-animation", () => {
+		render(<DeliveryFeverChart history={trailHistory} />);
 
-		expect(screen.getByText(/green/i)).toBeInTheDocument();
-		expect(screen.getByText(/amber/i)).toBeInTheDocument();
-		expect(screen.getByText(/red/i)).toBeInTheDocument();
+		const everyHasData = (getLatestChartProps()?.series ?? []).every(
+			(entry) => (entry.data?.length ?? 0) > 0,
+		);
+		expect(everyHasData).toBe(true);
 	});
 
-	it("shows the forward-only empty state and no chart when the trail is empty", () => {
-		render(<DeliveryFeverChart history={emptyHistory} />);
+	it("shows the forward-only empty state and no chart when no likelihood was recorded", () => {
+		render(<DeliveryFeverChart history={noLikelihoodHistory} />);
 
 		expect(
-			screen.getByText(
-				/builds forward from today — no snapshots recorded yet/i,
-			),
+			screen.getByText(/no likelihood snapshots recorded yet/i),
 		).toBeInTheDocument();
 		expect(scatterChartMock).not.toHaveBeenCalled();
 	});
 
 	it("carries the delivery-fever-chart test id on its root", () => {
-		render(<DeliveryFeverChart history={degradingHistory} />);
+		render(<DeliveryFeverChart history={trailHistory} />);
 
 		expect(screen.getByTestId("delivery-fever-chart")).toBeInTheDocument();
 	});
 });
 
-const everySeriesCarriesData = (): boolean =>
-	(getLatestChartProps()?.series ?? []).every(
-		(entry) => (entry.data?.length ?? 0) > 0,
-	);
-
-describe("DeliveryFeverChart empty-series guard", () => {
-	beforeEach(() => {
-		scatterChartMock.mockClear();
-		vi.useFakeTimers();
-	});
-
-	afterEach(() => {
-		vi.useRealTimers();
-	});
-
-	it("never dispatches a zone series with no points mid-animation", () => {
-		render(<DeliveryFeverChart history={degradingHistory} />);
-
-		expect(everySeriesCarriesData()).toBe(true);
-	});
-
-	it("omits the amber and red series when every bubble is in the green zone", () => {
-		renderSettled(onTrackHistory);
-
-		expect(everySeriesCarriesData()).toBe(true);
-		expect(seriesById("amber")).toBeUndefined();
-		expect(seriesById("red")).toBeUndefined();
-	});
-});
-
-const visibleBubbleCount = (): number =>
-	(getLatestChartProps()?.series ?? [])
-		.filter((entry) => entry.id !== "latest")
-		.reduce((sum, entry) => sum + (entry.data?.length ?? 0), 0);
+const visibleBubbleCount = (): number => seriesById("trail")?.data?.length ?? 0;
 
 describe("DeliveryFeverChart animation", () => {
 	beforeEach(() => {
@@ -270,8 +205,8 @@ describe("DeliveryFeverChart animation", () => {
 		vi.useRealTimers();
 	});
 
-	it("reveals the trail bubbles progressively over time and settles on the full trail", () => {
-		render(<DeliveryFeverChart history={onTrackHistory} />);
+	it("reveals the trail snapshots progressively over time and settles on the full trail", () => {
+		render(<DeliveryFeverChart history={trailHistory} />);
 
 		expect(visibleBubbleCount()).toBe(1);
 
@@ -279,7 +214,7 @@ describe("DeliveryFeverChart animation", () => {
 			vi.advanceTimersByTime(60_000);
 		});
 
-		expect(visibleBubbleCount()).toBe(onTrackHistory.points.length);
+		expect(visibleBubbleCount()).toBe(trailHistory.points.length);
 	});
 });
 

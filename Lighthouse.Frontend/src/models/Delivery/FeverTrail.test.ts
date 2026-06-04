@@ -2,62 +2,56 @@ import {
 	type DeliveryMetricsHistory,
 	parseDeliveryMetricsHistory,
 } from "./DeliveryMetricsHistory";
-import { deriveFeverTrail, type FeverZone } from "./FeverTrail";
+import {
+	AMBER_RED_INTERCEPT,
+	BAND_SLOPE,
+	deriveFeverTrail,
+	type FeverZone,
+	feverZonePolygons,
+} from "./FeverTrail";
 
 type RawPoint = {
 	date: string;
 	totalWork?: number;
-	remainingWork?: number;
+	doneWork?: number;
+	likelihoodPercentage?: number | null;
 };
 
 const getMockPoint = (overrides: RawPoint) => ({
 	date: overrides.date,
 	totalWork: overrides.totalWork ?? 20,
-	doneWork: 0,
-	remainingWork: overrides.remainingWork ?? 20,
+	doneWork: overrides.doneWork ?? 0,
+	remainingWork: (overrides.totalWork ?? 20) - (overrides.doneWork ?? 0),
 	estimatedItemCount: null,
 	forecastHowMany: null,
-	likelihoodPercentage: null,
+	likelihoodPercentage:
+		overrides.likelihoodPercentage === undefined
+			? 90
+			: overrides.likelihoodPercentage,
 	whenDistribution: null,
 });
 
 const getMockHistory = (overrides: {
-	firstSnapshotDate?: string | null;
-	deliveryDate?: string;
 	points: RawPoint[];
 }): DeliveryMetricsHistory =>
 	parseDeliveryMetricsHistory({
-		deliveryDate: overrides.deliveryDate ?? "2026-06-11T00:00:00Z",
-		firstSnapshotDate:
-			overrides.firstSnapshotDate === undefined
-				? "2026-06-01T00:00:00Z"
-				: overrides.firstSnapshotDate,
+		deliveryDate: "2026-06-21T00:00:00Z",
+		firstSnapshotDate: "2026-06-01T00:00:00Z",
 		points: overrides.points.map(getMockPoint),
 	});
 
-const onTrackHistory = getMockHistory({
+const healthyHistory = getMockHistory({
 	points: [
-		{ date: "2026-06-01T00:00:00Z", totalWork: 20, remainingWork: 20 },
-		{ date: "2026-06-04T00:00:00Z", totalWork: 20, remainingWork: 13 },
-		{ date: "2026-06-08T00:00:00Z", totalWork: 20, remainingWork: 6 },
-		{ date: "2026-06-11T00:00:00Z", totalWork: 20, remainingWork: 0 },
+		{ date: "2026-06-01T00:00:00Z", doneWork: 10, likelihoodPercentage: 80 },
+		{ date: "2026-06-08T00:00:00Z", doneWork: 16, likelihoodPercentage: 95 },
 	],
 });
 
 const degradingHistory = getMockHistory({
 	points: [
-		{ date: "2026-06-01T00:00:00Z", totalWork: 20, remainingWork: 20 },
-		{ date: "2026-06-04T00:00:00Z", totalWork: 20, remainingWork: 18 },
-		{ date: "2026-06-08T00:00:00Z", totalWork: 20, remainingWork: 18 },
-		{ date: "2026-06-11T00:00:00Z", totalWork: 20, remainingWork: 16 },
-	],
-});
-
-const atRiskHistory = getMockHistory({
-	points: [
-		{ date: "2026-06-01T00:00:00Z", totalWork: 20, remainingWork: 20 },
-		{ date: "2026-06-04T00:00:00Z", totalWork: 20, remainingWork: 20 },
-		{ date: "2026-06-08T00:00:00Z", totalWork: 20, remainingWork: 19 },
+		{ date: "2026-06-01T00:00:00Z", doneWork: 2, likelihoodPercentage: 99 },
+		{ date: "2026-06-08T00:00:00Z", doneWork: 5, likelihoodPercentage: 65 },
+		{ date: "2026-06-15T00:00:00Z", doneWork: 8, likelihoodPercentage: 35 },
 	],
 });
 
@@ -65,82 +59,118 @@ const zonesOf = (history: DeliveryMetricsHistory): FeverZone[] =>
 	deriveFeverTrail(history).points.map((point) => point.zone);
 
 describe("deriveFeverTrail", () => {
-	it("keeps an on-track delivery clear of the red zone", () => {
-		const trail = deriveFeverTrail(onTrackHistory);
+	it("keeps a healthy delivery clear of the red zone", () => {
+		const trail = deriveFeverTrail(healthyHistory);
 
 		expect(trail.empty).toBe(false);
-		expect(zonesOf(onTrackHistory)).not.toContain("red");
+		expect(zonesOf(healthyHistory)).not.toContain("red");
 	});
 
-	it("crosses green then amber then red in order as the delivery degrades", () => {
+	it("crosses green then amber then red as completion stalls and lateness rises", () => {
 		const zones = zonesOf(degradingHistory);
-
-		expect(zones).toContain("green");
-		expect(zones).toContain("amber");
-		expect(zones).toContain("red");
 
 		const firstAmber = zones.indexOf("amber");
 		const firstRed = zones.indexOf("red");
 		expect(zones.indexOf("green")).toBeLessThan(firstAmber);
 		expect(firstAmber).toBeLessThan(firstRed);
+		expect(zones).toEqual(["green", "amber", "red"]);
 	});
 
-	it("enters the red zone early for an at-risk delivery", () => {
-		const zones = zonesOf(atRiskHistory);
+	it("maps completion rate onto x and chance of being late onto y", () => {
+		const trail = deriveFeverTrail(
+			getMockHistory({
+				points: [
+					{
+						date: "2026-06-08T00:00:00Z",
+						doneWork: 10,
+						likelihoodPercentage: 80,
+					},
+				],
+			}),
+		);
+		const point = trail.points[0];
 
-		expect(zones).toContain("red");
-		expect(zones[zones.length - 1]).toBe("red");
+		expect(point.completion).toBe(50);
+		expect(point.chanceOfLate).toBe(20);
+		expect(point.zone).toBe("green");
 	});
 
-	it("treats a point exactly on the green deviation threshold as green", () => {
+	it("treats a point on the green/amber boundary as amber", () => {
 		const onBoundary = getMockHistory({
-			firstSnapshotDate: "2026-06-01T00:00:00Z",
-			deliveryDate: "2026-06-21T00:00:00Z",
 			points: [
-				{ date: "2026-06-06T00:00:00Z", totalWork: 20, remainingWork: 16 },
+				{
+					date: "2026-06-08T00:00:00Z",
+					doneWork: 0,
+					likelihoodPercentage: 100,
+				},
 			],
 		});
 
-		expect(zonesOf(onBoundary)).toEqual(["green"]);
+		expect(zonesOf(onBoundary)).toEqual(["amber"]);
 	});
 
-	it("reports an empty trail when the delivery date equals the first snapshot", () => {
+	it("plots a barely-started long-shot delivery in the red zone", () => {
+		const atRisk = getMockHistory({
+			points: [
+				{ date: "2026-06-08T00:00:00Z", doneWork: 2, likelihoodPercentage: 10 },
+			],
+		});
+
+		expect(zonesOf(atRisk)).toEqual(["red"]);
+	});
+
+	it("excludes snapshots recorded before any likelihood was captured", () => {
 		const trail = deriveFeverTrail(
 			getMockHistory({
-				firstSnapshotDate: "2026-06-08T00:00:00Z",
-				deliveryDate: "2026-06-08T00:00:00Z",
-				points: [{ date: "2026-06-08T00:00:00Z" }],
+				points: [
+					{
+						date: "2026-06-01T00:00:00Z",
+						doneWork: 4,
+						likelihoodPercentage: null,
+					},
+					{
+						date: "2026-06-08T00:00:00Z",
+						doneWork: 8,
+						likelihoodPercentage: 70,
+					},
+				],
 			}),
 		);
 
-		expect(trail.empty).toBe(true);
-		expect(trail.points).toEqual([]);
+		expect(trail.points).toHaveLength(1);
+		expect(trail.points[0].completion).toBe(40);
 	});
 
-	it("maps each snapshot onto schedule-consumed x and buffer-remaining y", () => {
-		const trail = deriveFeverTrail(onTrackHistory);
-		const first = trail.points[0];
-		const last = trail.points[trail.points.length - 1];
-
-		expect(first.x).toBe(0);
-		expect(first.y).toBe(100);
-		expect(last.x).toBe(100);
-		expect(last.y).toBe(0);
-		expect(trail.points.every((point) => point.x >= 0 && point.x <= 100)).toBe(
-			true,
-		);
-	});
-
-	it("reports an empty trail when no first snapshot date has been recorded", () => {
-		const trail = deriveFeverTrail(
+	it("excludes zero-scope points and reports empty when none are plottable", () => {
+		const mixed = deriveFeverTrail(
 			getMockHistory({
-				firstSnapshotDate: null,
-				points: [{ date: "2026-06-04T00:00:00Z" }],
+				points: [
+					{ date: "2026-06-01T00:00:00Z", totalWork: 0, doneWork: 0 },
+					{
+						date: "2026-06-08T00:00:00Z",
+						doneWork: 8,
+						likelihoodPercentage: 70,
+					},
+				],
 			}),
 		);
+		expect(mixed.points).toHaveLength(1);
+		expect(mixed.empty).toBe(false);
 
-		expect(trail.empty).toBe(true);
-		expect(trail.points).toEqual([]);
+		const none = deriveFeverTrail(
+			getMockHistory({
+				points: [
+					{ date: "2026-06-01T00:00:00Z", totalWork: 0, doneWork: 0 },
+					{
+						date: "2026-06-08T00:00:00Z",
+						doneWork: 8,
+						likelihoodPercentage: null,
+					},
+				],
+			}),
+		);
+		expect(none.points).toEqual([]);
+		expect(none.empty).toBe(true);
 	});
 
 	it("reports an empty trail when there are no snapshot points", () => {
@@ -149,41 +179,30 @@ describe("deriveFeverTrail", () => {
 		expect(trail.empty).toBe(true);
 		expect(trail.points).toEqual([]);
 	});
+});
 
-	it("reports an empty trail when the delivery date is not after the first snapshot", () => {
-		const trail = deriveFeverTrail(
-			getMockHistory({
-				firstSnapshotDate: "2026-06-08T00:00:00Z",
-				deliveryDate: "2026-06-01T00:00:00Z",
-				points: [{ date: "2026-06-08T00:00:00Z" }],
-			}),
-		);
+describe("feverZonePolygons", () => {
+	const byZone = (zone: FeverZone) =>
+		feverZonePolygons().find((polygon) => polygon.zone === zone);
 
-		expect(trail.empty).toBe(true);
-		expect(trail.points).toEqual([]);
+	it("anchors the amber/red band to the top-right corner and the green band to the bottom-right", () => {
+		expect(byZone("green")?.points).toEqual([
+			[0, 0],
+			[100, 0],
+			[100, BAND_SLOPE * 100],
+		]);
+		expect(byZone("red")?.points).toEqual([
+			[0, AMBER_RED_INTERCEPT],
+			[100, 100],
+			[0, 100],
+		]);
 	});
 
-	it("excludes zero-scope points and reports empty when every point has no work", () => {
-		const mixed = deriveFeverTrail(
-			getMockHistory({
-				points: [
-					{ date: "2026-06-01T00:00:00Z", totalWork: 0, remainingWork: 0 },
-					{ date: "2026-06-08T00:00:00Z", totalWork: 20, remainingWork: 6 },
-				],
-			}),
-		);
-		expect(mixed.points).toHaveLength(1);
-		expect(mixed.empty).toBe(false);
-
-		const allZero = deriveFeverTrail(
-			getMockHistory({
-				points: [
-					{ date: "2026-06-01T00:00:00Z", totalWork: 0, remainingWork: 0 },
-					{ date: "2026-06-08T00:00:00Z", totalWork: 0, remainingWork: 0 },
-				],
-			}),
-		);
-		expect(allZero.points).toEqual([]);
-		expect(allZero.empty).toBe(true);
+	it("fills the plane with green, amber and red regions", () => {
+		expect(feverZonePolygons().map((polygon) => polygon.zone)).toEqual([
+			"green",
+			"amber",
+			"red",
+		]);
 	});
 });
