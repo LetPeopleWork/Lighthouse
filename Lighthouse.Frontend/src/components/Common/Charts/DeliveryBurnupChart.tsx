@@ -157,7 +157,7 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 						lineStyle={{ stroke: theme.palette.error.main }}
 					/>
 				</LineChart>
-				{caption !== null ? (
+				{caption ? (
 					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
 						{caption}
 					</Typography>
