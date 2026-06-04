@@ -17,7 +17,7 @@ const config = {
 	thresholds: { high: 80, low: 70, break: 0 },
 	mutate: [
 		"src/models/Delivery/DeliveryMetricsHistory.ts",
-		"src/components/Common/Charts/DeliveryBurnupChart.tsx:15-64",
+		"src/components/Common/Charts/DeliveryBurnupChart.tsx:15-95",
 		"src/services/Api/DeliveryService.ts:137-144",
 		"src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:81-105",
 		"src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:447-554",

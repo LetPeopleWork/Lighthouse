@@ -15,7 +15,15 @@ interface DeliveryBurnupChartProps {
 const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no snapshots recorded yet.";
 
+const ESTIMATED_SERIES_ID = "estimated";
 const ESTIMATED_SERIES_LABEL = "Estimated (not broken down)";
+const ESTIMATED_DASH_PATTERN = "2 4";
+const ESTIMATED_LINE_SX = {
+	[`& .MuiLineChart-line[data-series="${ESTIMATED_SERIES_ID}"]`]: {
+		strokeDasharray: ESTIMATED_DASH_PATTERN,
+		strokeWidth: 2,
+	},
+};
 
 const formatDate = (date: Date): string => date.toLocaleDateString();
 
@@ -52,12 +60,12 @@ const buildSeries = (
 	colors: BurnupColors,
 ) => {
 	const series: Array<{
+		id?: string;
 		label: string;
 		data: Array<number | null>;
 		showMark: boolean;
 		color: string;
 		area?: boolean;
-		lineStyle?: { strokeDasharray: string };
 	}> = [
 		{
 			label: "Backlog",
@@ -76,11 +84,11 @@ const buildSeries = (
 
 	if (latestEstimatedPoint(points) !== undefined) {
 		series.push({
+			id: ESTIMATED_SERIES_ID,
 			label: ESTIMATED_SERIES_LABEL,
 			data: points.map(estimatedValue),
 			showMark: false,
 			color: colors.estimated,
-			lineStyle: { strokeDasharray: "5 5" },
 		});
 	}
 
@@ -135,6 +143,7 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 					]}
 					series={series}
 					height={320}
+					sx={ESTIMATED_LINE_SX}
 					slotProps={{
 						legend: {
 							direction: "horizontal",

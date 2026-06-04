@@ -36,15 +36,16 @@ vi.mock("@mui/x-charts", () => ({
 import DeliveryBurnupChart from "./DeliveryBurnupChart";
 
 interface SeriesEntry {
+	id?: string;
 	label?: string;
 	data?: Array<number | null>;
 	area?: boolean;
 	showMark?: boolean;
 	color?: string;
-	lineStyle?: { strokeDasharray?: string };
 }
 
 const ESTIMATED_SERIES_LABEL = "Estimated (not broken down)";
+const ESTIMATED_LINE_SELECTOR = '& .MuiLineChart-line[data-series="estimated"]';
 
 interface AxisEntry {
 	data?: Date[];
@@ -58,6 +59,7 @@ const getLatestChartProps = () => {
 		| {
 				series?: SeriesEntry[];
 				xAxis?: AxisEntry[];
+				sx?: Record<string, { strokeDasharray?: string }>;
 				children?: unknown;
 		  }
 		| undefined;
@@ -169,7 +171,8 @@ describe("DeliveryBurnupChart", () => {
 			(entry) => entry.label === ESTIMATED_SERIES_LABEL,
 		);
 		expect(estimated?.data).toEqual([12, 7]);
-		expect(estimated?.lineStyle?.strokeDasharray).toBeTruthy();
+		expect(estimated?.id).toBe("estimated");
+		expect(props?.sx?.[ESTIMATED_LINE_SELECTOR]?.strokeDasharray).toBeTruthy();
 		expect(estimated?.color).not.toBe(testTheme.palette.text.secondary);
 		expect(estimated?.color).not.toBe(testTheme.palette.primary.main);
 
