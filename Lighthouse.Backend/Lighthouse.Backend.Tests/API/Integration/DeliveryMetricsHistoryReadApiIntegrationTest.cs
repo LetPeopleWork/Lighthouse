@@ -259,8 +259,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var whenDistributionJson = JsonSerializer.Serialize(new[]
             {
-                new { Probability = 0.5, ExpectedDate = DateTime.UtcNow.Date.AddDays(20) },
-                new { Probability = 0.85, ExpectedDate = DateTime.UtcNow.Date.AddDays(28) },
+                new { Probability = 50.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(20) },
+                new { Probability = 85.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(28) },
             });
 
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot

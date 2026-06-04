@@ -1,6 +1,10 @@
+using System.Reflection;
+using System.Text.Json;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -18,6 +22,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     [NonParallelizable]
     public class DeliveryMetricSnapshotRecordingHandlerTest
     {
+        private static readonly int[] ExpectedWhenPercentiles = [50, 70, 85, 95];
+
+        private const int KnownForecastDays = 30;
+
         private TestWebApplicationFactory<Program> factory = null!;
         private IServiceScope scope = null!;
 
@@ -173,6 +181,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_DeliveryWithForecastedFeature_RecordsLikelihoodAndWhenDistributionForToday()
+        {
+            var fixture = await SeedDeliveryWithForecastedFeature();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            var whenPoints = DeserializeWhenDistribution(snapshot.WhenDistributionJson);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.LikelihoodPercentage, Is.EqualTo(fixture.ExpectedLikelihoodPercentage));
+                Assert.That(whenPoints.Select(point => (int)point.Probability), Is.EquivalentTo(ExpectedWhenPercentiles));
+                Assert.That(whenPoints.Select(point => point.ExpectedDate), Has.All.EqualTo(fixture.ExpectedWhenDate));
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_DeliveryWithoutUsableForecast_RecordsNullLikelihoodAndNullWhenDistribution()
+        {
+            var fixture = await SeedDeliveryWithoutUsableForecast();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.LikelihoodPercentage, Is.Null);
+                Assert.That(snapshot.WhenDistributionJson, Is.Null);
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_ForecastedDeliveryRunTwiceSameDay_OverwritesLikelihoodInPlace()
+        {
+            var fixture = await SeedDeliveryWithForecastedFeature();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
+                Assert.That(snapshot.LikelihoodPercentage, Is.EqualTo(fixture.ExpectedLikelihoodPercentage));
+            }
+        }
+
+        [Test]
         [Ignore("Slice 3 — US-03 forecast freshness (ForecastHowMany)")]
         public async Task HandleAsync_AfterForecastUpdate_RecordsFreshPostForecastFiguresNotStaleOnes()
         {
@@ -289,6 +345,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             };
         }
 
+        private async Task<RecorderFixture> SeedDeliveryWithForecastedFeature()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+
+            var feature = new Feature([(team, 12, 12)])
+            {
+                Name = "Forecasted Feature",
+                Order = "1",
+            };
+
+            var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            featureRepository.Add(feature);
+            await featureRepository.Save();
+
+            feature.SetFeatureForecasts([SingleOutcomeForecast(KnownForecastDays)]);
+            await featureRepository.Save();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id);
+            delivery.Features.Add(feature);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+                ExpectedTotalWork = 12,
+                ExpectedDoneWork = 0,
+                ExpectedLikelihoodPercentage = feature.GetLikelhoodForDate(delivery.Date),
+                ExpectedWhenDate = DateTime.UtcNow.Date.AddDays(KnownForecastDays),
+            };
+        }
+
+        private async Task<RecorderFixture> SeedDeliveryWithoutUsableForecast()
+        {
+            var (portfolio, _) = await SeedPortfolioWithTeam();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+            };
+        }
+
+        private static WhenForecast SingleOutcomeForecast(int days)
+        {
+            var forecast = new WhenForecast();
+            var simulationResult = new Dictionary<int, int> { { days, 100 } };
+            forecast.GetType()
+                .GetMethod("SetSimulationResult", BindingFlags.NonPublic | BindingFlags.Instance)?
+                .Invoke(forecast, [simulationResult]);
+
+            return forecast;
+        }
+
+        private static IReadOnlyList<WhenDistributionPointDto> DeserializeWhenDistribution(string? whenDistributionJson)
+        {
+            Assert.That(whenDistributionJson, Is.Not.Null);
+            return JsonSerializer.Deserialize<List<WhenDistributionPointDto>>(
+                whenDistributionJson!,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        }
+
         private async Task HandlePortfolioForecastsUpdated(RecorderFixture fixture)
         {
             var handler = scope.ServiceProvider.GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>();
@@ -334,6 +461,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 RemainingWork = snapshot.RemainingWork,
                 EstimatedItemCount = snapshot.EstimatedItemCount,
                 ForecastHowMany = snapshot.ForecastHowMany,
+                LikelihoodPercentage = snapshot.LikelihoodPercentage,
+                WhenDistributionJson = snapshot.WhenDistributionJson,
             };
 
         private async Task<(Portfolio Portfolio, Team Team)> SeedPortfolioWithTeam()
@@ -419,6 +548,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public int ExpectedTotalWork { get; init; }
             public int ExpectedDoneWork { get; init; }
             public int? ExpectedEstimatedItemCount { get; init; }
+            public double? ExpectedLikelihoodPercentage { get; init; }
+            public DateTime ExpectedWhenDate { get; init; }
             public int FreshForecastHowMany { get; init; }
             public int StalePreForecastHowMany { get; init; }
         }
@@ -430,6 +561,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public int RemainingWork { get; init; }
             public int? EstimatedItemCount { get; init; }
             public int? ForecastHowMany { get; init; }
+            public double? LikelihoodPercentage { get; init; }
+            public string? WhenDistributionJson { get; init; }
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -10,6 +11,10 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         IDeliveryMetricSnapshotRepository snapshotRepository,
         ILogger<DeliveryMetricSnapshotRecordingHandler> logger) : IDomainEventHandler<PortfolioForecastsUpdated>
     {
+        private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
+
+        private static readonly JsonSerializerOptions WhenDistributionJsonOptions = new();
+
         public async Task HandleAsync(PortfolioForecastsUpdated domainEvent, CancellationToken cancellationToken)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -33,6 +38,15 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     snapshot.DoneWork = totalWork - remainingWork;
                     snapshot.RemainingWork = remainingWork;
                     snapshot.EstimatedItemCount = estimatedPortion > 0 ? estimatedPortion : null;
+
+                    var metrics = delivery.CalculateMetrics(SnapshotPercentiles);
+                    var hasForecast = metrics.WhenDistribution.Count > 0;
+                    snapshot.LikelihoodPercentage = hasForecast ? metrics.LikelihoodPercentage : null;
+                    snapshot.WhenDistributionJson = hasForecast
+                        ? JsonSerializer.Serialize(
+                            metrics.WhenDistribution.Select(point => new { Probability = (double)point.Percentile, point.ExpectedDate }),
+                            WhenDistributionJsonOptions)
+                        : null;
                 }
 
                 await snapshotRepository.Save();
