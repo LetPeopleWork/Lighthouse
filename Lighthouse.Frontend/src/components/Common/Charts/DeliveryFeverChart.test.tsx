@@ -225,6 +225,36 @@ describe("DeliveryFeverChart", () => {
 	});
 });
 
+const everySeriesCarriesData = (): boolean =>
+	(getLatestChartProps()?.series ?? []).every(
+		(entry) => (entry.data?.length ?? 0) > 0,
+	);
+
+describe("DeliveryFeverChart empty-series guard", () => {
+	beforeEach(() => {
+		scatterChartMock.mockClear();
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("never dispatches a zone series with no points mid-animation", () => {
+		render(<DeliveryFeverChart history={degradingHistory} />);
+
+		expect(everySeriesCarriesData()).toBe(true);
+	});
+
+	it("omits the amber and red series when every bubble is in the green zone", () => {
+		renderSettled(onTrackHistory);
+
+		expect(everySeriesCarriesData()).toBe(true);
+		expect(seriesById("amber")).toBeUndefined();
+		expect(seriesById("red")).toBeUndefined();
+	});
+});
+
 const visibleBubbleCount = (): number =>
 	(getLatestChartProps()?.series ?? [])
 		.filter((entry) => entry.id !== "latest")

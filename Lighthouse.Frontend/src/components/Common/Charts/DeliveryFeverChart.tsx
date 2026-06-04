@@ -62,7 +62,7 @@ const buildZoneSeries = (points: FeverPoint[], theme: Theme): ZoneSeries[] => {
 		color: colourForZone(zone, theme),
 		markerSize: 5,
 		data: points.map(toDatum).filter((_, index) => points[index].zone === zone),
-	}));
+	})).filter((series) => series.data.length > 0);
 
 	const latest = points[points.length - 1];
 	const latestSeries: ZoneSeries = {
