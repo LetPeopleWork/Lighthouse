@@ -408,12 +408,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             return new WhenForecast(simulationResult);
         }
 
-        private static IReadOnlyList<WhenDistributionPointDto> DeserializeWhenDistribution(string? whenDistributionJson)
+        private static readonly JsonSerializerOptions WhenDistributionReadOptions = new() { PropertyNameCaseInsensitive = true };
+
+        private static List<WhenDistributionPointDto> DeserializeWhenDistribution(string? whenDistributionJson)
         {
             Assert.That(whenDistributionJson, Is.Not.Null);
             return JsonSerializer.Deserialize<List<WhenDistributionPointDto>>(
                 whenDistributionJson!,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+                WhenDistributionReadOptions)!;
         }
 
         private async Task HandlePortfolioForecastsUpdated(RecorderFixture fixture)
