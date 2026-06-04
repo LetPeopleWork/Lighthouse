@@ -1,0 +1,160 @@
+schema_version: 1
+feature_id: delivery-target-date-tracking
+updated: 2026-06-04
+extends: delivery-metrics
+note: >
+  Epic 3993 follow-up. Extends the delivery-metrics journey (tell-an-honest-delivery-trend-story) for
+  the case the original assumed away: the delivery's TARGET DATE moves. Grounded in a pre-DISCUSS code
+  reality check (DeliveryMetricSnapshot.cs, Delivery.cs, DeliveryMetricsHistoryDto.cs,
+  DeliveryBurnupChart.tsx, DeliveryPredictabilityChart.tsx, DeliveryFeverChart.tsx): every
+  target-relative metric is computed against Delivery.Date via GetLikelhoodForDate(Date), and the
+  metrics-history DTO carries a SINGLE current deliveryDate — so a target move silently re-references
+  the whole recorded history. Fix = Option 2 "annotate + dual reference", forward-only: a new
+  TargetDateAtSnapshot (DateTime?) column captured on the existing daily recorder run, surfaced per
+  point, driving (a) a stepped target line on the predictability When? view and (b) emphasized
+  "Target moved" change dots on the predictability How Likely? view (date-pair on hover). The burnup is
+  left untouched (the delivery date is not wanted there) and the fever annotation is dropped. No new
+  endpoint, no new RBAC, no reconstruction of past targets. Two carpaccio slices (US-01 #5174,
+  US-02 #5175; the burnup slice US-03 #5176 was dropped at DESIGN). See ADR-051/052.
+
+journeys:
+
+  - name: keep-the-trend-honest-when-the-target-moves
+    goal: >
+      Delivery Forecaster / RTE opens a replanned delivery's Metrics tab while preparing a leadership
+      status report, sees WHERE the target moved and reads each day's forecast against the target that
+      actually applied then, and distinguishes a real on-track trend from one manufactured by moving
+      the finish line — so neither they nor leadership mistake a replan for progress.
+    persona: "delivery-forecaster (also: product-owner secondary — a replan-vs-progress distinction changes whether a scope cut is warranted, job-po-scope-cut-from-delivery-trend)"
+
+    emotional_arc:
+      start: Uneasy — "the likelihood line jumped up in week 4, but I think that's just because we
+        pushed the date out. I can't prove it from the chart, and a leader will read it as progress."
+      middle: Reassured — "there's the marker — Target moved 1 Jun → 15 Jun — right where the line
+        stepped up; and the When? target line steps with it, so the forecast was tracking the old
+        date until the replan."
+      end: Confident — "I can say plainly: the team held steady, the rise is the replan. The chart
+        shows it; no caveat speech, no spreadsheet."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How deep — annotate-only, dual-reference, or re-baseline?
+        decision: >
+          Option 2 "annotate + dual reference" (user, 2026-06-04). Forward-record the per-snapshot
+          target AND annotate change events; PLUS dual reference — burnup shows the target's
+          replanning history and the When? view contrasts the forecast against the moving target. Not
+          the cheaper annotate-only, not the heavier re-baseline/scenario level.
+      - id: D2
+        question: Where is the per-snapshot target stored?
+        decision: >
+          A new TargetDateAtSnapshot (DateTime?) column on DeliveryMetricSnapshot, forward-only (one
+          EF migration per provider via Create-Migration.ps1; past rows null). Consistent with the
+          epic's forward-only principle — no reconstruction of past targets.
+      - id: D3
+        question: What triggers capture?
+        decision: >
+          The existing daily recorder (DeliveryMetricSnapshotRecordingHandler on
+          PortfolioForecastsUpdated) sets snapshot.TargetDateAtSnapshot = delivery.Date. No immediate
+          snapshot on a target-date edit; a move is captured at the next daily run. Cost accepted: a
+          same-day edit-and-revert is invisible. Benefit: zero new event wiring.
+      - id: D4
+        question: What does a target-change marker say?
+        decision: >
+          Neutral date-pair (user, 2026-06-04): "Target moved: {old} → {new}", shown on hover of the
+          How Likely? change dot. States the fact and lets the forecaster narrate; no editorial
+          "replan, not progress" copy that would otherwise sit in a leadership screenshot.
+      - id: D5
+        question: Slicing?
+        decision: >
+          Two thin carpaccio slices (user, 2026-06-04, reduced from three at DESIGN): S1 = column +
+          recorder + When?-view moving target (ships the data spine with the most-distorted surface);
+          S2 = change dots on the How Likely? view. The burnup slice was dropped (D8).
+      - id: D6
+        question: Authorization / endpoint impact?
+        decision: >
+          None. Additive nullable field on the existing metrics-history response — no new endpoint
+          (so no clients version-gate), no new permission. Inherits the delivery surface's premium +
+          portfolio-read RBAC. Website N/A (honesty refinement to a marketed feature, not new copy).
+      - id: D7
+        question: Why mark the two predictability views differently?
+        decision: >
+          Each view marks the replan in the idiom that fits its axes. The When? y-axis is a date, so
+          the moving target is a stepAfter line (S1) and the step itself is the marker. The How
+          Likely? y-axis is a percentage, so the change is an emphasized dot on the likelihood line
+          (S2) with the date-pair on hover. No duplicate marker across the two views.
+      - id: D8
+        question: How is the moving target shown on the burnup?
+        decision: >
+          Not shown — the burnup slice is DROPPED (user, 2026-06-04: the delivery date is not wanted
+          on the burnup). The burnup stays a clean backlog-vs-done view; the "when vs target" honesty
+          story lives entirely on the predictability charts. The existing off-axis
+          ChartsReferenceLine x={deliveryDate} (effectively invisible) is flagged as optional dead-code
+          removal, not committed scope. See ADR-052 and the feature-delta Changed Assumptions.
+
+    steps:
+
+      - id: step-open-replanned-delivery
+        action: >
+          Forecaster opens a delivery whose target was moved during its life and selects the Metrics
+          tab → Predictability → "When?"
+        expected_output: >
+          The When? view plots the forecast completion-date percentiles over time AND the target as a
+          stepped (step-after) line tracking targetDateAtSnapshot — flat at the old target across the
+          days it applied, stepping to the new target on the change day — instead of a single flat
+          line at today's target. On a delivery with only null target history (pre-migration) it falls
+          back to one flat line at the current deliveryDate, no crash.
+        emotional_state: Curious-then-reassured — "the target line steps where we replanned"
+        shared_artifacts:
+          - DeliveryMetricSnapshot.TargetDateAtSnapshot (new, DateTime?, forward-recorded by the daily
+            DeliveryMetricSnapshotRecordingHandler = delivery.Date; null for past rows)
+          - deliveryMetricsHistory point.targetDateAtSnapshot (new nullable field on the existing GET
+            .../metrics-history response)
+
+      - id: step-read-the-change-dot
+        action: >
+          Forecaster reads the "How Likely?" chart where the likelihood line stepped up
+        expected_output: >
+          An emphasized dot sits on the likelihood line at each snapshot where the recorded target
+          changed (N changes → N dots; none → none); hovering shows the neutral date-pair
+          "Target moved: {old} → {new}". The When? view conveys the same change through its step line
+          (no duplicate marker). The forecaster attributes the jump to the replan, not to progress.
+        emotional_state: Reassured — "there's the replan, right at the jump"
+        shared_artifacts:
+          - target-change dots (derived FE-side by targetChanges(points) from consecutive
+            targetDateAtSnapshot deltas)
+
+      - id: step-tell-the-honest-replan-story
+        action: >
+          Forecaster screenshots the predictability charts and frames status; a PO decides whether the
+          replan removes the need for a scope cut
+        expected_output: >
+          "The likelihood rose in week 4 because we moved the date (the dot, and the When? step); against
+          the old target the forecast had been slipping — the trend is honest about the replan." A PO
+          reads whether the gap that motivated a cut was closed by real progress or by the move.
+        emotional_state: Confident — "the chart tells the replan story for me"
+        shared_artifacts: []
+
+    error_paths_summary:
+      - Pre-migration / all-null target history: the When? view falls back to the single flat target
+        reference line and the How Likely? view shows no change dots — no crash, no gap.
+      - No target change across the recorded window: no markers, stepped line is one flat level equal
+        to the current target — not misread as a defect.
+      - Same-day target edit-and-revert: invisible by design (daily cadence, D3) — captured only at
+        the next daily run; an accepted limitation.
+      - Non-premium instance: the over-time charts (and therefore the new annotations) do not render —
+        inherits the existing canUsePremiumFeatures gate, unchanged.
+      - Burnup / fever: out of scope. The burnup is untouched (no delivery-date marker) and the fever
+        chart gets no annotation (no clean time axis) — the honesty story is carried entirely by the
+        two predictability views.
+
+    success_signal:
+      - Every recorded snapshot after the migration carries TargetDateAtSnapshot = delivery.Date
+        (KPI-1, backend integration assertion).
+      - Every consecutive target delta yields exactly one marker; zero deltas yield zero markers
+        (KPI-2, FE unit + backend integration).
+      - In dogfood/interview review of a replanned delivery, the forecaster names the replan from the
+        chart in ≥2 of 3 reviews rather than misreading the jump as progress (KPI-3; cross-instance
+        behavioural telemetry blocked on Epic 5015, measured via dogfood + interviews until then).
+      - Forward-only caveat: the markers/stepped line only become meaningful once a delivery has
+        accrued snapshots across at least one target change, so KPI-3's window starts at a delivery's
+        first recorded replan, not at launch.

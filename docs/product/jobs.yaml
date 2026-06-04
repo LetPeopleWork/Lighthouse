@@ -1232,3 +1232,66 @@ jobs:
         to ground the cut today. Gap: 2 — valuable but served entirely by the forecaster's charts
         (no bespoke PO build), hence a smaller gap than the lead job.
 
+  - id: job-honest-delivery-trend-when-target-moves
+    title: Keep a delivery's recorded trend honest when its target date changes
+    persona: delivery-forecaster
+    feature_context: delivery-target-date-tracking
+    created: 2026-06-04
+    note: >
+      Epic 3993 follow-up. Refines job-forecast-delivery-trend-over-time, which assumed a fixed
+      target. likelihoodPercentage, chance-of-being-late (100−likelihood on the fever chart), and the
+      burnup's delivery-date marker are all computed relative to Delivery.Date (verified:
+      GetLikelhoodForDate(Date)). The metrics-history DTO exposes a SINGLE current deliveryDate, so
+      when the target moves every recorded point is silently re-referenced against the new target — a
+      +2-week replan makes the recorded likelihood line step UP, reading as progress when it is
+      goalpost-moving. Forward-only: TargetDateAtSnapshot (DateTime?) is captured going forward on the
+      daily recorder run; no reconstruction of past targets. Shares the false-certainty trust surface
+      with job-forecast-no-false-certainty.
+    job_story: >
+      When I read a delivery's likelihood/predictability trend and the target date has been moved one
+      or more times during the delivery's life,
+      I want the chart to show me WHERE the target moved and to contrast the forecast against the
+      target as it stood at each point in time — not silently re-score every past day against today's
+      target,
+      so I don't mistake a replan for real delivery progress, and leadership doesn't either.
+    dimensions:
+      functional: >
+        Each snapshot records the delivery's target as of that day (forward-only). The predictability
+        When? view plots the target as a stepped line tracking the as-of-day target; a vertical
+        neutral marker ("Target moved: {old} → {new}") annotates each change on the likelihood and
+        When? views (and the fever trail); the burnup shows the target's replanning history (prior
+        position faded, current emphasized). Pre-migration/null history falls back to the single
+        current target with no crash.
+      emotional: >
+        Move from the quiet dread of presenting a likelihood jump that a leader reads as progress
+        (and being unable to say why it really rose), to confidence that the chart itself shows the
+        replan — the rise is explained on the screen, not in a caveat speech.
+      social: >
+        Be the forecaster who narrates "this jump is the replan, the team held steady" with the chart
+        as evidence — not someone caught claiming progress that was really a moved deadline.
+    forces:
+      push: >
+        Today the over-time charts re-reference every past point against today's target; a replan
+        inflates the recorded likelihood and nothing on the chart signals it happened.
+      pull: >
+        One forward-recorded column drives a stepped target line, change markers, and the burnup's
+        target history — the replan is visible at a glance, no spreadsheet and no verbal caveat.
+      anxiety: >
+        Will marking replans make the team look like it keeps missing? (Mitigated: neutral date-pair
+        copy states the fact and lets the forecaster frame it.) Will null pre-migration history break
+        the charts? (Mitigated: explicit flat-line / single-marker fallback.)
+      habit: >
+        Forecasters verbally caveat a likelihood jump ("that's because we moved the date") every time
+        — a ritual the stepped line and the marker should make unnecessary.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — the same high-stakes leadership trust surface as the forecast-honesty jobs;
+        when a delivery is replanned (common), the recorded trend is actively misleading. Current
+        satisfaction: 1 — the charts silently re-reference the moved target with no annotation, so in
+        the replan case the tool misinforms. Gap: 3 — a genuine honesty defect on a shipped
+        capability; kept tractable by one forward-only nullable column reusing the existing recorder
+        and metrics-history endpoint (no reconstruction, no new endpoint, no new RBAC).
+

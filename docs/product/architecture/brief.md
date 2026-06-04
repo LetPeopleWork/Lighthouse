@@ -1776,3 +1776,34 @@ The per-instance settings store is a driven adapter (EF over Sqlite/Postgres). A
 
 Under ADR-044 Option (a) FE-derived eligibility, **no new feature endpoint** → CLI/MCP clients **N/A**, no `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate. If the user selects ADR-044 Option (b) (server-side eligibility endpoint), the clients version-gate rule applies and is added to the DEVOPS handoff.
 
+
+## Application Architecture — delivery-target-date-tracking (Epic 3993 follow-up)
+
+Make the delivery over-time charts honest when a delivery's **target date moves**. A thin, reuse-heavy extension of the shipped `delivery-metrics` stack (this brief, the `delivery-metrics` section above). No new endpoint, no new RBAC, no new dependency, no new chart. Two slices (ADO #5174, #5175); the burnup slice (#5176) was dropped at DESIGN.
+
+### Key invariant introduced
+
+Every target-relative metric (`LikelihoodPercentage`, fever `100 − likelihood`) is computed against `Delivery.Date`, but the snapshot stored only the computed value, not the target it referenced — so a target move silently re-scored the whole recorded history. The snapshot now records the target **as of each day** (`TargetDateAtSnapshot`), forward-only, so the predictability charts contrast each day's forecast against the target that actually applied.
+
+### Component changes (EXTEND-only, plus two pure helpers)
+
+- `DeliveryMetricSnapshot` (+`TargetDateAtSnapshot DateTime?`), one EF migration per provider via `Create-Migration.ps1` (forward-only; verify on a real provider — InMemory skips migrations).
+- `DeliveryMetricSnapshotRecordingHandler` sets `snapshot.TargetDateAtSnapshot = delivery.Date` in the existing daily per-delivery loop (ADR-049 idempotency preserved).
+- `DeliveryMetricsHistoryPointDto` + the FE `DeliveryMetricsHistory.ts` parser each gain one nullable `targetDateAtSnapshot` (additive field on the existing metrics-history contract — ADR-050 re-affirmed).
+- `DeliveryPredictabilityChart`: **When?** view renders the target as a `curve:"stepAfter"` series on its existing time y-axis (flat `ChartsReferenceLine` fallback when all-null); **How Likely?** view adds a marks-only change-dot overlay at target-change snapshots (neutral date-pair on hover, D4).
+- NEW pure helper `models/Delivery/deliveryTargetHistory.ts` (`targetChanges` / `steppedTargetData`) — derivation kept out of the components for testability (the UI-1 lesson). The only CREATE-NEW, and it is pure functions, not a class.
+- `DeliveryBurnupChart` and the fever chart: **untouched** (the delivery date is not wanted on the burnup; the fever chart has no clean time axis).
+
+### Driving / driven ports
+
+No new driving port (additive nullable field on `GET .../deliveries/{id}/metrics-history`, `[RbacGuard(PortfolioRead)]`, premium-gated — unchanged). No new driven port (`Delivery.Date` read by the recorder; the existing snapshot repository persists the extra column with no interface change).
+
+### Clients consistency
+
+**N/A** — no new endpoint, only an additive nullable field on an existing response. No `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate (that rule guards new endpoints old servers 404). Old clients ignore the field; new clients treat null as "no recorded target".
+
+### ADR References (this feature)
+
+- **ADR-051** — per-snapshot target capture (`TargetDateAtSnapshot` + recorder), forward-only.
+- **ADR-052** — moving-target predictability rendering (When? step line + How Likely? change dots + pure derivation helper); supersedes the dropped burnup treatment.
+- Re-affirms **ADR-050** (single metrics-history endpoint, wide nullable schema).
