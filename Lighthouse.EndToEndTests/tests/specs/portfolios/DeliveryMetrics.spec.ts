@@ -38,6 +38,9 @@ test("@walking_skeleton @US-01 forecaster opens a delivery's Metrics tab and see
 	await metricsTab.showWhenView();
 	await expect(metricsTab.predictabilitySeriesLine("when-70")).toBeVisible();
 
+	await expect(metricsTab.feverChart).toBeVisible();
+	await expect.poll(() => metricsTab.countFeverBubbles()).toBeGreaterThan(0);
+
 	await metricsTab.openWorkItemsTab();
 	await expect(page.getByText("Feature Name")).toBeVisible();
 });

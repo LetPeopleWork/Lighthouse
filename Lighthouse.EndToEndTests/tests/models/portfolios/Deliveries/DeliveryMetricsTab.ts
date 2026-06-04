@@ -3,7 +3,9 @@ import type { DeliveryItem } from "./DeliveryItem";
 
 const BURNUP_CHART_TEST_ID = "delivery-burnup-chart";
 const PREDICTABILITY_CHART_TEST_ID = "delivery-predictability-chart";
+const FEVER_CHART_TEST_ID = "delivery-fever-chart";
 const LINE_ELEMENT_SELECTOR = "path.MuiLineChart-line";
+const FEVER_BUBBLE_SELECTOR = "circle.MuiScatterChart-marker";
 const ESTIMATED_CAPTION_PATTERN =
 	/are estimated \(features not yet broken down\)/;
 
@@ -40,6 +42,16 @@ export class DeliveryMetricsTab {
 		await this.predictabilityChart
 			.getByRole("button", { name: "How Likely?", exact: true })
 			.click();
+	}
+
+	get feverChart(): Locator {
+		return this.container
+			.page()
+			.locator(`[data-testid="${FEVER_CHART_TEST_ID}"]`);
+	}
+
+	async countFeverBubbles(): Promise<number> {
+		return this.feverChart.locator(FEVER_BUBBLE_SELECTOR).count();
 	}
 
 	predictabilitySeriesLine(seriesId: string): Locator {

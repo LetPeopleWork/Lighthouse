@@ -12,6 +12,7 @@ const {
 	mockUseLicenseRestrictions,
 	mockBurnupChart,
 	mockPredictabilityChart,
+	mockFeverChart,
 } = vi.hoisted(() => ({
 	mockGetMetricsHistory: vi.fn(),
 	mockUseLicenseRestrictions: vi.fn(),
@@ -20,6 +21,9 @@ const {
 	)),
 	mockPredictabilityChart: vi.fn((_props: { history: unknown }) => (
 		<div data-testid="predictability-chart" />
+	)),
+	mockFeverChart: vi.fn((_props: { history: unknown }) => (
+		<div data-testid="fever-chart" />
 	)),
 }));
 
@@ -54,6 +58,11 @@ vi.mock(
 			mockPredictabilityChart(props),
 	}),
 );
+
+vi.mock("../../../../../components/Common/Charts/DeliveryFeverChart", () => ({
+	default: (props: { history: DeliveryMetricsHistory }) =>
+		mockFeverChart(props),
+}));
 
 const getHistory = (): DeliveryMetricsHistory => ({
 	deliveryDate: new Date("2026-06-10T00:00:00Z"),
@@ -126,6 +135,7 @@ describe("DeliverySection Metrics tab", () => {
 		mockGetMetricsHistory.mockReset();
 		mockBurnupChart.mockClear();
 		mockPredictabilityChart.mockClear();
+		mockFeverChart.mockClear();
 		mockGetMetricsHistory.mockResolvedValue(getHistory());
 	});
 
@@ -216,7 +226,7 @@ describe("DeliverySection Metrics tab", () => {
 		);
 	});
 
-	it("renders the predictability chart alongside the burnup chart from the same fetched history", async () => {
+	it("renders the burnup, predictability and fever charts together from the same fetched history", async () => {
 		setPremium(false);
 		renderSection();
 
@@ -226,8 +236,12 @@ describe("DeliverySection Metrics tab", () => {
 			expect(screen.getByTestId("burnup-chart")).toBeInTheDocument();
 		});
 		expect(screen.getByTestId("predictability-chart")).toBeInTheDocument();
+		expect(screen.getByTestId("fever-chart")).toBeInTheDocument();
 		expect(mockGetMetricsHistory).toHaveBeenCalledTimes(1);
 		expect(mockPredictabilityChart).toHaveBeenCalledWith(
+			expect.objectContaining({ history: getHistory() }),
+		);
+		expect(mockFeverChart).toHaveBeenCalledWith(
 			expect.objectContaining({ history: getHistory() }),
 		);
 	});

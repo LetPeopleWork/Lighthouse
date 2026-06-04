@@ -20,6 +20,7 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
 import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
+import DeliveryFeverChart from "../../../../../components/Common/Charts/DeliveryFeverChart";
 import DeliveryPredictabilityChart from "../../../../../components/Common/Charts/DeliveryPredictabilityChart";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
 import {
@@ -557,6 +558,9 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ isLoading, history }) => {
 		>
 			<DeliveryBurnupChart history={history} />
 			<DeliveryPredictabilityChart history={history} />
+			<Box sx={{ gridColumn: { lg: "1 / -1" } }}>
+				<DeliveryFeverChart history={history} />
+			</Box>
 		</Box>
 	);
 };
