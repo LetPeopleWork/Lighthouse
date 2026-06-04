@@ -49,6 +49,7 @@ interface SeriesEntry {
 	label?: string;
 	data?: Array<number | null>;
 	showMark?: boolean;
+	curve?: string;
 	color?: string;
 	valueFormatter?: (
 		value: number | null,
@@ -228,6 +229,7 @@ describe("DeliveryPredictabilityChart likelihood view", () => {
 			(entry) => entry.id === "target-change",
 		);
 		expect(changeSeries?.data).toEqual([null, 92]);
+		expect(changeSeries?.showMark).toBe(true);
 	});
 
 	it("reveals the old and new target dates on the change dot", () => {
@@ -382,6 +384,8 @@ describe("DeliveryPredictabilityChart when view", () => {
 			new Date("2026-06-10T00:00:00Z").getTime(),
 			new Date("2026-06-20T00:00:00Z").getTime(),
 		]);
+		expect(target?.curve).toBe("stepAfter");
+		expect(target?.showMark).toBe(false);
 		expect(referenceLineMock).not.toHaveBeenCalled();
 	});
 

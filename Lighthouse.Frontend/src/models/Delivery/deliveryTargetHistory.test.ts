@@ -75,4 +75,13 @@ describe("targetChanges", () => {
 	it("reports no change when no target was recorded", () => {
 		expect(targetChanges([getMockPoint(), getMockPoint()])).toEqual([]);
 	});
+
+	it("reports no change when a later snapshot has no recorded target", () => {
+		expect(
+			targetChanges([
+				getMockPoint({ targetDateAtSnapshot: earlier }),
+				getMockPoint(),
+			]),
+		).toEqual([]);
+	});
 });
