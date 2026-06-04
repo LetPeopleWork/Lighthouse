@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
-import { vi } from "vitest";
+import { act, render, renderHook, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type DeliveryMetricsHistory,
 	parseDeliveryMetricsHistory,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
 import { testTheme } from "../../../tests/testTheme";
+import { useFeverTrailAnimation } from "./useFeverTrailAnimation";
 
 const scatterChartMock = vi.hoisted(() =>
 	vi.fn((_props: { series?: unknown }) => (
@@ -113,13 +114,27 @@ const degradingHistory = getMockHistory({
 
 const emptyHistory = getMockHistory({ firstSnapshotDate: null, points: [] });
 
+const SETTLE_MS = 60_000;
+
+const renderSettled = (history: DeliveryMetricsHistory): void => {
+	render(<DeliveryFeverChart history={history} />);
+	act(() => {
+		vi.advanceTimersByTime(SETTLE_MS);
+	});
+};
+
 describe("DeliveryFeverChart", () => {
 	beforeEach(() => {
 		scatterChartMock.mockClear();
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 
 	it("partitions the degrading trail into green, amber and red series coloured by zone", () => {
-		render(<DeliveryFeverChart history={degradingHistory} />);
+		renderSettled(degradingHistory);
 
 		const green = seriesById("green");
 		const amber = seriesById("amber");
@@ -140,7 +155,7 @@ describe("DeliveryFeverChart", () => {
 	});
 
 	it("places every on-track bubble in the green series and none in red", () => {
-		render(<DeliveryFeverChart history={onTrackHistory} />);
+		renderSettled(onTrackHistory);
 
 		const green = seriesById("green");
 		const red = seriesById("red");
@@ -150,7 +165,7 @@ describe("DeliveryFeverChart", () => {
 	});
 
 	it("plots each bubble at schedule-consumed x and work-remaining y", () => {
-		render(<DeliveryFeverChart history={onTrackHistory} />);
+		renderSettled(onTrackHistory);
 
 		const allData = (getLatestChartProps()?.series ?? [])
 			.filter((entry) => entry.id !== "latest")
@@ -162,7 +177,7 @@ describe("DeliveryFeverChart", () => {
 	});
 
 	it("emphasises the latest bubble as its own series", () => {
-		render(<DeliveryFeverChart history={degradingHistory} />);
+		renderSettled(degradingHistory);
 
 		const latest = seriesById("latest");
 		expect(latest?.data?.length).toBe(1);
@@ -207,5 +222,96 @@ describe("DeliveryFeverChart", () => {
 		render(<DeliveryFeverChart history={degradingHistory} />);
 
 		expect(screen.getByTestId("delivery-fever-chart")).toBeInTheDocument();
+	});
+});
+
+const visibleBubbleCount = (): number =>
+	(getLatestChartProps()?.series ?? [])
+		.filter((entry) => entry.id !== "latest")
+		.reduce((sum, entry) => sum + (entry.data?.length ?? 0), 0);
+
+describe("DeliveryFeverChart animation", () => {
+	beforeEach(() => {
+		scatterChartMock.mockClear();
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("reveals the trail bubbles progressively over time and settles on the full trail", () => {
+		render(<DeliveryFeverChart history={onTrackHistory} />);
+
+		expect(visibleBubbleCount()).toBe(1);
+
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+
+		expect(visibleBubbleCount()).toBe(onTrackHistory.points.length);
+	});
+});
+
+describe("useFeverTrailAnimation", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("advances the visible count one point at a time and stops at the total", () => {
+		const { result } = renderHook(() => useFeverTrailAnimation(4));
+
+		expect(result.current).toBe(1);
+
+		act(() => {
+			vi.advanceTimersToNextTimer();
+		});
+		expect(result.current).toBe(2);
+
+		act(() => {
+			vi.advanceTimersToNextTimer();
+		});
+		expect(result.current).toBe(3);
+
+		act(() => {
+			vi.advanceTimersToNextTimer();
+		});
+		expect(result.current).toBe(4);
+
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+		expect(result.current).toBe(4);
+	});
+
+	it("returns zero and registers no timer for an empty trail", () => {
+		const { result } = renderHook(() => useFeverTrailAnimation(0));
+
+		expect(result.current).toBe(0);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
+	it("reveals a single-point trail immediately without a timer", () => {
+		const { result } = renderHook(() => useFeverTrailAnimation(1));
+
+		expect(result.current).toBe(1);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
+	it("clears the interval on unmount so the count never advances again", () => {
+		const { result, unmount } = renderHook(() => useFeverTrailAnimation(4));
+
+		expect(result.current).toBe(1);
+		unmount();
+
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+		expect(result.current).toBe(1);
+		expect(vi.getTimerCount()).toBe(0);
 	});
 });

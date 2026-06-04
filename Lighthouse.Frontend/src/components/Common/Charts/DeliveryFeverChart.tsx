@@ -8,6 +8,7 @@ import {
 	type FeverPoint,
 	type FeverZone,
 } from "../../../models/Delivery/FeverTrail";
+import { useFeverTrailAnimation } from "./useFeverTrailAnimation";
 
 interface DeliveryFeverChartProps {
 	history: DeliveryMetricsHistory;
@@ -81,6 +82,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 }) => {
 	const theme = useTheme();
 	const trail = deriveFeverTrail(history);
+	const visibleCount = useFeverTrailAnimation(trail.points.length);
 
 	if (trail.empty) {
 		return (
@@ -95,7 +97,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 		);
 	}
 
-	const series = buildZoneSeries(trail.points, theme);
+	const series = buildZoneSeries(trail.points.slice(0, visibleCount), theme);
 
 	return (
 		<Card
