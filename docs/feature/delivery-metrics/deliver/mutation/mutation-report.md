@@ -105,3 +105,38 @@ After the Stryker run, `git status` shows **zero mutated production source files
 ### Final verdict
 
 **PASS** — overall 87.85 %, real-logic surface (parser 97.78 %, service 100 %, chart logic + tab/fetch/premium logic) well above the 80 % gate. All 22 survivors are justified presentational MUI styling, passthrough props to pre-existing components, or observationally-equivalent flag/guard mutants.
+
+---
+
+# Mutation Report — delivery-metrics (Slice 2, estimated-portion transparency)
+
+Run 2026-06-04. Same scoped configs as Slice 1; FE chart mutate range widened to `DeliveryBurnupChart.tsx:15-95` to cover the new estimated-line logic.
+
+## Backend (Stryker.NET 4.14.2)
+
+**Final score: 89.47 % (34 killed / 4 survived / 38 tested). Verdict: PASS (≥ 80 %).**
+
+The Slice-2 logic — `EstimatedItemCount = estimatedPortion > 0 ? estimatedPortion : null` and `estimatedPortion = Features.Where(IsUsingDefaultFeatureSize).SelectMany(FeatureWork).Sum(TotalWorkItems)` — is fully killed by the three new recorder tests (records-portion / fully-broken-down-null / idempotency).
+
+| # | Survivor | Justification |
+|---|---|---|
+| 1 | `DeliveryMetricSnapshotRecordingHandler.cs` L40 `stopwatch.Stop()` (success path) | Timing instrumentation; no test asserts elapsed time. |
+| 2 | `DeliveryMetricSnapshotRecordingHandler.cs` L47 `stopwatch.Stop()` (catch path) | Same — timing only. |
+| 3 | `DeliveryMetricSnapshotRecordingHandler.cs` L50 LogError message string | Log text not asserted (no-testing-logging convention). |
+| 4 | `DeliveryMetricsHistoryDto.cs` L23 `PropertyNameCaseInsensitive = true → false` | Equivalent: the persisted `whenDistribution` JSON keys are already PascalCase, matching the record params, so case-insensitivity is never exercised. |
+
+## Frontend (Stryker 4)
+
+**Final score: 88.32 % (174 killed / 23 survived / 197 tested). Verdict: PASS (≥ 80 %).**
+
+Slice-2 chart logic killed: the whole-condition `ConditionalExpression true/false` and `EqualityOperator <= 0` mutants in `estimatedValue` die on the gap test (`expected [9, +0] to deeply equal [9, null]`).
+
+| File | Survivors | Justification |
+|---|---|---|
+| `DeliveryBurnupChart.tsx` (5) | L31 `\|\|`, L31 sub-expr `>0→true`, L31 `>=0`; L28 `formatDate→undefined`; L90 `showMark false→true` | The three L31 survivors are **equivalent**: the leading `point.estimatedItemCount &&` already short-circuits on `0`/`null`, so the `> 0` guard only defends against negative counts that cannot occur — removing/relaxing it changes no behavior in the domain. `formatDate` (x-axis valueFormatter) and `showMark` are presentational, not behaviorally asserted. |
+| `DeliveryMetricsHistory.ts` (2) | L108 array-guard `false`/`{}` | Slice-1 defensive parse guard (unchanged in Slice 2); native `TypeError` still contains `"points"`, so the substring assertion preserves rejection behavior. |
+| `DeliverySection.tsx` (16) | `sx={{}}` object-literals + `isLoading` conditionals | Slice-1 presentational MUI styling / loading flags (unchanged in Slice 2); the parent-feature reuse-analysis already accepted these. |
+
+### Final verdict (Slice 2)
+
+**PASS** — BE 89.47 %, FE 88.32 %, both ≥ 80 %. Every survivor is an equivalent mutant, presentational styling, or pre-existing Slice-1 code outside the Slice-2 change. The estimated-portion recorder logic and the dotted estimated-line chart logic are fully killed.

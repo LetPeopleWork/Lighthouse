@@ -65,7 +65,7 @@ Two design refinements taken from the example: forecast series are pinned to the
 | D4 | **Premium gating inherited.** Deliveries are already a premium capability — verified: `Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx` gates on `licenseStatus?.canUsePremiumFeatures` via `useLicenseRestrictions()`. The over-time metrics views inherit that gating: a non-premium instance never sees these charts. No new premium gate is invented — the charts sit behind the existing delivery surface's gate. | Locked — verified in code. |
 | D5 | **No infra-only slice exists anymore (slice-composition gate satisfied structurally).** The `DeliveryMetricSnapshot` store + forward recorder is folded INTO Slice 1 alongside the user-visible burnup chart, so there is no standalone `@infrastructure` foundation slice that could fail the gate. The store IS the shared abstraction, shipped first, in the same slice as a user-visible consumer. The former US-02 `@infrastructure` story and the US-02b "captured today" marker are dissolved (US-02 folded into Slice 1; the marker is no longer needed because the burnup itself proves the store works). Every slice is user-visible by construction. | Locked. |
 | D6 | **All history is forward-only and the empty state says so (now universal).** Because the store is forward-recorded with no backfill, ALL charts — the burnup included, not just forecast/likelihood — start empty and build forward from the day recording begins. The empty state reads "builds forward from today — no snapshots recorded yet" rather than implying data is missing. This honesty is inherited from the forecaster persona's existing jobs. | Locked (extended to all series 2026-06-02). |
-| D7 | **Estimated size for not-yet-broken-down features is owned by Slice 2 (US-01b), IN MVP.** A feature in a delivery with zero child work items contributes its configured default/estimated size to the backlog line, annotated as estimated. Without this the backlog burnup reads artificially low for early-stage deliveries (the common case the epic calls out). It is forward-fed by the recorder (a feature's inferred size/breakdown-state on a past date was never persisted), like every other series. | Locked. |
+| D7 | **Estimated-portion transparency is owned by Slice 2 (US-01b), IN MVP.** The backlog line ALREADY includes the inferred estimate — `WorkItemService.ExtrapolateNotBrokenDownFeatures` unconditionally extrapolates zero-child features into persisted `FeatureWork` (from `EstimatedSize` or the portfolio default) before forecasting, and the recorder sums `FeatureWork` unfiltered. So Slice 2 does NOT add a higher line; it forward-records the *estimated portion* of each day's backlog (`Σ FeatureWork.TotalWorkItems` over `IsUsingDefaultFeatureSize` features) and surfaces the broken-down-vs-estimated split so the forecaster can see how much of the burnup rests on estimates. It is forward-fed by the recorder (a feature's breakdown-state on a past date was never persisted), like every other series. **Reframed 2026-06-02 — see `## Changed Assumptions`.** | Locked (reframed). |
 | D8 | **On-track read is geometric, not a new RAG endpoint (MVP).** Slice 3 stacks the daily forecast on Done; "done + forecast ≥ backlog at the target date ⇒ on track" is read off chart geometry. A dedicated on-track RAG/badge endpoint is a follow-up only if the geometric read tests poorly (Slice 3 learning hypothesis). | Locked. |
 | D9 | **Fever chart is STRETCH, gated behind Slices 2-4.** Slice 5 is explicitly out of committed MVP; it ships only on an explicit greenlight after Slice 4, and is the only slice with no internal reference class (requires a pre-slice SPIKE if greenlit). | Locked. |
 | D10 | **No change to current-snapshot delivery metrics.** `likelihoodPercentage`, `progress`, `remainingWork`, `totalWork`, `completionDates` on `Delivery.ts` are unchanged; the over-time charts are purely additive. Type-A walking skeleton — absent endpoints leave an empty chart slot, no regression. | Locked. |
@@ -137,24 +137,24 @@ Decision enabled: once history accrues, how to frame the status story to leaders
 - Given the EF migration is generated, then it applies cleanly on a real (non-InMemory) provider in the migration test.
 - No regression to the existing current-snapshot delivery metrics on the same view.
 
-### US-01b — Inferred-estimate line for not-yet-broken-down features (Slice 2, forward-fed)
+### US-01b — Estimated-portion transparency on the burnup (Slice 2, forward-fed)
 
-**Story**: As a `delivery-forecaster` tracking an early-stage delivery, I want features that haven't been broken down into child items yet to still contribute an estimated size to the backlog — recorded forward into the snapshot store — so the burnup doesn't read artificially low and mislead me into thinking the delivery is smaller than it is.
+**Story**: As a `delivery-forecaster` tracking an early-stage delivery, I want to see how much of the burnup's backlog comes from features that haven't been broken down yet — recorded forward into the snapshot store — so I can tell how much of the line rests on estimates rather than counted work before I trust the delivery's apparent size.
 
 **Job-id**: `job-forecast-delivery-trend-over-time`
 
 #### Elevator Pitch
 
-Before: a delivery full of features that aren't broken down yet shows a near-zero backlog line — the burnup looks almost done before work has started, which is the opposite of honest.
-After: open the delivery's Burnup chart → features with zero child items contribute their configured default/estimated size to a "total backlog including inferred estimate" line, recorded forward into the snapshot store, and the chart annotates "{N} of backlog is estimated (features not yet broken down)" so the size isn't silently inflated.
-Decision enabled: whether the delivery's apparent size can be trusted yet, or whether breaking down features must come before any forecast conversation.
+Before: the backlog line already includes extrapolated work for not-broken-down features (the system fills them in from `EstimatedSize`/the portfolio default), but nothing tells the forecaster *how much* of the line is estimated — a burnup resting mostly on estimates looks identical to one resting on counted items.
+After: open the delivery's Burnup chart → a dotted "Estimated (not broken down)" line plots how many backlog items are still estimated; it falls as features are broken down and disappears when none remain, and it explains any jump in the total (replacing an 8-item estimate with 5 real items drops the total; with 12 it raises it). A caption reads "{N} of {M} backlog items are estimated (features not yet broken down)".
+Decision enabled: whether the delivery's size can be trusted yet, or whether breaking down features must come before any forecast conversation.
 
 **AC**:
 
-- Given a feature in the delivery with zero child work items, when the forward recorder writes a snapshot, then that feature contributes its configured default/estimated size to the inferred-estimate column rather than zero; re-running the same day is a no-op.
-- The chart draws the inferred-estimate line alongside the actual-item backlog line and annotates that a portion of the backlog is estimated (not counted from real items), distinguishing it from broken-down work.
-- Given all features are broken down, then no estimated portion is shown and the inferred line collapses onto the actual-item backlog.
-- Given no forward snapshot has yet carried an inferred estimate, then only the actual-item backlog line shows, with the honest "estimated total builds forward from today" note (forward-only — D6/D11).
+- Given a delivery whose backlog includes a not-broken-down (extrapolated) feature, when the forward recorder writes a snapshot, then it records an `estimatedItemCount` equal to that extrapolated size (the estimated portion of the backlog total); re-running the same day is a no-op.
+- The chart plots a dotted "Estimated (not broken down)" line (the `estimatedItemCount`) alongside the backlog and done lines, and a caption names how many of the backlog items are estimated rather than counted.
+- Given all features are broken down, then `estimatedItemCount` is null and the dotted estimated line disappears (the chart is the Slice-1 backlog+done burnup).
+- Given no forward snapshot has yet carried an estimated portion, then the history carries only the backlog total (forward-only — D6/D11).
 
 *(US-02 and US-02b removed per D11: the `DeliveryMetricSnapshot` store + forward recorder is folded into Slice 1 alongside the user-visible burnup, so there is no standalone `@infrastructure` foundation story and no "forecast captured today" marker — the burnup chart itself proves the store works. The forward recorder introduced by Slice 1 is the sole feed, used by Slices 2-4 to append the inferred estimate / forecast / likelihood columns.)*
 
@@ -310,7 +310,7 @@ Cross-instance behavioral telemetry is blocked on Epic 5015 (opt-in telemetry; n
 
 | DoR Item | Status | Evidence |
 |---|---|---|
-| 1 Problem statement | PASS | Early-stage delivery's backlog reads artificially low when features aren't broken down; the inferred size on a past date was never persisted so it must be forward-fed (D11, code-verified premise). |
+| 1 Problem statement | PASS | The backlog already includes extrapolated work, so the forecaster can't tell how much of the burnup is estimated vs counted; the estimated portion on a past date was never persisted so it must be forward-fed (D7 reframe + D11, code-verified). |
 | 2 Persona | PASS | `delivery-forecaster` tracking an early-stage delivery. |
 | 3 3+ examples | PASS | Not-broken-down feature contributes configured size; all-broken-down collapses the line; no-forward-snapshot-yet shows only actual-item line; idempotent re-run. |
 | 4 UAT G/W/T | PASS | 4 AC in Given/When/Then form. |
@@ -393,6 +393,20 @@ Back-propagated change (2026-06-02, user decision) — the backfill is dropped. 
 
 **Ripple** (all applied in this delta and the DESIGN artifacts): D6's forward-only empty state is now universal (the burnup too, not just forecast/likelihood); former DESIGN Decisions 4 (backfill execution model) and 6 (backfill done-source / re-open cross-check) are removed as moot; Slice 1 is rescoped lighter; ADR-048 rewritten to single-feed (`adr-048-delivery-metric-snapshot-store.md`, superseding the dual-feed version); the placement refinement D2/D5 moves the charts into a "Metrics" tab inside the per-delivery `DeliverySection` accordion.
 
+---
+
+Back-propagated change (2026-06-02, code-verified during Slice-2 roadmap prep) — **Slice 2 (US-01b) reframed from "add a line above the backlog" to "show the estimated portion within the backlog."**
+
+**Original DISCUSS assumption (D7, verbatim)**:
+
+> *"the backlog burnup reads artificially low for early-stage deliveries … a feature with zero child work items contributes its configured default/estimated size to the backlog line, annotated as estimated."*
+
+**Code reality (`WorkItemService.ExtrapolateNotBrokenDownFeatures`, `WorkItemService.cs:329`, `Portfolio.GetFeaturesToExtrapolate`, `Portfolio.cs:43`)**: every portfolio update **unconditionally** extrapolates each non-Done feature with zero real children into persisted `FeatureWork` rows sized from `EstimatedSize` (else the portfolio default), saved *before* forecasting. The Slice-1 recorder sums `FeatureWork.TotalWorkItems` with no filter (`DeliveryMetricSnapshotRecordingHandler.cs:24`), so **`TotalWork` (the backlog line) already includes the inferred estimate**. The burnup does NOT read artificially low; the inferred-inclusive line is the one already drawn. (`Feature.Size` returns `0` for extrapolated features — `Feature.cs:50` — but the recorder bypasses that getter, which is why the estimate flows through.)
+
+**New assumption**: the value of US-01b is **transparency**, not a higher line. The recorder forward-records, per snapshot, the *estimated portion* of that day's backlog (`Σ FeatureWork.TotalWorkItems` over features where `IsUsingDefaultFeatureSize`); the burnup plots `estimatedItemCount` directly as a dotted "Estimated (not broken down)" line that falls toward zero and disappears as features are broken down (and explains jumps in the backlog total), plus a caption "N of M backlog items are estimated". The portion still must be forward-recorded — a feature's broken-down state on a past day was never persisted (the D11 forward-only rationale), so it cannot be recomputed later.
+
+**Ripple** (applied here + in `slices/slice-02-inferred-estimate.md` and `acceptance/milestone-2-inferred-estimate.feature`): D7 rewritten below; the US-01b problem statement and milestone-2 scenarios re-expressed as the estimated-portion split; the Slice-1 column `EstimatedTotalWork` is renamed to `EstimatedItemCount` (a corrective EF migration across Sqlite+Postgres — the column has never held data) and now stores the estimated portion, not a higher total; DTO field `estimatedTotalWork` → `estimatedItemCount`, FE model field likewise. ADO #5151 description needs the reframe (confirm before any ADO write).
+
 ## Wave: DESIGN / [REF] Architect + status
 
 Architect: Morgan (Solution Architect), interaction mode = PROPOSE. Date: 2026-06-02. Scope: Application/components.
@@ -402,7 +416,7 @@ Status: the six forking decisions below are **PROPOSED** (pending user confirmat
 
 - **Bounded context**: this feature lives in the existing *Delivery / Portfolio Forecasting* context — no new context. `Delivery` is the aggregate root for membership; `Feature` (with `FeatureWork`, `Forecasts`, `EstimatedSize`) supplies the metric source.
 - **New value/entity**: `DeliveryMetricSnapshot` is an immutable-by-convention time-series record keyed `(deliveryId, recordedAt.Date)` — a per-day projection, not a new aggregate root (it is owned by, and cascade-deleted with, its `Delivery`).
-- **Ubiquitous language**: "backlog line" = `totalWork` forward-recorded over time; "done line" = `doneWork`; "inferred estimate" = forward-recorded size of not-yet-broken-down features; "forecast band" = `forecastHowMany` stacked on done; "predictability trend" = `likelihoodPercentage` + when-distribution spread over time; "on-track read" = geometric (done+forecast ≥ backlog at the delivery-date marker). All series are forward-recorded into the snapshot — no new domain term invented beyond the snapshot.
+- **Ubiquitous language**: "backlog line" = `totalWork` forward-recorded over time; "done line" = `doneWork`; "estimated portion" = forward-recorded `estimatedItemCount`, the part of the backlog total contributed by not-yet-broken-down (extrapolated) features; "forecast band" = `forecastHowMany` stacked on done; "predictability trend" = `likelihoodPercentage` + when-distribution spread over time; "on-track read" = geometric (done+forecast ≥ backlog at the delivery-date marker). All series are forward-recorded into the snapshot — no new domain term invented beyond the snapshot.
 - **No DDD subdomain reshaping** — this is a projection/read-model addition over the existing forecasting domain.
 
 ## Wave: DESIGN / [REF] Component decomposition
@@ -525,9 +539,9 @@ Spec SSOT = the `.feature` files under `docs/feature/delivery-metrics/acceptance
 | | Deleting a delivery cascades away its snapshot rows | `@US-01 @real-io @error` |
 | | A non-premium instance does not expose the history | `@US-01 @real-io @error @premium` |
 | | A portfolio viewer can read the history | `@US-01 @real-io @rbac @driving_adapter` |
-| milestone-2-inferred-estimate.feature | Not-yet-broken-down feature contributes its estimated size | `@US-01b @real-io @kpi` |
+| milestone-2-inferred-estimate.feature | Not-broken-down feature's extrapolated items recorded as the estimated portion | `@US-01b @real-io @kpi` |
 | | A fully broken-down delivery records no estimated portion | `@US-01b @real-io` |
-| | Before any inferred estimate only the actual-item series is present | `@US-01b @real-io @error` |
+| | Before the estimated portion was recorded the history carries only the backlog total | `@US-01b @real-io @error` |
 | milestone-3-forecast-over-time.feature | Endpoint returns the recorded forecast-how-many series | `@US-03 @real-io @driving_adapter` |
 | | On-track delivery reads differently from at-risk | `@US-03 @real-io` |
 | | Sparse forecast series is annotated as building forward | `@US-03 @real-io @error` |
