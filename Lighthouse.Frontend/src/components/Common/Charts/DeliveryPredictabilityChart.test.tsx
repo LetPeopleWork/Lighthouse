@@ -11,6 +11,7 @@ import {
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
+import { FORECAST_LEVEL_THRESHOLDS } from "../Forecasts/ForecastLevel";
 
 const lineChartMock = vi.hoisted(() =>
 	vi.fn(({ children }) => (
@@ -156,7 +157,7 @@ describe("DeliveryPredictabilityChart likelihood view", () => {
 		const colorMap = props?.yAxis?.[0]?.colorMap;
 
 		expect(colorMap?.type).toBe("piecewise");
-		expect(colorMap?.thresholds).toEqual([50, 70, 85]);
+		expect(colorMap?.thresholds).toEqual([...FORECAST_LEVEL_THRESHOLDS]);
 		expect(colorMap?.colors).toEqual([
 			riskyColor,
 			realisticColor,
@@ -321,12 +322,16 @@ describe("DeliveryPredictabilityChart when view", () => {
 		).toBeInTheDocument();
 	});
 
-	it("does not throw when toggling on empty history", () => {
+	it("shows the forward-only empty state after toggling to the when view on empty history", () => {
 		const history = getMockHistory({ firstSnapshotDate: null, points: [] });
 
-		expect(() => {
-			render(<DeliveryPredictabilityChart history={history} />);
-			switchToWhenView();
-		}).not.toThrow();
+		render(<DeliveryPredictabilityChart history={history} />);
+		switchToWhenView();
+
+		expect(
+			screen.getByText(
+				/builds forward from today — no snapshots recorded yet/i,
+			),
+		).toBeInTheDocument();
 	});
 });

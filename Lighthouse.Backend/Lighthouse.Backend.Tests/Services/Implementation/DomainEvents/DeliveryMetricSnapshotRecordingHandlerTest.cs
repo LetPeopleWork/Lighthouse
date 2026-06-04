@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
@@ -25,6 +24,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private static readonly int[] ExpectedWhenPercentiles = [50, 70, 85, 95];
 
         private const int KnownForecastDays = 30;
+
+        private const int SingleBucketTrials = 100;
+
+        private const double CertainSingleBucketLikelihood = 100.0;
 
         private TestWebApplicationFactory<Program> factory = null!;
         private IServiceScope scope = null!;
@@ -375,7 +378,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 DeliveryId = delivery.Id,
                 ExpectedTotalWork = 12,
                 ExpectedDoneWork = 0,
-                ExpectedLikelihoodPercentage = feature.GetLikelhoodForDate(delivery.Date),
+                ExpectedLikelihoodPercentage = CertainSingleBucketLikelihood,
                 ExpectedWhenDate = DateTime.UtcNow.Date.AddDays(KnownForecastDays),
             };
         }
@@ -399,13 +402,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private static WhenForecast SingleOutcomeForecast(int days)
         {
-            var forecast = new WhenForecast();
-            var simulationResult = new Dictionary<int, int> { { days, 100 } };
-            forecast.GetType()
-                .GetMethod("SetSimulationResult", BindingFlags.NonPublic | BindingFlags.Instance)?
-                .Invoke(forecast, [simulationResult]);
+            var simulationResult = new SimulationResult();
+            simulationResult.SimulationResults[days] = SingleBucketTrials;
 
-            return forecast;
+            return new WhenForecast(simulationResult);
         }
 
         private static IReadOnlyList<WhenDistributionPointDto> DeserializeWhenDistribution(string? whenDistributionJson)

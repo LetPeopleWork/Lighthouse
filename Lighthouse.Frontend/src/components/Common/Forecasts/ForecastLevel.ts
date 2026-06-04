@@ -9,6 +9,8 @@ import {
 	riskyColor,
 } from "../../../utils/theme/colors";
 
+export const FORECAST_LEVEL_THRESHOLDS = [50, 70, 85] as const;
+
 export class ForecastLevel {
 	level: string;
 	IconComponent: React.ElementType;
@@ -16,17 +18,17 @@ export class ForecastLevel {
 
 	constructor(probability: number) {
 		switch (true) {
-			case probability <= 50:
+			case probability <= FORECAST_LEVEL_THRESHOLDS[0]:
 				this.level = "Risky";
 				this.IconComponent = RiskyIcon;
 				this.color = riskyColor;
 				break;
-			case probability <= 70:
+			case probability <= FORECAST_LEVEL_THRESHOLDS[1]:
 				this.level = "Realistic";
 				this.IconComponent = RealisticIcon;
 				this.color = realisticColor;
 				break;
-			case probability <= 85:
+			case probability <= FORECAST_LEVEL_THRESHOLDS[2]:
 				this.level = "Confident";
 				this.IconComponent = ConfidentIcon;
 				this.color = confidentColor;

@@ -19,6 +19,7 @@ import {
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
+import { FORECAST_LEVEL_THRESHOLDS } from "../Forecasts/ForecastLevel";
 
 interface DeliveryPredictabilityChartProps {
 	history: DeliveryMetricsHistory;
@@ -33,7 +34,6 @@ const FORWARD_ONLY_EMPTY_STATE =
 const LIKELIHOOD_SERIES_ID = "likelihood";
 const LIKELIHOOD_SERIES_LABEL = "Likelihood";
 
-const RAG_THRESHOLDS = [50, 70, 85];
 const RAG_BAND_COLORS = [
 	riskyColor,
 	realisticColor,
@@ -126,7 +126,7 @@ const LikelihoodView = ({
 				label: "Likelihood (%)",
 				colorMap: {
 					type: "piecewise",
-					thresholds: RAG_THRESHOLDS,
+					thresholds: [...FORECAST_LEVEL_THRESHOLDS],
 					colors: RAG_BAND_COLORS,
 				},
 			},

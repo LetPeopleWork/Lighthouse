@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
     {
         private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
 
+        private static readonly int[] RecordedWhenPercentiles = [50, 70, 85, 95];
+
         private const double LowerSpreadPercentile = 50.0;
         private const double UpperSpreadPercentile = 95.0;
 
@@ -315,7 +317,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var whenDistributionJson = JsonSerializer.Serialize(new[]
             {
                 new { Probability = 50.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(20) },
+                new { Probability = 70.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(24) },
                 new { Probability = 85.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(28) },
+                new { Probability = 95.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(30) },
             });
 
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
@@ -455,10 +459,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private static bool BodyCarriesEverySeries(string body)
         {
             var point = Points(body).Single();
+            var whenPercentiles = point.WhenDistribution?
+                .Select(entry => (int)entry.Probability)
+                .ToList();
+
             return point.EstimatedItemCount.HasValue
                 && point.ForecastHowMany.HasValue
                 && point.LikelihoodPercentage.HasValue
-                && point.WhenDistribution is { Count: > 0 };
+                && whenPercentiles is not null
+                && whenPercentiles.OrderBy(percentile => percentile).SequenceEqual(RecordedWhenPercentiles);
         }
 
         private static TimeSpan FirstDaySpread(IReadOnlyList<HistoryPointView> points)

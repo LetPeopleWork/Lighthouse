@@ -66,8 +66,9 @@ namespace Lighthouse.Backend.Models
         private Feature? GetLeastLikelyFeature()
         {
             var rankedFeatures = Features
-                .Where(feature => feature.GetLikelhoodForDate(Date) >= 0)
-                .OrderByDescending(feature => feature.GetLikelhoodForDate(Date))
+                .Select(feature => (feature, likelihood: feature.GetLikelhoodForDate(Date)))
+                .Where(ranked => ranked.likelihood >= 0)
+                .OrderByDescending(ranked => ranked.likelihood)
                 .ToList();
 
             if (rankedFeatures.Count == 0)
@@ -75,7 +76,7 @@ namespace Lighthouse.Backend.Models
                 return null;
             }
 
-            return rankedFeatures[^1];
+            return rankedFeatures[^1].feature;
         }
 
         private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile)
