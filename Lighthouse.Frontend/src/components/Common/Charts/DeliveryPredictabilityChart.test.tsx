@@ -50,12 +50,14 @@ interface SeriesEntry {
 	data?: Array<number | null>;
 	showMark?: boolean;
 	color?: string;
+	valueFormatter?: (value: number | null) => string;
 }
 
 interface AxisEntry {
 	data?: Date[];
 	scaleType?: string;
 	label?: string;
+	valueFormatter?: (value: number | null) => string;
 	colorMap?: {
 		type?: string;
 		thresholds?: number[];
@@ -333,5 +335,117 @@ describe("DeliveryPredictabilityChart when view", () => {
 				/builds forward from today — no snapshots recorded yet/i,
 			),
 		).toBeInTheDocument();
+	});
+});
+
+describe("DeliveryPredictabilityChart axis value formatters", () => {
+	beforeEach(() => {
+		lineChartMock.mockClear();
+	});
+
+	it("formats the likelihood series values as a percentage and blanks nulls", () => {
+		render(<DeliveryPredictabilityChart history={getMockHistory()} />);
+
+		const props = getLatestChartProps();
+		const formatter = props?.series?.find(
+			(entry) => entry.id === LIKELIHOOD_SERIES_ID,
+		)?.valueFormatter;
+
+		expect(formatter?.(72)).toBe("72%");
+		expect(formatter?.(0)).toBe("0%");
+		expect(formatter?.(null)).toBe("");
+	});
+
+	it("formats the when-view y-axis values as a date and blanks nulls", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+
+		const props = getLatestChartProps();
+		const formatter = props?.yAxis?.[0]?.valueFormatter;
+		const epochMs = new Date("2026-06-09T00:00:00Z").getTime();
+
+		expect(formatter?.(epochMs)).toBe(new Date(epochMs).toLocaleDateString());
+		expect(formatter?.(null)).toBe("");
+	});
+});
+
+describe("DeliveryPredictabilityChart when-view series construction", () => {
+	beforeEach(() => {
+		lineChartMock.mockClear();
+	});
+
+	it("labels one series per percentile and emphasises only the default 70th", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+
+		const series = getLatestChartProps()?.series ?? [];
+		expect(series.map((entry) => entry.label)).toEqual([
+			"50%",
+			"70%",
+			"85%",
+			"95%",
+		]);
+		expect(series.map((entry) => entry.showMark)).toEqual([
+			false,
+			true,
+			false,
+			false,
+		]);
+	});
+
+	it("reads each percentile's completion date per point and gaps points with no distribution", () => {
+		const history = getMockWhenHistory();
+		history.points[1].whenDistribution = null;
+
+		render(<DeliveryPredictabilityChart history={history} />);
+
+		switchToWhenView();
+
+		const when70 = getLatestChartProps()?.series?.find(
+			(entry) => entry.id === WHEN_70_SERIES_ID,
+		);
+		expect(when70?.data).toEqual([
+			new Date("2026-06-12T00:00:00Z").getTime(),
+			null,
+		]);
+	});
+
+	it("treats an empty whenDistribution array as no data and shows the empty state", () => {
+		const history = getMockWhenHistory();
+		history.points[0].whenDistribution = [];
+		history.points[1].whenDistribution = [];
+
+		render(<DeliveryPredictabilityChart history={history} />);
+
+		lineChartMock.mockClear();
+		switchToWhenView();
+
+		expect(
+			screen.getByText(
+				/builds forward from today — no snapshots recorded yet/i,
+			),
+		).toBeInTheDocument();
+		expect(lineChartMock).not.toHaveBeenCalled();
+	});
+});
+
+describe("DeliveryPredictabilityChart view-toggle guard", () => {
+	beforeEach(() => {
+		lineChartMock.mockClear();
+	});
+
+	it("keeps the current view when the toggle deselects to null", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+		fireEvent.click(screen.getByRole("button", { name: /when/i }));
+
+		const series = getLatestChartProps()?.series ?? [];
+		expect(series.some((entry) => entry.id === WHEN_70_SERIES_ID)).toBe(true);
+		expect(series.some((entry) => entry.id === LIKELIHOOD_SERIES_ID)).toBe(
+			false,
+		);
 	});
 });
