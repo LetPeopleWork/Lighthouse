@@ -232,6 +232,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_DeliveryWithMultipleFeatures_RecordsPerFeatureCompletionAndLikelihoodBreakdown()
+        {
+            var fixture = await SeedDeliveryWithMixedFeatureBreakdown();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            var breakdown = DeserializeFeatureBreakdown(snapshot.FeatureBreakdownJson);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(breakdown.Select(entry => entry.ReferenceId), Is.EquivalentTo(fixture.ExpectedBreakdown.Select(entry => entry.ReferenceId)));
+                Assert.That(breakdown, Is.EquivalentTo(fixture.ExpectedBreakdown));
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_FeatureWithoutAnyItems_IsExcludedFromTheBreakdown()
+        {
+            var fixture = await SeedDeliveryWithMixedFeatureBreakdown();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            var breakdown = DeserializeFeatureBreakdown(snapshot.FeatureBreakdownJson);
+            Assert.That(breakdown.Select(entry => entry.ReferenceId), Has.None.EqualTo(fixture.EmptyFeatureReferenceId));
+        }
+
+        [Test]
+        public async Task HandleAsync_BreakdownDeliveryRunTwiceSameDay_OverwritesBreakdownInPlace()
+        {
+            var fixture = await SeedDeliveryWithMixedFeatureBreakdown();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            var breakdown = DeserializeFeatureBreakdown(snapshot.FeatureBreakdownJson);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
+                Assert.That(breakdown, Is.EquivalentTo(fixture.ExpectedBreakdown));
+            }
+        }
+
+        [Test]
         [Ignore("Slice 3 — US-03 forecast freshness (ForecastHowMany)")]
         public async Task HandleAsync_AfterForecastUpdate_RecordsFreshPostForecastFiguresNotStaleOnes()
         {
@@ -383,6 +428,62 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             };
         }
 
+        private async Task<RecorderFixture> SeedDeliveryWithMixedFeatureBreakdown()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+
+            var inProgressFeature = new Feature([(team, 6, 10)])
+            {
+                Name = "In Progress Feature",
+                ReferenceId = "FEAT-1",
+                Order = "1",
+            };
+
+            var completedFeature = new Feature([(team, 0, 5)])
+            {
+                Name = "Completed Feature",
+                ReferenceId = "FEAT-2",
+                Order = "2",
+            };
+
+            var emptyFeature = new Feature([(team, 0, 0)])
+            {
+                Name = "Empty Feature",
+                ReferenceId = "FEAT-3",
+                Order = "3",
+            };
+
+            var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            featureRepository.Add(inProgressFeature);
+            featureRepository.Add(completedFeature);
+            featureRepository.Add(emptyFeature);
+            await featureRepository.Save();
+
+            inProgressFeature.SetFeatureForecasts([SingleOutcomeForecast(KnownForecastDays)]);
+            await featureRepository.Save();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id);
+            delivery.Features.Add(inProgressFeature);
+            delivery.Features.Add(completedFeature);
+            delivery.Features.Add(emptyFeature);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
+                EmptyFeatureReferenceId = "FEAT-3",
+                ExpectedBreakdown =
+                [
+                    new DeliveryFeatureMetric("FEAT-1", "In Progress Feature", 40.0, CertainSingleBucketLikelihood),
+                    new DeliveryFeatureMetric("FEAT-2", "Completed Feature", 100.0, CertainSingleBucketLikelihood),
+                ],
+            };
+        }
+
         private async Task<RecorderFixture> SeedDeliveryWithoutUsableForecast()
         {
             var (portfolio, _) = await SeedPortfolioWithTeam();
@@ -415,6 +516,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(whenDistributionJson, Is.Not.Null);
             return JsonSerializer.Deserialize<List<WhenDistributionPointDto>>(
                 whenDistributionJson!,
+                WhenDistributionReadOptions)!;
+        }
+
+        private static List<DeliveryFeatureMetric> DeserializeFeatureBreakdown(string? featureBreakdownJson)
+        {
+            Assert.That(featureBreakdownJson, Is.Not.Null);
+            return JsonSerializer.Deserialize<List<DeliveryFeatureMetric>>(
+                featureBreakdownJson!,
                 WhenDistributionReadOptions)!;
         }
 
@@ -465,6 +574,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 ForecastHowMany = snapshot.ForecastHowMany,
                 LikelihoodPercentage = snapshot.LikelihoodPercentage,
                 WhenDistributionJson = snapshot.WhenDistributionJson,
+                FeatureBreakdownJson = snapshot.FeatureBreakdownJson,
             };
 
         private async Task<(Portfolio Portfolio, Team Team)> SeedPortfolioWithTeam()
@@ -554,6 +664,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public DateTime ExpectedWhenDate { get; init; }
             public int FreshForecastHowMany { get; init; }
             public int StalePreForecastHowMany { get; init; }
+            public string EmptyFeatureReferenceId { get; init; } = string.Empty;
+            public IReadOnlyList<DeliveryFeatureMetric> ExpectedBreakdown { get; init; } = [];
         }
 
         private sealed record SnapshotView
@@ -565,6 +677,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public int? ForecastHowMany { get; init; }
             public double? LikelihoodPercentage { get; init; }
             public string? WhenDistributionJson { get; init; }
+            public string? FeatureBreakdownJson { get; init; }
         }
     }
 }

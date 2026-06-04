@@ -5,6 +5,8 @@ namespace Lighthouse.Backend.API.DTO
 {
     public sealed record WhenDistributionPointDto(double Probability, DateTime ExpectedDate);
 
+    public sealed record DeliveryFeatureMetricDto(string ReferenceId, string Name, double Completion, double Likelihood);
+
     public sealed record DeliveryMetricsHistoryPointDto(
         DateTime Date,
         int TotalWork,
@@ -13,7 +15,8 @@ namespace Lighthouse.Backend.API.DTO
         int? EstimatedItemCount,
         int? ForecastHowMany,
         double? LikelihoodPercentage,
-        IReadOnlyList<WhenDistributionPointDto>? WhenDistribution);
+        IReadOnlyList<WhenDistributionPointDto>? WhenDistribution,
+        IReadOnlyList<DeliveryFeatureMetricDto> FeatureBreakdown);
 
     public sealed record DeliveryMetricsHistoryDto(
         DateTime DeliveryDate,
@@ -44,7 +47,8 @@ namespace Lighthouse.Backend.API.DTO
                 snapshot.EstimatedItemCount,
                 snapshot.ForecastHowMany,
                 snapshot.LikelihoodPercentage,
-                ParseWhenDistribution(snapshot.WhenDistributionJson));
+                ParseWhenDistribution(snapshot.WhenDistributionJson),
+                ParseFeatureBreakdown(snapshot.FeatureBreakdownJson));
         }
 
         private static List<WhenDistributionPointDto>? ParseWhenDistribution(string? whenDistributionJson)
@@ -55,6 +59,16 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             return JsonSerializer.Deserialize<List<WhenDistributionPointDto>>(whenDistributionJson, WhenDistributionJsonOptions);
+        }
+
+        private static List<DeliveryFeatureMetricDto> ParseFeatureBreakdown(string? featureBreakdownJson)
+        {
+            if (string.IsNullOrWhiteSpace(featureBreakdownJson))
+            {
+                return [];
+            }
+
+            return JsonSerializer.Deserialize<List<DeliveryFeatureMetricDto>>(featureBreakdownJson, WhenDistributionJsonOptions) ?? [];
         }
     }
 }

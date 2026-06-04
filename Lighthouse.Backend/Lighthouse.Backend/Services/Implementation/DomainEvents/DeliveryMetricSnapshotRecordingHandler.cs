@@ -47,6 +47,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                             metrics.WhenDistribution.Select(point => new { Probability = (double)point.Percentile, point.ExpectedDate }),
                             WhenDistributionJsonOptions)
                         : null;
+                    snapshot.FeatureBreakdownJson = metrics.FeatureBreakdown.Count > 0
+                        ? JsonSerializer.Serialize(metrics.FeatureBreakdown, WhenDistributionJsonOptions)
+                        : null;
                 }
 
                 await snapshotRepository.Save();

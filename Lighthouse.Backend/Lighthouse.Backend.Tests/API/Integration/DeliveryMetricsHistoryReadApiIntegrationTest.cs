@@ -205,6 +205,37 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetMetricsHistory_WithRecordedFeatureBreakdown_ReturnsPerFeatureCompletionAndLikelihood()
+        {
+            var (portfolioId, deliveryId) = SeedDeliveryWithFeatureBreakdown();
+
+            client.AsPortfolioViewer(portfolioId);
+            var body = await (await client.GetAsync(MetricsHistoryUrl(deliveryId))).Content.ReadAsStringAsync();
+
+            var nullableBreakdown = Points(body).Single().FeatureBreakdown;
+            Assert.That(nullableBreakdown, Is.Not.Null, body);
+            var breakdown = nullableBreakdown!;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(breakdown.Select(entry => entry.ReferenceId), Is.EquivalentTo(new[] { "FEAT-1", "FEAT-2" }), body);
+                Assert.That(breakdown.Single(entry => entry.ReferenceId == "FEAT-1").Name, Is.EqualTo("Checkout"), body);
+                Assert.That(breakdown.Single(entry => entry.ReferenceId == "FEAT-1").Completion, Is.EqualTo(40.0), body);
+                Assert.That(breakdown.Single(entry => entry.ReferenceId == "FEAT-2").Likelihood, Is.EqualTo(88.0), body);
+            }
+        }
+
+        [Test]
+        public async Task GetMetricsHistory_SnapshotsWithoutFeatureBreakdown_ReturnEmptyBreakdown()
+        {
+            var (portfolioId, deliveryId) = SeedDeliveryWithOnlyBacklogTotals();
+
+            client.AsPortfolioViewer(portfolioId);
+            var body = await (await client.GetAsync(MetricsHistoryUrl(deliveryId))).Content.ReadAsStringAsync();
+
+            Assert.That(Points(body).All(point => point.FeatureBreakdown is null or { Count: 0 }), Is.True, body);
+        }
+
+        [Test]
         public async Task GetMetricsHistory_ForTheWhenView_ReturnsTheDeliveryTargetDate()
         {
             var (portfolioId, deliveryId, targetDate) = SeedDeliveryWithNarrowingWhenSpread();
@@ -333,6 +364,36 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ForecastHowMany = 6,
                 LikelihoodPercentage = 72.5,
                 WhenDistributionJson = whenDistributionJson,
+            });
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id);
+        }
+
+        private (int portfolioId, int deliveryId) SeedDeliveryWithFeatureBreakdown()
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var delivery = new Delivery("Release 5", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            var featureBreakdownJson = JsonSerializer.Serialize(new[]
+            {
+                new { ReferenceId = "FEAT-1", Name = "Checkout", Completion = 40.0, Likelihood = 100.0 },
+                new { ReferenceId = "FEAT-2", Name = "Search", Completion = 75.0, Likelihood = 88.0 },
+            });
+
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = DateTime.UtcNow.Date,
+                TotalWork = 20,
+                DoneWork = 11,
+                RemainingWork = 9,
+                FeatureBreakdownJson = featureBreakdownJson,
             });
             dbContext.SaveChanges();
 
@@ -498,8 +559,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             int? EstimatedItemCount,
             int? ForecastHowMany,
             double? LikelihoodPercentage,
-            IReadOnlyList<WhenDistributionView>? WhenDistribution);
+            IReadOnlyList<WhenDistributionView>? WhenDistribution,
+            IReadOnlyList<FeatureBreakdownView>? FeatureBreakdown);
 
         private sealed record WhenDistributionView(double Probability, DateTime ExpectedDate);
+
+        private sealed record FeatureBreakdownView(string ReferenceId, string Name, double Completion, double Likelihood);
     }
 }
