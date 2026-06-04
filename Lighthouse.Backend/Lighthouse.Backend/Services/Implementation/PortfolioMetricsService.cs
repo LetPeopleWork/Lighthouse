@@ -269,9 +269,9 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 var completedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedFeatures);
-                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(portfolio.DoingStates, completedItemsWithTransitions);
+                var cycleTimePercentiles = GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, portfolio.DoingStates, DefaultPacePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, portfolio.DoingStates, DefaultPacePercentiles, cycleTimePercentiles).ToList();
             }, logger);
         }
 

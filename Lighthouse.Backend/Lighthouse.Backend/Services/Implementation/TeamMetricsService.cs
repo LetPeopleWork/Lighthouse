@@ -331,9 +331,9 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 var completedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedItems);
-                var doingStatesInWorkflowOrder = BuildWorkflowStateOrder(team.DoingStates, completedItemsWithTransitions);
+                var cycleTimePercentiles = GetCycleTimePercentilesForTeam(team, startDate, endDate).ToList();
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, doingStatesInWorkflowOrder, team.DoingStates, DefaultPacePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, team.DoingStates, DefaultPacePercentiles, cycleTimePercentiles).ToList();
             }, logger);
         }
 
