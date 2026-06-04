@@ -2,6 +2,7 @@ import type { Locator } from "@playwright/test";
 import type { DeliveryItem } from "./DeliveryItem";
 
 const BURNUP_CHART_TEST_ID = "delivery-burnup-chart";
+const PREDICTABILITY_CHART_TEST_ID = "delivery-predictability-chart";
 const LINE_ELEMENT_SELECTOR = "path.MuiLineChart-line";
 const ESTIMATED_CAPTION_PATTERN =
 	/are estimated \(features not yet broken down\)/;
@@ -21,6 +22,30 @@ export class DeliveryMetricsTab {
 
 	get estimatedItemsCaption(): Locator {
 		return this.burnupChart.getByText(ESTIMATED_CAPTION_PATTERN);
+	}
+
+	get predictabilityChart(): Locator {
+		return this.container
+			.page()
+			.locator(`[data-testid="${PREDICTABILITY_CHART_TEST_ID}"]`);
+	}
+
+	async showWhenView(): Promise<void> {
+		await this.predictabilityChart
+			.getByRole("button", { name: "When?", exact: true })
+			.click();
+	}
+
+	async showLikelihoodView(): Promise<void> {
+		await this.predictabilityChart
+			.getByRole("button", { name: "How Likely?", exact: true })
+			.click();
+	}
+
+	predictabilitySeriesLine(seriesId: string): Locator {
+		return this.predictabilityChart.locator(
+			`${LINE_ELEMENT_SELECTOR}[data-series="${seriesId}"]`,
+		);
 	}
 
 	async countDrawnSeriesLines(): Promise<number> {

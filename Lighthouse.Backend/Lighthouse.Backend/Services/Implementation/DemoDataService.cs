@@ -14,6 +14,10 @@ namespace Lighthouse.Backend.Services.Implementation
         private const string DemoDeliveryName = "Apollo Release";
         private const int DemoBurnupDays = 14;
 
+        private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
+
+        private static readonly JsonSerializerOptions WhenDistributionJsonOptions = new();
+
         private readonly List<DemoDataScenario> scenarios = [];
 
         private readonly IRepository<Portfolio> projectRepository;
@@ -144,8 +148,40 @@ namespace Lighthouse.Backend.Services.Implementation
                 snapshot.DoneWork = doneWork;
                 snapshot.RemainingWork = totalWork - doneWork;
                 snapshot.EstimatedItemCount = estimatedItemCount > 0 ? estimatedItemCount : null;
+                snapshot.LikelihoodPercentage = LikelihoodForElapsedDays(elapsedDays);
+                snapshot.WhenDistributionJson = BuildWhenDistributionJson(recordedAt, elapsedDays);
             }
         }
+
+        private static double LikelihoodForElapsedDays(int elapsedDays)
+        {
+            const double startingLikelihood = 40d;
+            const double dailyGain = 4d;
+            var likelihood = startingLikelihood + (dailyGain * elapsedDays);
+            return Math.Min(likelihood, 95d);
+        }
+
+        private static string BuildWhenDistributionJson(DateTime recordedAt, int elapsedDays)
+        {
+            var spread = Math.Max(DemoBurnupDays - elapsedDays, 1);
+            var medianOffset = Math.Max(DemoBurnupDays - elapsedDays, 0);
+
+            var distribution = SnapshotPercentiles.Select(percentile => new
+            {
+                Probability = (double)percentile,
+                ExpectedDate = recordedAt.AddDays(medianOffset + PercentileOffset(percentile, spread)),
+            });
+
+            return JsonSerializer.Serialize(distribution, WhenDistributionJsonOptions);
+        }
+
+        private static int PercentileOffset(int percentile, int spread) => percentile switch
+        {
+            50 => 0,
+            70 => spread / 2,
+            85 => spread,
+            _ => spread * 2,
+        };
 
         private async Task AddTeamsForScenarios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
         {

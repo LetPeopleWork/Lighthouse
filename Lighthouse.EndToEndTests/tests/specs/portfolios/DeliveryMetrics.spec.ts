@@ -33,6 +33,11 @@ test("@walking_skeleton @US-01 forecaster opens a delivery's Metrics tab and see
 		.poll(() => metricsTab.countDrawnSeriesLines())
 		.toBeGreaterThanOrEqual(3);
 
+	await expect(metricsTab.predictabilityChart).toBeVisible();
+	await expect(metricsTab.predictabilitySeriesLine("likelihood")).toBeVisible();
+	await metricsTab.showWhenView();
+	await expect(metricsTab.predictabilitySeriesLine("when-70")).toBeVisible();
+
 	await metricsTab.openWorkItemsTab();
 	await expect(page.getByText("Feature Name")).toBeVisible();
 });

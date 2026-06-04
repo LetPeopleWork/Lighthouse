@@ -7,14 +7,21 @@ import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import DeliverySection from "./DeliverySection";
 
-const { mockGetMetricsHistory, mockUseLicenseRestrictions, mockBurnupChart } =
-	vi.hoisted(() => ({
-		mockGetMetricsHistory: vi.fn(),
-		mockUseLicenseRestrictions: vi.fn(),
-		mockBurnupChart: vi.fn((_props: { history: unknown }) => (
-			<div data-testid="burnup-chart" />
-		)),
-	}));
+const {
+	mockGetMetricsHistory,
+	mockUseLicenseRestrictions,
+	mockBurnupChart,
+	mockPredictabilityChart,
+} = vi.hoisted(() => ({
+	mockGetMetricsHistory: vi.fn(),
+	mockUseLicenseRestrictions: vi.fn(),
+	mockBurnupChart: vi.fn((_props: { history: unknown }) => (
+		<div data-testid="burnup-chart" />
+	)),
+	mockPredictabilityChart: vi.fn((_props: { history: unknown }) => (
+		<div data-testid="predictability-chart" />
+	)),
+}));
 
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
@@ -39,6 +46,14 @@ vi.mock("../../../../../components/Common/Charts/DeliveryBurnupChart", () => ({
 	default: (props: { history: DeliveryMetricsHistory }) =>
 		mockBurnupChart(props),
 }));
+
+vi.mock(
+	"../../../../../components/Common/Charts/DeliveryPredictabilityChart",
+	() => ({
+		default: (props: { history: DeliveryMetricsHistory }) =>
+			mockPredictabilityChart(props),
+	}),
+);
 
 const getHistory = (): DeliveryMetricsHistory => ({
 	deliveryDate: new Date("2026-06-10T00:00:00Z"),
@@ -110,6 +125,7 @@ describe("DeliverySection Metrics tab", () => {
 	beforeEach(() => {
 		mockGetMetricsHistory.mockReset();
 		mockBurnupChart.mockClear();
+		mockPredictabilityChart.mockClear();
 		mockGetMetricsHistory.mockResolvedValue(getHistory());
 	});
 
@@ -196,6 +212,22 @@ describe("DeliverySection Metrics tab", () => {
 			expect(screen.getByTestId("burnup-chart")).toBeInTheDocument();
 		});
 		expect(mockBurnupChart).toHaveBeenCalledWith(
+			expect.objectContaining({ history: getHistory() }),
+		);
+	});
+
+	it("renders the predictability chart alongside the burnup chart from the same fetched history", async () => {
+		setPremium(false);
+		renderSection();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Metrics" }));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("burnup-chart")).toBeInTheDocument();
+		});
+		expect(screen.getByTestId("predictability-chart")).toBeInTheDocument();
+		expect(mockGetMetricsHistory).toHaveBeenCalledTimes(1);
+		expect(mockPredictabilityChart).toHaveBeenCalledWith(
 			expect.objectContaining({ history: getHistory() }),
 		);
 	});
