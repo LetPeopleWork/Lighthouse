@@ -1,4 +1,3 @@
-import type { Theme } from "@mui/material";
 import {
 	Box,
 	Button,
@@ -7,7 +6,6 @@ import {
 	Typography,
 	useTheme,
 } from "@mui/material";
-import type { ScatterValueType } from "@mui/x-charts";
 import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import { ScatterChart } from "@mui/x-charts/ScatterChart";
 import type React from "react";
@@ -19,6 +17,14 @@ import {
 	type FeverZone,
 	feverZonePolygons,
 } from "../../../models/Delivery/FeverTrail";
+import {
+	featureColor,
+	likelihoodTooltip,
+	runButtonLabel,
+	visiblePoints,
+	zoneBandPath,
+	zoneColors,
+} from "./feverChartView";
 import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
 
 interface DeliveryFeverChartProps {
@@ -34,48 +40,9 @@ const ZONE_CAPTION =
 
 const ZONE_FILL_OPACITY = 0.25;
 
-const FEATURE_COLORS = [
-	"#1f77b4",
-	"#9467bd",
-	"#17becf",
-	"#8c564b",
-	"#e377c2",
-	"#2c3e50",
-	"#393b79",
-	"#637939",
-];
-
-interface ScatterDatum {
-	x: number;
-	y: number;
-	id: number;
-}
-
 interface ColouredFeature extends FeatureFeverSeries {
 	color: string;
 }
-
-const zoneColors = (theme: Theme): Record<FeverZone, string> => ({
-	green: theme.palette.success.main,
-	amber: theme.palette.warning.main,
-	red: theme.palette.error.main,
-});
-
-const currentPoint = (feature: FeatureFeverSeries, frame: number | null) =>
-	frame === null
-		? feature.latest
-		: feature.points[Math.min(frame, feature.points.length - 1)];
-
-const visiblePoints = (
-	feature: FeatureFeverSeries,
-	frame: number | null,
-): ScatterDatum[] => {
-	const point = currentPoint(feature, frame);
-	return [{ x: point.completion, y: point.chanceOfLate, id: 0 }];
-};
-
-const likelihoodTooltip = (value: ScatterValueType | null): string =>
-	value === null ? "" : `${Math.round(100 - value.y)}% Likelihood`;
 
 const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	colors,
@@ -84,19 +51,14 @@ const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	const yScale = useYScale();
 	return (
 		<g>
-			{feverZonePolygons().map((polygon) => {
-				const path = polygon.points
-					.map(([x, y]) => `${xScale(x)} ${yScale(y)}`)
-					.join(" L ");
-				return (
-					<path
-						key={polygon.zone}
-						d={`M ${path} Z`}
-						fill={colors[polygon.zone]}
-						fillOpacity={ZONE_FILL_OPACITY}
-					/>
-				);
-			})}
+			{feverZonePolygons().map((polygon) => (
+				<path
+					key={polygon.zone}
+					d={zoneBandPath(polygon.points, xScale, yScale)}
+					fill={colors[polygon.zone]}
+					fillOpacity={ZONE_FILL_OPACITY}
+				/>
+			))}
 		</g>
 	);
 };
@@ -148,13 +110,6 @@ const FeatureLegend: React.FC<FeatureLegendProps> = ({
 	</Box>
 );
 
-const runButtonLabel = (isRunning: boolean, frame: number | null): string => {
-	if (isRunning) {
-		return "Running…";
-	}
-	return frame === null ? "Run" : "Rerun";
-};
-
 const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	history,
 	title = "Delivery Progress",
@@ -196,7 +151,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	const colouredFeatures: ColouredFeature[] = chart.features.map(
 		(feature, index) => ({
 			...feature,
-			color: FEATURE_COLORS[index % FEATURE_COLORS.length],
+			color: featureColor(index),
 		}),
 	);
 

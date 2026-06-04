@@ -16,6 +16,7 @@ export default defineConfig({
 		include: [
 			"src/models/Delivery/FeverTrail.test.ts",
 			"src/components/Common/Charts/DeliveryFeverChart.test.tsx",
+			"src/components/Common/Charts/feverChartView.test.ts",
 		],
 		server: {
 			deps: {

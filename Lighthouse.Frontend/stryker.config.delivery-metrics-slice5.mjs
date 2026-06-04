@@ -18,7 +18,7 @@ const config = {
 	mutate: [
 		"src/models/Delivery/FeverTrail.ts",
 		"src/components/Common/Charts/useFeatureFeverReveal.ts",
-		"src/components/Common/Charts/DeliveryFeverChart.tsx",
+		"src/components/Common/Charts/feverChartView.ts",
 	],
 	ignorePatterns: [
 		"src-tauri",
