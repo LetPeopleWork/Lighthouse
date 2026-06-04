@@ -28,6 +28,7 @@ export interface IDelivery {
 	mode?: "and" | "or";
 	concurrencyToken?: string;
 	hasSufficientData?: boolean;
+	metricSnapshotCount: number;
 }
 
 export class Delivery implements IDelivery {
@@ -47,6 +48,7 @@ export class Delivery implements IDelivery {
 	mode?: "and" | "or";
 	concurrencyToken?: string;
 	hasSufficientData!: boolean;
+	metricSnapshotCount!: number;
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -61,6 +63,7 @@ export class Delivery implements IDelivery {
 		delivery.totalWork = data.totalWork || 0;
 		delivery.featureLikelihoods = data.featureLikelihoods || [];
 		delivery.hasSufficientData = data.hasSufficientData ?? true;
+		delivery.metricSnapshotCount = data.metricSnapshotCount ?? 0;
 		delivery.selectionMode = data.selectionMode ?? DeliverySelectionMode.Manual;
 		delivery.rules = data.rules?.map((r) =>
 			WorkItemRuleCondition.fromBackend(r),

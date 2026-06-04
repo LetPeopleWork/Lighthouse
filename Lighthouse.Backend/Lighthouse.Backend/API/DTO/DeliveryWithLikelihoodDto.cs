@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public bool HasSufficientData { get; set; } = true;
 
+        public int MetricSnapshotCount { get; set; }
+
         public DeliverySelectionMode SelectionMode { get; set; }
 
         public List<WorkItemRuleCondition> Rules { get; set; } = [];

@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
+        private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepositoryMock;
 
         [SetUp]
         public void Setup()
@@ -33,6 +34,11 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            deliveryMetricSnapshotRepositoryMock = new Mock<IDeliveryMetricSnapshotRepository>();
+
+            deliveryMetricSnapshotRepositoryMock
+                .Setup(x => x.GetSnapshotCountsByDelivery(It.IsAny<IEnumerable<int>>()))
+                .Returns(new Dictionary<int, int>());
 
             deliveryRuleServiceMock.Setup(x =>
                     x.GetMatchingFeaturesForRuleset(It.IsAny<WorkItemRuleSet>(), It.IsAny<IEnumerable<Feature>>()))
@@ -260,7 +266,7 @@ namespace Lighthouse.Backend.Tests.API
                 licenseServiceMock.Object,
                 deliveryRuleServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
-                Mock.Of<IDeliveryMetricSnapshotRepository>());
+                deliveryMetricSnapshotRepositoryMock.Object);
         }
 
         [Test]
@@ -441,6 +447,33 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(deliveryDto.Features, Has.Count.EqualTo(1));
                 Assert.That(deliveryDto.Features[0], Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetByPortfolio_WithRecordedSnapshots_ReturnsMetricSnapshotCountPerDelivery()
+        {
+            const int portfolioId = 1;
+            var deliveryWithout = new Delivery("No Snapshots", DateTime.UtcNow.AddDays(30), portfolioId) { Id = 10 };
+            var deliveryWith = new Delivery("Four Snapshots", DateTime.UtcNow.AddDays(60), portfolioId) { Id = 20 };
+
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
+                .Returns([deliveryWithout, deliveryWith]);
+            deliveryMetricSnapshotRepositoryMock
+                .Setup(x => x.GetSnapshotCountsByDelivery(It.IsAny<IEnumerable<int>>()))
+                .Returns(new Dictionary<int, int> { { 20, 4 } });
+
+            var controller = CreateSubject();
+
+            var result = controller.GetByPortfolio(portfolioId);
+
+            var okResult = result as OkObjectResult;
+            var deliveries = (okResult!.Value as IEnumerable<DeliveryWithLikelihoodDto>)!.ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deliveries.Single(d => d.Id == 10).MetricSnapshotCount, Is.Zero);
+                Assert.That(deliveries.Single(d => d.Id == 20).MetricSnapshotCount, Is.EqualTo(4));
             }
         }
 

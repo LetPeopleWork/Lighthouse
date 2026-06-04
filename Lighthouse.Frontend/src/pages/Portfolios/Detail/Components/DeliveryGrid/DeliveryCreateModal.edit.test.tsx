@@ -121,6 +121,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		featureLikelihoods: [],
 		completionDates: [],
 		selectionMode: DeliverySelectionMode.Manual,
+		metricSnapshotCount: 0,
 	};
 
 	const renderModal = (

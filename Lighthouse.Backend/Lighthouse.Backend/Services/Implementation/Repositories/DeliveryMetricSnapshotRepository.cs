@@ -34,5 +34,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .OrderBy(snapshot => snapshot.RecordedAt)
                 .ToList();
         }
+
+        public IReadOnlyDictionary<int, int> GetSnapshotCountsByDelivery(IEnumerable<int> deliveryIds)
+        {
+            var ids = deliveryIds.Distinct().ToList();
+
+            return Context.DeliveryMetricSnapshots
+                .Where(snapshot => ids.Contains(snapshot.DeliveryId))
+                .GroupBy(snapshot => snapshot.DeliveryId)
+                .Select(group => new { DeliveryId = group.Key, Count = group.Count() })
+                .ToDictionary(entry => entry.DeliveryId, entry => entry.Count);
+        }
     }
 }

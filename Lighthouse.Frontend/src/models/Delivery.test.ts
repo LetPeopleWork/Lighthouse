@@ -17,6 +17,7 @@ const buildBackendDelivery = (
 	featureLikelihoods: [],
 	completionDates: [],
 	selectionMode: DeliverySelectionMode.Manual,
+	metricSnapshotCount: 0,
 	...overrides,
 });
 

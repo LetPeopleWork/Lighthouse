@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Portfolio>> portfolioRepository;
         private Mock<ILicenseService> licenseService;
         private Mock<IRbacAdministrationService> rbacAdministrationService;
+        private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepository;
         private DeliveriesController subject;
 
         [SetUp]
@@ -28,6 +29,11 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepository = new Mock<IRepository<Portfolio>>();
             licenseService = new Mock<ILicenseService>();
             rbacAdministrationService = new Mock<IRbacAdministrationService>();
+            deliveryMetricSnapshotRepository = new Mock<IDeliveryMetricSnapshotRepository>();
+
+            deliveryMetricSnapshotRepository
+                .Setup(x => x.GetSnapshotCountsByDelivery(It.IsAny<IEnumerable<int>>()))
+                .Returns(new Dictionary<int, int>());
 
             deliveryRepository.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
             rbacAdministrationService
@@ -44,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API
                 licenseService.Object,
                 Mock.Of<IDeliveryRuleService>(),
                 rbacAdministrationService.Object,
-                Mock.Of<IDeliveryMetricSnapshotRepository>());
+                deliveryMetricSnapshotRepository.Object);
         }
 
         [Test]

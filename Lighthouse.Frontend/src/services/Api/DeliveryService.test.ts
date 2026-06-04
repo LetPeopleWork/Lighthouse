@@ -40,6 +40,7 @@ describe("DeliveryService", () => {
 					],
 					completionDates: [],
 					selectionMode: DeliverySelectionMode.Manual,
+					metricSnapshotCount: 0,
 				},
 				{
 					id: 2,
@@ -54,6 +55,7 @@ describe("DeliveryService", () => {
 					featureLikelihoods: [{ featureId: 3, likelihoodPercentage: 60.0 }],
 					completionDates: [],
 					selectionMode: DeliverySelectionMode.Manual,
+					metricSnapshotCount: 0,
 				},
 			];
 

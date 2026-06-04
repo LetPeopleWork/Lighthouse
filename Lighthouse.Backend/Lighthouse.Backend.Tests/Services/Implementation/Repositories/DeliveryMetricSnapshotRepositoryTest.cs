@@ -109,6 +109,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(snapshot.RecordedAt, Is.EqualTo(earlier));
         }
 
+        [Test]
+        public async Task GetSnapshotCountsByDelivery_MultipleDeliveries_ReturnsCountPerDeliveryInOneQuery()
+        {
+            var deliveryWithSnapshots = await GivenPersistedDelivery();
+            var deliveryWithoutSnapshots = await GivenPersistedDelivery();
+            var subject = CreateSubject();
+
+            foreach (var day in new[] { 25, 26, 27, 28 })
+            {
+                DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+                {
+                    DeliveryId = deliveryWithSnapshots,
+                    RecordedAt = new DateTime(2026, 5, day, 8, 0, 0, DateTimeKind.Utc),
+                });
+            }
+            await DatabaseContext.SaveChangesAsync();
+
+            var counts = subject.GetSnapshotCountsByDelivery([deliveryWithSnapshots, deliveryWithoutSnapshots]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(counts[deliveryWithSnapshots], Is.EqualTo(4));
+                Assert.That(counts.TryGetValue(deliveryWithoutSnapshots, out var zero) ? zero : 0, Is.Zero);
+            }
+        }
+
         private async Task<int> GivenPersistedDelivery()
         {
             var workTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };

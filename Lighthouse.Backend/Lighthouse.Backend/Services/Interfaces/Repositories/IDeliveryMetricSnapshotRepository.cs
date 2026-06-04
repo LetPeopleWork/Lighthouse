@@ -7,5 +7,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         DeliveryMetricSnapshot GetOrCreateForDay(int deliveryId, DateTime recordedAt);
 
         IEnumerable<DeliveryMetricSnapshot> GetByDelivery(int deliveryId);
+
+        IReadOnlyDictionary<int, int> GetSnapshotCountsByDelivery(IEnumerable<int> deliveryIds);
     }
 }

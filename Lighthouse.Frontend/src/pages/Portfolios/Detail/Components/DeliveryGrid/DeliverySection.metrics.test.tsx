@@ -82,7 +82,7 @@ const getHistory = (): DeliveryMetricsHistory => ({
 	],
 });
 
-const getMockDelivery = (): Delivery => {
+const getMockDelivery = (overrides: Partial<Delivery> = {}): Delivery => {
 	const delivery = new Delivery();
 	delivery.id = 7;
 	delivery.name = "Test Delivery";
@@ -94,7 +94,8 @@ const getMockDelivery = (): Delivery => {
 	delivery.totalWork = 10;
 	delivery.featureLikelihoods = [];
 	delivery.completionDates = [];
-	return delivery;
+	delivery.metricSnapshotCount = 3;
+	return Object.assign(delivery, overrides);
 };
 
 const getMockFeature = (): Feature => {
@@ -109,11 +110,11 @@ const getMockFeature = (): Feature => {
 
 const mockTeams: IEntityReference[] = [{ id: 1, name: "Team Alpha" }];
 
-const renderSection = () =>
+const renderSection = (deliveryOverrides: Partial<Delivery> = {}) =>
 	render(
 		<MemoryRouter>
 			<DeliverySection
-				delivery={getMockDelivery()}
+				delivery={getMockDelivery(deliveryOverrides)}
 				features={[getMockFeature()]}
 				isExpanded={true}
 				isLoadingFeatures={false}
@@ -284,5 +285,49 @@ describe("DeliverySection Metrics tab", () => {
 			expect(screen.getByTestId("burnup-chart")).toBeInTheDocument();
 		});
 		expect(mockGetMetricsHistory).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("DeliverySection Metrics tab snapshot gating", () => {
+	beforeEach(() => {
+		mockGetMetricsHistory.mockReset();
+		mockGetMetricsHistory.mockResolvedValue(getHistory());
+		setPremium(true);
+	});
+
+	it("disables the Metrics tab with an explanatory tooltip while too few snapshots are recorded", async () => {
+		renderSection({ metricSnapshotCount: 2 });
+
+		const metricsTab = screen.getByRole("tab", { name: /Metrics/ });
+		expect(metricsTab).toBeDisabled();
+
+		fireEvent.mouseOver(screen.getByText("Metrics"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(
+					"Metrics need at least 3 daily records to chart trends (have 2).",
+				),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("enables the Metrics tab once enough snapshots are recorded", () => {
+		renderSection({ metricSnapshotCount: 3 });
+
+		expect(screen.getByRole("tab", { name: /Metrics/ })).not.toBeDisabled();
+	});
+
+	it("does not fetch metrics or switch tabs when the disabled Metrics tab is clicked", () => {
+		renderSection({ metricSnapshotCount: 0 });
+
+		fireEvent.click(screen.getByRole("tab", { name: /Metrics/ }));
+
+		expect(screen.getByRole("tab", { name: "Work Items" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		expect(mockGetMetricsHistory).not.toHaveBeenCalled();
+		expect(screen.queryByTestId("burnup-chart")).not.toBeInTheDocument();
 	});
 });

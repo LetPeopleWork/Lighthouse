@@ -345,6 +345,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 				featureLikelihoods: [],
 				completionDates: [],
 				selectionMode: DeliverySelectionMode.RuleBased,
+				metricSnapshotCount: 0,
 				rules: [
 					{
 						fieldKey: "feature.tags",
@@ -388,6 +389,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 				featureLikelihoods: [],
 				completionDates: [],
 				selectionMode: DeliverySelectionMode.RuleBased,
+				metricSnapshotCount: 0,
 				rules: [
 					{
 						fieldKey: "feature.tags",
@@ -426,6 +428,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 				featureLikelihoods: [],
 				completionDates: [],
 				selectionMode: DeliverySelectionMode.RuleBased,
+				metricSnapshotCount: 0,
 				rules: [
 					{
 						fieldKey: "feature.tags",

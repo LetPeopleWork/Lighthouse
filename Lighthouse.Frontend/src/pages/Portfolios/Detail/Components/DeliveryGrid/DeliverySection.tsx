@@ -49,6 +49,8 @@ import { getWorkItemName } from "../../../../../utils/featureName";
 import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 
+export const MINIMUM_METRIC_SNAPSHOTS = 3;
+
 interface DeliverySectionProps {
 	delivery: Delivery;
 	features: IFeature[];
@@ -85,8 +87,14 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		useState<DeliveryMetricsHistory | null>(null);
 	const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
 
+	const isMetricsTabDisabled =
+		delivery.metricSnapshotCount < MINIMUM_METRIC_SNAPSHOTS;
+
 	const handleTabChange = useCallback(
 		(_event: React.SyntheticEvent, nextTab: "workItems" | "metrics") => {
+			if (nextTab === "metrics" && isMetricsTabDisabled) {
+				return;
+			}
 			setActiveTab(nextTab);
 			if (
 				nextTab !== "metrics" ||
@@ -101,7 +109,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				.then(setMetricsHistory)
 				.finally(() => setIsLoadingMetrics(false));
 		},
-		[deliveryService, delivery.id, metricsHistory, isLoadingMetrics],
+		[
+			deliveryService,
+			delivery.id,
+			metricsHistory,
+			isLoadingMetrics,
+			isMetricsTabDisabled,
+		],
 	);
 
 	const handleShowFeatureDetails = useCallback(
@@ -452,7 +466,21 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							sx={{ px: 2, borderBottom: 1, borderColor: "divider" }}
 						>
 							<Tab label={workItemsTerm} value="workItems" />
-							<Tab label="Metrics" value="metrics" />
+							<Tab
+								value="metrics"
+								disabled={isMetricsTabDisabled}
+								label={
+									<Tooltip
+										title={
+											isMetricsTabDisabled
+												? `Metrics need at least ${MINIMUM_METRIC_SNAPSHOTS} daily records to chart trends (have ${delivery.metricSnapshotCount}).`
+												: ""
+										}
+									>
+										<span style={{ pointerEvents: "auto" }}>Metrics</span>
+									</Tooltip>
+								}
+							/>
 						</Tabs>
 						{activeTab === "workItems" && (
 							<WorkItemsTab

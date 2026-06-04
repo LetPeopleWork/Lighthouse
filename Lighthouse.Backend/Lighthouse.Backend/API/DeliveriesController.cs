@@ -30,7 +30,14 @@ namespace Lighthouse.Backend.API
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
-            var deliveryDtos = deliveries.Select(DeliveryWithLikelihoodDto.FromDelivery);
+            var deliveryDtos = deliveries.Select(DeliveryWithLikelihoodDto.FromDelivery).ToList();
+
+            var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryDtos.Select(d => d.Id));
+            foreach (var deliveryDto in deliveryDtos)
+            {
+                deliveryDto.MetricSnapshotCount = snapshotCounts.TryGetValue(deliveryDto.Id, out var count) ? count : 0;
+            }
+
             return Ok(deliveryDtos.OrderBy(d => d.Date));
         }
 
