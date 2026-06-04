@@ -53,16 +53,10 @@ namespace Lighthouse.Backend.API.DTO
         {
             var featureLikelihoods = CalculateFeatureLikelihoods(delivery);
 
-            var likelihoodPercentage = 0.0;
-            var completionDates = new List<WhenForecastDto>();
+            var metrics = delivery.CalculateMetrics(70, 85, 95);
+            var completionDates = metrics.WhenDistribution.Select(ToWhenForecastDto).ToList();
 
             var leastLikelyFeature = GetLeastLikelyFeature(featureLikelihoods);
-
-            if (leastLikelyFeature != null)
-            {
-                likelihoodPercentage = leastLikelyFeature.LikelihoodPercentage;
-                completionDates.AddRange(leastLikelyFeature.CompletionDates);
-            }
 
             var (progress, remainingWork, totalWork) = CalculateDeliveryWork(delivery);
 
@@ -72,7 +66,7 @@ namespace Lighthouse.Backend.API.DTO
                 Name = delivery.Name,
                 Date = delivery.Date,
                 PortfolioId = delivery.PortfolioId,
-                LikelihoodPercentage = likelihoodPercentage,
+                LikelihoodPercentage = metrics.LikelihoodPercentage,
                 CompletionDates = completionDates,
                 Progress = progress,
                 RemainingWork = remainingWork,
@@ -84,6 +78,17 @@ namespace Lighthouse.Backend.API.DTO
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
                 ConcurrencyToken = delivery.ConcurrencyToken,
+            };
+        }
+
+        private static WhenForecastDto ToWhenForecastDto(DeliveryWhenPercentile percentile)
+        {
+            return new WhenForecastDto
+            {
+                Probability = percentile.Percentile,
+                ExpectedDate = percentile.ExpectedDate,
+                FilterApplied = percentile.FilterApplied,
+                ExcludedSummary = percentile.ExcludedSummary,
             };
         }
 
