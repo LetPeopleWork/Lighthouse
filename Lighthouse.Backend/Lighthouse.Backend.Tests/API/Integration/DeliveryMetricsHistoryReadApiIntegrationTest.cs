@@ -19,6 +19,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
     {
         private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
 
+        private const double LowerSpreadPercentile = 50.0;
+        private const double UpperSpreadPercentile = 95.0;
+
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient client = null!;
@@ -159,6 +162,40 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task GetMetricsHistory_ImprovingWhenSpreadNarrows_DegradingWhenSpreadWidens()
+        {
+            var (improvingPortfolioId, improvingDeliveryId, _) = SeedDeliveryWithNarrowingWhenSpread();
+            var (degradingPortfolioId, degradingDeliveryId, _) = SeedDeliveryWithWideningWhenSpread();
+
+            client.AsPortfolioViewer(improvingPortfolioId);
+            var improvingBody = await (await client.GetAsync(MetricsHistoryUrl(improvingDeliveryId))).Content.ReadAsStringAsync();
+
+            client.AsPortfolioViewer(degradingPortfolioId);
+            var degradingBody = await (await client.GetAsync(MetricsHistoryUrl(degradingDeliveryId))).Content.ReadAsStringAsync();
+
+            var improvingPoints = Points(improvingBody);
+            var degradingPoints = Points(degradingBody);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(LastDaySpread(improvingPoints), Is.LessThan(FirstDaySpread(improvingPoints)), improvingBody);
+                Assert.That(LastDaySpread(degradingPoints), Is.GreaterThan(FirstDaySpread(degradingPoints)), degradingBody);
+            }
+        }
+
+        [Test]
+        public async Task GetMetricsHistory_ForTheWhenView_ReturnsTheDeliveryTargetDate()
+        {
+            var (portfolioId, deliveryId, targetDate) = SeedDeliveryWithNarrowingWhenSpread();
+
+            client.AsPortfolioViewer(portfolioId);
+            var body = await (await client.GetAsync(MetricsHistoryUrl(deliveryId))).Content.ReadAsStringAsync();
+
+            var historyView = JsonSerializer.Deserialize<HistoryView>(body, CaseInsensitiveJson);
+            Assert.That(historyView!.DeliveryDate, Is.EqualTo(targetDate), body);
+        }
+
         private static string MetricsHistoryUrl(int deliveryId)
             => $"/api/latest/deliveries/{deliveryId}/metrics-history";
 
@@ -280,6 +317,72 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return (portfolio.Id, delivery.Id);
         }
 
+        private (int portfolioId, int deliveryId, DateTime targetDate) SeedDeliveryWithNarrowingWhenSpread()
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var targetDate = DateTime.UtcNow.Date.AddDays(40);
+            var delivery = new Delivery("Improving Release", targetDate, portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay, 50.0, lowerOffset: 10, upperOffset: 38);
+            AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(1), 65.0, lowerOffset: 14, upperOffset: 32);
+            AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(2), 80.0, lowerOffset: 18, upperOffset: 24);
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id, targetDate);
+        }
+
+        private (int portfolioId, int deliveryId, DateTime targetDate) SeedDeliveryWithWideningWhenSpread()
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var targetDate = DateTime.UtcNow.Date.AddDays(40);
+            var delivery = new Delivery("Degrading Release", targetDate, portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay, 80.0, lowerOffset: 18, upperOffset: 24);
+            AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(1), 65.0, lowerOffset: 14, upperOffset: 32);
+            AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(2), 50.0, lowerOffset: 10, upperOffset: 38);
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id, targetDate);
+        }
+
+        private static void AddWhenDistributionSnapshot(
+            Lighthouse.Backend.Data.LighthouseAppContext dbContext,
+            int deliveryId,
+            DateTime recordedAt,
+            double likelihood,
+            int lowerOffset,
+            int upperOffset)
+        {
+            var whenDistributionJson = JsonSerializer.Serialize(new[]
+            {
+                new { Probability = LowerSpreadPercentile, ExpectedDate = DateTime.UtcNow.Date.AddDays(lowerOffset) },
+                new { Probability = UpperSpreadPercentile, ExpectedDate = DateTime.UtcNow.Date.AddDays(upperOffset) },
+            });
+
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = deliveryId,
+                RecordedAt = recordedAt,
+                TotalWork = 20,
+                DoneWork = 5,
+                RemainingWork = 15,
+                LikelihoodPercentage = likelihood,
+                WhenDistributionJson = whenDistributionJson,
+            });
+        }
+
         private static Portfolio AddPortfolio(IServiceProvider serviceProvider)
         {
             var connection = new WorkTrackingSystemConnection
@@ -334,13 +437,25 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 && point.WhenDistribution is { Count: > 0 };
         }
 
+        private static TimeSpan FirstDaySpread(IReadOnlyList<HistoryPointView> points)
+            => WhenSpread(points[0]);
+
+        private static TimeSpan LastDaySpread(IReadOnlyList<HistoryPointView> points)
+            => WhenSpread(points[^1]);
+
+        private static TimeSpan WhenSpread(HistoryPointView point)
+            => ExpectedDateAt(point, UpperSpreadPercentile) - ExpectedDateAt(point, LowerSpreadPercentile);
+
+        private static DateTime ExpectedDateAt(HistoryPointView point, double percentile)
+            => point.WhenDistribution!.Single(entry => entry.Probability == percentile).ExpectedDate;
+
         private static IReadOnlyList<HistoryPointView> Points(string body)
         {
             var dto = JsonSerializer.Deserialize<HistoryView>(body, CaseInsensitiveJson);
             return dto?.Points ?? [];
         }
 
-        private sealed record HistoryView(DateTime? FirstSnapshotDate, IReadOnlyList<HistoryPointView> Points);
+        private sealed record HistoryView(DateTime DeliveryDate, DateTime? FirstSnapshotDate, IReadOnlyList<HistoryPointView> Points);
 
         private sealed record HistoryPointView(
             DateTime Date,
