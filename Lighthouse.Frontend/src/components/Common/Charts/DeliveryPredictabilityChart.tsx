@@ -13,7 +13,11 @@ import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
-import { steppedTargetData } from "../../../models/Delivery/deliveryTargetHistory";
+import {
+	steppedTargetData,
+	type TargetChange,
+	targetChanges,
+} from "../../../models/Delivery/deliveryTargetHistory";
 import {
 	certainColor,
 	confidentColor,
@@ -35,6 +39,9 @@ const FORWARD_ONLY_EMPTY_STATE =
 
 const LIKELIHOOD_SERIES_ID = "likelihood";
 const LIKELIHOOD_SERIES_LABEL = "Likelihood";
+
+const TARGET_CHANGE_SERIES_ID = "target-change";
+const TARGET_CHANGE_SERIES_LABEL = "Target moved";
 
 const RAG_BAND_COLORS = [
 	riskyColor,
@@ -70,6 +77,9 @@ const formatPercentage = (value: number | null): string =>
 
 const formatDateValue = (value: number | null): string =>
 	value === null ? "" : new Date(value).toLocaleDateString();
+
+const formatTargetMove = (change: TargetChange): string =>
+	`Target moved: ${formatDate(change.previousTarget)} → ${formatDate(change.newTarget)}`;
 
 const hasLikelihood = (point: DeliveryMetricsHistoryPoint): boolean =>
 	point.likelihoodPercentage !== null;
@@ -116,53 +126,84 @@ const EmptyBody = (): ReactElement => (
 const LikelihoodView = ({
 	points,
 	lineColor,
+	changeColor,
 	height,
 }: {
 	points: DeliveryMetricsHistoryPoint[];
 	lineColor: string;
+	changeColor: string;
 	height: number;
-}): ReactElement => (
-	<LineChart
-		xAxis={[
-			{
-				scaleType: "time",
-				data: points.map((point) => point.date),
-				label: "Date",
-				height: 56,
-				valueFormatter: formatDate,
-			},
-		]}
-		yAxis={[
-			{
-				min: 0,
-				max: 100,
-				label: "Likelihood (%)",
-				colorMap: {
-					type: "piecewise",
-					thresholds: [...FORECAST_LEVEL_THRESHOLDS],
-					colors: RAG_BAND_COLORS,
+}): ReactElement => {
+	const changes = targetChanges(points);
+	const changeByIndex = new Map(
+		changes.map((change) => [change.index, change]),
+	);
+
+	const likelihoodSeries = {
+		id: LIKELIHOOD_SERIES_ID,
+		label: LIKELIHOOD_SERIES_LABEL,
+		data: points.map((point) => point.likelihoodPercentage),
+		showMark: true,
+		color: lineColor,
+		valueFormatter: (value: number | null): string => formatPercentage(value),
+	};
+
+	const changeSeries = {
+		id: TARGET_CHANGE_SERIES_ID,
+		label: TARGET_CHANGE_SERIES_LABEL,
+		data: points.map((point, index) =>
+			changeByIndex.has(index) ? point.likelihoodPercentage : null,
+		),
+		showMark: true,
+		color: changeColor,
+		valueFormatter: (
+			_value: number | null,
+			context: { dataIndex: number },
+		): string => {
+			const change = changeByIndex.get(context.dataIndex);
+			return change ? formatTargetMove(change) : "";
+		},
+	};
+
+	const series =
+		changes.length === 0
+			? [likelihoodSeries]
+			: [likelihoodSeries, changeSeries];
+
+	return (
+		<LineChart
+			xAxis={[
+				{
+					scaleType: "time",
+					data: points.map((point) => point.date),
+					label: "Date",
+					height: 56,
+					valueFormatter: formatDate,
 				},
-			},
-		]}
-		series={[
-			{
-				id: LIKELIHOOD_SERIES_ID,
-				label: LIKELIHOOD_SERIES_LABEL,
-				data: points.map((point) => point.likelihoodPercentage),
-				showMark: true,
-				color: lineColor,
-				valueFormatter: formatPercentage,
-			},
-		]}
-		height={height}
-		slotProps={{
-			legend: {
-				direction: "horizontal",
-				position: { vertical: "top", horizontal: "end" },
-			},
-		}}
-	/>
-);
+			]}
+			yAxis={[
+				{
+					min: 0,
+					max: 100,
+					label: "Likelihood (%)",
+					colorMap: {
+						type: "piecewise",
+						thresholds: [...FORECAST_LEVEL_THRESHOLDS],
+						colors: RAG_BAND_COLORS,
+					},
+				},
+			]}
+			series={series}
+			height={height}
+			slotProps={{
+				legend: {
+					direction: "horizontal",
+					position: { vertical: "top", horizontal: "end" },
+				},
+			}}
+		/>
+	);
+};
 
 const WhenView = ({
 	history,
@@ -248,6 +289,7 @@ interface RenderBodyArgs {
 	showWhen: boolean;
 	history: DeliveryMetricsHistory;
 	lineColor: string;
+	changeColor: string;
 	palette: Record<number, string>;
 	height: number;
 }
@@ -257,6 +299,7 @@ const renderBody = ({
 	showWhen,
 	history,
 	lineColor,
+	changeColor,
 	palette,
 	height,
 }: RenderBodyArgs): ReactElement => {
@@ -279,6 +322,7 @@ const renderBody = ({
 		<LikelihoodView
 			points={history.points}
 			lineColor={lineColor}
+			changeColor={changeColor}
 			height={height}
 		/>
 	);
@@ -328,6 +372,7 @@ const DeliveryPredictabilityChart = ({
 					showWhen,
 					history,
 					lineColor: theme.palette.text.secondary,
+					changeColor: theme.palette.text.primary,
 					palette: WHEN_PALETTE,
 					height,
 				})}

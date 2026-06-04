@@ -50,7 +50,10 @@ interface SeriesEntry {
 	data?: Array<number | null>;
 	showMark?: boolean;
 	color?: string;
-	valueFormatter?: (value: number | null) => string;
+	valueFormatter?: (
+		value: number | null,
+		context?: { dataIndex: number },
+	) => string;
 }
 
 interface AxisEntry {
@@ -202,6 +205,73 @@ describe("DeliveryPredictabilityChart likelihood view", () => {
 		render(<DeliveryPredictabilityChart history={getMockHistory()} />);
 
 		expect(screen.getByText("Delivery Predictability")).toBeInTheDocument();
+	});
+
+	const historyWithTargetMove = (): DeliveryMetricsHistory => {
+		const base = getMockHistory();
+		return {
+			...base,
+			points: base.points.map((point, index) => ({
+				...point,
+				targetDateAtSnapshot:
+					index === 0
+						? new Date("2026-06-05T00:00:00Z")
+						: new Date("2026-06-12T00:00:00Z"),
+			})),
+		};
+	};
+
+	it("marks a target-change dot on the likelihood line at the day the target moved", () => {
+		render(<DeliveryPredictabilityChart history={historyWithTargetMove()} />);
+
+		const changeSeries = getLatestChartProps()?.series?.find(
+			(entry) => entry.id === "target-change",
+		);
+		expect(changeSeries?.data).toEqual([null, 92]);
+	});
+
+	it("reveals the old and new target dates on the change dot", () => {
+		render(<DeliveryPredictabilityChart history={historyWithTargetMove()} />);
+
+		const changeSeries = getLatestChartProps()?.series?.find(
+			(entry) => entry.id === "target-change",
+		);
+		const label = changeSeries?.valueFormatter?.(92, { dataIndex: 1 });
+		expect(label).toContain(
+			new Date("2026-06-05T00:00:00Z").toLocaleDateString(),
+		);
+		expect(label).toContain(
+			new Date("2026-06-12T00:00:00Z").toLocaleDateString(),
+		);
+	});
+
+	it("shows no change dot when the target never moved", () => {
+		const base = getMockHistory();
+		const history = {
+			...base,
+			points: base.points.map((point) => ({
+				...point,
+				targetDateAtSnapshot: new Date("2026-06-05T00:00:00Z"),
+			})),
+		};
+
+		render(<DeliveryPredictabilityChart history={history} />);
+
+		expect(
+			getLatestChartProps()?.series?.some(
+				(entry) => entry.id === "target-change",
+			),
+		).toBe(false);
+	});
+
+	it("shows no change dot when no target was recorded", () => {
+		render(<DeliveryPredictabilityChart history={getMockHistory()} />);
+
+		expect(
+			getLatestChartProps()?.series?.some(
+				(entry) => entry.id === "target-change",
+			),
+		).toBe(false);
 	});
 });
 
