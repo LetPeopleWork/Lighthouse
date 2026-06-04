@@ -225,6 +225,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetMetricsHistory_FeatureBreakdownJsonIsLiteralNull_ReturnsEmptyBreakdown()
+        {
+            var (portfolioId, deliveryId) = SeedDeliveryWithLiteralNullFeatureBreakdown();
+
+            client.AsPortfolioViewer(portfolioId);
+            var response = await client.GetAsync(MetricsHistoryUrl(deliveryId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(Points(body).Single().FeatureBreakdown, Is.Not.Null, body);
+                Assert.That(Points(body).Single().FeatureBreakdown, Is.Empty, body);
+            }
+        }
+
+        [Test]
         public async Task GetMetricsHistory_SnapshotsWithoutFeatureBreakdown_ReturnEmptyBreakdown()
         {
             var (portfolioId, deliveryId) = SeedDeliveryWithOnlyBacklogTotals();
@@ -394,6 +411,30 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 DoneWork = 11,
                 RemainingWork = 9,
                 FeatureBreakdownJson = featureBreakdownJson,
+            });
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id);
+        }
+
+        private (int portfolioId, int deliveryId) SeedDeliveryWithLiteralNullFeatureBreakdown()
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var delivery = new Delivery("Release 6", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = DateTime.UtcNow.Date,
+                TotalWork = 20,
+                DoneWork = 11,
+                RemainingWork = 9,
+                FeatureBreakdownJson = "null",
             });
             dbContext.SaveChanges();
 

@@ -260,6 +260,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_DeliveryWithNoPlottableFeatures_RecordsNullFeatureBreakdown()
+        {
+            var fixture = await SeedDeliveryWithNoPlottableFeatures();
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            Assert.That(snapshot.FeatureBreakdownJson, Is.Null);
+        }
+
+        [Test]
         public async Task HandleAsync_BreakdownDeliveryRunTwiceSameDay_OverwritesBreakdownInPlace()
         {
             var fixture = await SeedDeliveryWithMixedFeatureBreakdown();
@@ -481,6 +492,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                     new DeliveryFeatureMetric("FEAT-1", "In Progress Feature", 40.0, CertainSingleBucketLikelihood),
                     new DeliveryFeatureMetric("FEAT-2", "Completed Feature", 100.0, CertainSingleBucketLikelihood),
                 ],
+            };
+        }
+
+        private async Task<RecorderFixture> SeedDeliveryWithNoPlottableFeatures()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+
+            var emptyFeature = new Feature([(team, 0, 0)])
+            {
+                Name = "Empty Feature",
+                ReferenceId = "FEAT-EMPTY",
+                Order = "1",
+            };
+
+            var featureRepository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            featureRepository.Add(emptyFeature);
+            await featureRepository.Save();
+
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id);
+            delivery.Features.Add(emptyFeature);
+
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
+
+            return new RecorderFixture
+            {
+                PortfolioId = portfolio.Id,
+                DeliveryId = delivery.Id,
             };
         }
 
