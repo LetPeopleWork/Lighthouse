@@ -47,6 +47,18 @@ describe("parseDeliveryMetricsHistory", () => {
 		expect(point.date).toEqual(new Date("2026-06-01T00:00:00Z"));
 	});
 
+	it("maps the per-point target date when present and null when absent", () => {
+		const withTarget = parseDeliveryMetricsHistory(
+			responseWithPoint({ targetDateAtSnapshot: "2026-06-09T00:00:00Z" }),
+		);
+		expect(withTarget.points[0].targetDateAtSnapshot).toEqual(
+			new Date("2026-06-09T00:00:00Z"),
+		);
+
+		const withoutTarget = parseDeliveryMetricsHistory(getValidResponse());
+		expect(withoutTarget.points[0].targetDateAtSnapshot).toBeNull();
+	});
+
 	it("maps the top-level delivery and first-snapshot dates", () => {
 		const result = parseDeliveryMetricsHistory(getValidResponse());
 

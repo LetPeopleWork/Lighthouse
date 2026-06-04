@@ -277,7 +277,7 @@ describe("DeliveryPredictabilityChart when view", () => {
 		expect(props?.yAxis?.[0]?.scaleType).toBe("time");
 	});
 
-	it("draws a dashed reference line at the delivery target date in the when view", () => {
+	it("draws a flat dashed reference line at the delivery target when no per-day target was recorded", () => {
 		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
 
 		switchToWhenView();
@@ -287,6 +287,32 @@ describe("DeliveryPredictabilityChart when view", () => {
 			new Date("2026-06-10T00:00:00Z").getTime(),
 		);
 		expect(referenceLine?.lineStyle?.strokeDasharray).toBeTruthy();
+	});
+
+	it("steps the recorded target as a series and drops the flat reference line when the target moved", () => {
+		const base = getMockWhenHistory();
+		const history = {
+			...base,
+			points: base.points.map((point, index) => ({
+				...point,
+				targetDateAtSnapshot:
+					index === 0
+						? new Date("2026-06-10T00:00:00Z")
+						: new Date("2026-06-20T00:00:00Z"),
+			})),
+		};
+
+		render(<DeliveryPredictabilityChart history={history} />);
+		switchToWhenView();
+
+		const target = getLatestChartProps()?.series?.find(
+			(entry) => entry.id === "target",
+		);
+		expect(target?.data).toEqual([
+			new Date("2026-06-10T00:00:00Z").getTime(),
+			new Date("2026-06-20T00:00:00Z").getTime(),
+		]);
+		expect(referenceLineMock).not.toHaveBeenCalled();
 	});
 
 	it("toggles the rendered series between the likelihood and when views", () => {

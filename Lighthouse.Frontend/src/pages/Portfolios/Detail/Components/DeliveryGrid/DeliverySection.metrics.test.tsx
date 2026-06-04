@@ -70,6 +70,7 @@ const getHistory = (): DeliveryMetricsHistory => ({
 	points: [
 		{
 			date: new Date("2026-06-01T00:00:00Z"),
+			targetDateAtSnapshot: null,
 			totalWork: 20,
 			doneWork: 4,
 			remainingWork: 16,

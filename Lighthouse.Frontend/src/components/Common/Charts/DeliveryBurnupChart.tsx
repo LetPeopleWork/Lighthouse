@@ -1,5 +1,4 @@
 import { Card, CardContent, Typography, useTheme } from "@mui/material";
-import { ChartsReferenceLine } from "@mui/x-charts";
 import { LineChart } from "@mui/x-charts/LineChart";
 import type React from "react";
 import type {
@@ -141,13 +140,7 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 							position: { vertical: "top", horizontal: "end" },
 						},
 					}}
-				>
-					<ChartsReferenceLine
-						x={history.deliveryDate}
-						label="Delivery Date"
-						lineStyle={{ stroke: theme.palette.error.main }}
-					/>
-				</LineChart>
+				/>
 			</CardContent>
 		</Card>
 	);

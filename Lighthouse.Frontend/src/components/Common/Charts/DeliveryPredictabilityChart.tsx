@@ -13,6 +13,7 @@ import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
+import { steppedTargetData } from "../../../models/Delivery/deliveryTargetHistory";
 import {
 	certainColor,
 	confidentColor,
@@ -45,6 +46,15 @@ const RAG_BAND_COLORS = [
 const WHEN_PERCENTILES = [50, 70, 85, 95];
 const DEFAULT_WHEN_PERCENTILE = 70;
 const TARGET_LINE_DASH = "6 4";
+
+const TARGET_SERIES_ID = "target";
+const TARGET_SERIES_LABEL = "Delivery Target";
+const TARGET_STEP_SX = {
+	[`& .MuiLineChart-line[data-series="${TARGET_SERIES_ID}"]`]: {
+		strokeDasharray: TARGET_LINE_DASH,
+		strokeWidth: 2,
+	},
+};
 
 const WHEN_PALETTE: Record<number, string> = {
 	50: riskyColor,
@@ -157,14 +167,42 @@ const LikelihoodView = ({
 const WhenView = ({
 	history,
 	palette,
+	targetColor,
 	height,
 }: {
 	history: DeliveryMetricsHistory;
 	palette: Record<number, string>;
+	targetColor: string;
 	height: number;
 }): ReactElement => {
 	const points = history.points;
 	const whenSeries = buildWhenSeries(points, palette);
+	const targetData = steppedTargetData(points);
+
+	const percentileSeries = whenSeries.map((entry) => ({
+		id: entry.id,
+		label: entry.label,
+		data: entry.data,
+		showMark: entry.emphasized,
+		color: entry.color,
+		valueFormatter: formatDateValue,
+	}));
+
+	const series =
+		targetData === null
+			? percentileSeries
+			: [
+					...percentileSeries,
+					{
+						id: TARGET_SERIES_ID,
+						label: TARGET_SERIES_LABEL,
+						data: targetData,
+						showMark: false,
+						color: targetColor,
+						curve: "stepAfter" as const,
+						valueFormatter: formatDateValue,
+					},
+				];
 
 	return (
 		<LineChart
@@ -184,15 +222,9 @@ const WhenView = ({
 					valueFormatter: formatDateValue,
 				},
 			]}
-			series={whenSeries.map((entry) => ({
-				id: entry.id,
-				label: entry.label,
-				data: entry.data,
-				showMark: entry.emphasized,
-				color: entry.color,
-				valueFormatter: formatDateValue,
-			}))}
+			series={series}
 			height={height}
+			sx={targetData === null ? undefined : TARGET_STEP_SX}
 			slotProps={{
 				legend: {
 					direction: "horizontal",
@@ -200,11 +232,13 @@ const WhenView = ({
 				},
 			}}
 		>
-			<ChartsReferenceLine
-				y={history.deliveryDate}
-				label="Delivery Target"
-				lineStyle={{ strokeDasharray: TARGET_LINE_DASH }}
-			/>
+			{targetData === null && (
+				<ChartsReferenceLine
+					y={history.deliveryDate}
+					label="Delivery Target"
+					lineStyle={{ strokeDasharray: TARGET_LINE_DASH }}
+				/>
+			)}
 		</LineChart>
 	);
 };
@@ -231,7 +265,14 @@ const renderBody = ({
 	}
 
 	if (showWhen) {
-		return <WhenView history={history} palette={palette} height={height} />;
+		return (
+			<WhenView
+				history={history}
+				palette={palette}
+				targetColor={lineColor}
+				height={height}
+			/>
+		);
 	}
 
 	return (

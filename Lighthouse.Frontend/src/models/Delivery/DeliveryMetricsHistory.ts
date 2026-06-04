@@ -12,6 +12,7 @@ export interface FeatureMetric {
 
 export interface DeliveryMetricsHistoryPoint {
 	date: Date;
+	targetDateAtSnapshot: Date | null;
 	totalWork: number;
 	doneWork: number;
 	remainingWork: number;
@@ -114,6 +115,10 @@ function parsePoint(value: unknown): DeliveryMetricsHistoryPoint {
 	const point = asObject(value, "metrics-history point");
 	return {
 		date: asDate(point.date, "point.date"),
+		targetDateAtSnapshot: asNullableDate(
+			point.targetDateAtSnapshot,
+			"point.targetDateAtSnapshot",
+		),
 		totalWork: asNumber(point.totalWork, "point.totalWork"),
 		doneWork: asNumber(point.doneWork, "point.doneWork"),
 		remainingWork: asNumber(point.remainingWork, "point.remainingWork"),

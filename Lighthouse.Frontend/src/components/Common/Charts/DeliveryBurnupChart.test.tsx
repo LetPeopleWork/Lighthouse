@@ -102,6 +102,12 @@ describe("DeliveryBurnupChart", () => {
 		lineChartMock.mockClear();
 	});
 
+	it("renders no delivery-date reference marker on the burnup", () => {
+		render(<DeliveryBurnupChart history={getMockHistory()} />);
+
+		expect(screen.queryByTestId("mock-reference-line")).not.toBeInTheDocument();
+	});
+
 	it("renders a backlog series and a done series from the metrics history", () => {
 		render(<DeliveryBurnupChart history={getMockHistory()} />);
 
