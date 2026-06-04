@@ -5,6 +5,8 @@ Epic 4144 (More Detailed State Info) — second MVP-bundle feature, covers slice
 ADO Epic: https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/4144
 ADO Story (already created): https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5075
 
+> **⚠️ Pace-band metric superseded (2026-06-04) — see [ADR-053](../../product/architecture/adr-053-aging-pace-state-exit-with-cycle-time-terminal.md).** The **D12 / DDD-1 / DDD-1b** decisions below (the ADR-047 "cumulative reached-at-least-this-state population + imputation + majority-coverage fallback" metric) **shipped and bug #5145 recurred** on real Jira. The live metric is now: per-state band = `(last exit from S) − StartedDate` over items that *left* `S` (no imputation; columns = exactly the configured `DoingStates`); the **terminal column reuses the cycle-time percentiles** (lands on the lines by definition); the **non-decreasing clamp (DDD-1b) is the only piece retained**. Read those cells as historical context; RCA at `bug-5145-rca-v2.md`.
+
 ## Wave: DISCUSS / [REF] Pre-DISCUSS code reality check
 
 Before drafting this delta, the existing Work Item Aging chart code was inspected

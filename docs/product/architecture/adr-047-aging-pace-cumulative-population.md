@@ -1,12 +1,25 @@
 # ADR-047: Aging-Pace Bands — Cumulative Reached-At-Least-This-State Population (Connector-Agnostic)
 
-**Status**: Accepted (2026-06-01 — Morgan, interaction mode PROPOSE)
+**Status**: **SUPERSEDED (2026-06-04) by [ADR-053](./adr-053-aging-pace-state-exit-with-cycle-time-terminal.md)** — originally Accepted 2026-06-01 (Morgan, interaction mode PROPOSE)
 **Date**: 2026-06-01
 **Feature**: aging-pace-percentiles (Epic 4144 MVP bundle, slice F) — bug #5145 metric redesign
 **Decider**: Morgan (Solution Architect)
 **Supersedes**: the D12 / DDD-1 metric of ADR-019 (per-state-exit population). ADR-019's membership rule (§2, `ClosedDate ∈ window`), percentile function (§4, `PercentileCalculator`), and caching policy (§6) are **retained**.
 
 ADO: https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5145
+
+---
+
+> **⚠️ SUPERSEDED.** This "cumulative reached-at-least-this-state population + imputation + majority-coverage
+> fallback" metric **shipped and bug #5145 recurred** ("better but still wrong" on real Jira). RC: (RC-A) no
+> *Doing*-state population can equal the all-closed-items cycle-time lines, because items close from earlier
+> states; (RC-B) the imputation / fallback / cumulative population were themselves sources of wrongness, only
+> masked by the clamp. Replaced by **[ADR-053](./adr-053-aging-pace-state-exit-with-cycle-time-terminal.md)**:
+> per-state band = `(last exit from S) − StartedDate` over items that *left* `S` (no imputation, columns =
+> exactly the configured `DoingStates`), and the **terminal column simply reuses the cycle-time percentiles**
+> so it lands on the lines by definition. The non-decreasing clamp (DDD-1b) is the only piece retained. The
+> rest of this document is kept for historical context only — do not implement from it. See
+> `docs/feature/aging-pace-percentiles/bug-5145-rca-v2.md`.
 
 ---
 
