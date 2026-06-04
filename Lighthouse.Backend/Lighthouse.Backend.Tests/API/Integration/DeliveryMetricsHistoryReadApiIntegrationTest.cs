@@ -163,6 +163,24 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetMetricsHistory_SnapshotsRecordedBeforePredictability_CarryNoLikelihoodAndNoWhenDistribution()
+        {
+            var (portfolioId, deliveryId) = SeedDeliveryWithOnlyBacklogTotals();
+
+            client.AsPortfolioViewer(portfolioId);
+            var response = await client.GetAsync(MetricsHistoryUrl(deliveryId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(PointDatesInOrder(body), Is.True, body);
+                Assert.That(NoPointCarriesLikelihood(body), Is.True, body);
+                Assert.That(NoPointCarriesWhenDistribution(body), Is.True, body);
+            }
+        }
+
+        [Test]
         public async Task GetMetricsHistory_ImprovingWhenSpreadNarrows_DegradingWhenSpreadWidens()
         {
             var (improvingPortfolioId, improvingDeliveryId, _) = SeedDeliveryWithNarrowingWhenSpread();
@@ -427,6 +445,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static bool NoPointCarriesEstimatedItemCount(string body)
             => Points(body).All(point => point.EstimatedItemCount is null);
+
+        private static bool NoPointCarriesLikelihood(string body)
+            => Points(body).All(point => point.LikelihoodPercentage is null);
+
+        private static bool NoPointCarriesWhenDistribution(string body)
+            => Points(body).All(point => point.WhenDistribution is null or { Count: 0 });
 
         private static bool BodyCarriesEverySeries(string body)
         {
