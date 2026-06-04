@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import {
 	type DeliveryMetricsHistory,
@@ -33,10 +33,12 @@ vi.mock("@mui/x-charts/LineChart", () => ({
 	LineChart: lineChartMock,
 }));
 
+const referenceLineMock = vi.hoisted(() =>
+	vi.fn(({ label }) => <div data-testid="mock-reference-line">{label}</div>),
+);
+
 vi.mock("@mui/x-charts", () => ({
-	ChartsReferenceLine: vi.fn(({ label }) => (
-		<div data-testid="mock-reference-line">{label}</div>
-	)),
+	ChartsReferenceLine: referenceLineMock,
 }));
 
 import DeliveryPredictabilityChart from "./DeliveryPredictabilityChart";
@@ -52,6 +54,7 @@ interface SeriesEntry {
 interface AxisEntry {
 	data?: Date[];
 	scaleType?: string;
+	label?: string;
 	colorMap?: {
 		type?: string;
 		thresholds?: number[];
@@ -60,6 +63,19 @@ interface AxisEntry {
 }
 
 const LIKELIHOOD_SERIES_ID = "likelihood";
+const WHEN_70_SERIES_ID = "when-70";
+
+const getLatestReferenceLineProps = () => {
+	const lastCall =
+		referenceLineMock.mock.calls[referenceLineMock.mock.calls.length - 1];
+	return lastCall?.[0] as
+		| { y?: Date; lineStyle?: { strokeDasharray?: string } }
+		| undefined;
+};
+
+const switchToWhenView = () => {
+	fireEvent.click(screen.getByRole("button", { name: /when/i }));
+};
 
 const getLatestChartProps = () => {
 	const lastCall =
@@ -183,5 +199,134 @@ describe("DeliveryPredictabilityChart likelihood view", () => {
 		render(<DeliveryPredictabilityChart history={getMockHistory()} />);
 
 		expect(screen.getByText("Delivery Predictability")).toBeInTheDocument();
+	});
+});
+
+const getMockWhenHistory = (
+	overrides?: Partial<DeliveryMetricsHistory>,
+): DeliveryMetricsHistory => {
+	const history = parseDeliveryMetricsHistory({
+		deliveryDate: "2026-06-10T00:00:00Z",
+		firstSnapshotDate: "2026-06-01T00:00:00Z",
+		points: [
+			{
+				date: "2026-06-01T00:00:00Z",
+				totalWork: 20,
+				doneWork: 0,
+				remainingWork: 20,
+				estimatedItemCount: null,
+				forecastHowMany: null,
+				likelihoodPercentage: 40,
+				whenDistribution: [
+					{ probability: 50, expectedDate: "2026-06-08T00:00:00Z" },
+					{ probability: 70, expectedDate: "2026-06-12T00:00:00Z" },
+					{ probability: 85, expectedDate: "2026-06-15T00:00:00Z" },
+					{ probability: 95, expectedDate: "2026-06-18T00:00:00Z" },
+				],
+			},
+			{
+				date: "2026-06-02T00:00:00Z",
+				totalWork: 20,
+				doneWork: 8,
+				remainingWork: 12,
+				estimatedItemCount: null,
+				forecastHowMany: null,
+				likelihoodPercentage: 92,
+				whenDistribution: [
+					{ probability: 50, expectedDate: "2026-06-07T00:00:00Z" },
+					{ probability: 70, expectedDate: "2026-06-09T00:00:00Z" },
+					{ probability: 85, expectedDate: "2026-06-11T00:00:00Z" },
+					{ probability: 95, expectedDate: "2026-06-13T00:00:00Z" },
+				],
+			},
+		],
+	});
+	return { ...history, ...overrides };
+};
+
+describe("DeliveryPredictabilityChart when view", () => {
+	beforeEach(() => {
+		lineChartMock.mockClear();
+		referenceLineMock.mockClear();
+	});
+
+	it("plots the default 70th-percentile completion dates per snapshot when switched to the when view", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+
+		const props = getLatestChartProps();
+		const when70 = props?.series?.find(
+			(entry) => entry.id === WHEN_70_SERIES_ID,
+		);
+		expect(when70?.data).toEqual([
+			new Date("2026-06-12T00:00:00Z").getTime(),
+			new Date("2026-06-09T00:00:00Z").getTime(),
+		]);
+	});
+
+	it("plots the when view against a date y-axis", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+
+		const props = getLatestChartProps();
+		expect(props?.yAxis?.[0]?.scaleType).toBe("time");
+	});
+
+	it("draws a dashed reference line at the delivery target date in the when view", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+
+		const referenceLine = getLatestReferenceLineProps();
+		expect(referenceLine?.y?.getTime()).toBe(
+			new Date("2026-06-10T00:00:00Z").getTime(),
+		);
+		expect(referenceLine?.lineStyle?.strokeDasharray).toBeTruthy();
+	});
+
+	it("toggles the rendered series between the likelihood and when views", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		const likelihoodProps = getLatestChartProps();
+		expect(
+			likelihoodProps?.series?.some(
+				(entry) => entry.id === LIKELIHOOD_SERIES_ID,
+			),
+		).toBe(true);
+
+		switchToWhenView();
+
+		const whenProps = getLatestChartProps();
+		expect(
+			whenProps?.series?.some((entry) => entry.id === WHEN_70_SERIES_ID),
+		).toBe(true);
+		expect(
+			whenProps?.series?.some((entry) => entry.id === LIKELIHOOD_SERIES_ID),
+		).toBe(false);
+	});
+
+	it("shows the forward-only empty state in the when view when no point carries a whenDistribution", () => {
+		const history = getMockHistory();
+
+		render(<DeliveryPredictabilityChart history={history} />);
+
+		switchToWhenView();
+
+		expect(
+			screen.getByText(
+				/builds forward from today — no snapshots recorded yet/i,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("does not throw when toggling on empty history", () => {
+		const history = getMockHistory({ firstSnapshotDate: null, points: [] });
+
+		expect(() => {
+			render(<DeliveryPredictabilityChart history={history} />);
+			switchToWhenView();
+		}).not.toThrow();
 	});
 });
