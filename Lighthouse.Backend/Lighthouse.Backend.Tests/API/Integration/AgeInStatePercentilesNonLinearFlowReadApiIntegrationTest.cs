@@ -12,16 +12,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    public class AgeInStatePercentilesCumulativePopulationReadApiIntegrationTest
+    public class AgeInStatePercentilesNonLinearFlowReadApiIntegrationTest
     {
         private const string InProgress = "In Progress";
         private const string Review = "Review";
         private const string Test = "Test";
         private const string WaitingForFeedback = "Waiting for feedback";
         private const string Done = "Done";
-
-        private const string RedScaffoldReason =
-            "RED scaffold — pending #5145 Option A redesign; DELIVER un-ignores one at a time";
 
         private static int testDateOffset;
 
@@ -129,25 +126,32 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetAgeInStatePercentiles_ItemsSkipReview_ReviewPopulationIncludesSkippersByImputation()
+        [TestCase(WorkTrackingSystems.AzureDevOps)]
+        [TestCase(WorkTrackingSystems.Jira)]
+        [TestCase(WorkTrackingSystems.Linear)]
+        public async Task GetAgeInStatePercentiles_ItemsCloseFromDifferentStates_LastColumnEqualsCycleTimeLinesAcrossEveryConnector(WorkTrackingSystems system)
         {
-            var teamId = SeedReviewSkippersAlongsideReviewVisitors();
+            var teamId = SeedItemsClosingFromDifferentStates(system);
 
             client.AsTeamAdmin(teamId);
-            var response = await client.GetAsync(PercentilesUrl(teamId));
+            var paceResponse = await client.GetAsync(PercentilesUrl(teamId));
+            var cycleTimeResponse = await client.GetAsync(CycleTimeUrl(teamId));
 
-            var body = await response.Content.ReadAsStringAsync();
+            var paceBody = await paceResponse.Content.ReadAsStringAsync();
+            var cycleTimeBody = await cycleTimeResponse.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(paceResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), paceBody);
+                Assert.That(cycleTimeResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), cycleTimeBody);
 
-                var states = OrderedStateNames(body);
-                Assert.That(states, Does.Contain(Review),
-                    $"Review must be present: items that skipped it still reached at-or-after it and are imputed into its population — the skippers must not cause Review to be omitted. Body: {body}");
+                var lastState = PercentilesForState(paceBody, Test);
+                var cycleTime = PercentilesByKey(cycleTimeBody);
 
-                var review = PercentilesForState(body, Review);
-                Assert.That(review[70], Is.EqualTo(12),
-                    $"Review p70 must equal 12 — a value that exists ONLY among the 4 imputed skippers (cumulative ages 12,13,14,15), all of which exceed every visitor's Review age (2,3,4,5). p70 over the 8-observation imputed population lands at 12; over the 4 visitors alone no percentile can reach 12, so this value uniquely proves the skippers were imputed into Review. Body: {body}");
+                foreach (var percentile in new[] { 50, 70, 85, 95 })
+                {
+                    Assert.That(lastState[percentile], Is.EqualTo(cycleTime[percentile]),
+                        $"[{system}] The last column p{percentile} ({lastState[percentile]}) must equal the cycle-time line p{percentile} ({cycleTime[percentile]}) EVEN when most items close from earlier states and never reach the last Doing state — the rightmost column IS the whole-cycle-time distribution, not a subset over the few items that exited the last state. Pace: {paceBody} CycleTime: {cycleTimeBody}");
+                }
             }
         }
 
@@ -329,35 +333,39 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return team.Id;
         }
 
-        // visitor Review ages = {2,3,4,5}; skippers have no Review exit so they impute from their earliest at-or-after exit (the Test exit) = {12,13,14,15}, each above every visitor age; with-imputation Review pop sorted = {2,3,4,5,12,13,14,15} → p70 = item[floor(0.7*8)-1=4] = 12; visitors-only pop = {2,3,4,5} can never yield 12 → p70==12 is the unique signal that imputation ran.
-        private int SeedReviewSkippersAlongsideReviewVisitors()
+        private int SeedItemsClosingFromDifferentStates(WorkTrackingSystems system)
         {
             using var scope = factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
-            var team = AddTeamWithDoingStates(sp, WorkTrackingSystems.AzureDevOps, [InProgress, Review, Test]);
+            var team = AddTeamWithDoingStates(sp, system, [InProgress, Review, Test]);
             var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
             var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
 
-            for (var i = 0; i < 4; i++)
+            var closeFromInProgress = new[] { 3, 4, 5, 6 };
+            foreach (var (closeAge, index) in closeFromInProgress.Select((value, i) => (value, i)))
             {
-                var startedDate = windowStart.AddDays(10 + i);
-                var reviewExit = 2 + i;
-                var testExit = reviewExit + 4;
-                var item = AddCompletedItem(workItemRepository, team, $"VISIT-{i}", startedDate, closedAfterTestAgeDays: testExit);
-
-                AddExitTransition(transitionRepository, item, InProgress, Review, reviewExit - 1, startedDate);
-                AddExitTransition(transitionRepository, item, Review, Test, reviewExit, startedDate);
-                AddExitTransition(transitionRepository, item, Test, Done, testExit, startedDate);
+                var startedDate = windowStart.AddDays(10 + index);
+                var item = AddCompletedItem(workItemRepository, team, $"IP-{index}", startedDate, closedAfterTestAgeDays: closeAge);
+                AddExitTransition(transitionRepository, item, InProgress, Done, closeAge, startedDate);
             }
 
-            for (var i = 0; i < 4; i++)
+            var closeFromReview = new[] { 10, 11, 12 };
+            foreach (var (closeAge, index) in closeFromReview.Select((value, i) => (value, i)))
             {
-                var startedDate = windowStart.AddDays(30 + i);
-                var testExit = 12 + i;
-                var item = AddCompletedItem(workItemRepository, team, $"SKIP-{i}", startedDate, closedAfterTestAgeDays: testExit);
+                var startedDate = windowStart.AddDays(30 + index);
+                var item = AddCompletedItem(workItemRepository, team, $"RV-{index}", startedDate, closedAfterTestAgeDays: closeAge);
+                AddExitTransition(transitionRepository, item, InProgress, Review, 2 + index, startedDate);
+                AddExitTransition(transitionRepository, item, Review, Done, closeAge, startedDate);
+            }
 
-                AddExitTransition(transitionRepository, item, InProgress, Test, testExit - 1, startedDate);
-                AddExitTransition(transitionRepository, item, Test, Done, testExit, startedDate);
+            var closeFromTest = new[] { 20, 21, 22 };
+            foreach (var (closeAge, index) in closeFromTest.Select((value, i) => (value, i)))
+            {
+                var startedDate = windowStart.AddDays(50 + index);
+                var item = AddCompletedItem(workItemRepository, team, $"TS-{index}", startedDate, closedAfterTestAgeDays: closeAge);
+                AddExitTransition(transitionRepository, item, InProgress, Review, 3 + index, startedDate);
+                AddExitTransition(transitionRepository, item, Review, Test, 8 + index, startedDate);
+                AddExitTransition(transitionRepository, item, Test, Done, closeAge, startedDate);
             }
 
             workItemRepository.Save().GetAwaiter().GetResult();

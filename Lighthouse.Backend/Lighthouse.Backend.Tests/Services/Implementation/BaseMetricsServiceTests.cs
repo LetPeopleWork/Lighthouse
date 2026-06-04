@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static readonly string[] WorkflowOrder = ["In Progress", "Review", "Test"];
 
-        private static readonly string[] InProgressAndReview = ["In Progress", "Review"];
+        private static readonly string[] InProgressAndTest = ["In Progress", "Test"];
 
         [Test]
         public void ComputeAgeInStatePercentiles_CompletedItemsAcrossThreeStates_ReturnsExactCumulativeAgeAtExitPercentilesPerState()
@@ -53,17 +53,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void ComputeAgeInStatePercentiles_StateWithNoCompletedVisits_OmitsThatStateEntry()
+        public void ComputeAgeInStatePercentiles_NonLastStateWithNoCompletedVisits_OmitsThatStateEntry()
         {
             var item = ItemStartedAtFixtureStart();
             item = WithTransitions(item,
                 Transition("To Do", "In Progress", FixtureStart),
-                Transition("In Progress", "Review", FixtureStart.AddDays(2)),
-                Transition("Review", "Done", FixtureStart.AddDays(5)));
+                Transition("In Progress", "Test", FixtureStart.AddDays(2)),
+                Transition("Test", "Done", FixtureStart.AddDays(5)));
 
             var result = TestableBaseMetricsService.Compute([item], WorkflowOrder, RequestedPercentiles).ToList();
 
-            Assert.That(StatesInOrder(result), Is.EqualTo(InProgressAndReview));
+            Assert.That(StatesInOrder(result), Is.EqualTo(InProgressAndTest));
         }
 
         [Test]
@@ -381,7 +381,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 IReadOnlyList<string> doingStatesInWorkflowOrder,
                 IReadOnlyList<int> requestedPercentiles)
             {
-                return ComputeAgeInStatePercentiles(completedItemsInWindow, doingStatesInWorkflowOrder, doingStatesInWorkflowOrder, requestedPercentiles);
+                var items = completedItemsInWindow.ToList();
+                var cycleTimes = items.Select(item => item.CycleTime).Where(cycleTime => cycleTime > 0).ToList();
+                var cycleTimePercentiles = requestedPercentiles
+                    .Select(percentile => new PercentileValue(percentile, PercentileCalculator.CalculatePercentile(cycleTimes, percentile)))
+                    .ToList();
+
+                return ComputeAgeInStatePercentiles(items, doingStatesInWorkflowOrder, requestedPercentiles, cycleTimePercentiles);
             }
 
             public static IReadOnlyList<CumulativeStateTimeStateRowDto> ComputeBars(

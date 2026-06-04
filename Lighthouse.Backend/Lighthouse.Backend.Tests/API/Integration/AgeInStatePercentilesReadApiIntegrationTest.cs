@@ -383,6 +383,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Name = $"Team {Guid.NewGuid():N}",
                 WorkTrackingSystemConnection = connection,
                 DoneItemsCutoffDays = 0,
+                DoingStates = [InProgress, Review, Test],
             };
 
             var teamRepository = sp.GetRequiredService<IRepository<Team>>();

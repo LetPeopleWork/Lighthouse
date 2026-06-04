@@ -223,6 +223,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Name = $"Portfolio {Guid.NewGuid():N}",
                 WorkTrackingSystemConnection = connection,
+                DoingStates = [Analyzing, Building, Validating],
             };
 
             var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
