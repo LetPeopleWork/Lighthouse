@@ -17,7 +17,7 @@ const config = {
 	thresholds: { high: 80, low: 70, break: 0 },
 	mutate: [
 		"src/models/Delivery/FeverTrail.ts",
-		"src/components/Common/Charts/useFeverTrailAnimation.ts",
+		"src/components/Common/Charts/useFeatureFeverReveal.ts",
 		"src/components/Common/Charts/DeliveryFeverChart.tsx",
 	],
 	ignorePatterns: [

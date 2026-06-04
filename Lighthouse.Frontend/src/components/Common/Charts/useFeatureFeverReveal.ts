@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const REVEAL_INTERVAL_MS = 220;
+const REVEAL_INTERVAL_MS = 320;
 
 export interface FeatureFeverReveal {
 	frame: number | null;
 	isRunning: boolean;
 	run: () => void;
-	showLatest: () => void;
 }
 
 export function useFeatureFeverReveal(maxLength: number): FeatureFeverReveal {
@@ -22,15 +21,10 @@ export function useFeatureFeverReveal(maxLength: number): FeatureFeverReveal {
 		setIsRunning(false);
 	}, []);
 
-	const showLatest = useCallback(() => {
-		stop();
-		setFrame(null);
-	}, [stop]);
-
 	const run = useCallback(() => {
 		stop();
 		if (maxLength <= 1) {
-			setFrame(0);
+			setFrame(null);
 			return;
 		}
 		setFrame(0);
@@ -49,5 +43,5 @@ export function useFeatureFeverReveal(maxLength: number): FeatureFeverReveal {
 
 	useEffect(() => stop, [stop]);
 
-	return { frame, isRunning, run, showLatest };
+	return { frame, isRunning, run };
 }

@@ -7,9 +7,11 @@ import {
 	Typography,
 	useTheme,
 } from "@mui/material";
+import type { ScatterValueType } from "@mui/x-charts";
 import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import { ScatterChart } from "@mui/x-charts/ScatterChart";
 import type React from "react";
+import { useCallback, useState } from "react";
 import type { DeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
 import {
 	deriveFeatureFeverChart,
@@ -28,7 +30,7 @@ const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no feature snapshots recorded yet.";
 
 const ZONE_CAPTION =
-	"One bubble per feature at its latest snapshot. Red (top-left) is off track, green (bottom-right) is on track. Run the animation to watch each feature move over time.";
+	"One bubble per feature at its latest snapshot. Red (top-left) is off track, green (bottom-right) is on track. Run the animation to watch each feature move over time, or click a feature to show or hide it.";
 
 const ZONE_FILL_OPACITY = 0.25;
 
@@ -49,24 +51,31 @@ interface ScatterDatum {
 	id: number;
 }
 
+interface ColouredFeature extends FeatureFeverSeries {
+	color: string;
+}
+
 const zoneColors = (theme: Theme): Record<FeverZone, string> => ({
 	green: theme.palette.success.main,
 	amber: theme.palette.warning.main,
 	red: theme.palette.error.main,
 });
 
+const currentPoint = (feature: FeatureFeverSeries, frame: number | null) =>
+	frame === null
+		? feature.latest
+		: feature.points[Math.min(frame, feature.points.length - 1)];
+
 const visiblePoints = (
 	feature: FeatureFeverSeries,
 	frame: number | null,
 ): ScatterDatum[] => {
-	const points =
-		frame === null ? [feature.latest] : feature.points.slice(0, frame + 1);
-	return points.map((point, index) => ({
-		x: point.completion,
-		y: point.chanceOfLate,
-		id: index,
-	}));
+	const point = currentPoint(feature, frame);
+	return [{ x: point.completion, y: point.chanceOfLate, id: 0 }];
 };
+
+const likelihoodTooltip = (value: ScatterValueType | null): string =>
+	value === null ? "" : `${Math.round(100 - value.y)}% Likelihood`;
 
 const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	colors,
@@ -92,14 +101,58 @@ const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	);
 };
 
+interface FeatureLegendProps {
+	features: ColouredFeature[];
+	hidden: ReadonlySet<string>;
+	onToggle: (referenceId: string) => void;
+}
+
+const FeatureLegend: React.FC<FeatureLegendProps> = ({
+	features,
+	hidden,
+	onToggle,
+}) => (
+	<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mt: 1 }}>
+		{features.map((feature) => {
+			const isHidden = hidden.has(feature.referenceId);
+			return (
+				<Box
+					key={feature.referenceId}
+					component="button"
+					type="button"
+					onClick={() => onToggle(feature.referenceId)}
+					aria-pressed={!isHidden}
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						gap: 0.75,
+						border: "none",
+						background: "none",
+						cursor: "pointer",
+						p: 0,
+						opacity: isHidden ? 0.4 : 1,
+					}}
+				>
+					<Box
+						sx={{
+							width: 12,
+							height: 12,
+							borderRadius: "50%",
+							backgroundColor: feature.color,
+						}}
+					/>
+					<Typography variant="body2">{feature.name}</Typography>
+				</Box>
+			);
+		})}
+	</Box>
+);
+
 const runButtonLabel = (isRunning: boolean, frame: number | null): string => {
 	if (isRunning) {
 		return "Running…";
 	}
-	if (frame === null) {
-		return "Run";
-	}
-	return "Show latest";
+	return frame === null ? "Run" : "Rerun";
 };
 
 const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
@@ -107,13 +160,25 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	title = "Delivery Progress",
 }) => {
 	const theme = useTheme();
+	const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
 	const chart = deriveFeatureFeverChart(history);
 	const maxLength = chart.features.reduce(
 		(longest, feature) => Math.max(longest, feature.points.length),
 		0,
 	);
-	const { frame, isRunning, run, showLatest } =
-		useFeatureFeverReveal(maxLength);
+	const { frame, isRunning, run } = useFeatureFeverReveal(maxLength);
+
+	const toggle = useCallback((referenceId: string) => {
+		setHidden((previous) => {
+			const next = new Set(previous);
+			if (next.has(referenceId)) {
+				next.delete(referenceId);
+			} else {
+				next.add(referenceId);
+			}
+			return next;
+		});
+	}, []);
 
 	if (chart.empty) {
 		return (
@@ -128,16 +193,25 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 		);
 	}
 
-	const series = chart.features.map((feature, index) => ({
-		id: feature.referenceId,
-		label: feature.name,
-		color: FEATURE_COLORS[index % FEATURE_COLORS.length],
-		markerSize: 7,
-		data: visiblePoints(feature, frame),
-	}));
+	const colouredFeatures: ColouredFeature[] = chart.features.map(
+		(feature, index) => ({
+			...feature,
+			color: FEATURE_COLORS[index % FEATURE_COLORS.length],
+		}),
+	);
+
+	const series = colouredFeatures
+		.filter((feature) => !hidden.has(feature.referenceId))
+		.map((feature) => ({
+			id: feature.referenceId,
+			label: feature.name,
+			color: feature.color,
+			markerSize: 7,
+			valueFormatter: likelihoodTooltip,
+			data: visiblePoints(feature, frame),
+		}));
 
 	const canAnimate = maxLength > 1;
-	const onRunClick = frame === null ? run : showLatest;
 
 	return (
 		<Card
@@ -159,7 +233,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 						<Button
 							size="small"
 							variant="outlined"
-							onClick={onRunClick}
+							onClick={run}
 							disabled={isRunning}
 						>
 							{runButtonLabel(isRunning, frame)}
@@ -171,9 +245,15 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 					yAxis={[{ min: 0, max: 100, label: "Chance of Being Late (%)" }]}
 					series={series}
 					height={320}
+					hideLegend
 				>
 					<FeverZoneBands colors={zoneColors(theme)} />
 				</ScatterChart>
+				<FeatureLegend
+					features={colouredFeatures}
+					hidden={hidden}
+					onToggle={toggle}
+				/>
 				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
 					{ZONE_CAPTION}
 				</Typography>

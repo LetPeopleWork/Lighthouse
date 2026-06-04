@@ -51,6 +51,7 @@ interface SeriesEntry {
 	label?: string;
 	color?: string;
 	data?: ScatterDatum[];
+	valueFormatter?: (value: { x: number; y: number }) => string;
 }
 
 interface AxisEntry {
@@ -120,53 +121,60 @@ describe("DeliveryFeverChart", () => {
 		vi.useRealTimers();
 	});
 
-	it("shows one bubble per feature at its latest snapshot by default", () => {
+	it("shows a single bubble per feature at its latest snapshot by default", () => {
 		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
-		const checkout = seriesById("F-1");
-		const search = seriesById("F-2");
-		expect(checkout?.data).toEqual([{ x: 60, y: 5, id: 0 }]);
-		expect(search?.data).toEqual([{ x: 40, y: 70, id: 0 }]);
+		expect(seriesById("F-1")?.data).toEqual([{ x: 60, y: 5, id: 0 }]);
+		expect(seriesById("F-2")?.data).toEqual([{ x: 40, y: 70, id: 0 }]);
 	});
 
-	it("labels each feature series with its name and a distinct colour for the legend", () => {
+	it("labels each feature series with its name and a distinct colour", () => {
 		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
-		const checkout = seriesById("F-1");
-		const search = seriesById("F-2");
-		expect(checkout?.label).toBe("Checkout");
-		expect(search?.label).toBe("Search");
-		expect(checkout?.color).not.toBe(search?.color);
+		expect(seriesById("F-1")?.label).toBe("Checkout");
+		expect(seriesById("F-2")?.label).toBe("Search");
+		expect(seriesById("F-1")?.color).not.toBe(seriesById("F-2")?.color);
 	});
 
-	it("reveals each feature's full trail when the animation is run", () => {
+	it("moves a single bubble per feature during the animation, never a growing trail", () => {
 		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
 		act(() => {
 			fireEvent.click(screen.getByRole("button", { name: "Run" }));
 		});
-		act(() => {
-			vi.advanceTimersByTime(60_000);
-		});
 
-		expect(seriesById("F-1")?.data).toHaveLength(2);
-		expect(seriesById("F-2")?.data).toHaveLength(2);
-	});
-
-	it("returns to one bubble per feature when showing the latest again", () => {
-		render(<DeliveryFeverChart history={twoFeatureHistory} />);
-
-		act(() => {
-			fireEvent.click(screen.getByRole("button", { name: "Run" }));
-		});
-		act(() => {
-			vi.advanceTimersByTime(60_000);
-		});
-		act(() => {
-			fireEvent.click(screen.getByRole("button", { name: "Show latest" }));
-		});
-
+		expect(seriesById("F-1")?.data).toEqual([{ x: 20, y: 10, id: 0 }]);
 		expect(seriesById("F-1")?.data).toHaveLength(1);
+
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+
+		expect(seriesById("F-1")?.data).toEqual([{ x: 60, y: 5, id: 0 }]);
+		expect(seriesById("F-1")?.data).toHaveLength(1);
+	});
+
+	it("formats the tooltip value as the feature's likelihood", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+
+		expect(seriesById("F-1")?.valueFormatter?.({ x: 60, y: 5 })).toBe(
+			"95% Likelihood",
+		);
+	});
+
+	it("hides a feature from the chart when its legend entry is clicked, and restores it on a second click", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+
+		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
+		});
+		expect(seriesById("F-1")).toBeUndefined();
+		expect(seriesById("F-2")).toBeDefined();
+
+		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
+		});
+		expect(seriesById("F-1")).toBeDefined();
 	});
 
 	it("labels the axes as completion rate and chance of being late on a 0-100 scale", () => {
@@ -227,28 +235,14 @@ describe("useFeatureFeverReveal", () => {
 		expect(result.current.isRunning).toBe(false);
 	});
 
-	it("returns to the latest when showLatest is called", () => {
-		const { result } = renderHook(() => useFeatureFeverReveal(3));
-
-		act(() => {
-			result.current.run();
-		});
-		act(() => {
-			result.current.showLatest();
-		});
-
-		expect(result.current.frame).toBeNull();
-		expect(result.current.isRunning).toBe(false);
-	});
-
-	it("reveals a single-frame chart immediately without a timer", () => {
+	it("stays on the latest without a timer when there is only one frame", () => {
 		const { result } = renderHook(() => useFeatureFeverReveal(1));
 
 		act(() => {
 			result.current.run();
 		});
 
-		expect(result.current.frame).toBe(0);
+		expect(result.current.frame).toBeNull();
 		expect(vi.getTimerCount()).toBe(0);
 	});
 
