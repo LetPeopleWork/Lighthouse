@@ -150,8 +150,30 @@ namespace Lighthouse.Backend.Services.Implementation
                 snapshot.EstimatedItemCount = estimatedItemCount > 0 ? estimatedItemCount : null;
                 snapshot.LikelihoodPercentage = LikelihoodForElapsedDays(elapsedDays);
                 snapshot.WhenDistributionJson = BuildWhenDistributionJson(recordedAt, elapsedDays);
+                snapshot.FeatureBreakdownJson = BuildFeatureBreakdownJson(elapsedDays);
             }
         }
+
+        private static string BuildFeatureBreakdownJson(int elapsedDays)
+        {
+            var progress = (double)elapsedDays / DemoBurnupDays;
+            var features = new[]
+            {
+                BuildFeatureMetric("DEMO-FEAT-1", "Crew Life Support", progress * 130, 65 + (elapsedDays * 2.5)),
+                BuildFeatureMetric("DEMO-FEAT-2", "Orbital Docking", progress * 50, 45 - (elapsedDays * 2.5)),
+                BuildFeatureMetric("DEMO-FEAT-3", "Heat Shield Testing", progress * 60, 50),
+            };
+
+            return JsonSerializer.Serialize(features, WhenDistributionJsonOptions);
+        }
+
+        private static object BuildFeatureMetric(string referenceId, string name, double completion, double likelihood) => new
+        {
+            ReferenceId = referenceId,
+            Name = name,
+            Completion = Math.Round(Math.Clamp(completion, 0, 100), 1),
+            Likelihood = Math.Round(Math.Clamp(likelihood, 0, 100), 1),
+        };
 
         private static double LikelihoodForElapsedDays(int elapsedDays)
         {

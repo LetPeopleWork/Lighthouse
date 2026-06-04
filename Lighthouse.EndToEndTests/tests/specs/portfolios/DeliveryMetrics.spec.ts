@@ -40,6 +40,7 @@ test("@walking_skeleton @US-01 forecaster opens a delivery's Metrics tab and see
 
 	await expect(metricsTab.feverChart).toBeVisible();
 	await expect.poll(() => metricsTab.countFeverBubbles()).toBeGreaterThan(0);
+	await expect(metricsTab.feverRunButton).toBeVisible();
 
 	await metricsTab.openWorkItemsTab();
 	await expect(page.getByText("Feature Name")).toBeVisible();

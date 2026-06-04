@@ -54,6 +54,10 @@ export class DeliveryMetricsTab {
 		return this.feverChart.locator(FEVER_BUBBLE_SELECTOR).count();
 	}
 
+	get feverRunButton(): Locator {
+		return this.feverChart.getByRole("button", { name: "Run" });
+	}
+
 	predictabilitySeriesLine(seriesId: string): Locator {
 		return this.predictabilityChart.locator(
 			`${LINE_ELEMENT_SELECTOR}[data-series="${seriesId}"]`,
