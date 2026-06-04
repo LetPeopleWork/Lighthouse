@@ -40,16 +40,6 @@ const latestEstimatedPoint = (
 	return estimated[estimated.length - 1];
 };
 
-const estimatedCaption = (
-	points: DeliveryMetricsHistoryPoint[],
-): string | null => {
-	const latest = latestEstimatedPoint(points);
-	if (latest === undefined) {
-		return null;
-	}
-	return `${latest.estimatedItemCount} of ${latest.totalWork} backlog items are estimated (features not yet broken down)`;
-};
-
 interface BurnupColors {
 	backlog: string;
 	done: string;
@@ -122,7 +112,6 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 		done: theme.palette.primary.main,
 		estimated: theme.palette.warning.main,
 	});
-	const caption = estimatedCaption(history.points);
 
 	return (
 		<Card
@@ -159,11 +148,6 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 						lineStyle={{ stroke: theme.palette.error.main }}
 					/>
 				</LineChart>
-				{caption ? (
-					<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-						{caption}
-					</Typography>
-				) : null}
 			</CardContent>
 		</Card>
 	);

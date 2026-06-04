@@ -6,8 +6,6 @@ const PREDICTABILITY_CHART_TEST_ID = "delivery-predictability-chart";
 const FEVER_CHART_TEST_ID = "delivery-fever-chart";
 const LINE_ELEMENT_SELECTOR = "path.MuiLineChart-line";
 const FEVER_BUBBLE_SELECTOR = "circle.MuiScatterChart-marker";
-const ESTIMATED_CAPTION_PATTERN =
-	/are estimated \(features not yet broken down\)/;
 
 export class DeliveryMetricsTab {
 	private readonly container: Locator;
@@ -20,10 +18,6 @@ export class DeliveryMetricsTab {
 		return this.container
 			.page()
 			.locator(`[data-testid="${BURNUP_CHART_TEST_ID}"]`);
-	}
-
-	get estimatedItemsCaption(): Locator {
-		return this.burnupChart.getByText(ESTIMATED_CAPTION_PATTERN);
 	}
 
 	get predictabilityChart(): Locator {

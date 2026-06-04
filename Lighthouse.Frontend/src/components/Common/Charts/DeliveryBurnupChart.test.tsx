@@ -159,7 +159,7 @@ describe("DeliveryBurnupChart", () => {
 		expect(screen.queryByText("Delivery Burnup")).not.toBeInTheDocument();
 	});
 
-	it("plots the dotted estimated-items line and the caption when points carry an estimated count", () => {
+	it("plots the dotted estimated-items line when points carry an estimated count", () => {
 		const history = getMockHistory();
 		history.points[0].estimatedItemCount = 12;
 		history.points[1].estimatedItemCount = 7;
@@ -175,15 +175,9 @@ describe("DeliveryBurnupChart", () => {
 		expect(props?.sx?.[ESTIMATED_LINE_SELECTOR]?.strokeDasharray).toBeTruthy();
 		expect(estimated?.color).not.toBe(testTheme.palette.text.secondary);
 		expect(estimated?.color).not.toBe(testTheme.palette.primary.main);
-
-		expect(
-			screen.getByText(
-				/7 of 20 backlog items are estimated \(features not yet broken down\)/i,
-			),
-		).toBeInTheDocument();
 	});
 
-	it("gaps the dotted line where a point is fully broken down and captions the latest estimated point", () => {
+	it("gaps the dotted line where a point is fully broken down", () => {
 		const history = getMockHistory();
 		history.points[0].estimatedItemCount = 9;
 		history.points[1].estimatedItemCount = 0;
@@ -195,21 +189,14 @@ describe("DeliveryBurnupChart", () => {
 			(entry) => entry.label === ESTIMATED_SERIES_LABEL,
 		);
 		expect(estimated?.data).toEqual([9, null]);
-
-		expect(
-			screen.getByText(
-				/9 of 20 backlog items are estimated \(features not yet broken down\)/i,
-			),
-		).toBeInTheDocument();
 	});
 
-	it("renders no estimated series and no caption when no point carries an estimated count", () => {
+	it("renders no estimated series when no point carries an estimated count", () => {
 		render(<DeliveryBurnupChart history={getMockHistory()} />);
 
 		const props = getLatestChartProps();
 		const labels = props?.series?.map((entry) => entry.label) ?? [];
 		expect(labels).not.toContain(ESTIMATED_SERIES_LABEL);
-		expect(screen.queryByText(/are estimated/i)).not.toBeInTheDocument();
 	});
 
 	it("shows the forward-only empty state when no snapshots exist", () => {
