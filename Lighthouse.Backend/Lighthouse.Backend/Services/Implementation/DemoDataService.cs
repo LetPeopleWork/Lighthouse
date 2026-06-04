@@ -135,6 +135,10 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             const int totalWork = DemoBurnupDays;
             const int initialEstimatedItemCount = 8;
+            const int targetReplanOnElapsedDay = 7;
+
+            var currentTarget = DateTime.UtcNow.Date.AddDays(DemoBurnupDays);
+            var originalTarget = currentTarget.AddDays(-targetReplanOnElapsedDay);
 
             for (var daysAgo = DemoBurnupDays; daysAgo >= 0; daysAgo--)
             {
@@ -144,6 +148,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var estimatedItemCount = initialEstimatedItemCount - elapsedDays;
 
                 var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, recordedAt);
+                snapshot.TargetDateAtSnapshot = elapsedDays < targetReplanOnElapsedDay ? originalTarget : currentTarget;
                 snapshot.TotalWork = totalWork;
                 snapshot.DoneWork = doneWork;
                 snapshot.RemainingWork = totalWork - doneWork;

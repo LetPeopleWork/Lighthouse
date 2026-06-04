@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                         .Sum(work => work.TotalWorkItems);
 
                     var snapshot = snapshotRepository.GetOrCreateForDay(delivery.Id, recordedAt);
+                    snapshot.TargetDateAtSnapshot = delivery.Date;
                     snapshot.TotalWork = totalWork;
                     snapshot.DoneWork = totalWork - remainingWork;
                     snapshot.RemainingWork = remainingWork;

@@ -260,6 +260,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_DeliveryWithTargetDate_RecordsTargetDateAtSnapshot()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+            var targetDate = await DeliveryTargetDate(fixture);
+
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            Assert.That(snapshot.TargetDateAtSnapshot, Is.EqualTo(targetDate));
+        }
+
+        [Test]
+        public async Task HandleAsync_TargetMovedAndRerunSameDay_RecordsMovedTargetInOneRow()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var movedTarget = await MoveDeliveryTargetDate(fixture, daysToAdd: 14);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            var snapshot = await TodaysSnapshot(fixture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
+                Assert.That(snapshot.TargetDateAtSnapshot, Is.EqualTo(movedTarget));
+            }
+        }
+
+        [Test]
         public async Task HandleAsync_DeliveryWithNoPlottableFeatures_RecordsNullFeatureBreakdown()
         {
             var fixture = await SeedDeliveryWithNoPlottableFeatures();
@@ -573,6 +602,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);
         }
 
+        private async Task<DateTime> DeliveryTargetDate(RecorderFixture fixture)
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var delivery = await dbContext.Deliveries.SingleAsync(d => d.Id == fixture.DeliveryId);
+            return delivery.Date;
+        }
+
+        private async Task<DateTime> MoveDeliveryTargetDate(RecorderFixture fixture, int daysToAdd)
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var delivery = await dbContext.Deliveries.SingleAsync(d => d.Id == fixture.DeliveryId);
+            delivery.Date = delivery.Date.AddDays(daysToAdd);
+            await dbContext.SaveChangesAsync();
+            return delivery.Date;
+        }
+
         private async Task<SnapshotView> TodaysSnapshot(RecorderFixture fixture)
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -607,6 +652,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private static SnapshotView ToView(DeliveryMetricSnapshot snapshot)
             => new()
             {
+                TargetDateAtSnapshot = snapshot.TargetDateAtSnapshot,
                 TotalWork = snapshot.TotalWork,
                 DoneWork = snapshot.DoneWork,
                 RemainingWork = snapshot.RemainingWork,
@@ -710,6 +756,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private sealed record SnapshotView
         {
+            public DateTime? TargetDateAtSnapshot { get; init; }
             public int TotalWork { get; init; }
             public int DoneWork { get; init; }
             public int RemainingWork { get; init; }

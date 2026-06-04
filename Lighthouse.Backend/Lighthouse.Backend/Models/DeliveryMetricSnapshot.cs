@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Models
 
         public DateTime RecordedAt { get; set; }
 
+        public DateTime? TargetDateAtSnapshot { get; set; }
+
         public int TotalWork { get; set; }
 
         public int DoneWork { get; set; }

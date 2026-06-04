@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.API.DTO
 
     public sealed record DeliveryMetricsHistoryPointDto(
         DateTime Date,
+        DateTime? TargetDateAtSnapshot,
         int TotalWork,
         int DoneWork,
         int RemainingWork,
@@ -41,6 +42,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             return new DeliveryMetricsHistoryPointDto(
                 snapshot.RecordedAt,
+                snapshot.TargetDateAtSnapshot,
                 snapshot.TotalWork,
                 snapshot.DoneWork,
                 snapshot.RemainingWork,

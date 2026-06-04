@@ -134,6 +134,39 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetMetricsHistory_SnapshotsRecordedWithTargetDates_CarryTargetPerPoint()
+        {
+            var (portfolioId, deliveryId, earlierTarget, laterTarget) = SeedDeliveryWithVaryingRecordedTarget();
+
+            client.AsPortfolioViewer(portfolioId);
+            var body = await (await client.GetAsync(MetricsHistoryUrl(deliveryId))).Content.ReadAsStringAsync();
+
+            var points = Points(body);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(EveryPointCarriesTargetDate(body), Is.True, body);
+                Assert.That(points[0].TargetDateAtSnapshot, Is.EqualTo(earlierTarget), body);
+                Assert.That(points[^1].TargetDateAtSnapshot, Is.EqualTo(laterTarget), body);
+            }
+        }
+
+        [Test]
+        public async Task GetMetricsHistory_SnapshotsRecordedBeforeTargetCapture_CarryNoTargetButKeepDeliveryDate()
+        {
+            var (portfolioId, deliveryId) = SeedDeliveryWithSnapshotSeries();
+
+            client.AsPortfolioViewer(portfolioId);
+            var response = await client.GetAsync(MetricsHistoryUrl(deliveryId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(NoPointCarriesTargetDate(body), Is.True, body);
+                Assert.That(DeliveryDateIsPresent(body), Is.True, body);
+            }
+        }
+
+        [Test]
         public async Task GetMetricsHistory_ConsolidatedEndpoint_CarriesEverySeriesInOneResponse()
         {
             var (portfolioId, deliveryId) = SeedDeliveryWithEverySeriesRecorded();
@@ -307,6 +340,51 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dbContext.SaveChanges();
 
             return (portfolio.Id, delivery.Id);
+        }
+
+        private (int portfolioId, int deliveryId, DateTime earlierTarget, DateTime laterTarget) SeedDeliveryWithVaryingRecordedTarget()
+        {
+            using var scope = factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+
+            var portfolio = AddPortfolio(scope.ServiceProvider);
+            var laterTarget = DateTime.UtcNow.Date.AddDays(30);
+            var earlierTarget = laterTarget.AddDays(-14);
+            var delivery = new Delivery("Release 6", laterTarget, portfolio.Id);
+            dbContext.Deliveries.Add(delivery);
+            dbContext.SaveChanges();
+
+            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = firstDay,
+                TargetDateAtSnapshot = earlierTarget,
+                TotalWork = 10,
+                DoneWork = 2,
+                RemainingWork = 8,
+            });
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = firstDay.AddDays(1),
+                TargetDateAtSnapshot = earlierTarget,
+                TotalWork = 10,
+                DoneWork = 5,
+                RemainingWork = 5,
+            });
+            dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = delivery.Id,
+                RecordedAt = firstDay.AddDays(2),
+                TargetDateAtSnapshot = laterTarget,
+                TotalWork = 10,
+                DoneWork = 9,
+                RemainingWork = 1,
+            });
+            dbContext.SaveChanges();
+
+            return (portfolio.Id, delivery.Id, earlierTarget, laterTarget);
         }
 
         private (int portfolioId, int deliveryId) SeedDeliveryWithoutSnapshots()
@@ -545,11 +623,26 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return dto?.FirstSnapshotDate is null;
         }
 
+        private static bool DeliveryDateIsPresent(string body)
+        {
+            var dto = JsonSerializer.Deserialize<HistoryView>(body, CaseInsensitiveJson);
+            return dto is not null && dto.DeliveryDate != default;
+        }
+
         private static bool EveryPointCarriesBacklogTotal(string body)
         {
             var points = Points(body);
             return points.Count > 0 && points.All(point => point.TotalWork > 0);
         }
+
+        private static bool EveryPointCarriesTargetDate(string body)
+        {
+            var points = Points(body);
+            return points.Count > 0 && points.All(point => point.TargetDateAtSnapshot is not null);
+        }
+
+        private static bool NoPointCarriesTargetDate(string body)
+            => Points(body).All(point => point.TargetDateAtSnapshot is null);
 
         private static bool NoPointCarriesEstimatedItemCount(string body)
             => Points(body).All(point => point.EstimatedItemCount is null);
@@ -596,6 +689,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private sealed record HistoryPointView(
             DateTime Date,
+            DateTime? TargetDateAtSnapshot,
             int TotalWork,
             int DoneWork,
             int RemainingWork,

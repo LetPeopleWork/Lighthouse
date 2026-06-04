@@ -384,6 +384,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("RemainingWork")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("TargetDateAtSnapshot")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("TotalWork")
                         .HasColumnType("integer");
 
