@@ -21,6 +21,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static readonly int[] RecordedWhenPercentiles = [50, 70, 85, 95];
 
+        private static readonly string[] ExpectedBreakdownReferenceIds = ["FEAT-1", "FEAT-2"];
+
         private const double LowerSpreadPercentile = 50.0;
         private const double UpperSpreadPercentile = 95.0;
 
@@ -217,7 +219,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var breakdown = nullableBreakdown!;
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(breakdown.Select(entry => entry.ReferenceId), Is.EquivalentTo(new[] { "FEAT-1", "FEAT-2" }), body);
+                Assert.That(breakdown.Select(entry => entry.ReferenceId), Is.EquivalentTo(ExpectedBreakdownReferenceIds), body);
                 Assert.That(breakdown.Single(entry => entry.ReferenceId == "FEAT-1").Name, Is.EqualTo("Checkout"), body);
                 Assert.That(breakdown.Single(entry => entry.ReferenceId == "FEAT-1").Completion, Is.EqualTo(40.0), body);
                 Assert.That(breakdown.Single(entry => entry.ReferenceId == "FEAT-2").Likelihood, Is.EqualTo(88.0), body);
