@@ -332,6 +332,22 @@ describe("useFeverTrailAnimation", () => {
 		expect(vi.getTimerCount()).toBe(0);
 	});
 
+	it("restarts the reveal when the point count changes", () => {
+		const { result, rerender } = renderHook(
+			({ count }) => useFeverTrailAnimation(count),
+			{ initialProps: { count: 1 } },
+		);
+
+		expect(result.current).toBe(1);
+
+		rerender({ count: 4 });
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+
+		expect(result.current).toBe(4);
+	});
+
 	it("clears the interval on unmount so the count never advances again", () => {
 		const { result, unmount } = renderHook(() => useFeverTrailAnimation(4));
 

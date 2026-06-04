@@ -92,6 +92,31 @@ describe("deriveFeverTrail", () => {
 		expect(zones[zones.length - 1]).toBe("red");
 	});
 
+	it("treats a point exactly on the green deviation threshold as green", () => {
+		const onBoundary = getMockHistory({
+			firstSnapshotDate: "2026-06-01T00:00:00Z",
+			deliveryDate: "2026-06-21T00:00:00Z",
+			points: [
+				{ date: "2026-06-06T00:00:00Z", totalWork: 20, remainingWork: 16 },
+			],
+		});
+
+		expect(zonesOf(onBoundary)).toEqual(["green"]);
+	});
+
+	it("reports an empty trail when the delivery date equals the first snapshot", () => {
+		const trail = deriveFeverTrail(
+			getMockHistory({
+				firstSnapshotDate: "2026-06-08T00:00:00Z",
+				deliveryDate: "2026-06-08T00:00:00Z",
+				points: [{ date: "2026-06-08T00:00:00Z" }],
+			}),
+		);
+
+		expect(trail.empty).toBe(true);
+		expect(trail.points).toEqual([]);
+	});
+
 	it("maps each snapshot onto schedule-consumed x and buffer-remaining y", () => {
 		const trail = deriveFeverTrail(onTrackHistory);
 		const first = trail.points[0];
