@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/Delivery.cs{50..86}",
+      "**/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~DeliveryMetricSnapshotRecordingHandlerTest|FullyQualifiedName~DeliveryWithLikelihoodDtoTest|FullyQualifiedName~DeliveriesControllerTest|FullyQualifiedName~DeliveriesControllerUtcTest|FullyQualifiedName~DeliveryMetricsHistoryReadApiIntegrationTest",
+    "reporters": [
+      "progress",
+      "html",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
