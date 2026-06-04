@@ -35,9 +35,6 @@ interface DeliveryFeverChartProps {
 const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no feature snapshots recorded yet.";
 
-const ZONE_CAPTION =
-	"One bubble per feature at its latest snapshot. Red (top-left) is off track, green (bottom-right) is on track. Run the animation to watch each feature move over time, or click a feature to show or hide it.";
-
 const ZONE_FILL_OPACITY = 0.25;
 
 interface ColouredFeature extends FeatureFeverSeries {
@@ -92,6 +89,7 @@ const FeatureLegend: React.FC<FeatureLegendProps> = ({
 						background: "none",
 						cursor: "pointer",
 						p: 0,
+						color: "text.primary",
 						opacity: isHidden ? 0.4 : 1,
 					}}
 				>
@@ -209,9 +207,6 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 					hidden={hidden}
 					onToggle={toggle}
 				/>
-				<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-					{ZONE_CAPTION}
-				</Typography>
 			</CardContent>
 		</Card>
 	);
