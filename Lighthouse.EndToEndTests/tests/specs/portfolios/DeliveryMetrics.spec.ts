@@ -36,6 +36,7 @@ test("@walking_skeleton @US-01 forecaster opens a delivery's Metrics tab and see
 	await expect(metricsTab.predictabilitySeriesLine("likelihood")).toBeVisible();
 	await metricsTab.showWhenView();
 	await expect(metricsTab.predictabilitySeriesLine("when-70")).toBeVisible();
+	await expect(metricsTab.predictabilitySeriesLine("target")).toBeVisible();
 
 	await expect(metricsTab.feverChart).toBeVisible();
 	await expect.poll(() => metricsTab.countFeverBubbles()).toBeGreaterThan(0);
