@@ -49,18 +49,36 @@ namespace Lighthouse.Backend.Models
 
         public DeliveryMetricsProjection CalculateMetrics(params int[] percentiles)
         {
+            var featureBreakdown = CalculateFeatureBreakdown();
             var leastLikelyFeature = GetLeastLikelyFeature();
 
             if (leastLikelyFeature == null)
             {
-                return new DeliveryMetricsProjection(0.0, []);
+                return new DeliveryMetricsProjection(0.0, [], featureBreakdown);
             }
 
             var whenDistribution = percentiles
                 .Select(percentile => ToWhenPercentile(leastLikelyFeature.Forecast, percentile))
                 .ToList();
 
-            return new DeliveryMetricsProjection(leastLikelyFeature.GetLikelhoodForDate(Date), whenDistribution);
+            return new DeliveryMetricsProjection(leastLikelyFeature.GetLikelhoodForDate(Date), whenDistribution, featureBreakdown);
+        }
+
+        private List<DeliveryFeatureMetric> CalculateFeatureBreakdown()
+        {
+            return Features
+                .Where(feature => feature.FeatureWork.Sum(work => work.TotalWorkItems) > 0)
+                .Select(ToFeatureMetric)
+                .ToList();
+        }
+
+        private DeliveryFeatureMetric ToFeatureMetric(Feature feature)
+        {
+            var totalItems = feature.FeatureWork.Sum(work => work.TotalWorkItems);
+            var remainingItems = feature.FeatureWork.Sum(work => work.RemainingWorkItems);
+            var completion = Math.Clamp((double)(totalItems - remainingItems) / totalItems * 100.0, 0.0, 100.0);
+
+            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date));
         }
 
         private Feature? GetLeastLikelyFeature()

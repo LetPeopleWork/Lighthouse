@@ -23,5 +23,7 @@ namespace Lighthouse.Backend.Models
         public double? LikelihoodPercentage { get; set; }
 
         public string? WhenDistributionJson { get; set; }
+
+        public string? FeatureBreakdownJson { get; set; }
     }
 }

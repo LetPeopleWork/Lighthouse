@@ -369,6 +369,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("EstimatedItemCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("FeatureBreakdownJson")
+                        .HasColumnType("text");
+
                     b.Property<int?>("ForecastHowMany")
                         .HasColumnType("integer");
 
