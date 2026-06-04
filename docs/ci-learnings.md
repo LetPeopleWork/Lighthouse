@@ -375,6 +375,12 @@ Each entry follows:
 
 ## Infra & flakes
 
+### 2026-06-04 — `sonar-gates` 403 from the quality-gate-action (transient, NOT a gate failure)
+- **Symptom**: `sonar-gates / sonar-gates` red (run 26967525645, commit `a80230d2` — a FE-test + Stryker-config + docs-only commit) while every build/test/verify job (backend, frontend, sqlite, postgres, auth) was green. Failing step is `sonarsource/sonarqube-quality-gate-action@master` → `check-quality-gate.sh` → `curl: (22) The requested URL returned error: 403` → `exit code 22`.
+- **Root cause**: the quality-gate action's curl call to the SonarCloud web API got a transient **403**, not a gate violation. Verified independently: both project gates were `OK` at the time (`get_project_quality_gate_status` for `LetPeopleWork_Lighthouse` and `..._Frontend` — `new_violations=0`, coverage 89.3%/84.7%). The prior feature commit on the same branch (`fd77d09`) passed `sonar-gates` cleanly. So the gate is green; only the polling call flaked.
+- **Fix**: none in code. Re-run the failed `sonar-gates` job (`gh run rerun <id> --failed`, with user OK) — the curl succeeds on retry. Do NOT chase a quality-gate fix when the MCP `get_project_quality_gate_status` shows both projects `OK`.
+- **Rule going forward**: a red `sonar-gates` whose log ends in `curl: (22) ... error: 403` (or 401/429/5xx) from the quality-gate-action — with all analysis jobs green and `get_project_quality_gate_status` returning `OK` for both project keys — is a transient SonarCloud API hiccup, not a violation. Confirm via the MCP gate status, then re-run the failed job only; never edit code or suppress a rule for it. Recurrence: 1.
+
 ### 2026-06-01 — Suspected flake: `ForecastServiceTest.When_RealData_RunRealForecast_ExpectCorrectResults` boundary drift
 - **Symptom**: `Verify Backend / backend` red (run 26768739413, commit `c9f78775`) with `2718 passed, 1 failed`. The one failure: `Assert.That(forecast.GetProbability(70), Is.InRange(29, 31))` → `But was: 32`. The push that triggered it (survey-nudge S6964 fix + #5144 metrics docs) touches nothing in the Monte Carlo forecast engine.
 - **Root cause**: `ForecastService` runs a seedless Monte Carlo simulation; `ForecastServiceTest` asserts the resulting percentiles with narrow `Is.InRange(...)` windows (2-3 wide, e.g. lines 99-187, 201). A probability landing one outside the window (32 vs 29-31) is stochastic boundary drift, not a regression. Single failure in 2720, passes on re-run.
