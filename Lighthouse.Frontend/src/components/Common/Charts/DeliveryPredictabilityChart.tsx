@@ -24,6 +24,7 @@ import { FORECAST_LEVEL_THRESHOLDS } from "../Forecasts/ForecastLevel";
 interface DeliveryPredictabilityChartProps {
 	history: DeliveryMetricsHistory;
 	title?: string;
+	height?: number;
 }
 
 type PredictabilityView = "likelihood" | "when";
@@ -105,9 +106,11 @@ const EmptyBody = (): ReactElement => (
 const LikelihoodView = ({
 	points,
 	lineColor,
+	height,
 }: {
 	points: DeliveryMetricsHistoryPoint[];
 	lineColor: string;
+	height: number;
 }): ReactElement => (
 	<LineChart
 		xAxis={[
@@ -141,7 +144,7 @@ const LikelihoodView = ({
 				valueFormatter: formatPercentage,
 			},
 		]}
-		height={320}
+		height={height}
 		slotProps={{
 			legend: {
 				direction: "horizontal",
@@ -154,9 +157,11 @@ const LikelihoodView = ({
 const WhenView = ({
 	history,
 	palette,
+	height,
 }: {
 	history: DeliveryMetricsHistory;
 	palette: Record<number, string>;
+	height: number;
 }): ReactElement => {
 	const points = history.points;
 	const whenSeries = buildWhenSeries(points, palette);
@@ -187,7 +192,7 @@ const WhenView = ({
 				color: entry.color,
 				valueFormatter: formatDateValue,
 			}))}
-			height={320}
+			height={height}
 			slotProps={{
 				legend: {
 					direction: "horizontal",
@@ -210,6 +215,7 @@ interface RenderBodyArgs {
 	history: DeliveryMetricsHistory;
 	lineColor: string;
 	palette: Record<number, string>;
+	height: number;
 }
 
 const renderBody = ({
@@ -218,21 +224,29 @@ const renderBody = ({
 	history,
 	lineColor,
 	palette,
+	height,
 }: RenderBodyArgs): ReactElement => {
 	if (!hasDataForView) {
 		return <EmptyBody />;
 	}
 
 	if (showWhen) {
-		return <WhenView history={history} palette={palette} />;
+		return <WhenView history={history} palette={palette} height={height} />;
 	}
 
-	return <LikelihoodView points={history.points} lineColor={lineColor} />;
+	return (
+		<LikelihoodView
+			points={history.points}
+			lineColor={lineColor}
+			height={height}
+		/>
+	);
 };
 
 const DeliveryPredictabilityChart = ({
 	history,
 	title = "Delivery Predictability",
+	height = 320,
 }: DeliveryPredictabilityChartProps): ReactElement => {
 	const theme = useTheme();
 	const [view, setView] = useState<PredictabilityView>("likelihood");
@@ -274,6 +288,7 @@ const DeliveryPredictabilityChart = ({
 					history,
 					lineColor: theme.palette.text.secondary,
 					palette: WHEN_PALETTE,
+					height,
 				})}
 			</CardContent>
 		</Card>

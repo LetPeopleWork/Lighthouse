@@ -10,6 +10,7 @@ import type {
 interface DeliveryBurnupChartProps {
 	history: DeliveryMetricsHistory;
 	title?: string;
+	height?: number;
 }
 
 const FORWARD_ONLY_EMPTY_STATE =
@@ -98,6 +99,7 @@ const buildSeries = (
 const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 	history,
 	title = "Delivery Burnup",
+	height = 320,
 }) => {
 	const theme = useTheme();
 
@@ -142,7 +144,7 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 						},
 					]}
 					series={series}
-					height={320}
+					height={height}
 					sx={ESTIMATED_LINE_SX}
 					slotProps={{
 						legend: {

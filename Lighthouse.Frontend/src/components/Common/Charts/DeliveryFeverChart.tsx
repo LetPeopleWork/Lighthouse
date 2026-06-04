@@ -30,6 +30,7 @@ import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
 interface DeliveryFeverChartProps {
 	history: DeliveryMetricsHistory;
 	title?: string;
+	height?: number;
 }
 
 const FORWARD_ONLY_EMPTY_STATE =
@@ -111,6 +112,7 @@ const FeatureLegend: React.FC<FeatureLegendProps> = ({
 const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	history,
 	title = "Delivery Progress",
+	height = 320,
 }) => {
 	const theme = useTheme();
 	const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
@@ -197,7 +199,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 					xAxis={[{ min: 0, max: 100, label: "Completion Rate (%)" }]}
 					yAxis={[{ min: 0, max: 100, label: "Chance of Being Late (%)" }]}
 					series={series}
-					height={320}
+					height={height}
 					hideLegend
 				>
 					<FeverZoneBands colors={zoneColors(theme)} />

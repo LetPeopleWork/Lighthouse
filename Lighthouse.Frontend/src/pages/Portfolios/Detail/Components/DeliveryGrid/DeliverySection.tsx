@@ -22,6 +22,7 @@ import { useCallback, useContext, useMemo, useState } from "react";
 import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
 import DeliveryFeverChart from "../../../../../components/Common/Charts/DeliveryFeverChart";
 import DeliveryPredictabilityChart from "../../../../../components/Common/Charts/DeliveryPredictabilityChart";
+import EnlargeableChart from "../../../../../components/Common/Charts/EnlargeableChart";
 import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
@@ -556,10 +557,25 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ isLoading, history }) => {
 				gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
 			}}
 		>
-			<DeliveryBurnupChart history={history} />
-			<DeliveryPredictabilityChart history={history} />
+			<EnlargeableChart
+				ariaLabel="Delivery Burnup"
+				render={(height) => (
+					<DeliveryBurnupChart history={history} height={height} />
+				)}
+			/>
+			<EnlargeableChart
+				ariaLabel="Delivery Predictability"
+				render={(height) => (
+					<DeliveryPredictabilityChart history={history} height={height} />
+				)}
+			/>
 			<Box sx={{ gridColumn: { lg: "1 / -1" } }}>
-				<DeliveryFeverChart history={history} />
+				<EnlargeableChart
+					ariaLabel="Delivery Progress"
+					render={(height) => (
+						<DeliveryFeverChart history={history} height={height} />
+					)}
+				/>
 			</Box>
 		</Box>
 	);
