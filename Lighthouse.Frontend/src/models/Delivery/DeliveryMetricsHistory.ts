@@ -3,6 +3,13 @@ export interface WhenDistributionPoint {
 	expectedDate: Date;
 }
 
+export interface FeatureMetric {
+	referenceId: string;
+	name: string;
+	completion: number;
+	likelihood: number;
+}
+
 export interface DeliveryMetricsHistoryPoint {
 	date: Date;
 	totalWork: number;
@@ -12,6 +19,7 @@ export interface DeliveryMetricsHistoryPoint {
 	forecastHowMany: number | null;
 	likelihoodPercentage: number | null;
 	whenDistribution: WhenDistributionPoint[] | null;
+	featureBreakdown: FeatureMetric[];
 }
 
 export interface DeliveryMetricsHistory {
@@ -41,6 +49,13 @@ function asNullableNumber(value: unknown, context: string): number | null {
 		return null;
 	}
 	return asNumber(value, context);
+}
+
+function asString(value: unknown, context: string): string {
+	if (typeof value !== "string") {
+		throw new BoundaryError(`Expected a string for ${context}`);
+	}
+	return value;
 }
 
 function asDate(value: unknown, context: string): Date {
@@ -77,6 +92,24 @@ function parseWhenDistribution(value: unknown): WhenDistributionPoint[] | null {
 	});
 }
 
+function parseFeatureBreakdown(value: unknown): FeatureMetric[] {
+	if (value === null || value === undefined) {
+		return [];
+	}
+	if (!Array.isArray(value)) {
+		throw new BoundaryError("Expected an array for featureBreakdown");
+	}
+	return value.map((entry) => {
+		const metric = asObject(entry, "featureBreakdown entry");
+		return {
+			referenceId: asString(metric.referenceId, "featureBreakdown.referenceId"),
+			name: asString(metric.name, "featureBreakdown.name"),
+			completion: asNumber(metric.completion, "featureBreakdown.completion"),
+			likelihood: asNumber(metric.likelihood, "featureBreakdown.likelihood"),
+		};
+	});
+}
+
 function parsePoint(value: unknown): DeliveryMetricsHistoryPoint {
 	const point = asObject(value, "metrics-history point");
 	return {
@@ -97,6 +130,7 @@ function parsePoint(value: unknown): DeliveryMetricsHistoryPoint {
 			"point.likelihoodPercentage",
 		),
 		whenDistribution: parseWhenDistribution(point.whenDistribution),
+		featureBreakdown: parseFeatureBreakdown(point.featureBreakdown),
 	};
 }
 

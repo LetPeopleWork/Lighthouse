@@ -1,7 +1,4 @@
-import type {
-	DeliveryMetricsHistory,
-	DeliveryMetricsHistoryPoint,
-} from "./DeliveryMetricsHistory";
+import type { DeliveryMetricsHistory } from "./DeliveryMetricsHistory";
 
 export type FeverZone = "green" | "amber" | "red";
 
@@ -9,11 +6,17 @@ export type FeverPoint = {
 	date: Date;
 	completion: number;
 	chanceOfLate: number;
-	zone: FeverZone;
 };
 
-export type FeverTrail = {
+export type FeatureFeverSeries = {
+	referenceId: string;
+	name: string;
 	points: FeverPoint[];
+	latest: FeverPoint;
+};
+
+export type FeatureFeverChart = {
+	features: FeatureFeverSeries[];
 	empty: boolean;
 };
 
@@ -30,33 +33,34 @@ const greenAmberBoundary = (completion: number): number =>
 const amberRedBoundary = (completion: number): number =>
 	AMBER_RED_INTERCEPT + BAND_SLOPE * completion;
 
-const zoneFor = (completion: number, chanceOfLate: number): FeverZone => {
-	if (chanceOfLate >= amberRedBoundary(completion)) {
-		return "red";
-	}
-	if (chanceOfLate >= greenAmberBoundary(completion)) {
-		return "amber";
-	}
-	return "green";
-};
+export function deriveFeatureFeverChart(
+	history: DeliveryMetricsHistory,
+): FeatureFeverChart {
+	const dated = history.points.flatMap((point) =>
+		point.featureBreakdown.map((metric) => ({ metric, date: point.date })),
+	);
+	const referenceIds = [
+		...new Set(dated.map((entry) => entry.metric.referenceId)),
+	];
 
-const isPlottable = (point: DeliveryMetricsHistoryPoint): boolean =>
-	point.totalWork > 0 && point.likelihoodPercentage !== null;
+	const features = referenceIds.map((referenceId) => {
+		const entries = dated.filter(
+			(entry) => entry.metric.referenceId === referenceId,
+		);
+		const points = entries.map(({ metric, date }) => ({
+			date,
+			completion: clamp(metric.completion, 0, 100),
+			chanceOfLate: clamp(100 - metric.likelihood, 0, 100),
+		}));
+		return {
+			referenceId,
+			name: entries[entries.length - 1].metric.name,
+			points,
+			latest: points[points.length - 1],
+		};
+	});
 
-const toFeverPoint = (point: DeliveryMetricsHistoryPoint): FeverPoint => {
-	const completion = clamp((point.doneWork / point.totalWork) * 100, 0, 100);
-	const chanceOfLate = clamp(100 - (point.likelihoodPercentage ?? 0), 0, 100);
-	return {
-		date: point.date,
-		completion,
-		chanceOfLate,
-		zone: zoneFor(completion, chanceOfLate),
-	};
-};
-
-export function deriveFeverTrail(history: DeliveryMetricsHistory): FeverTrail {
-	const points = history.points.filter(isPlottable).map(toFeverPoint);
-	return { points, empty: points.length === 0 };
+	return { features, empty: features.length === 0 };
 }
 
 export type ZonePolygon = {

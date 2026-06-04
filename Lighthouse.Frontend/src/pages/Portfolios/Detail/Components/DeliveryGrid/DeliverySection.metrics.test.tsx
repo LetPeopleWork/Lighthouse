@@ -77,6 +77,7 @@ const getHistory = (): DeliveryMetricsHistory => ({
 			forecastHowMany: null,
 			likelihoodPercentage: null,
 			whenDistribution: null,
+			featureBreakdown: [],
 		},
 	],
 });

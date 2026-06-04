@@ -5,30 +5,33 @@ import {
 import {
 	AMBER_RED_INTERCEPT,
 	BAND_SLOPE,
-	deriveFeverTrail,
+	deriveFeatureFeverChart,
 	type FeverZone,
 	feverZonePolygons,
 } from "./FeverTrail";
 
+type RawFeature = {
+	referenceId: string;
+	name: string;
+	completion: number;
+	likelihood: number;
+};
+
 type RawPoint = {
 	date: string;
-	totalWork?: number;
-	doneWork?: number;
-	likelihoodPercentage?: number | null;
+	featureBreakdown?: RawFeature[];
 };
 
 const getMockPoint = (overrides: RawPoint) => ({
 	date: overrides.date,
-	totalWork: overrides.totalWork ?? 20,
-	doneWork: overrides.doneWork ?? 0,
-	remainingWork: (overrides.totalWork ?? 20) - (overrides.doneWork ?? 0),
+	totalWork: 20,
+	doneWork: 0,
+	remainingWork: 20,
 	estimatedItemCount: null,
 	forecastHowMany: null,
-	likelihoodPercentage:
-		overrides.likelihoodPercentage === undefined
-			? 90
-			: overrides.likelihoodPercentage,
+	likelihoodPercentage: null,
 	whenDistribution: null,
+	featureBreakdown: overrides.featureBreakdown ?? [],
 });
 
 const getMockHistory = (overrides: {
@@ -40,144 +43,116 @@ const getMockHistory = (overrides: {
 		points: overrides.points.map(getMockPoint),
 	});
 
-const healthyHistory = getMockHistory({
+const twoFeatureHistory = getMockHistory({
 	points: [
-		{ date: "2026-06-01T00:00:00Z", doneWork: 10, likelihoodPercentage: 80 },
-		{ date: "2026-06-08T00:00:00Z", doneWork: 16, likelihoodPercentage: 95 },
-	],
-});
-
-const degradingHistory = getMockHistory({
-	points: [
-		{ date: "2026-06-01T00:00:00Z", doneWork: 2, likelihoodPercentage: 99 },
-		{ date: "2026-06-08T00:00:00Z", doneWork: 5, likelihoodPercentage: 65 },
-		{ date: "2026-06-15T00:00:00Z", doneWork: 8, likelihoodPercentage: 35 },
-	],
-});
-
-const zonesOf = (history: DeliveryMetricsHistory): FeverZone[] =>
-	deriveFeverTrail(history).points.map((point) => point.zone);
-
-describe("deriveFeverTrail", () => {
-	it("keeps a healthy delivery clear of the red zone", () => {
-		const trail = deriveFeverTrail(healthyHistory);
-
-		expect(trail.empty).toBe(false);
-		expect(zonesOf(healthyHistory)).not.toContain("red");
-	});
-
-	it("crosses green then amber then red as completion stalls and lateness rises", () => {
-		const zones = zonesOf(degradingHistory);
-
-		const firstAmber = zones.indexOf("amber");
-		const firstRed = zones.indexOf("red");
-		expect(zones.indexOf("green")).toBeLessThan(firstAmber);
-		expect(firstAmber).toBeLessThan(firstRed);
-		expect(zones).toEqual(["green", "amber", "red"]);
-	});
-
-	it("maps completion rate onto x and chance of being late onto y", () => {
-		const trail = deriveFeverTrail(
-			getMockHistory({
-				points: [
-					{
-						date: "2026-06-08T00:00:00Z",
-						doneWork: 10,
-						likelihoodPercentage: 80,
-					},
-				],
-			}),
-		);
-		const point = trail.points[0];
-
-		expect(point.completion).toBe(50);
-		expect(point.chanceOfLate).toBe(20);
-		expect(point.zone).toBe("green");
-	});
-
-	it("treats a point on the green/amber boundary as amber", () => {
-		const onBoundary = getMockHistory({
-			points: [
+		{
+			date: "2026-06-01T00:00:00Z",
+			featureBreakdown: [
 				{
-					date: "2026-06-08T00:00:00Z",
-					doneWork: 0,
-					likelihoodPercentage: 100,
+					referenceId: "F-1",
+					name: "Checkout",
+					completion: 20,
+					likelihood: 90,
 				},
+				{ referenceId: "F-2", name: "Search", completion: 10, likelihood: 50 },
 			],
-		});
+		},
+		{
+			date: "2026-06-08T00:00:00Z",
+			featureBreakdown: [
+				{
+					referenceId: "F-1",
+					name: "Checkout",
+					completion: 60,
+					likelihood: 95,
+				},
+				{ referenceId: "F-2", name: "Search", completion: 40, likelihood: 30 },
+			],
+		},
+	],
+});
 
-		expect(zonesOf(onBoundary)).toEqual(["amber"]);
+describe("deriveFeatureFeverChart", () => {
+	it("groups snapshots into one date-ordered series per feature", () => {
+		const chart = deriveFeatureFeverChart(twoFeatureHistory);
+
+		expect(chart.empty).toBe(false);
+		expect(chart.features.map((feature) => feature.referenceId)).toEqual([
+			"F-1",
+			"F-2",
+		]);
+		expect(chart.features[0].points).toHaveLength(2);
 	});
 
-	it("plots a barely-started long-shot delivery in the red zone", () => {
-		const atRisk = getMockHistory({
-			points: [
-				{ date: "2026-06-08T00:00:00Z", doneWork: 2, likelihoodPercentage: 10 },
-			],
-		});
+	it("maps completion onto x and the inverted likelihood onto chance of being late", () => {
+		const checkout = deriveFeatureFeverChart(twoFeatureHistory).features[0];
 
-		expect(zonesOf(atRisk)).toEqual(["red"]);
+		expect(checkout.points[0]).toMatchObject({
+			completion: 20,
+			chanceOfLate: 10,
+		});
+		expect(checkout.points[1]).toMatchObject({
+			completion: 60,
+			chanceOfLate: 5,
+		});
 	});
 
-	it("excludes snapshots recorded before any likelihood was captured", () => {
-		const trail = deriveFeverTrail(
+	it("exposes each feature's most recent snapshot as its latest position", () => {
+		const search = deriveFeatureFeverChart(twoFeatureHistory).features[1];
+
+		expect(search.name).toBe("Search");
+		expect(search.latest).toMatchObject({ completion: 40, chanceOfLate: 70 });
+	});
+
+	it("includes only the snapshots in which a feature appears", () => {
+		const chart = deriveFeatureFeverChart(
 			getMockHistory({
 				points: [
 					{
 						date: "2026-06-01T00:00:00Z",
-						doneWork: 4,
-						likelihoodPercentage: null,
+						featureBreakdown: [
+							{
+								referenceId: "F-1",
+								name: "Checkout",
+								completion: 20,
+								likelihood: 90,
+							},
+						],
 					},
 					{
 						date: "2026-06-08T00:00:00Z",
-						doneWork: 8,
-						likelihoodPercentage: 70,
+						featureBreakdown: [
+							{
+								referenceId: "F-1",
+								name: "Checkout",
+								completion: 60,
+								likelihood: 95,
+							},
+							{
+								referenceId: "F-2",
+								name: "Search",
+								completion: 40,
+								likelihood: 30,
+							},
+						],
 					},
 				],
 			}),
 		);
 
-		expect(trail.points).toHaveLength(1);
-		expect(trail.points[0].completion).toBe(40);
+		const search = chart.features.find((f) => f.referenceId === "F-2");
+		expect(search?.points).toHaveLength(1);
 	});
 
-	it("excludes zero-scope points and reports empty when none are plottable", () => {
-		const mixed = deriveFeverTrail(
+	it("reports empty when no snapshot carries a feature breakdown", () => {
+		const chart = deriveFeatureFeverChart(
 			getMockHistory({
-				points: [
-					{ date: "2026-06-01T00:00:00Z", totalWork: 0, doneWork: 0 },
-					{
-						date: "2026-06-08T00:00:00Z",
-						doneWork: 8,
-						likelihoodPercentage: 70,
-					},
-				],
+				points: [{ date: "2026-06-01T00:00:00Z", featureBreakdown: [] }],
 			}),
 		);
-		expect(mixed.points).toHaveLength(1);
-		expect(mixed.empty).toBe(false);
 
-		const none = deriveFeverTrail(
-			getMockHistory({
-				points: [
-					{ date: "2026-06-01T00:00:00Z", totalWork: 0, doneWork: 0 },
-					{
-						date: "2026-06-08T00:00:00Z",
-						doneWork: 8,
-						likelihoodPercentage: null,
-					},
-				],
-			}),
-		);
-		expect(none.points).toEqual([]);
-		expect(none.empty).toBe(true);
-	});
-
-	it("reports an empty trail when there are no snapshot points", () => {
-		const trail = deriveFeverTrail(getMockHistory({ points: [] }));
-
-		expect(trail.empty).toBe(true);
-		expect(trail.points).toEqual([]);
+		expect(chart.empty).toBe(true);
+		expect(chart.features).toEqual([]);
 	});
 });
 

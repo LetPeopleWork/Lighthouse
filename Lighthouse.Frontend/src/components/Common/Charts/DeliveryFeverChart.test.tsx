@@ -1,11 +1,17 @@
-import { act, render, renderHook, screen } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	renderHook,
+	screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type DeliveryMetricsHistory,
 	parseDeliveryMetricsHistory,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
 import { testTheme } from "../../../tests/testTheme";
-import { useFeverTrailAnimation } from "./useFeverTrailAnimation";
+import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
 
 const scatterChartMock = vi.hoisted(() =>
 	vi.fn((_props: { series?: unknown }) => (
@@ -44,7 +50,6 @@ interface SeriesEntry {
 	id?: string;
 	label?: string;
 	color?: string;
-	markerSize?: number;
 	data?: ScatterDatum[];
 }
 
@@ -58,69 +63,52 @@ const getLatestChartProps = () => {
 	const lastCall =
 		scatterChartMock.mock.calls[scatterChartMock.mock.calls.length - 1];
 	return lastCall?.[0] as
-		| {
-				series?: SeriesEntry[];
-				xAxis?: AxisEntry[];
-				yAxis?: AxisEntry[];
-		  }
+		| { series?: SeriesEntry[]; xAxis?: AxisEntry[]; yAxis?: AxisEntry[] }
 		| undefined;
 };
 
 const seriesById = (id: string): SeriesEntry | undefined =>
 	getLatestChartProps()?.series?.find((entry) => entry.id === id);
 
-type RawPoint = {
-	date: string;
-	totalWork?: number;
-	doneWork?: number;
-	likelihoodPercentage?: number | null;
+type RawFeature = {
+	referenceId: string;
+	name: string;
+	completion: number;
+	likelihood: number;
 };
 
-const getMockPoint = (overrides: RawPoint) => ({
-	date: overrides.date,
-	totalWork: overrides.totalWork ?? 20,
-	doneWork: overrides.doneWork ?? 0,
-	remainingWork: (overrides.totalWork ?? 20) - (overrides.doneWork ?? 0),
+const getMockPoint = (date: string, featureBreakdown: RawFeature[]) => ({
+	date,
+	totalWork: 20,
+	doneWork: 0,
+	remainingWork: 20,
 	estimatedItemCount: null,
 	forecastHowMany: null,
-	likelihoodPercentage:
-		overrides.likelihoodPercentage === undefined
-			? 90
-			: overrides.likelihoodPercentage,
+	likelihoodPercentage: null,
 	whenDistribution: null,
+	featureBreakdown,
 });
 
-const getMockHistory = (overrides: {
-	points: RawPoint[];
-}): DeliveryMetricsHistory =>
-	parseDeliveryMetricsHistory({
-		deliveryDate: "2026-06-21T00:00:00Z",
-		firstSnapshotDate: "2026-06-01T00:00:00Z",
-		points: overrides.points.map(getMockPoint),
-	});
-
-const trailHistory = getMockHistory({
+const twoFeatureHistory: DeliveryMetricsHistory = parseDeliveryMetricsHistory({
+	deliveryDate: "2026-06-21T00:00:00Z",
+	firstSnapshotDate: "2026-06-01T00:00:00Z",
 	points: [
-		{ date: "2026-06-01T00:00:00Z", doneWork: 5, likelihoodPercentage: 98 },
-		{ date: "2026-06-08T00:00:00Z", doneWork: 10, likelihoodPercentage: 60 },
-		{ date: "2026-06-15T00:00:00Z", doneWork: 15, likelihoodPercentage: 10 },
+		getMockPoint("2026-06-01T00:00:00Z", [
+			{ referenceId: "F-1", name: "Checkout", completion: 20, likelihood: 90 },
+			{ referenceId: "F-2", name: "Search", completion: 10, likelihood: 50 },
+		]),
+		getMockPoint("2026-06-08T00:00:00Z", [
+			{ referenceId: "F-1", name: "Checkout", completion: 60, likelihood: 95 },
+			{ referenceId: "F-2", name: "Search", completion: 40, likelihood: 30 },
+		]),
 	],
 });
 
-const noLikelihoodHistory = getMockHistory({
-	points: [
-		{ date: "2026-06-01T00:00:00Z", doneWork: 4, likelihoodPercentage: null },
-	],
+const emptyHistory: DeliveryMetricsHistory = parseDeliveryMetricsHistory({
+	deliveryDate: "2026-06-21T00:00:00Z",
+	firstSnapshotDate: "2026-06-01T00:00:00Z",
+	points: [getMockPoint("2026-06-01T00:00:00Z", [])],
 });
-
-const SETTLE_MS = 60_000;
-
-const renderSettled = (history: DeliveryMetricsHistory): void => {
-	render(<DeliveryFeverChart history={history} />);
-	act(() => {
-		vi.advanceTimersByTime(SETTLE_MS);
-	});
-};
 
 describe("DeliveryFeverChart", () => {
 	beforeEach(() => {
@@ -132,93 +120,82 @@ describe("DeliveryFeverChart", () => {
 		vi.useRealTimers();
 	});
 
-	it("plots the snapshots as a trail series mapping completion to x and chance of late to y", () => {
-		renderSettled(trailHistory);
+	it("shows one bubble per feature at its latest snapshot by default", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
-		const trail = seriesById("trail");
-		expect(trail?.data).toEqual([
-			{ x: 25, y: 2, id: 0 },
-			{ x: 50, y: 40, id: 1 },
-			{ x: 75, y: 90, id: 2 },
-		]);
-		expect(trail?.color).toBe(testTheme.palette.primary.main);
+		const checkout = seriesById("F-1");
+		const search = seriesById("F-2");
+		expect(checkout?.data).toEqual([{ x: 60, y: 5, id: 0 }]);
+		expect(search?.data).toEqual([{ x: 40, y: 70, id: 0 }]);
 	});
 
-	it("emphasises the latest snapshot as its own larger series", () => {
-		renderSettled(trailHistory);
+	it("labels each feature series with its name and a distinct colour for the legend", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
-		const latest = seriesById("latest");
-		const trail = seriesById("trail");
-		expect(latest?.data).toEqual([{ x: 75, y: 90, id: 2 }]);
-		expect((latest?.markerSize ?? 0) > (trail?.markerSize ?? 0)).toBe(true);
+		const checkout = seriesById("F-1");
+		const search = seriesById("F-2");
+		expect(checkout?.label).toBe("Checkout");
+		expect(search?.label).toBe("Search");
+		expect(checkout?.color).not.toBe(search?.color);
+	});
+
+	it("reveals each feature's full trail when the animation is run", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+
+		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: "Run" }));
+		});
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+
+		expect(seriesById("F-1")?.data).toHaveLength(2);
+		expect(seriesById("F-2")?.data).toHaveLength(2);
+	});
+
+	it("returns to one bubble per feature when showing the latest again", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+
+		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: "Run" }));
+		});
+		act(() => {
+			vi.advanceTimersByTime(60_000);
+		});
+		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: "Show latest" }));
+		});
+
+		expect(seriesById("F-1")?.data).toHaveLength(1);
 	});
 
 	it("labels the axes as completion rate and chance of being late on a 0-100 scale", () => {
-		render(<DeliveryFeverChart history={trailHistory} />);
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
 		const props = getLatestChartProps();
-		const xAxis = props?.xAxis?.[0];
-		const yAxis = props?.yAxis?.[0];
-
-		expect(xAxis?.min).toBe(0);
-		expect(xAxis?.max).toBe(100);
-		expect(xAxis?.label).toMatch(/completion/i);
-		expect(yAxis?.min).toBe(0);
-		expect(yAxis?.max).toBe(100);
-		expect(yAxis?.label).toMatch(/late/i);
+		expect(props?.xAxis?.[0]?.min).toBe(0);
+		expect(props?.xAxis?.[0]?.max).toBe(100);
+		expect(props?.xAxis?.[0]?.label).toMatch(/completion/i);
+		expect(props?.yAxis?.[0]?.label).toMatch(/late/i);
 	});
 
-	it("never dispatches a series with no points mid-animation", () => {
-		render(<DeliveryFeverChart history={trailHistory} />);
-
-		const everyHasData = (getLatestChartProps()?.series ?? []).every(
-			(entry) => (entry.data?.length ?? 0) > 0,
-		);
-		expect(everyHasData).toBe(true);
-	});
-
-	it("shows the forward-only empty state and no chart when no likelihood was recorded", () => {
-		render(<DeliveryFeverChart history={noLikelihoodHistory} />);
+	it("shows the forward-only empty state and no chart when no feature was recorded", () => {
+		render(<DeliveryFeverChart history={emptyHistory} />);
 
 		expect(
-			screen.getByText(/no likelihood snapshots recorded yet/i),
+			screen.getByText(/no feature snapshots recorded yet/i),
 		).toBeInTheDocument();
 		expect(scatterChartMock).not.toHaveBeenCalled();
 	});
 
 	it("carries the delivery-fever-chart test id on its root", () => {
-		render(<DeliveryFeverChart history={trailHistory} />);
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
 		expect(screen.getByTestId("delivery-fever-chart")).toBeInTheDocument();
 	});
 });
 
-const visibleBubbleCount = (): number => seriesById("trail")?.data?.length ?? 0;
-
-describe("DeliveryFeverChart animation", () => {
-	beforeEach(() => {
-		scatterChartMock.mockClear();
-		vi.useFakeTimers();
-	});
-
-	afterEach(() => {
-		vi.useRealTimers();
-	});
-
-	it("reveals the trail snapshots progressively over time and settles on the full trail", () => {
-		render(<DeliveryFeverChart history={trailHistory} />);
-
-		expect(visibleBubbleCount()).toBe(1);
-
-		act(() => {
-			vi.advanceTimersByTime(60_000);
-		});
-
-		expect(visibleBubbleCount()).toBe(trailHistory.points.length);
-	});
-});
-
-describe("useFeverTrailAnimation", () => {
+describe("useFeatureFeverReveal", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
@@ -227,72 +204,65 @@ describe("useFeverTrailAnimation", () => {
 		vi.useRealTimers();
 	});
 
-	it("advances the visible count one point at a time and stops at the total", () => {
-		const { result } = renderHook(() => useFeverTrailAnimation(4));
+	it("is idle and showing the latest by default", () => {
+		const { result } = renderHook(() => useFeatureFeverReveal(3));
 
-		expect(result.current).toBe(1);
+		expect(result.current.frame).toBeNull();
+		expect(result.current.isRunning).toBe(false);
+	});
 
-		act(() => {
-			vi.advanceTimersToNextTimer();
-		});
-		expect(result.current).toBe(2);
-
-		act(() => {
-			vi.advanceTimersToNextTimer();
-		});
-		expect(result.current).toBe(3);
+	it("advances the frame to the last index and then stops", () => {
+		const { result } = renderHook(() => useFeatureFeverReveal(3));
 
 		act(() => {
-			vi.advanceTimersToNextTimer();
+			result.current.run();
 		});
-		expect(result.current).toBe(4);
+		expect(result.current.frame).toBe(0);
+		expect(result.current.isRunning).toBe(true);
 
 		act(() => {
 			vi.advanceTimersByTime(60_000);
 		});
-		expect(result.current).toBe(4);
+		expect(result.current.frame).toBe(2);
+		expect(result.current.isRunning).toBe(false);
 	});
 
-	it("returns zero and registers no timer for an empty trail", () => {
-		const { result } = renderHook(() => useFeverTrailAnimation(0));
+	it("returns to the latest when showLatest is called", () => {
+		const { result } = renderHook(() => useFeatureFeverReveal(3));
 
-		expect(result.current).toBe(0);
-		expect(vi.getTimerCount()).toBe(0);
-	});
-
-	it("reveals a single-point trail immediately without a timer", () => {
-		const { result } = renderHook(() => useFeverTrailAnimation(1));
-
-		expect(result.current).toBe(1);
-		expect(vi.getTimerCount()).toBe(0);
-	});
-
-	it("restarts the reveal when the point count changes", () => {
-		const { result, rerender } = renderHook(
-			({ count }) => useFeverTrailAnimation(count),
-			{ initialProps: { count: 1 } },
-		);
-
-		expect(result.current).toBe(1);
-
-		rerender({ count: 4 });
 		act(() => {
-			vi.advanceTimersByTime(60_000);
+			result.current.run();
+		});
+		act(() => {
+			result.current.showLatest();
 		});
 
-		expect(result.current).toBe(4);
+		expect(result.current.frame).toBeNull();
+		expect(result.current.isRunning).toBe(false);
 	});
 
-	it("clears the interval on unmount so the count never advances again", () => {
-		const { result, unmount } = renderHook(() => useFeverTrailAnimation(4));
+	it("reveals a single-frame chart immediately without a timer", () => {
+		const { result } = renderHook(() => useFeatureFeverReveal(1));
 
-		expect(result.current).toBe(1);
+		act(() => {
+			result.current.run();
+		});
+
+		expect(result.current.frame).toBe(0);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
+	it("clears the interval on unmount", () => {
+		const { result, unmount } = renderHook(() => useFeatureFeverReveal(4));
+
+		act(() => {
+			result.current.run();
+		});
 		unmount();
 
 		act(() => {
 			vi.advanceTimersByTime(60_000);
 		});
-		expect(result.current).toBe(1);
 		expect(vi.getTimerCount()).toBe(0);
 	});
 });

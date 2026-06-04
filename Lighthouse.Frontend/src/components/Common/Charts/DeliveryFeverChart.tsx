@@ -1,16 +1,23 @@
 import type { Theme } from "@mui/material";
-import { Card, CardContent, Typography, useTheme } from "@mui/material";
+import {
+	Box,
+	Button,
+	Card,
+	CardContent,
+	Typography,
+	useTheme,
+} from "@mui/material";
 import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import { ScatterChart } from "@mui/x-charts/ScatterChart";
 import type React from "react";
 import type { DeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
 import {
-	deriveFeverTrail,
-	type FeverPoint,
+	deriveFeatureFeverChart,
+	type FeatureFeverSeries,
 	type FeverZone,
 	feverZonePolygons,
 } from "../../../models/Delivery/FeverTrail";
-import { useFeverTrailAnimation } from "./useFeverTrailAnimation";
+import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
 
 interface DeliveryFeverChartProps {
 	history: DeliveryMetricsHistory;
@@ -18,14 +25,23 @@ interface DeliveryFeverChartProps {
 }
 
 const FORWARD_ONLY_EMPTY_STATE =
-	"This chart builds forward from today — no likelihood snapshots recorded yet.";
+	"This chart builds forward from today — no feature snapshots recorded yet.";
 
 const ZONE_CAPTION =
-	"Each bubble is a snapshot; the trail moves left-to-right as work completes. Red (top-left) is off track, green (bottom-right) is on track.";
+	"One bubble per feature at its latest snapshot. Red (top-left) is off track, green (bottom-right) is on track. Run the animation to watch each feature move over time.";
 
-const TRAIL_SERIES_ID = "trail";
-const LATEST_SERIES_ID = "latest";
 const ZONE_FILL_OPACITY = 0.25;
+
+const FEATURE_COLORS = [
+	"#1f77b4",
+	"#9467bd",
+	"#17becf",
+	"#8c564b",
+	"#e377c2",
+	"#2c3e50",
+	"#393b79",
+	"#637939",
+];
 
 interface ScatterDatum {
 	x: number;
@@ -33,17 +49,24 @@ interface ScatterDatum {
 	id: number;
 }
 
-const toDatum = (point: FeverPoint, index: number): ScatterDatum => ({
-	x: point.completion,
-	y: point.chanceOfLate,
-	id: index,
-});
-
 const zoneColors = (theme: Theme): Record<FeverZone, string> => ({
 	green: theme.palette.success.main,
 	amber: theme.palette.warning.main,
 	red: theme.palette.error.main,
 });
+
+const visiblePoints = (
+	feature: FeatureFeverSeries,
+	frame: number | null,
+): ScatterDatum[] => {
+	const points =
+		frame === null ? [feature.latest] : feature.points.slice(0, frame + 1);
+	return points.map((point, index) => ({
+		x: point.completion,
+		y: point.chanceOfLate,
+		id: index,
+	}));
+};
 
 const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	colors,
@@ -69,15 +92,30 @@ const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	);
 };
 
+const runButtonLabel = (isRunning: boolean, frame: number | null): string => {
+	if (isRunning) {
+		return "Running…";
+	}
+	if (frame === null) {
+		return "Run";
+	}
+	return "Show latest";
+};
+
 const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	history,
 	title = "Delivery Progress",
 }) => {
 	const theme = useTheme();
-	const trail = deriveFeverTrail(history);
-	const visibleCount = useFeverTrailAnimation(trail.points.length);
+	const chart = deriveFeatureFeverChart(history);
+	const maxLength = chart.features.reduce(
+		(longest, feature) => Math.max(longest, feature.points.length),
+		0,
+	);
+	const { frame, isRunning, run, showLatest } =
+		useFeatureFeverReveal(maxLength);
 
-	if (trail.empty) {
+	if (chart.empty) {
 		return (
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
@@ -90,24 +128,16 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 		);
 	}
 
-	const visible = trail.points.slice(0, visibleCount);
-	const latest = visible[visible.length - 1];
-	const series = [
-		{
-			id: TRAIL_SERIES_ID,
-			label: "Snapshots",
-			color: theme.palette.primary.main,
-			markerSize: 5,
-			data: visible.map(toDatum),
-		},
-		{
-			id: LATEST_SERIES_ID,
-			label: "Latest",
-			color: theme.palette.primary.dark,
-			markerSize: 11,
-			data: [toDatum(latest, visible.length - 1)],
-		},
-	];
+	const series = chart.features.map((feature, index) => ({
+		id: feature.referenceId,
+		label: feature.name,
+		color: FEATURE_COLORS[index % FEATURE_COLORS.length],
+		markerSize: 7,
+		data: visiblePoints(feature, frame),
+	}));
+
+	const canAnimate = maxLength > 1;
+	const onRunClick = frame === null ? run : showLatest;
 
 	return (
 		<Card
@@ -117,7 +147,25 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>
-				<Typography variant="h6">{title}</Typography>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
+					<Typography variant="h6">{title}</Typography>
+					{canAnimate ? (
+						<Button
+							size="small"
+							variant="outlined"
+							onClick={onRunClick}
+							disabled={isRunning}
+						>
+							{runButtonLabel(isRunning, frame)}
+						</Button>
+					) : null}
+				</Box>
 				<ScatterChart
 					xAxis={[{ min: 0, max: 100, label: "Completion Rate (%)" }]}
 					yAxis={[{ min: 0, max: 100, label: "Chance of Being Late (%)" }]}
