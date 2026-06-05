@@ -23,6 +23,7 @@ primary_jobs:
   - job-forecast-no-false-certainty
   - job-forecast-only-with-enough-data
   - job-forecast-delivery-trend-over-time
+  - job-forecast-skip-known-nonworking-days
 
 goals:
   - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work

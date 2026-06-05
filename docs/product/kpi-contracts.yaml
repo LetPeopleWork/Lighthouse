@@ -400,3 +400,38 @@ outcomes:
       `forecast-filter-takeeffect-hint`), and the auto-save + reload scenarios cover the replacement
       behaviour. No runtime telemetry.
     alerting: []
+
+  - id: OUT-blackout-forecast-shift
+    feature: blackout-day-forecast-shift
+    title: Forecast percentile dates step over known non-working days and never land on one
+    target: >
+      100% of forecast surfaces shift percentile dates over configured future blackout periods
+      (worked example: 10 working days + 2 future blackout days ⇒ 12 calendar days); 0 percentile
+      dates land on a blackout day; no-blackout teams byte-identical to pre-feature (D6); the
+      Monte Carlo days value (GetProbability) is unchanged with/without periods (D4).
+    measurement_scope: per_instance
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftTeamForecastIntegrationTest.cs
+        scenario: "@US-01 manual When percentile date steps over a future blackout span (POST /forecast/manual/{id})"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftItemPredictionIntegrationTest.cs
+        scenario: "@US-02 by-date how-many is scored on the working-day count (POST /forecast/manual/{id})"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs
+        scenario: "@US-03 feature/delivery percentile date steps over blackouts on the portfolio surface (GET /deliveries/portfolio/{id})"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs
+        scenario: "@US-04 the shifted date is written back and the historical-strip × forward-shift compose guard holds"
+        tag: "@kpi"
+        gate_type: hard
+    instrumentation_status: >
+      Repo/test-verifiable (all 4 KPIs: Fri-vs-Mon date stability, zero-dates-on-blackout, no-blackout
+      regression, mutation >=80%). Asserted at build time via the
+      backend acceptance suite pinning a deterministic forecast (days value fixed) and asserting the
+      shifted calendar date / working-day count across all four surfaces, plus no-blackout regression
+      guards (D6) and an ArchUnit Models ↛ Repositories guard (ADR-058 A1). No runtime telemetry;
+      not dependent on Epic 5015. Tests authored RED+[Ignore] at DISTILL; un-ignored in DELIVER.
+    alerting: []

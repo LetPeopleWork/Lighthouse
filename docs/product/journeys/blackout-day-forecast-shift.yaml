@@ -1,0 +1,91 @@
+schema_version: 1
+feature_id: blackout-day-forecast-shift
+updated: 2026-06-05
+ado: "#4974"
+note: >
+  Sibling #4577 (Recurring Blackout Events) is OUT of scope. Config + blackout-aware historical
+  throughput + backtest shipped March 2026; this feature adds only the forward day<->date
+  working-day translation. Scope/trigger/landing decisions locked by the user 2026-06-05.
+
+journeys:
+
+  - name: forecast-dates-skip-known-nonworking-days
+    goal: >
+      A delivery-forecaster opens a forecast for a team/delivery that has configured BlackoutPeriods
+      between now and the forecast date, and instead of percentile dates that drift later over a
+      passed weekend or land on a Saturday, the dates step over the known non-working days and never
+      land on one - while the underlying Monte Carlo days are unchanged - so a predictable weekend
+      passing does not make the forecast look worse and the dates presented are ones work can finish on.
+    persona: delivery-forecaster
+    secondary_persona: product-owner
+
+    emotional_arc:
+      start: Unreliable - "I shared 70% on Friday; Monday it is 55% and nothing changed. The weekend
+        hit the forecast twice and now I look like I cannot forecast."
+      middle: Relieved - "Lighthouse treats the configured weekend as predictable non-working time:
+        the percentile date stepped over it and the number held."
+      end: Confident - "The dates I present count working days and never land on a day nothing ships;
+        stakeholders stop discounting Lighthouse dates."
+
+    design_decisions_resolved:
+      - id: D1
+        question: What is in scope given the March-2026 partial implementation?
+        decision: >
+          Forward date-shift only. BlackoutPeriod config, blackout-aware historical throughput, and
+          backtest are shipped and treated as LOCKED/correct. This feature adds the day->date and
+          date->working-days translation layer only. (User, 2026-06-05.)
+      - id: D2
+        question: What triggers the shift?
+        decision: >
+          The presence of configured BlackoutPeriods for the scope. No new per-team toggle, no new
+          settings field, no new RBAC surface. (User, 2026-06-05.)
+      - id: D3
+        question: What if a computed date lands on a blackout day?
+        decision: >
+          Roll it forward to the next non-blackout day ("forecast dates avoid landing on weekends").
+          (User, 2026-06-05.)
+      - id: D4
+        question: Does the Monte Carlo change?
+        decision: >
+          No. Trials, the simulation, percentile math, GetProbability/GetLikelihood day-values are
+          untouched. Only date projection (days->date) and target conversion (date->working-days)
+          change. Honours the epic's "forecasting itself stays the same".
+      - id: D5
+        question: How does How-Many "by a date" behave?
+        decision: >
+          It forecasts for the working-day count between today and the target (epic resolved TBD:
+          "jump over those days").
+      - id: D6
+        question: What about teams with no blackout periods?
+        decision: >
+          Byte-identical to pre-feature behaviour (regression guard). When no BlackoutPeriod overlaps
+          the window, every date and count equals today's value.
+
+    surfaces:
+      - manual-when: WhenForecastDto percentile dates (US-01).
+      - manual-by-date: ForecastController likelihood + how-many by a target date (US-02).
+      - feature-delivery: HowManyForecast.TargetDate, Delivery expected dates,
+        DeliveryWithLikelihoodDto, Feature.GetLikelhoodForDate (US-03).
+      - write-back: WriteBackTriggerService forecast date written to Jira/ADO (US-04).
+
+    out_of_scope:
+      - Recurring blackout rules (#4577).
+      - Any Monte Carlo / percentile-math change (D4).
+      - Modifying or re-verifying the shipped historical-throughput stripping or backtest (D1).
+      - Per-team enable toggle / new settings field / new RBAC surface (D2).
+      - New FE charts beyond existing blackout overlays; time-zone redesign.
+
+    cross_cutting:
+      rbac: >
+        N/A - the shift changes WHAT date/count a forecast yields, not who may access it. No new
+        endpoint (keys off existing BlackoutPeriods), no IRbacAdministrationService interaction,
+        existing TeamRead/PortfolioWrite guards unchanged, useRbac() untouched. DESIGN to confirm
+        premium-gating inheritance of BlackoutPeriod.
+      clients: >
+        N/A (transparent). Changes the VALUE of existing date fields on existing endpoints, not the
+        contract. No new/changed endpoint or field, so no FEATURE_REQUIRES_SERVER_NEWER_THAN gate;
+        clients render whatever date the server sends.
+      website: >
+        N/A for a marketing change (no new screen/capability; blackout config already documented).
+        Strong release-notes story (a passing weekend no longer worsens the forecast) - flag for
+        /release-notes and tag the epic.

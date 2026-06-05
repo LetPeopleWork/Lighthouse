@@ -16,6 +16,7 @@ feature_context:
   - forecast-minimum-data-guard
   - cumulative-state-time-completion-filter
   - delivery-metrics
+  - blackout-day-forecast-shift
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1443,4 +1444,68 @@ jobs:
         the replan case the tool misinforms. Gap: 3 — a genuine honesty defect on a shipped
         capability; kept tractable by one forward-only nullable column reusing the existing recorder
         and metrics-history endpoint (no reconstruction, no new endpoint, no new RBAC).
+
+  - id: job-forecast-skip-known-nonworking-days
+    title: Forecast dates that step over known non-working days and never land on one
+    persona: delivery-forecaster
+    feature_context: blackout-day-forecast-shift
+    created: 2026-06-05
+    note: >
+      Epic 4974 "Blackout Days in Future" (reported by Chris). Sibling #4577 (recurring rules) is OUT.
+      BlackoutPeriod config + blackout-aware historical throughput + backtest shipped March 2026 and are
+      LOCKED; this job is served ONLY by the remaining forward day<->date working-day translation: the
+      Monte Carlo days are unchanged (D4), the day->date projection skips configured BlackoutPeriods and
+      rolls a landing date forward (D3), and target->days counts only working days for likelihood/how-many
+      (D5). Triggered by configured BlackoutPeriods, no new toggle (D2). No-blackout teams are
+      byte-identical to today (D6).
+    job_story: >
+      When I forecast a feature or team delivery and known non-working days (a weekend, a company
+      shutdown) fall between now and the forecast date,
+      I want Lighthouse to translate the forecast's working-days into a calendar date that steps over
+      those days and never lands on one - leaving the underlying Monte Carlo unchanged -
+      so a predictable weekend simply passing does not make my forecast look worse, and the percentile
+      dates I present to stakeholders are ones on which work can actually be completed.
+    dimensions:
+      functional: >
+        The forecast days output is identical with or without blackout periods. The day->date
+        projection advances calendar days, skips days inside any configured BlackoutPeriod, and rolls a
+        date that lands on a blackout day forward to the next working day. "By a date" likelihood and
+        how-many use the working-day count between today and the target. Applies to manual When,
+        likelihood/how-many by date, feature & delivery dates and likelihood, and forecast write-back.
+      emotional: >
+        Move from "I shared 70% on Friday, it is 55% Monday and nothing changed - I look unreliable" to
+        "the number holds across a known weekend because the model treats it as predictable non-working
+        time, and the date never lands on a Saturday".
+      social: >
+        Present percentile dates that count working days and fall on days work can finish, so leadership
+        stops mentally discounting or re-deriving Lighthouse forecast dates.
+    forces:
+      push: >
+        A passing weekend hits the forecast twice (it added zero-throughput days to history AND shrank
+        the days-remaining), and an 85th-percentile date can knowingly land on a Saturday where nothing
+        ships - eroding stakeholder trust in the forecast.
+      pull: >
+        The forecast days stay the same; they are merely translated to honest calendar dates that step
+        over the blackout periods already configured for the team - no new setup, no spreadsheet
+        hand-shifting.
+      anxiety: >
+        Will this silently change the Monte Carlo numbers? (No - D4, only the date projection changes.)
+        Will it double-count with the shipped historical-throughput stripping? (Guarded by an explicit
+        compose test - a blackout day is never both stripped from the sample and added to the projection
+        in a way that moves the days value.)
+      habit: >
+        Forecasters mentally subtract "minus the weekend" or hand-shift the date in a spreadsheet before
+        presenting; the tool should do it.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - the same high-stakes leadership-trust surface as the other forecast-honesty jobs
+        (confidence-cap, minimum-data-guard); a forecast that visibly worsens over a known weekend, or a
+        percentile date on a non-working day, directly undermines the forecaster's credibility. Current
+        satisfaction: 1 - the forward day->date path has zero blackout awareness today (verified: no
+        blackout references in Models/Forecast, WhenForecastDto, Delivery, Feature). Gap: 3 - a genuine
+        missing capability, kept thin because the config, historical-throughput stripping, and backtest
+        halves are already shipped and the reusable BlackoutDaysExtensions helpers exist.
 

@@ -1873,3 +1873,114 @@ NONE new. The tile fold reads only the existing per-state cumulative computation
 ### Delivered status (2026-06-05)
 
 Shipped (DISCUSS → DESIGN → DISTILL → DELIVER complete). Mutation baselines: backend core logic **86.2%** (`ComputeFlowEfficiency` 100%, controllers 100%; survivors logging-only equivalents), frontend core logic **89.0%** raw / **99.1%** excluding equivalents (`flowEfficiency.ts` 100%, `computeFlowEfficiencyRag` 100%, `FlowEfficiencyOverviewWidget` 100% logic, `WaitStatesEditor` 80.49%). The shared `CumulativeStateTimeChart` aggregate (58.25%) is presentational-bound under the `state-time-cumulative-view` baseline. ADR-057 deviation: the wait distinction shipped **colour-only** (red-ish bars) + interactive legend per explicit user choice — the D6 pattern/icon reinforcement was dropped. Evolution: [`docs/evolution/2026-06-05-wait-states-flow-efficiency.md`](../../evolution/2026-06-05-wait-states-flow-efficiency.md).
+
+---
+
+## Application Architecture — blackout-day-forecast-shift (Epic 4974)
+
+Feature: blackout-day-forecast-shift — the **forward day↔date working-day translation** layer for forecasts. Turns the Monte Carlo's *days* into a calendar date that skips configured `BlackoutPeriod`s and never lands on one (days→date, D3), and converts a target date into a working-day count for likelihood/how-many-by-date (date→working-days). Config + historical-throughput stripping + backtest are shipped & LOCKED (D1); this delta adds ONLY the missing translation.
+Wave: DESIGN · Date: 2026-06-05 · Architect: Morgan (Solution Architect), interaction mode = PROPOSE · Paradigm: OOP (C# backend).
+
+This section is **additive** to all prior `## Application Architecture` deltas. Pattern (ports-and-adapters / hexagonal), paradigm, and core invariants are **unchanged**. NO new architectural style, NO new external integration, NO new external library, NO new endpoint, NO new DTO field, NO EF migration, NO new DI registration. ADR: **ADR-058**.
+
+### Key invariants introduced
+
+- **Two pure functions on the existing static `BlackoutDaysExtensions` (ADR-058, DDD-1)**: `ProjectWorkingDays(periods, start, workingDayCount) → DateTime` (days→date, rolls forward off a landing blackout day, D3) and `CountWorkingDays(periods, start, target) → int` (date→working-days). Both pure — the clock is a passed-in parameter, the period list a passed-in argument. They live beside the shipped `GetBlackoutDayIndices`/`IsBlackoutDay` (D7) — single home for all blackout math. NO new `IWorkingDayProjector` service (Option C rejected: pure functions with no collaborators).
+- **Fetch-once, pass-inward (DDD-2/D9)**: the global blackout set (`blackoutPeriodRepository.GetAll()`, unscoped) is fetched **once per inbound request** in the DI-aware assembly layer (`ForecastController`, `DeliveriesController`→`DeliveryWithLikelihoodDto.FromDelivery`, `WriteBackTriggerService`) and threaded inward as a materialised `IReadOnlyList<BlackoutPeriod>`. Mirrors the shipped `GetBlackoutAwareThroughputForTeam` fetch-once pattern. No N+1.
+- **Models acquire NO repository/service dependency (DDD-3)**: `WhenForecastDto`, `HowManyForecast`, `Feature`, `Delivery` receive the periods as a **method/ctor parameter** (recommended shape A1: `IReadOnlyList<BlackoutPeriod>`). Upholds the brief's Models ↛ Repositories invariant (ArchUnitNET-guarded). The pivotal pending decision is A1 (param) vs A2 (pre-bound delegate).
+- **D6 byte-identical is a property of the math, not a branch (DDD-4)**: empty period list ⇒ `ProjectWorkingDays == AddDays`, `CountWorkingDays == (t − d).Days`. The no-blackout regression golden test passes `periods = []`.
+- **D4 Monte Carlo untouched (DDD-5)**: `ForecastService`, `ForecastBase.GetProbability`/`GetLikelihood`, `Trials`, percentile math are NOT edited. Only their date *inputs* (date→days) and date *outputs* (days→date) are wrapped at the assembly layer. `GetProbability(p)` is asserted identical with/without periods (US-01 AC4).
+- **Orthogonality vs shipped stripping (DDD-6, US-04 AC3)**: historical stripping changes the throughput SAMPLE (past days, feeds the days value); forward projection changes only the rendered DATE (future days). Opposite sides of "today" — they never act on the same day, so they cannot double-count. Pinned by the compose-guard test.
+
+### New / reused ports
+
+- **No new port.** Reused driven port: `IRepository<BlackoutPeriod>` (`GetAll()` global, D9) — already injected in `TeamMetricsService`; **newly injected into `WriteBackTriggerService`** (US-04). Driving ports unchanged (existing forecast/delivery/write-back surfaces carry shifted values; existing `TeamRead`/`PortfolioRead`/`PortfolioWrite` guards unchanged).
+- **No driven adapter, no external integration ⇒ no contract tests at the platform-architect handoff.** The primitives are pure in-process functions over data from the existing repo — no external substrate, so no probe contract is owed.
+
+### Component decomposition (headline)
+
+- **EXTEND (backend, the only changes)**: `BlackoutDaysExtensions` (+2 pure functions); `WhenForecastDto` + `DtoExtensions.CreateForecastDtos` (project When dates over periods); `ForecastController` (fetch once; `CountWorkingDays` at the by-date seams ~57/80/93/103; pass periods to When DTOs); `HowManyForecast.TargetDate`, `Feature.GetLikelhoodForDate(date, periods)`, `Delivery.CalculateMetrics(periods, …)` (line 102 projection), `DeliveryWithLikelihoodDto.FromDelivery(delivery, periods)` + `DeliveriesController` (fetch + thread); `WriteBackTriggerService` (inject repo, fetch once, project line 226).
+- **REUSE AS-IS (untouched)**: `ForecastService` / `ForecastBase` / Monte Carlo (D4); `TeamMetricsService` blackout-aware throughput (D1, orthogonal); `GetBlackoutDayIndices`/`IsBlackoutDay`/`HasOverlapWithDateRange`; `IRepository<BlackoutPeriod>`.
+- **CREATE NEW**: none in production code. (`IWorkingDayProjector` service candidate explicitly rejected — ADR-058 Option C.)
+
+### Reuse analysis
+
+Default EXTEND honoured everywhere. The single CREATE-NEW candidate (an injectable projector service) is rejected because the translation is two pure functions with no collaborators to mock and D7 mandates reuse of the existing blackout-math home. Full table in the feature-delta `## Wave: DESIGN / [REF] Reuse Analysis`.
+
+### Lighthouse-Clients consistency (version-gate)
+
+The translation changes the *value* of existing date fields (`ExpectedDate`, write-back date) on existing endpoints — no new route, no new field ⇒ **NO `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate**. Clients render whatever date the server sends; dates become more accurate. (Matches the feature-delta cross-cutting checklist.)
+
+### Premium gating
+
+`BlackoutPeriod` CRUD and `ComputeBlackoutAwareThroughput` carry **no premium gate** (verified — `GetBlackoutAwareThroughputForTeam` does not reference `ILicenseService`). The shift inherits **no premium gate** for US-01/02/03 (activates whenever periods are configured, D2). US-04 write-back already sits behind the existing `licenseService.CanUsePremiumFeatures()` gate (`WriteBackTriggerService` line 34); the shift inherits it unchanged. No new gate anywhere.
+
+### Quality attributes
+
+- **Functional suitability / reliability**: D3 roll-forward + D6 byte-identical are pinned by boundary + golden tests; KPI "forecast date stability across a known weekend" verified by a Fri-vs-Mon clock-pinned integration test; "0 dates landing on a blackout day" asserted across all surfaces.
+- **Maintainability / testability**: the whole translation lives in two pure, mutation-testable functions in one home; ≥80% Stryker gate (D8). D4/D6/AC3 are direct assertions because the day logic and date logic are not entangled.
+- **Performance**: one `GetAll().ToList()` per request (global set, D9), then O(days) projection — negligible; no N+1.
+- **Security**: no new endpoint, no RBAC surface, no new permission (DISCUSS RBAC verdict N/A).
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Day↔date translation exists in exactly one place (`ProjectWorkingDays`/`CountWorkingDays`) — no inline `AddDays`/`(target − Today).Days` on a forecast date at the six seams after this feature | NUnit/grep + ArchUnitNET test extending the existing suite |
+| `ProjectWorkingDays`/`CountWorkingDays` are pure (no `IRepository<>`, `DbContext`, `HttpClient`, `ILogger`, `DateTime.UtcNow`/`Today`) | NUnit static-inspection test |
+| Forecast models (`Models.Forecast.*`, `Feature`, `Delivery`) depend on NO repository/service | ArchUnitNET test: `Models.*` ↛ `Services.Interfaces.Repositories`/`Services.Interfaces` |
+| Monte Carlo day-values unchanged | NUnit: `GetProbability(p)`/`GetLikelihood(d)` identical with/without periods (US-01 AC4) |
+| D3 roll-forward / D6 identity / US-04 AC3 compose-guard | NUnit boundary, golden, and compose-guard tests (ADR-058) |
+
+### ADR References (this feature)
+
+- [ADR-058](./adr-058-blackout-forecast-date-shift-translation-placement.md): The forward day↔date blackout translation is two pure functions on `BlackoutDaysExtensions`, threaded through the DTO/projection assembly layer — never inside the forecast models. (Alternatives B "logic in models" and C "injectable projector service" considered and rejected.)
+
+### C4 — Container (this feature, backend translation seam)
+
+```mermaid
+C4Container
+  title Container Diagram — blackout-day-forecast-shift (backend translation seam)
+  Person(forecaster, "Delivery Forecaster", "Runs forecasts; reads percentile dates")
+  System_Ext(tracker, "Jira / ADO", "Work-tracking system (write-back target)")
+
+  Container_Boundary(be, "Lighthouse Backend (.NET 8, ports-and-adapters)") {
+    Component(fc, "ForecastController", "ASP.NET Core", "Assembles When/by-date forecasts (US-01/02)")
+    Component(dc, "DeliveriesController", "ASP.NET Core", "Assembles delivery projections (US-03)")
+    Component(wbt, "WriteBackTriggerService", "DI service", "Writes forecast date back (US-04)")
+    Component(bde, "BlackoutDaysExtensions", "Pure static helpers", "ProjectWorkingDays / CountWorkingDays (NEW) + shipped indices")
+    Component(models, "Forecast models / DTOs", "WhenForecastDto, HowManyForecast, Feature, Delivery", "Receive periods as a parameter; no DI")
+    Component(mc, "ForecastService / ForecastBase", "Monte Carlo", "Produces DAYS — UNTOUCHED (D4)")
+    ContainerDb(repo, "BlackoutPeriodRepository", "EF Core 8", "GetAll() — GLOBAL set (D9)")
+  }
+
+  Rel(forecaster, fc, "Requests forecast via")
+  Rel(forecaster, dc, "Reads delivery status via")
+  Rel(fc, repo, "Fetches global periods once from")
+  Rel(dc, repo, "Fetches global periods once from")
+  Rel(wbt, repo, "Fetches global periods once from")
+  Rel(fc, mc, "Gets DAYS from (unchanged)")
+  Rel(fc, models, "Passes periods + DAYS to")
+  Rel(dc, models, "Passes periods to")
+  Rel(models, bde, "Projects days→date / counts date→days via")
+  Rel(wbt, bde, "Projects write-back days→date via")
+  Rel(wbt, tracker, "Writes shifted date to")
+```
+
+### C4 — Component (the translation seam detail)
+
+```mermaid
+C4Component
+  title Component Diagram — day↔date translation seam (ADR-058)
+  Component(assembly, "DI assembly layer", "ForecastController / DeliveriesController / WriteBackTriggerService", "Fetches GetAll() once; threads IReadOnlyList<BlackoutPeriod> inward")
+  Component(project, "ProjectWorkingDays(periods, start, n)", "Pure (NEW)", "days→date; skips blackout days; rolls forward off a landing day (D3); empty list ⇒ AddDays (D6)")
+  Component(count, "CountWorkingDays(periods, start, target)", "Pure (NEW)", "date→working-days in (start, target]; empty list ⇒ (t−start).Days (D6)")
+  Component(indices, "GetBlackoutDayIndices / IsBlackoutDay", "Pure (shipped, D7)", "Underlying blackout-day math — REUSED")
+  Component(days, "GetProbability / GetLikelihood", "Monte Carlo (UNTOUCHED, D4)", "DAYS in/out")
+
+  Rel(assembly, days, "Gets DAYS / feeds working-day count to (unchanged)")
+  Rel(assembly, project, "days→date via")
+  Rel(assembly, count, "date→working-days via")
+  Rel(project, indices, "reuses")
+  Rel(count, indices, "reuses")
+```
