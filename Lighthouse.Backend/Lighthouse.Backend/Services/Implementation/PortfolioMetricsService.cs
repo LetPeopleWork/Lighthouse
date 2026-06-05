@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
@@ -600,6 +601,21 @@ namespace Lighthouse.Backend.Services.Implementation
                 var previousStart = startDate.AddDays(-periodDays);
                 var previousPercentiles = GetCycleTimePercentilesForPortfolio(portfolio, previousStart, previousEnd).ToList();
                 return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
+            }, logger);
+        }
+
+        public FlowEfficiencyInfoDto GetFlowEfficiencyInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Flow Efficiency Info for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"FlowEfficiencyInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate);
+                var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
+                var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
+
+                var expandedWaitStates = portfolio.GetRawStatesForCategory(portfolio.WaitStates);
+                return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, portfolio.WaitStates.Count > 0);
             }, logger);
         }
 

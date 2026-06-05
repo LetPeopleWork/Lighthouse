@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
@@ -65,6 +66,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         PredictabilityScoreInfoDto GetPredictabilityScoreInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
+        FlowEfficiencyInfoDto GetFlowEfficiencyInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         void InvalidatePortfolioMetrics(Portfolio portfolio);
     }

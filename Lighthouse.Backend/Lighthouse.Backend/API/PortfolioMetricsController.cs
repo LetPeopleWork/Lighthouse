@@ -277,6 +277,18 @@ namespace Lighthouse.Backend.API
                 portfolioMetricsService.GetWipOverviewInfoForPortfolio(portfolio, startDate, endDate));
         }
 
+        [HttpGet("flowEfficiencyInfo")]
+        public ActionResult<FlowEfficiencyInfoDto> GetFlowEfficiencyInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                portfolioMetricsService.GetFlowEfficiencyInfoForPortfolio(portfolio, startDate, endDate));
+        }
+
         [HttpGet("totalWorkItemAgeInfo")]
         public ActionResult<TotalWorkItemAgeInfoDto> GetTotalWorkItemAgeInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

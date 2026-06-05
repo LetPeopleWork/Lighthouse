@@ -11,15 +11,10 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // DISTILL scaffold for wait-states-flow-efficiency (Story #5173) — PORTFOLIO scope parity (ADR-055 §1).
-    // Black-box example-based ATs over WebApplicationFactory<Program>; [Ignore]'d until DELIVER (RED-by-skip).
-    // Same shape/behaviour as the team scope; the portfolio endpoint mirrors the team flowEfficiencyInfo.
     [TestFixture]
     [NonParallelizable]
     public class FlowEfficiencyPortfolioReadApiIntegrationTest
     {
-        private const string PendingReason = "pending — DELIVER (wait-states-flow-efficiency)";
-
         private const string Analyzing = "Analyzing";
         private const string AwaitingApproval = "Awaiting Approval";
         private const string QueuedForBuild = "Queued for Build";
@@ -76,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_PortfolioWithKnownWaitTime_ReturnsSameShapeAndArithmeticAsTeamScope()
         {
             // US-03 parity / ADR-055: portfolio efficiency = active / total Doing-time over features in scope.
@@ -101,7 +95,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_PortfolioWithNoWaitStates_ReportsNotConfiguredNeverHundredPercent()
         {
             // D3 parity: no wait states → IsConfigured=false, never 100%.
@@ -122,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_PortfolioWithZeroDoingTimeInScope_ReportsNoData()
         {
             // D4 parity: wait states configured but zero Doing-time → HasDataInScope=false, no division error.
@@ -141,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_PortfolioAnonymousCaller_IsRejected()
         {
             // ADR-055: class-level RbacGuard(PortfolioRead) — an unauthenticated caller is rejected.
@@ -219,11 +210,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static void ApplyWaitStates(Portfolio portfolio, string[] waitStates)
         {
-            // Placeholder for the DELIVER-added WaitStates field (see the team-scope test's note). Keeps the
-            // scaffold compile-green with zero references to a not-yet-existing property; [Ignore] keeps the
-            // test RED-by-skip. DELIVER replaces this body with `portfolio.WaitStates = [.. waitStates];`.
-            _ = portfolio;
-            _ = waitStates;
+            portfolio.WaitStates = [.. waitStates];
         }
 
         private void AddFeatureWithSingleDoingVisit(

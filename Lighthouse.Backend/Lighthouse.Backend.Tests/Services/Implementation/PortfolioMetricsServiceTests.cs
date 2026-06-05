@@ -1359,6 +1359,87 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return feature;
         }
 
+        [Test]
+        public void GetFlowEfficiencyInfoForPortfolio_MappingNameMarkedAsWaitState_ReportsActiveOverTotalDoingTime()
+        {
+            const string analyzing = "Analyzing";
+            const string awaitingApproval = "Awaiting Approval";
+            const string queuedForBuild = "Queued for Build";
+            const string done = "Done";
+
+            var windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc);
+            var windowStart = windowEnd.AddDays(-180);
+            var inWindow = windowStart.AddDays(10);
+
+            var flowPortfolio = new Portfolio
+            {
+                Id = 9,
+                Name = "Flow Efficiency Portfolio",
+                DoingStates = [analyzing, awaitingApproval, queuedForBuild],
+                DoneStates = [done],
+                WaitStates = ["Waiting"],
+                StateMappings = [new StateMapping { Name = "Waiting", States = [awaitingApproval, queuedForBuild] }],
+            };
+
+            var transitions = new List<FeatureStateTransition>();
+            var flowFeatures = new List<Feature>
+            {
+                SingleDoingVisitFeature(flowPortfolio, transitions, id: 201, referenceId: "EPIC-A", doingState: analyzing, startedDate: inWindow, days: 180),
+                SingleDoingVisitFeature(flowPortfolio, transitions, id: 202, referenceId: "EPIC-B", doingState: awaitingApproval, startedDate: inWindow, days: 120),
+                SingleDoingVisitFeature(flowPortfolio, transitions, id: 203, referenceId: "EPIC-C", doingState: queuedForBuild, startedDate: inWindow, days: 100),
+            };
+
+            featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => flowFeatures.Where(predicate.Compile()).AsQueryable());
+            featureStateTransitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+
+            var result = subject.GetFlowEfficiencyInfoForPortfolio(flowPortfolio, windowStart, windowEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsConfigured, Is.True);
+                Assert.That(result.HasDataInScope, Is.True);
+                Assert.That(result.TotalDoingDays, Is.EqualTo(400.0).Within(FlowEfficiencyDaysTolerance));
+                Assert.That(result.WaitDays, Is.EqualTo(220.0).Within(FlowEfficiencyDaysTolerance));
+                Assert.That(result.EfficiencyPercent, Is.EqualTo(45.0).Within(FlowEfficiencyPercentTolerance));
+            }
+        }
+
+        private const double FlowEfficiencyDaysTolerance = 0.1;
+
+        private const double FlowEfficiencyPercentTolerance = 0.6;
+
+        private static Feature SingleDoingVisitFeature(
+            Portfolio portfolio,
+            List<FeatureStateTransition> transitions,
+            int id,
+            string referenceId,
+            string doingState,
+            DateTime startedDate,
+            int days)
+        {
+            var exit = startedDate.AddDays(days);
+
+            var feature = new Feature
+            {
+                Id = id,
+                ReferenceId = referenceId,
+                Name = $"Epic {referenceId}",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                CreatedDate = startedDate.AddDays(-1),
+                StartedDate = startedDate,
+                ClosedDate = exit,
+            };
+            feature.Portfolios.Add(portfolio);
+
+            transitions.Add(new FeatureStateTransition { FeatureId = id, FromState = "Analyzing", ToState = doingState, TransitionedAt = startedDate });
+            transitions.Add(new FeatureStateTransition { FeatureId = id, FromState = doingState, ToState = "Done", TransitionedAt = exit });
+
+            return feature;
+        }
+
         #endregion
 
         private void SetupTestData()
