@@ -63,7 +63,15 @@ test("@walking_skeleton @US-01 admin marks a wait state and the delivery lead se
 		page,
 		CUMULATIVE_STATE_TIME_WIDGET_ID,
 	);
+	await expect(chartEfficiency.titleBlock).toContainText(
+		"Cumulative Time per State",
+	);
 	await expect(chartEfficiency.efficiencyNumber).toContainText("%");
-	await expect(chartEfficiency.waitBarLegendEntry).toBeVisible();
-	await expect.poll(() => chartEfficiency.countWaitBars()).toBeGreaterThan(0);
+	await expect(chartEfficiency.waitColourKey).toBeVisible();
+	await expect(chartEfficiency.waitColourKey).toContainText("Wait");
+
+	const completedToggle = chartEfficiency.completionLegendButton("Completed");
+	await expect(completedToggle).toHaveAttribute("aria-pressed", "true");
+	await completedToggle.click();
+	await expect(completedToggle).toHaveAttribute("aria-pressed", "false");
 });

@@ -1,9 +1,7 @@
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import {
 	Box,
 	Card,
 	CardContent,
-	Chip,
 	Stack,
 	Typography,
 	useTheme,
@@ -26,10 +24,9 @@ import {
 	flowEfficiency,
 	resolveWaitRawStates,
 } from "../../../utils/flowEfficiency";
-import LegendChip from "./LegendChip";
 
 const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
-const WAIT_PATTERN_ID = "cumulative-state-time-wait-pattern";
+const WAIT_HATCH_PATTERN_ID = "cumulative-state-time-wait-ongoing-hatch";
 
 const COMPLETED_CLASS = "Completed";
 const ONGOING_CLASS = "Ongoing";
@@ -123,6 +120,66 @@ const StateTooltipContent: React.FC<{
 	</Box>
 );
 
+const LegendSwatch: React.FC<{ color: string }> = ({ color }) => (
+	<Box
+		sx={{
+			width: 14,
+			height: 14,
+			borderRadius: 0.5,
+			backgroundColor: color,
+			flexShrink: 0,
+		}}
+	/>
+);
+
+interface CompletionLegendButtonProps {
+	label: string;
+	color: string;
+	visible: boolean;
+	onToggle: () => void;
+}
+
+const CompletionLegendButton: React.FC<CompletionLegendButtonProps> = ({
+	label,
+	color,
+	visible,
+	onToggle,
+}) => (
+	<Box
+		component="button"
+		type="button"
+		onClick={onToggle}
+		aria-pressed={visible}
+		aria-label={`${label} visibility toggle`}
+		sx={{
+			display: "flex",
+			alignItems: "center",
+			gap: 0.75,
+			border: "none",
+			background: "none",
+			cursor: "pointer",
+			p: 0,
+			color: "text.primary",
+			opacity: visible ? 1 : 0.4,
+		}}
+	>
+		<LegendSwatch color={color} />
+		<Typography variant="body2">{label}</Typography>
+	</Box>
+);
+
+const WaitColourKey: React.FC<{ color: string }> = ({ color }) => (
+	<Box
+		data-testid="cumulative-state-time-wait-legend"
+		sx={{ display: "flex", alignItems: "center", gap: 0.75 }}
+	>
+		<LegendSwatch color={color} />
+		<Typography variant="body2" color="text.secondary">
+			Wait
+		</Typography>
+	</Box>
+);
+
 const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	data,
 	onBarClick,
@@ -181,10 +238,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	const unitLabel = formatDuration(maxTotalDays, unit).split(" ")[1];
 
 	const stateLabels = orderedStates.map((row) => row.state);
-	const completedData = orderedStates.map(
-		(row) => row.completedContributionDays,
-	);
-	const ongoingData = orderedStates.map((row) => row.ongoingContributionDays);
 
 	const waitRawStates = new Set(
 		resolveWaitRawStates(waitStates, stateMappings).map((state) =>
@@ -193,16 +246,16 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	);
 	const isWaitState = (state: string): boolean =>
 		waitRawStates.has(state.toLowerCase());
-	const hasWaitHighlight = orderedStates.some((row) => isWaitState(row.state));
-	const waitColorMap = hasWaitHighlight
-		? {
-				type: "ordinal" as const,
-				values: stateLabels,
-				colors: orderedStates.map((row) =>
-					isWaitState(row.state) ? `url(#${WAIT_PATTERN_ID})` : "",
-				),
-			}
-		: undefined;
+	const hasWaitBars = orderedStates.some((row) => isWaitState(row.state));
+
+	const completedFor = (wait: boolean): (number | null)[] =>
+		orderedStates.map((row) =>
+			isWaitState(row.state) === wait ? row.completedContributionDays : null,
+		);
+	const ongoingFor = (wait: boolean): (number | null)[] =>
+		orderedStates.map((row) =>
+			isWaitState(row.state) === wait ? row.ongoingContributionDays : null,
+		);
 
 	const handleBarClick = (dataIndex: number) => {
 		const row = orderedStates[dataIndex];
@@ -216,30 +269,57 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 
 	const allSeries = [
 		{
+			id: "completedNonWait",
 			completionClass: COMPLETED_CLASS,
-			data: completedData,
+			wait: false,
+			data: completedFor(false),
 			label: `Completed (${unitLabel})`,
 			stack: "stateTime",
 			color: theme.palette.primary.main,
 			valueFormatter,
 		},
 		{
+			id: "completedWait",
+			completionClass: COMPLETED_CLASS,
+			wait: true,
+			data: completedFor(true),
+			label: `Completed (${unitLabel})`,
+			stack: "stateTime",
+			color: theme.palette.warning.main,
+			valueFormatter,
+		},
+		{
+			id: "ongoingNonWait",
 			completionClass: ONGOING_CLASS,
-			data: ongoingData,
+			wait: false,
+			data: ongoingFor(false),
 			label: `Ongoing (${unitLabel})`,
 			stack: "stateTime",
 			color: `url(#${HATCH_PATTERN_ID})`,
 			valueFormatter,
 		},
+		{
+			id: "ongoingWait",
+			completionClass: ONGOING_CLASS,
+			wait: true,
+			data: ongoingFor(true),
+			label: `Ongoing (${unitLabel})`,
+			stack: "stateTime",
+			color: `url(#${WAIT_HATCH_PATTERN_ID})`,
+			valueFormatter,
+		},
 	];
 
 	const series = allSeries
+		.filter((entry) => hasWaitBars || !entry.wait)
 		.filter(
 			(entry) =>
 				!completionFilterEnabled ||
 				visibleTypes[entry.completionClass] !== false,
 		)
-		.map(({ completionClass: _completionClass, ...entry }) => entry);
+		.map(
+			({ completionClass: _completionClass, wait: _wait, ...entry }) => entry,
+		);
 
 	return (
 		<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
@@ -250,51 +330,53 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 					direction="row"
 					sx={{
 						justifyContent: "space-between",
-						alignItems: "center",
-						minHeight: 56,
+						alignItems: "flex-start",
 						mb: 1,
 					}}
 				>
-					<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+					<Stack
+						direction="column"
+						spacing={0.25}
+						data-testid="cumulative-state-time-title-block"
+					>
 						<Typography variant="h6">Cumulative Time per State</Typography>
 						<FlowEfficiencyFigure
 							rows={orderedStates}
 							waitStates={waitStates}
 							stateMappings={stateMappings}
 						/>
-						{hasWaitHighlight && (
-							<Chip
-								size="small"
-								variant="outlined"
-								icon={<HourglassEmptyIcon fontSize="small" />}
-								label="Wait"
-								data-testid="cumulative-state-time-wait-legend"
-								sx={{ borderColor: theme.palette.secondary.main }}
-							/>
-						)}
-						{completionFilterEnabled && (
-							<>
-								<LegendChip
-									label={COMPLETED_CLASS}
-									color={theme.palette.primary.main}
-									visible={visibleTypes[COMPLETED_CLASS] !== false}
-									onToggle={() => toggleTypeVisibility(COMPLETED_CLASS)}
-								/>
-								<LegendChip
-									label={ONGOING_CLASS}
-									color={theme.palette.primary.light}
-									visible={visibleTypes[ONGOING_CLASS] !== false}
-									onToggle={() => toggleTypeVisibility(ONGOING_CLASS)}
-								/>
-							</>
-						)}
 					</Stack>
 					{pickerSlot}
+				</Stack>
+
+				<Stack
+					direction="row"
+					spacing={2}
+					sx={{ alignItems: "center", flexWrap: "wrap", mb: 1, rowGap: 1 }}
+				>
+					{completionFilterEnabled && (
+						<>
+							<CompletionLegendButton
+								label={COMPLETED_CLASS}
+								color={theme.palette.primary.main}
+								visible={visibleTypes[COMPLETED_CLASS] !== false}
+								onToggle={() => toggleTypeVisibility(COMPLETED_CLASS)}
+							/>
+							<CompletionLegendButton
+								label={ONGOING_CLASS}
+								color={theme.palette.primary.light}
+								visible={visibleTypes[ONGOING_CLASS] !== false}
+								onToggle={() => toggleTypeVisibility(ONGOING_CLASS)}
+							/>
+						</>
+					)}
+					{hasWaitBars && <WaitColourKey color={theme.palette.warning.main} />}
 				</Stack>
 
 				<Box sx={{ flex: 1, minHeight: 0 }}>
 					<BarChart
 						style={{ height: "100%", width: "100%" }}
+						hideLegend
 						onItemClick={(_event, params) =>
 							handleBarClick(params?.dataIndex ?? -1)
 						}
@@ -309,7 +391,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 									angle: -25,
 									textAnchor: "end",
 								},
-								colorMap: waitColorMap,
 							},
 						]}
 						yAxis={[{ valueFormatter, label: unitLabel }]}
@@ -334,21 +415,20 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 								/>
 							</pattern>
 							<pattern
-								id={WAIT_PATTERN_ID}
+								id={WAIT_HATCH_PATTERN_ID}
 								patternUnits="userSpaceOnUse"
-								width={8}
-								height={8}
+								width={6}
+								height={6}
+								patternTransform="rotate(45)"
 							>
-								<rect
-									width={8}
-									height={8}
-									fill={theme.palette.secondary.main}
-								/>
-								<circle
-									cx={4}
-									cy={4}
-									r={1.5}
-									fill={theme.palette.secondary.dark}
+								<rect width={6} height={6} fill={theme.palette.warning.light} />
+								<line
+									x1={0}
+									y1={0}
+									x2={0}
+									y2={6}
+									stroke={theme.palette.warning.dark}
+									strokeWidth={2}
 								/>
 							</pattern>
 						</defs>

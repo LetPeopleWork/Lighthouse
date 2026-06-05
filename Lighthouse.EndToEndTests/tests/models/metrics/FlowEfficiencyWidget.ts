@@ -1,8 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
-const WAIT_BAR_LEGEND_TEST_ID = "cumulative-state-time-wait-legend";
+const WAIT_COLOUR_KEY_TEST_ID = "cumulative-state-time-wait-legend";
 const CHART_EFFICIENCY_TEST_ID = "cumulative-state-time-flow-efficiency";
-const WAIT_PATTERN_FILL = "url(#cumulative-state-time-wait-pattern)";
+const TITLE_BLOCK_TEST_ID = "cumulative-state-time-title-block";
 
 export class FlowEfficiencyOverviewTile {
 	private readonly widget: Locator;
@@ -37,19 +37,25 @@ export class CumulativeChartFlowEfficiency {
 		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
 	}
 
+	get titleBlock(): Locator {
+		return this.widget.getByTestId(TITLE_BLOCK_TEST_ID);
+	}
+
 	get efficiencyNumber(): Locator {
-		return this.widget.getByTestId(CHART_EFFICIENCY_TEST_ID);
+		return this.titleBlock.getByTestId(CHART_EFFICIENCY_TEST_ID);
 	}
 
 	async readEfficiencyText(): Promise<string> {
 		return (await this.efficiencyNumber.innerText()) ?? "";
 	}
 
-	get waitBarLegendEntry(): Locator {
-		return this.widget.getByTestId(WAIT_BAR_LEGEND_TEST_ID);
+	get waitColourKey(): Locator {
+		return this.widget.getByTestId(WAIT_COLOUR_KEY_TEST_ID);
 	}
 
-	async countWaitBars(): Promise<number> {
-		return this.widget.locator(`rect[fill='${WAIT_PATTERN_FILL}']`).count();
+	completionLegendButton(label: "Completed" | "Ongoing"): Locator {
+		return this.widget.getByRole("button", {
+			name: `${label} visibility toggle`,
+		});
 	}
 }

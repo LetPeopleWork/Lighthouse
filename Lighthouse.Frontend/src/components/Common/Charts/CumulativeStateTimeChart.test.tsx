@@ -411,36 +411,68 @@ describe("CumulativeStateTimeChart completion-class legend toggle (US-5144-01)",
 });
 
 const waitHighlightRows: ICumulativeStateTimeStateRow[] = [
-	getMockStateRow({ state: "In Progress", workflowOrder: 0, totalDays: 30 }),
+	getMockStateRow({
+		state: "In Progress",
+		workflowOrder: 0,
+		totalDays: 30,
+		completedContributionDays: 18,
+		ongoingContributionDays: 12,
+	}),
 	getMockStateRow({
 		state: "Waiting for Review",
 		workflowOrder: 1,
 		totalDays: 20,
+		completedContributionDays: 14,
+		ongoingContributionDays: 6,
 	}),
-	getMockStateRow({ state: "Ready for Test", workflowOrder: 2, totalDays: 10 }),
+	getMockStateRow({
+		state: "Ready for Test",
+		workflowOrder: 2,
+		totalDays: 10,
+		completedContributionDays: 7,
+		ongoingContributionDays: 3,
+	}),
 ];
 
-const waitHighlightOf = (): string[] => {
+interface RenderedSeries {
+	id?: string;
+	label?: string;
+	color?: string;
+	stack?: string;
+	data: (number | null)[];
+}
+
+const fullSeriesOf = (): RenderedSeries[] => {
 	const chart = screen.getByTestId("mock-bar-chart");
-	const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
-	const colorMap = xAxis[0]?.colorMap;
-	if (!colorMap || colorMap.type !== "ordinal") {
-		return [];
-	}
-	const { values, colors } = colorMap as {
-		values: string[];
-		colors: string[];
-	};
-	return values.filter((_value: string, index: number) =>
-		Boolean(colors[index]),
-	);
+	return JSON.parse(chart.getAttribute("data-series") ?? "[]");
 };
 
-const waitLegendChip = (): HTMLElement | null =>
+const stateIndex = (state: string): number =>
+	[...waitHighlightRows]
+		.sort((a, b) => a.workflowOrder - b.workflowOrder)
+		.findIndex((row) => row.state === state);
+
+const seriesById = (id: string): RenderedSeries | undefined =>
+	fullSeriesOf().find((entry) => entry.id === id);
+
+const waitColoured = (): string[] => {
+	const completedWait = seriesById("completedWait");
+	if (!completedWait) {
+		return [];
+	}
+	const ordered = [...waitHighlightRows].sort(
+		(a, b) => a.workflowOrder - b.workflowOrder,
+	);
+	return ordered
+		.filter((row) => completedWait.data[stateIndex(row.state)] !== null)
+		.map((row) => row.state);
+};
+
+const waitKey = (): HTMLElement | null =>
 	screen.queryByTestId("cumulative-state-time-wait-legend");
 
-describe("CumulativeStateTimeChart wait-state highlight (US-04-01)", () => {
-	it("highlights the wait-state bars distinctly from active-state bars", () => {
+describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
+	it("colours wait bars in the amber family while leaving non-wait bars teal", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
@@ -448,10 +480,47 @@ describe("CumulativeStateTimeChart wait-state highlight (US-04-01)", () => {
 			/>,
 		);
 
-		expect(waitHighlightOf()).toEqual(["Waiting for Review"]);
+		const completedNonWait = seriesById("completedNonWait");
+		const completedWait = seriesById("completedWait");
+
+		expect(completedNonWait?.color).toBe(testTheme.palette.primary.main);
+		expect(completedWait?.color).toBe(testTheme.palette.warning.main);
 	});
 
-	it("highlights every underlying raw state when a mapping name is configured as wait", () => {
+	it("keeps the completed-solid vs ongoing-hatch distinction within wait bars", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		const completedWait = seriesById("completedWait");
+		const ongoingWait = seriesById("ongoingWait");
+
+		expect(completedWait?.color).toBe(testTheme.palette.warning.main);
+		expect(ongoingWait?.color).toContain("url(#");
+		expect(completedWait?.color).not.toEqual(ongoingWait?.color);
+	});
+
+	it("routes each bar's value into exactly one of the wait/non-wait pairs", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		const waitIdx = stateIndex("Waiting for Review");
+		const activeIdx = stateIndex("In Progress");
+
+		expect(seriesById("completedWait")?.data[waitIdx]).toBe(14);
+		expect(seriesById("completedNonWait")?.data[waitIdx]).toBeNull();
+		expect(seriesById("completedNonWait")?.data[activeIdx]).toBe(18);
+		expect(seriesById("completedWait")?.data[activeIdx]).toBeNull();
+	});
+
+	it("colours every underlying raw bar when a mapping name is configured as wait", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
@@ -465,10 +534,10 @@ describe("CumulativeStateTimeChart wait-state highlight (US-04-01)", () => {
 			/>,
 		);
 
-		expect(waitHighlightOf()).toEqual(["Waiting for Review", "Ready for Test"]);
+		expect(waitColoured()).toEqual(["Waiting for Review", "Ready for Test"]);
 	});
 
-	it("keeps the completed/ongoing segment split while highlighting wait bars", () => {
+	it("shows a non-clickable wait colour key labelled wait when a wait state is present", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
@@ -476,27 +545,13 @@ describe("CumulativeStateTimeChart wait-state highlight (US-04-01)", () => {
 			/>,
 		);
 
-		expect(seriesOf()).toHaveLength(2);
-		expect(waitHighlightOf()).toEqual(["Waiting for Review"]);
+		const key = waitKey();
+		expect(key).not.toBeNull();
+		expect(key?.textContent?.toLowerCase()).toContain("wait");
+		expect(key?.tagName).not.toBe("BUTTON");
 	});
 
-	it("renders a colour-blind-safe wait legend entry with a non-colour cue", () => {
-		const { container } = render(
-			<CumulativeStateTimeChart
-				data={{ states: waitHighlightRows }}
-				waitStates={["Waiting for Review"]}
-			/>,
-		);
-
-		const legend = waitLegendChip();
-		expect(legend).not.toBeNull();
-		expect(legend?.textContent?.toLowerCase()).toContain("wait");
-		expect(
-			container.querySelector("pattern#cumulative-state-time-wait-pattern"),
-		).not.toBeNull();
-	});
-
-	it("drives the highlight from the same resolveWaitRawStates used by the figure", () => {
+	it("drives the colouring from the same resolveWaitRawStates used by the figure", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
@@ -507,13 +562,66 @@ describe("CumulativeStateTimeChart wait-state highlight (US-04-01)", () => {
 
 		const figure = screen.getByTestId("cumulative-state-time-flow-efficiency");
 		expect(figure.textContent).toContain("83");
-		expect(waitHighlightOf()).toEqual(["Ready for Test"]);
+		expect(waitColoured()).toEqual(["Ready for Test"]);
 	});
 
-	it("highlights nothing and renders no wait legend when no wait states are configured", () => {
+	it("emits no wait series, no amber colour and no wait key when no wait states are configured", () => {
 		render(<CumulativeStateTimeChart data={{ states: waitHighlightRows }} />);
 
-		expect(waitHighlightOf()).toEqual([]);
-		expect(waitLegendChip()).toBeNull();
+		expect(seriesById("completedWait")).toBeUndefined();
+		expect(seriesById("ongoingWait")).toBeUndefined();
+		expect(seriesById("completedNonWait")?.color).toBe(
+			testTheme.palette.primary.main,
+		);
+		expect(waitKey()).toBeNull();
+	});
+
+	it("never builds an xAxis colorMap or a dotted wait pattern", () => {
+		const { container } = render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		const chart = screen.getByTestId("mock-bar-chart");
+		const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
+		expect(xAxis[0]?.colorMap).toBeUndefined();
+		expect(
+			container.querySelector("pattern#cumulative-state-time-wait-pattern"),
+		).toBeNull();
+	});
+});
+
+describe("CumulativeStateTimeChart header layout (US-04-03)", () => {
+	it("places the flow-efficiency figure below the title, not beside it", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		const titleBlock = screen.getByTestId("cumulative-state-time-title-block");
+		const figure = within(titleBlock).getByTestId(
+			"cumulative-state-time-flow-efficiency",
+		);
+
+		expect(titleBlock.textContent).toContain("Cumulative Time per State");
+		expect(figure).toBeInTheDocument();
+	});
+
+	it("removes the wait chip and the header completion chips", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+				completionFilterEnabled
+			/>,
+		);
+
+		expect(
+			screen.queryByText("Wait", { selector: ".MuiChip-label" }),
+		).toBeNull();
 	});
 });
