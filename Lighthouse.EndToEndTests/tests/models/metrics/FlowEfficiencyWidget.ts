@@ -1,8 +1,10 @@
 import type { Locator, Page } from "@playwright/test";
 
 const WAIT_COLOUR_KEY_TEST_ID = "cumulative-state-time-wait-legend";
+const WAIT_COLOUR_KEY_SWATCH_TEST_ID = "cumulative-state-time-wait-legend-swatch";
 const CHART_EFFICIENCY_TEST_ID = "cumulative-state-time-flow-efficiency";
 const TITLE_BLOCK_TEST_ID = "cumulative-state-time-title-block";
+const BAR_TOOLTIP_TEST_ID = "cumulative-state-bar-tooltip";
 
 export class FlowEfficiencyOverviewTile {
 	private readonly widget: Locator;
@@ -51,6 +53,34 @@ export class CumulativeChartFlowEfficiency {
 
 	get waitColourKey(): Locator {
 		return this.widget.getByTestId(WAIT_COLOUR_KEY_TEST_ID);
+	}
+
+	get waitColourKeySwatch(): Locator {
+		return this.widget.getByTestId(WAIT_COLOUR_KEY_SWATCH_TEST_ID);
+	}
+
+	async readWaitColourKeySwatchBackground(): Promise<string> {
+		return this.waitColourKeySwatch.evaluate(
+			(node) => globalThis.getComputedStyle(node).backgroundColor,
+		);
+	}
+
+	get barTooltip(): Locator {
+		return this.page.getByTestId(BAR_TOOLTIP_TEST_ID);
+	}
+
+	get barTooltipRows(): Locator {
+		return this.barTooltip.locator(
+			'[data-testid^="cumulative-state-bar-tooltip-row-"]',
+		);
+	}
+
+	async hoverFirstBar(): Promise<void> {
+		const bar = this.widget
+			.locator('rect.MuiBarChart-element:not([fill^="url("])')
+			.first();
+		await bar.waitFor({ state: "visible" });
+		await bar.hover({ force: true });
 	}
 
 	completionLegendButton(label: "Completed" | "Ongoing"): Locator {

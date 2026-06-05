@@ -3,7 +3,9 @@ import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ICumulativeStateTimeStateRow } from "../../../models/Metrics/CumulativeStateTime";
 import { testTheme } from "../../../tests/testTheme";
-import CumulativeStateTimeChart from "./CumulativeStateTimeChart";
+import CumulativeStateTimeChart, {
+	CumulativeStateBarTooltip,
+} from "./CumulativeStateTimeChart";
 
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
@@ -471,8 +473,8 @@ const waitColoured = (): string[] => {
 const waitKey = (): HTMLElement | null =>
 	screen.queryByTestId("cumulative-state-time-wait-legend");
 
-describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
-	it("colours wait bars in the amber family while leaving non-wait bars teal", () => {
+describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
+	it("colours wait bars in the red waste family while leaving non-wait bars teal", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
@@ -484,7 +486,8 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
 		const completedWait = seriesById("completedWait");
 
 		expect(completedNonWait?.color).toBe(testTheme.palette.primary.main);
-		expect(completedWait?.color).toBe(testTheme.palette.warning.main);
+		expect(completedWait?.color).toBe(testTheme.palette.error.main);
+		expect(completedWait?.color).not.toBe(testTheme.palette.warning.main);
 	});
 
 	it("keeps the completed-solid vs ongoing-hatch distinction within wait bars", () => {
@@ -498,7 +501,7 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
 		const completedWait = seriesById("completedWait");
 		const ongoingWait = seriesById("ongoingWait");
 
-		expect(completedWait?.color).toBe(testTheme.palette.warning.main);
+		expect(completedWait?.color).toBe(testTheme.palette.error.main);
 		expect(ongoingWait?.color).toContain("url(#");
 		expect(completedWait?.color).not.toEqual(ongoingWait?.color);
 	});
@@ -537,7 +540,7 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
 		expect(waitColoured()).toEqual(["Waiting for Review", "Ready for Test"]);
 	});
 
-	it("shows a non-clickable wait colour key labelled wait when a wait state is present", () => {
+	it("shows a non-clickable wait colour key labelled wait whose swatch matches the red waste colour", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
@@ -549,6 +552,13 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
 		expect(key).not.toBeNull();
 		expect(key?.textContent?.toLowerCase()).toContain("wait");
 		expect(key?.tagName).not.toBe("BUTTON");
+
+		const swatch = within(key as HTMLElement).getByTestId(
+			"cumulative-state-time-wait-legend-swatch",
+		);
+		expect(swatch).toHaveStyle({
+			backgroundColor: testTheme.palette.error.main,
+		});
 	});
 
 	it("drives the colouring from the same resolveWaitRawStates used by the figure", () => {
@@ -565,7 +575,7 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-03)", () => {
 		expect(waitColoured()).toEqual(["Ready for Test"]);
 	});
 
-	it("emits no wait series, no amber colour and no wait key when no wait states are configured", () => {
+	it("emits no wait series, no red colour and no wait key when no wait states are configured", () => {
 		render(<CumulativeStateTimeChart data={{ states: waitHighlightRows }} />);
 
 		expect(seriesById("completedWait")).toBeUndefined();
@@ -623,5 +633,87 @@ describe("CumulativeStateTimeChart header layout (US-04-03)", () => {
 		expect(
 			screen.queryByText("Wait", { selector: ".MuiChip-label" }),
 		).toBeNull();
+	});
+});
+
+describe("CumulativeStateBarTooltip 2-row presentation (US-04-04)", () => {
+	const tooltipRow = getMockStateRow({
+		state: "Waiting for Review",
+		completedContributionDays: 14,
+		ongoingContributionDays: 6,
+	});
+
+	const tooltipRowsFor = (testId: string): string[] => {
+		const tooltip = screen.getByTestId(testId);
+		return within(tooltip)
+			.getAllByTestId(/^cumulative-state-bar-tooltip-row-/)
+			.map((node) => node.getAttribute("data-testid") ?? "");
+	};
+
+	it("renders exactly two rows — Completed and Ongoing — for a wait bar with the bar colour", () => {
+		render(
+			<CumulativeStateBarTooltip
+				row={tooltipRow}
+				color={testTheme.palette.error.main}
+				unit="days"
+			/>,
+		);
+
+		const rows = tooltipRowsFor("cumulative-state-bar-tooltip");
+		expect(rows).toHaveLength(2);
+
+		const completed = screen.getByTestId(
+			"cumulative-state-bar-tooltip-row-completed",
+		);
+		const ongoing = screen.getByTestId(
+			"cumulative-state-bar-tooltip-row-ongoing",
+		);
+		expect(completed.textContent).toContain("Completed");
+		expect(completed.textContent).toContain("14");
+		expect(ongoing.textContent).toContain("Ongoing");
+		expect(ongoing.textContent).toContain("6");
+
+		const mark = within(completed).getByTestId(
+			"cumulative-state-bar-tooltip-mark",
+		);
+		expect(mark).toHaveStyle({
+			backgroundColor: testTheme.palette.error.main,
+		});
+	});
+
+	it("renders exactly two rows for a non-wait bar and never the four underlying series", () => {
+		render(
+			<CumulativeStateBarTooltip
+				row={getMockStateRow({
+					state: "In Progress",
+					completedContributionDays: 18,
+					ongoingContributionDays: 12,
+				})}
+				color={testTheme.palette.primary.main}
+				unit="days"
+			/>,
+		);
+
+		const rows = tooltipRowsFor("cumulative-state-bar-tooltip");
+		expect(rows).toHaveLength(2);
+
+		const tooltip = screen.getByTestId("cumulative-state-bar-tooltip");
+		expect(tooltip.textContent).toContain("In Progress");
+		expect(tooltip.textContent).not.toContain("(w)");
+		expect(tooltip.textContent).not.toContain("Wait");
+	});
+
+	it("titles the tooltip with the hovered state name", () => {
+		render(
+			<CumulativeStateBarTooltip
+				row={tooltipRow}
+				color={testTheme.palette.error.main}
+				unit="days"
+			/>,
+		);
+
+		expect(
+			screen.getByTestId("cumulative-state-bar-tooltip").textContent,
+		).toContain("Waiting for Review");
 	});
 });

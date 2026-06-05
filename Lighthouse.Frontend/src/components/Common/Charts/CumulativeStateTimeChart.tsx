@@ -7,6 +7,10 @@ import {
 	useTheme,
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
+import {
+	ChartsTooltipContainer,
+	useItemTooltip,
+} from "@mui/x-charts/ChartsTooltip";
 import type React from "react";
 import { type ReactNode, useMemo } from "react";
 import { useTypesVisibility } from "../../../hooks/useChartVisibility";
@@ -120,8 +124,83 @@ const StateTooltipContent: React.FC<{
 	</Box>
 );
 
-const LegendSwatch: React.FC<{ color: string }> = ({ color }) => (
+export const CumulativeStateBarTooltip: React.FC<{
+	row: ICumulativeStateTimeStateRow;
+	color: string;
+	unit: DurationUnit;
+}> = ({ row, color, unit }) => (
+	<Box data-testid="cumulative-state-bar-tooltip" sx={{ p: 1, minWidth: 160 }}>
+		<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+			{row.state}
+		</Typography>
+		<Box
+			data-testid="cumulative-state-bar-tooltip-row-completed"
+			sx={{ display: "flex", alignItems: "center", gap: 1 }}
+		>
+			<TooltipMark color={color} />
+			<Typography variant="caption">
+				Completed: {formatDuration(row.completedContributionDays, unit)}
+			</Typography>
+		</Box>
+		<Box
+			data-testid="cumulative-state-bar-tooltip-row-ongoing"
+			sx={{ display: "flex", alignItems: "center", gap: 1 }}
+		>
+			<TooltipMark color={color} />
+			<Typography variant="caption">
+				Ongoing: {formatDuration(row.ongoingContributionDays, unit)}
+			</Typography>
+		</Box>
+	</Box>
+);
+
+const createBarTooltipSlot = (
+	states: ICumulativeStateTimeStateRow[],
+	unit: DurationUnit,
+	solidColorFor: (state: string) => string,
+): React.FC => {
+	const BarTooltipSlot: React.FC = () => {
+		const tooltipData = useItemTooltip();
+		const dataIndex = tooltipData?.identifier?.dataIndex;
+		if (dataIndex === undefined) {
+			return null;
+		}
+		const row = states[dataIndex];
+		if (!row) {
+			return null;
+		}
+		return (
+			<ChartsTooltipContainer trigger="item">
+				<CumulativeStateBarTooltip
+					row={row}
+					color={solidColorFor(row.state)}
+					unit={unit}
+				/>
+			</ChartsTooltipContainer>
+		);
+	};
+	return BarTooltipSlot;
+};
+
+const TooltipMark: React.FC<{ color: string }> = ({ color }) => (
 	<Box
+		data-testid="cumulative-state-bar-tooltip-mark"
+		sx={{
+			width: 12,
+			height: 12,
+			borderRadius: 0.5,
+			backgroundColor: color,
+			flexShrink: 0,
+		}}
+	/>
+);
+
+const LegendSwatch: React.FC<{ color: string; testId?: string }> = ({
+	color,
+	testId,
+}) => (
+	<Box
+		data-testid={testId}
 		sx={{
 			width: 14,
 			height: 14,
@@ -173,7 +252,10 @@ const WaitColourKey: React.FC<{ color: string }> = ({ color }) => (
 		data-testid="cumulative-state-time-wait-legend"
 		sx={{ display: "flex", alignItems: "center", gap: 0.75 }}
 	>
-		<LegendSwatch color={color} />
+		<LegendSwatch
+			color={color}
+			testId="cumulative-state-time-wait-legend-swatch"
+		/>
 		<Typography variant="body2" color="text.secondary">
 			Wait
 		</Typography>
@@ -267,6 +349,15 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	const valueFormatter = (value: number | null): string =>
 		value === null ? "" : formatDuration(value, unit);
 
+	const solidColorFor = (state: string): string =>
+		isWaitState(state) ? theme.palette.error.main : theme.palette.primary.main;
+
+	const BarTooltipSlot = createBarTooltipSlot(
+		orderedStates,
+		unit,
+		solidColorFor,
+	);
+
 	const allSeries = [
 		{
 			id: "completedNonWait",
@@ -285,7 +376,7 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 			data: completedFor(true),
 			label: `Completed (${unitLabel})`,
 			stack: "stateTime",
-			color: theme.palette.warning.main,
+			color: theme.palette.error.main,
 			valueFormatter,
 		},
 		{
@@ -370,13 +461,14 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 							/>
 						</>
 					)}
-					{hasWaitBars && <WaitColourKey color={theme.palette.warning.main} />}
+					{hasWaitBars && <WaitColourKey color={theme.palette.error.main} />}
 				</Stack>
 
 				<Box sx={{ flex: 1, minHeight: 0 }}>
 					<BarChart
 						style={{ height: "100%", width: "100%" }}
 						hideLegend
+						slots={{ tooltip: BarTooltipSlot }}
 						onItemClick={(_event, params) =>
 							handleBarClick(params?.dataIndex ?? -1)
 						}
@@ -421,13 +513,13 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 								height={6}
 								patternTransform="rotate(45)"
 							>
-								<rect width={6} height={6} fill={theme.palette.warning.light} />
+								<rect width={6} height={6} fill={theme.palette.error.light} />
 								<line
 									x1={0}
 									y1={0}
 									x2={0}
 									y2={6}
-									stroke={theme.palette.warning.dark}
+									stroke={theme.palette.error.dark}
 									strokeWidth={2}
 								/>
 							</pattern>

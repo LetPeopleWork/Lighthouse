@@ -70,6 +70,17 @@ test("@walking_skeleton @US-01 admin marks a wait state and the delivery lead se
 	await expect(chartEfficiency.waitColourKey).toBeVisible();
 	await expect(chartEfficiency.waitColourKey).toContainText("Wait");
 
+	await expect(chartEfficiency.waitColourKeySwatch).toBeVisible();
+	const swatchBackground =
+		await chartEfficiency.readWaitColourKeySwatchBackground();
+	expect(swatchBackground).toBe("rgb(244, 67, 54)");
+
+	await chartEfficiency.hoverFirstBar();
+	await expect(chartEfficiency.barTooltip).toBeVisible();
+	await expect(chartEfficiency.barTooltipRows).toHaveCount(2);
+	await expect(chartEfficiency.barTooltip).toContainText("Completed");
+	await expect(chartEfficiency.barTooltip).toContainText("Ongoing");
+
 	const completedToggle = chartEfficiency.completionLegendButton("Completed");
 	await expect(completedToggle).toHaveAttribute("aria-pressed", "true");
 	await completedToggle.click();
