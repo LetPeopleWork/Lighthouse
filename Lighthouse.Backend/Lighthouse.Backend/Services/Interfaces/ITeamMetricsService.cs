@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
@@ -75,6 +76,8 @@ namespace Lighthouse.Backend.Services.Interfaces
         PredictabilityScoreInfoDto GetPredictabilityScoreInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
         CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+
+        FlowEfficiencyInfoDto GetFlowEfficiencyInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
         Task UpdateTeamMetrics(Team team);
     }

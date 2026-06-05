@@ -40,6 +40,8 @@ namespace Lighthouse.Backend.Models
 
         public List<string> BlockedStates { get; set; } = [];
 
+        public List<string> WaitStates { get; set; } = [];
+
         public List<string> BlockedTags { get; set; } = [];
 
         public List<StateMapping> StateMappings { get; set; } = [];

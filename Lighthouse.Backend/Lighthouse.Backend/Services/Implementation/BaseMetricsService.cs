@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
@@ -155,6 +156,27 @@ namespace Lighthouse.Backend.Services.Implementation
                     completedVisitsByState.TryGetValue(state, out var completed) ? completed : [],
                     ongoingByState.TryGetValue(state, out var ongoing) ? ongoing : []))
                 .ToList();
+        }
+
+        protected static FlowEfficiencyInfoDto ComputeFlowEfficiency(
+            IReadOnlyList<CumulativeStateTimeStateRowDto> doingStateRows,
+            IReadOnlyList<string> expandedWaitStates,
+            bool isConfigured)
+        {
+            var totalDoingDays = doingStateRows.Sum(row => row.TotalDays);
+            if (!isConfigured || totalDoingDays <= 0)
+            {
+                return new FlowEfficiencyInfoDto(isConfigured, HasDataInScope: totalDoingDays > 0, EfficiencyPercent: 0, totalDoingDays, WaitDays: 0);
+            }
+
+            var waitStateSet = expandedWaitStates.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var waitDays = doingStateRows
+                .Where(row => waitStateSet.Contains(row.State))
+                .Sum(row => row.TotalDays);
+
+            var efficiencyPercent = (totalDoingDays - waitDays) / totalDoingDays * 100.0;
+
+            return new FlowEfficiencyInfoDto(isConfigured, HasDataInScope: true, efficiencyPercent, totalDoingDays, waitDays);
         }
 
         private static Dictionary<string, List<double>> GroupOngoingContributionsByState(IEnumerable<WorkItem> items, DateTime nowSnapshot)

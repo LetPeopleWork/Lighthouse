@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
@@ -282,6 +283,109 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        private static readonly string[] FlowWorkflowOrder = ["In Progress", "Waiting for Review", "Ready for Test", "Blocked - External"];
+
+        private static readonly string[] WaitReviewAndTest = ["Waiting for Review", "Ready for Test"];
+
+        private static readonly string[] WaitReviewOnly = ["Waiting for Review"];
+
+        private static readonly string[] WaitReviewAndBlockedExternal = ["Waiting for Review", "Blocked - External"];
+
+        [Test]
+        public void ComputeFlowEfficiency_TwoWaitStatesOfTotalDoingTime_ReportsActiveOverTotalAsPercent()
+        {
+            var includedItems = new List<WorkItem>
+            {
+                SingleDoingVisitItem("In Progress", days: 184),
+                SingleDoingVisitItem("Waiting for Review", days: 200),
+                SingleDoingVisitItem("Ready for Test", days: 156),
+            };
+
+            var result = TestableBaseMetricsService.ComputeEfficiency(includedItems, FlowWorkflowOrder, WaitReviewAndTest, isConfigured: true, FixtureStart.AddDays(2000));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsConfigured, Is.True);
+                Assert.That(result.HasDataInScope, Is.True);
+                Assert.That(result.TotalDoingDays, Is.EqualTo(540.0).Within(Tolerance));
+                Assert.That(result.WaitDays, Is.EqualTo(356.0).Within(Tolerance));
+                Assert.That(result.EfficiencyPercent, Is.EqualTo(34.07).Within(EfficiencyTolerance));
+            }
+        }
+
+        [Test]
+        public void ComputeFlowEfficiency_SingleRawWaitState_RemovesThatStatesTimeFromActive()
+        {
+            var includedItems = new List<WorkItem>
+            {
+                SingleDoingVisitItem("In Progress", days: 150),
+                SingleDoingVisitItem("Waiting for Review", days: 90),
+            };
+
+            var result = TestableBaseMetricsService.ComputeEfficiency(includedItems, FlowWorkflowOrder, WaitReviewOnly, isConfigured: true, FixtureStart.AddDays(2000));
+
+            Assert.That(result.EfficiencyPercent, Is.EqualTo(62.5).Within(EfficiencyTolerance));
+        }
+
+        [Test]
+        public void ComputeFlowEfficiency_MappingNameExpandedToMultipleRawStates_CountsAllUnderlyingTimeAsWait()
+        {
+            var includedItems = new List<WorkItem>
+            {
+                SingleDoingVisitItem("In Progress", days: 180),
+                SingleDoingVisitItem("Waiting for Review", days: 120),
+                SingleDoingVisitItem("Blocked - External", days: 100),
+            };
+
+            var result = TestableBaseMetricsService.ComputeEfficiency(includedItems, FlowWorkflowOrder, WaitReviewAndBlockedExternal, isConfigured: true, FixtureStart.AddDays(2000));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.WaitDays, Is.EqualTo(220.0).Within(Tolerance));
+                Assert.That(result.EfficiencyPercent, Is.EqualTo(45.0).Within(EfficiencyTolerance));
+            }
+        }
+
+        [Test]
+        public void ComputeFlowEfficiency_FlagsAreDistinct_NotConfiguredAndNoDataAreReportedIndependently()
+        {
+            var withDoingTime = new List<WorkItem> { SingleDoingVisitItem("In Progress", days: 100) };
+
+            var notConfigured = TestableBaseMetricsService.ComputeEfficiency(withDoingTime, FlowWorkflowOrder, [], isConfigured: false, FixtureStart.AddDays(2000));
+            var noDataButConfigured = TestableBaseMetricsService.ComputeEfficiency([], FlowWorkflowOrder, WaitReviewOnly, isConfigured: true, FixtureStart.AddDays(2000));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(notConfigured.IsConfigured, Is.False);
+                Assert.That(notConfigured.HasDataInScope, Is.True);
+                Assert.That(noDataButConfigured.IsConfigured, Is.True);
+                Assert.That(noDataButConfigured.HasDataInScope, Is.False);
+            }
+        }
+
+        private static WorkItem SingleDoingVisitItem(string doingState, int days)
+        {
+            var enter = FixtureStart;
+            var exit = FixtureStart.AddDays(days);
+
+            return new WorkItem
+            {
+                Id = NextItemId(),
+                ReferenceId = $"FLOW-{doingState}",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                StartedDate = enter,
+                ClosedDate = exit,
+                SyncedTransitions =
+                [
+                    Transition("In Progress", doingState, enter),
+                    Transition(doingState, "Done", exit),
+                ],
+            };
+        }
+
+        private const double EfficiencyTolerance = 0.6;
+
         private const double Tolerance = 0.1;
 
         private static CumulativeStateTimeStateRowDto Row(IEnumerable<CumulativeStateTimeStateRowDto> result, string state)
@@ -404,6 +508,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 DateTime nowSnapshot)
             {
                 return ComputeCumulativeStateTimeItems(includedItems, state, nowSnapshot);
+            }
+
+            public static FlowEfficiencyInfoDto ComputeEfficiency(
+                IEnumerable<WorkItem> includedItems,
+                IReadOnlyList<string> workflowStateOrder,
+                IReadOnlyList<string> expandedWaitStates,
+                bool isConfigured,
+                DateTime nowSnapshot)
+            {
+                var rows = ComputeCumulativeStateTime(includedItems, workflowStateOrder, nowSnapshot);
+                return ComputeFlowEfficiency(rows, expandedWaitStates, isConfigured);
             }
         }
     }

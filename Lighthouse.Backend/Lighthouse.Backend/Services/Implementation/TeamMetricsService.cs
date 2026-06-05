@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Forecast;
@@ -348,6 +349,21 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
                 return new CumulativeStateTimeDto(states);
+            }, logger);
+        }
+
+        public FlowEfficiencyInfoDto GetFlowEfficiencyInfoForTeam(Team team, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Flow Efficiency Info for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"FlowEfficiencyInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            {
+                var candidateItems = ResolveCumulativeStateTimeCandidates(team, startDate, endDate);
+                var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
+                var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
+
+                var expandedWaitStates = team.GetRawStatesForCategory(team.WaitStates);
+                return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, team.WaitStates.Count > 0);
             }, logger);
         }
 

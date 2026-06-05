@@ -268,6 +268,18 @@ namespace Lighthouse.Backend.API
                 teamMetricsService.GetWipOverviewInfoForTeam(team, startDate, endDate));
         }
 
+        [HttpGet("flowEfficiencyInfo")]
+        public ActionResult<FlowEfficiencyInfoDto> GetFlowEfficiencyInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetFlowEfficiencyInfoForTeam(team, startDate, endDate));
+        }
+
         [HttpGet("featuresWorkedOnInfo")]
         public ActionResult<FeaturesWorkedOnInfoDto> GetFeaturesWorkedOnInfo(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

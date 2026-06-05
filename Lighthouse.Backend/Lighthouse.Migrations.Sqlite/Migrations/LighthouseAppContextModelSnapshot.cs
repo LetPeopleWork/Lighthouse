@@ -762,6 +762,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<bool>("UsePercentileToCalculateDefaultAmountOfWorkItems")
                         .HasColumnType("INTEGER");
 
+                    b.PrimitiveCollection<string>("WaitStates")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.PrimitiveCollection<string>("WorkItemTypes")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -913,6 +917,10 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<bool>("UseNonNumericEstimation")
                         .HasColumnType("INTEGER");
+
+                    b.PrimitiveCollection<string>("WaitStates")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.PrimitiveCollection<string>("WorkItemTypes")
                         .IsRequired()

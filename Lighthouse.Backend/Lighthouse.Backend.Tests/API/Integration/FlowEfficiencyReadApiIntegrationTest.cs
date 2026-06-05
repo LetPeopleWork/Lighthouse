@@ -83,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_TeamWithKnownWaitTime_ReturnsActiveOverTotalDoingTimeAsPercent()
         {
             // US-01 / D2 / ADR-054: efficiency = activeDoingTime / totalDoingTime over the in-scope set.
@@ -109,7 +108,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_TeamWithRawStateMarkedWait_CountsThatStateAsWaitTime()
         {
             // US-01 / D11: a RAW Doing-state marked directly as a wait state counts its time as wait time.
@@ -129,7 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_TeamWithMappingNameMarkedWait_CountsAllUnderlyingRawStatesAsWaitTime()
         {
             // THE critical correctness AT — US-01 / D11 / ADR-056.
@@ -156,7 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_WaitEntryOutsideDoingSet_ContributesNothingToTheDenominator()
         {
             // US-01 edge case / ADR-056 §3: a wait entry that resolves OUTSIDE the Doing set (here the
@@ -178,7 +174,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_NoWaitStatesConfigured_ReportsNotConfiguredNeverHundredPercent()
         {
             // D3 / ADR-055: no wait states → IsConfigured=false (the "not configured" signal), NEVER a
@@ -200,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_ZeroDoingTimeInScope_ReportsNoDataNeverDividesByZero()
         {
             // D4 / ADR-055: wait states ARE configured but there is zero Doing-time in scope → HasDataInScope
@@ -222,7 +216,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_TileNeverFollowsThePicker_HasNoItemIdsParameter()
         {
             // D5 / D18 / ADR-055: the tile is whole-set ONLY. Passing itemIds must not narrow it — the
@@ -245,7 +238,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_StartDateAfterEndDate_ReturnsBadRequest()
         {
             // ADR-055: validation mirrors the established …Info tile pattern (400 on inverted dates).
@@ -261,7 +253,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_TeamViewer_CanReadTheTile()
         {
             // ADR-055: class-level RbacGuard(TeamRead) — a Viewer (read role) can read the tile.
@@ -276,7 +267,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task GetFlowEfficiency_AnonymousCaller_IsRejected()
         {
             // ADR-055: class-level RbacGuard(TeamRead) — an unauthenticated caller is rejected.
@@ -483,12 +473,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static void ApplyWaitStates(Team team, string[] waitStates)
         {
-            // Placeholder for the DELIVER-added WaitStates field. Asserting nothing here keeps the scaffold
-            // compile-green with zero references to a not-yet-existing property; the [Ignore] on every test
-            // keeps the suite RED-by-skip rather than Broken. DELIVER replaces this body with
-            // `team.WaitStates = [.. waitStates];` when the field exists.
-            _ = team;
-            _ = waitStates;
+            team.WaitStates = [.. waitStates];
         }
 
         private void AddItemWithSingleDoingVisit(
