@@ -197,6 +197,61 @@ describe("CumulativeStateTimeChart", () => {
 	});
 });
 
+const efficiencyFixtureRows: ICumulativeStateTimeStateRow[] = [
+	getMockStateRow({ state: "In Progress", workflowOrder: 0, totalDays: 184 }),
+	getMockStateRow({
+		state: "Waiting for Review",
+		workflowOrder: 1,
+		totalDays: 200,
+	}),
+	getMockStateRow({
+		state: "Ready for Test",
+		workflowOrder: 2,
+		totalDays: 156,
+	}),
+];
+
+describe("CumulativeStateTimeChart flow-efficiency figure", () => {
+	it("shows the flow-efficiency percentage folded over the displayed wait states", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: efficiencyFixtureRows }}
+				waitStates={["Waiting for Review", "Ready for Test"]}
+			/>,
+		);
+
+		const figure = screen.getByTestId("cumulative-state-time-flow-efficiency");
+		expect(figure.textContent).toContain("34");
+	});
+
+	it("recomputes the figure over the narrowed set when fewer states are displayed", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{
+					states: [
+						getMockStateRow({ state: "In Progress", totalDays: 150 }),
+						getMockStateRow({ state: "Waiting for Review", totalDays: 90 }),
+					],
+				}}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		const figure = screen.getByTestId("cumulative-state-time-flow-efficiency");
+		expect(figure.textContent).toContain("63");
+	});
+
+	it("suppresses the figure when no wait states are configured", () => {
+		render(
+			<CumulativeStateTimeChart data={{ states: efficiencyFixtureRows }} />,
+		);
+
+		expect(
+			screen.queryByTestId("cumulative-state-time-flow-efficiency"),
+		).toBeNull();
+	});
+});
+
 const seriesOf = (): { label?: string }[] => {
 	const chart = screen.getByTestId("mock-bar-chart");
 	return JSON.parse(chart.getAttribute("data-series") ?? "[]");

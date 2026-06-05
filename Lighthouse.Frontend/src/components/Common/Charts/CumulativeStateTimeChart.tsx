@@ -10,6 +10,7 @@ import { BarChart } from "@mui/x-charts";
 import type React from "react";
 import { type ReactNode, useMemo } from "react";
 import { useTypesVisibility } from "../../../hooks/useChartVisibility";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type {
 	ICumulativeStateTimeResponse,
 	ICumulativeStateTimeStateRow,
@@ -19,6 +20,7 @@ import {
 	type DurationUnit,
 	formatDuration,
 } from "../../../utils/date/formatDuration";
+import { flowEfficiency } from "../../../utils/flowEfficiency";
 import LegendChip from "./LegendChip";
 
 const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
@@ -33,7 +35,36 @@ interface CumulativeStateTimeChartProps {
 	onBarClick?: (stateName: string) => void;
 	pickerSlot?: ReactNode;
 	completionFilterEnabled?: boolean;
+	waitStates?: string[];
+	stateMappings?: IStateMapping[];
 }
+
+const FlowEfficiencyFigure: React.FC<{
+	rows: ICumulativeStateTimeStateRow[];
+	waitStates: string[];
+	stateMappings: IStateMapping[];
+}> = ({ rows, waitStates, stateMappings }) => {
+	const result = flowEfficiency(rows, waitStates, stateMappings);
+
+	if (result.status === "not-configured") {
+		return null;
+	}
+
+	const label =
+		result.status === "no-data"
+			? "No data in scope"
+			: `Flow Efficiency: ${Math.round(result.efficiencyPercent)}%`;
+
+	return (
+		<Typography
+			variant="body2"
+			color="text.secondary"
+			data-testid="cumulative-state-time-flow-efficiency"
+		>
+			{label}
+		</Typography>
+	);
+};
 
 const orderByWorkflow = (
 	states: ICumulativeStateTimeStateRow[],
@@ -91,6 +122,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	onBarClick,
 	pickerSlot,
 	completionFilterEnabled = false,
+	waitStates = [],
+	stateMappings = [],
 }) => {
 	const theme = useTheme();
 
@@ -200,6 +233,11 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 				>
 					<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
 						<Typography variant="h6">Cumulative Time per State</Typography>
+						<FlowEfficiencyFigure
+							rows={orderedStates}
+							waitStates={waitStates}
+							stateMappings={stateMappings}
+						/>
 						{completionFilterEnabled && (
 							<>
 								<LegendChip
