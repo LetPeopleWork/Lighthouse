@@ -31,6 +31,7 @@ import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItem
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
@@ -119,6 +120,8 @@ export interface BaseMetricsViewProps<
 	hasForecastFilter?: boolean;
 	forecastFilterConditions?: readonly EvaluatorCondition[];
 	stalenessThresholdDays?: number;
+	waitStates?: string[];
+	stateMappings?: IStateMapping[];
 }
 
 function formatDate(date: Date): string {
@@ -764,6 +767,8 @@ function buildWidgetNodes(ctx: {
 	onCumulativeStateTimeSelectionChange: (itemIds: number[]) => void;
 	onCumulativeStateTimePickerOpen: () => void;
 	onCumulativeStateTimeBarClick: (stateName: string) => void;
+	waitStates: string[];
+	stateMappings: IStateMapping[];
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
@@ -939,6 +944,8 @@ function buildWidgetNodes(ctx: {
 			<CumulativeStateTimeChart
 				data={ctx.displayedCumulativeStateTime}
 				onBarClick={ctx.onCumulativeStateTimeBarClick}
+				waitStates={ctx.waitStates}
+				stateMappings={ctx.stateMappings}
 				completionFilterEnabled={
 					ctx.cumulativeStateTimeSelectedItemIds.length === 0
 				}
@@ -975,6 +982,8 @@ export const BaseMetricsView = <
 	hasForecastFilter = false,
 	forecastFilterConditions = [],
 	stalenessThresholdDays,
+	waitStates = [],
+	stateMappings = [],
 }: BaseMetricsViewProps<T, E>) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { licenseStatus } = useLicenseRestrictions();
@@ -1303,6 +1312,8 @@ export const BaseMetricsView = <
 		onCumulativeStateTimeBarClick: (stateName) => {
 			void handleCumulativeStateTimeBarClick(stateName);
 		},
+		waitStates,
+		stateMappings,
 		refetchThroughputPbc,
 	});
 

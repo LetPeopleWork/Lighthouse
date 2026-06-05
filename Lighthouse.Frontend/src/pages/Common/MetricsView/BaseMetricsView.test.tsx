@@ -116,13 +116,21 @@ vi.mock("../../../components/Common/Charts/CumulativeStateTimeChart", () => ({
 		onBarClick,
 		pickerSlot,
 		completionFilterEnabled = false,
+		waitStates = [],
+		stateMappings = [],
 	}: {
 		data: { states: { state: string }[] };
 		onBarClick?: (stateName: string) => void;
 		pickerSlot?: ReactNode;
 		completionFilterEnabled?: boolean;
+		waitStates?: string[];
+		stateMappings?: { name: string }[];
 	}) => (
 		<div data-testid="cumulative-state-time-chart">
+			<div data-testid="cumulative-wait-states">{waitStates.join(",")}</div>
+			<div data-testid="cumulative-state-mappings">
+				{stateMappings.map((mapping) => mapping.name).join(",")}
+			</div>
 			<div data-testid="cumulative-displayed-state-count">
 				{data.states.length}
 			</div>
@@ -3901,6 +3909,41 @@ describe("BaseMetricsView component", () => {
 				getFlowEfficiencyInfoForPortfolio: vi.fn(),
 			};
 		};
+
+		it("threads waitStates and stateMappings into the cumulative chart", async () => {
+			const team = new Team();
+			team.name = "Wait Team";
+			team.id = 777;
+			team.systemWIPLimit = 6;
+			team.lastUpdated = new Date();
+
+			const service = buildCumulativePickerService();
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${team.id}:category`,
+				"flow-metrics",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["Doing", "Review"]}
+					waitStates={["Review", "Waiting Cluster"]}
+					stateMappings={[{ name: "Waiting Cluster", states: ["Blocked"] }]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("cumulative-wait-states")).toHaveTextContent(
+					"Review,Waiting Cluster",
+				);
+			});
+			expect(screen.getByTestId("cumulative-state-mappings")).toHaveTextContent(
+				"Waiting Cluster",
+			);
+		});
 
 		async function selectFirstCandidate(
 			user: ReturnType<typeof userEvent.setup>,

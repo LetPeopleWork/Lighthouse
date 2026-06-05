@@ -17,13 +17,9 @@ const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith d
 const DEMO_TEAM_NAME = "Team Zenith";
 const CUMULATIVE_STATE_TIME_WIDGET_ID = "stateTimeCumulative";
 
-// Walking skeleton for wait-states-flow-efficiency (US-01..US-04). DISTILL authors it as test.fixme;
-// the WaitStatesEditor config control, the flowEfficiencyInfo endpoint, the chart efficiency number, and
-// the wait-bar highlight all land in DELIVER. Per the project policy
-// (docs/architecture/atdd-infrastructure-policy.md): POM-only (no inline page.locator in the spec), seeded
-// demo data (never live syncs). DELIVER un-fixmes this ONE scenario, picks a Doing state in Team Zenith to
-// mark as a wait state, and validates the data-testid / label locators against the running app.
-test.fixme("@walking_skeleton @US-01 admin marks a wait state and the delivery lead sees flow efficiency on the tile and the cumulative chart", async ({
+const DEMO_WAIT_STATE = "Verification";
+
+test("@walking_skeleton @US-01 admin marks a wait state and the delivery lead sees flow efficiency on the tile and the cumulative chart", async ({
 	page,
 	request,
 	overviewPage,
@@ -37,7 +33,7 @@ test.fixme("@walking_skeleton @US-01 admin marks a wait state and the delivery l
 	const teamEdit = await teamDetail.editTeam();
 	const waitStates = new WaitStatesEditor(page);
 	await waitStates.enable();
-	await waitStates.addWaitState("Review");
+	await waitStates.addWaitState(DEMO_WAIT_STATE);
 	const detailAfterSave = await teamEdit.save();
 
 	const metrics = await detailAfterSave.goToMetrics();

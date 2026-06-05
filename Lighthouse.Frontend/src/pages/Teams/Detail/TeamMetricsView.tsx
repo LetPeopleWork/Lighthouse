@@ -1,6 +1,7 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -31,6 +32,8 @@ interface TeamMetricsViewProps {
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
 	const [doingStates, setDoingStates] = useState<string[]>([]);
+	const [waitStates, setWaitStates] = useState<string[]>([]);
+	const [stateMappings, setStateMappings] = useState<IStateMapping[]>([]);
 	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
 	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
 		number | undefined
@@ -82,6 +85,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			try {
 				const settings = await teamService.getTeamSettings(team.id);
 				setDoingStates(settings.doingStates);
+				setWaitStates(settings.waitStates ?? []);
+				setStateMappings(settings.stateMappings);
 				setHasBlockedConfig(
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
@@ -121,6 +126,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			featureWip={featureWip}
 			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
+			waitStates={waitStates}
+			stateMappings={stateMappings}
 			hasForecastFilter={forecastFilterConditions.length > 0}
 			forecastFilterConditions={forecastFilterConditions}
 			stalenessThresholdDays={stalenessThresholdDays}

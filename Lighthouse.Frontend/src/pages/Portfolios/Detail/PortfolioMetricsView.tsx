@@ -1,5 +1,6 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -14,6 +15,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 	portfolio,
 }) => {
 	const [doingStates, setDoingStates] = useState<string[]>([]);
+	const [waitStates, setWaitStates] = useState<string[]>([]);
+	const [stateMappings, setStateMappings] = useState<IStateMapping[]>([]);
 	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
 	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
 		number | undefined
@@ -31,6 +34,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 					portfolio.id,
 				);
 				setDoingStates(settings.doingStates);
+				setWaitStates(settings.waitStates ?? []);
+				setStateMappings(settings.stateMappings);
 				setHasBlockedConfig(
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
@@ -51,6 +56,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			defaultDateRange={90}
 			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
+			waitStates={waitStates}
+			stateMappings={stateMappings}
 			stalenessThresholdDays={stalenessThresholdDays}
 		/>
 	);
