@@ -1808,3 +1808,64 @@ No new driving port (additive nullable field on `GET .../deliveries/{id}/metrics
 - **ADR-051** — per-snapshot target capture (`TargetDateAtSnapshot` + recorder), forward-only.
 - **ADR-052** — moving-target predictability rendering (When? step line + How Likely? change dots + pure derivation helper); supersedes the dropped burnup treatment.
 - Re-affirms **ADR-050** (single metrics-history endpoint, wide nullable schema).
+
+---
+
+## Application Architecture — wait-states-flow-efficiency (Story #5173)
+
+Feature: wait-states-flow-efficiency (additive, brownfield extension of the shipped `state-time-cumulative-view` chart, Epic 4144, plus a new Flow Overview tile). Lets a config-admin mark idle "wait" Doing-states (raw OR a whole State Mapping in one click), then surfaces **flow efficiency = active-Doing-time / total-Doing-time** on three surfaces: an overview tile, a number on the cumulative chart (aggregate + per-item via the existing US-05 picker), and colour-highlighted wait bars on that chart.
+Wave: DESIGN · Date: 2026-06-05 · Architect: Morgan (Solution Architect), interaction mode = PROPOSE · Paradigm: OOP (C# backend), functional-leaning React frontend.
+
+This section is **additive** to all prior `## Application Architecture` deltas. Pattern (ports-and-adapters / hexagonal), paradigm, and core invariants are **unchanged**. NO new architectural style, NO new external integration, NO new external library, NO premium gate, NO new top-level route. Exactly ONE new persisted field (`WaitStates`, mapping-aware), ONE new small read endpoint per scope (the overview tile), and three thin presentation surfaces over data the client already round-trips. ADRs: **ADR-054 / ADR-055 / ADR-056 / ADR-057**.
+
+### Key invariants introduced
+
+- **Mapping-aware `WaitStates` (D11, ADR-056)**: a new `List<string> WaitStates` on `WorkTrackingSystemOptionsOwner` (next to `BlockedStates`/`StateMappings`); entries are raw Doing-states OR `StateMapping.Name`, resolved through the EXISTING `GetRawStatesForCategory(WaitStates)` — the same expansion the state categories use. No second resolver on the backend; a pure TS twin `resolveWaitRawStates(...)` on the frontend.
+- **Flow-efficiency derivation (D2/D8a, ADR-054)**: `efficiency = (totalDoingTime − waitTime) / totalDoingTime`, where `totalDoingTime = Σ totalDays[Doing-state]` and `waitTime = Σ totalDays[s] for s ∈ GetRawStatesForCategory(WaitStates)`. It is a pure FOLD over the per-state `totalDays` the cumulative computation already produces — NO new per-state aggregation pass (ADR-024 upheld for the fifth time across this lineage; no `IPerStateAggregationService`).
+- **Chart number + wait-bar highlight FE-derived (ADR-054/057)**: both read the SAME `resolveWaitRawStates(...)` over the per-state rows the chart already has (already `itemIds`-narrowed ⇒ per-item efficiency is the free n=1 case, mirroring ADR-028 §7). The `cumulativeStateTime` contract is **UNCHANGED** — no `efficiency` field, no `isWaitState` row flag. Single FE source closes the registry HIGH-risk "two surfaces read different lists" divergence structurally.
+- **Tile is BE-computed, never the picker (D5/D18, ADR-055)**: the overview tile value is computed server-side over the WHOLE in-scope set via a new `protected` fold `BaseMetricsService.ComputeFlowEfficiency`, served by a small dedicated `flowEfficiencyInfo` endpoint per scope (the established `wipOverviewInfo`/`totalWorkItemAgeInfo` tile pattern). It takes NO `itemIds`.
+- **D3 vs D4 are contract-level booleans (ADR-055)**: `FlowEfficiencyInfoDto { IsConfigured, HasDataInScope, EfficiencyPercent, … }` — "not configured" (never 100%) and "no data in scope" (no division) are distinct flags, not magic sentinels.
+- **Inverted RAG (D10, ADR-057)**: NEW `computeFlowEfficiencyRag` in `ragRules.ts` — red < 40 / amber 40–60 / green ≥ 60 (efficiency is higher-is-better, the OPPOSITE polarity of `computeCumulativeStateTimeRag`). Confirms the D10 40/60 thresholds; separate function, not a wrap.
+- **UI placement (D12, ADR-056)**: a NEW sibling `WaitStatesEditor` immediately after `StateMappingsEditor` in both settings forms — the existing `StateMappingsEditor` is **NOT relocated/re-propped** (Option (b); the relocating wrapper Option (a) was rejected for blast radius — pure structural churn on a shipped component with a `reconcileDoingStates` coupling). Suggestions = raw Doing-states ∪ mapping names. Decoupled from Blocked States (`FlowMetricsConfigurationComponent` NO-CHANGE).
+- **Labelling overlay only (D9)**: wait states change throughput / forecasts / cycle-time / aging / the existing cumulative bars+RAG by ZERO. The only consumers are the efficiency computation and the highlight.
+
+### Component decomposition (headline)
+
+- **NEW (backend)**: `WaitStates` field on `WorkTrackingSystemOptionsOwner` (+ EF migration via `CreateMigration` script, DELIVER task; persists like `BlockedStates`); `FlowEfficiencyInfoDto`; `BaseMetricsService.ComputeFlowEfficiency` (`protected` fold); `flowEfficiencyInfo` endpoint on `TeamMetricsController` + `PortfolioMetricsController`; `GetFlowEfficiencyInfoForTeam`/`…ForPortfolio` on the services + interfaces.
+- **EXTEND (backend)**: settings DTO/validator (`waitStates` additive field), `ITeamMetricsService`/`IPortfolioMetricsService` (+1 method each), `BaseMetricsService` (+1 helper).
+- **NEW (frontend)**: `WaitStatesEditor.tsx`; `flowEfficiency.ts` util (`flowEfficiency()` fold + `resolveWaitRawStates()` resolver); `FlowEfficiencyOverviewWidget.tsx` (small KPI tile, `BlockedOverviewWidget` shape); `computeFlowEfficiencyRag` in `ragRules.ts`; `flowEfficiency` entries in `categoryMetadata.ts` (`flow-overview`, `small`, `trendPolicy: none`) + `widgetInfoMetadata.ts`; TS model + Zod for `FlowEfficiencyInfoDto`; Vitest tests.
+- **EXTEND (frontend)**: settings TS model/Zod (`waitStates`), `ModifyTeamSettings.tsx` + `ModifyProjectSettings.tsx` (render `WaitStatesEditor` sibling), `MetricsService`/`IMetricsService` (+ `getFlowEfficiencyInfo…`), the cumulative chart component (wait-bar `isWait` predicate + efficiency number slot), `BaseMetricsView` (dispatch the `flowEfficiency` tile).
+- **REUSE-AS-IS**: `GetRawStatesForCategory` (BE resolver), `StateMappingsEditor` / `StatesList` / `FlowMetricsConfigurationComponent` (UNTOUCHED), `InputGroup` + `ItemListManager` idiom, the cumulative `CumulativeStateTimeDto` + endpoints + US-05 picker, MUI-X `<BarChart>` + `<pattern>` hatch, `RagResult`/`ragRules.ts` idiom, `BaseMetricsService.GetFromCacheIfExists`, the `…Info`-tile controller scaffolding, `useRbac`.
+
+### Driving ports (HTTP)
+
+| Method | Route | Auth | Status |
+|---|---|---|---|
+| GET | `/api/teams/{teamId:int}/metrics/flowEfficiencyInfo?startDate&endDate` | `[RbacGuard(TeamRead)]` | **NEW (ADR-055)** |
+| GET | `/api/portfolios/{portfolioId:int}/metrics/flowEfficiencyInfo?startDate&endDate` | `[RbacGuard(PortfolioRead)]` | **NEW (ADR-055)** |
+
+`waitStates` rides the EXISTING team/portfolio settings GET/PUT (additive field, like `blockedStates`). The chart efficiency number + wait-bar highlight add NO endpoint (FE-derived from the existing `cumulativeStateTime` + settings round-trips, ADR-054). The tile endpoints mirror `wipOverviewInfo` exactly (same validation, same `RbacGuard`, no `itemIds`).
+
+### Driven ports
+
+NONE new. The tile fold reads only the existing per-state cumulative computation (over `WorkItemStateTransition` + `CurrentStateEnteredAt`, already wired by sibling 1). No new persistence adapter (the `WaitStates` column rides the existing settings aggregate's EF mapping). **No external integration ⇒ no contract tests recommended at the platform-architect handoff.**
+
+### Lighthouse-Clients consistency (version-gate)
+
+- Config write (`waitStates`): additive field on the existing settings contract ⇒ **NO version gate**.
+- Chart number + wait-bar highlight: FE-derived, no new endpoint ⇒ **NO version gate**.
+- Overview tile (`flowEfficiencyInfo`): the ONE new endpoint. **IF** the CLI/MCP clients wrap it, the wrapping method MUST be version-gated (`FEATURE_REQUIRES_SERVER_NEWER_THAN`, strictly newer than the last released version); **IF NOT wrapped** (a product-UI-only read), the gate is N/A. Decision recorded at wrap-or-skip time in the clients repo. (ADR-055.)
+
+### Quality attributes
+
+- **Performance**: the efficiency value is an O(states) fold (~5–15 states) over the per-state totals the cumulative computation already produces — negligible. The tile endpoint caches under `FlowEfficiency_{startDate}_{endDate}` via the existing hook.
+- **Maintainability/Testability**: the formula lives in exactly two pure, mutation-testable folds (`flowEfficiency.ts` FE, `ComputeFlowEfficiency` BE), pinned to agree by a cross-surface equality test (picker-cleared chart number == tile value). The RAG and resolver are pure functions. The highlight is largely presentational (justified mutation survivors).
+- **Reliability**: D9 guardrail — throughput/forecast/cycle-time/aging and the existing cumulative bars+RAG are byte-identical before/after defining wait states (regression test).
+- **Security**: tile endpoints inherit the existing class-level `RbacGuard(TeamRead)`/`(PortfolioRead)`; `waitStates` edit inherits the existing settings-edit gating (no new permission, no new `useRbac()` gate).
+
+### ADR References (this feature)
+
+- [ADR-054](./adr-054-flow-efficiency-derivation-and-contract.md): Flow Efficiency — Derivation From Existing Per-State Day Totals; FE-Computed Chart Number + Wait-Bar Flag (No New Cumulative Field); BE-Computed Tile Value.
+- [ADR-055](./adr-055-flow-efficiency-tile-transport-and-client-version-gate.md): Overview Tile — Small Dedicated `flowEfficiencyInfo` Endpoint (Established Tile Pattern), `trendPolicy: none`, and the Lighthouse-Clients Version-Gate Consequence.
+- [ADR-056](./adr-056-wait-states-config-placement-and-mapping-aware-resolution.md): Wait States Config — Mapping-Aware `WaitStates` + Sibling `WaitStatesEditor` (No `StateMappingsEditor` Relocation), Resolved via `GetRawStatesForCategory`.
+- [ADR-057](./adr-057-wait-bar-highlight-and-flow-efficiency-rag.md): Wait-Bar Colour-Highlight (FE-Derived, Colour-Blind-Safe, Composing With Segments) + `computeFlowEfficiencyRag` (Inverted 40/60 Thresholds).

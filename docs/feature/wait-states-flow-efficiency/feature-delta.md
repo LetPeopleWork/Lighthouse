@@ -730,3 +730,177 @@ instrumentation dependency, recorded for DEVOPS).
   exact `trendPolicy` for the `flowEfficiency` tile; (d) **(D12)** the state-config container shape — a new
   "Advanced State config" wrapper that relocates the existing `StateMappingsEditor`, vs a sibling Wait States
   `InputGroup` next to it without regrouping; DESIGN must size the brownfield refactor if it picks the wrapper.
+
+## Wave: DESIGN / [REF] Prior-wave reading checklist
+
+| Artifact | Read? | Bearing on DESIGN |
+|---|---|---|
+| `feature-delta.md` DISCUSS (D1–D12, 2026-06-05 revision) | ✓ | 12 locked decisions; D8a/D8b/D12/D10 deferred to DESIGN — resolved below. |
+| `slices/slice-01..04-*.md` | ✓ | Slice scopes confirmed; slice-01 = config+computation foundation; 02–04 read from it. |
+| `docs/product/architecture/brief.md` (global + per-feature deltas) | ✓ | Extended, not rewritten; new `## Application Architecture — wait-states-flow-efficiency` delta appended. |
+| ADR-022 (cumulative algorithm) | ✓ | Per-state `totalDays` already computed by state — efficiency is a fold over it. |
+| ADR-023 (drill-down shape) | ✓ | No drill-down change; tile uses the `…Info` tile pattern, not drill-down. |
+| ADR-025 (chart widget) | ✓ | Wait-bar highlight extends the existing `<BarChart>` + `<pattern>` mechanism; RAG idiom in `ragRules.ts`. |
+| ADR-028 (picker + `itemIds` + adaptive units, no-shared-aggregation 4th) | ✓ | Chart bars already `itemIds`-narrowed ⇒ per-item efficiency is the free n=1 case; ADR-024 upheld (5th). |
+| ADR-018/021/024 (no shared per-state aggregation) | ✓ | Upheld — `ComputeFlowEfficiency` is a `protected` fold, NOT a new interface/service. |
+| ADR-015/016/017 (transitions + `CurrentStateEnteredAt`) | ✓ | Data foundation reused read-only; no schema change beyond `WaitStates` config field. |
+| Code: `WorkTrackingSystemOptionsOwner.cs` (`GetRawStatesForCategory`, `BlockedStates`, `StateMappings`) | ✓ | `WaitStates` mirrors `BlockedStates` persistence; resolution reuses `GetRawStatesForCategory`. |
+| Code: `BaseMetricsService.cs` (cumulative computation, per-state `totalDays`) | ✓ | Efficiency fold lands here as a `protected` helper. |
+| Code: `Team/PortfolioMetricsController.cs` (`…Info` tile endpoints, `cumulativeStateTime`) | ✓ | `flowEfficiencyInfo` mirrors `wipOverviewInfo`. |
+| Code: `ModifyTeamSettings.tsx` / `StateMappingsEditor.tsx` / `categoryMetadata.ts` / `ragRules.ts` / `BlockedOverviewWidget.tsx` | ✓ | Sibling-editor placement, tile shape, RAG idiom all grounded in existing sites. |
+| `CumulativeStateTimeDto.cs` (contract shape) | ✓ | Confirmed unchanged — no `efficiency`/`isWaitState` added (D8a Option A). |
+| ⊘ Outcome Collision Check (`nwave-ai outcomes check-delta …`) | ⊘ SKIPPED | CLI/registry not installed in this environment (`nwave-ai` binary absent; only doc references found). No collision check run; proceed noted. |
+
+## Wave: DESIGN / [REF] Deferred-decision resolutions (the core of propose mode)
+
+### D8(a) — chart efficiency number + wait-flag contract → **FE-derived, NO new cumulative field** (ADR-054)
+
+**Options**: (A) FE-derive the number + wait-flag from the per-state `totalDays` already in the `cumulativeStateTime` response + the `waitStates`/`stateMappings` the client already round-trips; (B) add `efficiency` + per-row `isWaitState` to the cumulative response; (C) one combined endpoint serving number+bars+tile.
+
+**Recommendation & choice: Option A.** The cumulative response ALREADY carries `totalDays` per Doing state, already `itemIds`-narrowed; efficiency is a 3-line fold and per-item efficiency (D5) falls out as the free n=1 case. One FE source (`flowEfficiency.ts` with `resolveWaitRawStates`) feeds BOTH the number and the wait-bar highlight, closing the registry HIGH-risk divergence structurally. Option B bloats every (incl. narrowed) response for a derivable value and forces the BE to re-resolve `WaitStates` on every fetch; Option C wrongly couples the picker-following chart scope to the never-narrowing tile (ADR-028 §6/§7 asymmetry). **Contract: `cumulativeStateTime` UNCHANGED.**
+
+### D8(b) — overview tile transport → **small dedicated `flowEfficiencyInfo` endpoint per scope** (ADR-055)
+
+**Options**: (A) a new small `flowEfficiencyInfo` endpoint per scope (the established `…Info` tile pattern); (B) fold the value into an existing overview payload; (C) derive the tile client-side from a `cumulativeStateTime` fetch.
+
+**Recommendation & choice: Option A.** Every existing `flow-overview` small tile has its OWN `…Info` endpoint (`wipOverviewInfo`, `totalWorkItemAgeInfo`, …) — there is NO shared overview payload to fold into, so Option B would mean overloading an unrelated tile's DTO (inventing coupling). Option C forces the overview tile to fetch a `flow-metrics` chart payload purely to sum it (category-crossing). The dedicated endpoint computes over the whole set (never the picker, D5/D18 — it has no `itemIds` param) and returns explicit `IsConfigured`/`HasDataInScope` booleans (D3 vs D4 distinct).
+
+> **Client version-gate consequence (spelled out)**: `flowEfficiencyInfo` is the **ONLY new endpoint** in the feature. Config write (`waitStates`) = additive field on the existing settings contract ⇒ **NO gate**. Chart number + wait-bar highlight = FE-derived, no endpoint ⇒ **NO gate**. Overview tile = NEW endpoint ⇒ **IF the CLI/MCP clients wrap it, version-gate it** (`FEATURE_REQUIRES_SERVER_NEWER_THAN`, strictly newer than the last released Lighthouse version, recorded/bumped at wrap time so an old server's opaque 404 becomes a clear "upgrade Lighthouse" error; dev/unparseable versions never blocked). **IF the clients do NOT wrap the tile** (product-UI-only read), the gate is **N/A** — record the wrap-or-skip decision in the clients repo.
+
+### D12 — UI container shape → **sibling `WaitStatesEditor`, NO relocation of `StateMappingsEditor`** (ADR-056, Option (b))
+
+**Options**: (a) a new "Advanced State config" wrapper that RELOCATES the existing `StateMappingsEditor` into it; (b) a sibling `WaitStatesEditor` immediately after `StateMappingsEditor` without regrouping.
+
+**Recommendation & choice: Option (b).** **Blast-radius sizing of (a)**: `StateMappingsEditor` is a shipped, tested component wired into TWO call sites (`ModifyTeamSettings.tsx` + `ModifyProjectSettings.tsx`) with 6 props AND a non-trivial `reconcileDoingStates` coupling (its `onChange` reconciles `doingStates` when mappings change). Relocating it into a wrapper = re-threading all of that through a new container in two places, pure structural churn with ZERO behavioural benefit and a real regression risk on the very editor this feature is told NOT to touch ("does not change how mappings are created"). Option (b) satisfies ALL DISCUSS hard requirements (state-cluster placement, decoupled-from-Blocked, mapping-aware selector) with a one-file-plus-two-render-slots blast radius; the "Advanced State config" visual grouping is achieved by layout/heading proximity. A true wrapper, if ever wanted, is a separate deliberate settings-IA refactor (out of scope).
+
+### D10 — Flow-efficiency RAG → **confirm 40/60, NEW `computeFlowEfficiencyRag`, INVERTED polarity** (ADR-057)
+
+**Recommendation & choice: confirm the D10 40/60 thresholds; reuse the `ragRules.ts` idiom via a NEW `computeFlowEfficiencyRag` (red < 40 / amber 40–60 / green ≥ 60).** Critical correction: flow efficiency is **higher-is-better**, the OPPOSITE polarity of `computeCumulativeStateTimeRag` (where a dominant-state large share is bad). So the new function INVERTS direction while keeping the 40/60 boundaries (shared numeric family with the cumulative chart). It is a SEPARATE function (single-percent input vs per-state-array input), not a wrap. The `act/observe/sustain` words live in `tipText`/`statusGuidance`; the `ragStatus` is `red/amber/green` like every other RAG function. `trendPolicy` for the tile = `none` (no efficiency history store at MVP; upgradable later without a contract break).
+
+## Wave: DESIGN / [REF] Reuse Analysis (HARD GATE)
+
+Default EXTEND/REUSE; every CREATE-NEW carries a rejected-extend justification.
+
+| Overlapping component | Path | Classification | Evidence / justification |
+|---|---|---|---|
+| `GetRawStatesForCategory` (mapping expansion) | `Models/WorkTrackingSystemOptionsOwner.cs` L87 | **REUSE-AS-IS** | The exact resolver D11 mandates; `waitTime` + highlight call it. No second BE resolver. |
+| `BaseMetricsService` cumulative per-state `totalDays` | `Services/Implementation/BaseMetricsService.cs` L137+ | **EXTEND** | Add `protected ComputeFlowEfficiency` fold over the SAME per-state totals; ADR-024 upheld (no new service). |
+| `CumulativeStateTimeDto` + endpoints + US-05 picker | `Models/Metrics/CumulativeStateTimeDto.cs`, `*MetricsController.cs` | **REUSE-AS-IS** | Contract UNCHANGED (D8a Option A); chart number/highlight derive from the existing response + settings. |
+| `…Info` tile endpoint scaffolding (`wipOverviewInfo`) | `API/Team/PortfolioMetricsController.cs` | **EXTEND** | `flowEfficiencyInfo` mirrors it (route, validation, `RbacGuard`); the established small-tile pattern. |
+| `ITeamMetricsService` / `IPortfolioMetricsService` | `Services/Interfaces/*` | **EXTEND** | +1 method each (`GetFlowEfficiencyInfoFor…`). |
+| Settings DTO + validator | `API/DTO/*`, `API/Helpers/*` | **EXTEND** | `waitStates` additive field, like `blockedStates` when it was added. |
+| `BlockedStates` persistence mechanism | `WorkTrackingSystemOptionsOwner.cs` L41 + EF config | **REUSE-AS-IS (mirror)** | `WaitStates` persists EXACTLY like `BlockedStates`; migration via `CreateMigration` (DELIVER). |
+| `InputGroup` + `ItemListManager` autocomplete idiom | `components/Common/InputGroup/*`, BaseSettings | **REUSE-AS-IS (idiom)** | `WaitStatesEditor` reuses the chip/autocomplete add-remove pattern. |
+| `StateMappingsEditor` | `components/Common/StateMappings/StateMappingsEditor.tsx` | **REUSE-AS-IS (UNTOUCHED)** | NOT relocated/re-propped (D12 Option (b)); `WaitStatesEditor` is a sibling. |
+| `StatesList` mapping-name derivation | `ModifyTeamSettings.tsx` L167–171 | **REUSE-AS-IS (pattern)** | `WaitStatesEditor` derives `stateMappingNames` the same way for its suggestions. |
+| `FlowMetricsConfigurationComponent` (Blocked States) | `components/Common/BaseSettings/*` | **NO CHANGE** | Decoupled from Wait States (D12); Blocked evolving independently — out of scope. |
+| `ragRules.ts` RAG idiom + `RagResult` | `pages/Common/MetricsView/ragRules.ts` | **EXTEND** | NEW `computeFlowEfficiencyRag` (inverted 40/60); same shape as ~25 sibling `compute*Rag`. |
+| `categoryMetadata.ts` / `widgetInfoMetadata.ts` | `pages/Common/MetricsView/*` | **EXTEND** | Add `flowEfficiency` (`flow-overview`, `small`, `trendPolicy: none`) + description/status-guidance. |
+| `BlockedOverviewWidget` small-tile shape | `pages/Common/MetricsView/BlockedOverviewWidget.tsx` | **REUSE-AS-IS (template)** | `FlowEfficiencyOverviewWidget` follows the same Card/Typography KPI-tile shape. |
+| Cumulative chart `<BarChart>` + `<pattern>` hatch | `CumulativeStateTimeChart.tsx` (ADR-025) | **EXTEND** | Wait-bar `isWait` predicate + efficiency-number slot; composes with existing segments. |
+| `MetricsService` / `IMetricsService` | `services/Api/*` | **EXTEND** | +`getFlowEfficiencyInfo…` (the one new endpoint). |
+| `BaseMetricsView` widget dispatch | `pages/Common/MetricsView/BaseMetricsView.tsx` | **EXTEND** | Dispatch the `flowEfficiency` tile to both scopes. |
+| `flowEfficiency.ts` (fold + `resolveWaitRawStates`) | `utils/` (NEW) | **CREATE-NEW** | *Rejected-extend*: no existing util folds per-state totals into an efficiency %, and no FE twin of `GetRawStatesForCategory` exists (greps return zero `flowEfficiency`/`resolveWaitRawStates`/`waitState` matches). Pure, mutation-testable; one source for number + highlight. |
+| `WaitStatesEditor.tsx` | `components/Common/StateMappings/` (NEW) | **CREATE-NEW** | *Rejected-extend*: `StateMappingsEditor` has a different job (define mappings, with `reconcileDoingStates`); extending it would couple two responsibilities and violate D12's "untouched mappings editor". Reuses `InputGroup`/`ItemListManager` idiom. |
+| `FlowEfficiencyOverviewWidget.tsx` | `pages/Common/MetricsView/` (NEW) | **CREATE-NEW** | *Rejected-extend*: `BlockedOverviewWidget` renders a raw count, not a %/RAG/"not configured"/"no data" tri-state; structurally similar but a different business concept (don't pre-abstract). Follows its shape. |
+| `FlowEfficiencyInfoDto` + TS model/Zod | `Models/Metrics/`, FE `models/` (NEW) | **CREATE-NEW** | *Rejected-extend*: no existing DTO carries `IsConfigured`/`HasDataInScope`/`EfficiencyPercent`; D3/D4 need the two distinct flags. |
+| `WaitStates` field | `WorkTrackingSystemOptionsOwner.cs` (NEW field) | **CREATE-NEW (field)** | *Rejected-extend*: no existing field captures mapping-aware idle-state marking; `BlockedStates` is a different overlay (D9, decoupled). |
+
+**Net**: EXTEND = 10, REUSE-AS-IS = 7, CREATE-NEW = 6 (5 files + 1 model field + 1 endpoint, each with a rejected-extend justification). Zero existing semantic duplicate for any CREATE-NEW (codebase greps return zero `flowEfficiency`/`waitState` matches — confirmed in DISCUSS code-reality check).
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `WaitStates` field | `Lighthouse.Backend/.../Models/WorkTrackingSystemOptionsOwner.cs` | NEW field (`List<string>`, default `[]`, next to `BlockedStates`) |
+| EF migration for `WaitStates` | (generated) via `CreateMigration` PowerShell script, all providers | NEW (DELIVER task; mirror `BlockedStates`; `--no-incremental` rebuild) |
+| `ComputeFlowEfficiency` | `Lighthouse.Backend/.../Services/Implementation/BaseMetricsService.cs` | NEW `protected` fold |
+| `GetFlowEfficiencyInfoForTeam/…ForPortfolio` | `Team/PortfolioMetricsService.cs` + `ITeamMetricsService`/`IPortfolioMetricsService` | NEW method + interface entry |
+| `flowEfficiencyInfo` endpoint | `API/TeamMetricsController.cs`, `API/PortfolioMetricsController.cs` | NEW (mirrors `wipOverviewInfo`) |
+| `FlowEfficiencyInfoDto` | `Lighthouse.Backend/.../Models/Metrics/` | NEW record |
+| Settings DTO + validator | `API/DTO/*Settings*`, `API/Helpers/*` | EXTEND (`waitStates` additive) |
+| `WaitStatesEditor.tsx` | `Lighthouse.Frontend/src/components/Common/StateMappings/` | NEW (sibling of `StateMappingsEditor`) |
+| `ModifyTeamSettings.tsx` / `ModifyProjectSettings.tsx` | `src/components/Common/Team/`, `…/ProjectSettings/` | EXTEND (render `WaitStatesEditor` sibling; `waitStates` handlers) |
+| `flowEfficiency.ts` (`flowEfficiency` + `resolveWaitRawStates`) | `Lighthouse.Frontend/src/utils/` | NEW pure util |
+| `FlowEfficiencyOverviewWidget.tsx` | `src/pages/Common/MetricsView/` | NEW small tile |
+| `computeFlowEfficiencyRag` | `src/pages/Common/MetricsView/ragRules.ts` | EXTEND (new fn, inverted 40/60) |
+| `categoryMetadata.ts` / `widgetInfoMetadata.ts` | `src/pages/Common/MetricsView/` | EXTEND (`flowEfficiency` entry, `trendPolicy: none`) |
+| Cumulative chart (wait-bar `isWait` + number slot) | `src/pages/Common/MetricsView/CumulativeStateTimeChart.tsx` | EXTEND |
+| `BaseMetricsView.tsx` | `src/pages/Common/MetricsView/` | EXTEND (dispatch `flowEfficiency` tile) |
+| `MetricsService` / `IMetricsService` | `src/services/Api/` | EXTEND (`getFlowEfficiencyInfo…`) |
+| Settings TS model + Zod + `FlowEfficiencyInfoDto` model | `src/models/` | EXTEND (`waitStates`) + NEW (`FlowEfficiencyInfoDto`) |
+| `StateMappingsEditor`, `StatesList`, `FlowMetricsConfigurationComponent` | (existing) | **NO CHANGE** (D12 — untouched) |
+
+## Wave: DESIGN / [REF] C4 — Container (delta)
+
+```mermaid
+C4Container
+  title Container Diagram (delta) — wait-states-flow-efficiency
+  Person(admin, "Config-Admin (Carlos)", "Marks idle Doing-states as wait")
+  Person(lead, "Delivery-Lead / Coach (Priya)", "Reads flow efficiency")
+  Container(spa, "React SPA", "React 18 + TS", "Settings form, cumulative chart, Flow Overview tiles")
+  Container(api, "Lighthouse API", "ASP.NET Core .NET 8", "Settings + metrics endpoints")
+  ContainerDb(db, "Relational DB", "EF Core (SQLite/Postgres)", "Team/Portfolio config incl. WaitStates; transitions")
+  Rel(admin, spa, "Configures wait states via")
+  Rel(lead, spa, "Reads efficiency tile/number/highlight via")
+  Rel(spa, api, "PUT/GET settings (waitStates additive); GET cumulativeStateTime; GET flowEfficiencyInfo (NEW)")
+  Rel(api, db, "Persists WaitStates; reads transitions + CurrentStateEnteredAt")
+```
+
+## Wave: DESIGN / [REF] C4 — Component (delta)
+
+```mermaid
+C4Component
+  title Component Diagram (delta) — flow efficiency
+  Container_Boundary(spa, "React SPA") {
+    Component(editor, "WaitStatesEditor", "React (NEW)", "Mark raw Doing-state OR mapping name as wait")
+    Component(folder, "flowEfficiency.ts", "TS util (NEW)", "fold + resolveWaitRawStates; chart number + wait-flag")
+    Component(chart, "CumulativeStateTimeChart", "React (EXTEND)", "Efficiency number slot + wait-bar highlight")
+    Component(tile, "FlowEfficiencyOverviewWidget", "React (NEW)", "Small KPI tile + RAG")
+    Component(rag, "computeFlowEfficiencyRag", "ragRules.ts (NEW)", "Inverted 40/60")
+  }
+  Container_Boundary(api, "Lighthouse API") {
+    Component(ctrl, "MetricsController.flowEfficiencyInfo", "Endpoint (NEW)", "Whole-set tile value, no itemIds")
+    Component(svc, "BaseMetricsService.ComputeFlowEfficiency", "protected fold (NEW)", "Σ totalDays partitioned by GetRawStatesForCategory(WaitStates)")
+    Component(owner, "WorkTrackingSystemOptionsOwner", "Model (EXTEND: +WaitStates)", "GetRawStatesForCategory resolver (REUSE)")
+  }
+  Rel(editor, owner, "writes waitStates (additive settings field)")
+  Rel(chart, folder, "computes number + isWait from existing cumulative response + settings")
+  Rel(tile, ctrl, "fetches whole-set efficiency from")
+  Rel(tile, rag, "colours via")
+  Rel(ctrl, svc, "delegates to")
+  Rel(svc, owner, "resolves wait raw states via GetRawStatesForCategory")
+```
+
+## Wave: DESIGN / [REF] Decisions table
+
+| ID | Decision | Rationale | ADR |
+|---|---|---|---|
+| DDD-1 | Chart number + wait-flag FE-derived from existing per-state `totalDays`; `cumulativeStateTime` contract UNCHANGED. | Derivable fold; per-item = free n=1; one FE source closes divergence risk. | ADR-054 |
+| DDD-2 | `ComputeFlowEfficiency` is a `protected` `BaseMetricsService` fold, NOT a new service/interface. | Uphold ADR-018/021/024/028 (5th). | ADR-054 |
+| DDD-3 | Overview tile served by NEW `flowEfficiencyInfo` endpoint per scope (established `…Info` tile pattern), whole-set, no `itemIds`. | No shared overview payload to fold into; never follows the picker (D5/D18). | ADR-055 |
+| DDD-4 | `FlowEfficiencyInfoDto` carries explicit `IsConfigured` + `HasDataInScope` booleans. | D3 vs D4 distinct reads; no magic sentinels; "not configured" never reads 100%. | ADR-055 |
+| DDD-5 | `flowEfficiency` `trendPolicy: none`. | No efficiency-history store at MVP; upgradable later. | ADR-055 |
+| DDD-6 | Client version-gate ONLY for `flowEfficiencyInfo` IF wrapped; config write + chart number/highlight gate-free. | Only one new endpoint; rest additive/FE-derived. | ADR-055 |
+| DDD-7 | `WaitStates` mapping-aware, resolved via existing `GetRawStatesForCategory`; persists like `BlockedStates`. | D11; no second resolver; lowest-surprise EF migration. | ADR-056 |
+| DDD-8 | UI = sibling `WaitStatesEditor` after `StateMappingsEditor`; the latter NOT relocated. | Wrapper Option (a) = pure structural churn + regression risk on the untouched mappings editor. | ADR-056 |
+| DDD-9 | Wait-bar highlight FE-derived from the SAME `resolveWaitRawStates`; no `isWaitState` row flag; colour-blind-safe; composes with segments. | Single source with the number; reuses existing `<BarChart>`+`<pattern>`. | ADR-057 |
+| DDD-10 | NEW `computeFlowEfficiencyRag`, INVERTED 40/60 (red <40 / amber 40–60 / green ≥60). | Efficiency is higher-is-better — opposite polarity of `computeCumulativeStateTimeRag`; confirms D10. | ADR-057 |
+
+## Wave: DESIGN / [REF] Wave decisions summary
+
+**Key Decisions**: DDD-1..DDD-10 above (ADR-054/055/056/057).
+
+**Architecture Summary**: Additive brownfield extension of `state-time-cumulative-view` + a new Flow Overview tile. Ports-and-adapters unchanged. ONE new persisted mapping-aware field (`WaitStates`), ONE new small read endpoint per scope (`flowEfficiencyInfo`), and three FE presentation surfaces (config editor, chart number+highlight, tile). Efficiency is a pure fold over the per-state `totalDays` the cumulative computation already produces — no new aggregation service (ADR-024 upheld 5th). The chart number + highlight are FE-derived (contract untouched); the tile is BE-computed over the whole set.
+
+**Reuse Analysis**: EXTEND = 10, REUSE-AS-IS = 7, CREATE-NEW = 6 (each justified). `StateMappingsEditor`/`StatesList`/`FlowMetricsConfigurationComponent` untouched.
+
+**Tech Stack**: No new technology. C# .NET 8 / EF Core 8 (MIT), React 18 + TS strict (MIT/Apache-2.0), MUI + MUI-X-charts (MIT), NUnit+Moq+EF-InMemory / Vitest+RTL / Playwright, Stryker.NET + Stryker, Biome, ArchUnitNET. All established.
+
+**Constraints**: Immutability (records/`ImmutableList` where applicable), nullable enabled, `TreatWarningsAsErrors`, no new SonarCloud violations; EF migration via `CreateMigration` script (NOT `dotnet ef migrations add`) with `--no-incremental` stale-DLL rebuild; consult `docs/ci-learnings.md` (esp. nullable `[FromQuery]`, NUnit-analyzer, CA/S-rule families) when implementing. D9 regression guardrail (throughput/forecast/cycle-time/aging/existing cumulative bars+RAG byte-identical).
+
+**Upstream Changes (to DISTILL)**: none that invalidate DISCUSS. All 12 locked decisions honoured; the four DESIGN-flagged deferrals (D8a/D8b/D12/D10) resolved within DISCUSS's stated latitude. No story/AC change required — see Changed Assumptions below for the one clarification (D10 polarity), which refines (does not contradict) the locked decision.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- **D10 RAG polarity clarified (refinement, not contradiction)**: DISCUSS D10 stated thresholds "`act` < 40% / `observe` 40–60% / `sustain` ≥ 60%" but did not pin the code RAG colour direction. DESIGN confirms the 40/60 numbers AND clarifies that, because flow efficiency is **higher-is-better**, the `ragRules.ts` `ragStatus` must INVERT relative to `computeCumulativeStateTimeRag` (low efficiency = red/act, high = green/sustain). This is a refinement within D10's "DESIGN may refine numeric values" latitude; the `act/observe/sustain` guidance words and the 40/60 boundaries are unchanged. No AC change (US-03 AC already says `act < 40` / `sustain ≥ 60`, which this implements). No `upstream-changes.md` required.
