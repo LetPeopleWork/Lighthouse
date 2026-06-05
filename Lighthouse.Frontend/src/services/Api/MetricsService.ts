@@ -9,6 +9,7 @@ import type { ICumulativeStateTimeCandidatesResponse } from "../../models/Metric
 import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
 import type { IEstimationVsCycleTimeResponse } from "../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/FeatureSizeEstimationData";
+import type { IFlowEfficiencyInfo } from "../../models/Metrics/FlowEfficiencyInfo";
 import type {
 	IArrivalsInfo,
 	ICycleTimePercentilesInfo,
@@ -178,6 +179,18 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ICycleTimePercentilesInfo>;
+
+	getFlowEfficiencyInfoForTeam(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFlowEfficiencyInfo>;
+
+	getFlowEfficiencyInfoForPortfolio(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFlowEfficiencyInfo>;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -647,6 +660,35 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ICycleTimePercentilesInfo>(
 				`/${this.api}/${id}/metrics/cycleTimePercentilesInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	getFlowEfficiencyInfoForTeam(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFlowEfficiencyInfo> {
+		return this.fetchFlowEfficiencyInfo(id, startDate, endDate);
+	}
+
+	getFlowEfficiencyInfoForPortfolio(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFlowEfficiencyInfo> {
+		return this.fetchFlowEfficiencyInfo(id, startDate, endDate);
+	}
+
+	private fetchFlowEfficiencyInfo(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IFlowEfficiencyInfo> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IFlowEfficiencyInfo>(
+				`/${this.api}/${id}/metrics/flowEfficiencyInfo?${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
 		});

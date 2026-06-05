@@ -8,6 +8,7 @@ import {
 	computeEstimationVsCycleTimeRag,
 	computeFeatureSizeRag,
 	computeFeaturesWorkedOnRag,
+	computeFlowEfficiencyRag,
 	computeLoadBalanceMatrixRag,
 	computePbcRag,
 	computePredictabilityScoreRag,
@@ -1238,6 +1239,52 @@ describe("ragRules", () => {
 
 			expect(result.ragStatus).toBe("green");
 			expect(result.tipText.toLowerCase()).toContain("balanced");
+		});
+	});
+
+	describe("computeFlowEfficiencyRag", () => {
+		it.each([
+			{
+				scenario: "efficiency is below 40%",
+				efficiencyPercent: 39,
+				expected: "red",
+			},
+			{
+				scenario: "efficiency is between 40% and 60%",
+				efficiencyPercent: 50,
+				expected: "amber",
+			},
+			{
+				scenario: "efficiency is at or above 60%",
+				efficiencyPercent: 72,
+				expected: "green",
+			},
+		])("returns $expected when $scenario", ({
+			efficiencyPercent,
+			expected,
+		}) => {
+			const result = computeFlowEfficiencyRag(efficiencyPercent, terms);
+
+			expect(result.ragStatus).toBe(expected);
+		});
+
+		it("treats exactly 40% as the amber lower boundary", () => {
+			const result = computeFlowEfficiencyRag(40, terms);
+
+			expect(result.ragStatus).toBe("amber");
+		});
+
+		it("treats exactly 60% as the green lower boundary", () => {
+			const result = computeFlowEfficiencyRag(60, terms);
+
+			expect(result.ragStatus).toBe("green");
+		});
+
+		it("names the efficiency percentage in the red tip", () => {
+			const result = computeFlowEfficiencyRag(25, terms);
+
+			expect(result.ragStatus).toBe("red");
+			expect(result.tipText).toContain("25");
 		});
 	});
 });

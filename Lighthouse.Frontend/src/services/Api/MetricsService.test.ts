@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ICumulativeStateTimeResponse } from "../../models/Metrics/CumulativeStateTime";
 import type { ICumulativeStateTimeCandidatesResponse } from "../../models/Metrics/CumulativeStateTimeCandidates";
 import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
+import type { IFlowEfficiencyInfo } from "../../models/Metrics/FlowEfficiencyInfo";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
 import { TeamMetricsService } from "./TeamMetricsService";
 
@@ -280,6 +281,70 @@ describe("MetricsService cumulative state time candidates", () => {
 		expect(result).toEqual(response);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/teams/9/metrics/cumulativeStateTime/candidates?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+});
+
+function getMockFlowEfficiencyInfo(
+	overrides?: Partial<IFlowEfficiencyInfo>,
+): IFlowEfficiencyInfo {
+	return {
+		isConfigured: true,
+		hasDataInScope: true,
+		efficiencyPercent: 72,
+		totalDoingDays: 40,
+		waitDays: 11,
+		...overrides,
+	};
+}
+
+describe("MetricsService flow efficiency info", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("fetches the whole-set flow efficiency info for a team and window", async () => {
+		const response = getMockFlowEfficiencyInfo();
+		mockedAxios.get.mockResolvedValueOnce({ data: response });
+
+		const result = await metricsService.getFlowEfficiencyInfoForTeam(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result).toEqual(response);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/flowEfficiencyInfo?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+
+	it("fetches the whole-set flow efficiency info for a portfolio and window", async () => {
+		const response = getMockFlowEfficiencyInfo({
+			isConfigured: false,
+			hasDataInScope: false,
+			efficiencyPercent: 0,
+			totalDoingDays: 0,
+			waitDays: 0,
+		});
+		mockedAxios.get.mockResolvedValueOnce({ data: response });
+
+		const result = await metricsService.getFlowEfficiencyInfoForPortfolio(
+			9,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result).toEqual(response);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/9/metrics/flowEfficiencyInfo?startDate=2023-01-01&endDate=2023-01-31",
 		);
 	});
 });

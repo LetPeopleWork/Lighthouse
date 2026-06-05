@@ -61,6 +61,7 @@ import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
 import FeatureSizePercentilesWidget from "./FeatureSizePercentilesWidget";
 import FeaturesWorkedOnWidget from "./FeaturesWorkedOnWidget";
+import FlowEfficiencyOverviewWidget from "./FlowEfficiencyOverviewWidget";
 import {
 	deriveLoadBalanceMatrixData,
 	type LoadBalanceMatrixData,
@@ -709,6 +710,7 @@ function buildPbcNodes(ctx: PbcNodesCtx): Record<string, ReactNode | null> {
 function buildWidgetNodes(ctx: {
 	entity: IFeatureOwner;
 	title: string;
+	ownerType: "team" | "portfolio";
 	startDate: Date;
 	endDate: Date;
 	inProgressItems: IWorkItem[];
@@ -781,6 +783,15 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		staleOverview: <StaleOverviewWidget staleCount={ctx.staleItems.length} />,
+		flowEfficiency: (
+			<FlowEfficiencyOverviewWidget
+				entityId={ctx.entity.id}
+				metricsService={ctx.metricsService}
+				ownerType={ctx.ownerType}
+				startDate={ctx.startDate}
+				endDate={ctx.endDate}
+			/>
+		),
 		featuresWorkedOnOverview: ctx.featuresInProgress ? (
 			<FeaturesWorkedOnWidget
 				featureCount={ctx.featuresInProgress.length}
@@ -1234,6 +1245,7 @@ export const BaseMetricsView = <
 	const widgetNodes = buildWidgetNodes({
 		entity,
 		title,
+		ownerType,
 		startDate,
 		endDate,
 		inProgressItems,

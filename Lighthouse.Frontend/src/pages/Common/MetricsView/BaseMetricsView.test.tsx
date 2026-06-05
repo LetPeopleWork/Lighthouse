@@ -755,6 +755,8 @@ describe("BaseMetricsView component", () => {
 			getCumulativeStateTimeCandidatesForPortfolio: vi
 				.fn()
 				.mockResolvedValue({ items: [] }),
+			getFlowEfficiencyInfoForTeam: vi.fn(),
+			getFlowEfficiencyInfoForPortfolio: vi.fn(),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1336,6 +1338,8 @@ describe("BaseMetricsView component", () => {
 			getCumulativeStateTimeCandidatesForPortfolio: vi
 				.fn()
 				.mockResolvedValue({ items: [] }),
+			getFlowEfficiencyInfoForTeam: vi.fn(),
+			getFlowEfficiencyInfoForPortfolio: vi.fn(),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -2000,6 +2004,8 @@ describe("BaseMetricsView component", () => {
 				getCumulativeStateTimeCandidatesForPortfolio: vi
 					.fn()
 					.mockResolvedValue({ items: [] }),
+				getFlowEfficiencyInfoForTeam: vi.fn(),
+				getFlowEfficiencyInfoForPortfolio: vi.fn(),
 			};
 
 			const consoleSpy = vi
@@ -3891,6 +3897,8 @@ describe("BaseMetricsView component", () => {
 				getCumulativeStateTimeItemsForPortfolio: vi
 					.fn()
 					.mockResolvedValue({ state: "Doing", items: [] }),
+				getFlowEfficiencyInfoForTeam: vi.fn(),
+				getFlowEfficiencyInfoForPortfolio: vi.fn(),
 			};
 		};
 

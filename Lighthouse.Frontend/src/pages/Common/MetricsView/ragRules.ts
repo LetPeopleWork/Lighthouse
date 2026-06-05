@@ -852,6 +852,35 @@ export function computePbcRag(data: PbcInput): RagResult {
 const CUMULATIVE_STATE_AMBER_SHARE = 0.4;
 const CUMULATIVE_STATE_RED_SHARE = 0.6;
 
+const FLOW_EFFICIENCY_AMBER_PERCENT = 40;
+const FLOW_EFFICIENCY_GREEN_PERCENT = 60;
+
+export function computeFlowEfficiencyRag(
+	efficiencyPercent: number,
+	_terms: RagTerms,
+): RagResult {
+	const rounded = efficiencyPercent.toFixed(0);
+
+	if (efficiencyPercent < FLOW_EFFICIENCY_AMBER_PERCENT) {
+		return {
+			ragStatus: "red",
+			tipText: `Flow efficiency is ${rounded}% (below 40%). Act on the wait states draining your value-adding time.`,
+		};
+	}
+
+	if (efficiencyPercent < FLOW_EFFICIENCY_GREEN_PERCENT) {
+		return {
+			ragStatus: "amber",
+			tipText: `Flow efficiency is ${rounded}% (40–60%). Observe which wait states hold work the longest.`,
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: `Flow efficiency is ${rounded}% (at or above 60%). Sustain the balance between active and waiting time.`,
+	};
+}
+
 export function computeCumulativeStateTimeRag(
 	states: ReadonlyArray<{ state: string; totalDays: number }>,
 	terms: RagTerms,

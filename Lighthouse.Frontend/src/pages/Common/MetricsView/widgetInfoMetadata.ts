@@ -43,6 +43,18 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "No staleness threshold is configured, or 2 or more items are stale.",
 		},
 	},
+	flowEfficiency: {
+		description:
+			"The share of total time work spends actively progressing rather than waiting. Higher is better — it means less time lost in wait states.",
+		learnMoreUrl: `${DOCS_BASE}#flow-efficiency`,
+		statusGuidance: {
+			sustain:
+				"Flow efficiency is at or above 60%; active time clearly outweighs waiting time.",
+			observe:
+				"Flow efficiency is between 40% and 60%; watch which wait states hold work the longest.",
+			act: "No wait states are configured, no work is in scope, or flow efficiency is below 40% — too much time is lost waiting.",
+		},
+	},
 	featuresWorkedOnOverview: {
 		description:
 			"How many features your team is actively working on compared to the Feature WIP limit.",

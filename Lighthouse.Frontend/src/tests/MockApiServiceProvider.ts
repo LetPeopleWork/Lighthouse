@@ -200,6 +200,8 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getCumulativeStateTimeCandidatesForPortfolio: vi
 			.fn()
 			.mockResolvedValue({ items: [] }),
+		getFlowEfficiencyInfoForTeam: vi.fn(),
+		getFlowEfficiencyInfoForPortfolio: vi.fn(),
 	};
 };
 
@@ -246,6 +248,8 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getCumulativeStateTimeCandidatesForPortfolio: vi
 			.fn()
 			.mockResolvedValue({ items: [] }),
+		getFlowEfficiencyInfoForTeam: vi.fn(),
+		getFlowEfficiencyInfoForPortfolio: vi.fn(),
 	};
 };
 

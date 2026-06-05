@@ -119,6 +119,8 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 		getCumulativeStateTimeCandidatesForPortfolio: vi
 			.fn()
 			.mockResolvedValue({ items: [] }),
+		getFlowEfficiencyInfoForTeam: vi.fn(),
+		getFlowEfficiencyInfoForPortfolio: vi.fn(),
 	};
 }
 

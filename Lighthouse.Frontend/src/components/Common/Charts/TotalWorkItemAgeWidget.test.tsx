@@ -58,6 +58,8 @@ describe("TotalWorkItemAgeWidget", () => {
 		getCumulativeStateTimeCandidatesForPortfolio: vi
 			.fn()
 			.mockResolvedValue({ items: [] }),
+		getFlowEfficiencyInfoForTeam: vi.fn(),
+		getFlowEfficiencyInfoForPortfolio: vi.fn(),
 	});
 
 	it("renders loading state initially", () => {
