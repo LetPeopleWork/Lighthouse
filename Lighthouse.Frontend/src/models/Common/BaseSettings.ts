@@ -17,6 +17,7 @@ export interface IBaseSettings {
 	blockedStates: string[];
 	blockedTags: string[];
 	stateMappings: IStateMapping[];
+	waitStates?: string[];
 	doneItemsCutoffDays: number;
 	stalenessThresholdDays: number;
 	processBehaviourChartBaselineStartDate: Date | null;

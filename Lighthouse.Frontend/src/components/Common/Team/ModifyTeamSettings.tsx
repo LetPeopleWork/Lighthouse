@@ -21,6 +21,7 @@ import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
+import WaitStatesEditor from "../StateMappings/WaitStatesEditor";
 import StatesList from "../StatesList/StatesList";
 import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
@@ -186,6 +187,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							validationErrors={stateMappingErrors}
 							refreshFailed={refreshFailed}
 							onReloadDependentData={reloadDependentData}
+						/>
+
+						<WaitStatesEditor
+							waitStates={teamSettings.waitStates || []}
+							doingStates={teamSettings.doingStates || []}
+							stateMappings={teamSettings.stateMappings || []}
+							onChange={(nextWaitStates) =>
+								updateSettings("waitStates", nextWaitStates)
+							}
 						/>
 
 						<FlowMetricsConfigurationComponent

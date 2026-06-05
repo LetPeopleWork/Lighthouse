@@ -22,6 +22,7 @@ import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
+import WaitStatesEditor from "../StateMappings/WaitStatesEditor";
 import StatesList from "../StatesList/StatesList";
 import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
@@ -196,6 +197,15 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							validationErrors={stateMappingErrors}
 							refreshFailed={refreshFailed}
 							onReloadDependentData={reloadDependentData}
+						/>
+
+						<WaitStatesEditor
+							waitStates={projectSettings.waitStates || []}
+							doingStates={projectSettings.doingStates || []}
+							stateMappings={projectSettings.stateMappings || []}
+							onChange={(nextWaitStates) =>
+								updateSettings("waitStates", nextWaitStates)
+							}
 						/>
 
 						<FeatureSizeComponent
