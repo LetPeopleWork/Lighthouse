@@ -1,0 +1,286 @@
+schema_version: 1
+feature_id: wait-states-flow-efficiency
+created: 2026-06-05
+research_depth: lightweight
+note: >
+  Lightweight journey map for an additive, brownfield extension of the shipped
+  state-time-cumulative-view chart (Epic 4144) plus a new overview tile. Two linked journeys:
+  the config-admin defines wait states (one-time setup), then the delivery-lead-rte reads flow
+  efficiency in three surfaces. Happy-path focus per the locked research-depth decision; error
+  paths captured at summary level. Anchors to verified code reality: WaitStates is the structural
+  twin of BlockedStates on WorkTrackingSystemOptionsOwner; the efficiency surfaces sit on the
+  existing flow-overview (small tile) and flow-metrics (cumulative chart) categories.
+
+journeys:
+
+  - name: define-wait-states
+    goal: >
+      A Configuration Administrator opens a Team's (or Portfolio's) Flow Metrics Configuration,
+      marks the Doing-states that are idle "wait" states (the ones where an item just sits —
+      waiting for a reviewer, queued for test, blocked on a dependency), and saves — turning on
+      the flow-efficiency family of signals.
+    persona: "config-admin (Carlos Mendez, Team Phoenix admin)"
+    emotional_arc:
+      start: Recognising — "half our 'Doing' columns are really just queues; Lighthouse counts
+        them all as work, which overstates how productive we are."
+      middle: Familiar — "this is the same form and the same control I use for Blocked States;
+        I type the state names and they autocomplete from our Doing-states."
+      end: Set up — "wait states are saved; the efficiency number on the overview and the chart
+        will now reflect our real idle time."
+
+    steps:
+
+      - id: step-open-flow-metrics-config
+        action: >
+          Carlos opens Team Phoenix settings and expands the Flow Metrics Configuration group,
+          where Doing-states, State Mappings, Blocked States, and Blocked Tags already live.
+        expected_output: >
+          The existing config form renders with a NEW "Wait States" config living in the
+          state-config cluster (next to State Mappings, NOT inside the Blocked States sub-section —
+          Blocked config is evolving independently and is out of scope to touch), gated by a
+          "Configure Wait States" toggle, with helper text: "Wait states are Doing-states (or State
+          Mappings) where work sits idle (waiting, queued) rather than being actively worked. Flow
+          efficiency = active time / total Doing time."
+        emotional_state: Oriented — "there's the new section, grouped with the other state config"
+        shared_artifacts:
+          - settings.doingStates (existing — feeds the autocomplete suggestions)
+          - settings.waitStates (new — the list being edited)
+
+      - id: step-add-wait-states
+        action: >
+          Carlos enables the toggle and adds "Waiting for Review" and "Ready for Test" via the
+          ItemListManager, picking from the suggestions — which include both raw Doing-states AND
+          his defined State Mapping names, so he can mark a mapped state (e.g. "Waiting", a mapping
+          grouping several raw states) as a wait state in ONE click.
+        expected_output: >
+          Each added entry appears as a removable chip. Suggestions are the team's Doing-states
+          AND its State Mapping names (settings.doingStates plus settings.stateMappings names). A
+          mapped wait-state entry resolves — via the same GetRawStatesForCategory expansion the
+          categories use — so ALL its underlying raw states count as wait time. An entry already
+          added is not re-suggested.
+        emotional_state: In control — "same interaction as the rest of the state config; I can mark
+          a whole mapping as wait in one click"
+        shared_artifacts:
+          - settings.waitStates (new List<string>, mapping-aware — entries are raw Doing-states OR mapping names, resolved via GetRawStatesForCategory)
+          - settings.stateMappings (existing — mapping names are also valid wait-state entries)
+
+      - id: step-save-config
+        action: >
+          Carlos saves the team settings.
+        expected_output: >
+          The settings persist via the EXISTING team settings update endpoint (no new endpoint,
+          no new contract — WaitStates rides the settings DTO the same way BlockedStates does).
+          On reload the chips are still there (read-your-writes).
+        emotional_state: Done — "saved; the efficiency surfaces will use these now"
+        shared_artifacts:
+          - settings.waitStates (persisted on WorkTrackingSystemOptionsOwner)
+
+    error_paths_summary:
+      - A state typed that is NOT a Doing-state (nor a mapping name): accepted into the list but
+        ignored by the efficiency computation (only states inside GetRawStatesForCategory(WaitStates)
+        contribute to the denominator). The autocomplete only offers Doing-states and mapping names,
+        so this is an edge case, not the happy path.
+      - A mapping name marked as a wait state: resolves through GetRawStatesForCategory so ALL its
+        underlying raw states count as wait time — the user marks the whole mapping in one click,
+        without enumerating its raw states.
+      - No wait states defined (toggle off / empty list): not an error — it is the default. The
+        downstream efficiency surfaces show an explicit "not configured" state rather than a
+        misleading 100%.
+      - Concurrent edit by another admin: handled by the existing settings concurrency mechanism
+        (job-config-edit-no-silent-lost-update, epic-5121) — WaitStates inherits it for free as a
+        field on the tokened config aggregate. No new concurrency surface.
+
+    success_signal:
+      - Teams that have idle queues in their Doing pipeline define wait states within the first
+        weeks of release, unlocking a non-100% flow-efficiency reading that matches their reality.
+
+  - name: read-flow-efficiency
+    goal: >
+      A Delivery Lead / RTE (with wait states already defined) reads the team's flow efficiency
+      three ways — the overview tile (aggregate percentage), the number on the cumulative
+      time-per-state chart (aggregate, or per-item when the picker narrows to one item), and the
+      colour-highlighted wait-state bars on that chart — and uses it to name idle time as the
+      improvement target.
+    persona: "delivery-lead-rte (Priya Nair, Team Phoenix delivery lead; also flow-coach secondary for the per-item picker view)"
+    emotional_arc:
+      start: Suspicious — "everyone's busy but delivery is slow; I think we're waiting more than
+        we're working but I can't prove it."
+      middle: Confirmed — "34% efficient. The chart shows 'Waiting for Review' and 'Ready for
+        Test' bars highlighted as wait — and they're tall. Two thirds of our time is queueing."
+      end: Decisive — "the constraint is idle time, not effort. Improvement effort goes to
+        removing the waits — and I can show the number to leadership."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How is flow efficiency defined (aggregate and per-item)?
+        decision: >
+          Flow efficiency = sum of time in ACTIVE (non-wait) Doing-states / sum of time in ALL
+          Doing-states, computed over the SAME D12-included item set and full-duration attribution
+          (D5) the cumulative chart uses. Wait time = time spent in any raw state in
+          GetRawStatesForCategory(WaitStates) — i.e. WaitStates is mapping-aware (entries are raw
+          Doing-states OR StateMapping names) and resolved through the SAME expansion the categories
+          use, so a raw state counts as "wait" iff it is in that expanded set. Active time =
+          Doing-time NOT in that expanded wait set. Aggregate efficiency sums across all in-scope
+          items; per-item efficiency (when the US-05 picker selects exactly one item) uses only that
+          item's durations. ToDo/Done time is NOT in the denominator (only Doing-category time
+          counts, matching the D19 cumulative-chart scope).
+      - id: D2
+        question: Where does the overview Flow Efficiency widget live?
+        decision: >
+          flow-overview category, size small (the single-number-KPI tile shape — same family as
+          wipOverview, predictabilityScore, totalWorkItemAge). NOT flow-metrics (which holds the
+          large charts). Widget key: flowEfficiency. Confirmed against categoryMetadata.ts: every
+          flow-overview entry is a small KPI tile, which is exactly the flow-efficiency percentage's
+          shape.
+      - id: D3
+        question: What happens when no wait states are configured?
+        decision: >
+          Every efficiency surface shows an explicit "not configured" state, NEVER a misleading
+          100%. Overview tile: "Flow Efficiency — not configured" with a learn-more pointer to
+          define wait states. Chart number: suppressed (the cumulative bars and segments are
+          unchanged — the chart still works fully without wait states). Wait-bar colour-highlight:
+          no bars are highlighted (there are no wait states to highlight). Rationale: a 100% reading
+          would falsely claim perfect efficiency for a team that simply hasn't configured the
+          feature.
+      - id: D4
+        question: What happens when total Doing-time in scope is zero?
+        decision: >
+          No division by zero. The efficiency surfaces render "no data in scope" (the same
+          empty-state tone as the cumulative chart's empty filter), distinct from the
+          "not configured" state of D3. Zero-denominator and unconfigured are different conditions
+          and read differently.
+      - id: D5
+        question: Does narrowing the US-05 picker change the chart's flow-efficiency number?
+        decision: >
+          Yes — the chart number recomputes over the picker selection (this is the "efficiency for
+          an individual item if we filter" the work item asks for). Selecting one item shows that
+          item's efficiency. This DIFFERS from the cumulative chart's RAG (D18), which stays on the
+          whole in-scope set. Rationale: the work item explicitly wants per-item efficiency via the
+          filter; the number is a view-level read of the displayed bars, so it follows the picker.
+      - id: D6
+        question: How are wait-state bars colour-highlighted on the cumulative chart?
+        decision: >
+          Wait-state bars render in a visually distinct colour/treatment from active-state bars,
+          composing with the existing completed/ongoing segment split (D6 of the cumulative feature)
+          — i.e. a wait bar is still split solid-base / hatched-top, but its colour family marks it
+          as a wait state. Colour-blind-safe: the distinction is not colour-alone (a legend entry
+          and/or an icon/label marks wait bars), consistent with the cumulative chart's existing
+          colour-blind care. The active-vs-wait distinction is independent of the completed-vs-
+          ongoing distinction; both are legible together.
+      - id: D7
+        question: Does this change the cumulative chart's endpoints or the settings endpoint?
+        decision: >
+          Settings write: NO new endpoint — WaitStates rides the existing team/portfolio settings
+          DTO (twin of BlockedStates). Cumulative chart read: the existing cumulativeStateTime
+          response is extended additively with which states are wait states and the efficiency
+          figure(s) — OR efficiency is derivable client-side from the existing per-state bars plus
+          the settings' WaitStates list (DESIGN picks the split). Overview tile: a small efficiency
+          read, served either by a new lightweight endpoint or folded into the existing overview
+          payload (DESIGN decision). No breaking change to any existing contract.
+
+    steps:
+
+      - id: step-glance-overview-tile
+        action: >
+          Priya opens /teams/{teamId}, lands on the Flow Overview category, and reads the new
+          Flow Efficiency tile.
+        expected_output: >
+          A small KPI tile "Flow Efficiency — 34%" with a RAG colour (act/observe/sustain) sits
+          alongside the existing overview tiles (WIP, Predictability Score, Total Work Item Age).
+          With wait states configured and Doing-time in scope, it shows the aggregate percentage.
+        emotional_state: Alerted — "34%? That's low. Most of our time isn't active work."
+        shared_artifacts:
+          - flowEfficiencyAggregate (new — active Doing-time / total Doing-time over in-scope items)
+          - settings.waitStates (new — defines which Doing-states are idle)
+          - currentFilter (existing — team/portfolio scope, type chips, date range)
+
+      - id: step-open-cumulative-chart-see-highlight-and-number
+        action: >
+          Priya switches to Flow Metrics and looks at the Cumulative Time per State chart, where
+          the wait-state bars are now colour-highlighted and a flow-efficiency number is shown.
+        expected_output: >
+          The cumulative bars render as before (one per Doing-state, completed/ongoing segments),
+          but the wait-state bars ("Waiting for Review", "Ready for Test") are visually distinct
+          from the active-state bars, with a legend entry. A flow-efficiency figure (34%) is shown
+          on the chart for the in-scope set. The "where does time go?" view now also shows "how
+          much of it is waste?".
+        emotional_state: Confirmed — "the tall bars ARE the wait states. The waste is visible."
+        shared_artifacts:
+          - cumulativeStateTimeData (existing — per-state bars)
+          - settings.waitStates (new — drives which bars are highlighted)
+          - flowEfficiencyInScope (new — number shown on the chart for the displayed set)
+
+      - id: step-filter-to-one-item-see-its-efficiency
+        action: >
+          (Optional deep-dive) Priya — or a flow-coach — uses the existing US-05 item picker to
+          select a single slow item, and reads that item's flow efficiency from the chart number.
+        expected_output: >
+          The cumulative bars recompute over the one item (existing US-05 behaviour) AND the
+          flow-efficiency number recomputes to that item's efficiency (e.g. "This item: 18%
+          efficient — 36 of its 44 Doing-days were spent waiting"). Clearing the picker returns to
+          the aggregate number. The overview tile and the chart RAG are unchanged (they reflect the
+          whole in-scope set, per D5/D18).
+        emotional_state: Investigative — "this item was 18% efficient — it sat in Review and Test
+          queues almost the whole time. That's the story for the post-mortem."
+        shared_artifacts:
+          - selectedItemIds (existing — picker selection)
+          - flowEfficiencyPerSelection (new — efficiency over the picker selection)
+
+      - id: step-name-the-waste
+        action: >
+          Priya screenshots the overview tile and the highlighted chart for the leadership deck and
+          frames the improvement conversation around removing waits.
+        expected_output: >
+          Priya can say "We're 34% efficient — two thirds of our lead time is idle waiting, mostly
+          in Review and Test queues (here's the chart). The improvement target is removing those
+          waits, not working harder." — vs the previous best, an anecdote with no number.
+        emotional_state: Decisive — "the number names the waste; the improvement decision follows
+          from evidence, not from who shouted loudest about being busy."
+        shared_artifacts: []
+
+    error_paths_summary:
+      - No wait states configured (D3): overview tile shows "not configured" with a pointer to the
+        config; the chart number is suppressed; no bars highlighted. NEVER a misleading 100%.
+      - Zero total Doing-time in scope (D4): efficiency surfaces show "no data in scope" — distinct
+        in wording from "not configured" — and never divide by zero.
+      - A configured wait state is not currently a Doing-state (e.g. workflow changed): that state
+        contributes nothing to the denominator (only Doing-time counts) and is not highlighted; the
+        efficiency number stays well-defined.
+      - All Doing-time is in wait states (efficiency 0%): renders 0% with the "act" RAG — a valid,
+        if alarming, reading, not an error.
+      - Picker narrows to items with zero Doing-time (D4 at selection scope): the per-selection
+        number shows "no data in scope" while the aggregate tile/RAG stay on the whole set.
+
+    success_signal:
+      - Teams with wait states defined view the Flow Efficiency tile or the chart number, and the
+        "what fraction of our time is waste?" question stops being answered by spreadsheets or
+        anecdote.
+      - The per-item efficiency (picker-narrowed) is used in outlier post-mortems — validating that
+        the "efficiency for an individual item if we filter" ask was a real need.
+
+shared_artifacts_registry:
+  waitStates:
+    source_of_truth: "WorkTrackingSystemOptionsOwner.WaitStates (List<string>, mapping-aware — entries are raw Doing-states OR StateMapping names, resolved via GetRawStatesForCategory) on Team/Portfolio settings"
+    consumers:
+      - "Wait States config in the state-config cluster (next to State Mappings; decoupled from Blocked States)"
+      - "Flow-efficiency computation (waitTime = time in any raw state in GetRawStatesForCategory(WaitStates); denominator = all Doing-time)"
+      - "Cumulative chart wait-bar colour-highlight (which bars are wait bars, after the same expansion)"
+    owner: wait-states-flow-efficiency
+    integration_risk: "HIGH — single source; the SAME list (after GetRawStatesForCategory expansion) drives the efficiency math AND the chart highlight. Divergent reads (e.g. highlight using one list, math using another, or one surface skipping the mapping expansion) would confuse users. Both must read the one settings field through the SAME resolution the categories use."
+    validation: "A state (raw OR mapping name) marked wait is highlighted on the chart AND moved into the wait portion of the efficiency denominator — verify both surfaces resolve WaitStates via GetRawStatesForCategory and so agree on a mapping's underlying raw states."
+  flowEfficiency:
+    source_of_truth: "Computed: active(non-wait) Doing-time / total Doing-time over the in-scope item set (or picker selection), full-duration attribution per cumulative D5"
+    consumers:
+      - "Overview Flow Efficiency tile (aggregate, whole in-scope set)"
+      - "Cumulative chart efficiency number (in-scope set; recomputes with US-05 picker selection)"
+    owner: wait-states-flow-efficiency
+    integration_risk: "MEDIUM — two surfaces (tile vs chart number) can scope DIFFERENTLY by design: the tile is always whole-set; the chart number follows the picker (D5). This is intentional and must be documented so users don't read them as a contradiction."
+    validation: "With picker cleared, the chart number equals the tile (same scope). With one item picked, the chart number is that item's efficiency while the tile is unchanged."
+
+changelog:
+  - date: "2026-06-05"
+    feature: wait-states-flow-efficiency
+    change: "Initial lightweight journey map — define-wait-states (config) + read-flow-efficiency (3 surfaces). Anchored to WaitStates-as-BlockedStates-twin and the shipped cumulative chart."
+  - date: "2026-06-05"
+    feature: wait-states-flow-efficiency
+    change: "User-review revision — WaitStates is now mapping-aware (entries are raw Doing-states OR StateMapping names, resolved via GetRawStatesForCategory; mapped states markable as wait in one click); Wait States config relocated to the state-config cluster next to State Mappings, decoupled from the (independently-evolving) Blocked States sub-section."

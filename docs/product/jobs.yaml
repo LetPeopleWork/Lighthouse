@@ -611,6 +611,155 @@ jobs:
         systemic constraint job; this is why B2 was post-MVP originally and is now absorbed as a
         secondary lens of B3 rather than a standalone feature.
 
+  - id: job-config-admin-define-wait-states
+    title: Mark which Doing-states are idle "wait" states so flow efficiency can be measured
+    persona: config-admin
+    feature_context: wait-states-flow-efficiency
+    created: 2026-06-05
+    note: >
+      NEW in wait-states-flow-efficiency (ADO #5173, reported by Chris). The config action that
+      unlocks the whole feature: a wait state is an in-flow-but-idle Doing-state (e.g. "Waiting
+      for Review", "Blocked-by-dependency", "Ready for Test"). Mechanically a new List<string>
+      WaitStates on WorkTrackingSystemOptionsOwner, but MAPPING-AWARE: entries are raw Doing-states
+      OR StateMapping names, resolved via GetRawStatesForCategory (the same expansion the categories
+      use), so a mapped state can be marked as wait in one click. The control lives in the
+      state-config cluster next to State Mappings — decoupled from Blocked States, which is evolving
+      independently. With no wait states defined, flow efficiency cannot be computed and the
+      efficiency surfaces are suppressed.
+    job_story: >
+      When I am configuring a Team or Portfolio and I know that some of our Doing-states are
+      ones where the item just sits idle — waiting for a reviewer, waiting for a dependency,
+      queued for test — rather than states where someone is actively working,
+      I want to mark exactly those states as "wait" states in the same settings form where I
+      already manage Doing-states and blocked-states,
+      so the tool can tell idle time apart from active time and report our flow efficiency,
+      instead of treating every minute in the pipeline as if it were productive work.
+    dimensions:
+      functional: >
+        A "Wait States" config in the state-config cluster (Team and Portfolio), grouped with
+        State Mappings rather than anchored to the (independently-evolving) Blocked States
+        sub-section: an ItemListManager whose suggestions include BOTH the team's raw Doing-states
+        AND its State Mapping names, persisting to a new WaitStates List<string> on the settings
+        aggregate. Wait-state selection is MAPPING-AWARE — an entry may be a raw Doing-state OR a
+        StateMapping.Name, resolved through the same GetRawStatesForCategory expansion the
+        categories use, so marking a mapping name as a wait state (one click) attributes ALL its
+        underlying raw states' time to wait. Wait states stay within the Doing category (mappings
+        are Doing-sourced); a state outside that expanded set is ignored for efficiency. Saving
+        rides the existing team/portfolio settings endpoint — no new endpoint, no new contract for
+        the config write.
+      emotional: >
+        Move from "Lighthouse counts all our pipeline time as if it were work" to "I've told it
+        which states are idle, so the numbers it shows now reflect reality." Confidence that the
+        flow-efficiency figure leadership will see is grounded in our actual workflow.
+      social: >
+        Be the admin who set the team up so its flow-efficiency metric is trustworthy — the
+        states marked as "wait" match what the team actually experiences as idle time.
+    forces:
+      push: >
+        Today Lighthouse has no notion of idle-vs-active time within Doing; every state in the
+        pipeline is implicitly "work happening". Teams that KNOW half their lead time is queueing
+        have no way to express that, so no efficiency number can be produced.
+      pull: >
+        One familiar settings sub-section (identical interaction to Blocked States, which admins
+        already use) turns on a whole family of efficiency signals. Zero new screens to learn.
+      anxiety: >
+        Will marking a state as "wait" change throughput/forecast numbers? (No — wait states are
+        a labelling overlay used only by the new flow-efficiency computation and the chart
+        colour-highlight; cycle time, throughput, forecasts, and the existing cumulative bars are
+        unchanged.)
+        What if I mark a state that isn't a Doing-state? (It is ignored for efficiency; the
+        suggestions list only offers Doing-states, matching the Blocked States UX.)
+      habit: >
+        Admins already manage Doing-states, Blocked-states, and Blocked-tags in this exact form;
+        adding Wait-states is the same muscle memory. The only new idea is the meaning ("idle, not
+        active") — surfaced in the sub-section helper text.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — flow efficiency is a headline Kanban/flow metric (Little's Law family)
+        that customers explicitly asked for (ADO #5173); without the wait-state definition it
+        cannot exist. Current satisfaction: 1 — there is no wait-state concept anywhere in the
+        product today (verified: zero waitState/flowEfficiency matches in backend or frontend).
+        Gap: 3 — a foundational missing capability, surgically scoped as an additive twin of an
+        existing mechanism.
+
+  - id: job-spot-flow-efficiency-waste
+    title: See what fraction of our lead time is active work vs idle waiting
+    persona: delivery-lead-rte
+    feature_context: wait-states-flow-efficiency
+    created: 2026-06-05
+    note: >
+      NEW in wait-states-flow-efficiency (ADO #5173). The viewing job that pays off the config
+      job. Flow efficiency = active-Doing-time / total-Doing-time, surfaced three ways on top of
+      the shipped state-time-cumulative-view chart and a new overview tile: an overview Flow
+      Efficiency widget (aggregate), a flow-efficiency NUMBER on the cumulative chart (aggregate
+      for the in-scope set, and per-item when the US-05 picker narrows to one item), and a
+      colour-highlight that visually distinguishes wait-state bars on the cumulative chart.
+      Secondary persona flow-coach (per-item efficiency in the picker-narrowed view).
+    job_story: >
+      When I am running a retro, an improvement-planning meeting, or a leadership review and the
+      question is "how much of our lead time is actually spent working vs just waiting?",
+      I want a single flow-efficiency percentage for the team (and the ability to see the
+      wait-states called out on the cumulative time-per-state chart, and the efficiency for an
+      individual item when I filter to it),
+      so I can name idle time as the problem with evidence ("we're 34% efficient — two thirds of
+      our lead time is queueing") rather than arguing about how hard everyone is working.
+    dimensions:
+      functional: >
+        Flow efficiency = sum of time in active (non-wait) Doing-states / sum of time in ALL
+        Doing-states, over the same D12-included item set and full-duration attribution (D5) the
+        cumulative chart already uses. Surfaced as: (a) a Flow Efficiency overview tile (small
+        widget, flow-overview category) showing the aggregate percentage with RAG; (b) a
+        flow-efficiency number on the cumulative chart that recomputes with the US-05 picker, so
+        narrowing to one item shows THAT item's efficiency; (c) a colour-highlight that renders
+        wait-state bars distinctly from active-state bars on the cumulative chart. When no wait
+        states are configured, every efficiency surface shows an explicit "not configured" state,
+        not a misleading 100%.
+      emotional: >
+        Move from "everyone feels busy but delivery is slow and I can't say why" to "34% efficient —
+        the problem is queueing, not effort". Relief at having a defensible number for a previously
+        unmeasurable, politically charged question.
+      social: >
+        Walk into the leadership review able to say "two thirds of our lead time is idle waiting,
+        here's the chart, here are the wait states" — reframing an improvement conversation away
+        from "work harder" toward "remove the waits".
+    forces:
+      push: >
+        Flow efficiency is a standard flow metric teams expect; today Lighthouse cannot show it,
+        so users export state history and compute it in spreadsheets, or argue from anecdote. The
+        cumulative chart shows WHERE time goes but not what FRACTION of it is waste.
+      pull: >
+        One percentage on the overview, a number on the chart they already use, and a colour cue
+        that makes the wait-states pop out of the existing bars — all composing with the filters
+        and picker that already exist. Filter to one item and the same number answers "how
+        efficient was THIS item?".
+      anxiety: >
+        What if efficiency reads 100% just because we never defined wait states? (Mitigated: with
+        no wait states configured the surfaces show "not configured / define wait states", never a
+        misleading 100%.)
+        What if a tiny short window divides by near-zero Doing-time and shows a nonsense number?
+        (Mitigated: zero total Doing-time renders "no data in scope", never a division error.)
+        Is this just the cumulative chart again? (No — that chart answers "which state is the
+        constraint?"; this answers "what fraction of our time is waste?" — a different decision,
+        reusing the same data foundation and the same picker.)
+      habit: >
+        Leads who know ActionableAgile/Kanban expect a flow-efficiency figure and will look for
+        it; surfacing it on the overview (where the other single-number KPIs live) and on the
+        cumulative chart (where the per-state time already lives) puts it exactly where the eye
+        already goes.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — flow efficiency is a recurring, high-leverage leadership question and a
+        direct competitive-parity expectation. Current satisfaction: 1 — no efficiency surface
+        exists today. Gap: 3 — foundational, but bounded: it reuses the cumulative chart's data,
+        item-inclusion, and picker, so the marginal capability is the efficiency computation and
+        three thin presentation surfaces.
+
   - id: job-commit-intent-no-button
     title: Commit my intent without a ceremonial button
     persona: delivery-forecaster
