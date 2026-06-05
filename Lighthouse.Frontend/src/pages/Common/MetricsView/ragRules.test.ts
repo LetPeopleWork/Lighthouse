@@ -1286,5 +1286,22 @@ describe("ragRules", () => {
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("25");
 		});
+
+		it("names the 40-60 band and the rounded value in the amber tip", () => {
+			const result = computeFlowEfficiencyRag(50, terms);
+
+			expect(result.ragStatus).toBe("amber");
+			expect(result.tipText).toContain("50");
+			expect(result.tipText).toContain("40");
+			expect(result.tipText).toContain("60");
+		});
+
+		it("names the 60% target and the rounded value in the green tip", () => {
+			const result = computeFlowEfficiencyRag(72, terms);
+
+			expect(result.ragStatus).toBe("green");
+			expect(result.tipText).toContain("72");
+			expect(result.tipText).toContain("60");
+		});
 	});
 });

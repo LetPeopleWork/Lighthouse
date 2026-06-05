@@ -253,6 +253,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task GetFlowEfficiency_StartDateEqualsEndDate_IsAccepted()
+        {
+            var teamId = SeedTeamWithKnownDoingAndWaitTime();
+
+            client.AsTeamAdmin(teamId);
+            var url = $"/api/latest/teams/{teamId}/metrics/flowEfficiencyInfo?startDate={windowEnd:O}&endDate={windowEnd:O}";
+            var response = await client.GetAsync(url);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"ADR-055: an equal start/end date is a valid single-day window and must not be rejected (only startDate strictly after endDate is a 400). Body: {body}");
+        }
+
+        [Test]
         public async Task GetFlowEfficiency_TeamViewer_CanReadTheTile()
         {
             // ADR-055: class-level RbacGuard(TeamRead) — a Viewer (read role) can read the tile.

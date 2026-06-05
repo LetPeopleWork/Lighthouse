@@ -147,6 +147,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 $"An unauthenticated caller must not read the portfolio Flow Efficiency tile (RbacGuard PortfolioRead). Status: {response.StatusCode}");
         }
 
+        [Test]
+        public async Task GetFlowEfficiency_PortfolioStartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var portfolioId = SeedPortfolioWithMappingNameMarkedAsWaitState();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var url = $"/api/latest/portfolios/{portfolioId}/metrics/flowEfficiencyInfo?startDate={windowEnd:O}&endDate={windowStart:O}";
+            var response = await client.GetAsync(url);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                $"ADR-055 parity: a portfolio startDate after endDate is rejected with 400. Body: {body}");
+        }
+
+        [Test]
+        public async Task GetFlowEfficiency_PortfolioStartDateEqualsEndDate_IsAccepted()
+        {
+            var portfolioId = SeedPortfolioWithMappingNameMarkedAsWaitState();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var url = $"/api/latest/portfolios/{portfolioId}/metrics/flowEfficiencyInfo?startDate={windowEnd:O}&endDate={windowEnd:O}";
+            var response = await client.GetAsync(url);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"ADR-055 parity: an equal start/end date is a valid single-day window and must not be rejected. Body: {body}");
+        }
+
         private string InfoUrl(int portfolioId)
             => $"/api/latest/portfolios/{portfolioId}/metrics/flowEfficiencyInfo?startDate={windowStart:O}&endDate={windowEnd:O}";
 

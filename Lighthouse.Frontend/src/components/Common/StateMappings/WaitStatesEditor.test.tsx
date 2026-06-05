@@ -74,6 +74,23 @@ describe("WaitStatesEditor", () => {
 		expect(within(options).getByText("Active")).toBeInTheDocument();
 		expect(within(options).getByText("In Review")).toBeInTheDocument();
 		expect(within(options).getByText("Waiting for Review")).toBeInTheDocument();
+		expect(within(options).getAllByRole("option")).toHaveLength(3);
+	});
+
+	it("clears the wait states when the toggle is switched off", async () => {
+		const onChange = vi.fn();
+		render(
+			<WaitStatesEditor
+				waitStates={["Active"]}
+				doingStates={doingStates}
+				stateMappings={stateMappings}
+				onChange={onChange}
+			/>,
+		);
+
+		await openControl();
+
+		expect(onChange).toHaveBeenCalledExactlyOnceWith([]);
 	});
 
 	it("adds a selected mapping name as a single wait-state chip in one click", async () => {
@@ -94,6 +111,42 @@ describe("WaitStatesEditor", () => {
 		await userEvent.click(screen.getByText("Waiting for Review"));
 
 		expect(onChange).toHaveBeenCalledExactlyOnceWith(["Waiting for Review"]);
+	});
+
+	it("trims a typed wait state before adding it", async () => {
+		const onChange = vi.fn();
+		render(
+			<WaitStatesEditor
+				waitStates={[]}
+				doingStates={doingStates}
+				stateMappings={stateMappings}
+				onChange={onChange}
+			/>,
+		);
+
+		await openControl();
+		const combobox = screen.getByRole("combobox", { name: /wait state/i });
+		await userEvent.type(combobox, "  Blocked  {Enter}");
+
+		expect(onChange).toHaveBeenCalledExactlyOnceWith(["Blocked"]);
+	});
+
+	it("ignores a whitespace-only wait state", async () => {
+		const onChange = vi.fn();
+		render(
+			<WaitStatesEditor
+				waitStates={[]}
+				doingStates={doingStates}
+				stateMappings={stateMappings}
+				onChange={onChange}
+			/>,
+		);
+
+		await openControl();
+		const combobox = screen.getByRole("combobox", { name: /wait state/i });
+		await userEvent.type(combobox, "   {Enter}");
+
+		expect(onChange).not.toHaveBeenCalled();
 	});
 
 	it("removes a wait-state chip when its delete affordance is used", async () => {
