@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.API.Helpers
             SyncTeams(project, portfolioSetting, teamRepo);
             SyncServiceLevelExpectation(project, portfolioSetting);
             SyncBlockedItems(project, portfolioSetting);
+            SyncWaitStates(project, portfolioSetting);
         }
 
         private static void SyncStates(Portfolio project, PortfolioSettingDto portfolioSetting)
@@ -50,6 +51,11 @@ namespace Lighthouse.Backend.API.Helpers
         {
             project.BlockedStates = TrimListEntries(portfolioSetting.BlockedStates);
             project.BlockedTags = portfolioSetting.BlockedTags;
+        }
+
+        private static void SyncWaitStates(Portfolio project, PortfolioSettingDto portfolioSetting)
+        {
+            project.WaitStates = TrimListEntries(portfolioSetting.WaitStates);
         }
 
         private static List<string> TrimListEntries(List<string> list)

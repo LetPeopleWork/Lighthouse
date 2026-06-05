@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.API.DTO
             SystemWIPLimit = workTrackingSystemOptionsOwner.SystemWIPLimit;
             BlockedStates = workTrackingSystemOptionsOwner.BlockedStates;
             BlockedTags = workTrackingSystemOptionsOwner.BlockedTags;
+            WaitStates = workTrackingSystemOptionsOwner.WaitStates;
             ParentOverrideAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId;
             ProcessBehaviourChartBaselineStartDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineStartDate;
             ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
@@ -54,6 +55,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> BlockedStates { get; set; } = [];
 
         public List<string> BlockedTags { get; set; } = [];
+
+        public List<string> WaitStates { get; set; } = [];
 
         [JsonRequired]
         public int ServiceLevelExpectationProbability { get; set; }

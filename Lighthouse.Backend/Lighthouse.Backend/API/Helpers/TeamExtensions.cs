@@ -57,6 +57,7 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncStateMappings(team, teamSetting);
                 SyncServiceLevelExpectation(team, teamSetting);
                 SyncBlockedItems(team, teamSetting);
+                SyncWaitStates(team, teamSetting);
             }
 
             public bool WorkItemRelatedSettingsChanged(TeamSettingDto teamSetting)
@@ -85,6 +86,11 @@ namespace Lighthouse.Backend.API.Helpers
         {
             team.BlockedStates = TrimListEntries(teamSetting.BlockedStates);
             team.BlockedTags = TrimListEntries(teamSetting.BlockedTags);
+        }
+
+        private static void SyncWaitStates(Team team, TeamSettingDto teamSetting)
+        {
+            team.WaitStates = TrimListEntries(teamSetting.WaitStates);
         }
 
         private static void SyncServiceLevelExpectation(Team team, TeamSettingDto teamSetting)

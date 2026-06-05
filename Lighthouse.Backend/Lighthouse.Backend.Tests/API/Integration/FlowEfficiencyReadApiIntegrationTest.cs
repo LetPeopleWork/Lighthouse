@@ -282,7 +282,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(PendingReason)]
         public async Task PutTeamSettings_WithWaitStatesIncludingAMappingName_PersistsThemReadYourWrites()
         {
             // US-01 / D8 / ADR-056 §1: WaitStates rides the EXISTING settings endpoint as an additive field
