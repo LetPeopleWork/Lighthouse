@@ -1,7 +1,9 @@
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import {
 	Box,
 	Card,
 	CardContent,
+	Chip,
 	Stack,
 	Typography,
 	useTheme,
@@ -20,10 +22,14 @@ import {
 	type DurationUnit,
 	formatDuration,
 } from "../../../utils/date/formatDuration";
-import { flowEfficiency } from "../../../utils/flowEfficiency";
+import {
+	flowEfficiency,
+	resolveWaitRawStates,
+} from "../../../utils/flowEfficiency";
 import LegendChip from "./LegendChip";
 
 const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
+const WAIT_PATTERN_ID = "cumulative-state-time-wait-pattern";
 
 const COMPLETED_CLASS = "Completed";
 const ONGOING_CLASS = "Ongoing";
@@ -180,6 +186,24 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	);
 	const ongoingData = orderedStates.map((row) => row.ongoingContributionDays);
 
+	const waitRawStates = new Set(
+		resolveWaitRawStates(waitStates, stateMappings).map((state) =>
+			state.toLowerCase(),
+		),
+	);
+	const isWaitState = (state: string): boolean =>
+		waitRawStates.has(state.toLowerCase());
+	const hasWaitHighlight = orderedStates.some((row) => isWaitState(row.state));
+	const waitColorMap = hasWaitHighlight
+		? {
+				type: "ordinal" as const,
+				values: stateLabels,
+				colors: orderedStates.map((row) =>
+					isWaitState(row.state) ? `url(#${WAIT_PATTERN_ID})` : "",
+				),
+			}
+		: undefined;
+
 	const handleBarClick = (dataIndex: number) => {
 		const row = orderedStates[dataIndex];
 		if (row) {
@@ -238,6 +262,16 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 							waitStates={waitStates}
 							stateMappings={stateMappings}
 						/>
+						{hasWaitHighlight && (
+							<Chip
+								size="small"
+								variant="outlined"
+								icon={<HourglassEmptyIcon fontSize="small" />}
+								label="Wait"
+								data-testid="cumulative-state-time-wait-legend"
+								sx={{ borderColor: theme.palette.secondary.main }}
+							/>
+						)}
 						{completionFilterEnabled && (
 							<>
 								<LegendChip
@@ -275,6 +309,7 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 									angle: -25,
 									textAnchor: "end",
 								},
+								colorMap: waitColorMap,
 							},
 						]}
 						yAxis={[{ valueFormatter, label: unitLabel }]}
@@ -296,6 +331,24 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 									y2={6}
 									stroke={theme.palette.primary.dark}
 									strokeWidth={2}
+								/>
+							</pattern>
+							<pattern
+								id={WAIT_PATTERN_ID}
+								patternUnits="userSpaceOnUse"
+								width={8}
+								height={8}
+							>
+								<rect
+									width={8}
+									height={8}
+									fill={theme.palette.secondary.main}
+								/>
+								<circle
+									cx={4}
+									cy={4}
+									r={1.5}
+									fill={theme.palette.secondary.dark}
 								/>
 							</pattern>
 						</defs>

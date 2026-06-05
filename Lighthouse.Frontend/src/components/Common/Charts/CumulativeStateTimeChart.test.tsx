@@ -409,3 +409,111 @@ describe("CumulativeStateTimeChart completion-class legend toggle (US-5144-01)",
 		expect(seriesOf()).toHaveLength(2);
 	});
 });
+
+const waitHighlightRows: ICumulativeStateTimeStateRow[] = [
+	getMockStateRow({ state: "In Progress", workflowOrder: 0, totalDays: 30 }),
+	getMockStateRow({
+		state: "Waiting for Review",
+		workflowOrder: 1,
+		totalDays: 20,
+	}),
+	getMockStateRow({ state: "Ready for Test", workflowOrder: 2, totalDays: 10 }),
+];
+
+const waitHighlightOf = (): string[] => {
+	const chart = screen.getByTestId("mock-bar-chart");
+	const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
+	const colorMap = xAxis[0]?.colorMap;
+	if (!colorMap || colorMap.type !== "ordinal") {
+		return [];
+	}
+	const { values, colors } = colorMap as {
+		values: string[];
+		colors: string[];
+	};
+	return values.filter((_value: string, index: number) =>
+		Boolean(colors[index]),
+	);
+};
+
+const waitLegendChip = (): HTMLElement | null =>
+	screen.queryByTestId("cumulative-state-time-wait-legend");
+
+describe("CumulativeStateTimeChart wait-state highlight (US-04-01)", () => {
+	it("highlights the wait-state bars distinctly from active-state bars", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		expect(waitHighlightOf()).toEqual(["Waiting for Review"]);
+	});
+
+	it("highlights every underlying raw state when a mapping name is configured as wait", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting"]}
+				stateMappings={[
+					{
+						name: "Waiting",
+						states: ["Waiting for Review", "Ready for Test"],
+					},
+				]}
+			/>,
+		);
+
+		expect(waitHighlightOf()).toEqual(["Waiting for Review", "Ready for Test"]);
+	});
+
+	it("keeps the completed/ongoing segment split while highlighting wait bars", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		expect(seriesOf()).toHaveLength(2);
+		expect(waitHighlightOf()).toEqual(["Waiting for Review"]);
+	});
+
+	it("renders a colour-blind-safe wait legend entry with a non-colour cue", () => {
+		const { container } = render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting for Review"]}
+			/>,
+		);
+
+		const legend = waitLegendChip();
+		expect(legend).not.toBeNull();
+		expect(legend?.textContent?.toLowerCase()).toContain("wait");
+		expect(
+			container.querySelector("pattern#cumulative-state-time-wait-pattern"),
+		).not.toBeNull();
+	});
+
+	it("drives the highlight from the same resolveWaitRawStates used by the figure", () => {
+		render(
+			<CumulativeStateTimeChart
+				data={{ states: waitHighlightRows }}
+				waitStates={["Waiting"]}
+				stateMappings={[{ name: "Waiting", states: ["Ready for Test"] }]}
+			/>,
+		);
+
+		const figure = screen.getByTestId("cumulative-state-time-flow-efficiency");
+		expect(figure.textContent).toContain("83");
+		expect(waitHighlightOf()).toEqual(["Ready for Test"]);
+	});
+
+	it("highlights nothing and renders no wait legend when no wait states are configured", () => {
+		render(<CumulativeStateTimeChart data={{ states: waitHighlightRows }} />);
+
+		expect(waitHighlightOf()).toEqual([]);
+		expect(waitLegendChip()).toBeNull();
+	});
+});
