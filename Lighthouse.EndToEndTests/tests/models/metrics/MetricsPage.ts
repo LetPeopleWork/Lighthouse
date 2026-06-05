@@ -92,6 +92,7 @@ export enum MetricsCategories {
 
 export const MetricsWidgetNames = {
 	WorkInProgressOverview: "Work In Progress Overview",
+	FlowEfficiencyOverview: "Flow Efficiency Overview",
 	BlockedItemsOverview: "Blocked Items Overview",
 	StaleItemsOverview: "Stale Items Overview",
 	FeaturesBeingWorkedOnOverview: "Features Being Worked On Overview",
@@ -126,6 +127,7 @@ export class MetricsPage {
 	categoryWidgets: Record<MetricsCategories, [string, string][]> = {
 		[MetricsCategories.FlowOverview]: [
 			["Work In Progress Overview", "wipOverview"],
+			["Flow Efficiency Overview", "flowEfficiency"],
 			["Blocked Items Overview", "blockedOverview"],
 			["Stale Items Overview", "staleOverview"],
 			["Features Being Worked On Overview", "featuresWorkedOnOverview"],

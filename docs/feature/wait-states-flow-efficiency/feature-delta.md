@@ -904,3 +904,118 @@ C4Component
 ## Wave: DESIGN / [REF] Changed Assumptions
 
 - **D10 RAG polarity clarified (refinement, not contradiction)**: DISCUSS D10 stated thresholds "`act` < 40% / `observe` 40–60% / `sustain` ≥ 60%" but did not pin the code RAG colour direction. DESIGN confirms the 40/60 numbers AND clarifies that, because flow efficiency is **higher-is-better**, the `ragRules.ts` `ragStatus` must INVERT relative to `computeCumulativeStateTimeRag` (low efficiency = red/act, high = green/sustain). This is a refinement within D10's "DESIGN may refine numeric values" latitude; the `act/observe/sustain` guidance words and the 40/60 boundaries are unchanged. No AC change (US-03 AC already says `act < 40` / `sustain ≥ 60`, which this implements). No `upstream-changes.md` required.
+
+## Wave: DISTILL / [REF] Inherited commitments
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D2 | Efficiency = `activeDoingTime / totalDoingTime`; `waitTime` = Σ time in `GetRawStatesForCategory(WaitStates)`, Doing-only | DDD-2 | The known-fixture team AT (`GetFlowEfficiency_TeamWithKnownWaitTime_…`) pins 184/540 = 34% against seeded Doing-state durations — the single most-mis-implementable rule, locked exactly |
+| DISCUSS#D11 | `WaitStates` is mapping-aware; a `StateMapping.Name` marked wait expands to ALL its raw states via `GetRawStatesForCategory` | DDD-7 | THE critical correctness AT (`…MappingNameMarkedWait_CountsAllUnderlyingRawStatesAsWaitTime`) seeds "Waiting" → ["Waiting for Review","Blocked - External"], asserts 45% not a literal-match 100%; a raw-state-direct AT pins the simpler case |
+| DISCUSS#D3 | No wait states → "not configured", never 100% | DDD-4 | `…NoWaitStatesConfigured_ReportsNotConfiguredNeverHundredPercent` asserts `isConfigured=false` AND `efficiencyPercent != 100` (both scopes) |
+| DISCUSS#D4 | Zero total Doing-time → "no data in scope", never divide-by-zero; distinct from D3 | DDD-4 | `…ZeroDoingTimeInScope_ReportsNoDataNeverDividesByZero` asserts `hasDataInScope=false` while `isConfigured=true` — D3/D4 kept distinct (both scopes) |
+| DISCUSS#D5/D18 | Tile is whole-set ONLY, never follows the US-05 picker | DDD-3 | `…TileNeverFollowsThePicker_HasNoItemIdsParameter` asserts a stray `itemIds` param does not change the tile value |
+| DISCUSS#US-01 (edge) | A `WaitStates` entry outside the Doing set contributes nothing to the denominator | DDD-7 | `…WaitEntryOutsideDoingSet_ContributesNothingToTheDenominator` adds "Closed" and asserts efficiency is unchanged |
+| DISCUSS#D8 / ADR-056 | `WaitStates` rides the EXISTING settings endpoint (additive field, no new write endpoint) | DDD-7 | `PutTeamSettings_WithWaitStatesIncludingAMappingName_PersistsThemReadYourWrites` PUTs `waitStates` (raw + mapping name) via the existing endpoint, GETs it back (read-your-writes) — black-box JSON, no typed-DTO reference |
+| DESIGN#DDD-3 / ADR-055 | NEW `flowEfficiencyInfo` endpoint per scope, class-level `RbacGuard`, `startDate>endDate ⇒ 400` | DDD-3 | Anonymous-caller ATs both scopes; Viewer-can-read AT (team); inverted-date 400 AT — mirror `wipOverviewInfo` |
+| DESIGN#DDD-3 / ADR-055 | Portfolio scope parity (same shape/behaviour as team) | DDD-3 | Five portfolio-scope ATs (known-wait, not-configured, no-data, anonymous) mirror the team arithmetic |
+| DISCUSS#US-01..US-04 | One demo-able end-to-end loop: mark a wait state → tile % + chart number + highlighted wait bar | DDD-3/9 | `@walking_skeleton @US-01` E2E (`test.fixme`) closes the loop through the production composition root on seeded demo data |
+
+### [REF] Scenario list with tags
+
+Backend ATs are black-box example-based via `WebApplicationFactory<Program>` (C#/TS polyglot row — NUnit `[Ignore]` is the skip marker; no Hypothesis/PBT, no `state_delta` Universe — those are the Python pilot and explicitly do NOT apply here per `docs/architecture/atdd-infrastructure-policy.md`). Per ADR-054 the chart efficiency NUMBER, the wait-bar highlight, and the FE `resolveWaitRawStates` resolver are **FE-derived (Vitest)** — DELIVER's job, NOT authored in DISTILL (sibling precedent: FE component/unit tests are DELIVER-owned). The flow-efficiency RAG is FE-only (`computeFlowEfficiencyRag`, ADR-057) — also DELIVER Vitest, not a backend AT.
+
+| # | Scenario (test method) | File | AC | Tags |
+|---|---|---|---|---|
+| 1 | `GetFlowEfficiency_TeamWithKnownWaitTime_ReturnsActiveOverTotalDoingTimeAsPercent` | team AT | US-01 (D2) | `@US-01 @real-io @happy` |
+| 2 | `GetFlowEfficiency_TeamWithRawStateMarkedWait_CountsThatStateAsWaitTime` | team AT | US-01 (D11 raw) | `@US-01 @real-io @happy` |
+| 3 | `GetFlowEfficiency_TeamWithMappingNameMarkedWait_CountsAllUnderlyingRawStatesAsWaitTime` | team AT | US-01 (D11 mapping) | `@US-01 @real-io @happy` |
+| 4 | `GetFlowEfficiency_WaitEntryOutsideDoingSet_ContributesNothingToTheDenominator` | team AT | US-01 (edge) | `@US-01 @real-io @edge` |
+| 5 | `GetFlowEfficiency_NoWaitStatesConfigured_ReportsNotConfiguredNeverHundredPercent` | team AT | US-03 (D3) | `@US-03 @real-io @error` |
+| 6 | `GetFlowEfficiency_ZeroDoingTimeInScope_ReportsNoDataNeverDividesByZero` | team AT | US-03 (D4) | `@US-03 @real-io @error` |
+| 7 | `GetFlowEfficiency_TileNeverFollowsThePicker_HasNoItemIdsParameter` | team AT | US-03 (D5/D18) | `@US-03 @real-io @boundary` |
+| 8 | `GetFlowEfficiency_StartDateAfterEndDate_ReturnsBadRequest` | team AT | DDD-3 | `@US-03 @real-io @error` |
+| 9 | `GetFlowEfficiency_TeamViewer_CanReadTheTile` | team AT | DDD-3 (RBAC) | `@US-03 @real-io @happy` |
+| 10 | `GetFlowEfficiency_AnonymousCaller_IsRejected` | team AT | DDD-3 (RBAC) | `@US-03 @real-io @error` |
+| 11 | `PutTeamSettings_WithWaitStatesIncludingAMappingName_PersistsThemReadYourWrites` | team AT | US-01 (D8 round-trip) | `@US-01 @real-io @happy` |
+| 12 | `GetFlowEfficiency_PortfolioWithKnownWaitTime_ReturnsSameShapeAndArithmeticAsTeamScope` | portfolio AT | US-03 parity (D2/D11) | `@US-03 @real-io @happy` |
+| 13 | `GetFlowEfficiency_PortfolioWithNoWaitStates_ReportsNotConfiguredNeverHundredPercent` | portfolio AT | US-03 parity (D3) | `@US-03 @real-io @error` |
+| 14 | `GetFlowEfficiency_PortfolioWithZeroDoingTimeInScope_ReportsNoData` | portfolio AT | US-03 parity (D4) | `@US-03 @real-io @error` |
+| 15 | `GetFlowEfficiency_PortfolioAnonymousCaller_IsRejected` | portfolio AT | DDD-3 (RBAC) | `@US-03 @real-io @error` |
+| 16 | `@walking_skeleton @US-01 admin marks a wait state and the delivery lead sees flow efficiency on the tile and the cumulative chart` | E2E spec | US-01..US-04 | `@walking_skeleton @US-01 @real-io` |
+
+**Error/edge ratio**: of the 15 backend ATs, 6 are `@error`/`@edge`/`@boundary` (not-configured ×2, no-data ×2, out-of-Doing edge, inverted-date 400, anonymous ×2 — counting the four distinct error/edge/boundary categories across both scopes gives 8 `@error`/`@edge`/`@boundary`-tagged rows of 15) = **53%** — clears the ≥40% mandate. US-01 spans success (happy), edge (out-of-Doing), and the mapping-expansion correctness boundary; US-03 spans success, error (not-configured / no-data / anonymous), and boundary (picker-independence).
+
+### [REF] WS strategy
+
+**Type A (additive), per DISCUSS D8 / DESIGN ADR-054/055.** The walking skeleton is ONE E2E scenario (`@walking_skeleton @US-01`): in Team Zenith settings, mark a Doing state as a wait state in the state-config cluster → save → open the team detail → the Flow Efficiency tile (`flow-overview`) shows a percentage AND the cumulative chart shows the efficiency number + a colour-highlighted wait bar. It closes the end-to-end loop through the production composition root (real React app → real settings PUT → real `flowEfficiencyInfo` read + real `cumulativeStateTime` read of demo-seeded transitions) on seeded demo data (Team Zenith, scenario 0), demo-able to a Delivery Lead. No contract change to existing endpoints (ADR-054 keeps `cumulativeStateTime` unchanged); the ONE new endpoint is `flowEfficiencyInfo` (ADR-055). Per the C#/TS Architecture-of-Reference rows, backend ATs use the real `WebApplicationFactory<Program>` host with real EF (driving + driven-internal both real); the only faked ports are `ILicenseService` and the connector boundary (driven-external), neither of which this read-only-plus-additive-config feature exercises.
+
+### [REF] Adapter coverage table
+
+NO new driven adapter in this feature — it is an additive reader (`flowEfficiencyInfo` folds over the existing per-state computation) plus one additive config field (`WaitStates` on the existing settings aggregate). All read/write paths are REUSE-AS-IS / EXTEND of existing adapters, each exercised with real I/O (real EF via the test factory) by the ATs below.
+
+| Adapter / read-write path | Real-I/O coverage | Covered by |
+|---|---|---|
+| `IWorkItemStateTransitionRepository` (Doing-time per state, team) | YES | team ATs seed real `WorkItemStateTransition` rows; every efficiency assertion folds over the real repo |
+| `IFeatureStateTransitionRepository` (Doing-time per state, portfolio) | YES | portfolio ATs seed real `FeatureStateTransition` rows |
+| `IWorkItemRepository` / `IRepository<Feature>` (in-scope item resolution) | YES | every efficiency AT seeds real items/features |
+| `WorkTrackingSystemOptionsOwner.GetRawStatesForCategory(WaitStates)` (mapping expansion, REUSE-AS-IS) | YES | the mapping-name AT seeds a real `StateMapping` "Waiting" → 2 raw states and asserts both raw states' time is wait time |
+| Settings update/read endpoint (`waitStates` additive field, EXTEND) | YES | `PutTeamSettings_…PersistsThemReadYourWrites` round-trips `waitStates` (raw + mapping) through the real settings PUT/GET |
+| `BaseMetricsService.GetFromCacheIfExists` (cache, REUSE) | indirect | exercised transitively on every `flowEfficiencyInfo` call; cache-key shape is unit-tested in DELIVER's NUnit service tests, not re-asserted black-box |
+| FE `flowEfficiency.ts` fold + `resolveWaitRawStates`; chart number; wait-bar highlight; `computeFlowEfficiencyRag` tile RAG | N/A (DELIVER Vitest) | ADR-054/057 — FE-derived; DELIVER authors Vitest per sibling precedent, NOT DISTILL |
+| MUI-X `<BarChart>` highlight + Flow Efficiency tile (driving UI) | YES (deferred) | the `@walking_skeleton` E2E `test.fixme` — locators validated when un-fixme'd in DELIVER |
+
+Per Mandate 11, all layer-3+ sad paths above are example-based (not-configured / no-data / out-of-Doing / inverted-date / anonymous) — never PBT-generated.
+
+### [REF] Driving Adapter coverage (every endpoint → ≥1 scenario)
+
+| Driving port (endpoint) | Covered by |
+|---|---|
+| `GET /api/latest/teams/{id}/metrics/flowEfficiencyInfo` (NEW, ADR-055) | team ATs 1-10 |
+| `GET /api/latest/portfolios/{id}/metrics/flowEfficiencyInfo` (NEW, ADR-055) | portfolio ATs 12-15 |
+| `PUT /api/latest/teams/{id}` settings (EXISTING; `waitStates` additive, ADR-056/D8) | team AT 11 (round-trip) + the E2E walking skeleton (config write) |
+| `GET /api/latest/teams/{id}/settings` (EXISTING; carries `waitStates` additively) | team AT 11 (read-your-writes) |
+| `GET /api/latest/teams/{id}/metrics/cumulativeStateTime` (EXISTING, UNCHANGED, ADR-054) | the E2E walking skeleton (chart number + highlight derive from it FE-side) |
+
+Both new endpoints (team + portfolio `flowEfficiencyInfo`) have at least one black-box HTTP scenario invoking them via the real protocol (HTTP through `WebApplicationFactory`). The additive `waitStates` settings contract is exercised through the EXISTING settings PUT/GET. Route prefix is `/api/latest/...` per the live codebase.
+
+### [REF] Test files / scaffolds
+
+DISTILL writes ONLY tests + scaffold-by-skip-marker + docs. NO production code (no `WaitStates` field, no `flowEfficiencyInfo` endpoint, no `ComputeFlowEfficiency` fold, no `WaitStatesEditor` / tile / chart-number / highlight components). The endpoint + field do not exist yet, so the backend ATs are `[Ignore("pending — DELIVER (wait-states-flow-efficiency)")]` (compile-green, Skipped) and the E2E scenario is `test.fixme`. **Zero production scaffolds were needed** — every backend AT asserts on the HTTP/JSON contract black-box (the efficiency response's `isConfigured`/`hasDataInScope`/`efficiencyPercent` and the settings payload's `waitStates` array are read via `JsonDocument`/`JsonNode`, never a typed property), so the test project references no not-yet-existing production type. The two seed `ApplyWaitStates(...)` placeholders are inert no-ops that DELIVER replaces with `entity.WaitStates = [.. waitStates]` once the field exists; they keep the scaffold compile-green and the suite RED-by-skip (not Broken). Verified: `dotnet build` of the test project = 0 warnings / 0 errors; `dotnet test --filter ~FlowEfficiency` = 15 Skipped, 0 Failed, 0 Broken.
+
+| File | Status | Note |
+|---|---|---|
+| `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyReadApiIntegrationTest.cs` | NEW | 11 team-scope ATs (core computation, mapping-aware resolution, D3/D4, picker-independence, RBAC, settings round-trip), `[Ignore("pending — DELIVER (wait-states-flow-efficiency)")]` |
+| `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyPortfolioReadApiIntegrationTest.cs` | NEW | 4 portfolio-scope parity ATs (known-wait, not-configured, no-data, anonymous), same `[Ignore]` |
+| `Lighthouse.EndToEndTests/tests/models/metrics/FlowEfficiencyWidget.ts` | NEW | POM: Flow Efficiency overview tile (value + RAG) + cumulative-chart efficiency number + wait-bar legend/count (proposed `data-testid`s) |
+| `Lighthouse.EndToEndTests/tests/models/metrics/WaitStatesEditor.ts` | NEW | POM scaffold: Configure-Wait-States toggle + add-wait-state autocomplete + chips (sibling of `StateMappingsEditor`, ADR-056 Option (b)) |
+| `Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts` | EXTEND | added `FlowEfficiencyOverview` widget name + `["Flow Efficiency Overview", "flowEfficiency"]` to the `flow-overview` category list |
+| `Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts` | NEW | 1 `test.fixme` walking-skeleton (config write → tile % → chart number + highlighted wait bar), POM-only, seeded demo data |
+
+**Scaffold marker convention** (C#/TS polyglot, NOT the Python `__SCAFFOLD__`): NUnit `[Ignore("pending — DELIVER (wait-states-flow-efficiency)")]` and Playwright `test.fixme(...)` are the skip markers. DELIVER un-ignores backend ATs one slice at a time per the slice plan (01 config + computation → 02 chart number → 03 tile → 04 highlight) and un-fixmes the one E2E scenario when the config UI + tile + chart number + highlight all exist; per the green-before-push rule each story is pushed CI-green by re-skipping any not-yet-passing AT.
+
+### [REF] Test placement
+
+- Backend ATs → `Lighthouse.Backend.Tests/API/Integration/` — the exact directory and pattern of the sibling `CumulativeStateTimeReadApiIntegrationTest` / `…PortfolioReadApiIntegrationTest` and `TeamStalenessThresholdSettingsIntegrationTest`. Black-box `WebApplicationFactory<Program>` + `WithTestAuthentication`, real EF (`Database.EnsureDeleted/EnsureCreated` per `[SetUp]`), `[NonParallelizable]` (per ci-learnings 2026-05-18 — fixtures that build their own WAF + EF context AND the `*MetricsService` static cache risk per 2026-05-30 must serialise), per-fixture `testDateOffset` windows to avoid cross-fixture date collisions (portfolio fixture adds a 10000-day disjoint shift, mirroring the cumulative portfolio test). NUnit 4.6 analyzer rules pre-applied (ci-learnings 2026-05-12/2026-05-20): `Is.Zero`/no-`Is.EqualTo(0)`, and every ≥2 consecutive `Assert.That` wrapped in `using (Assert.EnterMultipleScope())`.
+- E2E spec → `Lighthouse.EndToEndTests/tests/specs/flow/` next to `CumulativeStateTime.spec.ts`; POMs → `tests/models/metrics/` next to `CumulativeStateTimeChart.ts`. All element access through the POM (project rule: no inline `page.locator` in specs). `npx tsc --noEmit` and Biome both clean on the new/changed E2E files.
+- Frontend Vitest tests are NOT authored here — they are DELIVER's responsibility per the established sibling precedent (the FE chart number, wait-bar highlight, tile rendering, `resolveWaitRawStates`/`flowEfficiency.ts` fold, and `computeFlowEfficiencyRag` all live in DELIVER-owned `.test.tsx`/`.test.ts`, enumerated in DESIGN's component-decomposition table).
+
+### [REF] Pre-requisites
+
+- **DESIGN driving ports**: the new `flowEfficiencyInfo` endpoint per scope + its `FlowEfficiencyInfoDto` shape (`isConfigured`, `hasDataInScope`, `efficiencyPercent`, `totalDoingDays`, `waitDays`; ADR-055 §1) — the ATs assert against the DDD-defined JSON contract. The additive `waitStates` field on the existing settings contract (ADR-056). The UNCHANGED `cumulativeStateTime` contract (ADR-054) the chart number/highlight derive from.
+- **DEVOPS environment matrix**: **ABSENT (WARN)** — no `docs/feature/wait-states-flow-efficiency/devops/` directory. Default infra applied per the Project Infrastructure Policy (`docs/architecture/atdd-infrastructure-policy.md`, inherited): backend ATs use `WebApplicationFactory<Program>` + EF real (Sqlite+Postgres lockstep in CI); E2E uses Playwright POM against the locally-started app on seeded demo data. Existing `ci_verifysqlite.yml` / `ci_verifypostgres.yml` gates cover the new code; no new CI workflow needed. EF migration for the `WaitStates` column is a DELIVER task (via the `CreateMigration` script, `--no-incremental` stale-DLL rebuild — DESIGN/DISCUSS technical notes), NOT created in DISTILL.
+- **Outcome registry**: **SKIPPED** — `docs/product/outcomes/registry.yaml` is absent (the `nwave-ai` binary is present but the registry file is not, matching the sibling). No `OUT-N` rows registered. Candidate rows to register WHEN the registry exists: the new `flowEfficiencyInfo` **operation** (input: scope id + date window; output: `{isConfigured, hasDataInScope, efficiencyPercent}`) and the flow-efficiency **invariant** (`efficiency = activeDoingTime / totalDoingTime` over `GetRawStatesForCategory(WaitStates)`, Doing-only, never 100% when unconfigured, never divide-by-zero). C#/TS polyglot row of the matrix governs — the Python-pilot `tests/common/state_delta.<ext>` port is NOT bootstrapped (correctly absent; it does not apply to this stack).
+
+### [REF] Reconciliation result + warnings
+
+- **Wave-Decision Reconciliation HARD GATE: PASSED — 0 contradictions.** (Pre-run by the orchestrator and re-confirmed here.) DISCUSS (D1–D12) ↔ DESIGN (ADR-054..057 + DDD-1..DDD-10) reconciled: D2 formula ↔ DDD-1/DDD-2 (consistent); D11 mapping-aware ↔ DDD-7/ADR-056 (consistent); D3/D4 ↔ DDD-4/ADR-055 explicit `IsConfigured`/`HasDataInScope` flags (consistent); D5/D18 tile-never-follows-picker ↔ DDD-3 no-`itemIds` endpoint (consistent); D8 no-new-write-endpoint ↔ ADR-056 additive settings field (consistent); D12 state-cluster placement ↔ DDD-8/ADR-056 sibling editor (consistent). The ONE Changed Assumption — flow-efficiency RAG polarity INVERTED (ADR-057, higher-is-better) — is a refinement within D10's stated latitude (`act < 40` / `sustain ≥ 60`), not a contradiction; it touches only the FE-only `computeFlowEfficiencyRag` (DELIVER Vitest), not any backend AT.
+- **WARN — DEVOPS artifacts absent**: default infrastructure applied (see Pre-requisites). Not a blocker (graceful-degradation matrix: DEVOPS missing → WARN).
+- **WARN — KPI contracts / outcome registry**: the three feature-level KPIs (wait-state definition rate, tile-view rate, per-item efficiency usage) are telemetry-guarded by the Epic 5015 self-hosted-telemetry gap (memory); no `@kpi` black-box scenario is authored (observability is settings-inspection + usage-telemetry, validated at the DELIVER post-merge gate by the PO-reviewer, not by DISTILL ATs — Sentinel scope boundary). KPI 1 (non-empty `WaitStates` ÷ active teams) is settings-inspectable on any instance.
+- **Pre-DELIVER fail-for-right-reason gate**: the 15 backend ATs currently report **Skipped** (NUnit `[Ignore]`), not Failed — they are RED-by-skip-marker scaffolds. When DELIVER un-ignores AT class N, the gate expectation is `MISSING_FUNCTIONALITY` (404/no-route until `flowEfficiencyInfo` is wired; `waitStates` absent from the settings payload until the field lands), not a fixture/import/compile error. The fixtures set only PRECONDITIONS (seeded transitions + Doing/wait-state config + `StateMappings`), never the expected output — no Fixture Theater.
+
+### [REF] Final wave-review action items (DELIVER scope)
+
+The consolidated 4-wave review (Eclipse / Architect / Sentinel, 2026-06-05) returned **all APPROVED, 0 blockers, 0 high**. Three non-blocking findings converge on one theme and are carried into DELIVER:
+
+1. **Name the cross-surface consistency test (Architect-low, Eclipse-medium)** — the HIGH-risk shared-artifact invariant (the chart number's FE `resolveWaitRawStates` and the wait-bar highlight and the BE `ComputeFlowEfficiency` all resolve the SAME wait set via `GetRawStatesForCategory`) must be pinned by an explicitly named test, not left implicit. DELIVER adds: (a) a Vitest `resolveWaitRawStates` parity fixture (raw-state entry AND mapping-name entry expand to the same raw set), and (b) a cross-surface integration assertion that the picker-cleared chart number equals the tile value on one fixture. Surface the name in slice-04's Done criteria.
+2. **D9 regression guardrail AT (Architect-low)** — add `GetFlowEfficiency_WithWaitStatesDefined_DoesNotChangeAnyOtherMetric`: seed a team with wait states defined, assert throughput / forecast / cycle-time / aging endpoint responses are identical before/after (wait states are a labelling overlay only, D9).
+3. **EF stale-migration-DLL guard (Architect-low)** — after running the `CreateMigration` script for `WaitStates`, run `dotnet build --no-incremental` before `dotnet test` (the Epic-4144 slice-04 stale-migration trap).
