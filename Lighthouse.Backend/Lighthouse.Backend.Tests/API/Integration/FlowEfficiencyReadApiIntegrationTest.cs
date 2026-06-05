@@ -309,6 +309,70 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task GetFlowEfficiency_WithWaitStatesDefined_DoesNotChangeAnyOtherMetric()
+        {
+            // D9 / review action item #2: wait states are a labelling OVERLAY only — defining them must not
+            // shift throughput, cycle-time, or age-in-state for the same team. Capture those metric bodies
+            // before any wait state exists, then define wait states through the real settings PUT endpoint,
+            // then re-capture: each other-metric body must be byte-identical before and after.
+            var teamId = SeedTeamWithDoingTimeButNoWaitStates();
+
+            client.AsTeamAdmin(teamId);
+
+            var throughputBefore = await ReadBody(ThroughputUrl(teamId));
+            var cycleTimeBefore = await ReadBody(CycleTimePercentilesUrl(teamId));
+            var ageInStateBefore = await ReadBody(AgeInStatePercentilesUrl(teamId));
+
+            var putResponse = await DefineWaitStatesViaSettings(teamId, [WaitingForReview, ReadyForTest]);
+            Assert.That(putResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                await putResponse.Content.ReadAsStringAsync());
+
+            var throughputAfter = await ReadBody(ThroughputUrl(teamId));
+            var cycleTimeAfter = await ReadBody(CycleTimePercentilesUrl(teamId));
+            var ageInStateAfter = await ReadBody(AgeInStatePercentilesUrl(teamId));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughputAfter, Is.EqualTo(throughputBefore),
+                    "D9: defining wait states must not change throughput — it is a labelling overlay only.");
+                Assert.That(cycleTimeAfter, Is.EqualTo(cycleTimeBefore),
+                    "D9: defining wait states must not change cycle-time percentiles.");
+                Assert.That(ageInStateAfter, Is.EqualTo(ageInStateBefore),
+                    "D9: defining wait states must not change age-in-state percentiles.");
+            }
+        }
+
+        private async Task<string> ReadBody(string url)
+        {
+            var response = await client.GetAsync(url);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+            return body;
+        }
+
+        private async Task<HttpResponseMessage> DefineWaitStatesViaSettings(int teamId, string[] waitStates)
+        {
+            // Read-modify-write the real settings JSON, mutating ONLY waitStates — this guarantees the only
+            // configuration delta the team sees is the wait-states overlay, so a byte-identical other-metric
+            // body afterwards proves the overlay changed nothing else (D9).
+            var settingsBody = await ReadBody($"/api/latest/teams/{teamId}/settings");
+            var payload = JsonNode.Parse(settingsBody)!.AsObject();
+            payload["waitStates"] = new JsonArray(waitStates.Select(s => (JsonNode)s!).ToArray());
+
+            var content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");
+            return await client.PutAsync($"/api/latest/teams/{teamId}", content);
+        }
+
+        private string ThroughputUrl(int teamId)
+            => $"/api/latest/teams/{teamId}/metrics/throughput?startDate={windowStart:O}&endDate={windowEnd:O}";
+
+        private string CycleTimePercentilesUrl(int teamId)
+            => $"/api/latest/teams/{teamId}/metrics/cycleTimePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}";
+
+        private string AgeInStatePercentilesUrl(int teamId)
+            => $"/api/latest/teams/{teamId}/metrics/ageInStatePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}";
+
         private string InfoUrl(int teamId)
             => $"/api/latest/teams/{teamId}/metrics/flowEfficiencyInfo?startDate={windowStart:O}&endDate={windowEnd:O}";
 

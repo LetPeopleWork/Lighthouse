@@ -52,4 +52,11 @@ namespace Lighthouse.Backend.Models.Metrics
     public record CycleTimePercentilesInfoDto(
         PercentileValueDto[] Percentiles,
         InfoWidgetComparisonDto Comparison);
+
+    public sealed record FlowEfficiencyInfoDto(
+        bool IsConfigured,
+        bool HasDataInScope,
+        double EfficiencyPercent,
+        double TotalDoingDays,
+        double WaitDays);
 }
