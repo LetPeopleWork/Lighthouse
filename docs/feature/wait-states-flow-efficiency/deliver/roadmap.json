@@ -1,0 +1,343 @@
+{
+  "roadmap": {
+    "project_id": "wait-states-flow-efficiency",
+    "created_at": "2026-06-05T00:00:00Z",
+    "total_steps": 11
+  },
+  "implementation_scope": {
+    "summary": "Additive brownfield extension of state-time-cumulative-view (Epic 4144) + a new Flow Overview tile. ONE new persisted mapping-aware field (WaitStates on WorkTrackingSystemOptionsOwner, twin of BlockedStates), ONE new small read endpoint per scope (flowEfficiencyInfo, mirrors wipOverviewInfo), and FE presentation surfaces (config editor, chart efficiency number + wait-bar highlight FE-derived via ONE resolveWaitRawStates, overview tile + inverted-polarity RAG). cumulativeStateTime contract UNCHANGED (ADR-054). Efficiency is a protected fold on BaseMetricsService over the per-state Doing totals (ADR-024 upheld 5th \u2014 no new aggregation service). Routes are /api/latest/...",
+    "in_scope": [
+      "WaitStates List<string> on WorkTrackingSystemOptionsOwner (mapping-aware, resolved via GetRawStatesForCategory) + EF migration via CreateMigration script",
+      "waitStates additive field on the EXISTING settings DTO/endpoint (no new write endpoint) \u2014 round-trips read-your-writes",
+      "ComputeFlowEfficiency protected fold on BaseMetricsService (active/total Doing-time; waitTime over GetRawStatesForCategory(WaitStates))",
+      "flowEfficiencyInfo endpoint per scope (team + portfolio) returning { isConfigured, hasDataInScope, efficiencyPercent } (ADR-055)",
+      "WaitStatesEditor.tsx sibling of StateMappingsEditor (D12 Option (b); StateMappingsEditor UNTOUCHED)",
+      "FE chart efficiency number + wait-bar colour-highlight FE-derived from the existing cumulativeStateTime response + ONE resolveWaitRawStates resolver (ADR-054/057)",
+      "FlowEfficiencyOverviewWidget small KPI tile in flow-overview + computeFlowEfficiencyRag (inverted 40/60) + metadata",
+      "D9 regression guardrail AT + cross-surface consistency tests (review action items #1, #2) + EF stale-migration guard (review action item #3)"
+    ],
+    "out_of_scope": [
+      "Touching BlockedStates config / FlowMetricsConfigurationComponent (D12 \u2014 decoupled, Blocked evolving independently)",
+      "Relocating/re-propping StateMappingsEditor (ADR-056 Option (a) rejected \u2014 pure structural churn + regression risk)",
+      "Any change to the cumulativeStateTime contract (ADR-054 \u2014 stays byte-identical)",
+      "Wait time affecting throughput / forecasts / cycle time / aging (D9 \u2014 labelling overlay only)",
+      "Configurable RAG thresholds (D10 \u2014 40/60 baseline defaults), efficiency trend-over-time history (trendPolicy: none)",
+      "Defining new State Mappings (REUSES existing StateMappings + StateMappingsEditor)"
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Config + flow-efficiency computation foundation (US-01)",
+      "description": "Slice 01. Mapping-aware WaitStates field on WorkTrackingSystemOptionsOwner (twin of BlockedStates) + EF migration, the ComputeFlowEfficiency protected fold on BaseMetricsService, the flowEfficiencyInfo endpoint + GetFlowEfficiencyInfoFor{Team|Portfolio} service methods + FlowEfficiencyInfoDto for BOTH scopes, the waitStates additive thread through the settings DTOs (round-trip), and the WaitStatesEditor sibling config UI. Drives all 15 backend ATs (team 11 + portfolio 4). Un-ignore the AT classes one slice-step at a time per ADR-025.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "WaitStates field + EF migration + FlowEfficiencyInfoDto + ComputeFlowEfficiency fold + team flowEfficiencyInfo endpoint",
+          "criteria": [
+            "WorkTrackingSystemOptionsOwner gains public List<string> WaitStates { get; set; } = []; next to BlockedStates (L41), persisted via the EF8 default List<string> mapping exactly as BlockedStates; an EF migration adding the column is generated via the CreateMigration PowerShell script across all providers (NOT dotnet ef migrations add)",
+            "FlowEfficiencyInfoDto is a record carrying IsConfigured, HasDataInScope, EfficiencyPercent (plus TotalDoingDays, WaitDays per ADR-055 \u00a71); isConfigured=false when WaitStates is empty (D3, never 100%), hasDataInScope=false when total Doing-time in scope is zero (D4, no divide-by-zero) and these two flags are distinct",
+            "BaseMetricsService gains a protected ComputeFlowEfficiency fold: efficiency = activeDoingTime / totalDoingTime over the in-scope set, full-duration attribution, Doing-category time only (D2/D19); waitTime = Sum of time in any raw state in the EXPANDED set GetRawStatesForCategory(WaitStates) (D11 mapping-aware), NOT a literal WaitStates string match; intra-inheritance protected helper only (ADR-024 \u2014 NOT a new service/interface)",
+            "TeamMetricsService.GetFlowEfficiencyInfoForTeam resolves the in-scope items for the window, delegates to ComputeFlowEfficiency, returns the DTO; TeamMetricsController exposes GET /api/latest/teams/{teamId:int}/metrics/flowEfficiencyInfo mirroring wipOverviewInfo (no itemIds param \u2014 D5/D18 the tile never follows the picker); startDate.Date > endDate.Date returns 400; auth via inherited class-level RbacGuard(TeamRead)",
+            "A wait state defined as a MAPPING NAME counts every underlying raw state's time as wait (fixture 'Waiting' -> ['Waiting for Review','Blocked - External'] -> 180/400 = 45%, not a literal-match 100%); a WaitStates entry resolving OUTSIDE the Doing set ('Closed') contributes nothing to the denominator (62.5% unchanged)",
+            "Team flowEfficiencyInfo ATs 1-10 (known-wait 34%, raw-wait 62.5%, mapping-name 45%, out-of-Doing 62.5%, not-configured, no-data, picker-independence, inverted-date 400, viewer-read, anonymous-rejected) in FlowEfficiencyReadApiIntegrationTest are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyReadApiIntegrationTest.cs",
+          "scenario_name": "GetFlowEfficiency_TeamWithKnownWaitTime_ReturnsActiveOverTotalDoingTimeAsPercent (+ ATs 2 raw-wait, 3 mapping-name 45%, 4 out-of-Doing edge, 5 not-configured, 6 no-data, 7 picker-independence, 8 inverted-date 400, 9 viewer-read, 10 anonymous-rejected)",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FlowEfficiencyInfoDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (the C#-row of the polyglot Architecture-of-Reference governs per docs/architecture/atdd-infrastructure-policy.md \u2014 Hypothesis/assert_state_delta/state_delta Universe are the Python pilot and do NOT apply). The un-ignored ATs are layer-4 black-box integration tests (WebApplicationFactory<Program> + real EF) that verify wiring, single-example per the mandate. Compensate with exact hand-computed NUnit unit tests on ComputeFlowEfficiency (the strongest oracle for the active/total arithmetic: 184/540=34%, 150/240=62.5%, 180/400=45%) plus the D11 mapping-expansion invariant (mapping name expands to BOTH raw states) and the D3/D4 flag-distinctness invariant. NEW FlowEfficiencyInfoDto.cs (WHY-NEW-FILE: no existing DTO carries IsConfigured/HasDataInScope/EfficiencyPercent \u2014 D3/D4 need the two DISTINCT explicit flags, not a sentinel; greps return zero flowEfficiency match per the Reuse Analysis). NEW WaitStates FIELD on WorkTrackingSystemOptionsOwner mirroring BlockedStates (L41) EXACTLY \u2014 same List<string> default-[] persistence, same EF8 mapping; WHY-NEW-FIELD: no existing field captures mapping-aware idle-state marking (BlockedStates is a decoupled overlay, D9). EXTEND BaseMetricsService with the protected ComputeFlowEfficiency fold per DDD-2/ADR-024 (intra-inheritance, NOT an interface \u2014 ADR-018/021/024 forbid a new per-state aggregation service; do NOT add IFlowEfficiencyService). waitTime MUST resolve through owner.GetRawStatesForCategory(WaitStates) (REUSE-AS-IS, the SAME resolver categories use \u2014 D11/ADR-056); a literal WaitStates string match is the wrong-implementation the mapping-name AT (45% vs 100%) exists to catch. EXTEND TeamMetricsController mirroring the existing wipOverviewInfo endpoint in this controller: [HttpGet(\"flowEfficiencyInfo\")], startDate.Date > endDate.Date => BadRequest reusing the in-class error const, inherited class-level [RbacGuard(TeamRead)] (do NOT add a new guard), GetEntityByIdAnExecuteAction(teamRepository, teamId, ...). The endpoint has NO itemIds parameter (D5/D18 \u2014 the tile is whole-set only; AT 7 passes a stray &itemIds and asserts the value is unchanged, which is automatic when the param does not exist). EF MIGRATION: generate via the CreateMigration PowerShell script (NOT dotnet ef migrations add \u2014 CLAUDE.md); after generating, run `dotnet build --no-incremental` BEFORE `dotnet test` to clear the stale-migration-DLL trap (project memory delivery-target-date-tracking / Epic-4144 slice-04; InMemory tests miss the persisted-model migration). CI-LEARNINGS PRE-APPLY (grep the ledger first): NUnit4002 (Is.Zero not Is.EqualTo(0)); NUnit2045/2056 (two+ consecutive Assert.That at one scope => wrap in using (Assert.EnterMultipleScope()), incl. seed/helper blocks); S107 (helpers >7 params => options/record or narrow pragma); S2325 (a method using no instance state => static); CA1859/CA1861; S3267/S6608 if LINQ patterns flagged; CA2016 (forward CancellationToken). RED handoff per ADR-025: un-ignore ATs 1-10 ONE at a time, confirm RED-for-right-reason (route absent => 404 / waitStates absent => MISSING_FUNCTIONALITY) \u2014 WRONG RED = JsonDocument.Parse throws on a 500/error page => BLOCK and fix setup. The seed ApplyWaitStates(team, waitStates) no-op placeholder is replaced with `team.WaitStates = [.. waitStates];` once the field exists (per the test's own note). Post-GREEN Fixture-Theater check: git diff --stat MUST show WorkTrackingSystemOptionsOwner.cs + FlowEfficiencyInfoDto.cs + BaseMetricsService.cs + TeamMetricsService.cs + TeamMetricsController.cs changed; if only the test file changed the numbers are echoed not computed => BLOCK. Immutability (record DTO/ImmutableList, no mutable List<T> state mutation), <=2 nesting, early returns no else chains, switch expressions, async with CancellationToken, no comments, nullable enabled, TreatWarningsAsErrors zero-warning build."
+        },
+        {
+          "id": "01-02",
+          "name": "Portfolio flowEfficiencyInfo endpoint + GetFlowEfficiencyInfoForPortfolio (shape + arithmetic parity with team)",
+          "criteria": [
+            "IPortfolioMetricsService declares GetFlowEfficiencyInfoForPortfolio(Portfolio, DateTime startDate, DateTime endDate); PortfolioMetricsService implements it via the SAME pattern as team \u2014 resolve the portfolio's in-scope features, delegate to the inherited BaseMetricsService.ComputeFlowEfficiency (the protected fold from 01-01, no duplication), return the same FlowEfficiencyInfoDto shape",
+            "PortfolioMetricsController exposes GET /api/latest/portfolios/{portfolioId:int}/metrics/flowEfficiencyInfo mirroring the team endpoint validation and dispatch; auth via inherited class-level RbacGuard(PortfolioRead)",
+            "The portfolio response is shape-and-arithmetic-identical to the team response for the same fixture: a mapping name 'Waiting' -> ['Awaiting Approval','Queued for Build'] yields 180/400 = 45% (the same expansion arithmetic as the team mapping case)",
+            "Portfolio parity holds for the not-configured (isConfigured=false, never 100%) and no-data (hasDataInScope=false) cases; an anonymous caller is rejected (RbacGuard PortfolioRead)",
+            "Portfolio flowEfficiencyInfo ATs 12-15 (known-wait 45% parity, not-configured, no-data, anonymous-rejected) in FlowEfficiencyPortfolioReadApiIntegrationTest are un-ignored one at a time and green; no regression in the rest of the portfolio Flow Overview category"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyPortfolioReadApiIntegrationTest.cs",
+          "scenario_name": "GetFlowEfficiency_PortfolioWithKnownWaitTime_ReturnsSameShapeAndArithmeticAsTeamScope (+ ATs 13 not-configured, 14 no-data, 15 anonymous-rejected)",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyPortfolioReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 integration tests that verify wiring \u2014 single-example. The active/total/mapping-expansion arithmetic invariants are ALREADY covered by 01-01's ComputeFlowEfficiency unit tests \u2014 the fold is shared via inheritance, so portfolio reuses the SAME proven computation (this is the point of ADR-024: NO parallel aggregation service, do NOT re-implement the math). EXTEND IPortfolioMetricsService + PortfolioMetricsService mirroring its existing wipOverviewInfo path AND the new GetFlowEfficiencyInfoForTeam from 01-01: resolve the portfolio's in-scope features-in-window via the existing portfolio item-resolution query, delegate to the inherited BaseMetricsService.ComputeFlowEfficiency (DDD-2 \u2014 same protected helper). EXTEND PortfolioMetricsController mirroring its existing wipOverviewInfo endpoint: [HttpGet(\"flowEfficiencyInfo\")], same startDate.Date > endDate.Date => BadRequest reusing the existing error const, NO itemIds param, inherited class-level [RbacGuard(PortfolioRead)] (do NOT add a new guard), GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, ...). Portfolio fixture uses a 10000-day disjoint date shift (the test already encodes PortfolioWindowDisjointShiftDays) to avoid cross-fixture date collisions. CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero); NUnit2045/2056 (wrap consecutive Assert.That); S4136 (the new flowEfficiencyInfo method sits adjacent to its sibling wipOverviewInfo overloads in both service and controller); S2325 (static where no instance state); CA2016 (forward CancellationToken). RED handoff per ADR-025: un-ignore ATs 12/13/14/15 one at a time, confirm RED-for-right-reason (404/empty until the portfolio route exists) \u2014 WRONG RED = Parse throws on 500 => BLOCK. The seed ApplyWaitStates(portfolio, waitStates) no-op is replaced with `portfolio.WaitStates = [.. waitStates];` (the field exists after 01-01). Post-GREEN Fixture-Theater check: PortfolioMetricsService.cs + PortfolioMetricsController.cs MUST appear in git diff; FlowEfficiencyInfoDto + the BaseMetricsService fold already shipped in 01-01 (do NOT re-add). Cross-scope parity: a NUnit service test asserts identical fixtures across team and portfolio produce shape-identical DTOs. Immutability, <=2 nesting, no else, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        },
+        {
+          "id": "01-03",
+          "name": "waitStates additive on the settings DTOs (read-your-writes round-trip, no new write endpoint)",
+          "criteria": [
+            "SettingsOwnerDtoBase carries waitStates as an OPTIONAL string[] defaulting to [] (so existing senders, E2E helpers, and FE wizards that omit it keep working \u2014 NOT JsonRequired); TeamSettingDto and PortfolioSettingDto carry it through to/from the WaitStates field on the aggregate, mirroring exactly how blockedStates threads through",
+            "PUT /api/latest/teams/{id} with a waitStates array containing BOTH a raw Doing-state AND a mapping name persists them on the team's settings; GET /api/latest/teams/{id}/settings returns the same waitStates array (read-your-writes), including the mapping name",
+            "Omitting waitStates entirely from a settings PUT leaves the persisted value at its default and does not error (additive, backward-compatible \u2014 no existing settings caller needs updating)",
+            "AT 11 PutTeamSettings_WithWaitStatesIncludingAMappingName_PersistsThemReadYourWrites in FlowEfficiencyReadApiIntegrationTest is un-ignored and green",
+            "No regression: existing settings round-trip integration tests (blockedStates, stateMappings, staleness) pass unchanged"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyReadApiIntegrationTest.cs",
+          "scenario_name": "PutTeamSettings_WithWaitStatesIncludingAMappingName_PersistsThemReadYourWrites",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/TeamSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSettingDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); AT 11 is a layer-4 black-box round-trip integration test (real settings PUT/GET through WebApplicationFactory) that verifies wiring \u2014 single-example. EXTEND SettingsOwnerDtoBase + TeamSettingDto + PortfolioSettingDto with the waitStates field, threading to/from WorkTrackingSystemOptionsOwner.WaitStates EXACTLY like blockedStates already does (the established additive-field pattern, same as when BlockedStates/StateMappings were added per the Reuse Analysis). CRITICAL CI FOOT-GUN (the JsonRequired vs optional settings-field trap, explicitly flagged in the slice plan): make waitStates OPTIONAL with a default of [] \u2014 do NOT mark it [JsonRequired] / required. The black-box AT 11 builds its own raw JsonObject payload INCLUDING every existing field, but real-world existing senders (the FE settings wizards, the E2E settings helpers, the CLI/MCP clients) do NOT send waitStates yet; a required field would 400 every one of them. Optional-defaulting-[] keeps the contract backward-compatible (D8 / ADR-056: additive, no breaking change) and is exactly the blockedStates precedent. CLIENTS NOTE (DDD-6): the config write rides the EXISTING settings endpoint => NO FEATURE_REQUIRES_SERVER_NEWER_THAN version gate needed for the write; a client that round-trips settings carries waitStates through additively. CI-LEARNINGS PRE-APPLY: System.Text.Json PropertyNameCaseInsensitive at any non-controller call site (memory feedback_systemtextjson_case_insensitive \u2014 controller binding already handles it, but if the DTO is ever deserialised manually pass the flag); NUnit4002/2045/2056 in the test. RED handoff per ADR-025: un-ignore AT 11, confirm RED-for-right-reason (waitStates absent from the settings GET payload until the DTO threads it) \u2014 WRONG RED = the PUT 400s for an unrelated reason => BLOCK and fix the payload. Post-GREEN Fixture-Theater check: SettingsOwnerDtoBase.cs + TeamSettingDto.cs + PortfolioSettingDto.cs MUST appear in git diff. Immutability (record DTO / init-only or [.. ] copy), <=2 nesting, no else, no comments; zero-warning build. NO new write endpoint (D8) \u2014 this is purely the existing settings contract gaining an additive field."
+        },
+        {
+          "id": "01-04",
+          "name": "WaitStatesEditor sibling config UI (mapping-aware selector) wired into team + project settings",
+          "criteria": [
+            "WaitStatesEditor.tsx renders next to StateMappingsEditor in the state-config cluster (D12 Option (b)), decoupled from the Blocked States sub-section (FlowMetricsConfigurationComponent UNTOUCHED); a 'Configure Wait States' toggle gates an add/remove chip control (reusing the InputGroup / ItemListManager idiom) whose suggestions include BOTH raw Doing-states AND StateMappings names; helper text explains 'idle, not active' and the efficiency formula",
+            "Selecting a raw Doing-state OR a mapping name adds it as a removable chip; the editor derives stateMappingNames the same way StatesList does (REUSE-AS-IS pattern); StateMappingsEditor is NOT relocated or re-propped (D12 / ADR-056 \u2014 sibling only)",
+            "ModifyTeamSettings.tsx and ModifyProjectSettings.tsx render WaitStatesEditor as a sibling after StateMappingsEditor and thread waitStates through the settings model (BaseSettings.ts waitStates: string[] additive); saving persists, reopening shows the chips (read-your-writes at the UI level)",
+            "BaseSettings TS model + its Zod schema (if any at the trust boundary) gain waitStates: string[] additive (default []); strict TS, no any",
+            "Vitest covers: toggle gates the control, suggestions include raw Doing-states AND mapping names, add/remove chip, mapping-name selectable in one click, save threads waitStates; pnpm build clean; Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/StateMappings/WaitStatesEditor.test.tsx",
+          "scenario_name": "offers raw Doing-states and mapping names as suggestions, adds a mapping name as a single wait-state chip, and threads waitStates through save",
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/StateMappings/WaitStatesEditor.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "Lighthouse.Frontend/src/models/Common/BaseSettings.ts",
+            "Lighthouse.Frontend/src/components/Common/StateMappings/WaitStatesEditor.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (the TS-row of the polyglot matrix); Hypothesis does NOT apply. Suggestion-list / chip-add-remove / toggle-gating are example-based RTL interaction assertions, not quantified invariants; compensate by parametrising the suggestion-source cases (raw-state offered, mapping-name offered, non-Doing-state behaviour). NEW WaitStatesEditor.tsx per ADR-056 Option (b) / the Reuse Analysis CREATE-NEW row (Rejected-extend: StateMappingsEditor has a DIFFERENT job \u2014 define mappings with reconcileDoingStates coupling; extending it would couple two responsibilities and violate D12's 'untouched mappings editor'). REUSE the InputGroup / ItemListManager chip-autocomplete idiom (REUSE-AS-IS idiom, the same add-remove pattern). Derive stateMappingNames the SAME way StatesList does (ModifyTeamSettings.tsx ~L167-171 pattern \u2014 REUSE-AS-IS) so suggestions include raw Doing-states AND mapping names (D11). EXTEND ModifyTeamSettings.tsx + ModifyProjectSettings.tsx to render WaitStatesEditor as a SIBLING immediately after StateMappingsEditor (the 'Advanced State config' grouping is achieved by layout/heading proximity, NOT a wrapper \u2014 ADR-056 rejects relocating StateMappingsEditor); thread waitStates through the existing settings-state handlers exactly like blockedStates. EXTEND BaseSettings.ts (the model that already carries blockedStates) with waitStates: string[] additive; if BaseSettings is validated by a Zod schema at the trust boundary, extend that schema and z.infer the type \u2014 do NOT as-cast (CLAUDE.md). CRITICAL (project memory project_react185_loop_unstable_useeffect_dep + ci-learnings): do NOT introduce a new inline new Date()/[]/{} into a useEffect/useMemo dep array (the waitStates array is a classic offender \u2014 useMemo/useCallback-stabilise). CI-LEARNINGS PRE-APPLY: typescript:S6582 (collapse x !== null && x.method() to x?.method() ?? false); MUI Autocomplete/Select renders a combobox \u2014 if an InputLabel is used, pair id + labelId via useId() (ci-learnings 2026-05-17). Skip framework renders-without-crashing tests (CLAUDE.md). Factory getMockX(overrides?) for settings validated against the BaseSettings type \u2014 never redefine the schema in tests. Strict TS, no any (narrow unknown with a guard); type for data, interface only for behaviour contracts; immutable (spread for chip add/remove, never push/splice). RBAC: the editor inherits the existing settings-edit gating via useRbac() \u2014 NO new permission, NO new useRbac() gate (cross-cutting RBAC section: waitStates is just another field on the already-gated form). Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Chart flow-efficiency number, FE-derived via resolveWaitRawStates (US-02)",
+      "description": "Slice 02. The FE flowEfficiency.ts util (the fold + the ONE resolveWaitRawStates resolver, mapping-aware, mirroring GetRawStatesForCategory) and the efficiency NUMBER on the cumulative chart \u2014 aggregate when the picker is cleared, per-item when the US-05 picker narrows to one item (D5). cumulativeStateTime contract UNCHANGED (ADR-054). Includes the named cross-surface consistency tests (review action item #1).",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "flowEfficiency.ts (fold + resolveWaitRawStates) + cumulative chart efficiency number + cross-surface parity test",
+          "criteria": [
+            "flowEfficiency.ts exports resolveWaitRawStates (mapping-aware: a raw-state entry stays itself, a mapping-name entry expands to its raw states \u2014 the FE twin of GetRawStatesForCategory) and a flowEfficiency fold computing active/total Doing-time from the per-state totalDays already in the cumulativeStateTime response + the settings' waitStates/stateMappings (ADR-054 \u2014 no new field on the response)",
+            "The cumulative chart displays a flow-efficiency figure for the current in-scope set when the picker is cleared; with the US-05 picker narrowed to one item the number recomputes over that selection (per-item, D5) while the overview tile and the chart RAG do NOT change (they stay whole-set, D5/D18); with no wait states the number is suppressed (D3, rest of chart unchanged); with zero Doing-time in the displayed scope it reads 'no data in scope' (D4, no division error)",
+            "NAMED cross-surface consistency test #1a (review action item #1): a resolveWaitRawStates parity Vitest fixture asserts a raw-state entry AND a mapping-name entry expand to the SAME raw set (the HIGH-risk shared-artifact invariant \u2014 number, highlight, and BE all resolve the same wait set)",
+            "NAMED cross-surface consistency test #1b (review action item #1): an assertion that the picker-cleared chart number equals the FlowEfficiencyOverviewTile value on one shared fixture (same whole-set scope)",
+            "Vitest covers resolveWaitRawStates (raw + mapping expansion + non-Doing), the fold arithmetic (34% / per-item), picker-cleared==tile, suppressed-when-unconfigured, no-data-in-scope; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/utils/flowEfficiency.test.ts",
+          "scenario_name": "resolveWaitRawStates expands a raw entry and a mapping-name entry to the same raw set, and the picker-cleared chart number equals the overview tile value",
+          "deps": [
+            "01-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/flowEfficiency.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/utils/flowEfficiency.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/CumulativeStateTimeChart.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest project (TS-row); Hypothesis does NOT apply. The fold/resolver are pure functions and the chart number is an RTL render assertion \u2014 example-based; compensate by parametrising resolveWaitRawStates (raw-entry, mapping-name-entry, non-Doing-entry) and the (picker-cleared -> aggregate, one-item -> per-item, unconfigured -> suppressed, zero-Doing -> no-data) cases. NEW flowEfficiency.ts per ADR-054 / the Reuse Analysis CREATE-NEW row (Rejected-extend: no existing util folds per-state totals into an efficiency %, and no FE twin of GetRawStatesForCategory exists \u2014 greps return zero flowEfficiency/resolveWaitRawStates/waitState matches). This is the SINGLE FE source feeding BOTH the chart number (this slice) AND the wait-bar highlight (slice 04) \u2014 closing the registry HIGH-risk divergence structurally; do NOT write a second resolver in slice 04. resolveWaitRawStates must mirror BE GetRawStatesForCategory(WaitStates) semantics: a raw Doing-state entry resolves to itself; a StateMapping.Name entry expands to that mapping's raw States. The fold reads the per-state totalDays the cumulativeStateTime response ALREADY carries (ADR-054 \u2014 the contract is UNCHANGED, no efficiency/isWaitState field added); per-item efficiency is the free n=1 case when the picker narrows to one item (the bars are already itemIds-narrowed by US-05, so the fold over the narrowed bars IS the per-item number). EXTEND CumulativeStateTimeChart.tsx to render the number slot (the chart already exposed presentation slots in the state-time-cumulative-view feature); the RAG stays read from the systemic ctx.cumulativeStateTime (do NOT recompute RAG from the narrowed set \u2014 D5/D18). REVIEW ACTION ITEM #1 (name the cross-surface consistency test): author BOTH (a) the resolveWaitRawStates parity fixture and (b) the picker-cleared-number == tile-value assertion as EXPLICITLY NAMED tests here, surfaced again in slice-04's Done criteria \u2014 the HIGH-risk shared-artifact invariant must be pinned, not left implicit. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise the waitStates-derived resolved set and the selection dep. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining in predicates). Skip framework renders-without-crashing tests. Factory getMockX(overrides?) for the cumulative response + settings validated against their types. Strict TS, no any (narrow unknown with a guard); immutable (map/filter/spread, never push/sort-in-place). Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Flow Efficiency overview tile + inverted-polarity RAG (US-03)",
+      "description": "Slice 03. The FlowEfficiencyOverviewWidget small KPI tile in the flow-overview category consuming the flowEfficiencyInfo endpoint, the new computeFlowEfficiencyRag (INVERTED 40/60 \u2014 higher-is-better, ADR-057), and the metadata + dispatch wiring. Tri-state: percentage+RAG / 'not configured' (D3) / 'no data in scope' (D4).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "FlowEfficiencyOverviewWidget + computeFlowEfficiencyRag (inverted 40/60) + metadata + MetricsService + BaseMetricsView dispatch",
+          "criteria": [
+            "FlowEfficiencyInfoDto TS model (isConfigured, hasDataInScope, efficiencyPercent) + MetricsService/IMetricsService gain getFlowEfficiencyInfoForTeam/...ForPortfolio(scope, startDate, endDate) GET /api/latest/{scope}/{id}/metrics/flowEfficiencyInfo (no itemIds \u2014 whole-set, D5/D18)",
+            "computeFlowEfficiencyRag in ragRules.ts returns red (< 40), amber (40-60), green (>= 60) \u2014 INVERTED polarity vs computeCumulativeStateTimeRag because flow efficiency is higher-is-better (ADR-057); the act/observe/sustain words live in tipText/statusGuidance; existing RAG functions and ragRules.test.ts pass unchanged",
+            "FlowEfficiencyOverviewWidget.tsx renders a small KPI tile (the BlockedOverviewWidget Card/Typography shape) showing the aggregate efficiency percentage with its RAG colour when isConfigured && hasDataInScope; 'Flow Efficiency \u2014 not configured' with a define-wait-states pointer when !isConfigured (never 100%, D3); 'no data in scope' when isConfigured && !hasDataInScope (D4) \u2014 three distinct reads",
+            "categoryMetadata.ts adds { widgetKey: 'flowEfficiency', size: 'small' } to flow-overview (both scopes) + trendPolicy 'none'; widgetInfoMetadata.ts adds the flowEfficiency entry (title, description, RAG statusGuidance reflecting the 40/60 inverted mapping, learn-more URL); BaseMetricsView dispatches widgetKey 'flowEfficiency' to the tile in both team and portfolio scope",
+            "Vitest covers the tri-state (percentage+RAG / not-configured / no-data), the three RAG thresholds (39->red, 50->amber, 72->green), and no regression to the rest of flow-overview; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/FlowEfficiencyOverviewWidget.test.tsx",
+          "scenario_name": "renders the aggregate efficiency percentage with an inverted-RAG colour, and shows distinct 'not configured' and 'no data in scope' reads",
+          "deps": [
+            "01-02",
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Metrics/FlowEfficiencyInfo.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/FlowEfficiencyOverviewWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/FlowEfficiencyOverviewWidget.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Tile tri-state render + RAG thresholds + service fetch are example-based RTL/unit assertions; compensate by parametrising the three RAG thresholds (boundary 39/40/60/61) and the three tile states (percentage / not-configured / no-data). NEW FlowEfficiencyInfo.ts model (mirror the backend FlowEfficiencyInfoDto: isConfigured, hasDataInScope, efficiencyPercent). EXTEND IMetricsService + MetricsService with getFlowEfficiencyInfoForTeam/...ForPortfolio mirroring the existing wipOverviewInfo service shape (GET, NO itemIds \u2014 the tile is whole-set, D5/D18). Mock only abstractions you own \u2014 do NOT mock fetch/axios directly (CLAUDE.md); test through the service seam. NEW computeFlowEfficiencyRag in ragRules.ts per ADR-057 (the Reuse Analysis EXTEND row \u2014 same { ragStatus, tipText } shape as the ~25 sibling compute*Rag functions). CRITICAL POLARITY (DDD-10 / the DESIGN Changed Assumption): flow efficiency is HIGHER-IS-BETTER, so this function INVERTS direction relative to computeCumulativeStateTimeRag (low efficiency = red/act, high = green/sustain) while keeping the 40/60 boundaries. It is a SEPARATE function (single-percent input vs per-state-array input), NOT a wrap; do NOT touch computeCumulativeStateTimeRag or any other RAG function. NEW FlowEfficiencyOverviewWidget.tsx per the Reuse Analysis CREATE-NEW row (Rejected-extend: BlockedOverviewWidget renders a raw count, not a %/RAG/not-configured/no-data tri-state \u2014 structurally similar but a DIFFERENT business concept; do NOT pre-abstract). Follow its Card/Typography KPI-tile shape (REUSE-AS-IS template). EXTEND categoryMetadata.ts (flow-overview already has small-tile entries) + widgetInfoMetadata.ts (the not-configured pointer + the inverted-RAG statusGuidance) + BaseMetricsView with one widgetKey dispatch entry (both scopes). CLIENTS NOTE (DDD-6): flowEfficiencyInfo is the ONLY new endpoint \u2014 IF the CLI/MCP clients wrap it, version-gate the wrapping method (FEATURE_REQUIRES_SERVER_NEWER_THAN, strictly newer than the last released Lighthouse version, recorded/bumped at wrap time so an old server's opaque 404 becomes a clear 'upgrade Lighthouse' error); IF the clients do NOT wrap the tile (product-UI-only read), the gate is N/A \u2014 record the wrap-or-skip decision in the clients repo. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining); MUI <Select> (if any) pairs InputLabel id + Select labelId via useId(). Skip framework renders-without-crashing tests. Factory getMockX(overrides?) validated against FlowEfficiencyInfo. Strict TS, no any; immutable. Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Wait-bar colour-highlight + walking-skeleton E2E (US-04)",
+      "description": "Slice 04. Colour-highlight the wait-state bars on the cumulative chart, colour-blind-safe (legend/label, not colour-alone), composing with the existing completed/ongoing segments, reusing the SAME resolveWaitRawStates resolver from slice 02 (single source \u2014 review action item #1). Then un-fixme the ONE walking-skeleton E2E scenario and validate locators live.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Wait-bar colour-highlight on the cumulative chart (reuses resolveWaitRawStates; colour-blind-safe)",
+          "criteria": [
+            "Bars for states in resolveWaitRawStates(waitStates, stateMappings) (the expanded set, so a mapped wait state highlights ALL its underlying raw-state bars \u2014 D11) render in a treatment visually distinct from active-state bars, with a legend entry; the highlight reads from the SAME resolveWaitRawStates the chart number uses (slice 02 \u2014 single source, NOT a second resolver; review action item #1)",
+            "The wait highlight composes with the existing completed/ongoing segment split (solid base / hatched top) and remains legible together",
+            "The wait/active distinction is colour-blind-safe (legend label and/or pattern/icon, not colour alone); with no wait states configured, no bars are highlighted and the chart renders exactly as before (no regression)",
+            "Vitest covers: wait bars distinct from active, mapping-name highlights all underlying raw-state bars, highlight composes with segments, legend present, colour-blind-safe cue present, unconfigured -> no highlight; plus the slice-02 cross-surface consistency tests are re-asserted/surfaced in this slice's Done criteria (review action item #1)",
+            "pnpm build clean; Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/CumulativeStateTimeChart.test.tsx",
+          "scenario_name": "renders wait-state bars in a colour-blind-safe distinct treatment with a legend, composing with the completed/ongoing segments, driven by the same resolveWaitRawStates as the chart number",
+          "deps": [
+            "02-01",
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/CumulativeStateTimeChart.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. The highlight is an SVG-render assertion; compensate by parametrising the (wait-state-bar -> highlighted, active-state-bar -> not-highlighted, mapping-name -> all underlying raw bars highlighted, unconfigured -> none) cases. EXTEND CumulativeStateTimeChart.tsx (ADR-025 / the Reuse Analysis EXTEND row): add a wait-bar isWait predicate driven by resolveWaitRawStates from flowEfficiency.ts (slice 02) \u2014 REUSE that ONE resolver, do NOT write a second one (the registry HIGH-risk divergence is closed structurally by a single FE source for BOTH the number and the highlight; review action item #1). Reuse the chart's EXISTING colour-blind-safe conventions \u2014 the state-time-cumulative-view feature already handles colour-blind care for the completed/ongoing segments (hatch pattern, not shade-alone); the wait distinction adds a legend label and/or pattern, NOT colour alone (D6). The highlight composes with the existing <BarChart> + <pattern> hatch (the segments stay solid-base/hatched-top); no isWaitState row flag is added to the response (ADR-054 \u2014 FE-derived). REVIEW ACTION ITEM #1 (single source): the chart number (slice 02) and this highlight MUST resolve the SAME wait set via the SAME resolveWaitRawStates \u2014 surface the slice-02 parity fixture + the picker-cleared-number==tile assertion in THIS slice's Done criteria so the cross-surface invariant is visibly pinned at slice close. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise the resolved wait set. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining). Skip framework renders-without-crashing tests. Factory getMockX(overrides?). Strict TS, no any; immutable (map/filter, no push/sort-in-place). Biome clean; pnpm build zero warnings. NOTE: the walking-skeleton E2E is the NEXT step (04-02) \u2014 do not un-fixme it here."
+        },
+        {
+          "id": "04-02",
+          "name": "Un-fixme and run the @walking_skeleton E2E live (mark a wait state, see tile % + chart number + highlighted wait bar)",
+          "criteria": [
+            "The @walking_skeleton @US-01 test.fixme in FlowEfficiency.spec.ts is un-fixme'd and runs in the E2E suite",
+            "Driving demo scenario 0 (Team Zenith): edit the team -> enable Configure Wait States in the state-config cluster -> add a Doing state (e.g. matching 'Review') -> save -> the Flow Overview shows the Flow Efficiency tile with a % AND the cumulative chart shows the efficiency number (%) + a wait-bar legend entry + at least one highlighted wait bar",
+            "All element access stays in the POMs (WaitStatesEditor.ts, FlowEfficiencyWidget.ts \u2014 FlowEfficiencyOverviewTile + CumulativeChartFlowEfficiency, MetricsPage.ts); the data-testids / labels / widget names ('Flow Efficiency Overview' / 'flowEfficiency') match exactly what 01-04 / 02-01 / 03-01 / 04-01 shipped; no inline page.locator in the spec",
+            "The scenario was RUN against a locally-started app loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts",
+          "scenario_name": "@walking_skeleton @US-01 admin marks a wait state and the delivery lead sees flow efficiency on the tile and the cumulative chart",
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/WaitStatesEditor.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/FlowEfficiencyWidget.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking-skeleton (single-shot UI flow over the production composition root); the mandate keeps E2E single-example \u2014 they verify wiring, not invariants. The efficiency arithmetic invariants live in the 01-01/01-02 backend ATs + the 02-01 Vitest fold tests (faster, deterministic). WS strategy Type A (additive). The scenario + POMs are already committed (test.fixme); the spec drives demo scenario 0 -> overviewPage.goToTeam('Team Zenith') -> editTeam -> WaitStatesEditor.enable() + addWaitState('Review') -> save -> goToMetrics -> switchCategory(FlowOverview) -> getWidgetByName('Flow Efficiency Overview') asserts FlowEfficiencyOverviewTile.efficiencyValue contains '%' -> switchCategory(FlowMetrics) -> getWidgetByName('Cumulative Time per State') asserts CumulativeChartFlowEfficiency.efficiencyNumber contains '%', waitBarLegendEntry visible, countWaitBars() > 0. USER/AGENT RUNS LIVE per project memory (feedback_e2e_run_locally_by_user: Claude runs the live Playwright itself \u2014 creds in env, do NOT punt to the user; feedback_run_playwright_before_commit: never commit a spec/POM not RUN against a locally-started app, pnpm build only type-checks locators; feedback_e2e_page_object_model: POM-only, no inline page.locator; feedback_e2e_use_demo_data: drive from seeded demo data, never live connector syncs). PRODUCTION-DATA NOTE: pick a Doing state that actually exists in Team Zenith's scenario-0 workflow to mark as wait (the spec's 'Review' is a proposed match \u2014 confirm against the live demo workflow; if no Doing state carries wait-eligible time, a demo-data check precedes green, parallel to the cumulative feature's slice-01). CI-LEARNINGS PRE-APPLY: Playwright getByRole({name}) is case-insensitive substring \u2014 pass exact:true for single-verb button labels (Save, etc.) (2026-05-16); a POM action that triggers a client-side redirect MUST waitForURL the settled pattern (2026-05-25); for any async-loaded widget value/count use expect.poll / toBeVisible auto-retry, never a one-shot expect(await getX()) (2026-05-25); MUI Autocomplete is targeted via getByRole('combobox',{name}) (2026-05-17). GREEN-BEFORE-PUSH (memory feedback_green_before_push_skip_acceptance): if this E2E is not yet green at a push boundary, re-fixme it to push the slice CI-green, then un-fixme to resume. Procedure: un-fixme, start the app locally (dotnet run backend + frontend), load demo scenario 0, run the scenario, confirm green; adjust the POMs ONLY if a real accessible name/testid differs from what the FE slices shipped (POM-only, never inline page.locator). ORCHESTRATOR NOTE: this step REQUIRES A RUNNING APP \u2014 it cannot be self-certified from a type-check; the agent runs the live Playwright and reports the live-run result. Biome/lint clean on the E2E project (npx tsc --noEmit + Biome clean on the new/changed E2E files)."
+        },
+        {
+          "id": "04-03",
+          "name": "Chart UX rework per user review: wait=colour-only, interactive legend, efficiency below title",
+          "deps": [
+            "04-02"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+          "scenario_name": "wait bars render in a distinct colour keeping completed/ongoing segments, non-wait bars keep their original colour, the legend toggles completed/ongoing on click, and the flow-efficiency figure sits below the title",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+            "Lighthouse.EndToEndTests/tests/models/metrics/FlowEfficiencyWidget.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts"
+          ],
+          "criteria": [
+            "Wait-state bars (resolveWaitRawStates expanded set) render in a DISTINCT colour family (amber/secondary) for BOTH their completed (solid) and ongoing (hatched) segments; non-wait bars keep their ORIGINAL teal colour with completed solid / ongoing hatched. Implemented as 4 stacked series (completed/ongoing x wait/non-wait) so the segment distinction survives on every bar. The xAxis ordinal colorMap and the dotted WAIT_PATTERN are REMOVED (they caused black non-wait bars and erased the completed/ongoing split).",
+            "The header is decluttered: the 'Wait' filter Chip and the Completed/Ongoing LegendChip chips are REMOVED from the header. The Flow Efficiency figure ('Flow Efficiency: X%') sits BELOW the title (stacked), not beside it. The Work Items picker stays top-right.",
+            "A single interactive legend (mirroring DeliveryFeverChart's clickable FeatureLegend) lets the user click Completed / Ongoing to toggle those series' visibility (reuse useTypesVisibility); the MUI built-in legend is hidden. A small NON-clickable 'Wait' colour key shows the amber swatch so users know what the colour means (no wait filtering).",
+            "No wait filtering: there is no control to hide/show wait bars; wait is purely a colour overlay. With no wait states configured, all bars are teal and no 'Wait' key shows; the chart renders exactly as before the feature.",
+            "Vitest covers: wait bars use the distinct colour while keeping completed/ongoing, non-wait bars keep teal, mapping-name colours all underlying raw-state bars, legend click toggles completed/ongoing, efficiency figure renders below the title, unconfigured -> no wait colour/key; the cross-surface resolveWaitRawStates parity test still holds. pnpm build clean; Biome zero warnings.",
+            "The walking-skeleton E2E (FlowEfficiency.spec.ts) is updated for the new legend/efficiency placement, RUN live against demo scenario 0, and passes; POM locators (FlowEfficiencyWidget.ts) match the reworked DOM."
+          ],
+          "implementation_notes": "USER-REVIEW REVISION (2026-06-05) of slices 02/04. Root cause of the black bars + lost segments: the xAxis 'ordinal' colorMap set non-wait colours to '' (=> black) and overrode the stacked completed/ongoing series colours; REMOVE it entirely. New approach = 4 stacked series in one 'stateTime' stack: completedNonWait (solid theme.primary.main), ongoingNonWait (url hatch with primary), completedWait (solid theme.secondary/amber), ongoingWait (url hatch with amber); zero/null where not applicable so only one pair renders per bar; stack order completed-base then ongoing-top. Reuse resolveWaitRawStates (single source, do NOT add a second resolver). Interactive legend: mirror DeliveryFeverChart.tsx FeatureLegend (Box of clickable buttons, aria-pressed, opacity when hidden) reusing the existing useTypesVisibility hook; hide MUI legend via slotProps.legend hidden or slots. The 'Wait' colour key is a non-clickable swatch+label. Move FlowEfficiencyFigure under the Typography h6 title (column Stack). Remove HourglassEmptyIcon + the Wait Chip + the two header LegendChips + WAIT_PATTERN_ID + waitColorMap. DECISION DEVIATION from ADR-057: user explicitly chose colour-ONLY for wait ('nothing else really, only a color thing') -> the colour-blind-safe-via-non-colour-cue requirement is relaxed for wait/non-wait per direct user instruction; completed/ongoing remains pattern-distinguished. Run the live E2E (dotnet run + premium license import + demo scenario 0) and screenshot before commit. CI-learnings: Biome, strict TS no any, immutable, no comments.",
+          "test_budget": "<=8 FE unit tests for the reworked chart"
+        },
+        {
+          "id": "04-04",
+          "name": "Chart polish per user review #2: wait colour red-ish + 2-row tooltip",
+          "deps": [
+            "04-03"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+          "scenario_name": "wait bars use a red-ish waste colour and the bar tooltip shows exactly Completed and Ongoing (not the four underlying series)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+            "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/FlowEfficiencyWidget.ts"
+          ],
+          "criteria": [
+            "Wait-state bars use a RED-ISH 'waste' colour family (theme.palette.error / a red tone) instead of amber/orange, for BOTH the solid completed segment and the hatched ongoing segment; the legend 'Wait' colour key matches; non-wait bars stay teal. The colour reads well in BOTH dark and light mode.",
+            "The bar tooltip shows EXACTLY two rows for the hovered bar: 'Completed' and 'Ongoing' (with their day values + the bar's colour) \u2014 NOT the four underlying stacked series (completedNonWait/completedWait/ongoingNonWait/ongoingWait). The implementation detail of the 4-series split must not appear in the tooltip; a non-applicable pair (0/blank) must not show.",
+            "Vitest covers: wait bars use the red-ish colour, the tooltip renders exactly Completed + Ongoing (two entries) for both a wait bar and a non-wait bar; the cross-surface resolveWaitRawStates parity still holds; pnpm build clean; Biome zero warnings.",
+            "The walking-skeleton E2E is updated if the legend/tooltip locators changed, RUN live against demo scenario 0, passes, and a fresh screenshot is captured showing the red-ish wait bar + the 2-row tooltip."
+          ],
+          "implementation_notes": "USER-REVIEW REVISION #2 (2026-06-05) of step 04-03. (1) Wait colour: swap theme.palette.warning/amber -> a red-ish waste tone (theme.palette.error.main for solid, error.light/dark for the hatch pattern); keep completed=solid / ongoing=hatch within wait bars; update the amber hatch pattern colours to red. Update the legend 'Wait' swatch + any Vitest colour assertions. (2) Tooltip: the 4-series split (completedNonWait/completedWait/ongoingNonWait/ongoingWait) makes the default MUI-X tooltip show 4 rows. Provide a CUSTOM tooltip (MUI-X version-appropriate: slots.tooltip / slotProps.tooltip, or a custom ChartsTooltip content) that renders exactly two rows for the hovered dataIndex: 'Completed' = completedContributionDays and 'Ongoing' = ongoingContributionDays for that state (data already available on orderedStates), formatted via formatDuration, with the bar's colour swatch. Alternatively collapse the series labels so only 2 logical entries surface \u2014 but a custom tooltip keyed on dataIndex is the robust path. Reuse the existing per-row data; there is already a hidden StateTooltipContent with the values + testids that can inform the custom tooltip. Do NOT change the 4-series rendering (it is what preserves per-bar colour + segments) \u2014 only the tooltip presentation. Run the live E2E + screenshot before commit. Strict TS no any, immutable, no comments, Biome clean.",
+          "test_budget": "<=6 FE unit tests added/changed"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Close-out: D9 regression guardrail + seam guard + EF stale-migration guard + docs (cross-cutting)",
+      "description": "Cross-cutting close-out mirroring the sibling state-time-cumulative-view close-out phase. The D9 regression guardrail AT (review action item #2), an ArchUnit seam guard that ComputeFlowEfficiency stays a protected fold (no new aggregation service, ADR-024), the EF stale-migration-DLL guard note (review action item #3), and the docs/screenshot for the learn-more URLs.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "D9 regression guardrail AT + ComputeFlowEfficiency seam ArchUnit guard + EF stale-migration guard + docs/screenshot",
+          "criteria": [
+            "GetFlowEfficiency_WithWaitStatesDefined_DoesNotChangeAnyOtherMetric (review action item #2 / D9): seed a team with wait states defined, assert the throughput / forecast / cycle-time / aging endpoint responses are byte-identical before and after wait states are defined \u2014 wait states are a labelling overlay only and must not shift any other metric",
+            "An ArchUnit seam guard asserts ComputeFlowEfficiency lives as a protected member of BaseMetricsService and that no IFlowEfficiencyService / new per-state aggregation interface was introduced (ADR-024 upheld \u2014 mirrors the sibling's CumulativeStateTimeSeamArchUnitTest close-out guard)",
+            "EF stale-migration guard (review action item #3): the close-out documents/verifies that after running the CreateMigration script for WaitStates, `dotnet build --no-incremental` ran before `dotnet test` (the Epic-4144 slice-04 stale-migration-DLL trap); the migration applies cleanly on Sqlite + Postgres in CI",
+            "Docs: the flowEfficiency tile + the cumulative chart's wait-highlight learn-more URLs (widgetInfoMetadata.ts) point to a doc page added in this wave; a screenshot of the tile and the highlighted chart is captured",
+            "dotnet build zero warnings; pnpm build clean; the full backend + frontend suites green; no new SonarCloud violations"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowEfficiencySeamArchUnitTest.cs",
+          "scenario_name": "ComputeFlowEfficiency stays a protected BaseMetricsService fold (no new aggregation service) and defining wait states changes no other metric",
+          "deps": [
+            "01-02",
+            "03-01",
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowEfficiencySeamArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FlowEfficiencyReadApiIntegrationTest.cs",
+            "docs/feature/wait-states-flow-efficiency/deliver/close-out.md"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit/ArchUnitNET project (C#-row); the D9 guardrail is a layer-4 black-box regression assertion and the seam guard is a static-architecture assertion \u2014 both single-example by nature (they verify a structural/regression fact, not a quantified invariant). REVIEW ACTION ITEM #2 (D9 regression guardrail): add GetFlowEfficiency_WithWaitStatesDefined_DoesNotChangeAnyOtherMetric to the existing FlowEfficiencyReadApiIntegrationTest fixture \u2014 seed a team, snapshot the throughput/forecast/cycle-time/aging endpoint responses, define wait states on the same team, re-fetch, assert the responses are identical (wait states are a labelling overlay only \u2014 D9; this is the DoD guardrail that the numbers stay byte-identical before/after). NEW FlowEfficiencySeamArchUnitTest.cs mirroring the sibling state-time-cumulative-view close-out (CumulativeStateTimeSeamArchUnitTest): use TngTech.ArchUnitNET (0.13.3, the project arch-test mechanism per project memory epic5121 \u2014 mind its gotchas) to assert ComputeFlowEfficiency is a protected member of BaseMetricsService AND that no new IFlowEfficiencyService / per-state aggregation interface exists (ADR-018/021/024 upheld 5th \u2014 no parallel aggregation service). REVIEW ACTION ITEM #3 (EF stale-migration guard): document in close-out.md that the WaitStates migration was generated via the CreateMigration PowerShell script (NOT dotnet ef migrations add) and that `dotnet build --no-incremental` ran before `dotnet test` (Epic-4144 slice-04 stale-migration-DLL trap; InMemory tests miss the persisted-model migration so the providers must be exercised). DOCS (DoD #12): the widgetInfoMetadata.ts learn-more URLs for the Flow Efficiency tile and the cumulative chart's wait-highlight point to a doc page added in this wave; capture a screenshot of the tile + the highlighted chart \u2014 per project memory feedback_docs_wait_for_confirmation, hold the doc/troubleshooting commit until the user confirms the feature works in their environment (code can ship first, docs wait). CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero), NUnit2045/2056 (wrap consecutive Assert.That), ArchUnitNET fluent-API gotchas (epic5121 memory). The D9 guardrail fixture sets only PRECONDITIONS (seeded items + the before/after wait-state toggle), never the expected output. Immutability, <=2 nesting, no else, no comments; zero-warning build; no new SonarCloud violations."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "notes": "Awaiting the orchestrator's automated quality gate (des-roadmap validate) + integrity check + solution-architect-reviewer peer review. Coverage self-check: all 15 backend ATs + 1 E2E scenario (16 total) mapped to steps, 0 orphans \u2014 team ATs 1-10 -> 01-01, AT 11 -> 01-03, portfolio ATs 12-15 -> 01-02, E2E scenario 16 -> 04-02. The 15 backend ATs are FlowEfficiencyReadApiIntegrationTest (11) + FlowEfficiencyPortfolioReadApiIntegrationTest (4). FE chart number / wait-bar highlight / tile / RAG / resolveWaitRawStates are FE-derived Vitest (DELIVER-owned per ADR-054/057, not backend ATs). Review action items: #1 cross-surface consistency tests (02-01 + surfaced in 04-01), #2 D9 regression guardrail AT (05-01), #3 EF stale-migration guard (01-01 note + 05-01 verification).",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "verdict": "approved",
+    "blocker_count": 0,
+    "reviewed_at": "2026-06-05",
+    "automated_quality_gate": "passed 6/6 (IDs NN-NN; no validation-only; ratio 0.32 steps/file; all 9 steps have test_file+scenario_name; no private-method ACs; config-first)",
+    "integrity_check": "des-verify-integrity --roadmap-only exit 0",
+    "orphan_scenarios": 0,
+    "note": "9 steps / 5 phases. All 16 DISTILL scenarios mapped (15 backend ATs + 1 @walking_skeleton E2E), 0 orphans. Reviewer approved gate-ready. Locked design honoured: WaitStates additive on settings endpoint (no new write endpoint); flowEfficiencyInfo only new endpoint x2 scopes (no itemIds); cumulativeStateTime UNCHANGED; chart number+highlight FE-derived via one resolveWaitRawStates; tile/RAG whole-set; RAG inverted polarity (ADR-057); mapping-aware via GetRawStatesForCategory (D11); StateMappingsEditor untouched (ADR-056 Option b). Routes /api/latest/..."
+  }
+}
