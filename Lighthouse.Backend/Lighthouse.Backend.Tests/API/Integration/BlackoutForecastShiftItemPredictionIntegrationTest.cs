@@ -11,7 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    [Ignore("pending DELIVER — Epic 4974 US-02 date→working-days count not yet implemented")]
     public class BlackoutForecastShiftItemPredictionIntegrationTest : BlackoutForecastShiftTestBase
     {
         [SetUp]

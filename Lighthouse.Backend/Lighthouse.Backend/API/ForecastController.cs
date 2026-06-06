@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -77,12 +78,14 @@ namespace Lighthouse.Backend.API
             {
                 var manualForecast = new ManualForecastDto(input.RemainingItems ?? 0, input.TargetDate);
                 var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
-                var timeToTargetDate = input.TargetDate.HasValue ? (input.TargetDate.Value - DateTime.Today).Days : 0;
+                var timeToTargetDate = input.TargetDate.HasValue
+                    ? blackoutPeriods.CountWorkingDays(DateTime.UtcNow.Date, input.TargetDate.Value)
+                    : 0;
 
                 if (input.RemainingItems is > 0)
                 {
-                    var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                     var whenForecast = await forecastService.When(team, input.RemainingItems.Value, mode);
 
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(blackoutPeriods, 50, 70, 85, 95));
