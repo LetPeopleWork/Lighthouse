@@ -29,5 +29,37 @@ namespace Lighthouse.Backend.API
             var created = await recurringBlackoutRuleService.Create(dto);
             return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
         }
+
+        [HttpPut("{id:int}")]
+        [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        public async Task<IActionResult> Update(int id, [FromBody] RecurringBlackoutRuleDto dto)
+        {
+            try
+            {
+                var updated = await recurringBlackoutRuleService.Update(id, dto);
+                return Ok(updated);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpDelete("{id:int}")]
+        [LicenseGuard(RequirePremium = true)]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await recurringBlackoutRuleService.Delete(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
     }
 }

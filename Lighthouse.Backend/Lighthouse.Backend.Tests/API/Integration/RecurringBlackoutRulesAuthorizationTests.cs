@@ -9,7 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     public class RecurringBlackoutRulesAuthorizationTests() : IntegrationTestBase
     {
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task GetAll_AsNonPremiumUser_DoesNotReturn403()
         {
             var response = await Client.GetAsync("/api/latest/recurring-blackout-rules");
@@ -19,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task Create_AsNonPremiumUser_Returns403()
         {
             var rule = new
@@ -38,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task Update_AsNonPremiumUser_Returns403()
         {
             var rule = new
@@ -57,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task Delete_AsNonPremiumUser_Returns403()
         {
             var response = await Client.DeleteAsync("/api/latest/recurring-blackout-rules/1");
