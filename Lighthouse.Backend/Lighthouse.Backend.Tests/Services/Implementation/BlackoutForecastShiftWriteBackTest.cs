@@ -82,6 +82,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task TriggerForecastWriteBack_ForecastCompletesInZeroDays_WritesTodayDespiteFutureBlackout()
+        {
+            ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(1)), DateOnly.FromDateTime(Today.AddDays(2)));
+            var portfolio = PortfolioWithForecastedFeature(0);
+
+            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+
+            var written = capturedUpdates.Single().Value;
+            Assert.That(written, Is.EqualTo(Today.ToString("yyyy-MM-dd")));
+        }
+
+        [Test]
         public async Task TriggerForecastWriteBack_HistoricalAndFutureBlackoutBothConfigured_DaysValueUnchangedAndDateShiftedExactlyOnce()
         {
             ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(3)), DateOnly.FromDateTime(Today.AddDays(4)));
