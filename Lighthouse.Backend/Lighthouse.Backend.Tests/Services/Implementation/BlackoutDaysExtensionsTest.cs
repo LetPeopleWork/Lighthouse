@@ -246,5 +246,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(result, Is.True);
         }
+
+        private static readonly DateTime ProjectionStart = new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private static IReadOnlyList<BlackoutPeriod> BlackoutPeriods(params (int StartOffset, int EndOffset)[] dayOffsets)
+        {
+            return dayOffsets
+                .Select(offset => new BlackoutPeriod
+                {
+                    Start = DateOnly.FromDateTime(ProjectionStart.AddDays(offset.StartOffset)),
+                    End = DateOnly.FromDateTime(ProjectionStart.AddDays(offset.EndOffset))
+                })
+                .ToList();
+        }
+
+        [TestCase(3, 4, 12, TestName = "ProjectWorkingDays_TwoBlackoutDaysWithinSpan_PushesLandingByBlackoutCount")]
+        [TestCase(10, 10, 11, TestName = "ProjectWorkingDays_BlackoutDayLandsOnNaiveTarget_RollsForwardIntrinsically")]
+        [TestCase(10, 13, 14, TestName = "ProjectWorkingDays_ConsecutiveBlackoutSpan_RollsPastWholeSpan")]
+        public void ProjectWorkingDays_SkipsBlackoutDays_LandsOnNthWorkingDay(int blackoutStartOffset, int blackoutEndOffset, int expectedDayOffset)
+        {
+            var blackoutPeriods = BlackoutPeriods((blackoutStartOffset, blackoutEndOffset));
+
+            var result = blackoutPeriods.ProjectWorkingDays(ProjectionStart, 10);
+
+            Assert.That(result, Is.EqualTo(ProjectionStart.AddDays(expectedDayOffset)));
+        }
+
+        [Test]
+        public void ProjectWorkingDays_NoBlackoutPeriods_IsByteIdenticalToAddDays()
+        {
+            var result = Array.Empty<BlackoutPeriod>().ProjectWorkingDays(ProjectionStart, 10);
+
+            Assert.That(result, Is.EqualTo(ProjectionStart.AddDays(10)));
+        }
+
+        [Test]
+        public void ProjectWorkingDays_ZeroWorkingDays_ReturnsStart()
+        {
+            var blackoutPeriods = BlackoutPeriods((3, 4));
+
+            var result = blackoutPeriods.ProjectWorkingDays(ProjectionStart, 0);
+
+            Assert.That(result, Is.EqualTo(ProjectionStart));
+        }
     }
 }

@@ -47,6 +47,29 @@ namespace Lighthouse.Backend.Services.Implementation
             return blackoutPeriods.IsBlackoutDay(date);
         }
 
+        public static DateTime ProjectWorkingDays(this IReadOnlyList<BlackoutPeriod> blackoutPeriods, DateTime start, int workingDayCount)
+        {
+            if (workingDayCount <= 0)
+            {
+                return start;
+            }
+
+            var dayOffset = 0;
+            var workingDaysCounted = 0;
+
+            while (workingDaysCounted < workingDayCount)
+            {
+                dayOffset++;
+
+                if (!blackoutPeriods.IsBlackoutDay(start.AddDays(dayOffset)))
+                {
+                    workingDaysCounted++;
+                }
+            }
+
+            return start.AddDays(dayOffset);
+        }
+
         public static bool HasOverlapWithDateRange(this IEnumerable<BlackoutPeriod> blackoutPeriods, DateTime startDate, DateTime endDate)
         {
             var rangeStart = DateOnly.FromDateTime(startDate.Date);
