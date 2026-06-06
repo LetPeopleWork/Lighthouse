@@ -249,7 +249,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static readonly DateTime ProjectionStart = new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private static IReadOnlyList<BlackoutPeriod> BlackoutPeriods(params (int StartOffset, int EndOffset)[] dayOffsets)
+        private static List<BlackoutPeriod> BlackoutPeriods(params (int StartOffset, int EndOffset)[] dayOffsets)
         {
             return dayOffsets
                 .Select(offset => new BlackoutPeriod
