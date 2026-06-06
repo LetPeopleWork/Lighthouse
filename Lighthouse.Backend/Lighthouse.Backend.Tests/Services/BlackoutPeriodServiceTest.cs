@@ -8,14 +8,19 @@ namespace Lighthouse.Backend.Tests.Services
     [TestFixture]
     public class BlackoutPeriodServiceTest
     {
+        private static readonly int[] OneOffPeriodIds = [1, 2];
+
         private BlackoutPeriodService subject;
         private Mock<IRepository<BlackoutPeriod>> repositoryMock;
+        private Mock<IRepository<RecurringBlackoutRule>> recurringRuleRepositoryMock;
         private readonly List<BlackoutPeriod> blackoutPeriods = [];
+        private readonly List<RecurringBlackoutRule> recurringRules = [];
 
         [SetUp]
         public void SetUp()
         {
             blackoutPeriods.Clear();
+            recurringRules.Clear();
 
             repositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             repositoryMock.Setup(r => r.GetAll())
@@ -23,7 +28,11 @@ namespace Lighthouse.Backend.Tests.Services
             repositoryMock.Setup(r => r.GetById(It.IsAny<int>()))
                 .Returns((int id) => blackoutPeriods.SingleOrDefault(bp => bp.Id == id));
 
-            subject = new BlackoutPeriodService(repositoryMock.Object);
+            recurringRuleRepositoryMock = new Mock<IRepository<RecurringBlackoutRule>>();
+            recurringRuleRepositoryMock.Setup(r => r.GetAll())
+                .Returns(recurringRules.AsQueryable());
+
+            subject = new BlackoutPeriodService(repositoryMock.Object, recurringRuleRepositoryMock.Object);
         }
 
         [Test]
@@ -49,6 +58,51 @@ namespace Lighthouse.Backend.Tests.Services
                 Assert.That(result[0].Id, Is.EqualTo(3));
                 Assert.That(result[1].Id, Is.EqualTo(2));
                 Assert.That(result[2].Id, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void GetEffectiveBlackoutDays_NoRecurringRules_ReturnsExactlyTheOneOffPeriods()
+        {
+            blackoutPeriods.Add(new BlackoutPeriod { Id = 1, Start = new DateOnly(2026, 6, 1), End = new DateOnly(2026, 6, 5) });
+            blackoutPeriods.Add(new BlackoutPeriod { Id = 2, Start = new DateOnly(2026, 6, 10), End = new DateOnly(2026, 6, 12) });
+
+            var result = subject.GetEffectiveBlackoutDays(
+                new DateTime(2026, 6, 1), new DateTime(2026, 6, 30));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Has.Count.EqualTo(2));
+                Assert.That(result.Select(bp => bp.Id), Is.EquivalentTo(OneOffPeriodIds));
+            }
+        }
+
+        [Test]
+        public void GetEffectiveBlackoutDays_WithRecurringWeekendRule_UnionsMaterializedSingleDayPeriodsWithinTheWindow()
+        {
+            blackoutPeriods.Add(new BlackoutPeriod { Id = 1, Start = new DateOnly(2026, 6, 1), End = new DateOnly(2026, 6, 1) });
+            recurringRules.Add(new RecurringBlackoutRule
+            {
+                Weekdays = [DayOfWeek.Saturday, DayOfWeek.Sunday],
+                IntervalWeeks = 1,
+                Start = new DateOnly(2026, 6, 1),
+                End = null,
+                Description = "Weekends",
+            });
+
+            var result = subject.GetEffectiveBlackoutDays(
+                new DateTime(2026, 6, 1), new DateTime(2026, 6, 14));
+
+            var materializedWeekendDays = result.Where(bp => bp.Id == 0).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Any(bp => bp.Id == 1), Is.True);
+                Assert.That(materializedWeekendDays, Is.Not.Empty);
+                Assert.That(materializedWeekendDays.All(bp => bp.Start == bp.End), Is.True);
+                Assert.That(
+                    materializedWeekendDays.All(bp => bp.Start.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday),
+                    Is.True);
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -22,7 +23,8 @@ namespace Lighthouse.Backend.API
         IForecastService forecastService,
         IRepository<Team> teamRepository,
         ITeamMetricsService teamMetricsService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IBlackoutPeriodService blackoutPeriodService)
         : ControllerBase
     {
         [HttpPost("update/{id:int}")]
@@ -88,7 +90,11 @@ namespace Lighthouse.Backend.API
                 {
                     var whenForecast = await forecastService.When(team, input.RemainingItems.Value, mode);
 
-                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(blackoutPeriods, 50, 70, 85, 95));
+                    var effectiveBlackoutDays = blackoutPeriodService.GetEffectiveBlackoutDays(
+                        DateTime.UtcNow.Date,
+                        EstimateForecastWindowEnd(whenForecast));
+
+                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(effectiveBlackoutDays, 50, 70, 85, 95));
                     manualForecast.FilterApplied = whenForecast.FilterApplied;
                     manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
                     manualForecast.HasSufficientData = whenForecast.HasSufficientData;
@@ -114,6 +120,17 @@ namespace Lighthouse.Backend.API
 
                 return manualForecast;
             });
+        }
+
+        private static DateTime EstimateForecastWindowEnd(WhenForecast whenForecast)
+        {
+            const int CalendarHeadroomDays = 14;
+            const int BlackoutDensityMultiplier = 2;
+
+            var worstCaseWorkingDays = whenForecast.GetProbability(95);
+            var calendarSpan = (worstCaseWorkingDays * BlackoutDensityMultiplier) + CalendarHeadroomDays;
+
+            return DateTime.UtcNow.Date.AddDays(calendarSpan);
         }
 
         private static ThroughputFilterMode MapOverrideToFilterMode(bool? applyFilterOverride)

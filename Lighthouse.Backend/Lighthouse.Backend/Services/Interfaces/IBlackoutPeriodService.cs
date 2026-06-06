@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Services.Interfaces
     {
         IEnumerable<BlackoutPeriod> GetAll();
 
+        IReadOnlyList<BlackoutPeriod> GetEffectiveBlackoutDays(DateTime windowStart, DateTime windowEnd);
+
         BlackoutPeriod? GetById(int id);
 
         Task<BlackoutPeriod> Create(BlackoutPeriodDto dto);

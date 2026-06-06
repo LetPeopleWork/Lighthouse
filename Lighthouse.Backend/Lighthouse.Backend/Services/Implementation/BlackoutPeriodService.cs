@@ -4,15 +4,30 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class BlackoutPeriodService(IRepository<BlackoutPeriod> repository) : IBlackoutPeriodService
+    public class BlackoutPeriodService(IRepository<BlackoutPeriod> repository, IRepository<RecurringBlackoutRule> recurringRuleRepository) : IBlackoutPeriodService
     {
         private readonly IRepository<BlackoutPeriod> repository = repository ?? throw new ArgumentNullException(nameof(repository));
+
+        private readonly IRepository<RecurringBlackoutRule> recurringRuleRepository = recurringRuleRepository ?? throw new ArgumentNullException(nameof(recurringRuleRepository));
 
         public IEnumerable<BlackoutPeriod> GetAll()
         {
             return repository.GetAll()
                 .OrderBy(bp => bp.Start)
                 .ThenBy(bp => bp.End);
+        }
+
+        public IReadOnlyList<BlackoutPeriod> GetEffectiveBlackoutDays(DateTime windowStart, DateTime windowEnd)
+        {
+            var oneOffPeriods = repository.GetAll();
+
+            var windowStartDay = DateOnly.FromDateTime(windowStart);
+            var windowEndDay = DateOnly.FromDateTime(windowEnd);
+
+            var materializedRecurringDays = recurringRuleRepository.GetAll()
+                .SelectMany(rule => rule.ExpandToBlackoutDays(windowStartDay, windowEndDay));
+
+            return oneOffPeriods.Concat(materializedRecurringDays).ToList();
         }
 
         public BlackoutPeriod? GetById(int id)

@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IForecastUpdater> forecastUpdaterMock;
         private Team team;
         private ForecastController subject;
@@ -35,6 +36,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             teamRepositoryMock = new Mock<IRepository<Team>>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
             forecastUpdaterMock = new Mock<IForecastUpdater>();
 
             team = new Team { Id = TeamId, Name = "Premium-Team" };
@@ -62,7 +66,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 forecastServiceMock.Object,
                 teamRepositoryMock.Object,
                 teamMetricsServiceMock.Object,
-                blackoutPeriodRepositoryMock.Object);
+                blackoutPeriodRepositoryMock.Object,
+                blackoutPeriodServiceMock.Object);
         }
 
         [Test]

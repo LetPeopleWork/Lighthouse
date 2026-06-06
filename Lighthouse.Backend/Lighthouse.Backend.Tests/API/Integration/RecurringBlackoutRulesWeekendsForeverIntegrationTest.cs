@@ -45,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-01")]
         public async Task WhenForecast_WithWeekendsForeverRule_NoPercentileDateLandsOnAWeekend()
         {
             Client.AsSystemAdmin();
@@ -55,6 +54,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var percentileDates = await AllPercentileDates(remainingItems: 5);
 
+            var unshiftedDate = Today.AddDays(WorkingDaysAtAllPercentiles);
+
             Assert.That(percentileDates, Is.Not.Empty);
             using (Assert.EnterMultipleScope())
             {
@@ -62,6 +63,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 {
                     Assert.That(date.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Saturday), $"{date:yyyy-MM-dd} is a Saturday");
                     Assert.That(date.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Sunday), $"{date:yyyy-MM-dd} is a Sunday");
+                    Assert.That(date, Is.GreaterThan(unshiftedDate),
+                        $"{date:yyyy-MM-dd} must be shifted past the unshifted {unshiftedDate:yyyy-MM-dd} because the weekends-forever rule blacks out the intervening weekend days");
                 }
             }
         }
