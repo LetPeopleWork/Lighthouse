@@ -325,5 +325,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(result, Is.Zero);
         }
+
+        [Test]
+        public void CountWorkingDays_StartDayItselfIsBlackout_DoesNotCountTheStartDay()
+        {
+            var blackoutPeriods = BlackoutPeriods((0, 0));
+
+            var result = blackoutPeriods.CountWorkingDays(ProjectionStart, ProjectionStart.AddDays(10));
+
+            Assert.That(result, Is.EqualTo(10));
+        }
     }
 }
