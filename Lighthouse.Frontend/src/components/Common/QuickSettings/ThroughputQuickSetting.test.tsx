@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import ThroughputQuickSetting from "./ThroughputQuickSetting";
@@ -179,17 +179,53 @@ describe("ThroughputQuickSetting", () => {
 		});
 	});
 
-	it("should validate rolling history is at least 1 day", () => {
-		// This test validates that the HTML5 number input with min=0
-		// prevents entering negative values. Browser behavior blocks -5 input.
-		// The actual validation logic allows 0 (unset) and positive numbers.
-		// Validation for < 0 is defensive but never reached due to input constraints.
-		render(<ThroughputQuickSetting {...getMockProps()} />);
+	it("should reject negative rolling history and not save", async () => {
+		const user = userEvent.setup();
+		const mockOnSave = vi.fn().mockResolvedValue(undefined);
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ startDate, endDate, onSave: mockOnSave })}
+			/>,
+		);
 
-		// The test confirms the component exists and renders
-		expect(
-			screen.getByRole("button", { name: /Throughput/i }),
-		).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: /Throughput/i }));
+
+		const historyInput = screen.getByRole("spinbutton", {
+			name: /Throughput History/i,
+		});
+		fireEvent.change(historyInput, { target: { value: "-5" } });
+
+		await user.keyboard("{Enter}");
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(/history must be at least 1 day/i),
+			).toBeInTheDocument();
+		});
+		expect(mockOnSave).not.toHaveBeenCalled();
+	});
+
+	it("should reject missing fixed dates and not save", async () => {
+		const user = userEvent.setup();
+		const mockOnSave = vi.fn().mockResolvedValue(undefined);
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ useFixedDates: true, onSave: mockOnSave })}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: /Throughput/i }));
+
+		await user.keyboard("{Enter}");
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(/Start and end dates are required/i),
+			).toBeInTheDocument();
+		});
+		expect(mockOnSave).not.toHaveBeenCalled();
 	});
 
 	it("should call onSave with updated rolling history when Enter is pressed", async () => {
@@ -457,6 +493,63 @@ describe("ThroughputQuickSetting", () => {
 				name: /Blackout days within window.*Forecast filter active/i,
 			}),
 		).toBeInTheDocument();
+	});
+
+	it("suppresses the blackout qualifier on the Not-set branch even when overlapping", () => {
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ hasBlackoutOverlap: true })}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: /Not set/i }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /Blackout days within window/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("renders the base label alone with no list when there are no qualifiers", async () => {
+		const user = userEvent.setup();
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting {...getMockProps({ startDate, endDate })} />,
+		);
+
+		await user.hover(screen.getByRole("button", { name: /Throughput/i }));
+
+		await waitFor(() => {
+			expect(screen.getByText(/Rolling 30 days/i)).toBeInTheDocument();
+		});
+		expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+	});
+
+	it("switches back to the rolling history input when fixed dates is unchecked", async () => {
+		const user = userEvent.setup();
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-31");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({ useFixedDates: true, startDate, endDate })}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: /Throughput/i }));
+
+		expect(screen.getByLabelText(/Start Date/i)).toBeInTheDocument();
+
+		await user.click(
+			screen.getByRole("checkbox", { name: /Use Fixed Dates/i }),
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("spinbutton", { name: /Throughput History/i }),
+			).toBeInTheDocument();
+			expect(screen.queryByLabelText(/Start Date/i)).not.toBeInTheDocument();
+		});
 	});
 
 	it("renders each active qualifier as a distinct list item in the tooltip", async () => {

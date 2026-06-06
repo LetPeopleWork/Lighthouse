@@ -202,6 +202,166 @@ describe("BlackoutSettings", () => {
 		});
 	});
 
+	it("requires both dates before creating a one-off period", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("add-blackout-period-button"),
+			).not.toBeDisabled();
+		});
+
+		fireEvent.click(screen.getByTestId("add-blackout-period-button"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("dialog")).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByTestId("save-blackout-period"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Start and end dates are required."),
+			).toBeVisible();
+		});
+
+		expect(periodService.create).not.toHaveBeenCalled();
+	});
+
+	it("refetches and renders the new period row after creating it", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		periodService.getAll = vi
+			.fn()
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
+				getMockPeriod({ id: 2, description: "Spring break" }),
+			]);
+		periodService.create = vi.fn().mockResolvedValue(undefined);
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("add-blackout-period-button"),
+			).not.toBeDisabled();
+		});
+
+		fireEvent.click(screen.getByTestId("add-blackout-period-button"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("dialog")).toBeVisible();
+		});
+
+		const startInput = screen
+			.getByTestId("blackout-start-date")
+			.querySelector("input");
+		const endInput = screen
+			.getByTestId("blackout-end-date")
+			.querySelector("input");
+		if (!startInput || !endInput) {
+			throw new Error("Date inputs not found");
+		}
+		fireEvent.change(startInput, { target: { value: "2026-01-01" } });
+		fireEvent.change(endInput, { target: { value: "2026-01-05" } });
+
+		fireEvent.click(screen.getByTestId("save-blackout-period"));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("blackout-period-row-2")).toBeVisible();
+		});
+		expect(screen.getByText("Spring break")).toBeVisible();
+		expect(periodService.getAll).toHaveBeenCalledTimes(2);
+	});
+
+	it("prefills the edit dialog and updates the period with its id", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		periodService.getAll = vi
+			.fn()
+			.mockResolvedValue([
+				getMockPeriod({ id: 7, start: "2026-03-01", end: "2026-03-05" }),
+			]);
+		periodService.update = vi.fn().mockResolvedValue(undefined);
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("edit-blackout-7")).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByTestId("edit-blackout-7"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Edit Blackout Period")).toBeVisible();
+		});
+
+		const startInput = screen
+			.getByTestId("blackout-start-date")
+			.querySelector("input");
+		const endInput = screen
+			.getByTestId("blackout-end-date")
+			.querySelector("input");
+		if (!startInput || !endInput) {
+			throw new Error("Date inputs not found");
+		}
+		expect(startInput.value).toBe("2026-03-01");
+		expect(endInput.value).toBe("2026-03-05");
+
+		fireEvent.change(endInput, { target: { value: "2026-03-10" } });
+		fireEvent.click(screen.getByTestId("save-blackout-period"));
+
+		await waitFor(() => {
+			expect(periodService.update).toHaveBeenCalledWith(7, {
+				start: "2026-03-01",
+				end: "2026-03-10",
+				description: "New Year",
+			});
+		});
+		expect(periodService.create).not.toHaveBeenCalled();
+	});
+
+	it("shows the fallback message when a period save throws a non-Error", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		periodService.create = vi.fn().mockRejectedValue("boom");
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("add-blackout-period-button"),
+			).not.toBeDisabled();
+		});
+
+		fireEvent.click(screen.getByTestId("add-blackout-period-button"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("dialog")).toBeVisible();
+		});
+
+		const startInput = screen
+			.getByTestId("blackout-start-date")
+			.querySelector("input");
+		const endInput = screen
+			.getByTestId("blackout-end-date")
+			.querySelector("input");
+		if (!startInput || !endInput) {
+			throw new Error("Date inputs not found");
+		}
+		fireEvent.change(startInput, { target: { value: "2026-01-01" } });
+		fireEvent.change(endInput, { target: { value: "2026-01-05" } });
+
+		fireEvent.click(screen.getByTestId("save-blackout-period"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Failed to save blackout period.")).toBeVisible();
+		});
+	});
+
 	it("validates the one-off period start is on or before end", async () => {
 		const periodService = createMockBlackoutPeriodService();
 		const ruleService = createMockRecurringBlackoutRuleService();
@@ -272,6 +432,196 @@ describe("BlackoutSettings", () => {
 		await waitFor(() => {
 			expect(periodService.delete).toHaveBeenCalledWith(1);
 		});
+	});
+
+	it("does not delete a one-off period when the dialog is cancelled", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		periodService.getAll = vi.fn().mockResolvedValue([getMockPeriod()]);
+		periodService.delete = vi.fn().mockResolvedValue(undefined);
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(screen.getByText("New Year")).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByTestId("delete-blackout-1"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(
+					"Are you sure you want to delete this blackout period?",
+				),
+			).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByText("Cancel"));
+
+		await waitFor(() => {
+			expect(
+				screen.queryByText(
+					"Are you sure you want to delete this blackout period?",
+				),
+			).not.toBeInTheDocument();
+		});
+		expect(periodService.delete).not.toHaveBeenCalled();
+	});
+
+	it("creates a recurring rule with the toggled weekdays and null open end", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		ruleService.create = vi.fn().mockResolvedValue(undefined);
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("add-recurring-blackout-rule-button"),
+			).not.toBeDisabled();
+		});
+
+		fireEvent.click(screen.getByTestId("add-recurring-blackout-rule-button"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("dialog")).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByTestId("recurring-weekday-Monday"));
+		fireEvent.click(screen.getByTestId("recurring-weekday-Wednesday"));
+		fireEvent.click(screen.getByTestId("recurring-weekday-Wednesday"));
+		fireEvent.click(screen.getByTestId("recurring-weekday-Friday"));
+
+		const intervalInput = screen
+			.getByTestId("recurring-interval-weeks")
+			.querySelector("input");
+		const startInput = screen
+			.getByTestId("recurring-start-date")
+			.querySelector("input");
+		const descInput = screen
+			.getByTestId("recurring-description")
+			.querySelector("input");
+		if (!intervalInput || !startInput || !descInput) {
+			throw new Error("Form inputs not found");
+		}
+		fireEvent.change(intervalInput, { target: { value: "3" } });
+		fireEvent.change(startInput, { target: { value: "2026-02-02" } });
+		fireEvent.change(descInput, { target: { value: "Maintenance" } });
+
+		fireEvent.click(screen.getByTestId("save-recurring-blackout-rule"));
+
+		await waitFor(() => {
+			expect(ruleService.create).toHaveBeenCalledWith({
+				weekdays: ["Monday", "Friday"],
+				intervalWeeks: 3,
+				start: "2026-02-02",
+				end: null,
+				description: "Maintenance",
+			});
+		});
+	});
+
+	it("validates the recurring rule end is on or after start", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("add-recurring-blackout-rule-button"),
+			).not.toBeDisabled();
+		});
+
+		fireEvent.click(screen.getByTestId("add-recurring-blackout-rule-button"));
+
+		await waitFor(() => {
+			expect(screen.getByRole("dialog")).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByTestId("recurring-weekday-Tuesday"));
+
+		const startInput = screen
+			.getByTestId("recurring-start-date")
+			.querySelector("input");
+		const endInput = screen
+			.getByTestId("recurring-end-date")
+			.querySelector("input");
+		if (!startInput || !endInput) {
+			throw new Error("Date inputs not found");
+		}
+		fireEvent.change(startInput, { target: { value: "2026-02-10" } });
+		fireEvent.change(endInput, { target: { value: "2026-02-05" } });
+
+		fireEvent.click(screen.getByTestId("save-recurring-blackout-rule"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Start date must be on or before end date."),
+			).toBeVisible();
+		});
+		expect(ruleService.create).not.toHaveBeenCalled();
+	});
+
+	it("prefills the recurring edit dialog and updates the rule with its id", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		ruleService.getAll = vi.fn().mockResolvedValue([
+			getMockRule({
+				id: 9,
+				weekdays: ["Monday"],
+				intervalWeeks: 2,
+				start: "2026-01-05",
+				end: "2026-12-31",
+				description: "Quarterly",
+			}),
+		]);
+		ruleService.update = vi.fn().mockResolvedValue(undefined);
+
+		renderComponent(periodService, ruleService);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("edit-recurring-blackout-9")).toBeVisible();
+		});
+
+		fireEvent.click(screen.getByTestId("edit-recurring-blackout-9"));
+
+		await waitFor(() => {
+			expect(screen.getByText("Edit Recurring Blackout Rule")).toBeVisible();
+		});
+
+		const startInput = screen
+			.getByTestId("recurring-start-date")
+			.querySelector("input");
+		const endInput = screen
+			.getByTestId("recurring-end-date")
+			.querySelector("input");
+		if (!startInput || !endInput) {
+			throw new Error("Date inputs not found");
+		}
+		expect(startInput.value).toBe("2026-01-05");
+		expect(endInput.value).toBe("2026-12-31");
+		expect(
+			(
+				screen
+					.getByTestId("recurring-weekday-Monday")
+					.querySelector("input") as HTMLInputElement
+			).checked,
+		).toBe(true);
+
+		fireEvent.click(screen.getByTestId("recurring-weekday-Tuesday"));
+		fireEvent.click(screen.getByTestId("save-recurring-blackout-rule"));
+
+		await waitFor(() => {
+			expect(ruleService.update).toHaveBeenCalledWith(9, {
+				weekdays: ["Monday", "Tuesday"],
+				intervalWeeks: 2,
+				start: "2026-01-05",
+				end: "2026-12-31",
+				description: "Quarterly",
+			});
+		});
+		expect(ruleService.create).not.toHaveBeenCalled();
 	});
 
 	it("requires at least one weekday before creating a recurring rule", async () => {
@@ -377,6 +727,29 @@ describe("BlackoutSettings", () => {
 
 		await waitFor(() => {
 			expect(ruleService.delete).toHaveBeenCalledWith(1);
+		});
+	});
+
+	it("renders and dismisses the load-error alert when fetching fails", async () => {
+		const periodService = createMockBlackoutPeriodService();
+		const ruleService = createMockRecurringBlackoutRuleService();
+		periodService.getAll = vi.fn().mockRejectedValue(new Error("network down"));
+
+		renderComponent(periodService, ruleService);
+
+		const alert = await screen.findByText(
+			"Failed to load blackout periods or recurring rules",
+		);
+		expect(alert).toBeVisible();
+
+		fireEvent.click(screen.getByLabelText("Close"));
+
+		await waitFor(() => {
+			expect(
+				screen.queryByText(
+					"Failed to load blackout periods or recurring rules",
+				),
+			).not.toBeInTheDocument();
 		});
 	});
 });
