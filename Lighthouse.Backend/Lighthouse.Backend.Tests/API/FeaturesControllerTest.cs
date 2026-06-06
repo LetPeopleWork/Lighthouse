@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
@@ -29,8 +30,8 @@ namespace Lighthouse.Backend.Tests.API
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
 
             features.Clear();
@@ -418,7 +419,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private FeaturesController CreateSubject()
         {
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodRepositoryMock.Object, rbacAdministrationServiceMock.Object);
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> projectRepository,
         IWorkItemRepository workItemRepository,
         ITeamUpdater teamUpdateService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IBlackoutPeriodService blackoutPeriodService,
         IUpdateQueueService updateQueueService,
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService)
@@ -57,8 +57,8 @@ namespace Lighthouse.Backend.API
                     .ToHashSet();
 
                 var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdSet);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                 var throughputSettings = team.GetThroughputSettings();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasForecastFilter = forecastFilterRuleService.GetEffectiveRuleSet(team) != null;
 

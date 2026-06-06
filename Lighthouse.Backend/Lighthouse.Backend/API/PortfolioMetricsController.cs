@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.API
     public class PortfolioMetricsController(
         IRepository<Portfolio> portfolioRepository,
         IPortfolioMetricsService portfolioMetricsService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IBlackoutPeriodService blackoutPeriodService,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
     {
@@ -94,8 +94,9 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate).ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
                 return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
@@ -181,8 +182,9 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cycleTimeData", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = portfolioMetricsService.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var features = portfolioMetricsService.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
                 return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
@@ -197,8 +199,9 @@ namespace Lighthouse.Backend.API
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = portfolioMetricsService.GetAllFeaturesForSizeChart(portfolio, startDate, endDate);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var features = portfolioMetricsService.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
                 return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
@@ -337,7 +340,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                AnnotateBlackoutDays(portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate)));
+                AnnotateBlackoutDays(portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("arrivals/pbc")]
@@ -349,7 +352,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                AnnotateBlackoutDays(portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate)));
+                AnnotateBlackoutDays(portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("wipOverTime/pbc")]
@@ -361,7 +364,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                AnnotateBlackoutDays(portfolioMetricsService.GetWipProcessBehaviourChart(portfolio, startDate, endDate)));
+                AnnotateBlackoutDays(portfolioMetricsService.GetWipProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("totalWorkItemAge/pbc")]
@@ -373,7 +376,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                AnnotateBlackoutDays(portfolioMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate)));
+                AnnotateBlackoutDays(portfolioMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("cycleTime/pbc")]
@@ -386,7 +389,7 @@ namespace Lighthouse.Backend.API
 
             LogDateBoundaries("cycleTime/pbc", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                AnnotateBlackoutDays(portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate)));
+                AnnotateBlackoutDays(portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("featureSize/pbc")]
@@ -398,7 +401,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                AnnotateBlackoutDays(portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate)));
+                AnnotateBlackoutDays(portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("estimationVsCycleTime")]
@@ -425,13 +428,13 @@ namespace Lighthouse.Backend.API
 
         private int[] GetBlackoutDayIndicesArray(DateTime startDate, DateTime endDate)
         {
-            var blackoutPeriods = blackoutPeriodRepository.GetAll();
+            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate);
             return blackoutPeriods.GetBlackoutDayIndices(startDate, endDate).OrderBy(i => i).ToArray();
         }
 
-        private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart)
+        private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart, DateTime startDate, DateTime endDate)
         {
-            var blackoutPeriods = blackoutPeriodRepository.GetAll();
+            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate);
             return blackoutPeriods.AnnotateBlackoutDays(chart);
         }
 

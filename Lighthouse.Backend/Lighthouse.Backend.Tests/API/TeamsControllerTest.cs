@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -29,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<ILicenseService> licenseServiceMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
         private Mock<IForecastFilterRuleService> forecastFilterRuleServiceMock;
 
@@ -42,8 +43,8 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock = new Mock<ILicenseService>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
@@ -483,7 +484,7 @@ namespace Lighthouse.Backend.Tests.API
             var throughputSettings = team.GetThroughputSettings();
             var midPoint = throughputSettings.StartDate.AddDays(10);
 
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns([
+            blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate)).Returns([
                 new BlackoutPeriod { Start = DateOnly.FromDateTime(midPoint), End = DateOnly.FromDateTime(midPoint.AddDays(2)) }
             ]);
 
@@ -499,7 +500,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(1, "Team 1");
             team.ThroughputHistory = 30;
 
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns([
+            blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([
                 new BlackoutPeriod { Start = new DateOnly(2020, 1, 1), End = new DateOnly(2020, 1, 5) }
             ]);
 
@@ -621,7 +622,7 @@ namespace Lighthouse.Backend.Tests.API
                 teamUpdateServiceMock.Object,
                 workTrackingConnectorFactoryMock.Object,
                 licenseServiceMock.Object,
-                blackoutPeriodRepositoryMock.Object,
+                blackoutPeriodServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
                 forecastFilterRuleServiceMock.Object);
         }

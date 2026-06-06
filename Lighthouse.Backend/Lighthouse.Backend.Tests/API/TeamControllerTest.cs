@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepoMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IUpdateQueueService> updateQueueServiceMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
@@ -39,8 +39,8 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             workItemRepoMock = new Mock<IWorkItemRepository>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(Array.Empty<BlackoutPeriod>());
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             updateQueueServiceMock = new Mock<IUpdateQueueService>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
@@ -569,7 +569,7 @@ namespace Lighthouse.Backend.Tests.API
             var throughputSettings = team.GetThroughputSettings();
             var midPoint = throughputSettings.StartDate.AddDays(10);
 
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns([
+            blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate)).Returns([
                 new BlackoutPeriod { Start = DateOnly.FromDateTime(midPoint), End = DateOnly.FromDateTime(midPoint.AddDays(2)) }
             ]);
 
@@ -588,7 +588,7 @@ namespace Lighthouse.Backend.Tests.API
             team.ThroughputHistory = 30;
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
 
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns([
+            blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([
                 new BlackoutPeriod { Start = new DateOnly(2020, 1, 1), End = new DateOnly(2020, 1, 5) }
             ]);
 
@@ -737,7 +737,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodRepositoryMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Portfolio>> portfolioRepository;
         private Mock<IPortfolioMetricsService> projectMetricsService;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
 
@@ -28,9 +28,9 @@ namespace Lighthouse.Backend.Tests.API
         {
             portfolioRepository = new Mock<IRepository<Portfolio>>();
             projectMetricsService = new Mock<IPortfolioMetricsService>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
 
             project = new Portfolio
             {

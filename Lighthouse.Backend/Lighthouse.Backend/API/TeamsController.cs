@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -26,7 +27,7 @@ namespace Lighthouse.Backend.API
         ITeamUpdater teamUpdateService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         ILicenseService licenseService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IBlackoutPeriodService blackoutPeriodService,
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService)
         : ControllerBase
@@ -51,12 +52,12 @@ namespace Lighthouse.Backend.API
             var effectiveReadablePortfolioIds = readablePortfolioIdSet ?? portfolioIds;
             var readablePortfolioIdsSet = effectiveReadablePortfolioIds
                 .ToHashSet();
-            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
             foreach (var team in allTeams.Where(team => readableTeamIdSet.Contains(team.Id)))
             {
                 var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdsSet);
                 var throughputSettings = team.GetThroughputSettings();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasForecastFilter = forecastFilterRuleService.GetEffectiveRuleSet(team) != null;
 

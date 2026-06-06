@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
         [SetUp]
@@ -25,8 +24,6 @@ namespace Lighthouse.Backend.Tests.API
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -984,8 +981,8 @@ namespace Lighthouse.Backend.Tests.API
             var throughputData = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
             teamMetricsServiceMock.Setup(s => s.GetThroughputForTeam(team, startDate, endDate)).Returns(throughputData);
 
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Start = new DateOnly(2025, 1, 3), End = new DateOnly(2025, 1, 5) } }.AsQueryable());
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(startDate, endDate))
+                .Returns([new BlackoutPeriod { Start = new DateOnly(2025, 1, 3), End = new DateOnly(2025, 1, 5) }]);
 
             var subject = CreateSubject();
             var response = subject.GetThroughput(team.Id, startDate, endDate);
@@ -1129,8 +1126,8 @@ namespace Lighthouse.Backend.Tests.API
             };
             teamMetricsServiceMock.Setup(s => s.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)).Returns(pbcChart);
 
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Start = new DateOnly(2025, 1, 4), End = new DateOnly(2025, 1, 4) } }.AsQueryable());
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(startDate, endDate))
+                .Returns([new BlackoutPeriod { Start = new DateOnly(2025, 1, 4), End = new DateOnly(2025, 1, 4) }]);
 
             var subject = CreateSubject();
             var response = subject.GetCycleTimeProcessBehaviourChart(team.Id, startDate, endDate);
@@ -1485,7 +1482,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, blackoutPeriodServiceMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
         }
     }
 }

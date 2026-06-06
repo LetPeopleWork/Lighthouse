@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -16,18 +17,18 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRepository<Feature> featureRepository;
         private readonly IWorkItemRepository workItemRepository;
-        private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
+        private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IRbacAdministrationService rbacAdministrationService;
 
         public FeaturesController(
             IRepository<Feature> featureRepository,
             IWorkItemRepository workItemRepository,
-            IRepository<BlackoutPeriod> blackoutPeriodRepository,
+            IBlackoutPeriodService blackoutPeriodService,
             IRbacAdministrationService rbacAdministrationService)
         {
             this.featureRepository = featureRepository;
             this.workItemRepository = workItemRepository;
-            this.blackoutPeriodRepository = blackoutPeriodRepository;
+            this.blackoutPeriodService = blackoutPeriodService;
             this.rbacAdministrationService = rbacAdministrationService;
         }
 
@@ -83,7 +84,8 @@ namespace Lighthouse.Backend.API
         {
             var features = featureRepository.GetAllByPredicate(predicate).OrderBy(f => f, new FeatureComparer()).ToList();
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
-            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))

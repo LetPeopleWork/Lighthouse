@@ -21,15 +21,13 @@ namespace Lighthouse.Backend.API
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
-        private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IRepository<BlackoutPeriod> blackoutPeriodRepository, IBlackoutPeriodService blackoutPeriodService, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
-            this.blackoutPeriodRepository = blackoutPeriodRepository;
             this.blackoutPeriodService = blackoutPeriodService;
             this.logger = logger;
         }
@@ -97,8 +95,9 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
-                var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team, asOfDate);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team, asOfDate).ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
 
                 return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
@@ -362,7 +361,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                AnnotateBlackoutDays(teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate)));
+                AnnotateBlackoutDays(teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("wipOverTime/pbc")]
@@ -374,7 +373,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                AnnotateBlackoutDays(teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate)));
+                AnnotateBlackoutDays(teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("totalWorkItemAge/pbc")]
@@ -386,7 +385,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                AnnotateBlackoutDays(teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate)));
+                AnnotateBlackoutDays(teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("cycleTime/pbc")]
@@ -399,7 +398,7 @@ namespace Lighthouse.Backend.API
 
             LogDateBoundaries("cycleTime/pbc", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                AnnotateBlackoutDays(teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)));
+                AnnotateBlackoutDays(teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate), startDate, endDate));
         }
 
         [HttpGet("estimationVsCycleTime")]
@@ -415,14 +414,8 @@ namespace Lighthouse.Backend.API
 
         private int[] GetBlackoutDayIndicesArray(DateTime startDate, DateTime endDate)
         {
-            var blackoutPeriods = blackoutPeriodRepository.GetAll();
+            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate);
             return blackoutPeriods.GetBlackoutDayIndices(startDate, endDate).OrderBy(i => i).ToArray();
-        }
-
-        private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart)
-        {
-            var blackoutPeriods = blackoutPeriodRepository.GetAll();
-            return blackoutPeriods.AnnotateBlackoutDays(chart);
         }
 
         private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart, DateTime startDate, DateTime endDate)
