@@ -80,10 +80,11 @@ namespace Lighthouse.Backend.API
             {
                 var manualForecast = new ManualForecastDto(input.RemainingItems ?? 0, input.TargetDate);
                 var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
                 var timeToTargetDate = input.TargetDate.HasValue
-                    ? blackoutPeriods.CountWorkingDays(DateTime.UtcNow.Date, input.TargetDate.Value)
+                    ? blackoutPeriodService
+                        .GetEffectiveBlackoutDays(DateTime.UtcNow.Date, input.TargetDate.Value)
+                        .CountWorkingDays(DateTime.UtcNow.Date, input.TargetDate.Value)
                     : 0;
 
                 if (input.RemainingItems is > 0)
