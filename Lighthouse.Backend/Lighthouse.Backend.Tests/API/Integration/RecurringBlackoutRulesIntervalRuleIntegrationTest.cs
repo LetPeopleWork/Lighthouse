@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-02")]
         public async Task CreateEveryFourthFridayRule_AsPremiumSystemAdmin_RuleIsAcceptedAndListed()
         {
             Client.AsSystemAdmin();
@@ -45,24 +44,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-02")]
         public async Task WhenForecast_WithEveryFourthFridayRule_NoPercentileDateLandsOnAFriday()
         {
+            var unshiftedDate = await PercentileDate(85, remainingItems: 5);
+
             Client.AsSystemAdmin();
             var createResponse = await CreateOffSiteFridayRuleAnchoredOnNextFriday();
             Assert.That(createResponse.StatusCode, Is.EqualTo(HttpStatusCode.Created),
                 await createResponse.Content.ReadAsStringAsync());
 
-            var matchedFriday = await PercentileDate(85, remainingItems: 5);
+            var shiftedDate = await PercentileDate(85, remainingItems: 5);
 
-            Assert.That(matchedFriday.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Friday), $"{matchedFriday:yyyy-MM-dd} is a Friday");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(shiftedDate.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Friday), $"{shiftedDate:yyyy-MM-dd} is a Friday");
+                Assert.That(shiftedDate, Is.GreaterThan(unshiftedDate),
+                    $"interval rule did not step the forecast past any off-site Friday: shifted {shiftedDate:yyyy-MM-dd} vs unshifted {unshiftedDate:yyyy-MM-dd}");
+            }
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-02")]
         public async Task WhenForecast_IntervalOneWeekRuleReproducesPlainWeeklyBehaviour_NoPercentileDateLandsOnAWeekend()
         {
-            Client.AsSystemAdmin();
             var rule = new
             {
                 weekdays = new[] { "Saturday", "Sunday" },
@@ -71,16 +74,21 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 end = (string?)null,
                 description = "Weekends via interval 1",
             };
+            var unshiftedDate = await PercentileDate(85, remainingItems: 5);
+
+            Client.AsSystemAdmin();
             var createResponse = await Client.PostAsJsonAsync("/api/latest/recurring-blackout-rules", rule);
             Assert.That(createResponse.StatusCode, Is.EqualTo(HttpStatusCode.Created),
                 await createResponse.Content.ReadAsStringAsync());
 
-            var expectedDate = await PercentileDate(85, remainingItems: 5);
+            var shiftedDate = await PercentileDate(85, remainingItems: 5);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(expectedDate.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Saturday), $"{expectedDate:yyyy-MM-dd} is a Saturday");
-                Assert.That(expectedDate.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Sunday), $"{expectedDate:yyyy-MM-dd} is a Sunday");
+                Assert.That(shiftedDate.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Saturday), $"{shiftedDate:yyyy-MM-dd} is a Saturday");
+                Assert.That(shiftedDate.DayOfWeek, Is.Not.EqualTo(DayOfWeek.Sunday), $"{shiftedDate:yyyy-MM-dd} is a Sunday");
+                Assert.That(shiftedDate, Is.GreaterThan(unshiftedDate),
+                    $"interval-1 weekend rule did not reproduce plain weekly behaviour: shifted {shiftedDate:yyyy-MM-dd} vs unshifted {unshiftedDate:yyyy-MM-dd}");
             }
         }
 
