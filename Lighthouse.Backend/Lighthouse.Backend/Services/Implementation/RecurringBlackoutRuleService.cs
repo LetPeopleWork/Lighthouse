@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public async Task<RecurringBlackoutRuleDto> Create(RecurringBlackoutRuleDto dto)
         {
+            Validate(dto);
+
             var rule = dto.ToEntity();
 
             repository.Add(rule);
@@ -28,6 +30,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public async Task<RecurringBlackoutRuleDto> Update(int id, RecurringBlackoutRuleDto dto)
         {
+            Validate(dto);
+
             var existing = repository.GetById(id)
                 ?? throw new KeyNotFoundException($"Recurring blackout rule with id {id} not found.");
 
@@ -51,6 +55,24 @@ namespace Lighthouse.Backend.Services.Implementation
 
             repository.Remove(id);
             await repository.Save();
+        }
+
+        private static void Validate(RecurringBlackoutRuleDto dto)
+        {
+            if (dto.Weekdays.Count == 0)
+            {
+                throw new ArgumentException("Select at least one weekday for the rule to repeat on.");
+            }
+
+            if (dto.IntervalWeeks < 1)
+            {
+                throw new ArgumentException("Repeat interval must be at least 1 week.");
+            }
+
+            if (dto.End is not null && dto.End < dto.Start)
+            {
+                throw new ArgumentException("End date must be on or after the start date.");
+            }
         }
     }
 }

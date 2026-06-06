@@ -79,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task CreateRule_WithNoWeekdays_RejectedWithWeekdayRequiredMessage()
         {
             Client.AsSystemAdmin();
@@ -103,7 +102,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task CreateRule_WithIntervalBelowOne_RejectedWithIntervalMessage()
         {
             Client.AsSystemAdmin();
@@ -127,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task CreateRule_WithEndBeforeStart_RejectedWithDateRangeMessage()
         {
             Client.AsSystemAdmin();

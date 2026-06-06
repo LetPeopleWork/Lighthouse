@@ -26,8 +26,15 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<IActionResult> Create([FromBody] RecurringBlackoutRuleDto dto)
         {
-            var created = await recurringBlackoutRuleService.Create(dto);
-            return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
+            try
+            {
+                var created = await recurringBlackoutRuleService.Create(dto);
+                return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("{id:int}")]
@@ -43,6 +50,10 @@ namespace Lighthouse.Backend.API
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
