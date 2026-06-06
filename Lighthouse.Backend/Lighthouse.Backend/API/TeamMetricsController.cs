@@ -22,13 +22,15 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
+        private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IRepository<BlackoutPeriod> blackoutPeriodRepository, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IRepository<BlackoutPeriod> blackoutPeriodRepository, IBlackoutPeriodService blackoutPeriodService, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
             this.blackoutPeriodRepository = blackoutPeriodRepository;
+            this.blackoutPeriodService = blackoutPeriodService;
             this.logger = logger;
         }
 
@@ -338,7 +340,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                AnnotateBlackoutDays(GetPbcForView(team, startDate, endDate, view)));
+                AnnotateBlackoutDays(GetPbcForView(team, startDate, endDate, view), startDate, endDate));
         }
 
         private ProcessBehaviourChart GetPbcForView(Team team, DateTime startDate, DateTime endDate, string? view)
@@ -420,6 +422,12 @@ namespace Lighthouse.Backend.API
         private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart)
         {
             var blackoutPeriods = blackoutPeriodRepository.GetAll();
+            return blackoutPeriods.AnnotateBlackoutDays(chart);
+        }
+
+        private ProcessBehaviourChart AnnotateBlackoutDays(ProcessBehaviourChart chart, DateTime startDate, DateTime endDate)
+        {
+            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate);
             return blackoutPeriods.AnnotateBlackoutDays(chart);
         }
 

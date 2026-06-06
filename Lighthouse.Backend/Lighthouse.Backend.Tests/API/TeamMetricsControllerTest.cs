@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
         [SetUp]
         public void Setup()
@@ -26,6 +27,10 @@ namespace Lighthouse.Backend.Tests.API
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
             blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock
+                .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
         }
 
         [Test]
@@ -1045,8 +1050,8 @@ namespace Lighthouse.Backend.Tests.API
             };
             teamMetricsServiceMock.Setup(s => s.GetThroughputProcessBehaviourChart(team, startDate, endDate)).Returns(pbcChart);
 
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Start = new DateOnly(2025, 1, 2), End = new DateOnly(2025, 1, 2) } }.AsQueryable());
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(startDate, endDate))
+                .Returns([new BlackoutPeriod { Start = new DateOnly(2025, 1, 2), End = new DateOnly(2025, 1, 2) }]);
 
             var subject = CreateSubject();
             var response = subject.GetThroughputProcessBehaviourChart(team.Id, startDate, endDate);
@@ -1480,7 +1485,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, blackoutPeriodServiceMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
         }
     }
 }

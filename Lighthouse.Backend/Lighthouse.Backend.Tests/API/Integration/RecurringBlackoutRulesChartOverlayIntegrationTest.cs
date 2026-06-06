@@ -88,7 +88,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rootFactory.Dispose();
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task GetThroughputPbc_WithRecurringRuleDay_AnnotatesTheMatchingDataPointAsBlackout()
         {
@@ -105,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task GetThroughputPbc_RecurringRuleDay_AnnotatesIdenticallyToEquivalentOneOffPeriod()
         {
@@ -120,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "The IsBlackout annotation for a recurring-rule day must match the annotation for an equivalent one-off period.");
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task GetThroughputPbc_NoRecurringRulesAndNoOneOffPeriods_NoDataPointMarkedAsBlackout()
         {
