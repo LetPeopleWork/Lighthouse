@@ -70,6 +70,20 @@ namespace Lighthouse.Backend.Services.Implementation
             return start.AddDays(dayOffset);
         }
 
+        public static int CountWorkingDays(this IReadOnlyList<BlackoutPeriod> blackoutPeriods, DateTime start, DateTime target)
+        {
+            var calendarDays = (target.Date - start.Date).Days;
+
+            if (calendarDays <= 0)
+            {
+                return calendarDays;
+            }
+
+            var blackoutDaysAfterStart = blackoutPeriods.GetBlackoutDayIndices(start, target).Count(index => index > 0);
+
+            return calendarDays - blackoutDaysAfterStart;
+        }
+
         public static bool HasOverlapWithDateRange(this IEnumerable<BlackoutPeriod> blackoutPeriods, DateTime startDate, DateTime endDate)
         {
             var rangeStart = DateOnly.FromDateTime(startDate.Date);

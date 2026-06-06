@@ -289,5 +289,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(result, Is.EqualTo(ProjectionStart));
         }
+
+        [Test]
+        public void CountWorkingDays_TwoBlackoutDaysWithinSpan_ExcludesThemFromCount()
+        {
+            var blackoutPeriods = BlackoutPeriods((3, 4));
+
+            var result = blackoutPeriods.CountWorkingDays(ProjectionStart, ProjectionStart.AddDays(12));
+
+            Assert.That(result, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void CountWorkingDays_NoBlackoutPeriods_IsByteIdenticalToCalendarDiff()
+        {
+            var result = Array.Empty<BlackoutPeriod>().CountWorkingDays(ProjectionStart, ProjectionStart.AddDays(12));
+
+            Assert.That(result, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void CountWorkingDays_PastTarget_ReturnsNegativeUnclamped()
+        {
+            var blackoutPeriods = BlackoutPeriods((3, 4));
+
+            var result = blackoutPeriods.CountWorkingDays(ProjectionStart, ProjectionStart.AddDays(-3));
+
+            Assert.That(result, Is.EqualTo(-3));
+        }
+
+        [Test]
+        public void CountWorkingDays_TargetEqualsStart_ReturnsZero()
+        {
+            var result = Array.Empty<BlackoutPeriod>().CountWorkingDays(ProjectionStart, ProjectionStart);
+
+            Assert.That(result, Is.Zero);
+        }
     }
 }
