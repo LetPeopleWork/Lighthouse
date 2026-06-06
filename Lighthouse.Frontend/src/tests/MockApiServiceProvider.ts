@@ -378,24 +378,18 @@ export const createMockSurveyNudgeService = (): ISurveyNudgeService => {
 	};
 };
 
-export const createMockBlackoutPeriodService = (): IBlackoutPeriodService => {
-	return {
-		getAll: vi.fn().mockResolvedValue([]),
-		create: vi.fn(),
-		update: vi.fn(),
-		delete: vi.fn(),
-	};
-};
+const createMockCrudService = () => ({
+	getAll: vi.fn().mockResolvedValue([]),
+	create: vi.fn(),
+	update: vi.fn(),
+	delete: vi.fn(),
+});
+
+export const createMockBlackoutPeriodService = (): IBlackoutPeriodService =>
+	createMockCrudService();
 
 export const createMockRecurringBlackoutRuleService =
-	(): IRecurringBlackoutRuleService => {
-		return {
-			getAll: vi.fn().mockResolvedValue([]),
-			create: vi.fn(),
-			update: vi.fn(),
-			delete: vi.fn(),
-		};
-	};
+	(): IRecurringBlackoutRuleService => createMockCrudService();
 
 export const createMockApiKeyService = (): IApiKeyService => {
 	return {

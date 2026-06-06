@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
         }
 
-        private static DateTime ForecastWindowEnd(IReadOnlyList<Delivery> deliveries)
+        private static DateTime ForecastWindowEnd(List<Delivery> deliveries)
         {
             const int CalendarHeadroomDays = 14;
 

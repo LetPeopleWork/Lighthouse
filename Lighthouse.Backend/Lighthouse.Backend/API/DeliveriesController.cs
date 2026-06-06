@@ -319,7 +319,7 @@ namespace Lighthouse.Backend.API
             return null;
         }
 
-        private static DateTime ForecastWindowEnd(IReadOnlyList<Delivery> deliveries)
+        private static DateTime ForecastWindowEnd(List<Delivery> deliveries)
         {
             const int CalendarHeadroomDays = 14;
 
