@@ -375,3 +375,160 @@ Slice 01 first = it births the entity + endpoint + the **unified-evaluation seam
 - **ADRs**: ADR-059 (unified evaluation via materialization), ADR-060 (entity + weekday storage + expansion). Cross-ref ADR-058.
 - **External integrations / contract tests**: none — no foreign substrate; nothing owed at the platform-architect handoff.
 - **ADO children**: #5221 (US-01), #5222 (US-02), #5223 (US-03), #5224 (US-04) — already exist.
+
+---
+
+## Wave: DISTILL / [REF] Reconciliation Gate
+
+**Reconciliation passed — 0 contradictions.** DISCUSS decisions D1–D7 were checked against
+DESIGN (ADR-059 Option C, ADR-060, OQ-1 confirmed). DESIGN explicitly recorded "no upstream
+changes." Each DISCUSS decision has a consistent DESIGN realisation: D3↔ADR-060 entity shape;
+D4↔ADR-059 materialization + separate entity; D5↔both ADRs' premium verdict (writes
+Premium+SystemAdmin, GET open); D6↔`GetAll()` global; D7↔"shift untouched, only widens set".
+No `--policy=fresh`; `--policy=inherit` applied.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Density: **lean** (Tier-1 [REF] only). Tier A acceptance only — no Tier B state-machine PBT
+(this is a C#/.NET project; the Hypothesis/`RuleBasedStateMachine` pilot does not apply here per
+`docs/architecture/atdd-infrastructure-policy.md`). 26 backend integration scenarios authored
+(17 original + 9 added to close Sentinel's US-03 per-surface HIGH findings);
+**10/26 = 38% error/edge** plus **5/26 = 19% regression/parity guards**; the 8 explicit
+`@error` scenarios remain (≥40% of the non-guard, behaviour-asserting set: 8/21 = 38%, and
+10/26 counting the two new regression guards as edge). US-03 now traces a dedicated test to
+every AC: AC1/AC2 via #2/#4/#5/#6 + #18–#20 (delivery), AC3 via #21–#23 (write-back), AC4 via
+#24–#26 (chart overlays), AC5 via #7 + #23 + #26.
+
+| # | Scenario | Story | Tags |
+|---|----------|-------|------|
+| 1 | Create weekends-forever rule as premium SystemAdmin → 201 + listed with human-readable summary | US-01 | @walking_skeleton @real-io @US-01 |
+| 2 | "When" forecast with weekends-forever rule → no percentile date lands on a weekend | US-01 | @real-io @US-01 |
+| 3 | Create every-4th-Friday bounded rule → 201 + listed | US-02 | @real-io @US-02 |
+| 4 | "When" forecast with off-site Friday rule → no percentile date lands on a Friday | US-02 | @real-io @US-02 |
+| 5 | Interval-1 rule reproduces plain weekly behaviour (no regression) | US-02 | @real-io @US-02 |
+| 6 | Recurring-rule day shifts percentile date identically to an equivalent one-off period (parity) | US-03 | @real-io @US-03 |
+| 7 | No rules and no one-off periods → percentile date unshifted (regression, inherits #4974 D6) | US-03 | @real-io @regression @US-03 |
+| 8 | GET as non-premium user does NOT return 403 (open read) | US-04 | @error @auth @US-04 |
+| 9 | POST as non-premium user → 403 | US-04 | @error @auth @US-04 |
+| 10 | PUT as non-premium user → 403 | US-04 | @error @auth @US-04 |
+| 11 | DELETE as non-premium user → 403 | US-04 | @error @auth @US-04 |
+| 12 | Edit rule (Sat+Sun → Fri) → list reflects the new weekday | US-04 | @real-io @US-04 |
+| 13 | Delete rule → removed from the list | US-04 | @real-io @US-04 |
+| 14 | Delete unknown id → 404 | US-04 | @error @US-04 |
+| 15 | Create with zero weekdays → 400 "Select at least one weekday for the rule to repeat on." | US-04 | @error @US-04 |
+| 16 | Create with interval < 1 → 400 "Repeat interval must be at least 1 week." | US-04 | @error @US-04 |
+| 17 | Create with end before start → 400 "End date must be on or after the start date." | US-04 | @error @US-04 |
+| 18 | Delivery feature percentile date steps over recurring-rule days (AC1/AC2) | US-03 | @real-io @US-03 |
+| 19 | Delivery feature percentile date identical to equivalent one-off period (parity, AC2) | US-03 | @real-io @US-03 |
+| 20 | Delivery likelihood (`GetLikelhoodForDate`) computed on the working-day count excluding recurring days (AC2) | US-03 | @real-io @US-03 |
+| 21 | Forecast write-back persists the recurring-blackout-shifted date (AC3) | US-03 | @real-io @US-03 |
+| 22 | Write-back date identical to equivalent one-off period (parity, AC3) | US-03 | @real-io @US-03 |
+| 23 | Write-back with no rules and no periods → unchanged date (regression, AC5) | US-03 | @real-io @regression @US-03 |
+| 24 | Chart throughput PBC annotates the recurring-rule data point as blackout (AC4) | US-03 | @real-io @US-03 |
+| 25 | Chart `IsBlackout` annotation identical to equivalent one-off period (parity, AC4) | US-03 | @real-io @US-03 |
+| 26 | Chart with no rules and no periods → no data point annotated (regression, AC5) | US-03 | @real-io @regression @US-03 |
+
+## Wave: DISTILL / [REF] WS Strategy
+
+Inherits the **Architecture of Reference** + the project ATDD Infrastructure Policy
+(`docs/architecture/atdd-infrastructure-policy.md`, `--policy=inherit`):
+
+- **Driving (HTTP API)** = REAL `WebApplicationFactory<Program>` over real HTTP (`TestWebApplicationFactory` + `WithTestAuthentication`; `AsSystemAdmin`/`AsViewer`/`AsTeamViewer`). Routes `/api/latest/recurring-blackout-rules`.
+- **Driven internal (EF `LighthouseAppContext` + `IRepository<T>`)** = REAL EF via the test factory; `EnsureDeleted`+`EnsureCreated` per `[SetUp]`. The new `IRepository<RecurringBlackoutRule>` is covered by the **existing** EF policy row — no new policy row needed (confirmed: it is a `RepositoryBase<RecurringBlackoutRule>` over the same context, same mechanism).
+- **Driven external / non-deterministic** = FAKE: `Mock<ILicenseService>` (`CanUsePremiumFeatures()→true`), `Mock<IForecastService>` (deterministic single-key Monte Carlo mass), `Mock<ITeamMetricsService>` — all injected via `RemoveAll`+`AddScoped`, exactly as #4974's `BlackoutForecastShiftTestBase`.
+
+Walking-skeleton scenario (#1, `@walking_skeleton`): create a weekends-forever rule as a premium
+SystemAdmin and see it listed — the demo proof a stakeholder confirms ("yes, I set up weekend
+exclusion once"); scenario #2 closes the loop by showing the forecast then steps over the
+weekend (the unified-eval payoff). Per DISCUSS WS Strategy D (brownfield, extend existing), there
+is no new integration spine — recurring days ride the shipped #4974 surfaces.
+
+**No new atdd-policy rows** (expected none; confirmed).
+
+## Wave: DISTILL / [REF] Adapter coverage table
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| EF `IRepository<RecurringBlackoutRule>` (new, real) | YES | #1/#3/#12/#13 — POST/PUT/DELETE round-trip through real EF; GET reads it back; #18–#26 seed the rule via POST |
+| EF `IRepository<BlackoutPeriod>` (existing, real) | YES | #6/#19/#22/#25 — one-off period seeded + removed via the real repo for the parity comparison |
+| `IBlackoutPeriodService.GetEffectiveBlackoutDays` union seam (extended) | YES | #2/#4/#5/#6/#7 (forecast); #18–#20 (delivery read path `DeliveryWithLikelihoodDto.FromDelivery` + `Feature.GetLikelhoodForDate`); #21–#23 (`WriteBackTriggerService`); #24–#26 (`TeamMetricsController.AnnotateBlackoutDays` → `ProcessBehaviourChart.IsBlackout`) — every #4974 eval site exercised end-to-end |
+| `IWriteBackService` (fake) | n/a (fake) | `Mock<IWriteBackService>` captures the written `WriteBackFieldUpdate.Value` for the shifted date (#21–#23) |
+| `ITeamMetricsService` (fake) | n/a (fake) | `Mock<ITeamMetricsService>` returns a deterministic 3-day PBC so `IsBlackout` annotation is assertable (#24–#26) |
+| `ILicenseService` (fake) | n/a (fake) | premium toggled via `Mock<ILicenseService>` (#1–#7, #12–#26 happy/parity) / default non-premium (#8–#11) |
+| `IForecastService` (fake) | n/a (fake) | deterministic 10-working-day mass pins the date shift (#2/#4/#5/#6/#7); delivery/write-back surfaces (#18–#23) pin the forecast directly on the seeded `Feature` via `SetFeatureForecasts` (no service call), mirroring #4974 |
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+Every NEW endpoint exercised over HTTP at least once:
+
+| Endpoint | Method | Exercised by |
+|---|---|---|
+| `/api/latest/recurring-blackout-rules` | POST | #1, #3, #5, #6, #9, #15, #16, #17 |
+| `/api/latest/recurring-blackout-rules` | GET | #1, #3, #8, #12, #13 |
+| `/api/latest/recurring-blackout-rules/{id}` | PUT | #10, #12 |
+| `/api/latest/recurring-blackout-rules/{id}` | DELETE | #11, #13, #14 |
+| `/api/latest/forecast/manual/{teamId}` (existing #4974 surface) | POST | #2, #4, #5, #6, #7 |
+| `/api/latest/deliveries/portfolio/{portfolioId}` (existing #4974 surface) | POST + GET | #18, #19, #20 — feature/delivery percentile dates + likelihood (US-03 AC1/AC2) |
+| `IWriteBackTriggerService.TriggerForecastWriteBackForPortfolio` (resolved from the real DI container; the write-back surface has no HTTP endpoint — same service seam as the #4974 `BlackoutForecastShiftWriteBackTest`, but seeded via the rule POST) | service seam | #21, #22, #23 — shifted write-back date (US-03 AC3) |
+| `/api/latest/teams/{teamId}/metrics/throughput/pbc` (existing #4974 surface) | GET | #24, #25, #26 — chart `IsBlackout` overlay annotation (US-03 AC4) |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+**No production scaffolds created.** Per the C#/statically-typed RED-readiness strategy, the
+new endpoints are driven over **raw HTTP** with anonymous/inline JSON bodies — the Tests project
+references NO not-yet-existing C# types (`RecurringBlackoutRule`, its DTO, service, controller).
+The project therefore compiles today (verified: 0 warnings, 0 errors) and each new-endpoint call
+fails with route-missing = MISSING_FUNCTIONALITY = correct RED. DELIVER creates the production
+types in its RED/GREEN cycle (ADR-025). The `__SCAFFOLD__` Python-pilot convention does not apply
+to this repo (per the ATDD Infrastructure Policy header).
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/` — the established home for
+port-to-port `WebApplicationFactory` integration tests, and the exact location of the SHIPPED
+sibling #4974 suite (`BlackoutForecastShift*IntegrationTest.cs`,
+`BlackoutPeriodsControllerAuthorizationTests.cs`). New files:
+
+- `RecurringBlackoutRulesTestBase.cs` — combined deterministic-forecast + premium-license base (merges #4974's `BlackoutForecastShiftTestBase` forecast pinning with the `Mock<ILicenseService>` premium enablement).
+- `RecurringBlackoutRulesWeekendsForeverIntegrationTest.cs` (US-01) — 2 scenarios.
+- `RecurringBlackoutRulesIntervalRuleIntegrationTest.cs` (US-02) — 3 scenarios.
+- `RecurringBlackoutRulesDownstreamParityIntegrationTest.cs` (US-03) — 2 scenarios (manual "When" parity + no-rule regression).
+- `RecurringBlackoutRulesDeliveryIntegrationTest.cs` (US-03 AC1/AC2) — 3 scenarios; mirrors #4974 `BlackoutForecastShiftDeliveryIntegrationTest.cs` (feature/delivery percentile dates + `GetLikelhoodForDate` via `/deliveries/portfolio/{id}`).
+- `RecurringBlackoutRulesWriteBackIntegrationTest.cs` (US-03 AC3) — 3 scenarios; mirrors #4974 `BlackoutForecastShiftWriteBackTest.cs` (shifted write-back date; same `IWriteBackTriggerService` seam resolved from the real container, rule seeded via POST + `Mock<IWriteBackService>` capture).
+- `RecurringBlackoutRulesChartOverlayIntegrationTest.cs` (US-03 AC4) — 3 scenarios; mirrors #4974 `TeamMetricsControllerTest.GetThroughputPbc_With/NoBlackoutPeriods` over HTTP (`/teams/{id}/metrics/throughput/pbc` → `ProcessBehaviourChart.IsBlackout`).
+- `RecurringBlackoutRulesAuthorizationTests.cs` (US-04, extends `IntegrationTestBase`, mirrors `BlackoutPeriodsControllerAuthorizationTests`) — 4 scenarios.
+- `RecurringBlackoutRulesLifecycleIntegrationTest.cs` (US-04) — 6 scenarios.
+
+All tests carry `[Category("recurring-blackout-events")]` and `[Ignore("pending DELIVER — US-0N")]`;
+they were verified RED before being ignored (see `distill/red-classification.md`). DELIVER
+un-ignores one at a time for Outside-In TDD.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN driving ports: the four `recurring-blackout-rules` endpoints + the extended `IBlackoutPeriodService.GetEffectiveBlackoutDays` union seam (ADR-059) + the pure `RecurringBlackoutRuleExtensions.ExpandToBlackoutDays` anchoring (ADR-060).
+- DEVOPS: no new environment matrix — the SQLite test-host (with Postgres lockstep in CI) recorded in the ATDD policy is reused as-is.
+- The new `IRepository<RecurringBlackoutRule>` must be DI-registered (DESIGN component decomposition) before the integration tests can seed/read it — a DELIVER GREEN-phase obligation.
+
+## Wave: DISTILL / [REF] DELIVER obligations (carried, not authored here)
+
+These are intentionally NOT authored in DISTILL — they need the production types and are
+DELIVER's RED-phase job (ADR-025), or are unit/component-level work:
+
+- **Unit tests for `ExpandToBlackoutDays`** — the interval-anchoring math (US-02 worked examples: 06-12/07-10/08-07 match, 06-19 does not; out-of-window excluded; interval-1 ≡ weekly), purity (no I/O), and the synthetic single-day `BlackoutPeriod { Start==End }` shape (ADR-060 enforcement table). DELIVER authors these against the real production types.
+- **Unit parity test for the union** — recurring-day-set ≡ one-off-period-set across `IsBlackoutDay`/`GetBlackoutDayIndices`/`ProjectWorkingDays` (ADR-059 enforcement table); the integration parity test (#6) is the user-observable proxy, the unit test is the helper-level proof.
+- **ArchUnitNET seam test** — NOT authored here: it would reference the not-yet-existing `RecurringBlackoutRule`/`RecurringBlackoutRuleExtensions` namespaces and break compilation. Recorded as a DELIVER close-out obligation. Template: the #4974 `Architecture/BlackoutForecastShiftSeamArchUnitTest.cs`. Rules to encode (ADR-059/060): `Models.RecurringBlackoutRule ↛ Services.*`; the forecast/chart path depends on `GetEffectiveBlackoutDays`, not the raw `IRepository<BlackoutPeriod>.GetAll()`; expansion output is never `Add()`-ed to the repo.
+- **EF round-trip / `ValueComparer`-present test** — the weekday `List<DayOfWeek>` JSON-converter + `ValueComparer` (the StateMappings trap, ADR-060 §2). DELIVER, against the real `LighthouseAppContext`.
+- **Frontend `RecurringBlackoutRulesSettings.tsx` Vitest/RTL tests** — the component does not exist yet; per the project convention its tests live beside it and are DELIVER's Outside-In responsibility (same as the sibling one-off `BlackoutPeriodsSettings` tests). NOT scaffolded now.
+- **Mutation gate** — Stryker.NET (BE) + Stryker (FE) ≥ 80% on the new recurrence-expansion + endpoint code (DoD item 5).
+- **Outcomes registry** — `nwave-ai outcomes register` is **absent in this repo** (not the Python pilot). Skipped-unavailable, non-blocking.
+
+### [REF] Inherited commitments
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D4 | Separate entity + unified evaluation — a recurring-rule day is indistinguishable downstream from a one-off blackout day | DDD-1, DDD-2 | Scenario #6 asserts the recurring-rule forecast date equals the one-off-period forecast date over the same days — the user-observable proxy for D4 parity |
+| DISCUSS#D5 | Writes gated Premium + SystemAdmin; GET open | n/a | Scenarios #8–#11 pin the 403-on-write / open-GET guard; happy paths run as premium SystemAdmin |
+| DISCUSS#D7 | Monte Carlo + #4974 shift untouched — recurring rules only widen the blackout-day set | DDD-1 | Forecast scenarios reuse the shipped #4974 deterministic-forecast harness verbatim; the only new input is the recurring rule POSTed before the forecast |
+| DESIGN#ADR-059 | Union assembled once behind `IBlackoutPeriodService.GetEffectiveBlackoutDays(window)`; 13 same-shape call-site swaps | DDD-2 | Scenarios #2/#4/#5/#6/#7 exercise the union via the existing forecast endpoint; the ArchUnit seam test (DELIVER obligation) pins "no raw repo on the eval path" |
+| DESIGN#ADR-060 | Validation messages match journey error paths verbatim | DDD-4 | Scenarios #15/#16/#17 assert the exact strings ("Select at least one weekday…", "Repeat interval must be at least 1 week.", "End date must be on or after the start date.") |
+| #4974 D6 | No-rule regression byte-identical to pre-feature | DDD-6 | Scenario #7 asserts the unshifted `Today + 10 working days` date with no rules and no periods |
