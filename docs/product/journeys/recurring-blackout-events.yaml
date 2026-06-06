@@ -67,6 +67,10 @@ journeys:
           downstream. One-off and recurring coexist as distinct concepts in the settings UI. The
           entity-vs-materialization implementation detail is a DESIGN/ADR concern; the "separate
           entity + unified evaluation" product constraint is locked. (User, 2026-06-06.)
+          VF-2 (DELIVER, user verification 2026-06-06): the two stay distinct concepts (two Add
+          buttons, two dialogs, date-range vs recurrence-summary text) but now share ONE merged
+          settings section/grid (BlackoutSettings.tsx) rather than two stacked boxes - less real
+          estate, easier to manage. Reverses DESIGN Decision 6's "sibling component" UI shape.
       - id: D5
         question: Who may create/edit/delete recurring rules?
         decision: >
@@ -82,8 +86,9 @@ journeys:
           the same global rule set; no per-team scoping in v1 (explicit out-of-scope).
 
     surfaces:
-      - settings-recurring-rules: a recurring-rules section in the existing System settings page
-        (BlackoutPeriodsSettings.tsx neighbourhood) with create/edit/delete (US-01, US-02, US-04).
+      - settings-recurring-rules: recurring rules are managed in the unified "Blackout Periods &
+        Recurring Rules" System-settings section (BlackoutSettings.tsx, VF-2 merge) - one merged
+        grid with create/edit/delete for both one-off periods and recurring rules (US-01, US-02, US-04).
       - recurrence-expansion: rule -> concrete non-working days feeding the unified IsBlackoutDay /
         GetBlackoutDayIndices evaluation (US-03).
       - forecasting-and-charts: the shipped #4974 day<->date shift, historical-throughput stripping,

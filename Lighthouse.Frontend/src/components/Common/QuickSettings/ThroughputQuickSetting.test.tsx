@@ -458,4 +458,30 @@ describe("ThroughputQuickSetting", () => {
 			}),
 		).toBeInTheDocument();
 	});
+
+	it("renders each active qualifier as a distinct list item in the tooltip", async () => {
+		const user = userEvent.setup();
+		const startDate = new Date("2024-01-01");
+		const endDate = new Date("2024-01-30");
+		render(
+			<ThroughputQuickSetting
+				{...getMockProps({
+					startDate,
+					endDate,
+					hasBlackoutOverlap: true,
+					hasForecastFilter: true,
+				})}
+			/>,
+		);
+
+		await user.hover(screen.getByRole("button", { name: /Throughput/i }));
+
+		const qualifiers = await screen.findAllByRole("listitem");
+		const qualifierTexts = qualifiers.map((item) => item.textContent);
+
+		expect(qualifierTexts).toEqual([
+			"Blackout days within window — excluded from forecast",
+			"Forecast filter active — some throughput items excluded",
+		]);
+	});
 });

@@ -159,6 +159,6 @@ export class SystemConfigurationPage {
 	}
 
 	get blackoutPeriodsSection(): Locator {
-		return this.page.getByText("Blackout PeriodsDefine global");
+		return this.page.getByText("Blackout Periods & Recurring RulesDefine global");
 	}
 }

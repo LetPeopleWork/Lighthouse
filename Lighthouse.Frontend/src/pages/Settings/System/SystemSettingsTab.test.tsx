@@ -254,7 +254,9 @@ describe("SystemSettingsTab Component", () => {
 
 		// Wait for initial load
 		await waitFor(() => {
-			expect(screen.queryByText("Blackout Periods")).toBeInTheDocument();
+			expect(
+				screen.queryByText("Blackout Periods & Recurring Rules"),
+			).toBeInTheDocument();
 		});
 
 		// Verify the "Optional Features" group is not rendered
@@ -273,7 +275,9 @@ describe("SystemSettingsTab Component", () => {
 		renderWithMockApiProvider();
 
 		await waitFor(() => {
-			expect(screen.getByText("Blackout Periods")).toBeInTheDocument();
+			expect(
+				screen.getByText("Blackout Periods & Recurring Rules"),
+			).toBeInTheDocument();
 		});
 
 		expect(screen.queryByTestId("log-level-section")).not.toBeInTheDocument();

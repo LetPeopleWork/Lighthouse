@@ -309,7 +309,7 @@ Slice 01 first = it births the entity + endpoint + the **unified-evaluation seam
 | Eval fetch sites (×13) | `ForecastController`, `DeliveriesController`, `FeaturesController`, `DeliveryRulesController`, `TeamMetricsController`, `PortfolioMetricsController`, `TeamController`, `TeamsController`, `WriteBackTriggerService`, `TeamMetricsService`, `DeliveryMetricSnapshotRecordingHandler` | EXTEND (same-shape swap) |
 | FE rule model + Zod | `Lighthouse.Frontend/src/models/RecurringBlackoutRule.ts` | CREATE NEW |
 | FE API service | `src/services/Api/RecurringBlackoutRuleService.ts` | CREATE NEW |
-| FE settings section | `src/pages/Settings/System/RecurringBlackoutRulesSettings.tsx` | CREATE NEW (sibling of `BlackoutPeriodsSettings.tsx`) |
+| FE settings section | `src/pages/Settings/System/BlackoutSettings.tsx` (VF-2: merged one-off + recurring into one section/grid; was planned as a sibling `RecurringBlackoutRulesSettings.tsx`) | CREATE NEW |
 | EF migration | via `CreateMigration` PowerShell script | CREATE NEW (new table) |
 
 ## Wave: DESIGN / [REF] Driving Ports
@@ -341,7 +341,7 @@ Slice 01 first = it births the entity + endpoint + the **unified-evaluation seam
 | 3 | Expansion algorithm + home | Pure `RecurringBlackoutRuleExtensions.ExpandToBlackoutDays(rule, window)`; week-index-modulo anchor (Monday of start week) | ADR-060 |
 | 4 | New controller/service/repo | `RecurringBlackoutRulesController` + `IRecurringBlackoutRuleService` + `IRepository<RecurringBlackoutRule>`, mirroring the one-off stack; `GetEffectiveBlackoutDays` exposes the unified eval path | ADR-059/060 |
 | 5 | Premium gating on eval path | **None** — recurring rules act whenever configured for every viewer (inherits one-off / #4974 verdict); only writes gated | ADR-059 |
-| 6 | Frontend shape | **Sibling component** `RecurringBlackoutRulesSettings.tsx` (second section, same page) — one-off & recurring "distinct concepts in the UI" (D4) | brief delta |
+| 6 | Frontend shape | ~~Sibling component `RecurringBlackoutRulesSettings.tsx` (second section)~~ **→ REVERSED by VF-2 (DELIVER, user verification 2026-06-06): ONE unified `BlackoutSettings.tsx` section with a single merged grid** (Schedule \| Description \| Actions; one row per entry, Schedule = date-range for one-off OR recurrence-summary for recurring) and two Add buttons. One-off & recurring stay *distinct concepts* (two Add buttons, two dialogs, date-range vs summary text) but share one box — less real estate, easier to manage. See "Verification-Feedback Overrides" below. | brief delta |
 
 ## Wave: DESIGN / [REF] Reuse Analysis
 
@@ -355,7 +355,7 @@ Slice 01 first = it births the entity + endpoint + the **unified-evaluation seam
 | `IBlackoutPeriodService` + `BlackoutPeriodService` | EXTEND | Add `GetEffectiveBlackoutDays`; the union's one home |
 | `LighthouseAppContext`, `Program.cs` | EXTEND | `DbSet` + converter + DI registration |
 | 13 eval fetch sites | EXTEND | Same-shape swap to the union method |
-| `BlackoutPeriodsSettings.tsx` | REUSE (pattern) | Pattern copied into a sibling component, not edited |
+| `BlackoutPeriodsSettings.tsx` | MERGED (VF-2) | Merged with `RecurringBlackoutRulesSettings.tsx` into the unified `BlackoutSettings.tsx`; both originals deleted |
 | **New entity stack (7 BE files + 3 FE files + migration)** | **CREATE NEW** | **Evidence**: D4 locks a *separate entity*; a recurring rule (weekdays + interval + open-endedness) cannot be expressed by `BlackoutPeriod`'s date range, so storage reuse is impossible. Each new file is the recurring twin of a shipped one-off file — the *pattern* is reused even though the *type* is new (D2 satisfied). |
 
 ## Wave: DESIGN / [REF] Open Questions
@@ -367,7 +367,7 @@ Slice 01 first = it births the entity + endpoint + the **unified-evaluation seam
 
 - **Pattern**: Ports-and-adapters (hexagonal) — unchanged; no new style.
 - **Paradigm**: **OOP** (C# backend), functional-leaning React frontend.
-- **Key components**: NEW `RecurringBlackoutRule` entity + DTO + pure `ExpandToBlackoutDays` + service/repo/controller + FE sibling settings section; EXTENDED `IBlackoutPeriodService.GetEffectiveBlackoutDays` (the union seam) + 13 same-shape fetch-site swaps + `LighthouseAppContext` + `Program.cs`.
+- **Key components**: NEW `RecurringBlackoutRule` entity + DTO + pure `ExpandToBlackoutDays` + service/repo/controller + FE unified `BlackoutSettings.tsx` settings section (VF-2 merge); EXTENDED `IBlackoutPeriodService.GetEffectiveBlackoutDays` (the union seam) + 13 same-shape fetch-site swaps + `LighthouseAppContext` + `Program.cs`.
 - **Reuse**: everything the recurring days flow *into* is REUSE AS-IS (helpers, #4974 shift, Monte Carlo, overlays); the union seam and EF/DI are EXTEND; the new entity stack is CREATE NEW (D4 separate entity, evidence above).
 - **Tech stack**: existing — .NET 8 / EF Core 8 / React 18 / MUI / Zod; EF migration via `CreateMigration`. No new library/integration.
 - **Constraints honoured**: D1 (cross-cutting), D2 (extend, no skeleton), D3 (weekdays + every-X-weeks + start + optional end), D4 (separate entity, unified eval via materialization), D5 (writes Premium+SystemAdmin, GET open, no new permission), D6 (global), D7 (Monte Carlo + shift untouched).
@@ -532,3 +532,12 @@ DELIVER's RED-phase job (ADR-025), or are unit/component-level work:
 | DESIGN#ADR-059 | Union assembled once behind `IBlackoutPeriodService.GetEffectiveBlackoutDays(window)`; 13 same-shape call-site swaps | DDD-2 | Scenarios #2/#4/#5/#6/#7 exercise the union via the existing forecast endpoint; the ArchUnit seam test (DELIVER obligation) pins "no raw repo on the eval path" |
 | DESIGN#ADR-060 | Validation messages match journey error paths verbatim | DDD-4 | Scenarios #15/#16/#17 assert the exact strings ("Select at least one weekday…", "Repeat interval must be at least 1 week.", "End date must be on or after the start date.") |
 | #4974 D6 | No-rule regression byte-identical to pre-feature | DDD-6 | Scenario #7 asserts the unshifted `Today + 10 working days` date with no rules and no periods |
+
+---
+
+## Wave: DELIVER / [REF] Verification-Feedback Overrides (2026-06-06)
+
+After the 16 DELIVER steps shipped, the user manually verified the feature ("looks really great") and raised two UI revisions, folded in before the quality gates. Both are recorded here as the source of truth for the deviations from DESIGN Decision 6.
+
+- **VF-1 — throughput tooltip qualifiers as a list (polish).** On the team-view Throughput tile, when a forecast filter AND a blackout overlap are both active, the tooltip previously chained two parentheticals ("… (Blackout days within window — excluded from forecast) (Forecast filter active — some throughput items excluded)"). Now the base label renders first and the active qualifiers render as a bulleted **list** beneath it (`ThroughputQuickSetting.tsx`). The IconButton `aria-label` keeps a flat, ordered string (base → blackout → filter) so the existing accessible-name assertions still hold. Pre-existing surface (#4974 + forecast-filter), not recurring-specific.
+- **VF-2 — merged settings section (REVERSES DESIGN Decision 6 / the D4 "sibling, distinct sections" UI framing).** The System-settings page previously showed TWO boxes ("Blackout Periods" + "Recurring Blackout Rules"). The user asked for ONE box with less real estate that is easier to manage. Delivered as a single `BlackoutSettings.tsx` section titled **"Blackout Periods & Recurring Rules"** with **two Add buttons** (Add Blackout Period / Add Recurring Rule) and **one merged grid**: columns **Schedule | Description | Actions**, one row per entry, where Schedule shows the `start → end` range for a one-off period or the recurrence summary for a recurring rule. The two prior components (`BlackoutPeriodsSettings.tsx`, `RecurringBlackoutRulesSettings.tsx`) and their tests were merged into `BlackoutSettings.tsx` + `BlackoutSettings.test.tsx`; `SystemSettingsTab.tsx` renders the single section; the E2E `SystemConfigurationPage.blackoutPeriodsSection` getter was retargeted. **Rationale for the reversal**: D4's product constraint is "separate entity, *unified evaluation*, one-off & recurring are distinct concepts" — VF-2 keeps them distinct (two Add buttons, two dialogs, date-range vs recurrence-summary text) while sharing the Description + Actions columns and one box, which is the lower-real-estate management surface the user wanted. The original "two sections would entangle two form shapes" worry does not apply: the two Add/Edit *dialogs* remain separate; only the read grid and the section frame are unified. Verified live (screenshot regeneration deferred to a clean-backend `/update-docs` run pending user confirmation).

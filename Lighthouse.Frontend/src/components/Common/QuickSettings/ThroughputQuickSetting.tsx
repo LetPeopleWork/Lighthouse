@@ -79,24 +79,54 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		initialEndDate,
 	]);
 
-	const getTooltipText = (): string => {
-		const blackoutSuffix = hasBlackoutOverlap
-			? " (Blackout days within window — excluded from forecast)"
-			: "";
-		const filterSuffix = hasForecastFilter
-			? ` (Forecast filter active — some ${throughputTerm.toLowerCase()} items excluded)`
-			: "";
-
+	const getBaseLabel = (): string => {
 		if (!initialUseFixedDates && initialThroughputHistory <= 0) {
-			return `${throughputTerm}: Not set${filterSuffix}`;
+			return `${throughputTerm}: Not set`;
 		}
 
 		if (initialUseFixedDates && initialStartDate && initialEndDate) {
-			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}${blackoutSuffix}${filterSuffix}`;
+			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}`;
 		}
 
-		return `${throughputTerm}: Rolling ${initialThroughputHistory} days${blackoutSuffix}${filterSuffix}`;
+		return `${throughputTerm}: Rolling ${initialThroughputHistory} days`;
 	};
+
+	const getQualifiers = (): string[] => {
+		const isUnsetLabel = !initialUseFixedDates && initialThroughputHistory <= 0;
+		const qualifiers: string[] = [];
+
+		if (hasBlackoutOverlap && !isUnsetLabel) {
+			qualifiers.push("Blackout days within window — excluded from forecast");
+		}
+
+		if (hasForecastFilter) {
+			qualifiers.push(
+				`Forecast filter active — some ${throughputTerm.toLowerCase()} items excluded`,
+			);
+		}
+
+		return qualifiers;
+	};
+
+	const baseLabel = getBaseLabel();
+	const qualifiers = getQualifiers();
+	const ariaLabel = [baseLabel, ...qualifiers].join(" — ");
+
+	const tooltipTitle =
+		qualifiers.length === 0 ? (
+			baseLabel
+		) : (
+			<>
+				{baseLabel}
+				<Box component="ul" sx={{ m: 0, pl: 2 }}>
+					{qualifiers.map((qualifier) => (
+						<Box component="li" key={qualifier}>
+							{qualifier}
+						</Box>
+					))}
+				</Box>
+			</>
+		);
 
 	const isUnset = !initialUseFixedDates && initialThroughputHistory <= 0;
 
@@ -216,13 +246,13 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 
 	return (
 		<>
-			<Tooltip title={getTooltipText()} arrow>
+			<Tooltip title={tooltipTitle} arrow>
 				<span>
 					<IconButton
 						size="small"
 						onClick={handleOpen}
 						disabled={disabled}
-						aria-label={getTooltipText()}
+						aria-label={ariaLabel}
 						sx={{
 							color: getIconColor(),
 							"&:hover": {
