@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-05-14
+updated: 2026-06-06
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -434,4 +434,44 @@ outcomes:
       shifted calendar date / working-day count across all four surfaces, plus no-blackout regression
       guards (D6) and an ArchUnit Models ↛ Repositories guard (ADR-058 A1). No runtime telemetry;
       not dependent on Epic 5015. Tests authored RED+[Ignore] at DISTILL; un-ignored in DELIVER.
+    alerting: []
+
+  - id: OUT-recurring-blackout-unified-evaluation
+    feature: recurring-blackout-events
+    title: Recurring-rule days are honoured identically to one-off blackout days on every forecast & chart surface
+    target: >
+      A recurring-rule day produces identical IsBlackoutDay / GetBlackoutDayIndices results to an
+      equivalent one-off BlackoutPeriod (D4 unified evaluation), so 0 percentile dates land on a
+      recurring non-working day across the manual When forecast, by-date how-many/likelihood, delivery
+      dates, backtest horizon, historical-throughput stripping, write-back, and chart overlays; with no
+      rules and no periods every surface is byte-identical to pre-feature (DDD-6); the Monte Carlo is
+      unchanged (D7 — only the blackout-day SET widens).
+    measurement_scope: per_instance
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWeekendsForeverIntegrationTest.cs
+        scenario: "@US-01 a weekends-forever rule steps the When percentile dates over Saturday/Sunday"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesIntervalRuleIntegrationTest.cs
+        scenario: "@US-02 an every-4th-Friday bounded rule marks exactly the off-site Fridays and no off-week Friday"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDownstreamParityIntegrationTest.cs
+        scenario: "@US-03 a recurring-rule day shifts the percentile date identically to an equivalent one-off period"
+        tag: "@kpi"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs
+        scenario: "@US-03 the recurring-blackout-shifted date is written back; no-rule no-period case unchanged"
+        tag: "@kpi"
+        gate_type: hard
+    instrumentation_status: >
+      Repo/test-verifiable now (DISCUSS KPI 3 correctness guardrail + KPI 4 mutation quality);
+      independent of telemetry. Asserted at build time via 26 port-to-port integration scenarios plus
+      parity tests that compute the recurring-day result and the equivalent one-off result and assert
+      equality, an ArchUnit seam guard (RecurringBlackoutEventsSeamArchUnitTest), and the regression
+      tests added when the adversarial review found the backtest + throughput-stripping eval sites had
+      bypassed the union seam. Mutation (KPI 4): backend 90.22% on the new recurrence + endpoint code.
+      DISCUSS KPIs 1 & 2 (recurring-rule adoption replacing hand-entered weekend periods; drop in net-new
+      one-off weekend periods) are opt_in_telemetry_required — blocked on Epic 5015, tracked qualitatively
+      (Productboard/support) until then; instrumented in code so they activate when telemetry lands.
     alerting: []

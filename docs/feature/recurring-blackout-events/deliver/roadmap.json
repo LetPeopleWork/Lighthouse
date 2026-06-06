@@ -1,0 +1,290 @@
+{
+  "roadmap": {
+    "project_id": "recurring-blackout-events",
+    "created_at": "2026-06-06",
+    "total_steps": 16,
+    "phases": 4
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/Models",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces",
+      "Lighthouse.Backend/Lighthouse.Backend/Data",
+      "Lighthouse.Backend/Lighthouse.Backend/API",
+      "Lighthouse.Backend/Lighthouse.Backend/Migrations",
+      "Lighthouse.Frontend/src/models",
+      "Lighthouse.Frontend/src/services/Api",
+      "Lighthouse.Frontend/src/pages/Settings/System"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-06-06",
+    "method": "Scenario-coverage gate APPROVED: 26/26 DISTILL scenarios map to exactly one step; 0 orphans; walking skeleton (US-01 create+list+forecast-steps-over-weekend) in Phase 01; deps coherent (entity/expansion/EF before service/controller before union seam; slice 01<02<03<04; FE after backend); design-compliant vs component table; no validation-only steps. 0 blockers/0 high.",
+    "client_version_gate_note": "OQ-2 (cross-cutting): the recurring-blackout-rules endpoint family is NEW. Before release, DELIVER must confirm against the separate Lighthouse-Clients repo whether the CLI/MCP clients currently wrap one-off blackout-period CRUD. If yes: add a version-gated recurring-rule client method (FEATURE_REQUIRES_SERVER_NEWER_THAN pinned strictly newer than the last released Lighthouse version; dev/unparseable versions never blocked). If no: defer-and-record explicitly in the clients repo \u2014 do not silently skip. This work lives in the clients repo, NOT in this roadmap; flagged here only. Evaluation-path changes (recurring days in existing forecast/delivery/chart endpoints) change only field VALUES \u2014 no client gate, as #4974."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 US-01 weekends-forever rule + unified-eval seam (walking skeleton)",
+      "description": "Births the RecurringBlackoutRule entity, the pure interval-anchored expansion, EF persistence (weekday converter + ValueComparer), the CRUD service/repository/controller (Create + GetAll, premium+SystemAdmin on POST, GET open), and the ADR-059 union seam GetEffectiveBlackoutDays wired into the When-forecast path. Delivers the observable end-to-end: create a weekends-forever rule, GET lists it, and a When-forecast steps over the next Saturday/Sunday. Primitive-before-wiring: entity \u2192 expansion \u2192 EF \u2192 service+controller \u2192 union seam.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "RecurringBlackoutRule entity + DTO",
+          "criteria": "RecurringBlackoutRule { int Id; List<DayOfWeek> Weekdays=[]; int IntervalWeeks=1; DateOnly Start; DateOnly? End; string Description } implements IEntity (mirrors BlackoutPeriod's IEntity shape). RecurringBlackoutRuleDto { int? Id; List<DayOfWeek> Weekdays; int IntervalWeeks; DateOnly Start; DateOnly? End; string Description } with [JsonRequired] on the non-optional fields (matching BlackoutPeriodDto). Round-trips DTO<->entity mapping. Models compile with zero warnings; no repository/service dependency (Models \u219b Services).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/RecurringBlackoutRuleDtoTest.cs",
+          "scenario_name": "DTO maps to and from the entity preserving weekdays, interval, start, optional end, and description",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RecurringBlackoutRule.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RecurringBlackoutRuleDto.cs"
+          ],
+          "implementation_notes": "ADR-060 \u00a71/\u00a75 entity + DTO shape verbatim. Weekdays is mutable List<DayOfWeek> ONLY because EF change-tracking + the StateMappings converter precedent require a settable collection; the immutability convention (CLAUDE.md) yields here exactly as Team.StateMappings does \u2014 do NOT try to make it ImmutableList. DayOfWeek serializes as its int (Sun=0..Sat=6). Models acquire NO using of Services.Interfaces.Repositories (ArchUnitNET Models \u219b Services guard \u2014 extended in 03-05). CI-learnings: keep DTO a plain class mirroring BlackoutPeriodDto; watch S2325 (mark members static where they don't touch instance state), CA1859 (prefer concrete List<DayOfWeek> return type over IList where the design table says List), S6608 (indexing over LINQ First/Last where applicable). No comments \u2014 names carry intent (CLAUDE.md). TEST PARADIGM: this is a C#/.NET project \u2014 Tier-A single-example NUnit only; the Hypothesis/PBT mandate does not apply per docs/architecture/atdd-infrastructure-policy.md. EXEMPT FROM PARADIGM: statically-typed .NET stack, no Hypothesis. Compensate with the anchoring table tests in 01-02.",
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "01-02",
+          "name": "Pure ExpandToBlackoutDays with interval anchoring",
+          "criteria": "RecurringBlackoutRuleExtensions.ExpandToBlackoutDays(this RecurringBlackoutRule rule, DateOnly windowStart, DateOnly windowEnd) \u2192 IEnumerable<BlackoutPeriod> yields one single-day BlackoutPeriod { Start==End==matchedDay, Description=rule summary } per day matching: d in [rule.Start, rule.End?] AND d in [windowStart, windowEnd] AND rule.Weekdays.Contains(d.DayOfWeek) AND weeksBetween(anchorMonday, dMonday) % IntervalWeeks == 0 (weeksBetween>=0). Anchor = ISO-Monday of rule.Start's week. ADR-060 worked examples pass: Fri/every-4-weeks/start 2026-06-12 marks 06-12, 07-10, 08-07; does NOT mark off-week 06-19; excludes 06-05 (before start) and 2027-01-08 (after end 2026-12-31); interval-1 reproduces plain weekly (% 1 always true). Pure \u2014 no IRepository, DbContext, HttpClient, ILogger, DateTime.UtcNow/Today. Unit tests green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RecurringBlackoutRuleExtensionsTest.cs",
+          "scenario_name": "ExpandToBlackoutDays anchors on the ISO-Monday of the start week, matches every 4th Friday but not off-week Fridays, bounds by [Start,End] and the consumer window, and reproduces weekly at interval 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleExtensions.cs"
+          ],
+          "implementation_notes": "ADR-060 \u00a73/\u00a74. Extension method on RecurringBlackoutRule in its OWN static class (NOT on BlackoutDaysExtensions \u2014 that is the one-off-period math; keeping recurring expansion separate preserves single-responsibility and lets ArchUnitNET pin each pure independently). anchorMonday = rule.Start.AddDays(-(int)((rule.Start.DayOfWeek + 6) % 7)); dMonday likewise; weeksBetween = (dMonday - anchorMonday).Days / 7; match iff weeksBetween >= 0 && weeksBetween % rule.IntervalWeeks == 0. Each synthetic BlackoutPeriod { Start = End = d }; Description = the rule's human-readable summary (provenance only \u2014 downstream never reads it, so D4 holds regardless). Window passed in (the clock is the caller's window \u2014 purity). Iterate only over [max(rule.Start,windowStart) .. min(rule.End??windowEnd, windowEnd)] so open-ended rules are bounded by the consumer window (O(window-days), never infinite). Author the anchoring table tests against ADR-060's worked examples AND a purity static-inspection assertion (no repo/DbContext/clock symbols). CI-learnings: S3267 (use LINQ Where/Select over imperative loops where it reads cleaner \u2014 but a day-stepping loop is legitimate here; do not force a contrived LINQ), CA1859 (return IEnumerable<BlackoutPeriod> per the ADR signature; if a test needs a List, materialize at the call boundary, not in the producer), S107 (keep param count at 3 \u2014 rule via this + windowStart + windowEnd). EXEMPT FROM PARADIGM: .NET stack, NUnit table tests are the Tier-A form for anchoring math.",
+          "estimated_hours": 1.0
+        },
+        {
+          "id": "01-03",
+          "name": "EF persistence: DbSet + weekday JSON converter + ValueComparer + key",
+          "criteria": "LighthouseAppContext gains DbSet<RecurringBlackoutRule>; OnModelCreating configures the entity key (Id ValueGeneratedOnAdd, beside the BlackoutPeriod config) and the Weekdays property via a ValueConverter<List<DayOfWeek>,string> (JSON serialize/deserialize) PAIRED with a ValueComparer<List<DayOfWeek>> (mandatory \u2014 the StateMappings idiom). Start/End persist as native DateOnly/DateOnly? (no converter). A round-trip test through the real context persists a rule, reads it back with weekdays intact, AND an in-place mutation of the Weekdays list is detected by EF change-tracking (the ValueComparer-present assertion). dotnet build zero warnings.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/RecurringBlackoutRulePersistenceTest.cs",
+          "scenario_name": "RecurringBlackoutRule round-trips through the context with its weekday set, and an in-place weekday-list mutation is tracked (ValueComparer present)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs"
+          ],
+          "implementation_notes": "ADR-060 \u00a72. Copy the Team.StateMappings block (LighthouseAppContext.cs:332-354) idiom verbatim: ValueConverter (JsonSerializer.Serialize/Deserialize) + ValueComparer<List<DayOfWeek>>((a,b)=>a.SequenceEqual(b), c=>c.Aggregate(0,(h,v)=>HashCode.Combine(h,v.GetHashCode())), c=>c.ToList()). Omitting the ValueComparer is the EF-misses-mutation trap the precedent already solved \u2014 the round-trip test MUST include a mutate-then-save-then-reload assertion to pin it. Key config beside the existing BlackoutPeriod entity config. CI-learnings / project memory: the MIGRATION in 01-06 needs a clean rebuild \u2014 a stale Migrations DLL is not picked up by an incremental build; the persistence test here uses EF InMemory (per the test stack) so it will NOT catch a missing-migration provider gap \u2014 that is exactly why 01-06 generates the real migration via CreateMigration. Watch S2325, S6608. EXEMPT FROM PARADIGM: .NET/EF stack, single-example round-trip test.",
+          "estimated_hours": 0.75
+        },
+        {
+          "id": "01-04",
+          "name": "Rule service + repository + controller: Create + GetAll",
+          "criteria": "IRecurringBlackoutRuleService + RecurringBlackoutRuleService expose Create(dto) and GetAll() returning RecurringBlackoutRuleDto with a human-readable summary (containing the weekday names, e.g. 'Saturday'/'Sunday'). RecurringBlackoutRuleRepository : RepositoryBase<RecurringBlackoutRule> (GetAll global, D6). RecurringBlackoutRulesController exposes POST (creates, returns 201 + body incl. id) and GET (lists, open) at api/{v1|latest}/recurring-blackout-rules; POST carries [LicenseGuard(RequirePremium=true)] + [RbacGuard(RbacGuardRequirement.SystemAdmin)], GET open. DI registers IRepository<RecurringBlackoutRule> in Program.cs. Scenario #1 un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWeekendsForeverIntegrationTest.cs",
+          "scenario_name": "CreateWeekendsForeverRule_AsPremiumSystemAdmin_RuleIsAcceptedAndListedWithHumanReadableSummary",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRecurringBlackoutRuleService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/RecurringBlackoutRuleRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "implementation_notes": "Mirror the shipped one-off stack: BlackoutPeriodService / IBlackoutPeriodService / BlackoutPeriodRepository / BlackoutPeriodsController / Program.cs registration. ADR-059/060 Decision 4. Outside-In: un-ignore RecurringBlackoutRulesWeekendsForeverIntegrationTest.CreateWeekendsForeverRule_... FIRST (RED \u2014 route missing), then build to GREEN. The summary string the test asserts must contain 'Saturday'/'Sat' AND 'Sunday'/'Sun' \u2014 derive it from Weekdays (e.g. 'Every Sat, Sun \u2014 weekly \u2014 from {Start} \u2014 no end'). RepositoryBase<RecurringBlackoutRule> over the same context (the existing EF policy row covers it \u2014 no new policy). Controller route family api/v1 + api/latest mirroring BlackoutPeriodsController exactly; POST returns CreatedAtAction/201 with the persisted dto (id populated). DO NOT add validation here \u2014 that is 04-03 (US-04); 01-04 only needs Create + GetAll happy path. CI-learnings: [RbacGuard]/[LicenseGuard] attribute order copied from BlackoutPeriodsController; nullable [FromQuery]/[FromRoute] only where inspect-on-missing is needed (here id is route-required so non-nullable is correct). S2325, CA1859 (concrete List<RecurringBlackoutRuleDto> return where the controller/service signature is concrete), CA1861 (avoid constant array args in attributes). EXEMPT FROM PARADIGM: integration test verifies wiring, single-example by mandate.",
+          "estimated_hours": 1.0
+        },
+        {
+          "id": "01-05",
+          "name": "Union seam GetEffectiveBlackoutDays wired into the When-forecast path",
+          "criteria": "IBlackoutPeriodService.GetEffectiveBlackoutDays(DateTime windowStart, DateTime windowEnd) \u2192 IReadOnlyList<BlackoutPeriod> added; BlackoutPeriodService injects IRepository<RecurringBlackoutRule>, fetches both repos once, expands each rule over [windowStart,windowEnd] (ExpandToBlackoutDays), returns one-off \u222a recurring in the unchanged IReadOnlyList<BlackoutPeriod> shape. No-rule case returns exactly the one-off periods (golden: GetEffectiveBlackoutDays \u2261 GetAll()); synthetic periods are never Add()-ed/Save()-d (Id==0, read-only). ForecastController's manual When path swaps its raw blackoutPeriodRepository.GetAll().ToList() for blackoutPeriodService.GetEffectiveBlackoutDays(today, horizon). Scenario #2 un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWeekendsForeverIntegrationTest.cs",
+          "scenario_name": "WhenForecast_WithWeekendsForeverRule_NoPercentileDateLandsOnAWeekend",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IBlackoutPeriodService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BlackoutPeriodService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs"
+          ],
+          "implementation_notes": "ADR-059 Decision (Option C). This is the single union assembly point \u2014 the whole feature's pivotal seam, settled here in Slice 01 BEFORE the 13-site fan-out in Phase 03. BlackoutPeriodService gains a ctor dependency on IRepository<RecurringBlackoutRule> (it is a DI service, not a model \u2014 respects the ports-and-adapters arrow; it already depends on IRepository<BlackoutPeriod>). GetEffectiveBlackoutDays: fetch blackoutPeriodRepository.GetAll() AND recurringBlackoutRuleRepository.GetAll() once; for each rule .ExpandToBlackoutDays(DateOnly.FromDateTime(windowStart), DateOnly.FromDateTime(windowEnd)); return periods.Concat(expanded).ToList(). NEVER Add/Save the synthetic periods (assert Id==0 read-only in a service unit test alongside the no-rule golden GetEffectiveBlackoutDays \u2261 GetAll()). ForecastController: the When path was made blackout-aware by #4974 (ADR-058) \u2014 it already fetches periods once and threads IReadOnlyList<BlackoutPeriod> via ProjectWorkingDays into WhenForecastDto; here ONLY swap the SOURCE of that list from blackoutPeriodRepository.GetAll().ToList() to blackoutPeriodService.GetEffectiveBlackoutDays(DateTime.UtcNow.Date, horizon). DO NOT touch ProjectWorkingDays, WhenForecastDto, or forecastService.When (D7 \u2014 Monte Carlo + shift untouched; only the day SET widens). The forecast window upper bound: the horizon already used by the #4974 When path (today + forecast days); reuse it. Outside-In: un-ignore WhenForecast_WithWeekendsForeverRule_... (RED \u2014 recurring days not yet in the set), then GREEN via the seam. Add the service-level no-rule golden + never-persist unit tests in this step. CI-learnings: S2325, CA1859, S3267, async-all-the-way (GetEffectiveBlackoutDays is sync over in-memory GetAll() \u2014 keep it sync, do not introduce a needless Task). EXEMPT FROM PARADIGM: .NET; integration + service unit single-example.",
+          "estimated_hours": 1.0
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 US-02 interval cadence + bounded end end-to-end",
+      "description": "The expansion primitive (01-02) already implements interval anchoring and bounded [Start,End]; this slice verifies the every-X-weeks + bounded-end rule end-to-end through the create endpoint and the When-forecast path, and pins interval-1 == weekly (no regression). One step un-ignores all three US-02 scenarios; no new production logic expected beyond confirming the seam carries the interval rule \u2014 any gap surfaced here is a fix to ExpandToBlackoutDays or the controller, not new structure.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "01"
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Verify every-4th-Friday bounded rule + interval-1 weekly end-to-end",
+          "criteria": "An every-4-weeks Friday rule (start 2026-06-12, end 2026-12-31) created via POST is listed (contains 'Friday'/'Fri'); a When-forecast with an every-Friday rule yields no P85 date on a Friday; an interval-1 weekends rule reproduces the US-01 weekly behaviour (no P85 date on a Sat/Sun). All three RecurringBlackoutRulesIntervalRuleIntegrationTest scenarios un-ignored and green. If a gap exists (wrong Fridays / out-of-window days / interval-1 divergence), fix ExpandToBlackoutDays (01-02) and/or the controller path; otherwise this is a pure un-ignore confirming the 01 seam carries the interval rule.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesIntervalRuleIntegrationTest.cs",
+          "scenario_name": "CreateEveryFourthFridayRule_AsPremiumSystemAdmin_RuleIsAcceptedAndListed; WhenForecast_WithEveryFourthFridayRule_NoPercentileDateLandsOnAFriday; WhenForecast_IntervalOneWeekRuleReproducesPlainWeeklyBehaviour_NoPercentileDateLandsOnAWeekend",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesIntervalRuleIntegrationTest.cs"
+          ],
+          "implementation_notes": "ADR-060 \u00a73/\u00a74: interval anchoring was already implemented and unit-pinned in 01-02 (the worked examples ARE the US-02 AC); interval-1 \u2261 weekly is the % 1 property, not a special case (US-02 AC4, no regression). Un-ignore all three RecurringBlackoutRulesIntervalRuleIntegrationTest tests one at a time (Outside-In RED\u2192GREEN per test). Expected GREEN on the first run if 01-02's anchoring matches ADR-060 exactly \u2014 this step is primarily acceptance confirmation, but listed as a code-touching step (it edits the test file to un-ignore, and may patch ExpandToBlackoutDays if an end-to-end gap surfaces that the unit table tests missed, e.g. DateOnly/DateTime window-boundary conversion). The files_to_modify lists ExpandToBlackoutDays as the ONLY production file that could need a touch \u2014 no new structure. If zero production change is needed, that is the healthy outcome (the 01 seam was correct); the step still ships (the un-ignore). CI-learnings: do not weaken the anchoring to chase a forecast off-by-one \u2014 investigate the window-boundary DateOnly conversion in GetEffectiveBlackoutDays first (01-05). S3267, CA1859. EXEMPT FROM PARADIGM: .NET; integration single-example.",
+          "estimated_hours": 0.5
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 US-03 fan the union across every #4974 eval surface",
+      "description": "Same-shape swap of the remaining ~12 raw blackoutPeriodRepository.GetAll() eval fetch sites to blackoutPeriodService.GetEffectiveBlackoutDays(window), so feature/delivery percentile dates, by-date likelihood, forecast write-back, and chart overlays all honour recurring-rule days identically to one-off blackout days. Plus the ArchUnitNET seam test pinning 'forecast/chart path uses GetEffectiveBlackoutDays, not raw GetAll()' and 'Models.RecurringBlackoutRule \u219b Services'. Depends on the union seam settled in Phase 01.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "02"
+      ],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Manual When parity + no-rule regression across the union",
+          "criteria": "A recurring-rule day shifts the manual When percentile date identically to an equivalent one-off period (parity, D4); with no rules and no one-off periods the percentile date is unshifted (Today + 10 working days, regression inherits #4974 D6). Both RecurringBlackoutRulesDownstreamParityIntegrationTest scenarios un-ignored and green. Confirms the 01-05 seam swap holds the parity invariant at the manual-When surface.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDownstreamParityIntegrationTest.cs",
+          "scenario_name": "WhenForecast_RecurringRuleDay_ProducesSamePercentileDateAsAnEquivalentOneOffPeriod; WhenForecast_NoRecurringRulesAndNoOneOffPeriods_PercentileDateIsUnshifted",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDownstreamParityIntegrationTest.cs"
+          ],
+          "implementation_notes": "ADR-059 D4 parity + #4974 D6 regression. The manual When path was already swapped to GetEffectiveBlackoutDays in 01-05, so these two scenarios should pass on un-ignore \u2014 this step is the explicit parity + regression proof at the manual surface (the user-observable proxy for the helper-level union equality). Un-ignore one at a time. Test-only file edit expected (no production change if 01-05 is correct); if parity fails, the bug is in GetEffectiveBlackoutDays window bounding (01-05) or ExpandToBlackoutDays (01-02), NOT in a new code path here. This step is listed before the multi-surface swaps (03-02..03-04) because it is the cheapest confirmation that the seam itself is sound before fanning it out. CI-learnings: none new \u2014 pure un-ignore. EXEMPT FROM PARADIGM: .NET; integration single-example. NOTE: this is a test-only step by design (the production swap already shipped in 01-05) \u2014 it ships the un-ignore + locks the parity/regression guard; not a validation-only step in the forbidden sense (it un-gates a real behaviour assertion that gates the slice).",
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "03-02",
+          "name": "Swap delivery read path: feature/delivery percentile dates + likelihood",
+          "criteria": "DeliveriesController.GetByPortfolio fetches blackoutPeriodService.GetEffectiveBlackoutDays(today, deliveryDate) once and threads the IReadOnlyList<BlackoutPeriod> into DeliveryWithLikelihoodDto.FromDelivery \u2192 Delivery.CalculateMetrics / Feature.GetLikelhoodForDate (already #4974-parameterized \u2014 same-shape swap of the SOURCE list). DeliveryMetricSnapshotRecordingHandler swaps its raw GetAll() to the same union method so recorded snapshots match the blackout-aware live read. Feature/delivery percentile dates step over recurring spans (Today+12 for a 2-day span), match an equivalent one-off period, and likelihood is computed on the working-day count. No model acquires IRepository (ArchUnit stays green). All three RecurringBlackoutRulesDeliveryIntegrationTest scenarios un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDeliveryIntegrationTest.cs",
+          "scenario_name": "GetDelivery_FeatureWithRecurringRuleDays_FeaturePercentileDateStepsOverTheRecurringSpan; GetDelivery_RecurringRuleDays_FeaturePercentileDateIdenticalToEquivalentOneOffPeriod; GetDelivery_FeatureWithRecurringRuleDays_LikelihoodComputedOnTheWorkingDayCount",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DeliveryWithLikelihoodDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs"
+          ],
+          "implementation_notes": "ADR-059 same-shape swap. The #4974 work (ADR-058) ALREADY parameterized Feature.GetLikelhoodForDate / Delivery.CalculateMetrics / DeliveryWithLikelihoodDto.FromDelivery to TAKE IReadOnlyList<BlackoutPeriod> \u2014 this step does NOT change those signatures (Models \u219b Repositories stays intact, no new model edit). It ONLY changes the assembly-layer SOURCE: where DeliveriesController.GetByPortfolio + FromDelivery currently fetch blackoutPeriodRepository.GetAll().ToList(), inject/route blackoutPeriodService.GetEffectiveBlackoutDays(DateTime.UtcNow.Date, deliveryDate). DeliveriesController gains/keeps the IBlackoutPeriodService dependency (it likely already has IRepository<BlackoutPeriod> from #4974 \u2014 replace that usage on the eval path). DeliveryMetricSnapshotRecordingHandler.HandleAsync: same swap so snapshot/live consistency holds (update its test ctor/mock to provide IBlackoutPeriodService). The window upper bound is the delivery date / percentile horizon each consumer already owns (ADR-059 fetch table). Outside-In: un-ignore one scenario at a time. SIZING NOTE (flagged for reviewer): 3 scenarios + 5 production files touched in one step breaches the \u22642.5 files/step heuristic; kept whole because the delivery read path is a single coherent same-shape swap that cannot be half-un-ignored without leaving a test red on a partially-threaded path \u2014 splitting would create a validation-only sub-step. CI-learnings: do NOT add a using of ...Repositories to any Models file (Feature/Delivery) \u2014 the ArchUnit guard (03-05) and the existing BlackoutForecastShiftSeamArchUnitTest both fail on it. S2325, CA1859, S3267, S6608. Mind the System.Text.Json case-insensitivity note when the test deserializes DeliveryWithLikelihoodDto (the test already sets PropertyNameCaseInsensitive=true). EXEMPT FROM PARADIGM: .NET; integration single-example.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "03-03",
+          "name": "Swap forecast write-back to the union",
+          "criteria": "WriteBackTriggerService fetches blackoutPeriodService.GetEffectiveBlackoutDays(today, today.AddDays(daysToCompletion)) once per trigger and projects the forecast write-back date over it (already #4974-shifted via ProjectWorkingDays \u2014 same-shape source swap). The written value for a feature spanning a 2-day recurring span equals Today+12; equals the value for an equivalent one-off period (parity); with no rules and no periods writes the unchanged Today+10. All three RecurringBlackoutRulesWriteBackIntegrationTest scenarios un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs",
+          "scenario_name": "TriggerForecastWriteBack_FeatureWithRecurringRuleDays_WritesTheShiftedDate; TriggerForecastWriteBack_RecurringRuleDays_WritesSameDateAsEquivalentOneOffPeriod; TriggerForecastWriteBack_NoRecurringRulesAndNoOneOffPeriods_WritesTheUnchangedDate",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs"
+          ],
+          "implementation_notes": "ADR-059 same-shape swap. WriteBackTriggerService was made blackout-aware by #4974 (ADR-058 Slice 04) \u2014 it already fetches periods once per TriggerForecastWriteBackForPortfolio/TriggerWriteBackForTeam and shifts the date via ProjectWorkingDays. Here ONLY swap the SOURCE from the raw repo GetAll() to blackoutPeriodService.GetEffectiveBlackoutDays(DateTime.UtcNow.Date, DateTime.UtcNow.Date.AddDays(daysToCompletion)). Inject IBlackoutPeriodService if not already present (it likely holds IRepository<BlackoutPeriod> from #4974 \u2014 replace that usage). Keep the daysToCompletion<0 guard. DO NOT touch ProjectWorkingDays or GetProbability (D7). The test resolves IWriteBackTriggerService from the real DI container and captures the written WriteBackFieldUpdate.Value via Mock<IWriteBackService>; it seeds the rule via the real POST endpoint. Outside-In: un-ignore one at a time. CI-learnings: async-all-the-way (TriggerForecastWriteBackForPortfolio is async \u2014 thread CancellationToken if the existing signature has one; never .Result/.Wait). S2325, CA1859. EXEMPT FROM PARADIGM: .NET; integration single-example.",
+          "estimated_hours": 0.75
+        },
+        {
+          "id": "03-04",
+          "name": "Swap chart-overlay throughput PBC to the union",
+          "criteria": "The throughput-PBC chart path (TeamMetricsController + TeamMetricsService / the AnnotateBlackoutDays \u2192 ProcessBehaviourChart.IsBlackout reads) fetches blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate) over the chart's date range instead of the raw repo. A recurring-rule day annotates the matching PBC data point IsBlackout=true (others false); identical to an equivalent one-off period; with no rules and no periods no data point is annotated. All three RecurringBlackoutRulesChartOverlayIntegrationTest scenarios un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesChartOverlayIntegrationTest.cs",
+          "scenario_name": "GetThroughputPbc_WithRecurringRuleDay_AnnotatesTheMatchingDataPointAsBlackout; GetThroughputPbc_RecurringRuleDay_AnnotatesIdenticallyToEquivalentOneOffPeriod; GetThroughputPbc_NoRecurringRulesAndNoOneOffPeriods_NoDataPointMarkedAsBlackout",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs"
+          ],
+          "implementation_notes": "ADR-059 same-shape swap on the chart-annotation eval site(s). The chart's AnnotateBlackoutDays consumes IEnumerable<BlackoutPeriod> over the chart window (startDate..endDate) \u2014 swap the SOURCE to blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate). The test mocks ITeamMetricsService.GetThroughputProcessBehaviourChart to return a deterministic 3-day chart, so the blackout ANNOTATION (IsBlackout) is what's under test \u2014 confirm whether the annotation happens in TeamMetricsController (post-chart) or inside TeamMetricsService and swap the correct site (read the #4974 wiring: TeamMetricsService.GetBlackoutAwareThroughputForTeam fetch-once is the precedent; the chart-annotation site may be a separate GetAll() in the controller or service). Window = the chart's startDate/endDate query params (the test uses 2026-06-01..2026-06-07). If both the controller and service have an eval GetAll() on the chart path, swap both (still \u22642 files). DO NOT touch ProcessBehaviourChart or the chart math (D7). Outside-In: un-ignore one at a time. CI-learnings: S2325, CA1859, S6608; the test deserializes ProcessBehaviourChart with PropertyNameCaseInsensitive=true + JsonStringEnumConverter \u2014 server enum serialization must match. EXEMPT FROM PARADIGM: .NET; integration single-example.",
+          "estimated_hours": 0.75
+        },
+        {
+          "id": "03-05",
+          "name": "ArchUnitNET seam test + remaining eval-site swaps",
+          "criteria": "RecurringBlackoutEventsSeamArchUnitTest (mirrors BlackoutForecastShiftSeamArchUnitTest) pins: (a) Models.RecurringBlackoutRule \u219b Services.Interfaces.Repositories / Services.Interfaces (extends the existing Models \u219b Services suite); (b) the forecast/chart eval path depends on IBlackoutPeriodService.GetEffectiveBlackoutDays, not on IRepository<BlackoutPeriod>.GetAll() for the eval path. Any remaining raw blackoutPeriodRepository.GetAll() eval fetch sites among the design's ~13 (FeaturesController, DeliveryRulesController, PortfolioMetricsController, TeamController, TeamsController) are swapped to GetEffectiveBlackoutDays(window) so the ArchUnit rule passes. dotnet build + dotnet test green; the existing BlackoutForecastShiftSeamArchUnitTest stays green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs",
+          "scenario_name": "Models.RecurringBlackoutRule does not depend on repositories or services; the forecast and chart eval path depends on GetEffectiveBlackoutDays not the raw repository",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RecurringBlackoutEventsSeamArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs"
+          ],
+          "implementation_notes": "ADR-059 Architectural Enforcement + ADR-060 Models \u219b Services. Template: Lighthouse.Backend.Tests/Architecture/BlackoutForecastShiftSeamArchUnitTest.cs (TngTech.ArchUnitNET 0.13.3 \u2014 see project memory for its gotchas: load the production assembly via typeof(BlackoutDaysExtensions).Assembly; use ResideInNamespace / HaveFullName / NotDependOnAny). Add a RecurringBlackoutRule Models-\u219b-Repositories rule (HaveFullName 'Lighthouse.Backend.Models.RecurringBlackoutRule'). For the eval-path rule, encode it the way the sibling does (namespace/type dependency) \u2014 ArchUnitNET cannot assert method-call-target presence, so pin it structurally: the forecast/chart controllers+services depend on IBlackoutPeriodService; combine with a grep/NUnit assertion that the eval path no longer references IRepository<BlackoutPeriod>.GetAll() if a method-presence check is infeasible (note: import-linter-style import-graph-only tools were rejected for method-presence per the methodology \u2014 ArchUnitNET is the mechanism here). This step ALSO sweeps the remaining design-table eval fetch sites (FeaturesController, DeliveryRulesController, PortfolioMetricsController, TeamController, TeamsController) to GetEffectiveBlackoutDays(window) so the new ArchUnit rule is satisfiable \u2014 each is the same same-shape swap as 03-02/03/04, window = the percentile horizon each already owns (ADR-059 fetch table). These five have NO dedicated acceptance scenario (the 26 cover forecast/delivery/write-back/chart); they are covered by the existing #4974 regression suite + the new ArchUnit rule. Grep first per CLAUDE.md to find every blackoutPeriodRepository.GetAll() on the eval path before swapping. CI-learnings: S2325, CA1859; ArchUnitNET test classes are [TestFixture] with a static ArchitectureModel field. EXEMPT FROM PARADIGM: architecture test, structural assertion.",
+          "estimated_hours": 1.0
+        },
+        {
+          "id": "03-06",
+          "name": "Union recurring days into the by-date likelihood/how-many forecast path",
+          "criteria": "ForecastController by-date likelihood and how-many (CountWorkingDays date->working-days, ~line 83) sources its blackout days from blackoutPeriodService.GetEffectiveBlackoutDays so a recurring rule shifts the by-date result identically to a one-off period; the #4974 backtest path (~line 191) stays on the raw repo (locked, backward-looking); no-rule path byte-identical.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesByDateForecastIntegrationTest.cs",
+          "scenario_name": "By-date likelihood and how-many honour a recurring rule day identically to an equivalent one-off period; no-rule unchanged",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesByDateForecastIntegrationTest.cs"
+          ],
+          "implementation_notes": "Post-review consistency add (user-approved 2026-06-06). ONLY swap the forward by-date source (the CountWorkingDays(periods, today, target) site for likelihood-by-date + how-many-by-date) from raw blackoutPeriodRepository.GetAll() to blackoutPeriodService.GetEffectiveBlackoutDays(today, target). DO NOT touch the backtest horizon (~:191, #4974-locked) or ProjectWorkingDays/Monte Carlo (D7). Author a new integration test proving a recurring weekend rule changes the by-date likelihood/how-many vs no-rule, and equals an equivalent one-off period (parity). Mirror the #4974 by-date test style.",
+          "deps": "01-05"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 US-04 edit/delete/validation + frontend settings section",
+      "description": "Completes the management surface: PUT/DELETE on the controller+service, the three validations (\u22651 weekday, interval\u22651, end\u2265start with the exact journey messages), the auth guard on writes (GET open), and the frontend RecurringBlackoutRulesSettings sibling section (model + Zod + API client + component with Vitest/RTL). Depends on the entity + create endpoint existing.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "03"
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Auth guards on writes + Update/Delete endpoints",
+          "criteria": "RecurringBlackoutRulesController gains PUT /{id} and DELETE /{id}; service gains Update(id,dto) and Delete(id). Writes (POST/PUT/DELETE) carry [LicenseGuard(RequirePremium=true)] + [RbacGuard(RbacGuardRequirement.SystemAdmin)]; GET is open. GET as a non-premium user does NOT return 403; POST/PUT/DELETE as a non-premium user return 403. All four RecurringBlackoutRulesAuthorizationTests scenarios un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesAuthorizationTests.cs",
+          "scenario_name": "GetAll_AsNonPremiumUser_DoesNotReturn403; Create_AsNonPremiumUser_Returns403; Update_AsNonPremiumUser_Returns403; Delete_AsNonPremiumUser_Returns403",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IRecurringBlackoutRuleService.cs"
+          ],
+          "implementation_notes": "ADR-059/060 D5 \u2014 mirror BlackoutPeriodsController guard placement EXACTLY (the auth test is the proof). PUT returns 200 + updated dto; DELETE returns 204 NoContent on success. Update on unknown id \u2192 KeyNotFoundException \u2192 404 (controller maps it; the lifecycle test in 04-02 covers the 404); the auth tests here PUT/DELETE id=1 as a NON-premium user and expect 403 \u2014 the LicenseGuard/RbacGuard must fire BEFORE the handler reaches the repo (so 403 precedes any 404). RecurringBlackoutRulesAuthorizationTests extends IntegrationTestBase (default non-premium, no premium mock) \u2014 so the guard attributes alone produce the 403s. Outside-In: un-ignore one at a time. CI-learnings: attribute order copied from BlackoutPeriodsController; [RbacGuard(RbacGuardRequirement.SystemAdmin)]; route api/v1 + api/latest. S2325, CA1859. EXEMPT FROM PARADIGM: .NET; integration single-example.",
+          "estimated_hours": 0.75
+        },
+        {
+          "id": "04-02",
+          "name": "Edit/delete lifecycle behaviour",
+          "criteria": "Editing a rule (Sat+Sun \u2192 Fri only) via PUT /{id} updates it; the list reflects the new weekday (contains 'Friday'/'Fri', not 'Saturday'). Deleting via DELETE /{id} removes it from the list (empty array). Deleting an unknown id returns 404. Three RecurringBlackoutRulesLifecycleIntegrationTest scenarios (Edit, Delete, DeleteUnknown) un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesLifecycleIntegrationTest.cs",
+          "scenario_name": "EditRule_ChangeWeekendsToFridayOnly_ListReflectsTheNewWeekday; DeleteRule_RemovesItFromTheList; DeleteRule_UnknownId_Returns404",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesLifecycleIntegrationTest.cs"
+          ],
+          "implementation_notes": "ADR-060 \u00a75 + the one-off BlackoutPeriodService Update/Delete + KeyNotFoundException\u2192404 mapping pattern. Update(id,dto): load by id (throw KeyNotFoundException if absent), overwrite Weekdays/IntervalWeeks/Start/End/Description, Save; the edited summary must drop 'Saturday' and contain 'Friday'. Delete(id): load-or-throw, Remove, Save. The endpoints exist from 04-01; this step completes their service behaviour + un-ignores the lifecycle tests. Mutation/immutability: per ADR-060 Weekdays is the EF-required mutable list \u2014 on Update assign a NEW list (rule.Weekdays = dto.Weekdays.Distinct().ToList()) so the ValueComparer sees the change; do not push/clear in place. Outside-In: un-ignore one at a time. CI-learnings: S2325, CA1859, S6608; KeyNotFoundException mapping is in the controller (copied from BlackoutPeriodsController) \u2014 confirm it returns 404 not 500. EXEMPT FROM PARADIGM: .NET; integration single-example.",
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "04-03",
+          "name": "Validation with exact journey messages",
+          "criteria": "RecurringBlackoutRuleService.Validate(dto) throws ArgumentException (\u2192 400 in the controller) for: empty Weekdays \u2192 'Select at least one weekday for the rule to repeat on.'; IntervalWeeks < 1 \u2192 'Repeat interval must be at least 1 week.'; End != null && End < Start \u2192 'End date must be on or after the start date.'. POST with each invalid body returns 400 with the exact message. Three RecurringBlackoutRulesLifecycleIntegrationTest validation scenarios un-ignored and green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesLifecycleIntegrationTest.cs",
+          "scenario_name": "CreateRule_WithNoWeekdays_RejectedWithWeekdayRequiredMessage; CreateRule_WithIntervalBelowOne_RejectedWithIntervalMessage; CreateRule_WithEndBeforeStart_RejectedWithDateRangeMessage",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RecurringBlackoutRuleService.cs"
+          ],
+          "implementation_notes": "ADR-060 \u00a75 \u2014 the three messages are VERBATIM from the journey error paths; the tests assert exact strings via Does.Contain, so a typo fails the gate. Validate runs in Create AND Update (an edit to a meaningless state is rejected too). Mirror the one-off BlackoutPeriodService.ValidateDateRange (throws ArgumentException, controller maps \u2192 400). Order the checks weekday \u2192 interval \u2192 date-range so the most fundamental rule fires first; the tests each isolate one violation so order is not asserted, but be consistent. CI-learnings: do NOT throw for control flow elsewhere (CLAUDE.md), but validation-via-ArgumentException-mapped-to-400 is the established one-off pattern here \u2014 match it, do not introduce a Result<T> divergence. S107 (Validate takes the dto only), S2325. EXEMPT FROM PARADIGM: .NET; integration single-example asserting exact error strings.",
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "04-04",
+          "name": "Frontend RecurringBlackoutRulesSettings sibling section",
+          "criteria": "models/RecurringBlackoutRule.ts (+ Zod schema at the trust boundary, type via z.infer) and services/Api/RecurringBlackoutRuleService.ts (GET/POST/PUT/DELETE against /api/.../recurring-blackout-rules) are created. RecurringBlackoutRulesSettings.tsx renders a second section in the System settings page mirroring BlackoutPeriodsSettings.tsx: weekday checkboxes + interval input + start/optional-end date pickers + a summary row per rule, with premium-gated (isPremium + LicenseTooltip + useRbac()) Add/Edit/Delete dialogs. Vitest/RTL tests assert business behaviour (a rule renders its summary; Add/Edit/Delete are gated for non-premium; validation surfaces the messages). pnpm test green; pnpm build + Biome clean (zero warnings).",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/System/RecurringBlackoutRulesSettings.test.tsx",
+          "scenario_name": "Recurring rules settings section lists a rule's summary, gates Add/Edit/Delete behind premium, and surfaces validation messages",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/RecurringBlackoutRule.ts",
+            "Lighthouse.Frontend/src/services/Api/RecurringBlackoutRuleService.ts",
+            "Lighthouse.Frontend/src/pages/Settings/System/RecurringBlackoutRulesSettings.tsx"
+          ],
+          "implementation_notes": "Brief delta Decision 6 (sibling component, NOT a merge with BlackoutPeriodsSettings \u2014 one-off and recurring are distinct concepts in the UI, D4). Mirror BlackoutPeriodsSettings.tsx / BlackoutPeriod.ts / BlackoutPeriodService.ts structure. Zod at the trust boundary (API response + form input), type via z.infer; never `any` \u2014 narrow unknown with a guard (CLAUDE.md). Weekday set as DayOfWeek (string enum or 0-6 ints matching the backend JSON). UI gating via the established premium pattern (isPremium prop, LicenseTooltip, useRbac()) \u2014 do NOT fetch /authorization/my-summary directly (CLAUDE.md architecture rule). Vitest/RTL: assert business behaviour only \u2014 skip 'renders without crashing'; use getMockRecurringBlackoutRule(overrides?) factory validated against the Zod schema (no shared mutable beforeEach state); mock only abstractions you own (the RecurringBlackoutRuleService), never fetch directly. The RecurringBlackoutRulesSettings.tsx must be mounted into the System settings page beside BlackoutPeriodsSettings (read how BlackoutPeriodsSettings is wired into the parent System settings page and add the sibling the same way \u2014 that parent file is an EXTEND if the wiring lives there; if so add it to files_to_modify during execution). CI-learnings (frontend): Biome zero-warnings (prebuild hook); kebab-case filenames; PascalCase components; UPPER_SNAKE_CASE module constants; immutability (spread/.map/.filter, no push/splice/sort in place); functional-leaning hooks; beware React #185 unstable useEffect dep (useMemo-stabilize any new Date() default). EXEMPT FROM PARADIGM: TS/React stack; Vitest/RTL component tests verify UI behaviour, single-example by mandate.",
+          "estimated_hours": 1.5
+        }
+      ]
+    }
+  ]
+}
