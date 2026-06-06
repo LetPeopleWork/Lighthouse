@@ -862,3 +862,98 @@ The diagram makes five architectural commitments visible:
 4. **One endpoint, schema-first FE boundary** — all series in one response, parsed by one Zod schema; forward fields null until accrued render as the D6 honest forward-only state, never zero (ADR-050).
 5. **Snapshot delete lifecycle = FK cascade** — `DeliveryMetricSnapshot.DeliveryId` → `Delivery` is `ON DELETE CASCADE`; deleting a delivery removes its rows at the DB, no orphans, no `DeliveryDeleted` event (ADR-048).
 
+---
+
+# C4 Architecture Diagrams — recurring-blackout-events
+
+Feature: recurring-blackout-events (Epic 4577)
+Wave: DESIGN
+Date: 2026-06-06
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+ADRs: ADR-059 (unified evaluation via materialization), ADR-060 (entity + weekday storage + expansion). Cross-refs ADR-058.
+
+Sibling of the SHIPPED #4974. A new `RecurringBlackoutRule` entity's days **materialize into synthetic single-day `BlackoutPeriod` instances** and join the global blackout-day set behind one unifying service seam (`IBlackoutPeriodService.GetEffectiveBlackoutDays(window)`), so the #4974 day↔date shift, the historical-throughput stripping, and the chart overlays consume them with no per-surface change (D4 / D7).
+
+## C4 Level 1 — System Context (delta)
+
+```mermaid
+C4Context
+    title System Context — recurring-blackout-events (delta)
+
+    Person(admin, "Config Admin", "SystemAdmin; authors recurring blackout rules (Premium-gated writes)")
+    Person(forecaster, "Delivery Forecaster", "Reads forecasts/charts; gains dates that skip recurring non-working days, no setup")
+
+    System(lighthouse, "Lighthouse", "Forecasting tool. Adds recurring blackout rules that widen the global blackout-day set every forecast/chart surface already reads.")
+
+    System_Ext(tracker, "Jira / ADO", "Work-tracking system; receives blackout-shifted forecast write-back dates (existing, value now includes recurring days)")
+
+    Rel(admin, lighthouse, "Defines weekday/interval recurring rules via System settings")
+    Rel(forecaster, lighthouse, "Reads recurring-aware forecasts & charts via")
+    Rel(lighthouse, tracker, "Writes recurring-blackout-shifted dates to (existing path)")
+```
+
+## C4 Level 2 — Container (delta)
+
+```mermaid
+C4Container
+    title Container Diagram — recurring-blackout-events (delta)
+    Person(admin, "Config Admin (SystemAdmin)")
+    Person(forecaster, "Delivery Forecaster")
+
+    Container_Boundary(spa, "Frontend SPA (React + TS)") {
+        Component(rrSettings, "RecurringBlackoutRulesSettings.tsx (NEW)", "React", "Sibling section to BlackoutPeriodsSettings; weekday checkboxes + interval + start/optional-end + summary row; premium-gated via LicenseTooltip/useRbac")
+        Component(rrSvc, "RecurringBlackoutRuleService.ts (NEW)", "TS HTTP adapter", "CRUD; Zod schema at the trust boundary")
+    }
+
+    Container_Boundary(be, "Lighthouse Backend (.NET 8, ports-and-adapters)") {
+        Component(rbc, "RecurringBlackoutRulesController (NEW)", "ASP.NET Core", "api/{v1|latest}/recurring-blackout-rules; GET open, writes Premium+SystemAdmin")
+        Component(rbs, "RecurringBlackoutRuleService (NEW)", "DI service", "CRUD + Validate (≥1 weekday, interval≥1, end≥start)")
+        Component(bps, "BlackoutPeriodService (EXTENDED)", "DI service", "GetEffectiveBlackoutDays(window) — one-off ∪ expanded recurring; the UNION seam")
+        Component(expand, "RecurringBlackoutRuleExtensions (NEW)", "Pure static", "ExpandToBlackoutDays(rule, window) → single-day BlackoutPeriod[]")
+        Component(consumers, "Eval consumers (×13, EXTENDED)", "ForecastController / DeliveriesController / FeaturesController / TeamMetricsService / WriteBackTriggerService / …", "Swap raw GetAll() → GetEffectiveBlackoutDays(window)")
+        Component(bde, "BlackoutDaysExtensions (REUSE)", "Pure static (shipped)", "IsBlackoutDay / GetBlackoutDayIndices / ProjectWorkingDays / CountWorkingDays / AnnotateBlackoutDays")
+        ContainerDb(rrepo, "RecurringBlackoutRuleRepository (NEW)", "EF Core 8", "GetAll() — GLOBAL")
+        ContainerDb(brepo, "BlackoutPeriodRepository (shipped)", "EF Core 8", "GetAll() — GLOBAL")
+    }
+
+    Rel(admin, rrSettings, "Authors rules via")
+    Rel(rrSettings, rrSvc, "Calls")
+    Rel(rrSvc, rbc, "CRUD over")
+    Rel(rbc, rbs, "Delegates to")
+    Rel(rbs, rrepo, "Persists via")
+    Rel(forecaster, consumers, "Reads recurring-aware forecasts/charts via")
+    Rel(consumers, bps, "Fetches effective blackout days (window) from")
+    Rel(bps, brepo, "Fetches one-off periods from")
+    Rel(bps, rrepo, "Fetches rules from")
+    Rel(bps, expand, "Materializes rule days via")
+    Rel(consumers, bde, "Evaluates / shifts dates via (unchanged)")
+```
+
+## C4 Level 3 — Component: Recurring-day materialization and union seam
+
+The architecturally significant decision is **where the one-off ∪ recurring union is assembled and in what shape it reaches the 13 downstream eval sites** (ADR-059). Because every shipped helper speaks `BlackoutPeriod`, a recurring occurrence materialized as a single-day `BlackoutPeriod` is indistinguishable downstream (D4) and the #4974 A1 contract is untouched (D7). The union lives in exactly one place — `GetEffectiveBlackoutDays` — and an ArchUnitNET/grep rule forbids the eval path from calling the raw repo, catching the "missed seam" drift that the rejected per-consumer Option A would risk.
+
+```mermaid
+C4Component
+    title Component Diagram — recurring-day materialization + union (ADR-059/060)
+
+    Component(consumer, "Eval consumer (×13)", "ForecastController / DeliveriesController / TeamMetricsService / WriteBackTriggerService / DeliveryMetricSnapshotRecordingHandler / …", "Owns a window; calls GetEffectiveBlackoutDays(windowStart, windowEnd)")
+    Component(union, "GetEffectiveBlackoutDays(window)", "IBlackoutPeriodService (EXTENDED)", "Fetches both repos once; returns one-off.GetAll() ∪ rules.SelectMany(expand) as IReadOnlyList<BlackoutPeriod> (same shape)")
+    Component(rule, "RecurringBlackoutRule", "EF entity (NEW)", "Weekdays:List<DayOfWeek> (JSON-converted + ValueComparer), IntervalWeeks≥1, Start:DateOnly, End:DateOnly? (null=forever)")
+    Component(expand, "ExpandToBlackoutDays(rule, window)", "Pure static (NEW)", "weekday match ∧ weeksBetween(anchorMonday,dMonday)%IntervalWeeks==0 ∧ d∈[Start,End]∩window → BlackoutPeriod{Start=End=d}")
+    Component(helpers, "IsBlackoutDay / GetBlackoutDayIndices / ProjectWorkingDays / CountWorkingDays / AnnotateBlackoutDays", "Pure static (shipped, D7)", "Consume BlackoutPeriod — cannot tell recurring from one-off")
+
+    Rel(consumer, union, "fetches effective days (window) from")
+    Rel(union, rule, "reads global rules")
+    Rel(union, expand, "materializes each rule over the window via")
+    Rel(consumer, helpers, "evaluates / shifts the unified list via (unchanged)")
+    Rel(union, helpers, "(synthetic single-day periods are ordinary input to)")
+```
+
+The diagram makes four commitments visible:
+
+1. **Union in exactly one place** — `GetEffectiveBlackoutDays` is the sole assembler; the eval path never calls `blackoutPeriodRepository.GetAll()` directly after this feature (ArchUnitNET-enforceable). The rejected per-consumer Option A would scatter this across 13 sites with a silent-omission drift mode.
+2. **Materialization, not signature change** — recurring days become single-day `BlackoutPeriod`s; the #4974 A1 contract (`ProjectWorkingDays`/`CountWorkingDays`/`FromDelivery`/`GetLikelhoodForDate`) is untouched (D7). The rejected Option B (generalize behind `IBlackoutDaySource`) would re-touch every helper + the shipped shift.
+3. **Pure, bounded expansion** — `ExpandToBlackoutDays` has the clock/window passed in (no I/O); open-ended rules are bounded by the consumer's window, never infinite. Interval-week-modulo anchoring; interval 1 ⇒ plain weekly by `% 1` (ADR-060, US-02 AC4).
+4. **D4 indistinguishability / D6 regression are properties, not branches** — a recurring day-set equals the same days as one-off periods through every helper (direct equality assertion); no rules ⇒ `GetEffectiveBlackoutDays ≡ GetAll()` ⇒ byte-identical (inherits #4974 D6).
+

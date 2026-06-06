@@ -23,6 +23,7 @@ short_description: >
 primary_jobs:
   - job-config-edit-no-silent-lost-update
   - job-config-admin-define-wait-states  # wait-states-flow-efficiency (2026-06-05): mark idle Doing-states as wait states
+  - job-config-admin-define-recurring-blackout-rule  # recurring-blackout-events (2026-06-06, #4577): define a recurring non-working-day rule once
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted

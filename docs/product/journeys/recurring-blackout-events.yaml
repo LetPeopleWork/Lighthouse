@@ -1,0 +1,144 @@
+schema_version: 1
+feature_id: recurring-blackout-events
+updated: 2026-06-06
+ado: "#4577"
+note: >
+  Sibling of the SHIPPED #4974 (blackout-day-forecast-shift). The one-off BlackoutPeriod
+  (Start/End date range) CRUD, the premium+SystemAdmin guard pattern, the
+  BlackoutPeriodsSettings.tsx settings UI, and the BlackoutDaysExtensions evaluation seam are
+  shipped and LOCKED. #4577 adds RECURRENCE: a new RecurringBlackoutRule entity living alongside
+  the one-off period (weekday set + every-X-weeks interval + start date + optional open-ended end).
+  Covers BOTH epic use cases: "exclude weekends forever" AND "off-site every 4th Friday this year".
+  Recurring and one-off coexist as distinct concepts in the settings UI but feed a UNIFIED
+  blackout-day evaluation, so a recurring-rule day is indistinguishable downstream from a one-off
+  blackout day (and the shipped #4974 day<->date forecast shift consumes it for free). Decisions
+  D1-D4 locked by the user 2026-06-06.
+
+journeys:
+
+  - name: author-recurring-blackout-rule
+    goal: >
+      A config-admin opens System settings and, instead of hand-entering a one-off blackout period
+      for every recurring non-working day forever, defines the pattern ONCE - which weekdays, how
+      often (every X weeks), when it starts, and optionally when it ends or left open-ended to run
+      forever - so every matching day (e.g. every Saturday and Sunday, or every 4th Friday) is
+      automatically treated as a non-working day by forecasts and chart overlays, with no
+      ever-growing list to maintain.
+    persona: config-admin
+    secondary_persona: delivery-forecaster
+
+    emotional_arc:
+      start: Resigned - "Excluding weekends means adding a one-off period for every single weekend
+        forever. I am not going to do that, so the forecast just counts Saturdays as working days."
+      middle: Curious then reassured - "I pick the weekdays, set 'every 1 week', a start date, leave
+        the end empty for forever - this is just a calendar recurring event. The form tells me if I
+        forget to pick a weekday."
+      end: Confident - "One rule covers every weekend permanently; the off-site rule covers every
+        4th Friday this year. The forecast already steps over those days and I never touch the
+        screen again."
+
+    design_decisions_resolved:
+      - id: D1
+        question: What kind of feature is this?
+        decision: >
+          Cross-cutting - a new admin settings UI for recurring rules + a backend recurrence model +
+          integration into every surface that already reads blackout days (forecasting day<->date
+          shift, historical-throughput stripping, chart overlays). (User, 2026-06-06.)
+      - id: D2
+        question: Walking skeleton or extend existing?
+        decision: >
+          No new walking skeleton - extend the shipped infrastructure. Reuse the one-off
+          BlackoutPeriod CRUD pattern, BlackoutPeriodsSettings.tsx, the premium+SystemAdmin guard
+          pattern, and the BlackoutDaysExtensions evaluation seam. Slice thin vertical increments
+          onto proven infrastructure. (User, 2026-06-06.)
+      - id: D3
+        question: What recurrence does v1 support?
+        decision: >
+          Weekday selection + "every X weeks" interval cadence + concrete start date + OPTIONAL
+          open-ended end (empty = forever). Must cover BOTH epic use cases: "exclude weekends
+          forever" AND "off-site every 4th Friday". Monthly / nth-weekday-of-month / broader RRULE
+          recurrence is explicitly OUT of v1. (User, 2026-06-06.)
+      - id: D4
+        question: How does a recurring rule relate to the one-off blackout period?
+        decision: >
+          Separate entity, unified evaluation. A new RecurringBlackoutRule entity lives ALONGSIDE
+          the existing one-off BlackoutPeriod; forecasting and charts evaluate BOTH through a unified
+          blackout-day check so a recurring-rule day is indistinguishable from a one-off blackout day
+          downstream. One-off and recurring coexist as distinct concepts in the settings UI. The
+          entity-vs-materialization implementation detail is a DESIGN/ADR concern; the "separate
+          entity + unified evaluation" product constraint is locked. (User, 2026-06-06.)
+      - id: D5
+        question: Who may create/edit/delete recurring rules?
+        decision: >
+          Premium + SystemAdmin, identical to one-off blackout-period CRUD. GET (read the rule list)
+          is open like the existing BlackoutPeriodsController GET. Flows through the established
+          [LicenseGuard(RequirePremium=true)] + [RbacGuard(SystemAdmin)] attributes;
+          IRbacAdministrationService backs RBAC; UI gating derives from the existing premium pattern
+          (isPremium prop / LicenseTooltip / useRbac()).
+      - id: D6
+        question: Are recurring rules global or per-team?
+        decision: >
+          GLOBAL, like one-off blackout periods (inherits #4974 D9). Every team/feature/delivery uses
+          the same global rule set; no per-team scoping in v1 (explicit out-of-scope).
+
+    surfaces:
+      - settings-recurring-rules: a recurring-rules section in the existing System settings page
+        (BlackoutPeriodsSettings.tsx neighbourhood) with create/edit/delete (US-01, US-02, US-04).
+      - recurrence-expansion: rule -> concrete non-working days feeding the unified IsBlackoutDay /
+        GetBlackoutDayIndices evaluation (US-03).
+      - forecasting-and-charts: the shipped #4974 day<->date shift, historical-throughput stripping,
+        and chart blackout overlays consume recurring-rule days with no per-surface change (US-03).
+
+    happy_path:
+      - step: Admin opens System settings and sees a "Recurring Blackout Rules" section next to the
+        existing one-off "Blackout Periods" table.
+      - step: Admin clicks "Add Recurring Rule", selects Sat + Sun, leaves interval at "every 1
+        week", sets start = today, leaves end empty (forever), saves.
+      - step: The rule appears in the recurring-rules list with a human-readable summary
+        ("Every Sat, Sun - weekly - from 2026-06-06 - no end").
+      - step: A "When" forecast for a team now steps its percentile dates over the upcoming weekend
+        and never lands on a Saturday/Sunday (the shipped #4974 shift consuming the recurring days).
+      - step: Admin adds a second rule "every 4 weeks, Fri, start 2026-06-12, end 2026-12-31" for the
+        off-site; those Fridays are now non-working days too.
+
+    error_paths:
+      - no-weekday-selected: saving a recurring rule with zero weekdays selected is rejected with a
+        clear message ("Select at least one weekday for the rule to repeat on").
+      - interval-below-one: an interval < 1 week is rejected ("Repeat interval must be at least 1
+        week").
+      - start-after-end: a concrete end date earlier than the start date is rejected ("End date must
+        be on or after the start date") - mirrors the one-off ValidateDateRange message.
+      - premium-or-admin-missing: a non-premium or non-SystemAdmin caller cannot create/edit/delete
+        (premium UI disabled with LicenseTooltip; backend 403 via the guards) - GET still works.
+
+    out_of_scope:
+      - Monthly / nth-weekday-of-month / broader RRULE recurrence (D3) - v1 is weekdays + every-X-weeks only.
+      - Per-team / per-portfolio scoping of recurring rules (D6 - global, like one-off periods).
+      - Timezone handling / holiday-calendar import / public-holiday presets.
+      - Any change to the Monte Carlo simulation or the shipped #4974 day<->date shift logic itself
+        (recurring rules only add days to the existing blackout-day set the shift already consumes).
+      - New forecasting charts or blackout visualisations beyond the existing overlays.
+
+    cross_cutting:
+      rbac: >
+        Recurring-rule create/edit/delete is gated by Premium + SystemAdmin, identical to one-off
+        blackout-period CRUD - the [LicenseGuard(RequirePremium=true)] + [RbacGuard(SystemAdmin)]
+        attribute pair on the new endpoints. RBAC flows through IRbacAdministrationService (no new
+        permission introduced - reuses the SystemAdmin requirement); UI gating derives from the
+        existing premium pattern (isPremium prop, LicenseTooltip, useRbac()). GET (read the rule
+        list) is open, matching the existing BlackoutPeriodsController GET.
+      clients: >
+        A NEW endpoint family (e.g. api/v1/recurring-blackout-rules) is introduced, so the
+        Lighthouse-Clients (CLI + MCP) likely need a matching wrapped method IF blackout config is
+        exposed there. The new method MUST be version-gated: an old Lighthouse server returns an
+        opaque 404 for an endpoint it does not have, so the client pre-checks server version and
+        fails with a clear "upgrade Lighthouse" error. Pin strictly newer than the LAST RELEASED
+        Lighthouse version and record that baseline in the clients' FEATURE_REQUIRES_SERVER_NEWER_THAN
+        registry (bump it to the current latest release when wrapping). Dev/unparseable versions must
+        never be blocked. If the clients do not currently surface blackout-period CRUD, this is
+        deferred - record explicitly in the clients repo rather than silently.
+      website: >
+        This is a Premium feature (epic tagged Premium). The public website's premium-feature
+        surface should mention recurring blackout rules ("exclude weekends and recurring off-sites
+        from forecasts automatically") - decide at release whether to add it to the premium feature
+        list and/or release notes. Tag the epic for /release-notes.

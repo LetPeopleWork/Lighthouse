@@ -1,0 +1,377 @@
+# Feature Delta — recurring-blackout-events
+
+> Epic **4577 "Recurring Blackout Events"** (ADO; State: Planned; Tags: Premium, Productboard, Release Notes; via Productboard). DISCUSS wave (Luna / nw-product-owner).
+> **Sibling of the SHIPPED #4974 "Blackout Days in Future"** (`blackout-day-forecast-shift`). The one-off `BlackoutPeriod` (Start/End date range) CRUD, the premium+SystemAdmin guard pattern, the `BlackoutPeriodsSettings.tsx` settings UI, and the `BlackoutDaysExtensions` evaluation seam are shipped and **LOCKED**. This feature adds **recurrence**.
+> Density: **lean** (Tier-1 [REF] only). Expansion mode: **ask-intelligent** — no Tier-2 expansion trigger fired (single bounded context = blackout configuration; 2 personas; no regulatory/compliance surface; AC are numerically unambiguous; WS = D/no-skeleton brownfield) → strict lean output, no expansion menu emitted.
+
+---
+
+## Wave: DISCUSS / [REF] Pre-requisites & Brownfield Baseline
+
+This feature **extends shipped, locked infrastructure** (Decision D2). The one-off blackout-period stack landed and shipped; #4974's forward day↔date forecast shift consumes it. Recurring rules add a new entity that feeds the **same** blackout-day evaluation.
+
+**Shipped & LOCKED (reuse, do not modify):**
+
+| Surface | File | Reuse for recurring rules |
+|---|---|---|
+| One-off model | `Models/BlackoutPeriod.cs` (`{ int Id; DateOnly Start; DateOnly End; string Description; }`, `IEntity`) | Shape template for the new `RecurringBlackoutRule` entity |
+| One-off DTO + service | `Models/BlackoutPeriodDto.cs`, `Services/Implementation/BlackoutPeriodService.cs` (CRUD + `ValidateDateRange`), `IBlackoutPeriodService` | CRUD + validation pattern to mirror |
+| One-off controller | `API/BlackoutPeriodsController.cs` (`api/v1` + `api/latest/blackout-periods`); GET open, POST/PUT/DELETE `[LicenseGuard(RequirePremium=true)]` + `[RbacGuard(SystemAdmin)]` | Guard + route pattern to mirror on the new controller |
+| Evaluation seam | `Services/Implementation/BlackoutDaysExtensions.cs` — `IsBlackoutDay`, `GetBlackoutDayIndices`, `HasOverlapWithDateRange`, `AnnotateBlackoutDays`, and the #4974 `ProjectWorkingDays`/`CountWorkingDays` (take `IEnumerable<BlackoutPeriod>`) | **The unified-evaluation seam (D4): recurring rules must feed the SAME indices/IsBlackoutDay results** |
+| Forecasting consumers | `ForecastController`, `DeliveriesController`, `WriteBackTriggerService`, `TeamMetricsService` | Already blackout-aware via #4974; widen the day SOURCE to include recurring days |
+| FE settings | `pages/Settings/System/BlackoutPeriodsSettings.tsx`, `models/BlackoutPeriod.ts`, `services/Api/BlackoutPeriodService.ts` | Settings-section + dialog + `data-testid` pattern to mirror |
+| Chart overlays | `BlackoutOverlay.tsx` / `PbcBlackoutOverlay.tsx` / `TimeBlackoutOverlay.tsx` | Consume recurring days unchanged (D4) |
+
+**New in this feature:** a `RecurringBlackoutRule` entity (weekday set + every-X-weeks interval + start date + optional open-ended end), its CRUD endpoint family, a recurring-rules settings section, and the **rule → concrete-days expansion** that unifies into the existing evaluation. The expansion is the only genuinely new logic.
+
+---
+
+## Wave: DISCUSS / [REF] Persona
+
+**Primary: `config-admin`** (existing SSOT persona; the system-admin who authors rules). PRIMARY actor for every story. Adds the recurring-rule vocabulary via the new job.
+
+**Secondary / beneficiary: `delivery-forecaster`** (existing SSOT persona) — gains accurate forecasts that skip recurring non-working days (e.g. weekends) without hand-maintaining one-off periods. Realises the downstream value through the existing job `job-forecast-skip-known-nonworking-days`; no bespoke build for this persona.
+
+---
+
+## Wave: DISCUSS / [REF] JTBD One-Liners
+
+> **`job-config-admin-define-recurring-blackout-rule`** (NEW, config-admin) — When the same non-working days repeat on a predictable cadence (every weekend, or a team off-site every 4th Friday) and today I must hand-enter each one as a separate one-off blackout period forever, I want to define the pattern ONCE as a recurring rule — which weekdays, how often, when it starts, optionally when it ends or open-ended to run forever — so every matching day is automatically treated as a non-working day in forecasts and on the charts, without maintaining an ever-growing list.
+
+> **`job-forecast-skip-known-nonworking-days`** (EXISTING, delivery-forecaster, downstream value) — the recurring rule's concrete days flow into the shipped #4974 day↔date shift, so the forecaster's percentile dates step over recurring weekends/off-sites and never land on one, with zero new forecaster setup.
+
+- **Functional**: new entity (weekdays + interval + start + optional end) → CRUD via a new endpoint → **expands to concrete days feeding the SAME `IsBlackoutDay`/`GetBlackoutDayIndices`** the one-off periods feed (D4). Covers "weekends forever" (Sat+Sun, every 1 wk, no end) AND "off-site every 4th Friday" (Fri, every 4 wks, bounded).
+- **Emotional**: from "I dread the blackout screen — I keep hand-adding weekends and it never ends" → "I described the weekend once; Lighthouse keeps it correct forever."
+- **Social**: be the admin whose forecasts are honest about recurring non-working time without anyone babysitting a list.
+- **Forces** — *Push*: excluding weekends today = a one-off period per weekend forever, so nobody does it and Saturdays count as working days. *Pull*: calendar-style recurrence everyone understands, entered once, reusing the proven CRUD/guard/settings pattern and plugging into already-shipped blackout-aware forecasting. *Anxiety*: "will a recurring day behave differently downstream?" (No — D4 unified eval). "Will empty end break anything?" (No — empty = forever). "Will it change the Monte Carlo?" (No — only adds days to the set #4974 already consumes). *Habit*: admins already manage one-off periods on this exact screen; recurrence is the natural "make it repeat" extension.
+- **Opportunity**: importance 4, current_satisfaction 1, gap 3 (weekends effectively un-excludable today; high-leverage, kept thin by reuse).
+
+---
+
+## Wave: DISCUSS / [REF] Locked Decisions
+
+- **[D1] Feature type = Cross-cutting.** New admin settings UI + backend recurrence model + forecasting/chart integration (every surface that today reads blackout days). (User, 2026-06-06.)
+- **[D2] Walking skeleton = No / extend existing.** Reuse the shipped one-off `BlackoutPeriod` CRUD pattern, `BlackoutPeriodsSettings.tsx`, the premium+SystemAdmin guard pattern, and the `BlackoutDaysExtensions` evaluation seam. Slice thin vertical increments onto proven infrastructure. (User, 2026-06-06.)
+- **[D3] v1 scope = both core use cases.** Weekday selection + "every X weeks" interval cadence + start date + OPTIONAL open-ended end (empty = forever). Must cover BOTH "exclude weekends forever" AND "off-site every 4th Friday". Monthly / nth-weekday-of-month / broader RRULE recurrence is OUT of v1. (User, 2026-06-06.)
+- **[D4] Model relationship = separate entity, unified evaluation.** A new `RecurringBlackoutRule` lives ALONGSIDE the one-off `BlackoutPeriod`; forecasting and charts evaluate BOTH through a unified blackout-day check so a recurring-rule day is indistinguishable from a one-off blackout day downstream. One-off and recurring coexist as distinct concepts in the settings UI. Entity-vs-materialization is a DESIGN/ADR concern; the "separate entity + unified evaluation" product constraint is locked. (User, 2026-06-06.)
+- **[D5] Auth = Premium + SystemAdmin (create/edit/delete); GET open.** Identical to one-off blackout-period CRUD. Reuses `[LicenseGuard(RequirePremium=true)]` + `[RbacGuard(SystemAdmin)]`; RBAC through `IRbacAdministrationService`; UI gating via the existing premium pattern (`isPremium`, `LicenseTooltip`, `useRbac()`). (Luna, derived from epic "only for sys admins, like regular blackout day creation".)
+- **[D6] Rules are GLOBAL.** Inherits #4974 D9 — every team/feature/delivery uses the same global rule set; no per-team scoping in v1 (explicit out-of-scope). (Luna, by parity with shipped one-off periods.)
+- **[D7] Monte Carlo unchanged.** Recurring rules only widen the blackout-day SET the shipped #4974 day↔date shift already consumes; `Trials`, the simulation, percentile math, `GetProbability`/`GetLikelihood` day-values are untouched (inherits #4974 D4). (Luna, by parity.)
+
+---
+
+## Wave: DISCUSS / [REF] User Stories (with Elevator Pitches + embedded AC)
+
+<!-- markdownlint-disable MD024 -->
+
+### US-01 — Create an "exclude weekends forever" recurring rule
+`job_id: job-config-admin-define-recurring-blackout-rule`
+
+As a config-admin who wants weekends excluded from every forecast, I want to define a single open-ended weekly rule (Sat+Sun, every 1 week, start today, no end) instead of hand-entering a one-off period for every weekend forever, so the forecast automatically treats every Saturday and Sunday as non-working — permanently.
+
+#### Elevator Pitch
+Before: excluding weekends means creating a separate one-off `BlackoutPeriod` for every single weekend forever, so nobody does it and the forecast counts Saturdays/Sundays as working days.
+After: in **System settings → Recurring Blackout Rules → Add**, the admin picks Sat + Sun, leaves interval "every 1 week", sets start = today, leaves end empty (forever), saves → sees `the rule listed as "Every Sat, Sun — weekly — from 2026-06-06 — no end"`, and a **"When" forecast for a team now shows `P50/70/85/95 dates each stepped over the next Saturday and Sunday, none landing on a weekend`**.
+Decision enabled: the admin sets weekend exclusion up once and trusts every future forecast skips weekends without ever revisiting the screen.
+
+**AC** (verify the After end-to-end):
+- AC1: A rule (Sat+Sun, every 1 week, start today, no end) created via `POST /recurring-blackout-rules` appears in `GET` with a human-readable summary.
+- AC2: Given that rule and no one-off periods, a "When" forecast returning 10 working days at P85 with exactly 2 weekend days in the next 10 calendar days yields a P85 `ExpectedDate` **12** calendar days out, and no percentile date lands on a Sat/Sun (rolls forward, inherits #4974 D3).
+- AC3: A recurring-rule day and a one-off `BlackoutPeriod` day produce **identical** `IsBlackoutDay`/`GetBlackoutDayIndices` results (unified evaluation, D4).
+- AC4: `POST` by a non-premium OR non-SystemAdmin caller returns 403; `GET` succeeds for a viewer (D5).
+
+### US-02 — Create an "off-site every 4th Friday" interval rule with a bounded end
+`job_id: job-config-admin-define-recurring-blackout-rule`
+
+As a config-admin whose team has a recurring off-site, I want a rule that repeats on an interval ("every 4 weeks, Friday, from 2026-06-12 to 2026-12-31") so exactly the off-site Fridays — and no other Fridays, and nothing outside the window — become non-working days.
+
+#### Elevator Pitch
+Before: a recurring off-site can only be modelled as a one-off period per occurrence, and there is no way to say "every 4th Friday this year".
+After: the admin adds a rule (Friday, **every 4 weeks**, start 2026-06-12, **end 2026-12-31**) → sees `2026-06-12, 2026-07-10, 2026-08-07, … marked as non-working days while 2026-06-19 (an off-week Friday) stays a working day`, and a forecast window spanning one off-site Friday `steps that single Friday over (+1 working day)`.
+Decision enabled: the admin models a bounded recurring off-site precisely, so forecasts for the rest of the year skip exactly those Fridays and no others.
+
+**AC**:
+- AC1: A rule (Fri, every 4 weeks, start 2026-06-12, end 2026-12-31) marks 2026-06-12, 2026-07-10, 2026-08-07 … as blackout days and marks NO off-week Friday (2026-06-19 is a working day).
+- AC2: A date before `start` (2026-06-05) and after `end` (2027-01-08) is NOT a blackout day for this rule (bounded window).
+- AC3: A "When" forecast whose window spans exactly one off-site Friday shifts the percentile date by +1 working day and lands on a working day.
+- AC4: "every 1 week" with selected weekdays reproduces the US-01 weekly behaviour (interval default, no regression).
+
+### US-03 — Recurring-rule days are honoured across every forecasting & chart surface
+`job_id: job-forecast-skip-known-nonworking-days`
+
+As a delivery-forecaster / config-admin reading a Portfolio → Delivery, a by-date likelihood, a written-back date, or a metrics chart, I want recurring-rule days treated exactly like one-off blackout days everywhere, so the unified-evaluation guarantee holds product-wide — not just on the manual "When" forecast.
+
+#### Elevator Pitch
+Before: even if the manual "When" forecast skipped recurring weekends, the feature/delivery dates, by-date likelihood, write-back date, and chart overlays might still treat a recurring weekend differently from a one-off blackout — an inconsistent product.
+After: open **Portfolio → Delivery** whose features span a recurring weekend → sees `feature percentile dates stepped over the recurring weekend and rolled forward, the delivery likelihood computed on working days, the write-back date blackout-shifted, and chart overlays annotating the recurring days` — all identical to one-off blackout behaviour.
+Decision enabled: the forecaster reads delivery status and the PO judges on-track/at-risk on dates that already account for recurring non-working days, with no surface-specific surprises.
+
+**AC**:
+- AC1: Feature/Delivery percentile dates (`HowManyForecast.TargetDate`, `Delivery` expected dates, `DeliveryWithLikelihoodDto.ExpectedDate`) step over recurring-rule days and roll forward (inherits #4974 D3) — identical to one-off behaviour.
+- AC2: `Feature.GetLikelhoodForDate(date)` counts working days excluding recurring-rule days in the window.
+- AC3: Forecast write-back writes the recurring-blackout-shifted date to Jira/ADO.
+- AC4: Chart blackout overlays annotate recurring-rule days the same as one-off blackout days.
+- AC5 (regression): with no recurring rules and no one-off periods, every surface is byte-identical to pre-feature (inherits #4974 D6).
+
+### US-04 — Edit, delete, and validate recurring rules
+`job_id: job-config-admin-define-recurring-blackout-rule`
+
+As a config-admin maintaining the rule list, I want to edit and delete recurring rules and be stopped at the form with clear messages when a rule is invalid (no weekday, interval < 1, end before start), so the recurring-rules screen is a complete, trustworthy management surface like the one-off periods table.
+
+#### Elevator Pitch
+Before: a freshly-added recurring rule cannot be corrected or removed, and an invalid rule (no weekday, end before start) could be saved into a meaningless state.
+After: the admin opens a rule's **Edit** dialog (pre-filled), changes Sat+Sun → Fri only, saves → `the forecast immediately reflects only Fridays`; clicking **Delete** with confirmation `removes the rule and reverts the stepped-over dates`; saving a rule with zero weekdays shows `"Select at least one weekday for the rule to repeat on."`
+Decision enabled: the admin self-services rule corrections and removals and is prevented from saving a rule that would silently do nothing.
+
+**AC**:
+- AC1: Editing a rule (Sat+Sun → Fri only) via `PUT /recurring-blackout-rules/{id}` updates it; the forecast reflects the new matching days.
+- AC2: Deleting a rule via `DELETE /recurring-blackout-rules/{id}` removes its days; a previously-stepped-over forecast date reverts; a viewer sees no edit/delete controls.
+- AC3: Saving a rule with zero weekdays is rejected with "Select at least one weekday for the rule to repeat on."
+- AC4: Saving a rule with interval < 1 is rejected with "Repeat interval must be at least 1 week."
+- AC5: Saving a rule whose end date precedes its start is rejected with "End date must be on or after the start date."
+- AC6: `PUT`/`DELETE` by a non-premium or non-SystemAdmin caller returns 403; an unknown id returns 404.
+
+---
+
+## Wave: DISCUSS / [REF] Outcome KPIs
+
+### Objective
+By release + 60 days, config-admins express recurring non-working days as reusable rules (not hand-entered one-off periods), and forecasts skip those days automatically — so "exclude weekends" goes from impractical to one click.
+
+| # | Who | Does What | By How Much | Baseline | Measured By | Type |
+|---|-----|-----------|-------------|----------|-------------|------|
+| 1 | Premium config-admins | Define a recurring rule covering weekends instead of hand-entering one-off weekend periods | ≥ 60% of instances that today maintain ≥ 4 weekend one-off periods replace them with ≥ 1 recurring rule | ~0 (no recurrence exists) | Count of `RecurringBlackoutRule` rows vs one-off weekend `BlackoutPeriod` rows per instance (telemetry-gated — see note) | Leading (adoption) |
+| 2 | Premium config-admins | Stop hand-maintaining one-off weekend periods after defining a weekends rule | Net new one-off weekend periods per instance drops by ≥ 70% in the 60 days after a weekends rule exists | current one-off-weekend creation rate | one-off `BlackoutPeriod` create events (telemetry-gated) | Leading (behaviour change) |
+| 3 | Delivery-forecasters (downstream) | Present percentile dates that never land on a recurring non-working day | 0 percentile dates land on a recurring-rule day across all forecast surfaces | n/a (capability absent) | Integration-test assertion across surfaces (US-03) — product invariant, measurable today without telemetry | Guardrail (correctness) |
+| 4 | Engineering | Ship recurring-day evaluation that is indistinguishable from one-off blackout days | Mutation kill rate ≥ 80% on new recurrence-expansion + endpoint code | n/a | Stryker.NET (BE) + Stryker (FE), feature-scoped | Guardrail (quality) |
+
+### Metric Hierarchy
+- **North Star**: recurring-rule adoption replacing hand-entered weekend periods (KPI 1).
+- **Leading indicators**: drop in net-new one-off weekend periods after a rule exists (KPI 2).
+- **Guardrail metrics**: 0 percentile dates on recurring non-working days (KPI 3, measurable today via tests); mutation ≥ 80% (KPI 4); no regression for instances with no rules (inherits #4974 D6).
+
+### Measurement note
+KPIs 1 & 2 require usage telemetry. Per MEMORY (`project_self_hosted_telemetry_gap`), self-hosted Lighthouse instances do **not** phone home; cross-instance KPIs are blocked on Epic 5015 (opt-in telemetry, no timeline). Until then, KPIs 1 & 2 are tracked **qualitatively** (Productboard feedback, support signal) and instrumented in code so they activate when telemetry lands. KPIs 3 & 4 are enforced now via the test suite and gate the feature regardless of telemetry.
+
+---
+
+## Wave: DISCUSS / [REF] Cross-Cutting Impact Checklist
+
+- **RBAC** — Recurring-rule **create/edit/delete is gated by Premium + SystemAdmin**, identical to one-off blackout-period CRUD: the new endpoints carry `[LicenseGuard(RequirePremium=true)]` + `[RbacGuard(RbacGuardRequirement.SystemAdmin)]`. RBAC flows through `IRbacAdministrationService` (no NEW permission — reuses the existing `SystemAdmin` requirement); UI gating derives from the established premium pattern (`isPremium` prop, `LicenseTooltip`, `useRbac()`). **GET (read the rule list) is open**, matching the existing `BlackoutPeriodsController` GET. (D5.)
+- **Lighthouse-Clients (CLI + MCP)** — A **NEW endpoint family** `api/{v1|latest}/recurring-blackout-rules` is introduced. **Decision:** if the CLI/MCP clients surface blackout-period configuration, they need a matching wrapped method for recurring rules; that method MUST be **version-gated** — an old Lighthouse server returns an opaque 404 for an endpoint it lacks, so the client pre-checks server version and fails with a clear "upgrade Lighthouse" error. Pin **strictly newer than the LAST RELEASED Lighthouse version** and record that baseline in the clients' `FEATURE_REQUIRES_SERVER_NEWER_THAN` registry (bump it to the current latest release when wrapping); dev/unparseable versions must never be blocked. **If the clients do not currently wrap one-off blackout-period CRUD, the recurring-rule client method is deferred** — record that decision explicitly in the clients repo at release (do not silently skip). DESIGN/DELIVER to confirm whether the clients touch blackout config at all.
+- **Website** — This is a **Premium feature** (epic tagged Premium + Release Notes). **Decision:** surface it on the public website's premium-feature list and in release notes — "Exclude weekends and recurring off-sites from forecasts automatically, set up once." Tag the epic for `/release-notes`. (Not N/A — a marketed premium capability per the epic tags.)
+
+---
+
+## Wave: DISCUSS / [REF] WS Strategy
+
+**Strategy D — brownfield, no walking skeleton; extend existing infrastructure** (Decision D2). There is no new end-to-end integration spine to prove — recurring rules plug into the shipped one-off CRUD pattern and the unified `BlackoutDaysExtensions` evaluation seam already consumed by forecasting and charts. Each slice is a thin vertical increment on proven infrastructure. (Of the A/B/C/D walking-skeleton options: **A** greenfield-skeleton = no; **B** thin-skeleton-then-thicken = no; **C** isolated-brownfield-layer = partial; **D** extend-existing-with-no-new-skeleton = **chosen**.)
+
+Slice 01 still ships an observable end-to-end behaviour (create a weekends-forever rule → it lists AND a forecast date steps over Saturday/Sunday): the shared unified-evaluation "infra" rides inside a value-producing slice — **no slice contains only `@infrastructure` stories.**
+
+---
+
+## Wave: DISCUSS / [REF] Driving Ports (inbound surfaces touched)
+
+- `POST /api/{v1|latest}/recurring-blackout-rules` — create a rule (US-01, US-02).
+- `GET /api/{v1|latest}/recurring-blackout-rules` — list rules (open; US-01).
+- `PUT /api/{v1|latest}/recurring-blackout-rules/{id}` — edit a rule (US-04).
+- `DELETE /api/{v1|latest}/recurring-blackout-rules/{id}` — delete a rule (US-04).
+- **Settings UI action**: a "Recurring Blackout Rules" section in the System settings page (Add / Edit / Delete dialogs, mirroring `BlackoutPeriodsSettings.tsx`) (US-01, US-02, US-04).
+- **No new forecast/chart endpoint**: recurring days flow into existing #4974 surfaces (`forecast/manual`, delivery reads, write-back, chart overlays) which render the wider blackout-day set (US-03).
+
+---
+
+## Wave: DISCUSS / [REF] Pre-requisites
+
+- Shipped + LOCKED: one-off `BlackoutPeriod` model/DTO/service/controller/repository; the premium+SystemAdmin guard pattern; `BlackoutPeriodsSettings.tsx`; `BlackoutDaysExtensions` evaluation seam; the #4974 day↔date forecast shift (`ProjectWorkingDays`/`CountWorkingDays`) across all forecasting consumers.
+- New endpoint → client version-gate decision (cross-cutting, above).
+- EF migration for the new `RecurringBlackoutRule` table (use the existing `CreateMigration` PowerShell script, per CLAUDE.md — not `dotnet ef migrations add` directly). DESIGN/DELIVER concern; flagged here as a prerequisite.
+
+---
+
+## Wave: DISCUSS / [REF] Out of Scope
+
+- **Monthly / nth-weekday-of-month / broader RRULE recurrence** (e.g. "first Monday of each month") → v1 is **weekdays + every-X-weeks only** (D3).
+- **Per-team / per-portfolio scoping** of recurring rules → rules are **GLOBAL** like one-off periods (D6, inherits #4974 D9).
+- **Timezone handling / holiday-calendar import / public-holiday presets.**
+- **Any change to the Monte Carlo simulation or the shipped #4974 day↔date shift logic itself** — recurring rules only widen the blackout-day set the shift already consumes (D7).
+- **New forecasting charts or blackout visualisations** beyond the existing overlays.
+- **Migrating existing one-off weekend periods into recurring rules** (no data migration; admins replace them manually if they choose).
+
+---
+
+## Wave: DISCUSS / [REF] Definition of Done
+
+1. All 4 stories' AC pass via acceptance (port-to-port) tests through the new endpoints + the existing forecast/delivery surfaces.
+2. Unit tests cover rule → concrete-days expansion (weekly-forever, every-X-weeks anchoring, bounded [start,end], open-ended end) and the unified-evaluation parity (recurring day ≡ one-off blackout day).
+3. Validation tests: weekday-required, interval ≥ 1, end ≥ start; premium+SystemAdmin guard on POST/PUT/DELETE; GET open; 404 on unknown id.
+4. Downstream-coherence tests (US-03): feature/delivery dates, by-date likelihood, write-back, chart overlays honour recurring days identically to one-off; no-rule regression byte-identical (inherits #4974 D6).
+5. Mutation ≥ 80% on new recurrence-expansion + endpoint code (Stryker.NET BE; Stryker FE).
+6. EF migration generated via `CreateMigration` (all providers); `dotnet build` zero warnings; `dotnet test` green; `pnpm build`/Biome clean; SonarCloud new-violations = 0 (consult `docs/ci-learnings.md` first).
+7. ADO Epic 4577 child stories created/transitioned; pause before push.
+8. Release-notes + website premium-surface flag recorded (cross-cutting).
+9. SSOT updated: job in `jobs.yaml`, journey `recurring-blackout-events.yaml`, persona job-ref on `config-admin`.
+
+---
+
+## Wave: DISCUSS / [REF] DoR Validation
+
+| # | DoR item | Status | Evidence |
+|---|---|---|---|
+| 1 | Problem statement clear, domain language + persona | PASS | 4 stories; `config-admin` primary, `delivery-forecaster` beneficiary; problem framed in admin pain (hand-entering weekends forever) |
+| 2 | User/persona specific characteristics | PASS | config-admin = SystemAdmin authoring global config on the settings screen; forecaster = downstream beneficiary |
+| 3 | 3+ domain examples with real data | PASS | "Every Sat+Sun, weekly, from 2026-06-06, no end"; "Fri, every 4 weeks, 2026-06-12→2026-12-31" marking 06-12/07-10/08-07; off-week 2026-06-19 stays working; edit Sat+Sun→Fri |
+| 4 | UAT in Given/When/Then (3–7 per story) | PASS | 4 stories, 4–6 numeric AC each; expressible as G/W/T (DISTILL to formalise) |
+| 5 | AC derived from UAT / Elevator Pitch | PASS | Each story's AC verify its Elevator Pitch end-to-end (rule listed + forecast steps over the day) |
+| 6 | Right-sized (1–3 days, 3–7 scenarios) | PASS | 4 slices, ~0.5–1 day each; one surface/outcome per slice (see slice briefs) |
+| 7 | Technical notes / cross-cutting constraints | PASS | RBAC/clients/website all explicit; brownfield baseline; D1–D7; EF migration prerequisite |
+| 8 | Dependencies resolved or tracked | PASS | Shipped one-off CRUD + guard + settings + `BlackoutDaysExtensions` + #4974 shift (locked); new-endpoint client gate tracked; Slices ordered 01→04 |
+| 9 | Outcome KPIs with measurable targets | PASS | KPI table (adoption/behaviour/correctness/quality) with targets + methods + telemetry-gap note |
+
+**DoR Status: PASSED** (9/9). Requirements completeness: **0.96** (KPIs 1–2 telemetry-gated, tracked qualitatively until Epic 5015 — only soft point).
+
+---
+
+## Wave: DISCUSS / [REF] Story Map & Slices
+
+Backbone (config-admin authoring journey): **(A) define a rule** · **(B) express the cadence** · **(C) it acts everywhere blackout days act** · **(D) manage the rule list**.
+
+| Activity | A · Define | B · Cadence | C · Acts everywhere | D · Manage |
+|---|---|---|---|---|
+| Walking skeleton (Slice 01) | Create weekends-forever rule (entity+POST+GET+UI) | every 1 week (default) | Manual "When" forecast steps over weekend (unified eval) | — |
+| Release 1 (Slice 02) | — | every-X-weeks + bounded end | One off-site Friday stepped over | — |
+| Release 2 (Slice 03) | — | — | Feature/Delivery/likelihood/write-back/charts all honour recurring days | — |
+| Release 3 (Slice 04) | edit/delete | — | edited rule re-expands; deleted rule reverts | edit + delete + validation |
+
+Thinnest-first. One slice = one story = one demoable surface/outcome.
+
+| Slice | Story | Surface | Learning hypothesis (one line) |
+|---|---|---|---|
+| 01 | US-01 | Recurring-rules create + GET + minimal UI + expansion + unified eval | Disproves "a recurring rule expands to days feeding the SAME unified blackout-day eval (D4) so the #4974 shift consumes them for free" if a forecast doesn't step over the configured weekend |
+| 02 | US-02 | Recurring-rules create (interval + bounded end) | Disproves "every-X-weeks anchors on the start week so exactly the intended Fridays match" if the wrong Fridays / out-of-window days are marked |
+| 03 | US-03 | Feature/Delivery/likelihood/write-back/chart surfaces | Disproves "recurring days drop into the existing union-of-blackout-days seam unchanged" if any surface treats a recurring day differently from a one-off blackout day |
+| 04 | US-04 | Recurring-rules edit/delete + form validation | Disproves "the lifecycle reuses the one-off edit/delete/validation UX 1:1" if recurrence-specific validations (weekday-required, interval≥1) don't fit the existing pattern |
+
+Slice briefs: `docs/feature/recurring-blackout-events/slices/slice-0{1..4}-*.md`.
+
+### Priority Rationale
+Slice 01 first = it births the entity + endpoint + the **unified-evaluation seam** (highest learning leverage; proves D4 on the smallest surface while delivering observable value — a forecast stepping over a weekend). Slice 02 adds interval/bounding on the same endpoint (second epic use case, smallest delta). Slice 03 fans the proven recurring-day source across all #4974 consumers (high value, depends on the seam being settled). Slice 04 (edit/delete/validation) last — lowest forecasting risk, completes the management surface, depends on the entity existing. Ordering = Value × Urgency / Effort with Walking-Skeleton (Slice 01) > riskiest assumption (D4 unified eval, also Slice 01) > highest value (Slice 03) > completeness (Slice 04).
+
+---
+
+## Wave: DISCUSS / [REF] Wave Decisions Summary
+
+- **Feature type**: Cross-cutting (D1) — settings UI + recurrence model + forecasting/chart integration.
+- **JTBD**: Yes (Decision 4 = YES) — every story carries a real `job_id`: US-01/02/04 → `job-config-admin-define-recurring-blackout-rule` (NEW); US-03 → `job-forecast-skip-known-nonworking-days` (existing downstream).
+- **UX research depth**: Lightweight — reuses the proven `BlackoutPeriodsSettings.tsx` settings pattern; the only new UI is a recurrence form (weekday checkboxes + interval + dates) and a rule-summary list row. Platform = web (React + ASP.NET Core); web UX skills consulted on-demand.
+- **Walking skeleton**: No — Strategy D (extend existing, D2).
+- **Primary need**: define recurring non-working days once (weekends forever; off-site every 4th Friday) so forecasts and charts skip them automatically, without an ever-growing one-off list.
+- **Constraints**: D4 (unified evaluation — recurring day ≡ one-off day downstream), D5 (premium+SystemAdmin; GET open), D6 (global), D7 (Monte Carlo unchanged), D3 (no monthly/RRULE in v1).
+- **Upstream changes**: no DISCOVER/DIVERGE artifacts existed for this epic (sibling of shipped #4974). SSOT bootstrapped: new job in `jobs.yaml`, new journey `recurring-blackout-events.yaml`, `config-admin` persona job-ref added. **Risk recorded**: no formal DIVERGE recommendation — mitigated by inheriting the validated #4974 decisions and the locked user decisions D1–D4.
+- **Expansion trigger**: none fired (single bounded context, 2 personas, no compliance, unambiguous numeric AC, brownfield no-skeleton) → strict lean; ask-intelligent menu NOT emitted.
+
+**Handoff → DESIGN (nw-solution-architect)** + **DEVOPS (KPIs only, telemetry-gated)** + **DISTILL (journey YAML + integration points + KPIs)**. DESIGN to decide: the `RecurringBlackoutRule` entity shape + EF migration; rule→concrete-days **expansion vs materialization** (the entity-vs-materialization detail deferred per D4) and where the unified-evaluation union lives (likely a `BlackoutDaysExtensions` extension or an assembly-layer union into the existing `IReadOnlyList<BlackoutPeriod>` shape); the new controller/service/repository; and whether recurring rules inherit a premium gate on the evaluation path (none observed on one-off throughput stripping — confirm).
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Consultation Checklist
+
+- ✓ `docs/feature/recurring-blackout-events/feature-delta.md` (DISCUSS): D1–D7, cross-cutting checklist, 4 slices, DoR 9/9 read and designed within.
+- ✓ `docs/product/journeys/recurring-blackout-events.yaml`: journey, surfaces, error paths, D1–D6 read; error-path messages reused verbatim in validation (ADR-060 §5).
+- ✓ `docs/product/architecture/adr-058-…`: the A1 contract, the `BlackoutDaysExtensions` seam, the fetch-once-pass-inward pattern, and ADR-058's explicit "promote behind an interface if recurring rules arise; YAGNI until then" hint — all consulted; ADR-059 chose materialization (clears the YAGNI bar at a fraction of B's blast radius).
+- ✓ `docs/product/architecture/brief.md` `## Application Architecture`: house style followed; appended `## Application Architecture — recurring-blackout-events` delta (earlier sections untouched).
+- ✓ Code surfaces grounded (read, not assumed): `BlackoutPeriod`/`BlackoutPeriodDto`/`BlackoutPeriodService`/`IBlackoutPeriodService`/`BlackoutPeriodsController`/`BlackoutDaysExtensions`/`BlackoutPeriodRepository`/`TeamMetricsService` (fetch-once); the #4974 seams `ForecastController`, `DeliveriesController`+`DeliveryWithLikelihoodDto.FromDelivery`, `WriteBackTriggerService`, `Feature.GetLikelhoodForDate`, `Delivery.CalculateMetrics`, `WhenForecastDto`; `LighthouseAppContext` (the `StateMappings` JSON-converter+`ValueComparer` precedent + `BlackoutPeriod` key config + `DbSet`); `Program.cs` DI; FE `BlackoutPeriodsSettings.tsx`/`BlackoutPeriod.ts`/`BlackoutPeriodService.ts`/`BlackoutOverlay.tsx`. **Decisive finding**: the blackout-day set is fetched at **~13 call sites** (`blackoutPeriodRepository.GetAll().ToList()`), all threading into `BlackoutPeriod`-typed pure helpers — the lever for ADR-059's materialization-behind-one-seam.
+- ⊘ `nwave-ai outcomes check-delta` — nWave tooling not present in this repo (Lighthouse); **attempted, skipped-unavailable**, not blocking (per task note).
+
+## Wave: DESIGN / [REF] Domain-Driven Design
+
+- **DDD-1 — Materialization, not signature change (ADR-059).** Recurring days reach evaluation as synthetic single-day `BlackoutPeriod` instances. **Verdict: chosen** (Option C of the pivotal decision) — smallest blast radius that keeps the union in one place; D4/D7 fall out by construction.
+- **DDD-2 — Union behind the fetch seam (ADR-059).** `IBlackoutPeriodService.GetEffectiveBlackoutDays(window) → IReadOnlyList<BlackoutPeriod>` is the single assembly point; the 13 eval sites do a same-shape swap. **Verdict: chosen** — mirrors #4974 fetch-once-pass-inward (ADR-058 DDD-2).
+- **DDD-3 — Separate entity, value-typed weekday set (ADR-060).** `RecurringBlackoutRule` mirrors `BlackoutPeriod`'s stack; `Weekdays:List<DayOfWeek>` JSON-converted + `ValueComparer` (the `StateMappings` idiom). **Verdict: chosen** — D4 locks separate entity; bitmask/child-table rejected.
+- **DDD-4 — Pure interval-anchored expansion (ADR-060).** `ExpandToBlackoutDays(rule, window)` = weekday match ∧ week-index-modulo anchor ∧ `[Start,End]∩window`. **Verdict: chosen** — interval-1 ⇒ weekly by `% 1`; anchoring worked against every US-02 AC.
+- **DDD-5 — Models acquire no repo/service dependency.** Entity is a persistence projection; expansion is a pure extension with the window passed in. **Verdict: upheld** — ArchUnitNET `Models.* ↛ Services.*`.
+- **DDD-6 — No-rule regression byte-identical (inherits #4974 D6).** No rules ⇒ `GetEffectiveBlackoutDays ≡ GetAll()`. **Verdict: upheld** — golden test.
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Path | EXTEND / CREATE NEW |
+|---|---|---|
+| `RecurringBlackoutRule` entity | `Lighthouse.Backend/Lighthouse.Backend/Models/RecurringBlackoutRule.cs` | CREATE NEW (D4 separate entity) |
+| `RecurringBlackoutRuleDto` | `Models/RecurringBlackoutRuleDto.cs` | CREATE NEW |
+| Expansion (pure) | `Services/Implementation/RecurringBlackoutRuleExtensions.cs` | CREATE NEW |
+| Rule service + interface | `Services/Implementation/RecurringBlackoutRuleService.cs`, `Services/Interfaces/IRecurringBlackoutRuleService.cs` | CREATE NEW |
+| Rule repository | `Services/Implementation/Repositories/RecurringBlackoutRuleRepository.cs` | CREATE NEW |
+| Rule controller | `API/RecurringBlackoutRulesController.cs` | CREATE NEW |
+| Union seam | `Services/Interfaces/IBlackoutPeriodService.cs` + `Services/Implementation/BlackoutPeriodService.cs` (`GetEffectiveBlackoutDays`, inject rule repo) | EXTEND |
+| EF context | `Data/LighthouseAppContext.cs` (`DbSet<RecurringBlackoutRule>` + weekday converter/comparer + key) | EXTEND |
+| DI | `Program.cs` (register `IRepository<RecurringBlackoutRule>`) | EXTEND |
+| Eval fetch sites (×13) | `ForecastController`, `DeliveriesController`, `FeaturesController`, `DeliveryRulesController`, `TeamMetricsController`, `PortfolioMetricsController`, `TeamController`, `TeamsController`, `WriteBackTriggerService`, `TeamMetricsService`, `DeliveryMetricSnapshotRecordingHandler` | EXTEND (same-shape swap) |
+| FE rule model + Zod | `Lighthouse.Frontend/src/models/RecurringBlackoutRule.ts` | CREATE NEW |
+| FE API service | `src/services/Api/RecurringBlackoutRuleService.ts` | CREATE NEW |
+| FE settings section | `src/pages/Settings/System/RecurringBlackoutRulesSettings.tsx` | CREATE NEW (sibling of `BlackoutPeriodsSettings.tsx`) |
+| EF migration | via `CreateMigration` PowerShell script | CREATE NEW (new table) |
+
+## Wave: DESIGN / [REF] Driving Ports
+
+- `POST /api/{v1|latest}/recurring-blackout-rules` — create (Premium+SystemAdmin) — US-01/02.
+- `GET /api/{v1|latest}/recurring-blackout-rules` — list (open) — US-01.
+- `PUT /api/{v1|latest}/recurring-blackout-rules/{id}` — edit (Premium+SystemAdmin) — US-04.
+- `DELETE /api/{v1|latest}/recurring-blackout-rules/{id}` — delete (Premium+SystemAdmin) — US-04.
+- Settings UI section action (Add/Edit/Delete dialogs, weekday checkboxes + interval + start/optional-end + summary) — US-01/02/04.
+- No new forecast/chart endpoint (US-03 rides existing #4974 surfaces via `GetEffectiveBlackoutDays`).
+
+## Wave: DESIGN / [REF] Driven Ports + Adapters
+
+- `IRepository<RecurringBlackoutRule>` → `RecurringBlackoutRuleRepository : RepositoryBase<RecurringBlackoutRule>` (EF Core 8; `GetAll()` global, D6). Newly injected into `BlackoutPeriodService` for the union.
+- REUSE: `IRepository<BlackoutPeriod>` (existing), `IRbacAdministrationService` (RBAC), `ILicenseService` (premium guard via attribute). **No new external integration / foreign substrate ⇒ no probe contract and no contract tests owed at the platform-architect handoff** (the union is a pure in-process function over the two existing repos).
+
+## Wave: DESIGN / [REF] Technology Choices
+
+- **Backend**: C# .NET 8 ASP.NET Core, EF Core 8 (OSS, MIT/Apache — already the stack). Weekday set via EF `ValueConverter` + `ValueComparer` (built-in; the `StateMappings` precedent). No new library.
+- **Frontend**: React 18 + TS, MUI (existing), Zod at the trust boundary (existing). No new library.
+- **Migration**: existing `CreateMigration` PowerShell script (CLAUDE.md). No new tooling.
+
+## Wave: DESIGN / [REF] Decisions
+
+| # | Decision | Choice | ADR |
+|---|---|---|---|
+| 1 | Unified-evaluation mechanism | **Materialize** recurring days into synthetic single-day `BlackoutPeriod`s; union behind `IBlackoutPeriodService.GetEffectiveBlackoutDays(window)` (Option C) | ADR-059 |
+| 2 | Entity + weekday storage | Mirror `BlackoutPeriod` stack; `Weekdays:List<DayOfWeek>` JSON-converted + `ValueComparer`; `Start:DateOnly`, `End:DateOnly?` | ADR-060 |
+| 3 | Expansion algorithm + home | Pure `RecurringBlackoutRuleExtensions.ExpandToBlackoutDays(rule, window)`; week-index-modulo anchor (Monday of start week) | ADR-060 |
+| 4 | New controller/service/repo | `RecurringBlackoutRulesController` + `IRecurringBlackoutRuleService` + `IRepository<RecurringBlackoutRule>`, mirroring the one-off stack; `GetEffectiveBlackoutDays` exposes the unified eval path | ADR-059/060 |
+| 5 | Premium gating on eval path | **None** — recurring rules act whenever configured for every viewer (inherits one-off / #4974 verdict); only writes gated | ADR-059 |
+| 6 | Frontend shape | **Sibling component** `RecurringBlackoutRulesSettings.tsx` (second section, same page) — one-off & recurring "distinct concepts in the UI" (D4) | brief delta |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Overlapping component | Verdict | Justification |
+|---|---|---|
+| `BlackoutPeriod` model/DTO/service-CRUD/controller/repo | REUSE AS-IS | Untouched; recurring is a separate entity (D4) |
+| `BlackoutDaysExtensions` (all helpers) | REUSE AS-IS | Materialized recurring days are ordinary `BlackoutPeriod` input — no signature change (D7) |
+| #4974 A1 seams (`WhenForecastDto`, `Feature.GetLikelhoodForDate`, `Delivery.CalculateMetrics`, `FromDelivery`, `ProjectWorkingDays`/`CountWorkingDays`) | REUSE AS-IS | Contract untouched; they receive the unified list |
+| Monte Carlo (`ForecastService`/`ForecastBase`) | REUSE AS-IS | D7 — only the day SET widens |
+| Chart overlays (`Blackout`/`PbcBlackout`/`TimeBlackout`Overlay.tsx) | REUSE AS-IS | Consume server-derived `blackoutDayLabels`; transparent to the union |
+| `IBlackoutPeriodService` + `BlackoutPeriodService` | EXTEND | Add `GetEffectiveBlackoutDays`; the union's one home |
+| `LighthouseAppContext`, `Program.cs` | EXTEND | `DbSet` + converter + DI registration |
+| 13 eval fetch sites | EXTEND | Same-shape swap to the union method |
+| `BlackoutPeriodsSettings.tsx` | REUSE (pattern) | Pattern copied into a sibling component, not edited |
+| **New entity stack (7 BE files + 3 FE files + migration)** | **CREATE NEW** | **Evidence**: D4 locks a *separate entity*; a recurring rule (weekdays + interval + open-endedness) cannot be expressed by `BlackoutPeriod`'s date range, so storage reuse is impossible. Each new file is the recurring twin of a shipped one-off file — the *pattern* is reused even though the *type* is new (D2 satisfied). |
+
+## Wave: DESIGN / [REF] Open Questions
+
+- **OQ-1 (the single decision needing user confirmation)** — confirm ADR-059 Option C (materialize + union behind `GetEffectiveBlackoutDays`, `IReadOnlyList<BlackoutPeriod>` shape unchanged) over Option B (generalize the seam behind an `IBlackoutDaySource` interface, cleaner long-term model but re-touches every helper + the shipped #4974 shift). Recommendation: **Option C**.
+- **OQ-2** — do the CLI/MCP clients currently wrap one-off blackout-period CRUD? If yes, add a version-gated recurring-rule method; if no, defer-and-record explicitly. (DELIVER confirms against the clients repo.)
+
+## Wave: DESIGN / [REF] Wave Decisions Summary
+
+- **Pattern**: Ports-and-adapters (hexagonal) — unchanged; no new style.
+- **Paradigm**: **OOP** (C# backend), functional-leaning React frontend.
+- **Key components**: NEW `RecurringBlackoutRule` entity + DTO + pure `ExpandToBlackoutDays` + service/repo/controller + FE sibling settings section; EXTENDED `IBlackoutPeriodService.GetEffectiveBlackoutDays` (the union seam) + 13 same-shape fetch-site swaps + `LighthouseAppContext` + `Program.cs`.
+- **Reuse**: everything the recurring days flow *into* is REUSE AS-IS (helpers, #4974 shift, Monte Carlo, overlays); the union seam and EF/DI are EXTEND; the new entity stack is CREATE NEW (D4 separate entity, evidence above).
+- **Tech stack**: existing — .NET 8 / EF Core 8 / React 18 / MUI / Zod; EF migration via `CreateMigration`. No new library/integration.
+- **Constraints honoured**: D1 (cross-cutting), D2 (extend, no skeleton), D3 (weekdays + every-X-weeks + start + optional end), D4 (separate entity, unified eval via materialization), D5 (writes Premium+SystemAdmin, GET open, no new permission), D6 (global), D7 (Monte Carlo + shift untouched).
+- **Upstream changes**: none — every AC is satisfiable within the locked DISCUSS decisions; no user story / AC needs to change. No `## Changed Assumptions`, no `design/upstream-changes.md`.
+- **ADRs**: ADR-059 (unified evaluation via materialization), ADR-060 (entity + weekday storage + expansion). Cross-ref ADR-058.
+- **External integrations / contract tests**: none — no foreign substrate; nothing owed at the platform-architect handoff.
+- **ADO children**: #5221 (US-01), #5222 (US-02), #5223 (US-03), #5224 (US-04) — already exist.

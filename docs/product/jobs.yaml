@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-05-31
+updated: 2026-06-06
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -17,6 +17,7 @@ feature_context:
   - cumulative-state-time-completion-filter
   - delivery-metrics
   - blackout-day-forecast-shift
+  - recurring-blackout-events
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1508,4 +1509,82 @@ jobs:
         blackout references in Models/Forecast, WhenForecastDto, Delivery, Feature). Gap: 3 - a genuine
         missing capability, kept thin because the config, historical-throughput stripping, and backtest
         halves are already shipped and the reusable BlackoutDaysExtensions helpers exist.
+
+  - id: job-config-admin-define-recurring-blackout-rule
+    title: Define a recurring non-working-day rule once instead of re-entering one-off periods
+    persona: config-admin
+    feature_context: recurring-blackout-events
+    created: 2026-06-06
+    note: >
+      NEW in recurring-blackout-events (ADO Epic #4577 "Recurring Blackout Events", Premium,
+      reported via Productboard). Sibling of the SHIPPED #4974 (blackout-day-forecast-shift): the
+      one-off BlackoutPeriod (Start/End date range) CRUD, premium+SystemAdmin guard, the
+      BlackoutPeriodsSettings.tsx settings UI, and the BlackoutDaysExtensions evaluation seam are
+      shipped and LOCKED. This job is served by a NEW recurring-rule entity (RecurringBlackoutRule)
+      that lives ALONGSIDE the one-off period: select weekdays, an "every X weeks" interval, a
+      concrete start date, and an OPTIONAL open-ended end (empty = forever). Covers BOTH epic use
+      cases: "exclude weekends forever" AND "team off-site every 4th Friday this year". Recurring
+      and one-off coexist as distinct concepts in the settings UI but feed a UNIFIED blackout-day
+      evaluation (D4) so a recurring-rule day is indistinguishable downstream from a one-off
+      blackout day. Broader RRULE recurrence (monthly / nth-weekday-of-month), per-team scoping,
+      and holiday-calendar import are OUT of v1. Rules are GLOBAL like one-off periods (inherits
+      #4974 D9). SystemAdmin + Premium gate, same as one-off blackout-period creation.
+    job_story: >
+      When the same non-working days repeat on a predictable cadence - every weekend, or our team
+      off-site every fourth Friday - and today I have to hand-enter each one as a separate one-off
+      blackout period (and will keep re-entering them forever),
+      I want to define the pattern ONCE as a recurring rule - which weekdays, how often, when it
+      starts, and optionally when it ends or leave it open-ended to run forever -
+      so that every matching day is automatically treated as a non-working day in forecasts and on
+      the charts, without me maintaining an ever-growing list of individual date ranges.
+    dimensions:
+      functional: >
+        A new RecurringBlackoutRule (weekdays set, every-X-weeks interval, start date, optional
+        open-ended end) created/edited/deleted through a recurring-rules section in the existing
+        System settings page, alongside the one-off blackout periods. The rule expands to concrete
+        non-working days that feed the SAME IsBlackoutDay / GetBlackoutDayIndices evaluation the
+        one-off periods feed (unified evaluation, D4), so forecasting (day<->date shift, throughput
+        stripping) and chart overlays treat a recurring-rule day identically to a one-off blackout
+        day. "Exclude weekends forever" = Sat+Sun, every 1 week, start today, no end. "Off-site
+        every 4th Friday" = Fri, every 4 weeks, concrete start, concrete end. Creation gated by
+        Premium + SystemAdmin (GET open), matching one-off period CRUD.
+      emotional: >
+        Move from "I dread the blackout-periods screen because I keep hand-adding weekends and it
+        never ends" to "I described the weekend pattern once and Lighthouse keeps it correct
+        forever". Confidence that the forecast already knows about the recurring off-site without
+        anyone remembering to add it.
+      social: >
+        Be the admin who set the team up so forecasts are honest about recurring non-working time
+        without anyone babysitting a list - the recurring rule is self-evidently the source of those
+        skipped days.
+    forces:
+      push: >
+        Excluding weekends today means creating a one-off period for every single weekend, forever -
+        impractical, so admins simply do not, and forecasts silently count Saturdays and Sundays as
+        working days. A regular off-site has the same problem at smaller scale.
+      pull: >
+        Calendar-style recurrence everyone already understands (weekdays + "every X weeks" + start +
+        optional end) entered once, reusing the blackout-periods screen and the proven CRUD/guard
+        pattern - and it plugs straight into the already-shipped blackout-aware forecasting.
+      anxiety: >
+        Will a recurring rule behave differently from a one-off period downstream? (No - unified
+        evaluation, D4: a recurring-rule day is the same blackout day to forecasting and charts.)
+        Will leaving the end date empty break anything? (No - empty end = runs forever, the explicit
+        "exclude weekends" use case.) Will it change the Monte Carlo? (No - it only adds days to the
+        existing blackout-day set the shipped #4974 shift already consumes.)
+      habit: >
+        Admins already manage one-off blackout periods in this exact settings page; recurrence is the
+        natural "make this repeat" extension of an interaction they already perform.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - "exclude weekends" is the single most common non-working-day pattern and is
+        effectively unusable today via one-off periods; it directly feeds the high-stakes
+        forecast-honesty surface (#4974). Current satisfaction: 1 - no recurrence exists; weekends
+        can only be excluded by hand-entering every weekend, which nobody does. Gap: 3 - a genuine
+        missing capability, kept tractable because it reuses the shipped one-off CRUD pattern,
+        premium+admin guard, settings UI, and the unified BlackoutDaysExtensions evaluation seam; the
+        only genuinely new logic is rule -> concrete-days expansion.
 
