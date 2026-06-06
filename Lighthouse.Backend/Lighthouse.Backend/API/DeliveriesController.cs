@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API
         IDeliveryRuleService deliveryRuleService,
         IRbacAdministrationService rbacAdministrationService,
         IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository)
+        IBlackoutPeriodService blackoutPeriodService)
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
@@ -30,8 +30,9 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType<IEnumerable<DeliveryWithLikelihoodDto>>(StatusCodes.Status200OK)]
         public IActionResult GetByPortfolio(int portfolioId)
         {
-            var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
-            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+            var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId).ToList();
+            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                DateTime.UtcNow.Date, ForecastWindowEnd(deliveries));
             var deliveryDtos = deliveries.Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, blackoutPeriods)).ToList();
 
             var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryDtos.Select(d => d.Id));
@@ -316,6 +317,19 @@ namespace Lighthouse.Backend.API
             }
 
             return null;
+        }
+
+        private static DateTime ForecastWindowEnd(IReadOnlyList<Delivery> deliveries)
+        {
+            const int CalendarHeadroomDays = 14;
+
+            var latestDeliveryDate = deliveries.Count == 0
+                ? DateTime.UtcNow.Date
+                : deliveries.Max(delivery => delivery.Date.Date);
+
+            var horizon = latestDeliveryDate > DateTime.UtcNow.Date ? latestDeliveryDate : DateTime.UtcNow.Date;
+
+            return horizon.AddDays(CalendarHeadroomDays);
         }
     }
 }

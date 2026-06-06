@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
@@ -10,7 +11,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
     public class DeliveryMetricSnapshotRecordingHandler(
         IDeliveryRepository deliveryRepository,
         IDeliveryMetricSnapshotRepository snapshotRepository,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IBlackoutPeriodService blackoutPeriodService,
         ILogger<DeliveryMetricSnapshotRecordingHandler> logger) : IDomainEventHandler<PortfolioForecastsUpdated>
     {
         private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
@@ -24,7 +25,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             try
             {
                 var deliveries = deliveryRepository.GetByPortfolioAsync(domainEvent.PortfolioId).ToList();
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
+                    DateTime.UtcNow.Date, ForecastWindowEnd(deliveries));
                 var recordedAt = DateTime.UtcNow;
 
                 foreach (var delivery in deliveries)
@@ -71,6 +73,19 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     "Failed to record delivery metric snapshots for Portfolio {PortfolioId} after {ElapsedMilliseconds}ms; snapshot recording is best-effort and the next forecast update will retry",
                     domainEvent.PortfolioId, stopwatch.ElapsedMilliseconds);
             }
+        }
+
+        private static DateTime ForecastWindowEnd(IReadOnlyList<Delivery> deliveries)
+        {
+            const int CalendarHeadroomDays = 14;
+
+            var latestDeliveryDate = deliveries.Count == 0
+                ? DateTime.UtcNow.Date
+                : deliveries.Max(delivery => delivery.Date.Date);
+
+            var horizon = latestDeliveryDate > DateTime.UtcNow.Date ? latestDeliveryDate : DateTime.UtcNow.Date;
+
+            return horizon.AddDays(CalendarHeadroomDays);
         }
     }
 }

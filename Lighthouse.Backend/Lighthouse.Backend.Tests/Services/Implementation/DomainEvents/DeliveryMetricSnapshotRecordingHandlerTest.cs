@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -108,14 +109,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Setup(repository => repository.Save())
                 .ThrowsAsync(persistenceFailure);
 
-            var blackoutPeriodRepository = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepository.Setup(repository => repository.GetAll()).Returns(new List<BlackoutPeriod>());
+            var blackoutPeriodService = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodService
+                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<BlackoutPeriod>());
 
             var logger = new Mock<ILogger<DeliveryMetricSnapshotRecordingHandler>>();
             var handler = new DeliveryMetricSnapshotRecordingHandler(
                 scope.ServiceProvider.GetRequiredService<IDeliveryRepository>(),
                 snapshotRepository.Object,
-                blackoutPeriodRepository.Object,
+                blackoutPeriodService.Object,
                 logger.Object);
 
             await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);

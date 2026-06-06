@@ -38,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             StopApplication();
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task GetDelivery_FeatureWithRecurringRuleDays_FeaturePercentileDateStepsOverTheRecurringSpan()
         {
@@ -55,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(completionDate, Is.EqualTo(Today.AddDays(12)));
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task GetDelivery_RecurringRuleDays_FeaturePercentileDateIdenticalToEquivalentOneOffPeriod()
         {
@@ -70,6 +68,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             RemoveAllOneOffPeriods();
             RemoveAllPortfolios();
+            RemoveAllFeatures();
             await ConfigureRecurringRuleCovering(firstBlackoutDay, secondBlackoutDay);
             var recurringPortfolioId = await SeedPortfolioWithForecastedFeature();
             await CreateDelivery(recurringPortfolioId);
@@ -80,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "A recurring-rule day must shift the delivery percentile date identically to a one-off blackout period (D4 unified evaluation).");
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task GetDelivery_FeatureWithRecurringRuleDays_LikelihoodComputedOnTheWorkingDayCount()
         {
@@ -88,13 +86,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var secondBlackoutDay = DateOnly.FromDateTime(Today.AddDays(4));
             await ConfigureRecurringRuleCovering(firstBlackoutDay, secondBlackoutDay);
 
-            var portfolioId = await SeedPortfolioWithForecastedFeature();
-            await CreateDelivery(portfolioId, dueDateDaysOut: 12);
+            var portfolioId = await SeedPortfolioWithForecast(ForecastSplitBetweenNineAndElevenWorkingDays());
+            await CreateDelivery(portfolioId, dueDateDaysOut: 11);
 
             var delivery = await GetSingleDelivery(portfolioId);
 
-            Assert.That(delivery.FeatureLikelihoods.Single().LikelihoodPercentage, Is.GreaterThanOrEqualTo(100),
-                "GetLikelhoodForDate counts working days excluding recurring-rule days; the 10 working days fit inside the 12-calendar-day window after stepping over the 2 recurring days.");
+            Assert.That(delivery.FeatureLikelihoods.Single().LikelihoodPercentage, Is.EqualTo(50),
+                "GetLikelhoodForDate counts working days excluding recurring-rule days; the 2 recurring days consume 2 of the 11 calendar days, leaving 9 working days. Half the forecast trials complete in 9 days and half in 11, so the likelihood is 50 — without the recurring days the full 11-day window would yield 100.");
         }
 
         private async Task ConfigureRecurringRuleCovering(DateOnly firstDay, DateOnly secondDay)
@@ -136,7 +134,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
             repository.Save().GetAwaiter().GetResult();
         }
 
-        private async Task<int> SeedPortfolioWithForecastedFeature()
+        private void RemoveAllFeatures()
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+            foreach (var feature in repository.GetAll().ToList())
+            {
+                repository.Remove(feature);
+            }
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        private Task<int> SeedPortfolioWithForecastedFeature()
+        {
+            return SeedPortfolioWithForecast(ForecastCompletingInWorkingDays(WorkingDaysToCompletion));
+        }
+
+        private async Task<int> SeedPortfolioWithForecast(WhenForecast forecast)
         {
             using var scope = Factory.Services.CreateScope();
 
@@ -148,7 +162,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await teamRepository.Save();
 
             var feature = new Feature(team, 5) { Name = "Feature", Order = "12" };
-            feature.SetFeatureForecasts([ForecastCompletingInWorkingDays(WorkingDaysToCompletion)]);
+            feature.SetFeatureForecasts([forecast]);
 
             var portfolio = new Portfolio { Name = $"Test Portfolio {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection };
             portfolio.UpdateFeatures([feature]);
@@ -158,6 +172,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await portfolioRepository.Save();
 
             return portfolio.Id;
+        }
+
+        private static WhenForecast ForecastSplitBetweenNineAndElevenWorkingDays()
+        {
+            var simulation = new SimulationResult();
+            simulation.SimulationResults[9] = 50;
+            simulation.SimulationResults[11] = 50;
+            return new WhenForecast(simulation) { HasSufficientData = true };
         }
 
         private async Task CreateDelivery(int portfolioId, int dueDateDaysOut = 30)
@@ -174,7 +196,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 SelectionMode = DeliverySelectionMode.Manual,
             };
 
-            Client.AsPortfolioViewer(portfolioId);
+            Client.AsPortfolioAdmin(portfolioId);
             var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolioId}", JsonContent.Create(request));
             response.EnsureSuccessStatusCode();
         }

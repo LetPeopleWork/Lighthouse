@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
         private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepositoryMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
         [SetUp]
         public void Setup()
@@ -36,9 +36,11 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             deliveryMetricSnapshotRepositoryMock = new Mock<IDeliveryMetricSnapshotRepository>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
 
-            blackoutPeriodRepositoryMock.Setup(x => x.GetAll()).Returns(new List<BlackoutPeriod>());
+            blackoutPeriodServiceMock
+                .Setup(x => x.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<BlackoutPeriod>());
 
             deliveryMetricSnapshotRepositoryMock
                 .Setup(x => x.GetSnapshotCountsByDelivery(It.IsAny<IEnumerable<int>>()))
@@ -271,7 +273,7 @@ namespace Lighthouse.Backend.Tests.API
                 deliveryRuleServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
                 deliveryMetricSnapshotRepositoryMock.Object,
-                blackoutPeriodRepositoryMock.Object);
+                blackoutPeriodServiceMock.Object);
         }
 
         [Test]
