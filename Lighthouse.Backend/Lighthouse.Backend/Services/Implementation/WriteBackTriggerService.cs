@@ -10,6 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation
         IWriteBackService writeBackService,
         ILicenseService licenseService,
         IWorkItemRepository workItemRepository,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
         ILogger<WriteBackTriggerService> logger)
         : IWriteBackTriggerService
     {
@@ -93,7 +94,9 @@ namespace Lighthouse.Backend.Services.Implementation
                     "Triggering {WriteBackType} write-back for portfolio {PortfolioId} ({PortfolioName}), {MappingCount} mapping(s)",
                     isForecast ? "forecast" : "feature", portfolio.Id, portfolio.Name, mappings.Count);
 
-                var updates = ResolvePortfolioUpdates(mappings, portfolio.Features);
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+
+                var updates = ResolvePortfolioUpdates(mappings, portfolio.Features, blackoutPeriods);
 
                 if (updates.Count == 0)
                 {
@@ -147,7 +150,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private List<WriteBackFieldUpdate> ResolvePortfolioUpdates(
             List<WriteBackMappingDefinition> mappings,
-            List<Feature> features)
+            List<Feature> features,
+            IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             var updates = new List<WriteBackFieldUpdate>();
 
@@ -164,7 +168,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 foreach (var feature in features)
                 {
-                    var value = ResolveFeatureValue(mapping, feature);
+                    var value = ResolveFeatureValue(mapping, feature, blackoutPeriods);
                     if (value != null)
                     {
                         updates.Add(new WriteBackFieldUpdate
@@ -190,11 +194,11 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        private static string? ResolveFeatureValue(WriteBackMappingDefinition mapping, Feature feature)
+        private static string? ResolveFeatureValue(WriteBackMappingDefinition mapping, Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             if (ForecastSources.Contains(mapping.ValueSource))
             {
-                return ResolveForecastValue(mapping, feature);
+                return ResolveForecastValue(mapping, feature, blackoutPeriods);
             }
 
             return mapping.ValueSource switch
@@ -206,7 +210,7 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        private static string? ResolveForecastValue(WriteBackMappingDefinition mapping, Feature feature)
+        private static string? ResolveForecastValue(WriteBackMappingDefinition mapping, Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             if (feature.StateCategory == StateCategories.Done)
             {
@@ -223,7 +227,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return null;
             }
 
-            var forecastDate = DateTime.UtcNow.Date.AddDays(daysToCompletion);
+            var forecastDate = blackoutPeriods.ProjectWorkingDays(DateTime.UtcNow.Date, daysToCompletion);
 
             return mapping.TargetValueType == WriteBackTargetValueType.FormattedText && !string.IsNullOrEmpty(mapping.DateFormat)
                 ? forecastDate.ToString(mapping.DateFormat)

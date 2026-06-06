@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [TestFixture]
-    [Ignore("pending DELIVER — Epic 4974 US-04 write-back date shift + compose guard not yet implemented")]
     public class BlackoutForecastShiftWriteBackTest
     {
         private const int WorkingDaysToCompletion = 10;
@@ -21,6 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWriteBackService> writeBackServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
+        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private List<WriteBackFieldUpdate> capturedUpdates;
         private WriteBackTriggerService subject;
 
@@ -32,8 +32,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             writeBackServiceMock = new Mock<IWriteBackService>();
             licenseServiceMock = new Mock<ILicenseService>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
 
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
 
             capturedUpdates = [];
             writeBackServiceMock
@@ -45,12 +47,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 writeBackServiceMock.Object,
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
+                blackoutPeriodRepositoryMock.Object,
                 Mock.Of<ILogger<WriteBackTriggerService>>());
+        }
+
+        private void ConfigureBlackoutPeriod(DateOnly start, DateOnly end)
+        {
+            blackoutPeriodRepositoryMock
+                .Setup(r => r.GetAll())
+                .Returns([new BlackoutPeriod { Start = start, End = end, Description = "Company shutdown" }]);
         }
 
         [Test]
         public async Task TriggerForecastWriteBack_FeatureWithFutureBlackoutDays_WritesTheShiftedDate()
         {
+            ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(3)), DateOnly.FromDateTime(Today.AddDays(4)));
             var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
 
             await subject.TriggerForecastWriteBackForPortfolio(portfolio);
@@ -73,6 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task TriggerForecastWriteBack_HistoricalAndFutureBlackoutBothConfigured_DaysValueUnchangedAndDateShiftedExactlyOnce()
         {
+            ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(3)), DateOnly.FromDateTime(Today.AddDays(4)));
             var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
             var feature = portfolio.Features.Single();
 
