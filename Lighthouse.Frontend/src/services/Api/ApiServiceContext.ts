@@ -32,6 +32,10 @@ import {
 import { type IPortfolioService, PortfolioService } from "./PortfolioService";
 import { ProjectMetricsService } from "./ProjectMetricsService";
 import { type IRbacService, RbacService } from "./RbacService";
+import {
+	type IRecurringBlackoutRuleService,
+	RecurringBlackoutRuleService,
+} from "./RecurringBlackoutRuleService";
 import { type ISettingsService, SettingsService } from "./SettingsService";
 import {
 	type ISuggestionService,
@@ -83,6 +87,7 @@ export interface IApiServiceContext {
 	systemInfoService: ISystemInfoService;
 	surveyNudgeService: ISurveyNudgeService;
 	blackoutPeriodService: IBlackoutPeriodService;
+	recurringBlackoutRuleService: IRecurringBlackoutRuleService;
 	databaseManagementService: IDatabaseManagementService;
 	oauthService: IOAuthService;
 }
@@ -112,6 +117,7 @@ const defaultServices: IApiServiceContext = {
 	systemInfoService: new SystemInfoService(),
 	surveyNudgeService: new SurveyNudgeService(),
 	blackoutPeriodService: new BlackoutPeriodService(),
+	recurringBlackoutRuleService: new RecurringBlackoutRuleService(),
 	databaseManagementService: new DatabaseManagementService(),
 	oauthService: new OAuthService(),
 };

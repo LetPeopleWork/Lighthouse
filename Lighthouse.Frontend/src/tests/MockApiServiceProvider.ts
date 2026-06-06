@@ -14,6 +14,7 @@ import type { IOAuthService } from "../services/Api/OAuthService";
 import type { IOptionalFeatureService } from "../services/Api/OptionalFeatureService";
 import type { IPortfolioService } from "../services/Api/PortfolioService";
 import type { IRbacService } from "../services/Api/RbacService";
+import type { IRecurringBlackoutRuleService } from "../services/Api/RecurringBlackoutRuleService";
 import type { ISettingsService } from "../services/Api/SettingsService";
 import type { ISuggestionService } from "../services/Api/SuggestionService";
 import type { ISurveyNudgeService } from "../services/Api/SurveyNudgeService";
@@ -59,6 +60,8 @@ export const createMockApiServiceContext = (
 		surveyNudgeService: createMockSurveyNudgeService(),
 		blackoutPeriodService:
 			null as unknown as IApiServiceContext["blackoutPeriodService"],
+		recurringBlackoutRuleService:
+			null as unknown as IApiServiceContext["recurringBlackoutRuleService"],
 		databaseManagementService:
 			null as unknown as IApiServiceContext["databaseManagementService"],
 		oauthService: createMockOAuthService(),
@@ -383,6 +386,16 @@ export const createMockBlackoutPeriodService = (): IBlackoutPeriodService => {
 		delete: vi.fn(),
 	};
 };
+
+export const createMockRecurringBlackoutRuleService =
+	(): IRecurringBlackoutRuleService => {
+		return {
+			getAll: vi.fn().mockResolvedValue([]),
+			create: vi.fn(),
+			update: vi.fn(),
+			delete: vi.fn(),
+		};
+	};
 
 export const createMockApiKeyService = (): IApiKeyService => {
 	return {

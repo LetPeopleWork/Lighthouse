@@ -23,6 +23,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import LogSettings from "../LogSettings/LogSettings";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BlackoutPeriodsSettings from "./BlackoutPeriodsSettings";
+import RecurringBlackoutRulesSettings from "./RecurringBlackoutRulesSettings";
 
 const SystemSettingsTab: React.FC = () => {
 	// Optional Features state
@@ -91,6 +92,12 @@ const SystemSettingsTab: React.FC = () => {
 		<Box sx={{ mb: 4 }}>
 			<InputGroup title="Blackout Periods" initiallyExpanded={true}>
 				<BlackoutPeriodsSettings
+					isPremium={licenseStatus?.canUsePremiumFeatures ?? false}
+				/>
+			</InputGroup>
+
+			<InputGroup title="Recurring Blackout Rules" initiallyExpanded={true}>
+				<RecurringBlackoutRulesSettings
 					isPremium={licenseStatus?.canUsePremiumFeatures ?? false}
 				/>
 			</InputGroup>
