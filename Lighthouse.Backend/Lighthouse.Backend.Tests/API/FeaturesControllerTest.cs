@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
+        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
@@ -28,6 +29,8 @@ namespace Lighthouse.Backend.Tests.API
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
 
             features.Clear();
@@ -415,7 +418,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private FeaturesController CreateSubject()
         {
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, rbacAdministrationServiceMock.Object);
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodRepositoryMock.Object, rbacAdministrationServiceMock.Object);
         }
     }
 }

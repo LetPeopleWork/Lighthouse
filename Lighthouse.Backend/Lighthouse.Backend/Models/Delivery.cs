@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
@@ -47,10 +48,10 @@ namespace Lighthouse.Backend.Models
 
         public int? RuleSchemaVersion { get; set; }
 
-        public DeliveryMetricsProjection CalculateMetrics(params int[] percentiles)
+        public DeliveryMetricsProjection CalculateMetrics(IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
         {
-            var featureBreakdown = CalculateFeatureBreakdown();
-            var leastLikelyFeature = GetLeastLikelyFeature();
+            var featureBreakdown = CalculateFeatureBreakdown(blackoutPeriods);
+            var leastLikelyFeature = GetLeastLikelyFeature(blackoutPeriods);
 
             if (leastLikelyFeature == null)
             {
@@ -58,33 +59,33 @@ namespace Lighthouse.Backend.Models
             }
 
             var whenDistribution = percentiles
-                .Select(percentile => ToWhenPercentile(leastLikelyFeature.Forecast, percentile))
+                .Select(percentile => ToWhenPercentile(leastLikelyFeature.Forecast, percentile, blackoutPeriods))
                 .ToList();
 
-            return new DeliveryMetricsProjection(leastLikelyFeature.GetLikelhoodForDate(Date), whenDistribution, featureBreakdown);
+            return new DeliveryMetricsProjection(leastLikelyFeature.GetLikelhoodForDate(Date, blackoutPeriods), whenDistribution, featureBreakdown);
         }
 
-        private List<DeliveryFeatureMetric> CalculateFeatureBreakdown()
+        private List<DeliveryFeatureMetric> CalculateFeatureBreakdown(IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             return Features
                 .Where(feature => feature.FeatureWork.Sum(work => work.TotalWorkItems) > 0)
-                .Select(ToFeatureMetric)
+                .Select(feature => ToFeatureMetric(feature, blackoutPeriods))
                 .ToList();
         }
 
-        private DeliveryFeatureMetric ToFeatureMetric(Feature feature)
+        private DeliveryFeatureMetric ToFeatureMetric(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             var totalItems = feature.FeatureWork.Sum(work => work.TotalWorkItems);
             var remainingItems = feature.FeatureWork.Sum(work => work.RemainingWorkItems);
             var completion = Math.Clamp((double)(totalItems - remainingItems) / totalItems * 100.0, 0.0, 100.0);
 
-            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date));
+            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date, blackoutPeriods));
         }
 
-        private Feature? GetLeastLikelyFeature()
+        private Feature? GetLeastLikelyFeature(IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             var rankedFeatures = Features
-                .Select(feature => (feature, likelihood: feature.GetLikelhoodForDate(Date)))
+                .Select(feature => (feature, likelihood: feature.GetLikelhoodForDate(Date, blackoutPeriods)))
                 .Where(ranked => ranked.likelihood >= 0)
                 .OrderByDescending(ranked => ranked.likelihood)
                 .ToList();
@@ -97,9 +98,9 @@ namespace Lighthouse.Backend.Models
             return rankedFeatures[^1].feature;
         }
 
-        private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile)
+        private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
-            var expectedDate = DateTime.UtcNow.Date.AddDays(forecast.GetProbability(percentile));
+            var expectedDate = blackoutPeriods.ProjectWorkingDays(DateTime.UtcNow.Date, forecast.GetProbability(percentile));
             return new DeliveryWhenPercentile(percentile, expectedDate, forecast.FilterApplied, forecast.ExcludedSummary);
         }
     }

@@ -4,14 +4,14 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureDto : WorkItemDto
     {
-        public FeatureDto(Feature feature, ISet<int>? readablePortfolioIds = null) : base(feature)
-        {            
+        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null) : base(feature)
+        {
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
             Size = feature.Size;
             OwningTeam = feature.OwningTeam;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(Array.Empty<BlackoutPeriod>(), 50, 70, 85, 95) ?? []);
+            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(blackoutPeriods, 50, 70, 85, 95) ?? []);
 
             foreach (var work in feature.FeatureWork)
             {

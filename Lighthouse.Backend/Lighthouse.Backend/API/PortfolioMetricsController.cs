@@ -95,7 +95,8 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate);
-                return features.Select(f => new FeatureDto(f));
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
 
@@ -181,7 +182,8 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var features = portfolioMetricsService.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate);
-                return features.Select(f => new FeatureDto(f));
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
 
@@ -196,7 +198,8 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var features = portfolioMetricsService.GetAllFeaturesForSizeChart(portfolio, startDate, endDate);
-                return features.Select(f => new FeatureDto(f));
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
 

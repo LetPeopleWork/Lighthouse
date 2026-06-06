@@ -51,11 +51,11 @@ namespace Lighthouse.Backend.API.DTO
 
         public Guid ConcurrencyToken { get; set; }
 
-        public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery)
+        public static DeliveryWithLikelihoodDto FromDelivery(Delivery delivery, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
-            var featureLikelihoods = CalculateFeatureLikelihoods(delivery);
+            var featureLikelihoods = CalculateFeatureLikelihoods(delivery, blackoutPeriods);
 
-            var metrics = delivery.CalculateMetrics(70, 85, 95);
+            var metrics = delivery.CalculateMetrics(blackoutPeriods, 70, 85, 95);
             var completionDates = metrics.WhenDistribution.Select(ToWhenForecastDto).ToList();
 
             var leastLikelyFeature = GetLeastLikelyFeature(featureLikelihoods);
@@ -142,15 +142,15 @@ namespace Lighthouse.Backend.API.DTO
             return (progress, remainingWork, totalWork);
         }
 
-        private static List<FeatureLikelihoodDto> CalculateFeatureLikelihoods(Delivery delivery)
+        private static List<FeatureLikelihoodDto> CalculateFeatureLikelihoods(Delivery delivery, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             var featureLikelihoods = new List<FeatureLikelihoodDto>();
 
             foreach (var feature in delivery.Features)
             {
-                var likelihood = feature.GetLikelhoodForDate(delivery.Date);
+                var likelihood = feature.GetLikelhoodForDate(delivery.Date, blackoutPeriods);
 
-                var completionDates = feature.Forecast.CreateForecastDtos(Array.Empty<BlackoutPeriod>(), 70, 85, 95);
+                var completionDates = feature.Forecast.CreateForecastDtos(blackoutPeriods, 70, 85, 95);
 
                 featureLikelihoods.Add(new FeatureLikelihoodDto
                 {

@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [Ignore("pending DELIVER — Epic 4974 US-03 feature/delivery date shift not yet implemented")]
     public class BlackoutForecastShiftDeliveryIntegrationTest() : IntegrationTestBase
     {
         private const int WorkingDaysToCompletion = 10;

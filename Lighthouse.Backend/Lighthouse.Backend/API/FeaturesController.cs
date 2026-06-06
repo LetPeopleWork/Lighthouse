@@ -16,15 +16,18 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRepository<Feature> featureRepository;
         private readonly IWorkItemRepository workItemRepository;
+        private readonly IRepository<BlackoutPeriod> blackoutPeriodRepository;
         private readonly IRbacAdministrationService rbacAdministrationService;
 
         public FeaturesController(
             IRepository<Feature> featureRepository,
             IWorkItemRepository workItemRepository,
+            IRepository<BlackoutPeriod> blackoutPeriodRepository,
             IRbacAdministrationService rbacAdministrationService)
         {
             this.featureRepository = featureRepository;
             this.workItemRepository = workItemRepository;
+            this.blackoutPeriodRepository = blackoutPeriodRepository;
             this.rbacAdministrationService = rbacAdministrationService;
         }
 
@@ -80,10 +83,11 @@ namespace Lighthouse.Backend.API
         {
             var features = featureRepository.GetAllByPredicate(predicate).OrderBy(f => f, new FeatureComparer()).ToList();
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
+            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
-                .Select(f => new FeatureDto(f, readablePortfolioIdSet))
+                .Select(f => new FeatureDto(f, blackoutPeriods, readablePortfolioIdSet))
                 .ToList();
         }
 

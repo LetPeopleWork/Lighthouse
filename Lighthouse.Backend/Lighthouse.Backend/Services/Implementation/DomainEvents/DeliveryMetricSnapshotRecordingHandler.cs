@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -9,6 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
     public class DeliveryMetricSnapshotRecordingHandler(
         IDeliveryRepository deliveryRepository,
         IDeliveryMetricSnapshotRepository snapshotRepository,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository,
         ILogger<DeliveryMetricSnapshotRecordingHandler> logger) : IDomainEventHandler<PortfolioForecastsUpdated>
     {
         private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
@@ -22,6 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             try
             {
                 var deliveries = deliveryRepository.GetByPortfolioAsync(domainEvent.PortfolioId).ToList();
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                 var recordedAt = DateTime.UtcNow;
 
                 foreach (var delivery in deliveries)
@@ -40,7 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     snapshot.RemainingWork = remainingWork;
                     snapshot.EstimatedItemCount = estimatedPortion > 0 ? estimatedPortion : null;
 
-                    var metrics = delivery.CalculateMetrics(SnapshotPercentiles);
+                    var metrics = delivery.CalculateMetrics(blackoutPeriods, SnapshotPercentiles);
                     var hasForecast = metrics.WhenDistribution.Count > 0;
                     snapshot.LikelihoodPercentage = hasForecast ? metrics.LikelihoodPercentage : null;
                     snapshot.WhenDistributionJson = hasForecast

@@ -5,12 +5,14 @@ namespace Lighthouse.Backend.Tests.Models
 {
     public class FeatureTest
     {
+        private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
+
         [Test]
         public void GetLikelihoodForFeature_FeatureHasNoRemainingWork_Returns100()
         {
             var subject = CreateSubject();
 
-            var likelihood = subject.GetLikelhoodForDate(DateTime.Today.AddDays(17));
+            var likelihood = subject.GetLikelhoodForDate(DateTime.Today.AddDays(17), NoBlackoutPeriods);
 
             Assert.That(likelihood, Is.EqualTo(100));
         }

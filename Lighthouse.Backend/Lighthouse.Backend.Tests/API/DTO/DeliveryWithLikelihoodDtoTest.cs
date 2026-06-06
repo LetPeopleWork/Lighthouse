@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
 {
     public class DeliveryWithLikelihoodDtoTest
     {
+        private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
+
         [Test]
         public void Should_Calculate_Likelihood_Based_On_Feature_Forecasts()
         {
@@ -38,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -68,7 +70,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -126,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature2);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -191,7 +193,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature3);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -230,7 +232,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(sufficientFeature);
             delivery.Features.Add(governingFeature);
 
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {

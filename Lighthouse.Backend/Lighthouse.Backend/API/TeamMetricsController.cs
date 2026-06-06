@@ -96,8 +96,9 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team, asOfDate);
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
 
-                return features.Select(f => new FeatureDto(f));
+                return features.Select(f => new FeatureDto(f, blackoutPeriods));
             });
         }
 

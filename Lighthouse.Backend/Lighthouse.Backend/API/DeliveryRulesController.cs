@@ -15,7 +15,8 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class DeliveryRulesController(
         IRepository<Portfolio> portfolioRepository,
-        IDeliveryRuleService deliveryRuleService)
+        IDeliveryRuleService deliveryRuleService,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository)
         : ControllerBase
     {
         [HttpGet("schema")]
@@ -51,8 +52,9 @@ namespace Lighthouse.Backend.API
 
             var ruleSet = ConvertToRuleSet(request);
             var result = deliveryRuleService.GetMatchingFeaturesForRuleset(ruleSet, portfolio.Features);
-            
-            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f)));
+            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+
+            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, blackoutPeriods)));
 
             if (matchingFeatures.Count == 0)
             {

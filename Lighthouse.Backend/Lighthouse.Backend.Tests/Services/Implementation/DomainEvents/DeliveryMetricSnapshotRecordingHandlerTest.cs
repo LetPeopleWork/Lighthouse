@@ -108,10 +108,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Setup(repository => repository.Save())
                 .ThrowsAsync(persistenceFailure);
 
+            var blackoutPeriodRepository = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodRepository.Setup(repository => repository.GetAll()).Returns(new List<BlackoutPeriod>());
+
             var logger = new Mock<ILogger<DeliveryMetricSnapshotRecordingHandler>>();
             var handler = new DeliveryMetricSnapshotRecordingHandler(
                 scope.ServiceProvider.GetRequiredService<IDeliveryRepository>(),
                 snapshotRepository.Object,
+                blackoutPeriodRepository.Object,
                 logger.Object);
 
             await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);

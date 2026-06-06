@@ -21,7 +21,8 @@ namespace Lighthouse.Backend.API
         ILicenseService licenseService,
         IDeliveryRuleService deliveryRuleService,
         IRbacAdministrationService rbacAdministrationService,
-        IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository)
+        IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository)
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
@@ -30,7 +31,8 @@ namespace Lighthouse.Backend.API
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
-            var deliveryDtos = deliveries.Select(DeliveryWithLikelihoodDto.FromDelivery).ToList();
+            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+            var deliveryDtos = deliveries.Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, blackoutPeriods)).ToList();
 
             var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryDtos.Select(d => d.Id));
             foreach (var deliveryDto in deliveryDtos)

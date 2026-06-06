@@ -50,7 +50,8 @@ namespace Lighthouse.Backend.Tests.API
                 licenseService.Object,
                 Mock.Of<IDeliveryRuleService>(),
                 rbacAdministrationService.Object,
-                deliveryMetricSnapshotRepository.Object);
+                deliveryMetricSnapshotRepository.Object,
+                Mock.Of<IRepository<BlackoutPeriod>>());
         }
 
         [Test]

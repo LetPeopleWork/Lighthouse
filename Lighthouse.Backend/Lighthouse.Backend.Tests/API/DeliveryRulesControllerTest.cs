@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Tests.API
     {
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
+        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private DeliveryRulesController subject;
 
         [SetUp]
@@ -23,10 +24,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
-            
+            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+
             subject = new DeliveryRulesController(
                 portfolioRepositoryMock.Object,
-                deliveryRuleServiceMock.Object);
+                deliveryRuleServiceMock.Object,
+                blackoutPeriodRepositoryMock.Object);
         }
 
         [Test]

@@ -1,4 +1,5 @@
 ﻿﻿using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
@@ -65,11 +66,11 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);
 
-        public double GetLikelhoodForDate(DateTime date)
+        public double GetLikelhoodForDate(DateTime date, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
-                var timeToTargetDate = (date - DateTime.UtcNow.Date).Days;
+                var timeToTargetDate = blackoutPeriods.CountWorkingDays(DateTime.UtcNow.Date, date);
 
                 return Forecast?.GetLikelihood(timeToTargetDate) ?? 0;
             }
