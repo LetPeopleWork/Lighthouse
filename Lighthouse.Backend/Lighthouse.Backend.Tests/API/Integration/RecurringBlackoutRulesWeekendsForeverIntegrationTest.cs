@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-01")]
         public async Task CreateWeekendsForeverRule_AsPremiumSystemAdmin_RuleIsAcceptedAndListedWithHumanReadableSummary()
         {
             Client.AsSystemAdmin();

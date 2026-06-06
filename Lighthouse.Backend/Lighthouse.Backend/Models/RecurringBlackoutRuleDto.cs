@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.Models
@@ -32,6 +33,22 @@ namespace Lighthouse.Backend.Models
         public DateOnly? End { get; set; }
 
         public string Description { get; set; } = string.Empty;
+
+        public string Summary => BuildSummary();
+
+        private string BuildSummary()
+        {
+            var dayNames = string.Join(", ", Weekdays.Select(day => day.ToString()));
+            var cadence = IntervalWeeks == 1
+                ? "weekly"
+                : $"every {IntervalWeeks} weeks";
+            var startText = Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var endText = End is null
+                ? "no end"
+                : End.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            return $"Every {dayNames} — {cadence} — from {startText} — {endText}";
+        }
 
         public RecurringBlackoutRule ToEntity()
         {
