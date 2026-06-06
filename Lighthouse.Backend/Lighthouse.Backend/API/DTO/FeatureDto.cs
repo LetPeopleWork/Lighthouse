@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.API.DTO
             Size = feature.Size;
             OwningTeam = feature.OwningTeam;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(50, 70, 85, 95) ?? []);
+            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(Array.Empty<BlackoutPeriod>(), 50, 70, 85, 95) ?? []);
 
             foreach (var work in feature.FeatureWork)
             {

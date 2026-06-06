@@ -5,13 +5,13 @@ namespace Lighthouse.Backend.API.DTO
 {
     public static class DtoExtensions
     {
-        public static IEnumerable<WhenForecastDto> CreateForecastDtos(this WhenForecast whenForecast, params int[] probabilities)
+        public static IEnumerable<WhenForecastDto> CreateForecastDtos(this WhenForecast whenForecast, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] probabilities)
         {
             var forecastDtos = new List<WhenForecastDto>();
             foreach (var probability in probabilities)
             {
                 forecastDtos.Add(
-                        new WhenForecastDto(whenForecast, probability)
+                        new WhenForecastDto(whenForecast, probability, blackoutPeriods)
                     );
             }
 

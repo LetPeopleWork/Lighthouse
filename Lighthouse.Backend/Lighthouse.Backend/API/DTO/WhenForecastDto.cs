@@ -1,4 +1,6 @@
-﻿using Lighthouse.Backend.Models.Forecast;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -8,10 +10,10 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public WhenForecastDto(WhenForecast forecast, int probability)
+        public WhenForecastDto(WhenForecast forecast, int probability, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             Probability = probability;
-            ExpectedDate = GetFutureDate(forecast.GetProbability(probability));
+            ExpectedDate = blackoutPeriods.ProjectWorkingDays(DateTime.UtcNow.Date, forecast.GetProbability(probability));
             FilterApplied = forecast.FilterApplied;
             ExcludedSummary = forecast.ExcludedSummary;
         }
@@ -23,10 +25,5 @@ namespace Lighthouse.Backend.API.DTO
         public bool FilterApplied { get; set; }
 
         public string? ExcludedSummary { get; set; }
-
-        private static DateTime GetFutureDate(int daysInFuture)
-        {
-            return DateTime.UtcNow.Date.AddDays(daysInFuture);
-        }
     }
 }

@@ -20,7 +20,8 @@ namespace Lighthouse.Backend.API
         IForecastUpdater forecastUpdater,
         IForecastService forecastService,
         IRepository<Team> teamRepository,
-        ITeamMetricsService teamMetricsService)
+        ITeamMetricsService teamMetricsService,
+        IRepository<BlackoutPeriod> blackoutPeriodRepository)
         : ControllerBase
     {
         [HttpPost("update/{id:int}")]
@@ -81,9 +82,10 @@ namespace Lighthouse.Backend.API
 
                 if (input.RemainingItems is > 0)
                 {
+                    var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
                     var whenForecast = await forecastService.When(team, input.RemainingItems.Value, mode);
 
-                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(50, 70, 85, 95));
+                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(blackoutPeriods, 50, 70, 85, 95));
                     manualForecast.FilterApplied = whenForecast.FilterApplied;
                     manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
                     manualForecast.HasSufficientData = whenForecast.HasSufficientData;
