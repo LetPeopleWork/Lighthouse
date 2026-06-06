@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; } = null!;
 
+        public DbSet<RecurringBlackoutRule> RecurringBlackoutRules { get; set; } = null!;
+
         public DbSet<RefreshLog> RefreshLogs { get; set; } = null!;
 
         public DbSet<ApiKey> ApiKeys { get; set; } = null!;
@@ -328,6 +330,30 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<BlackoutPeriod>()
                 .Property(bp => bp.Id)
                 .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<RecurringBlackoutRule>().HasKey(r => r.Id);
+            modelBuilder.Entity<RecurringBlackoutRule>()
+                .Property(r => r.Id)
+                .ValueGeneratedOnAdd();
+
+            var weekdaysConverter = new ValueConverter<List<DayOfWeek>, string>(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new List<DayOfWeek>()
+                    : JsonSerializer.Deserialize<List<DayOfWeek>>(v, (JsonSerializerOptions?)null)
+                      ?? new List<DayOfWeek>()
+            );
+
+            var weekdaysComparer = new ValueComparer<List<DayOfWeek>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (hash, value) => HashCode.Combine(hash, value.GetHashCode())),
+                c => c.ToList()
+            );
+
+            modelBuilder.Entity<RecurringBlackoutRule>()
+                .Property(r => r.Weekdays)
+                .HasConversion(weekdaysConverter)
+                .Metadata.SetValueComparer(weekdaysComparer);
 
             var stateMappingsConverter = new ValueConverter<List<StateMapping>, string>(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),

@@ -822,6 +822,36 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("Portfolios");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.RecurringBlackoutRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("End")
+                        .HasColumnType("date");
+
+                    b.Property<int>("IntervalWeeks")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Weekdays")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RecurringBlackoutRules");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.RefreshLog", b =>
                 {
                     b.Property<int>("Id")
