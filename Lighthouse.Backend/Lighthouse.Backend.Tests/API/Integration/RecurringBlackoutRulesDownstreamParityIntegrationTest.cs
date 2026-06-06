@@ -25,11 +25,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-03")]
         public async Task WhenForecast_RecurringRuleDay_ProducesSamePercentileDateAsAnEquivalentOneOffPeriod()
         {
             var firstBlackoutDay = DateOnly.FromDateTime(Today.AddDays(3));
             var secondBlackoutDay = DateOnly.FromDateTime(Today.AddDays(4));
+
+            var unshiftedDate = Today.AddDays(WorkingDaysAtAllPercentiles);
+            var dateShiftedByTwoBlackoutDays = Today.AddDays(WorkingDaysAtAllPercentiles + 2);
 
             ConfigureOneOffBlackoutPeriod(firstBlackoutDay, secondBlackoutDay);
             var oneOffDate = await PercentileDate(85, remainingItems: 5);
@@ -38,12 +40,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await ConfigureRecurringRuleCovering(firstBlackoutDay, secondBlackoutDay);
             var recurringDate = await PercentileDate(85, remainingItems: 5);
 
-            Assert.That(recurringDate, Is.EqualTo(oneOffDate),
-                "A recurring-rule day must shift the percentile date identically to a one-off blackout period (D4 unified evaluation).");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(oneOffDate, Is.EqualTo(dateShiftedByTwoBlackoutDays),
+                    "Two one-off blackout days inside the forecast window must push the percentile date out by exactly two calendar days.");
+                Assert.That(oneOffDate, Is.Not.EqualTo(unshiftedDate),
+                    "Guards parity against vacuity: the one-off run must genuinely differ from the unshifted baseline.");
+                Assert.That(recurringDate, Is.EqualTo(oneOffDate),
+                    "A recurring-rule day must shift the percentile date identically to a one-off blackout period (D4 unified evaluation).");
+            }
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-03")]
         public async Task WhenForecast_NoRecurringRulesAndNoOneOffPeriods_PercentileDateIsUnshifted()
         {
             var expectedDate = await PercentileDate(85, remainingItems: 5);
