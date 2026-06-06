@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task EditRule_ChangeWeekendsToFridayOnly_ListReflectsTheNewWeekday()
         {
             Client.AsSystemAdmin();
@@ -52,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task DeleteRule_RemovesItFromTheList()
         {
             Client.AsSystemAdmin();
@@ -70,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending DELIVER — US-04")]
         public async Task DeleteRule_UnknownId_Returns404()
         {
             Client.AsSystemAdmin();
