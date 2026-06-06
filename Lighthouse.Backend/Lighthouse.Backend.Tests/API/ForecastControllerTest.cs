@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -20,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
         [SetUp]
@@ -31,8 +31,6 @@ namespace Lighthouse.Backend.Tests.API
 
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
@@ -573,6 +571,71 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void RunBacktest_RecurringRuleDayInForecastWindow_ReducesForecastDaysIdenticallyToOneOffPeriod()
+        {
+            var expectedTeam = new Team { Id = 12, Name = "Test Team" };
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            var startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60));
+            var endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
+            var historicalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-90));
+            var historicalEndDate = startDate;
+            var calendarSpan = endDate.DayNumber - startDate.DayNumber;
+
+            var historicalThroughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 1, 3]));
+            teamMetricsServiceMock.Setup(x => x.GetBlackoutAwareThroughputForTeam(
+                expectedTeam,
+                historicalStartDate.ToDateTime(TimeOnly.MinValue),
+                historicalEndDate.ToDateTime(TimeOnly.MinValue),
+                ThroughputFilterMode.RespectTeamSetting))
+                .Returns(historicalThroughput);
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(expectedTeam, ThroughputFilterMode.RespectTeamSetting))
+                .Returns(new ForecastThroughputStatus(historicalThroughput, false, null));
+            teamMetricsServiceMock.Setup(x => x.GetThroughputForTeam(
+                expectedTeam,
+                It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(),
+                ThroughputFilterMode.RespectTeamSetting))
+                .Returns(new RunChartData(RunChartDataGenerator.GenerateRunChartData([2, 3, 1])));
+
+            var recurringDay = startDate.AddDays(5);
+            var materializedRecurringDay = new BlackoutPeriod { Id = 0, Start = recurringDay, End = recurringDay };
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(
+                startDate.ToDateTime(TimeOnly.MinValue),
+                endDate.ToDateTime(TimeOnly.MinValue)))
+                .Returns(new[] { materializedRecurringDay });
+
+            int? forecastDaysSeen = null;
+            forecastServiceMock.Setup(x => x.HowMany(historicalThroughput, It.IsAny<int>()))
+                .Callback((RunChartData _, int days) => forecastDaysSeen = days)
+                .Returns(new HowManyForecast());
+
+            var subject = CreateSubject();
+
+            var input = new BacktestInputDto
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                HistoricalStartDate = historicalStartDate,
+                HistoricalEndDate = historicalEndDate,
+            };
+
+            var result = subject.RunBacktest(12, input);
+
+            var equivalentOneOff = new[] { materializedRecurringDay }.ToList().CountWorkingDays(
+                startDate.ToDateTime(TimeOnly.MinValue),
+                endDate.ToDateTime(TimeOnly.MinValue));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(forecastDaysSeen, Is.EqualTo(calendarSpan - 1), "the recurring-rule day must be excluded from the backtest forecast window");
+                Assert.That(forecastDaysSeen, Is.EqualTo(equivalentOneOff), "a recurring-rule day must reduce the forecast window identically to an equivalent one-off period");
+            }
+        }
+
         #endregion
 
         [Test]
@@ -599,7 +662,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodRepositoryMock.Object, blackoutPeriodServiceMock.Object);
+            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object);
         }
     }
 }

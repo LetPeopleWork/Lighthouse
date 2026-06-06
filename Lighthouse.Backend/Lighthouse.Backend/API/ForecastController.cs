@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.API
         IForecastService forecastService,
         IRepository<Team> teamRepository,
         ITeamMetricsService teamMetricsService,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository,
         IBlackoutPeriodService blackoutPeriodService)
         : ControllerBase
     {
@@ -189,7 +188,7 @@ namespace Lighthouse.Backend.API
 
                 var periodStart = input.StartDate.ToDateTime(TimeOnly.MinValue);
                 var periodEnd = input.EndDate.ToDateTime(TimeOnly.MinValue);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(periodStart, periodEnd);
                 var forecastDays = blackoutPeriods.CountWorkingDays(periodStart, periodEnd);
 
                 var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);

@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
         private Team testTeam;
 
@@ -32,8 +32,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             forecastServiceMock = new Mock<IForecastService>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<BlackoutPeriod>().AsQueryable());
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            SetupEffectiveBlackoutDays();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
@@ -47,12 +47,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodRepositoryMock.Object, forecastFilterRuleServiceMock.Object, Mock.Of<IWorkItemStateTransitionRepository>());
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, forecastFilterRuleServiceMock.Object, Mock.Of<IWorkItemStateTransitionRepository>());
 
             workItems = new List<WorkItem>();
 
             workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
             .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+        }
+
+        private void SetupEffectiveBlackoutDays(params BlackoutPeriod[] periods)
+        {
+            blackoutPeriodServiceMock
+                .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(periods);
+        }
+
+        private Team SeedTeamWithItemsOnAprilFirstFifthAndTenth(int teamId)
+        {
+            AddWorkItem(StateCategories.Done, teamId, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, teamId, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, teamId, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            return new Team { Id = teamId, Name = $"Team-{teamId}", ThroughputHistory = 30 };
         }
 
         [TearDown]
@@ -2122,8 +2138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Blackout 2 days ago and 3 days ago
             var blackoutStart = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3));
             var blackoutEnd = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = blackoutStart, End = blackoutEnd } }.AsQueryable());
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = blackoutStart, End = blackoutEnd });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
@@ -2152,8 +2167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-5);
 
             var blackoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = blackoutDate, End = blackoutDate } }.AsQueryable());
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = blackoutDate, End = blackoutDate });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
@@ -2182,8 +2196,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
 
             // Blackout Apr 4-6 (3 days)
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) } }.AsQueryable());
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
@@ -2208,8 +2221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
 
             // Blackout Apr 4-6
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) } }.AsQueryable());
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) });
 
             var throughput = subject.GetBlackoutAwareThroughputForTeam(testTeam, startDate, endDate);
 
@@ -2219,6 +2231,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(throughput.History, Is.EqualTo(7));
                 // Item on Apr 5 excluded
                 Assert.That(throughput.Total, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void GetBlackoutAwareThroughputForTeam_RecurringRuleDay_StripsThroughputIdenticallyToOneOffPeriodAndDiffersFromNoRule()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+            var recurringDay = new DateOnly(1991, 4, 5);
+
+            var recurringTeam = SeedTeamWithItemsOnAprilFirstFifthAndTenth(teamId: 4577);
+            var oneOffTeam = SeedTeamWithItemsOnAprilFirstFifthAndTenth(teamId: 4974);
+            var noRuleTeam = SeedTeamWithItemsOnAprilFirstFifthAndTenth(teamId: 5577);
+
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 0, Start = recurringDay, End = recurringDay });
+            var recurringThroughput = subject.GetBlackoutAwareThroughputForTeam(recurringTeam, startDate, endDate);
+
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = recurringDay, End = recurringDay });
+            var oneOffThroughput = subject.GetBlackoutAwareThroughputForTeam(oneOffTeam, startDate, endDate);
+
+            SetupEffectiveBlackoutDays();
+            var noRuleThroughput = subject.GetBlackoutAwareThroughputForTeam(noRuleTeam, startDate, endDate);
+
+            try
+            {
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(recurringThroughput.History, Is.EqualTo(oneOffThroughput.History), "recurring-rule day must strip the same number of effective days as an equivalent one-off period");
+                    Assert.That(recurringThroughput.Total, Is.EqualTo(oneOffThroughput.Total), "recurring-rule day must exclude the same throughput items as an equivalent one-off period");
+                    Assert.That(recurringThroughput.History, Is.EqualTo(9), "the single recurring-rule day must reduce the 10-day window to 9 effective days");
+                    Assert.That(recurringThroughput.Total, Is.EqualTo(2), "the item closed on the recurring-rule day must be excluded");
+                    Assert.That(noRuleThroughput.Total, Is.EqualTo(3), "with no rule, the Apr-5 item is retained");
+                    Assert.That(recurringThroughput.Total, Is.Not.EqualTo(noRuleThroughput.Total), "stripping a recurring-rule day must differ from the no-rule baseline");
+                }
+            }
+            finally
+            {
+                subject.InvalidateTeamMetrics(recurringTeam);
+                subject.InvalidateTeamMetrics(oneOffTeam);
+                subject.InvalidateTeamMetrics(noRuleTeam);
             }
         }
 
@@ -2257,12 +2309,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var blackout1End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
             var blackout2Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-5));
             var blackout2End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-5));
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[]
-                {
-                    new BlackoutPeriod { Id = 1, Start = blackout1Start, End = blackout1End },
-                    new BlackoutPeriod { Id = 2, Start = blackout2Start, End = blackout2End }
-                }.AsQueryable());
+            SetupEffectiveBlackoutDays(
+                new BlackoutPeriod { Id = 1, Start = blackout1Start, End = blackout1End },
+                new BlackoutPeriod { Id = 2, Start = blackout2Start, End = blackout2End });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
@@ -2284,8 +2333,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
 
             // Blackout Apr 4-6 (3 days)
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(new[] { new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) } }.AsQueryable());
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 4), End = new DateOnly(1991, 4, 6) });
 
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
                 .Returns((RunChartData throughput, int days) =>

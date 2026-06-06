@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Services.Implementation
         IRepository<Feature> featureRepository,
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
-        IRepository<BlackoutPeriod> blackoutPeriodRepository,
+        IBlackoutPeriodService blackoutPeriodService,
         IForecastFilterRuleService forecastFilterRuleService,
         IWorkItemStateTransitionRepository workItemStateTransitionRepository)
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var unfiltered = GetFromCacheIfExists(team, $"BlackoutAwareThroughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
                 var throughput = GetThroughputForTeam(team, startDate, endDate);
-                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(startDate, endDate);
                 return FilterBlackoutDaysFromRunChart(throughput, startDate, endDate, blackoutPeriods);
             }, logger);
 
@@ -647,17 +647,15 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int effectiveDaysNeeded)
         {
-            var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
-
             var endDate = DateTime.UtcNow.Date;
             var rollingStart = endDate.AddDays(-(effectiveDaysNeeded - 1));
 
-            var blackoutDayIndices = blackoutPeriods.GetBlackoutDayIndices(rollingStart, endDate);
+            var blackoutDayIndices = blackoutPeriodService.GetEffectiveBlackoutDays(rollingStart, endDate).GetBlackoutDayIndices(rollingStart, endDate);
             while ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count < effectiveDaysNeeded)
             {
                 var deficit = effectiveDaysNeeded - ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count);
                 rollingStart = rollingStart.AddDays(-deficit);
-                blackoutDayIndices = blackoutPeriods.GetBlackoutDayIndices(rollingStart, endDate);
+                blackoutDayIndices = blackoutPeriodService.GetEffectiveBlackoutDays(rollingStart, endDate).GetBlackoutDayIndices(rollingStart, endDate);
             }
 
             var rollingThroughput = GetThroughputForTeam(team, rollingStart, endDate);
@@ -716,7 +714,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return $"Excluded {excludedCount} work item{(excludedCount == 1 ? string.Empty : "s")} via team forecast filter";
         }
 
-        private static RunChartData FilterBlackoutDaysFromRunChart(RunChartData runChart, DateTime startDate, DateTime endDate, List<BlackoutPeriod> blackoutPeriods)
+        private static RunChartData FilterBlackoutDaysFromRunChart(RunChartData runChart, DateTime startDate, DateTime endDate, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             var blackoutDayIndices = blackoutPeriods.GetBlackoutDayIndices(startDate, endDate);
             return FilterBlackoutDays(runChart, blackoutDayIndices);

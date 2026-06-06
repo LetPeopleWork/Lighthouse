@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     {
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
         private Team testTeam;
         private TeamMetricsService subject;
@@ -37,9 +37,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll())
-                .Returns(Enumerable.Empty<BlackoutPeriod>().AsQueryable());
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
             appSettingsServiceMock.Setup(x => x.GetTeamDataRefreshSettings())
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 featureRepositoryMock.Object,
                 appSettingsServiceMock.Object,
                 serviceProvider.Object,
-                blackoutPeriodRepositoryMock.Object,
+                blackoutPeriodServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
                 Mock.Of<IWorkItemStateTransitionRepository>());
 

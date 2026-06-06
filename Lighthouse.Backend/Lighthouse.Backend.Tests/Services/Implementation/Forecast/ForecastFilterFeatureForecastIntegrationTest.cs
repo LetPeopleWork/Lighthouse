@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private List<WorkItem> workItems;
         private TeamMetricsService subject;
@@ -41,8 +41,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             forecastServiceMock = new Mock<IForecastService>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns(Enumerable.Empty<BlackoutPeriod>().AsQueryable());
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
 
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 featureRepositoryMock.Object,
                 appSettingsServiceMock.Object,
                 serviceProvider.Object,
-                blackoutPeriodRepositoryMock.Object,
+                blackoutPeriodServiceMock.Object,
                 forecastFilterRuleService,
                 Mock.Of<IWorkItemStateTransitionRepository>());
         }
