@@ -1,0 +1,169 @@
+{
+  "roadmap": {
+    "project_id": "blackout-day-forecast-shift",
+    "created_at": "2026-06-06",
+    "total_steps": 7,
+    "phases": 5
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation",
+      "Lighthouse.Backend/Lighthouse.Backend/API",
+      "Lighthouse.Backend/Lighthouse.Backend/API/DTO",
+      "Lighthouse.Backend/Lighthouse.Backend/Models",
+      "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-06-06",
+    "method": "Scenario-coverage gate APPROVED: all 16 DISTILL scenarios (#1-#13 + A1/A2) map to a step; max 4 scenarios/step; 3 @driving_port inbound surfaces covered; deps coherent (primitive before wiring, slice 01<02<03<04). Automated quality gate clean; des-verify-integrity --roadmap-only exit 0. ADR-058 (A1 locked): two pure fns on BlackoutDaysExtensions, periods threaded as IReadOnlyList<BlackoutPeriod>; Models never fetch (DDD-2/DDD-3). D8 manual-review gate before every commit."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 US-01 When percentile days to date",
+      "description": "Add the pure ProjectWorkingDays primitive to BlackoutDaysExtensions and wire it into the manual When forecast path so percentile dates step over future blackout days and never land on one (D3). Monte Carlo untouched (D4).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add ProjectWorkingDays pure primitive",
+          "criteria": "BlackoutDaysExtensions.ProjectWorkingDays(periods, start, workingDayCount) advances calendar days, counts only non-blackout days, returns the Nth working day; empty periods yields start.AddDays(N) byte-identical (D4/D6); a 4-day consecutive span pushes the landing past the whole span; unit tests green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutDaysExtensionsTest.cs",
+          "scenario_name": "ProjectWorkingDays skips blackout days, rolls past consecutive spans, equals AddDays when empty",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BlackoutDaysExtensions.cs"
+          ],
+          "implementation_notes": "Pure static, reuse IsBlackoutDay. Signature: static DateTime ProjectWorkingDays(this IReadOnlyList<BlackoutPeriod> periods, DateTime start, int workingDayCount). Algorithm: from start, step day by day; on each non-blackout day increment a counter; return the date when counter == workingDayCount (that date is non-blackout by construction, satisfying D3 roll-forward intrinsically). workingDayCount<=0 returns start. Empty list => start.AddDays(N) exactly (DDD-4). Add the unit-test class beside the existing BlackoutDaysExtensions tests if one exists; otherwise create BlackoutDaysExtensionsTest.cs. NO repository dependency (pure). Consult docs/ci-learnings.md (S2325, CA1859, S3267) before writing.",
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "01-02",
+          "name": "Wire ProjectWorkingDays into When path",
+          "criteria": "WhenForecastDto.ExpectedDate uses periods.ProjectWorkingDays(Today, days); DtoExtensions.CreateForecastDtos(WhenForecast, periods, probs) threads periods; ForecastController fetches global periods once and passes them; BlackoutForecastShiftTeamForecastIntegrationTest un-ignored and all 4 tests green; GetProbability days value identical (AC4).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftTeamForecastIntegrationTest.cs",
+          "scenario_name": "When percentile date steps over a 2-day blackout (Today+12); lands-on-blackout rolls forward; consecutive-span rolls past whole span; no-blackout equals Today+days",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DtoExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftTeamForecastIntegrationTest.cs"
+          ],
+          "implementation_notes": "DDD-2/DDD-3: ForecastController gains IRepository<BlackoutPeriod>; fetch periods = blackoutPeriodRepository.GetAll().ToList() ONCE per request (mirror GetBlackoutAwareThroughputForTeam fetch-once). Thread IReadOnlyList<BlackoutPeriod> into CreateForecastDtos(this WhenForecast, IReadOnlyList<BlackoutPeriod> periods, params int[] probabilities) and into the WhenForecastDto ctor; GetFutureDate -> periods.ProjectWorkingDays(DateTime.UtcNow.Date, days). DO NOT change forecastService.When or GetProbability (D4). Remove the [Ignore] attribute on the integration test. Covers DISTILL scenarios #1, #2, #2b, #3. ArchUnit BlackoutForecastShiftSeamArchUnitTest must stay green (WhenForecastDto is in API.DTO, not Models.Forecast, so unaffected, but verify Models.Forecast gains no repo dep).",
+          "estimated_hours": 0.75
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 US-02 by-date working-day count",
+      "description": "Add the inverse CountWorkingDays primitive and replace raw calendar-day subtraction in ForecastController so likelihood and how-many by a target date count only working days, preserving the timeToTargetDate<=0 guard (D5/AC3).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["01"],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Add CountWorkingDays pure primitive",
+          "criteria": "BlackoutDaysExtensions.CountWorkingDays(periods, start, target) returns the count of non-blackout days in (start, target]; equals (target-start).Days when no blackout overlaps (D6); returns <=0 for a today/past target so the existing guard still fires; unit tests green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutDaysExtensionsTest.cs",
+          "scenario_name": "CountWorkingDays excludes blackout days, equals calendar diff when empty, non-positive for past target",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BlackoutDaysExtensions.cs"
+          ],
+          "implementation_notes": "Pure static: static int CountWorkingDays(this IReadOnlyList<BlackoutPeriod> periods, DateTime start, DateTime target). Reuse GetBlackoutDayIndices over (start, target] OR compute (target-start).Days minus blackout days strictly after start and up to target. Must return the calendar diff exactly when no overlap (DDD-4). For target <= start, return (target-start).Days (<=0) so ForecastController's timeToTargetDate<=0 guard semantics are preserved verbatim (AC3). Add unit tests beside ProjectWorkingDays.",
+          "estimated_hours": 0.5
+        },
+        {
+          "id": "02-02",
+          "name": "Wire CountWorkingDays into ForecastController",
+          "criteria": "ForecastController computes timeToTargetDate via periods.CountWorkingDays(Today, target) at the manual likelihood/how-many path (lines ~80) and the item-prediction path (line ~57); the timeToTargetDate<=0 guard is unchanged; BlackoutForecastShiftItemPredictionIntegrationTest un-ignored and all 4 tests green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftItemPredictionIntegrationTest.cs",
+          "scenario_name": "By-date how-many scored on working-day count (10 not 12); likelihood on working-day count; no-blackout count equals calendar count; past target keeps guard",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftItemPredictionIntegrationTest.cs"
+          ],
+          "implementation_notes": "Reuse the periods fetched once for slice 01 (same controller). Replace `(input.TargetDate.Value - DateTime.Today).Days` (manual, ~line 80) and `(input.TargetDate - DateTime.Today).Days` (itemprediction, ~line 57) with periods.CountWorkingDays(DateTime.UtcNow.Date, target). KEEP the `if (timeToTargetDate <= 0)` early return and the `timeToTargetDate > 0` likelihood guard exactly. Do not touch forecastService.HowMany/GetLikelihood (D4). Remove [Ignore]. Covers DISTILL scenarios #4, #5, #6, #7.",
+          "estimated_hours": 0.5
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 US-03 feature and delivery surfaces",
+      "description": "Thread the proven projector and counter through the feature and delivery read path so portfolio percentile dates and delivery likelihood account for global blackout periods (D9). A1: periods passed as a parameter into models, never a repo dependency.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["02"],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Thread periods through delivery read + snapshot recorder",
+          "criteria": "Feature.GetLikelhoodForDate(date, periods) uses CountWorkingDays; Delivery.CalculateMetrics(periods, percentiles) + ToWhenPercentile project over periods; DeliveryWithLikelihoodDto.FromDelivery(delivery, periods) and DeliveriesController.GetByPortfolio fetch+thread periods; DeliveryMetricSnapshotRecordingHandler injects the blackout repo and threads periods into CalculateMetrics (snapshot/live consistency); no model acquires IRepository (ArchUnit A1/A2 stay green); BlackoutForecastShiftDeliveryIntegrationTest un-ignored, all 3 green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs",
+          "scenario_name": "Feature percentile date steps over blackouts on delivery read; no-blackout unchanged; multi-team feature forecast per-team then worst-case date shifted (A1/A2 arch guards stay green)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DeliveryWithLikelihoodDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs"
+          ],
+          "implementation_notes": "Outside-In: un-ignore BlackoutForecastShiftDeliveryIntegrationTest first (RED), then thread the periods param to GREEN. A1 (DC-2): add IReadOnlyList<BlackoutPeriod> param to Feature.GetLikelhoodForDate (timeToTargetDate = periods.CountWorkingDays(UtcNow.Date, date)), Delivery.CalculateMetrics, Delivery.ToWhenPercentile (line 102: expectedDate = periods.ProjectWorkingDays(UtcNow.Date, forecast.GetProbability(percentile))). Delivery.CalculateMetrics threads periods to GetLeastLikelyFeature/CalculateFeatureBreakdown/ToFeatureMetric/internal GetLikelhoodForDate. NO `using ...Repositories` in any Models file (ArchUnit guard). Assembly layer fetches global periods ONCE (D9): DeliveriesController.GetByPortfolio injects IRepository<BlackoutPeriod>, GetAll().ToList(), passes to FromDelivery(d, periods); FromDelivery threads periods into delivery.CalculateMetrics(periods,70,85,95) + CalculateFeatureLikelihoods line ~151 feature.GetLikelhoodForDate(delivery.Date, periods) + line ~153 feature.Forecast.CreateForecastDtos(periods,70,85,95) (currently passes Array.Empty — the TESTED feature-percentile-date path #8). DeliveryMetricSnapshotRecordingHandler.HandleAsync also calls delivery.CalculateMetrics — inject IRepository<BlackoutPeriod>, fetch once per HandleAsync, pass periods so recorded snapshots match the blackout-aware live read (consistency; update DeliveryMetricSnapshotRecordingHandlerTest ctor/mock). HowManyForecast.TargetDate is OUT (no forecast-path consumer — do not touch). Covers DISTILL scenarios #8, #9, #10; A1/A2 arch guards stay green.",
+          "estimated_hours": 1.25
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 US-04 write-back date and compose guard",
+      "description": "Shift the forecast write-back date over global blackout periods and lock in that the shipped historical-throughput stripping and the new forward shift never double-count a blackout day (US-04 AC3). Finalize candidate after this slice.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["03"],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Shift write-back date and add compose guard",
+          "criteria": "WriteBackTriggerService fetches global periods once per trigger and projects the forecast date via periods.ProjectWorkingDays(Today, daysToCompletion) at line ~226; the written value equals the US-01 shifted date; no-blackout writes the unchanged date; compose-guard asserts GetProbability(85) unchanged while the date shifts exactly once; BlackoutForecastShiftWriteBackTest un-ignored and all 3 tests green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs",
+          "scenario_name": "Write-back writes the blackout-shifted date; no-blackout unchanged; historical x forward-shift compose guard (days unchanged, date shifted once)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs"
+          ],
+          "implementation_notes": "Inject IRepository<BlackoutPeriod> into WriteBackTriggerService ctor (DDD-2 newly-injected seam, per DESIGN). Fetch periods once per TriggerForecastWriteBackForPortfolio/TriggerWriteBackForTeam. Line 226: forecastDate = periods.ProjectWorkingDays(DateTime.UtcNow.Date, daysToCompletion). Keep the daysToCompletion<0 guard. The scaffold ctor passes 4 args (writeBackService, license, workItemRepository, logger) — the test SetUp will need the blackout repo mock added; update the scaffold's ctor call when un-ignoring. DDD-6 orthogonality: historical strip (past sample) and forward shift (future date) are disjoint around today; compose-guard #13 pins GetProbability(85) unchanged. Remove [Ignore]. Covers DISTILL scenarios #11, #12, #13.",
+          "estimated_hours": 0.75
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 backtest forecast horizon counts working days",
+      "description": "Make the backtest's forecast horizon consistent with its already-blackout-aware historical sample: count only working days in the [Start,End] window so a window containing blackout days no longer over-predicts vs actual. Added 2026-06-06 on user request after the manual-verification review surfaced the asymmetry (sample stripped, horizon calendar).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["02"],
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Backtest horizon via CountWorkingDays",
+          "criteria": "ForecastController.RunBacktest computes forecastDays via blackoutPeriods.CountWorkingDays(periodStart, periodEnd) instead of the raw calendar diff, so the HowMany horizon matches the blackout-aware historical sample; a backtest window containing N blackout days reduces the horizon by N; a no-blackout window is byte-identical (D6); the >=14-day calendar validation is unchanged; existing backtest tests green.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterBacktestIntegrationTest.cs",
+          "scenario_name": "Backtest forecast horizon counts working days (blackout days excluded); no-blackout window byte-identical",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterBacktestIntegrationTest.cs"
+          ],
+          "implementation_notes": "RunBacktest currently computes `var forecastDays = input.EndDate.DayNumber - input.StartDate.DayNumber;` OUTSIDE the GetEntityByIdAnExecuteAction lambda (line ~165) and passes it to forecastService.HowMany at ~174. The historical sample at ~172 (GetBlackoutAwareThroughputForTeam) is already blackout-stripped (working-day rate), so simulating over a CALENDAR horizon over-predicts when the window has blackout days. Fix: move the horizon computation INSIDE the lambda after periodStart/periodEnd are built (~176-177), fetch `var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();` (the controller already injects IRepository<BlackoutPeriod>), and compute `var forecastDays = blackoutPeriods.CountWorkingDays(periodStart, periodEnd);`. Remove the outer line 165. Keep ValidateBacktestInput's >=14 CALENDAR-day check unchanged (the window-size guard is about calendar span, not the horizon). D6: empty periods ⇒ CountWorkingDays == (periodEnd-periodStart).Days == the old calendar diff, so no-blackout backtests are byte-identical. Test (best home: ForecastFilterBacktestIntegrationTest or a focused ForecastControllerTest): seed a blackout period inside the backtest [Start,End] window, capture the `days` argument forecastService.HowMany is invoked with (Mock<IForecastService>), assert it equals the working-day count (calendar - blackout days); add a no-blackout case asserting it equals the calendar diff. Covers the UI-2 backtest-consistency finding. Forecast days math (Monte Carlo) otherwise untouched (D4).",
+          "estimated_hours": 0.5
+        }
+      ]
+    }
+  ]
+}

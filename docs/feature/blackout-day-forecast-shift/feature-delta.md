@@ -395,3 +395,29 @@ Every endpoint named in DISCUSS/DESIGN Driving Ports has ≥1 integration scenar
 | DESIGN#DC-2 | A1 — periods threaded as `IReadOnlyList<BlackoutPeriod>` parameter, never a repo dependency in a model | ADR-058 | ArchUnit guards A1/A2 enforce Models ↛ Repositories; a model gaining `IRepository<BlackoutPeriod>` reds the guard |
 | DESIGN#DC-4 | Historical-strip × forward-shift are orthogonal — no double-count | ADR-058 / US-04 AC3 | Compose-guard #13 pins it empirically (both blackouts configured ⇒ days unchanged, date shifted exactly once) |
 | DISCUSS#D8 | Per-slice manual-review gate before any forecasting-code commit | n/a | DISTILL wrote ONLY test code; no production forecasting change. DELIVER un-ignores one slice at a time behind the review gate |
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+### UI-1 — Item-creation prediction history is NOT blackout-aware (asymmetry surfaced in Slice 02)
+
+**Found:** 2026-06-06, during Slice 02 (US-02) D8 review (user-raised).
+
+**Issue.** The shipped blackout-aware historical stripping (`ComputeBlackoutAwareThroughput` → `GetBlackoutAwareThroughputForTeam`) is applied **only to completed-item throughput** — the `When` path, the manual how-many-by-date path (via `GetForecastThroughputStatus`), backtest, and the predictability score. The **item-creation prediction** endpoint (`POST /forecast/itemprediction/{id}` → `ForecastService.PredictWorkItemCreation` → `TeamMetricsService.GetCreatedItemsForTeam` → `GenerateCreationRunChart`) samples **raw calendar creation dates** with blackout days included as zero-creation days. DESIGN (DDD/DC tables, DISTILL driving-port coverage) assumed `/itemprediction` "shares the day→date / how-many path … no bespoke endpoint behaviour differs" — but it overlooked that the *history sample* on that path is not blackout-aware.
+
+**Consequence avoided.** Roadmap step 02-02 initially applied `CountWorkingDays` to *both* the manual how-many path and the item-creation path. The item-creation path would then run a **working-day horizon over a calendar-day (blackout-diluted) creation rate** → systematic **under-prediction**, and it sits outside the US-02 acceptance test (which exercises `/forecast/manual`, not `/itemprediction`).
+
+**Resolution (user decision, 2026-06-06).** Revert the `RunItemCreationPrediction` change; `/itemprediction` keeps calendar-day horizon (byte-identical to pre-feature, internally consistent: calendar rate × calendar horizon). `CountWorkingDays` stays only on the tested, consistent manual how-many path.
+
+**Deferred follow-up (out of scope here).** Making item-creation truly blackout-aware requires stripping blackout days from `GetCreatedItemsForTeam` / `GenerateCreationRunChart` — a change inside the **D1-locked** throughput-stripping area — plus a new acceptance test hitting `/forecast/itemprediction/{id}`. Track as a separate scoped item (candidate ADO Story under Epic 4974 or sibling #4577) if item-creation by-date accuracy around shutdowns is wanted.
+
+### UI-2 — Backtest forecast horizon was calendar days while its sample was blackout-aware (RESOLVED in-feature, Slice 05)
+
+**Found:** 2026-06-06, during the manual-verification review (user-raised: "is backtesting also affected by the blackout days?").
+
+**Issue.** `ForecastController.RunBacktest` sampled a **blackout-aware** historical throughput (`GetBlackoutAwareThroughputForTeam`, working-day rate) but simulated `HowMany` over a **raw calendar-day** horizon (`forecastDays = EndDate − StartDate`). For a backtest window containing blackout days, the forecast side drew calendar-many days at the working-day rate while the actual side (`GetThroughputForTeam`) naturally had zeros on those days → the forecast systematically **over-predicted** vs actual. Same asymmetry class as UI-1, on the opposite (backtest) surface.
+
+**Resolution (user authorized 2026-06-06, Slice 05 / step 05-01).** `forecastDays` now = `blackoutPeriods.CountWorkingDays(periodStart, periodEnd)` — the working-day span of the window — so the horizon matches the blackout-aware sample. The ≥14-day window validation stays on calendar days (it guards window size); the Monte Carlo and the shipped historical-stripping are untouched (D4). No-blackout windows are byte-identical (D6).
+
+**Scope deviation note.** Backtest was declared D1-LOCKED in DISCUSS. This change touches it deliberately, on explicit user request after manual verification surfaced the inconsistency. It does NOT modify the locked historical-stripping itself — only the horizon value the controller feeds to `HowMany`.
