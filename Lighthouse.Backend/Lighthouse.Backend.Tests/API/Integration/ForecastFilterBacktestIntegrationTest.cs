@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
+using System.Runtime.CompilerServices;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
@@ -129,6 +130,57 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public void Backtest_WindowContainsBlackoutDays_ForecastHorizonExcludesThem()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var windowStart = today.AddDays(-58);
+            var windowEnd = windowStart.AddDays(28);
+            var blackoutStart = windowStart.AddDays(10);
+            blackoutPeriodRepositoryMock
+                .Setup(r => r.GetAll())
+                .Returns(BlackoutPeriods((blackoutStart, blackoutStart.AddDays(2))));
+            var capturedHorizon = CaptureForecastHorizon();
+            StubBlackoutAwareThroughput(ThroughputFilterMode.RespectTeamSetting);
+            StubForecastStatus(ThroughputFilterMode.RespectTeamSetting, filterApplied: false, excludedSummary: null);
+
+            RunBacktest(applyFilterOverride: null, windowStart, windowEnd);
+
+            Assert.That(capturedHorizon.Value, Is.EqualTo(25));
+        }
+
+        [Test]
+        public void Backtest_WindowWithoutBlackoutDays_ForecastHorizonIsCalendarSpan()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var windowStart = today.AddDays(-58);
+            var windowEnd = windowStart.AddDays(28);
+            var capturedHorizon = CaptureForecastHorizon();
+            StubBlackoutAwareThroughput(ThroughputFilterMode.RespectTeamSetting);
+            StubForecastStatus(ThroughputFilterMode.RespectTeamSetting, filterApplied: false, excludedSummary: null);
+
+            RunBacktest(applyFilterOverride: null, windowStart, windowEnd);
+
+            Assert.That(capturedHorizon.Value, Is.EqualTo(28));
+        }
+
+        private StrongBox<int> CaptureForecastHorizon()
+        {
+            var capturedHorizon = new StrongBox<int>(-1);
+            forecastServiceMock
+                .Setup(s => s.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
+                .Callback<RunChartData, int>((_, days) => capturedHorizon.Value = days)
+                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 14));
+            return capturedHorizon;
+        }
+
+        private static List<BlackoutPeriod> BlackoutPeriods(params (DateOnly Start, DateOnly End)[] periods)
+        {
+            return periods
+                .Select(p => new BlackoutPeriod { Start = p.Start, End = p.End })
+                .ToList();
+        }
+
         private void StubBlackoutAwareThroughput(ThroughputFilterMode mode)
         {
             teamMetricsServiceMock
@@ -146,12 +198,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private BacktestResultDto RunBacktest(bool? applyFilterOverride)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
+            return RunBacktest(applyFilterOverride, today.AddDays(-60), today.AddDays(-30));
+        }
+
+        private BacktestResultDto RunBacktest(bool? applyFilterOverride, DateOnly windowStart, DateOnly windowEnd)
+        {
             var input = new BacktestInputDto
             {
-                StartDate = today.AddDays(-60),
-                EndDate = today.AddDays(-30),
-                HistoricalStartDate = today.AddDays(-120),
-                HistoricalEndDate = today.AddDays(-60),
+                StartDate = windowStart,
+                EndDate = windowEnd,
+                HistoricalStartDate = windowStart.AddDays(-60),
+                HistoricalEndDate = windowStart,
                 ApplyFilterOverride = applyFilterOverride,
             };
 

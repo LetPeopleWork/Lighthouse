@@ -162,8 +162,6 @@ namespace Lighthouse.Backend.API
                 return BadRequest(validationError);
             }
 
-            var forecastDays = input.EndDate.DayNumber - input.StartDate.DayNumber;
-
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
                 var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
@@ -171,10 +169,13 @@ namespace Lighthouse.Backend.API
                 var historyEnd = input.HistoricalEndDate.ToDateTime(TimeOnly.MinValue);
                 var historicalThroughput = teamMetricsService.GetBlackoutAwareThroughputForTeam(team, historyStart, historyEnd, mode);
 
-                var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);
-
                 var periodStart = input.StartDate.ToDateTime(TimeOnly.MinValue);
                 var periodEnd = input.EndDate.ToDateTime(TimeOnly.MinValue);
+                var blackoutPeriods = blackoutPeriodRepository.GetAll().ToList();
+                var forecastDays = blackoutPeriods.CountWorkingDays(periodStart, periodEnd);
+
+                var howManyForecast = forecastService.HowMany(historicalThroughput, forecastDays);
+
                 var actualThroughput = teamMetricsService.GetThroughputForTeam(team, periodStart, periodEnd, mode);
 
                 var status = teamMetricsService.GetForecastThroughputStatus(team, mode);
