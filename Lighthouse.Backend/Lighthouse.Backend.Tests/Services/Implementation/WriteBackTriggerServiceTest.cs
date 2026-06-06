@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWriteBackService> writeBackServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IRepository<BlackoutPeriod>> blackoutPeriodRepositoryMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<ILogger<WriteBackTriggerService>> loggerMock;
 
         [SetUp]
@@ -25,11 +25,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             writeBackServiceMock = new Mock<IWriteBackService>();
             licenseServiceMock = new Mock<ILicenseService>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            blackoutPeriodRepositoryMock = new Mock<IRepository<BlackoutPeriod>>();
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             loggerMock = new Mock<ILogger<WriteBackTriggerService>>();
 
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
-            blackoutPeriodRepositoryMock.Setup(r => r.GetAll()).Returns([]);
+            blackoutPeriodServiceMock
+                .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
 
             writeBackServiceMock
                 .Setup(w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
@@ -557,7 +559,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 writeBackServiceMock.Object,
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
-                blackoutPeriodRepositoryMock.Object,
+                blackoutPeriodServiceMock.Object,
                 loggerMock.Object);
         }
 

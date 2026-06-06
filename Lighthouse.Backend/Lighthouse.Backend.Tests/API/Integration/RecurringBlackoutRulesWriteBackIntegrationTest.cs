@@ -83,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rootFactory.Dispose();
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task TriggerForecastWriteBack_FeatureWithRecurringRuleDays_WritesTheShiftedDate()
         {
@@ -98,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(written, Is.EqualTo(Today.AddDays(12).ToString("yyyy-MM-dd")));
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task TriggerForecastWriteBack_RecurringRuleDays_WritesSameDateAsEquivalentOneOffPeriod()
         {
@@ -119,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "Write-back must persist the same blackout-shifted date for a recurring-rule day as for an equivalent one-off period (D4 unified evaluation).");
         }
 
-        [Ignore("pending DELIVER — US-03")]
         [Test]
         public async Task TriggerForecastWriteBack_NoRecurringRulesAndNoOneOffPeriods_WritesTheUnchangedDate()
         {
