@@ -2,6 +2,7 @@ import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
 import { BlackoutPeriodDialog } from "./BlackoutPeriodDialog";
 import { ImportDialog } from "./ImportDialog";
+import { RecurringBlackoutRuleDialog } from "./RecurringBlackoutRuleDialog";
 
 export type PeriodicRefreshSettingType = "Team" | "Feature" | "Forecast";
 
@@ -18,6 +19,12 @@ export class SystemConfigurationPage {
 			.click();
 
 		return new BlackoutPeriodDialog(this.page);
+	}
+
+	async addRecurringRule(): Promise<RecurringBlackoutRuleDialog> {
+		await this.page.getByRole("button", { name: "Add Recurring Rule" }).click();
+
+		return new RecurringBlackoutRuleDialog(this.page);
 	}
 
 	async enableFeature(featureName: string): Promise<void> {
@@ -159,6 +166,8 @@ export class SystemConfigurationPage {
 	}
 
 	get blackoutPeriodsSection(): Locator {
-		return this.page.getByText("Blackout Periods & Recurring RulesDefine global");
+		return this.page.getByText(
+			"Blackout Periods & Recurring RulesDefine global",
+		);
 	}
 }

@@ -10,10 +10,16 @@ import {
 } from "../../helpers/screenshots";
 import { CumulativeStateTimeChart } from "../../models/metrics/CumulativeStateTimeChart";
 import {
+	CumulativeChartFlowEfficiency,
+	FlowEfficiencyOverviewTile,
+} from "../../models/metrics/FlowEfficiencyWidget";
+import {
 	MetricsCategories,
 	MetricsWidgetNames,
 } from "../../models/metrics/MetricsPage";
+import { WaitStatesEditor } from "../../models/metrics/WaitStatesEditor";
 import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
+import { DeliveryMetricsTab } from "../../models/portfolios/Deliveries/DeliveryMetricsTab";
 
 const DEMO_SCENARIO_ID = 0;
 const testWithDemo = testWithDemoData(DEMO_SCENARIO_ID);
@@ -60,32 +66,9 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	const demoDataPage = await settingsPage.goToDemoData();
 	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 
-	let systemSettings = await settingsPage.goToSystemConfiguration();
+	const systemSettings = await settingsPage.goToSystemConfiguration();
 
 	await takePageScreenshot(systemSettings.page, "settings/configuration.png");
-
-	const startDate = new Date(Date.now()).toISOString().slice(0, 10);
-	const endDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
-		.toISOString()
-		.slice(0, 10);
-
-	const blackoutPeriodDialog = await systemSettings.addBlackoutPeriod();
-	blackoutPeriodDialog.addBlackoutPeriod(
-		"GCZ Meisterfeier",
-		startDate,
-		endDate,
-	);
-
-	await takeDialogScreenshot(
-		blackoutPeriodDialog.page.getByRole("dialog"),
-		"settings/blackoutPeriodConfiguration.png",
-	);
-
-	systemSettings = await blackoutPeriodDialog.saveBlackoutPeriod();
-	await takeElementScreenshot(
-		systemSettings.blackoutPeriodsSection,
-		"settings/blackoutPeriodsSection.png",
-	);
 
 	await takeElementScreenshot(
 		systemSettings.terminologyConfiguration,
@@ -101,10 +84,12 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		"settings/featurerefreshsettings.png",
 	);
 
-	await takeElementScreenshot(
-		systemSettings.optionalFeatures,
-		"settings/optionalfeatures.png",
-	);
+	if (await systemSettings.optionalFeatures.isVisible()) {
+		await takeElementScreenshot(
+			systemSettings.optionalFeatures,
+			"settings/optionalfeatures.png",
+		);
+	}
 
 	const logs = await settingsPage.goToSystemInfo();
 	await takePageScreenshot(logs.page, "settings/systeminfo.png");
@@ -118,6 +103,48 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 	await takePageScreenshot(
 		databaseManagement.page,
 		"settings/databasemanagement.png",
+	);
+});
+
+test("Take @screenshot of blackout periods and recurring rules", async ({
+	overviewPage,
+}) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
+	let systemSettings = await settingsPage.goToSystemConfiguration();
+
+	const startDate = new Date(Date.now()).toISOString().slice(0, 10);
+	const endDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+		.toISOString()
+		.slice(0, 10);
+
+	const blackoutPeriodDialog = await systemSettings.addBlackoutPeriod();
+	await blackoutPeriodDialog.addBlackoutPeriod(
+		"GCZ Meisterfeier",
+		startDate,
+		endDate,
+	);
+	await takeDialogScreenshot(
+		blackoutPeriodDialog.page.getByRole("dialog"),
+		"settings/blackoutPeriodConfiguration.png",
+	);
+	systemSettings = await blackoutPeriodDialog.saveBlackoutPeriod();
+
+	const recurringRuleDialog = await systemSettings.addRecurringRule();
+	await recurringRuleDialog.configureRule({
+		weekdays: ["Monday", "Friday"],
+		intervalWeeks: 2,
+		startDate,
+		description: "Sprint planning & review",
+	});
+	await takeDialogScreenshot(
+		recurringRuleDialog.page.getByRole("dialog"),
+		"settings/recurringBlackoutRuleConfiguration.png",
+	);
+	systemSettings = await recurringRuleDialog.saveRule();
+
+	await takeElementScreenshot(
+		systemSettings.blackoutPeriodsSection,
+		"settings/blackoutPeriodsSection.png",
 	);
 });
 
@@ -450,6 +477,113 @@ testWithDemo(
 		await takeElementScreenshot(
 			agingWidget.Widget,
 			"features/metrics/aging_pace_percentiles.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of Wait States configuration and Flow Efficiency",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+
+		const teamDetail = await overviewPage.goToTeam(testData.teams[0].name);
+		const teamEdit = await teamDetail.editTeam();
+
+		const waitStates = new WaitStatesEditor(page);
+		await waitStates.enable();
+		await waitStates.addWaitState("Verification");
+		await takeElementScreenshot(
+			waitStates.section,
+			"features/metrics/waitStatesEditor.png",
+		);
+
+		const teamDetailAfterSave = await teamEdit.save();
+		const metricsPage = await teamDetailAfterSave.goToMetrics();
+
+		const overviewWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowOverview,
+		);
+		const tileWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.FlowEfficiencyOverview,
+			overviewWidgets,
+		);
+		await expect(tileWidget.Widget).toBeVisible();
+
+		const tile = new FlowEfficiencyOverviewTile(page);
+		await expect(tile.efficiencyValue).toContainText("%");
+		await takeElementScreenshot(
+			tileWidget.Widget,
+			"features/metrics/flowEfficiencyConfigured.png",
+		);
+
+		const flowMetricsWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const chartWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CumulativeStateTime,
+			flowMetricsWidgets,
+		);
+		await expect(chartWidget.Widget).toBeVisible();
+
+		const chartEfficiency = new CumulativeChartFlowEfficiency(
+			page,
+			"stateTimeCumulative",
+		);
+		await expect(chartEfficiency.efficiencyNumber).toContainText("%");
+		await expect(chartEfficiency.waitColourKey).toContainText("Wait");
+		await takeElementScreenshot(
+			chartWidget.Widget,
+			"features/metrics/stateTimeCumulativeWaitStates.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of delivery over-time metrics charts",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0].name,
+		);
+		const deliveryPage = await portfolioDetailPage.goToDeliveries();
+		const delivery = deliveryPage.getDeliveryByName("Apollo Release");
+		await delivery.toggleDetails();
+
+		const metricsTab = new DeliveryMetricsTab(delivery);
+		await metricsTab.openMetricsTab();
+
+		await expect(metricsTab.burnupChart).toBeVisible();
+		await expect
+			.poll(() => metricsTab.countDrawnSeriesLines())
+			.toBeGreaterThanOrEqual(1);
+		await takeElementScreenshot(
+			metricsTab.burnupChart,
+			"features/deliveryBurnup.png",
+		);
+
+		await expect(metricsTab.predictabilityChart).toBeVisible();
+		await metricsTab.showLikelihoodView();
+		await expect(
+			metricsTab.predictabilitySeriesLine("likelihood"),
+		).toBeVisible();
+		await takeElementScreenshot(
+			metricsTab.predictabilityChart,
+			"features/deliveryPredictabilityLikelihood.png",
+		);
+
+		await metricsTab.showWhenView();
+		await expect(metricsTab.predictabilitySeriesLine("target")).toBeVisible();
+		await takeElementScreenshot(
+			metricsTab.predictabilityChart,
+			"features/deliveryPredictabilityWhen.png",
+		);
+
+		await expect(metricsTab.feverChart).toBeVisible();
+		await expect.poll(() => metricsTab.countFeverBubbles()).toBeGreaterThan(0);
+		await takeElementScreenshot(
+			metricsTab.feverChart,
+			"features/deliveryFever.png",
 		);
 	},
 );

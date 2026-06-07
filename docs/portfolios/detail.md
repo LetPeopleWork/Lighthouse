@@ -189,5 +189,48 @@ The row also includes an expand control to reveal included features and their st
 {: .recommendation}
 > Use deliveries to communicate release milestones and to group related features — this makes it easier to discuss release risk and progress with stakeholders.
 
+## Delivery Metrics over Time
+
+Expand a delivery and open its **Metrics** tab to see how the delivery has tracked over time. Where the feature forecasts answer *"where do we stand today?"*, these charts answer *"how has the picture changed, and is it getting better or worse?"*. They build forward from the moment the delivery is created — each daily snapshot adds a point — so the history grows richer the longer a delivery is live.
+
+### Burnup
+
+The burnup chart plots total scope against completed work over time.
+
+![Delivery Burnup](../assets/features/deliveryBurnup.png)
+
+- The **Backlog** line is the total number of items in the delivery; it rises when scope is added.
+- The **Done** area is how much has been completed.
+- A dashed **Estimated** line appears when the delivery still contains features that have not been broken down, so you can see how much of the scope is a placeholder estimate rather than counted items.
+
+The gap between Backlog and Done is the remaining work — watching the two lines converge (or diverge) tells you whether the delivery is closing in on completion or losing ground to scope growth.
+
+### Predictability
+
+The predictability chart tracks the forecast itself over time and offers two views via the toggle in its header.
+
+**How Likely?** shows the probability of hitting the target date on each day, plotted against coloured confidence bands (Risky → Certain).
+
+![Delivery Predictability — How Likely](../assets/features/deliveryPredictabilityLikelihood.png)
+
+**When?** shows the forecasted completion dates (50th, 70th, 85th, and 95th percentiles) over time against the delivery's target date.
+
+![Delivery Predictability — When](../assets/features/deliveryPredictabilityWhen.png)
+
+#### Honest charts when the target moves
+
+If you change a delivery's target date, the charts do **not** silently rewrite history. The target is recorded as it was on each snapshot, so the target line *steps* on the day it changed, and a marker highlights the change on the *How Likely?* view. This keeps the forecast honest: a sudden jump in likelihood is clearly attributable to a moved target rather than to real progress.
+
+### Fever Chart
+
+The fever chart places each feature in the delivery on a schedule-versus-confidence plot, coloured green / amber / red by risk, and animates the trail of how that position evolved.
+
+![Delivery Fever Chart](../assets/features/deliveryFever.png)
+
+Use the **Run** control to replay the trail over time. A feature drifting up into the red zone is consuming its buffer faster than it is making progress — an early-warning signal long before the target date arrives.
+
+{: .note}
+These charts accrue from the day a delivery is created. A newly added delivery shows an empty state until the first snapshots are recorded — give it a day or two of background updates to populate.
+
 # Metrics
 Similar to the Team Details, the Portfolio contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Portfolio. Check the [Metrics Page](../metrics/metrics.html) for more details.

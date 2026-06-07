@@ -223,6 +223,9 @@ The baseline is used as the reference period to calculate the average and natura
 
 See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts) for examples and screenshots.
 
+## Wait States
+As with teams, you can mark which *Doing* states represent waiting rather than active work to drive the **Flow Efficiency** metric at portfolio level. The setup is identical — see [Wait States](../teams/edit.html#wait-states) on the team configuration page for details.
+
 # Estimation
 Chose an additional field that represents the estimation (if you have any). Additionally you can define the *unit*, for example Story Points, Ideal Days, T-Shirt Size, or whatever you use. If an estimation is configured, an additional chart will be rendered, that compares the Estimates with the Cycle Time.
 

@@ -1,7 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
 const WAIT_COLOUR_KEY_TEST_ID = "cumulative-state-time-wait-legend";
-const WAIT_COLOUR_KEY_SWATCH_TEST_ID = "cumulative-state-time-wait-legend-swatch";
+const WAIT_COLOUR_KEY_SWATCH_TEST_ID =
+	"cumulative-state-time-wait-legend-swatch";
 const CHART_EFFICIENCY_TEST_ID = "cumulative-state-time-flow-efficiency";
 const TITLE_BLOCK_TEST_ID = "cumulative-state-time-title-block";
 const BAR_TOOLTIP_TEST_ID = "cumulative-state-bar-tooltip";

@@ -260,6 +260,19 @@ The baseline is used as the reference period to calculate the average and natura
 
 See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts) for examples and screenshots.
 
+## Wait States
+Not all *Doing* time is active work. Some states represent waiting — an item queued behind a person, sitting in a review column, or parked pending a hand-off. The **Wait States** setting lets you mark which of your states count as waiting rather than working.
+
+![Wait States Editor](../assets/features/metrics/waitStatesEditor.png)
+
+Tick *Configure Wait States* and add the states (or [state mappings](#state-mappings)) that represent idle time. Lighthouse uses this to calculate **Flow Efficiency** — the share of total time work spends actively progressing versus waiting — which surfaces as a dedicated overview tile and as a figure with highlighted wait bars on the [Cumulative Time per State](../metrics/widgets.html#cumulative-time-per-state) chart.
+
+{: .note}
+Wait states are purely a *metrics* concept — they describe how to interpret time already spent in your existing states. They do not change forecasting, throughput, or which items are considered in progress.
+
+{: .recommendation}
+Start by marking obvious queues such as *Ready for Review*, *Waiting for Test*, or any column whose name implies a hand-off. A low flow efficiency is not a failure — it is a conversation starter about where work waits.
+
 # Estimation
 Chose an additional field that represents the estimation (if you have any). Additionally you can define the *unit*, for example Story Points, Ideal Days, T-Shirt Size, or whatever you use. If an estimation is configured, an additional chart will be rendered, that compares the Estimates with the Cycle Time.
 

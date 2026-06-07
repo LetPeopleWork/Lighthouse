@@ -37,7 +37,7 @@ Widgets are organized into four dashboard categories. Each category groups relat
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
+| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
 | **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Cumulative Time per State, Load Balance Matrix, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
 | **Predictability** | Can we trust our forecasts? | Predictability Score Details, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
 | **Portfolio & Features** | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
@@ -160,6 +160,32 @@ This metric is only available for Teams.
 | 🟡 Observe | Fewer features are being worked on than the Feature WIP limit. |
 | 🟢 Sustain | Feature count exactly matches the Feature WIP limit. |
 
+# Flow Efficiency
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Cycle Time, Work Item Age |
+| **Affected by Filtering** | Yes |
+
+Flow Efficiency is the share of time your work spends **actively progressing** versus **waiting**. A value of 100% would mean work never sat idle; in practice most systems sit far lower, and that gap is where the biggest delivery improvements usually hide.
+
+![Flow Efficiency Overview](../assets/features/metrics/flowEfficiencyConfigured.png)
+
+The figure is derived from the [wait states](../teams/edit.html#wait-states) you configure: time spent in a wait state counts as waiting, all other *Doing* time counts as active. The same number, together with the contributing wait time highlighted on each bar, also appears on the [Cumulative Time per State](#cumulative-time-per-state) chart.
+
+{: .important}
+This widget shows *Not configured* until you mark at least one [wait state](../teams/edit.html#wait-states) in your Team or Portfolio settings. Without wait states there is no way to tell active time from waiting time.
+
+## Status Indicator
+
+Unlike most widgets, a **higher** value is better here, so the thresholds are inverted.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | Flow efficiency is below 40% — waiting dominates; investigate the wait states draining your value-adding time. |
+| 🟡 Observe | Flow efficiency is between 40% and 60% — watch which wait states hold work the longest. |
+| 🟢 Sustain | Flow efficiency is at or above 60% — a healthy balance between active and waiting time. |
+
 # WIP Over Time
 
 |--------------|-------------------------|
@@ -247,6 +273,14 @@ Each bar represents one *Doing* state. Every item that accumulated time in that 
 - **Ongoing segment** (hatched): time still accumulating on items that are currently in the state.
 
 Hovering over a state shows its breakdown — total, completed, and ongoing time, plus the mean, median, and item counts. Clicking the constraint (tallest) bar opens a drill-in dialog listing the items that contributed to it.
+
+## Wait States and Flow Efficiency
+
+When you configure [wait states](../teams/edit.html#wait-states), the bars for those states are colour-highlighted and the chart header shows the resulting **Flow Efficiency** — the share of time spent actively working rather than waiting.
+
+![Cumulative Time per State with wait states highlighted](../assets/features/metrics/stateTimeCumulativeWaitStates.png)
+
+This makes the cost of waiting tangible: you can see at a glance how much of your total state time is consumed by queues and hand-offs versus value-adding work. The same headline figure is also available as a standalone [Flow Efficiency](#flow-efficiency) overview tile.
 
 ## Filtering to specific items
 

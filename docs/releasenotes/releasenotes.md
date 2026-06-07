@@ -4,6 +4,58 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.6.7.1
+
+## Track a Delivery Over Time, Not Just Today
+A delivery forecast tells you where you stand *right now*. What it never showed was the trend: are we closing in on the date, or quietly slipping? This release adds a **Metrics** tab to every delivery with three charts that build forward from the day the delivery is created.
+
+- **Burnup** — total scope versus completed work over time, with a dashed *Estimated* line for the portion of scope that isn't broken down yet, so placeholder estimates are honest rather than hidden.
+- **Predictability** — the forecast itself, tracked day by day. Flip between *How Likely?* (probability of hitting the target, against coloured confidence bands) and *When?* (the 50/70/85/95 percentile dates against the target).
+- **Fever chart** — every feature plotted on a schedule-versus-confidence trail you can replay with a **Run** control, so a feature drifting into the red announces itself long before the target date.
+
+![Delivery Burnup](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/deliveryBurnup.png)
+
+### Honest charts when the target moves
+Move a delivery's target date and the charts don't quietly rewrite history. The target is recorded as it was on each snapshot, so the target line **steps** on the day it changed and a marker highlights the change — a jump in likelihood is clearly attributable to a moved goal, not to imaginary progress.
+
+See [Delivery Metrics over Time](https://docs.lighthouse.letpeople.work/portfolios/detail.html#delivery-metrics-over-time) for the full walkthrough.
+
+## Wait States & Flow Efficiency
+Not all *Doing* time is active work — some of it is waiting: queued behind a person, parked in a review column, sitting through a hand-off. You can now mark which states count as **wait states** in your team or portfolio settings, and Lighthouse turns that into **Flow Efficiency**: the share of time work spends actively progressing versus waiting.
+
+It surfaces as a dedicated *Flow Overview* tile and as a headline figure on the **Cumulative Time per State** chart, where the waiting bars are highlighted so the cost of queues is impossible to miss.
+
+![Flow Efficiency on the Cumulative Time per State chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/stateTimeCumulativeWaitStates.png)
+
+Configure it under [Wait States](https://docs.lighthouse.letpeople.work/teams/edit.html#wait-states) and read the metric details on the [Flow Efficiency widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#flow-efficiency).
+
+## Forecasts That Respect Your Non-Working Days
+Blackout periods already kept non-working days out of your throughput. Now they also shape the **dates forecasts land on**: a forecast of *N working days* steps its predicted calendar date over any known upcoming blackout days — weekends, holidays, planned shutdowns — instead of pretending work happens on days nobody is working. This applies across the *When* forecast, feature and delivery dates, and the value written back to your work tracker.
+
+### Recurring Blackout Rules (Premium)
+Entering every weekend by hand was never going to scale. You can now define **recurring blackout rules** — pick the weekdays, a *repeat every N weeks* cadence, a start date and an optional open end — and Lighthouse expands them into the concrete non-working days automatically. One-off periods and recurring rules live together in the same settings section and feed forecasting and metrics identically.
+
+![Recurring Blackout Rule](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/recurringBlackoutRuleConfiguration.png)
+
+See [Blackout Periods & Recurring Rules](https://docs.lighthouse.letpeople.work/settings/configuration.html#blackout-periods--recurring-rules).
+
+## Bugfixes and Improvements
+- **Never show 100% confidence** — forecast likelihoods are now capped at *>95%* on the manual, delivery, and portfolio forecasts. A Monte Carlo simulation can't honestly promise certainty, and showing "100%" invited exactly the wrong kind of trust. Reported by Liz Rettig.
+- **Don't forecast on too little data** — when a team has fewer than five active days of throughput, Lighthouse now suppresses the forecast and tells you why instead of producing a confident-looking number built on almost nothing. Reported by Liz Rettig.
+- **Cumulative Time per State — hide Completed or Ongoing** — a legend toggle lets you show only completed time, only ongoing time, or both, so you can isolate the part of the picture you care about.
+- **Load Balance Matrix aspect ratio** — the matrix no longer stretches out of shape on wide screens; it keeps a square plotting area so the quadrants stay readable. Reported by Gonzalo Mendez.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.5.29.5...v26.6.7.1)
+
+
 # Lighthouse v26.5.29.5
 
 ## See How Long Work Has Been Sitting — Time in State & Stale Items

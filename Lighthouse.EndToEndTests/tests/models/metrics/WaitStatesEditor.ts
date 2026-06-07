@@ -11,6 +11,12 @@ export class WaitStatesEditor {
 		return this.page.getByRole("combobox", { name: "New Wait State" });
 	}
 
+	get section(): Locator {
+		return this.configureWaitStatesToggle.locator(
+			'xpath=ancestor::div[contains(@class,"MuiCard-root")][1]',
+		);
+	}
+
 	async enable(): Promise<void> {
 		if (!(await this.configureWaitStatesToggle.isChecked())) {
 			await this.configureWaitStatesToggle.check();
