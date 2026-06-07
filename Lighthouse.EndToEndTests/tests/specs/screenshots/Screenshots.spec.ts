@@ -491,7 +491,7 @@ testWithDemo(
 
 		const waitStates = new WaitStatesEditor(page);
 		await waitStates.enable();
-		await waitStates.addWaitState("Verification");
+		await waitStates.addWaitState("Waiting for Verification");
 		await takeElementScreenshot(
 			waitStates.section,
 			"features/metrics/waitStatesEditor.png",

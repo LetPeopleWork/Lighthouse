@@ -20,18 +20,18 @@ GR-022,Notification preferences,Done,User Story,,{-14},{-9},,
 GR-024,User onboarding flow,Done,User Story,,{-35},{-13},,
 GR-028,Security audit fixes,Done,Bug,,{-3},{-2},,
 GR-029,Real-time collaboration features,Done,User Story,,{-17},{-16},,
-GR-030,Custom widget builder,Verification,User Story,,{-28},,Blocked,{-12}
-GR-033,Predictive maintenance alerts,Verification,User Story,,{-22},,Blocked,{-12}
-GR-034,Real-time notifications,Verification,User Story,,{-20},,Blocked,{-12}
+GR-030,Custom widget builder,Waiting for Verification,User Story,,{-28},,Blocked,{-12}
+GR-033,Predictive maintenance alerts,Waiting for Verification,User Story,,{-22},,Blocked,{-12}
+GR-034,Real-time notifications,Waiting for Verification,User Story,,{-20},,Blocked,{-12}
 GR-035,Advanced user preferences,Implementation,User Story,,{-18},,Blocked,{-12}
-GR-037,Custom field definitions,Verification,User Story,,{-14},,Blocked,{-12}
-GR-038,Workflow template library,Verification,User Story,,{-12},,Blocked,{-12}
+GR-037,Custom field definitions,Waiting for Verification,User Story,,{-14},,Blocked,{-12}
+GR-038,Workflow template library,Waiting for Verification,User Story,,{-12},,Blocked,{-12}
 GR-039,Advanced permission matrix,Implementation,User Story,,{-10},,Blocked,{-12}
 GR-040,Performance optimization,Implementation,Bug,,{-8},,,{-2}
-GR-041,Memory usage improvements,Verification,Bug,,{-7},,,{-6}
+GR-041,Memory usage improvements,Waiting for Verification,Bug,,{-7},,,{-6}
 GR-042,Database connection pooling,Implementation,Bug,,{-6},,,{-2}
 GR-043,API response caching,Implementation,Bug,,{-5},,,{-6}
-GR-045,Input validation fixes,Verification,Bug,,{-3},,,{-2}
+GR-045,Input validation fixes,Waiting for Verification,Bug,,{-3},,,{-2}
 GR-047,Mobile navigation menu,Implementation,User Story,,{-8},,,{-6}
 GR-049,System health monitoring,Implementation,User Story,,{-6},,,{-2}
 GR-051,Advanced reporting module,Analyzing,User Story,,{-4},,,
@@ -46,7 +46,7 @@ GR-059,Advanced search filters,Next,User Story,,{-3},,,{-2}
 GR-063,Activity timeline view,Analysing,User Story,,{0},,,{-6}
 GR-064,Advanced search operators,Analysing,User Story,,{-10},,Blocked,{-12}
 GR-066,Automated report distribution,Analysing,User Story,,{-1},,,{-6}
-GR-067,User preference profiles,Verification,User Story,,{-1},,,{-2}
+GR-067,User preference profiles,Waiting for Verification,User Story,,{-1},,,{-2}
 GR-068,Multi-factor authentication,Implementation,User Story,,{0},,,{-6}
 GR-073,Configuration management,Backlog,User Story,,,,,
 GR-074,Load testing framework,Backlog,Bug,,,,,

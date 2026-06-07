@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Factories
                 Name = name,
                 BlockedTags = new List<string> { "Blocked" },
                 ToDoStates = new List<string> { "Backlog" },
-                DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Verification" },
+                DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "Epic" },
                 DataRetrievalValue = ParseCsv(name)
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Factories
                 AutomaticallyAdjustFeatureWIP = false,
                 BlockedTags = new List<string> { "Blocked" },
                 ToDoStates = new List<string> { "Backlog" },
-                DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Verification" },
+                DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
                 DataRetrievalValue = ParseCsv(name)

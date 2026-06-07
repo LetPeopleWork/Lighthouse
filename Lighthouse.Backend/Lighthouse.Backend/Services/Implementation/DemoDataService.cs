@@ -16,6 +16,10 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
 
+        private static readonly int[] BurnupTotalWorkByElapsedDay = [60, 62, 64, 66, 68, 92, 94, 96, 98, 86, 90, 94, 98, 100, 102];
+        private static readonly int[] BurnupDoneWorkByElapsedDay = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 32, 34, 36, 37];
+        private static readonly int[] BurnupEstimatedItemCountByElapsedDay = [22, 21, 20, 19, 18, 28, 27, 26, 25, 16, 18, 20, 22, 24, 25];
+
         private static readonly JsonSerializerOptions WhenDistributionJsonOptions = new();
 
         private readonly List<DemoDataScenario> scenarios = [];
@@ -133,8 +137,6 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private void SeedBurnupSnapshots(int deliveryId)
         {
-            const int totalWork = DemoBurnupDays;
-            const int initialEstimatedItemCount = 8;
             const int targetReplanOnElapsedDay = 7;
 
             var currentTarget = DateTime.UtcNow.Date.AddDays(DemoBurnupDays);
@@ -144,15 +146,15 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 var recordedAt = DateTime.UtcNow.Date.AddDays(-daysAgo);
                 var elapsedDays = DemoBurnupDays - daysAgo;
-                var doneWork = elapsedDays;
-                var estimatedItemCount = initialEstimatedItemCount - elapsedDays;
+                var totalWork = BurnupTotalWorkByElapsedDay[elapsedDays];
+                var doneWork = BurnupDoneWorkByElapsedDay[elapsedDays];
 
                 var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, recordedAt);
                 snapshot.TargetDateAtSnapshot = elapsedDays < targetReplanOnElapsedDay ? originalTarget : currentTarget;
                 snapshot.TotalWork = totalWork;
                 snapshot.DoneWork = doneWork;
                 snapshot.RemainingWork = totalWork - doneWork;
-                snapshot.EstimatedItemCount = estimatedItemCount > 0 ? estimatedItemCount : null;
+                snapshot.EstimatedItemCount = BurnupEstimatedItemCountByElapsedDay[elapsedDays];
                 snapshot.LikelihoodPercentage = LikelihoodForElapsedDays(elapsedDays);
                 snapshot.WhenDistributionJson = BuildWhenDistributionJson(recordedAt, elapsedDays);
                 snapshot.FeatureBreakdownJson = BuildFeatureBreakdownJson(elapsedDays);

@@ -56,10 +56,11 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoTeam.ToDoStates, Has.Count.EqualTo(1));
                 Assert.That(demoTeam.ToDoStates, Contains.Item("Backlog"));
 
-                Assert.That(demoTeam.DoingStates, Has.Count.EqualTo(4));
+                Assert.That(demoTeam.DoingStates, Has.Count.EqualTo(5));
                 Assert.That(demoTeam.DoingStates, Contains.Item("Next"));
                 Assert.That(demoTeam.DoingStates, Contains.Item("Analysing"));
                 Assert.That(demoTeam.DoingStates, Contains.Item("Implementation"));
+                Assert.That(demoTeam.DoingStates, Contains.Item("Waiting for Verification"));
                 Assert.That(demoTeam.DoingStates, Contains.Item("Verification"));
 
                 Assert.That(demoTeam.DoneStates, Has.Count.EqualTo(1));
@@ -96,10 +97,11 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoProject.ToDoStates, Has.Count.EqualTo(1));
                 Assert.That(demoProject.ToDoStates, Contains.Item("Backlog"));
 
-                Assert.That(demoProject.DoingStates, Has.Count.EqualTo(4));
+                Assert.That(demoProject.DoingStates, Has.Count.EqualTo(5));
                 Assert.That(demoProject.DoingStates, Contains.Item("Next"));
                 Assert.That(demoProject.DoingStates, Contains.Item("Analysing"));
                 Assert.That(demoProject.DoingStates, Contains.Item("Implementation"));
+                Assert.That(demoProject.DoingStates, Contains.Item("Waiting for Verification"));
                 Assert.That(demoProject.DoingStates, Contains.Item("Verification"));
 
                 Assert.That(demoProject.DoneStates, Has.Count.EqualTo(1));

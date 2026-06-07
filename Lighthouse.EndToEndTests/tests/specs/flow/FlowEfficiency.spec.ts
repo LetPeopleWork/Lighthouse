@@ -17,7 +17,7 @@ const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith d
 const DEMO_TEAM_NAME = "Team Zenith";
 const CUMULATIVE_STATE_TIME_WIDGET_ID = "stateTimeCumulative";
 
-const DEMO_WAIT_STATE = "Verification";
+const DEMO_WAIT_STATE = "Waiting for Verification";
 
 test("@walking_skeleton @US-01 admin marks a wait state and the delivery lead sees flow efficiency on the tile and the cumulative chart", async ({
 	page,

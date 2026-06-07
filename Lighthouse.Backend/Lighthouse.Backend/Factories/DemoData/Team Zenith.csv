@@ -37,7 +37,7 @@ TZ-035,Bulk operations interface,Done,User Story,AP-003,{-9},{-7},,
 TZ-036,Fix email template rendering,Done,Bug,AP-003,{-8},{-6},,
 TZ-037,Third-party API integration,Done,User Story,AP-003,{-7},{-4},,
 TZ-038,Performance testing suite,Done,User Story,,{-6},{-2},,
-TZ-039,Accessibility improvements,Verification,User Story,,{-5},,,{-6}
+TZ-039,Accessibility improvements,Waiting for Verification,User Story,,{-5},,,{-6}
 TZ-040,Database migration tools,Implementation,User Story,,{-3},,Blocked,{-12}
 TZ-300,Hotfix triage for login regression,Analysing,User Story,AP-001,{-0},,,{-0}
 TZ-041,Telemetry data ingestion pipeline,Done,User Story,ALT-91,{-84},{-82},,

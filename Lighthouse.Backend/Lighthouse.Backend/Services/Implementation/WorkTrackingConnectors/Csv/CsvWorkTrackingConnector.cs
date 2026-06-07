@@ -222,6 +222,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return BuildCurrentStateEnteredTransition(csv, stateEnteredDateColumn, mappedState, stateCategory);
         }
 
+        private static readonly IReadOnlyDictionary<string, int> DemoStateJourneyWeights =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Next"] = 1,
+                ["Analysing"] = 2,
+                ["Implementation"] = 4,
+                ["Waiting for Verification"] = 3,
+                ["Verification"] = 1,
+            };
+
+        private static int GetDemoStateWeight(string state) =>
+            DemoStateJourneyWeights.TryGetValue(state, out var weight) ? weight : 1;
+
         private static IReadOnlyList<WorkItemStateTransition> BuildInterpolatedDoneJourney(
             IWorkItemQueryOwner owner, DateTime startedDate, DateTime closedDate)
         {
@@ -237,9 +250,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var totalSpan = closed - started;
             var stateCount = doingStates.Count;
 
+            var weights = doingStates.Select(GetDemoStateWeight).ToList();
+            var totalWeight = weights.Sum();
+
             var enteredAt = Enumerable
                 .Range(0, stateCount)
-                .Select(index => started + TimeSpan.FromTicks(totalSpan.Ticks * index / stateCount))
+                .Select(index => started + TimeSpan.FromTicks(totalSpan.Ticks * weights.Take(index).Sum() / totalWeight))
                 .ToList();
 
             var exitTransitions = doingStates
