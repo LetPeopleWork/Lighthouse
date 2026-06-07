@@ -62,7 +62,7 @@ Follow RED-GREEN-REFACTOR strictly:
 **TypeScript:**
 - No `any` types - use `unknown` if type is truly unknown
 - Strict mode always enabled
-- Schema-first at trust boundaries (Zod)
+- Schema-first at trust boundaries (Zod v4) — rolling adoption; required at converted & new API boundaries, validate via `BaseApiService.parse` (see `docs/feature/zod-adoption-evaluation/adoption-roadmap.md`)
 
 **C#:**
 - Nullable reference types enabled

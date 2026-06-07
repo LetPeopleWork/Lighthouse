@@ -85,7 +85,7 @@ After every GREEN, classify and act:
 
 - C# (`backend-csharp.instructions.md`): every `.csproj` requires `<Nullable>enable</Nullable>`, `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`, `<WarningLevel>5</WarningLevel>`, `<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>`. No unconstrained `dynamic`.
 - TS (`frontend-typescript.instructions.md`): strict mode (all `strict*` flags) required. Never `any` — narrow `unknown` with a type guard. Use `type` for data; `interface` only for behavior contracts.
-- Schema-first at trust boundaries (API responses, form input, persisted data) using Zod; derive types via `z.infer`. Plain `type` aliases only for purely internal data.
+- Schema-first at trust boundaries (API responses, form input, persisted data) using Zod (v4) — **rolling adoption**, one boundary at a time (`docs/feature/zod-adoption-evaluation/adoption-roadmap.md`). **Required at converted boundaries (forecast, backtest, feature list) and for any NEW/changed API boundary**; validate in the service via `BaseApiService.parse(schema, data)`. Derive types via `z.infer` — delete the interface for pure-data DTOs, but for behaviour-bearing model classes (e.g. `Feature`) Zod replaces the *deserializer* and the interface stays as the behavioural contract (`Model.fromParsed(parsed)`). Plain `type` aliases only for purely internal data.
 
 ### Code Structure
 

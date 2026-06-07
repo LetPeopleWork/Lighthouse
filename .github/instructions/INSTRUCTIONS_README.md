@@ -50,7 +50,7 @@ GitHub Copilot automatically loads:
 
 ### frontend-typescript.instructions.md
 - TypeScript strict mode configuration
-- Schema-first development with Zod
+- Schema-first development with Zod (v4, rolling adoption)
 - React component patterns
 - Immutable state updates in React
 - Custom hooks patterns

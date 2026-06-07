@@ -90,7 +90,13 @@ interface User {
 
 ## Schema-First Development with Zod
 
-Always define schemas first, then derive types:
+> **Lighthouse status (rolling adoption, since 2026-06).** Zod (v4) is being adopted **incrementally, one trust boundary at a time** — see `docs/feature/zod-adoption-evaluation/adoption-roadmap.md`. The rules below are the **target pattern**, not a claim that every boundary is converted yet. Concretely:
+> - **Required at converted boundaries** (currently: forecast results, backtest, feature list) and for **any new or changed API boundary** — a new `*Service` response MUST be schema-validated.
+> - Validation runs in the service via the shared `BaseApiService.parse(schema, data)` helper (routes failures through `ApiError`), not a bespoke fetch wrapper. The illustrative `useFetch(url, schema)` hook below shows the *principle*; the real app validates inside the API-service methods that React Query's `queryFn`s call.
+> - Derive types with `z.infer`. **For pure-data DTOs, delete the hand-written interface in favour of `z.infer`. For behaviour-bearing model classes (those with methods, e.g. `Feature`), Zod replaces the _deserializer_, not the interface** — the interface stays as the class's behavioural contract; construct the class from the parsed plain object (`Model.fromParsed(data)`).
+> - Internal/derived data still uses plain `type` aliases.
+
+Define schemas first, then derive types:
 
 ```typescript
 import { z } from 'zod';
@@ -127,8 +133,8 @@ const handlePaymentSubmit = async (data: unknown) => {
     await processPayment(validatedRequest);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      // Handle validation errors
-      return { success: false, errors: error.errors };
+      // Handle validation errors (Zod v4: `.issues`, not `.errors`)
+      return { success: false, errors: error.issues };
     }
     throw error;
   }
@@ -264,7 +270,7 @@ type UseFetchResult<T> = {
 
 export const useFetch = <T,>(
   url: string,
-  schema: z.ZodSchema<T>
+  schema: z.ZodType<T>
 ): UseFetchResult<T> => {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -544,7 +550,7 @@ export const Dashboard = () => {
 
 - TypeScript strict mode always enabled
 - No `any` types - use `unknown` and type guards
-- Schema-first with Zod at trust boundaries
+- Schema-first with Zod at converted & new trust boundaries (rolling adoption — see adoption-roadmap)
 - Immutable state updates in React
 - Test behavior through user interactions
 - Use factory functions for test data
