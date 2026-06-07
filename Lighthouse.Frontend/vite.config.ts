@@ -11,6 +11,7 @@ export default defineConfig({
         outDir: '../Lighthouse.Backend/Lighthouse.Backend/wwwroot',
         emptyOutDir: true,
         minify: true,
+        chunkSizeWarningLimit: 1100,
     },
     base: '/'
 });

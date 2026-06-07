@@ -1,9 +1,10 @@
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
 	Navigate,
 	Route,
@@ -19,16 +20,8 @@ import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
 import SplashScreen from "./components/App/SplashScreen/SplashScreen";
 import { useAuthGuard } from "./hooks/useAuthGuard";
-import OverviewDashboard from "./pages/Overview/OverviewDashboard";
-import Settings from "./pages/Settings/Settings";
 import "./App.css";
-import OAuthPopupComplete from "./components/Common/Connections/OAuthPopupComplete";
 import SurveyNudge from "./components/SurveyNudge/SurveyNudge";
-import EditConnection from "./pages/Connections/Edit/EditConnection";
-import PortfolioDetail from "./pages/Portfolios/Detail/PortfolioDetail";
-import EditPortfolio from "./pages/Portfolios/Edit/EditPortfolio";
-import TeamDetail from "./pages/Teams/Detail/TeamDetail";
-import EditTeam from "./pages/Teams/Edit/EditTeam";
 import {
 	ApiServiceContext,
 	getApiServices,
@@ -37,6 +30,38 @@ import {
 import { TerminologyProvider } from "./services/TerminologyContext";
 import { notifyBackendReady } from "./utils/backendUrl";
 import { hasTauriBackendUrl, isTauriEnv } from "./utils/tauri";
+
+const OverviewDashboard = lazy(
+	() => import("./pages/Overview/OverviewDashboard"),
+);
+const Settings = lazy(() => import("./pages/Settings/Settings"));
+const OAuthPopupComplete = lazy(
+	() => import("./components/Common/Connections/OAuthPopupComplete"),
+);
+const EditConnection = lazy(
+	() => import("./pages/Connections/Edit/EditConnection"),
+);
+const PortfolioDetail = lazy(
+	() => import("./pages/Portfolios/Detail/PortfolioDetail"),
+);
+const EditPortfolio = lazy(
+	() => import("./pages/Portfolios/Edit/EditPortfolio"),
+);
+const TeamDetail = lazy(() => import("./pages/Teams/Detail/TeamDetail"));
+const EditTeam = lazy(() => import("./pages/Teams/Edit/EditTeam"));
+
+const RouteFallback: React.FC = () => (
+	<Box
+		sx={{
+			display: "flex",
+			justifyContent: "center",
+			alignItems: "center",
+			py: 8,
+		}}
+	>
+		<CircularProgress />
+	</Box>
+);
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -67,12 +92,10 @@ const App: React.FC = () => {
 	const theme = useTheme();
 	const apiServices: IApiServiceContext = getApiServices();
 
-	// --- 1. Splashscreen State ---
 	const isTauri = isTauriEnv() && !hasTauriBackendUrl();
 	const [isBackendReady, setIsBackendReady] = useState(!isTauri);
 	const [minTimeElapsed, setMinTimeElapsed] = useState(!isTauri);
 
-	// Only enforce the minimum display time when showing the splash (Tauri env)
 	useEffect(() => {
 		if (!isTauri) return;
 		const timer = setTimeout(() => setMinTimeElapsed(true), SPLASH_MIN_MS);
@@ -104,26 +127,19 @@ const App: React.FC = () => {
 		return () => unlistenFn?.();
 	}, [isTauri]);
 
-	// --- 2. Auth Guard ---
 	const { shell, loginUrl, misconfigurationMessage, logout, currentUser } =
 		useAuthGuard(apiServices.authService);
 
-	// Re-bootstrap auth state after a blocked-mode license import
 	const handleBlockedLicenseImported = () => {
 		globalThis.location.reload();
 	};
 
-	// --- 3. Splashscreen UI ---
-	// Show until BOTH the backend is ready AND the minimum display time has passed
 	if (!isBackendReady || !minTimeElapsed) {
 		return <SplashScreen />;
 	}
 
-	// --- 4. Auth Shell Selection ---
-	// Ensure protected content does not render before auth state is known
 	if (shell === "loading") {
-		// If we are in Tauri, show the splash.
-		// If we are in Server mode, return null (or a tiny spinner) to prevent the "flash"
+		// Server mode returns null (not a spinner) to avoid a flash before auth resolves
 		return isTauri ? <SplashScreen /> : null;
 	}
 
@@ -149,7 +165,6 @@ const App: React.FC = () => {
 		);
 	}
 
-	// shell is "anonymous" or "authenticated" — render the normal app
 	return (
 		<QueryClientProvider client={queryClient}>
 			<Router>
@@ -161,7 +176,7 @@ const App: React.FC = () => {
 								bgcolor: theme.palette.background.default,
 								color: theme.palette.text.primary,
 								transition: "background-color 0.3s ease, color 0.3s ease",
-								minHeight: "100vh", // Ensure container fills screen
+								minHeight: "100vh",
 								display: "flex",
 								flexDirection: "column",
 							}}
@@ -179,34 +194,36 @@ const App: React.FC = () => {
 									bgcolor: theme.palette.background.default,
 									pt: 2,
 									pb: 4,
-									flex: 1, // Push footer to bottom
+									flex: 1,
 								}}
 							>
-								<Routes>
-									<Route path="/" element={<OverviewDashboard />} />
-									<Route
-										path="/oauth/popup-complete"
-										element={<OAuthPopupComplete />}
-									/>
-									<Route path="/connections">
-										<Route path="new" element={<EditConnection />} />
-										<Route path=":id/edit" element={<EditConnection />} />
-									</Route>
-									<Route path="/teams">
-										<Route path=":id/:tab?" element={<TeamDetail />} />
-										<Route path="edit/:id" element={<TeamEditRedirect />} />
-										<Route path="new" element={<EditTeam />} />
-									</Route>
-									<Route path="/portfolios">
-										<Route path=":id/:tab?" element={<PortfolioDetail />} />
+								<Suspense fallback={<RouteFallback />}>
+									<Routes>
+										<Route path="/" element={<OverviewDashboard />} />
 										<Route
-											path="edit/:id"
-											element={<PortfolioEditRedirect />}
+											path="/oauth/popup-complete"
+											element={<OAuthPopupComplete />}
 										/>
-										<Route path="new" element={<EditPortfolio />} />
-									</Route>
-									<Route path="/settings" element={<Settings />} />
-								</Routes>
+										<Route path="/connections">
+											<Route path="new" element={<EditConnection />} />
+											<Route path=":id/edit" element={<EditConnection />} />
+										</Route>
+										<Route path="/teams">
+											<Route path=":id/:tab?" element={<TeamDetail />} />
+											<Route path="edit/:id" element={<TeamEditRedirect />} />
+											<Route path="new" element={<EditTeam />} />
+										</Route>
+										<Route path="/portfolios">
+											<Route path=":id/:tab?" element={<PortfolioDetail />} />
+											<Route
+												path="edit/:id"
+												element={<PortfolioEditRedirect />}
+											/>
+											<Route path="new" element={<EditPortfolio />} />
+										</Route>
+										<Route path="/settings" element={<Settings />} />
+									</Routes>
+								</Suspense>
 							</Box>
 							<Footer />
 							<SurveyNudge />
