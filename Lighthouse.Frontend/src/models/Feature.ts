@@ -1,5 +1,8 @@
 import { z } from "zod";
-import type { IEntityReference } from "./EntityReference";
+import {
+	EntityReferenceSchema,
+	type IEntityReference,
+} from "./EntityReference";
 import { WhenForecastSchema } from "./Forecasts/forecastSchemas";
 import { type IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
 import type { IWorkItem, StateCategory } from "./WorkItem";
@@ -40,10 +43,7 @@ export const FeatureSchema = z.object({
 	parentWorkItemReference: z.string(),
 	isBlocked: z.boolean().optional().default(false),
 	url: z.string().nullable().optional(),
-	projects: z
-		.array(z.object({ id: z.number(), name: z.string() }))
-		.optional()
-		.default([]),
+	projects: z.array(EntityReferenceSchema).optional().default([]),
 	remainingWork: WorkByTeamSchema,
 	totalWork: WorkByTeamSchema,
 	forecasts: z.array(WhenForecastSchema),

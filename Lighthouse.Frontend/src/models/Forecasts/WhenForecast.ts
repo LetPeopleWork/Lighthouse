@@ -1,5 +1,3 @@
-import { plainToInstance, Type } from "class-transformer";
-import "reflect-metadata";
 import type { IForecast } from "./IForecast";
 
 export interface IWhenForecast extends IForecast {
@@ -10,15 +8,18 @@ export interface IWhenForecast extends IForecast {
 
 export class WhenForecast implements IWhenForecast {
 	probability!: number;
-
-	@Type(() => Date)
 	expectedDate: Date = new Date();
-
 	filterApplied?: boolean;
 	excludedSummary?: string;
 
 	static fromBackend(data: IWhenForecast): WhenForecast {
-		return plainToInstance(WhenForecast, data);
+		const forecast = WhenForecast.new(
+			data.probability,
+			new Date(data.expectedDate),
+		);
+		forecast.filterApplied = data.filterApplied;
+		forecast.excludedSummary = data.excludedSummary;
+		return forecast;
 	}
 
 	static new(probability: number, expectedDate: Date): WhenForecast {

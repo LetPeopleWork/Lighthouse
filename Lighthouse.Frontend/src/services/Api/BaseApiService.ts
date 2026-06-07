@@ -1,8 +1,8 @@
 import axios, { type AxiosInstance } from "axios";
 import { z } from "zod";
 import { Feature, FeatureSchema } from "../../models/Feature";
-import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
-import { type ITeam, Team } from "../../models/Team/Team";
+import { Portfolio, PortfolioSchema } from "../../models/Portfolio/Portfolio";
+import { Team, TeamSchema } from "../../models/Team/Team";
 import { getBackendReadyPromise, getBackendUrl } from "../../utils/backendUrl";
 import { ApiError } from "./ApiError";
 
@@ -150,13 +150,13 @@ export class BaseApiService {
 		return result.data;
 	}
 
-	protected static deserializeTeam(item: ITeam) {
+	protected static deserializeTeam(item: unknown): Team | null {
 		if (item == null) return null;
-		return Team.fromBackend(item);
+		return Team.fromParsed(BaseApiService.parse(TeamSchema, item));
 	}
 
-	protected static deserializePortfolio(item: IPortfolio): Portfolio {
-		return Portfolio.fromBackend(item);
+	protected static deserializePortfolio(item: unknown): Portfolio {
+		return Portfolio.fromParsed(BaseApiService.parse(PortfolioSchema, item));
 	}
 
 	protected static deserializeFeatures(data: unknown): Feature[] {

@@ -9,7 +9,6 @@ import App from "./App.tsx";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { appColors } from "./utils/theme/colors";
 import { extendTheme } from "./utils/theme/themeExtensions";
-import "reflect-metadata";
 
 // Light theme base
 const lightThemeBase = createTheme({

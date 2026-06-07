@@ -42,7 +42,7 @@ The memo's ideal end-state is "delete the interface in favour of `z.infer`." Sli
 
 So for behaviour-bearing classes, Zod replaces the **deserializer**, not the interface. The "delete the interface → `z.infer`" rule applies cleanly only to **pure-data DTOs** (no methods). Worth encoding in the convention rewrite (step 0).
 
-A bonus payoff: retiring `class-transformer`/`reflect-metadata` from `Feature.ts` removed decorator-metadata runtime cost from the single most-imported model (Team/Portfolio/WhenForecast still use class-transformer — candidates for later slices to fully drop the dependency).
+A bonus payoff, now fully realized: **`class-transformer` + `reflect-metadata` have been removed from `package.json` entirely.** Converting the last four decorated models — `Feature`, `Team`, `Portfolio` (lenient `fromParsed` schemas) and `WhenForecast` (plain construction) — plus dropping the global `reflect-metadata` polyfill from `main.tsx`, retired both dependencies. Measured total-JS effect: **797.33 → 790.49 kB gzip (~7 kB saved)**, validating the memo's "partial offset" thesis — the net cost of Zod is materially smaller than its gross add. Note: `Team`/`Portfolio` schemas are deliberately **lenient** (every field defaulted to its class default, dates coerced) to exactly preserve the old `plainToInstance` leniency for these central, E2E-heavy models — they remove the dependency and add coercion without tightening validation in a way that could surprise a live payload. Tightening them to fail-fast is a future, live-calibrated step.
 
 ## Guardrails
 
