@@ -222,8 +222,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return BuildCurrentStateEnteredTransition(csv, stateEnteredDateColumn, mappedState, stateCategory);
         }
 
-        private static readonly IReadOnlyDictionary<string, int> DemoStateJourneyWeights =
-            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, int> DemoStateJourneyWeights =
+            new(StringComparer.OrdinalIgnoreCase)
             {
                 ["Next"] = 1,
                 ["Analysing"] = 2,
