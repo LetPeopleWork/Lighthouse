@@ -27,5 +27,8 @@ export const SystemInfoSchema = z.object({
 	authorizationEnabled: z.boolean().optional(),
 	emergencyAdminSubjects: z.array(z.string()).optional(),
 	baseUrl: z.string().optional(),
-	installTimestamp: z.string().optional(),
+	installTimestamp: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? undefined),
 });
