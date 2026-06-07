@@ -1,4 +1,7 @@
-import type { ILicenseStatus } from "../../models/ILicenseStatus";
+import {
+	type ILicenseStatus,
+	LicenseStatusSchema,
+} from "../../models/ILicenseStatus";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ILicensingService {
@@ -13,14 +16,8 @@ export class LicensingService
 {
 	async getLicenseStatus(): Promise<ILicenseStatus> {
 		return await this.withErrorHandling(async () => {
-			const response = await this.apiService.get<ILicenseStatus>("/license");
-
-			// Convert date string to Date object if present
-			if (response.data.expiryDate) {
-				response.data.expiryDate = new Date(response.data.expiryDate);
-			}
-
-			return response.data;
+			const response = await this.apiService.get<unknown>("/license");
+			return BaseApiService.parse(LicenseStatusSchema, response.data);
 		});
 	}
 
@@ -29,7 +26,7 @@ export class LicensingService
 			const formData = new FormData();
 			formData.append("file", file);
 
-			const response = await this.apiService.post<ILicenseStatus>(
+			const response = await this.apiService.post<unknown>(
 				"/license/import",
 				formData,
 				{
@@ -39,12 +36,7 @@ export class LicensingService
 				},
 			);
 
-			// Convert date string to Date object if present
-			if (response.data.expiryDate) {
-				response.data.expiryDate = new Date(response.data.expiryDate);
-			}
-
-			return response.data;
+			return BaseApiService.parse(LicenseStatusSchema, response.data);
 		});
 	}
 

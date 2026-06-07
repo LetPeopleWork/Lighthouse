@@ -7,6 +7,7 @@ import type {
 	RbacUser,
 	UserAuthorizationSummary,
 } from "../../models/Authorization/RbacModels";
+import { ApiError } from "./ApiError";
 import { RbacService } from "./RbacService";
 
 vi.mock("axios");
@@ -111,6 +112,20 @@ describe("RbacService", () => {
 
 		expect(result).toEqual(mockSummary);
 		expect(mockedAxios.get).toHaveBeenCalledWith("/authorization/my-summary");
+	});
+
+	it("should fail closed when the authorization summary is missing required permissions", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: { isRbacEnabled: true, isSystemAdmin: false },
+		});
+
+		const error = await subject
+			.getAuthorizationSummary()
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApiError);
+		expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+		expect((error as ApiError).technicalDetails).toContain("canCreateTeam");
 	});
 
 	it("should fetch team members", async () => {

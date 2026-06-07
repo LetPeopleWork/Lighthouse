@@ -1,11 +1,12 @@
-import type {
-	CreateRbacGroupMappingRequest,
-	RbacGroupMapping,
-	RbacScopedMemberSummary,
-	RbacStatus,
-	RbacUser,
-	ScopedRbacRole,
-	UserAuthorizationSummary,
+import {
+	type CreateRbacGroupMappingRequest,
+	type RbacGroupMapping,
+	type RbacScopedMemberSummary,
+	type RbacStatus,
+	type RbacUser,
+	type ScopedRbacRole,
+	type UserAuthorizationSummary,
+	UserAuthorizationSummarySchema,
 } from "../../models/Authorization/RbacModels";
 import { BaseApiService } from "./BaseApiService";
 
@@ -62,10 +63,13 @@ export class RbacService extends BaseApiService implements IRbacService {
 
 	getAuthorizationSummary(): Promise<UserAuthorizationSummary> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<UserAuthorizationSummary>(
+			const response = await this.apiService.get<unknown>(
 				"/authorization/my-summary",
 			);
-			return response.data;
+			return BaseApiService.parse(
+				UserAuthorizationSummarySchema,
+				response.data,
+			);
 		});
 	}
 

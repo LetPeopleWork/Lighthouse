@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface RbacStatus {
 	enabled: boolean;
 	premiumGateSatisfied: boolean;
@@ -29,6 +31,16 @@ export interface UserAuthorizationSummary {
 	/** Portfolio IDs where the current user has admin (write) rights. Empty when RBAC is disabled or user is System Admin. */
 	adminPortfolioIds?: number[];
 }
+
+export const UserAuthorizationSummarySchema = z.object({
+	isRbacEnabled: z.boolean(),
+	isSystemAdmin: z.boolean(),
+	canCreateTeam: z.boolean(),
+	canCreatePortfolio: z.boolean(),
+	systemAdminDisplayNames: z.array(z.string()).optional(),
+	adminTeamIds: z.array(z.number()).optional(),
+	adminPortfolioIds: z.array(z.number()).optional(),
+});
 
 export type ScopedRbacRole = "Viewer" | "TeamAdmin" | "PortfolioAdmin";
 

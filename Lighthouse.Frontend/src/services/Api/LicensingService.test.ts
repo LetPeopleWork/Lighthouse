@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../models/ILicenseStatus";
+import { ApiError } from "./ApiError";
 import { LicensingService } from "./LicensingService";
 
 vi.mock("axios");
@@ -70,6 +71,18 @@ describe("LicensingService", () => {
 		expect(licenseStatus).toEqual(mockResponse);
 		expect(licenseStatus.hasLicense).toBe(false);
 		expect(licenseStatus.isValid).toBe(false);
+	});
+
+	it("should reject a license response missing required fields with a structured ApiError", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: { isValid: true } });
+
+		const error = await licensingService
+			.getLicenseStatus()
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApiError);
+		expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+		expect((error as ApiError).technicalDetails).toContain("hasLicense");
 	});
 
 	it("should import license file", async () => {
