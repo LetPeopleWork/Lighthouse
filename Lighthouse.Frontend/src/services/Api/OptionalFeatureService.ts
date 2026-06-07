@@ -1,4 +1,8 @@
-import type { IOptionalFeature } from "../../models/OptionalFeatures/OptionalFeature";
+import { z } from "zod";
+import {
+	type IOptionalFeature,
+	OptionalFeatureSchema,
+} from "../../models/OptionalFeatures/OptionalFeature";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IOptionalFeatureService {
@@ -13,20 +17,24 @@ export class OptionalFeatureService
 {
 	getAllFeatures(): Promise<IOptionalFeature[]> {
 		return this.withErrorHandling(async () => {
-			const response =
-				await this.apiService.get<IOptionalFeature[]>("/optionalfeatures");
+			const response = await this.apiService.get<unknown>("/optionalfeatures");
 
-			return response.data;
+			return BaseApiService.parse(
+				z.array(OptionalFeatureSchema),
+				response.data,
+			);
 		});
 	}
 
 	getFeatureByKey(key: string): Promise<IOptionalFeature | null> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IOptionalFeature>(
+			const response = await this.apiService.get<unknown>(
 				`/optionalfeatures/${key}`,
 			);
 
-			return response.data;
+			return response.data == null
+				? null
+				: BaseApiService.parse(OptionalFeatureSchema, response.data);
 		});
 	}
 

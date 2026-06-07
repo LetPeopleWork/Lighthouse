@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface IOptionalFeature {
 	name: string;
 	key: string;
@@ -7,3 +9,13 @@ export interface IOptionalFeature {
 	isPremium: boolean;
 	isPreview: boolean;
 }
+
+export const OptionalFeatureSchema = z.object({
+	name: z.string(),
+	key: z.string(),
+	id: z.number(),
+	description: z.string(),
+	enabled: z.boolean(),
+	isPremium: z.boolean(),
+	isPreview: z.boolean(),
+});

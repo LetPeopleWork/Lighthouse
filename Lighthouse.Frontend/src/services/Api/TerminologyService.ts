@@ -1,4 +1,5 @@
-import type { ITerminology } from "../../models/Terminology";
+import { z } from "zod";
+import { type ITerminology, TerminologySchema } from "../../models/Terminology";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ITerminologyService {
@@ -12,9 +13,8 @@ export class TerminologyService
 {
 	public async getAllTerminology(): Promise<ITerminology[]> {
 		return this.withErrorHandling(async () => {
-			const response =
-				await this.apiService.get<ITerminology[]>("/terminology/all");
-			return response.data;
+			const response = await this.apiService.get<unknown>("/terminology/all");
+			return BaseApiService.parse(z.array(TerminologySchema), response.data);
 		});
 	}
 

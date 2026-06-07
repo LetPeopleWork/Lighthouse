@@ -25,6 +25,7 @@ describe("OptionalFeatureService", () => {
 				name: "Feature 1",
 				description: "Description 1",
 				enabled: true,
+				isPremium: false,
 				isPreview: true,
 			},
 			{
@@ -33,6 +34,7 @@ describe("OptionalFeatureService", () => {
 				name: "Feature 2",
 				description: "Description 2",
 				enabled: false,
+				isPremium: true,
 				isPreview: false,
 			},
 		];
@@ -53,6 +55,7 @@ describe("OptionalFeatureService", () => {
 			name: "Feature 1",
 			description: "Description 1",
 			enabled: true,
+			isPremium: false,
 			isPreview: true,
 		};
 

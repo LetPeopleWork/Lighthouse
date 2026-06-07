@@ -1,4 +1,7 @@
-import type { IRefreshSettings } from "../../models/AppSettings/RefreshSettings";
+import {
+	type IRefreshSettings,
+	RefreshSettingsSchema,
+} from "../../models/AppSettings/RefreshSettings";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ISettingsService {
@@ -15,11 +18,11 @@ export class SettingsService
 {
 	async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IRefreshSettings>(
+			const response = await this.apiService.get<unknown>(
 				`/appsettings/${settingName}Refresh`,
 			);
 
-			return response.data;
+			return BaseApiService.parse(RefreshSettingsSchema, response.data);
 		});
 	}
 

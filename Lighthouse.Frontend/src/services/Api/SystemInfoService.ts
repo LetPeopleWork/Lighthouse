@@ -1,5 +1,8 @@
 import type { RefreshLog } from "../../models/SystemInfo/RefreshLog";
-import type { SystemInfo } from "../../models/SystemInfo/SystemInfo";
+import {
+	type SystemInfo,
+	SystemInfoSchema,
+} from "../../models/SystemInfo/SystemInfo";
 import { BaseApiService } from "./BaseApiService";
 
 export type CdxLicense = {
@@ -38,8 +41,8 @@ export class SystemInfoService
 {
 	async getSystemInfo(): Promise<SystemInfo> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<SystemInfo>("/systeminfo");
-			return response.data;
+			const response = await this.apiService.get<unknown>("/systeminfo");
+			return BaseApiService.parse(SystemInfoSchema, response.data);
 		});
 	}
 
