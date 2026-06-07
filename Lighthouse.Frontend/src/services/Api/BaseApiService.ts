@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
+import { z } from "zod";
 import { Feature, type IFeature } from "../../models/Feature";
 import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { type ITeam, Team } from "../../models/Team/Team";
@@ -132,6 +133,21 @@ export class BaseApiService {
 		}
 
 		return undefined;
+	}
+
+	protected static parse<TSchema extends z.ZodType>(
+		schema: TSchema,
+		data: unknown,
+	): z.infer<TSchema> {
+		const result = schema.safeParse(data);
+		if (!result.success) {
+			throw new ApiError(
+				"INVALID_RESPONSE",
+				"Received an unexpected response from the server.",
+				z.prettifyError(result.error),
+			);
+		}
+		return result.data;
 	}
 
 	protected static deserializeTeam(item: ITeam) {

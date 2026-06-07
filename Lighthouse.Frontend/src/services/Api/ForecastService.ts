@@ -2,11 +2,9 @@ import {
 	BacktestResult,
 	type IBacktestResult,
 } from "../../models/Forecasts/BacktestResult";
+import { ManualForecastSchema } from "../../models/Forecasts/forecastSchemas";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
-import {
-	type IManualForecast,
-	ManualForecast,
-} from "../../models/Forecasts/ManualForecast";
+import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
 import { BaseApiService } from "./BaseApiService";
 
@@ -63,11 +61,11 @@ export class ForecastService
 				requestBody.applyFilterOverride = applyFilterOverride;
 			}
 
-			const response = await this.apiService.post<IManualForecast>(
+			const response = await this.apiService.post<unknown>(
 				`/forecast/manual/${teamId}`,
 				requestBody,
 			);
-			return this.deserializeManualForecast(response.data);
+			return ForecastService.deserializeManualForecast(response.data);
 		});
 	}
 
@@ -79,7 +77,7 @@ export class ForecastService
 		workItemTypes: string[],
 	): Promise<ManualForecast> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.post<IManualForecast>(
+			const response = await this.apiService.post<unknown>(
 				`/forecast/itemprediction/${teamId}`,
 				{
 					startDate: startDate,
@@ -89,33 +87,28 @@ export class ForecastService
 				},
 			);
 
-			return this.deserializeManualForecast(response.data);
+			return ForecastService.deserializeManualForecast(response.data);
 		});
 	}
 
-	private deserializeManualForecast(
-		manualForecastData: IManualForecast,
-	): ManualForecast {
-		const whenForecasts = manualForecastData.whenForecasts.map((forecast) => {
-			return WhenForecast.new(
-				forecast.probability,
-				new Date(forecast.expectedDate),
-			);
-		});
-		const howManyForecasts = manualForecastData.howManyForecasts.map(
+	private static deserializeManualForecast(data: unknown): ManualForecast {
+		const parsed = BaseApiService.parse(ManualForecastSchema, data);
+		const whenForecasts = parsed.whenForecasts.map((forecast) =>
+			WhenForecast.new(forecast.probability, forecast.expectedDate),
+		);
+		const howManyForecasts = parsed.howManyForecasts.map(
 			(forecast) => new HowManyForecast(forecast.probability, forecast.value),
 		);
 		const manualForecast = new ManualForecast(
-			manualForecastData.remainingItems,
-			new Date(manualForecastData.targetDate),
+			parsed.remainingItems,
+			parsed.targetDate,
 			whenForecasts,
 			howManyForecasts,
-			manualForecastData.likelihood,
-			manualForecastData.filterApplied ?? false,
-			manualForecastData.excludedSummary,
+			parsed.likelihood,
+			parsed.filterApplied,
+			parsed.excludedSummary,
 		);
-		manualForecast.hasSufficientData =
-			manualForecastData.hasSufficientData ?? true;
+		manualForecast.hasSufficientData = parsed.hasSufficientData;
 		return manualForecast;
 	}
 

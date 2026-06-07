@@ -10,6 +10,7 @@ import {
 	ManualForecast,
 } from "../../models/Forecasts/ManualForecast";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
+import { ApiError } from "./ApiError";
 import { ForecastService } from "./ForecastService";
 
 vi.mock("axios");
@@ -125,6 +126,26 @@ describe("ForecastService", () => {
 				targetDate,
 			},
 		);
+	});
+
+	it("should reject a response missing required fields with a structured ApiError", async () => {
+		const teamId = 8;
+		const driftedResponse = {
+			remainingItems: 4,
+			targetDate: "2023-10-01T00:00:00Z",
+			howManyForecasts: [],
+			likelihood: 0.5,
+		};
+
+		mockedAxios.post.mockResolvedValueOnce({ data: driftedResponse });
+
+		const error = await forecastService
+			.runManualForecast(teamId, 4, new Date("2023-10-01"))
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApiError);
+		expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+		expect((error as ApiError).technicalDetails).toContain("whenForecasts");
 	});
 
 	it("should omit remainingItems when it is not set", async () => {
