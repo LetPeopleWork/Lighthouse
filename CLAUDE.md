@@ -39,6 +39,18 @@ Every feature run through `nw-discuss` MUST explicitly address these three impac
 - **Lighthouse-Clients (CLI + MCP)** — Decide whether the change needs a matching update to the CLI and MCP clients. Any new or changed API contract usually means the clients follow; call out the required client change or explain why they're unaffected. **Version-gate any NEW endpoint** in the clients repo: an old Lighthouse server returns an opaque 404 for an endpoint it doesn't have, so the wrapping client method must pre-check the server version and fail with a clear "upgrade Lighthouse" error instead. The rule: at development time the next release number is unknown, so pin the feature to **strictly newer than the *last released* Lighthouse version** (record that baseline in the clients' `FEATURE_REQUIRES_SERVER_NEWER_THAN` registry; bump it to the current latest release each time you wrap a new server-dependent endpoint). Dev/unparseable versions must never be blocked.
 - **Website** — Decide whether the public website needs an update — e.g. a new premium feature should be surfaced/marketed there. Note the required website change or explicitly mark it N/A.
 
+## DELIVER Wave — Docs & Screenshots at Finalization
+
+**Every feature that adds or changes user-visible behaviour MUST update the public docs and their screenshots as part of its own finalization — never defer this to release time.** Batching docs across many features into one `/release` pass is a process failure: it produces huge, error-prone doc sessions and stale screenshots.
+
+Concretely, before a feature is considered finalized (`nw-finalize`):
+
+- **Docs prose** — for each new/changed UI surface, add or update the matching page under `docs/` (`settings/`, `metrics/`, `teams/`, `portfolios/`, `concepts/`, …). A new premium feature usually needs its own section. Match the existing terse, present-tense house style.
+- **Screenshots** — add a **focused, per-theme** `@screenshot` test in `Lighthouse.EndToEndTests/.../Screenshots.spec.ts` (one test per feature/theme, not bundled into a monolith — demo data makes per-test setup cheap). Drive it from the `testWithDemoData` fixture (destructure `testData` or the demo-loading fixture never runs), and **run it live** against a clean backend before committing — `pnpm build` only type-checks, it does not validate locators.
+- **Demo data** — if the feature needs specific state to illustrate it (e.g. seeded history, a wait state), extend the demo data (`DemoDataService` / `DemoDataFactory` / the demo CSVs) so the screenshot and the live demo both show it.
+
+The `/release` `update-docs` pass should then find little or no drift. If it finds a lot, the per-feature discipline above was skipped — fix it at the feature level, not in a release-time mega-batch.
+
 ## Coding Conventions
 
 Synthesized from `.github/instructions/*.md`. Rules below extend (don't restate) the paradigm/architecture/test-framework choices above.

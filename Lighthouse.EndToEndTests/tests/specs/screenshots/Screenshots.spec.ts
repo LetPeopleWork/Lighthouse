@@ -60,21 +60,25 @@ test("Take @screenshot of licensing", async ({ overviewPage }) => {
 	);
 });
 
-test("Take @screenshot of setting pages", async ({ overviewPage }) => {
+test("Take @screenshot of the demo data settings page", async ({
+	overviewPage,
+}) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-
 	const demoDataPage = await settingsPage.goToDemoData();
 	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
+});
 
+test("Take @screenshot of the system configuration page", async ({
+	overviewPage,
+}) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const systemSettings = await settingsPage.goToSystemConfiguration();
 
 	await takePageScreenshot(systemSettings.page, "settings/configuration.png");
-
 	await takeElementScreenshot(
 		systemSettings.terminologyConfiguration,
 		"settings/terminologyConfiguration.png",
 	);
-
 	await takeElementScreenshot(
 		systemSettings.teamRefreshSettings,
 		"settings/teamrefreshsettings.png",
@@ -90,7 +94,12 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 			"settings/optionalfeatures.png",
 		);
 	}
+});
 
+test("Take @screenshot of the system info settings page", async ({
+	overviewPage,
+}) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const logs = await settingsPage.goToSystemInfo();
 	await takePageScreenshot(logs.page, "settings/systeminfo.png");
 
@@ -98,7 +107,12 @@ test("Take @screenshot of setting pages", async ({ overviewPage }) => {
 		name: "system information",
 	});
 	await takeElementScreenshot(systemInfoTable, "settings/systeminfo_auth.png");
+});
 
+test("Take @screenshot of the database management settings page", async ({
+	overviewPage,
+}) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const databaseManagement = await settingsPage.goToDatabaseManagement();
 	await takePageScreenshot(
 		databaseManagement.page,
@@ -149,7 +163,7 @@ test("Take @screenshot of blackout periods and recurring rules", async ({
 });
 
 testWithDemo(
-	"Take @screenshot of populated overview, teams overview, team detail, portfolios overview, and portfolio detail pages",
+	"Take @screenshot of the team deletion dialog",
 	async ({ testData, overviewPage }) => {
 		const teamsPage = await overviewPage.lightHousePage.goToOverview();
 		const deleteTeamDialog = await teamsPage.deleteTeam(testData.teams[0].name);
@@ -159,9 +173,14 @@ testWithDemo(
 			0.5,
 			1000,
 		);
-
 		await deleteTeamDialog.cancel();
+	},
+);
 
+testWithDemo(
+	"Take @screenshot of the team detail forecasts and backtest",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		teamDetailPage.goToForecasts();
 
@@ -177,21 +196,22 @@ testWithDemo(
 			"features/creationforecast.png",
 		);
 
-		// Backtest screenshot
 		await teamDetailPage.runBacktest();
 		await expect(teamDetailPage.backtestResultsSection).toBeVisible();
 		await takeElementScreenshot(
 			teamDetailPage.backtestForecastingSection.locator("../../.."),
 			"features/backtest.png",
 		);
+	},
+);
 
-		overviewPage.lightHousePage.goToOverview();
-
-		// portfolio Deletion Dialog
+testWithDemo(
+	"Take @screenshot of the portfolio deletion dialog",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
 		const deletePortfolioDialog = await overviewPage.deletePortfolio(
 			testData.portfolios[0],
 		);
-
 		await takeElementScreenshot(
 			deletePortfolioDialog.page.getByRole("dialog"),
 			"features/portfolios_delete.png",
@@ -199,8 +219,13 @@ testWithDemo(
 			1000,
 		);
 		await deletePortfolioDialog.cancel();
+	},
+);
 
-		// portfolio Detail Page
+testWithDemo(
+	"Take @screenshot of the portfolio detail page",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
 		const portfolioDetailPage = await overviewPage.goToPortfolio(
 			testData.portfolios[0].name,
 		);
@@ -209,8 +234,17 @@ testWithDemo(
 			"features/portfoliodetail.png",
 			3,
 		);
+	},
+);
 
-		let deliveryPage = await portfolioDetailPage.goToDeliveries();
+testWithDemo(
+	"Take @screenshot of delivery creation (manual and rule-based)",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0].name,
+		);
+		const deliveryPage = await portfolioDetailPage.goToDeliveries();
 		const addDeliveryPage = await deliveryPage.addDelivery();
 		await addDeliveryPage.setDeliveryName("Next Release");
 
@@ -219,7 +253,6 @@ testWithDemo(
 			.slice(0, 10);
 
 		await addDeliveryPage.setDeliveryDate(futureDate);
-
 		await addDeliveryPage.selectFeatureByIndex(0);
 		await addDeliveryPage.selectFeatureByIndex(1);
 
@@ -253,12 +286,12 @@ testWithDemo(
 
 		await addDeliveryPage.switchToManual();
 
-		deliveryPage = await addDeliveryPage.save();
-		const delivery = deliveryPage.getDeliveryByName("Next Release");
+		const savedDeliveryPage = await addDeliveryPage.save();
+		const delivery = savedDeliveryPage.getDeliveryByName("Next Release");
 		await delivery.toggleDetails();
 
 		await takePageScreenshot(
-			deliveryPage.page,
+			savedDeliveryPage.page,
 			"features/delivery_detail.png",
 			5,
 			1000,
@@ -266,15 +299,12 @@ testWithDemo(
 	},
 );
 testWithDemo(
-	"Take @screenshot of Metrics",
+	"Take @screenshot of the team metrics dashboard widgets",
 	async ({ testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();
-
-		// Go to Metrics Tab
 		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
 		const metricsPage = await teamDetailPage.goToMetrics();
 
-		// Metrics Overview
 		await takePageScreenshot(
 			metricsPage.page,
 			"features/metrics/metricsoverview.png",
@@ -291,11 +321,11 @@ testWithDemo(
 			const metrics = await metricsPage.switchCategory(category);
 
 			for (const metricWidget of metrics) {
-				if (
+				const coveredElsewhere =
 					metricWidget.name === MetricsWidgetNames.EstimationVsCycleTime ||
-					metricWidget.name === MetricsWidgetNames.FeatureSizePercentiles
-				) {
-					continue; // Skip Estimation vs Cycle Time chart as it is covered in a separate test and has a different setup process
+					metricWidget.name === MetricsWidgetNames.FeatureSizePercentiles;
+				if (coveredElsewhere) {
+					continue;
 				}
 
 				await takeElementScreenshot(
@@ -304,11 +334,19 @@ testWithDemo(
 				);
 			}
 		}
+	},
+);
 
-		let availableWidgets = await metricsPage.switchCategory(
+testWithDemo(
+	"Take @screenshot of the cycle time work items dialog",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const availableWidgets = await metricsPage.switchCategory(
 			MetricsCategories.FlowOverview,
 		);
-
 		const cycleTimePercentilesWidget = await metricsPage.getWidgetByName(
 			MetricsWidgetNames.CycleTimePercentiles,
 			availableWidgets,
@@ -320,9 +358,13 @@ testWithDemo(
 			"features/metrics/workitemsdialog.png",
 		);
 		await workItemsDialog.close();
+	},
+);
 
-		overviewPage = await overviewPage.lightHousePage.goToOverview();
-
+testWithDemo(
+	"Take @screenshot of the portfolio metrics widgets",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
 		const portfolioDetailPage = await overviewPage.goToPortfolio(
 			testData.portfolios[0].name,
 		);
@@ -334,15 +376,13 @@ testWithDemo(
 
 		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
-		availableWidgets = await portfolioMetricsPage.switchCategory(
+		let availableWidgets = await portfolioMetricsPage.switchCategory(
 			MetricsCategories.PortfolioAndFeatures,
 		);
-
 		const featureSizeWidget = await portfolioMetricsPage.getWidgetByName(
 			MetricsWidgetNames.FeatureSize,
 			availableWidgets,
 		);
-
 		await takeElementScreenshot(
 			featureSizeWidget.Widget,
 			"features/metrics/featuresize.png",
@@ -351,13 +391,11 @@ testWithDemo(
 		availableWidgets = await portfolioMetricsPage.switchCategory(
 			MetricsCategories.Predictability,
 		);
-
 		const featureSizeProcessBehaviourWidget =
 			await portfolioMetricsPage.getWidgetByName(
 				MetricsWidgetNames.FeatureSizeProcessBehaviourChart,
 				availableWidgets,
 			);
-
 		await takeElementScreenshot(
 			featureSizeProcessBehaviourWidget.Widget,
 			"features/metrics/featureSizeProcessBehaviourChart.png",
@@ -366,13 +404,11 @@ testWithDemo(
 		availableWidgets = await portfolioMetricsPage.switchCategory(
 			MetricsCategories.FlowOverview,
 		);
-
 		const featureSizePercentilesWidget =
 			await portfolioMetricsPage.getWidgetByName(
 				MetricsWidgetNames.FeatureSizePercentiles,
 				availableWidgets,
 			);
-
 		await takeElementScreenshot(
 			featureSizePercentilesWidget.Widget,
 			"features/metrics/featureSizePercentiles.png",
