@@ -59,6 +59,12 @@ Each entry follows:
 
 ## Tests
 
+### 2026-06-07 — Zod `z.coerce.date()` silently turns `null` into epoch (1970); backend `DateTime?` fields must be `.nullable()`
+- **Symptom**: E2E run ~2-3× normal length, multiple flow/metrics specs (CycleTime, AgingPace, FlowEfficiency, TimeInState) failing/timing out after the Zod adoption. Unit tests were all green; only live demo data exposed it.
+- **Root cause**: `FeatureSchema` modelled `startedDate`/`closedDate` as required `z.coerce.date()`, but the backend `WorkItemDto` types them `DateTime?` and serialises `null` for not-started/not-closed items. `z.coerce.date()` runs `new Date(null)` → `1970-01-01` (a *valid* Date, so no parse error) instead of preserving `null`. The old `class-transformer` `@Type(() => Date)` passed `null` through. `BaseMetricsView`'s `closedDate === null` filter then never matched → wrong chart data → pages never settled → Playwright timeouts.
+- **Fix**: `startedDate`/`closedDate` → `z.coerce.date().nullable()`; assign through with `as Date` to preserve the runtime `null` while keeping the `IWorkItem` `Date` contract that 60 consumers depend on. Regression test in `FeatureService.test.ts` ("preserve null started/closed dates"). `Feature.ts:36-37,143-146`.
+- **Rule going forward**: when a backend property is `DateTime?` (or any nullable type), the Zod schema field MUST be `.nullable()` — `z.coerce.date()` alone converts `null` to epoch silently and `z.coerce.number()`/`.string()` similarly mangle null. Check the C# DTO's nullability before writing the schema; unit-test mocks won't catch it because they always supply the value. Proper follow-up: widen `IWorkItem.startedDate/closedDate` to `Date | null` and null-guard the chart consumers, removing the `as Date`.
+
 ### 2026-05-18 — `IntegrationTestBase` is `[NonParallelizable]` (SQLite file-DB race in `EnsureDeleted` + `EnsureCreated`)
 
 - **Symptom**: `Verify Backend` job on run 26051082940 failed with 1 / 2537 tests: `ProjectsControllerAuthorizationTests.UpdateProject_AsNonPremiumUser_AboveLimit_Returns403` — `SetUp : Microsoft.Data.Sqlite.SqliteException : SQLite Error 1: 'table "AppSettings" already exists'` thrown from `IntegrationTestBase.Init()` at the `DatabaseContext.Database.EnsureCreated()` call.

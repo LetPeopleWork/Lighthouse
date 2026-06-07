@@ -33,8 +33,8 @@ export const FeatureSchema = z.object({
 	type: z.string(),
 	stateCategory: z.enum(["Unknown", "ToDo", "Doing", "Done"]),
 	lastUpdated: z.coerce.date(),
-	startedDate: z.coerce.date(),
-	closedDate: z.coerce.date(),
+	startedDate: z.coerce.date().nullable(),
+	closedDate: z.coerce.date().nullable(),
 	cycleTime: z.number(),
 	workItemAge: z.number(),
 	size: z.number(),
@@ -140,8 +140,12 @@ export class Feature implements IFeature {
 		feature.type = data.type;
 		feature.stateCategory = data.stateCategory;
 		feature.lastUpdated = data.lastUpdated;
-		feature.startedDate = data.startedDate;
-		feature.closedDate = data.closedDate;
+		// Backend StartedDate/ClosedDate are DateTime? — null for not-started/not-closed
+		// items. IWorkItem types them as Date but consumers rely on the runtime null
+		// (e.g. BaseMetricsView's `closedDate === null`), so preserve it rather than
+		// coercing to epoch.
+		feature.startedDate = data.startedDate as Date;
+		feature.closedDate = data.closedDate as Date;
 		feature.cycleTime = data.cycleTime;
 		feature.workItemAge = data.workItemAge;
 		feature.size = data.size;

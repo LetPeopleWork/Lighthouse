@@ -178,6 +178,38 @@ describe("FeatureService", () => {
 		});
 	});
 
+	it("should preserve null started/closed dates instead of coercing them to epoch", async () => {
+		const openFeature = {
+			name: "Open Feature",
+			id: 7,
+			referenceId: "FTR-7",
+			state: "In Progress",
+			type: "Feature",
+			size: 5,
+			lastUpdated: new Date(),
+			isUsingDefaultFeatureSize: false,
+			owningTeam: "",
+			parentWorkItemReference: "",
+			projects: [],
+			remainingWork: { 1: 5 },
+			totalWork: { 1: 10 },
+			forecasts: [],
+			url: "",
+			stateCategory: "Doing",
+			startedDate: null,
+			closedDate: null,
+			cycleTime: 0,
+			workItemAge: 3,
+			isBlocked: false,
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: [openFeature] });
+
+		const features = await featureService.getFeaturesByIds([7]);
+
+		expect(features[0].startedDate).toBeNull();
+		expect(features[0].closedDate).toBeNull();
+	});
+
 	it("should reject a feature response missing required fields with a structured ApiError", async () => {
 		const driftedResponse = [
 			{ id: 1, name: "Feature 1", referenceId: "FTR-1" },
