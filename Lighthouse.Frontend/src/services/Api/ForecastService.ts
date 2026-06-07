@@ -1,8 +1,8 @@
+import { BacktestResult } from "../../models/Forecasts/BacktestResult";
 import {
-	BacktestResult,
-	type IBacktestResult,
-} from "../../models/Forecasts/BacktestResult";
-import { ManualForecastSchema } from "../../models/Forecasts/forecastSchemas";
+	BacktestResultSchema,
+	ManualForecastSchema,
+} from "../../models/Forecasts/forecastSchemas";
 import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
@@ -138,11 +138,11 @@ export class ForecastService
 				requestBody.applyFilterOverride = applyFilterOverride;
 			}
 
-			const response = await this.apiService.post<IBacktestResult>(
+			const response = await this.apiService.post<unknown>(
 				`/forecast/backtest/${teamId}`,
 				requestBody,
 			);
-			return this.deserializeBacktestResult(response.data);
+			return ForecastService.deserializeBacktestResult(response.data);
 		});
 	}
 
@@ -150,19 +150,20 @@ export class ForecastService
 		return date.toISOString().split("T")[0];
 	}
 
-	private deserializeBacktestResult(data: IBacktestResult): BacktestResult {
-		const percentiles = data.percentiles.map(
+	private static deserializeBacktestResult(data: unknown): BacktestResult {
+		const parsed = BaseApiService.parse(BacktestResultSchema, data);
+		const percentiles = parsed.percentiles.map(
 			(forecast) => new HowManyForecast(forecast.probability, forecast.value),
 		);
 		return new BacktestResult({
-			startDate: new Date(data.startDate),
-			endDate: new Date(data.endDate),
-			historicalStartDate: new Date(data.historicalStartDate),
-			historicalEndDate: new Date(data.historicalEndDate),
+			startDate: parsed.startDate,
+			endDate: parsed.endDate,
+			historicalStartDate: parsed.historicalStartDate,
+			historicalEndDate: parsed.historicalEndDate,
 			percentiles,
-			actualThroughput: data.actualThroughput,
-			filterApplied: data.filterApplied ?? false,
-			excludedSummary: data.excludedSummary,
+			actualThroughput: parsed.actualThroughput,
+			filterApplied: parsed.filterApplied,
+			excludedSummary: parsed.excludedSummary,
 		});
 	}
 }

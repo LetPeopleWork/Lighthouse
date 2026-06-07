@@ -681,6 +681,31 @@ describe("ForecastService", () => {
 			);
 		});
 
+		it("should reject a backtest response missing required fields with a structured ApiError", async () => {
+			const driftedResponse = {
+				startDate: "2023-06-01",
+				endDate: "2023-06-30",
+				historicalStartDate: "2023-05-01",
+				historicalEndDate: "2023-05-31",
+				actualThroughput: 12,
+			};
+			mockedAxios.post.mockResolvedValueOnce({ data: driftedResponse });
+
+			const error = await forecastService
+				.runBacktest(
+					1,
+					new Date("2023-06-01"),
+					new Date("2023-06-30"),
+					new Date("2023-05-01"),
+					new Date("2023-05-31"),
+				)
+				.catch((caught: unknown) => caught);
+
+			expect(error).toBeInstanceOf(ApiError);
+			expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+			expect((error as ApiError).technicalDetails).toContain("percentiles");
+		});
+
 		it("should deserialize all percentile forecasts correctly", async () => {
 			const teamId = 5;
 			const startDate = new Date("2023-03-01");

@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance } from "axios";
 import { z } from "zod";
-import { Feature, type IFeature } from "../../models/Feature";
+import { Feature, FeatureSchema } from "../../models/Feature";
 import { type IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import { type ITeam, Team } from "../../models/Team/Team";
 import { getBackendReadyPromise, getBackendUrl } from "../../utils/backendUrl";
@@ -159,7 +159,9 @@ export class BaseApiService {
 		return Portfolio.fromBackend(item);
 	}
 
-	protected static deserializeFeatures(featureData: IFeature[]): Feature[] {
-		return featureData.map((feature: IFeature) => Feature.fromBackend(feature));
+	protected static deserializeFeatures(data: unknown): Feature[] {
+		return BaseApiService.parse(z.array(FeatureSchema), data).map(
+			Feature.fromParsed,
+		);
 	}
 }

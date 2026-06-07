@@ -26,11 +26,23 @@ return new X(parsed.a, parsed.b /* ... */);
 |---|----------|-------|----------------|--------|
 | 0 | **Convention docs** | Rewrite the Zod sections in `CLAUDE.md` + `.github/instructions/frontend-typescript.instructions.md` (+ Copilot/README mirrors) to "required at *converted* boundaries (currently: forecast manual-forecast), expanding per this roadmap; new boundaries MUST be schema-validated." Fix the v3-stale examples (`error.errors`→`error.issues`, `z.ZodSchema`→`z.ZodType`). | Ends the stated-but-unfollowed contradiction *now*; makes the docs true at each step. **Awaiting user confirmation before editing.** | ⏳ pending |
 | 1 | **Forecast — manual forecast** (`ForecastService.runManualForecast` / `runItemPrediction`) | `ManualForecastSchema` + `BaseApiService.parse`; construct `ManualForecast`/`WhenForecast`/`HowManyForecast`. | Highest value + risk; feeds MUI-X charts with a history of runtime shape incidents (React #185). Proves the TS 6.0 / Vite 8 spike. | ✅ done (2026-06-07) |
-| 2 | **Forecast — backtest** (`ForecastService.runBacktest`) | `BacktestResultSchema`; replace `deserializeBacktestResult`. | Same boundary, finishes the forecast surface; smallest possible next slice. | ⏳ next |
-| 3 | **Work-item / feature lists** (`FeatureService`, `WorkItemService`) | Schemas for `IFeature` / work-item DTOs; replace `deserializeFeatures`. Reconcile behaviour-bearing `Feature` methods (`getRemainingWorkForTeam`, …) via parse→construct. | Largest blast radius + the behaviour-bearing-class cost the memo flagged; do it once the pattern is battle-tested. | ⏳ later |
+| 2 | **Forecast — backtest** (`ForecastService.runBacktest`) | `BacktestResultSchema`; replace `deserializeBacktestResult`. | Same boundary, finishes the forecast surface; smallest possible next slice. | ✅ done (2026-06-07) |
+| 3 | **Feature list** (`FeatureService` → `BaseApiService.deserializeFeatures`) | `FeatureSchema` (records via `z.record`, `StateCategory` via `z.enum`, nested `forecasts` reusing `WhenForecastSchema`, coerced dates); `Feature.fromParsed` constructs the behaviour-bearing class; **class-transformer + reflect-metadata retired from `Feature.ts`**. | Largest blast radius + the behaviour-bearing-class cost the memo flagged. Proved the hardest parts. | ✅ done (2026-06-07) |
 | 4 | **Licensing** (`LicensingService`) | `LicenseStatusSchema`. | Security/correctness-adjacent; a malformed license response should fail loudly. | ⏳ later |
 | 5 | **Auth / RBAC summary** (`AuthService`, RBAC summary endpoint) | Schema for the authorization summary the `useRbac()` hook derives from. | Security-adjacent; gates UI permissions — drift here is high-impact. | ⏳ later |
 | 6+ | Remaining services, one group per slice | Convert opportunistically when a service is touched for other work (boy-scout). | Long tail; no need to convert internal/derived models that aren't trust boundaries. | ⏳ ongoing |
+
+## Finding from slice 3 (Feature): interfaces are NOT always deletable
+
+The memo's ideal end-state is "delete the interface in favour of `z.infer`." Slice 3 surfaced a real exception: **`IFeature` is not just a DTO — it's the class's behavioural contract** (it declares `getRemainingWorkForTeam()` etc. on top of `IWorkItem`), and it has ~60 importers. A data-only `z.infer<typeof FeatureSchema>` cannot express methods, so the right design for **behaviour-bearing models** is:
+
+- **`FeatureSchema` owns runtime validation** of the incoming data (the boundary).
+- **`Feature.fromParsed(data)` constructs the class** from the validated plain object (parse → construct).
+- **`IFeature` stays** as the behavioural contract the class implements and that ~60 consumers import.
+
+So for behaviour-bearing classes, Zod replaces the **deserializer**, not the interface. The "delete the interface → `z.infer`" rule applies cleanly only to **pure-data DTOs** (no methods). Worth encoding in the convention rewrite (step 0).
+
+A bonus payoff: retiring `class-transformer`/`reflect-metadata` from `Feature.ts` removed decorator-metadata runtime cost from the single most-imported model (Team/Portfolio/WhenForecast still use class-transformer — candidates for later slices to fully drop the dependency).
 
 ## Guardrails
 

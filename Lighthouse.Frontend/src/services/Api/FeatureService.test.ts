@@ -1,6 +1,7 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../models/Feature";
+import { ApiError } from "./ApiError";
 import { FeatureService } from "./FeatureService";
 
 vi.mock("axios");
@@ -175,6 +176,21 @@ describe("FeatureService", () => {
 			expect(features[0].id).toBe(1);
 			expect(mockedAxios.get).toHaveBeenCalledWith(expectedUrl);
 		});
+	});
+
+	it("should reject a feature response missing required fields with a structured ApiError", async () => {
+		const driftedResponse = [
+			{ id: 1, name: "Feature 1", referenceId: "FTR-1" },
+		];
+		mockedAxios.get.mockResolvedValueOnce({ data: driftedResponse });
+
+		const error = await featureService
+			.getFeaturesByIds([1])
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApiError);
+		expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+		expect((error as ApiError).technicalDetails).toContain("remainingWork");
 	});
 
 	describe("getFeaturesByReferences", () => {

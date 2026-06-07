@@ -1,7 +1,6 @@
-import { plainToInstance, Transform, Type } from "class-transformer";
-import "reflect-metadata";
-
+import { z } from "zod";
 import type { IEntityReference } from "./EntityReference";
+import { WhenForecastSchema } from "./Forecasts/forecastSchemas";
 import { type IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
 import type { IWorkItem, StateCategory } from "./WorkItem";
 
@@ -21,9 +20,36 @@ export interface IFeature extends IWorkItem {
 	getTotalWorkForTeam(id: number): number;
 }
 
-class DictionaryObject<TValue> {
-	readonly [key: number]: TValue;
-}
+const WorkByTeamSchema = z.record(z.string(), z.number());
+
+export const FeatureSchema = z.object({
+	name: z.string(),
+	id: z.number(),
+	referenceId: z.string(),
+	state: z.string(),
+	type: z.string(),
+	stateCategory: z.enum(["Unknown", "ToDo", "Doing", "Done"]),
+	lastUpdated: z.coerce.date(),
+	startedDate: z.coerce.date(),
+	closedDate: z.coerce.date(),
+	cycleTime: z.number(),
+	workItemAge: z.number(),
+	size: z.number(),
+	owningTeam: z.string(),
+	isUsingDefaultFeatureSize: z.boolean(),
+	parentWorkItemReference: z.string(),
+	isBlocked: z.boolean().optional().default(false),
+	url: z.string().nullable().optional(),
+	projects: z
+		.array(z.object({ id: z.number(), name: z.string() }))
+		.optional()
+		.default([]),
+	remainingWork: WorkByTeamSchema,
+	totalWork: WorkByTeamSchema,
+	forecasts: z.array(WhenForecastSchema),
+});
+
+export type FeatureData = z.infer<typeof FeatureSchema>;
 
 export class Feature implements IFeature {
 	name!: string;
@@ -37,28 +63,16 @@ export class Feature implements IFeature {
 	isBlocked!: boolean;
 
 	projects: IEntityReference[] = [];
-
-	@Type(() => DictionaryObject<number>)
-	remainingWork: DictionaryObject<number> = {};
-
-	@Type(() => DictionaryObject<number>)
+	remainingWork: { [key: number]: number } = {};
 	totalWork: { [key: number]: number } = {};
-
-	@Type(() => WhenForecast)
-	@Transform(({ value }) => value.map(WhenForecast.fromBackend), {
-		toClassOnly: true,
-	})
-	forecasts!: IWhenForecast[];
+	forecasts: IWhenForecast[] = [];
 
 	owningTeam!: string;
 
 	url = "";
 	stateCategory: StateCategory = "Unknown";
 
-	@Type(() => Date)
 	startedDate: Date = new Date();
-
-	@Type(() => Date)
 	closedDate: Date = new Date();
 
 	cycleTime!: number;
@@ -117,7 +131,31 @@ export class Feature implements IFeature {
 		return work[id] ?? 0;
 	}
 
-	static fromBackend(data: IFeature): Feature {
-		return plainToInstance(Feature, data);
+	static fromParsed(data: FeatureData): Feature {
+		const feature = new Feature();
+		feature.name = data.name;
+		feature.id = data.id;
+		feature.referenceId = data.referenceId;
+		feature.state = data.state;
+		feature.type = data.type;
+		feature.stateCategory = data.stateCategory;
+		feature.lastUpdated = data.lastUpdated;
+		feature.startedDate = data.startedDate;
+		feature.closedDate = data.closedDate;
+		feature.cycleTime = data.cycleTime;
+		feature.workItemAge = data.workItemAge;
+		feature.size = data.size;
+		feature.owningTeam = data.owningTeam;
+		feature.isUsingDefaultFeatureSize = data.isUsingDefaultFeatureSize;
+		feature.parentWorkItemReference = data.parentWorkItemReference;
+		feature.isBlocked = data.isBlocked;
+		feature.url = data.url ?? "";
+		feature.projects = data.projects;
+		feature.remainingWork = data.remainingWork;
+		feature.totalWork = data.totalWork;
+		feature.forecasts = data.forecasts.map((forecast) =>
+			WhenForecast.new(forecast.probability, forecast.expectedDate),
+		);
+		return feature;
 	}
 }

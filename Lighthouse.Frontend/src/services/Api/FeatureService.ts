@@ -21,7 +21,7 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 				params.append("featureIds", `${id}`);
 			}
 
-			const response = await this.apiService.get<IFeature[]>(
+			const response = await this.apiService.get<unknown>(
 				`/features/ids?${params.toString()}`,
 			);
 
@@ -38,7 +38,7 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 				params.append("featureReferences", id);
 			}
 
-			const response = await this.apiService.get<IFeature[]>(
+			const response = await this.apiService.get<unknown>(
 				`/features/references?${params.toString()}`,
 			);
 

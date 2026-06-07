@@ -24,3 +24,16 @@ export const ManualForecastSchema = z.object({
 });
 
 export type ManualForecastResponse = z.infer<typeof ManualForecastSchema>;
+
+export const BacktestResultSchema = z.object({
+	startDate: z.coerce.date(),
+	endDate: z.coerce.date(),
+	historicalStartDate: z.coerce.date(),
+	historicalEndDate: z.coerce.date(),
+	percentiles: z.array(HowManyForecastSchema),
+	actualThroughput: z.number(),
+	filterApplied: z.boolean().optional().default(false),
+	excludedSummary: z.string().optional(),
+});
+
+export type BacktestResultResponse = z.infer<typeof BacktestResultSchema>;
