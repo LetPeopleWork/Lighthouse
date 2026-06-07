@@ -20,23 +20,25 @@ function createPbc(average: number): ProcessBehaviourChartData {
 
 describe("loadBalanceMatrix", () => {
 	describe("isLoadBalanceBaselineAvailable", () => {
-		it("returns true only when both PBC baselines are ready and configured", () => {
+		it("returns true when both PBC baselines are ready, whether explicit or implicit", () => {
 			expect(isLoadBalanceBaselineAvailable(createPbc(5), createPbc(40))).toBe(
 				true,
 			);
 
 			expect(
 				isLoadBalanceBaselineAvailable(
+					{ ...createPbc(5), baselineConfigured: false },
+					{ ...createPbc(40), baselineConfigured: false },
+				),
+			).toBe(true);
+		});
+
+		it("returns false when a PBC baseline is not ready", () => {
+			expect(
+				isLoadBalanceBaselineAvailable(
 					{ ...createPbc(5), status: "BaselineMissing" },
 					createPbc(40),
 				),
-			).toBe(false);
-
-			expect(
-				isLoadBalanceBaselineAvailable(createPbc(5), {
-					...createPbc(40),
-					baselineConfigured: false,
-				}),
 			).toBe(false);
 		});
 	});
@@ -66,6 +68,23 @@ describe("loadBalanceMatrix", () => {
 			expect(result.averageWip).toBe(5);
 			expect(result.averageTotalWorkItemAge).toBe(40);
 			expect(result.baselineAvailable).toBe(true);
+		});
+
+		it("exposes the implicit baseline averages when no explicit baseline is configured", () => {
+			const result = deriveLoadBalanceMatrixData({
+				endDate: new Date("2026-04-20T00:00:00.000Z"),
+				currentWip: 3,
+				currentTotalWorkItemAge: 11,
+				wipPbcData: { ...createPbc(4), baselineConfigured: false },
+				totalWorkItemAgePbcData: {
+					...createPbc(38),
+					baselineConfigured: false,
+				},
+			});
+
+			expect(result.baselineAvailable).toBe(true);
+			expect(result.averageWip).toBe(4);
+			expect(result.averageTotalWorkItemAge).toBe(38);
 		});
 
 		it("handles missing baseline and still returns six projection points", () => {

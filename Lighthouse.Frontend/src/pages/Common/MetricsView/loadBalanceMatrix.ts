@@ -27,10 +27,7 @@ type DeriveLoadBalanceMatrixInput = {
 
 function isReadyBaseline(data: ProcessBehaviourChartData | null): boolean {
 	return (
-		data !== null &&
-		data.status === "Ready" &&
-		data.baselineConfigured &&
-		Number.isFinite(data.average)
+		data !== null && data.status === "Ready" && Number.isFinite(data.average)
 	);
 }
 
