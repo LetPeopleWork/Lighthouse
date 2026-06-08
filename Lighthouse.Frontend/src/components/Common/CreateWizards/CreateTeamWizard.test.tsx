@@ -692,6 +692,7 @@ describe("CreateTeamWizard", () => {
 			expect(savedSettings.workTrackingSystemConnectionId).toBe(1);
 			expect(savedSettings.throughputHistory).toBe(90);
 			expect(savedSettings.featureWIP).toBe(0);
+			expect(savedSettings.stalenessThresholdDays).toBe(0);
 		});
 
 		it("shows Back button that returns to Configure step", async () => {

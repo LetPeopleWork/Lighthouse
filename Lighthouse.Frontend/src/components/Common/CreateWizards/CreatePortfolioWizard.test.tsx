@@ -683,6 +683,7 @@ describe("CreatePortfolioWizard", () => {
 			expect(savedSettings.name).toBe("New Portfolio");
 			expect(savedSettings.workTrackingSystemConnectionId).toBe(1);
 			expect(savedSettings.defaultAmountOfWorkItemsPerFeature).toBe(10);
+			expect(savedSettings.stalenessThresholdDays).toBe(0);
 		});
 
 		it("shows Back button that returns to Configure step", async () => {

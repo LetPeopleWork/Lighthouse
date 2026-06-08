@@ -53,7 +53,7 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 			estimationUnit: null,
 			useNonNumericEstimation: false,
 			estimationCategoryValues: [],
-			stalenessThresholdDays: 14,
+			stalenessThresholdDays: 0,
 		}),
 		validateSettings: validatePortfolioSettings,
 		saveSettings: savePortfolioSettings,

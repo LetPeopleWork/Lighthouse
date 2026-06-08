@@ -52,7 +52,7 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 			estimationUnit: null,
 			useNonNumericEstimation: false,
 			estimationCategoryValues: [],
-			stalenessThresholdDays: 7,
+			stalenessThresholdDays: 0,
 		}),
 		validateSettings: validateTeamSettings,
 		saveSettings: saveTeamSettings,
