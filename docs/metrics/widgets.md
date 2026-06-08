@@ -265,7 +265,7 @@ A **stale** item (one that has been in its current state longer than the configu
 
 This chart shows how much **total time** your work spends in each workflow state, making it easy to see where work waits and where bottlenecks form.
 
-![Cumulative Time per State](../assets/features/metrics/stateTimeCumulative.png)
+![Cumulative Time per State](../assets/features/metrics/stateTimeCumulativeWaitStates.png)
 
 Each bar represents one *Doing* state. Every item that accumulated time in that state within the selected range contributes to the bar, split into two segments:
 
