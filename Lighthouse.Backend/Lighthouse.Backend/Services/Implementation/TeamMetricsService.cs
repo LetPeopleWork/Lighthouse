@@ -323,6 +323,69 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public IReadOnlyList<NamedCycleTimeWorkItem> GetNamedCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId)
+        {
+            logger.LogDebug("Getting Named Cycle Time Data for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"NamedCycleTimeData_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
+                ComputeNamedCycleTimeSeries(team, startDate, endDate, definitionId), logger);
+        }
+
+        public IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId)
+        {
+            logger.LogDebug("Getting Named Cycle Time Percentiles for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
+            {
+                var namedCycleTimes = ComputeNamedCycleTimeSeries(team, startDate, endDate, definitionId)
+                    .Select(entry => entry.CycleTime)
+                    .ToList();
+
+                return (IEnumerable<PercentileValue>)
+                [
+                    new PercentileValue(50, PercentileCalculator.CalculatePercentile(namedCycleTimes, 50)),
+                    new PercentileValue(70, PercentileCalculator.CalculatePercentile(namedCycleTimes, 70)),
+                    new PercentileValue(85, PercentileCalculator.CalculatePercentile(namedCycleTimes, 85)),
+                    new PercentileValue(95, PercentileCalculator.CalculatePercentile(namedCycleTimes, 95))
+                ];
+            }, logger);
+        }
+
+        private IReadOnlyList<NamedCycleTimeWorkItem> ComputeNamedCycleTimeSeries(Team team, DateTime startDate, DateTime endDate, int definitionId)
+        {
+            var definition = ResolveCycleTimeDefinition(definitionId);
+            var allStatesInOrder = team.AllStates.ToList();
+            var startState = ResolveBoundaryState(team, allStatesInOrder, definition.StartState);
+            var endState = ResolveBoundaryState(team, allStatesInOrder, definition.EndState);
+
+            var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
+            var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
+
+            return itemsWithTransitions
+                .Select(item => (item, namedDays: NamedCycleTimeDays(item, allStatesInOrder, startState, endState)))
+                .Where(entry => entry.namedDays.HasValue)
+                .Select(entry => new NamedCycleTimeWorkItem(entry.item, entry.namedDays!.Value))
+                .ToList();
+        }
+
+        private static string ResolveBoundaryState(Team team, List<string> allStatesInOrder, string boundaryState)
+        {
+            var rawStates = team.GetRawStatesForCategory([boundaryState]);
+            return allStatesInOrder.FirstOrDefault(state => rawStates.Any(raw => string.Equals(raw, state, StringComparison.OrdinalIgnoreCase)))
+                ?? boundaryState;
+        }
+
+        private static CycleTimeDefinition ResolveCycleTimeDefinition(int definitionId)
+        {
+            return new CycleTimeDefinition
+            {
+                Id = definitionId,
+                Name = "Concept to Cash",
+                StartState = "Planned",
+                EndState = "Done",
+            };
+        }
+
         public IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Age In State Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

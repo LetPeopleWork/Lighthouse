@@ -283,6 +283,84 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
+        protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        {
+            var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
+            var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
+            if (startThreshold < 0 || endThreshold < 0)
+            {
+                return null;
+            }
+
+            var stateEntries = OrderedStateEntries(item, allStatesInOrder).ToList();
+
+            var startMoment = stateEntries
+                .Where(entry => entry.Rank >= startThreshold)
+                .Select(entry => (DateTime?)entry.EnteredAt)
+                .FirstOrDefault();
+            if (!startMoment.HasValue)
+            {
+                return null;
+            }
+
+            var endMoment = stateEntries
+                .Where(entry => entry.EnteredAt >= startMoment.Value && entry.Rank >= endThreshold)
+                .Select(entry => (DateTime?)entry.EnteredAt)
+                .FirstOrDefault();
+            if (!endMoment.HasValue)
+            {
+                return null;
+            }
+
+            return (int)(endMoment.Value.Date - startMoment.Value.Date).TotalDays + 1;
+        }
+
+        private static int BoundaryThresholdIndex(IReadOnlyList<string> allStatesInOrder, string boundaryState)
+        {
+            for (var index = 0; index < allStatesInOrder.Count; index++)
+            {
+                if (string.Equals(allStatesInOrder[index], boundaryState, StringComparison.OrdinalIgnoreCase))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private static IEnumerable<(int Rank, DateTime EnteredAt)> OrderedStateEntries(WorkItem item, IReadOnlyList<string> allStatesInOrder)
+        {
+            if (!item.StartedDate.HasValue)
+            {
+                yield break;
+            }
+
+            var orderedTransitions = item.SyncedTransitions
+                .OrderBy(transition => transition.TransitionedAt)
+                .ToList();
+
+            var firstState = orderedTransitions.Count > 0 ? orderedTransitions[0].FromState : item.State;
+            yield return (RankOfState(allStatesInOrder, firstState), item.StartedDate.Value);
+
+            foreach (var transition in orderedTransitions)
+            {
+                yield return (RankOfState(allStatesInOrder, transition.ToState), transition.TransitionedAt);
+            }
+        }
+
+        private static int RankOfState(IReadOnlyList<string> allStatesInOrder, string state)
+        {
+            for (var index = 0; index < allStatesInOrder.Count; index++)
+            {
+                if (string.Equals(allStatesInOrder[index], state, StringComparison.OrdinalIgnoreCase))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
         private static bool IsInFlight(WorkItem item)
         {
             return item.StateCategory == StateCategories.Doing && item.CurrentStateEnteredAt.HasValue;

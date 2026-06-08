@@ -5,6 +5,11 @@ namespace Lighthouse.Backend.API.DTO
     public class WorkItemDto
     {
         public WorkItemDto(WorkItemBase workItem)
+            : this(workItem, workItem.CycleTime)
+        {
+        }
+
+        public WorkItemDto(WorkItemBase workItem, int cycleTime)
         {
             Name = workItem.Name;
             Id = workItem.Id;
@@ -16,7 +21,7 @@ namespace Lighthouse.Backend.API.DTO
             StateCategory = workItem.StateCategory;
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
-            CycleTime = workItem.CycleTime;
+            CycleTime = cycleTime;
             WorkItemAge = workItem.WorkItemAge;
             IsBlocked = workItem.IsBlocked;
             CurrentStateEnteredAt = workItem.CurrentStateEnteredAt;

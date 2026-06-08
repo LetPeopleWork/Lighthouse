@@ -6,8 +6,14 @@ namespace Lighthouse.Backend.Services.Interfaces
 {
     public sealed record ForecastThroughputStatus(RunChartData Throughput, bool FilterApplied, string? ExcludedSummary, bool HasSufficientData = true);
 
+    public sealed record NamedCycleTimeWorkItem(WorkItem WorkItem, int CycleTime);
+
     public interface ITeamMetricsService
     {
+        IReadOnlyList<NamedCycleTimeWorkItem> GetNamedCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId);
+
+        IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId);
+
         RunChartData GetCurrentThroughputForTeamForecast(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
 
         ForecastThroughputStatus GetForecastThroughputStatus(Team team, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting);
