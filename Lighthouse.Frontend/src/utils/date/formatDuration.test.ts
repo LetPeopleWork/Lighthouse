@@ -9,8 +9,8 @@ describe("chooseDurationUnit", () => {
 		{ maxDays: 0.9, expected: "hours" },
 		{ maxDays: 1, expected: "days" },
 		{ maxDays: 13, expected: "days" },
-		{ maxDays: 14, expected: "weeks" },
-		{ maxDays: 120, expected: "weeks" },
+		{ maxDays: 14, expected: "days" },
+		{ maxDays: 120, expected: "days" },
 	])("picks $expected when the largest bar magnitude is $maxDays days", ({
 		maxDays,
 		expected,
@@ -26,8 +26,8 @@ describe("formatDuration", () => {
 		{ valueDays: 0.02, unit: "hours" as const, expected: "0.5 h" },
 		{ valueDays: 0.25, unit: "hours" as const, expected: "6 h" },
 		{ valueDays: 0.01, unit: "minutes" as const, expected: "14 m" },
-		{ valueDays: 7, unit: "weeks" as const, expected: "1 w" },
-		{ valueDays: 21, unit: "weeks" as const, expected: "3 w" },
+		{ valueDays: 21, unit: "days" as const, expected: "21 d" },
+		{ valueDays: 120, unit: "days" as const, expected: "120 d" },
 	])("formats $valueDays days as $expected in $unit", ({
 		valueDays,
 		unit,
@@ -55,7 +55,7 @@ describe("formatDuration", () => {
 			formatDuration(value, unit),
 		);
 
-		expect(unit).toBe("weeks");
-		expect(formattedValues.every((value) => value.endsWith(" w"))).toBe(true);
+		expect(unit).toBe("days");
+		expect(formattedValues.every((value) => value.endsWith(" d"))).toBe(true);
 	});
 });
