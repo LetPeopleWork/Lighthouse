@@ -108,6 +108,16 @@ namespace Lighthouse.Backend.Models
             return rawStates;
         }
 
+        public bool IsCycleTimeDefinitionValid(CycleTimeDefinition definition)
+        {
+            var states = AllStates.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var startRaw = GetRawStatesForCategory([definition.StartState]);
+            var endRaw = GetRawStatesForCategory([definition.EndState]);
+
+            return startRaw.Count > 0 && endRaw.Count > 0
+                && startRaw.All(states.Contains) && endRaw.All(states.Contains);
+        }
+
         public string MapRawStateToMappedName(string rawState)
         {
             var mapping = StateMappings.FirstOrDefault(m =>
