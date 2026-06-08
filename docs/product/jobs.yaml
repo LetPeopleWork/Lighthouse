@@ -18,6 +18,7 @@ feature_context:
   - delivery-metrics
   - blackout-day-forecast-shift
   - recurring-blackout-events
+  - multiple-cycle-times
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1587,4 +1588,171 @@ jobs:
         missing capability, kept tractable because it reuses the shipped one-off CRUD pattern,
         premium+admin guard, settings UI, and the unified BlackoutDaysExtensions evaluation seam; the
         only genuinely new logic is rule -> concrete-days expansion.
+
+  - id: job-config-admin-define-named-cycle-time
+    title: Define a named cycle time once so the team can measure a custom start->end window
+    persona: config-admin
+    feature_context: multiple-cycle-times
+    created: 2026-06-08
+    note: >
+      NEW in multiple-cycle-times (ADO Epic #5251 "Support Multiple Cycle Times", Premium). The
+      config action that unlocks the whole feature. A named cycle time = { name, startState, endState }
+      with ORDERED-BOUNDARY semantics over WorkTrackingSystemOptionsOwner.AllStates
+      (= ToDoStates ++ DoingStates ++ DoneStates, mapping-expanded via GetRawStatesForCategory - the
+      same total order the cumulative-time-per-state chart's workflowOrder uses). The regular cycle
+      time is the special case (start = first Doing state, end = first Done state), so this
+      generalises/reuses the existing StartedDate/ClosedDate derivation rather than building a parallel
+      engine - two states suffice, To Do/Doing/Done are NOT re-declared per definition. Saving rides
+      the EXISTING team/portfolio settings endpoint (CycleTimeDefinitions is a new List on the settings
+      aggregate, twin of WaitStates/DoingStates - no new write contract). Premium + config-admin
+      (team-admin / portfolio-admin) gate, same as other state config.
+    job_story: >
+      When I am configuring a Team or Portfolio and I know that our real lead time starts well before
+      Lighthouse's default "started" boundary (work sits in a planning or validation queue for weeks
+      before anyone moves a card to Doing) - or ends differently from "closed" -
+      I want to define an additional NAMED cycle time once by naming it and picking a start state and
+      an end state, in the same mapping-aware, workflow-ordered state picker I already use elsewhere,
+      so the team can visualise where time is really spent across that custom window on the scatterplot
+      and the cumulative chart - without re-declaring categories or maintaining an offline spreadsheet.
+    dimensions:
+      functional: >
+        A new "Cycle Times" config in the flow-metrics/state-config cluster (Team and Portfolio):
+        the implicit "Default" cycle time (started->finished) shown read-only for reference, plus an
+        add/edit/delete list of named definitions, each { name, startState, endState }. Both boundary
+        pickers are MAPPING-AWARE (offer State-Mapping names AND raw states, expanded via
+        GetRawStatesForCategory) and present states in workflow (AllStates) order, consistent with the
+        wait-states feature. Save-time validation: endState must come STRICTLY after startState in
+        AllStates (reject end-before-start, D4); name non-empty and unique within the owner. Persists
+        to a new CycleTimeDefinitions List on WorkTrackingSystemOptionsOwner via the EXISTING settings
+        update endpoint - no new endpoint, no new write contract. Premium-gated; UI gating via
+        useRbac(); config-admin (team-admin / portfolio-admin) write scope. Re-entries use the FIRST
+        boundary crossing (D2), mirroring the regular cycle time.
+      emotional: >
+        Move from "the only cycle time I can show is started->finished, which hides the weeks of
+        validation queue before work even begins" to "I described the Planned->Done window once and the
+        team can now see exactly where the time goes". Confidence that the chart the team reads reflects
+        their real workflow, not just Lighthouse's default boundaries.
+      social: >
+        Be the admin who set the team up so its cycle-time charts answer "where does our time really
+        go?" - the named window matches what the team actually experiences, not a generic default.
+    forces:
+      push: >
+        Lighthouse computes ONE cycle time (started->finished) today; teams whose real bottleneck is
+        upstream of "started" (a planning/validation/intake queue) or whose meaningful window differs
+        from started->closed have no way to express it, so the scatterplot can never show where their
+        time actually goes. The workaround is exporting state history to a spreadsheet and computing the
+        custom window by hand.
+      pull: >
+        One familiar settings sub-section (the same mapping-aware, workflow-ordered state picker used
+        for other state config) defines a reusable named window once; every consuming surface (the
+        scatterplot selector, the cumulative-chart scope switch) respects it. Set once, visualise on
+        demand.
+      anxiety: >
+        Will I have to re-declare To Do/Doing/Done for each named cycle time? (No - D1: two states
+        suffice; the definition reuses AllStates ordering and the existing started/closed derivation.)
+        What if I pick an end state before the start state? (Mitigated by D4: save is rejected inline
+        with "End state must come after the start state in the workflow"; nothing is persisted.)
+        What if I later remove a state a definition depends on? (Mitigated by D5: the definition becomes
+        invalid - warned and disabled in the selectors - never a silent break or crash.)
+      habit: >
+        Admins already manage Doing-states, State Mappings, Blocked-states, and Wait-states in this
+        exact form with this exact mapping-aware picker; adding a named cycle time is the same muscle
+        memory. The only new idea is "a cycle time is just two boundary states" - surfaced in the
+        sub-section helper text and an inline boundary preview.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - a single started->finished cycle time cannot answer "where does our time
+        really go?" for teams whose constraint is upstream of started (a common, high-stakes
+        leadership question); customers asked for custom windows (Epic 5251). Current satisfaction: 1 -
+        no named/custom cycle time exists anywhere in the product today (verified: WorkItemBase.CycleTime
+        is the only cycle time, gated on StateCategory==Done). Gap: 3 - a foundational missing
+        capability, kept tractable by reusing AllStates ordering, the existing started/closed
+        derivation, the mapping-aware picker, and the existing settings write contract; the only
+        genuinely new config logic is { name, startState, endState } + end-after-start validation.
+
+  - id: job-delivery-lead-see-time-over-custom-window
+    title: See where time really goes over a custom start->end window, not just started->finished
+    persona: delivery-lead-rte
+    feature_context: multiple-cycle-times
+    created: 2026-06-08
+    note: >
+      NEW in multiple-cycle-times (ADO Epic #5251, Premium). The viewing job that pays off the config
+      job. With a named cycle time defined, the delivery lead switches the Cycle Time Scatterplot's
+      selector from "Default" to the named definition; the dots re-plot (Y = that definition's
+      duration) and the 50/70/85/95 percentile lines recompute (D6a). The cumulative-time-per-state
+      chart also gains a switch to scope its bars to a named cycle time's window (D6b). Both Team and
+      Portfolio (D7). Items that never cross BOTH boundaries are excluded; a sparse/empty series is an
+      explicit low-sample state (D9). A NEW read endpoint serves per-definition scatter/percentile data
+      (the existing GetCycleTimeDataForTeam / GetCycleTimePercentilesForTeam compute only the default
+      window); premium-gated, UI gating via useRbac() (D8). Forecasting is explicitly NOT in scope -
+      this is analysis, not forecasting.
+    job_story: >
+      When I am running a retro or a leadership review and the started->finished cycle time looks fine
+      yet features still land late, and I suspect the time disappears in a window the default cycle time
+      can't see (e.g. a validation queue before work starts),
+      I want to switch the Cycle Time Scatterplot to a named cycle time (e.g. Concept to Cash =
+      Planned->Done) and read the re-plotted dots and recomputed percentile lines - and optionally scope
+      the cumulative-time-per-state chart to that window,
+      so I can name where time is really spent with evidence ("Concept to Cash P85 is 47 days; 35 of
+      them are the validation queue before build even starts") rather than guessing from the
+      started->finished window alone.
+    dimensions:
+      functional: >
+        On the Cycle Time Scatterplot, a cycle-time selector ("Default" + each named definition);
+        selecting a named definition re-plots every closed item's dot with Y = that definition's
+        ordered-boundary duration (first start-or-later -> first end-or-later, first crossing per D2)
+        and recomputes the 50/70/85/95 percentile lines over that series (D6a). On the
+        cumulative-time-per-state chart, a switch to scope the bars to a named cycle time's window
+        (D6b). Both surfaces at Team AND Portfolio scope (D7). Items that never cross BOTH boundaries
+        are excluded (D9); a sparse/empty series renders an explicit low-sample state, not misleading
+        percentiles on one or two dots. A definition invalidated by state removal (D5) appears DISABLED
+        with a warning, never a crash. Served by a NEW per-definition read endpoint; premium-gated, UI
+        gating via useRbac() (D8). Forecasting is OUT of scope.
+      emotional: >
+        Move from "started->finished looks fine but we keep landing late and I can't show why" to
+        "the Concept-to-Cash scatterplot makes the upstream wait undeniable - the build is fast, the
+        queue before it is the problem". Confidence grounded in the shape of the chart, not anecdote.
+      social: >
+        Walk into the leadership review with two scatterplots side by side - "build is fast (P85 12
+        days started->finished); Concept to Cash is 47 days; here's the 35-day validation queue" -
+        reframing the improvement conversation toward the real constraint instead of squeezing a build
+        step that is already fast.
+    forces:
+      push: >
+        The scatterplot shows only the started->finished window today; for teams whose constraint is
+        upstream of "started" (or in any custom window) it literally cannot show where the time goes, so
+        leads either intuit it or rebuild the custom-window distribution in a spreadsheet, losing the
+        integrated-tool trail back to the source items.
+      pull: >
+        One selector on the chart they already use re-plots the dots and the percentiles over the named
+        window; one switch scopes the cumulative chart to the same window. The custom-window story is
+        told on the existing surfaces, no spreadsheet, no new screen to learn.
+      anxiety: >
+        What if the named series has too few items to be meaningful? (Mitigated by D9: a sparse/empty
+        series is an explicit low-sample state; the scatterplot only plots closed items anyway, and
+        items that never crossed both boundaries are excluded rather than faked.)
+        What if I switch to a definition whose boundary state was removed? (Mitigated by D5: it appears
+        disabled with a warning; the chart stays on the last valid selection.)
+        Is this forecasting? (No - explicitly analysis only; the Monte Carlo and forecast surfaces are
+        untouched.)
+      habit: >
+        Leads who use the scatterplot are accustomed to one cycle time and the full-width 50/70/85/95
+        lines; the new series needs the selector labelled clearly so switching to a named window doesn't
+        surprise them. The chart geometry is otherwise identical - same dots, same percentile lines,
+        different boundary window.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - "where does our time really go?" over a custom window is a recurring,
+        high-stakes leadership/retro question, and a single started->finished cycle time provably cannot
+        answer it for upstream-constrained teams (direct customer ask, Epic 5251). Current satisfaction:
+        1 - the scatterplot shows only the default window; any custom window means a hand-built
+        spreadsheet. Gap: 3 - a genuine missing capability; kept tractable because it reuses the
+        existing scatterplot/percentile machinery and the cumulative chart, adding a per-definition read
+        endpoint and a selector/switch rather than a new analysis engine.
 

@@ -2110,3 +2110,113 @@ C4Component
   Rel(consumer, helpers, "evaluates the unified list via (unchanged)")
   Rel(union, helpers, "(synthetic periods are ordinary BlackoutPeriod input to)")
 ```
+
+---
+
+## Application Architecture — multiple-cycle-times (Epic 5251)
+
+Feature: multiple-cycle-times — Premium **named cycle times** (`{ name, startState, endState }`, ordered-boundary semantics over `WorkTrackingSystemOptionsOwner.AllStates`) defined in Team/Portfolio settings and visualised on the Cycle Time Scatterplot (selector re-plots a named series) and the cumulative-time-per-state chart (scope-to-window switch). Regular cycle time is the conceptual special case; analysis only (forecasting out of scope, D1/D10).
+Wave: DESIGN · Date: 2026-06-08 · Architect: Morgan (Solution Architect), interaction mode = PROPOSE · Paradigm: **OOP (C# backend), functional-leaning React frontend**. ADRs: **ADR-061** (computation placement), **ADR-062** (read endpoint + client gate), **ADR-063** (validity SSOT + US-04 cumulative scope), **ADR-064** (definition persistence). Cross-refs **ADR-056** (mapping-aware resolution / settings idiom), **ADR-055** (client version-gate pattern), **ADR-022** (cumulative algorithm).
+
+This section is **additive** to all prior `## Application Architecture` deltas. Pattern (ports-and-adapters / hexagonal), paradigm, and core invariants are **unchanged**. **NO new architectural style, NO new external integration, NO new external library, NO new endpoint route, NO new computation engine, NO new mapping resolver.** The only new artifacts are a small `CycleTimeDefinition` entity + DTO + EF migration, a settings config editor, two selector controls, and one TS validity predicate.
+
+> **Three forks are PROVISIONAL (PROPOSE mode) pending user confirmation** — Fork 1 computation placement (ADR-061), Fork 2 read-endpoint contract (ADR-062), Fork 3 validity SSOT (ADR-063). Each ADR carries 2–3 options + rejection rationale. The rest of the architecture is designed assuming the recommendations.
+
+### Key invariants introduced
+
+- **The named ordered-boundary duration is computed in the metrics layer reusing the existing transition-ordering primitive — NOT on `WorkItemBase` (ADR-061, the pivotal Fork-1 decision).** A new pure `BaseMetricsService.NamedCycleTimeDays(item, allStatesInOrder, startState, endState)` walks `SyncedTransitions` exactly as the shipped `CompletedVisits` helper does (same `OrderBy(TransitionedAt)`, same `StartedDate` anchor), parameterised by boundary states: first entry into start-or-later → first subsequent entry into end-or-later (D1), first-crossing on re-entry (D2), half-open `[enter start … enter end)` window so the end-state dwell is excluded (D10), `null` when both boundaries are not crossed (D9 exclusion). `WorkItemBase.CycleTime` is **untouched** (a model→settings coupling and a high-blast-radius change to the hot default property are avoided; the default scatter render-time guardrail is protected). Chosen over (B) generalising the model property and (C) a standalone calculator that would duplicate the ordering and break cross-surface consistency.
+- **Named reads ride the EXISTING endpoints via an additive `definitionId` — zero new routes, zero new client version-gate touch-points (ADR-062, Fork 2).** `cycleTimeData` / `cycleTimePercentiles` / `cumulativeStateTime` (Team + Portfolio) each gain an optional `definitionId`: absent ⇒ byte-identical default; present ⇒ the named series in the SAME `WorkItemDto` (`CycleTime` carries the named duration, so the FE scatter render path is unchanged) / `PercentileValue` / windowed-cumulative shape. An additive query param **degrades gracefully on old servers** (unknown param ignored — no opaque 404) ⇒ **NO `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate** (contrast ADR-055's new endpoint). Boundaries are resolved server-side from the saved definition (never on the wire). Chosen over (A) a new definition-by-id endpoint and (B) inline start/end-state params (both gate + bypass D5 / duplicate scaffolding).
+- **Definition validity (D5) has ONE source of truth, retiring the DISCUSS HIGH cross-surface risk by construction (ADR-063, Fork 3).** `WorkTrackingSystemOptionsOwner.IsCycleTimeDefinitionValid(definition)` (one method, reusing `AllStates` + `GetRawStatesForCategory`) is the only backend validity predicate; its verdict is **stamped as `IsValid` into every read DTO** (config list, scatter read, cumulative read consume the stamp, never recompute). ONE pure TS predicate `isCycleTimeDefinitionValid` mirrors it for live selector reasoning, imported by the config list + both selectors. The config list + scatter selector + cumulative scope therefore **cannot disagree** on validity. Chosen over (ii) a domain service wrapping the aggregate and (iii) ad-hoc per-surface checks (the silent-divergence failure mode D5 forbids).
+- **US-04 cumulative scope reuses the scatter's boundary resolution — same span by construction (ADR-063 §4).** `cumulativeStateTime` + `definitionId` restricts `ComputeCumulativeStateTime` (over `BuildCumulativeWorkflowStateOrder`) to the half-open `[enter start … enter end)` window using the SAME index logic as `NamedCycleTimeDays`; the end state contributes no in-window bar (D10). The scatter duration and the cumulative scope cover the identical span — no separate inclusive/exclusive toggle.
+- **`CycleTimeDefinition` persists as an owned collection mirroring `StateMappings` (ADR-064).** `{ Id, Name, StartState, EndState }` on the aggregate next to `StateMappings`; additive `CycleTimeDefinitionDto` (stamped `IsValid`) on `SettingsOwnerDtoBase`; rides the **existing tokened settings write** (D8 — no new write contract; epic-5121 concurrency inherited). Id-stable for `definitionId` reads + KPI-2 telemetry. Chosen over a JSON column (no stable id, idiom divergence) and a separate table (definitions have no lifecycle independent of the owner).
+
+### New / reused ports
+
+- **Driving (inbound)**: `GET cycleTimeData?…&definitionId` and `cycleTimePercentiles?…&definitionId` (named series + percentiles, premium-gated named branch); `GET cumulativeStateTime?…&definitionId` (windowed scope) — all Team + Portfolio, **extending existing endpoints** (additive param). The settings write (existing) persists/validates `CycleTimeDefinitions` (D4 end-after-start + name unique/non-empty; D3 mapping resolution).
+- **Driven (outbound)**: work-item repository reads (`GetClosedItemsForTeam` / `GetWorkItemsClosedInDateRange` — same source as the default scatter; items carry `SyncedTransitions`); settings persistence on the tokened aggregate (`CycleTimeDefinitions` owned collection); the in-process mapping resolver `GetRawStatesForCategory` / `AllStates` on the aggregate. **No new external integration, no driven adapter to a foreign substrate ⇒ no probe contract / no contract tests owed** at the platform-architect handoff — the named computation is a pure in-process function over data from the existing repos.
+
+### Component decomposition (headline)
+
+- **CREATE NEW (backend)**: `Models/CycleTimeDefinition.cs` (small entity, mirrors `StateMapping`); `API/DTO/CycleTimeDefinitionDto.cs` (`{ Id, Name, StartState, EndState, IsValid }`); EF migration for the new field via the `CreateMigration` PS script (DELIVER, all providers).
+- **CREATE NEW (frontend)**: cycle-time config editor (Team + Portfolio settings; mapping-aware workflow-ordered boundary picker reusing the `WaitStatesEditor`/`ItemListManager` idiom, ADR-056); cycle-time selector on the scatter; scope switch + selector on the cumulative chart; `isCycleTimeDefinitionValid` TS predicate (one fn, three call sites); `CycleTimeDefinitionDto` Zod schema at the settings + metrics boundaries.
+- **EXTEND (backend)**: `WorkTrackingSystemOptionsOwner` (`CycleTimeDefinitions` list + `IsCycleTimeDefinitionValid`); `SettingsOwnerDtoBase` (project `CycleTimeDefinitions` with stamped `IsValid`); `BaseMetricsService` (`NamedCycleTimeDays` + window-restricted cumulative path); `Team/PortfolioMetricsService` (named series + percentiles + scoped cumulative; cache key `_Def_{id}` via the `SelectionCacheSuffix` idiom); `Team/PortfolioMetricsController` (optional `definitionId` on the three reads; premium gate on the named branch); the existing settings-write validator (D4/D3).
+- **REUSE AS-IS (untouched)**: `WorkItemBase.CycleTime` and the whole default scatter/percentile/PBC/estimation surface; `WorkItemDto`; `CycleTimeScatterPlotChart` render path (keyed on `item.cycleTime`); `GetRawStatesForCategory` / `AllStates`; `PercentileCalculator`; `CompletedVisits` / `GroupTransitionsByItem` ordering; premium key + `useRbac()` gating; the tokened settings write / epic-5121 concurrency.
+
+### Reuse analysis
+
+Default EXTEND honoured everywhere. **No CREATE NEW of a metrics computation, endpoint route, mapping resolver, or chart was justified** — the named duration reuses the `CompletedVisits` ordering, the reads extend existing endpoints, validity reuses `GetRawStatesForCategory`, and the charts reuse their render paths. The only CREATE-NEW artifacts are the genuinely-absent `CycleTimeDefinition` entity/DTO (no existing structured "named window" type), the config editor, two thin selector controls, and one TS predicate. Full table in the feature-delta `## Wave: DESIGN / [REF] Reuse Analysis`.
+
+### Premium gating
+
+Premium + config-admin (team-admin / portfolio-admin) per D8. The named read branch is premium-gated **server-side** (defence-in-depth) behind `useRbac()` UI gating; the config write rides the `IRbacAdministrationService`-governed settings write. **No new authz surface, no new permission.** Premium-off hides the feature regardless of role; Default cycle time behaves as today for everyone.
+
+### Lighthouse-Clients consistency (version-gate)
+
+**NO new version gate.** `definitionId` is an additive optional query param on the existing `cycleTimeData`/`cycleTimePercentiles`/`cumulativeStateTime` endpoints, and `CycleTimeDefinitions` is an additive settings field — both ride existing contracts (D8). An old server ignores the unknown param and returns the default series (graceful degrade), so the opaque-404 problem ADR-055 guards against does not arise. If the clients ever expose named cycle-time reads, they pass `definitionId` to the existing wrapped method — record the no-gate decision (N/A) in the clients repo at wrap-or-skip time. This is the **only** feature in the recent series with zero new version-gate touch-points (a concrete advantage of the Fork-2 choice).
+
+### Quality attributes
+
+- **Functional suitability / reliability**: D9 exclusion (`null` for non-crossing items), D2 first-crossing, and D10 half-open window asserted on `NamedCycleTimeDays` (PHX-204 ⇒ 47, PHX-211 re-open first-crossing). D5 invalid-on-removal is a cross-surface integration test (removed boundary ⇒ all three surfaces report invalid; no 500, no crash — KPI guardrail "no increase in chart-crash telemetry"). The scatter named-duration span ≡ the US-04 cumulative scoped span by construction (single boundary-resolution impl).
+- **Maintainability / testability**: the only genuinely new compute logic is the pure `NamedCycleTimeDays` and the window restriction of an existing aggregation — both mutation-testable; ≥80% Stryker.NET / Stryker FE per-feature gate. ArchUnitNET/grep guards: no second transition-ordering walk, no second mapping resolver, no recompute of validity outside the one aggregate method.
+- **Performance**: named series + cumulative scope reuse the existing closed-items source + transition log; cache keyed by `_Def_{id}` (parallel to `SelectionCacheSuffix`). **Default scatter render-time is untouched** (`WorkItemBase.CycleTime` unchanged) — the DISCUSS render-time guardrail is protected by construction.
+- **Security**: named branch premium-gated server-side through the existing guards; settings write governed by `IRbacAdministrationService`; no boundary states on the wire (server-side definition lookup); no new permission.
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Named duration reuses the `CompletedVisits` ordering — no second transition-ordering walk | NUnit on `NamedCycleTimeDays`; ArchUnitNET/grep |
+| `WorkItemBase.CycleTime` NOT modified | Git-diff review gate; decomposition marks it NO-CHANGE |
+| `definitionId` absent ⇒ byte-identical default (all three reads) | Integration golden-equality tests |
+| `definitionId` present ⇒ same DTO shape, `CycleTime` = named duration; PHX-204 ⇒ 47 | `Team/PortfolioMetricsControllerTests` |
+| ONE validity method; surfaces consume the stamped `IsValid`, never recompute | ArchUnitNET/grep; cross-surface integration test (removed boundary ⇒ all invalid) |
+| ONE TS validity predicate, three call sites; C#↔TS parity | Vitest + shared-fixture parity test |
+| Half-open window (D10): end-state contributes no cumulative bar | NUnit: end=Done ⇒ no "Done" bar |
+| Scatter named span ≡ cumulative scoped span (same definition) | NUnit cross-computation test |
+| `CycleTimeDefinitions` persists like `StateMappings`; read-your-writes | NUnit InMemory + real-provider integration; migration via `CreateMigration` (DELIVER) |
+| Additive `definitionId` / settings field ⇒ no client version gate | Clients-repo handoff note (N/A recorded) |
+
+### ADR References (this feature)
+
+- [ADR-061](./adr-061-named-cycle-time-ordered-boundary-computation-placement.md): named ordered-boundary duration computed in `BaseMetricsService` reusing the `CompletedVisits` primitive; `WorkItemBase.CycleTime` untouched. (Alternatives B "generalise the model property" and C "standalone calculator" considered and rejected.) PROVISIONAL (Fork 1).
+- [ADR-062](./adr-062-named-cycle-time-read-endpoint-contract-and-client-version-gate.md): extend existing `cycleTimeData`/`cycleTimePercentiles` with optional `definitionId`; same `WorkItemDto` contract; additive param ⇒ no client version gate. (Alternatives A "new definition-by-id endpoint" and B "inline boundary params" considered and rejected.) PROVISIONAL (Fork 2).
+- [ADR-063](./adr-063-named-cycle-time-definition-validity-single-source-of-truth.md): validity is one aggregate method, stamped `IsValid` into every DTO, mirrored by one TS predicate; US-04 cumulative scope via additive `definitionId` reusing the scatter boundary resolution. (Alternatives ii "domain service" and iii "ad-hoc per surface" considered and rejected.) PROVISIONAL (Fork 3).
+- [ADR-064](./adr-064-cycle-time-definitions-storage-as-owned-collection-on-settings-aggregate.md): `CycleTimeDefinition` owned collection mirroring `StateMappings`; additive DTO; rides the tokened settings write. (Alternatives JSON column, separate table considered and rejected.)
+- Cross-refs [ADR-056](./adr-056-wait-states-config-placement-and-mapping-aware-resolution.md) (mapping-aware resolution / settings editor idiom), [ADR-055](./adr-055-flow-efficiency-tile-transport-and-client-version-gate.md) (client version-gate pattern), [ADR-022](./adr-022-cumulative-state-time-algorithm.md) (cumulative algorithm reused for US-04 scope).
+
+### C4 — Container (this feature, named-read + config-write)
+
+```mermaid
+C4Container
+  title Container Diagram — multiple-cycle-times (named read + config write)
+  Person(lead, "Delivery lead / config-admin", "Premium")
+  Container(spa, "Lighthouse Frontend", "React + MUI-X", "Scatter selector, cumulative scope switch, cycle-time config editor")
+  Container(api, "Lighthouse Backend", "ASP.NET Core (hexagonal)", "Metrics controllers + services, settings write")
+  ContainerDb(db, "Lighthouse DB", "EF Core (Sqlite/Postgres)", "Settings aggregate incl. CycleTimeDefinitions; work items + transition log")
+  System_Ext(clients, "Lighthouse-Clients (CLI/MCP)", "Optional named read via additive definitionId — no version gate")
+  Rel(lead, spa, "Selects a named cycle time / edits definitions in")
+  Rel(spa, api, "Reads named series/percentiles/scoped cumulative via (definitionId); writes definitions via settings")
+  Rel(api, db, "Computes over transition log; persists definitions on tokened aggregate")
+  Rel(clients, api, "May pass definitionId to existing cycle-time read")
+```
+
+### C4 — Component (backend named-read + config-write paths)
+
+```mermaid
+C4Component
+  title Component Diagram — named cycle time read + config write (backend)
+  Container_Boundary(api, "Lighthouse Backend") {
+    Component(ctrl, "Team/PortfolioMetricsController", "Controller", "Optional definitionId on cycleTimeData/cycleTimePercentiles/cumulativeStateTime; premium gate on named branch")
+    Component(svc, "Team/PortfolioMetricsService", "Service", "Named series + percentiles + scoped cumulative; cache _Def_{id}")
+    Component(base, "BaseMetricsService", "Shared", "NamedCycleTimeDays (reuses CompletedVisits ordering); window-restricted ComputeCumulativeStateTime")
+    Component(owner, "WorkTrackingSystemOptionsOwner", "Aggregate", "CycleTimeDefinitions; IsCycleTimeDefinitionValid; GetRawStatesForCategory / AllStates")
+    Component(settings, "Settings write (existing)", "Service", "Validates + persists CycleTimeDefinitions (D4/D3), tokened")
+    Component(repo, "WorkItem repository", "Driven adapter", "Closed items in range, carrying SyncedTransitions")
+  }
+  Rel(ctrl, svc, "Requests named series / scoped cumulative for definitionId")
+  Rel(svc, base, "Computes via NamedCycleTimeDays / restricted cumulative")
+  Rel(svc, owner, "Resolves boundaries + validity via")
+  Rel(base, repo, "Reads closed items + transition log from")
+  Rel(ctrl, settings, "Routes definition writes to")
+  Rel(settings, owner, "Validates against AllStates + persists on")
+```

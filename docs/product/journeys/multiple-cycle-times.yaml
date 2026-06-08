@@ -1,0 +1,316 @@
+schema_version: 1
+feature_id: multiple-cycle-times
+created: 2026-06-08
+research_depth: comprehensive
+note: >
+  Comprehensive journey map for Epic 5251 "Support Multiple Cycle Times" (Premium). Lighthouse
+  computes one "regular" cycle time today (StartedDate->ClosedDate, derived from To Do/Doing/Done
+  categories) and plots it on the Cycle Time Scatterplot with 50/70/85/95 percentile lines. This
+  feature lets users define ADDITIONAL named cycle times - e.g. "Concept to Cash" = Planned->Done -
+  with ordered-boundary semantics, and visualise them on demand on the scatterplot and the
+  cumulative-time-per-state chart, surfacing WHERE time is really spent beyond the default
+  started->finished window. Two linked journeys: a config-admin defines a named cycle time (one-time
+  setup, Team or Portfolio settings), then a delivery-lead-rte switches the scatterplot to that
+  definition and reads the percentile shift. Anchored to verified code reality: a named cycle time
+  generalises the existing StartedDate/ClosedDate derivation; the total state order is
+  WorkTrackingSystemOptionsOwner.AllStates (= ToDoStates ++ DoingStates ++ DoneStates,
+  mapping-expanded via GetRawStatesForCategory); the boundary picker is mapping-aware in workflow
+  order (same as wait-states); the scatterplot endpoints (GetCycleTimeDataForTeam,
+  GetCycleTimePercentilesForTeam + Portfolio twins) and the cumulative-time-per-state chart already
+  exist. Premium-gated; config writes ride the existing settings endpoint; a NEW read endpoint
+  serves per-definition scatter/percentile data.
+
+journeys:
+
+  - name: define-named-cycle-time
+    goal: >
+      A Configuration Administrator opens a Team's (or Portfolio's) settings, defines an additional
+      named cycle time by naming it and picking a start boundary state and an end boundary state
+      (in workflow order, mapping-aware), and saves - making that definition selectable on the
+      team's Cycle Time Scatterplot and cumulative-time-per-state chart.
+    persona: "config-admin (Carlos Mendez, Team Phoenix admin)"
+    emotional_arc:
+      start: Recognising - "started->finished hides where our real time goes; validation sits
+        idle for weeks before a card even moves to Doing, and the default cycle time can't see that."
+      middle: Familiar - "this is the same mapping-aware state picker I use elsewhere, in workflow
+        order; I name the window, pick Planned as the start and Done as the end, save."
+      end: Set up - "'Concept to Cash' is saved; it now appears in the scatterplot's cycle-time
+        selector and the cumulative chart's scope switch."
+
+    steps:
+
+      - id: step-open-cycle-time-config
+        action: >
+          Carlos opens Team Phoenix settings and finds the new "Cycle Times" config in the
+          flow-metrics / state-config cluster, listing the implicit "Default" cycle time
+          (started->finished, read-only) plus any named definitions already created.
+        expected_output: >
+          The config renders with the Default cycle time shown read-only for reference, an "Add
+          cycle time" action, and helper text: "A named cycle time measures the time between two
+          workflow states. The clock starts when an item first reaches the start state (or any
+          later state) and ends when it first reaches the end state (or any later state). Use it to
+          see where time really goes - e.g. Concept to Cash = Planned -> Done."
+        emotional_state: Oriented - "there's the new section; Default is the cycle time I already know"
+        shared_artifacts:
+          - settings.allStates (existing - the ordered workflow states feeding the boundary pickers)
+          - settings.cycleTimeDefinitions (new - the list being edited)
+
+      - id: step-name-and-pick-boundaries
+        action: >
+          Carlos clicks "Add cycle time", types the name "Concept to Cash", and picks the start
+          state "Planned" and the end state "Done" from two mapping-aware pickers that present states
+          in workflow order (the same order the cumulative-time-per-state chart uses).
+        expected_output: >
+          Two state pickers offer the team's State-Mapping names AND raw states, expanded via
+          GetRawStatesForCategory and listed in AllStates (workflow) order. The name field requires a
+          non-empty, unique-per-owner name. As Carlos picks, an inline preview reads "Clock starts at
+          first transition into Planned or later; ends at first transition into Done or later."
+        emotional_state: In control - "same picker, workflow order, I can pick a mapping name in one click"
+        shared_artifacts:
+          - settings.allStates (existing - ordered, mapping-expanded boundary candidates)
+          - settings.stateMappings (existing - mapping names are valid boundary entries)
+          - cycleTimeDefinition (new - { name, startState, endState })
+
+      - id: step-save-with-validation
+        action: >
+          Carlos saves. Lighthouse validates that the end state comes strictly after the start state
+          in AllStates order before persisting.
+        expected_output: >
+          With end-after-start satisfied, the definition persists via the EXISTING team settings
+          update endpoint (no new write contract - CycleTimeDefinitions rides the settings DTO the
+          same way DoingStates/WaitStates do). On reload the definition is still there
+          (read-your-writes). If end is at or before start, the save is REJECTED inline with
+          "End state must come after the start state in the workflow" and nothing is persisted.
+        emotional_state: Done - "saved; 'Concept to Cash' is now selectable on the charts"
+        failure_modes:
+          - End state equals or precedes start state in AllStates -> save rejected inline (D4); nothing persisted.
+          - Empty or duplicate name within the same owner -> save rejected inline; nothing persisted.
+        shared_artifacts:
+          - settings.cycleTimeDefinitions (persisted on WorkTrackingSystemOptionsOwner, Team or Portfolio)
+
+    error_paths_summary:
+      - End-before-start (D4): a definition whose end state is not strictly after its start state in
+        AllStates is rejected at save time with an inline message; nothing is persisted. Ordering
+        correctness is the user's responsibility; the tool validates end-after-start and presents
+        workflow order but does not auto-correct.
+      - A boundary state referenced by a SAVED definition is later removed or renamed from the
+        team/portfolio config (D5): the definition becomes INVALID - surfaced with a warning in the
+        config list and DISABLED in the chart selectors - never a silent break or a crash. The admin
+        edits the definition to pick a valid state, or deletes it.
+      - Concurrent edit by another admin: handled by the existing settings concurrency mechanism
+        (job-config-edit-no-silent-lost-update, epic-5121) - CycleTimeDefinitions inherits it for
+        free as a field on the tokened config aggregate. No new concurrency surface.
+      - No premium license: the Cycle Times config is gated off (premium feature, D8); the Default
+        cycle time and existing scatterplot are unaffected.
+
+    success_signal:
+      - Teams whose real lead time starts well before "started" (a planning/validation queue) define
+        at least one named cycle time within the first weeks of release, unlocking a scatterplot read
+        that the default started->finished window cannot show.
+
+  - name: read-named-cycle-time
+    goal: >
+      A Delivery Lead / RTE (with a named cycle time already defined) switches the Cycle Time
+      Scatterplot's selector from Default to the named definition, reads the re-plotted dots and the
+      recomputed percentile lines, and optionally scopes the cumulative-time-per-state chart to that
+      window - using the shift to name where time is really spent.
+    persona: "delivery-lead-rte (Priya Nair, Team Phoenix delivery lead)"
+    emotional_arc:
+      start: Suspicious - "our started->finished cycle time looks fine, but features still land late;
+        I think the time disappears before work even starts but I can't prove it on a chart."
+      middle: Confirmed - "switching to 'Concept to Cash' the dots jump up and the P85 line moves
+        from 12 days to 47 days. The gap is the validation/planning queue, not the build."
+      end: Decisive - "the constraint is upstream of 'started'. I can show leadership the two
+        scatterplots side by side - the build is fast; the wait to start is the problem."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How is a named cycle time defined and computed?
+        decision: >
+          A named cycle time = { name, startState, endState } with ORDERED-BOUNDARY semantics over
+          WorkTrackingSystemOptionsOwner.AllStates (= ToDoStates ++ DoingStates ++ DoneStates,
+          mapping-expanded via GetRawStatesForCategory - the same total order the
+          cumulative-time-per-state chart's workflowOrder uses). The clock starts at the FIRST
+          transition into startState OR any later state in AllStates; the clock ends at the FIRST
+          transition (at or after start) into endState OR any later state. The regular cycle time is
+          the special case (start = first Doing state, end = first Done state) - generalise/reuse the
+          existing StartedDate/ClosedDate derivation rather than build a parallel engine. Two states
+          suffice; we do NOT re-declare To Do/Doing/Done per definition.
+      - id: D2
+        question: How are re-entries / flow-backs handled?
+        decision: >
+          Use the FIRST boundary crossing (mirror current cycle-time behaviour) - the first time the
+          item reaches startState-or-later, and the first subsequent time it reaches endState-or-later.
+          Consistent and explainable; matches the regular cycle time.
+      - id: D3
+        question: How does the boundary state picker behave?
+        decision: >
+          Mapping-aware: it offers State-Mapping names and expands them via GetRawStatesForCategory,
+          and presents states in workflow (AllStates) order - consistent with the wait-states feature.
+      - id: D4
+        question: What is validated at save time?
+        decision: >
+          endState must come STRICTLY after startState in AllStates order (reject end-before-start),
+          inline, before persisting. Name must be non-empty and unique within the owner.
+      - id: D5
+        question: What happens when a referenced boundary state is removed or renamed?
+        decision: >
+          A saved definition whose startState or endState is later removed from the team/portfolio
+          config becomes INVALID - surfaced with a warning in the config list and DISABLED in the
+          chart selectors, NEVER a silent break or crash. A first-class error path. Ordering
+          correctness is the user's responsibility; the tool validates end-after-start and presents
+          workflow order but does not auto-correct.
+      - id: D6
+        question: Which surfaces consume named cycle times in the MVP?
+        decision: >
+          (a) The Cycle Time Scatterplot gets a combobox "Default" + each named definition; selecting
+          one re-plots dots (Y = that definition's duration) and recomputes the 50/70/85/95 percentile
+          lines. (b) The cumulative-time-per-state chart gets a switch to scope to a named cycle
+          time's window. Both Team and Portfolio.
+      - id: D7
+        question: What is the config scope?
+        decision: >
+          Team AND Portfolio - sibling flow features (wait-states, staleness, forecast-filter) exist
+          at both scopes; named cycle times follow the same pattern, stored on the shared settings owner.
+      - id: D8
+        question: How is the feature gated and what contracts change?
+        decision: >
+          Premium-gated (Lighthouse optional feature). UI gating derives from useRbac() per the
+          architecture rule. Config WRITES ride the existing team/portfolio settings endpoint (no new
+          write contract). A NEW READ endpoint serves per-definition scatter data and percentiles
+          (the existing GetCycleTimeDataForTeam / GetCycleTimePercentilesForTeam compute only the
+          default window).
+      - id: D9
+        question: How are items that never cross both boundaries handled, and what about few items?
+        decision: >
+          Items that never cross BOTH boundaries are EXCLUDED from that series (the scatterplot only
+          plots closed items anyway). For low/sparse samples a named series behaves EXACTLY like the
+          default cycle time: it plots whatever closed items crossed both boundaries and shows the item
+          count and the 50/70/85/95 percentile lines - NO threshold and NO special low-sample UI state.
+          Few items still plot and still show a count, the same as the default scatterplot does today.
+      - id: D10
+        question: Does the cycle time include time spent IN the end state, or only time to REACH it?
+        decision: >
+          Cycle time measures time-to-REACH the end, not time IN the end. The window is HALF-OPEN
+          [entering startState ... entering endState): the end boundary is the moment of ENTRY into
+          endState (or any later state in AllStates, per D1); the end state's own dwell time is NOT
+          counted. Standard flow definition (Planned->Done = from becoming Planned until becoming Done;
+          the dwell in Done is not counted). Consequences: (a) endState may legitimately be the
+          workflow's final state (e.g. Done) - there is NO "must leave the end state" requirement, since
+          the clock stops on entry; (b) when the cumulative-time-per-state chart is scoped to a named
+          cycle time (D6b), the bars cover the half-open span - start-inclusive through the states
+          occupied before entering endState - so the end state contributes no in-window time and has no
+          bar. Forced by the same definition, so scatterplot duration and cumulative scoping stay
+          consistent with no separate inclusive/exclusive toggle.
+
+    steps:
+
+      - id: step-open-scatterplot-default
+        action: >
+          Priya opens /teams/{teamId} metrics and lands on the Cycle Time Scatterplot, which shows
+          the Default cycle time (started->finished) with its 50/70/85/95 percentile lines, as today.
+        expected_output: >
+          The scatterplot renders exactly as it does today PLUS a new cycle-time selector defaulting
+          to "Default". With a named cycle time defined, the selector also lists "Concept to Cash".
+        emotional_state: Familiar - "the chart I know; there's a new selector at the top"
+        shared_artifacts:
+          - cycleTimeScatterData (existing for Default - one dot per closed item, Y = cycle time)
+          - cycleTimeDefinitions (new - populates the selector)
+
+      - id: step-switch-to-named-definition
+        action: >
+          Priya picks "Concept to Cash" from the selector.
+        expected_output: >
+          The scatterplot re-plots: each dot's Y becomes that item's Concept-to-Cash duration - the
+          half-open span from first entry into Planned-or-later up to (but not including) first entry
+          into Done-or-later (D10, time-to-reach not time-in) - and the 50/70/85/95 percentile lines
+          recompute over that series. Items that never crossed both boundaries drop out (D9). A
+          definition whose boundary state was removed (D5) appears DISABLED in the selector with a
+          warning, not as a crash.
+        emotional_state: Confirmed - "the dots jumped up; P85 went from 12 to 47 days. The wait to
+          start IS the constraint."
+        failure_modes:
+          - Few items after switch (D9) - the series still plots whatever closed items crossed both
+            boundaries and shows the count and percentile lines, exactly like the default cycle time;
+            no threshold and no special low-sample state.
+          - Selected definition became invalid via state removal (D5) -> shown DISABLED with a warning;
+            selecting it is prevented; the chart stays on the last valid selection.
+        shared_artifacts:
+          - cycleTimeDefinitionId (new - the selected definition)
+          - cycleTimeScatterData (new per-definition series from the NEW read endpoint)
+          - cycleTimePercentiles (new per-definition 50/70/85/95 from the NEW read endpoint)
+
+      - id: step-scope-cumulative-chart
+        action: >
+          (Optional) Priya switches to the cumulative-time-per-state chart and uses its new "scope to
+          cycle time" switch to scope the bars to the Concept-to-Cash window.
+        expected_output: >
+          The cumulative bars recompute over the named window's HALF-OPEN span [entering Planned ...
+          entering Done) (D10): start-inclusive, the "Done" dwell excluded, so only the states occupied
+          before entering Done contribute a bar (Done shows no bar). Priya sees which states inside the
+          Planned->Done window consumed the time, consistent with the scatterplot's time-to-reach
+          duration - no separate inclusive/exclusive toggle. With the switch off, the chart behaves
+          exactly as today.
+        emotional_state: Investigative - "scoped to Concept to Cash, the 'Planned' and 'Validation'
+          bars dominate - the time is upstream of build, exactly as the scatterplot hinted."
+        shared_artifacts:
+          - cycleTimeDefinitionId (new - the scoping selection)
+          - cumulativeStateTimeData (existing - recomputed over the named window)
+
+      - id: step-name-the-constraint
+        action: >
+          Priya screenshots the Default and the Concept-to-Cash scatterplots for the leadership deck
+          and frames the conversation around the upstream wait.
+        expected_output: >
+          Priya can say "Our build is fast - P85 started-to-finished is 12 days. But Concept to Cash
+          P85 is 47 days; 35 of those days are the validation queue before work even starts. The
+          improvement target is upstream of the team." - vs the previous best, an anecdote with no chart.
+        emotional_state: Decisive - "the two charts name where the time really goes; the decision
+          follows from evidence, not from where the noise is loudest."
+        shared_artifacts: []
+
+    error_paths_summary:
+      - Few items (D9): switching to a definition that few closed items crossed still plots those items
+        and shows the item count and the 50/70/85/95 percentile lines, exactly like the default cycle
+        time - there is no threshold and no special low-sample state.
+      - Invalid definition from state removal/rename (D5): the definition appears DISABLED in the
+        selector with a warning; the chart stays on the last valid selection; no crash.
+      - No named definitions yet: the selector shows only "Default" (and a hint pointing admins to the
+        Cycle Times config) - the chart works fully without any named cycle time.
+      - Non-premium viewer: the cycle-time selector and the cumulative scope switch are gated off; the
+        Default scatterplot and the unscoped cumulative chart are unaffected.
+
+    success_signal:
+      - Delivery leads on teams with a named cycle time switch the scatterplot selector at least once
+        per reporting cycle, and the "where does our time really go?" question stops being answered by
+        the started->finished window alone or by an offline spreadsheet.
+
+shared_artifacts_registry:
+  cycleTimeDefinitions:
+    source_of_truth: "WorkTrackingSystemOptionsOwner.CycleTimeDefinitions (List of { name, startState, endState }) on Team/Portfolio settings"
+    consumers:
+      - "Cycle Times config in the flow-metrics/state-config cluster (Team and Portfolio)"
+      - "Cycle Time Scatterplot cycle-time selector (Default + each named definition)"
+      - "Cumulative-time-per-state chart scope switch (scope bars to a named window)"
+      - "Per-definition scatter/percentile read endpoint (computes the named series)"
+    owner: multiple-cycle-times
+    integration_risk: "HIGH - single source; the SAME { name, startState, endState } threads from settings -> scatterplot selector -> percentile computation -> cumulative-chart scope. A definition invalidated by state removal (D5) MUST read consistently as disabled across every consumer; a divergent read (selectable on one surface, broken on another) would confuse users and risk a crash."
+    validation: "A definition saved in settings appears in BOTH chart selectors; a definition whose boundary state is removed reads as DISABLED+warned in BOTH the config list AND the chart selectors; end-after-start is validated at the single save path."
+  cycleTimeBoundaryOrder:
+    source_of_truth: "WorkTrackingSystemOptionsOwner.AllStates (= ToDoStates ++ DoingStates ++ DoneStates, mapping-expanded via GetRawStatesForCategory) - the total workflow order"
+    consumers:
+      - "Boundary state pickers (present candidates in this order, mapping-aware)"
+      - "Save-time end-after-start validation (end must be strictly later in this order)"
+      - "Clock start/end computation: half-open [entering start-or-later ... entering end-or-later) per D10 - duration is time-to-REACH the end, the end state's own dwell excluded"
+      - "Cumulative-chart scoping: bars cover the same half-open span, so the end state contributes no bar (D10)"
+    owner: multiple-cycle-times
+    integration_risk: "HIGH - the picker order, the validation, and the runtime clock computation MUST all use the SAME AllStates ordering and the SAME GetRawStatesForCategory expansion the cumulative chart uses; any divergence makes a definition that validated at save compute wrong durations at read."
+    validation: "The picker order, the end-after-start check, and the duration computation all resolve through AllStates + GetRawStatesForCategory; a definition that passes save-time validation never computes a negative or undefined duration at read."
+
+changelog:
+  - date: "2026-06-08"
+    feature: multiple-cycle-times
+    change: "Initial comprehensive journey map - define-named-cycle-time (config) + read-named-cycle-time (scatterplot selector + cumulative scope). Anchored to AllStates ordered-boundary semantics (D1), first-crossing re-entry (D2), mapping-aware workflow-order picker (D3), end-after-start save validation (D4), invalid-on-removal first-class error path (D5), scatterplot+cumulative MVP surfaces (D6), Team+Portfolio scope (D7), premium gate + new read endpoint (D8), sparse-series low-sample state (D9)."
+  - date: "2026-06-08"
+    feature: multiple-cycle-times
+    change: "Refinements folded in: D9 pinned - a named series behaves EXACTLY like the default cycle time for few items (plots them, shows count + percentiles, no threshold, no special low-sample state); removed the old 'explicit low-sample state' language across the read journey. Added D10 - cycle time is time-to-REACH the end, measured over the half-open span [entering startState ... entering endState), so the end state's dwell is excluded, endState may be the final state, and the cumulative scope shows no bar for the end state. Reconciled step-switch-to-named-definition, step-scope-cumulative-chart, error_paths_summary, and the cycleTimeBoundaryOrder registry entry to D10."
