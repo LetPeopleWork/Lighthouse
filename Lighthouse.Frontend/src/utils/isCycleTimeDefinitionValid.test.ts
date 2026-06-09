@@ -95,4 +95,93 @@ describe("isCycleTimeDefinitionValid (C#<->TS parity)", () => {
 			cycleTimeBoundaryIndex("Implementation", states, NO_MAPPINGS),
 		).toBeLessThan(cycleTimeBoundaryIndex("Done", states, NO_MAPPINGS));
 	});
+
+	it("matches a boundary ignoring surrounding whitespace and case", () => {
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "  implementation  ", endState: "DONE" },
+				workflow(),
+				NO_MAPPINGS,
+			),
+		).toBe(true);
+	});
+
+	it("is invalid when a boundary maps to an empty state set", () => {
+		const emptyMapping: IStateMapping = { name: "Nothing", states: [] };
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "Nothing", endState: "Done" },
+				workflow([emptyMapping]),
+				[emptyMapping],
+			),
+		).toBe(false);
+	});
+
+	it("is invalid when a boundary is only whitespace", () => {
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "   ", endState: "Done" },
+				workflow(),
+				NO_MAPPINGS,
+			),
+		).toBe(false);
+	});
+
+	it("is invalid when any underlying state of a multi-state mapping is absent", () => {
+		const phaseMapping: IStateMapping = {
+			name: "Phase",
+			states: ["Review", "Ghost"],
+		};
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "Phase", endState: "Done" },
+				workflow([phaseMapping]),
+				[phaseMapping],
+			),
+		).toBe(false);
+	});
+
+	it("de-duplicates resolved workflow states case-insensitively", () => {
+		const states = resolveWorkflowStates(
+			["Backlog"],
+			["Review"],
+			["review"],
+			NO_MAPPINGS,
+		);
+		expect(
+			states.filter((state) => state.toLowerCase() === "review"),
+		).toHaveLength(1);
+	});
+
+	it("resolves a mapping-name boundary ignoring whitespace and case", () => {
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "Backlog", endState: "  validation  " },
+				workflow([VALIDATION_MAPPING]),
+				[VALIDATION_MAPPING],
+			),
+		).toBe(true);
+	});
+
+	it("is invalid when the end boundary maps to an empty state set", () => {
+		const emptyMapping: IStateMapping = { name: "Nothing", states: [] };
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "Backlog", endState: "Nothing" },
+				workflow([emptyMapping]),
+				[emptyMapping],
+			),
+		).toBe(false);
+	});
+
+	it("locates a boundary that matches any underlying state of a multi-state mapping", () => {
+		const phaseMapping: IStateMapping = {
+			name: "Phase",
+			states: ["Ghost", "Review"],
+		};
+		const states = workflow([phaseMapping]);
+		expect(
+			cycleTimeBoundaryIndex("Phase", states, [phaseMapping]),
+		).toBeGreaterThanOrEqual(0);
+	});
 });

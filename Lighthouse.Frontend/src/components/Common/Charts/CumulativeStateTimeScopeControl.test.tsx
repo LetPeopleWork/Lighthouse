@@ -117,4 +117,32 @@ describe("CumulativeStateTimeScopeControl", () => {
 
 		expect(onScopeChange).toHaveBeenCalledWith(null);
 	});
+
+	it("does not reset when nothing is scoped", () => {
+		const onScopeChange = vi.fn();
+		render(
+			<CumulativeStateTimeScopeControl
+				namedCycleTimeDefinitions={[getMockDefinition({ id: 2, isValid: false })]}
+				scopeDefinitionId={null}
+				onScopeChange={onScopeChange}
+			/>,
+		);
+
+		expect(onScopeChange).not.toHaveBeenCalled();
+	});
+
+	it("does not reset a scope that still points at a valid definition", () => {
+		const onScopeChange = vi.fn();
+		render(
+			<CumulativeStateTimeScopeControl
+				namedCycleTimeDefinitions={[
+					getMockDefinition({ id: 4, name: "Lead Time", isValid: true }),
+				]}
+				scopeDefinitionId={4}
+				onScopeChange={onScopeChange}
+			/>,
+		);
+
+		expect(onScopeChange).not.toHaveBeenCalled();
+	});
 });
