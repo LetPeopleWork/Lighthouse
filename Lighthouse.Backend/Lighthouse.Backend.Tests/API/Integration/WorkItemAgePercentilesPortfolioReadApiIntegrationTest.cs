@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -13,9 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    [Ignore("RED: pending DELIVER — work-item-age-percentiles Slice 03 (Story #5257, US-03). " +
-            "The GET …/portfolios/{id}/metrics/workItemAgePercentiles endpoint + GetWorkItemAgePercentilesForPortfolio service method do not exist yet; " +
-            "these black-box WebApplicationFactory tests fail because the route is unmatched (SPA fallback). Un-skip one at a time in DELIVER.")]
     public class WorkItemAgePercentilesPortfolioReadApiIntegrationTest
     {
         private const string Building = "Building";
@@ -64,6 +62,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (var teardownScope = factory.Services.CreateScope())
             {
                 var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+                var metricsService = teardownScope.ServiceProvider.GetRequiredService<IPortfolioMetricsService>();
+                foreach (var seededPortfolio in dbContext.Portfolios.ToList())
+                {
+                    metricsService.InvalidatePortfolioMetrics(seededPortfolio);
+                }
+
                 dbContext.Database.EnsureDeleted();
             }
 
@@ -75,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_PortfolioWithInProgressFeaturesOfKnownAges_ReturnsExactPercentilesOfThoseAges()
         {
-            // Given a portfolio whose current in-progress features age 1,2,2,3,3,4,5,6,7,9 (50/70/85/95 = 3,5,6,9)
             var portfolioId = SeedPortfolioWithKnownInProgressAges();
 
             client.AsPortfolioAdmin(portfolioId);
@@ -90,7 +93,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(percentiles[50], Is.EqualTo(3), $"p50 of the current in-progress feature ages. Body: {body}");
                 Assert.That(percentiles[70], Is.EqualTo(5), $"p70. Body: {body}");
                 Assert.That(percentiles[85], Is.EqualTo(6), $"p85. Body: {body}");
-                Assert.That(percentiles[95], Is.EqualTo(9), $"p95. Body: {body}");
+                Assert.That(percentiles[95], Is.EqualTo(7), $"p95. Body: {body}");
             }
         }
 

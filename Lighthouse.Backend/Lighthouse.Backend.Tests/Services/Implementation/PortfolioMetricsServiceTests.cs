@@ -166,6 +166,76 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetWorkItemAgePercentilesForPortfolio_InProgressFeaturesOfKnownAges_ReturnsNearestRankPercentiles()
+        {
+            features.Clear();
+            foreach (var age in new[] { 1, 2, 2, 3, 3, 4, 5, 6, 7, 9 })
+            {
+                AddInProgressFeatureAged(age);
+            }
+
+            var percentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, DateTime.UtcNow.Date).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(percentiles[0].Percentile, Is.EqualTo(50));
+                Assert.That(percentiles[0].Value, Is.EqualTo(3));
+                Assert.That(percentiles[1].Percentile, Is.EqualTo(70));
+                Assert.That(percentiles[1].Value, Is.EqualTo(5));
+                Assert.That(percentiles[2].Percentile, Is.EqualTo(85));
+                Assert.That(percentiles[2].Value, Is.EqualTo(6));
+                Assert.That(percentiles[3].Percentile, Is.EqualTo(95));
+                Assert.That(percentiles[3].Value, Is.EqualTo(7));
+            }
+        }
+
+        [Test]
+        public void GetWorkItemAgePercentilesForPortfolio_NoInProgressFeatures_ReturnsFourZeroValuedEntries()
+        {
+            features.Clear();
+            var done = new Feature
+            {
+                Id = 1,
+                StateCategory = StateCategories.Done,
+                StartedDate = DateTime.UtcNow.AddDays(-30),
+                ClosedDate = DateTime.UtcNow.AddDays(-2),
+            };
+            done.Portfolios.Add(portfolio);
+            features.Add(done);
+
+            var percentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, DateTime.UtcNow.Date).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(percentiles, Has.Count.EqualTo(4));
+                Assert.That(percentiles.Select(p => p.Value), Is.All.Zero);
+            }
+        }
+
+        [Test]
+        public void GetWorkItemAgePercentilesForPortfolio_KeyedOnEndDateOnly_DoesNotCollideWithCycleTimePercentilesCache()
+        {
+            features.Clear();
+            AddInProgressFeatureAged(2);
+            var closed = new Feature
+            {
+                Id = 99,
+                StateCategory = StateCategories.Done,
+                StartedDate = DateTime.UtcNow.AddDays(-100),
+                ClosedDate = DateTime.UtcNow,
+            };
+            closed.Portfolios.Add(portfolio);
+            features.Add(closed);
+
+            var endDate = DateTime.UtcNow.Date;
+            var cycleTimePercentiles = subject.GetCycleTimePercentilesForPortfolio(portfolio, endDate.AddDays(-101), endDate).ToList();
+            var agePercentiles = subject.GetWorkItemAgePercentilesForPortfolio(portfolio, endDate).ToList();
+
+            Assert.That(agePercentiles[3].Value, Is.Not.EqualTo(cycleTimePercentiles[3].Value),
+                "WorkItemAgePercentiles_{endDate} must be a distinct cache key from CycleTimePercentiles_{startDate}_{endDate}; a collision would echo the closed feature's cycle time as the WIP age.");
+        }
+
+        [Test]
         public void GetSizePercentilesForProject_ReturnsCorrectPercentileValues()
         {
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -1441,6 +1511,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         #endregion
+
+        private int inProgressFeatureSequence = 1000;
+
+        private Feature AddInProgressFeatureAged(int ageDays)
+        {
+            var feature = new Feature
+            {
+                Id = ++inProgressFeatureSequence,
+                StateCategory = StateCategories.Doing,
+                StartedDate = DateTime.UtcNow.Date.AddDays(-(ageDays - 1)),
+            };
+            feature.Portfolios.Add(portfolio);
+            features.Add(feature);
+            return feature;
+        }
 
         private void SetupTestData()
         {

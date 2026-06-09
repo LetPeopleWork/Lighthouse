@@ -261,6 +261,18 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public IEnumerable<PercentileValue> GetWorkItemAgePercentilesForPortfolio(Portfolio portfolio, DateTime endDate)
+        {
+            logger.LogDebug("Getting Work Item Age Percentiles for Portfolio {PortfolioName} at {EndDate}", portfolio.Name, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"WorkItemAgePercentiles_{endDate:yyyy-MM-dd}", () =>
+            {
+                var ages = GetInProgressFeaturesForPortfolio(portfolio, endDate).Select(f => f.WorkItemAge).Where(age => age > 0).ToList();
+
+                return BuildPercentiles(ages);
+            }, logger);
+        }
+
         public IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Age In State Percentiles for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
