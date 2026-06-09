@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
     [TestFixture]
     public class CycleTimeDefinitionValidatorTest
     {
-        private static SettingsOwnerDtoBase SettingsWith(params CycleTimeDefinitionDto[] definitions)
+        private static TeamSettingDto SettingsWith(params CycleTimeDefinitionDto[] definitions)
         {
             return new TeamSettingDto
             {
