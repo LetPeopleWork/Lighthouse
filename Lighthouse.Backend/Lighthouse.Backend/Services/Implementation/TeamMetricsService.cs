@@ -345,6 +345,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var allStatesInOrder = team.AllStates.ToList();
             var resolvedDefinitions = team.CycleTimeDefinitions
+                .Where(team.IsCycleTimeDefinitionValid)
                 .Select(definition => (
                     definition.Id,
                     StartState: ResolveBoundaryState(team, allStatesInOrder, definition.StartState),
@@ -374,7 +375,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private List<int> ComputeNamedDurations(Team team, DateTime startDate, DateTime endDate, int definitionId)
         {
             var definition = team.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId);
-            if (definition == null)
+            if (definition == null || !team.IsCycleTimeDefinitionValid(definition))
             {
                 return [];
             }

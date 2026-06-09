@@ -49,13 +49,10 @@ namespace Lighthouse.Backend.API.Helpers
             var startIndex = BoundaryIndex(resolver, orderedStates, definition.StartState);
             var endIndex = BoundaryIndex(resolver, orderedStates, definition.EndState);
 
-            if (startIndex < 0 || endIndex < 0)
-            {
-                errors.Add($"Cycle time '{definition.Name}' must use start and end states that exist in the workflow.");
-                return;
-            }
-
-            if (endIndex <= startIndex)
+            // Boundary presence is a READ-TIME concern (D5): a definition whose boundary state was
+            // removed persists as invalid (IsValid:false on projection), it is not rejected at save.
+            // Only the end-after-start ordering (D4) is enforced here, and only when both resolve.
+            if (startIndex >= 0 && endIndex >= 0 && endIndex <= startIndex)
             {
                 errors.Add(EndStateMustComeAfterStartStateError);
             }
