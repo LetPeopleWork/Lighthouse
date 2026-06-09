@@ -470,7 +470,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static double OngoingDuration(WorkItem item, DateTime nowSnapshot)
         {
-            return (nowSnapshot - item.CurrentStateEnteredAt!.Value).TotalDays;
+            // An item that entered its current state after the window end has accrued no ongoing time
+            // within the window — never a negative bar segment.
+            return Math.Max(0, (nowSnapshot - item.CurrentStateEnteredAt!.Value).TotalDays);
         }
 
         private static double ContributionForState(WorkItem item, string state, DateTime nowSnapshot)

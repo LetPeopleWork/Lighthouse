@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
@@ -189,6 +190,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result, Is.EqualTo(15));
         }
 
+        [Test]
+        public void Cumulative_InFlightItemEnteredCurrentStateAfterWindowEnd_ContributesZeroOngoingNotNegative()
+        {
+            var windowEnd = FixtureStart.AddDays(10);
+            var inFlight = new WorkItem
+            {
+                State = "In Progress",
+                StateCategory = StateCategories.Doing,
+                StartedDate = FixtureStart,
+                CurrentStateEnteredAt = windowEnd.AddDays(5),
+                SyncedTransitions = [],
+            };
+
+            var rows = TestableBaseMetricsService.Cumulative([inFlight], ["In Progress"], windowEnd);
+            var inProgress = rows.Single(row => row.State == "In Progress");
+
+            Assert.That(inProgress.OngoingContributionDays, Is.Zero,
+                "An item that entered its current state after the window end has no ongoing time in the window — the bar segment must never go negative.");
+        }
+
         private static WorkItem ItemWithTransitions(DateTime startedDate, params WorkItemStateTransition[] transitions)
         {
             return new WorkItem
@@ -240,6 +261,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             public static string ResolveBoundary(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> allStatesInOrder, string boundaryState)
             {
                 return ResolveBoundaryState(owner, allStatesInOrder, boundaryState);
+            }
+
+            public static IReadOnlyList<CumulativeStateTimeStateRowDto> Cumulative(IEnumerable<WorkItem> items, IReadOnlyList<string> stateOrder, DateTime nowSnapshot)
+            {
+                return ComputeCumulativeStateTime(items, stateOrder, nowSnapshot);
             }
         }
     }
