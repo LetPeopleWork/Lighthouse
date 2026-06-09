@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return 0;
         }
 
-        private static IReadOnlyList<string> StateNames(string body)
+        private static List<string> StateNames(string body)
         {
             using var document = JsonDocument.Parse(body);
             return document.RootElement.GetProperty("states").EnumerateArray()
