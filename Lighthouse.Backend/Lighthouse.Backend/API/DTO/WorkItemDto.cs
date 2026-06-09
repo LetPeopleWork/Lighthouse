@@ -1,15 +1,16 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.API.DTO
 {
     public class WorkItemDto
     {
         public WorkItemDto(WorkItemBase workItem)
-            : this(workItem, workItem.CycleTime)
+            : this(workItem, [])
         {
         }
 
-        public WorkItemDto(WorkItemBase workItem, int cycleTime)
+        public WorkItemDto(WorkItemBase workItem, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
         {
             Name = workItem.Name;
             Id = workItem.Id;
@@ -21,7 +22,8 @@ namespace Lighthouse.Backend.API.DTO
             StateCategory = workItem.StateCategory;
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
-            CycleTime = cycleTime;
+            CycleTime = workItem.CycleTime;
+            NamedCycleTimes = namedCycleTimes;
             WorkItemAge = workItem.WorkItemAge;
             IsBlocked = workItem.IsBlocked;
             CurrentStateEnteredAt = workItem.CurrentStateEnteredAt;
@@ -47,6 +49,8 @@ namespace Lighthouse.Backend.API.DTO
         public StateCategories StateCategory { get; }
 
         public int CycleTime { get; }
+
+        public IReadOnlyList<NamedCycleTimeValue> NamedCycleTimes { get; }
 
         public int WorkItemAge { get; }
 

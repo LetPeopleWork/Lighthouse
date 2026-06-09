@@ -6,7 +6,6 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,19 +19,16 @@ namespace Lighthouse.Backend.API
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
-        private const string NamedCycleTimeRequiresPremiumErrorMessage = "Named cycle times require a premium license.";
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IBlackoutPeriodService blackoutPeriodService;
-        private readonly ILicenseService licenseService;
         private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, ILicenseService licenseService, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
             this.blackoutPeriodService = blackoutPeriodService;
-            this.licenseService = licenseService;
             this.logger = logger;
         }
 
@@ -132,11 +128,6 @@ namespace Lighthouse.Backend.API
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            if (IsNamedRequest(definitionId) && !licenseService.CanUsePremiumFeatures())
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, NamedCycleTimeRequiresPremiumErrorMessage);
-            }
-
             LogDateBoundaries("cycleTimePercentiles", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 IsNamedRequest(definitionId)
@@ -201,31 +192,17 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cycleTimeData")]
-        public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
+        public ActionResult<IEnumerable<WorkItemDto>> GetCycleTimeDataForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
                 return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
             }
 
-            if (IsNamedRequest(definitionId) && !licenseService.CanUsePremiumFeatures())
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, NamedCycleTimeRequiresPremiumErrorMessage);
-            }
-
             LogDateBoundaries("cycleTimeData", teamId, startDate, endDate);
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => GetCycleTimeData(team, startDate, endDate, definitionId));
-        }
-
-        private IEnumerable<WorkItemDto> GetCycleTimeData(Team team, DateTime startDate, DateTime endDate, int? definitionId)
-        {
-            if (IsNamedRequest(definitionId))
-            {
-                return teamMetricsService.GetNamedCycleTimeDataForTeam(team, startDate, endDate, definitionId!.Value)
-                    .Select(entry => new WorkItemDto(entry.WorkItem, entry.CycleTime));
-            }
-
-            return teamMetricsService.GetClosedItemsForTeam(team, startDate, endDate).Select(w => new WorkItemDto(w));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate)
+                    .Select(entry => new WorkItemDto(entry.WorkItem, entry.NamedCycleTimes)));
         }
 
         private static bool IsNamedRequest(int? definitionId) => definitionId is > 0;

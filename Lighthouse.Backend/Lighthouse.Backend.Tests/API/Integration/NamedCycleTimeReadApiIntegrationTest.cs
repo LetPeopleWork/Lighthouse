@@ -2,14 +2,11 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
@@ -28,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient client = null!;
-        private Mock<ILicenseService> licenseServiceMock = null!;
         private DateTime windowStart;
         private DateTime windowEnd;
         private DateTime conceptStart;
@@ -43,18 +39,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             rootFactory = new TestWebApplicationFactory<Program>();
 
-            licenseServiceMock = new Mock<ILicenseService>();
-            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
-            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory)
-                .WithWebHostBuilder(builder =>
-                {
-                    builder.ConfigureServices(services =>
-                    {
-                        services.RemoveAll<ILicenseService>();
-                        services.AddScoped(_ => licenseServiceMock.Object);
-                    });
-                });
+            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
 
             client = factory.CreateClient();
 
@@ -85,42 +70,38 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task DefinitionIdAbsent_ReturnsByteIdenticalDefaultCycleTimeSeries()
+        public async Task CycleTimeData_ReturnsDefaultCycleTimePerClosedItem_Unchanged()
         {
             var teamId = SeedTeamWithConceptToCashItems();
 
             client.AsTeamAdmin(teamId);
-            var defaultResponse = await client.GetAsync(CycleTimeDataUrl(teamId, definitionId: null));
-            var explicitZeroResponse = await client.GetAsync(CycleTimeDataUrl(teamId, definitionId: 0));
-
-            var defaultBody = await defaultResponse.Content.ReadAsStringAsync();
-            var explicitZeroBody = await explicitZeroResponse.Content.ReadAsStringAsync();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(defaultResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), defaultBody);
-                Assert.That(explicitZeroBody, Is.EqualTo(defaultBody),
-                    "definitionId=0 must behave exactly like the no-param default series (ADR-062 §1).");
-
-                var phx204DefaultCycleTime = CycleTimeFor(defaultBody, "PHX-204");
-                Assert.That(phx204DefaultCycleTime, Is.EqualTo(DefaultPhx204CycleTime()),
-                    $"The default series uses the StartedDate->ClosedDate cycle time, not the named boundary. Body: {defaultBody}");
-            }
-        }
-
-        [Test]
-        public async Task NamedDefinition_PlotsEachClosedItemAtItsOrderedBoundaryDuration_Phx204Is47Days()
-        {
-            var teamId = SeedTeamWithConceptToCashItems();
-
-            client.AsTeamAdmin(teamId);
-            var response = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
+            var response = await client.GetAsync(CycleTimeDataUrl(teamId));
 
             var body = await response.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(CycleTimeFor(body, "PHX-204"), Is.EqualTo(47),
-                    $"PHX-204 reaches Planned at conceptStart and Done 46 days later -> inclusive 47-day named duration. Body: {body}");
+                Assert.That(ReferenceIds(body), Is.EquivalentTo(new[] { "PHX-204", "PHX-211", "PHX-NEVERDONE" }),
+                    $"cycleTimeData returns every closed item; the named durations ride an additive list per item. Body: {body}");
+                Assert.That(CycleTimeFor(body, "PHX-204"), Is.EqualTo(DefaultPhx204CycleTime()),
+                    $"The default cycleTime field stays the StartedDate->ClosedDate duration. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task CycleTimeData_EachClosedItemCarriesItsNamedCycleTimes_Phx204Is47Days()
+        {
+            var teamId = SeedTeamWithConceptToCashItems();
+
+            client.AsTeamAdmin(teamId);
+            var response = await client.GetAsync(CycleTimeDataUrl(teamId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(NamedDaysFor(body, "PHX-204", ConceptToCashDefinitionId), Is.EqualTo(47),
+                    $"PHX-204 reaches Planned at conceptStart and Done 46 days later -> inclusive 47-day named duration in cycleTimes. Body: {body}");
             }
         }
 
@@ -147,36 +128,36 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task NamedDefinition_ReEntryUsesFirstCrossingNotTheReopen_Phx211()
+        public async Task CycleTimeData_ReEntryUsesFirstCrossingNotTheReopen_Phx211()
         {
             var teamId = SeedTeamWithConceptToCashItems();
 
             client.AsTeamAdmin(teamId);
-            var response = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
+            var response = await client.GetAsync(CycleTimeDataUrl(teamId));
 
             var body = await response.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(CycleTimeFor(body, "PHX-211"), Is.EqualTo(30),
+                Assert.That(NamedDaysFor(body, "PHX-211", ConceptToCashDefinitionId), Is.EqualTo(30),
                     $"PHX-211 reopens into Planned, but the named duration spans the FIRST Planned crossing to the FIRST Done crossing. Body: {body}");
             }
         }
 
         [Test]
-        public async Task NamedDefinition_ItemsCrossingNeitherOrOnlyOneBoundary_AreExcludedFromTheSeries()
+        public async Task CycleTimeData_ItemCrossingNeitherOrOnlyOneBoundary_HasNoNamedEntry()
         {
             var teamId = SeedTeamWithConceptToCashItems();
 
             client.AsTeamAdmin(teamId);
-            var response = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
+            var response = await client.GetAsync(CycleTimeDataUrl(teamId));
 
             var body = await response.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(ReferenceIds(body), Does.Not.Contain("PHX-NEVERDONE"),
-                    $"D9: a closed item that never crossed the Done boundary is excluded from the named series. Body: {body}");
+                Assert.That(NamedDaysFor(body, "PHX-NEVERDONE", ConceptToCashDefinitionId), Is.Null,
+                    $"D9: a closed item that never crossed the Done boundary has no entry for that definition in cycleTimes. Body: {body}");
             }
         }
 
@@ -186,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var teamId = SeedTeamWithConceptToCashItems();
 
             client.AsTeamAdmin(teamId);
-            var dataResponse = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
+            var dataResponse = await client.GetAsync(CycleTimeDataUrl(teamId));
             var percentilesResponse = await client.GetAsync(CycleTimePercentilesUrl(teamId, ConceptToCashDefinitionId));
 
             var dataBody = await dataResponse.Content.ReadAsStringAsync();
@@ -196,51 +177,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(dataResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), dataBody);
                 Assert.That(percentilesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), percentilesBody);
 
-                Assert.That(ReferenceIds(dataBody), Is.EquivalentTo(new[] { "PHX-204", "PHX-211" }),
-                    $"D9: exactly the two boundary-crossing items are plotted, with no low-sample suppression. Body: {dataBody}");
+                Assert.That(ReferenceIdsWithNamedEntry(dataBody, ConceptToCashDefinitionId), Is.EquivalentTo(new[] { "PHX-204", "PHX-211" }),
+                    $"D9: exactly the two boundary-crossing items carry a named entry, with no low-sample suppression. Body: {dataBody}");
                 Assert.That(PercentileCount(percentilesBody), Is.EqualTo(4),
                     $"The 50/70/85/95 percentile lines are still returned for a small named sample. Body: {percentilesBody}");
             }
         }
 
         [Test]
-        public async Task NamedBranch_NonPremiumCaller_PassingDefinitionId_IsRefused()
-        {
-            var teamId = SeedTeamWithConceptToCashItems();
-            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
-
-            client.AsTeamAdmin(teamId);
-            var namedResponse = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
-            var defaultResponse = await client.GetAsync(CycleTimeDataUrl(teamId, definitionId: null));
-
-            var namedBody = await namedResponse.Content.ReadAsStringAsync();
-            var defaultBody = await defaultResponse.Content.ReadAsStringAsync();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(namedResponse.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), namedBody);
-                Assert.That(defaultResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), defaultBody);
-            }
-        }
-
-        [Test]
-        public async Task NamedBranch_TeamViewer_CanReadTheNamedSeries()
+        public async Task TeamViewer_CanReadCycleTimeDataWithNamedCycleTimes()
         {
             var teamId = SeedTeamWithConceptToCashItems();
 
             client.AsTeamViewer(teamId);
-            var viewerResponse = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
+            var viewerResponse = await client.GetAsync(CycleTimeDataUrl(teamId));
 
             client.AsAnonymous();
-            var anonymousResponse = await client.GetAsync(CycleTimeDataUrl(teamId, ConceptToCashDefinitionId));
+            var anonymousResponse = await client.GetAsync(CycleTimeDataUrl(teamId));
 
             var viewerBody = await viewerResponse.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(viewerResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), viewerBody);
+                Assert.That(NamedDaysFor(viewerBody, "PHX-204", ConceptToCashDefinitionId), Is.EqualTo(47),
+                    $"A Team Viewer reads the named cycle times off cycleTimeData (no read-side premium gate). Body: {viewerBody}");
                 Assert.That(
                     new[] { HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden, HttpStatusCode.NotFound },
                     Does.Contain(anonymousResponse.StatusCode),
-                    $"An anonymous caller must not read the named series (existing TeamRead guard). Status: {anonymousResponse.StatusCode}");
+                    $"An anonymous caller must not read cycle time data (existing TeamRead guard). Status: {anonymousResponse.StatusCode}");
             }
         }
 
@@ -249,10 +213,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return (int)(conceptStart.AddDays(46).Date - conceptStart.Date).TotalDays + 1;
         }
 
-        private string CycleTimeDataUrl(int teamId, int? definitionId)
+        private string CycleTimeDataUrl(int teamId)
         {
-            var baseUrl = $"/api/latest/teams/{teamId}/metrics/cycleTimeData?startDate={windowStart:O}&endDate={windowEnd:O}";
-            return definitionId.HasValue ? $"{baseUrl}&definitionId={definitionId.Value}" : baseUrl;
+            return $"/api/latest/teams/{teamId}/metrics/cycleTimeData?startDate={windowStart:O}&endDate={windowEnd:O}";
         }
 
         private string CycleTimePercentilesUrl(int teamId, int? definitionId)
@@ -373,10 +336,45 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return 0;
         }
 
+        private static int? NamedDaysFor(string body, string referenceId, int definitionId)
+        {
+            using var document = JsonDocument.Parse(body);
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                if (item.GetProperty("referenceId").GetString() != referenceId)
+                {
+                    continue;
+                }
+
+                foreach (var named in item.GetProperty("namedCycleTimes").EnumerateArray())
+                {
+                    if (named.GetProperty("definitionId").GetInt32() == definitionId)
+                    {
+                        return named.GetProperty("days").GetInt32();
+                    }
+                }
+
+                return null;
+            }
+
+            Assert.Fail($"Item '{referenceId}' was expected in the series but was absent. Body: {body}");
+            return null;
+        }
+
         private static string[] ReferenceIds(string body)
         {
             using var document = JsonDocument.Parse(body);
             return document.RootElement.EnumerateArray()
+                .Select(item => item.GetProperty("referenceId").GetString() ?? string.Empty)
+                .ToArray();
+        }
+
+        private static string[] ReferenceIdsWithNamedEntry(string body, int definitionId)
+        {
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.EnumerateArray()
+                .Where(item => item.GetProperty("namedCycleTimes").EnumerateArray()
+                    .Any(named => named.GetProperty("definitionId").GetInt32() == definitionId))
                 .Select(item => item.GetProperty("referenceId").GetString() ?? string.Empty)
                 .ToArray();
         }

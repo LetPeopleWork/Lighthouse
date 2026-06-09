@@ -6,11 +6,11 @@ namespace Lighthouse.Backend.Services.Interfaces
 {
     public sealed record ForecastThroughputStatus(RunChartData Throughput, bool FilterApplied, string? ExcludedSummary, bool HasSufficientData = true);
 
-    public sealed record NamedCycleTimeWorkItem(WorkItem WorkItem, int CycleTime);
+    public sealed record CycleTimeWorkItem(WorkItem WorkItem, IReadOnlyList<NamedCycleTimeValue> NamedCycleTimes);
 
     public interface ITeamMetricsService
     {
-        IReadOnlyList<NamedCycleTimeWorkItem> GetNamedCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId);
+        IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId);
 

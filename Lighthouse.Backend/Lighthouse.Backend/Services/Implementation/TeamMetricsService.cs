@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const string ForecastStatusMetricIdentifier = "ForecastThroughputStatus";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
+        private const int ConceptToCashDefinitionId = 1;
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
         internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
 
@@ -313,22 +314,16 @@ namespace Lighthouse.Backend.Services.Implementation
                 var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
                 var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
 
-                return (IEnumerable<PercentileValue>)
-                [
-                    new PercentileValue(50, PercentileCalculator.CalculatePercentile(cycleTimes, 50)),
-                    new PercentileValue(70, PercentileCalculator.CalculatePercentile(cycleTimes, 70)),
-                    new PercentileValue(85, PercentileCalculator.CalculatePercentile(cycleTimes, 85)),
-                    new PercentileValue(95, PercentileCalculator.CalculatePercentile(cycleTimes, 95))
-                ];
+                return BuildPercentiles(cycleTimes);
             }, logger);
         }
 
-        public IReadOnlyList<NamedCycleTimeWorkItem> GetNamedCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId)
+        public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)
         {
-            logger.LogDebug("Getting Named Cycle Time Data for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
+            logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(team, $"NamedCycleTimeData_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
-                ComputeNamedCycleTimeSeries(team, startDate, endDate, definitionId), logger);
+            return GetFromCacheIfExists(team, $"CycleTimeData_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+                ComputeCycleTimeData(team, startDate, endDate), logger);
         }
 
         public IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId)
@@ -336,22 +331,48 @@ namespace Lighthouse.Backend.Services.Implementation
             logger.LogDebug("Getting Named Cycle Time Percentiles for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
 
             return GetFromCacheIfExists(team, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
-            {
-                var namedCycleTimes = ComputeNamedCycleTimeSeries(team, startDate, endDate, definitionId)
-                    .Select(entry => entry.CycleTime)
-                    .ToList();
-
-                return (IEnumerable<PercentileValue>)
-                [
-                    new PercentileValue(50, PercentileCalculator.CalculatePercentile(namedCycleTimes, 50)),
-                    new PercentileValue(70, PercentileCalculator.CalculatePercentile(namedCycleTimes, 70)),
-                    new PercentileValue(85, PercentileCalculator.CalculatePercentile(namedCycleTimes, 85)),
-                    new PercentileValue(95, PercentileCalculator.CalculatePercentile(namedCycleTimes, 95))
-                ];
-            }, logger);
+                BuildPercentiles(ComputeNamedDurations(team, startDate, endDate, definitionId)), logger);
         }
 
-        private IReadOnlyList<NamedCycleTimeWorkItem> ComputeNamedCycleTimeSeries(Team team, DateTime startDate, DateTime endDate, int definitionId)
+        private static IEnumerable<PercentileValue> BuildPercentiles(List<int> values) =>
+        [
+            new PercentileValue(50, PercentileCalculator.CalculatePercentile(values, 50)),
+            new PercentileValue(70, PercentileCalculator.CalculatePercentile(values, 70)),
+            new PercentileValue(85, PercentileCalculator.CalculatePercentile(values, 85)),
+            new PercentileValue(95, PercentileCalculator.CalculatePercentile(values, 95)),
+        ];
+
+        private IReadOnlyList<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
+        {
+            var allStatesInOrder = team.AllStates.ToList();
+            var resolvedDefinitions = GetCycleTimeDefinitions()
+                .Select(definition => (
+                    definition.Id,
+                    StartState: ResolveBoundaryState(team, allStatesInOrder, definition.StartState),
+                    EndState: ResolveBoundaryState(team, allStatesInOrder, definition.EndState)))
+                .ToList();
+
+            var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
+            var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
+
+            return itemsWithTransitions
+                .Select(item => new CycleTimeWorkItem(item, NamedValuesForItem(item, allStatesInOrder, resolvedDefinitions)))
+                .ToList();
+        }
+
+        private static IReadOnlyList<NamedCycleTimeValue> NamedValuesForItem(
+            WorkItem item,
+            IReadOnlyList<string> allStatesInOrder,
+            IReadOnlyList<(int Id, string StartState, string EndState)> definitions)
+        {
+            return definitions
+                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, allStatesInOrder, definition.StartState, definition.EndState)))
+                .Where(entry => entry.days.HasValue)
+                .Select(entry => new NamedCycleTimeValue(entry.Id, entry.days!.Value))
+                .ToList();
+        }
+
+        private List<int> ComputeNamedDurations(Team team, DateTime startDate, DateTime endDate, int definitionId)
         {
             var definition = ResolveCycleTimeDefinition(definitionId);
             var allStatesInOrder = team.AllStates.ToList();
@@ -362,10 +383,15 @@ namespace Lighthouse.Backend.Services.Implementation
             var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
 
             return itemsWithTransitions
-                .Select(item => (item, namedDays: NamedCycleTimeDays(item, allStatesInOrder, startState, endState)))
-                .Where(entry => entry.namedDays.HasValue)
-                .Select(entry => new NamedCycleTimeWorkItem(entry.item, entry.namedDays!.Value))
+                .Select(item => NamedCycleTimeDays(item, allStatesInOrder, startState, endState))
+                .Where(days => days.HasValue)
+                .Select(days => days!.Value)
                 .ToList();
+        }
+
+        private static IReadOnlyList<CycleTimeDefinition> GetCycleTimeDefinitions()
+        {
+            return [ResolveCycleTimeDefinition(ConceptToCashDefinitionId)];
         }
 
         private static string ResolveBoundaryState(Team team, List<string> allStatesInOrder, string boundaryState)
@@ -379,7 +405,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             return new CycleTimeDefinition
             {
-                Id = definitionId,
+                Id = definitionId > 0 ? definitionId : ConceptToCashDefinitionId,
                 Name = "Concept to Cash",
                 StartState = "Planned",
                 EndState = "Done",
