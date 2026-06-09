@@ -18,6 +18,7 @@ short_description: >
 primary_jobs:
   - job-flow-coach-spot-stuck-items
   - job-flow-coach-spot-pace-outliers
+  - job-flow-coach-gauge-wip-age-spread
 
 goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast

@@ -1,0 +1,101 @@
+schema_version: 1
+feature_id: work-item-age-percentiles
+updated: 2026-06-09
+
+journeys:
+
+  - name: gauge-current-wip-age-spread
+    goal: >
+      Flow coach opens the team (or portfolio) metrics view and within a glance reads how old
+      the current work-in-progress is — the 50/70/85/95 of live WIP age — then optionally lays
+      that same distribution over the Work Item Aging chart in place of the cycle-time lines to
+      see which dots have drifted past the bulk of the current work.
+    persona: flow-coach (secondary: delivery-forecaster, for forecast-honesty conversations)
+    job: job-flow-coach-gauge-wip-age-spread
+
+    emotional_arc:
+      start: >
+        Uncertain — "I can see the in-progress dots on the aging chart, but I can't tell whether
+        this is a healthy spread or a quiet pile-up; I'd be eyeballing each one."
+      middle: >
+        Oriented — "The overview card tells me 85% of my WIP is under 18 days; now I flip the
+        chart to Work Item Age and the reference lines sit right inside my own dots, so the
+        outliers above the 95th jump out."
+      end: >
+        Decisive — "I have the live WIP-age spread AND I know exactly which items have drifted
+        past it. I can name them in standup without source-system spelunking."
+
+    mental_model:
+      - Cycle Time percentiles answer "how long did finished work TAKE" (history of completions).
+      - Work Item Age percentiles answer "how old is my work RIGHT NOW" (snapshot of live WIP).
+      - These are different populations; the aging chart can benchmark its dots against either,
+        but only one set of lines at a time so the meaning stays unambiguous.
+      - "Aging healthily" = most WIP clusters in a tight low band; "piling up" = the spread is
+        wide or the upper percentiles are climbing.
+
+    happy_path:
+      - step: open-metrics-overview
+        output: >
+          Team (or portfolio) metrics overview renders, now including a small "Work Item Age
+          Percentiles" card showing 50/70/85/95 of current in-progress age, descending, with
+          ForecastLevel colours (mirrors the Cycle Time percentiles card).
+      - step: read-wip-age-summary
+        output: >
+          Coach reads e.g. "85th: 18d · 70th: 11d · 50th: 6d" and forms an immediate judgement of
+          WIP-age health without scanning the chart.
+      - step: open-aging-chart
+        output: >
+          Work Item Aging chart shows in-progress dots with the default Cycle Time percentile
+          reference lines (current behaviour, unchanged).
+      - step: flip-ct-to-wia-toggle
+        output: >
+          The horizontal reference lines redraw at the 50/70/85/95 of current WIP age; the
+          cycle-time lines are removed (mutually exclusive). Outliers above the 95th are visible.
+      - step: flip-back
+        output: >
+          Toggling back restores the cycle-time lines, no page reload; the independent pace-band
+          overlay (if on) is unaffected throughout.
+
+    shared_artifacts:
+      - artifact: work-item-age-percentiles
+        source: >
+          The 50/70/85/95 of the current in-progress population's workItemAge. Single source of
+          truth feeds BOTH the overview card and the aging-chart WIA lines (compute location —
+          backend read vs FE-derived from already-loaded in-progress items — is the DESIGN D8
+          fork). Never windowed by date range (WIP is "now").
+      - artifact: in-progress-items
+        source: >
+          The current in-progress items already loaded for the aging chart, each carrying
+          workItemAge. The percentile artifact is derived from these.
+
+    error_paths:
+      - condition: zero in-progress items
+        recovery: >
+          Card renders a graceful empty state ("—" / no work in progress); flipping the chart to
+          WIA shows no reference lines. Never crashes (D6).
+      - condition: a single in-progress item
+        recovery: >
+          Percentiles compute over the one value (no special low-sample gate — behaves like the
+          data it has, same stance as the cycle-time card).
+
+    design_decisions_resolved:
+      - id: D2
+        question: How does the aging chart switch between Cycle Time and Work Item Age percentiles?
+        decision: >
+          A switch SWAPS the horizontal reference lines between the two sets, mutually exclusive,
+          Cycle Time as the default. The pace-band overlay chip is orthogonal and untouched.
+      - id: D3
+        question: Is this premium?
+        decision: >
+          No. No useRbac/license gate; rides the existing metrics read path guarded by
+          RbacGuard(TeamRead/PortfolioRead).
+      - id: D4
+        question: What population and which percentiles?
+        decision: >
+          Every current in-progress item's total workItemAge (snapshot, not windowed); 50/70/85/95
+          to match cycle-time percentiles. Overall, not per-state (per-state is aging-pace-percentiles).
+      - id: D5
+        question: Scope and placement?
+        decision: >
+          Team + Portfolio; new small "Work Item Age Percentiles" card in OverviewCategory mirroring
+          the CycleTimePercentiles card.

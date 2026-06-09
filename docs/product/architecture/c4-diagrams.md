@@ -957,3 +957,64 @@ The diagram makes four commitments visible:
 3. **Pure, bounded expansion** — `ExpandToBlackoutDays` has the clock/window passed in (no I/O); open-ended rules are bounded by the consumer's window, never infinite. Interval-week-modulo anchoring; interval 1 ⇒ plain weekly by `% 1` (ADR-060, US-02 AC4).
 4. **D4 indistinguishability / D6 regression are properties, not branches** — a recurring day-set equals the same days as one-off periods through every helper (direct equality assertion); no rules ⇒ `GetEffectiveBlackoutDays ≡ GetAll()` ⇒ byte-identical (inherits #4974 D6).
 
+---
+
+# C4 Architecture Diagrams — work-item-age-percentiles
+
+Feature: work-item-age-percentiles (Story #5257)
+Wave: DESIGN
+Date: 2026-06-09
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+ADRs: ADR-065 (WIA percentiles computed **server-side** on a new read endpoint per scope), ADR-066 (aging-chart line-source swap between two server-fetched arrays). Cross-refs ADR-020, ADR-062, ADR-055, ADR-019.
+
+**System Context: unchanged** — no new actor, no new external system. **Container delta: 2 new endpoints** — the D8 verdict (ADR-065, user-confirmed) adds `GET …/metrics/workItemAgePercentiles` at **Team** and **Portfolio** scope on the existing Backend container, consumed by the existing Frontend SPA and wrapped (version-gated) by the Lighthouse-Clients (separate repo). No new persistence, no new external system.
+
+## C4 Level 2 — Container (delta = 2 new endpoints: Team + Portfolio)
+
+```mermaid
+C4Container
+    title Container Diagram — work-item-age-percentiles (delta = 2 new endpoints)
+    Person(coach, "Flow Coach", "Reads team/portfolio metrics; no premium gate")
+
+    Container(spa, "Lighthouse Frontend", "React + MUI-X", "New WIP-age overview card + aging-chart CT↔WIA toggle; consumes server-computed PercentileValue[]")
+    Container(api, "Lighthouse Backend", "ASP.NET Core (hexagonal)", "2 NEW read endpoints compute WIA percentiles via BuildPercentiles/PercentileCalculator over the in-progress selection")
+    Container(clients, "Lighthouse-Clients (CLI + MCP)", "separate repo", "Version-gated getWorkItemAgePercentiles wrapper")
+
+    Rel(coach, spa, "Reads WIP-age card + flips CT↔WIA toggle in")
+    Rel(spa, api, "GET …/metrics/workItemAgePercentiles (Team + Portfolio) [RbacGuard(TeamRead/PortfolioRead)] — NEW")
+    Rel(clients, api, "GET …/metrics/workItemAgePercentiles — NEW, version-gated (404 on old server ⇒ upgrade error)")
+```
+
+## C4 Level 3 — Component: server-side WIA percentile compute + chart line-source swap
+
+The architecturally significant decisions are **where the WIA percentiles are computed** (ADR-065: server-side, reusing the in-progress selection + `BuildPercentiles`) and **how the aging chart shows one of two server-fetched percentile sets at a time** (ADR-066: swap the source feeding the single existing reference-line block, so mutual exclusivity is structural).
+
+```mermaid
+C4Component
+    title Component Diagram — server-side WIA percentile compute + line-source swap (ADR-065/066)
+
+    Component(ctrl, "Team/PortfolioMetricsController", "ASP.NET (EXTENDED)", "NEW GetWorkItemAgePercentiles action; [RbacGuard]; 400 on startDate>endDate; returns IEnumerable<PercentileValue>")
+    Component(svc, "Team/PortfolioMetricsService", "C# (EXTENDED)", "NEW GetWorkItemAgePercentilesFor…: in-progress selection → WorkItemAge → BuildPercentiles; cached on endDate only")
+    Component(sel, "GetWipSnapshotForTeam / GetInProgressFeaturesForPortfolio", "C# (REUSE)", "Existing current-in-progress selection feeding the aging-chart dots")
+    Component(calc, "BuildPercentiles → PercentileCalculator", "C# (REUSE)", "Existing 50/70/85/95 algorithm; emits PercentileValue[]")
+    Component(msvc, "MetricsService / IMetricsService", "TS (EXTENDED)", "NEW getWorkItemAgePercentiles(id, …) → IPercentileValue[]")
+    Component(metrics, "useMetricsData / MetricsData ctx", "React hook (EXTENDED)", "Parallel-fetches WIA into NEW ctx field workItemAgePercentilesValues alongside percentileValues")
+    Component(card, "WorkItemAgePercentiles.tsx", "React card (NEW)", "Mirrors CycleTimePercentiles.tsx: 50/70/85/95 descending, ForecastLevel colour, graceful empty state, distinct WIA title")
+    Component(chart, "WorkItemAgingChart", "React chart (EXTENDED)", "NEW optional workItemAgePercentileValues prop + local percentileSource state; activePercentiles feeds the EXISTING single ChartsReferenceLine block")
+
+    Rel(ctrl, svc, "delegates to")
+    Rel(svc, sel, "reuses in-progress selection")
+    Rel(svc, calc, "computes percentiles via")
+    Rel(msvc, ctrl, "GET workItemAgePercentiles (version-gated in CLI/MCP)")
+    Rel(metrics, msvc, "parallel-fetches WIA array via")
+    Rel(metrics, card, "feeds workItemAgePercentilesValues to")
+    Rel(metrics, chart, "passes percentileValues (CT) + workItemAgePercentilesValues (WIA) to")
+```
+
+The diagram makes four commitments visible:
+
+1. **Server-side compute, reuse-maximal (ADR-065)** — the new service method composes the **existing** in-progress selection (`GetWipSnapshotForTeam` / `GetInProgressFeaturesForPortfolio`) and the **existing** `BuildPercentiles`/`PercentileCalculator`; no new DTO (`PercentileValue` reused), no new algorithm, no persistence. Production percentile logic stays out of the frontend (user directive).
+2. **One algorithm, uniformity by construction** — WIA percentiles use the same server-side `PercentileCalculator` as `cycleTimePercentiles`/`ageInStatePercentiles`; no second-language fork, no parity test.
+3. **Line-source swap between two server-fetched arrays (ADR-066)** — `activePercentiles = percentileSource === "workItemAge" ? WIA : CT` feeds the *existing* single `ChartsReferenceLine` block; both arrays are fetched (CT + the new WIA endpoint); exactly one set on the canvas by construction; `useChartVisibility` unchanged.
+4. **New endpoint ⇒ version-gated clients** — the CLI + MCP wrappers pre-check the server version (an old server 404s opaquely) and fail with an "upgrade Lighthouse" error; `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry; tracked in the separate clients repo. Empty WIP ⇒ `BuildPercentiles([])` `0`-valued set ⇒ card empty state + chart no-lines; the pace-band overlay chip is untouched by the toggle (D2 / ADR-020).
+

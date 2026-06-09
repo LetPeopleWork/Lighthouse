@@ -19,6 +19,7 @@ feature_context:
   - blackout-day-forecast-shift
   - recurring-blackout-events
   - multiple-cycle-times
+  - work-item-age-percentiles
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1755,4 +1756,61 @@ jobs:
         spreadsheet. Gap: 3 - a genuine missing capability; kept tractable because it reuses the
         existing scatterplot/percentile machinery and the cumulative chart, adding a per-definition read
         endpoint and a selector/switch rather than a new analysis engine.
+
+  - id: job-flow-coach-gauge-wip-age-spread
+    title: Gauge how old my current work-in-progress is, at a glance
+    persona: flow-coach
+    feature_context: work-item-age-percentiles
+    job_story: >
+      When I review my team's current in-progress work during a standup or flow review,
+      I want a percentile readout of how old my WIP is RIGHT NOW — not how long finished
+      work took — and the option to lay that same distribution over the Work Item Aging
+      chart in place of the cycle-time lines,
+      so I can judge at a glance whether my live work is aging healthily or piling up, and
+      name which items have drifted past the bulk of the current WIP.
+    dimensions:
+      functional: >
+        See the 50/70/85/95 percentiles of the CURRENT in-progress population's own ages
+        (a snapshot of live WIP, not a history of completions) as a small overview card,
+        and toggle the Work Item Aging chart's horizontal reference lines between Cycle
+        Time percentiles (historical completions) and Work Item Age percentiles (current
+        WIP), one set at a time.
+      emotional: >
+        Move from "I can see the dots but I can't tell if this is a healthy spread or a
+        pile-up" to "85% of my WIP is younger than 18 days and these three are the
+        outliers" — confidence that the WIP age is summarised, not eyeballed.
+      social: >
+        Frame WIP-health conversations with the live distribution ("most of our current
+        work is under two weeks old; these two have drifted well past it") rather than gut
+        feel, and distinguish that from the historical cycle-time benchmark precisely.
+    forces:
+      push: >
+        Today the overview summarises cycle time (finished work) but there is NO summary of
+        how old the current WIP is; the aging chart plots the dots but offers only
+        historical cycle-time lines as the benchmark. Coaches must eyeball every dot to
+        judge the live spread.
+      pull: >
+        A small percentile card answers "how old is my WIP?" in one glance, and a single
+        toggle lays that distribution onto the aging chart for a direct dots-vs-spread read
+        — same screen, no mental math, clearly separated from the cycle-time benchmark.
+      anxiety: >
+        Will coaches confuse "current WIP age percentiles" with "historical cycle-time
+        percentiles"? (Mitigated: the two are mutually exclusive on the chart with explicit
+        labels, and the card is titled distinctly.) Is a snapshot of a handful of
+        in-progress items statistically meaningful? (Accepted: it behaves like the data it
+        has — no special low-sample gate — same stance as the cycle-time card.)
+      habit: >
+        Coaches currently scan the aging-chart dots one by one, or fall back to the
+        cycle-time lines as a proxy for "is this old?", instead of reading the live WIP
+        distribution directly.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 - "is my current WIP aging healthily?" is a core standup/flow-review
+        question. Current satisfaction: 2 - the dots are visible and the cycle-time lines
+        give an indirect proxy, but there is no direct WIP-age summary. Gap: 2 - a genuine
+        but contained gap; reuses the existing percentile machinery and aging chart rather
+        than new analysis, so the lift is small.
 
