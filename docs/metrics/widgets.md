@@ -37,7 +37,7 @@ Widgets are organized into four dashboard categories. Each category groups relat
 
 | Category | Question it answers | Widgets |
 |---|---|---|
-| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
+| **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
 | **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Cumulative Time per State, Load Balance Matrix, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
 | **Predictability** | Can we trust our forecasts? | Predictability Score Details, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
 | **Portfolio & Features** | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
@@ -236,6 +236,17 @@ If there is a blocked item, it will appear as a red dot in the chart.
 
 {: .note}
 Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Portfolios. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
+
+## Cycle Time vs. Work Item Age Reference Lines
+
+The **Cycle Time / Work Item Age** selector in the top-right of the chart swaps the horizontal reference lines between two sources:
+
+- **Cycle Time** — the historical cycle-time percentiles of completed work for the selected range (the default).
+- **Work Item Age** — the [Work Item Age percentiles](#work-item-age-percentiles) of the current in-progress items, letting you compare each item against how long today's work in progress is actually taking.
+
+![Work Item Aging Chart with Work Item Age reference lines](../assets/features/metrics/agingWorkItemAgeReferenceLines.png)
+
+The y-axis stays anchored to cycle time regardless of the selection, so the [pace percentile bands](#pace-percentile-bands) keep their scale when you switch. When two percentiles fall on the same value, only the highest percentile's line and label are drawn.
 
 ## Pace Percentile Bands
 
@@ -633,6 +644,21 @@ Use the **View Data** button in the widget header to see all items that were clo
 | 🔴 Act | No SLE is configured, *or* no closed items exist in the range, *or* the percentage of items within the SLE is more than 20 percentage points below the SLE target. |
 | 🟡 Observe | The percentage of items within the SLE is below the target by up to 20 percentage points. |
 | 🟢 Sustain | The percentage of items within the SLE meets or exceeds the configured target percentile. Consider tightening the target. |
+
+# Work Item Age Percentiles
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Work Item Age |
+| **Affected by Filtering** | Yes |
+
+This overview widget shows the 50th, 70th, 85th, and 95th percentiles of **Work Item Age** for the items that are currently in progress. Unlike [Cycle Time Percentiles](#cycle-time-percentiles), which summarizes completed work, this is a live snapshot of how long your in-progress work has been ageing right now.
+
+![Work Item Age Percentiles](../assets/features/metrics/workItemAgePercentilesCard.png)
+
+The same percentiles can be overlaid as reference lines on the [Work Item Aging Chart](#cycle-time-vs-work-item-age-reference-lines) via its Cycle Time / Work Item Age selector.
+
+When no work is in progress, the widget shows an empty state instead of percentile values.
 
 # Feature Size Percentiles
 
