@@ -2,7 +2,6 @@ import {
 	Card,
 	CardContent,
 	FormControl,
-	InputLabel,
 	MenuItem,
 	Select,
 	Stack,
@@ -20,7 +19,7 @@ import {
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
@@ -167,7 +166,6 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
-	const selectorLabelId = useId();
 	const [selectedDefinitionId, setSelectedDefinitionId] = useState<
 		number | null
 	>(null);
@@ -288,11 +286,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 	const cycleTimeSelector =
 		namedCycleTimeDefinitions.length > 0 ? (
-			<FormControl size="small" sx={{ minWidth: 220 }}>
-				<InputLabel id={selectorLabelId}>{cycleTimeTerm}</InputLabel>
+			<FormControl size="small" sx={{ minWidth: 200 }}>
 				<Select
-					labelId={selectorLabelId}
-					label={cycleTimeTerm}
 					value={
 						selectedDefinitionId === null
 							? DEFAULT_SELECTION
@@ -304,6 +299,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 							value === DEFAULT_SELECTION ? null : Number(value),
 						);
 					}}
+					SelectDisplayProps={{ "aria-label": cycleTimeTerm }}
 				>
 					<MenuItem value={DEFAULT_SELECTION}>Default</MenuItem>
 					{namedCycleTimeDefinitions.map((definition) => (
@@ -331,9 +327,8 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				>
 					<Stack
 						direction="row"
-						spacing={1}
+						spacing={2}
 						sx={{
-							justifyContent: "space-between",
 							alignItems: "center",
 							mb: 1,
 						}}
