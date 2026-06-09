@@ -887,6 +887,7 @@ function buildWidgetNodes(ctx: {
 				doingStates={ctx.doingStates}
 				stalenessThresholdDays={ctx.stalenessThresholdDays}
 				perStatePercentileValues={ctx.perStatePercentileValues}
+				workItemAgePercentileValues={ctx.workItemAgePercentilesValues}
 			/>
 		),
 		loadBalanceMatrix: <LoadBalanceMatrixChart data={ctx.loadBalanceData} />,

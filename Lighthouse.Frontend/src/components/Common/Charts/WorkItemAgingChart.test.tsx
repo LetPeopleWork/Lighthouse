@@ -1361,4 +1361,107 @@ describe("WorkItemAgingChart component", () => {
 			}
 		});
 	});
+
+	describe("Cycle time / work item age reference-line selector", () => {
+		const workItemAgePercentileValues: IPercentileValue[] = [
+			{ percentile: 50, value: 4 },
+			{ percentile: 70, value: 6 },
+			{ percentile: 85, value: 9 },
+			{ percentile: 95, value: 14 },
+		];
+
+		const renderWithSelector = (
+			overrides?: Partial<{
+				workItemAgePercentileValues: IPercentileValue[];
+				inProgressItems: IWorkItem[];
+			}>,
+		) =>
+			render(
+				<WorkItemAgingChart
+					inProgressItems={overrides?.inProgressItems ?? mockInProgressItems}
+					percentileValues={mockPercentileValues}
+					serviceLevelExpectation={mockSLE}
+					doingStates={["To Do", "In Progress", "Review"]}
+					perStatePercentileValues={[getMockPerStatePercentileValues()]}
+					workItemAgePercentileValues={
+						overrides?.workItemAgePercentileValues ??
+						workItemAgePercentileValues
+					}
+				/>,
+			);
+
+		const selectSource = (name: string) =>
+			fireEvent.click(screen.getByRole("button", { name }));
+
+		it("draws the cycle time reference lines by default and no work item age lines", () => {
+			renderWithSelector();
+
+			expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-85%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
+
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 50%"),
+			).not.toBeInTheDocument();
+		});
+
+		it("swaps to work item age lines and removes the cycle time lines, then round-trips back to cycle time", () => {
+			renderWithSelector();
+
+			selectSource("Work Item Age");
+
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 50%"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 95%"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-50%"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-95%"),
+			).not.toBeInTheDocument();
+
+			selectSource("Cycle Time");
+
+			expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 50%"),
+			).not.toBeInTheDocument();
+		});
+
+		it("leaves the pace-band overlay untouched when swapping the reference-line source", () => {
+			renderWithSelector();
+
+			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			expect(screen.getAllByTestId("pace-band").length).toBeGreaterThan(0);
+
+			selectSource("Work Item Age");
+
+			expect(screen.getAllByTestId("pace-band").length).toBeGreaterThan(0);
+		});
+
+		it("renders no work item age lines when in-progress work item age percentiles are all zero", () => {
+			renderWithSelector({
+				workItemAgePercentileValues: [
+					{ percentile: 50, value: 0 },
+					{ percentile: 70, value: 0 },
+					{ percentile: 85, value: 0 },
+					{ percentile: 95, value: 0 },
+				],
+			});
+
+			selectSource("Work Item Age");
+
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 50%"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 95%"),
+			).not.toBeInTheDocument();
+			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
+		});
+	});
 });

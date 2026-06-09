@@ -5,6 +5,8 @@ import {
 	CardContent,
 	IconButton,
 	Stack,
+	ToggleButton,
+	ToggleButtonGroup,
 	Tooltip,
 	Typography,
 	useTheme,
@@ -334,6 +336,8 @@ const groupWorkItems = (
 	return Object.values(groups);
 };
 
+type PercentileSource = "cycleTime" | "workItemAge";
+
 interface WorkItemAgingChartProps {
 	inProgressItems: IWorkItem[];
 	percentileValues: IPercentileValue[];
@@ -342,6 +346,7 @@ interface WorkItemAgingChartProps {
 	stalenessThresholdDays?: number;
 	now?: Date;
 	perStatePercentileValues?: IPerStatePercentileValues[];
+	workItemAgePercentileValues?: IPercentileValue[];
 }
 
 const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
@@ -352,12 +357,15 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	stalenessThresholdDays,
 	now: providedNow,
 	perStatePercentileValues = [],
+	workItemAgePercentileValues = [],
 }) => {
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
 	>([]);
 	const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<IWorkItem[]>([]);
+	const [percentileSource, setPercentileSource] =
+		useState<PercentileSource>("cycleTime");
 	const { showPaceBands, togglePaceBands } = useShowPaceBands();
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -392,6 +400,20 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	);
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
+	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+
+	const meaningfulWorkItemAgePercentiles = useMemo(
+		() => workItemAgePercentileValues.filter((p) => p.value > 0),
+		[workItemAgePercentileValues],
+	);
+
+	const activePercentiles = useMemo(
+		() =>
+			percentileSource === "workItemAge"
+				? meaningfulWorkItemAgePercentiles
+				: percentileValues,
+		[percentileSource, meaningfulWorkItemAgePercentiles, percentileValues],
+	);
 
 	const now = useMemo(() => providedNow ?? new Date(), [providedNow]);
 	const nowTime = now.getTime();
@@ -426,7 +448,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 	const getMaxYAxisHeightValue = () => {
 		return getMaxYAxisHeight({
-			percentiles: percentileValues,
+			percentiles: activePercentiles,
 			serviceLevelExpectation,
 			dataPoints: groupedDataPoints,
 			getDataValue: (g) => g.age,
@@ -466,7 +488,13 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 					<Stack
 						direction="row"
 						spacing={1}
-						sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
+						sx={{
+							mb: 2,
+							flexWrap: "wrap",
+							gap: 1,
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
 					>
 						<PercentileLegend
 							percentiles={percentileValues}
@@ -477,6 +505,33 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 							sleVisible={sleVisible}
 							onToggleSle={toggleSleVisibility}
 						/>
+						<ToggleButtonGroup
+							value={percentileSource}
+							exclusive
+							onChange={(_e, newSource) => {
+								if (newSource !== null) {
+									setPercentileSource(newSource as PercentileSource);
+								}
+							}}
+							size="small"
+							aria-label="Reference line source"
+							sx={{
+								height: 28,
+								"& .MuiToggleButton-root": {
+									fontSize: "0.75rem",
+									py: 0,
+									px: 1,
+									textTransform: "none",
+								},
+							}}
+						>
+							<ToggleButton value="cycleTime" aria-label={cycleTimeTerm}>
+								{cycleTimeTerm}
+							</ToggleButton>
+							<ToggleButton value="workItemAge" aria-label={workItemAgeTerm}>
+								{workItemAgeTerm}
+							</ToggleButton>
+						</ToggleButtonGroup>
 					</Stack>
 					<Stack
 						direction="row"
@@ -563,13 +618,17 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								},
 							]}
 						>
-							{percentileValues.map((p) => {
+							{activePercentiles.map((p) => {
 								const forecastLevel = new ForecastLevel(p.percentile);
-								return visiblePercentiles[p.percentile] ? (
+								const label =
+									percentileSource === "workItemAge"
+										? `${workItemAgeTerm} ${p.percentile}%`
+										: `${p.percentile}%`;
+								return visiblePercentiles[p.percentile] !== false ? (
 									<ChartsReferenceLine
-										key={`percentile-${p.percentile}`}
+										key={`percentile-${percentileSource}-${p.percentile}`}
 										y={p.value}
-										label={`${p.percentile}%`}
+										label={label}
 										labelAlign="end"
 										lineStyle={{
 											stroke: forecastLevel.color,
