@@ -116,7 +116,7 @@ Decision enabled: I judge WIP-age health for the whole train, not one team at a 
 ## Wave: DISCUSS / [REF] Cross-cutting impact (DoR Item 7 hard gate)
 
 - **RBAC** — **N/A (no new authorization), because** D3 makes this non-premium and the read rides the existing `TeamMetricsController` / `PortfolioMetricsController` paths already guarded by `[RbacGuard(TeamRead/PortfolioRead)]`. No `useRbac()` UI gating change; no `IRbacAdministrationService` interaction.
-- **Lighthouse-Clients (CLI + MCP)** — **Conditional, resolved at DESIGN.** If D8 lands on a new `workItemAgePercentiles` endpoint AND the clients expose percentile metrics at all, the wrapping client method MUST be version-gated (pin strictly-newer-than the last released Lighthouse version; record in `FEATURE_REQUIRES_SERVER_NEWER_THAN`). If D8 lands on FE-side derivation (no new endpoint), or the clients don't surface percentile metrics today, **clients are unaffected** — confirm which at DESIGN. (Note: the existing `cycleTimePercentiles`/`ageInStatePercentiles` endpoints are the precedent to check.)
+- **Lighthouse-Clients (CLI + MCP)** — **AFFECTED (version-gated).** Resolved by the D8 backend override (2026-06-09): the new `workItemAgePercentiles` endpoint × 2 scopes means the wrapping CLI + MCP client method MUST be version-gated — pre-check the server version and fail with a clear "upgrade Lighthouse" error (an old server 404s opaquely), pinned strictly-newer-than the last released Lighthouse version, recorded in `FEATURE_REQUIRES_SERVER_NEWER_THAN` (dev/unparseable versions never blocked). Separate repo; tracked as a DELIVER cross-cutting deliverable (see DELIVER action items). Precedent: `cycleTimePercentiles`/`ageInStatePercentiles` + ADR-055/062.
 - **Website** — **Marketing N/A, because** this enhances an existing *free* metric surface rather than introducing a new premium feature. **Docs are NOT N/A**: `docs/metrics/` MUST gain the WIA card + chart-toggle description with a per-theme `@screenshot` at finalization (per the DELIVER docs discipline).
 
 ## Wave: DISCUSS / [REF] Story map & slices
@@ -229,3 +229,98 @@ The only CREATE-NEW backend artifacts are 2 thin service methods + 2 controller 
 - **DELIVER**: exact placement/affordance of the CT↔WIA toggle control on the chart (switch vs chip-pair) — a UX detail, AC-neutral, decided live against the rendered chart per the run-Playwright-before-commit discipline. Per-theme `@screenshot` (card + toggle) + `docs/metrics/` prose at finalization.
 - **DELIVER (Lighthouse-Clients — separate repo)**: add the version-gated `getWorkItemAgePercentiles` wrapper to CLI + MCP; record/bump the `FEATURE_REQUIRES_SERVER_NEWER_THAN` baseline to the current latest release; ensure dev/unparseable versions are never blocked. Tracked in the clients repo, not this repo's slices.
 - **DELIVER (mutation)**: ensure the new service methods (`GetWorkItemAgePercentilesForTeam`/`…ForPortfolio`) are mutation-hardened — the `> 0` age filter, the `endDate`-only cache key (not `startDate`), and the empty-population path. Mirror the `GetCycleTimePercentilesForTeam` test cases for the `BuildPercentiles` boundary mutants. ≥80% Stryker BE gate.
+
+---
+
+## Wave: DISTILL / [REF] Inherited commitments
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DESIGN#row1 | 2 NEW HTTP endpoints `GET …/metrics/workItemAgePercentiles` (Team + Portfolio) returning flat `IEnumerable<PercentileValue>` | ADR-065 | DISTILL authors black-box WebApplicationFactory acceptance tests at the HTTP port; both endpoints RED-scaffolded |
+| DESIGN#row2 | `startDate` does NOT filter the population; only `endDate`/asOf matters (snapshot semantics) | ADR-065 | Date-range-invariance is the key new invariant under test (same `endDate`, differing `startDate` ⇒ identical percentiles) |
+| DISCUSS#D3 | Non-premium; no `ILicenseService` gate on the read path | n/a | A non-premium caller still receives percentiles — the inverse of a premium-gated endpoint; asserted explicitly |
+| DISCUSS#D6 | Empty / single-item WIP graceful, never crash | n/a | Empty WIP ⇒ four-entry all-zero set (confirmed `BuildPercentiles([])` contract); single-item ⇒ that one value at every percentile |
+| DESIGN#row3 | NO new driven adapter — reads existing repos via existing selections + cache | ADR-065 | No new `@real-io` adapter scenario owed; existing repos already under integration coverage |
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Backend acceptance, black-box at HTTP port via `WebApplicationFactory<Program>` (Tier A only — see WS strategy). Skip marker: NUnit `[Ignore]` at class level. All 13 scaffolds RED (clean-assertion, verified by un-skip-and-run).
+
+**Team — `WorkItemAgePercentilesReadApiIntegrationTest` (US-01, 9 scenarios)**
+
+| # | Scenario (test method) | Tags |
+|---|------------------------|------|
+| 1 | `…TeamWithInProgressItemsOfKnownAges_ReturnsExactPercentilesOfThoseAges` | `@US-01 @real-io @driving_port @golden` |
+| 2 | `…PopulationIsTheWipSet_ClosedItemsExcluded` | `@US-01 @real-io @golden` |
+| 3 | `…ResponseShapeIsByteCompatibleWithCycleTimePercentiles` | `@US-01 @real-io @contract` |
+| 4 | `…SameEndDateDifferentStartDate_ReturnsIdenticalPercentiles` | `@US-01 @real-io @invariant` (D4) |
+| 5 | `…TeamWithNoInProgressItems_ReturnsGracefulZeroValuedSet` | `@US-01 @real-io @error @edge` (D6) |
+| 6 | `…TeamWithSingleInProgressItem_ComputesOverThatOneValue` | `@US-01 @real-io @edge` (D6) |
+| 7 | `…NonPremiumCaller_StillReceivesPercentiles` | `@US-01 @real-io @rbac` (D3 inverse) |
+| 8 | `…AnonymousCaller_IsRejected` | `@US-01 @real-io @error @rbac` |
+| 9 | `…StartDateAfterEndDate_ReturnsBadRequest` | `@US-01 @real-io @error` |
+
+**Portfolio — `WorkItemAgePercentilesPortfolioReadApiIntegrationTest` (US-03, 4 scenarios)**
+
+| # | Scenario (test method) | Tags |
+|---|------------------------|------|
+| 1 | `…PortfolioWithInProgressFeaturesOfKnownAges_ReturnsExactPercentilesOfThoseAges` | `@US-03 @real-io @driving_port @golden` |
+| 2 | `…SameEndDateDifferentStartDate_ReturnsIdenticalPercentiles` | `@US-03 @real-io @invariant` (D4) |
+| 3 | `…PortfolioWithNoInProgressFeatures_ReturnsGracefulZeroValuedSet` | `@US-03 @real-io @error @edge` (D6) |
+| 4 | `…AnonymousCaller_IsRejected` | `@US-03 @real-io @error @rbac` |
+
+Error/edge ratio: 6 of 13 = 46% (≥40% target met).
+
+## Wave: DISTILL / [REF] WS strategy
+
+Per the Architecture of Reference + Project Infrastructure Policy (`docs/architecture/atdd-infrastructure-policy.md`): **driving port = real `WebApplicationFactory<Program>`** (`TestWebApplicationFactory` + `WithTestAuthentication`, real EF `LighthouseAppContext` via `EnsureDeleted`/`EnsureCreated`). No walking skeleton (D7 — brownfield extension); Slice 01 is the thinnest end-to-end Team slice. No new driven adapter ⇒ no fake added beyond the policy's existing `ILicenseService` mock (not even exercised on this non-premium read path). Tier B (state-machine PBT) NOT applied: this is a config/read-shaped feature (single read, no ≥3-scenario chained journey with rich input space) and the project is C#/NUnit, not the Python/Hypothesis pilot.
+
+## Wave: DISTILL / [REF] Adapter coverage table
+
+| Driven adapter | New? | @real-io scenario | Covered by |
+|----------------|------|-------------------|------------|
+| EF `LighthouseAppContext` + `IWorkItemRepository` / `IRepository<Feature>` | NO (existing) | YES | Every test seeds real EF rows and reads through the endpoint; existing repos already under integration coverage |
+| `ILicenseService` (fake) | NO (existing) | n/a | Non-premium read path — no license gate (D3); `NonPremiumCaller` test proves a standard caller is served |
+
+**No new driven adapter** ⇒ no new `@real-io @adapter-integration` scenario is owed (DESIGN driven-ports = NONE NEW; new endpoints read existing repositories already under integration coverage).
+
+## Wave: DISTILL / [REF] Scaffolds (RED-ready)
+
+| File | Tests | RED mechanism |
+|------|-------|---------------|
+| `Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs` | 9 (US-01) | Class-level `[Ignore]`; real assertions fail because the route is unmatched (SPA fallback ⇒ HTML body) — a JSON-array guard converts that to a clean `MISSING_FUNCTIONALITY` assertion, never a raw parse exception |
+| `Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs` | 4 (US-03) | Same |
+
+No `__SCAFFOLD__` production stubs (C#/.NET project — the Python-pilot scaffold convention does not apply per the Infrastructure Policy). The endpoints/service methods are authored from scratch in DELIVER; the tests are RED against their absence (the missing route yields the SPA fallback, asserted as a non-JSON body).
+
+## Wave: DISTILL / [REF] Test placement + precedent
+
+Both files live in `Lighthouse.Backend.Tests/API/Integration/`, the canonical home of real-EF + WebApplicationFactory percentile read-endpoint acceptance tests. Direct precedent cloned: `AgeInStatePercentilesReadApiIntegrationTest.cs` + `AgeInStatePercentilesPortfolioReadApiIntegrationTest.cs` (sibling percentile read endpoints, Team + Portfolio) and the `NamedCycleTimeReadApiIntegrationTest` / `CumulativeStateTimeReadApiIntegrationTest` family. Same `[SetUp]`/`[TearDown]`, `testDateOffset` interlock, `client.AsTeamAdmin`/`AsPortfolioAdmin`/`AsTeamViewer`/`AsAnonymous` auth helpers, and `[NonParallelizable]` (process-wide static `BaseMetricsService.MetricsCache` + SQLite file-DB race, per ci-learnings).
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving port (DESIGN) | Protocol scenario |
+|-----------------------|-------------------|
+| `GET /api/teams/{teamId:int}/metrics/workItemAgePercentiles` `[RbacGuard(TeamRead)]` | 9 real-HTTP tests (golden, shape, invariance, empty, single, non-premium, anon, 400) |
+| `GET /api/portfolios/{portfolioId:int}/metrics/workItemAgePercentiles` `[RbacGuard(PortfolioRead)]` | 4 real-HTTP tests (golden, invariance, empty, anon) |
+| FE WIA card + `WorkItemAgingChart` CT↔WIA toggle (US-02) | DEFERRED to DELIVER (see deferrals) |
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- `WebApplicationFactory<Program>` test host (`TestWebApplicationFactory` + `WithTestAuthentication`), `AuthenticatedHttpClientExtensions`, real EF `LighthouseAppContext` — all existing.
+- Reused production contracts the tests pin: `PercentileValue` (flat `{percentile,value}`), `BaseMetricsService.BuildPercentiles` (always 4 entries 50/70/85/95; `[]`⇒all-zero), `WorkItemBase.WorkItemAge` (computed against `DateTime.UtcNow`, so golden ages are anchored to today; `endDate` only selects the snapshot), `GetWipSnapshotForTeam`/`GetInProgressFeaturesForPortfolio`.
+- DEVOPS: no feature-specific environment matrix; default C# integration env (SQLite + Postgres lockstep in CI per policy).
+
+## Wave: DISTILL / [REF] Deferred to DELIVER
+
+- **US-02 chart toggle (FE) + the live E2E walking-skeleton** — DEFERRED to **DELIVER Slice 02** per the run-Playwright-before-commit discipline (a Playwright spec/POM is never authored unrun). No live spec authored now.
+- **FE Vitest component RED scaffold for the CT↔WIA swap** — NOT scaffolded. The repo's FE toggle tests are authored alongside the component in DELIVER (Vitest + RTL), and the existing FE test idiom co-locates them with the new `WorkItemAgePercentiles.tsx` / extended `WorkItemAgingChart.tsx`; authoring a standalone RED component test now (against components that don't exist) would be BROKEN, not RED, under Vitest module resolution. Deferred fully to DELIVER Slice 01/02 with an explicit note here.
+- **Lighthouse-Clients** version-gated `getWorkItemAgePercentiles` wrapper (separate repo) — per DESIGN.
+- **Mutation hardening** of the new service methods (`> 0` age filter, `endDate`-only cache key, empty-population path) — DELIVER.
+
+### Review-gate action items (4-reviewer consolidated, 2026-06-09 — all DELIVER-scope, 0 blockers)
+
+- **[Forge HIGH] Clients release-gate, not just deferral.** The separate-repo version-gated wrapper must be confirmed merged + `FEATURE_REQUIRES_SERVER_NEWER_THAN` pinned to the last released version BEFORE this feature releases — otherwise old CLI/MCP callers get an opaque 404 instead of the "upgrade Lighthouse" error. Add an explicit confirmation step to the feature's finalization/release checklist (don't mark released until clients work is verified). Ensure dev/unparseable versions are never blocked.
+- **[Forge MEDIUM] Cache-isolation test.** Add a cheap defensive test that `WorkItemAgePercentiles_{endDate}` and `CycleTimePercentiles_{startDate}_{endDate}` produce distinct cache entries for the same entity+endDate and never cross-contaminate (guards against a metric-identifier typo silently serving the wrong percentile lines).
+- **[Forge LOW] KPI-3 finalization criterion.** Define a concrete dogfood/demo pass for KPI-3 (flow coach answers "is my WIP aging healthily?" from one screen). If the card is ignored in the walkthrough, record as an exploratory finding (not a release blocker), since central telemetry is unavailable (self-hosted; Epic 5015).
+- **[Eclipse MEDIUM] (DONE)** Stale DISCUSS Clients "Conditional" line refreshed to "AFFECTED (version-gated)" — fixed in this pass.
