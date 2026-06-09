@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             return ScanCallTargets(caller).Contains(callee);
         }
 
-        private static IReadOnlyCollection<MethodBase> ScanCallTargets(MethodBase caller)
+        private static List<MethodBase> ScanCallTargets(MethodBase caller)
         {
             var body = SafeGetMethodBody(caller);
             var il = body?.GetILAsByteArray();

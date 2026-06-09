@@ -341,7 +341,7 @@ namespace Lighthouse.Backend.Services.Implementation
             new PercentileValue(95, PercentileCalculator.CalculatePercentile(values, 95)),
         ];
 
-        private IReadOnlyList<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
+        private List<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
         {
             var allStatesInOrder = team.AllStates.ToList();
             var resolvedDefinitions = team.CycleTimeDefinitions
@@ -359,7 +359,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
-        private static IReadOnlyList<NamedCycleTimeValue> NamedValuesForItem(
+        private static List<NamedCycleTimeValue> NamedValuesForItem(
             WorkItem item,
             IReadOnlyList<string> allStatesInOrder,
             IReadOnlyList<(int Id, string StartState, string EndState)> definitions)

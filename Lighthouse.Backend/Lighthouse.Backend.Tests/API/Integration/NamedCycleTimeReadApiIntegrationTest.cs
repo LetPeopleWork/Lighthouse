@@ -20,6 +20,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string Done = "Done";
         private const int ImplementationToDoneDefinitionId = 1;
 
+        private static readonly string[] AllClosedReferenceIds = ["PHX-204", "PHX-211", "PHX-NEVERDONE"];
+        private static readonly string[] BoundaryCrossingReferenceIds = ["PHX-204", "PHX-211"];
+
         private static int testDateOffset;
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
@@ -81,7 +84,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(ReferenceIds(body), Is.EquivalentTo(new[] { "PHX-204", "PHX-211", "PHX-NEVERDONE" }),
+                Assert.That(ReferenceIds(body), Is.EquivalentTo(AllClosedReferenceIds),
                     $"cycleTimeData returns every closed item; the named durations ride an additive list per item. Body: {body}");
                 Assert.That(CycleTimeFor(body, "PHX-204"), Is.EqualTo(DefaultPhx204CycleTime()),
                     $"The default cycleTime field stays the StartedDate->ClosedDate duration. Body: {body}");
@@ -177,7 +180,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(dataResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), dataBody);
                 Assert.That(percentilesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), percentilesBody);
 
-                Assert.That(ReferenceIdsWithNamedEntry(dataBody, ImplementationToDoneDefinitionId), Is.EquivalentTo(new[] { "PHX-204", "PHX-211" }),
+                Assert.That(ReferenceIdsWithNamedEntry(dataBody, ImplementationToDoneDefinitionId), Is.EquivalentTo(BoundaryCrossingReferenceIds),
                     $"D9: exactly the two boundary-crossing items carry a named entry, with no low-sample suppression. Body: {dataBody}");
                 Assert.That(PercentileCount(percentilesBody), Is.EqualTo(4),
                     $"The 50/70/85/95 percentile lines are still returned for a small named sample. Body: {percentilesBody}");

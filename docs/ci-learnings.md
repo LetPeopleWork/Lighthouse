@@ -26,6 +26,7 @@ deterministic, low-false-positive line pattern. Format (4 fields, ` ::: ` delimi
 <!-- LEDGER-CHECKS:START -->
 typescript:S7735 ::: ts,tsx ::: (!==|!=)\s*(undefined|null)\s*\? ::: Negated condition in a ternary — flip to `X === undefined ? falsy : truthy` (no `!==`/`!=` in a ternary condition). See the 2026-05-16 S7735 entry.
 dotnet-nunit:NUnit4002 ::: cs ::: Is\.EqualTo\(0\) ::: Use `Is.Zero`, never `Is.EqualTo(0)` (NUnit4002).
+external_roslyn:CA1861 ::: cs ::: (Is|Does|Has)\.\w+\(new\[\] ::: CA1861 — extract the inline `new[] {...}` assertion array to a `private static readonly` field; Roslyn flags constant array args passed to repeatedly-called methods.
 <!-- LEDGER-CHECKS:END -->
 
 ## Formatting & linting
@@ -35,6 +36,13 @@ dotnet-nunit:NUnit4002 ::: cs ::: Is\.EqualTo\(0\) ::: Use `Is.Zero`, never `Is.
 - **Root cause**: PowerShell files are linted by Sonar with stricter conventions than ad-hoc shell scripting habits. `Write-Host` discards its output (un-pipelable) and is the de-facto debug-print habit; PowerShell-strict code uses `Write-Output` for informational text and reserves `Write-Host` for things that genuinely need TTY-only behaviour (e.g. `-ForegroundColor`). Comparing `$variable -eq $null` is unreliable in PowerShell because of array-flattening semantics; `$null -eq $variable` is the safe order.
 - **Fix**: Trailing whitespace removed. `Write-Host "info"` → `Write-Output "info"` where colour wasn't needed. `Write-Host "..." -ForegroundColor Green` was kept as-is (intentional terminal-only). `$null -eq (Get-Process ...)` ordering flipped. The cmdlet-casing rule firing on the literal `pkcs11-tool` (an external binary, not a PowerShell cmdlet) was worked around by storing the name in a variable and invoking via `& $varname`.
 - **Rule going forward**: In any new `.ps1` file: (a) prefer `Write-Output` for non-coloured informational text — only use `Write-Host` when `-ForegroundColor` is essential; (b) write `$null -eq $foo`, never `$foo -eq $null`; (c) trim trailing whitespace; (d) if you need to call an external binary whose name looks like a cmdlet (e.g. contains a hyphen), store the name in a variable and invoke with `& $name args...` to bypass the cmdlet-casing analyzer.
+
+### 2026-06-09 — CA1859 / CA1861 surface only in the SonarCloud backend gate, not the local build
+
+- **Symptom**: Backend Sonar gate failed with 5 new violations — `external_roslyn:CA1859` (private methods returning `IReadOnlyList<T>`/`IReadOnlyCollection<T>` that actually build and return a `List<T>`) and `external_roslyn:CA1861` (inline `new[] { ... }` arrays passed to NUnit assertions like `Is.EquivalentTo(new[] {...})`). A clean local `dotnet build` (TreatWarningsAsErrors) passed — these CA rules sit at suggestion/info severity locally, so they never break the build; they only fail Sonar's `new_violations=0` gate.
+- **Root cause**: CA1859 wants concrete return types on non-public methods for perf (the JIT can devirtualise); CA1861 wants constant arrays hoisted to `static readonly` fields rather than reconstructed per call. Both are in the CLAUDE.md recurring list but are easy to re-introduce because the local build is silent on them.
+- **Fix**: CA1859 — change the private/internal method's declared return type from the interface to the concrete `List<T>` it returns. CA1861 — extract the inline `new[] {...}` to a `private static readonly T[] Foo = [...]` field and reference it.
+- **Rule going forward**: For any NEW non-public method that returns `.ToList()`/`.ToArray()`, declare the return type as the concrete `List<T>`/`T[]`, not `IReadOnlyList<T>`/`IReadOnlyCollection<T>`. Never pass an inline `new[] {...}` to an NUnit assertion — hoist it to a `static readonly` field. The pre-commit hook now greps the CA1861 assertion form; CA1859 (return type) is not line-greppable, so apply it by habit.
 
 ## Build & compile
 
