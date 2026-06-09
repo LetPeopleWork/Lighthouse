@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cumulativeStateTime")]
-        public ActionResult<CumulativeStateTimeDto> GetCumulativeStateTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null)
+        public ActionResult<CumulativeStateTimeDto> GetCumulativeStateTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null, [FromQuery] int? definitionId = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.API
 
             LogDateBoundaries("cumulativeStateTime", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
-                teamMetricsService.GetCumulativeStateTimeForTeam(team, startDate, endDate, itemIds));
+                teamMetricsService.GetCumulativeStateTimeForTeam(team, startDate, endDate, itemIds, definitionId));
         }
 
         [HttpGet("cumulativeStateTime/items")]

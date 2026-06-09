@@ -415,14 +415,28 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
+        public CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null)
         {
             logger.LogDebug("Getting Cumulative State Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(team, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}", () =>
+            var scopedDefinition = definitionId is > 0
+                ? team.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId && team.IsCycleTimeDefinitionValid(candidate))
+                : null;
+            var scopeSuffix = scopedDefinition != null ? $"_Def_{definitionId}" : string.Empty;
+
+            return GetFromCacheIfExists(team, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}{scopeSuffix}", () =>
             {
                 var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(team, startDate, endDate), itemIds);
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
+
+                if (scopedDefinition != null)
+                {
+                    var allStatesInOrder = team.AllStates.ToList();
+                    var startState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.StartState);
+                    var endState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.EndState);
+                    var scopedStates = ComputeScopedCumulativeStateTime(candidateItems, workflowStateOrder, allStatesInOrder, startState, endState);
+                    return new CumulativeStateTimeDto(scopedStates);
+                }
 
                 var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
                 return new CumulativeStateTimeDto(states);

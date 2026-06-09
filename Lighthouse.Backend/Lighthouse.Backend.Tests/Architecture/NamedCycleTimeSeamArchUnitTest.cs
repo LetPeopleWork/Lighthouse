@@ -51,6 +51,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var transitionOrderingHelper = typeof(BaseMetricsService).GetMethod(TransitionOrderingHelperName, AllMemberFlags);
             var namedDurationHelper = typeof(BaseMetricsService).GetMethod(NamedCycleTimeDurationHelperName, AllMemberFlags);
+            var namedWindowHelper = typeof(BaseMetricsService).GetMethod("NamedCycleTimeWindow", AllMemberFlags);
 
             using (Assert.EnterMultipleScope())
             {
@@ -61,9 +62,17 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "ADR-061 §1: BaseMetricsService.NamedCycleTimeDays must exist for this no-parallel-engine test to be meaningful.");
             }
 
-            Assert.That(MethodCalls(namedDurationHelper!, transitionOrderingHelper!), Is.True,
+            // NamedCycleTimeDays delegates to NamedCycleTimeWindow (the shared boundary-resolution point reused by
+            // both the scatter duration and the cumulative scope), which reuses OrderedStateEntries. Either the direct
+            // reuse or the via-window reuse satisfies the single-ordering-walk invariant.
+            var reusesOrderingPrimitive = MethodCalls(namedDurationHelper!, transitionOrderingHelper!)
+                || (namedWindowHelper != null
+                    && MethodCalls(namedDurationHelper!, namedWindowHelper)
+                    && MethodCalls(namedWindowHelper, transitionOrderingHelper!));
+
+            Assert.That(reusesOrderingPrimitive, Is.True,
                 "ADR-061 §1/§3: NamedCycleTimeDays must reuse the BaseMetricsService transition-ordering primitive " +
-                "(OrderedStateEntries) rather than walking the transition log itself.");
+                "(OrderedStateEntries, directly or via NamedCycleTimeWindow) rather than walking the transition log itself.");
 
             var namedFeatureWalkingTransitionsOutsideBaseMetricsService = AllProductionMethods()
                 .Where(method => method.DeclaringType != typeof(BaseMetricsService)

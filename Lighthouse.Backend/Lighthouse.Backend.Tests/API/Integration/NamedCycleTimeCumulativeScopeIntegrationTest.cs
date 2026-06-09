@@ -1,67 +1,254 @@
+using System.Net;
+using System.Text.Json;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    /// <summary>
-    /// DISTILL RED scaffolds for Slice 04 / US-04 (D6b/D10): scoping the cumulative-time-per-state chart
-    /// to a named window. Driving port: the EXISTING GET cumulativeStateTime extended with an optional
-    /// &amp;definitionId (ADR-063 §4). Absent ⇒ byte-identical; present+valid ⇒ the per-state aggregation is
-    /// restricted to the half-open [enter start … enter end) span reusing the SAME boundary resolution as
-    /// the scatter (so the scatter duration and the cumulative span are the identical window by construction).
-    /// Mirror CumulativeStateTimeReadApiIntegrationTest for the seeding + JSON-parsing idiom.
-    /// </summary>
+    // US-04 (D10): cumulativeStateTime scoped to a named window via an additive optional definitionId.
+    // The DISTILL "premium-gated cumulative read" scaffold is superseded by the ADR-062 revision (no
+    // read-side license gate — the premium gate lives on definition create/update only), mirroring the
+    // read-gate removal in 01-01.
     [TestFixture]
     [NonParallelizable]
     public class NamedCycleTimeCumulativeScopeIntegrationTest
     {
-        private const string ScaffoldReason = "DISTILL RED scaffold — un-skip in DELIVER Slice 04 (US-04)";
+        private const string Backlog = "Backlog";
+        private const string Implementation = "Implementation";
+        private const string Review = "Review";
+        private const string Done = "Done";
+        private const int ReviewToDoneDefinitionId = 1;
+        private const int InvalidDefinitionId = 2;
 
-        [Test]
-        [Ignore(ScaffoldReason)]
-        public void DefinitionIdAbsent_CumulativeStateTime_IsByteIdenticalToTodaysUnscopedResponse()
+        private static int testDateOffset;
+
+        private TestWebApplicationFactory<Program> rootFactory = null!;
+        private WebApplicationFactory<Program> factory = null!;
+        private HttpClient client = null!;
+        private DateTime windowStart;
+        private DateTime windowEnd;
+        private DateTime workStart;
+        private int seededTeamId;
+
+        [SetUp]
+        public void Init()
         {
-            Assert.Fail(
-                "ADR-063 §4 / US-04 'switch off': cumulativeStateTime with NO definitionId equals the pre-feature golden " +
-                "unscoped response, byte-for-shape. The additive param must not perturb the default path.");
+            // Distinct ~100y window base so the process-wide MetricsCache (reused team ids) never collides
+            // with the read/validity fixtures' cumulative reads.
+            var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset) * 400 + 36500;
+            windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
+            windowStart = windowEnd.AddDays(-180);
+            workStart = windowStart.AddDays(20);
+
+            rootFactory = new TestWebApplicationFactory<Program>();
+            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
+            client = factory.CreateClient();
+
+            using var setupScope = factory.Services.CreateScope();
+            var dbContext = setupScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+            dbContext.Database.EnsureDeleted();
+            dbContext.Database.EnsureCreated();
+
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
+
+            seededTeamId = SeedTeamWithWindowedItem();
+            client.AsTeamAdmin(seededTeamId);
+        }
+
+        [TearDown]
+        public void Cleanup()
+        {
+            using (var teardownScope = factory.Services.CreateScope())
+            {
+                var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+                dbContext.Database.EnsureDeleted();
+            }
+
+            client.Dispose();
+            factory.Dispose();
+            rootFactory.Dispose();
         }
 
         [Test]
-        [Ignore(ScaffoldReason)]
-        public void DefinitionIdValid_BarsRecomputeOverHalfOpenWindow_AndTheEndStateHasNoBar()
+        public async Task DefinitionIdAbsent_CumulativeStateTime_IsByteIdenticalToTodaysUnscopedResponse()
         {
-            Assert.Fail(
-                "D10 / ADR-063 §4: with definitionId for Planned→Done, the bars cover [enter Planned … enter Done) — " +
-                "start-inclusive, the 'Done' dwell EXCLUDED so 'Done' contributes no bar; only states occupied before " +
-                "entering Done get a bar (the upstream Planned/Validation bars dominate). Seed an item walking the window " +
-                "and assert the Done bar is absent/zero while in-window state bars carry their durations.");
+            var unscoped = await client.GetAsync(CumulativeUrl(null));
+            var explicitZero = await client.GetAsync(CumulativeUrl(0));
+
+            var unscopedBody = await unscoped.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(unscoped.StatusCode, Is.EqualTo(HttpStatusCode.OK), unscopedBody);
+                Assert.That(await explicitZero.Content.ReadAsStringAsync(), Is.EqualTo(unscopedBody),
+                    "definitionId=0 behaves exactly like the no-param unscoped response.");
+                Assert.That(StateBar(unscopedBody, Implementation), Is.GreaterThan(0),
+                    "The unscoped chart bars all Doing-state time, including Implementation before the Review window.");
+            }
         }
 
         [Test]
-        [Ignore(ScaffoldReason)]
-        public void ScatterNamedDurationWindow_EqualsCumulativeScopedSpan_ForTheSameDefinition()
+        public async Task DefinitionIdValid_BarsRecomputeOverHalfOpenWindow_AndTheEndStateHasNoBar()
         {
-            Assert.Fail(
-                "ADR-063 §4 cross-surface (by construction): for the same item and definition, the scatter named duration " +
-                "(cycleTimeData?definitionId) equals the sum of the in-window cumulative bars (cumulativeStateTime?" +
-                "definitionId) within tolerance — they resolve through the SAME NamedCycleTimeDays boundary logic.");
+            var response = await client.GetAsync(CumulativeUrl(ReviewToDoneDefinitionId));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(StateBar(body, Review), Is.GreaterThan(0),
+                    $"Review is in the [enter Review .. enter Done) window and carries its dwell. Body: {body}");
+                Assert.That(StateBar(body, Implementation), Is.Zero,
+                    $"Implementation is BEFORE the Review window start and is clipped out. Body: {body}");
+                Assert.That(StateBar(body, Done), Is.Zero,
+                    $"D10: the end state's dwell is excluded — Done contributes no bar. Body: {body}");
+            }
         }
 
         [Test]
-        [Ignore(ScaffoldReason)]
-        public void DefinitionIdInvalid_CumulativeScope_IsRefused_ChartStaysUnscoped()
+        public async Task ScatterNamedDurationWindow_EqualsCumulativeScopedSpan_ForTheSameDefinition()
         {
-            Assert.Fail(
-                "D5 / US-04 example 3: a removed-boundary (invalid) definitionId on cumulativeStateTime is refused; the chart " +
-                "stays unscoped, never scoped against missing states, never 500.");
+            var scatterBody = await (await client.GetAsync(CycleTimeDataUrl())).Content.ReadAsStringAsync();
+            var cumulativeBody = await (await client.GetAsync(CumulativeUrl(ReviewToDoneDefinitionId))).Content.ReadAsStringAsync();
+
+            var scatterDays = NamedDaysFor(scatterBody, "WIN-1", ReviewToDoneDefinitionId);
+            var cumulativeSpan = StateBars(cumulativeBody).Sum();
+
+            Assert.That(Math.Abs(scatterDays - cumulativeSpan), Is.LessThanOrEqualTo(1.5),
+                $"The scatter named duration ({scatterDays}d) and the cumulative scoped span ({cumulativeSpan}d) are the " +
+                "same window by construction (they resolve through the same NamedCycleTimeDays boundary logic; the " +
+                "inclusive-day convention accounts for the <=1d difference).");
         }
 
         [Test]
-        [Ignore(ScaffoldReason)]
-        public void CumulativeNamedBranch_IsPremiumGated_NonPremiumDefinitionIdRefused()
+        public async Task DefinitionIdInvalid_CumulativeScope_IsRefused_ChartStaysUnscoped()
         {
-            Assert.Fail(
-                "D8 premium gate (defence-in-depth): a non-premium caller passing definitionId to cumulativeStateTime is " +
-                "refused while the unscoped read is unaffected.");
+            var scopedInvalid = await (await client.GetAsync(CumulativeUrl(InvalidDefinitionId))).Content.ReadAsStringAsync();
+            var unscoped = await (await client.GetAsync(CumulativeUrl(null))).Content.ReadAsStringAsync();
+
+            Assert.That(scopedInvalid, Is.EqualTo(unscoped),
+                "An invalid definitionId is refused: the cumulative chart stays unscoped, never scoped against missing states.");
+        }
+
+        private string CumulativeUrl(int? definitionId)
+        {
+            var url = $"/api/latest/teams/{seededTeamId}/metrics/cumulativeStateTime?startDate={windowStart:O}&endDate={windowEnd:O}";
+            return definitionId.HasValue ? $"{url}&definitionId={definitionId.Value}" : url;
+        }
+
+        private string CycleTimeDataUrl() =>
+            $"/api/latest/teams/{seededTeamId}/metrics/cycleTimeData?startDate={windowStart:O}&endDate={windowEnd:O}";
+
+        private static double StateBar(string body, string state)
+        {
+            using var document = JsonDocument.Parse(body);
+            foreach (var row in document.RootElement.GetProperty("states").EnumerateArray())
+            {
+                if (string.Equals(row.GetProperty("state").GetString(), state, StringComparison.OrdinalIgnoreCase))
+                {
+                    return row.GetProperty("totalDays").GetDouble();
+                }
+            }
+
+            return 0;
+        }
+
+        private static double[] StateBars(string body)
+        {
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.GetProperty("states").EnumerateArray()
+                .Select(row => row.GetProperty("totalDays").GetDouble())
+                .ToArray();
+        }
+
+        private static int NamedDaysFor(string body, string referenceId, int definitionId)
+        {
+            using var document = JsonDocument.Parse(body);
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                if (item.GetProperty("referenceId").GetString() != referenceId)
+                {
+                    continue;
+                }
+
+                foreach (var named in item.GetProperty("namedCycleTimes").EnumerateArray())
+                {
+                    if (named.GetProperty("definitionId").GetInt32() == definitionId)
+                    {
+                        return named.GetProperty("days").GetInt32();
+                    }
+                }
+            }
+
+            Assert.Fail($"Named duration for '{referenceId}' definition {definitionId} not found. Body: {body}");
+            return 0;
+        }
+
+        private int SeedTeamWithWindowedItem()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = $"Connection {Guid.NewGuid():N}",
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+            };
+
+            var team = new Team
+            {
+                Name = $"Team {Guid.NewGuid():N}",
+                WorkTrackingSystemConnection = connection,
+                DoneItemsCutoffDays = 0,
+                ToDoStates = [Backlog],
+                DoingStates = [Implementation, Review],
+                DoneStates = [Done],
+                CycleTimeDefinitions =
+                [
+                    new CycleTimeDefinition { Id = ReviewToDoneDefinitionId, Name = "Review to Done", StartState = Review, EndState = Done },
+                    new CycleTimeDefinition { Id = InvalidDefinitionId, Name = "Phantom to Done", StartState = "Phantom", EndState = Done },
+                ],
+            };
+
+            var teamRepository = sp.GetRequiredService<IRepository<Team>>();
+            teamRepository.Add(team);
+            teamRepository.Save().GetAwaiter().GetResult();
+
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            var item = new WorkItem
+            {
+                Team = team,
+                TeamId = team.Id,
+                ReferenceId = "WIN-1",
+                Name = "Story WIN-1",
+                Type = "Story",
+                State = Done,
+                StateCategory = StateCategories.Done,
+                Url = "https://example.test/items/WIN-1",
+                CreatedDate = workStart.AddDays(-1),
+                StartedDate = workStart,
+                ClosedDate = workStart.AddDays(10),
+                Order = "WIN-1",
+            };
+            workItemRepository.Add(item);
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Backlog, ToState = Implementation, TransitionedAt = workStart });
+            transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Implementation, ToState = Review, TransitionedAt = workStart.AddDays(4) });
+            transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Review, ToState = Done, TransitionedAt = workStart.AddDays(10) });
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
         }
     }
 }

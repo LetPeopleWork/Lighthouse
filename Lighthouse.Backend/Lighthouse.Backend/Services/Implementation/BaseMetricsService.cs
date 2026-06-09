@@ -266,6 +266,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static IEnumerable<(string State, int ItemId, double Days)> CompletedVisits(WorkItem item)
         {
+            return RawCompletedVisits(item)
+                .Select(visit => (visit.State, visit.ItemId, (visit.End - visit.Start).TotalDays));
+        }
+
+        private static IEnumerable<(string State, int ItemId, DateTime Start, DateTime End)> RawCompletedVisits(WorkItem item)
+        {
             var orderedTransitions = item.SyncedTransitions
                 .OrderBy(transition => transition.TransitionedAt)
                 .ToList();
@@ -276,14 +282,81 @@ namespace Lighthouse.Backend.Services.Implementation
             {
                 if (entryIntoState.HasValue && !string.IsNullOrEmpty(transition.FromState))
                 {
-                    yield return (transition.FromState, item.Id, (transition.TransitionedAt - entryIntoState.Value).TotalDays);
+                    yield return (transition.FromState, item.Id, entryIntoState.Value, transition.TransitionedAt);
                 }
 
                 entryIntoState = transition.TransitionedAt;
             }
         }
 
+        protected static IReadOnlyList<CumulativeStateTimeStateRowDto> ComputeScopedCumulativeStateTime(
+            IEnumerable<WorkItem> includedItems,
+            IReadOnlyList<string> workflowStateOrder,
+            IReadOnlyList<string> allStatesInOrder,
+            string startState,
+            string endState)
+        {
+            var items = includedItems.ToList();
+            if (items.Count == 0)
+            {
+                return [];
+            }
+
+            var byState = new Dictionary<string, List<(int ItemId, double Days)>>();
+            foreach (var visit in items.SelectMany(item => WindowedCompletedVisits(item, allStatesInOrder, startState, endState)))
+            {
+                if (!byState.TryGetValue(visit.State, out var visits))
+                {
+                    visits = [];
+                    byState[visit.State] = visits;
+                }
+
+                visits.Add((visit.ItemId, visit.Days));
+            }
+
+            return workflowStateOrder
+                .Select((state, order) => BuildCumulativeStateTimeRow(
+                    state,
+                    order,
+                    byState.TryGetValue(state, out var completed) ? completed : [],
+                    []))
+                .ToList();
+        }
+
+        private static IEnumerable<(string State, int ItemId, double Days)> WindowedCompletedVisits(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        {
+            var window = NamedCycleTimeWindow(item, allStatesInOrder, startState, endState);
+            if (window == null)
+            {
+                yield break;
+            }
+
+            var (windowStart, windowEnd) = window.Value;
+
+            foreach (var visit in RawCompletedVisits(item))
+            {
+                var clippedStart = visit.Start > windowStart ? visit.Start : windowStart;
+                var clippedEnd = visit.End < windowEnd ? visit.End : windowEnd;
+                var days = (clippedEnd - clippedStart).TotalDays;
+                if (days > 0)
+                {
+                    yield return (visit.State, visit.ItemId, days);
+                }
+            }
+        }
+
         protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        {
+            var window = NamedCycleTimeWindow(item, allStatesInOrder, startState, endState);
+            if (window == null)
+            {
+                return null;
+            }
+
+            return (int)(window.Value.End.Date - window.Value.Start.Date).TotalDays + 1;
+        }
+
+        protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
         {
             var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
             var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
@@ -312,7 +385,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return null;
             }
 
-            return (int)(endMoment.Value.Date - startMoment.Value.Date).TotalDays + 1;
+            return (startMoment.Value, endMoment.Value);
         }
 
         private static int BoundaryThresholdIndex(IReadOnlyList<string> allStatesInOrder, string boundaryState)
