@@ -624,7 +624,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 									percentileSource === "workItemAge"
 										? `${workItemAgeTerm} ${p.percentile}%`
 										: `${p.percentile}%`;
-								return visiblePercentiles[p.percentile] !== false ? (
+								return visiblePercentiles[p.percentile] === false ? null : (
 									<ChartsReferenceLine
 										key={`percentile-${percentileSource}-${p.percentile}`}
 										y={p.value}
@@ -636,7 +636,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 											strokeDasharray: "5 5",
 										}}
 									/>
-								) : null;
+								);
 							})}
 							{sleVisible && serviceLevelExpectation && (
 								<ChartsReferenceLine
