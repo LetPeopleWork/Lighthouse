@@ -9,6 +9,8 @@ import {
 	takePageScreenshot,
 } from "../../helpers/screenshots";
 import { CumulativeStateTimeChart } from "../../models/metrics/CumulativeStateTimeChart";
+import { CycleTimeScatterPlotChart } from "../../models/metrics/CycleTimeScatterPlotChart";
+import { CycleTimesEditor } from "../../models/metrics/CycleTimesEditor";
 import {
 	CumulativeChartFlowEfficiency,
 	FlowEfficiencyOverviewTile,
@@ -334,6 +336,61 @@ testWithDemo(
 				);
 			}
 		}
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of named cycle times on the charts and the config editor",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(testData.teams[0].name);
+
+		await teamDetail.editTeam();
+		const cycleTimes = new CycleTimesEditor(page);
+		await expect(cycleTimes.section).toBeVisible();
+		await takeElementScreenshot(
+			cycleTimes.section,
+			"features/metrics/cycleTimesEditor.png",
+		);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailAgain = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailAgain.goToMetrics();
+		const flowMetrics = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+
+		const scatterWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CycleTimeScatterplot,
+			flowMetrics,
+		);
+		await expect(scatterWidget.Widget).toBeVisible();
+		const scatter = new CycleTimeScatterPlotChart(page, "cycleScatter");
+		await expect.poll(() => scatter.countDots()).toBeGreaterThan(0);
+		await scatter.selectDefinition("Analysis to Done");
+		await expect
+			.poll(() => scatter.getSelectedDefinition())
+			.toContain("Analysis to Done");
+		await takeElementScreenshot(
+			scatterWidget.Widget,
+			"features/metrics/cycleScatterNamedCycleTime.png",
+		);
+
+		const cumulativeWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CumulativeStateTime,
+			flowMetrics,
+		);
+		await expect(cumulativeWidget.Widget).toBeVisible();
+		const cumulative = new CumulativeStateTimeChart(
+			page,
+			"stateTimeCumulative",
+		);
+		await cumulative.scopeToCycleTime("Lead Time (End to End)");
+		await expect.poll(() => cumulative.countStateBars()).toBeGreaterThan(0);
+		await takeElementScreenshot(
+			cumulative.chart,
+			"features/metrics/stateTimeCumulativeScoped.png",
+		);
 	},
 );
 

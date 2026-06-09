@@ -1,0 +1,363 @@
+{
+  "roadmap": {
+    "project_id": "multiple-cycle-times",
+    "created_at": "2026-06-08T00:00:00Z",
+    "total_steps": 12
+  },
+  "implementation_scope": {
+    "summary": "Premium named cycle times (Epic 5251). A named cycle time = { name, startState, endState } with ordered-boundary half-open [enter start .. enter end) semantics over WorkTrackingSystemOptionsOwner.AllStates (D1/D2/D10). EXTEND the existing metrics layer, controllers, settings DTO and chart components throughout; CREATE NEW only the small CycleTimeDefinition entity+DTO, the config editor, and the selector controls. Computation lives as a pure NamedCycleTimeDays helper on BaseMetricsService reusing the CompletedVisits transition-ordering primitive (ADR-061); WorkItemBase.CycleTime is untouched. Reads ride the EXISTING cycleTimeData/cycleTimePercentiles/cumulativeStateTime endpoints via an additive optional definitionId => no new route, no client version gate (ADR-062/063). Validity is ONE method on the aggregate (IsCycleTimeDefinitionValid) stamped as IsValid into every DTO + ONE pure TS predicate mirror (ADR-063). Persistence is an owned collection mirroring StateMappings, migration via the CreateMigration PS script, real-provider read-your-writes (ADR-064). Routes are /api/latest/...; 5 vertical slices (US-01..05), walking skeleton first.",
+    "in_scope": [
+      "NamedCycleTimeDays protected helper on BaseMetricsService reusing CompletedVisits ordering (ADR-061); WorkItemBase.CycleTime untouched",
+      "Additive optional definitionId on cycleTimeData/cycleTimePercentiles (Team+Portfolio) returning the SAME WorkItemDto/PercentileValue shape with CycleTime carrying the named duration; premium gate on the named branch; cache key _Def_{id} (ADR-062)",
+      "CycleTimeDefinition entity + owned collection on WorkTrackingSystemOptionsOwner + CycleTimeDefinitionDto with stamped IsValid on SettingsOwnerDtoBase; EF migration via CreateMigration PS script; real-provider read-your-writes (ADR-064)",
+      "Settings-write validation: end-after-start in AllStates (D4), name non-empty + unique per owner (D4), mapping resolution via GetRawStatesForCategory (D3)",
+      "IsCycleTimeDefinitionValid single source of truth on the aggregate, stamped into config/scatter/cumulative DTOs; ONE pure TS predicate mirror (ADR-063)",
+      "Additive optional definitionId on cumulativeStateTime (Team+Portfolio) restricting ComputeCumulativeStateTime to the half-open window, end state no bar (D10, ADR-063 section 4)",
+      "Frontend cycle-time selector on the scatterplot, scope switch+selector on the cumulative chart, cycle-time config editor (mapping-aware workflow-ordered picker), Metrics service definitionId threading + Zod schema; premium + config-admin gating via useRbac()",
+      "Portfolio parity (CRUD, scatter selector, cumulative scope, invalid-on-removal, few-items) reusing the Team build (D7)",
+      "Walking-skeleton E2E: delivery lead selects a named cycle time and dots re-plot (demo data, run live)",
+      "Seam ArchUnit guards: helper placement, single transition walk, WorkItemBase untouched, single validity predicate (ADR-061/063)"
+    ],
+    "out_of_scope": [
+      "Forecasting / Monte Carlo interaction with named windows (analysis only)",
+      "More than two boundary states per definition; per-definition To Do/Doing/Done categories (D1)",
+      "Auto-correction of invalid/misordered definitions (D5 - user's responsibility)",
+      "Cycle-time-over-time trend, predictability, or backtest on named windows",
+      "Re-entry chronology lens (D2 fixes first-crossing)",
+      "Re-routing the default WorkItemBase.CycleTime through the named helper (deferred unification, ADR-061 section 3)",
+      "A new wait-bar interaction over a named-window-scoped cumulative chart (verify-in-DELIVER note only, ADR-063)"
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Walking skeleton - one named cycle time end-to-end onto the Team scatterplot (US-01)",
+      "description": "Slice 01. Generalise the started/closed derivation over AllStates as the NamedCycleTimeDays helper on BaseMetricsService (reusing CompletedVisits; ADR-061), thread an additive optional definitionId through the existing Team cycleTimeData/cycleTimePercentiles endpoints (same WorkItemDto/PercentileValue contract; ADR-062), wire a cycle-time selector onto the scatterplot that re-fetches with definitionId, and lock the computation placement with the seam ArchUnit guards. Proves definition -> compute -> endpoint -> chart end-to-end before any CRUD. The named series uses a seeded/hard-coded definition this slice (no persistence yet). Un-ignore the 8 read ATs + the 4 seam ATs one at a time; author + run the @walking_skeleton E2E live.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "NamedCycleTimeDays helper + named series/percentiles on Team cycleTimeData/cycleTimePercentiles via additive definitionId",
+          "criteria": [
+            "BaseMetricsService gains a protected static NamedCycleTimeDays(item, allStatesInOrder, startState, endState) returning int? that resolves the start index = first transition into startState OR any later state in AllStates order and the end index = first transition AT OR AFTER the start moment into endState OR any later state (D1), reusing the CompletedVisits/GroupTransitionsByItem ordering so re-entries collapse to first-crossing (D2); the half-open [enter start .. enter end) window means the end-state dwell is excluded (D10); the inclusive day-difference convention matches WorkItemBase.CycleTime so PHX-204 Planned(day0)->Done(day47) yields 47; an item that never crosses BOTH boundaries returns null and is excluded from the series (D9)",
+            "GET /api/latest/teams/{teamId:int}/metrics/cycleTimeData with definitionId ABSENT returns the byte-identical default cycle-time series (no change for any existing caller); GET .../cycleTimePercentiles with definitionId absent is byte-identical",
+            "cycleTimeData with definitionId PRESENT returns the SAME IEnumerable<WorkItemDto> shape with each item's CycleTime carrying the named ordered-boundary duration; cycleTimePercentiles with definitionId present returns the SAME PercentileValue 50/70/85/95 shape recomputed over the non-null named durations via the existing PercentileCalculator; items crossing neither/only-one boundary are excluded; few qualifying items still plot with item count + percentile lines and NO special low-sample state (D9)",
+            "The named branch is premium-gated server-side: a non-premium caller passing a definitionId is refused (defence-in-depth behind useRbac()); a Team Viewer (read role) can read the named series",
+            "TeamMetricsService resolves the definition's boundaries via the owner's GetRawStatesForCategory (no second resolver) and adds a _Def_{definitionId} cache-key suffix mirroring SelectionCacheSuffix; the default cache key is unchanged when definitionId is absent",
+            "ATs 1-8 in NamedCycleTimeReadApiIntegrationTest (definitionId-absent byte-identical, PHX-204=47d, percentiles recompute, PHX-211 first-crossing, neither/one-boundary excluded, few-items-no-special-state, non-premium refused, viewer-read) are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeReadApiIntegrationTest.cs",
+          "scenario_name": "DefinitionIdAbsent_ReturnsByteIdenticalDefaultCycleTimeSeries; NamedDefinition_PlotsEachClosedItemAtItsOrderedBoundaryDuration_Phx204Is47Days; NamedDefinition_RecomputesPercentileLinesOverTheNamedSeries; NamedDefinition_ReEntryUsesFirstCrossingNotTheReopen_Phx211; NamedDefinition_ItemsCrossingNeitherOrOnlyOneBoundary_AreExcludedFromTheSeries; NamedDefinition_FewQualifyingItems_StillPlotsThemWithCountAndPercentiles_NoSpecialLowSampleState; NamedBranch_NonPremiumCaller_PassingDefinitionId_IsRefused; NamedBranch_TeamViewer_CanReadTheNamedSeries",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "[PENDING REVISION before push] REVISION 2026-06-08 (user review of 01-01, ADR-062 rewritten): (1) WorkItemDto carries an additive CycleTimes list [{definitionId,days}] (0..N, one entry per VALID crossed definition) \u2014 DROP the WorkItemDto ctor overload added in 01-01; cycleTimeData returns default CycleTime + all named durations in ONE shot and takes NO definitionId (dots switch client-side). (2) cycleTimePercentiles KEEPS optional definitionId (per-definition percentiles server-side). (3) REMOVE the read-side premium/license gate from TeamMetricsController \u2014 gate definition create/update only (02-01); delete ILicenseService usage + the NonPremiumCaller_PassingDefinitionId_IsRefused test, and revise the read AT (NamedCycleTimeReadApiIntegrationTest) to assert the list shape (PHX-204 -> cycleTimes contains {definitionId:1,days:47}) and KEEP the per-definition percentile + TeamViewer tests. (4) Hard-coded 'Concept to Cash' (id 1) STAYS as Slice-01 scaffolding (removed in 02-01). Downgraded-premium teams keep their definitions on read (no blocking).\n\nORIGINAL: EXEMPT FROM PARADIGM: C#/.NET + NUnit project (the C#-row of the Architecture-of-Reference per docs/architecture/atdd-infrastructure-policy.md governs - Hypothesis/assert_state_delta are the Python pilot and do NOT apply). The un-ignored ATs are layer-4 black-box integration tests (WebApplicationFactory<Program> + real EF + real transition log) that verify wiring, single-example per the mandate. Compensate with exact hand-computed NUnit unit tests on NamedCycleTimeDays (PHX-204 Planned day0 -> Done day47 = 47; PHX-211 reopen uses the first Planned->first subsequent Done; never-reaches-end => null; one-boundary => null) plus the D2 first-crossing and D10 half-open invariants. ADR-061: NamedCycleTimeDays is a protected static helper on BaseMetricsService REUSING the CompletedVisits/GroupTransitionsByItem transition-ordering primitive (same OrderBy(TransitionedAt), same StartedDate anchor) - NOT a parallel engine, NOT a new service (Option C rejected), NOT a generalisation of WorkItemBase.CycleTime (Option B rejected - do NOT touch WorkItemBase). Mapping resolution via owner.GetRawStatesForCategory([state]) (REUSE-AS-IS, ADR-056) before the index lookup; allStatesInOrder = owner.AllStates (already mapping-expanded, ordered ToDo++Doing++Done). ADR-062: EXTEND the EXISTING cycleTimeData/cycleTimePercentiles with an optional definitionId query param - definitionId absent/0/null => today's path byte-for-byte; present => server-side definition lookup (seeded/hard-coded this slice, real saved definitions arrive in slice 02), same WorkItemDto/PercentileValue contract so the FE scatter render path (item.cycleTime) is unchanged; premium gate (OptionalFeatureKeys) on the named branch only - non-premium + definitionId => refused (403/feature-disabled). Cache key gains _Def_{definitionId} mirroring SelectionCacheSuffix; default key unchanged. EF MIGRATION: not needed this step (no persisted field yet - the definition is seeded). CI-LEARNINGS PRE-APPLY (grep the ledger first): NUnit4002 (Is.Zero not Is.EqualTo(0)); NUnit2045/2056 (two+ consecutive Assert.That => wrap in using (Assert.EnterMultipleScope())); S107 (helpers >7 params => options/record); S2325 (static where no instance state - NamedCycleTimeDays IS static); CA1859/CA1861; S3267/S6608 on LINQ; CA2016 (forward CancellationToken). RED handoff: un-ignore ATs 1-8 ONE at a time, confirm RED-for-right-reason (definitionId branch absent => named series == default until implemented; non-premium path 200 until gated) - WRONG RED = JsonDocument.Parse throws on a 500 => BLOCK and fix setup. Post-GREEN Fixture-Theater check: git diff --stat MUST show BaseMetricsService.cs + TeamMetricsService.cs + TeamMetricsController.cs changed; if only the test file changed the durations are echoed not computed => BLOCK. Immutability (no mutable List<T> state mutation, ImmutableList/[..] copies), <=2 nesting, early returns no else chains, switch expressions, async with CancellationToken, no comments, nullable enabled, TreatWarningsAsErrors zero-warning build."
+        },
+        {
+          "id": "01-02",
+          "name": "Seam ArchUnit guards: helper placement, single transition walk, WorkItemBase untouched, single validity predicate",
+          "criteria": [
+            "NamedCycleTimeDuration_IsAProtectedHelperOnBaseMetricsService_NotOnAnyInterface asserts the named-duration computation is a protected helper on BaseMetricsService and is NOT exposed on ITeamMetricsService/IPortfolioMetricsService or any other interface (ADR-061)",
+            "NamedCycleTimeDuration_ReusesTheTransitionOrderingPrimitive_NoSecondTransitionWalkOutsideBaseMetricsService asserts there is no new OrderBy(TransitionedAt) transition walk outside BaseMetricsService - the named duration reuses the CompletedVisits family (ADR-061)",
+            "WorkItemBaseCycleTime_IsNotModifiedByThisFeature asserts WorkItemBase.CycleTime is unchanged by this feature (component decomposition marks WorkItemBase NO-CHANGE)",
+            "IsCycleTimeDefinitionValid_IsTheOnlyBoundaryPresenceCheckAgainstAllStates asserts IsCycleTimeDefinitionValid on the aggregate is the only place boundaries are checked for presence against AllStates (ADR-063 SSOT) - the method exists as the single predicate even though it is fully exercised in slice 03",
+            "All 4 seam ATs in NamedCycleTimeSeamArchUnitTest are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamedCycleTimeSeamArchUnitTest.cs",
+          "scenario_name": "NamedCycleTimeDuration_IsAProtectedHelperOnBaseMetricsService_NotOnAnyInterface; NamedCycleTimeDuration_ReusesTheTransitionOrderingPrimitive_NoSecondTransitionWalkOutsideBaseMetricsService; WorkItemBaseCycleTime_IsNotModifiedByThisFeature; IsCycleTimeDefinitionValid_IsTheOnlyBoundaryPresenceCheckAgainstAllStates",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/NamedCycleTimeSeamArchUnitTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + ArchUnitNET/NUnit seam tests (TngTech.ArchUnitNET 0.13.3 per project memory project_epic5121_domain_events) - these are structural assertions over the assembly, not behavioural invariants; no Hypothesis. ADR-061/063 enforcement rows. These guards LOCK the computation placement decided in 01-01 and force the validity SSOT to land as ONE method on WorkTrackingSystemOptionsOwner. The IsCycleTimeDefinitionValid method itself is introduced here as the single predicate (per ADR-063 section 1 signature) so the seam test passes; its full behavioural exercise (DTO stamping, cross-surface agreement) is slice 03 - this step only needs the method to EXIST as the sole AllStates-presence check. Precedent: CumulativeStateTimeSeamArchUnitTest (state-time-cumulative-view). CI-LEARNINGS PRE-APPLY: ArchUnitNET gotchas (project_epic5121_domain_events note - resolve types by full name, beware closed-generic matching); NUnit4002/2045/2056; S2325. RED handoff: un-ignore the 4 seam ATs one at a time - the helper-placement + no-second-walk + WorkItemBase-untouched guards should already be GREEN given 01-01 (confirm they would FAIL if the helper were public/on an interface or if a second OrderBy(TransitionedAt) walk existed); the IsCycleTimeDefinitionValid guard goes RED until the method is added, then GREEN. Post-GREEN Fixture-Theater check: WorkTrackingSystemOptionsOwner.cs MUST appear in git diff (the IsCycleTimeDefinitionValid method). Immutability, <=2 nesting, no else, switch expressions, no comments; zero-warning build."
+        },
+        {
+          "id": "01-03",
+          "name": "Cycle-time selector on the Team scatterplot (re-fetch with definitionId; premium-gated via useRbac)",
+          "criteria": [
+            "The Cycle Time Scatterplot shows a cycle-time selector listing Default + ONE seeded/hard-coded named definition (e.g. 'Concept to Cash' = Planned->Done) this slice; Default behaves exactly as today",
+            "Selecting the named definition re-fetches cycleTimeData/cycleTimePercentiles with definitionId and re-plots each closed item's dot at its named duration with recomputed P50/70/85/95 lines; the existing item.cycleTime render path is unchanged (the named CycleTime drops into the same field)",
+            "MetricsService threads an optional definitionId through getCycleTimeDataForTeam/getCycleTimePercentilesForTeam (additive arg; absent => existing call); a Zod schema validates the read at the trust boundary (derive the type via z.infer, no as-cast)",
+            "The selector and named series are premium-gated via useRbac() - no component fetches authorization directly; a non-premium viewer never sees the selector and Default is unaffected",
+            "Vitest covers: selector lists Default + named, selecting named passes definitionId and re-plots, Default selection unchanged, premium-off hides the selector; pnpm build clean; Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx",
+          "scenario_name": "lists Default plus the named cycle time, re-fetches with definitionId and re-plots dots with recomputed percentile lines when the named definition is selected, and hides the selector for non-premium",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimePercentiles.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+          ],
+          "implementation_notes": "[REVISED CONTRACT] FE scatter cycle-time selector reads item.cycleTimes (the one-shot list from cycleTimeData) and switches dots CLIENT-SIDE (no re-fetch); a named selection plots cycleTimes.find(definitionId)?.days (absent => item drops out, D9). Percentile lines DO re-fetch cycleTimePercentiles?definitionId on change. Zod schema gains the cycleTimes array + NamedCycleTimeValue {definitionId,days}. No premium branch in the read path (gate is at create/update). \n\nORIGINAL: EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Selector-lists / re-fetch-with-definitionId / premium-gating are example-based RTL/service-seam assertions; compensate by parametrising the (Default -> default fetch, named -> definitionId fetch + re-plot, premium-off -> no selector) cases. ADR-062 EXTEND: the selector control is the ONLY new FE behaviour for the read - the scatter render path (item.cycleTime, the ${closedDateTimestamp}-${item.cycleTime} grouping key) is UNCHANGED because the named branch overloads CycleTime with the named duration. EXTEND MetricsService getCycleTimeDataForTeam/getCycleTimePercentilesForTeam with an optional definitionId (additive arg defaulting undefined => existing call signature preserved); validate the response with a Zod schema at the boundary per CLAUDE.md rolling adoption (z.infer the type, never as-cast). The scatterplot is wired through BaseMetricsView.tsx (verified) - add the selector there or in the chart container, deriving the available definitions list (seeded this slice; from settings in slice 02). Mock only abstractions you own (the MetricsService seam) - do NOT mock fetch/axios directly (CLAUDE.md). RBAC: gate the selector via useRbac() (premium + can-view) - NO component fetches /api/latest/authorization/my-summary directly (CLAUDE.md architecture rule); premium-off hides the selector entirely (Default unaffected). CRITICAL (project_react185_loop_unstable_useeffect_dep + ci-learnings 2026-05-25): do NOT feed an inline new Date()/[]/{} into a useEffect/useMemo dep (the selected-definition + date-range deps are classic offenders) - useMemo/useCallback-stabilise. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining x?.m() ?? false); MUI Select/Autocomplete renders a combobox - pair InputLabel id + labelId via useId() (ci-learnings 2026-05-17); for MUI-X line/scatter series selectors the data-series selector idiom (project_delivery_metrics note). Skip framework renders-without-crashing tests (CLAUDE.md). Factory getMockX(overrides?) validated against the WorkItemDto/PercentileValue types - never redefine schemas in tests. Strict TS, no any (narrow unknown with a guard); type for data, interface only for behaviour contracts; immutable (map/filter/spread, never push/sort-in-place). CLIENTS NOTE (DDD-6): additive definitionId on the existing read => NO FEATURE_REQUIRES_SERVER_NEWER_THAN gate (ADR-062 section 3); old servers ignore the unknown param and return the default series (graceful degrade). Biome clean; pnpm build zero warnings."
+        },
+        {
+          "id": "01-04",
+          "name": "Un-fixme and run the @walking_skeleton E2E live (delivery lead selects a named cycle time, dots re-plot)",
+          "criteria": [
+            "The @walking_skeleton @premium E2E scenario in a new MultipleCycleTimes.spec.ts is authored (test was deferred to DELIVER per DISTILL), un-fixme'd, and runs in the E2E suite",
+            "Driving testWithDemoData (scenario 0): a premium delivery lead opens the Team Cycle Time Scatterplot, selects the named cycle time from the selector, and sees the dots re-plot at their named durations with recomputed percentile lines",
+            "All element access stays in POMs (a MetricsPage/scatterplot POM with selector methods); the data-testids / labels / selector option text match exactly what 01-03 shipped; no inline page.locator in the spec",
+            "The scenario was RUN against a locally-started app (dotnet run backend + premium license import + frontend) loaded with demo scenario 0 before commit and passes"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/metrics/MultipleCycleTimes.spec.ts",
+          "scenario_name": "@walking_skeleton @premium a delivery lead selects a named cycle time on the scatterplot and the dots re-plot with recomputed percentile lines",
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/metrics/MultipleCycleTimes.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking-skeleton (single-shot UI flow over the production composition root); the mandate keeps E2E single-example - they verify wiring, not invariants. The ordered-boundary arithmetic invariants live in the 01-01 backend ATs + unit tests (faster, deterministic). Per DISTILL, the WS spec was DEFERRED to DELIVER (authored here against new MetricsPage/scatterplot POM methods and run live before un-fixme). Drives testWithDemoData(0) - DESTRUCTURE testData or the demo-loading fixture never runs (project memory feedback_screenshot_tests_per_theme / feedback_e2e_use_demo_data). The seeded named definition from slice 01 must exist in the demo workflow (Planned->Done over scenario-0 states); confirm a Doing/Done span exists in the live demo before green (parallel to the cumulative feature's slice-01 demo-data check). PREMIUM: import the premium license locally first (reference_premium_license_dev_seed: dotnet run + POST /api/v1/license/import with valid_not_expired_license.json + verify canUsePremiumFeatures). USER/AGENT RUNS LIVE (feedback_e2e_run_locally_by_user: Claude runs the live Playwright itself - creds in env, do NOT punt to the user; feedback_run_playwright_before_commit: never commit a spec/POM not RUN against a locally-started app, pnpm build only type-checks locators; feedback_e2e_page_object_model: POM-only, no inline page.locator; feedback_e2e_use_demo_data: seeded demo data, never live connector syncs). CI-LEARNINGS PRE-APPLY: Playwright getByRole({name}) is case-insensitive substring - pass exact:true for single-word labels (2026-05-16); a POM action triggering a client-side redirect MUST waitForURL the settled pattern (2026-05-25); for any async-loaded chart value/dot use expect.poll / toBeVisible auto-retry, never a one-shot expect(await getX()) (2026-05-25); MUI Autocomplete/Select via getByRole('combobox',{name}) (2026-05-17). GREEN-BEFORE-PUSH (feedback_green_before_push_skip_acceptance): if this E2E is not yet green at a push boundary, test.fixme it to push the slice CI-green, then un-fixme to resume Outside-In. ORCHESTRATOR NOTE: this step REQUIRES A RUNNING APP - it cannot be self-certified from a type-check; the agent runs the live Playwright and reports the live-run result. Biome/tsc --noEmit clean on the changed E2E files."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Team Cycle Times CRUD - persistence + mapping-aware picker + end-after-start validation (US-02)",
+      "description": "Slice 02. CycleTimeDefinition owned collection on WorkTrackingSystemOptionsOwner mirroring StateMappings + EF migration via the CreateMigration PS script + real-provider read-your-writes (ADR-064); CycleTimeDefinitionDto with stamped IsValid carried additively on SettingsOwnerDtoBase; save-time validation (end-after-start in AllStates D4, name non-empty + unique D4, mapping resolution D3); the Team Cycle Times config editor with two mapping-aware workflow-ordered boundary pickers. Slice 01's hard-coded definition is replaced by reading real saved definitions into the selector. Un-ignore the 8 settings ATs one at a time.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "CycleTimeDefinition owned collection + DTO with stamped IsValid + settings-write validation + EF migration (real-provider read-your-writes)",
+          "criteria": [
+            "CycleTimeDefinition { Id, Name, StartState, EndState } is added as an owned collection List<CycleTimeDefinition> CycleTimeDefinitions on WorkTrackingSystemOptionsOwner next to StateMappings, persisted via the SAME owned-entity mechanism; an EF migration adding the collection is generated via the CreateMigration PowerShell script across ALL providers (NOT dotnet ef migrations add)",
+            "SettingsOwnerDtoBase carries List<CycleTimeDefinitionDto> CycleTimeDefinitions where CycleTimeDefinitionDto is { Id, Name, StartState, EndState, IsValid } and IsValid is stamped by WorkTrackingSystemOptionsOwner.IsCycleTimeDefinitionValid at projection time; the field is additive/optional so existing senders that omit it keep working (no JsonRequired)",
+            "Saving a named definition (Planned->Done) via the EXISTING settings PUT persists it on the team and a subsequent GET returns it (read-your-writes) - asserted against a REAL provider (InMemory misses the migration)",
+            "The saved definition feeds the scatterplot selector source (the selector now reads real saved definitions, replacing slice-01's hard-coded one)",
+            "Save-time validation at the existing settings write rejects end-before-start inline with 'End state must come after the start state in the workflow' (D4) and persists nothing; rejects an empty name and a name duplicating another definition on the same owner (D4) and persists nothing; a State-Mapping name as a boundary resolves via GetRawStatesForCategory (D3)",
+            "Saving a definition requires Team Admin (a Viewer is forbidden via the existing settings-write RBAC gate); a concurrent settings edit is rejected by the inherited epic-5121 concurrency token (no new concurrency design)",
+            "All 8 ATs 9-16 in CycleTimeDefinitionSettingsIntegrationTest (read-your-writes, selector source, end-before-start, empty/duplicate name, mapping-name resolution, requires-team-admin viewer-forbidden, premium-gated downgrade-non-destructive, concurrent-edit-rejected) are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CycleTimeDefinitionSettingsIntegrationTest.cs",
+          "scenario_name": "SaveNamedDefinition_SurvivesReload_ReadYourWrites; SaveNamedDefinition_AppearsInTheScatterplotSelectorSource; SaveEndStateBeforeStartState_RejectedInline_NothingPersisted; SaveEmptyOrDuplicateName_RejectedInline_NothingPersisted; SaveMappingNameBoundary_ResolvesViaGetRawStatesForCategory; SaveDefinition_RequiresTeamAdmin_ViewerIsForbidden; CycleTimesConfig_IsPremiumGated_NonPremiumWriteRefused; ConcurrentSettingsEdit_IsRejectedByTheInheritedConcurrencyToken",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/CycleTimeDefinition.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/CycleTimeDefinitionDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CycleTimeDefinitionSettingsIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 black-box settings PUT/GET round-trip integration tests (WebApplicationFactory<Program> + REAL EF) that verify wiring - single-example. Compensate with NUnit unit tests on the settings-write validator (end-after-start in AllStates order, empty-name reject, duplicate-name-per-owner reject, mapping-name resolves) and on IsCycleTimeDefinitionValid stamping. ADR-064: CREATE NEW CycleTimeDefinition entity (WHY-NEW: no existing structured 'named window' record; mirrors StateMapping EXACTLY - same owned-collection mechanism, same DTO projection idiom; do NOT use a JSON column (Option B rejected - no stable Id for definitionId reads) and do NOT use a separate top-level table (Option C rejected - definitions have no lifecycle independent of the owner)). CREATE NEW CycleTimeDefinitionDto { Id, Name, StartState, EndState, IsValid }. EXTEND WorkTrackingSystemOptionsOwner with the CycleTimeDefinitions list next to StateMappings (L47); the IsCycleTimeDefinitionValid method already exists from 01-02 - REUSE it to stamp IsValid (do NOT recompute validity in the projection - ADR-063 section 2). EXTEND SettingsOwnerDtoBase mirroring the StateMappings->StateMappingDto projection (L37/L87). CRITICAL JsonRequired FOOT-GUN (the optional-settings-field trap, prior wait-states/ADR-056 lesson + feedback memory): make CycleTimeDefinitions OPTIONAL defaulting [] - do NOT mark [JsonRequired]; the FE wizards, E2E helpers, and CLI/MCP clients do NOT send it yet and a required field would 400 every one of them. EF MIGRATION: generate via the CreateMigration PowerShell script (NOT dotnet ef migrations add - CLAUDE.md); after generating, run dotnet build --no-incremental BEFORE dotnet test to clear the stale-migration-DLL trap (project memory delivery-target-date-tracking - InMemory tests miss the persisted-model migration so AT 9 MUST run against a real provider per ADR-064). System.Text.Json PropertyNameCaseInsensitive=true at any non-controller deserialize call site (feedback_systemtextjson_case_insensitive). CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero); NUnit2045/2056 (wrap consecutive Assert.That); S2325 (static where no instance state); S4136 (keep overloads adjacent); CA2016 (forward CancellationToken). RED handoff: un-ignore ATs 9/10/11/12/13/15/16 one at a time, confirm RED-for-right-reason (CycleTimeDefinitions absent from settings GET until the DTO threads it; validation absent => end-before-start persists until the validator lands) - WRONG RED = the PUT 400s for an unrelated reason => BLOCK and fix the payload. Post-GREEN Fixture-Theater check: CycleTimeDefinition.cs + WorkTrackingSystemOptionsOwner.cs + CycleTimeDefinitionDto.cs + SettingsOwnerDtoBase.cs MUST appear in git diff. RBAC: save requires team-admin via the EXISTING settings-write gate (governed by IRbacAdministrationService) - NO new authz surface. Immutability (record DTO / init-only / [..] copies, no mutable state mutation), <=2 nesting, no else chains, switch expressions, async with CancellationToken, no comments, nullable enabled; zero-warning build."
+        },
+        {
+          "id": "02-02",
+          "name": "Team Cycle Times config editor - mapping-aware workflow-ordered boundary pickers (premium + team-admin gated)",
+          "criteria": [
+            "A 'Cycle Times' config surface in the Team state-config cluster shows Default read-only and lets the admin add/edit/delete named definitions, each with two boundary pickers (start, end) whose suggestions include raw states AND State-Mapping names presented in workflow (AllStates) order (D3), with an inline boundary preview",
+            "Saving threads CycleTimeDefinitions through the existing settings model and persists; reopening shows the saved definitions (read-your-writes at the UI level); end-before-start and empty/duplicate-name are surfaced inline from the server validation (D4) and nothing persists",
+            "The config editor and its writes are premium + config-admin (team-admin) gated via useRbac() - no component fetches authorization directly; non-admins/non-premium do not see the editor",
+            "The settings TS model + its Zod schema gain cycleTimeDefinitions: CycleTimeDefinition[] additive (default []); a single shared pure TS predicate isCycleTimeDefinitionValid(definition, allStates, stateMappings) is created and imported by the config list (the same predicate the selectors will reuse in slices 03-05); strict TS, no any",
+            "Vitest covers: pickers offer raw states + mapping names in workflow order, add/edit/delete a definition, save threads cycleTimeDefinitions, inline error on end-before-start/duplicate name, premium-off/non-admin hides the editor; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/StateMappings/CycleTimesEditor.test.tsx",
+          "scenario_name": "offers raw states and mapping names in workflow order in both boundary pickers, adds a named definition and threads cycleTimeDefinitions through save, surfaces an inline end-before-start error, and hides the editor for non-admin or non-premium",
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/StateMappings/CycleTimesEditor.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "Lighthouse.Frontend/src/models/Common/BaseSettings.ts",
+            "Lighthouse.Frontend/src/utils/isCycleTimeDefinitionValid.ts",
+            "Lighthouse.Frontend/src/components/Common/StateMappings/CycleTimesEditor.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Picker-suggestion / add-edit-delete / inline-validation / gating are example-based RTL assertions; compensate by parametrising the (raw-state offered, mapping-name offered, workflow-order, end-before-start -> inline error, duplicate-name -> inline error, premium-off -> no editor) cases. CREATE NEW CycleTimesEditor.tsx (Reuse Analysis CREATE-NEW row: no existing editor for named cycle times; Rejected-extend StateMappingsEditor/WaitStatesEditor - different jobs). REUSE the WaitStatesEditor/StateMappingsEditor mapping-aware workflow-ordered picker idiom (ADR-056, the InputGroup/ItemListManager chip-autocomplete pattern) - derive stateMappingNames the SAME way StatesList does (REUSE-AS-IS) so suggestions include raw states AND mapping names in AllStates order (D3); StateMappingsEditor/WaitStatesEditor are NOT relocated or re-propped (sibling only). EXTEND ModifyTeamSettings.tsx to render CycleTimesEditor in the state-config cluster and thread cycleTimeDefinitions through the existing settings-state handlers exactly like waitStates/blockedStates. EXTEND BaseSettings.ts with cycleTimeDefinitions: CycleTimeDefinition[] additive (default []); extend the BaseSettings Zod schema and z.infer the type - do NOT as-cast (CLAUDE.md). CREATE NEW isCycleTimeDefinitionValid.ts (ADR-063 section 3): ONE pure TS predicate mirroring the C# IsCycleTimeDefinitionValid (a raw-state entry resolves to itself, a mapping-name entry expands via the FE getRawStatesForCategory twin; valid iff both start+end resolve to present AllStates) - this is the SINGLE FE validity source imported by the config list NOW and BOTH selectors in slices 03-05; do NOT write a second copy later (ADR-063 single-function rule, three call sites). Preferred path: the config list consumes the server-stamped IsValid; the TS predicate is for live pre-save selector reasoning. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep (the cycleTimeDefinitions array is a classic offender) - useMemo-stabilise. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining); MUI Autocomplete/Select pairs InputLabel id + labelId via useId() (2026-05-17). Skip framework renders-without-crashing tests (CLAUDE.md). Factory getMockX(overrides?) validated against BaseSettings - never redefine the schema in tests. Strict TS, no any (narrow unknown with a guard); type for data, interface only for behaviour contracts; immutable (spread for add/edit/delete, never push/splice). RBAC: the editor inherits the existing settings-edit gate via useRbac() + the premium gate - NO new permission, NO direct authorization fetch (CLAUDE.md). Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Invalid-on-removal - a definition survives a boundary-state change gracefully (US-03/D5)",
+      "description": "Slice 03. The read-time validity (IsCycleTimeDefinitionValid) introduced in 01-02 is now fully exercised: a removed/renamed boundary state stamps the config DTO IsValid:false without re-save, the scatter read returns an empty series + invalid signal (not 500), the cumulative-scope read is refused (stays unscoped), and config + scatter + cumulative all agree for the same removed boundary (retires the HIGH cross-surface risk). FE: invalid definitions render disabled with a warning in the config list AND the scatter selector via the ONE shared TS predicate; edit-to-valid restores, delete removes cleanly. Un-ignore the 6 validity ATs one at a time.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Read-time validity stamped + invalid scatter/cumulative refused (not 500) + cross-surface agreement + edit/delete recovery",
+          "criteria": [
+            "Removing a boundary state stamps the definition's DTO IsValid:false at projection time WITHOUT re-save (recomputed from current AllStates by IsCycleTimeDefinitionValid - ADR-063/064)",
+            "A scatter read (cycleTimeData with definitionId) for a definition with a removed boundary returns an empty series plus an invalid signal (IsValid:false-style flag), NOT a 500 - the chart degrades to disabled-with-warning rather than crashing (D5)",
+            "A cumulative-scope read (cumulativeStateTime with definitionId) for an invalid definition is refused and stays unscoped, NOT a 500",
+            "For the SAME removed boundary, the config DTO + the scatter read + the cumulative read ALL report invalid (the single cross-surface test that retires the DISCUSS HIGH risk)",
+            "Editing an invalid definition to a still-present boundary makes it valid again (IsValid:true on next read); deleting an invalid definition removes it cleanly",
+            "All 6 ATs in CycleTimeDefinitionValidityIntegrationTest (DTO IsValid:false without re-save, scatter empty+invalid not 500, cumulative refused stays unscoped, cross-surface all-invalid, edit-to-valid restores, delete-invalid clean) are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CycleTimeDefinitionValidityIntegrationTest.cs",
+          "scenario_name": "RemovingABoundaryState_StampsDefinitionDtoIsValidFalse_WithoutReSave; RemovingABoundaryState_ScatterReadReturnsEmptySeriesPlusInvalidSignal_Not500; RemovingABoundaryState_CumulativeScopeRead_IsRefused_AndStaysUnscoped; ConfigDtoScatterReadAndCumulativeRead_AllReportInvalid_ForTheSameRemovedBoundary; EditingAnInvalidDefinitionToAPresentBoundary_MakesItValidAgain; DeletingAnInvalidDefinition_RemovesItCleanly",
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CycleTimeDefinitionValidityIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 black-box integration tests (real EF + real settings round-trip + read endpoints) that verify wiring - single-example. Compensate with NUnit unit tests on IsCycleTimeDefinitionValid (start removed => invalid, end removed => invalid, mapping-name boundary whose underlying raw states are all removed => invalid, both present => valid) - the method already exists from 01-02; this step exercises its read-time projection + the refuse-not-500 endpoint branch. ADR-063 section 1/2: validity is the ONE method on the aggregate, stamped as IsValid into every DTO at projection (config DTO from 02-01 already stamps it - this step adds the SCATTER and CUMULATIVE read consumption of the SAME verdict; NO surface recomputes validity from raw state lists). ADR-062 section 1: an invalid definition on the scatter read returns a structured empty-series + invalid signal (NOT a 500); ADR-063 section 4: an invalid definition on the cumulative read is refused and the chart stays unscoped. The cumulativeStateTime definitionId branch is FIRST INTRODUCED here only enough to refuse-when-invalid; its VALID half-open windowing is slice 04 (this step's cumulative AT asserts the refused-invalid path, not the windowing). CROSS-SURFACE TEST (ConfigDtoScatterReadAndCumulativeRead_AllReportInvalid_ForTheSameRemovedBoundary) is the named test that retires the DISCUSS HIGH risk - it must assert all three surfaces from the SAME removed-boundary fixture. CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero); NUnit2045/2056 (wrap consecutive Assert.That); S2325; CA2016 (forward CancellationToken). RED handoff: un-ignore the 6 ATs one at a time, confirm RED-for-right-reason (invalid definition currently 500s or computes a wrong series until the refuse-branch + IsValid stamp land) - WRONG RED = Parse throws on an unrelated 500 => BLOCK. Post-GREEN Fixture-Theater check: TeamMetricsController.cs + TeamMetricsService.cs MUST appear in git diff. Immutability, <=2 nesting, no else chains, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        },
+        {
+          "id": "03-02",
+          "name": "Invalid definitions render disabled-with-warning in the config list + scatter selector (shared TS predicate); edit/delete recovery",
+          "criteria": [
+            "An invalid definition renders DISABLED with a warning in the Cycle Times config list and in the scatterplot selector; selecting an invalid option is prevented and the chart stays on the last valid selection - it never crashes or plots a wrong series",
+            "Both the config list and the scatter selector consume the server-stamped IsValid from the settings/read DTOs and use the SAME shared pure TS predicate isCycleTimeDefinitionValid (from 02-02) for any live pre-read reasoning - NO second validity copy is written",
+            "Editing an invalid definition to a still-present boundary makes it valid and selectable again in both surfaces; deleting it removes it cleanly",
+            "Vitest covers: invalid option disabled + warning in the selector and the config list, selecting-invalid prevented, chart stays on last valid selection, edit-to-valid re-enables, delete removes; a parity test asserts the TS predicate and the server IsValid agree on a removed/mapping boundary fixture; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx",
+          "scenario_name": "disables an invalid named cycle time with a warning in the scatter selector and keeps the chart on the last valid selection, and the shared isCycleTimeDefinitionValid predicate agrees with the server-stamped IsValid",
+          "deps": [
+            "03-01",
+            "02-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/StateMappings/CycleTimesEditor.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/StateMappings/CycleTimesEditor.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Disabled-option / warning / last-valid-selection / edit-delete-recovery are example-based RTL assertions; compensate by parametrising the (invalid -> disabled+warning, select-invalid -> prevented, edit-to-valid -> re-enabled, delete -> removed) cases. ADR-063 section 3: the config list and the scatter selector consume the server-stamped IsValid from the DTOs they already fetch and use the ONE shared isCycleTimeDefinitionValid TS predicate (from 02-02) only for live pre-read reasoning - import that single function, do NOT write a second copy (ADR-063 single-function rule; the registry HIGH-risk divergence is closed structurally). EXTEND CycleTimeScatterPlotChart.tsx (the selector from 01-03) to render invalid options disabled-with-warning and keep the chart on the last valid selection. EXTEND CycleTimesEditor.tsx (from 02-02) to render invalid definitions disabled-with-warning in the list with edit/delete recovery. The C#<->TS parity test (removed/renamed/mapping boundary asserted equal both stacks) is the ADR-063 enforcement row - author it as a NAMED Vitest fixture mirroring the server fixture. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise the validity-derived disabled set and the selection dep. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining x?.m() ?? false); MUI Select disabled MenuItem keeps the combobox label/id pairing via useId(). Skip framework renders-without-crashing tests. Factory getMockX(overrides?) validated against the DTO types. Strict TS, no any (narrow unknown with a guard); immutable (map/filter/spread, never mutate). RBAC: gating unchanged (useRbac() premium + role; no direct authorization fetch). Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Cumulative-time-per-state chart scope switch to a named window (US-04/D6b/D10)",
+      "description": "Slice 04. EXTEND cumulativeStateTime (Team) with the VALID-definitionId half-open windowing: ComputeCumulativeStateTime is restricted to the [enter start .. enter end) span reusing the SAME boundary resolution as the scatter (NamedCycleTimeDays index logic), so the end state contributes no bar (D10) and the scatter named duration window equals the cumulative scoped span by construction. FE: a 'scope to cycle time' switch + selector on the cumulative chart; off = byte-identical to today; invalid definitions disabled here too (reuse the shared TS predicate). Premium-gated. Un-ignore the 5 cumulative ATs one at a time.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Half-open windowed cumulativeStateTime via valid definitionId (Team) - end state no bar, span equals scatter, premium-gated",
+          "criteria": [
+            "GET /api/latest/teams/{teamId:int}/metrics/cumulativeStateTime with definitionId ABSENT is byte-identical to today's unscoped response (US-04 switch-off)",
+            "definitionId PRESENT + valid restricts ComputeCumulativeStateTime over BuildCumulativeWorkflowStateOrder to the half-open [enter start .. enter end) window (D10): only states occupied from entering startState up to (excluding) entering endState contribute a bar; the end state contributes no in-window time and so has NO bar",
+            "The cumulative scoped span equals the scatter named-duration window for the SAME definition (the cross-surface span guarantee - both reuse NamedCycleTimeDays boundary resolution by construction)",
+            "definitionId PRESENT + invalid is refused and the chart stays unscoped (consistent with 03-01); the cumulative named branch is premium-gated server-side (non-premium + definitionId refused); cache key gains _Def_{definitionId}",
+            "All 5 ATs in NamedCycleTimeCumulativeScopeIntegrationTest (definitionId-absent byte-identical, valid half-open + end-state-no-bar, scatter-window==cumulative-span, invalid refused stays unscoped, premium-gated) are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeCumulativeScopeIntegrationTest.cs",
+          "scenario_name": "DefinitionIdAbsent_CumulativeStateTime_IsByteIdenticalToTodaysUnscopedResponse; DefinitionIdValid_BarsRecomputeOverHalfOpenWindow_AndTheEndStateHasNoBar; ScatterNamedDurationWindow_EqualsCumulativeScopedSpan_ForTheSameDefinition; DefinitionIdInvalid_CumulativeScope_IsRefused_ChartStaysUnscoped; CumulativeNamedBranch_IsPremiumGated_NonPremiumDefinitionIdRefused",
+          "deps": [
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeCumulativeScopeIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 integration tests (real EF + real transition log) that verify wiring - single-example. Compensate with NUnit unit tests on the window-restricted ComputeCumulativeStateTime (end=Done => Done has no bar; states before entering end accrue; the windowed totals match the scatter NamedCycleTimeDays span for the same fixture). ADR-063 section 4: EXTEND the EXISTING cumulativeStateTime with an optional definitionId (additive => NO client version gate) - absent => byte-identical (golden equality), present+valid => ComputeCumulativeStateTime restricted to the half-open [enter start .. enter end) window REUSING the SAME boundary resolution as the scatter (the NamedCycleTimeDays index logic from 01-01 / ADR-061) so the span agrees BY CONSTRUCTION (do NOT write a second windowing path - that is the cross-surface guarantee). EXTEND BaseMetricsService with the window-restricted cumulative path (reuse BuildCumulativeWorkflowStateOrder; ADR-024 - intra-inheritance protected helper, NOT a new aggregation service). present+invalid => refused, stays unscoped (reuse the IsCycleTimeDefinitionValid verdict from 03-01). Premium gate on the named branch (defence-in-depth behind useRbac()). Cache key _Def_{definitionId} mirroring SelectionCacheSuffix; default key unchanged. CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero); NUnit2045/2056 (wrap consecutive Assert.That); S2325 (static); S3267/S6608 on LINQ; CA2016 (forward CancellationToken). RED handoff: un-ignore the 5 ATs one at a time, confirm RED-for-right-reason (definitionId ignored by cumulative => scoped==unscoped until windowing lands; end-state still has a bar until half-open restriction lands) - WRONG RED = Parse throws on a 500 => BLOCK. Post-GREEN Fixture-Theater check: BaseMetricsService.cs + TeamMetricsService.cs + TeamMetricsController.cs MUST appear in git diff. Immutability, <=2 nesting, no else chains, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        },
+        {
+          "id": "04-02",
+          "name": "Cumulative chart 'scope to cycle time' switch + selector (Team); off byte-identical; invalid disabled; premium-gated",
+          "criteria": [
+            "The cumulative-time-per-state chart gains a 'scope to cycle time' switch + a definition selector; with the switch OFF the chart behaves exactly as today (byte-identical), with the switch ON and a valid definition selected the bars recompute over the named window (re-fetch cumulativeStateTime with definitionId) and the upstream in-window state bars dominate",
+            "Invalid definitions appear disabled-with-warning in the switch's selector (reuse the shared isCycleTimeDefinitionValid TS predicate from 02-02 + the server-stamped IsValid) and the chart stays unscoped when one is selected",
+            "MetricsService threads the optional definitionId through getCumulativeStateTimeForTeam (additive arg; absent => existing call); the read is Zod-validated at the boundary",
+            "The switch + selector are premium-gated via useRbac(); a non-premium viewer does not see them and the unscoped chart is unaffected",
+            "Vitest covers: switch-off byte-identical, switch-on+valid re-fetches with definitionId and recomputes, invalid disabled + stays unscoped, premium-off hides the switch; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+          "scenario_name": "scopes the cumulative bars to a named window when the scope switch is on with a valid definition, behaves byte-identically when off, disables invalid definitions in the selector, and hides the switch for non-premium",
+          "deps": [
+            "04-01",
+            "03-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/CumulativeStateTimeChart.test.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Switch-toggle / re-fetch / invalid-disabled / gating are example-based RTL/service-seam assertions; compensate by parametrising the (off -> byte-identical, on+valid -> definitionId fetch + recompute, invalid -> disabled+unscoped, premium-off -> hidden) cases. ADR-063 section 4 EXTEND: add the 'scope to cycle time' switch + selector to CumulativeStateTimeChart.tsx (the Reuse Analysis EXTEND row - the chart already exposes presentation slots from state-time-cumulative-view; the unscoped contract is unchanged). EXTEND MetricsService getCumulativeStateTimeForTeam with an optional definitionId (additive arg defaulting undefined => existing call signature preserved); Zod-validate the response at the boundary (z.infer, no as-cast). REUSE the shared isCycleTimeDefinitionValid TS predicate (from 02-02) + the server-stamped IsValid for disabling invalid options - do NOT write a second validity copy (ADR-063). Mock only the MetricsService seam - do NOT mock fetch/axios directly (CLAUDE.md). CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep (the selected-definition + scope-on + date-range deps are offenders) - useMemo/useCallback-stabilise; this chart previously hit React #185 via an unstable new Date() dep (project memory) - be especially careful. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining); MUI Switch + Select pair InputLabel id + labelId via useId() (2026-05-17); MUI-X cumulative chart series/colorMap idioms (wait-states-flow-efficiency lesson: ordinal colorMap breaks stacked series - do not introduce one here). Skip framework renders-without-crashing tests. Factory getMockX(overrides?) validated against the cumulative response + DTO types. Strict TS, no any (narrow unknown with a guard); immutable (map/filter/spread, never push/sort-in-place). CLIENTS NOTE (DDD-6): additive definitionId on the existing cumulative read => NO version gate (ADR-063). RBAC: gate via useRbac() (premium + can-view); no direct authorization fetch (CLAUDE.md). Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Portfolio scope - full parity with the Team build (US-05/D7)",
+      "description": "Slice 05. The Team build generalises to Portfolio with no new concepts: the Portfolio cycleTimeData/cycleTimePercentiles/cumulativeStateTime gain the same additive definitionId (twins of the Team endpoints reusing the inherited BaseMetricsService helpers), definitions persist on the Portfolio settings owner via the existing Portfolio settings write, and the config editor + scatter selector + cumulative scope switch appear on the Portfolio surfaces with premium + portfolio-admin gating. Un-ignore the 6 Portfolio ATs one at a time.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Portfolio named series/percentiles/cumulative scope + read-your-writes + invalid-on-removal + premium parity (twin of Team)",
+          "criteria": [
+            "Portfolio save of a named definition (Backlog->Released) via the existing Portfolio settings write survives reload (read-your-writes against a real provider)",
+            "GET /api/latest/portfolios/{portfolioId:int}/metrics/cycleTimeData?definitionId re-plots over the window with recomputed percentiles (twin of the Team endpoint, reusing the inherited NamedCycleTimeDays + PercentileCalculator); cumulativeStateTime?definitionId recomputes the bars over the half-open window (twin of 04-01)",
+            "An invalid Portfolio definition (boundary removed) reads disabled across the config DTO + scatter read + cumulative read (the Portfolio cross-surface parity, reusing the SAME IsCycleTimeDefinitionValid)",
+            "A Portfolio named series with few qualifying items still plots them with item count + percentile lines and NO special low-sample state (D9 parity); a non-premium viewer at Portfolio scope is gated off (selector + scope switch) server-side and the Default scatterplot is unaffected",
+            "All 6 ATs in NamedCycleTimePortfolioIntegrationTest (read-your-writes, scatter re-plot, cumulative scope, invalid-on-removal across all surfaces, few-items-no-special-state, non-premium gated-off) are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimePortfolioIntegrationTest.cs",
+          "scenario_name": "Portfolio_SaveNamedDefinition_SurvivesReload_ReadYourWrites; Portfolio_NamedDefinition_ScatterReplotsOverTheWindow_WithRecomputedPercentiles; Portfolio_CumulativeScope_RecomputesBarsOverTheWindow; Portfolio_InvalidOnRemoval_ReadsDisabledAcrossConfigAndBothSelectors; Portfolio_FewQualifyingItems_StillPlotsThemWithCountAndPercentiles_NoSpecialLowSampleState; Portfolio_NonPremiumViewer_SelectorAndScopeSwitchGatedOff_DefaultUnaffected",
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimePortfolioIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 integration tests (real EF + real transition log + real Portfolio settings round-trip) that verify wiring - single-example. The ordered-boundary arithmetic + half-open windowing + validity invariants are ALREADY covered by the Team NUnit unit tests (01-01, 04-01, 03-01) - the helpers are SHARED via inheritance from BaseMetricsService, so Portfolio reuses the SAME proven computation (ADR-061/063: NO parallel engine, do NOT re-implement the math or a second resolver). EXTEND IPortfolioMetricsService + PortfolioMetricsService mirroring the Team service methods AND the existing Portfolio cycleTimeData/cycleTimePercentiles/cumulativeStateTime path: resolve the portfolio's in-scope closed items via the existing portfolio item-resolution query, delegate to the inherited BaseMetricsService.NamedCycleTimeDays / window-restricted cumulative, return the same WorkItemDto/PercentileValue/cumulative shapes; cache key _Def_{definitionId}. EXTEND PortfolioMetricsController mirroring the Team controller: optional definitionId on the three reads, premium gate on the named branch, inherited class-level [RbacGuard(PortfolioRead)] (do NOT add a new guard), GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, ...). Definitions persist on the SAME WorkTrackingSystemOptionsOwner aggregate (Portfolio is an owner) - the CycleTimeDefinitions collection + DTO + IsCycleTimeDefinitionValid from slice 02/03 cover Portfolio with NO new entity. Portfolio fixtures use a disjoint date shift to avoid cross-fixture date collisions (precedent: FlowEfficiencyPortfolioReadApiIntegrationTest PortfolioWindowDisjointShiftDays). EF migration already shipped in slice 02 (the field is on the shared owner) - do NOT re-add. CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero); NUnit2045/2056 (wrap consecutive Assert.That); S4136 (keep the new Portfolio methods adjacent to their sibling overloads); S2325 (static where no instance state); CA2016 (forward CancellationToken). RED handoff: un-ignore the 6 ATs one at a time, confirm RED-for-right-reason (Portfolio definitionId branch absent => named==default / 404 until implemented) - WRONG RED = Parse throws on a 500 => BLOCK. Post-GREEN Fixture-Theater check: PortfolioMetricsService.cs + PortfolioMetricsController.cs MUST appear in git diff; the BaseMetricsService helpers + DTO + entity already shipped (do NOT re-add). Cross-scope parity: assert identical fixtures across Team and Portfolio produce shape-identical DTOs. Immutability, <=2 nesting, no else chains, switch expressions, async with CancellationToken, no comments; zero-warning build."
+        },
+        {
+          "id": "05-02",
+          "name": "Portfolio FE surfaces - config editor, scatter selector, cumulative scope switch (premium + portfolio-admin gated)",
+          "criteria": [
+            "The Cycle Times config editor renders on the Portfolio settings surface (reusing CycleTimesEditor) and threads cycleTimeDefinitions through the Portfolio settings model; the scatter selector and the cumulative scope switch render on the Portfolio metrics surfaces, reusing the same controls as the Team build",
+            "A portfolio-admin defines 'Idea to Live' (Backlog->Released), it appears in the Portfolio scatterplot selector and re-plots dots over that window, and the cumulative scope switch recomputes the Portfolio bars over the window",
+            "Invalid Portfolio definitions are disabled-with-warning everywhere (config + both selectors) via the SAME shared isCycleTimeDefinitionValid predicate + server-stamped IsValid; a non-premium viewer at Portfolio scope sees the selector + switch gated off and Default is unaffected",
+            "All Portfolio FE gating derives from useRbac() (premium + portfolio-admin) - no component fetches authorization directly",
+            "Vitest covers the Portfolio wiring (editor renders + threads, selector re-plots, scope switch recomputes, invalid disabled, premium-off/non-admin hidden); pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx",
+          "scenario_name": "renders the Cycle Times editor and threads cycleTimeDefinitions on the Portfolio settings, and the Portfolio scatter selector and cumulative scope switch reuse the Team controls with invalid definitions disabled and non-premium gated off",
+          "deps": [
+            "05-01",
+            "04-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Portfolio wiring is example-based RTL assertions (the editor/selector/switch behaviours are already invariant-tested in the Team Vitest from slices 02-04); compensate by parametrising the (editor-renders+threads, selector-replots, scope-recomputes, invalid-disabled, premium-off/non-admin-hidden) cases. NO new components - REUSE CycleTimesEditor (02-02), the scatter selector (01-03/03-02), and the cumulative scope switch (04-02). EXTEND ModifyProjectSettings.tsx to render CycleTimesEditor in the Portfolio state-config cluster and thread cycleTimeDefinitions through the Portfolio settings model exactly like the Team ModifyTeamSettings (the BaseSettings model already carries cycleTimeDefinitions from 02-02 - Portfolio inherits it). EXTEND BaseMetricsView.tsx so the scatter selector + cumulative scope switch render in Portfolio scope (the components are scope-agnostic - pass the Portfolio metrics service methods + definitions). REUSE the shared isCycleTimeDefinitionValid TS predicate + server-stamped IsValid for invalid disabling - do NOT write a second copy (ADR-063). CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise the Portfolio definitions + selection deps. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining); MUI combobox InputLabel id + labelId via useId() (2026-05-17). Skip framework renders-without-crashing tests. Factory getMockX(overrides?) validated against BaseSettings + the DTO types. Strict TS, no any (narrow unknown with a guard); immutable (spread/map/filter, never mutate). RBAC: Portfolio gating via useRbac() (premium + portfolio-admin) - no direct authorization fetch (CLAUDE.md). Biome clean; pnpm build zero warnings. NOTE: at finalization (separate from this step), add the docs prose + a per-theme @screenshot test + the website premium-features entry per the DoR cross-cutting checklist - run the screenshot live and rm the old PNG to force a fresh write (project memory project_screenshot_regen_pixel_threshold_trap)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "orchestrator-self-review (coverage 37/37 + 4 seam + 1 E2E; WS in Phase 01; 01-01/02-01 sizing acknowledged cohesive single-surface; scaffolds Sentinel-approved in DISTILL)",
+    "reviewed_date": "2026-06-08"
+  },
+  "pending_revisions": [
+    {
+      "date": "2026-06-08",
+      "origin": "user review of 01-01",
+      "summary": "ADR-062 rewritten: list-shaped WorkItemDto.CycleTimes (dots one-shot) + per-definition cycleTimePercentiles + gate-at-write only (no read-side license gate). 01-01 to be amended before push; 01-03 reads the list. See ADR-062.",
+      "affected_steps": [
+        "01-01",
+        "01-03",
+        "05-02"
+      ]
+    }
+  ]
+}

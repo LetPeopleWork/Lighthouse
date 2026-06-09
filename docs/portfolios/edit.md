@@ -226,6 +226,9 @@ See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts)
 ## Wait States
 As with teams, you can mark which *Doing* states represent waiting rather than active work to drive the **Flow Efficiency** metric at portfolio level. The setup is identical — see [Wait States](../teams/edit.html#wait-states) on the team configuration page for details.
 
+## Cycle Times (Premium)
+As with teams, you can define **named cycle times** — additional start→end measurements over the portfolio workflow — that then appear as choices on the Cycle Time Scatterplot and the Cumulative Time per State chart. The setup is identical — see [Cycle Times](../teams/edit.html#cycle-times-premium) on the team configuration page for details.
+
 # Estimation
 Chose an additional field that represents the estimation (if you have any). Additionally you can define the *unit*, for example Story Points, Ideal Days, T-Shirt Size, or whatever you use. If an estimation is configured, an additional chart will be rendered, that compares the Estimates with the Cycle Time.
 

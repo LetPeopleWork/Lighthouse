@@ -273,6 +273,16 @@ Wait states are purely a *metrics* concept — they describe how to interpret ti
 {: .recommendation}
 Start by marking obvious queues such as *Ready for Review*, *Waiting for Test*, or any column whose name implies a hand-off. A low flow efficiency is not a failure — it is a conversation starter about where work waits.
 
+## Cycle Times (Premium)
+Alongside the built-in Cycle Time, you can define **named cycle times** — additional start→end measurements over your workflow. A "Lead Time" from *Backlog* to *Done*, or an "Analysis to Done" from your analysis state onwards, can be tracked side by side.
+
+![Cycle Times Editor](../assets/features/metrics/cycleTimesEditor.png)
+
+Add a definition with a name, a **start** state and an **end** state (both pick from your configured states or [state mappings](#state-mappings), in workflow order). The end state must come after the start state. Each named cycle time then appears as a choice on the [Cycle Time Scatterplot](../metrics/widgets.html#named-cycle-times-premium) and the [Cumulative Time per State](../metrics/widgets.html#scope-to-a-named-cycle-time-premium) chart.
+
+{: .note}
+If you later remove or reorder a state that a definition references, the definition is kept but marked invalid (shown disabled with a hint) until you fix its boundaries — your other definitions and charts are unaffected.
+
 # Estimation
 Chose an additional field that represents the estimation (if you have any). Additionally you can define the *unit*, for example Story Points, Ideal Days, T-Shirt Size, or whatever you use. If an estimation is configured, an additional chart will be rendered, that compares the Estimates with the Cycle Time.
 

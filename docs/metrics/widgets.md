@@ -288,6 +288,14 @@ Use the work-item picker above the chart to scope it to one or more selected ite
 
 ![Cumulative Time per State scoped to a filtered item](../assets/features/metrics/stateTimeCumulative_filtered.png)
 
+## Scope to a Named Cycle Time (Premium)
+
+If you have defined [named cycle times](#named-cycle-times-premium), a **Scope to cycle time** selector appears in the chart header. By default the chart bars all *Doing* states; choose a named cycle time to narrow it to exactly the states in that window's span — from its start state up to (but not including) its end state.
+
+![Cumulative Time per State scoped to a named cycle time](../assets/features/metrics/stateTimeCumulativeScoped.png)
+
+Scoping changes *which* states are shown — earlier states that the default view omits (for example a Backlog state) appear, and the end state drops out — while keeping the same completed/ongoing split. This lets you see where time accumulates within a specific lead-time window rather than across the whole workflow.
+
 ## Status Indicator
 
 | Status | Condition |
@@ -678,6 +686,17 @@ The chart also distinguishes items by type, using different colors for each item
 If [Blackout Periods](../settings/configuration.html#blackout-periods) are configured, the corresponding date ranges are highlighted with a hatched overlay on this chart, helping you distinguish expected gaps from anomalies.
 
 ![Cycle Time with Blackout](../assets/features/metrics/cycletime_blackout.png)
+
+## Named Cycle Times (Premium)
+
+The built-in Cycle Time measures the whole in-progress span. Often you also want to track a *different* start→end window — for example a "Lead Time" from Backlog all the way to Done, or an "Analysis to Done" from your analysis state onwards. Define these as **named cycle times** in your [Team](../teams/edit.html#cycle-times) or [Portfolio](../portfolios/edit.html#cycle-times) settings, and a selector appears in the top-left of the scatterplot.
+
+![Cycle Time Scatterplot with a named cycle time selected](../assets/features/metrics/cycleScatterNamedCycleTime.png)
+
+Pick **Default** for the built-in Cycle Time, or any named cycle time to re-plot every dot over that window and recompute the percentiles for it. A definition whose start or end state you have since removed is shown disabled with a hint to fix its states; the chart simply stays on the Default until you do.
+
+{: .note}
+A named cycle time uses half-open `[enter start … enter end)` boundaries: an item's time is measured from when it first reaches the start state up to (but not including) when it reaches the end state.
 
 ## Status Indicator
 

@@ -97,6 +97,15 @@ export class CumulativeStateTimeChart {
 		return new CumulativeStateTimeDrillDownDialog(this.page);
 	}
 
+	get scopeSelector(): Locator {
+		return this.widget.getByRole("combobox", { name: /cycle time scope/i });
+	}
+
+	async scopeToCycleTime(name: string): Promise<void> {
+		await this.scopeSelector.click();
+		await this.page.getByRole("option", { name, exact: true }).click();
+	}
+
 	get itemPickerCombobox(): Locator {
 		return this.widget.getByRole("combobox", {
 			name: /select contributing/i,
