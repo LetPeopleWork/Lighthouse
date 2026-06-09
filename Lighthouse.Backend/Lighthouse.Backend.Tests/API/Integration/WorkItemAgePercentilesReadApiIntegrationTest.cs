@@ -263,6 +263,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 $"startDate after endDate must be rejected with 400, mirroring cycleTimePercentiles validation. Body: {body}");
         }
 
+        [Test]
+        public async Task GetWorkItemAgePercentiles_StartDateEqualsEndDate_IsAccepted()
+        {
+            var teamId = SeedTeamWithKnownInProgressAges();
+
+            client.AsTeamAdmin(teamId);
+            var url = $"/api/latest/teams/{teamId}/metrics/workItemAgePercentiles?startDate={windowEnd:O}&endDate={windowEnd:O}";
+            var response = await client.GetAsync(url);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"startDate equal to endDate is a valid single-day window and must be accepted; only strictly-after is rejected. Body: {body}");
+        }
+
         private string PercentilesUrl(int teamId)
         {
             return $"/api/latest/teams/{teamId}/metrics/workItemAgePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}";

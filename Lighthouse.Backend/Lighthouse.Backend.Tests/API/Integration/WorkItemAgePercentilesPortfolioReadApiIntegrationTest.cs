@@ -160,6 +160,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 $"An unauthenticated caller must not read portfolio WIP-age percentiles (class-level RbacGuard PortfolioRead). Status: {response.StatusCode}");
         }
 
+        [Test]
+        public async Task GetWorkItemAgePercentiles_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var portfolioId = SeedPortfolioWithKnownInProgressAges();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var url = $"/api/latest/portfolios/{portfolioId}/metrics/workItemAgePercentiles?startDate={windowEnd:O}&endDate={windowStart:O}";
+            var response = await client.GetAsync(url);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                $"startDate after endDate must be rejected with 400, mirroring cycleTimePercentiles validation. Body: {body}");
+        }
+
+        [Test]
+        public async Task GetWorkItemAgePercentiles_StartDateEqualsEndDate_IsAccepted()
+        {
+            var portfolioId = SeedPortfolioWithKnownInProgressAges();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var url = $"/api/latest/portfolios/{portfolioId}/metrics/workItemAgePercentiles?startDate={windowEnd:O}&endDate={windowEnd:O}";
+            var response = await client.GetAsync(url);
+
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"startDate equal to endDate is a valid single-day window and must be accepted; only strictly-after is rejected. Body: {body}");
+        }
+
         private string PercentilesUrl(int portfolioId)
         {
             return $"/api/latest/portfolios/{portfolioId}/metrics/workItemAgePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}";
