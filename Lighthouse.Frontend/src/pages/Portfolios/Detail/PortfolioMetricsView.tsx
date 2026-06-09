@@ -1,6 +1,7 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
+import type { ICycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -21,6 +22,9 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
 		number | undefined
 	>(undefined);
+	const [cycleTimeDefinitions, setCycleTimeDefinitions] = useState<
+		ICycleTimeDefinition[]
+	>([]);
 	const { portfolioMetricsService, portfolioService } =
 		useContext(ApiServiceContext);
 
@@ -40,6 +44,7 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
 				setStalenessThresholdDays(settings.stalenessThresholdDays);
+				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
 			} catch (err) {
 				console.error("Error fetching portfolio settings:", err);
 			}
@@ -58,6 +63,7 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			doingStates={doingStates}
 			waitStates={waitStates}
 			stateMappings={stateMappings}
+			cycleTimeDefinitions={cycleTimeDefinitions}
 			stalenessThresholdDays={stalenessThresholdDays}
 		/>
 	);

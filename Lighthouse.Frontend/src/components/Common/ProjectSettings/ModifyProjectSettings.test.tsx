@@ -411,6 +411,7 @@ describe("ModifyProjectSettings", () => {
 		expect(screen.getByText("WorkItemTypesComponent")).toBeInTheDocument();
 		expect(screen.getByText("StatesList")).toBeInTheDocument();
 		expect(screen.getByText("Change Work Tracking System")).toBeInTheDocument();
+		expect(screen.getByText("Cycle Times")).toBeInTheDocument();
 	});
 
 	it("handles project settings change", async () => {
