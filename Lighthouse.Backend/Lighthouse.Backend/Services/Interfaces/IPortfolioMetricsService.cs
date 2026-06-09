@@ -4,6 +4,8 @@ using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
+    public sealed record CycleTimeFeature(Feature Feature, IReadOnlyList<NamedCycleTimeValue> NamedCycleTimes);
+
     public interface IPortfolioMetricsService
     {
         ProcessBehaviourChart GetThroughputProcessBehaviourChart(Portfolio portfolio, DateTime startDate, DateTime endDate);
@@ -34,7 +36,11 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
-        CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);
+        CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null);
+
+        IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+
+        IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int definitionId);
 
         CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForPortfolio(Portfolio portfolio, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null);
 

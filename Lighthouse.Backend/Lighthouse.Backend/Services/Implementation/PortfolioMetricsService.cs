@@ -275,18 +275,86 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)
+        public CumulativeStateTimeDto GetCumulativeStateTimeForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null)
         {
             logger.LogDebug("Getting Cumulative State Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}", () =>
+            var scopedDefinition = definitionId is > 0
+                ? portfolio.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId && portfolio.IsCycleTimeDefinitionValid(candidate))
+                : null;
+            var scopeSuffix = scopedDefinition != null ? $"_Def_{definitionId}" : string.Empty;
+
+            return GetFromCacheIfExists(portfolio, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}{scopeSuffix}", () =>
             {
                 var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(portfolio, startDate, endDate), itemIds);
-                var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
+                var stateOrder = ResolveCumulativeStateOrder(portfolio, scopedDefinition);
 
-                var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
+                var states = ComputeCumulativeStateTime(candidateItems, stateOrder, endDate);
                 return new CumulativeStateTimeDto(states);
             }, logger);
+        }
+
+        private static IReadOnlyList<string> ResolveCumulativeStateOrder(Portfolio portfolio, CycleTimeDefinition? scopedDefinition)
+        {
+            if (scopedDefinition == null)
+            {
+                return BuildCumulativeWorkflowStateOrder(portfolio);
+            }
+
+            var allStatesInOrder = portfolio.AllStates.ToList();
+            var startState = ResolveBoundaryState(portfolio, allStatesInOrder, scopedDefinition.StartState);
+            var endState = ResolveBoundaryState(portfolio, allStatesInOrder, scopedDefinition.EndState);
+            return ScopedCumulativeStateOrder(allStatesInOrder, startState, endState);
+        }
+
+        public IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        {
+            logger.LogDebug("Getting Named Cycle Time Data for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
+
+            var allStatesInOrder = portfolio.AllStates.ToList();
+            var resolvedDefinitions = ResolveValidNamedDefinitions(portfolio, allStatesInOrder);
+
+            var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
+            var itemsWithTransitions = AssociateSyncedTransitions(closedFeatures);
+            var namedByItemId = itemsWithTransitions.ToDictionary(
+                item => item.Id,
+                item => (IReadOnlyList<NamedCycleTimeValue>)NamedValuesForItem(item, allStatesInOrder, resolvedDefinitions));
+
+            return closedFeatures
+                .Select(feature => new CycleTimeFeature(
+                    feature,
+                    namedByItemId.TryGetValue(feature.Id, out var named) ? named : []))
+                .ToList();
+        }
+
+        public IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int definitionId)
+        {
+            logger.LogDebug("Getting Named Cycle Time Percentiles for Portfolio {PortfolioName} definition {DefinitionId} between {StartDate} and {EndDate}", portfolio.Name, definitionId, startDate.Date, endDate.Date);
+
+            return GetFromCacheIfExists(portfolio, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
+                BuildPercentiles(ComputeNamedDurations(portfolio, startDate, endDate, definitionId)), logger);
+        }
+
+        private List<int> ComputeNamedDurations(Portfolio portfolio, DateTime startDate, DateTime endDate, int definitionId)
+        {
+            var definition = portfolio.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId);
+            if (definition == null || !portfolio.IsCycleTimeDefinitionValid(definition))
+            {
+                return [];
+            }
+
+            var allStatesInOrder = portfolio.AllStates.ToList();
+            var startState = ResolveBoundaryState(portfolio, allStatesInOrder, definition.StartState);
+            var endState = ResolveBoundaryState(portfolio, allStatesInOrder, definition.EndState);
+
+            var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
+            var itemsWithTransitions = AssociateSyncedTransitions(closedFeatures);
+
+            return itemsWithTransitions
+                .Select(item => NamedCycleTimeDays(item, allStatesInOrder, startState, endState))
+                .Where(days => days.HasValue)
+                .Select(days => days!.Value)
+                .ToList();
         }
 
         public CumulativeStateTimeItemsDto GetCumulativeStateTimeItemsForPortfolio(Portfolio portfolio, string state, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null)

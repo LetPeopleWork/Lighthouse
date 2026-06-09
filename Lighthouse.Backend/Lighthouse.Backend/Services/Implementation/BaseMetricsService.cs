@@ -301,6 +301,46 @@ namespace Lighthouse.Backend.Services.Implementation
             return allStatesInOrder.Skip(startThreshold).Take(endThreshold - startThreshold).ToList();
         }
 
+        protected static IEnumerable<PercentileValue> BuildPercentiles(List<int> values) =>
+        [
+            new PercentileValue(50, PercentileCalculator.CalculatePercentile(values, 50)),
+            new PercentileValue(70, PercentileCalculator.CalculatePercentile(values, 70)),
+            new PercentileValue(85, PercentileCalculator.CalculatePercentile(values, 85)),
+            new PercentileValue(95, PercentileCalculator.CalculatePercentile(values, 95)),
+        ];
+
+        protected static List<(int Id, string StartState, string EndState)> ResolveValidNamedDefinitions(
+            WorkTrackingSystemOptionsOwner owner,
+            IReadOnlyList<string> allStatesInOrder)
+        {
+            return owner.CycleTimeDefinitions
+                .Where(owner.IsCycleTimeDefinitionValid)
+                .Select(definition => (
+                    definition.Id,
+                    StartState: ResolveBoundaryState(owner, allStatesInOrder, definition.StartState),
+                    EndState: ResolveBoundaryState(owner, allStatesInOrder, definition.EndState)))
+                .ToList();
+        }
+
+        protected static List<NamedCycleTimeValue> NamedValuesForItem(
+            WorkItem item,
+            IReadOnlyList<string> allStatesInOrder,
+            IReadOnlyList<(int Id, string StartState, string EndState)> definitions)
+        {
+            return definitions
+                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, allStatesInOrder, definition.StartState, definition.EndState)))
+                .Where(entry => entry.days.HasValue)
+                .Select(entry => new NamedCycleTimeValue(entry.Id, entry.days!.Value))
+                .ToList();
+        }
+
+        protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> allStatesInOrder, string boundaryState)
+        {
+            var rawStates = owner.GetRawStatesForCategory([boundaryState]);
+            return allStatesInOrder.FirstOrDefault(state => rawStates.Any(raw => string.Equals(raw, state, StringComparison.OrdinalIgnoreCase)))
+                ?? boundaryState;
+        }
+
         protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
         {
             var window = NamedCycleTimeWindow(item, allStatesInOrder, startState, endState);

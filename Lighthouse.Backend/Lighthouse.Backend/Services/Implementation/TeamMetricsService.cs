@@ -333,42 +333,16 @@ namespace Lighthouse.Backend.Services.Implementation
                 BuildPercentiles(ComputeNamedDurations(team, startDate, endDate, definitionId)), logger);
         }
 
-        private static IEnumerable<PercentileValue> BuildPercentiles(List<int> values) =>
-        [
-            new PercentileValue(50, PercentileCalculator.CalculatePercentile(values, 50)),
-            new PercentileValue(70, PercentileCalculator.CalculatePercentile(values, 70)),
-            new PercentileValue(85, PercentileCalculator.CalculatePercentile(values, 85)),
-            new PercentileValue(95, PercentileCalculator.CalculatePercentile(values, 95)),
-        ];
-
         private List<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
         {
             var allStatesInOrder = team.AllStates.ToList();
-            var resolvedDefinitions = team.CycleTimeDefinitions
-                .Where(team.IsCycleTimeDefinitionValid)
-                .Select(definition => (
-                    definition.Id,
-                    StartState: ResolveBoundaryState(team, allStatesInOrder, definition.StartState),
-                    EndState: ResolveBoundaryState(team, allStatesInOrder, definition.EndState)))
-                .ToList();
+            var resolvedDefinitions = ResolveValidNamedDefinitions(team, allStatesInOrder);
 
             var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
             var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
 
             return itemsWithTransitions
                 .Select(item => new CycleTimeWorkItem(item, NamedValuesForItem(item, allStatesInOrder, resolvedDefinitions)))
-                .ToList();
-        }
-
-        private static List<NamedCycleTimeValue> NamedValuesForItem(
-            WorkItem item,
-            IReadOnlyList<string> allStatesInOrder,
-            IReadOnlyList<(int Id, string StartState, string EndState)> definitions)
-        {
-            return definitions
-                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, allStatesInOrder, definition.StartState, definition.EndState)))
-                .Where(entry => entry.days.HasValue)
-                .Select(entry => new NamedCycleTimeValue(entry.Id, entry.days!.Value))
                 .ToList();
         }
 
@@ -392,13 +366,6 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Where(days => days.HasValue)
                 .Select(days => days!.Value)
                 .ToList();
-        }
-
-        private static string ResolveBoundaryState(Team team, List<string> allStatesInOrder, string boundaryState)
-        {
-            var rawStates = team.GetRawStatesForCategory([boundaryState]);
-            return allStatesInOrder.FirstOrDefault(state => rawStates.Any(raw => string.Equals(raw, state, StringComparison.OrdinalIgnoreCase)))
-                ?? boundaryState;
         }
 
         public IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)

@@ -335,14 +335,14 @@ namespace Lighthouse.Backend.Tests.API
         {
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
-            var features = new List<Feature>
+            var data = new List<CycleTimeFeature>
             {
-                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = DateTime.Now.AddDays(-2), ClosedDate = DateTime.Now },
-                new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = DateTime.Now.AddDays(-5), ClosedDate = DateTime.Now }
+                new CycleTimeFeature(new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = DateTime.Now.AddDays(-2), ClosedDate = DateTime.Now }, []),
+                new CycleTimeFeature(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = DateTime.Now.AddDays(-5), ClosedDate = DateTime.Now }, [new NamedCycleTimeValue(7, 5)])
             };
 
-            projectMetricsService.Setup(x => x.GetCycleTimeDataForPortfolio(project, startDate, endDate))
-                .Returns(features);
+            projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate))
+                .Returns(data);
 
             var result = subject.GetCycleTimeData(1, startDate, endDate);
 
@@ -352,6 +352,7 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos?.Count(), Is.EqualTo(2));
+                Assert.That(featureDtos!.Single(dto => dto.Id == 2).NamedCycleTimes, Has.Count.EqualTo(1));
             }
         }
 

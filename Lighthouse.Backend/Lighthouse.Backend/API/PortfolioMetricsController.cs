@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cycleTimePercentiles")]
-        public ActionResult<IEnumerable<PercentileValue>> GetCycleTimePercentiles(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<IEnumerable<PercentileValue>> GetCycleTimePercentiles(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -111,7 +111,9 @@ namespace Lighthouse.Backend.API
 
             LogDateBoundaries("cycleTimePercentiles", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate));
+                IsNamedRequest(definitionId)
+                    ? portfolioMetricsService.GetNamedCycleTimePercentilesForPortfolio(portfolio, startDate, endDate, definitionId!.Value)
+                    : portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate));
         }
 
         [HttpGet("ageInStatePercentiles")]
@@ -128,7 +130,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cumulativeStateTime")]
-        public ActionResult<CumulativeStateTimeDto> GetCumulativeStateTime(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null)
+        public ActionResult<CumulativeStateTimeDto> GetCumulativeStateTime(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int[]? itemIds = null, [FromQuery] int? definitionId = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -137,7 +139,7 @@ namespace Lighthouse.Backend.API
 
             LogDateBoundaries("cumulativeStateTime", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                portfolioMetricsService.GetCumulativeStateTimeForPortfolio(portfolio, startDate, endDate, itemIds));
+                portfolioMetricsService.GetCumulativeStateTimeForPortfolio(portfolio, startDate, endDate, itemIds, definitionId));
         }
 
         [HttpGet("cumulativeStateTime/items")]
@@ -182,10 +184,11 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cycleTimeData", portfolioId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
-                var features = portfolioMetricsService.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
+                var data = portfolioMetricsService.GetNamedCycleTimeDataForPortfolio(portfolio, startDate, endDate);
+                var features = data.Select(entry => entry.Feature).ToList();
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
-                return features.Select(f => new FeatureDto(f, blackoutPeriods));
+                return data.Select(entry => new FeatureDto(entry.Feature, blackoutPeriods, namedCycleTimes: entry.NamedCycleTimes));
             });
         }
 
@@ -443,5 +446,7 @@ namespace Lighthouse.Backend.API
             logger.LogDebug("Metrics request {Endpoint} for portfolio {PortfolioId}: startDate={StartDate:yyyy-MM-dd} endDate={EndDate:yyyy-MM-dd} (Kind={StartKind}/{EndKind})",
                 endpoint, portfolioId, startDate, endDate, startDate.Kind, endDate.Kind);
         }
+
+        private static bool IsNamedRequest(int? definitionId) => definitionId is > 0;
     }
 }

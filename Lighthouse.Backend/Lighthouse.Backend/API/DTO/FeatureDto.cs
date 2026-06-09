@@ -1,10 +1,11 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureDto : WorkItemDto
     {
-        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null) : base(feature)
+        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null) : base(feature, namedCycleTimes ?? [])
         {
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
