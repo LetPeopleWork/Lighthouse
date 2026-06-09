@@ -194,9 +194,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var settings = BuildSettings(["Coding"]);
             settings.CycleTimeDefinitions = [];
             var deleteResponse = await client.PutAsJsonAsync(TeamUrl(), settings);
-            Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), await deleteResponse.Content.ReadAsStringAsync());
-
-            Assert.That(await GetDefinitions(), Is.Empty, "The deleted definition disappears from the config list.");
+            var deleteBody = await deleteResponse.Content.ReadAsStringAsync();
+            var definitions = await GetDefinitions();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), deleteBody);
+                Assert.That(definitions, Is.Empty, "The deleted definition disappears from the config list.");
+            }
         }
 
         private async Task RemoveImplementationState()
