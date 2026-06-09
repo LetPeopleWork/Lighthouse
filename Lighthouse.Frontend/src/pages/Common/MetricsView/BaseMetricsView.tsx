@@ -27,6 +27,7 @@ import ThroughputChartFilterToggle from "../../../components/Common/Charts/Throu
 import TotalWorkItemAgeRunChart from "../../../components/Common/Charts/TotalWorkItemAgeRunChart";
 import TotalWorkItemAgeWidget from "../../../components/Common/Charts/TotalWorkItemAgeWidget";
 import WorkDistributionChart from "../../../components/Common/Charts/WorkDistributionChart";
+import WorkItemAgePercentiles from "../../../components/Common/Charts/WorkItemAgePercentiles";
 import WorkItemAgingChart from "../../../components/Common/Charts/WorkItemAgingChart";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -732,6 +733,7 @@ function buildWidgetNodes(ctx: {
 	featuresTerm: string;
 	predictabilityData: IForecastPredictabilityScore | null;
 	percentileValues: IPercentileValue[];
+	workItemAgePercentilesValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
 	serviceLevelExpectation: IPercentileValue | null;
 	cycleTimeData: IWorkItem[];
@@ -834,6 +836,11 @@ function buildWidgetNodes(ctx: {
 		),
 		percentiles: (
 			<CycleTimePercentiles percentileValues={ctx.percentileValues} />
+		),
+		workItemAgePercentiles: (
+			<WorkItemAgePercentiles
+				percentileValues={ctx.workItemAgePercentilesValues}
+			/>
 		),
 		totalWorkItemAge: (
 			<TotalWorkItemAgeWidget
@@ -1047,6 +1054,7 @@ export const BaseMetricsView = <
 		inProgressItems,
 		cycleTimeData,
 		percentileValues,
+		workItemAgePercentilesValues,
 		perStatePercentileValues,
 		sizePercentileValues,
 		allFeaturesForSizeChart,
@@ -1342,6 +1350,7 @@ export const BaseMetricsView = <
 		featuresTerm,
 		predictabilityData,
 		percentileValues,
+		workItemAgePercentilesValues,
 		perStatePercentileValues,
 		serviceLevelExpectation,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],

@@ -60,6 +60,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 		{ widgetKey: "flowEfficiency", size: "small" },
 		{ widgetKey: "predictabilityScore", size: "small" },
 		{ widgetKey: "percentiles", size: "small" },
+		{ widgetKey: "workItemAgePercentiles", size: "small" },
 		{ widgetKey: "totalThroughput", size: "small" },
 		{ widgetKey: "totalArrivals", size: "small" },
 		{
@@ -108,6 +109,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	totalThroughput: "previous-period",
 	totalArrivals: "previous-period",
 	percentiles: "previous-period",
+	workItemAgePercentiles: "none",
 	featureSizePercentiles: "previous-period",
 	cycleScatter: "none",
 	throughput: "none",

@@ -38,6 +38,7 @@ export interface MetricsData<T> {
 	inProgressItems: IWorkItem[];
 	cycleTimeData: T[];
 	percentileValues: IPercentileValue[];
+	workItemAgePercentilesValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	sizePercentileValues: IPercentileValue[];
@@ -108,6 +109,8 @@ export function useMetricsData<
 	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
 		[],
 	);
+	const [workItemAgePercentilesValues, setWorkItemAgePercentilesValues] =
+		useState<IPercentileValue[]>([]);
 	const [perStatePercentileValues, setPerStatePercentileValues] = useState<
 		IPerStatePercentileValues[]
 	>([]);
@@ -217,8 +220,14 @@ export function useMetricsData<
 				endDate,
 			);
 			setCycleTimeData(data);
-			const [percentiles, perStatePercentiles, cumulative] = await Promise.all([
+			const [
+				percentiles,
+				workItemAgePercentiles,
+				perStatePercentiles,
+				cumulative,
+			] = await Promise.all([
 				metricsService.getCycleTimePercentiles(entity.id, startDate, endDate),
+				metricsService.getWorkItemAgePercentiles(entity.id, startDate, endDate),
 				metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate),
 				metricsService.getCumulativeStateTimeForTeam(
 					entity.id,
@@ -227,6 +236,7 @@ export function useMetricsData<
 				),
 			]);
 			setPercentileValues(percentiles);
+			setWorkItemAgePercentilesValues(workItemAgePercentiles);
 			setPerStatePercentileValues(perStatePercentiles);
 			setCumulativeStateTime(cumulative);
 		};
@@ -413,6 +423,7 @@ export function useMetricsData<
 		inProgressItems,
 		cycleTimeData,
 		percentileValues,
+		workItemAgePercentilesValues,
 		perStatePercentileValues,
 		cumulativeStateTime,
 		sizePercentileValues,

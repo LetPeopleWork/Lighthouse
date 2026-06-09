@@ -175,6 +175,7 @@ describe("categoryMetadata", () => {
 				"flowEfficiency",
 				"predictabilityScore",
 				"percentiles",
+				"workItemAgePercentiles",
 				"totalThroughput",
 				"totalArrivals",
 			]);
@@ -190,6 +191,7 @@ describe("categoryMetadata", () => {
 				"flowEfficiency",
 				"predictabilityScore",
 				"percentiles",
+				"workItemAgePercentiles",
 				"totalThroughput",
 				"totalArrivals",
 				"featureSizePercentiles",

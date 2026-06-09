@@ -30,6 +30,7 @@ describe("TotalWorkItemAgeWidget", () => {
 		getInProgressItems: vi.fn(),
 		getCycleTimeData: vi.fn(),
 		getCycleTimePercentiles: vi.fn(),
+		getWorkItemAgePercentiles: vi.fn(),
 		getAgeInStatePercentiles: vi.fn(),
 		getMultiItemForecastPredictabilityScore: vi.fn(),
 		getThroughputPbc: vi.fn(),

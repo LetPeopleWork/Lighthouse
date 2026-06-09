@@ -26,7 +26,10 @@ import {
 } from "../../models/Metrics/NamedCycleTime";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
-import type { IPercentileValue } from "../../models/PercentileValue";
+import {
+	type IPercentileValue,
+	PercentileValueSchema,
+} from "../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
@@ -54,6 +57,12 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 		definitionId?: number,
+	): Promise<IPercentileValue[]>;
+
+	getWorkItemAgePercentiles(
+		id: number,
+		startDate: Date,
+		endDate: Date,
 	): Promise<IPercentileValue[]>;
 
 	getAgeInStatePercentiles(
@@ -325,6 +334,23 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			);
 
 			return response.data;
+		});
+	}
+
+	async getWorkItemAgePercentiles(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<IPercentileValue[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`/${this.api}/${id}/metrics/workItemAgePercentiles?${this.getDateFormatString(startDate, endDate)}`,
+			);
+
+			return BaseMetricsService.parse(
+				PercentileValueSchema.array(),
+				response.data,
+			);
 		});
 	}
 
