@@ -10,6 +10,7 @@ export type INamedCycleTimeValue = z.infer<typeof NamedCycleTimeValueSchema>;
 export interface INamedCycleTimeDefinition {
 	id: number;
 	name: string;
+	isValid?: boolean;
 }
 
 export interface ICycleTimeDefinition {

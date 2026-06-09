@@ -458,5 +458,66 @@ describe("CycleTimeScatterPlotChart component", () => {
 				expect(onFetchNamedCycleTimePercentiles).toHaveBeenCalledWith(1);
 			});
 		});
+
+		it("disables an invalid named cycle time and keeps it unselectable", async () => {
+			render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[
+						{ ...conceptToCash, isValid: true },
+						{ id: 2, name: "Broken", isValid: false },
+					]}
+				/>,
+			);
+
+			await userEvent.click(
+				screen.getByRole("combobox", { name: /cycle time/i }),
+			);
+
+			const invalidOption = within(screen.getByRole("listbox")).getByText(
+				/Broken \(invalid/,
+			);
+			expect(invalidOption.closest('[role="option"]')).toHaveAttribute(
+				"aria-disabled",
+				"true",
+			);
+		});
+
+		it("falls back to Default when the selected definition becomes invalid", async () => {
+			const { rerender } = render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[{ ...conceptToCash, isValid: true }]}
+				/>,
+			);
+
+			await userEvent.click(
+				screen.getByRole("combobox", { name: /cycle time/i }),
+			);
+			await userEvent.click(
+				within(screen.getByRole("listbox")).getByText("Concept to Cash"),
+			);
+			await waitFor(() => {
+				expect(seriesData().map((point) => point.y)).toEqual([20]);
+			});
+
+			rerender(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[{ ...conceptToCash, isValid: false }]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					seriesData()
+						.map((point) => point.y)
+						.sort((a, b) => a - b),
+				).toEqual([5, 10]);
+			});
+		});
 	});
 });

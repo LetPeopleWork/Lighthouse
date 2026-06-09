@@ -1070,6 +1070,7 @@ export const BaseMetricsView = <
 				? cycleTimeDefinitions.map((definition) => ({
 						id: definition.id,
 						name: definition.name,
+						isValid: definition.isValid,
 					}))
 				: [],
 		[isPremium, cycleTimeDefinitions],

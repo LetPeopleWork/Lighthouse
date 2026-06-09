@@ -174,6 +174,18 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	);
 
 	useEffect(() => {
+		if (selectedDefinitionId === null) {
+			return;
+		}
+		const selected = namedCycleTimeDefinitions.find(
+			(definition) => definition.id === selectedDefinitionId,
+		);
+		if (!selected || selected.isValid === false) {
+			setSelectedDefinitionId(null);
+		}
+	}, [selectedDefinitionId, namedCycleTimeDefinitions]);
+
+	useEffect(() => {
 		if (selectedDefinitionId === null || !onFetchNamedCycleTimePercentiles) {
 			setNamedPercentiles([]);
 			return;
@@ -303,8 +315,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				>
 					<MenuItem value={DEFAULT_SELECTION}>Default</MenuItem>
 					{namedCycleTimeDefinitions.map((definition) => (
-						<MenuItem key={definition.id} value={String(definition.id)}>
-							{definition.name}
+						<MenuItem
+							key={definition.id}
+							value={String(definition.id)}
+							disabled={definition.isValid === false}
+						>
+							{definition.isValid === false
+								? `${definition.name} (invalid — fix its states)`
+								: definition.name}
 						</MenuItem>
 					))}
 				</Select>
