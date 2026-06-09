@@ -74,8 +74,15 @@ namespace Lighthouse.Backend.Factories
                 new CycleTimeDefinition
                 {
                     Id = 1,
-                    Name = "Implementation to Done",
-                    StartState = "Implementation",
+                    Name = "Lead Time (End to End)",
+                    StartState = "Backlog",
+                    EndState = "Done",
+                },
+                new CycleTimeDefinition
+                {
+                    Id = 2,
+                    Name = "Analysis to Done",
+                    StartState = "Analysing",
                     EndState = "Done",
                 },
             };

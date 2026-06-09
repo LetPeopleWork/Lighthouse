@@ -12,7 +12,7 @@ import {
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
 const CYCLE_SCATTER_WIDGET_ID = "cycleScatter";
-const NAMED_DEFINITION = "Implementation to Done";
+const NAMED_DEFINITION = "Analysis to Done";
 
 test("@walking_skeleton @premium a delivery lead selects a named cycle time on the scatterplot and the dots re-plot with recomputed percentile lines", async ({
 	page,
