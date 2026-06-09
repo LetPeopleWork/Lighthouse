@@ -90,6 +90,46 @@ describe("MetricsService getAgeInStatePercentiles", () => {
 	});
 });
 
+describe("MetricsService getWorkItemAgePercentiles", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("fetches and parses work item age percentiles for an entity and window", async () => {
+		const percentiles = [
+			{ percentile: 50, value: 4 },
+			{ percentile: 85, value: 9 },
+		];
+		mockedAxios.get.mockResolvedValueOnce({ data: percentiles });
+
+		const result = await metricsService.getWorkItemAgePercentiles(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result).toEqual(percentiles);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/workItemAgePercentiles?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+
+	it("propagates errors when fetching work item age percentiles fails", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
+
+		await expect(
+			metricsService.getWorkItemAgePercentiles(1, new Date(), new Date()),
+		).rejects.toThrow("Network Error");
+	});
+});
+
 describe("MetricsService getCumulativeStateTimeForTeam", () => {
 	let metricsService: TeamMetricsService;
 

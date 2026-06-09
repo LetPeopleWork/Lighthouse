@@ -366,6 +366,8 @@ describe("WorkItemAgingChart component", () => {
 		}
 
 		expect(percentile50Chip).toBeInTheDocument();
+		expect(screen.queryByTestId("reference-line-50%")).not.toBeInTheDocument();
+		expect(screen.getByTestId("reference-line-85%")).toBeInTheDocument();
 	});
 
 	it("toggles service level expectation visibility when chip is clicked", () => {

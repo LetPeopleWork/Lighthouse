@@ -80,4 +80,16 @@ describe("WorkItemAgePercentiles component", () => {
 		expect(screen.getByText("No work in progress")).toBeInTheDocument();
 		expect(screen.queryByText(/\d+th/)).not.toBeInTheDocument();
 	});
+
+	it("renders the percentile table when only some values are positive", () => {
+		render(
+			<WorkItemAgePercentiles
+				percentileValues={getMockPercentiles({ 50: 0, 70: 0, 85: 0 })}
+			/>,
+		);
+
+		expect(screen.queryByText("No work in progress")).not.toBeInTheDocument();
+		expect(screen.getByText("27 days")).toBeInTheDocument();
+		expect(screen.getByText("95th")).toBeInTheDocument();
+	});
 });
