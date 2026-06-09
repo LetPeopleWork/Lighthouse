@@ -3,5 +3,18 @@
     "allow": [
       "Bash(des-verify-integrity *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/Scripts/ledger_check.sh\""
+          }
+        ]
+      }
+    ]
   }
 }

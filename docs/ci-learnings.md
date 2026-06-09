@@ -12,6 +12,22 @@ Each entry follows:
 - **Rule going forward**: a single declarative do/don't sentence future-Claude can apply BEFORE writing similar code.
 ```
 
+## Automated pre-commit checks (machine-readable)
+
+`Scripts/ledger_check.py` runs as a `PreToolUse` hook on `git commit` (wired in
+`.claude/settings.json`) and greps the **staged** diff against the patterns below. A match
+**hard-blocks the commit** — the hook's message is fed back to Claude, which fixes the line,
+re-stages, and commits again — so a known foot-gun never enters git history. Add a line
+here (same delimiter) whenever `/clean-ci` records a learning whose foot-gun is a
+deterministic, low-false-positive line pattern. Format (4 fields, ` ::: ` delimited):
+
+`<rule-key> ::: <comma-separated file extensions> ::: <Python regex> ::: <fix hint>`
+
+<!-- LEDGER-CHECKS:START -->
+typescript:S7735 ::: ts,tsx ::: (!==|!=)\s*(undefined|null)\s*\? ::: Negated condition in a ternary — flip to `X === undefined ? falsy : truthy` (no `!==`/`!=` in a ternary condition). See the 2026-05-16 S7735 entry.
+dotnet-nunit:NUnit4002 ::: cs ::: Is\.EqualTo\(0\) ::: Use `Is.Zero`, never `Is.EqualTo(0)` (NUnit4002).
+<!-- LEDGER-CHECKS:END -->
+
 ## Formatting & linting
 
 ### 2026-05-12 — SonarCloud's PowerShell analyzer is strict; new `.ps1` files trigger many rules
