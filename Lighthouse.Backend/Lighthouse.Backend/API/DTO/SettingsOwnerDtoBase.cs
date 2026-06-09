@@ -35,6 +35,9 @@ namespace Lighthouse.Backend.API.DTO
             EstimationCategoryValues = workTrackingSystemOptionsOwner.EstimationCategoryValues;
             StalenessThresholdDays = workTrackingSystemOptionsOwner.StalenessThresholdDays;
             StateMappings = workTrackingSystemOptionsOwner.StateMappings.Select(sm => new StateMappingDto(sm)).ToList();
+            CycleTimeDefinitions = workTrackingSystemOptionsOwner.CycleTimeDefinitions
+                .Select(definition => new CycleTimeDefinitionDto(definition, workTrackingSystemOptionsOwner.IsCycleTimeDefinitionValid(definition)))
+                .ToList();
         }
 
         [JsonRequired]
@@ -85,6 +88,8 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> EstimationCategoryValues { get; set; } = [];
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
+
+        public List<CycleTimeDefinitionDto> CycleTimeDefinitions { get; set; } = [];
 
         public Guid? ConcurrencyToken { get; set; }
 

@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Models
 
         public List<StateMapping> StateMappings { get; set; } = [];
 
+        public List<CycleTimeDefinition> CycleTimeDefinitions { get; set; } = [];
+
         public abstract int DoneItemsCutoffDays { get; set; }
 
         public virtual int StalenessThresholdDays { get; set; }

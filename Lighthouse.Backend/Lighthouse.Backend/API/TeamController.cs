@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -31,7 +32,8 @@ namespace Lighthouse.Backend.API
         IBlackoutPeriodService blackoutPeriodService,
         IUpdateQueueService updateQueueService,
         IRbacAdministrationService rbacAdministrationService,
-        IForecastFilterRuleService forecastFilterRuleService)
+        IForecastFilterRuleService forecastFilterRuleService,
+        ILicenseService licenseService)
         : ControllerBase
     {
         internal const int MinStalenessThresholdDays = 0;
@@ -150,8 +152,25 @@ namespace Lighthouse.Backend.API
                 }
             }
 
+            var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
+            if (canUsePremiumFeatures)
+            {
+                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting);
+                if (!cycleTimeValidation.IsValid)
+                {
+                    return BadRequest(cycleTimeValidation.Errors);
+                }
+            }
+
             return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
             {
+                if (!canUsePremiumFeatures)
+                {
+                    teamSetting.CycleTimeDefinitions = team.CycleTimeDefinitions
+                        .Select(definition => new CycleTimeDefinitionDto(definition, true))
+                        .ToList();
+                }
+
                 if (team.WorkItemRelatedSettingsChanged(teamSetting))
                 {
                     workItemRepository.RemoveWorkItemsForTeam(team.Id);

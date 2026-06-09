@@ -312,6 +312,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ToDoStates = [Backlog],
                 DoingStates = [Implementation],
                 DoneStates = [Done],
+                CycleTimeDefinitions =
+                [
+                    new CycleTimeDefinition
+                    {
+                        Id = ImplementationToDoneDefinitionId,
+                        Name = "Implementation to Done",
+                        StartState = Implementation,
+                        EndState = Done,
+                    },
+                ],
             };
 
             var teamRepository = sp.GetRequiredService<IRepository<Team>>();

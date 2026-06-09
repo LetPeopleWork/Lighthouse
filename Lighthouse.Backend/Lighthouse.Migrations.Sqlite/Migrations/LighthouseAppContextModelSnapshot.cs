@@ -673,6 +673,10 @@ namespace Lighthouse.Backend.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CycleTimeDefinitions")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DataRetrievalValue")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -862,6 +866,10 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<Guid>("ConcurrencyToken")
                         .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CycleTimeDefinitions")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DataRetrievalValue")

@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const string ForecastStatusMetricIdentifier = "ForecastThroughputStatus";
         private const string FeatureWipMetricIdentifier = "FeatureWIP";
-        private const int ConceptToCashDefinitionId = 1;
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
         internal const string EmptyFilteredSampleWarning = "Filter excluded all throughput; showing unfiltered forecast";
 
@@ -345,7 +344,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private IReadOnlyList<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
         {
             var allStatesInOrder = team.AllStates.ToList();
-            var resolvedDefinitions = GetCycleTimeDefinitions()
+            var resolvedDefinitions = team.CycleTimeDefinitions
                 .Select(definition => (
                     definition.Id,
                     StartState: ResolveBoundaryState(team, allStatesInOrder, definition.StartState),
@@ -374,7 +373,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private List<int> ComputeNamedDurations(Team team, DateTime startDate, DateTime endDate, int definitionId)
         {
-            var definition = ResolveCycleTimeDefinition(definitionId);
+            var definition = team.CycleTimeDefinitions.FirstOrDefault(candidate => candidate.Id == definitionId);
+            if (definition == null)
+            {
+                return [];
+            }
+
             var allStatesInOrder = team.AllStates.ToList();
             var startState = ResolveBoundaryState(team, allStatesInOrder, definition.StartState);
             var endState = ResolveBoundaryState(team, allStatesInOrder, definition.EndState);
@@ -389,27 +393,11 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
-        private static IReadOnlyList<CycleTimeDefinition> GetCycleTimeDefinitions()
-        {
-            return [ResolveCycleTimeDefinition(ConceptToCashDefinitionId)];
-        }
-
         private static string ResolveBoundaryState(Team team, List<string> allStatesInOrder, string boundaryState)
         {
             var rawStates = team.GetRawStatesForCategory([boundaryState]);
             return allStatesInOrder.FirstOrDefault(state => rawStates.Any(raw => string.Equals(raw, state, StringComparison.OrdinalIgnoreCase)))
                 ?? boundaryState;
-        }
-
-        private static CycleTimeDefinition ResolveCycleTimeDefinition(int definitionId)
-        {
-            return new CycleTimeDefinition
-            {
-                Id = definitionId > 0 ? definitionId : ConceptToCashDefinitionId,
-                Name = "Implementation to Done",
-                StartState = "Implementation",
-                EndState = "Done",
-            };
         }
 
         public IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate)

@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Factories
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "Epic" },
+                CycleTimeDefinitions = CreateDemoCycleTimeDefinitions(),
                 DataRetrievalValue = ParseCsv(name)
             };
 
@@ -41,6 +42,7 @@ namespace Lighthouse.Backend.Factories
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
                 WorkItemTypes = new List<string> { "User Story", "Bug" },
+                CycleTimeDefinitions = CreateDemoCycleTimeDefinitions(),
                 DataRetrievalValue = ParseCsv(name)
             };
 
@@ -63,6 +65,20 @@ namespace Lighthouse.Backend.Factories
             workTrackingSystemConnection.Options.Single(x => x.Key == CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo).Value = bool.TrueString;
 
             return workTrackingSystemConnection;
+        }
+
+        private static List<CycleTimeDefinition> CreateDemoCycleTimeDefinitions()
+        {
+            return new List<CycleTimeDefinition>
+            {
+                new CycleTimeDefinition
+                {
+                    Id = 1,
+                    Name = "Implementation to Done",
+                    StartState = "Implementation",
+                    EndState = "Done",
+                },
+            };
         }
 
         private static string ParseCsv(string csvName)

@@ -378,6 +378,30 @@ namespace Lighthouse.Backend.Data
                 .Property(p => p.StateMappings)
                 .HasConversion(stateMappingsConverter)
                 .Metadata.SetValueComparer(stateMappingsComparer);
+
+            var cycleTimeDefinitionsConverter = new ValueConverter<List<CycleTimeDefinition>, string>(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new List<CycleTimeDefinition>()
+                    : JsonSerializer.Deserialize<List<CycleTimeDefinition>>(v, (JsonSerializerOptions?)null)
+                      ?? new List<CycleTimeDefinition>()
+            );
+
+            var cycleTimeDefinitionsComparer = new ValueComparer<List<CycleTimeDefinition>>(
+                (c1, c2) => JsonSerializer.Serialize(c1, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(c2, (JsonSerializerOptions?)null),
+                c => JsonSerializer.Serialize(c, (JsonSerializerOptions?)null).GetHashCode(),
+                c => JsonSerializer.Deserialize<List<CycleTimeDefinition>>(JsonSerializer.Serialize(c, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!
+            );
+
+            modelBuilder.Entity<Team>()
+                .Property(t => t.CycleTimeDefinitions)
+                .HasConversion(cycleTimeDefinitionsConverter)
+                .Metadata.SetValueComparer(cycleTimeDefinitionsComparer);
+
+            modelBuilder.Entity<Portfolio>()
+                .Property(p => p.CycleTimeDefinitions)
+                .HasConversion(cycleTimeDefinitionsConverter)
+                .Metadata.SetValueComparer(cycleTimeDefinitionsComparer);
         }
 
         public override int SaveChanges()

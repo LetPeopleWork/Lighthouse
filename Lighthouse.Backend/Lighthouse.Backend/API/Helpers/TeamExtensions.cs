@@ -58,6 +58,7 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncServiceLevelExpectation(team, teamSetting);
                 SyncBlockedItems(team, teamSetting);
                 SyncWaitStates(team, teamSetting);
+                SyncCycleTimeDefinitions(team, teamSetting);
             }
 
             public bool WorkItemRelatedSettingsChanged(TeamSettingDto teamSetting)
@@ -106,6 +107,22 @@ namespace Lighthouse.Backend.API.Helpers
                 {
                     Name = dto.Name.Trim(),
                     States = dto.States.Select(s => s.Trim()).ToList()
+                })
+                .ToList();
+        }
+
+        private static void SyncCycleTimeDefinitions(Team team, TeamSettingDto teamSetting)
+        {
+            var existingIds = team.CycleTimeDefinitions.Select(definition => definition.Id).ToHashSet();
+            var nextId = existingIds.Count == 0 ? 1 : existingIds.Max() + 1;
+
+            team.CycleTimeDefinitions = teamSetting.CycleTimeDefinitions
+                .Select(dto => new CycleTimeDefinition
+                {
+                    Id = dto.Id > 0 && existingIds.Contains(dto.Id) ? dto.Id : nextId++,
+                    Name = dto.Name.Trim(),
+                    StartState = dto.StartState.Trim(),
+                    EndState = dto.EndState.Trim(),
                 })
                 .ToList();
         }
