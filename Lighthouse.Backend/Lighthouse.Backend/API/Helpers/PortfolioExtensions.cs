@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.API.Helpers
 
             SyncStates(project, portfolioSetting);
             SyncStateMappings(project, portfolioSetting);
+            SyncCycleTimeDefinitions(project, portfolioSetting);
             SyncTeams(project, portfolioSetting, teamRepo);
             SyncServiceLevelExpectation(project, portfolioSetting);
             SyncBlockedItems(project, portfolioSetting);
@@ -70,6 +71,22 @@ namespace Lighthouse.Backend.API.Helpers
                 {
                     Name = dto.Name.Trim(),
                     States = dto.States.Select(s => s.Trim()).ToList()
+                })
+                .ToList();
+        }
+
+        private static void SyncCycleTimeDefinitions(Portfolio project, PortfolioSettingDto portfolioSetting)
+        {
+            var existingIds = project.CycleTimeDefinitions.Select(definition => definition.Id).ToHashSet();
+            var nextId = existingIds.Count == 0 ? 1 : existingIds.Max() + 1;
+
+            project.CycleTimeDefinitions = portfolioSetting.CycleTimeDefinitions
+                .Select(dto => new CycleTimeDefinition
+                {
+                    Id = dto.Id > 0 && existingIds.Contains(dto.Id) ? dto.Id : nextId++,
+                    Name = dto.Name.Trim(),
+                    StartState = dto.StartState.Trim(),
+                    EndState = dto.EndState.Trim(),
                 })
                 .ToList();
         }

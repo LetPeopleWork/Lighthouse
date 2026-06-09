@@ -156,6 +156,39 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), body);
         }
 
+        [Test]
+        public async Task PutPortfolio_PortfolioAdminAddsNamedCycleTime_DefinitionPersistsAndIsStampedValid()
+        {
+            client.AsPortfolioAdmin(seededPortfolioId);
+
+            var payload = BuildPortfolioSettingJson(seededPortfolioId);
+            payload["cycleTimeDefinitions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = 0,
+                    ["name"] = "Lead Time",
+                    ["startState"] = "New",
+                    ["endState"] = "Done",
+                },
+            };
+
+            var content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");
+            var putResponse = await client.PutAsync($"/api/latest/portfolios/{seededPortfolioId}", content);
+            Assert.That(putResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), await putResponse.Content.ReadAsStringAsync());
+
+            var settingsBody = await (await client.GetAsync($"/api/latest/portfolios/{seededPortfolioId}/settings")).Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(settingsBody);
+            var definitions = document.RootElement.GetProperty("cycleTimeDefinitions").EnumerateArray().ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(definitions, Has.Count.EqualTo(1),
+                    $"A named cycle time saved through the portfolio PUT must persist — PortfolioExtensions previously dropped CycleTimeDefinitions entirely. Body: {settingsBody}");
+                Assert.That(definitions[0].GetProperty("name").GetString(), Is.EqualTo("Lead Time"), settingsBody);
+                Assert.That(definitions[0].GetProperty("isValid").GetBoolean(), Is.True, settingsBody);
+            }
+        }
+
         private async Task<HttpResponseMessage> PutPortfolioWithThreshold(int portfolioId, int threshold)
         {
             var payload = BuildPortfolioSettingJson(portfolioId);

@@ -270,13 +270,31 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Select(visit => (visit.State, visit.ItemId, (visit.End - visit.Start).TotalDays));
         }
 
+        private static DateTime? WorkflowEntryIntoFirstState(WorkItem item, IReadOnlyList<WorkItemStateTransition> orderedTransitions)
+        {
+            var startedDate = item.StartedDate;
+
+            // StartedDate is the entry into the first Doing state. If the first recorded state was
+            // exited at or before then, it is a pre-Doing (To Do) state the item has occupied since it
+            // was created — its entry is CreatedDate. Otherwise the first recorded state IS the first
+            // Doing state, entered at StartedDate. This keeps the default Doing-only view anchored at
+            // StartedDate while letting a named window that spans To Do states measure from creation.
+            var firstStateLeftBeforeDoingStart = startedDate.HasValue
+                && orderedTransitions.Count > 0
+                && orderedTransitions[0].TransitionedAt <= startedDate.Value;
+
+            return firstStateLeftBeforeDoingStart
+                ? (item.CreatedDate ?? startedDate)
+                : (startedDate ?? item.CreatedDate);
+        }
+
         private static IEnumerable<(string State, int ItemId, DateTime Start, DateTime End)> RawCompletedVisits(WorkItem item)
         {
             var orderedTransitions = item.SyncedTransitions
                 .OrderBy(transition => transition.TransitionedAt)
                 .ToList();
 
-            var entryIntoState = item.StartedDate;
+            var entryIntoState = WorkflowEntryIntoFirstState(item, orderedTransitions);
 
             foreach (var transition in orderedTransitions)
             {
@@ -372,10 +390,24 @@ namespace Lighthouse.Backend.Services.Implementation
                 return null;
             }
 
-            var endMoment = stateEntries
-                .Where(entry => entry.EnteredAt >= startMoment.Value && entry.Rank >= endThreshold)
-                .Select(entry => (DateTime?)entry.EnteredAt)
-                .FirstOrDefault();
+            // The clock stops at the LAST forward crossing into the end boundary (an item that reaches
+            // the end, is reopened below it, and reaches it again ends on the final re-close — aligning
+            // with the default Cycle Time's ClosedDate and keeping a wider window from measuring shorter
+            // than a narrower one). A re-stamp that never dropped below the boundary is NOT a new crossing,
+            // so dwell inside the end state is still excluded (D10).
+            DateTime? endMoment = null;
+            var previousRank = int.MinValue;
+            foreach (var entry in stateEntries)
+            {
+                var isForwardCrossing = previousRank < endThreshold && entry.Rank >= endThreshold;
+                if (isForwardCrossing && entry.EnteredAt >= startMoment.Value)
+                {
+                    endMoment = entry.EnteredAt;
+                }
+
+                previousRank = entry.Rank;
+            }
+
             if (!endMoment.HasValue)
             {
                 return null;
@@ -399,17 +431,18 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static IEnumerable<(int Rank, DateTime EnteredAt)> OrderedStateEntries(WorkItem item, IReadOnlyList<string> allStatesInOrder)
         {
-            if (!item.StartedDate.HasValue)
-            {
-                yield break;
-            }
-
             var orderedTransitions = item.SyncedTransitions
                 .OrderBy(transition => transition.TransitionedAt)
                 .ToList();
 
+            var workflowEntry = WorkflowEntryIntoFirstState(item, orderedTransitions);
+            if (!workflowEntry.HasValue)
+            {
+                yield break;
+            }
+
             var firstState = orderedTransitions.Count > 0 ? orderedTransitions[0].FromState : item.State;
-            yield return (RankOfState(allStatesInOrder, firstState), item.StartedDate.Value);
+            yield return (RankOfState(allStatesInOrder, firstState), workflowEntry.Value);
 
             foreach (var transition in orderedTransitions)
             {

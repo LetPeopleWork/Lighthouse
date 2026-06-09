@@ -122,6 +122,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void NamedCycleTimeDays_WindowSpanningAToDoFirstState_MeasuresFromCreationNotStarted()
+        {
+            var item = ItemWithDates(
+                createdDate: FixtureStart,
+                startedDate: FixtureStart.AddDays(3),
+                Transition("Planned", "In Progress", FixtureStart.AddDays(3)),
+                Transition("In Progress", "Done", FixtureStart.AddDays(13)));
+
+            var result = TestableBaseMetricsService.NamedDays(item, AllStatesInOrder, "Planned", "Done");
+
+            Assert.That(result, Is.EqualTo(14),
+                "A window anchored at a To Do state measures from when the item entered that state at creation (day 0), " +
+                "not from StartedDate (day 3) — so a wider window is never shorter than the default cycle time.");
+        }
+
+        [Test]
+        public void NamedCycleTimeDays_ItemReopenedAndReclosed_EndsOnTheFinalReClose()
+        {
+            var item = ItemWithTransitions(FixtureStart,
+                Transition("Planned", "In Progress", FixtureStart),
+                Transition("In Progress", "Done", FixtureStart.AddDays(10)),
+                Transition("Done", "In Progress", FixtureStart.AddDays(15)),
+                Transition("In Progress", "Done", FixtureStart.AddDays(20)));
+
+            var result = TestableBaseMetricsService.NamedDays(item, AllStatesInOrder, "In Progress", "Done");
+
+            Assert.That(result, Is.EqualTo(21),
+                "A reopened item ends on the LAST forward crossing into Done (day 20), not the first (day 10) — " +
+                "aligning with the default Cycle Time's ClosedDate so a wider window never measures shorter.");
+        }
+
+        [Test]
         public void ScopedCumulativeStateOrder_SpansFromStartInclusiveToEndExclusive()
         {
             var span = TestableBaseMetricsService.ScopedOrder(AllStatesInOrder, "In Progress", "Done");
@@ -163,6 +195,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 State = "Done",
                 StateCategory = StateCategories.Done,
+                StartedDate = startedDate,
+                ClosedDate = transitions.Length > 0 ? transitions[^1].TransitionedAt : startedDate,
+                SyncedTransitions = transitions,
+            };
+        }
+
+        private static WorkItem ItemWithDates(DateTime createdDate, DateTime startedDate, params WorkItemStateTransition[] transitions)
+        {
+            return new WorkItem
+            {
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                CreatedDate = createdDate,
                 StartedDate = startedDate,
                 ClosedDate = transitions.Length > 0 ? transitions[^1].TransitionedAt : startedDate,
                 SyncedTransitions = transitions,
