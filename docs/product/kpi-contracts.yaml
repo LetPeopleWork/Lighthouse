@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-06-06
+updated: 2026-06-09
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -474,4 +474,43 @@ outcomes:
       DISCUSS KPIs 1 & 2 (recurring-rule adoption replacing hand-entered weekend periods; drop in net-new
       one-off weekend periods) are opt_in_telemetry_required — blocked on Epic 5015, tracked qualitatively
       (Productboard/support) until then; instrumented in code so they activate when telemetry lands.
+    alerting: []
+
+  - id: OUT-wia-percentile-functional-completeness
+    feature: work-item-age-percentiles
+    title: Work Item Age percentiles functional completeness + client-side toggle
+    target: >
+      KPI-1: WIA card renders correct 50/70/85/95 for any Team/Portfolio with >= 1 in-progress
+      item (100%, test-verified). KPI-2: the CT<->WIA aging-chart toggle re-renders client-side
+      with no network round-trip when data is already loaded.
+    measurement_scope: vendor_demo_only
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs
+        scenario: "@US-01 team with in-progress items of known ages returns exact percentiles of those ages"
+        tag: "@kpi-OUT-wia-percentile-functional-completeness"
+        gate_type: hard
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs
+        scenario: "@US-03 portfolio with in-progress features of known ages returns exact percentiles of those ages"
+        tag: "@kpi-OUT-wia-percentile-functional-completeness"
+        gate_type: hard
+      - file: Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx
+        scenario: "Cycle time / work item age reference-line selector swaps the line source without a re-fetch"
+        tag: "@kpi-OUT-wia-percentile-functional-completeness"
+        gate_type: hard
+    measurement_window: build-time (every CI run); demo walkthrough at finalize
+    rationale: >
+      Both DISCUSS KPIs are repo/test-verifiable, not telemetry-dependent. KPI-1 (functional
+      completeness) is asserted by the golden-percentile integration tests on both scopes plus the
+      FE card component tests. KPI-2 (interaction cost) is structural: both percentile arrays are
+      fetched in parallel into ctx and the toggle is a pure client-side `percentileSource` source
+      swap feeding the existing single reference-line block (ADR-066) — no per-flip network call,
+      proven by the selector test asserting the lines redraw without a re-fetch. KPI-3 (qualitative
+      "is my WIP aging healthily?" from one screen) is validated by the demo walkthrough; central
+      telemetry is unavailable (self-hosted; Epic 5015).
+    instrumentation_status: >
+      Repo/test-verifiable now. KPI-1: 13 base + 4 boundary integration scenarios (Team + Portfolio)
+      + FE card tests; measured baseline = 100% functional completeness (all green). KPI-2: client-side
+      source swap, no network round-trip (selector test). Mutation quality on the new surface: BE 83.3%
+      adjusted, FE 95.9% adjusted (>= 80% gate). KPI-3 is vendor_demo_only — no central telemetry; tracked
+      qualitatively until Epic 5015 opt-in telemetry lands.
     alerting: []

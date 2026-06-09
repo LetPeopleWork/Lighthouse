@@ -324,3 +324,93 @@ Both files live in `Lighthouse.Backend.Tests/API/Integration/`, the canonical ho
 - **[Forge MEDIUM] Cache-isolation test.** Add a cheap defensive test that `WorkItemAgePercentiles_{endDate}` and `CycleTimePercentiles_{startDate}_{endDate}` produce distinct cache entries for the same entity+endDate and never cross-contaminate (guards against a metric-identifier typo silently serving the wrong percentile lines).
 - **[Forge LOW] KPI-3 finalization criterion.** Define a concrete dogfood/demo pass for KPI-3 (flow coach answers "is my WIP aging healthily?" from one screen). If the card is ignored in the walkthrough, record as an exploratory finding (not a release blocker), since central telemetry is unavailable (self-hosted; Epic 5015).
 - **[Eclipse MEDIUM] (DONE)** Stale DISCUSS Clients "Conditional" line refreshed to "AFFECTED (version-gated)" — fixed in this pass.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+6 steps across 3 slices, all RED → GREEN → COMMIT, every step CI-green. Server computes the WIA percentiles; the frontend consumes the server-fetched `PercentileValue[]` exactly as it does for cycle-time percentiles (D8 / ADR-065).
+
+| Step | Commit | Slice | What shipped |
+|------|--------|-------|--------------|
+| 01-01 | `23f4e50f` | 01 (Team) | `GET /api/teams/{teamId}/metrics/workItemAgePercentiles` → `IEnumerable<PercentileValue>`. Service composes the in-progress selection (`GetWipSnapshotForTeam`) → each item's `WorkItemAge` (`> 0` filter) → `BuildPercentiles`/`PercentileCalculator`. Snapshot semantics: only `endDate` selects the population + the cache key (`WorkItemAgePercentiles_{endDate}`); `startDate` does not filter (D4). 9 acceptance tests. |
+| 01-02 | `5d8d4450` | 01 (Team) | `WorkItemAgePercentiles.tsx` card (clone of `CycleTimePercentiles`, empty-state keyed on all-four-values == 0) + `MetricsService.getWorkItemAgePercentiles` + `useMetricsData` ctx field + `categoryMetadata` widget entry + Team render via `BaseMetricsView`. |
+| 02-01 | `0add4fb5` | 02 (toggle) | `WorkItemAgingChart` Cycle Time ↔ Work Item Age segmented `ToggleButtonGroup` (FeatureSize-style) swapping the reference-line *source*: one derived `activePercentiles` feeds the single existing `ChartsReferenceLine` block (ADR-066). |
+| 02-02 | `ee511d50` | 02 (toggle) | Live Playwright `@screenshot` walking-skeleton (`MetricsPage` POM + `Screenshots.spec.ts`), run live against a clean backend, card + aging-selector PNGs committed. |
+| 03-01 | `50cef21c` | 03 (Portfolio) | Portfolio endpoint + service (mirror of Team via `GetInProgressFeaturesForPortfolio`). |
+| 03-02 | `f466ab08` | 03 (Portfolio) | Portfolio card + selector render via `BaseMetricsView` — component reuse, no new components. |
+
+Post-step hardening: `bac5552d` (Sonar S7735 negated-ternary on the reference-line render guard), `9858b9fd` (BE mutation-harden — start/end-date 400 guard boundary), `a0584673` (FE mutation-harden — empty-state `.some`, schema, URL, visibility guard), `23f5eccc` (review feedback — axis stabilised to cycle time + overlapping percentile-line value-dedup), `438dfc00` (docs/metrics + regenerated screenshot).
+
+## Wave: DELIVER / [REF] Files modified
+
+**Production (backend)**
+- `Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs` — new `workItemAgePercentiles` action
+- `Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs` — Portfolio sibling action
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs` — `GetWorkItemAgePercentilesForTeam`
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs` — `GetWorkItemAgePercentilesForPortfolio`
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs` + `IPortfolioMetricsService.cs` — new method signatures
+
+**Production (frontend)**
+- `src/components/Common/Charts/WorkItemAgePercentiles.tsx` — new card
+- `src/components/Common/Charts/WorkItemAgingChart.tsx` — CT↔WIA toggle + axis stabilisation + line-value dedup
+- `src/services/Api/MetricsService.ts` — `getWorkItemAgePercentiles`
+- `src/models/PercentileValue.ts` — `PercentileValueSchema` reuse for the new read
+- `src/hooks/useMetricsData.ts` — parallel-fetch `workItemAgePercentilesValues` ctx field
+- `src/pages/Common/MetricsView/BaseMetricsView.tsx` — render card + pass WIA array to the `aging` widget (Team + Portfolio)
+- `src/pages/Common/MetricsView/categoryMetadata.ts` — `workItemAgePercentiles` widget entry
+- `src/tests/MockApiServiceProvider.ts` — mock for the new service method
+
+**Test**
+- `Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs` (Team, 9 + 2 boundary)
+- `Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs` (Portfolio, 4 + 2 boundary)
+- `TeamMetricsServiceTests.cs` / `PortfolioMetricsServiceTests.cs` — golden percentiles + population
+- `WorkItemAgePercentiles.test.tsx`, `WorkItemAgingChart.test.tsx`, `MetricsService.test.ts`, `useMetricsData.test.ts`, `BaseMetricsView.test.tsx`, `categoryMetadata.test.ts`, `TotalWorkItemAgeWidget.test.tsx`
+- `Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts` + `tests/specs/screenshots/Screenshots.spec.ts` — live `@screenshot`
+- Stryker configs: `stryker-config.work-item-age-percentiles.json`, `stryker.config.work-item-age-percentiles.mjs`, `vitest.stryker.work-item-age-percentiles.config.ts`
+
+**Docs**
+- `docs/metrics/widgets.md` — WIA card + aging-selector prose
+- `docs/product/architecture/brief.md` + `c4-diagrams.md` — DESIGN section (SHIPPED markers added at finalize)
+- `docs/product/architecture/adr-065-*.md`, `adr-066-*.md`
+- E2E screenshots: `workItemAgePercentilesCard.png`, `agingWorkItemAgeReferenceLines.png`
+- `docs/ci-learnings.md` — S7735 negated-ternary rule
+
+## Wave: DELIVER / [REF] Scenarios green
+
+- Backend acceptance: 13 base (9 Team + 4 Portfolio) + 4 mutation-hardening boundary tests = **17 integration scenarios green**.
+- Backend service unit tests: golden-percentile + population assertions on both services.
+- Frontend: 74 tests across the scoped Vitest suite (card + chart selector + service + plumbing) green.
+- E2E: 1 live `@screenshot` walking-skeleton (card + aging selector), run live and passing.
+
+## Wave: DELIVER / [REF] Definition of Done (against the DISCUSS 9-item)
+
+1. US-01/02/03 ACs all green (BE integration + FE component) — ✅
+2. WIA card renders Team + Portfolio — ✅
+3. Aging-chart CT↔WIA toggle round-trips — ✅ (client-side source swap, no reload)
+4. Empty-WIP path graceful on card + chart — ✅ (all-zero set; card empty state; chart no WIA lines)
+5. `pnpm build`/`pnpm test` + `dotnet build`/`dotnet test` green, zero warnings — ✅
+6. SonarCloud `new_violations = 0` — ✅ (S7735 fixed in `bac5552d`)
+7. Mutation ≥ 80% on new compute + toggle — ✅ (BE 83.3% adjusted, FE 95.9% adjusted)
+8. `docs/metrics/` updated + per-theme `@screenshot` run live — ✅ **with a noted gap**: the live `@screenshot` covers the Team card + Team aging selector. A **dedicated Portfolio `@screenshot` is deferred** (Portfolio surface is component-identical via `BaseMetricsView`; covered by BE Portfolio integration + FE `BaseMetricsView` tests, not by a separate Portfolio PNG).
+9. ADO #5257 transition / release-notes tag — orchestrator-owned (this finalize does NOT transition ADO or push).
+
+**Cross-cutting deliverable (not in this repo):** the version-gated `getWorkItemAgePercentiles` CLI + MCP wrapper + `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is committed in the **separate clients repo, awaiting release**. Per the Forge HIGH review action item, this MUST be confirmed merged before the feature releases — it is a release-gate, tracked outside this workspace.
+
+## Wave: DELIVER / [REF] Demo evidence
+
+- Live Playwright `@screenshot` ran against a clean backend (demo data) and passed — the card and the aging-chart CT↔WIA selector both render.
+- Regenerated PNGs committed: `workItemAgePercentilesCard.png` (new) and `agingWorkItemAgeReferenceLines.png` (regenerated after the axis-stabilisation + dedup review fix shifted the rendered lines).
+- KPI-3 dogfood criterion (Forge LOW): the flow coach can read 50/70/85/95 of current WIP from one card and contrast it against historical cycle time on the same chart via the toggle — satisfied in the demo walkthrough; central telemetry unavailable (self-hosted; Epic 5015).
+
+## Wave: DELIVER / [REF] Quality gates
+
+- **Refactor**: no-op — the feature composes existing primitives; no structural refactor needed.
+- **Adversarial review**: APPROVED, **0 blockers**.
+- **4-reviewer DISTILL gate**: passed (0 blockers; action items all DELIVER-scope, addressed).
+- **Mutation**: BE **83.3% adjusted** (10/12; 8 equivalent — logging + unreachable `>=0` boundary, 2 marginal constant-cache-key), FE **95.9% adjusted** (70/73; 0 genuine gaps, survivors presentational/equivalent/pre-existing-chart). Reports: `docs/feature/work-item-age-percentiles/deliver/mutation/`.
+- **Integrity check**: exit 0.
+
+## Wave: DELIVER / [REF] Pre-requisites (consumed)
+
+All existing, no new prerequisite introduced: `PercentileCalculator` + `BaseMetricsService.BuildPercentiles`; `PercentileValue` / `IPercentileValue`; `GetWipSnapshotForTeam` / `GetInProgressFeaturesForPortfolio`; `BaseMetricsService.GetFromCacheIfExists`; `WorkItemBase.WorkItemAge`; `ForecastLevel`; `CycleTimePercentiles.tsx` (template); `WorkItemAgingChart.tsx` + `useChartVisibility` + `ChartsReferenceLine`; `WebApplicationFactory<Program>` test host. No EF migration, no new library, no new persistence.

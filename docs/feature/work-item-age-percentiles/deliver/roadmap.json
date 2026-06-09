@@ -1,0 +1,188 @@
+{
+  "roadmap": {
+    "project_id": "work-item-age-percentiles",
+    "created_at": "2026-06-09T00:00:00Z",
+    "total_steps": 6
+  },
+  "implementation_scope": {
+    "summary": "Work Item Age percentiles (Story #5257). A non-premium read that summarises the CURRENT in-progress population's own ages as 50/70/85/95 percentiles — distinct from the completed-work cycle-time percentiles. D8 LOCKED backend compute: two NEW endpoints GET /api/{teams|portfolios}/{id}/metrics/workItemAgePercentiles?startDate&endDate returning the EXISTING IEnumerable<PercentileValue> shape (NO new DTO), each mirroring cycleTimePercentiles (same [RbacGuard(TeamRead/PortfolioRead)], same startDate>endDate=>400, same date-keyed cache idiom). Each service method composes existing primitives: the existing in-progress selection (GetWipSnapshotForTeam / GetInProgressFeaturesForPortfolio) -> each item's WorkItemBase.WorkItemAge (filter > 0) -> BaseMetricsService.BuildPercentiles -> PercentileCalculator (50/70/85/95). SNAPSHOT semantics (D4): only endDate selects the population + participates in the cache key (WorkItemAgePercentiles_{endDate:yyyy-MM-dd}); startDate exists for signature parity + the 400-guard but does NOT filter. Two upstream contracts the impl MUST honour: (1) BuildPercentiles([]) returns FOUR zero-valued entries (NOT empty) — empty WIP yields an all-zero four-entry set, FE empty-state reads 'all four == 0'; (2) WorkItemAge is measured vs DateTime.UtcNow (endDate only selects the snapshot, never scopes the age). FE: a WorkItemAgePercentiles.tsx card cloned from CycleTimePercentiles.tsx + MetricsService.getWorkItemAgePercentiles + a useMetricsData ctx field + a categoryMetadata.ts entry + BaseMetricsView wiring; a WorkItemAgingChart CT<->WIA toggle that swaps one activePercentiles source feeding the EXISTING single ChartsReferenceLine block (mutually exclusive, CT default; pace-band chip orthogonal). 3 slices (US-01 Team card, US-02 chart toggle + E2E, US-03 Portfolio). The 13 scaffolded WebApplicationFactory ATs (9 Team + 4 Portfolio) are class-[Ignore]'d RED and un-ignored one at a time in GREEN — the crafter does NOT re-author them.",
+    "in_scope": [
+      "Team GET /api/teams/{teamId:int}/metrics/workItemAgePercentiles + GetWorkItemAgePercentilesForTeam service method returning IEnumerable<PercentileValue>; reuse the in-progress selection + BuildPercentiles/PercentileCalculator + PercentileValue; > 0 age filter; startDate>endDate=>400; WorkItemAgePercentiles_{endDate} cache key (endDate-only, distinct from CycleTimePercentiles_)",
+      "Portfolio GET /api/portfolios/{portfolioId:int}/metrics/workItemAgePercentiles + GetWorkItemAgePercentilesForPortfolio mirroring the Team path over GetInProgressFeaturesForPortfolio",
+      "FE WorkItemAgePercentiles.tsx card (clone of CycleTimePercentiles.tsx: 50/70/85/95 descending, ForecastLevel colours, graceful all-zero empty state) + MetricsService.getWorkItemAgePercentiles + IMetricsService extension + useMetricsData parallel-fetch ctx field workItemAgePercentilesValues + categoryMetadata.ts entry + BaseMetricsView render (Team + Portfolio)",
+      "WorkItemAgingChart CT<->WIA toggle: a local percentileSource state derives one activePercentiles feeding the EXISTING single ChartsReferenceLine block (mutual exclusivity structural, CT default); pace-band chip untouched/orthogonal; empty-WIP => no WIA lines",
+      "Cache-key isolation test: WorkItemAgePercentiles_{endDate} distinct from CycleTimePercentiles_{startDate}_{endDate} for the same entity+endDate (Forge MEDIUM)",
+      "Live Playwright walking-skeleton + per-theme @screenshot driving the card + CT<->WIA toggle on demo data (run-live-before-commit)",
+      "Zod reuse of the existing percentile shape at the new read boundary (no new schema)"
+    ],
+    "out_of_scope": [
+      "Per-state WIA percentiles (already served by aging-pace-percentiles)",
+      "Any change to how WorkItemAge itself is computed",
+      "Premium gating / new permissions / new RBAC surface (D3 — rides existing [RbacGuard]; no ILicenseService on the read path)",
+      "A configurable percentile set (50/70/85/95 is fixed)",
+      "New DTO / new driven adapter / new repository / EF migration (reads existing repos via existing selections + cache)",
+      "Lighthouse-Clients version-gated getWorkItemAgePercentiles wrapper + FEATURE_REQUIRES_SERVER_NEWER_THAN entry (separate repo; tracked as a finalization/release gate, not a slice here — Forge HIGH)",
+      "docs/metrics/ prose (authored at finalization with the @screenshot, not a roadmap step)"
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 — Team WIP-age percentile endpoint + overview card (US-01)",
+      "description": "The thinnest end-to-end Team slice (D7, brownfield extension — no walking skeleton). Backend: a new GetWorkItemAgePercentilesForTeam service method + a new Team controller action mirroring cycleTimePercentiles, composing the existing in-progress selection -> WorkItemAge (> 0) -> BuildPercentiles. Honour the two upstream contracts (empty WIP => four zero-valued entries; WorkItemAge vs UtcNow, endDate selects the snapshot only). Frontend: the WorkItemAgePercentiles.tsx card cloned from CycleTimePercentiles.tsx + the MetricsService method + the useMetricsData ctx field + the categoryMetadata entry + BaseMetricsView render (Team). Un-ignore the 9 US-01 ATs one at a time; add the cache-key isolation unit test.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Team workItemAgePercentiles endpoint + GetWorkItemAgePercentilesForTeam service method",
+          "criteria": [
+            "GET /api/latest/teams/{teamId:int}/metrics/workItemAgePercentiles?startDate&endDate exists under the EXISTING class-level [RbacGuard(TeamRead)] and returns IEnumerable<PercentileValue> byte-compatible with cycleTimePercentiles (flat [{percentile,value}], four entries 50/70/85/95 in emission order); startDate>endDate => 400",
+            "GetWorkItemAgePercentilesForTeam composes the existing in-progress selection (GetWipSnapshotForTeam, asOfDate=endDate) -> each item's WorkItemBase.WorkItemAge filtered > 0 -> BuildPercentiles; closed items are excluded so a 400-day-cycle-time closed item never leaks into p95",
+            "Snapshot semantics (D4): only endDate selects the population AND participates in the cache key WorkItemAgePercentiles_{endDate:yyyy-MM-dd}; differing startDate with the same endDate returns identical percentiles; startDate does NOT filter; the cache key is distinct from CycleTimePercentiles_{startDate}_{endDate} for the same entity+endDate (cross-contamination guard, Forge MEDIUM)",
+            "Empty WIP returns the four-entry all-zero set (BuildPercentiles([]) contract — NOT an empty array, NOT a crash); a single in-progress item yields that one value at every percentile (D6, no low-sample gate); a non-premium TeamViewer still receives the real percentile payload (D3 — no ILicenseService on the path); an anonymous caller is denied",
+            "The 9 US-01 ATs in WorkItemAgePercentilesReadApiIntegrationTest are un-ignored one at a time and green; a NUnit unit test asserts the WorkItemAgePercentiles_{endDate} cache key is distinct from the cycleTimePercentiles key for the same entity+endDate"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs",
+          "scenario_name": "GetWorkItemAgePercentiles_TeamWithInProgressItemsOfKnownAges_ReturnsExactPercentilesOfThoseAges; GetWorkItemAgePercentiles_PopulationIsTheWipSet_ClosedItemsExcluded; GetWorkItemAgePercentiles_ResponseShapeIsByteCompatibleWithCycleTimePercentiles; GetWorkItemAgePercentiles_SameEndDateDifferentStartDate_ReturnsIdenticalPercentiles; GetWorkItemAgePercentiles_TeamWithNoInProgressItems_ReturnsGracefulZeroValuedSet; GetWorkItemAgePercentiles_TeamWithSingleInProgressItem_ComputesOverThatOneValue; GetWorkItemAgePercentiles_NonPremiumCaller_StillReceivesPercentiles; GetWorkItemAgePercentiles_AnonymousCaller_IsRejected; GetWorkItemAgePercentiles_StartDateAfterEndDate_ReturnsBadRequest",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (the C#-row of the Architecture-of-Reference per docs/architecture/atdd-infrastructure-policy.md governs — Hypothesis/assert_state_delta are the Python pilot and do NOT apply here). The un-ignored ATs are layer-4 black-box integration tests (WebApplicationFactory<Program> + real EF + real in-progress selection) that verify wiring, single-example per the mandate. Compensate with NUnit unit tests on the service method: hand-computed golden ages 1,2,2,3,3,4,5,6,7,9 => nearest-rank 50/70/85/95 = 3,5,6,9 (mirror GetCycleTimePercentilesForTeam test cases for the BuildPercentiles boundary mutants); the > 0 age filter (a zero/negative age is dropped); the empty-population path (BuildPercentiles([]) => four zero entries); and the endDate-only cache key (NOT startDate — the Forge cache-isolation unit test). ADR-065: CREATE NEW GetWorkItemAgePercentilesForTeam composing existing primitives — the in-progress selection GetWipSnapshotForTeam (REUSE-AS-IS, same set that feeds the aging-chart dots, asOfDate=endDate), each item's WorkItemBase.WorkItemAge (REUSE-AS-IS, measured vs DateTime.UtcNow so golden StartedDate is anchored to today; endDate only selects WHICH items the snapshot includes, it does NOT scope the age value — upstream-issues.md finding 3), BaseMetricsService.BuildPercentiles -> PercentileCalculator (REUSE-AS-IS). UPSTREAM CONTRACT (upstream-issues.md finding 1): BuildPercentiles([]) returns FOUR zero-valued PercentileValue entries, NOT an empty array — do NOT special-case empty WIP to []; the four-entry all-zero set IS the graceful empty path (D6). Reuse PercentileValue — NO new DTO. The controller action mirrors the cycleTimePercentiles action: same class-level [RbacGuard(TeamRead)], same startDate>endDate=>400 BadRequest, same GetFromCacheIfExists idiom with the NEW key namespace WorkItemAgePercentiles_{endDate:yyyy-MM-dd} (endDate-only — startDate is NOT in the key, mirroring the snapshot semantics; this is also why the cache-isolation test matters). startDate stays on the signature for parity + the 400-guard only. NO premium gate, NO ILicenseService on this read path (D3) — the NonPremiumCaller test pins a standard viewer is served. NO new driven adapter, NO persistence, NO EF migration. CI-LEARNINGS PRE-APPLY (grep the ledger first): NUnit4002 (Is.Zero not Is.EqualTo(0) — the empty-set test asserts all values zero); NUnit2045/2056 (two+ consecutive Assert.That => wrap in using (Assert.EnterMultipleScope())); S2325 (static where no instance state); CA1859/CA1861; S3267/S6608 on LINQ (.Where(a => a > 0).Select(...)); CA2016 (forward CancellationToken). RED handoff: un-ignore the 9 ATs ONE at a time — confirm RED-for-right-reason (the route is unmatched => SPA fallback HTML body => the AssertIsPercentileJsonArray guard converts that to a clean MISSING_FUNCTIONALITY assertion, never a raw JsonDocument.Parse 500). WRONG RED = a 500 / unrelated 400 => BLOCK and fix setup. Post-GREEN Fixture-Theater check: git diff --stat MUST show TeamMetricsController.cs + TeamMetricsService.cs + ITeamMetricsService.cs changed; if only the test file changed the durations are echoed not computed => BLOCK. MUTATION (DELIVER gate, >=80% Stryker BE): harden the > 0 age filter, the endDate-only cache key, and the empty-population path. Immutability (ImmutableList/[..] copies, no mutable List<T> state mutation), <=2 nesting, early returns no else chains, switch expressions, async with CancellationToken, no comments, nullable enabled, TreatWarningsAsErrors zero-warning build."
+        },
+        {
+          "id": "01-02",
+          "name": "WorkItemAgePercentiles card + MetricsService fetch + useMetricsData ctx + categoryMetadata + Team render",
+          "criteria": [
+            "A new small 'Work Item Age Percentiles' card renders in the Team metrics OverviewCategory mirroring CycleTimePercentiles.tsx: the 50/70/85/95 rows in descending order with ForecastLevel colouring, and a distinct WIA title so it is never conflated with the Cycle Time Percentiles card",
+            "Given the all-zero four-entry set (empty WIP), the card renders a graceful empty state ('—' / no-work-in-progress) reading the all-four-values-==-0 signal, NOT array length 0, NOT a crash (D6, upstream-issues.md finding 1)",
+            "MetricsService.getWorkItemAgePercentiles (+ IMetricsService extension) fetches GET .../metrics/workItemAgePercentiles -> IPercentileValue[] and validates the response with the EXISTING percentile Zod shape at the boundary (z.infer, no as-cast); useMetricsData parallel-fetches it alongside percentileValues into a new ctx field workItemAgePercentilesValues",
+            "categoryMetadata.ts gains a workItemAgePercentiles entry (OverviewCategory / flow-overview, size small, both scopes); BaseMetricsView renders the new card via the widget key in the Team path",
+            "Vitest covers: the card lists 50/70/85/95 descending with ForecastLevel; the all-zero set renders the empty state; the service method calls the endpoint and parses the percentile shape; pnpm build clean; Biome zero warnings on ./src"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgePercentiles.test.tsx",
+          "scenario_name": "renders the 50/70/85/95 work item age percentiles in descending order with ForecastLevel colouring, and shows a graceful empty state when the four percentile values are all zero",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgePercentiles.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgePercentiles.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. The FE component test was DEFERRED to DELIVER per DISTILL (a standalone RED component test against a non-existent component is BROKEN, not RED, under Vitest module resolution) — author it here alongside the component. Card-renders-rows / empty-state / service-fetch are example-based RTL/service-seam assertions; compensate by parametrising the (descending rows + ForecastLevel, all-zero => empty state, populated => values) cases. CREATE NEW WorkItemAgePercentiles.tsx by CLONING CycleTimePercentiles.tsx (Reuse Analysis TEMPLATE row — original UNMODIFIED): same layout, same ForecastLevel palette (REUSE-AS-IS), DISTINCT WIA title. EMPTY-STATE CONTRACT (upstream-issues.md finding 1): the wire payload for empty WIP is the four-entry all-zero set, NOT []; the card's empty-state predicate is 'all four values == 0', NOT 'array length 0' — do NOT key the empty state off length. EXTEND MetricsService with getWorkItemAgePercentiles (additive method on the IMetricsService interface in MetricsService.ts and the base impl) that fetches the new endpoint and validates with the EXISTING percentile Zod schema (reuse PercentileValue[] — no new schema; z.infer the type, never as-cast — CLAUDE.md). EXTEND useMetricsData to parallel-fetch into a NEW MetricsData ctx field workItemAgePercentilesValues alongside percentileValues (same Promise.all idiom). CREATE NEW categoryMetadata.ts entry workItemAgePercentiles (flow-overview, size small, both scopes). EXTEND BaseMetricsView to render the card via the widget key (Team path this slice; Portfolio path reuses it in 03-02). CRITICAL (project_react185_loop_unstable_useeffect_dep + ci-learnings 2026-05-25): do NOT feed an inline new Date()/[]/{} into a useEffect/useMemo dep (the date-range + percentile-array deps are classic offenders) — useMemo/useCallback-stabilise. CLIENTS NOTE: the NEW endpoint => the separate Lighthouse-Clients repo owes a version-gated getWorkItemAgePercentiles wrapper + FEATURE_REQUIRES_SERVER_NEWER_THAN entry (NOT in this slice; release-gated per Forge HIGH — confirm merged before this feature releases). CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining x?.m() ?? false); skip framework renders-without-crashing tests (CLAUDE.md). Factory getMockX(overrides?) validated against the IPercentileValue type — never redefine the schema in tests. Strict TS, no any (narrow unknown with a guard); type for data, interface only for behaviour contracts; immutable (map/filter/spread, never push/sort-in-place). Biome clean; pnpm build zero warnings."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 — Aging-chart CT<->WIA toggle (Team) + live E2E (US-02)",
+      "description": "The WorkItemAgingChart gains a CT<->WIA toggle that swaps the SINGLE reference-line source (one activePercentiles derived from a local percentileSource state) feeding the EXISTING single ChartsReferenceLine block — mutually exclusive, CT default, pace-band chip orthogonal/untouched, empty-WIP => no WIA lines (D2/D6). US-02 has NO backend AT — it is covered by Vitest (toggle behaviour) + the live Playwright walking-skeleton on demo data.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "WorkItemAgingChart CT<->WIA reference-line toggle (Team)",
+          "criteria": [
+            "WorkItemAgingChart gains an optional workItemAgePercentileValues prop + a local percentileSource state + a CT<->WIA toggle control; one derived activePercentiles feeds the EXISTING single ChartsReferenceLine block (no second line set — mutual exclusivity is structural)",
+            "Default position is CT (current behaviour byte-preserved); flipping to WIA redraws the reference lines at the 50/70/85/95 of current in-progress ages and the CT lines are removed; flipping back restores the CT lines and round-trips client-side with no page reload (AC1/AC2)",
+            "The pace-band overlay chip (if present) is unaffected by the toggle — the two controls are orthogonal (D2, AC3); with zero in-progress items, flipping to WIA shows no reference lines and the dots area renders normally, no crash (D6, AC4)",
+            "The chart consumes the SAME workItemAgePercentilesValues ctx field as the Slice-01 card (single source of truth — no extra fetch); clear axis/legend labelling distinguishes CT lines from WIA lines",
+            "Vitest covers: CT default lines, flip-to-WIA swaps the line source and removes CT lines, round-trip restores CT, pace-band orthogonal, empty-WIP no WIA lines; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx",
+          "scenario_name": "swaps the reference lines from cycle time to work item age percentiles when toggled and removes the cycle-time lines, round-trips back to cycle time without reload, leaves the pace-band overlay untouched, and renders no work-item-age lines for empty WIP",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Toggle-swap / round-trip / orthogonality / empty-WIP are example-based RTL assertions; compensate by parametrising the (CT default, WIA swaps + CT removed, round-trip restores CT, pace-band untouched, empty-WIP no lines) cases. ADR-066: EXTEND WorkItemAgingChart with an OPTIONAL workItemAgePercentileValues prop + a local percentileSource state; derive ONE activePercentiles (CT array vs WIA array) and feed the EXISTING single ChartsReferenceLine block — do NOT add a second reference-line set; mutual exclusivity (D2) is structural because there is exactly one line source. CT is the default (the chart's current percentileValues path is byte-preserved when the toggle is untouched). The chart reuses useChartVisibility AS-IS (single-percentiles contract unchanged) and consumes the SAME workItemAgePercentilesValues from useMetricsData that the 01-02 card uses (single source of truth — no extra fetch). The pace-band overlay chip is a SEPARATE orthogonal control — do NOT couple it to percentileSource. Empty WIP => the WIA array is the all-zero four-entry set; treat all-zero as 'no meaningful WIA lines' so flipping to WIA renders no reference lines (D6 AC4) — mirror the card's all-zero empty signal, do NOT plot zero-valued lines. Toggle affordance (switch vs chip-pair) is AC-neutral, decided live against the rendered chart per the run-Playwright-before-commit discipline (DESIGN deferral). CRITICAL (project_react185 + ci-learnings 2026-05-25): do NOT feed an inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise activePercentiles + the percentileSource-derived deps. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining); MUI-X line/reference-line series selector idiom (project_delivery_metrics note — MuiLineChart-line[data-series=...]); skip framework renders-without-crashing tests. Factory getMockX(overrides?) validated against IPercentileValue. Strict TS, no any; immutable (map/filter/spread, never mutate). MUTATION (FE Stryker >=80%): harden the source-swap branch (CT-vs-WIA selection) and the empty-WIP no-lines guard. RBAC: no gate (D3 non-premium). Biome clean; pnpm build zero warnings."
+        },
+        {
+          "id": "02-02",
+          "name": "Live Playwright walking-skeleton + @screenshot: card + CT<->WIA toggle on demo data",
+          "criteria": [
+            "A Playwright scenario (deferred to DELIVER per DISTILL) is authored against a MetricsPage POM and driven by the testWithDemoData fixture: a flow coach opens the Team metrics overview, reads the Work Item Age Percentiles card, opens the aging chart and flips CT<->WIA, seeing the reference lines redraw at the current-WIP ages and revert on flip-back",
+            "A focused per-theme @screenshot test captures the card + the toggled chart on demo data; all element access stays in POMs (no inline page.locator in the spec); the data-testids / labels match exactly what 01-02 / 02-01 shipped",
+            "The scenario + screenshot were RUN against a locally-started app (dotnet run backend + demo data loaded + frontend) before commit and pass; the demo data shows in-progress items so the card and WIA lines are non-empty",
+            "tsc --noEmit / Biome clean on the changed E2E files"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+          "scenario_name": "@screenshot a flow coach reads the Work Item Age Percentiles card and toggles the aging chart between cycle time and work item age percentiles",
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: E2E walking-skeleton + @screenshot (single-shot UI flow over the production composition root); the mandate keeps E2E single-example — they verify wiring, not invariants. The percentile arithmetic invariants live in the 01-01 backend ATs + unit tests; the toggle invariants live in the 02-01 Vitest. Per DISTILL the live spec was DEFERRED to DELIVER (never author an unrun Playwright spec/POM). Drive testWithDemoData — DESTRUCTURE testData or the demo-loading fixture never runs (feedback_screenshot_tests_per_theme / feedback_e2e_use_demo_data). Demo data already carries in-progress items (slice-01 / aging-chart precedent); confirm a non-empty WIP age population exists live before green. Prefer ONE focused per-theme @screenshot test (demo data makes setup cheap) over a monolith; goToOverview() to refresh; guard empty sections (feedback_screenshot_tests_per_theme). SCREENSHOT REGEN TRAP (project_screenshot_regen_pixel_threshold_trap): the @screenshot helper keeps the OLD PNG when the diff < 0.5% — rm the target PNG first to force a fresh write, then Read it to confirm. USER/AGENT RUNS LIVE (feedback_e2e_run_locally_by_user: Claude runs the live Playwright itself — creds in env, do NOT punt to the user; feedback_run_playwright_before_commit: never commit a spec/POM not RUN against a locally-started app — pnpm build only type-checks locators; feedback_e2e_page_object_model: POM-only, no inline page.locator; feedback_e2e_use_demo_data: seeded demo data, never live connector syncs). NON-PREMIUM: no license import needed (D3 — this is a free metric surface). CI-LEARNINGS PRE-APPLY: Playwright getByRole({name}) is case-insensitive substring — pass exact:true for single-word labels (2026-05-16); for any async-loaded chart value/line use expect.poll / toBeVisible auto-retry, never a one-shot expect(await getX()) (2026-05-25); MUI Switch/toggle via getByRole('switch'|'checkbox',{name}); MUI-X reference line via the data-series selector. GREEN-BEFORE-PUSH (feedback_green_before_push_skip_acceptance): if this E2E is not green at a push boundary, test.fixme it to push the slice CI-green, then un-fixme to resume. ORCHESTRATOR NOTE: this step REQUIRES A RUNNING APP — it cannot be self-certified from a type-check; the agent runs the live Playwright and reports the live-run result. NOTE: docs/metrics/ prose (the WIA card + chart-toggle description) is authored at finalization alongside this @screenshot per the DELIVER docs discipline, NOT as a separate roadmap step."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 — Portfolio scope (card + toggle) (US-03)",
+      "description": "Mirror the Team compute/read into PortfolioMetricsController / PortfolioMetricsService (the existing cycleTimePercentiles portfolio sibling pattern): a new GET /api/portfolios/{portfolioId:int}/metrics/workItemAgePercentiles over GetInProgressFeaturesForPortfolio. FE: the same WorkItemAgePercentiles card + WorkItemAgingChart toggle render in the Portfolio path via BaseMetricsView (mostly reuse of the 01-02 / 02-01 components). Un-ignore the 4 US-03 ATs one at a time.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Portfolio workItemAgePercentiles endpoint + GetWorkItemAgePercentilesForPortfolio service method",
+          "criteria": [
+            "GET /api/latest/portfolios/{portfolioId:int}/metrics/workItemAgePercentiles?startDate&endDate exists under the EXISTING class-level [RbacGuard(PortfolioRead)] and returns IEnumerable<PercentileValue> identical in shape and ordering to the Team endpoint; startDate>endDate => 400",
+            "GetWorkItemAgePercentilesForPortfolio composes the existing in-progress selection (GetInProgressFeaturesForPortfolio, asOfDate=endDate) -> each feature's WorkItemAge filtered > 0 -> BuildPercentiles, mirroring the Team service method exactly; WorkItemAgePercentiles_{endDate} cache key",
+            "Snapshot semantics (D4): differing startDate with the same endDate returns identical portfolio percentiles; startDate does NOT filter; empty portfolio WIP returns the four-entry all-zero set (D6, never a crash); an anonymous caller is denied",
+            "The 4 US-03 ATs in WorkItemAgePercentilesPortfolioReadApiIntegrationTest are un-ignored one at a time and green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs",
+          "scenario_name": "GetWorkItemAgePercentiles_PortfolioWithInProgressFeaturesOfKnownAges_ReturnsExactPercentilesOfThoseAges; GetWorkItemAgePercentiles_SameEndDateDifferentStartDate_ReturnsIdenticalPercentiles; GetWorkItemAgePercentiles_PortfolioWithNoInProgressFeatures_ReturnsGracefulZeroValuedSet; GetWorkItemAgePercentiles_AnonymousCaller_IsRejected",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: C#/.NET + NUnit project (C#-row); the un-ignored ATs are layer-4 black-box WebApplicationFactory + real EF integration tests that verify wiring — single-example. Compensate with NUnit unit tests on the portfolio service method mirroring the Team unit tests (golden ages 1,2,2,3,3,4,5,6,7,9 => 3,5,6,9; > 0 filter; empty-population four-zero set; endDate-only cache key). ADR-065: CREATE NEW GetWorkItemAgePercentilesForPortfolio composing existing primitives — the portfolio in-progress selection GetInProgressFeaturesForPortfolio (REUSE-AS-IS, asOfDate=endDate), each feature's WorkItemBase.WorkItemAge (REUSE-AS-IS, vs DateTime.UtcNow), BaseMetricsService.BuildPercentiles -> PercentileCalculator (REUSE-AS-IS). Same upstream contract as Team: BuildPercentiles([]) => four zero entries (NOT []); empty portfolio WIP is the four-entry all-zero set, never a crash (D6). Reuse PercentileValue — NO new DTO. The controller action mirrors the portfolio cycleTimePercentiles action: same class-level [RbacGuard(PortfolioRead)], same startDate>endDate=>400, same GetFromCacheIfExists with the WorkItemAgePercentiles_{endDate:yyyy-MM-dd} key (endDate-only). NO premium gate / NO ILicenseService on the read path (D3). NO new driven adapter / persistence / EF migration. CI-LEARNINGS PRE-APPLY: NUnit4002 (Is.Zero); NUnit2045/2056 (wrap consecutive Assert.That); S2325; CA1859/CA1861; S3267/S6608 on LINQ; CA2016 (forward CancellationToken). RED handoff: un-ignore the 4 ATs ONE at a time — confirm RED-for-right-reason (route unmatched => SPA fallback HTML => the JSON-array guard yields a clean MISSING_FUNCTIONALITY assertion, never a 500/Parse crash). WRONG RED = a 500/unrelated 400 => BLOCK. Post-GREEN Fixture-Theater check: PortfolioMetricsController.cs + PortfolioMetricsService.cs + IPortfolioMetricsService.cs MUST appear in git diff. MUTATION (BE Stryker >=80%): harden the > 0 filter, endDate-only cache key, empty-population path on the portfolio method too. Immutability, <=2 nesting, no else chains, switch expressions, async with CancellationToken, no comments, nullable enabled, zero-warning build."
+        },
+        {
+          "id": "03-02",
+          "name": "Portfolio card + aging-chart toggle render via BaseMetricsView (reuse Team components)",
+          "criteria": [
+            "The Work Item Age Percentiles card renders in the Portfolio metrics overview computed over the portfolio's current in-progress population, with identical layout/empty-state behaviour to Team (US-03 AC1)",
+            "The Portfolio aging chart offers the same CT<->WIA toggle with identical semantics to Team (US-03 AC2); empty portfolio WIP shows the graceful empty card + no WIA lines (US-03 AC3/D6)",
+            "useMetricsData / MetricsService parallel-fetch workItemAgePercentilesValues for the Portfolio scope (Portfolio metrics service path); the card + chart components from 01-02 / 02-01 are REUSED scope-agnostically (no new components)",
+            "Vitest covers the Portfolio render wiring (card + toggle reuse, empty-WIP) as needed; pnpm build clean; Biome zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "renders the Work Item Age Percentiles card and the CT<->WIA aging-chart toggle in Portfolio scope reusing the Team components, with the graceful empty state for an empty portfolio WIP",
+          "deps": [
+            "03-01",
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: React/TypeScript + Vitest/RTL project (TS-row); Hypothesis does NOT apply. Portfolio wiring is example-based RTL assertions (the card + toggle behaviours are already invariant-tested in the Team Vitest from 01-02 / 02-01); compensate by parametrising the (card-renders, toggle-reuse, empty-WIP) cases. NO new components — REUSE WorkItemAgePercentiles.tsx (01-02) and the WorkItemAgingChart toggle (02-01) scope-agnostically. EXTEND BaseMetricsView so the card widget + the aging-chart toggle render in the Portfolio path (the components are scope-agnostic — pass the Portfolio metrics service methods + the Portfolio workItemAgePercentilesValues). EXTEND MetricsService.getWorkItemAgePercentiles + useMetricsData to fetch the Portfolio endpoint for the Portfolio scope (the IProjectMetricsService side of the IMetricsService interface — mirror how cycleTimePercentiles is threaded for Portfolio). The categoryMetadata entry from 01-02 already declares both scopes (no change). REUSE the existing percentile Zod shape — no new schema. CRITICAL (project_react185 + ci-learnings 2026-05-25): no inline new Date()/[]/{} into a useEffect/useMemo dep; useMemo-stabilise the Portfolio percentile + date-range deps. CI-LEARNINGS PRE-APPLY: typescript:S6582 (optional chaining); skip framework renders-without-crashing tests. Factory getMockX(overrides?) validated against the DTO types. Strict TS, no any (narrow unknown with a guard); immutable (spread/map/filter, never mutate). RBAC: no gate (D3 non-premium); rides the existing Portfolio metrics path. Biome clean; pnpm build zero warnings. NOTE: at finalization (separate from this step), extend the @screenshot to cover the Portfolio card + toggle and add the docs/metrics/ prose per the DoR cross-cutting checklist; CONFIRM the Lighthouse-Clients version-gated getWorkItemAgePercentiles wrapper (both scopes) is merged + FEATURE_REQUIRES_SERVER_NEWER_THAN pinned BEFORE the feature releases (Forge HIGH release-gate)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "Morgan (nw-solution-architect) self-review — coverage: all 13 scaffolded ATs mapped (9 US-01 -> 01-01, 4 US-03 -> 03-01); US-02 (no backend AT) covered by 02-01 Vitest + 02-02 live Playwright/@screenshot; Forge MEDIUM cache-isolation test folded into 01-01; Forge HIGH clients release-gate carried as a finalization NOTE on 01-02/03-02 (separate repo, not a slice); steps/files ratio <= 2.5 on every step; phases mirror the 3 DISCUSS slices; brownfield (no walking skeleton, D7)",
+    "reviewed_date": "2026-06-09"
+  }
+}
