@@ -1465,5 +1465,139 @@ describe("WorkItemAgingChart component", () => {
 			).not.toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
+
+		const yAxisMaxOf = (): number => {
+			const chartsContainerMock = MuiCharts.ChartsContainer as unknown as {
+				mock: { calls: Array<[Record<string, unknown>]> };
+			};
+			const containerProps =
+				chartsContainerMock.mock.calls[
+					chartsContainerMock.mock.calls.length - 1
+				]?.[0];
+			const yAxisConfig = (
+				containerProps?.yAxis as Array<Record<string, unknown>>
+			)?.[0];
+			return yAxisConfig?.max as number;
+		};
+
+		it("keeps the y-axis anchored to cycle time when work item age with smaller percentiles is selected", () => {
+			renderWithSelector({
+				workItemAgePercentileValues: [
+					{ percentile: 50, value: 1 },
+					{ percentile: 95, value: 2 },
+				],
+			});
+
+			const cycleTimeMax = yAxisMaxOf();
+
+			selectSource("Work Item Age");
+
+			expect(yAxisMaxOf()).toBe(cycleTimeMax);
+		});
+
+		it("keeps the pace bands unchanged when swapping the reference-line source to work item age", () => {
+			renderWithSelector({
+				workItemAgePercentileValues: [
+					{ percentile: 50, value: 1 },
+					{ percentile: 95, value: 2 },
+				],
+			});
+
+			fireEvent.click(screen.getByTestId("pace-bands-toggle"));
+			const cycleTimeBandHeights = screen
+				.getAllByTestId("pace-band")
+				.map((band) => band.getAttribute("height"));
+
+			selectSource("Work Item Age");
+
+			expect(
+				screen
+					.getAllByTestId("pace-band")
+					.map((band) => band.getAttribute("height")),
+			).toEqual(cycleTimeBandHeights);
+		});
+
+		it("renders only the highest percentile line when work item age percentiles collapse to one value", () => {
+			renderWithSelector({
+				workItemAgePercentileValues: [
+					{ percentile: 50, value: 2 },
+					{ percentile: 70, value: 2 },
+					{ percentile: 85, value: 2 },
+					{ percentile: 95, value: 2 },
+				],
+			});
+
+			selectSource("Work Item Age");
+
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 95%"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 50%"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 70%"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 85%"),
+			).not.toBeInTheDocument();
+		});
+
+		it("keeps the highest percentile per distinct value when some collapse and others do not", () => {
+			renderWithSelector({
+				workItemAgePercentileValues: [
+					{ percentile: 50, value: 1 },
+					{ percentile: 70, value: 1 },
+					{ percentile: 85, value: 2 },
+					{ percentile: 95, value: 2 },
+				],
+			});
+
+			selectSource("Work Item Age");
+
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 70%"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 95%"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 50%"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 85%"),
+			).not.toBeInTheDocument();
+		});
+
+		it("lets the next-highest work item age percentile at a shared value show when the highest is toggled off", () => {
+			renderWithSelector({
+				workItemAgePercentileValues: [
+					{ percentile: 85, value: 2 },
+					{ percentile: 95, value: 2 },
+				],
+			});
+
+			selectSource("Work Item Age");
+
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 95%"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 85%"),
+			).not.toBeInTheDocument();
+
+			const chips = screen.getAllByRole("button");
+			const percentile95Chip = chips.find((chip) => chip.textContent === "95%");
+			if (percentile95Chip) {
+				fireEvent.click(percentile95Chip);
+			}
+
+			expect(
+				screen.getByTestId("reference-line-Work Item Age 85%"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("reference-line-Work Item Age 95%"),
+			).not.toBeInTheDocument();
+		});
 	});
 });

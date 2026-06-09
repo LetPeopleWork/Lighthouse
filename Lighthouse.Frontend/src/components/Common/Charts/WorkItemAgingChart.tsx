@@ -415,6 +415,23 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		[percentileSource, meaningfulWorkItemAgePercentiles, percentileValues],
 	);
 
+	const referenceLinePercentiles = useMemo(() => {
+		const highestByValue = new Map<number, IPercentileValue>();
+		for (const candidate of activePercentiles) {
+			if (visiblePercentiles[candidate.percentile] === false) {
+				continue;
+			}
+			const existing = highestByValue.get(candidate.value);
+			if (
+				existing === undefined ||
+				candidate.percentile > existing.percentile
+			) {
+				highestByValue.set(candidate.value, candidate);
+			}
+		}
+		return Array.from(highestByValue.values());
+	}, [activePercentiles, visiblePercentiles]);
+
 	const now = useMemo(() => providedNow ?? new Date(), [providedNow]);
 	const nowTime = now.getTime();
 
@@ -448,7 +465,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 
 	const getMaxYAxisHeightValue = () => {
 		return getMaxYAxisHeight({
-			percentiles: activePercentiles,
+			percentiles: percentileValues,
 			serviceLevelExpectation,
 			dataPoints: groupedDataPoints,
 			getDataValue: (g) => g.age,
@@ -618,13 +635,13 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 								},
 							]}
 						>
-							{activePercentiles.map((p) => {
+							{referenceLinePercentiles.map((p) => {
 								const forecastLevel = new ForecastLevel(p.percentile);
 								const label =
 									percentileSource === "workItemAge"
 										? `${workItemAgeTerm} ${p.percentile}%`
 										: `${p.percentile}%`;
-								return visiblePercentiles[p.percentile] === false ? null : (
+								return (
 									<ChartsReferenceLine
 										key={`percentile-${percentileSource}-${p.percentile}`}
 										y={p.value}
