@@ -317,6 +317,18 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
+        public IEnumerable<PercentileValue> GetWorkItemAgePercentilesForTeam(Team team, DateTime endDate)
+        {
+            logger.LogDebug("Getting Work Item Age Percentiles for Team {TeamName} at {EndDate}", team.Name, endDate.Date);
+
+            return GetFromCacheIfExists(team, $"WorkItemAgePercentiles_{endDate:yyyy-MM-dd}", () =>
+            {
+                var ages = GetWipSnapshotForTeam(team, endDate).Select(i => i.WorkItemAge).Where(age => age > 0).ToList();
+
+                return BuildPercentiles(ages);
+            }, logger);
+        }
+
         public IReadOnlyList<CycleTimeWorkItem> GetCycleTimeDataForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Data for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);

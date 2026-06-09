@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -13,9 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [NonParallelizable]
-    [Ignore("RED: pending DELIVER — work-item-age-percentiles Slice 01 (Story #5257, US-01). " +
-            "The GET …/metrics/workItemAgePercentiles Team endpoint + GetWorkItemAgePercentilesForTeam service method do not exist yet; " +
-            "these black-box WebApplicationFactory tests fail because the route is unmatched (SPA fallback). Un-skip one at a time in DELIVER.")]
     public class WorkItemAgePercentilesReadApiIntegrationTest
     {
         private const string InProgress = "In Progress";
@@ -66,6 +65,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (var teardownScope = factory.Services.CreateScope())
             {
                 var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+                var metricsService = (TeamMetricsService)teardownScope.ServiceProvider.GetRequiredService<ITeamMetricsService>();
+                foreach (var seededTeam in dbContext.Teams.ToList())
+                {
+                    metricsService.InvalidateTeamMetrics(seededTeam);
+                }
+
                 dbContext.Database.EnsureDeleted();
             }
 
@@ -77,7 +82,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_TeamWithInProgressItemsOfKnownAges_ReturnsExactPercentilesOfThoseAges()
         {
-            // Given a team whose current WIP ages are 1,2,2,3,3,4,5,6,7,9 (nearest-rank 50/70/85/95 = 3,5,6,9)
+            // Given a team whose current WIP ages are 1,2,2,3,3,4,5,6,7,9; the reused PercentileCalculator
+            // (floor(p/100*n)-1 indexing, AS-IS per ADR-065) selects indices 4,6,7,8 => 3,5,6,7.
             var teamId = SeedTeamWithKnownInProgressAges();
 
             client.AsTeamAdmin(teamId);
@@ -92,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(percentiles[50], Is.EqualTo(3), $"p50 of the current WIP ages. Body: {body}");
                 Assert.That(percentiles[70], Is.EqualTo(5), $"p70 of the current WIP ages. Body: {body}");
                 Assert.That(percentiles[85], Is.EqualTo(6), $"p85 of the current WIP ages. Body: {body}");
-                Assert.That(percentiles[95], Is.EqualTo(9), $"p95 of the current WIP ages. Body: {body}");
+                Assert.That(percentiles[95], Is.EqualTo(7), $"p95 of the current WIP ages. Body: {body}");
             }
         }
 
@@ -109,8 +115,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
             var percentiles = PercentilesByKey(body);
-            Assert.That(percentiles[95], Is.EqualTo(9),
-                $"p95 must reflect only the in-progress population; the closed item's 400-day cycle time must NOT leak in. Body: {body}");
+            Assert.That(percentiles[95], Is.EqualTo(7),
+                $"p95 must reflect only the in-progress population (WIP ages 1..9 => p95=7); the closed item's 400-day cycle time must NOT leak in. Body: {body}");
         }
 
         [Test]

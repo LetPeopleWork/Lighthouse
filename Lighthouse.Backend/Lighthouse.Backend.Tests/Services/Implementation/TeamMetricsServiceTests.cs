@@ -678,6 +678,59 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetWorkItemAgePercentilesForTeam_InProgressItemsOfKnownAges_ReturnsNearestRankPercentiles()
+        {
+            foreach (var age in new[] { 1, 2, 2, 3, 3, 4, 5, 6, 7, 9 })
+            {
+                AddInProgressItemAged(age);
+            }
+
+            var percentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(percentiles[0].Percentile, Is.EqualTo(50));
+                Assert.That(percentiles[0].Value, Is.EqualTo(3));
+                Assert.That(percentiles[1].Percentile, Is.EqualTo(70));
+                Assert.That(percentiles[1].Value, Is.EqualTo(5));
+                Assert.That(percentiles[2].Percentile, Is.EqualTo(85));
+                Assert.That(percentiles[2].Value, Is.EqualTo(6));
+                Assert.That(percentiles[3].Percentile, Is.EqualTo(95));
+                Assert.That(percentiles[3].Value, Is.EqualTo(7));
+            }
+        }
+
+        [Test]
+        public void GetWorkItemAgePercentilesForTeam_NoInProgressItems_ReturnsFourZeroValuedEntries()
+        {
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-2);
+
+            var percentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(percentiles, Has.Count.EqualTo(4));
+                Assert.That(percentiles.Select(p => p.Value), Is.All.Zero);
+            }
+        }
+
+        [Test]
+        public void GetWorkItemAgePercentilesForTeam_KeyedOnEndDateOnly_DoesNotCollideWithCycleTimePercentilesCache()
+        {
+            AddInProgressItemAged(2);
+            var closedItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            closedItem.StartedDate = DateTime.UtcNow.AddDays(-100);
+            closedItem.ClosedDate = DateTime.UtcNow;
+
+            var endDate = DateTime.UtcNow.Date;
+            var cycleTimePercentiles = subject.GetCycleTimePercentilesForTeam(testTeam, endDate.AddDays(-30), endDate).ToList();
+            var agePercentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, endDate).ToList();
+
+            Assert.That(agePercentiles[3].Value, Is.Not.EqualTo(cycleTimePercentiles[3].Value),
+                "WorkItemAgePercentiles_{endDate} must be a distinct cache key from CycleTimePercentiles_{startDate}_{endDate}; a collision would echo the closed item's 101-day cycle time as the WIP age.");
+        }
+
+        [Test]
         public void GetClosedItemsForTeam_ReturnsAllClosedItemsInTimeRange()
         {
             // Set up work item cycle times (1, 2, 3, ... 10)
@@ -1721,6 +1774,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItems.Add(workItem);
 
             return workItem;
+        }
+
+        private WorkItem AddInProgressItemAged(int ageDays)
+        {
+            var item = AddWorkItem(StateCategories.Doing, testTeam.Id, string.Empty);
+            item.StartedDate = DateTime.UtcNow.Date.AddDays(-(ageDays - 1));
+            return item;
         }
 
         #region GetEstimationVsCycleTimeData

@@ -135,6 +135,19 @@ namespace Lighthouse.Backend.API
                     : teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate));
         }
 
+        [HttpGet("workItemAgePercentiles")]
+        public ActionResult<IEnumerable<PercentileValue>> GetWorkItemAgePercentilesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            LogDateBoundaries("workItemAgePercentiles", teamId, startDate, endDate);
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                teamMetricsService.GetWorkItemAgePercentilesForTeam(team, endDate));
+        }
+
         [HttpGet("ageInStatePercentiles")]
         public ActionResult<IEnumerable<AgeInStatePercentilesDto>> GetAgeInStatePercentilesForTeam(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {

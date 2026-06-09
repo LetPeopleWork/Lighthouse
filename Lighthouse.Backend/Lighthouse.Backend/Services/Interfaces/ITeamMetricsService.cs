@@ -60,6 +60,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<PercentileValue> GetCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        IEnumerable<PercentileValue> GetWorkItemAgePercentilesForTeam(Team team, DateTime endDate);
+
         IEnumerable<AgeInStatePercentilesDto> GetAgeInStatePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);
 
         CumulativeStateTimeDto GetCumulativeStateTimeForTeam(Team team, DateTime startDate, DateTime endDate, IReadOnlyList<int>? itemIds = null, int? definitionId = null);
