@@ -270,7 +270,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Select(visit => (visit.State, visit.ItemId, (visit.End - visit.Start).TotalDays));
         }
 
-        private static DateTime? WorkflowEntryIntoFirstState(WorkItem item, IReadOnlyList<WorkItemStateTransition> orderedTransitions)
+        private static DateTime? WorkflowEntryIntoFirstState(WorkItem item, List<WorkItemStateTransition> orderedTransitions)
         {
             var startedDate = item.StartedDate;
 
