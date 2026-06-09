@@ -1,6 +1,8 @@
 import * as MuiCharts from "@mui/x-charts";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
@@ -334,5 +336,127 @@ describe("CycleTimeScatterPlotChart component", () => {
 				([props]) => (props as { axisId?: string })?.axisId === "cycleTimeAxis",
 			),
 		).toBe(true);
+	});
+
+	describe("named cycle time selector", () => {
+		const conceptToCash: INamedCycleTimeDefinition = {
+			id: 1,
+			name: "Concept to Cash",
+		};
+
+		const namedItems: IWorkItem[] = [
+			{
+				...mockWorkItems[0],
+				cycleTime: 5,
+				namedCycleTimes: [{ definitionId: 1, days: 20 }],
+			},
+			{
+				...mockWorkItems[1],
+				cycleTime: 10,
+				namedCycleTimes: [],
+			},
+		];
+
+		const seriesData = () => {
+			const seriesAttr = screen.getByTestId("mock-chart-container").dataset
+				.series;
+			const series = seriesAttr ? JSON.parse(seriesAttr) : [];
+			return (series?.[0]?.data ?? []) as Array<{ y: number }>;
+		};
+
+		it("does not render the selector when no named definitions are available", () => {
+			render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+				/>,
+			);
+
+			expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+		});
+
+		it("lists Default plus each named cycle time definition", async () => {
+			render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[conceptToCash]}
+				/>,
+			);
+
+			await userEvent.click(
+				screen.getByRole("combobox", { name: /cycle time/i }),
+			);
+
+			const options = screen.getByRole("listbox");
+			expect(within(options).getByText("Default")).toBeInTheDocument();
+			expect(within(options).getByText("Concept to Cash")).toBeInTheDocument();
+		});
+
+		it("plots the default durations until a named definition is selected", () => {
+			render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[conceptToCash]}
+				/>,
+			);
+
+			expect(
+				seriesData()
+					.map((point) => point.y)
+					.sort((a, b) => a - b),
+			).toEqual([5, 10]);
+		});
+
+		it("switches the dots to the named durations client-side and drops items without an entry", async () => {
+			render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[conceptToCash]}
+				/>,
+			);
+
+			await userEvent.click(
+				screen.getByRole("combobox", { name: /cycle time/i }),
+			);
+			await userEvent.click(
+				within(screen.getByRole("listbox")).getByText("Concept to Cash"),
+			);
+
+			await waitFor(() => {
+				expect(seriesData().map((point) => point.y)).toEqual([20]);
+			});
+		});
+
+		it("re-fetches percentiles for the selected definition", async () => {
+			const onFetchNamedCycleTimePercentiles = vi
+				.fn<(definitionId: number) => Promise<IPercentileValue[]>>()
+				.mockResolvedValue([
+					{ percentile: 50, value: 18 },
+					{ percentile: 85, value: 25 },
+				]);
+
+			render(
+				<CycleTimeScatterPlotChart
+					percentileValues={mockPercentileValues}
+					cycleTimeDataPoints={namedItems}
+					namedCycleTimeDefinitions={[conceptToCash]}
+					onFetchNamedCycleTimePercentiles={onFetchNamedCycleTimePercentiles}
+				/>,
+			);
+
+			await userEvent.click(
+				screen.getByRole("combobox", { name: /cycle time/i }),
+			);
+			await userEvent.click(
+				within(screen.getByRole("listbox")).getByText("Concept to Cash"),
+			);
+
+			await waitFor(() => {
+				expect(onFetchNamedCycleTimePercentiles).toHaveBeenCalledWith(1);
+			});
+		});
 	});
 });

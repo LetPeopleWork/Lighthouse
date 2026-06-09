@@ -45,6 +45,7 @@ import type {
 	IFeatureSizePercentilesInfo,
 	IThroughputInfo,
 } from "../../../models/Metrics/InfoWidgetData";
+import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -104,6 +105,12 @@ import type { ViewDataPayload } from "./WidgetShell";
 import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
 import { getWidgetInfo } from "./widgetInfoMetadata";
+
+const SEEDED_NAMED_CYCLE_TIME_DEFINITIONS: INamedCycleTimeDefinition[] = [
+	{ id: 1, name: "Concept to Cash" },
+];
+
+const NO_NAMED_CYCLE_TIME_DEFINITIONS: INamedCycleTimeDefinition[] = [];
 
 export interface BaseMetricsViewProps<
 	T extends IWorkItem | IFeature,
@@ -729,6 +736,10 @@ function buildWidgetNodes(ctx: {
 	perStatePercentileValues: IPerStatePercentileValues[];
 	serviceLevelExpectation: IPercentileValue | null;
 	cycleTimeData: IWorkItem[];
+	namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
+	onFetchNamedCycleTimePercentiles: (
+		definitionId: number,
+	) => Promise<IPercentileValue[]>;
 	throughputData: RunChartData | null;
 	wipOverTimeData: RunChartData | null;
 	allFeaturesForSizeChart: IFeature[];
@@ -848,6 +859,8 @@ function buildWidgetNodes(ctx: {
 				percentileValues={ctx.percentileValues}
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
 				blackoutPeriods={ctx.blackoutPeriods}
+				namedCycleTimeDefinitions={ctx.namedCycleTimeDefinitions}
+				onFetchNamedCycleTimePercentiles={ctx.onFetchNamedCycleTimePercentiles}
 			/>
 		),
 		workDistribution: (
@@ -1051,6 +1064,21 @@ export const BaseMetricsView = <
 		cumulativeStateTime,
 		refetchThroughputPbc,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
+
+	const namedCycleTimeDefinitions = isPremium
+		? SEEDED_NAMED_CYCLE_TIME_DEFINITIONS
+		: NO_NAMED_CYCLE_TIME_DEFINITIONS;
+
+	const onFetchNamedCycleTimePercentiles = useCallback(
+		(definitionId: number) =>
+			metricsService.getCycleTimePercentiles(
+				entity.id,
+				startDate,
+				endDate,
+				definitionId,
+			),
+		[metricsService, entity.id, startDate, endDate],
+	);
 
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
@@ -1270,6 +1298,8 @@ export const BaseMetricsView = <
 		perStatePercentileValues,
 		serviceLevelExpectation,
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
+		namedCycleTimeDefinitions,
+		onFetchNamedCycleTimePercentiles,
 		throughputData,
 		wipOverTimeData,
 		allFeaturesForSizeChart,

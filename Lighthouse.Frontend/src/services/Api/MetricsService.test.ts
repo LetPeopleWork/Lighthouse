@@ -348,3 +348,103 @@ describe("MetricsService flow efficiency info", () => {
 		);
 	});
 });
+
+describe("MetricsService cycle time percentiles with definitionId", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("omits the definitionId query param for the default percentiles", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+		await metricsService.getCycleTimePercentiles(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cycleTimePercentiles?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+
+	it("appends the definitionId query param for a named definition", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+		await metricsService.getCycleTimePercentiles(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+			1,
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cycleTimePercentiles?startDate=2023-01-01&endDate=2023-01-31&definitionId=1",
+		);
+	});
+});
+
+describe("MetricsService getCycleTimeData named cycle times", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	const rawItem = (namedCycleTimes: unknown) => ({
+		id: 1,
+		name: "PHX-204",
+		referenceId: "PHX-204",
+		url: null,
+		state: "Done",
+		stateCategory: "Done",
+		type: "Story",
+		startedDate: "2023-01-01T00:00:00Z",
+		closedDate: "2023-01-15T00:00:00Z",
+		cycleTime: 14,
+		workItemAge: 0,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		namedCycleTimes,
+	});
+
+	it("keeps the validated named cycle times from the response", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: [rawItem([{ definitionId: 1, days: 47 }])],
+		});
+
+		const result = await metricsService.getCycleTimeData(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result[0].namedCycleTimes).toEqual([{ definitionId: 1, days: 47 }]);
+	});
+
+	it("falls back to an empty list when the named cycle times are malformed", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: [rawItem([{ definitionId: "nope" }])],
+		});
+
+		const result = await metricsService.getCycleTimeData(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(result[0].namedCycleTimes).toEqual([]);
+	});
+});

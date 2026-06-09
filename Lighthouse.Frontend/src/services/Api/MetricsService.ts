@@ -20,6 +20,10 @@ import type {
 	ITotalWorkItemAgeInfo,
 	IWipOverviewInfo,
 } from "../../models/Metrics/InfoWidgetData";
+import {
+	type INamedCycleTimeValue,
+	NamedCycleTimeValueSchema,
+} from "../../models/Metrics/NamedCycleTime";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
@@ -49,6 +53,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		definitionId?: number,
 	): Promise<IPercentileValue[]>;
 
 	getAgeInStatePercentiles(
@@ -309,10 +314,13 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		definitionId?: number,
 	): Promise<IPercentileValue[]> {
 		return this.withErrorHandling(async () => {
+			const definitionSuffix =
+				definitionId !== undefined ? `&definitionId=${definitionId}` : "";
 			const response = await this.apiService.get<IPercentileValue[]>(
-				`/${this.api}/${id}/metrics/cycleTimePercentiles?${this.getDateFormatString(startDate, endDate)}`,
+				`/${this.api}/${id}/metrics/cycleTimePercentiles?${this.getDateFormatString(startDate, endDate)}${definitionSuffix}`,
 			);
 
 			return response.data;
@@ -448,6 +456,15 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 			const items = response.data.map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
+				const parsedNamedCycleTimes =
+					NamedCycleTimeValueSchema.array().safeParse(
+						(workItem as { namedCycleTimes?: unknown }).namedCycleTimes,
+					);
+				(
+					workItem as { namedCycleTimes?: INamedCycleTimeValue[] }
+				).namedCycleTimes = parsedNamedCycleTimes.success
+					? parsedNamedCycleTimes.data
+					: [];
 				return workItem;
 			});
 

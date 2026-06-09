@@ -1,3 +1,5 @@
+import type { INamedCycleTimeValue } from "./Metrics/NamedCycleTime";
+
 export type StateCategory = "Unknown" | "ToDo" | "Doing" | "Done";
 
 export interface IWorkItem {
@@ -11,6 +13,7 @@ export interface IWorkItem {
 	startedDate: Date;
 	closedDate: Date;
 	cycleTime: number;
+	namedCycleTimes?: INamedCycleTimeValue[];
 	workItemAge: number;
 	parentWorkItemReference: string;
 	isBlocked: boolean;

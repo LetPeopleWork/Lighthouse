@@ -1,6 +1,10 @@
 import {
 	Card,
 	CardContent,
+	FormControl,
+	InputLabel,
+	MenuItem,
+	Select,
 	Stack,
 	type Theme,
 	Typography,
@@ -16,9 +20,10 @@ import {
 	ScatterPlot,
 } from "@mui/x-charts";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useChartVisibility } from "../../../hooks/useChartVisibility";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
+import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
@@ -135,13 +140,21 @@ interface CycleTimeScatterPlotChartProps {
 	cycleTimeDataPoints: IWorkItem[];
 	serviceLevelExpectation?: IPercentileValue | null;
 	blackoutPeriods?: IBlackoutPeriod[];
+	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
+	onFetchNamedCycleTimePercentiles?: (
+		definitionId: number,
+	) => Promise<IPercentileValue[]>;
 }
+
+const DEFAULT_SELECTION = "default";
 
 const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	percentileValues,
 	cycleTimeDataPoints,
 	serviceLevelExpectation = null,
 	blackoutPeriods = [],
+	namedCycleTimeDefinitions = [],
+	onFetchNamedCycleTimePercentiles,
 }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
@@ -153,6 +166,49 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
+
+	const selectorLabelId = useId();
+	const [selectedDefinitionId, setSelectedDefinitionId] = useState<
+		number | null
+	>(null);
+	const [namedPercentiles, setNamedPercentiles] = useState<IPercentileValue[]>(
+		[],
+	);
+
+	useEffect(() => {
+		if (selectedDefinitionId === null || !onFetchNamedCycleTimePercentiles) {
+			setNamedPercentiles([]);
+			return;
+		}
+
+		let cancelled = false;
+		onFetchNamedCycleTimePercentiles(selectedDefinitionId)
+			.then((percentiles) => {
+				if (!cancelled) setNamedPercentiles(percentiles);
+			})
+			.catch(() => {
+				if (!cancelled) setNamedPercentiles([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [selectedDefinitionId, onFetchNamedCycleTimePercentiles]);
+
+	const effectiveDataPoints = useMemo(() => {
+		if (selectedDefinitionId === null) {
+			return cycleTimeDataPoints;
+		}
+
+		return cycleTimeDataPoints.flatMap((item) => {
+			const named = item.namedCycleTimes?.find(
+				(value) => value.definitionId === selectedDefinitionId,
+			);
+			return named ? [{ ...item, cycleTime: named.days }] : [];
+		});
+	}, [cycleTimeDataPoints, selectedDefinitionId]);
+
+	const effectivePercentiles =
+		selectedDefinitionId === null ? percentileValues : namedPercentiles;
 
 	const types = useMemo(() => {
 		const typeSet = new Set<string>();
@@ -172,7 +228,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		visibleTypes,
 		toggleTypeVisibility,
 	} = useChartVisibility({
-		percentiles: percentileValues,
+		percentiles: effectivePercentiles,
 		types,
 	});
 
@@ -188,14 +244,14 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 	// Calculate fixed axis domains
 	useEffect(() => {
-		if (cycleTimeDataPoints.length === 0) {
+		if (effectiveDataPoints.length === 0) {
 			setFixedXAxisDomain(null);
 			setFixedYAxisMax(null);
 			return;
 		}
 
 		// X-axis domain (time range)
-		const timestamps = cycleTimeDataPoints.map((item) =>
+		const timestamps = effectiveDataPoints.map((item) =>
 			getDateOnlyTimestamp(item.closedDate),
 		);
 		const minTimestamp = Math.min(...timestamps);
@@ -204,17 +260,17 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 
 		// Y-axis max - Using utility function!
 		const yMax = getMaxYAxisHeight({
-			percentiles: percentileValues,
+			percentiles: effectivePercentiles,
 			serviceLevelExpectation,
-			dataPoints: cycleTimeDataPoints,
+			dataPoints: effectiveDataPoints,
 			getDataValue: (item) => item.cycleTime,
 		});
 		setFixedYAxisMax(yMax);
-	}, [cycleTimeDataPoints, percentileValues, serviceLevelExpectation]);
+	}, [effectiveDataPoints, effectivePercentiles, serviceLevelExpectation]);
 
 	// Group and filter work items
 	useEffect(() => {
-		const grouped = groupWorkItems(cycleTimeDataPoints);
+		const grouped = groupWorkItems(effectiveDataPoints);
 		const filtered = grouped.filter((g) => {
 			return g.items.some((item) => {
 				const itemType = item.type || "";
@@ -223,207 +279,263 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 			});
 		});
 		setGroupedDataPoints(filtered);
-	}, [cycleTimeDataPoints, visibleTypes]);
+	}, [effectiveDataPoints, visibleTypes]);
 
 	const handleShowItems = (items: IWorkItem[]) => {
 		setSelectedItems(items);
 		setDialogOpen(true);
 	};
 
-	return cycleTimeDataPoints.length > 0 && groupedDataPoints.length > 0 ? (
+	const cycleTimeSelector =
+		namedCycleTimeDefinitions.length > 0 ? (
+			<FormControl size="small" sx={{ minWidth: 220 }}>
+				<InputLabel id={selectorLabelId}>{cycleTimeTerm}</InputLabel>
+				<Select
+					labelId={selectorLabelId}
+					label={cycleTimeTerm}
+					value={
+						selectedDefinitionId === null
+							? DEFAULT_SELECTION
+							: String(selectedDefinitionId)
+					}
+					onChange={(event) => {
+						const value = event.target.value;
+						setSelectedDefinitionId(
+							value === DEFAULT_SELECTION ? null : Number(value),
+						);
+					}}
+				>
+					<MenuItem value={DEFAULT_SELECTION}>Default</MenuItem>
+					{namedCycleTimeDefinitions.map((definition) => (
+						<MenuItem key={definition.id} value={String(definition.id)}>
+							{definition.name}
+						</MenuItem>
+					))}
+				</Select>
+			</FormControl>
+		) : null;
+
+	if (cycleTimeDataPoints.length === 0) {
+		return (
+			<Typography variant="body2" color="text.secondary">
+				No data available
+			</Typography>
+		);
+	}
+
+	return (
 		<>
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
 				<CardContent
 					sx={{ display: "flex", flexDirection: "column", height: "100%" }}
 				>
-					<Typography variant="h6">{cycleTimeTerm}</Typography>
-
 					<Stack
 						direction="row"
 						spacing={1}
 						sx={{
-							mb: 2,
-							flexWrap: "wrap",
-							gap: 1,
 							justifyContent: "space-between",
+							alignItems: "center",
+							mb: 1,
 						}}
 					>
-						<PercentileLegend
-							percentiles={percentileValues}
-							visiblePercentiles={visiblePercentiles}
-							onTogglePercentile={togglePercentileVisibility}
-							serviceLevelExpectation={serviceLevelExpectation}
-							serviceLevelExpectationLabel={serviceLevelExpectationTerm}
-							sleVisible={sleVisible}
-							onToggleSle={toggleSleVisibility}
-						/>
+						<Typography variant="h6">{cycleTimeTerm}</Typography>
+						{cycleTimeSelector}
+					</Stack>
 
-						{types.length > 0 && (
+					{groupedDataPoints.length > 0 ? (
+						<>
 							<Stack
 								direction="row"
 								spacing={1}
-								sx={{ flexWrap: "wrap", gap: 1 }}
+								sx={{
+									mb: 2,
+									flexWrap: "wrap",
+									gap: 1,
+									justifyContent: "space-between",
+								}}
 							>
-								{types.map((type) => (
-									<LegendChip
-										key={`legend-type-${type}`}
-										label={type}
-										color={colorMap[type]}
-										visible={visibleTypes[type] !== false}
-										onToggle={() => toggleTypeVisibility(type)}
-									/>
-								))}
+								<PercentileLegend
+									percentiles={effectivePercentiles}
+									visiblePercentiles={visiblePercentiles}
+									onTogglePercentile={togglePercentileVisibility}
+									serviceLevelExpectation={serviceLevelExpectation}
+									serviceLevelExpectationLabel={serviceLevelExpectationTerm}
+									sleVisible={sleVisible}
+									onToggleSle={toggleSleVisibility}
+								/>
+
+								{types.length > 0 && (
+									<Stack
+										direction="row"
+										spacing={1}
+										sx={{ flexWrap: "wrap", gap: 1 }}
+									>
+										{types.map((type) => (
+											<LegendChip
+												key={`legend-type-${type}`}
+												label={type}
+												color={colorMap[type]}
+												visible={visibleTypes[type] !== false}
+												onToggle={() => toggleTypeVisibility(type)}
+											/>
+										))}
+									</Stack>
+								)}
 							</Stack>
-						)}
-					</Stack>
 
-					<ChartsContainer
-						sx={{ flex: 1, minHeight: 0, height: "100%" }}
-						xAxis={[
-							{
-								id: "timeAxis",
-								scaleType: "time",
-								label: "Date",
-								height: 56,
-								min: fixedXAxisDomain?.[0],
-								max: fixedXAxisDomain?.[1],
-								valueFormatter: dateValueFormatter,
-							},
-						]}
-						yAxis={[
-							{
-								id: "cycleTimeAxis",
-								scaleType: "linear",
-								label: `${cycleTimeTerm} (days)`,
-								min: 1,
-								max:
-									fixedYAxisMax ??
-									getMaxYAxisHeight({
-										percentiles: percentileValues,
-										serviceLevelExpectation,
-										dataPoints: cycleTimeDataPoints,
-										getDataValue: (item) => item.cycleTime,
-									}),
-								valueFormatter: integerValueFormatter,
-							},
-						]}
-						series={[
-							{
-								type: "scatter",
-								data: groupedDataPoints.map((group, index) => ({
-									x: group.closedDateTimestamp,
-									y: group.cycleTime,
-									id: index,
-									itemCount: group.items.length,
-									color: getMarkerColor(group, colorMap, theme),
-								})),
-								xAxisId: "timeAxis",
-								yAxisId: "cycleTimeAxis",
-								color: theme.palette.primary.main,
-								markerSize: 4,
-								highlightScope: {
-									highlight: "item",
-									fade: "global",
-								},
-								valueFormatter: (item) => {
-									if (item?.id === undefined) return "";
+							<ChartsContainer
+								sx={{ flex: 1, minHeight: 0, height: "100%" }}
+								xAxis={[
+									{
+										id: "timeAxis",
+										scaleType: "time",
+										label: "Date",
+										height: 56,
+										min: fixedXAxisDomain?.[0],
+										max: fixedXAxisDomain?.[1],
+										valueFormatter: dateValueFormatter,
+									},
+								]}
+								yAxis={[
+									{
+										id: "cycleTimeAxis",
+										scaleType: "linear",
+										label: `${cycleTimeTerm} (days)`,
+										min: 1,
+										max:
+											fixedYAxisMax ??
+											getMaxYAxisHeight({
+												percentiles: effectivePercentiles,
+												serviceLevelExpectation,
+												dataPoints: effectiveDataPoints,
+												getDataValue: (item) => item.cycleTime,
+											}),
+										valueFormatter: integerValueFormatter,
+									},
+								]}
+								series={[
+									{
+										type: "scatter",
+										data: groupedDataPoints.map((group, index) => ({
+											x: group.closedDateTimestamp,
+											y: group.cycleTime,
+											id: index,
+											itemCount: group.items.length,
+											color: getMarkerColor(group, colorMap, theme),
+										})),
+										xAxisId: "timeAxis",
+										yAxisId: "cycleTimeAxis",
+										color: theme.palette.primary.main,
+										markerSize: 4,
+										highlightScope: {
+											highlight: "item",
+											fade: "global",
+										},
+										valueFormatter: (item) => {
+											if (item?.id === undefined) return "";
 
-									const group = groupedDataPoints[item.id as number];
-									if (!group) return "";
+											const group = groupedDataPoints[item.id as number];
+											if (!group) return "";
 
-									const numberOfClosedItems = group.items.length ?? 0;
+											const numberOfClosedItems = group.items.length ?? 0;
 
-									if (numberOfClosedItems === 1) {
-										const workItem = group.items[0];
-										return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
-									}
+											if (numberOfClosedItems === 1) {
+												const workItem = group.items[0];
+												return `${getWorkItemName(workItem.name, workItem.referenceId)} (Click for details)`;
+											}
 
-									return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
-								},
-							},
-						]}
-					>
-						{/* Reference lines for percentiles */}
-						{percentileValues.map((p) => {
-							const forecastLevel = new ForecastLevel(p.percentile);
-							return visiblePercentiles[p.percentile] ? (
-								<ChartsReferenceLine
-									key={`percentile-${p.percentile}`}
-									y={p.value}
-									label={`${p.percentile}%`}
-									labelAlign="end"
-									lineStyle={{
-										stroke: forecastLevel.color,
-										strokeWidth: 1,
-										strokeDasharray: "5 5",
+											return `${numberOfClosedItems} Closed ${workItemsTerm} (Click for details)`;
+										},
+									},
+								]}
+							>
+								{/* Reference lines for percentiles */}
+								{effectivePercentiles.map((p) => {
+									const forecastLevel = new ForecastLevel(p.percentile);
+									return visiblePercentiles[p.percentile] ? (
+										<ChartsReferenceLine
+											key={`percentile-${p.percentile}`}
+											y={p.value}
+											label={`${p.percentile}%`}
+											labelAlign="end"
+											lineStyle={{
+												stroke: forecastLevel.color,
+												strokeWidth: 1,
+												strokeDasharray: "5 5",
+											}}
+										/>
+									) : null;
+								})}
+
+								{/* SLE reference line */}
+								{sleVisible && serviceLevelExpectation && (
+									<ChartsReferenceLine
+										key="sle-reference-line"
+										y={serviceLevelExpectation.value}
+										label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
+										labelAlign="start"
+										lineStyle={{
+											stroke: theme.palette.primary.main,
+											strokeWidth: 2,
+											strokeDasharray: "3 3",
+										}}
+									/>
+								)}
+
+								<ChartsXAxis axisId="timeAxis" />
+								<ChartsYAxis axisId="cycleTimeAxis" />
+								<TimeBlackoutOverlay
+									blackoutPeriods={blackoutPeriods}
+									axisId="timeAxis"
+								/>
+								<ScatterPlot
+									slots={{
+										marker: (props) =>
+											ScatterMarker(
+												props,
+												groupedDataPoints,
+												theme,
+												workItemsTerm,
+												blockedTerm,
+												colorMap,
+												handleShowItems,
+											),
 									}}
 								/>
-							) : null;
-						})}
 
-						{/* SLE reference line */}
-						{sleVisible && serviceLevelExpectation && (
-							<ChartsReferenceLine
-								key="sle-reference-line"
-								y={serviceLevelExpectation.value}
-								label={`${sleTerm}: ${serviceLevelExpectation.percentile}% @ ${serviceLevelExpectation.value} days or less`}
-								labelAlign="start"
-								lineStyle={{
-									stroke: theme.palette.primary.main,
-									strokeWidth: 2,
-									strokeDasharray: "3 3",
-								}}
-							/>
-						)}
-
-						<ChartsXAxis axisId="timeAxis" />
-						<ChartsYAxis axisId="cycleTimeAxis" />
-						<TimeBlackoutOverlay
-							blackoutPeriods={blackoutPeriods}
-							axisId="timeAxis"
-						/>
-						<ScatterPlot
-							slots={{
-								marker: (props) =>
-									ScatterMarker(
-										props,
-										groupedDataPoints,
-										theme,
-										workItemsTerm,
-										blockedTerm,
-										colorMap,
-										handleShowItems,
-									),
-							}}
-						/>
-
-						<ChartsTooltip
-							trigger="item"
-							sx={{
-								zIndex: 1200,
-								maxWidth: "400px",
-								"& .MuiChartsTooltip-mark": {
-									display: "none",
-								},
-								"& .MuiChartsTooltip-markContainer": {
-									display: "none",
-								},
-								"& .MuiChartsTooltip-table": {
-									maxWidth: "100%",
-									wordBreak: "break-word",
-								},
-								"& .MuiChartsTooltip-valueCell": {
-									whiteSpace: "pre-line",
-									maxWidth: "300px",
-									overflowWrap: "break-word",
-								},
-								"& .MuiPopper-root": {
-									transition: "opacity 0.2s ease-in-out",
-									transitionDelay: "150ms",
-								},
-							}}
-						/>
-					</ChartsContainer>
+								<ChartsTooltip
+									trigger="item"
+									sx={{
+										zIndex: 1200,
+										maxWidth: "400px",
+										"& .MuiChartsTooltip-mark": {
+											display: "none",
+										},
+										"& .MuiChartsTooltip-markContainer": {
+											display: "none",
+										},
+										"& .MuiChartsTooltip-table": {
+											maxWidth: "100%",
+											wordBreak: "break-word",
+										},
+										"& .MuiChartsTooltip-valueCell": {
+											whiteSpace: "pre-line",
+											maxWidth: "300px",
+											overflowWrap: "break-word",
+										},
+										"& .MuiPopper-root": {
+											transition: "opacity 0.2s ease-in-out",
+											transitionDelay: "150ms",
+										},
+									}}
+								/>
+							</ChartsContainer>
+						</>
+					) : (
+						<Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+							No data available
+						</Typography>
+					)}
 				</CardContent>
 			</Card>
 			<WorkItemsDialog
@@ -438,10 +550,6 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 				}}
 			/>
 		</>
-	) : (
-		<Typography variant="body2" color="text.secondary">
-			No data available
-		</Typography>
 	);
 };
 
