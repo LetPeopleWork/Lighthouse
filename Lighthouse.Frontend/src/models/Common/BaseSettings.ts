@@ -1,3 +1,4 @@
+import type { ICycleTimeDefinition } from "../Metrics/NamedCycleTime";
 import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
 import type { IStateMapping } from "./StateMapping";
 
@@ -17,6 +18,7 @@ export interface IBaseSettings {
 	blockedStates: string[];
 	blockedTags: string[];
 	stateMappings: IStateMapping[];
+	cycleTimeDefinitions?: ICycleTimeDefinition[];
 	waitStates?: string[];
 	doneItemsCutoffDays: number;
 	stalenessThresholdDays: number;

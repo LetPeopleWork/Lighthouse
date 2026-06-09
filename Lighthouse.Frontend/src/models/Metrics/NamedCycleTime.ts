@@ -11,3 +11,11 @@ export interface INamedCycleTimeDefinition {
 	id: number;
 	name: string;
 }
+
+export interface ICycleTimeDefinition {
+	id: number;
+	name: string;
+	startState: string;
+	endState: string;
+	isValid?: boolean;
+}

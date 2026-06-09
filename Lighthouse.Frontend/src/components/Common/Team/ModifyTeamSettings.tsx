@@ -20,6 +20,7 @@ import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfig
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
+import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
 import StateMappingsEditor from "../StateMappings/StateMappingsEditor";
 import WaitStatesEditor from "../StateMappings/WaitStatesEditor";
 import StatesList from "../StatesList/StatesList";
@@ -195,6 +196,17 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							stateMappings={teamSettings.stateMappings || []}
 							onChange={(nextWaitStates) =>
 								updateSettings("waitStates", nextWaitStates)
+							}
+						/>
+
+						<CycleTimesEditor
+							cycleTimeDefinitions={teamSettings.cycleTimeDefinitions || []}
+							toDoStates={teamSettings.toDoStates || []}
+							doingStates={teamSettings.doingStates || []}
+							doneStates={teamSettings.doneStates || []}
+							stateMappings={teamSettings.stateMappings || []}
+							onChange={(nextDefinitions) =>
+								updateSettings("cycleTimeDefinitions", nextDefinitions)
 							}
 						/>
 

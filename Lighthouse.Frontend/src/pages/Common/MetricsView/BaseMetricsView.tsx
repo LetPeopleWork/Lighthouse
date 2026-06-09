@@ -45,7 +45,10 @@ import type {
 	IFeatureSizePercentilesInfo,
 	IThroughputInfo,
 } from "../../../models/Metrics/InfoWidgetData";
-import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
+import type {
+	ICycleTimeDefinition,
+	INamedCycleTimeDefinition,
+} from "../../../models/Metrics/NamedCycleTime";
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
@@ -106,12 +109,6 @@ import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
 import { getWidgetInfo } from "./widgetInfoMetadata";
 
-const SEEDED_NAMED_CYCLE_TIME_DEFINITIONS: INamedCycleTimeDefinition[] = [
-	{ id: 1, name: "Implementation to Done" },
-];
-
-const NO_NAMED_CYCLE_TIME_DEFINITIONS: INamedCycleTimeDefinition[] = [];
-
 export interface BaseMetricsViewProps<
 	T extends IWorkItem | IFeature,
 	E extends IFeatureOwner,
@@ -129,6 +126,7 @@ export interface BaseMetricsViewProps<
 	stalenessThresholdDays?: number;
 	waitStates?: string[];
 	stateMappings?: IStateMapping[];
+	cycleTimeDefinitions?: ICycleTimeDefinition[];
 }
 
 function formatDate(date: Date): string {
@@ -997,6 +995,7 @@ export const BaseMetricsView = <
 	stalenessThresholdDays,
 	waitStates = [],
 	stateMappings = [],
+	cycleTimeDefinitions = [],
 }: BaseMetricsViewProps<T, E>) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { licenseStatus } = useLicenseRestrictions();
@@ -1065,9 +1064,16 @@ export const BaseMetricsView = <
 		refetchThroughputPbc,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
-	const namedCycleTimeDefinitions = isPremium
-		? SEEDED_NAMED_CYCLE_TIME_DEFINITIONS
-		: NO_NAMED_CYCLE_TIME_DEFINITIONS;
+	const namedCycleTimeDefinitions: INamedCycleTimeDefinition[] = useMemo(
+		() =>
+			isPremium
+				? cycleTimeDefinitions.map((definition) => ({
+						id: definition.id,
+						name: definition.name,
+					}))
+				: [],
+		[isPremium, cycleTimeDefinitions],
+	);
 
 	const onFetchNamedCycleTimePercentiles = useCallback(
 		(definitionId: number) =>
