@@ -83,6 +83,87 @@ export class MetricsWidget {
 	}
 }
 
+export class WorkItemAgePercentilesCard {
+	private readonly card: Locator;
+
+	constructor(public readonly page: Page) {
+		this.card = page.locator(
+			'[data-testid="dashboard-item-workItemAgePercentiles"]',
+		);
+	}
+
+	get widget(): Locator {
+		return this.card;
+	}
+
+	get title(): Locator {
+		return this.card.getByText("Work Item Age Percentiles", { exact: true });
+	}
+
+	get percentileValues(): Locator {
+		return this.card.getByText(/\d+ days?$/);
+	}
+
+	async countPercentileValues(): Promise<number> {
+		return this.percentileValues.count();
+	}
+}
+
+export class WorkItemAgingReferenceLineSelector {
+	private readonly widget: Locator;
+
+	constructor(
+		public readonly page: Page,
+		widgetId: string,
+	) {
+		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+	}
+
+	get chart(): Locator {
+		return this.widget;
+	}
+
+	private toggle(name: string): Locator {
+		return this.widget.getByRole("button", { name, exact: true });
+	}
+
+	get cycleTimeToggle(): Locator {
+		return this.toggle("Cycle Time");
+	}
+
+	get workItemAgeToggle(): Locator {
+		return this.toggle("Work Item Age");
+	}
+
+	private referenceLineLabels(pattern: RegExp): Locator {
+		return this.widget.locator("text").filter({ hasText: pattern });
+	}
+
+	get cycleTimeReferenceLines(): Locator {
+		return this.referenceLineLabels(/^\d+%$/);
+	}
+
+	get workItemAgeReferenceLines(): Locator {
+		return this.referenceLineLabels(/^Work Item Age \d+%$/);
+	}
+
+	async selectCycleTime(): Promise<void> {
+		await this.cycleTimeToggle.click();
+	}
+
+	async selectWorkItemAge(): Promise<void> {
+		await this.workItemAgeToggle.click();
+	}
+
+	async countCycleTimeReferenceLines(): Promise<number> {
+		return this.cycleTimeReferenceLines.count();
+	}
+
+	async countWorkItemAgeReferenceLines(): Promise<number> {
+		return this.workItemAgeReferenceLines.count();
+	}
+}
+
 export enum MetricsCategories {
 	FlowOverview = "flow-overview",
 	FlowMetrics = "flow-metrics",
@@ -99,6 +180,7 @@ export const MetricsWidgetNames = {
 	TotalWorkItemAgeOverview: "Total Work Item Age Overview",
 	PredictabilityScoreOverview: "Predictability Score Overview",
 	CycleTimePercentiles: "Cycle Time Percentiles",
+	WorkItemAgePercentiles: "Work Item Age Percentiles",
 	CycleTimeScatterplot: "Cycle Time Scatterplot",
 	WorkItemAgingChart: "Work Item Aging Chart",
 	CumulativeStateTime: "Cumulative Time per State",
@@ -134,6 +216,7 @@ export class MetricsPage {
 			["Total Work Item Age Overview", "totalWorkItemAge"],
 			["Predictability Score Overview", "predictabilityScore"],
 			["Cycle Time Percentiles", "percentiles"],
+			["Work Item Age Percentiles", "workItemAgePercentiles"],
 			["Total Throughput", "totalThroughput"],
 			["Total Arrivals", "totalArrivals"],
 			["Feature Size Percentiles", "featureSizePercentiles"],

@@ -18,6 +18,8 @@ import {
 import {
 	MetricsCategories,
 	MetricsWidgetNames,
+	WorkItemAgePercentilesCard,
+	WorkItemAgingReferenceLineSelector,
 } from "../../models/metrics/MetricsPage";
 import { WaitStatesEditor } from "../../models/metrics/WaitStatesEditor";
 import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
@@ -391,6 +393,70 @@ testWithDemo(
 			cumulative.chart,
 			"features/metrics/stateTimeCumulativeScoped.png",
 		);
+	},
+);
+
+testWithDemo(
+	"@screenshot a flow coach reads the Work Item Age Percentiles card and switches the aging chart between cycle time and work item age percentiles",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const overviewWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowOverview,
+		);
+		const agePercentilesWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.WorkItemAgePercentiles,
+			overviewWidgets,
+		);
+		await expect(agePercentilesWidget.Widget).toBeVisible();
+
+		const agePercentilesCard = new WorkItemAgePercentilesCard(page);
+		await expect(agePercentilesCard.title).toBeVisible();
+		await expect
+			.poll(() => agePercentilesCard.countPercentileValues())
+			.toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			agePercentilesWidget.Widget,
+			"features/metrics/workItemAgePercentilesCard.png",
+		);
+
+		const flowMetricsWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const agingWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.WorkItemAgingChart,
+			flowMetricsWidgets,
+		);
+		await expect(agingWidget.Widget).toBeVisible();
+
+		const agingSelector = new WorkItemAgingReferenceLineSelector(page, "aging");
+		await expect
+			.poll(() => agingSelector.countCycleTimeReferenceLines())
+			.toBeGreaterThan(0);
+
+		await agingSelector.selectWorkItemAge();
+		await expect
+			.poll(() => agingSelector.countWorkItemAgeReferenceLines())
+			.toBeGreaterThan(0);
+		await expect
+			.poll(() => agingSelector.countCycleTimeReferenceLines())
+			.toBe(0);
+
+		await takeElementScreenshot(
+			agingWidget.Widget,
+			"features/metrics/agingWorkItemAgeReferenceLines.png",
+		);
+
+		await agingSelector.selectCycleTime();
+		await expect
+			.poll(() => agingSelector.countCycleTimeReferenceLines())
+			.toBeGreaterThan(0);
+		await expect
+			.poll(() => agingSelector.countWorkItemAgeReferenceLines())
+			.toBe(0);
 	},
 );
 
