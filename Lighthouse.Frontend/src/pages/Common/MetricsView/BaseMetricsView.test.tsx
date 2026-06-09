@@ -289,10 +289,12 @@ vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
 		inProgressItems,
 		percentileValues,
 		serviceLevelExpectation,
+		workItemAgePercentileValues = [],
 	}: {
 		inProgressItems: IWorkItem[];
 		percentileValues: IPercentileValue[];
 		serviceLevelExpectation: IPercentileValue | null;
+		workItemAgePercentileValues?: IPercentileValue[];
 	}) => (
 		<div data-testid="work-item-aging-chart">
 			<div data-testid="aging-in-progress-items-count">
@@ -300,6 +302,9 @@ vi.mock("../../../components/Common/Charts/WorkItemAgingChart", () => ({
 			</div>
 			<div data-testid="aging-percentile-values-count">
 				{percentileValues.length}
+			</div>
+			<div data-testid="aging-work-item-age-percentile-values-count">
+				{workItemAgePercentileValues.length}
 			</div>
 			<div data-testid="aging-service-level-expectation">
 				{serviceLevelExpectation
@@ -4185,6 +4190,131 @@ describe("BaseMetricsView component", () => {
 			expect(screen.getByTestId("additionalColumnContent")).toHaveTextContent(
 				"10.2",
 			);
+		});
+	});
+
+	describe("Work Item Age Percentiles in Portfolio scope", () => {
+		const portfolioWorkItemAgeValues: IPercentileValue[] = [
+			{ percentile: 50, value: 4 },
+			{ percentile: 85, value: 9 },
+			{ percentile: 95, value: 13 },
+		];
+
+		const makePortfolio = (id: number): Portfolio => {
+			const portfolio = new Portfolio();
+			portfolio.name = "Age Portfolio";
+			portfolio.id = id;
+			portfolio.lastUpdated = new Date();
+			portfolio.serviceLevelExpectationProbability = 85;
+			portfolio.serviceLevelExpectationRange = 14;
+			return portfolio;
+		};
+
+		it("renders the card over portfolio WIP and reuses the aging-chart selector with portfolio age values", async () => {
+			const portfolio = makePortfolio(420);
+			const portfolioService = {
+				...createMockMetricsService<IFeature>(),
+				getWorkItemAgePercentiles: vi
+					.fn()
+					.mockResolvedValue(portfolioWorkItemAgeValues),
+			};
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${portfolio.id}:category`,
+				"flow-overview",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={portfolio}
+					metricsService={portfolioService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(portfolioService.getWorkItemAgePercentiles).toHaveBeenCalledWith(
+					portfolio.id,
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+
+			expect(
+				await screen.findByText("Work Item Age Percentiles"),
+			).toBeInTheDocument();
+			expect(screen.getByText("4 days")).toBeInTheDocument();
+			expect(screen.getByText("9 days")).toBeInTheDocument();
+			expect(screen.getByText("13 days")).toBeInTheDocument();
+
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${portfolio.id}:category`,
+				"flow-metrics",
+			);
+			renderWithRouter(
+				<BaseMetricsView
+					entity={portfolio}
+					metricsService={portfolioService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("aging-work-item-age-percentile-values-count"),
+				).toHaveTextContent("3");
+			});
+		});
+
+		it("shows the graceful empty card and no aging age values for an empty portfolio WIP", async () => {
+			const portfolio = makePortfolio(421);
+			const portfolioService = {
+				...createMockMetricsService<IFeature>(),
+				getInProgressItems: vi.fn().mockResolvedValue([]),
+				getWorkItemAgePercentiles: vi.fn().mockResolvedValue([]),
+			};
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${portfolio.id}:category`,
+				"flow-overview",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={portfolio}
+					metricsService={portfolioService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			expect(
+				await screen.findByText("Work Item Age Percentiles"),
+			).toBeInTheDocument();
+			expect(screen.getByText("No work in progress")).toBeInTheDocument();
+
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${portfolio.id}:category`,
+				"flow-metrics",
+			);
+			renderWithRouter(
+				<BaseMetricsView
+					entity={portfolio}
+					metricsService={portfolioService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("aging-work-item-age-percentile-values-count"),
+				).toHaveTextContent("0");
+			});
 		});
 	});
 });
