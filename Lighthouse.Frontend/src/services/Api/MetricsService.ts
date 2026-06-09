@@ -67,6 +67,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 		itemIds?: number[],
+		definitionId?: number,
 	): Promise<ICumulativeStateTimeResponse>;
 
 	getCumulativeStateTimeItemsForTeam(
@@ -346,13 +347,16 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		startDate: Date,
 		endDate: Date,
 		itemIds?: number[],
+		definitionId?: number,
 	): Promise<ICumulativeStateTimeResponse> {
 		return this.withErrorHandling(async () => {
 			const itemIdsSuffix = (itemIds ?? [])
 				.map((itemId) => `&itemIds=${itemId}`)
 				.join("");
+			const definitionSuffix =
+				definitionId === undefined ? "" : `&definitionId=${definitionId}`;
 			const response = await this.apiService.get<ICumulativeStateTimeResponse>(
-				`/${this.api}/${id}/metrics/cumulativeStateTime?${this.getDateFormatString(startDate, endDate)}${itemIdsSuffix}`,
+				`/${this.api}/${id}/metrics/cumulativeStateTime?${this.getDateFormatString(startDate, endDate)}${itemIdsSuffix}${definitionSuffix}`,
 			);
 
 			return response.data;

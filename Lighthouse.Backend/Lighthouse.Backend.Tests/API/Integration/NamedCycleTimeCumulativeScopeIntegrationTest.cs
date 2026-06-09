@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string Done = "Done";
         private const int ReviewToDoneDefinitionId = 1;
         private const int InvalidDefinitionId = 2;
+        private const int BacklogToDoneDefinitionId = 3;
 
         private static int testDateOffset;
 
@@ -96,7 +97,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task DefinitionIdValid_BarsRecomputeOverHalfOpenWindow_AndTheEndStateHasNoBar()
+        public async Task DefinitionIdValid_ScopeSpansTheNamedStates_StatesOutsideTheSpanHaveNoBar()
         {
             var response = await client.GetAsync(CumulativeUrl(ReviewToDoneDefinitionId));
 
@@ -105,27 +106,46 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(StateBar(body, Review), Is.GreaterThan(0),
-                    $"Review is in the [enter Review .. enter Done) window and carries its dwell. Body: {body}");
-                Assert.That(StateBar(body, Implementation), Is.Zero,
-                    $"Implementation is BEFORE the Review window start and is clipped out. Body: {body}");
-                Assert.That(StateBar(body, Done), Is.Zero,
-                    $"D10: the end state's dwell is excluded — Done contributes no bar. Body: {body}");
+                    $"Review is the only state in the [Review .. Done) span and carries its dwell. Body: {body}");
+                Assert.That(StateNames(body), Does.Not.Contain(Implementation),
+                    $"Implementation is BEFORE the Review span start and is not part of the scope. Body: {body}");
+                Assert.That(StateNames(body), Does.Not.Contain(Done),
+                    $"D10: the end state Done is excluded from the half-open span. Body: {body}");
             }
         }
 
         [Test]
-        public async Task ScatterNamedDurationWindow_EqualsCumulativeScopedSpan_ForTheSameDefinition()
+        public async Task DefinitionIdValid_ScopeSpansEarlierStates_ABarAppearsThatTheDefaultViewNeverShows()
         {
-            var scatterBody = await (await client.GetAsync(CycleTimeDataUrl())).Content.ReadAsStringAsync();
-            var cumulativeBody = await (await client.GetAsync(CumulativeUrl(ReviewToDoneDefinitionId))).Content.ReadAsStringAsync();
+            var unscoped = await (await client.GetAsync(CumulativeUrl(null))).Content.ReadAsStringAsync();
+            var scoped = await (await client.GetAsync(CumulativeUrl(BacklogToDoneDefinitionId))).Content.ReadAsStringAsync();
 
-            var scatterDays = NamedDaysFor(scatterBody, "WIN-1", ReviewToDoneDefinitionId);
-            var cumulativeSpan = StateBars(cumulativeBody).Sum();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StateNames(unscoped), Does.Not.Contain(Backlog),
+                    $"The default per-state view bars only Doing states — Backlog (a ToDo state) never appears. Body: {unscoped}");
+                Assert.That(StateNames(scoped), Does.Contain(Backlog),
+                    $"Scoping to a Backlog-anchored window adds Backlog to the displayed span. Body: {scoped}");
+                Assert.That(StateBar(scoped, Backlog), Is.GreaterThan(0),
+                    $"Backlog carries its real dwell inside the [enter Backlog .. enter Done) window. Body: {scoped}");
+                Assert.That(StateBar(scoped, Done), Is.Zero,
+                    $"D10: the end state Done is excluded from the half-open span. Body: {scoped}");
+            }
+        }
 
-            Assert.That(Math.Abs(scatterDays - cumulativeSpan), Is.LessThanOrEqualTo(1.5),
-                $"The scatter named duration ({scatterDays}d) and the cumulative scoped span ({cumulativeSpan}d) are the " +
-                "same window by construction (they resolve through the same NamedCycleTimeDays boundary logic; the " +
-                "inclusive-day convention accounts for the <=1d difference).");
+        [Test]
+        public async Task DefinitionIdValid_KeepsTheCompletedVersusOngoingSplit_FromTheWorkflowMapping()
+        {
+            var scoped = await (await client.GetAsync(CumulativeUrl(BacklogToDoneDefinitionId))).Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OngoingBar(scoped, Implementation), Is.GreaterThan(0),
+                    $"An item still sitting in Implementation (a Doing state) accrues ongoing time even when scoped — the " +
+                    $"completed/ongoing split follows the To Do/Doing/Done mapping, not whether the named cycle finished. Body: {scoped}");
+                Assert.That(CompletedBar(scoped, Backlog), Is.GreaterThan(0),
+                    $"Earlier states the in-flight item has already left carry completed time. Body: {scoped}");
+            }
         }
 
         [Test]
@@ -144,52 +164,32 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return definitionId.HasValue ? $"{url}&definitionId={definitionId.Value}" : url;
         }
 
-        private string CycleTimeDataUrl() =>
-            $"/api/latest/teams/{seededTeamId}/metrics/cycleTimeData?startDate={windowStart:O}&endDate={windowEnd:O}";
+        private static double StateBar(string body, string state) => StateMetric(body, state, "totalDays");
 
-        private static double StateBar(string body, string state)
+        private static double CompletedBar(string body, string state) => StateMetric(body, state, "completedContributionDays");
+
+        private static double OngoingBar(string body, string state) => StateMetric(body, state, "ongoingContributionDays");
+
+        private static double StateMetric(string body, string state, string metric)
         {
             using var document = JsonDocument.Parse(body);
             foreach (var row in document.RootElement.GetProperty("states").EnumerateArray())
             {
                 if (string.Equals(row.GetProperty("state").GetString(), state, StringComparison.OrdinalIgnoreCase))
                 {
-                    return row.GetProperty("totalDays").GetDouble();
+                    return row.GetProperty(metric).GetDouble();
                 }
             }
 
             return 0;
         }
 
-        private static double[] StateBars(string body)
+        private static IReadOnlyList<string> StateNames(string body)
         {
             using var document = JsonDocument.Parse(body);
             return document.RootElement.GetProperty("states").EnumerateArray()
-                .Select(row => row.GetProperty("totalDays").GetDouble())
-                .ToArray();
-        }
-
-        private static int NamedDaysFor(string body, string referenceId, int definitionId)
-        {
-            using var document = JsonDocument.Parse(body);
-            foreach (var item in document.RootElement.EnumerateArray())
-            {
-                if (item.GetProperty("referenceId").GetString() != referenceId)
-                {
-                    continue;
-                }
-
-                foreach (var named in item.GetProperty("namedCycleTimes").EnumerateArray())
-                {
-                    if (named.GetProperty("definitionId").GetInt32() == definitionId)
-                    {
-                        return named.GetProperty("days").GetInt32();
-                    }
-                }
-            }
-
-            Assert.Fail($"Named duration for '{referenceId}' definition {definitionId} not found. Body: {body}");
-            return 0;
+                .Select(row => row.GetProperty("state").GetString() ?? string.Empty)
+                .ToList();
         }
 
         private int SeedTeamWithWindowedItem()
@@ -215,6 +215,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 [
                     new CycleTimeDefinition { Id = ReviewToDoneDefinitionId, Name = "Review to Done", StartState = Review, EndState = Done },
                     new CycleTimeDefinition { Id = InvalidDefinitionId, Name = "Phantom to Done", StartState = "Phantom", EndState = Done },
+                    new CycleTimeDefinition { Id = BacklogToDoneDefinitionId, Name = "Lead Time", StartState = Backlog, EndState = Done },
                 ],
             };
 
@@ -243,9 +244,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
             workItemRepository.Add(item);
             workItemRepository.Save().GetAwaiter().GetResult();
 
-            transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Backlog, ToState = Implementation, TransitionedAt = workStart });
+            var inFlight = new WorkItem
+            {
+                Team = team,
+                TeamId = team.Id,
+                ReferenceId = "FLOW-1",
+                Name = "Story FLOW-1",
+                Type = "Story",
+                State = Implementation,
+                StateCategory = StateCategories.Doing,
+                Url = "https://example.test/items/FLOW-1",
+                CreatedDate = workStart.AddDays(-1),
+                StartedDate = workStart,
+                CurrentStateEnteredAt = workStart.AddDays(3),
+                Order = "FLOW-1",
+            };
+            workItemRepository.Add(inFlight);
+            workItemRepository.Save().GetAwaiter().GetResult();
+
+            transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Backlog, ToState = Implementation, TransitionedAt = workStart.AddDays(2) });
             transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Implementation, ToState = Review, TransitionedAt = workStart.AddDays(4) });
             transitionRepository.Add(new WorkItemStateTransition { WorkItemId = item.Id, FromState = Review, ToState = Done, TransitionedAt = workStart.AddDays(10) });
+            transitionRepository.Add(new WorkItemStateTransition { WorkItemId = inFlight.Id, FromState = Backlog, ToState = Implementation, TransitionedAt = workStart.AddDays(3) });
             transitionRepository.Save().GetAwaiter().GetResult();
 
             return team.Id;

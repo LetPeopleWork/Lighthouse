@@ -119,6 +119,23 @@ describe("MetricsService getCumulativeStateTimeForTeam", () => {
 			"/teams/7/metrics/cumulativeStateTime?startDate=2023-01-01&endDate=2023-01-31",
 		);
 	});
+
+	it("appends the definitionId query param when scoping to a named cycle time", async () => {
+		const response = getMockCumulativeStateTimeResponse();
+		mockedAxios.get.mockResolvedValueOnce({ data: response });
+
+		await metricsService.getCumulativeStateTimeForTeam(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+			undefined,
+			3,
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cumulativeStateTime?startDate=2023-01-01&endDate=2023-01-31&definitionId=3",
+		);
+	});
 });
 
 function getMockCumulativeStateTimeItemsResponse(

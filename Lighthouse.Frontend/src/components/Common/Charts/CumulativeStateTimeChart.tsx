@@ -41,6 +41,7 @@ interface CumulativeStateTimeChartProps {
 	data: ICumulativeStateTimeResponse;
 	onBarClick?: (stateName: string) => void;
 	pickerSlot?: ReactNode;
+	scopeSlot?: ReactNode;
 	completionFilterEnabled?: boolean;
 	waitStates?: string[];
 	stateMappings?: IStateMapping[];
@@ -129,7 +130,19 @@ export const CumulativeStateBarTooltip: React.FC<{
 	color: string;
 	unit: DurationUnit;
 }> = ({ row, color, unit }) => (
-	<Box data-testid="cumulative-state-bar-tooltip" sx={{ p: 1, minWidth: 160 }}>
+	<Box
+		data-testid="cumulative-state-bar-tooltip"
+		sx={{
+			p: 1,
+			minWidth: 160,
+			bgcolor: "background.paper",
+			color: "text.primary",
+			border: 1,
+			borderColor: "divider",
+			borderRadius: 1,
+			boxShadow: 3,
+		}}
+	>
 		<Typography variant="subtitle2" sx={{ mb: 0.5 }}>
 			{row.state}
 		</Typography>
@@ -266,6 +279,7 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	data,
 	onBarClick,
 	pickerSlot,
+	scopeSlot,
 	completionFilterEnabled = false,
 	waitStates = [],
 	stateMappings = [],
@@ -437,7 +451,10 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 							stateMappings={stateMappings}
 						/>
 					</Stack>
-					{pickerSlot}
+					<Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+						{scopeSlot}
+						{pickerSlot}
+					</Stack>
 				</Stack>
 
 				<Stack

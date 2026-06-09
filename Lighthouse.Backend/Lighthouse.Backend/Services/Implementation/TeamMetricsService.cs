@@ -427,18 +427,8 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetFromCacheIfExists(team, $"CumulativeStateTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}{SelectionCacheSuffix(itemIds)}{scopeSuffix}", () =>
             {
                 var candidateItems = NarrowToSelectedItems(ResolveCumulativeStateTimeCandidates(team, startDate, endDate), itemIds);
-                var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
-
-                if (scopedDefinition != null)
-                {
-                    var allStatesInOrder = team.AllStates.ToList();
-                    var startState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.StartState);
-                    var endState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.EndState);
-                    var scopedStates = ComputeScopedCumulativeStateTime(candidateItems, workflowStateOrder, allStatesInOrder, startState, endState);
-                    return new CumulativeStateTimeDto(scopedStates);
-                }
-
-                var states = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
+                var stateOrder = ResolveCumulativeStateOrder(team, scopedDefinition);
+                var states = ComputeCumulativeStateTime(candidateItems, stateOrder, endDate);
                 return new CumulativeStateTimeDto(states);
             }, logger);
         }
@@ -541,6 +531,19 @@ namespace Lighthouse.Backend.Services.Implementation
         private static List<string> BuildCumulativeWorkflowStateOrder(Team team)
         {
             return [.. team.DoingStates];
+        }
+
+        private static IReadOnlyList<string> ResolveCumulativeStateOrder(Team team, CycleTimeDefinition? scopedDefinition)
+        {
+            if (scopedDefinition == null)
+            {
+                return BuildCumulativeWorkflowStateOrder(team);
+            }
+
+            var allStatesInOrder = team.AllStates.ToList();
+            var startState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.StartState);
+            var endState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.EndState);
+            return ScopedCumulativeStateOrder(allStatesInOrder, startState, endState);
         }
 
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)

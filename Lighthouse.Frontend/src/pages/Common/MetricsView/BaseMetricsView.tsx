@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
 import CumulativeStateTimeItemPicker from "../../../components/Common/Charts/CumulativeStateTimeItemPicker";
+import CumulativeStateTimeScopeControl from "../../../components/Common/Charts/CumulativeStateTimeScopeControl";
 import CycleTimePercentiles from "../../../components/Common/Charts/CycleTimePercentiles";
 import CycleTimeScatterPlotChart from "../../../components/Common/Charts/CycleTimeScatterPlotChart";
 import EstimationVsCycleTimeChart from "../../../components/Common/Charts/EstimationVsCycleTimeChart";
@@ -770,6 +771,8 @@ function buildWidgetNodes(ctx: {
 	stalenessThresholdDays: number | undefined;
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	displayedCumulativeStateTime: ICumulativeStateTimeResponse | null;
+	cumulativeScopeDefinitionId: number | null;
+	onCumulativeScopeChange: (definitionId: number | null) => void;
 	cumulativeStateTimeCandidates: ICumulativeStateTimeCandidateRow[];
 	cumulativeStateTimeCandidatesLoaded: boolean;
 	cumulativeStateTimeSelectedItemIds: number[];
@@ -960,6 +963,13 @@ function buildWidgetNodes(ctx: {
 				completionFilterEnabled={
 					ctx.cumulativeStateTimeSelectedItemIds.length === 0
 				}
+				scopeSlot={
+					<CumulativeStateTimeScopeControl
+						namedCycleTimeDefinitions={ctx.namedCycleTimeDefinitions}
+						scopeDefinitionId={ctx.cumulativeScopeDefinitionId}
+						onScopeChange={ctx.onCumulativeScopeChange}
+					/>
+				}
 				pickerSlot={
 					<CumulativeStateTimeItemPicker
 						candidates={ctx.cumulativeStateTimeCandidates}
@@ -1112,6 +1122,10 @@ export const BaseMetricsView = <
 		useState(false);
 	const [narrowedCumulativeStateTime, setNarrowedCumulativeStateTime] =
 		useState<ICumulativeStateTimeResponse | null>(null);
+	const [cumulativeScopeDefinitionId, setCumulativeScopeDefinitionId] =
+		useState<number | null>(null);
+	const [scopedCumulativeStateTime, setScopedCumulativeStateTime] =
+		useState<ICumulativeStateTimeResponse | null>(null);
 	const candidatesRequestedRef = useRef(false);
 
 	useEffect(() => {
@@ -1132,6 +1146,32 @@ export const BaseMetricsView = <
 			),
 		[metricsService, entity.id, startDate, endDate],
 	);
+
+	const handleCumulativeScopeChange = useCallback(
+		(definitionId: number | null) => {
+			setCumulativeScopeDefinitionId(definitionId);
+			if (definitionId === null) {
+				setScopedCumulativeStateTime(null);
+				return;
+			}
+			void metricsService
+				.getCumulativeStateTimeForTeam(
+					entity.id,
+					startDate,
+					endDate,
+					undefined,
+					definitionId,
+				)
+				.then(setScopedCumulativeStateTime);
+		},
+		[metricsService, entity.id, startDate, endDate],
+	);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: entity/window are reset triggers, not values read in the body — a scope chosen for one team/window must not leak into the next.
+	useEffect(() => {
+		setCumulativeScopeDefinitionId(null);
+		setScopedCumulativeStateTime(null);
+	}, [entity.id, startDate, endDate]);
 
 	const handleCumulativeStateTimePickerOpen = useCallback(() => {
 		if (candidatesRequestedRef.current) {
@@ -1339,7 +1379,11 @@ export const BaseMetricsView = <
 		stalenessThresholdDays,
 		cumulativeStateTime,
 		displayedCumulativeStateTime:
-			narrowedCumulativeStateTime ?? cumulativeStateTime,
+			scopedCumulativeStateTime ??
+			narrowedCumulativeStateTime ??
+			cumulativeStateTime,
+		cumulativeScopeDefinitionId,
+		onCumulativeScopeChange: handleCumulativeScopeChange,
 		cumulativeStateTimeCandidates: cumulativeCandidates,
 		cumulativeStateTimeCandidatesLoaded: cumulativeCandidatesLoaded,
 		cumulativeStateTimeSelectedItemIds: selectedItemIds,

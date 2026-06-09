@@ -289,60 +289,16 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        protected static IReadOnlyList<CumulativeStateTimeStateRowDto> ComputeScopedCumulativeStateTime(
-            IEnumerable<WorkItem> includedItems,
-            IReadOnlyList<string> workflowStateOrder,
-            IReadOnlyList<string> allStatesInOrder,
-            string startState,
-            string endState)
+        protected static IReadOnlyList<string> ScopedCumulativeStateOrder(IReadOnlyList<string> allStatesInOrder, string startState, string endState)
         {
-            var items = includedItems.ToList();
-            if (items.Count == 0)
+            var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
+            var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
+            if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return [];
             }
 
-            var byState = new Dictionary<string, List<(int ItemId, double Days)>>();
-            foreach (var visit in items.SelectMany(item => WindowedCompletedVisits(item, allStatesInOrder, startState, endState)))
-            {
-                if (!byState.TryGetValue(visit.State, out var visits))
-                {
-                    visits = [];
-                    byState[visit.State] = visits;
-                }
-
-                visits.Add((visit.ItemId, visit.Days));
-            }
-
-            return workflowStateOrder
-                .Select((state, order) => BuildCumulativeStateTimeRow(
-                    state,
-                    order,
-                    byState.TryGetValue(state, out var completed) ? completed : [],
-                    []))
-                .ToList();
-        }
-
-        private static IEnumerable<(string State, int ItemId, double Days)> WindowedCompletedVisits(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
-        {
-            var window = NamedCycleTimeWindow(item, allStatesInOrder, startState, endState);
-            if (window == null)
-            {
-                yield break;
-            }
-
-            var (windowStart, windowEnd) = window.Value;
-
-            foreach (var visit in RawCompletedVisits(item))
-            {
-                var clippedStart = visit.Start > windowStart ? visit.Start : windowStart;
-                var clippedEnd = visit.End < windowEnd ? visit.End : windowEnd;
-                var days = (clippedEnd - clippedStart).TotalDays;
-                if (days > 0)
-                {
-                    yield return (visit.State, visit.ItemId, days);
-                }
-            }
+            return allStatesInOrder.Skip(startThreshold).Take(endThreshold - startThreshold).ToList();
         }
 
         protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
