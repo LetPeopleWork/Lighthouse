@@ -318,7 +318,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	): Promise<IPercentileValue[]> {
 		return this.withErrorHandling(async () => {
 			const definitionSuffix =
-				definitionId !== undefined ? `&definitionId=${definitionId}` : "";
+				definitionId === undefined ? "" : `&definitionId=${definitionId}`;
 			const response = await this.apiService.get<IPercentileValue[]>(
 				`/${this.api}/${id}/metrics/cycleTimePercentiles?${this.getDateFormatString(startDate, endDate)}${definitionSuffix}`,
 			);
