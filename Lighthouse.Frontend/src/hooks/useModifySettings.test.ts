@@ -136,6 +136,21 @@ describe("useModifySettings", () => {
 			expect(additionalFetch).toHaveBeenCalledTimes(1);
 		});
 
+		it("prefers initialFetch over additionalFetch on mount so opening the form never triggers a sync", async () => {
+			const initialFetch = vi.fn().mockResolvedValue(undefined);
+			const additionalFetch = vi.fn().mockResolvedValue(undefined);
+			const args = makeHookArgs({ initialFetch, additionalFetch });
+			const { result } = renderHook(() => useModifySettings(args));
+
+			await waitFor(() => expect(result.current.loading).toBe(false));
+			expect(initialFetch).toHaveBeenCalledTimes(1);
+			expect(additionalFetch).not.toHaveBeenCalled();
+
+			result.current.reloadDependentData();
+			await waitFor(() => expect(additionalFetch).toHaveBeenCalledTimes(1));
+			expect(initialFetch).toHaveBeenCalledTimes(1);
+		});
+
 		it("handles fetch error gracefully (loading becomes false, settings stays null)", async () => {
 			const consoleError = vi
 				.spyOn(console, "error")

@@ -56,15 +56,18 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { portfolioService } = useContext(ApiServiceContext);
 	const portfolioIdRef = useRef(0);
 
+	const loadTeams = useCallback(async () => {
+		setTeams(await getAllTeams());
+	}, [getAllTeams]);
+
 	const refreshDependentData = useCallback(async () => {
-		const fetchedTeams = await getAllTeams();
-		setTeams(fetchedTeams);
+		await loadTeams();
 		if (portfolioIdRef.current > 0) {
 			await portfolioService.refreshFeaturesForPortfolio(
 				portfolioIdRef.current,
 			);
 		}
-	}, [getAllTeams, portfolioService]);
+	}, [loadTeams, portfolioService]);
 
 	const {
 		loading,
@@ -117,6 +120,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			);
 		},
 		additionalFetch: refreshDependentData,
+		initialFetch: loadTeams,
 	});
 
 	portfolioIdRef.current = projectSettings?.id ?? 0;

@@ -122,7 +122,9 @@ describe("CumulativeStateTimeScopeControl", () => {
 		const onScopeChange = vi.fn();
 		render(
 			<CumulativeStateTimeScopeControl
-				namedCycleTimeDefinitions={[getMockDefinition({ id: 2, isValid: false })]}
+				namedCycleTimeDefinitions={[
+					getMockDefinition({ id: 2, isValid: false }),
+				]}
 				scopeDefinitionId={null}
 				onScopeChange={onScopeChange}
 			/>,

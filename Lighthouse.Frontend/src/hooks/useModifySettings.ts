@@ -45,6 +45,7 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 		wts: WorkTrackingSystemType,
 	) => TSettings["dataRetrievalSchema"];
 	additionalFetch?: () => Promise<void>;
+	initialFetch?: () => Promise<void>;
 	autoSave?: AutoSaveOptions;
 }
 
@@ -107,6 +108,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	validateForm,
 	getSchemaForSystem,
 	additionalFetch,
+	initialFetch,
 	autoSave,
 }: UseModifySettingsOptions<TSettings>) {
 	const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -133,11 +135,13 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const getSettingsRef = useRef(getSettings);
 	const getWorkTrackingSystemsRef = useRef(getWorkTrackingSystems);
 	const additionalFetchRef = useRef(additionalFetch);
+	const initialFetchRef = useRef(initialFetch);
 	const saveSettingsRef = useRef(saveSettings);
 	const tokenRef = useRef<string | undefined>(undefined);
 	getSettingsRef.current = getSettings;
 	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
 	additionalFetchRef.current = additionalFetch;
+	initialFetchRef.current = initialFetch;
 	saveSettingsRef.current = saveSettings;
 	tokenRef.current = settings?.concurrencyToken;
 
@@ -299,7 +303,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 						(s) => s.id === fetchedSettings.workTrackingSystemConnectionId,
 					) ?? null,
 				);
-				await additionalFetchRef.current?.();
+				// On mount, only load display-dependent data (e.g. the teams dropdown). Triggering a
+				// backend re-sync just because the edit view opened is bad UX; the sync runs on save
+				// (refreshOnSave) and on relevant changes (reloadDependentData), via additionalFetch.
+				await (initialFetchRef.current ?? additionalFetchRef.current)?.();
 			} catch (error) {
 				console.error("Error fetching data", error);
 			} finally {
