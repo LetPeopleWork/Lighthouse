@@ -107,7 +107,7 @@ import WipOverviewWidget from "./WipOverviewWidget";
 import { getWidgetInfo } from "./widgetInfoMetadata";
 
 const SEEDED_NAMED_CYCLE_TIME_DEFINITIONS: INamedCycleTimeDefinition[] = [
-	{ id: 1, name: "Concept to Cash" },
+	{ id: 1, name: "Implementation to Done" },
 ];
 
 const NO_NAMED_CYCLE_TIME_DEFINITIONS: INamedCycleTimeDefinition[] = [];

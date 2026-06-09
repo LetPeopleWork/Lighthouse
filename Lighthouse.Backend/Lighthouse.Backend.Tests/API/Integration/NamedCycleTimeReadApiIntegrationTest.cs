@@ -15,10 +15,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [NonParallelizable]
     public class NamedCycleTimeReadApiIntegrationTest
     {
-        private const string Planned = "Planned";
-        private const string InProgress = "In Progress";
+        private const string Backlog = "Backlog";
+        private const string Implementation = "Implementation";
         private const string Done = "Done";
-        private const int ConceptToCashDefinitionId = 1;
+        private const int ImplementationToDoneDefinitionId = 1;
 
         private static int testDateOffset;
 
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task CycleTimeData_ReturnsDefaultCycleTimePerClosedItem_Unchanged()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamAdmin(teamId);
             var response = await client.GetAsync(CycleTimeDataUrl(teamId));
@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task CycleTimeData_EachClosedItemCarriesItsNamedCycleTimes_Phx204Is47Days()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamAdmin(teamId);
             var response = await client.GetAsync(CycleTimeDataUrl(teamId));
@@ -100,18 +100,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(NamedDaysFor(body, "PHX-204", ConceptToCashDefinitionId), Is.EqualTo(47),
-                    $"PHX-204 reaches Planned at conceptStart and Done 46 days later -> inclusive 47-day named duration in cycleTimes. Body: {body}");
+                Assert.That(NamedDaysFor(body, "PHX-204", ImplementationToDoneDefinitionId), Is.EqualTo(47),
+                    $"PHX-204 reaches Implementation at conceptStart and Done 46 days later -> inclusive 47-day named duration in cycleTimes. Body: {body}");
             }
         }
 
         [Test]
         public async Task NamedDefinition_RecomputesPercentileLinesOverTheNamedSeries()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamAdmin(teamId);
-            var namedResponse = await client.GetAsync(CycleTimePercentilesUrl(teamId, ConceptToCashDefinitionId));
+            var namedResponse = await client.GetAsync(CycleTimePercentilesUrl(teamId, ImplementationToDoneDefinitionId));
             var defaultResponse = await client.GetAsync(CycleTimePercentilesUrl(teamId, definitionId: null));
 
             var namedBody = await namedResponse.Content.ReadAsStringAsync();
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task CycleTimeData_ReEntryUsesFirstCrossingNotTheReopen_Phx211()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamAdmin(teamId);
             var response = await client.GetAsync(CycleTimeDataUrl(teamId));
@@ -139,15 +139,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(NamedDaysFor(body, "PHX-211", ConceptToCashDefinitionId), Is.EqualTo(30),
-                    $"PHX-211 reopens into Planned, but the named duration spans the FIRST Planned crossing to the FIRST Done crossing. Body: {body}");
+                Assert.That(NamedDaysFor(body, "PHX-211", ImplementationToDoneDefinitionId), Is.EqualTo(30),
+                    $"PHX-211 reopens into Backlog, but the named duration spans the FIRST Implementation crossing to the FIRST Done crossing. Body: {body}");
             }
         }
 
         [Test]
         public async Task CycleTimeData_ItemCrossingNeitherOrOnlyOneBoundary_HasNoNamedEntry()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamAdmin(teamId);
             var response = await client.GetAsync(CycleTimeDataUrl(teamId));
@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(NamedDaysFor(body, "PHX-NEVERDONE", ConceptToCashDefinitionId), Is.Null,
+                Assert.That(NamedDaysFor(body, "PHX-NEVERDONE", ImplementationToDoneDefinitionId), Is.Null,
                     $"D9: a closed item that never crossed the Done boundary has no entry for that definition in cycleTimes. Body: {body}");
             }
         }
@@ -164,11 +164,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task NamedDefinition_FewQualifyingItems_StillPlotsThemWithCountAndPercentiles_NoSpecialLowSampleState()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamAdmin(teamId);
             var dataResponse = await client.GetAsync(CycleTimeDataUrl(teamId));
-            var percentilesResponse = await client.GetAsync(CycleTimePercentilesUrl(teamId, ConceptToCashDefinitionId));
+            var percentilesResponse = await client.GetAsync(CycleTimePercentilesUrl(teamId, ImplementationToDoneDefinitionId));
 
             var dataBody = await dataResponse.Content.ReadAsStringAsync();
             var percentilesBody = await percentilesResponse.Content.ReadAsStringAsync();
@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(dataResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), dataBody);
                 Assert.That(percentilesResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), percentilesBody);
 
-                Assert.That(ReferenceIdsWithNamedEntry(dataBody, ConceptToCashDefinitionId), Is.EquivalentTo(new[] { "PHX-204", "PHX-211" }),
+                Assert.That(ReferenceIdsWithNamedEntry(dataBody, ImplementationToDoneDefinitionId), Is.EquivalentTo(new[] { "PHX-204", "PHX-211" }),
                     $"D9: exactly the two boundary-crossing items carry a named entry, with no low-sample suppression. Body: {dataBody}");
                 Assert.That(PercentileCount(percentilesBody), Is.EqualTo(4),
                     $"The 50/70/85/95 percentile lines are still returned for a small named sample. Body: {percentilesBody}");
@@ -187,7 +187,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task TeamViewer_CanReadCycleTimeDataWithNamedCycleTimes()
         {
-            var teamId = SeedTeamWithConceptToCashItems();
+            var teamId = SeedTeamWithClosedItems();
 
             client.AsTeamViewer(teamId);
             var viewerResponse = await client.GetAsync(CycleTimeDataUrl(teamId));
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(viewerResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), viewerBody);
-                Assert.That(NamedDaysFor(viewerBody, "PHX-204", ConceptToCashDefinitionId), Is.EqualTo(47),
+                Assert.That(NamedDaysFor(viewerBody, "PHX-204", ImplementationToDoneDefinitionId), Is.EqualTo(47),
                     $"A Team Viewer reads the named cycle times off cycleTimeData (no read-side premium gate). Body: {viewerBody}");
                 Assert.That(
                     new[] { HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden, HttpStatusCode.NotFound },
@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return definitionId.HasValue ? $"{baseUrl}&definitionId={definitionId.Value}" : baseUrl;
         }
 
-        private int SeedTeamWithConceptToCashItems()
+        private int SeedTeamWithClosedItems()
         {
             using var scope = factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -233,17 +233,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
 
             AddItem(workItemRepository, transitionRepository, team, "PHX-204", conceptStart, conceptStart.AddDays(46),
-                Transition(Planned, InProgress, conceptStart.AddDays(10)),
-                Transition(InProgress, Done, conceptStart.AddDays(46)));
+                Transition(Backlog, Implementation, conceptStart),
+                Transition(Implementation, Done, conceptStart.AddDays(46)));
 
             AddItem(workItemRepository, transitionRepository, team, "PHX-211", conceptStart, conceptStart.AddDays(29),
-                Transition(Planned, InProgress, conceptStart.AddDays(5)),
-                Transition(InProgress, Planned, conceptStart.AddDays(12)),
-                Transition(Planned, InProgress, conceptStart.AddDays(20)),
-                Transition(InProgress, Done, conceptStart.AddDays(29)));
+                Transition(Backlog, Implementation, conceptStart),
+                Transition(Implementation, Backlog, conceptStart.AddDays(12)),
+                Transition(Backlog, Implementation, conceptStart.AddDays(20)),
+                Transition(Implementation, Done, conceptStart.AddDays(29)));
 
             AddItem(workItemRepository, transitionRepository, team, "PHX-NEVERDONE", conceptStart, conceptStart.AddDays(40),
-                Transition(Planned, InProgress, conceptStart.AddDays(6)));
+                Transition(Backlog, Implementation, conceptStart.AddDays(6)));
 
             workItemRepository.Save().GetAwaiter().GetResult();
             transitionRepository.Save().GetAwaiter().GetResult();
@@ -309,8 +309,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Name = $"Team {Guid.NewGuid():N}",
                 WorkTrackingSystemConnection = connection,
                 DoneItemsCutoffDays = 0,
-                ToDoStates = [Planned],
-                DoingStates = [InProgress],
+                ToDoStates = [Backlog],
+                DoingStates = [Implementation],
                 DoneStates = [Done],
             };
 

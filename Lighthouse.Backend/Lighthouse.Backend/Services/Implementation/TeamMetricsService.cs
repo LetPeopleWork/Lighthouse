@@ -406,8 +406,8 @@ namespace Lighthouse.Backend.Services.Implementation
             return new CycleTimeDefinition
             {
                 Id = definitionId > 0 ? definitionId : ConceptToCashDefinitionId,
-                Name = "Concept to Cash",
-                StartState = "Planned",
+                Name = "Implementation to Done",
+                StartState = "Implementation",
                 EndState = "Done",
             };
         }
