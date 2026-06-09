@@ -356,7 +356,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
             var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
-            if (startThreshold < 0 || endThreshold < 0)
+            if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return null;
             }

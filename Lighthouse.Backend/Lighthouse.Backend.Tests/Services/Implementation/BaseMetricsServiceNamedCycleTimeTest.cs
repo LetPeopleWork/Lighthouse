@@ -63,6 +63,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void NamedCycleTimeDays_BoundariesPresentButEndSortsBeforeStart_ReturnsNull()
+        {
+            var item = ItemWithTransitions(FixtureStart,
+                Transition("Planned", "In Progress", FixtureStart.AddDays(2)),
+                Transition("In Progress", "Done", FixtureStart.AddDays(14)));
+
+            var result = TestableBaseMetricsService.NamedDays(item, AllStatesInOrder, "Done", "Review");
+
+            Assert.That(result, Is.Null,
+                "A definition whose end boundary sorts before its start boundary has no window — it must not yield a spurious near-zero duration, matching ScopedCumulativeStateOrder's guard.");
+        }
+
+        [Test]
         public void NamedCycleTimeDays_EndStateEntryStopsTheClock_DwellInEndStateIsExcluded()
         {
             var item = ItemWithTransitions(FixtureStart,
