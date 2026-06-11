@@ -19,6 +19,8 @@ primary_jobs:
   - job-flow-coach-spot-stuck-items
   - job-flow-coach-spot-pace-outliers
   - job-flow-coach-gauge-wip-age-spread
+  - job-flow-coach-see-how-long-blocked  # epic-5074-blocked-items (2026-06-11, #5074): see per-item blocked duration
+  - job-flow-coach-stale-when-blocked-too-long  # epic-5074-blocked-items (2026-06-11, #5074): blocked-duration staleness trigger
 
 goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast

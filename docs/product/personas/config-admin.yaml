@@ -25,6 +25,7 @@ primary_jobs:
   - job-config-admin-define-wait-states  # wait-states-flow-efficiency (2026-06-05): mark idle Doing-states as wait states
   - job-config-admin-define-recurring-blackout-rule  # recurring-blackout-events (2026-06-06, #4577): define a recurring non-working-day rule once
   - job-config-admin-define-named-cycle-time  # multiple-cycle-times (2026-06-08, #5251): define a named start->end cycle-time window once
+  - job-config-admin-define-blocked-rules  # epic-5074-blocked-items (2026-06-11, #5074): define "blocked" as a flexible rule set (FOUNDATION)
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted

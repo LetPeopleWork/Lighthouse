@@ -24,6 +24,7 @@ feature_context:
   - epic-5305-k8s-readiness
   - epic-5306-k8s-productization
   - epic-5306-productization-platform
+  - epic-5074-blocked-items
 
 jobs:
   - id: job-rbac-bootstrap
@@ -2528,3 +2529,280 @@ jobs:
         Importance: 5 - tenant zero is the walking skeleton AND the dogfood that validates every other
         job on production data before a customer lands. Current satisfaction: 1 - LPW is not yet hosted
         on this platform. Gap: 4 - it is the end-to-end thread the whole epic hangs on.
+
+  - id: job-config-admin-define-blocked-rules
+    title: Define what "blocked" means with a flexible rule set instead of two hardcoded lists
+    persona: config-admin
+    feature_context: epic-5074-blocked-items
+    created: 2026-06-11
+    note: >
+      NEW in epic-5074-blocked-items (ADO Epic #5074, promoted out of Epic #4144). The FOUNDATION job
+      and slice 1 of the Epic — the user's verbatim steer: "flexible rules like we have for rule-based
+      deliveries or the filtered throughput — THAT is the main point of this epic (and should be the
+      FIRST slice)". Replaces the hardcoded BlockedStates + BlockedTags lists on the settings aggregate
+      with a BlockedRuleSet (the EXISTING WorkItemRuleSet, ADR-013) evaluated with Include semantics — a
+      matched item is blocked (mirrors DeliveryRule Include; inverse of ForecastFilter Exclude). Reuses
+      RuleEvaluator<WorkItem> / WorkItemFieldProvider and the DeliveryRuleBuilder component; no new
+      engine, no new operators. Field keys include additionalField.{id}, so a Jira flag custom field is
+      expressible directly as a rule condition — which is how the Epic's flagged-field cleanup (removing
+      the synthetic "Flagged" label special case in IssueFactory) is solved generically. Existing
+      BlockedStates/BlockedTags are AUTO-MIGRATED into equivalent OR'd conditions (State equals X /
+      Tags contains Y) so no admin loses config. Settings write rides the existing team/portfolio
+      settings endpoint (changed contract — version-gated for CLI/MCP clients). Lighthouse-side blocked
+      definition only (README L1): the rule DEFINITION is new config, the EVALUATION cadence is
+      unchanged. config-admin (team-admin / portfolio-admin) gate via IRbacAdministrationService;
+      non-premium (twin of the non-premium blocked-states config). Everything else in the Epic builds on
+      this definition.
+    job_story: >
+      When my team's notion of "blocked" isn't a bare workflow state or a single tag — it's a Jira flag
+      custom field, or "our Blocked state OR anything tagged dependency", or some other combination the
+      two hardcoded blocked lists simply can't express —
+      I want to define what counts as blocked using the same flexible rule builder I already use for
+      rule-based deliveries and the forecast filter, building conditions on state, tags, or any field
+      and combining them with AND/OR,
+      so "blocked" means exactly what my workflow means by it — and my existing blocked-states and
+      blocked-tags come across automatically as rules so I lose nothing in the change.
+    dimensions:
+      functional: >
+        A "Blocked" rule builder in Flow Metrics Configuration (Team and Portfolio) replacing the two
+        BlockedStates/BlockedTags ItemListManager lists, built on the EXISTING WorkItemRuleSet
+        (Mode and/or, up to MaxRules=20 conditions, MaxValueLength=500) and the EXISTING RuleOperators
+        (equals, notequals, contains, notcontains, isempty, isnotempty). Evaluated with Include
+        semantics by the EXISTING RuleEvaluator<WorkItem>: a matched item is IsBlocked. Field keys are
+        the fixed WorkItem fields plus additionalField.{id} (so a custom flag field is a valid
+        condition). Reuses the DeliveryRuleBuilder frontend component and WorkItemRules.ts model.
+        Existing BlockedStates -> `State equals <value>` and BlockedTags -> `Tags contains <value>`,
+        OR-combined, auto-migrated once and shown pre-populated. Persists as BlockedRuleSet on the
+        settings aggregate via the existing settings update endpoint (no new endpoint; changed contract
+        version-gated for clients). config-admin write scope via useRbac(); non-premium.
+      emotional: >
+        Move from "our 'blocked' is a flag field the two hardcoded lists can't express, so I hack it
+        with a synthetic label" to "blocked means precisely what I defined — and my old config came
+        across as rules, so I lost nothing." Confidence that the blocked signal the whole team reads is
+        grounded in the real workflow definition.
+      social: >
+        Be the admin who set blocked up so it matches what the team actually experiences as blocked —
+        the rule set is self-evidently the definition, the same shape as the delivery rules colleagues
+        already trust.
+    forces:
+      push: >
+        Today "blocked" is two hardcoded lists (BlockedStates + BlockedTags) on the settings owner;
+        teams whose blocked concept is a custom field or a compound condition can't express it and
+        resort to hacks — e.g. the Jira "Is Flagged" path injects a synthetic "Flagged" label so it can
+        be added to BlockedTags. Inflexible and special-cased.
+      pull: >
+        One familiar rule builder — the exact DeliveryRuleBuilder used for rule-based deliveries and the
+        forecast filter — expresses any blocked definition (state, tag, field, AND/OR) and reuses an
+        engine the team already trusts. Existing config migrates automatically.
+      anxiety: >
+        Will I lose my existing blocked-states/blocked-tags in the change? (No — D2 auto-migration:
+        each becomes an equivalent OR'd rule condition, pre-populated and editable; the learning
+        hypothesis is that if ANY existing config can't be represented the model isn't expressive
+        enough.)
+        Will rule-based blocked behave differently from the old lists for the same config? (No — the
+        migrated rule set matches exactly the items the lists matched.)
+        Does "blocked" now get read from Jira/ADO history? (No — README L1: blocked stays a
+        Lighthouse-side computed concept; only the definition is new config.)
+      habit: >
+        Admins already build rule-based deliveries and forecast filters in this exact builder; defining
+        blocked the same way is the same muscle memory. The only shift is that blocked is no longer two
+        special lists — it's a rule set like the others.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 2
+      gap: 3
+      rationale: >
+        Importance: 5 — this is the FOUNDATION of the whole Epic (the user's explicit main point) and
+        every other blocked signal (duration, over-time, blocked->stale, flagged cleanup) builds on the
+        rule-based definition; without it the rest is hardcoded. Current satisfaction: 2 — blocked DOES
+        work today via the two lists, so it's not zero, but the lists can't express custom-field or
+        compound definitions and force hacks like the synthetic Flagged label. Gap: 3 — a real
+        expressiveness gap, kept tractable because the rule engine, operators, evaluator, and builder
+        component all already exist (ADR-013) and only need a third Include-semantics consumer plus a
+        one-time config migration.
+
+  - id: job-flow-coach-see-how-long-blocked
+    title: See how long each item has been blocked, so aged blockers stop being forgotten
+    persona: flow-coach
+    feature_context: epic-5074-blocked-items
+    created: 2026-06-11
+    note: >
+      NEW in epic-5074-blocked-items (ADO Epic #5074). Pays off the foundation rule-based definition:
+      once blocked is computed from the rule set, capture WHEN each item enters/leaves blocked
+      (Lighthouse-side per-sync, README L1, via a new WorkItemBlockedTransition entity off the existing
+      WorkItemBlocked domain event + new leave-detection) and surface "blocked <N>d" per item. Today's
+      blocked indicator is a snapshot with no duration, so a quietly-blocked item rots unnoticed.
+      Resolution = sync cadence (approximate, surfaced in tooltip — twin of the time-in-state badge).
+      Distinct from the existing job-flow-coach-spot-stuck-items (which is time-in-CURRENT-state, not
+      blocked duration). Non-premium.
+    job_story: >
+      When I run my team's flow review and some items are blocked, the current indicator tells me WHICH
+      items are blocked but not for how long, so a long-blocked item quietly rots until someone happens
+      to notice it,
+      I want to see at a glance how many days each item has been blocked — and have items blocked far
+      too long stand out —
+      so I escalate the right blockers in standup with evidence ("this has been blocked nine days")
+      instead of discovering an aged blocker weeks later in a missed forecast.
+    dimensions:
+      functional: >
+        Per work item, a "blocked <N>d" read for the item's CURRENT blocked spell (since the captured
+        enter-blocked timestamp), shown alongside the existing blocked emphasis on the team/portfolio
+        views. Sourced from a new WorkItemBlockedTransition capture entity populated per-sync off the
+        existing WorkItemBlocked event (enter) plus new leave-detection (IsBlocked false after
+        WasBlocked true; no WorkItemUnblocked event exists today). First-observation items show "—"
+        until the next sync establishes a baseline; the tooltip reads "Approximate — based on sync
+        cadence". Never pulled from source-of-truth (README L1). Non-premium.
+      emotional: >
+        Move from "I can see it's blocked but not whether that's a day or a fortnight" to "this one's
+        been blocked nine days — that's today's escalation". Confidence that aged blockers surface
+        themselves rather than waiting to be stumbled on.
+      social: >
+        Be the coach who walks into standup naming the specific aged blockers with hard durations, not
+        a vague "didn't something get stuck?".
+    forces:
+      push: >
+        Today the blocked indicator is a duration-less snapshot; "how long has this been blocked?" means
+        opening the item in Jira/ADO and reading its history — high friction, so nobody does it for every
+        blocked item, and aged blockers fester.
+      pull: >
+        One "blocked Nd" read per item on the table the coach already scans answers the question for
+        every blocked item at a glance, and makes the long ones obvious.
+      anxiety: >
+        Will the number disagree with the source system? (Mitigated: it's Lighthouse-side per-sync
+        capture, L1, surfaced as approximate — it answers "how long in OUR view" honestly rather than
+        claiming source-precision.)
+        What about items already blocked when the feature ships? (First-observation shows "—" until the
+        next sync sets a baseline — the same honest behaviour as the time-in-state badge.)
+      habit: >
+        Coaches read a blocked flag today and mentally guess its age; reading a concrete duration is the
+        same glance with the answer already computed.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — aged blockers are a direct flow risk and "how long has this been blocked?" is a
+        recurring standup/flow-review question (the persona's own listed frustration: "aged blocked
+        items get forgotten because the indicator doesn't say how long"). Current satisfaction: 1 — the
+        duration isn't surfaced anywhere today; blocked is a snapshot. Gap: 3 — a genuine missing
+        capability, kept tractable by reusing the existing WorkItemBlocked event as the enter seam and a
+        thin per-sync capture entity rather than a source-of-truth integration.
+
+  - id: job-delivery-lead-see-blocked-trend
+    title: See whether the team's blocked count is trending up or down over time
+    persona: delivery-lead-rte
+    feature_context: epic-5074-blocked-items
+    created: 2026-06-11
+    note: >
+      NEW in epic-5074-blocked-items (ADO Epic #5074). Builds on the per-sync blocked capture: a
+      forward-only daily snapshot of the in-scope blocked COUNT, plotted as a time series following the
+      delivery-metrics history pattern (recorder, not per-item reconstruction). Answers "are we clearing
+      blockers faster than they arrive?" — a systemic trend read, distinct from the flow-coach's
+      per-item duration. Forward-only and honest when empty. Non-premium.
+    job_story: >
+      When I'm reviewing my team's flow health for a retro or a leadership update and I want to know
+      whether our blocked situation is improving or getting worse,
+      I want to see the team's blocked-item count as a trend over time — not just today's number —
+      so I can tell whether we're accumulating blockers faster than we clear them, and frame the
+      improvement conversation around clear-rate with evidence rather than a single snapshot.
+    dimensions:
+      functional: >
+        A Blocked Items over-time chart plotting the in-scope blocked count per day over the selected
+        window, composing with the existing team/portfolio/date-range filter. Built from a forward-only
+        daily blocked-count snapshot (delivery-metrics history pattern; recorded going forward, never
+        reconstructed). Empty/new state reads "builds forward from today — no snapshots yet", never a
+        flat zero. Both Team and Portfolio scope. Non-premium.
+      emotional: >
+        Move from "I know how many are blocked right now but not whether that's better or worse than last
+        month" to "blocked count climbed three weeks running — clearing blockers is our problem".
+        Confidence to name the trend, not just the snapshot.
+      social: >
+        Walk into the retro or leadership review able to say "we're accumulating blockers faster than we
+        clear them — here's the trend" rather than arguing from this week's count alone.
+    forces:
+      push: >
+        Today Lighthouse shows the current blocked count (the overview widget) but nothing over time, so
+        "are we getting better at clearing blockers?" can't be answered without exporting and charting by
+        hand.
+      pull: >
+        One trend chart on the surfaces the lead already uses answers the improvement question at a
+        glance and composes with the existing filters.
+      anxiety: >
+        Will the chart look broken when it's empty just because it's new? (Mitigated: forward-only empty
+        state reads "builds forward from today", honest rather than a misleading zero line.)
+      habit: >
+        Leads read the current blocked widget today; a trend chart is the natural over-time extension,
+        the same shape as the delivery-metrics over-time charts they already know.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — the blocked TREND is a real improvement-planning signal but lower-frequency and
+        less acute than the per-item duration the coach acts on daily. Current satisfaction: 1 — no
+        over-time blocked view exists today; only the current count. Gap: 2 — valuable but built almost
+        entirely on the established delivery-metrics history pattern plus the new per-sync capture, so
+        the marginal lift is a count snapshot and a chart.
+
+  - id: job-flow-coach-stale-when-blocked-too-long
+    title: Treat an item as stale when it has been blocked too long, not only when it sits in a state
+    persona: flow-coach
+    feature_context: epic-5074-blocked-items
+    created: 2026-06-11
+    note: >
+      NEW in epic-5074-blocked-items (ADO Epic #5074); ties into Epic #4144 staleness. A DISTINCT
+      staleness trigger keyed on BLOCKED DURATION, separate from the existing time-in-state staleness
+      (time-in-state-and-staleness: IsStale = Doing AND now−CurrentStateEnteredAt > StalenessThresholdDays).
+      A blocked item becomes Stale after a configured blocked-duration threshold
+      (blockedStalenessThresholdDays, 0 = disabled, twin of StalenessThresholdDays, config-admin gated).
+      The two staleness sources are OR'd but reported with DISTINCT reasons. Depends on the per-sync
+      blocked capture (blockedSince). Non-premium.
+    job_story: >
+      When an item has been blocked for a long time but is sitting in a state that the time-in-state
+      staleness signal doesn't flag (or isn't moving in a way that signal notices),
+      I want it to be marked Stale because it has been BLOCKED too long — with the reason saying so —
+      so a long-blocked item shows up in the same "needs a conversation" signal I already use, instead
+      of slipping past because today's staleness only watches time-in-state.
+    dimensions:
+      functional: >
+        A new blocked-duration staleness trigger: an item blocked longer than a configured
+        blockedStalenessThresholdDays (per Team and Portfolio; 0 disables; config-admin gated, twin of
+        StalenessThresholdDays) is flagged Stale. This is OR'd with the existing time-in-state staleness
+        but reported with a DISTINCT reason ("stale: blocked 12 days" vs "stale: 11 days in Review") so
+        the coach knows which trigger fired. Derives the blocked duration from the per-sync blockedSince
+        capture. Non-premium.
+      emotional: >
+        Move from "a long-blocked item can slip past my staleness signal because that signal only watches
+        time-in-state" to "blocked-too-long items show up in the same stale signal, with the reason that
+        explains why". Confidence the stale signal catches blocked rot, not just slow states.
+      social: >
+        Be the coach whose stale list catches the right items for the right reasons — "this is stale
+        because it's been blocked twelve days" reads as precise, not generic.
+    forces:
+      push: >
+        Today staleness only fires on time-in-current-state; an item can be blocked for weeks without
+        tripping it (e.g. blocked while technically in a state that keeps getting touched), so blocked rot
+        escapes the one signal coaches rely on.
+      pull: >
+        One extra threshold reuses the staleness signal and treatment the coach already knows, adding a
+        blocked-duration trigger with a clear distinct reason — no new mental model, just a second source
+        of "needs a conversation".
+      anxiety: >
+        Will this double-count an item that's both blocked-stale and state-stale? (Mitigated: the sources
+        are OR'd into a single stale state with both reasons listed, not two separate flags.)
+        Will it spam if the threshold is wrong? (Mitigated: configurable per Team/Portfolio, 0 disables,
+        same calibration model as time-in-state staleness.)
+      habit: >
+        Coaches already use the stale red treatment from time-in-state-and-staleness; a blocked-duration
+        source feeds the SAME signal, so it's the same muscle memory with one more reason.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — closes a real gap (blocked rot escaping the time-in-state-only staleness signal)
+        but is a refinement of an existing signal rather than a foundational capability. Current
+        satisfaction: 1 — there is no blocked-duration staleness today; staleness watches time-in-state
+        only. Gap: 2 — genuine but contained; reuses the staleness signal, treatment, and threshold model
+        wholesale, adding a second trigger source keyed on the new blockedSince capture.
+

@@ -23,6 +23,7 @@ primary_jobs:
   - job-delivery-lead-spot-workflow-constraint
   - job-spot-flow-efficiency-waste  # wait-states-flow-efficiency (2026-06-05): what fraction of lead time is active vs idle
   - job-delivery-lead-see-time-over-custom-window  # multiple-cycle-times (2026-06-08, #5251): see where time goes over a custom start->end window
+  - job-delivery-lead-see-blocked-trend  # epic-5074-blocked-items (2026-06-11, #5074): blocked-count trend over time
 
 goals:
   - Identify which workflow state(s) consume the most of the team's collective time over a
