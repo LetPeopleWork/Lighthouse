@@ -218,6 +218,13 @@ Design bets that learning will confirm or overturn. Revisit at each band boundar
 6. **Embedded frontend is the default; split is a SaaS-scale optimization** (Q4). The standalone
    product never changes; the split only pays off in the hosted SaaS, where one shared
    tenant-agnostic static frontend could serve every subdomain while backends stay per-tenant.
+7. **Ingress is the routing API.** Band A learns Ingress (story 03) because it's ubiquitous, simplest,
+   and what Helm charts use — but the k8s project has **frozen** the Ingress API (GA + stable, no
+   removal, but no new features) and recommends the **Gateway API** (GatewayClass / Gateway /
+   HTTPRoute) for new work. Concepts map 1:1 and cert-manager supports both, so Ingress is the on-ramp,
+   not a dead end. **Revisit at the chart/SaaS boundary**: the public Helm chart (story 09) and
+   per-tenant routing + wildcard TLS (stories 11–12) are where Gateway API's expressiveness and
+   multi-tenant routing model may earn a switch (or a chart toggle). Traefik on k3s backs both.
 
 ---
 
