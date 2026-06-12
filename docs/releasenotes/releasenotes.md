@@ -4,6 +4,40 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.6.11.3
+
+## Cycle Time, Your Way — Multiple Named Cycle Times (Premium)
+The default cycle time runs from *work started* to *work finished*. But that's rarely the only span worth watching. You might want *Concept to Cash* end-to-end, or deliberately a slice that **excludes** stages outside your control. You can now define **named cycle times** — give a name to any start→end pair across your workflow states — and switch between them right on the **Cycle Time Scatterplot** with a combobox, at both Team and Portfolio level.
+
+The same named window also re-scopes the **Cumulative Time per State** chart, so you can analyse where work spends its time inside exactly the span you care about, not just the default one.
+
+![Named Cycle Time on the Scatterplot](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleScatterNamedCycleTime.png)
+
+Define them under [Named Cycle Times](https://docs.lighthouse.letpeople.work/metrics/widgets.html#named-cycle-times-premium) and read how scoping works in [Scope to a Named Cycle Time](https://docs.lighthouse.letpeople.work/metrics/widgets.html#scope-to-a-named-cycle-time-premium).
+
+## How Long Has In-Progress Work Been Ageing? — Work Item Age Percentiles
+Cycle Time percentiles tell you how long *finished* work took. They say nothing about the items still on your board today. This release adds a **Work Item Age Percentiles** overview widget that shows the 50th, 70th, 85th, and 95th percentiles of **Work Item Age** across the items **currently in progress** — a live snapshot of how long your work has been ageing right now, at both Team and Portfolio scope.
+
+A matching selector on the **Work Item Aging** chart lets you draw either *Cycle Time* or *Work Item Age* reference lines behind your in-progress items, so you can compare today's ageing against either yardstick.
+
+![Work Item Age Percentiles](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workItemAgePercentilesCard.png)
+
+See the [Work Item Age Percentiles widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#work-item-age-percentiles).
+
+## Bugfixes and Improvements
+- **Cumulative Time per State now reads in days** — the chart no longer blows up into unwieldy hour or minute figures; its display unit is capped at days so the bars stay readable at a glance. Reported by Gonzalo Mendez.
+- **Staleness off by default for new teams and portfolios** — newly created teams and portfolios no longer start with a staleness threshold enabled. You now opt into stale-item flagging when you want it, instead of having it on from day one.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+- [Gonzalo Mendez](https://www.linkedin.com/in/gonzalo-mendez-nz/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.6.7.1...v26.6.11.3)
+
+
 # Lighthouse v26.6.7.1
 
 ## Track a Delivery Over Time, Not Just Today
