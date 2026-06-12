@@ -569,3 +569,111 @@ per-slice).
 - **OQ2 — RESOLVED (user decision 2026-06-11): Flow Metrics chart.** The blocked-over-time chart lives
   in the **Flow Metrics chart area** (alongside the other flow-metrics charts), NOT folded into the
   overview widget area. Reflected in US-03 (elevator pitch + AC) and `slice-03`.
+
+## Wave: DESIGN / [REF] Summary
+
+Date: 2026-06-12 | Decider: Morgan (PROPOSE) | Density: LEAN (Tier-1 only). Full ADRs are the SSOT.
+
+**Architecture summary**: No new bounded context — every capability EXTENDS an existing mechanism.
+Blocked becomes the **third Include consumer** of the existing rule engine (ADR-012/013): a
+`WorkItemRuleSet` stored as a JSON column on the shared `WorkTrackingSystemOptionsOwner` aggregate
+(Team + Portfolio), evaluated once via `RuleEvaluator<T>` (matched = blocked). Per-item duration is a
+new owned `WorkItemBlockedTransition` capture (enter via the existing `WorkItemBlocked` event, leave
+via a new `WorkItemUnblocked` event). The over-time trend reuses the forward-only delivery-metrics
+snapshot PATTERN as a new owner-grained sibling store. Blocked→stale AMENDS ADR-026 (blocked-exclusion
+narrowed to the time-in-state trigger; a distinct blocked-duration trigger OR's in). The Jira flag
+becomes a predefined (system-owned) additional field via the generic id-keyed path (SPIKE gated).
+Default = modular monolith + ports-and-adapters (unchanged); no style change; no premium gate.
+
+### [REF] DDD Decisions (verdicts + one-line rationale)
+
+| ID | Decision | Verdict | Rationale | ADR |
+|---|---|---|---|---|
+| DDD-1 | Blocked definition + storage placement | `BlockedRuleSetJson` (WorkItemRuleSet) JSON column on `WorkTrackingSystemOptionsOwner` (Team+Portfolio); single `IsBlocked` via `IBlockedItemService`→`RuleEvaluator<T>` (Include); legacy `BlockedStates`/`BlockedTags` REMOVED | **DECIDED** | JSON column is the EXISTING rule-set idiom (`ForecastFilterRuleSetJson`/`RuleDefinitionJson`), not owned-collection (ADR-064 is for structured non-rule config); one definition by construction once legacy columns dropped | ADR-067 |
+| DDD-2 | Auto-migration of existing config | App-layer + EF backfill-before-drop; each `BlockedStates`→`State equals X`, each `BlockedTags`→`Tags contains Y`, OR'd; idempotent (null-guard, no `=true` sentinel) | **DECIDED** | Loss-free proven by real-provider pre/post blocked-status equality test; pure SQL can't reuse the C# rule synthesis | ADR-067 |
+| DDD-3 | Blocked-transition capture entity | New owned `WorkItemBlockedTransition {WorkItemId, EnteredAt, LeftAt?}`; enter=existing `WorkItemBlocked`, leave=NEW `WorkItemUnblocked` domain event; `blockedSince` = open spell's `EnteredAt`; first-observation = null = "—" | **DECIDED** | Symmetric enter/leave on the bus (memory: prefer domain events); orthogonal to state (not `WorkItemStateTransition`); current-spell (D6); honest no-fabrication | ADR-068 |
+| DDD-4 | Blocked-over-time count snapshot | NEW owner-grained sibling `BlockedCountSnapshot {OwnerId, OwnerType, RecordedAt, BlockedCount}`; forward recorder post-sync; date-keyed upsert; NEW `blockedCountHistory` read endpoint | **DECIDED** | Grain differs from delivery-keyed `DeliveryMetricSnapshot` (owner not delivery); forward-only PATTERN reused; honest empty state | ADR-069 |
+| DDD-5 | Blocked→stale vs ADR-026 (CRITICAL) | `deriveStaleness` returns `StalenessResult {isStale, reasons[]}`; time-in-state KEEPS `!isBlocked` guard; NEW blocked-duration trigger (`≥ blockedStalenessThresholdDays`, 0=off) OR's in with distinct reason; stale-once | **DECIDED** | AMENDS ADR-026 (exclusion narrowed to time-in-state); single-selector invariant upheld + extended; OQ1 resolved (`≥` blocked, `>` time-in-state) | ADR-070 |
+| DDD-6 | Predefined/system additional field | Additive `IsPredefined` flag in the SAME list; auto-registered for Jira; excluded from user CRUD + slot count; generic id-keyed value/rule path; synthetic-label hack deleted | **DECIDED + SPIKE** | Value/fetch/rule paths already generic; exclusion threads 4 surfaces + no system-field precedent ⇒ pre-slice-05 SPIKE | ADR-071 |
+| DDD-7 | Settings/contract + client version-gate | Matrix: changed settings contract (#1) GATE, `blockedSince` (#2) no gate, new endpoint (#3) GATE, `blockedStalenessThresholdDays` (#4) no gate, `IsPredefined` write (#5) GATE; baseline strictly `> v26.6.7.1` | **DECIDED** | Additive ⇒ no gate (ADR-062); changed/new ⇒ gate (loud "upgrade" beats silent divergence); last released = v26.6.7.1 | ADR-072 |
+
+### [REF] Component Decomposition
+
+| Component | EXTEND / CREATE | Surface | Owner |
+|---|---|---|---|
+| `IBlockedItemService` (`IsBlocked(WorkItem,Team)` / `IsBlocked(Feature,Portfolio)`) | CREATE NEW (thin delegator, mirrors `ForecastFilterRuleService`) | backend service | ADR-067 |
+| `RuleEvaluator<T>`, `WorkItemFieldProvider`, `FeatureFieldProvider`, `WorkItemRuleSet`, schema | EXTEND (reused unchanged) | backend rule engine | ADR-067 |
+| `BlockedRuleSetJson` column on `WorkTrackingSystemOptionsOwner` | EXTEND (new column on existing aggregate) | persistence | ADR-067 |
+| `WorkItemBlockedTransition` owned entity + 2 handlers | CREATE NEW (mirrors `WorkItemStateTransition`) | capture | ADR-068 |
+| `WorkItemUnblocked` domain event + dispatch seam | CREATE NEW (symmetric to `WorkItemBlocked`) | event bus | ADR-068 |
+| `BlockedCountSnapshot` store + repo + recorder + endpoint | CREATE NEW (forward-only pattern reused) | snapshot/read | ADR-069 |
+| `deriveStaleness` selector (boolean → `StalenessResult`) | EXTEND (return type widened; 3 call sites) | FE staleness | ADR-070 |
+| `blockedStalenessThresholdDays` settings field | EXTEND (twin of `StalenessThresholdDays`) | settings | ADR-070 |
+| `IsPredefined` flag on `AdditionalFieldDefinition` + Jira auto-reg + CRUD/slot exclusion | EXTEND (additive flag) / CREATE (registration hook) | additional fields | ADR-071 |
+| `DeliveryRuleBuilder` (blocked rule builder UI) | EXTEND (third consumer; ForecastFilterEditor is the precedent) | FE config | ADR-067 |
+| `BlockedOverviewWidget`, blocked badge, `WorkItemDto.IsBlocked` | EXTEND (consume rule-derived `IsBlocked` unchanged) | FE read | ADR-067 |
+
+### [REF] Driving / Driven Ports
+
+- **Driving** (inbound): team/portfolio settings PUT (blocked rule validation, blocked-staleness threshold) via `TeamController`/`PortfolioController` (existing, extended); `GET blockedCountHistory` (new); the per-sync work-item pipeline (existing) emitting `WorkItemBlocked`/`WorkItemUnblocked`.
+- **Driven** (outbound): `IBlockedCountSnapshotRepository : IRepository<BlockedCountSnapshot>` (new); existing `IRepository<Team/Portfolio/WorkItem>`; the domain-event dispatcher (existing); Jira/ADO connectors (existing additional-field fetch, generic).
+- **Core (no I/O)**: `RuleEvaluator<T>` (pure, ADR-012 purity invariant), `IBlockedItemService` (composes evaluator + provider), `deriveStaleness` (pure FE selector, ADR-026/070).
+
+### [REF] Technology Choices
+
+All existing — zero new dependencies (OSS-first satisfied by reuse). Backend C# .NET 8, EF (migrations via the `CreateMigration` PowerShell script, all providers; real-provider read-your-writes tests — InMemory misses migrations). FE React 18 + TS strict; **Zod at the changed settings boundary + the new `blockedCountHistory` boundary** (rolling-adoption rule — DELIVER constraint). Architectural enforcement: ArchUnitNET (backend: single `IsBlocked` path, evaluator purity, `WorkItemBlockedTransition` distinctness); grep/Vitest (FE single-selector, no method-presence enforcement in TS — same limitation noted in ADR-026).
+
+### [REF] Reuse Analysis (HARD GATE)
+
+| Existing component | Path | Verdict | Justification |
+|---|---|---|---|
+| Rule engine (`RuleEvaluator<T>`, providers, `WorkItemRuleSet`, schema, 6 operators) | `Backend/.../Models/WorkItemRules/`, `.../Services/.../WorkItemRules/` | **EXTEND** | Third Include consumer; no new engine/operators (D-ENGINE) |
+| Rule-set JSON persistence idiom | `Team.ForecastFilterRuleSetJson` (L19), `Delivery.RuleDefinitionJson` (L47) | **EXTEND** | `BlockedRuleSetJson` reuses the exact JSON-column idiom; ADR-013 canary protects shape |
+| `WorkTrackingSystemOptionsOwner` settings aggregate (Team+Portfolio base) | `Backend/.../Models/WorkTrackingSystemOptionsOwner.cs` | **EXTEND** | New columns (`BlockedRuleSetJson`, `blockedStalenessThresholdDays`); removed columns (`BlockedStates`/`BlockedTags`) |
+| `WorkItemBlocked` event + `WasBlocked` seam | `Backend/.../Events/WorkItemBlocked.cs`, `WorkItemService.cs` L103/L121 | **EXTEND** | Enter seam reused; symmetric `WorkItemUnblocked` added |
+| `WorkItemStateTransition` capture idiom | ADR-015/016/017 | **EXTEND (idiom)** / **CREATE (entity)** | New `WorkItemBlockedTransition` mirrors the owned-collection + capture-dispatch idiom; distinct entity (blocked ⊥ state, README L1) |
+| Delivery-metrics forward-snapshot pattern | ADR-048/049/050 | **EXTEND (pattern)** / **CREATE (store)** | Forward recorder + date-keyed upsert + honest-empty PATTERN reused; new owner-grained store (grain differs from delivery) |
+| `deriveStaleness` selector + 3 surfaces | `Frontend/src/utils/staleness/deriveStaleness.ts` (+ TimeInStateBadge, StaleOverviewWidget, WorkItemAgingChart) | **EXTEND** | Return type widened to `StalenessResult`; ADR-026 single-selector invariant upheld |
+| `DeliveryRuleBuilder` + `ForecastFilterEditor` reuse precedent | `Frontend/src/components/Common/DeliveryRuleBuilder/`, `.../Teams/ForecastFilterEditor/` | **EXTEND** | Third UI consumer (fetch schema → pass to builder), exact ForecastFilterEditor pattern; replaces the two `ItemListManager` blocked lists |
+| `BlockedOverviewWidget`, blocked badge | `Frontend/src/pages/Common/MetricsView/BlockedOverviewWidget.tsx`, `BaseMetricsView.tsx` | **EXTEND** | Consume rule-derived `IsBlocked` (unchanged bool); add per-item `blockedSince` badge |
+| Additional-field mechanism (generic id-keyed fetch/value/schema/provider) | `AdditionalFieldDefinition`, connectors, `WorkItemFieldProvider`, `AdditionalFieldsHelper` | **EXTEND** | `IsPredefined` additive flag rides the generic path; Jira auto-registration hook (new, single) |
+| RBAC (`IRbacAdministrationService`, `useRbac()`) | existing settings authorization | **EXTEND (reuse)** | All blocked config writes ride the existing team/portfolio settings gate; no new authorization surface |
+
+No CREATE-NEW without an EXTEND attempt first. The two genuinely-new entities (`WorkItemBlockedTransition`, `BlockedCountSnapshot`) and the new event (`WorkItemUnblocked`) each reuse an established idiom/pattern; extending an existing entity was rejected with evidence in their ADRs.
+
+### [REF] ADR-026 Reconciliation (the critical one)
+
+ADR-026 locked "a blocked item must NOT also be flagged stale" via `&& !item.isBlocked` in `deriveStaleness`. ADR-070 AMENDS this: the rule is NARROWED from "staleness" to "TIME-IN-STATE staleness" (the original premise had only one staleness source). PRESERVED: blocked excludes time-in-state stale (clock paused). ADDED: a distinct blocked-DURATION trigger that fires *because* the item is blocked too long, OR'd into one `StalenessResult` with a distinct reason, stale-once. The single-selector architecture is upheld and extended; only the exclusion's scope changes. ADR-070 carries a `## Changed Assumptions` section quoting ADR-026 verbatim.
+
+### [REF] Slice-05 SPIKE Verdict
+
+**VERDICT: pre-slice-05 SPIKE REQUIRED (timeboxed ~half-day), NOT a thin additive slice.** Evidence: the value/fetch/rule paths are fully GENERIC (favourable, cheap) BUT the predefined-field exclusion threads through FOUR surfaces (CRUD reconcile `UpdateAdditionalFieldDefinitions`, license slot gate `SupportsAdditionalFields`, DTO user-list/rule-picker split, connector auto-registration) and there is NO existing system-registered-field precedent. SPIKE must answer: reconcile-merge (no silent delete on user PUT), slot-count split (user vs total), `WriteBackMappingDefinition` compatibility + `Reference` immutability, single idempotent Jira hook, FE DTO split. Does NOT block slices 01–04 (slice 05 = MoSCoW Could, last). Detail: ADR-071 §5, upstream-changes UC-3.
+
+### [REF] Decisions Table
+
+| DDD | ADR | Status |
+|---|---|---|
+| DDD-1 rule-based blocked + storage + migration | ADR-067 | Accepted |
+| DDD-3 blocked-transition capture + `WorkItemUnblocked` | ADR-068 | Accepted |
+| DDD-4 blocked-count snapshot + endpoint | ADR-069 | Accepted |
+| DDD-5 blocked→stale AMENDS ADR-026 | ADR-070 | Accepted |
+| DDD-6 predefined/system additional field + SPIKE | ADR-071 | Accepted |
+| DDD-7 contract changes + client version-gate matrix | ADR-072 | Accepted |
+| DDD-2 (migration) | folded into ADR-067 | Accepted |
+
+### [REF] Constraints (carried to DELIVER)
+
+- **RBAC** (unchanged): all blocked CONFIG writes ride the existing team/portfolio settings gate (`IRbacAdministrationService`, UI via `useRbac()` `isTeamAdmin`/`isPortfolioAdmin`); reads inherit existing metric/work-item read gating. No new authorization surface.
+- **Non-premium** (verified): no premium gate anywhere in this epic. **Website N/A** (non-premium).
+- **EF migrations** via the `CreateMigration` PowerShell script (all providers); real-provider read-your-writes tests required (InMemory misses migrations); mind the `--no-incremental` stale-DLL trap.
+- **Zod** at the changed settings boundary + the new `blockedCountHistory` boundary (rolling-adoption rule).
+- **CI**: immutability (records/ImmutableList), Nullable enable + TreatWarningsAsErrors, TS strict; consult `docs/ci-learnings.md` rule families (CA1859, S2325, NUnit4002…) when coding.
+- **Architectural enforcement**: ArchUnitNET (single `IsBlocked` path, evaluator purity, transition-entity distinctness); grep/Vitest for FE single-selector.
+
+### [REF] Open Questions (deferred to DISTILL / DELIVER)
+
+- **UC-1** (slice-04 AC2): RESOLVED at DESIGN (ADR-070) — `blocked-duration` is the stale driver, days-in-state is a `context-time-in-state` entry; stale-once. Only the AC2 Gherkin wording is for the acceptance-designer at DISTILL. (Not a product decision.)
+- **UC-2** (slice-03 AC3): historical per-TYPE blocked-count filtering deferred (total-count snapshot; per-type is an additive follow-up). (DISTILL — delivery-lead.)
+- **UC-3** (slice-05): pre-slice-05 SPIKE scheduled (does not block slices 01–04). (DELIVER — software-crafter.)
+
+All three recorded in `design/upstream-changes.md`. None block the DESIGN handoff.

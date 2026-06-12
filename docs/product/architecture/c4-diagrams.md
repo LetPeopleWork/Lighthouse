@@ -1211,4 +1211,97 @@ sequenceDiagram
     Host->>K8s: host reports Stopped → pod exits (zero dropped requests)
     Note over K8s,Conn: Standalone (US-03 AC3): Ctrl-C → same drain → exits exactly as today
 ```
+---
+
+# C4 Architecture Diagrams — epic-5074-blocked-items
+
+Feature: epic-5074-blocked-items | Wave: DESIGN | Date: 2026-06-12 | Architect: Morgan (PROPOSE)
+ADRs: 067–072. No new bounded context; every element EXTENDS an existing mechanism.
+
+## C4 Level 1 — System Context (delta)
+
+```mermaid
+C4Context
+    title System Context (delta) — Epic 5074 Blocked Items
+
+    Person(configAdmin, "Config Admin (Carlos)", "Team/Portfolio admin; defines the blocked rule set + blocked-staleness threshold")
+    Person(flowCoach, "Flow Coach (Priya)", "Reads per-item blocked duration + blocked-stale signal")
+    Person(deliveryLead, "Delivery Lead / RTE", "Reads the blocked-count over-time trend")
+
+    System(lighthouse, "Lighthouse", "Flow forecasting tool; blocked is now a rule-engine concept (3rd Include consumer) with per-item duration, an over-time trend, and a blocked-duration staleness trigger")
+    System_Ext(jira, "Jira", "Source of work items + the Flagged custom field (now a predefined additional field, no synthetic label)")
+    System_Ext(clients, "Lighthouse CLI + MCP clients", "Separate repo; wrap the changed settings contract + new endpoint; version-gated > v26.6.7.1")
+
+    Rel(configAdmin, lighthouse, "Defines blocked rule set + threshold via settings")
+    Rel(flowCoach, lighthouse, "Reads blocked duration + blocked-stale via team/portfolio views")
+    Rel(deliveryLead, lighthouse, "Reads blocked-count trend via the Flow Metrics chart area")
+    Rel(lighthouse, jira, "Fetches the Flagged predefined additional field on sync from")
+    Rel(clients, lighthouse, "Wrap blocked config + over-time endpoint (version-gated) against")
+```
+
+## C4 Level 2 — Container (delta)
+
+```mermaid
+C4Container
+    title Container (delta) — Epic 5074 Blocked Items
+
+    Person(configAdmin, "Config Admin")
+    Person(reader, "Flow Coach / Delivery Lead")
+
+    Container(spa, "React SPA", "React 18 + TS", "Blocked rule builder (reuses DeliveryRuleBuilder), blocked badge, blocked-over-time chart (Flow Metrics area), stale signal with reasons")
+    Container(api, "ASP.NET Core API", ".NET 8", "Settings PUT (blocked rule + threshold validation), blockedCountHistory GET, WorkItemDto with blockedSince")
+    Container(blockedSvc, "IBlockedItemService", ".NET 8 service", "Single IsBlocked via RuleEvaluator<T> over BlockedRuleSet (Include)")
+    Container(ruleEngine, "Rule Engine", ".NET 8 (existing)", "RuleEvaluator<T> + WorkItem/Feature field providers + schema (reused)")
+    Container(syncPipeline, "Work-Item Sync + Event Bus", ".NET 8 (existing)", "Emits WorkItemBlocked + new WorkItemUnblocked; recorder fires post-sync")
+    ContainerDb(db, "Relational DB", "SQLite / Postgres", "BlockedRuleSetJson + blockedStalenessThresholdDays on owner; WorkItemBlockedTransition; BlockedCountSnapshot")
+    System_Ext(jira, "Jira")
+
+    Rel(configAdmin, spa, "Builds blocked rules in")
+    Rel(reader, spa, "Reads blocked signals in")
+    Rel(spa, api, "Calls settings PUT + blockedCountHistory + cycleTimeData(blockedSince) on")
+    Rel(api, blockedSvc, "Resolves IsBlocked through")
+    Rel(blockedSvc, ruleEngine, "Evaluates BlockedRuleSet via")
+    Rel(api, db, "Persists blocked config + reads snapshots/transitions from")
+    Rel(syncPipeline, blockedSvc, "Recomputes IsBlocked (enter/leave) via")
+    Rel(syncPipeline, db, "Writes WorkItemBlockedTransition + BlockedCountSnapshot to")
+    Rel(syncPipeline, jira, "Fetches Flagged predefined additional field from")
+```
+
+## C4 Level 3 — Component: Blocked evaluation, capture, trend, and staleness
+
+```mermaid
+C4Component
+    title Component (delta) — Blocked domain (Epic 5074)
+
+    Container_Boundary(api, "API + Services") {
+        Component(settingsCtrl, "Team/PortfolioController settings PUT", "Controller", "Validates BlockedRuleSet (IRuleEvaluator.IsValid) + blockedStalenessThresholdDays; existing RBAC gate")
+        Component(blockedSvc, "IBlockedItemService", "Service", "IsBlocked(WorkItem,Team) / IsBlocked(Feature,Portfolio) via RuleEvaluator<T> (Include)")
+        Component(migrator, "Blocked config migrator", "One-time", "BlockedStates→State equals X, BlockedTags→Tags contains Y, OR'd; idempotent null-guard")
+        Component(enterHandler, "WorkItemBlockedTransition recorder", "EventHandler<WorkItemBlocked>", "Opens a spell (EnteredAt)")
+        Component(leaveHandler, "Spell-close handler", "EventHandler<WorkItemUnblocked>", "Closes the open spell (LeftAt)")
+        Component(snapshotRecorder, "BlockedCountSnapshot recorder", "post-sync handler", "Upserts daily count(IsBlocked) per owner; date-keyed idempotent")
+        Component(historyEndpoint, "blockedCountHistory GET", "Controller", "Daily count series; honest empty state; version-gated")
+    }
+    ComponentDb(transition, "WorkItemBlockedTransition", "owned entity", "{WorkItemId, EnteredAt, LeftAt?}")
+    ComponentDb(snapshot, "BlockedCountSnapshot", "store", "{OwnerId, OwnerType, RecordedAt, BlockedCount}")
+    Component(ruleEval, "RuleEvaluator<T>", "pure (existing)", "Match(ruleSet, items, provider)")
+    Component(deriveStale, "deriveStaleness", "FE selector", "StalenessResult{isStale, reasons[]}; time-in-state excludes blocked; blocked-duration ≥ threshold OR's in")
+
+    Rel(settingsCtrl, blockedSvc, "Validates rule set via")
+    Rel(blockedSvc, ruleEval, "Evaluates BlockedRuleSet through")
+    Rel(migrator, blockedSvc, "Produces a rule set matching the same items as")
+    Rel(enterHandler, transition, "Opens spell in")
+    Rel(leaveHandler, transition, "Closes spell in")
+    Rel(snapshotRecorder, blockedSvc, "Counts IsBlocked via")
+    Rel(snapshotRecorder, snapshot, "Upserts daily row in")
+    Rel(historyEndpoint, snapshot, "Reads series from")
+    Rel(deriveStale, transition, "Reads blockedSince (open spell) for blocked-duration trigger via WorkItemDto")
+```
+
+Four commitments the diagrams make visible:
+
+1. **One `IsBlocked` (ADR-067)** — every signal (badge, widget, snapshot count, blocked-staleness, `WasBlocked` seam) resolves through `IBlockedItemService` → `RuleEvaluator<T>` over `BlockedRuleSet`; no `BlockedStates`/`BlockedTags` read path survives the migration.
+2. **Symmetric capture on the bus (ADR-068)** — enter via the existing `WorkItemBlocked`, leave via the new `WorkItemUnblocked`; at most one open spell; first-observation is honest "—".
+3. **Forward-only owner-grained trend (ADR-069)** — a sibling `BlockedCountSnapshot` (NOT the delivery-grained `DeliveryMetricSnapshot`) fed by a post-sync recorder; new endpoint ⇒ client version-gate `> v26.6.7.1`.
+4. **Staleness amends ADR-026 (ADR-070)** — `deriveStaleness` returns a multi-reason result; time-in-state keeps the `!isBlocked` guard; a distinct blocked-duration trigger (`≥`) OR's in; one stale state, reasons listed.
 
