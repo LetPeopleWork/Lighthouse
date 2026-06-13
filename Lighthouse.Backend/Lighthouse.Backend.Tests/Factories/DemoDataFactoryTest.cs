@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Factories;
+﻿using System.Globalization;
+using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
@@ -117,6 +118,34 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoProject.DataRetrievalValue, Does.Not.Contain("{"));
                 Assert.That(demoProject.DataRetrievalValue, Does.Not.Contain("}"));
             }
+        }
+
+        [Test]
+        public void CreateDemoTeam_GoodThroughputTeam_NeverCompletesWorkOnWeekends()
+        {
+            var subject = CreateSubject();
+
+            var demoTeam = subject.CreateDemoTeam(DemoTeamNames.GoodThroughput);
+
+            var completedDates = ParseColumnDates(demoTeam.DataRetrievalValue, columnIndex: 6);
+            Assert.That(completedDates, Is.Not.Empty);
+            Assert.That(completedDates, Has.None.Matches<DateTime>(IsWeekend));
+        }
+
+        private static bool IsWeekend(DateTime date)
+        {
+            return date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+        }
+
+        private static IReadOnlyList<DateTime> ParseColumnDates(string csvContent, int columnIndex)
+        {
+            return csvContent
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Skip(1)
+                .Select(line => line.Split(','))
+                .Where(cells => cells.Length > columnIndex && !string.IsNullOrWhiteSpace(cells[columnIndex]))
+                .Select(cells => DateTime.ParseExact(cells[columnIndex], "yyyy-MM-dd", CultureInfo.InvariantCulture))
+                .ToList();
         }
 
         private string GetWorkTrackingSystemOptionValue(string optionName, IEnumerable<WorkTrackingSystemConnectionOption> options)

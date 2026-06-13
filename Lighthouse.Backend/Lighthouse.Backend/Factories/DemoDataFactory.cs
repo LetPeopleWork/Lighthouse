@@ -97,17 +97,46 @@ namespace Lighthouse.Backend.Factories
 
         private static string ReplaceDatePlaceholders(string csvContent)
         {
-            var pattern = @"\{(-?\d+)\}";
+            var pattern = @"\{(w?)(-?\d+)\}";
             var today = DateTime.UtcNow.Date;
 
             return Regex.Replace(csvContent, pattern, match =>
             {
-                int daysOffset = int.Parse(match.Groups[1].Value);
+                int daysOffset = int.Parse(match.Groups[2].Value);
+                var isBusinessDayOffset = match.Groups[1].Value == "w";
 
-                var targetDate = today.AddDays(daysOffset);
+                var targetDate = isBusinessDayOffset
+                    ? BusinessDaysBefore(today, Math.Abs(daysOffset))
+                    : today.AddDays(daysOffset);
 
                 return targetDate.ToString("yyyy-MM-dd");
             }, RegexOptions.None, TimeSpan.FromSeconds(1));
+        }
+
+        private static DateTime BusinessDaysBefore(DateTime today, int businessDays)
+        {
+            var date = today;
+
+            while (IsWeekend(date))
+            {
+                date = date.AddDays(-1);
+            }
+
+            for (var remaining = businessDays; remaining > 0; remaining--)
+            {
+                do
+                {
+                    date = date.AddDays(-1);
+                }
+                while (IsWeekend(date));
+            }
+
+            return date;
+        }
+
+        private static bool IsWeekend(DateTime date)
+        {
+            return date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
         }
     }
 
