@@ -210,7 +210,8 @@ Design bets that learning will confirm or overturn. Revisit at each band boundar
    resource cost. A shared Postgres with a DB-per-tenant is the cheaper alternative (Q2). Story 18's
    "per-tenant `pg_dump`" works under either — decide before 14.
 3. **oauth2-proxy at the edge is sufficient** alongside app-level OIDC. May be redundant for some
-   surfaces; the MCP endpoint (06) likely wants token auth *instead of* browser OIDC.
+   surfaces; the MCP endpoint (06) likely wants token auth *instead of* browser OIDC — see Q5 for the
+   inbound-auth model that decision turns on.
 4. **ESO + Azure Key Vault** assumes LPW stays on the Azure/Entra side for identity+secrets even if
    compute is elsewhere (e.g. Hetzner). Confirm the identity/secrets home (Q3) before 13.
 5. **Single cluster, namespace-per-tenant** is the multi-tenancy model. Fine for early scale;
@@ -247,6 +248,26 @@ These aren't blockers for Band A, but they shape Bands D–E. Decide by the band
   starts**, where it actually pays off: one shared static frontend serving every tenant subdomain
   (it derives its API base from its own hostname) while backends stay per-tenant. So: build the
   toggle, default it off, flip it on for the hosted SaaS. Affects 01, 03, 08, 09.
+- **Q5 (by Band C/D productization — chart 09 / SaaS 11–13):** MCP HTTP server inbound-auth model.
+  Story 06 deploys today's published `mcp-http` container, which holds **one** baked-in
+  `LIGHTHOUSE_API_KEY` (a Secret) and authenticates *downstream* to Lighthouse — but does **not**
+  authenticate the *inbound* caller. That makes it a **confused deputy**: every caller drives
+  Lighthouse as that single key's owner/scope, which is exactly why story 06 forces a ClusterIP-only
+  vs edge-auth exposure decision. Lighthouse's backend already supports the better model — API keys
+  are **owner-resolved** (`ApiKey.OwnerSubject` → `sub` claim in `ApiKeyAuthenticationHandler`) and
+  **permission-scoped** (`ApiKeyPermission`: role + scope) — so a caller's own credential already
+  maps to *their* identity and rights. Two productization options, decision deferred:
+  - **(b, preferred) Official MCP OAuth pass-through** — adopt the MCP spec (rev 2025-06-18)
+    Authorization framework so each caller authenticates with their own OAuth token; no shared key to
+    bake, seal, distribute, or rotate. Removes the ambient authority entirely → an unauth'd `/mcp` is
+    no longer an open hole, and per-user RBAC + audit come for free.
+  - **(a, interim) `X-Api-Key` pass-through** — the client sends its own Lighthouse API key, the MCP
+    server forwards it. Simpler than OAuth, reuses the existing owner-resolved/scoped key model, same
+    no-ambient-authority benefit; costs N user-held keys instead of one Secret.
+  Either way the change is primarily in the **lighthouse-clients** repo (the MCP server); the
+  Lighthouse backend likely needs little/nothing. **Solve this when we productize the MCP server**
+  (chart/SaaS boundary), not in the throwaway story-06 scaffold. Affects 06, 09, 11–13; CLAUDE.md
+  Lighthouse-Clients cross-cutting checklist applies.
 
 ---
 
