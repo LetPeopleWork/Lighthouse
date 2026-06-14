@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Tests.Factories
             return date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
         }
 
-        private static IReadOnlyList<DateTime> ParseColumnDates(string csvContent, int columnIndex)
+        private static List<DateTime> ParseColumnDates(string csvContent, int columnIndex)
         {
             return csvContent
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
