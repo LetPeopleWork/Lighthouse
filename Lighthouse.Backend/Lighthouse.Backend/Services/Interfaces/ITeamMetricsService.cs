@@ -86,6 +86,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         FlowEfficiencyInfoDto GetFlowEfficiencyInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
+        void InvalidateTeamMetrics(Team team);
+
         Task UpdateTeamMetrics(Team team);
     }
 }

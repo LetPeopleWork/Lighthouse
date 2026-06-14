@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         protected Mock<ITeamMetricsService> TeamMetricsServiceMock { get; private set; } = null!;
 
+        protected Mock<IPortfolioMetricsService> PortfolioMetricsServiceMock { get; private set; } = null!;
+
         protected Mock<ILicenseService> LicenseServiceMock { get; private set; } = null!;
 
         protected int SeededTeamId { get; private set; }
@@ -50,6 +52,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 .Setup(s => s.GetForecastThroughputStatus(It.IsAny<Team>(), It.IsAny<ThroughputFilterMode>()))
                 .Returns(new ForecastThroughputStatus(new RunChartData(), false, null));
 
+            PortfolioMetricsServiceMock = new Mock<IPortfolioMetricsService>();
+
             LicenseServiceMock = new Mock<ILicenseService>();
             LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
@@ -62,6 +66,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                         services.AddScoped(_ => ForecastServiceMock.Object);
                         services.RemoveAll<ITeamMetricsService>();
                         services.AddScoped(_ => TeamMetricsServiceMock.Object);
+                        services.RemoveAll<IPortfolioMetricsService>();
+                        services.AddScoped(_ => PortfolioMetricsServiceMock.Object);
                         services.RemoveAll<ILicenseService>();
                         services.AddScoped(_ => LicenseServiceMock.Object);
                     });

@@ -1,14 +1,18 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class BlackoutPeriodService(IRepository<BlackoutPeriod> repository, IRepository<RecurringBlackoutRule> recurringRuleRepository) : IBlackoutPeriodService
+    public class BlackoutPeriodService(IRepository<BlackoutPeriod> repository, IRepository<RecurringBlackoutRule> recurringRuleRepository, IDomainEventDispatcher domainEventDispatcher) : IBlackoutPeriodService
     {
         private readonly IRepository<BlackoutPeriod> repository = repository ?? throw new ArgumentNullException(nameof(repository));
 
         private readonly IRepository<RecurringBlackoutRule> recurringRuleRepository = recurringRuleRepository ?? throw new ArgumentNullException(nameof(recurringRuleRepository));
+
+        private readonly IDomainEventDispatcher domainEventDispatcher = domainEventDispatcher ?? throw new ArgumentNullException(nameof(domainEventDispatcher));
 
         public IEnumerable<BlackoutPeriod> GetAll()
         {
@@ -49,6 +53,8 @@ namespace Lighthouse.Backend.Services.Implementation
             repository.Add(blackoutPeriod);
             await repository.Save();
 
+            await domainEventDispatcher.PublishAsync(new BlackoutConfigurationChanged());
+
             return blackoutPeriod;
         }
 
@@ -65,6 +71,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             await repository.Save();
 
+            await domainEventDispatcher.PublishAsync(new BlackoutConfigurationChanged());
+
             return existing;
         }
 
@@ -77,6 +85,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             repository.Remove(id);
             await repository.Save();
+
+            await domainEventDispatcher.PublishAsync(new BlackoutConfigurationChanged());
         }
 
         private static void ValidateDateRange(DateOnly start, DateOnly end)

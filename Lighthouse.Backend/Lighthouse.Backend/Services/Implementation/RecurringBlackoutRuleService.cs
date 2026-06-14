@@ -1,12 +1,16 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class RecurringBlackoutRuleService(IRepository<RecurringBlackoutRule> repository) : IRecurringBlackoutRuleService
+    public class RecurringBlackoutRuleService(IRepository<RecurringBlackoutRule> repository, IDomainEventDispatcher domainEventDispatcher) : IRecurringBlackoutRuleService
     {
         private readonly IRepository<RecurringBlackoutRule> repository = repository ?? throw new ArgumentNullException(nameof(repository));
+
+        private readonly IDomainEventDispatcher domainEventDispatcher = domainEventDispatcher ?? throw new ArgumentNullException(nameof(domainEventDispatcher));
 
         public IEnumerable<RecurringBlackoutRuleDto> GetAll()
         {
@@ -24,6 +28,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             repository.Add(rule);
             await repository.Save();
+
+            await domainEventDispatcher.PublishAsync(new BlackoutConfigurationChanged());
 
             return new RecurringBlackoutRuleDto(rule);
         }
@@ -43,6 +49,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             await repository.Save();
 
+            await domainEventDispatcher.PublishAsync(new BlackoutConfigurationChanged());
+
             return new RecurringBlackoutRuleDto(existing);
         }
 
@@ -55,6 +63,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             repository.Remove(id);
             await repository.Save();
+
+            await domainEventDispatcher.PublishAsync(new BlackoutConfigurationChanged());
         }
 
         private static void Validate(RecurringBlackoutRuleDto dto)

@@ -60,6 +60,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     {
                         services.RemoveAll<ITeamMetricsService>();
                         services.AddScoped(_ => teamMetricsServiceMock.Object);
+                        services.RemoveAll<IPortfolioMetricsService>();
+                        services.AddScoped(_ => Mock.Of<IPortfolioMetricsService>());
                         services.RemoveAll<ILicenseService>();
                         services.AddScoped(_ => licenseServiceMock.Object);
                     });

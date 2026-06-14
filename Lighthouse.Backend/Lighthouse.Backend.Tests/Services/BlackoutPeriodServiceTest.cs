@@ -1,5 +1,7 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
@@ -13,6 +15,7 @@ namespace Lighthouse.Backend.Tests.Services
         private BlackoutPeriodService subject;
         private Mock<IRepository<BlackoutPeriod>> repositoryMock;
         private Mock<IRepository<RecurringBlackoutRule>> recurringRuleRepositoryMock;
+        private Mock<IDomainEventDispatcher> dispatcherMock;
         private readonly List<BlackoutPeriod> blackoutPeriods = [];
         private readonly List<RecurringBlackoutRule> recurringRules = [];
 
@@ -32,7 +35,16 @@ namespace Lighthouse.Backend.Tests.Services
             recurringRuleRepositoryMock.Setup(r => r.GetAll())
                 .Returns(recurringRules.AsQueryable());
 
-            subject = new BlackoutPeriodService(repositoryMock.Object, recurringRuleRepositoryMock.Object);
+            dispatcherMock = new Mock<IDomainEventDispatcher>();
+
+            subject = new BlackoutPeriodService(repositoryMock.Object, recurringRuleRepositoryMock.Object, dispatcherMock.Object);
+        }
+
+        private void VerifyBlackoutConfigurationChangedPublished(Times times)
+        {
+            dispatcherMock.Verify(
+                d => d.PublishAsync(It.IsAny<BlackoutConfigurationChanged>(), It.IsAny<CancellationToken>()),
+                times);
         }
 
         [Test]
@@ -148,6 +160,7 @@ namespace Lighthouse.Backend.Tests.Services
                           bp.End == new DateOnly(2026, 4, 15) &&
                           bp.Description == "Spring break")), Times.Once);
                 repositoryMock.Verify(r => r.Save(), Times.Once);
+                VerifyBlackoutConfigurationChangedPublished(Times.Once());
             }
         }
 
@@ -162,6 +175,8 @@ namespace Lighthouse.Backend.Tests.Services
             };
 
             Assert.ThrowsAsync<ArgumentException>(async () => await subject.Create(dto));
+
+            VerifyBlackoutConfigurationChangedPublished(Times.Never());
         }
 
         [Test]
@@ -207,6 +222,7 @@ namespace Lighthouse.Backend.Tests.Services
                 Assert.That(result.Description, Is.EqualTo("Updated"));
 
                 repositoryMock.Verify(r => r.Save(), Times.Once);
+                VerifyBlackoutConfigurationChangedPublished(Times.Once());
             }
         }
 
@@ -258,6 +274,7 @@ namespace Lighthouse.Backend.Tests.Services
             {
                 repositoryMock.Verify(r => r.Remove(1), Times.Once);
                 repositoryMock.Verify(r => r.Save(), Times.Once);
+                VerifyBlackoutConfigurationChangedPublished(Times.Once());
             }
         }
 
@@ -267,6 +284,8 @@ namespace Lighthouse.Backend.Tests.Services
             repositoryMock.Setup(r => r.Exists(999)).Returns(false);
 
             Assert.ThrowsAsync<KeyNotFoundException>(async () => await subject.Delete(999));
+
+            VerifyBlackoutConfigurationChangedPublished(Times.Never());
         }
     }
 }

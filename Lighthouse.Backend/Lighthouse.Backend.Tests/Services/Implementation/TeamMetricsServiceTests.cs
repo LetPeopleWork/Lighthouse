@@ -2355,6 +2355,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetBlackoutAwareThroughputForTeam_BlackoutConfigChangesAfterCaching_StaysStaleUntilInvalidated()
+        {
+            var startDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            var endDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 1, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 5, 0, 0, 0, DateTimeKind.Utc);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = new DateTime(1991, 4, 10, 0, 0, 0, DateTimeKind.Utc);
+
+            SetupEffectiveBlackoutDays();
+            var beforeConfigChange = subject.GetBlackoutAwareThroughputForTeam(testTeam, startDate, endDate);
+
+            SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = new DateOnly(1991, 4, 5), End = new DateOnly(1991, 4, 5) });
+            var afterConfigChangeWithoutInvalidation = subject.GetBlackoutAwareThroughputForTeam(testTeam, startDate, endDate);
+
+            subject.InvalidateTeamMetrics(testTeam);
+            var afterInvalidation = subject.GetBlackoutAwareThroughputForTeam(testTeam, startDate, endDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(afterConfigChangeWithoutInvalidation.History, Is.EqualTo(beforeConfigChange.History), "without invalidation the throughput cache must stay stale after a blackout config change");
+                Assert.That(afterConfigChangeWithoutInvalidation.Total, Is.EqualTo(beforeConfigChange.Total), "without invalidation the cached throughput keeps the now-blacked-out day's item");
+                Assert.That(afterInvalidation.History, Is.EqualTo(9), "after invalidation the blackout day reduces the 10-day window to 9 effective days");
+                Assert.That(afterInvalidation.Total, Is.EqualTo(2), "after invalidation the item closed on the blackout day is excluded");
+            }
+        }
+
+        [Test]
         public void GetCurrentThroughputForTeam_RollingWindow_MultipleBlackoutPeriods_ExcludesAll()
         {
             testTeam.ThroughputHistory = 5;
