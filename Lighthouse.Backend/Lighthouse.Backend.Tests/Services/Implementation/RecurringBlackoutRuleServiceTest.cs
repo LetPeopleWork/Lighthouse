@@ -103,6 +103,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task Create_MinimumIntervalAndSingleDayRange_IsAccepted()
+        {
+            var dto = ValidDto();
+            dto.IntervalWeeks = 1;
+            dto.Start = new DateOnly(2026, 6, 1);
+            dto.End = new DateOnly(2026, 6, 1);
+
+            var result = await CreateSubject().Create(dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                repositoryMock.Verify(r => r.Add(It.IsAny<RecurringBlackoutRule>()), Times.Once);
+                repositoryMock.Verify(r => r.Save(), Times.Once);
+                Assert.That(result.IntervalWeeks, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
         public async Task Update_ExistingRule_AppliesChangesAndSaves()
         {
             var existing = CreateRule(id: 7, start: new DateOnly(2026, 6, 1));
