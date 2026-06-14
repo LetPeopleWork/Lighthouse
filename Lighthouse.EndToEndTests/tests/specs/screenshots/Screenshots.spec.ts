@@ -499,6 +499,11 @@ testWithDemo(
 
 		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
+		await takePageScreenshot(
+			portfolioMetricsPage.page,
+			"features/metrics/portfoliometricsoverview.png",
+		);
+
 		let availableWidgets = await portfolioMetricsPage.switchCategory(
 			MetricsCategories.PortfolioAndFeatures,
 		);
