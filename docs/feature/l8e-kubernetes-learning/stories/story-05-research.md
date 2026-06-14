@@ -5,13 +5,21 @@
 **Date**: 2026-06-13 | **Step**: nw-research (instructor + reference, not implementer) | **Sources**: 8 primary (6 official-doc pages + oauth2-proxy + repo)
 **Doc currency**: k8s concept pages are evergreen-per-version (current nav tracks v1.36.x); the OIDC/RBAC/ServiceAccount/Secret/ConfigMap mechanics are stable API. All repo facts (the *already-implemented* OIDC + app-RBAC wiring) are line-cited from this repo's `Program.cs`, `appsettings.json`, and the `API/` controllers at HEAD. The big realisation of this story is grounded in the repo, not the k8s docs — read §3 before §5.
 
-> **🗂 Workspace: SCRATCH — not the repo.** Everything you write here (the Keycloak Deployment, the
-> Secret/ConfigMap holding the OIDC config, the ServiceAccounts, the Role/RoleBinding, the oauth2-proxy
-> Deployment + Ingress annotations) is throwaway learning scaffolding. Keep it in a personal scratch dir,
-> e.g. `~/learn-k8s/story-05/`. **Nothing from this story goes into the Lighthouse repo** — the real
-> manifests first land in `chart/` at **story 09** (planning §7 workspace map: stories 00–08 = scratch,
-> "throwaway, never committed"). You are *configuring* the real Lighthouse image's auth, but the YAML is
-> rehearsal, not product. The production OIDC values (Entra, real secrets) are a story 11–12 / D2 concern.
+> **🗂 Workspace: SCRATCH — not the repo.** Everything you write here (the Secret/ConfigMap holding the
+> OIDC config, the ServiceAccounts, the Role/RoleBinding, the oauth2-proxy Deployment + Ingress
+> annotations) is throwaway learning scaffolding. Keep it in a personal scratch dir, e.g.
+> `~/learn-k8s/story-05/`. **Nothing from this story goes into the Lighthouse repo** — the real manifests
+> first land in `chart/` at **story 09** (planning §7 workspace map: stories 00–08 = scratch, "throwaway,
+> never committed"). You are *configuring* the real Lighthouse image's auth, but the YAML is rehearsal, not
+> product.
+>
+> **IdP choice: this guide uses a real Entra ID app registration, not an in-cluster Keycloak.** The IdP is
+> *external* — there is no IdP Deployment/Service/Ingress to write; you reuse an existing Entra tenant +
+> app registration (created once in the Azure portal). That trades away the in-cluster split-horizon-issuer
+> lesson (it only exists when the IdP runs *inside* the cluster) in exchange for a much simpler setup and
+> the realism of configuring against the *actual* production IdP. If you want the split-horizon lesson,
+> §8 (optional appendix) spins up throwaway Keycloak just for that. Real secrets + encryption-at-rest on
+> the Secret remain a story 11–12 / D2 concern.
 
 ## 1. Orientation
 
@@ -19,8 +27,8 @@ The word **"auth"** is about to mean **four different things** in the same clust
 of this story is to stop conflating them. By the time you're done you should be able to point at any
 manifest and say *which* auth it is.
 
-1. **App-level OIDC** — Lighthouse logging a human in against an identity provider (Keycloak here, Entra
-   in prod). **This already exists in the C#** (`Program.cs:658-680`, §3). Story 05 doesn't *write* it —
+1. **App-level OIDC** — Lighthouse logging a human in against an identity provider (Entra ID here *and* in
+   prod — same external IdP). **This already exists in the C#** (`Program.cs:658-680`, §3). Story 05 doesn't *write* it —
    it **configures** it, by feeding `Authentication__*` settings into the pod via a **ConfigMap**
    (non-secret: Authority, ClientId) and a **Secret** (the ClientSecret). That ConfigMap-vs-Secret split
    *is* the "configure OIDC via Secrets and ConfigMaps" deliverable.
@@ -37,19 +45,22 @@ manifest and say *which* auth it is.
    ever reaches the pod. The deliverable asks you to stand it up — but be honest (planning hypothesis #3):
    because Lighthouse **already** enforces OIDC itself, oauth2-proxy here is **partly redundant**. Its
    real value is protecting things that *don't* have built-in auth (a dashboard, Postgres' admin UI, a
-   sidecar) — you learn the pattern on Lighthouse, then know when it actually earns its place.
+   sidecar) — you learn the pattern on Lighthouse, then know when it actually earns its place. **Carry this
+   forward to story 06:** an **MCP server** is the textbook beneficiary — most MCP containers expose an
+   HTTP/SSE endpoint with *no* auth of their own, so fronting them with oauth2-proxy (Entra as provider) is
+   exactly where this pattern stops being redundant and becomes the only thing gating the endpoint.
 
 And one **red herring** to name and discard: OIDC can *also* authenticate **humans to the kube-apiserver**
 (so `kubectl` trusts your Keycloak login). That's a *third* use of the letters "OIDC", configured on the
 API server, and it is **out of scope** — don't let "OIDC" + "k8s" trick you into thinking story 05 wires
 your IdP into `kubectl`. It doesn't.
 
-"Done" feels like: deploy Keycloak in-cluster, **configure** Lighthouse's existing OIDC via a ConfigMap +
-Secret and log in through the browser end-to-end; create least-privilege ServiceAccounts for the
-Lighthouse and Postgres pods and **explain why they need no RoleBinding**; write a namespaced Role +
-RoleBinding (for a pod that *would* need API access, as the teaching exercise); stand oauth2-proxy in
-front of the Ingress and verify `browser → Ingress → oauth2-proxy → Lighthouse`; and — unaided —
-**place each of the four "auths" above** and say what breaks if it's missing or misconfigured.
+"Done" feels like: reuse an existing **Entra ID** app registration, **configure** Lighthouse's existing
+OIDC via a ConfigMap + Secret and log in through the browser end-to-end; create least-privilege
+ServiceAccounts for the Lighthouse and Postgres pods and **explain why they need no RoleBinding**; write a
+namespaced Role + RoleBinding (for a pod that *would* need API access, as the teaching exercise); stand
+oauth2-proxy in front of the Ingress and verify `browser → Ingress → oauth2-proxy → Lighthouse`; and —
+unaided — **place each of the four "auths" above** and say what breaks if it's missing or misconfigured.
 
 This story builds on story 02's `lighthouse` + `lighthouse-postgres` workload and story 03's Ingress/TLS
 (`lighthouse.local` over HTTPS). Don't re-teach those.
@@ -166,24 +177,25 @@ requests upstream.
 **Where it sits.** `browser → Ingress → oauth2-proxy → Lighthouse`. The two common wirings:
 - **As the upstream's gatekeeper** — Traefik/NGINX calls oauth2-proxy via an *external-auth* hook
   (`auth_request` / Traefik `ForwardAuth` middleware) on every request; a 202 lets it through, a 401
-  bounces the browser to Keycloak.
+  bounces the browser to Entra.
 - **In-line proxy** — oauth2-proxy *is* the Ingress backend and proxies authenticated traffic to
   Lighthouse's Service.
 
 **The honest reconciliation (planning hypothesis #3).** Lighthouse **already** does OIDC against the same
-Keycloak. So putting oauth2-proxy in front means **two** OIDC layers — the user could be challenged twice,
-and you now maintain two client registrations. That's belt-and-suspenders. oauth2-proxy *earns its keep*
-when the thing behind it has **no** auth of its own (a raw dashboard, pgAdmin, an internal tool). Learn
-the pattern on Lighthouse because the demo is cheap, but record *when you'd actually reach for it* — and
-note the alternative: for an app that already authenticates, you usually **don't** layer oauth2-proxy; you
-just expose it. (Decision deferred to the chart/SaaS boundary, stories 09/11–12.)
+Entra tenant. So putting oauth2-proxy in front means **two** OIDC layers — the user could be challenged
+twice, and you now maintain two app registrations. That's belt-and-suspenders. oauth2-proxy *earns its
+keep* when the thing behind it has **no** auth of its own (a raw dashboard, pgAdmin, an internal tool —
+or, in story 06, an **MCP server**). Learn the pattern on Lighthouse because the demo is cheap, but record
+*when you'd actually reach for it* — and note the alternative: for an app that already authenticates, you
+usually **don't** layer oauth2-proxy; you just expose it. (Decision deferred to the chart/SaaS boundary,
+stories 09/11–12.)
 
 - Read: oauth2-proxy — https://oauth2-proxy.github.io/oauth2-proxy/ [5]
 - Read (mechanism): k8s authentication, "OpenID Connect Tokens" (the **red herring** — OIDC to the *kube-apiserver*, not the app) — https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens [6]
 
 You should be able to answer:
-- Draw `browser → Ingress → oauth2-proxy → Lighthouse`. Where does the OIDC redirect to Keycloak happen, and what does oauth2-proxy forward upstream once the user is authenticated?
-- Lighthouse already does OIDC. So what does oauth2-proxy add *here*, honestly — and what kind of backend would make it genuinely necessary?
+- Draw `browser → Ingress → oauth2-proxy → Lighthouse`. Where does the OIDC redirect to Entra happen, and what does oauth2-proxy forward upstream once the user is authenticated?
+- Lighthouse already does OIDC. So what does oauth2-proxy add *here*, honestly — and what kind of backend (hint: story 06) would make it genuinely necessary?
 - The red herring: name the *third* use of OIDC (humans → kube-apiserver) and say why story 05 is **not** about it.
 
 ## 3. Repo-grounded facts (Lighthouse ALREADY does OIDC + app-RBAC — you CONFIGURE, you don't BUILD)
@@ -233,11 +245,21 @@ story: the C# is already written. Read it first.**
   *zero* API access. The Role/RoleBinding you write in §5.4 is a **teaching exercise** for a hypothetical
   pod that *would* need API access, not something Lighthouse itself requires.
 
-> **Forward hook — the production OIDC values are OUT OF SCOPE here (planning §D2/§D3).** Locally you use
-> **Keycloak + HTTP/self-signed**; production is **Entra ID + real secrets + encryption-at-rest on the
-> Secret**. Wiring the *real* IdP, sealing secrets (SealedSecrets/external-secrets), and the
-> oauth2-proxy-or-not decision are **story 11–12 / chart** concerns. Story 05 proves the *mechanism* with
-> throwaway Keycloak; it does not productionize it.
+- **Two Entra-specific facts that bite the `groups`/CORS wiring.** (a) The app-RBAC layer reads the
+  `groups` claim, but **Entra does not emit `groups` by default** — you must enable it in the app
+  registration's **Token configuration** (or app-role claims), and even then it emits **group object-IDs
+  (GUIDs)**, not human names. So `Authorization__GroupClaimName` stays `"groups"`, but the values your
+  `EmergencySystemAdminSubjects`/group mappings must match are **GUIDs**, not "Admins". (b)
+  `Authentication__AllowedOrigins` is **mandatory when auth is enabled** — `Program.cs:494-498` *hard-fails
+  startup* if it's blank — and in-cluster it must be the **browser-facing** origin `https://lighthouse.local`,
+  **not** a laptop value like `https://localhost:48332`. It feeds CORS (`Program.cs:520-523`).
+
+> **Forward hook — real secrets are still OUT OF SCOPE here (planning §D2/§D3).** This guide uses your real
+> **Entra ID** tenant (external IdP, HTTPS issuer) for the *login mechanism*, but the **ClientSecret is a
+> throwaway dev secret in a plain k8s Secret (base64, not encrypted)**. Sealing secrets
+> (SealedSecrets/external-secrets), encryption-at-rest on etcd, and the oauth2-proxy-or-not decision are
+> **story 11–12 / chart** concerns. Story 05 proves the *mechanism*; it does not productionize secret
+> handling.
 
 ## 4. Debug reflex (carry this through the story)
 
@@ -245,14 +267,21 @@ Carry forward the prior rules (describe→Events before run, logs after; `/api` 
 then add the auth-specific failure shapes — most of which are **not** k8s errors at all but **OIDC
 mismatches**:
 
-- **Login redirects to Keycloak then fails with `invalid issuer` / `IDX10205` / `Unable to obtain
-  configuration`** → the **split-horizon issuer trap** (the #1 in-cluster OIDC bug). The browser reaches
-  Keycloak at one URL (`https://keycloak.local`) but the **pod** reaches it at the in-cluster Service DNS
-  (`http://keycloak.keycloak.svc:8080`). The `iss` in the token must match what `Authority` expects. Fix:
-  pin Keycloak's frontend hostname (`KC_HOSTNAME`) so the issuer is **stable regardless of who asks**, and
-  use `MetadataAddress` (bound at `Program.cs:671`) to point the pod's *discovery fetch* at the internal
-  URL while `Authority` stays the public issuer. Read it: `kubectl logs deploy/lighthouse` shows the OIDC
-  middleware exception with the expected-vs-actual issuer.
+- **Login redirects to Entra then fails with `Unable to obtain configuration from .../.well-known/openid-configuration`**
+  → the **pod can't egress to `login.microsoftonline.com`**. Unlike an in-cluster Keycloak, Entra is on
+  the public internet, so the *pod* (not just your browser) needs outbound HTTPS to fetch discovery. If a
+  NetworkPolicy or air-gapped node blocks egress, discovery times out. (This replaces the in-cluster
+  split-horizon issuer trap — with an *external* IdP browser and pod hit the **same** `iss`, so there's no
+  split horizon. If you want to *experience* split-horizon, that's the optional Keycloak appendix, §8.)
+  Read it: `kubectl logs deploy/lighthouse` shows the discovery fetch exception; `kubectl exec
+  deploy/lighthouse -- wget -qO- https://login.microsoftonline.com/<tenant>/v2.0/.well-known/openid-configuration`
+  confirms egress.
+- **Login works but every user is unauthorized / no groups** → Entra isn't emitting the `groups` claim
+  (off by default; enable in the app registration's Token configuration) — or it *is*, but as **GUIDs**
+  your group mapping doesn't match (§3). Decode the token at the SPA or check the persisted snapshot.
+- **Startup crashes with "Authentication is enabled but AllowedOrigins is empty"** → set
+  `Authentication__AllowedOrigins: "https://lighthouse.local"` (the in-cluster browser origin), not your
+  laptop's `https://localhost:48332` (`Program.cs:494`, §3).
 - **Browser loops back to login forever / cookie never sticks** → over HTTP, the session cookie is
   `SecurePolicy = Always` (`Program.cs:628`), so it's **dropped on plain http**. You went through story
   03 for exactly this reason — log in over **HTTPS** (`https://lighthouse.local`), not http. If
@@ -268,60 +297,44 @@ mismatches**:
 - **`kubectl drain` / API call from the pod gets `Forbidden`** (only if you gave a pod API access in §5.4)
   → that's k8s RBAC working: the ServiceAccount has no (or insufficient) RoleBinding. `kubectl auth
   can-i <verb> <resource> --as=system:serviceaccount:<ns>:<sa>` tells you exactly what a SA may do.
-- **oauth2-proxy returns 500 / redirect mismatch** → its `--redirect-url` must equal the registered
-  Keycloak client redirect URI **exactly** (scheme + host + path), and its `--oidc-issuer-url` must match
-  the issuer (same split-horizon rule as above). `kubectl logs deploy/oauth2-proxy`.
+- **oauth2-proxy returns 500 / redirect mismatch** → its `--redirect-url` must equal the redirect URI
+  registered on the **oauth2-proxy** Entra app registration **exactly** (scheme + host + path), and its
+  `--oidc-issuer-url` must be your tenant's v2.0 issuer. `kubectl logs deploy/oauth2-proxy`.
 
-Mnemonic: **most "k8s auth" failures are OIDC mismatches, not RBAC** — issuer mismatch (split-horizon),
-cookie dropped on http, env not `__`-mapped, or auth silently disabled. True k8s-RBAC `Forbidden` only
+Mnemonic: **most "k8s auth" failures are OIDC mismatches, not RBAC** — pod can't egress to Entra, groups
+claim absent/GUID-shaped, AllowedOrigins blank, cookie dropped on http, env not `__`-mapped, or auth
+silently disabled. True k8s-RBAC `Forbidden` only
 appears if a pod actually calls the API — and Lighthouse doesn't. Verify a SA's powers with
 `kubectl auth can-i ... --as=system:serviceaccount:...`.
 
 ## 5. Hands-on — copy/paste manifests
 
 Try each block from memory first; these are the backstop. Work in `~/learn-k8s/story-05/`, namespace
-`lighthouse` (reuse story 02–03). Replace placeholders (`<CLIENT_SECRET>`, hostnames) with your values.
-**Keycloak realm/client setup is done in the Keycloak admin UI** — the manifests stand the server up; the
-realm `lighthouse` + client `lighthouse` (confidential, redirect `https://lighthouse.local/api/auth/callback`)
-you create through its console.
+`lighthouse` (reuse story 02–03). Replace placeholders (`<TENANT_ID>`, `<CLIENT_ID>`, `<CLIENT_SECRET>`)
+with your values.
 
-### 5.1 Keycloak in-cluster (throwaway dev mode)
+### 5.1 Entra ID app registration (one-time, in the Azure portal — no manifest)
 
-```yaml
-# keycloak.yaml — DEV MODE ONLY (in-memory, no TLS). Never production.
-apiVersion: apps/v1
-kind: Deployment
-metadata: { name: keycloak, namespace: lighthouse }
-spec:
-  replicas: 1
-  selector: { matchLabels: { app: keycloak } }
-  template:
-    metadata: { labels: { app: keycloak } }
-    spec:
-      containers:
-        - name: keycloak
-          image: quay.io/keycloak/keycloak:26.0   # pin a real tag; never :latest
-          args: ["start-dev"]
-          env:
-            - { name: KC_BOOTSTRAP_ADMIN_USERNAME, value: admin }
-            - { name: KC_BOOTSTRAP_ADMIN_PASSWORD, value: admin }   # dev only
-            - { name: KC_HOSTNAME, value: "https://keycloak.local" } # STABLE issuer — beats split-horizon (§4)
-            - { name: KC_HTTP_ENABLED, value: "true" }
-            - { name: KC_PROXY_HEADERS, value: "xforwarded" }
-          ports: [{ containerPort: 8080 }]
----
-apiVersion: v1
-kind: Service
-metadata: { name: keycloak, namespace: lighthouse }
-spec:
-  selector: { app: keycloak }
-  ports: [{ port: 8080, targetPort: 8080 }]
+The IdP is external, so there is **nothing to deploy**. In **Azure portal → Entra ID → App registrations**,
+reuse or create a **confidential** app registration for Lighthouse:
+
+- **Redirect URI** (type *Web*): `https://lighthouse.local/api/auth/callback` — must match
+  `Authentication__CallbackPath` exactly (scheme + host + path).
+- **Client secret**: *Certificates & secrets → New client secret* → copy the **value** (you'll only see it
+  once) — this becomes `Authentication__ClientSecret` in §5.2's Secret.
+- **Groups claim**: *Token configuration → Add groups claim* (pick *Security groups* or *Groups assigned
+  to the application*). Without this, the `groups` claim never arrives and app-RBAC stays empty (§3, §4).
+  Remember the values are **group object-ID GUIDs**, not names.
+- Note your **tenant ID** and **client (application) ID** for the next step.
+
+The resulting values map straight onto the config you already have for local dev — only the host-facing
+bits change for in-cluster:
+
 ```
-
-Give Keycloak its own Ingress host (`keycloak.local`, story 03 pattern) so the browser *and* the issuer
-agree on `https://keycloak.local`. Then in the admin UI: create realm `lighthouse`, a confidential client
-`lighthouse` with redirect URI `https://lighthouse.local/api/auth/callback`, a `groups` client-scope/mapper,
-and a test user in a group.
+Authority  = https://login.microsoftonline.com/<TENANT_ID>/v2.0
+ClientId   = <CLIENT_ID>
+AllowedOrigins = https://lighthouse.local        # in-cluster browser origin (NOT https://localhost:48332)
+```
 
 ### 5.2 OIDC config split across a ConfigMap (non-secret) and a Secret (the ClientSecret)
 
@@ -332,20 +345,20 @@ kind: ConfigMap
 metadata: { name: lighthouse-oidc, namespace: lighthouse }
 data:
   Authentication__Enabled: "true"
-  Authentication__Authority: "https://keycloak.local/realms/lighthouse"   # public issuer
-  Authentication__ClientId: "lighthouse"
-  # point the POD's discovery fetch at the in-cluster Service while Authority stays the public issuer (§4)
-  Authentication__MetadataAddress: "http://keycloak.keycloak.svc.cluster.local:8080/realms/lighthouse/.well-known/openid-configuration"
-  Authentication__RequireHttpsMetadata: "false"   # dev only — internal fetch is plain http
+  Authentication__Authority: "https://login.microsoftonline.com/<TENANT_ID>/v2.0"   # external issuer — same for browser AND pod
+  Authentication__ClientId: "<CLIENT_ID>"
+  Authentication__AllowedOrigins: "https://lighthouse.local"   # MANDATORY when auth enabled (Program.cs:494) — in-cluster origin
+  # No MetadataAddress / RequireHttpsMetadata override needed: Entra is external HTTPS, discovery is
+  # auto-derived from Authority, and there is no split-horizon (browser and pod resolve the SAME issuer).
   Authorization__Enabled: "true"
-  Authorization__GroupClaimName: "groups"
+  Authorization__GroupClaimName: "groups"     # values arrive as group object-ID GUIDs (§3)
 ---
 apiVersion: v1
 kind: Secret
 metadata: { name: lighthouse-oidc-secret, namespace: lighthouse }
 type: Opaque
 stringData:                                  # stringData = plaintext in, base64 at rest (NOT encrypted, §2)
-  Authentication__ClientSecret: "<CLIENT_SECRET>"   # from the Keycloak client's Credentials tab
+  Authentication__ClientSecret: "<CLIENT_SECRET>"   # the secret VALUE from Entra → Certificates & secrets
 ```
 
 Wire both into the existing `lighthouse` Deployment with `envFrom` (keeps story 02's `Database__*` env):
@@ -449,9 +462,9 @@ spec:
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0   # pin a real tag
           args:
             - --provider=oidc
-            - --oidc-issuer-url=https://keycloak.local/realms/lighthouse   # MUST match the issuer (§4)
-            - --client-id=oauth2-proxy                # a SEPARATE Keycloak client from "lighthouse"
-            - --redirect-url=https://lighthouse.local/oauth2/callback   # MUST equal the registered redirect exactly
+            - --oidc-issuer-url=https://login.microsoftonline.com/<TENANT_ID>/v2.0   # MUST match the issuer (§4)
+            - --client-id=<OAUTH2_PROXY_CLIENT_ID>    # a SEPARATE Entra app registration from Lighthouse's
+            - --redirect-url=https://lighthouse.local/oauth2/callback   # register this on the oauth2-proxy app reg, exactly
             - --email-domain=*
             - --upstream=static://202                  # ForwardAuth mode: just say yes/no, don't proxy
             - --http-address=0.0.0.0:4180
@@ -494,14 +507,14 @@ kubectl create secret generic oauth2-proxy-secret -n lighthouse \
   --from-literal=client-secret='<OAUTH2_PROXY_CLIENT_SECRET>' \
   --from-literal=cookie-secret="$cookie_secret"
 kubectl apply -f oauth2-proxy.yaml
-# verify the chain: a fresh browser to https://lighthouse.local now bounces to Keycloak FIRST (edge),
+# verify the chain: a fresh browser to https://lighthouse.local now bounces to Entra FIRST (edge),
 # THEN Lighthouse's own OIDC — observe the DOUBLE challenge that proves the redundancy point (§2).
 ```
 
 ### 5.6 Teardown
 
 ```bash
-kubectl delete -f oauth2-proxy.yaml -f rbac-demo.yaml -f keycloak.yaml
+kubectl delete -f oauth2-proxy.yaml -f rbac-demo.yaml
 kubectl delete secret oauth2-proxy-secret lighthouse-oidc-secret -n lighthouse
 kubectl delete configmap lighthouse-oidc -n lighthouse
 # revert the lighthouse Deployment to story 03 (drop envFrom + serviceAccountName), and remove the
@@ -509,15 +522,18 @@ kubectl delete configmap lighthouse-oidc -n lighthouse
 kubectl apply -f lighthouse.yaml
 ```
 
+The Entra app registrations are external and reusable — leave them, or delete the client secret if you're
+done. (No in-cluster IdP to tear down.)
+
 ## 6. Self-check (maps to the exit criterion)
 
 Exit criterion: *OIDC auth works end-to-end; k8s RBAC is understood and applied; you can distinguish
 app-level auth from k8s RBAC and wire least-privilege ServiceAccounts plus edge auth enforcement.* Unaided,
 you should be able to:
 
-- [ ] **Name and place the four "auths"**: app-level OIDC (Lighthouse↔Keycloak, already coded), app-level RBAC (the `groups` claim → `IRbacAdministrationService`, already coded), k8s RBAC (Role/RoleBinding/SA — pod↔kube-apiserver), oauth2-proxy edge auth — and identify the OIDC-to-kube-apiserver **red herring** as out of scope.
-- [ ] **Configure** Lighthouse's *existing* OIDC via a ConfigMap (Authority/ClientId/Enabled/GroupClaimName) + a Secret (ClientSecret), explain **why the ClientSecret can't be in the ConfigMap**, and explain that the env keys use `__` because ASP.NET maps `__`→`:`.
-- [ ] Log in **end-to-end** through the browser over **HTTPS**, and explain the two ways it breaks: the **split-horizon issuer** mismatch (fix with stable `KC_HOSTNAME` + `MetadataAddress`) and the **cookie dropped on http** (`SecurePolicy=Always`).
+- [ ] **Name and place the four "auths"**: app-level OIDC (Lighthouse↔Entra, already coded), app-level RBAC (the `groups` claim → `IRbacAdministrationService`, already coded), k8s RBAC (Role/RoleBinding/SA — pod↔kube-apiserver), oauth2-proxy edge auth — and identify the OIDC-to-kube-apiserver **red herring** as out of scope.
+- [ ] **Configure** Lighthouse's *existing* OIDC via a ConfigMap (Authority/ClientId/AllowedOrigins/Enabled/GroupClaimName) + a Secret (ClientSecret), explain **why the ClientSecret can't be in the ConfigMap**, and explain that the env keys use `__` because ASP.NET maps `__`→`:`.
+- [ ] Log in **end-to-end** through the browser over **HTTPS**, and explain the ways it breaks: the **pod can't egress** to Entra discovery, the **`groups` claim absent/GUID-shaped**, **`AllowedOrigins` blank**, and the **cookie dropped on http** (`SecurePolicy=Always`). (With an *in-cluster* IdP you'd add the **split-horizon issuer** mismatch — §8.)
 - [ ] **ServiceAccount vs RoleBinding** least privilege: why Lighthouse's SA needs `automountServiceAccountToken: false` and **no RoleBinding** — grounded in "permissions are purely additive, no deny rules" and "Lighthouse never calls the k8s API".
 - [ ] Write a namespaced **Role + RoleBinding**, explain **Role vs ClusterRole** (namespaced vs cluster) and **RoleBinding vs ClusterRoleBinding**, and verify a SA's powers with `kubectl auth can-i ... --as=system:serviceaccount:...`.
 - [ ] Stand up **oauth2-proxy** for `browser → Ingress → oauth2-proxy → Lighthouse`, and **honestly assess its redundancy** here (Lighthouse already does OIDC) vs when it genuinely earns its place (a backend with no built-in auth).
@@ -529,13 +545,14 @@ If any box needs a doc to complete, you're not through the gate yet.
 
 Pick a throwaway experiment that *tests the lesson at its edges*. Form a hypothesis **before** you run it:
 
-> **(a) Break the issuer on purpose — see the split-horizon failure.** Set
-> `Authentication__Authority` to the **internal** Service URL (`http://keycloak.keycloak.svc:8080/realms/lighthouse`)
-> instead of the public one, keep `MetadataAddress` pointing internally, and log in. Predict *before* you
-> run it: does discovery succeed but token validation fail, or does the browser redirect break? Read
-> `kubectl logs deploy/lighthouse` for the expected-vs-actual `iss`. Then fix it with the stable
-> `KC_HOSTNAME` + public `Authority` and watch it pass. (Expected: the browser-issued token's `iss` is the
-> public host; validation against the internal `Authority` fails — *that* is split-horizon.)
+> **(a) Prove the pod (not just the browser) must reach the IdP.** With external Entra there's no
+> split-horizon — but discovery still happens *server-side*. Hypothesis first: if you block the pod's
+> egress to `login.microsoftonline.com` (a deny-all `NetworkPolicy`, or just point `Authority` at a
+> bogus tenant), does the *browser* redirect still start, and where does it fail? Apply the block, log in,
+> and read `kubectl logs deploy/lighthouse` — you'll see the discovery fetch fail even though the browser
+> half would have worked. Lesson: OIDC has two network legs (browser→IdP and **pod→IdP**), and the pod's
+> leg is the one k8s networking can silently sever. (Want the *split-horizon* failure instead? That needs
+> an in-cluster IdP — do the optional Keycloak appendix, §8.)
 >
 > **(b) Prove the ServiceAccount is powerless — and that a binding is purely additive.** Before applying
 > §5.4, run `kubectl auth can-i list configmaps --as=system:serviceaccount:lighthouse:lighthouse` (expect
@@ -550,9 +567,68 @@ Pick a throwaway experiment that *tests the lesson at its edges*. Form a hypothe
 > name the backend type where it *would* be the only thing standing between the internet and an unauth'd
 > service.
 
-Investigate, don't look it up: break the issuer and read the `iss` mismatch; grant-then-probe to feel
-"additive, no deny"; double-challenge to feel the redundancy. The issuer log is the OIDC lesson; the
-`can-i` matrix is the RBAC lesson; the challenge count is the edge-auth lesson.
+Investigate, don't look it up: sever the pod's egress and read the discovery failure; grant-then-probe to
+feel "additive, no deny"; double-challenge to feel the redundancy. The discovery log is the OIDC lesson;
+the `can-i` matrix is the RBAC lesson; the challenge count is the edge-auth lesson.
+
+## 8. Optional appendix — in-cluster Keycloak (only for the split-horizon lesson)
+
+You dropped Keycloak to keep setup simple with Entra. The **one** lesson that drops with it — the
+**split-horizon issuer trap**, the #1 in-cluster-OIDC bug — only exists when the IdP runs *inside* the
+cluster and is therefore reachable at two URLs. If you want to *feel* it (recommended once, it's the
+richest OIDC lesson here), stand up throwaway Keycloak and point Lighthouse at it instead of Entra for one
+session.
+
+```yaml
+# keycloak.yaml — DEV MODE ONLY (in-memory, no TLS). Never production.
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: keycloak, namespace: lighthouse }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: keycloak } }
+  template:
+    metadata: { labels: { app: keycloak } }
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0   # pin a real tag; never :latest
+          args: ["start-dev"]
+          env:
+            - { name: KC_BOOTSTRAP_ADMIN_USERNAME, value: admin }
+            - { name: KC_BOOTSTRAP_ADMIN_PASSWORD, value: admin }   # dev only
+            - { name: KC_HOSTNAME, value: "https://keycloak.local" } # STABLE issuer — beats split-horizon
+            - { name: KC_HTTP_ENABLED, value: "true" }
+            - { name: KC_PROXY_HEADERS, value: "xforwarded" }
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: keycloak, namespace: lighthouse }
+spec:
+  selector: { app: keycloak }
+  ports: [{ port: 8080, targetPort: 8080 }]
+```
+
+Give Keycloak its own Ingress host (`keycloak.local`, story 03 pattern) so the browser *and* the issuer
+agree on `https://keycloak.local`. In the admin UI: realm `lighthouse`, a confidential client `lighthouse`
+(redirect `https://lighthouse.local/api/auth/callback`), a `groups` client-scope/mapper, and a test user
+in a group. Then swap §5.2's ConfigMap to the Keycloak issuer and **add back** the discovery override that
+external Entra didn't need:
+
+```yaml
+  Authentication__Authority: "https://keycloak.local/realms/lighthouse"   # public issuer
+  Authentication__MetadataAddress: "http://keycloak.keycloak.svc.cluster.local:8080/realms/lighthouse/.well-known/openid-configuration"
+  Authentication__RequireHttpsMetadata: "false"   # dev only — internal fetch is plain http
+```
+
+**The spike (replaces §7a for this appendix):** set `Authentication__Authority` to the **internal**
+Service URL (`http://keycloak.keycloak.svc:8080/realms/lighthouse`) and log in. Predict first: does
+discovery succeed but token validation fail, or does the redirect break? Read `kubectl logs
+deploy/lighthouse` for the expected-vs-actual `iss`: the browser-issued token's `iss` is the *public* host,
+validation against the *internal* `Authority` fails — **that** is split-horizon. Fix it with the stable
+`KC_HOSTNAME` + public `Authority` + internal `MetadataAddress` above and watch it pass. Tear down with
+`kubectl delete -f keycloak.yaml` and revert §5.2 to the Entra values.
 
 ## Source Analysis
 
