@@ -1,8 +1,9 @@
 # l8e Kubernetes Learning — Planning Stage (North Star)
 
-> **What this is.** The one-time, epic-wide backbone for ADO Epic #5189. All 19 stories
-> (#5190–#5208) converge on one end-state, so it is designed once here and each story is a slice
-> toward it.
+> **What this is.** The one-time backbone (north star) for the Kubernetes initiative. It was authored
+> for what was originally a single 19-story Epic #5189; that epic was **split into three sequenced
+> epics on 2026-06-15 (see §0)**. This document remains the shared end-state all three converge on —
+> it is designed once here and each story across the three epics is a slice toward it.
 >
 > **Posture.** This is a *living north star, not a frozen spec.* You can't fully design ArgoCD /
 > ESO / observability before you've learned them — the architecture below is a hypothesis you
@@ -10,6 +11,33 @@
 > Per-story execution is the light loop: `objective → nw-research (cited reading) → you build it →
 > nw-spike (throwaway experiments) → Claude reviews (Socratic)`. No DoR gate, no Gherkin, except
 > the three full-nWave stories called out in D3.
+
+---
+
+## 0. Epic structure (split 2026-06-15)
+
+The initiative started as one Epic #5189 with 19 stories. Once the learning bands were nearly done it
+was reorganized into **three sequenced epics** — learning the platform, then making the *app* safe to
+run on it, then packaging and hosting it:
+
+| Epic | State | Holds | Loop |
+|------|-------|-------|------|
+| **#5189 — l8e Kubernetes Learning** | Active | Stories **00–08** (#5190–#5198). 00–07 Closed; **08 (#5198) is the only open story.** | light loop (learning) |
+| **#5305 — Lighthouse k8s-readiness — production code changes** | New | The real Lighthouse C#/TS changes that must land before hosting: #5304 SignalR Redis backplane + single-instance background work · #5307 MCP HTTP inbound OAuth pass-through (Q5) · #5308 expand-only migrations + safe startup under N replicas · #5309 graceful shutdown (SIGTERM) + draining · #5310 health checks (live/ready/startup) · #5311 reverse-proxy forwarded-headers · #5312 /metrics + structured logging. | full nWave (product code) |
+| **#5306 — l8e Kubernetes Productization (GitOps · dogfood · stage/prod)** | Planned | Stories **09–18** (#5199–#5208): the public Helm chart, enterprise docs, the private `lighthouse-gitops` repo (ArgoCD), wildcard DNS + per-tenant TLS, secrets, dogfooding LPW as tenant-zero across stage + prod, upgrades, observability, provisioning, backup/DR. | light loop + chart/ops |
+
+**Sequence: #5189 → #5305 → #5306.** The app must be cluster-safe (#5305) before it is packaged and
+hosted (#5306). #5306 consumes the public Helm chart and depends on #5305.
+
+**#5305 epic gate (every child story):** the change MUST keep the existing single-container standalone
+and regular server deployment working unchanged — it auto-degrades to the single-instance path (no
+Redis → in-memory backplane; single replica works; SQLite stays the default; frontend stays embedded).
+No breaking change for self-hosters; verified per story. This is the D4 "standalone is sacrosanct" rule
+applied as a hard acceptance gate.
+
+This §0 supersedes the earlier "all 19 stories under one epic" framing; the bands (§1) and the
+architecture/decisions (§3–§6) are unchanged by the split — band boundaries map onto the epics: **A–B →
+#5189**, the product-code work pulled out of B/C → **#5305**, **C–E → #5306**.
 
 ---
 
@@ -97,7 +125,13 @@ The whole point: learn against a stack that maps 1:1 to the hosted setup, at zer
 
 The local stack is not a throwaway — it's the rehearsal environment for every prod change.
 
-### D3 — The full-nWave exception (only 3 stories touch product code)
+### D3 — The full-nWave exception (product code = epic #5305)
+
+> **Post-split (§0):** the product-code work below is now the dedicated epic **#5305** rather than a
+> handful of flagged stories inside the learning epic. The learning stories that *touched* product
+> code (02, 06) shipped as light-loop learning slices in #5189; their genuine productization (e.g.
+> 06 → MCP OAuth #5307) is full-nWave work under #5305. The rule of thumb below is unchanged — it
+> just maps onto epic boundaries now.
 
 Most stories are infra/ops YAML with no testable app code and no external customer → **light loop**.
 Three stories change real Lighthouse C#/TS and are testable + customer-facing → full
@@ -110,9 +144,15 @@ Three stories change real Lighthouse C#/TS and are testable + customer-facing �
   RBAC-gated admin surface? do the CLI/MCP clients need a connection hint? website N/A).
 - **06 — MCP HTTP server in-cluster.** New driving adapter (HTTP-exposed MCP) → directly implicates
   **Lighthouse-Clients (CLI + MCP)** in the checklist, and likely version-gating per CLAUDE.md.
-- **07 — SignalR scaling.** `sessionAffinity: ClientIP` is the band-aid; the **Redis backplane** is
-  the real stateless fix and is C# work. Treat the backplane as the full-nWave slice; the affinity
-  experiment is a spike.
+- **07 — SignalR scaling.** *Re-scoped to a light loop (Option 3 decision, 2026-06-14).* The learning
+  story does the **k8s-layer spike only** — scale to N, reproduce the breakage, `sessionAffinity:
+  ClientIP`, HPA on CPU, load-test — all throwaway scratch against the *current* in-memory app. The
+  **production code** (SignalR Redis backplane **plus** the work that makes Lighthouse actually
+  multi-replica-safe — single-instance background updaters + a distributed status cache) is deferred
+  to a dedicated full-nWave story **#5304**, because those pieces are coupled (the backplane alone
+  doesn't yield a scalable app) and nothing needs real multi-replica until the SaaS bands. So story 07
+  is now light-loop, not a D3 exception; #5304 is the D3 exception. See
+  `stories/story-07-research.md` §1 for the (A)/(B)/(C) reframe.
 
 **Rule of thumb:** infra/learning = light loop; Lighthouse product code = full nWave.
 
@@ -282,7 +322,8 @@ or repo-bound (and which repo), so it's never ambiguous where files belong. The 
 | 09 (Helm) | **repo (public)** | this `lighthouse` repo, `chart/` |
 | 10 (docs) | **repo (public)** | this `lighthouse` repo, `docs/` |
 | 11–18 (GitOps/ops) | **repo (private)** | `lighthouse-gitops` |
-| 02, 06, 07 (C#/TS) | **repo (public, product code)** | this `lighthouse` repo — full nWave |
+| 02, 06 (C#/TS) | **repo (public, product code)** | this `lighthouse` repo — full nWave |
+| #5304 (horizontal-scaling product code, deferred — split out of 07) | **repo (public, product code)** | this `lighthouse` repo — full nWave, scheduled after the learning stories |
 
 For every non-exception story:
 
@@ -297,7 +338,8 @@ For every non-exception story:
 5. **Claude reviews** — Socratic review of what *you* wrote: what's missing, what would break in
    prod, what you can't yet explain.
 
-For the three D3 exception stories (02, 06, 07): full `DISCUSS→…→DELIVER` + the CLAUDE.md checklist.
+For the D3 exception stories (02, 06, and the deferred scaling story #5304): full
+`DISCUSS→…→DELIVER` + the CLAUDE.md checklist. (Story 07 was re-scoped to a light loop — see §D3.)
 
 **Suggested start:** story **00 — Local Cluster & kubectl Basics** (#5190). Smallest possible loop,
 establishes the k3s rehearsal environment everything else runs on.
