@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // and therefore legitimately keep [NonParallelizable]. Every OTHER opt-out must be removed
         // by fixing its shared-state root cause (per-fixture WAF/DB or per-test mocks). Slice-04
         // finalises this set against docs/feature/backend-test-speed/triage.md.
-        private static readonly IReadOnlySet<string> AllowedSerialFixtures = new HashSet<string>
+        private static readonly HashSet<string> AllowedSerialFixtures = new HashSet<string>
         {
             "S6_RateLimitingTests",
             "S1_AllowedOriginsEnvVarBindingTests",
