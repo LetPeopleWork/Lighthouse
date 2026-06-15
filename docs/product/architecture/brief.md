@@ -2346,3 +2346,21 @@ EXTEND the existing `@screenshot` → `docs/assets` pipeline (`Lighthouse.EndToE
 ### C4
 
 System Context & Container: **unchanged for the Lighthouse product** (no new actor, system, endpoint, or store). The delta is a cross-repo asset-flow wiring (website → jsDelivr CDN → `docs/assets` ← `@screenshot` suite, with a manual finalization gate). Diagram in `docs/feature/website-screenshot-freshness/feature-delta.md` → "Wave: DESIGN / [REF] C4 delta" and `docs/product/architecture/c4-diagrams.md` → "C4 Architecture Diagrams — website-screenshot-freshness".
+
+## Application Architecture — backend-test-speed (DESIGN delta)
+
+Test-infrastructure design (ADO #5258; follows #5020 CS-P). Product runtime architecture **unchanged** — this delta governs the backend test harness only.
+
+- **Decision (ADR-074)**: backend tests parallelize at the fixture level via **per-fixture `WebApplicationFactory` ownership**. `IntegrationTestBase` stops sharing one `static` factory + DB; each fixture builds its own factory (already unique-SQLite-file-per-instance, hosted-services-stripped) and the base-level `[NonParallelizable]` is removed. Tests within a fixture stay serial (one factory built once, reused), so the per-test `EnsureDeleted/EnsureCreated` reset remains collision-free.
+- **Serial residue** (rate-limiting, CORS-env, API-key scopes, concurrency) stays `[NonParallelizable]` on a **justified allowlist** enforced by an **ArchUnitNET guard** that fails the build on any off-allowlist opt-out — closing the gap that let 54 opt-outs accumulate after CS-P.
+- **Rejected**: shared-WAF + per-test-DB plumbing (per-scope connection complexity + shared-singleton contention). See ADR-074.
+- **Invariant**: behaviour preserved (same tests/assertions); mutation ≥ 80 % on any production isolation seam; CS-P `AuthenticationMethodSchema` per-host-singleton precedent upheld.
+- **Cross-cutting**: RBAC / Lighthouse-Clients / Website all **N/A** (test-infra; no authorization path, API contract, or marketed surface).
+
+### ADR
+
+- [ADR-074](./adr-074-backend-test-fixture-parallelization-isolation.md): per-fixture `WebApplicationFactory` ownership for fixture-level backend test parallelism; allowlist + ArchUnit guard for the serial residue. (Alternatives: shared-WAF + per-test DB; status-quo more-`[NonParallelizable]` — rejected.) ACCEPTED (2026-06-15); wall-clock numbers gated on Slice-01 spike.
+
+### C4
+
+System Context & Container: **unchanged for the Lighthouse product**. The delta is test-harness topology only (NUnit runner → parallel fixtures → per-fixture WAF → per-fixture SQLite; ArchUnit guard on the serial allowlist). Diagram in `docs/feature/backend-test-speed/feature-delta.md` → "Wave: DESIGN / [REF] C4 — test execution topology".
