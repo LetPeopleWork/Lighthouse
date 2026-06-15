@@ -387,3 +387,76 @@ System Context is unchanged from `brief.md` (this feature alters only the test h
 - **Constraints**: behaviour preserved (D8); mutation ≥ 80 % on touched production seams (D9); CI-learnings isolation rules upheld; standalone/regular behaviour untouched (test-only).
 - **Upstream changes**: none.
 - **Handoff**: DEVOPS (KPIs only — wall-clock targets) → DISTILL. DELIVER executes slices 01→04; Slice-01 validates the cost assumption behind ADR-074.
+
+---
+---
+
+# DEVOPS
+
+Density: `lean`. Scope: deliberately minimal — this feature deploys nothing and adds no infrastructure. All platform decisions are settled by the existing project and verified in-repo; none re-litigated. No contradiction with DESIGN.
+
+Prior-wave reading: ✓ `feature-delta.md` DISCUSS outcome-KPIs + DESIGN (lean single-file model holds both). Machine artifact produced: `environments.yaml`.
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+| Environment | Platform | Preconditions | Wall-clock target |
+|---|---|---|---|
+| `local-dev` | linux/macos/wsl | multi-core; assembly `Parallelizable(Fixtures)` active | full BE suite ≤ 3–4 min (locked Slice-01) |
+| `ci-runner` | GitHub Actions ubuntu-latest | constrained cores; `dotnet test -c Release … MaxCpuCount=0` | BE test step ≤ 7 min, from 12+ (locked Slice-01) |
+
+Full inventory + coexistence: `docs/feature/backend-test-speed/environments.yaml`.
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+**No pipeline change.** `ci_backend.yml` already (a) runs `dotnet test -c Release … RunConfiguration.MaxCpuCount=0` on the single BE test assembly, (b) extracts per-test timings to `test-timings-backend.csv` and uploads it as an artifact (#5020), and (c) carries the real-API integration path-filter (#5020 CS-H). The parallelization is a **test-project code change**, not a pipeline change. The US-04 ArchUnit guard runs as an ordinary test → it gates on the existing backend test step with **no new stage**.
+
+| Stage (existing) | Trigger | Change for this feature |
+|---|---|---|
+| Backend build + `dotnet test` | every PR + `main` | none — picks up the faster parallel suite + the guard automatically |
+| test-timings extract + upload | every PR + `main` | none — reused as the before/after measurement instrument (Slice-01/02) |
+
+## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
+
+| KPI | Instrument |
+|---|---|
+| OUT-be-test-ci-walltime | GitHub Actions backend test-step duration (run summary) + `test-timings-backend.csv` sum |
+| OUT-be-test-local-walltime | local `dotnet test` wall-clock, recorded in the Slice-01/02 measurement table |
+| OUT-be-parallel-debt | `grep -rl NonParallelizable` count vs the justified allowlist (US-04) |
+| OUT-be-suite-stability | 3× consecutive local green + CI merge-build green |
+| OUT-be-mutation-kill-rate | Stryker.NET per-feature report on any touched production file |
+| OUT-be-regression-guard | ArchUnit guard test: red on a planted off-allowlist `[NonParallelizable]` |
+
+No new observability stack, dashboard, or alerting — these are CI-artifact + local-stdout measurements (consistent with #5020 and the self-hosted, no-phone-home posture).
+
+## Wave: DEVOPS / [REF] Deployment strategy
+
+**N/A** — no deployable artifact. Rollback = `git revert` of the test-project change; the suite is its own safety net (green-3× gate).
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+**per-feature** (unchanged; CLAUDE.md gate ≥ 80 %). The assembly `Parallelizable` attribute must not break Stryker runs — re-validated on any production isolation seam (DISCUSS D9 / ADR-074). No CLAUDE.md change.
+
+## Wave: DEVOPS / [REF] Observability stack
+
+Reuse #5020's per-test timing artifacts (`Scripts/test-timings/*` + the `ci_backend.yml` extract/upload steps) as the measurement surface. No metrics/log/trace stack added.
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+**Trunk-based on `main`** (project standard). Each slice = a focused local commit; push at slice boundaries, wait for CI green, then transition ADO. No feature branches/PRs.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+The existing BE suite, the #5020 timing instrumentation, the Stryker per-feature configs, and the `ci_backend.yml` integration path-filter must all keep working. See `environments.yaml`.
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- `[assembly: Parallelizable(ParallelScope.Fixtures)]` present (verified).
+- `ci_backend.yml` timing instrumentation intact (verified — lines 116/118/139).
+- ArchUnitNET available in the test project (existing; used by current seam tests).
+
+## Wave: DEVOPS / [REF] Wave-decisions summary (DEVOPS)
+
+- **Deployment**: none (test-infra). **CI/CD**: GitHub Actions, existing `ci_backend.yml`, no new stage. **Branching**: trunk-based. **Observability**: reuse #5020 timing artifacts. **Mutation**: per-feature ≥ 80 % (unchanged).
+- **Constraint established**: the guard and the faster suite ride the existing backend test step — no pipeline edit, no new workflow (per `feedback-ci-and-e2e-minimalism`).
+- **Upstream changes**: none.
+- **Handoff**: DISTILL (acceptance design). `environments.yaml` parametrizes the local-vs-CI realism axis.

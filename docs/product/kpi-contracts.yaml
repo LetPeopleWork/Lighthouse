@@ -514,3 +514,50 @@ outcomes:
       adjusted, FE 95.9% adjusted (>= 80% gate). KPI-3 is vendor_demo_only — no central telemetry; tracked
       qualitatively until Epic 5015 opt-in telemetry lands.
     alerting: []
+
+  - id: OUT-be-test-ci-walltime
+    feature: backend-test-speed
+    title: PR CI backend test-step wall-clock
+    target: "<= 7 min (from 12+); precise target locked in Slice-01 re-baseline"
+    measurement_scope: vendor_demo_only   # CI runs on the LetPeopleWork GitHub org
+    measured_by: "GitHub Actions backend test-step duration + sum(test-timings-backend.csv)"
+    measurement_window: every Build And Deploy Lighthouse run; before/after table in Slice-01/02
+    rationale: >
+      Backend CI step regressed to 12+ min after 54 [NonParallelizable] opt-outs re-serialized the
+      suite. ADR-074 (per-fixture WebApplicationFactory ownership) re-enables fixture parallelism.
+      Reuses #5020's timing instrumentation; no new pipeline stage.
+    alerting: []
+
+  - id: OUT-be-test-local-walltime
+    feature: backend-test-speed
+    title: Local full backend suite wall-clock
+    target: "<= 3-4 min; precise target locked in Slice-01"
+    measurement_scope: per_instance
+    measured_by: "local `dotnet test ./Lighthouse.Backend` wall-clock, recorded in Slice-01/02 table"
+    measurement_window: inner loop; 3x consecutive runs at slice verification
+    rationale: "Inner-loop feedback velocity (job-dev-test-feedback-velocity)."
+    alerting: []
+
+  - id: OUT-be-parallel-debt
+    feature: backend-test-speed
+    title: Avoidable [NonParallelizable] opt-out count
+    target: "Reduced from 54 to the justified allowlist only (~<= 8 inherently-serial)"
+    measurement_scope: per_instance
+    measured_by: "`grep -rl NonParallelizable Lighthouse.Backend` vs the US-04 allowlist; ArchUnit guard enforces"
+    measurement_window: every CI run (guard is a normal test)
+    rationale: >
+      The debt accumulated because no guard existed after #5020 CS-P. US-04 adds an ArchUnit guard
+      that fails the build on any off-allowlist [NonParallelizable], preventing silent re-accumulation.
+    alerting:
+      - condition: "off-allowlist [NonParallelizable] present"
+        action: "build fails (ArchUnit guard red)"
+
+  - id: OUT-be-mutation-kill-rate
+    feature: backend-test-speed
+    title: Per-feature mutation kill rate on touched production files
+    target: ">= 80%"
+    measurement_scope: vendor_demo_only
+    measured_by: "Stryker.NET per-feature report"
+    measurement_window: per-feature (CLAUDE.md gate)
+    rationale: "Assembly Parallelizable attribute must not break mutation runs (ADR-074 / DISCUSS D9)."
+    alerting: []

@@ -1,0 +1,44 @@
+# environments.yaml — backend-test-speed (ADO #5258)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+# This feature deploys NOTHING — the "environments" are the contexts in which the
+# backend test suite executes. The meaningful realism axis is core count: a dev box
+# parallelizes fixtures across many cores; the CI runner is constrained, so the
+# wall-clock target is laxer there (≤3 min local vs ≤7 min CI).
+
+target_environments:
+  - name: local-dev
+    description: "Developer machine running `dotnet test ./Lighthouse.Backend` on the inner loop"
+    platform: [linux, macos, wsl]
+    preconditions:
+      - "multi-core (parallel fixtures scale with available cores)"
+      - "[assembly: Parallelizable(ParallelScope.Fixtures)] active"
+
+  - name: ci-runner
+    description: "GitHub Actions ubuntu-latest, `Build And Deploy Lighthouse` → ci_backend.yml backend test step"
+    platform: [linux]
+    preconditions:
+      - "GitHub Actions ubuntu-latest (constrained core count vs a dev box)"
+      - "dotnet test -c Release --no-build with RunConfiguration.MaxCpuCount=0"
+      - "test-timings extraction + artifact upload present (from #5020)"
+
+coexistence_matrix:
+  - tool: existing backend test suite (NUnit + Moq + EF in-memory/SQLite)
+    must_not_break: true
+  - tool: "#5020 per-test timing instrumentation (Scripts/test-timings/* + ci_backend.yml steps)"
+    must_not_break: true
+  - tool: Stryker.NET per-feature mutation configs
+    must_not_break: true   # assembly Parallelizable attribute must not break mutation runs
+  - tool: ci_backend.yml path-filter (real-API integration scoping, #5020 CS-H)
+    must_not_break: true
+
+platform_coverage:
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  macOS: [13.x, 14.x]
+  WSL: [WSL2]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "No deployment artifact — change is confined to the Lighthouse.Backend.Tests project + isolation seams."
+  - "The full backend suite MUST pass green 3× consecutively locally and green on the CI merge build (no flakes introduced by parallelism)."
+  - "Behaviour preserved: same tests, same assertions; only fixture/DB lifetime changes."
+  - "The regression guard (ArchUnit) runs as a normal test — it gates in CI with no new pipeline stage."
