@@ -1,0 +1,50 @@
+schema_version: 1
+id: lighthouse-maintainer
+created: 2026-06-14
+created_in_feature: website-screenshot-freshness
+
+display_name: Lighthouse Maintainer
+
+aliases:
+  - lighthouse-developer
+  - release-maintainer
+  - feature-finalizer
+
+short_description: >
+  A core Lighthouse contributor who builds features and runs them through finalization and release.
+  Responsible for keeping every public-facing surface — the docs site AND the marketing website —
+  honest and current as the product evolves. Values low-ceremony automation: the right outcome should
+  be the cheap default, not a manual chore bolted on at release time. Allergic to drift that
+  accumulates silently because nothing prompted a check at the moment it was owed.
+
+primary_jobs:
+  - job-maintainer-keep-website-current
+
+goals:
+  - Keep public screenshots accurate with near-zero per-release effort
+  - Catch "the website needs an update" at feature-finalization time, not weeks later at release
+  - Reuse the screenshot pipeline that already keeps the docs site current — one source of truth, two consumers
+
+frustrations:
+  - The marketing website lives in a separate repo, so its screenshots drift out of sight after a UI change
+  - Manually re-exporting and committing an image into another repo is exactly the kind of chore that gets skipped
+  - Batching website updates to release time produces huge, error-prone catch-up sessions on stale imagery
+
+mental_model:
+  - The docs-site `@screenshot` pipeline already produces canonical, current PNGs in `docs/assets/**`
+  - If the website just points at those, "keeping the website current" becomes a side effect of work already done
+  - A drift problem is best fixed with a gate at the moment of change (finalization), not a periodic clean-up
+
+vocabulary:
+  - "canonical asset" — the `docs/assets/**` PNG produced by an `@screenshot` E2E test, single source of truth
+  - "hotlink" — referencing a remote image by URL rather than bundling a local copy
+  - "finalization gate" — a checklist step at `nw-finalize` that must be answered before close-out
+  - "drift" — public imagery silently falling out of sync with the shipped UI
+
+related_personas:
+  - forecasting-prospect (the downstream beneficiary — the website visitor who must see current screenshots)
+
+not_this_persona:
+  - An end user of the Lighthouse product (uses the in-tool product personas)
+  - A website visitor / prospect (that is forecasting-prospect — the consumer of what this persona maintains)
+</content>

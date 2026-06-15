@@ -1,0 +1,70 @@
+schema_version: 1
+feature_id: website-screenshot-freshness
+updated: 2026-06-14
+ado: "#5259"
+
+journeys:
+
+  - name: keep-the-marketing-website-honest-for-free
+    goal: >
+      A Lighthouse maintainer finishes a feature that changes a marketed UI surface; the website's
+      screenshot of that surface becomes current automatically (it points at the canonical
+      docs/assets PNG the @screenshot suite already regenerated), and finalization prompts a check
+      so nothing slips — without re-exporting and committing an image into a separate repo.
+    persona: lighthouse-maintainer
+
+    emotional_arc:
+      start: Resigned — "The website screenshots are stale again and I only notice at release; fixing
+        them means a tedious cross-repo image dump."
+      middle: Relieved — "The website just points at the canonical asset my @screenshot test already
+        produced. Updating the docs updated the website too."
+      end: Confident — "Finalization asks me about the website while the change is fresh in my head;
+        drift can't pile up unseen anymore."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How does the website get current screenshots?
+        decision: >
+          GitHub-hosted latest images — the website references the canonical docs/assets PNGs the
+          @screenshot E2E suite already regenerates, instead of bundling stale local copies.
+      - id: D2
+        question: Which host serves the GitHub-hosted images?
+        decision: >
+          RECOMMENDED jsDelivr (cdn.jsdelivr.net/gh) over raw.githubusercontent (not a CDN,
+          rate-limited, wrong content-type). DESIGN to finalize; the walking skeleton proves it live.
+      - id: D3
+        question: Does the website show latest main or latest release?
+        decision: >
+          RECOMMENDED pin to the latest RELEASE tag (jsDelivr @latest), so prospects see released UI,
+          not in-flight main. Revisitable to @main for absolute-latest. Product call.
+      - id: D4
+        question: Is video in scope?
+        decision: NO — the website .mp4 walkthroughs are unchanged; automated video is a follow-up.
+      - id: D5
+        question: Is the OG/SEO image migrated too?
+        decision: >
+          NO — public/forecasts-project.png stays website-hosted; social scrapers/SEO need a stable
+          same-origin absolute URL. Refreshed manually, separately.
+
+    surfaces:
+      - website-lighthouse-page: website/src/pages/Lighthouse.tsx and components/LighthouseSection.tsx
+        — the marketed screenshots switch from bundled imports to GitHub-hosted URLs.
+      - lighthouse-screenshot-suite: Lighthouse.EndToEndTests @screenshot tests writing docs/assets/**.
+      - finalization-gate: CLAUDE.md DELIVER mandate + nw-finalize checklist.
+
+    out_of_scope:
+      - Video / walkthrough refresh and automated capture (D4).
+      - OG/SEO image migration (D5).
+      - Automated drift detection / CI enforcement (the gate is manual this story).
+      - Website layout/marketing redesign.
+
+    cross_cutting:
+      rbac: >
+        N/A — no authorization surface. Public static-asset linking plus a developer-process checklist;
+        no IRbacAdministrationService interaction, no useRbac() gating.
+      clients: >
+        N/A — no API contract added or changed; nothing for CLI/MCP to wrap, no version gate.
+      website: >
+        PRIMARY surface — the feature's main deliverable is the website change (bundled imports →
+        GitHub-hosted URLs), coordinated with Lighthouse-side canonical-asset generation. Spans both repos.
+</content>

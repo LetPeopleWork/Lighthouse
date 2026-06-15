@@ -1,0 +1,97 @@
+{
+  "roadmap": {
+    "project_id": "website-screenshot-freshness",
+    "created_at": "2026-06-14",
+    "total_steps": 4,
+    "phases": 3
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "/storage/repos/website/src",
+      "Lighthouse.EndToEndTests/tests/specs/screenshots",
+      "docs/assets"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "main-orchestrator",
+    "reviewed_at": "2026-06-14",
+    "method": "Consolidated 3-reviewer DISTILL gate (Eclipse/Architect/Sentinel) approved 0 blockers. Cross-repo TS/Playwright/docs feature; real stacks Vitest (website) + Playwright @screenshot (Lighthouse), not pytest/des-Python. Roadmap self-approved by orchestrator given tiny scope + passed gate."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Walking skeleton — one image via jsDelivr CDN (website repo)",
+      "description": "Prove the jsDelivr @main hotlink boundary (DDD-2/DDD-3) live with one real image before any bulk migration. Ship the lighthouseAsset() URL-convention helper (DDD-8) as the reusable abstraction first.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "lighthouseAsset() helper + Vitest + migrate one screenshot to jsDelivr CDN",
+          "criteria": "WEBSITE REPO at /storage/repos/website. lighthouseAsset('features/metrics/metricsoverview.png') returns 'https://cdn.jsdelivr.net/gh/LetPeopleWork/Lighthouse@main/docs/assets/features/metrics/metricsoverview.png'; it normalizes a leading slash (e.g. '/features/teamdetail.png') without a double slash and without dropping segments; a nested path round-trips. ONE marketing image in LighthouseSection.tsx is changed from a bundled '@/assets/screenshots/*.png' import to lighthouseAsset(...) in mediaItems. Vitest unit spec for lighthouseAsset passes. Website build (tsc -b + vite) clean and Biome zero issues. GitHub.png and the OG/SEO image are NOT touched (DDD-9/DDD-5 exclusions hold). Orchestrator live-verifies the migrated image loads from the CDN URL in the running website after COMMIT.",
+          "test_file": "/storage/repos/website/src/lib/lighthouseAsset.test.ts",
+          "scenario_name": "DISTILL S1 (live render) + S2/S3 (helper unit + normalization)",
+          "files_to_modify": [
+            "/storage/repos/website/src/lib/lighthouseAsset.ts",
+            "/storage/repos/website/src/lib/lighthouseAsset.test.ts",
+            "/storage/repos/website/src/components/LighthouseSection.tsx"
+          ],
+          "implementation_notes": "RED first: author lighthouseAsset.test.ts (helper absent -> fail), then implement the ~10-LOC helper (GREEN). Base = 'https://cdn.jsdelivr.net/gh/LetPeopleWork/Lighthouse@main/docs/assets/'; strip a single leading '/' from the path before concatenation. Pick metricsoverview as the one migrated image (it maps cleanly per the DESIGN mapping). Website uses Vitest (bun/pnpm) — match the repo's existing test/build scripts (vitest run; build = tsc + vite; Biome via prebuild). Do NOT push the website repo — orchestrator handles push after live verification + user review.",
+          "estimated_hours": 2
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "One-time refresh of all 10 website screenshots",
+      "description": "Resolve the mapping audit (OQ-1/OQ-2), produce any missing canonical marketing assets via the existing @screenshot pipeline (run live), then migrate the remaining website references and remove dead bundled copies.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Portfolio-metrics marketing @screenshot tests (Lighthouse E2E), run live, regenerate canonical assets",
+          "criteria": "LIGHTHOUSE REPO. The 10->canonical mapping audit is resolved and recorded (which map directly vs which need a new shot — OQ-1: Query_Configuration/Metrics_Team_2/Forecasts_Team_Epics; OQ-2: the 2 portfolio-metrics gaps). Each confirmed gap has a focused per-theme @screenshot test extending Screenshots.spec.ts (driven from testWithDemoData, written via getPathToDocsAssetsFolder()). New @screenshot tests are RUN LIVE against a clean backend (not just type-checked) and write canonical PNGs into docs/assets/**. If the final gap count exceeds 2, the overflow is flagged for a follow-up bespoke-shot slice (US-02 hypothesis).",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+          "scenario_name": "DISTILL S6/S7 (canonical marketing assets produced)",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts"
+          ],
+          "implementation_notes": "Reuse the existing @screenshot pattern (DDD-10) — no parallel pipeline. Destructure testData from testWithDemoData or the demo fixture won't run. If a small change wouldn't clear the 0.5% pixel-diff threshold, rm the stale target PNG first to force a fresh write, then Read it to confirm. Per-theme (one test per theme), not a monolith.",
+          "estimated_hours": 4
+        },
+        {
+          "id": "02-02",
+          "name": "Migrate remaining website screenshots to jsDelivr URLs + migration guard + remove dead imports",
+          "criteria": "WEBSITE REPO. The remaining still-screenshots (all except GitHub.png) in Lighthouse.tsx and LighthouseSection.tsx are migrated from bundled imports to lighthouseAsset(...) URLs, each mapped to its canonical docs/assets path (from 02-01). A Vitest migration-guard asserts: every migrated mediaItems entry is a jsDelivr URL; GitHub.png stays a bundled import; the OG/SEO image stays same-origin (DDD-5/DDD-9). Dead bundled copies for migrated images are removed from src/assets/screenshots/ with no dangling imports. Website build + Biome clean. Orchestrator live-verifies all Lighthouse images load from the CDN on the running site.",
+          "test_file": "/storage/repos/website/src/components/LighthouseSection.test.tsx",
+          "scenario_name": "DISTILL S4 (all migrated reference CDN) + S5 (exclusions preserved)",
+          "files_to_modify": [
+            "/storage/repos/website/src/pages/Lighthouse.tsx",
+            "/storage/repos/website/src/components/LighthouseSection.tsx",
+            "/storage/repos/website/src/components/LighthouseSection.test.tsx",
+            "/storage/repos/website/src/assets/screenshots/"
+          ],
+          "implementation_notes": "Use the lighthouseAsset() helper from 01-01. Keep GitHub.png import and the ogImage/structuredData.screenshot same-origin references untouched. Map each website image to the canonical path confirmed in 02-01. Do NOT push — orchestrator handles push after live verification + user review.",
+          "estimated_hours": 3
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Finalization website-freshness gate",
+      "description": "Keep the website fresh by a manual gate at finalization, mirroring the existing per-feature docs/screenshot discipline (D7/DDD-7).",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Website-freshness finalization gate in CLAUDE.md DELIVER mandate",
+          "criteria": "LIGHTHOUSE REPO. A Website-freshness gate item is added to the CLAUDE.md 'DELIVER Wave - Docs & Screenshots at Finalization' mandate, mirroring the existing docs/screenshot discipline: changed marketed UI surface -> regenerate canonical docs/assets asset (auto-served to the website via jsDelivr @main) -> confirm the website references the correct asset path. The gate requires an explicit answer (incl. 'N/A, because...'). nw-finalize reads CLAUDE.md, so the reference is via that mandate. Wording matches the existing terse house style. Docs-only change -> DES-exempt.",
+          "test_file": "(none — documentation/process change, DES-exempt)",
+          "scenario_name": "DISTILL S8 (finalization gate present, non-skippable)",
+          "files_to_modify": [
+            "CLAUDE.md"
+          ],
+          "implementation_notes": "Single additive bullet block under the existing DELIVER mandate. DES-exempt (docs) — mark with <!-- DES-ENFORCEMENT : exempt --> in the dispatch if run via crafter, or apply directly as a docs edit.",
+          "estimated_hours": 1
+        }
+      ]
+    }
+  ]
+}

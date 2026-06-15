@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-06-06
+updated: 2026-06-14
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -20,6 +20,7 @@ feature_context:
   - recurring-blackout-events
   - multiple-cycle-times
   - work-item-age-percentiles
+  - website-screenshot-freshness
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1813,4 +1814,103 @@ jobs:
         give an indirect proxy, but there is no direct WIP-age summary. Gap: 2 - a genuine
         but contained gap; reuses the existing percentile machinery and aging chart rather
         than new analysis, so the lift is small.
+
+  - id: job-maintainer-keep-website-current
+    title: Keep the marketing website's screenshots current without a cross-repo chore
+    persona: lighthouse-maintainer
+    feature_context: website-screenshot-freshness
+    created: 2026-06-14
+    note: >
+      NEW in website-screenshot-freshness (ADO #5259). The marketing website (separate repo
+      LetPeopleWork/website) bundles its own stale copies of Lighthouse screenshots, so they drift
+      out of sync after every UI change and only get noticed at release. The docs-site @screenshot
+      pipeline already regenerates canonical PNGs in docs/assets/**; this job makes the website
+      consume those (GitHub-hosted, D1) so "keep the website current" becomes a side effect of work
+      already done, plus a finalization gate (D7) so drift can't re-accumulate unseen.
+    job_story: >
+      When I finish a Lighthouse feature that changes a UI surface the website markets,
+      I want the website's screenshot of that surface to become current without me manually
+      re-exporting and committing an image into a separate repo,
+      so keeping the marketing site honest costs me nothing per release and I catch the need
+      while the change is still fresh in my head.
+    dimensions:
+      functional: >
+        The website references the canonical docs/assets PNGs the @screenshot suite regenerates
+        (via a GitHub-file CDN, D2, pinned to the latest release tag, D3) instead of bundling local
+        copies; feature finalization carries an explicit Website-freshness gate (D7) that must be
+        answered (including "N/A, because...") before close-out.
+      emotional: >
+        Move from resignation ("stale again, and fixing it is a tedious cross-repo image dump") to
+        confidence ("updating the docs updated the website too, and finalization reminds me to check").
+      social: >
+        Be the maintainer whose public surfaces are trustworthy — the website shows the product as it
+        actually is, with no embarrassing version-old screenshots in front of prospects.
+    forces:
+      push: >
+        The website lives in a separate repo, so its screenshots drift out of sight; manual
+        re-export-and-commit is exactly the chore that gets skipped; batching to release time
+        produces huge, error-prone catch-up sessions.
+      pull: >
+        Point the website at the canonical assets already produced for the docs site — one source of
+        truth, two consumers — and gate finalization so the check happens at the moment of change.
+      anxiety: >
+        Will hotlinking GitHub-hosted images render reliably on the live site? (Mitigated: the
+        walking skeleton proves it live before any bulk migration; jsDelivr if raw is unreliable.)
+        Will the website show in-flight main? (Mitigated by D3: pin to latest release tag.)
+      habit: >
+        Maintainers are used to treating the website as a separate manual artifact updated at release;
+        this asks them to trust the auto-served pipeline and a finalization checklist instead.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 - public-imagery honesty matters for credibility but is a maintainer-process
+        concern, not a core product capability. Current satisfaction: 1 - today the website drifts and
+        is fixed manually and late. Gap: 2 - real and recurring, but bounded: it reuses the existing
+        screenshot pipeline, so the marginal work is the consuming-side wiring plus a checklist gate.
+
+  - id: job-prospect-trust-current-screenshots
+    title: Trust that the website's screenshots show the product as it actually is today
+    persona: forecasting-prospect
+    feature_context: website-screenshot-freshness
+    created: 2026-06-14
+    note: >
+      NEW in website-screenshot-freshness (ADO #5259). The downstream beneficiary of the maintainer
+      job. A prospect evaluating Lighthouse on the marketing website judges credibility partly on
+      whether the screenshots match a real, current product. Stale imagery quietly erodes trust at the
+      top of the funnel.
+    job_story: >
+      When I evaluate Lighthouse on the website,
+      I want the screenshots to show the product as it actually looks today,
+      so I can trust that what I'm being sold is what I'll get when I install it.
+    dimensions:
+      functional: >
+        Every Lighthouse screenshot on the website depicts the current released UI (served from the
+        canonical docs/assets set), not a version-old rendering.
+      emotional: >
+        Move from low-grade skepticism ("is this tool actually like this, or is the marketing dated?")
+        to confidence ("the screenshots look like the real, maintained product").
+      social: >
+        Be able to bring a screenshot from the website to my team as a faithful preview of what we'd
+        adopt, without being caught out by a UI that has since changed.
+    forces:
+      push: >
+        Outdated screenshots signal a neglected product and undercut the credibility the marketing
+        copy is trying to build.
+      pull: >
+        Current, real screenshots make the evaluation honest and lower the perceived risk of trying it.
+      anxiety: >
+        What if the product doesn't actually look like the marketing? (Mitigated: screenshots are the
+        same canonical assets the live docs use.)
+      habit: >
+        Prospects discount marketing imagery as aspirational; current screenshots earn back that trust.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        Importance: 3 - top-of-funnel credibility matters but is one of many trust signals. Current
+        satisfaction: 2 - the screenshots exist and are broadly representative, just dated. Gap: 1 -
+        small but real; this job is the downstream payoff of the maintainer job, not an independent ask.
 

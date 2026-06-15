@@ -2302,3 +2302,47 @@ Default EXTEND/REUSE honoured. The only CREATE-NEW backend artifacts are 2 thin 
 ### C4
 
 System Context: **unchanged** (no new actor, no new external system). Container delta: **2 new endpoints** (Team + Portfolio `workItemAgePercentiles`) on the existing Backend container, consumed by the existing Frontend SPA container, plus the Lighthouse-Clients (separate repo) gaining version-gated wrappers for them. See `docs/product/architecture/c4-diagrams.md` → "C4 Architecture Diagrams — work-item-age-percentiles".
+
+---
+
+## Application Architecture — website-screenshot-freshness (DESIGN delta)
+
+Feature: website-screenshot-freshness (ADO #5259)
+Wave: DESIGN
+Date: 2026-06-14
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE (decisions pre-locked in DISCUSS)
+
+This feature is a **cross-repo wiring + process** change. It introduces **no new backend architectural pattern, no API contract, no persistence, no RBAC surface, and no Lighthouse-Clients impact.** The Lighthouse product architecture (ports-and-adapters / hexagonal, ADR-027) is unchanged. The deliverable spans the Lighthouse repo (canonical-asset generation + finalization process) and the separate `LetPeopleWork/website` repo (marketing-site consumption).
+
+**What changes:** the marketing website stops bundling its own stale copies of 10 Lighthouse product screenshots (`website/src/assets/screenshots/*.png`, imported into `src/pages/Lighthouse.tsx` and `src/components/LighthouseSection.tsx`) and instead hotlinks the canonical `docs/assets/**` PNGs — the same assets the `@screenshot` E2E suite already regenerates per feature — through the **jsDelivr GitHub CDN pinned to `@main`** (`https://cdn.jsdelivr.net/gh/LetPeopleWork/Lighthouse@main/docs/assets/<path>.png`). A single ~10-LOC website helper (`src/lib/lighthouseAsset.ts`) owns the URL convention.
+
+### Driven dependency introduced (website runtime)
+
+- **jsDelivr GitHub CDN** — an external, public CDN the website GETs each marketing PNG from at runtime. This is the feature's highest-risk boundary (CDN availability + `main` not regressing an asset). **Earned-trust probe:** the US-01 walking skeleton exercises the real boundary live (Network panel: 200, `Content-Type: image/png`, correct dimensions, no broken image) before any bulk migration; at the platform-architect handoff this becomes a lightweight deployed-site link-check / image smoke test (the static-asset-CDN analogue of a contract test — no Pact, as there is no typed API surface).
+- **Produced artifact:** `docs/assets/**` canonical PNGs, written by the existing `@screenshot` suite (unchanged mechanism), read-only by the website.
+
+### Exclusions (named, not silently omitted)
+
+- The OG/SEO image `website/public/forecasts-project.png` stays website-hosted same-origin (SEO/social scrapers need a stable same-origin URL).
+- `GitHub.png` (a github.com README screenshot, not a Lighthouse product surface) stays website-bundled — the `@screenshot` suite screenshots the running app and cannot produce it.
+
+### Reuse Analysis (this feature)
+
+EXTEND the existing `@screenshot` → `docs/assets` pipeline (`Lighthouse.EndToEndTests/.../Screenshots.spec.ts` + `tests/helpers/screenshots.ts`, `testWithDemoData`) for marketing-gap shots — no parallel pipeline. REUSE the 105 existing canonical PNGs (5–8 of the 10 website shots map directly). EXTEND `Lighthouse.tsx` / `LighthouseSection.tsx` (bundled `import` → `lighthouseAsset()` URL). CREATE only the ~10-LOC `lighthouseAsset()` helper (no remote-asset helper exists in the website repo today). EXTEND `CLAUDE.md` DELIVER mandate + `nw-finalize` for the manual freshness gate.
+
+### ADR References (this feature)
+
+- [ADR-073](./adr-073-website-github-hosted-screenshot-linking.md): website marketing screenshots are hotlinked from `docs/assets` via the **jsDelivr GitHub CDN at `@main`**, with the OG image and `GitHub.png` excluded, and freshness held by a manual finalization gate. (Alternatives: raw.githubusercontent host, bundle-and-copy status quo, release-tag pin, automated drift detection — all considered and rejected.) ACCEPTED (2026-06-14).
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| The website builds the CDN URL only via `lighthouseAsset()` — no hand-written `cdn.jsdelivr.net` literals scattered across components | Grep / lint in the website repo: `cdn.jsdelivr.net` appears only in `src/lib/lighthouseAsset.ts` |
+| No migrated screenshot is referenced both as a bundled `import` and a CDN URL (no dead imports) | `bun run build` clean + website test/lint: no unused `@/assets/screenshots/*` imports remain for migrated images |
+| Marketing-gap screenshots are produced by the existing pipeline, not a new one | New `@screenshot` tests live in `Screenshots.spec.ts` and write via `getPathToDocsAssetsFolder()`; run live before commit (project rule) |
+| Every one of the 10 website shots is mapped, gap-filled, or explicitly excluded | feature-delta 10→canonical mapping table; US-02 AC "no silent omission" |
+
+### C4
+
+System Context & Container: **unchanged for the Lighthouse product** (no new actor, system, endpoint, or store). The delta is a cross-repo asset-flow wiring (website → jsDelivr CDN → `docs/assets` ← `@screenshot` suite, with a manual finalization gate). Diagram in `docs/feature/website-screenshot-freshness/feature-delta.md` → "Wave: DESIGN / [REF] C4 delta" and `docs/product/architecture/c4-diagrams.md` → "C4 Architecture Diagrams — website-screenshot-freshness".

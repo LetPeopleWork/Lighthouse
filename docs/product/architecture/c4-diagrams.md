@@ -1018,3 +1018,49 @@ The diagram makes four commitments visible:
 3. **Line-source swap between two server-fetched arrays (ADR-066)** — `activePercentiles = percentileSource === "workItemAge" ? WIA : CT` feeds the *existing* single `ChartsReferenceLine` block; both arrays are fetched (CT + the new WIA endpoint); exactly one set on the canvas by construction; `useChartVisibility` unchanged.
 4. **New endpoint ⇒ version-gated clients** — the CLI + MCP wrappers pre-check the server version (an old server 404s opaquely) and fail with an "upgrade Lighthouse" error; `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry; tracked in the separate clients repo. Empty WIP ⇒ `BuildPercentiles([])` `0`-valued set ⇒ card empty state + chart no-lines; the pace-band overlay chip is untouched by the toggle (D2 / ADR-020).
 
+---
+
+# C4 Architecture Diagrams — website-screenshot-freshness
+
+Feature: website-screenshot-freshness (ADO #5259)
+Wave: DESIGN
+Date: 2026-06-14
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE (decisions pre-locked in DISCUSS)
+ADRs: ADR-073 (website marketing screenshots hotlinked from `docs/assets` via the jsDelivr GitHub CDN at `@main`; OG image + `GitHub.png` excluded; manual finalization gate).
+
+**Lighthouse product System Context & Container: unchanged** — no new actor, system, endpoint, or store. The delta is a **cross-repo asset-flow wiring**: the separate marketing website reads canonical `docs/assets` PNGs over the jsDelivr CDN (a new external driven dependency of the website at runtime); the existing `@screenshot` E2E suite produces those PNGs; a manual finalization gate keeps the website fresh. No backend change.
+
+## C4 Level 2 — Container (cross-repo asset flow)
+
+```mermaid
+C4Container
+    title Container Diagram — website-screenshot-freshness (cross-repo asset flow)
+    Person(prospect, "Forecasting prospect", "Evaluates Lighthouse on the marketing site")
+    Person(maintainer, "Lighthouse maintainer", "Finalizes features; owns public-surface freshness")
+
+    System_Boundary(web, "website repo (LetPeopleWork/website)") {
+        Container(site, "Marketing website", "Vite + React + TS", "Renders Lighthouse screenshots via lighthouseAsset() CDN URLs; OG image + GitHub.png stay bundled")
+    }
+    System_Ext(cdn, "jsDelivr GitHub CDN", "cdn.jsdelivr.net/gh @main", "Caches & serves docs/assets PNGs as image/png (~12h branch cache)")
+    System_Boundary(lh, "Lighthouse repo (LetPeopleWork/Lighthouse)") {
+        ContainerDb(assets, "docs/assets/** PNGs", "Static files on main", "Canonical product screenshots — single source of truth")
+        Container(e2e, "@screenshot E2E suite", "Playwright + testWithDemoData", "Regenerates canonical PNGs at finalization via getPathToDocsAssetsFolder()")
+        Container(gate, "Finalization gate", "CLAUDE.md DELIVER mandate + nw-finalize", "Manual website-freshness check; explicit answer required")
+    }
+
+    Rel(prospect, site, "Views current product screenshots on")
+    Rel(site, cdn, "Hotlinks PNG via", "HTTPS GET (lighthouseAsset @main)")
+    Rel(cdn, assets, "Fetches & caches from", "GitHub raw @main")
+    Rel(e2e, assets, "Regenerates")
+    Rel(maintainer, gate, "Answers at finalization")
+    Rel(gate, e2e, "Prompts regen of changed marketed surface")
+```
+
+This diagram makes three commitments visible:
+
+1. **Single source of truth (ADR-073 / DDD-1)** — the website is a pure consumer of `docs/assets`; the `@screenshot` suite is the sole producer. No parallel marketing-image pipeline; covered screenshots become current automatically when the suite regenerates them at finalization.
+2. **jsDelivr `@main` is the only transport (DDD-2/3/8)** — exactly one external driven dependency, its URL convention localized to the `lighthouseAsset()` helper. The walking skeleton (US-01) probes it live before bulk migration; a deployed-site link-check is the platform-handoff smoke test.
+3. **Two named exclusions** — the OG/SEO image (same-origin SEO requirement, DDD-5) and `GitHub.png` (a non-product github.com surface the `@screenshot` suite cannot produce, DDD-9) stay website-bundled. No silent omission.
+
+No Level 3 — the change is wiring + process, not internal component decomposition. The C4 here and in `docs/feature/website-screenshot-freshness/feature-delta.md` are the same diagram; the feature-delta also carries the 10→canonical mapping table that sizes slice-02.
+
