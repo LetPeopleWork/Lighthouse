@@ -499,6 +499,12 @@ testWithDemo(
 
 		const portfolioMetricsPage = await portfolioDetailPage.goToMetrics();
 
+		await expect(
+			portfolioMetricsPage.page
+				.locator('[data-testid="dashboard-item-predictabilityScore"]')
+				.getByText(/%/),
+		).toBeVisible({ timeout: 90_000 });
+
 		await takePageScreenshot(
 			portfolioMetricsPage.page,
 			"features/metrics/portfoliometricsoverview.png",
