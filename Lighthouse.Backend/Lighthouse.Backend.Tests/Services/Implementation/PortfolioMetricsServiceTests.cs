@@ -38,6 +38,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             forecastServiceMock = new Mock<IForecastService>();
             var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(sp => sp.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
+                .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(forecastServiceMock.Object);
 

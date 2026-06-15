@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns(new RefreshSettings { Interval = 1 });
 
             var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(sp => sp.GetService(typeof(Lighthouse.Backend.Cache.Cache<string, object>)))
+                .Returns(new Lighthouse.Backend.Cache.Cache<string, object>());
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(Mock.Of<IForecastService>());
 

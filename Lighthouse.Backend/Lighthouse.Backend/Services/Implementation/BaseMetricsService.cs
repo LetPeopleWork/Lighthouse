@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public abstract class BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider)
     {
-        private static readonly Cache<string, object> MetricsCache = new();
+        private Cache<string, object> MetricsCache => field ??= serviceProvider.GetRequiredService<Cache<string, object>>();
 
         private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();
 
@@ -907,7 +907,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return metric;
         }
 
-        protected static void InvalidateMetrics<TEntity>(TEntity entity, ILogger logger) where TEntity : class, IEntity
+        protected void InvalidateMetrics<TEntity>(TEntity entity, ILogger logger) where TEntity : class, IEntity
         {
             logger.LogInformation("Invalidating Metrics for Entity Id: {EntityId}", entity.Id);
             var entityKeys = MetricsCache.Keys.Where(k => k.StartsWith($"{entity.Id}_")).ToList();
@@ -1317,7 +1317,7 @@ namespace Lighthouse.Backend.Services.Implementation
             MetricsCache.Store(key, metric, TimeSpan.FromMinutes(refreshRateInMinutes));
         }
 
-        private static TMetric? GetMetricFromCache<TMetric>(string key) where TMetric : class
+        private TMetric? GetMetricFromCache<TMetric>(string key) where TMetric : class
         {
             var metric = MetricsCache.Get(key);
 

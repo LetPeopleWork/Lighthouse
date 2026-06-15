@@ -836,6 +836,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();
             builder.Services.AddScoped<IAssemblyService, AssemblyService>();
+            builder.Services.AddSingleton<Lighthouse.Backend.Cache.Cache<string, object>>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
