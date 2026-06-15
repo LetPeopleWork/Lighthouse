@@ -19,7 +19,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {
     [TestFixture]
-    [NonParallelizable]
     public class DeliveryMetricSnapshotRecordingHandlerTest
     {
         private static readonly int[] ExpectedWhenPercentiles = [50, 70, 85, 95];

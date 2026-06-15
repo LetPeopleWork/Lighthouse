@@ -7,7 +7,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [NonParallelizable]
     public class BlackoutForecastShiftTeamForecastIntegrationTest : BlackoutForecastShiftTestBase
     {
         [SetUp]

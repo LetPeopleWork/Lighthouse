@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private async Task<int> SnapshotRowCountForDelivery(int deliveryId)
         {
-            using var scope = SharedFactory.Services.CreateScope();
+            using var scope = WebApplicationFactory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<Data.LighthouseAppContext>();
             return await context.DeliveryMetricSnapshots.CountAsync(s => s.DeliveryId == deliveryId);
         }

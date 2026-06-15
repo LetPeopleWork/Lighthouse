@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                 services.AddDbContext<LighthouseAppContext>(options =>
                 {
-                    options.UseSqlite($"DataSource={databaseFileName}",
+                    options.UseSqlite($"DataSource={databaseFileName};Pooling=False",
                         x => x.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
                 });
             });

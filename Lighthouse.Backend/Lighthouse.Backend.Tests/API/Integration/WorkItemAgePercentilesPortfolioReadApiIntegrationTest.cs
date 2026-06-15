@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [NonParallelizable]
     public class WorkItemAgePercentilesPortfolioReadApiIntegrationTest
     {
         private const string Building = "Building";

@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// downgrade), cross-cutting invariant #5 (RBAC: PUT requires TeamWrite).
     /// </summary>
     [TestFixture]
-    [NonParallelizable]
     public class ForecastFilterTeamSettingsIntegrationTest
     {
         private TestWebApplicationFactory<Program> rootFactory = null!;

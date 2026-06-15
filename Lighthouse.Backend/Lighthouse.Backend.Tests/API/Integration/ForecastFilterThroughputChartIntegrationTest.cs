@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// invariant #1 (default Raw behaviour preserved), US-07 (premium gate downgrade).
     /// </summary>
     [TestFixture]
-    [NonParallelizable]
     public class ForecastFilterThroughputChartIntegrationTest
     {
         private static int testDateOffset;

@@ -22,15 +22,6 @@ namespace Lighthouse.Backend.Tests
         public void EmitReport()
         {
             TryEmit();
-            DisposeSharedFactory();
-        }
-
-        private static void DisposeSharedFactory()
-        {
-            if (IntegrationTestBase.TryGetSharedFactoryIfCreated(out var factory))
-            {
-                factory!.Dispose();
-            }
         }
 
         private static void TryEmit()

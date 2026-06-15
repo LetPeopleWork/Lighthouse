@@ -19,7 +19,6 @@ using Microsoft.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [NonParallelizable]
     public class PortfolioDeleteSerialisationTests
     {
         private TestWebApplicationFactory<Program> factory;

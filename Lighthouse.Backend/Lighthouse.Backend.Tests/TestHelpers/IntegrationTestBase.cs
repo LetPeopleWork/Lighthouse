@@ -5,48 +5,25 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     [TestFixture]
-    [NonParallelizable]
     public abstract class IntegrationTestBase
     {
-        private static readonly Lazy<TestWebApplicationFactory<Program>> SharedFactoryLazy =
-            new(() => new TestWebApplicationFactory<Program>(), isThreadSafe: true);
-
-        internal static TestWebApplicationFactory<Program> SharedFactory => SharedFactoryLazy.Value;
-
-        internal static bool TryGetSharedFactoryIfCreated(out TestWebApplicationFactory<Program>? factory)
-        {
-            if (SharedFactoryLazy.IsValueCreated)
-            {
-                factory = SharedFactoryLazy.Value;
-                return true;
-            }
-
-            factory = null;
-            return false;
-        }
-
         private readonly TestWebApplicationFactory<Program> webApplicationFactory;
-        private readonly bool ownsFactory;
         private IServiceScope serviceScope;
 
         protected IntegrationTestBase()
-            : this(SharedFactory, ownsFactory: false)
+            : this(new TestWebApplicationFactory<Program>())
         {
         }
 
         protected IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory)
-            : this(webApplicationFactory, ownsFactory: true)
-        {
-        }
-
-        private IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory, bool ownsFactory)
         {
             this.webApplicationFactory = webApplicationFactory;
-            this.ownsFactory = ownsFactory;
             Client = webApplicationFactory.CreateClient();
         }
 
         protected IServiceProvider ServiceProvider { get; private set; }
+
+        protected TestWebApplicationFactory<Program> WebApplicationFactory => webApplicationFactory;
 
         protected HttpClient Client { get; }
 
@@ -56,11 +33,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public void GlobalTearDown()
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
-            if (ownsFactory)
-            {
-                webApplicationFactory.Dispose();
-            }
-
+            webApplicationFactory.Dispose();
             Client.Dispose();
         }
 

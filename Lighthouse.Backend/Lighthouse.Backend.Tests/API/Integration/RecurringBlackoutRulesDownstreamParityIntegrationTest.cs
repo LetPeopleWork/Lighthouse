@@ -8,7 +8,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [NonParallelizable]
     [Category("recurring-blackout-events")]
     public class RecurringBlackoutRulesDownstreamParityIntegrationTest : RecurringBlackoutRulesTestBase
     {

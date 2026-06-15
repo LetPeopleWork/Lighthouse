@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [NonParallelizable]
     public class NamedCycleTimeReadApiIntegrationTest
     {
         private const string Backlog = "Backlog";

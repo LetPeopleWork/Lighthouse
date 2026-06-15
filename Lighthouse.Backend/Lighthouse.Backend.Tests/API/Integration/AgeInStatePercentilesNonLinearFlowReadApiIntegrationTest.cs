@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    [NonParallelizable]
     public class AgeInStatePercentilesNonLinearFlowReadApiIntegrationTest
     {
         private const string InProgress = "In Progress";

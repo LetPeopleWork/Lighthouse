@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // (the premium gate lives on definition create/update only), so a portfolio viewer reads the named
     // branch just like the Default.
     [TestFixture]
-    [NonParallelizable]
     public class NamedCycleTimePortfolioIntegrationTest
     {
         private const string Backlog = "Backlog";

@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests
 {
     [TestFixture]
-    [NonParallelizable]
     public class LighthouseAppContextConcurrencyTest
     {
         private TestWebApplicationFactory<Program> factory = null!;

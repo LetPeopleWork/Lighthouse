@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // read-side license gate — the premium gate lives on definition create/update only), mirroring the
     // read-gate removal in 01-01.
     [TestFixture]
-    [NonParallelizable]
     public class NamedCycleTimeCumulativeScopeIntegrationTest
     {
         private const string Backlog = "Backlog";

@@ -18,7 +18,6 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    [NonParallelizable]
     public class S5_ApiKeyScopesTests
     {
         private const string CreateApiKeyPath = "/api/v1/apikeys";

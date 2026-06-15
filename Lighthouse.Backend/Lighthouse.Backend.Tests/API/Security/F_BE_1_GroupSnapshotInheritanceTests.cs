@@ -20,7 +20,6 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    [NonParallelizable]
     public class F_BE_1_GroupSnapshotInheritanceTests
     {
         private const string TeamsPath = "/api/v1/teams";

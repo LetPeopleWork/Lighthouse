@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // Assertions target the HTTP/JSON contract only — zero references to not-yet-existing production types,
     // so the project compiles green now and the suite is Skipped until DELIVER un-ignores one slice at a time.
     [TestFixture]
-    [NonParallelizable]
     public class FlowEfficiencyReadApiIntegrationTest
     {
         private const string PendingReason = "pending — DELIVER (wait-states-flow-efficiency)";
