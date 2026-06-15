@@ -18,6 +18,7 @@ target_environments:
     platform: [linux]
     preconditions:
       - "GitHub Actions ubuntu-latest (constrained core count vs a dev box)"
+      - "assumes >= 2 usable cores; the <=7 min CI target is tied to this baseline (Slice-01 locks the precise number against the observed runner)"
       - "dotnet test -c Release --no-build with RunConfiguration.MaxCpuCount=0"
       - "test-timings extraction + artifact upload present (from #5020)"
 

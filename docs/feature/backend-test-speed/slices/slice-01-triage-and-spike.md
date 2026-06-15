@@ -4,6 +4,8 @@
 
 **Owner story**: US-01.
 
+**Classification**: **measurement spike / precursor — not a shippable value slice.** It changes no code and ships a doc + measurement that feeds Slice-02; it is exempt from the value-slice composition gate (timeboxed spike) and is never released independently. (Consolidated-review action item, 2026-06-15.)
+
 **Estimated effort**: ½ day.
 
 **Learning hypothesis**:

@@ -522,6 +522,7 @@ outcomes:
     measurement_scope: vendor_demo_only   # CI runs on the LetPeopleWork GitHub org
     measured_by: "GitHub Actions backend test-step duration + sum(test-timings-backend.csv)"
     measurement_window: every Build And Deploy Lighthouse run; before/after table in Slice-01/02
+    assumption: "<=7 min target assumes ubuntu-latest provides >= 2 usable cores; Slice-01 locks the precise number against the observed runner"
     rationale: >
       Backend CI step regressed to 12+ min after 54 [NonParallelizable] opt-outs re-serialized the
       suite. ADR-074 (per-fixture WebApplicationFactory ownership) re-enables fixture parallelism.

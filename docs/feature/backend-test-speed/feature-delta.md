@@ -460,3 +460,101 @@ The existing BE suite, the #5020 timing instrumentation, the Stryker per-feature
 - **Constraint established**: the guard and the faster suite ride the existing backend test step — no pipeline edit, no new workflow (per `feedback-ci-and-e2e-minimalism`).
 - **Upstream changes**: none.
 - **Handoff**: DISTILL (acceptance design). `environments.yaml` parametrizes the local-vs-CI realism axis.
+
+---
+---
+
+# DISTILL
+
+Density: `lean`. Reconciliation gate: **passed — 0 contradictions** (DISCUSS BE-only-parallelization-root-cause, DESIGN Strategy A, DEVOPS no-pipeline-change are mutually consistent; no port/protocol/tenancy conflict). Stack: C#/.NET (NUnit + ArchUnitNET), not pytest-bdd — the polyglot adapter matrix C# row applies; the Gherkin/`.feature`/scaffold machinery is adapted to NUnit.
+
+Prior-wave reading: ✓ `feature-delta.md` (DISCUSS + DESIGN + DEVOPS, single-file lean model), ✓ `environments.yaml`, ✓ `brief.md` + ADR-074, ✓ `kpi-contracts.yaml` (OUT-be-* entries). No separate `discuss/`,`design/`,`devops/` dirs (lean model) — content read inline.
+
+## Wave: DISTILL / [REF] Acceptance shape (why this feature is non-standard)
+
+This is a **test-infrastructure** feature: its outcome is "the existing tests run faster, in parallel, with behaviour preserved." So acceptance splits into two oracles, neither of which is a freshly-authored product scenario:
+
+1. **Behaviour preservation** — the **existing backend suite** is the oracle. Acceptance = the full suite runs **green 3× consecutively** under `ParallelScope.Fixtures` (locally) and green on the CI merge build. No new behavioural test is authored; authoring one would duplicate coverage. (DISCUSS D8.)
+2. **Parallel-debt outcome** — the one genuinely authorable test: the **parallelization guard** (US-04). RED today (~48 off-allowlist `[NonParallelizable]` vs the 6-name allowlist), GREEN after Slices 02–03 remove the avoidable opt-outs.
+3. **Wall-clock** — a **measurement**, recorded in the Slice-01/02 before/after table and the GitHub Actions run summary. Deliberately **not** asserted in a test (a `< 7 min` assertion would be flaky under runner contention; OUT-be-test-ci-walltime is observed, not gated by a unit test).
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+| Scenario | Tag(s) | Oracle | Authored? |
+|---|---|---|---|
+| Suite stays green under fixture parallelism, 3× consecutive | `@US-02 @US-03 @real-io @behaviour-preservation` | existing backend suite | No — reuse the suite (verification step, Slices 02/03) |
+| No fixture opts out of parallelization without being allowlisted | `@US-04 @property @guard` | `BackendTestParallelizationGuardTest` (new) | **Yes — scaffolded `[Ignore]`** |
+| Per-fixture WAF isolation: two fixtures hold disjoint DB state concurrently | `@US-02 @real-io` | RED unit test written in DELIVER Slice-02 (TDD) | No — crafter authors at GREEN-driving time |
+| CI backend step ≤ 7 min / local ≤ 3–4 min | `@kpi-OUT-be-test-ci-walltime @measurement` | GitHub Actions duration + timing CSV | No — measured, not asserted |
+
+The guard is a `Property:`-style invariant ("for every fixture carrying `[NonParallelizable]`, it must be on the allowlist") expressed as a reflection-over-assembly NUnit test — the C#/NUnit equivalent of a pytest-bdd `@property` scaffold.
+
+## Wave: DISTILL / [REF] WS strategy
+
+**N/A** — no walking skeleton (brownfield test-infra; nothing end-to-end to bootstrap). Per the Architecture of Reference: the only driven port touched is the test database, already a real adapter (SQLite file per fixture) exercised by the existing suite — no fake, no new mechanism.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | `@real-io` coverage | Covered by |
+|---|---|---|
+| Test database (SQLite, per-fixture file) | YES | the existing integration suite (real EF + SQLite), now per-fixture isolated (ADR-074) |
+
+No new driven adapters. No external/non-deterministic ports (hosted services are stripped in the test WAF).
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+The driving surface is `dotnet test` (CLI) — already exercised by every suite run and by CI (`ci_backend.yml`). No new CLI/endpoint/hook is introduced, so there is no uncovered entry point. The guard runs as an ordinary test under the same `dotnet test`.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| Scaffold | Path | Marker | State |
+|---|---|---|---|
+| Parallelization guard | `Lighthouse.Backend.Tests/Architecture/BackendTestParallelizationGuardTest.cs` | `[Ignore("pending: … Slice-04")]` (NUnit `@pending` equivalent) | **Compiles (verified `dotnet build`, 0 warnings); RED-when-unskipped** |
+
+No production-module RED stubs needed (no new production type — the isolation refactor edits existing test infrastructure). The guard is committed `[Ignore]`d so it rides CI without breaking it; DELIVER Slice-04 un-skips it once the allowlist is final.
+
+## Wave: DISTILL / [REF] Red-classification (fail-for-right-reason gate)
+
+| Test | Classification | Note |
+|---|---|---|
+| `BackendTestParallelizationGuardTest` | **RED (correct)** — structurally | Un-ignored, it fails because ~48 off-allowlist `[NonParallelizable]` types exist (the cleanup is the missing functionality), not from import/fixture/setup error. Compile verified now (`dotnet build` green, 0 warnings). Live un-skip confirmation is the Slice-04 RED-phase entry gate (ADR-025 D2). |
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend.Tests/Architecture/` — precedent: the existing seam guards (`DomainEventDispatcherSeamArchUnitTest`, `ModuleBoundariesArchUnitTest`, etc.) live here. The parallelization guard is the same class of structural ratchet, so it shares the directory and `[TestFixture]` idiom.
+
+## Wave: DISTILL / [REF] Outcome registration
+
+**Skipped (methodology/internal-quality)** — `backend-test-speed` introduces no new product typed-contract surface (no rule module, CLI subcommand, public service operation, or system-wide product invariant). The guard is a test-suite invariant, not a promise about what the *product* does. Per the registry's code-feature gate-scoping, nothing is registered in `docs/product/outcomes/registry.yaml`.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN driving port: `dotnet test` (existing). DEVOPS environment matrix: `local-dev` (≤3–4 min) vs `ci-runner` (≤7 min) from `environments.yaml`.
+- ArchUnitNET + NUnit `NonParallelizableAttribute` available in the test project (verified — the guard builds).
+- The guard's allowlist is provisional (6 inherently-serial fixtures from the US-01 triage); **Slice-04 finalises it** after Slices 02–03 land.
+
+## Wave: DISTILL / [REF] Wave-decisions summary (DISTILL)
+
+- **Acceptance oracles**: existing suite (behaviour preservation, green-3×) + the parallelization guard (debt outcome) + wall-clock measurement (not asserted).
+- **Authored AT**: one — `BackendTestParallelizationGuardTest`, scaffolded `[Ignore]`, compiles clean, RED-when-unskipped for the right reason.
+- **No walking skeleton, no new driven adapter, no new driving port, no outcome registration** (test-infra).
+- **Handoff to DELIVER**: execute Slices 01→04; Slice-01 validates ADR-074's cost assumption; Slice-04 un-skips the guard against the final allowlist.
+
+## Wave: DISTILL / [REF] Consolidated review verdict + action items
+
+Four-reviewer parallel gate (Haiku) against the full 4-wave delta, 2026-06-15:
+
+| Reviewer | Wave | Verdict | Blockers | High |
+|---|---|---|---|---|
+| Eclipse (PO) | DISCUSS | approved | 0 | 0 |
+| Architect | DESIGN | approved | 0 | 0 |
+| Forge (Platform) | DEVOPS | conditionally_approved | 0 | 0 (1 med, 2 low) |
+| Sentinel (Acceptance) | DISTILL | approved | 0 | 0 |
+
+**Gate: PASS** (all approved/conditionally-approved; zero blockers, zero high). Action items:
+
+- **APPLIED — Slice-01 is a measurement spike/precursor, not a shippable value slice** (Eclipse): it changes no code and ships a doc + measurement. It is exempt from the value-slice composition gate as a timeboxed spike whose output feeds Slice-02; it is NOT released independently. Slices 02–04 each carry developer-observable value (faster `dotnet test`, red-on-planted-opt-out). slice-01 brief reclassified accordingly.
+- **APPLIED — core-count assumption** (Forge, med): the `≤ 7 min` CI target assumes GitHub Actions `ubuntu-latest` provides ≥ 2 usable cores; recorded in `environments.yaml` (ci-runner) and the `OUT-be-test-ci-walltime` KPI. Slice-01 re-baseline locks the precise number against the observed runner.
+- **APPLIED — terminology clarity**: the `API/Integration/*` fixtures are in-process `WebApplicationFactory` tests and are **not** `[Category("Integration")]` (that category = real-external-API tests, #5020). So `dotnet test --filter "Category!=Integration"` runs them (fast) while excluding the real-API suite — the normal local invocation.
+- **DELIVER-scope** (Forge, low): (a) whether local wall-clock needs ongoing observability vs one-time measurement — default one-time per the self-hosted no-phone-home posture, note in `ci-learnings.md` at Slice-02; (b) confirm #5020's TRX timing-extraction cost stays negligible under fixture parallelism — record in the Slice-02 measurement table.
+- **ACCEPTED AS-IS**: narrative job traceability (each story names `job-dev-test-feedback-velocity`) matches the #5020 sibling and the lean single-file model; not a DoR gate (Eclipse's structured verdict was `approved`, 0 blockers).
