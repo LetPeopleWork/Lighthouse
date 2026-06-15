@@ -558,3 +558,32 @@ Four-reviewer parallel gate (Haiku) against the full 4-wave delta, 2026-06-15:
 - **APPLIED — terminology clarity**: the `API/Integration/*` fixtures are in-process `WebApplicationFactory` tests and are **not** `[Category("Integration")]` (that category = real-external-API tests, #5020). So `dotnet test --filter "Category!=Integration"` runs them (fast) while excluding the real-API suite — the normal local invocation.
 - **DELIVER-scope** (Forge, low): (a) whether local wall-clock needs ongoing observability vs one-time measurement — default one-time per the self-hosted no-phone-home posture, note in `ci-learnings.md` at Slice-02; (b) confirm #5020's TRX timing-extraction cost stays negligible under fixture parallelism — record in the Slice-02 measurement table.
 - **ACCEPTED AS-IS**: narrative job traceability (each story names `job-dev-test-feedback-velocity`) matches the #5020 sibling and the lean single-file model; not a DoR gate (Eclipse's structured verdict was `approved`, 0 blockers).
+
+---
+---
+
+# DELIVER
+
+Density: `lean`. In progress — Slice-01 complete (measurement-only); Slices 02–04 pending. DES-exempt for Slice-01 (`<!-- DES-ENFORCEMENT : exempt -->`: triage/measurement, no production or test code changed).
+
+## Wave: DELIVER / [REF] Slice-01 — triage + spike (delivered 2026-06-15)
+
+Implementation summary: classified every serial backend fixture, re-baselined CI + local wall-clock, microbenchmarked per-fixture `WebApplicationFactory` setup cost, and recommended the isolation strategy. No code changed (the WAF-cost microbenchmark was throwaway scratch, deleted, not committed).
+
+Files: `docs/feature/backend-test-speed/triage.md` (new — full inventory, per-cluster fix strategy, spike measurements).
+
+Key results:
+- **71 serial fixtures** (not 54 — DISCUSS counted only the literal-tag grep; 36 fixtures serialize by *inheriting* `IntegrationTestBase`'s tag). Split **67 fix / 4 keep**. Clusters: WAF-integration-base 36 · WAF-integration-selfbuilt 25 · service-mock 7 · inherently-serial 3.
+- **Binding constraint is correctness, not WAF cost.** Per-fixture WAF setup ≈ 187ms warm (110ms host build + 77ms DB bootstrap); at 61 WAF fixtures across 12 cores that is ~1s wall-clock — far from any break-even where shared-WAF would win. So ADR-074 DDD-7 holds: ship Strategy A plain, no cost mitigation. The real blocker is the **process-wide SQLite connection-pool race** (ci-learnings 2026-05-18) — unique file names do NOT defeat it; Slice-02 must set `Pooling=False` (or held-open in-memory SQLite) per fixture.
+- CI re-baseline: backend job ~765s/12.75min; `Test Backend` step ~580s/9.7min. Local serial baseline (`Category!=Integration`) ≈ **336s/5.5min** (2 runs: 341s with one non-reproducible flake; 332s clean).
+
+DoD progress: items 1 (triage) ✓; wall-clock targets locked in `triage.md` (item per §DoD); remaining items pending Slices 02–04.
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+**Guard allowlist contradicts the triage (back-prop to DISTILL scaffold + Slice-04).** The DISTILL scaffold `Architecture/BackendTestParallelizationGuardTest.cs` allowlists 6 fixtures; the Slice-01 triage finds the genuine inherently-serial set is **4**, a 3-out / 1-in swing:
+- **Remove (fixable — SQLite-pool race, not process-global):** `S5_ApiKeyScopesTests`, `F_BE_1_GroupSnapshotInheritanceTests`, `LighthouseAppContextConcurrencyTest` (misnamed — it tests EF concurrency-token semantics serially across scopes, not in-process `Task.Run`).
+- **Add (genuinely serial — shared `static IGitHubService` rate-limit workaround):** `LighthouseReleaseServiceIntegrationTest`.
+- **Keep (agree):** `S6_RateLimitingTests`, `S1_AllowedOriginsEnvVarBindingTests`, `S1_CorsFailClosedTests`.
+
+Resolution: the final allowlist is set in **Slice-04** after Slices 02–03 prove the `fix` verdicts via 3× green. Any `fix` fixture that still flakes after isolation moves back to the allowlist with a justification (slice-brief contingency). The `LighthouseAppContextConcurrencyTest` un-allowlisting is provisional pending a confirmation it has no `Task.Run` parallelism.
