@@ -625,3 +625,25 @@ Files modified (test-only):
 AC check: AC-03.1 ✓ (each fix-verdict fixture isolated/un-tagged), AC-03.2 ✓ (full suite 3× green: 320/299/315s, 0 failures), AC-03.3 ✓ (behaviour preserved — same 2970 tests; D9 N/A this slice, no production file touched).
 
 Remaining tagged after Slice-03 (the Slice-04 allowlist candidates): `S6_RateLimitingTests`, `S1_AllowedOriginsEnvVarBindingTests`, `S1_CorsFailClosedTests` (inherently serial — process-global rate-limit / CORS-env), `LighthouseReleaseServiceIntegrationTest` (shared `static IGitHubService` rate-limit workaround), plus the guard's own allowlist references. This matches the Slice-01 "genuine serial = 4" finding (the §Upstream-Issues 3-out/1-in swing is now realised: `S5`/`F_BE_1`/`LighthouseAppContextConcurrencyTest` untagged in Slice-02, `LighthouseReleaseServiceIntegrationTest` retained).
+
+## Wave: DELIVER / [REF] Slice-04 — lock in the gain: justified allowlist + regression guard (delivered 2026-06-16)
+
+Implementation summary: finalised `Architecture/BackendTestParallelizationGuardTest` (un-ignored the DISTILL scaffold) against the **4** genuinely-serial fixtures and added a build guard. The guard is a reflection-over-assembly NUnit test (per `feedback-ci-and-e2e-minimalism` — backend test, not Playwright) with two ratchet directions, both proven RED on a planted violation then reverted.
+
+The allowlist is encoded as a `name → reason` dictionary (not comments — satisfies AC-04.1's "justification per entry" as asserted data, per the no-comments house rule):
+- `S6_RateLimitingTests` — process-wide per-IP rate-limiter window/partition.
+- `S1_AllowedOriginsEnvVarBindingTests` — sets `Authentication__AllowedOrigins*` process-global env vars.
+- `S1_CorsFailClosedTests` — sets CORS/auth process-global env vars.
+- `LighthouseReleaseServiceIntegrationTest` — shares a `static IGitHubService` GitHub rate-limit workaround.
+
+Two guard assertions:
+- `NoFixtureOptsOutOfParallelizationWithoutBeingOnTheAllowlist` — any off-allowlist `[NonParallelizable]` fails the build (the AC-04.2 direction). Proven RED by planting the tag on `TeamMetricsServiceTests` → offender named, then reverted.
+- `EveryAllowlistedFixtureStillOptsOutOfParallelization` — a stale allowlist entry (no longer tagged) fails the build, so a fixed fixture must be removed from the list — keeps the residue honest. Proven RED by adding a ghost entry, then reverted.
+
+Files modified (test + docs only):
+- `Lighthouse.Backend.Tests/Architecture/BackendTestParallelizationGuardTest.cs` — un-ignore; 4-entry data-justified allowlist; two ratchet assertions; shared `TaggedFixtureNames()` reflection helper.
+- `docs/ci-learnings.md` — new 2026-06-16 entry (per-fixture isolation primitives, the background-service timing-race learning, the guard + allowlist rationale) + supersede markers on the three now-stale 2026-05-18/05-30 entries that advised adding `[NonParallelizable]`.
+
+AC check: AC-04.1 ✓ (4-entry allowlist, one justification each), AC-04.2 ✓ (ArchUnit-style backend guard, RED on planted off-allowlist opt-out — verified both directions), AC-04.3 ✓ (`ci-learnings.md` entry: isolation pattern + allowlist rationale + `IntegrationTestBase` precedent), AC-04.4 — ADO #5258 before/after comment **pending the post-push CI wall-clock** (user is watching the run; comment to be posted with confirmation once the CI delta is known).
+
+Feature DoD: items 1–7 ✓ (all 54 triaged, avoidable opt-outs removed to the 4-entry allowlist; integration + service/mock clusters parallel; behaviour preserved; guard in place + red on planted violation; ci-learnings updated; no new Sonar issues expected — test-only + the Slice-02 `BaseMetricsService` lifetime change). Item 8 (ADO `Resolved`) + the AC-04.4 wall-clock comment land after CI confirms green + the timing delta. Mutation gate (D9): only `BaseMetricsService.cs` (Slice-02) is a touched production file; Slices 03–04 are test/docs only — mutation run deferred to finalization per the review-first convention.
