@@ -41,6 +41,22 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private DateTime workStart;
         private int seededPortfolioId;
 
+        [OneTimeSetUp]
+        public void OneTimeInit()
+        {
+            rootFactory = new TestWebApplicationFactory<Program>();
+            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
+            client = factory.CreateClient();
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeCleanup()
+        {
+            client.Dispose();
+            factory.Dispose();
+            rootFactory.Dispose();
+        }
+
         [SetUp]
         public void Init()
         {
@@ -48,10 +64,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc).AddDays(-offsetDays);
             windowStart = windowEnd.AddDays(-180);
             workStart = windowStart.AddDays(20);
-
-            rootFactory = new TestWebApplicationFactory<Program>();
-            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
-            client = factory.CreateClient();
 
             using var setupScope = factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
@@ -75,10 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
                 dbContext.Database.EnsureDeleted();
             }
-
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
         }
 
         [Test]

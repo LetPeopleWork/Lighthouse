@@ -31,6 +31,22 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private DateTime windowStart;
         private DateTime windowEnd;
 
+        [OneTimeSetUp]
+        public void OneTimeInit()
+        {
+            rootFactory = new TestWebApplicationFactory<Program>();
+            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
+            client = factory.CreateClient();
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeCleanup()
+        {
+            client.Dispose();
+            factory.Dispose();
+            rootFactory.Dispose();
+        }
+
         [SetUp]
         public void Init()
         {
@@ -38,10 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             windowEnd = today;
             var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset);
             windowStart = today.AddDays(-180 - offsetDays);
-
-            rootFactory = new TestWebApplicationFactory<Program>();
-            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
-            client = factory.CreateClient();
 
             using var setupScope = factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
@@ -69,10 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
                 dbContext.Database.EnsureDeleted();
             }
-
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
         }
 
         [Test]
