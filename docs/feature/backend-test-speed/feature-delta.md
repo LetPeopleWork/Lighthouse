@@ -647,3 +647,19 @@ Files modified (test + docs only):
 AC check: AC-04.1 ✓ (4-entry allowlist, one justification each), AC-04.2 ✓ (ArchUnit-style backend guard, RED on planted off-allowlist opt-out — verified both directions), AC-04.3 ✓ (`ci-learnings.md` entry: isolation pattern + allowlist rationale + `IntegrationTestBase` precedent), AC-04.4 — ADO #5258 before/after comment **pending the post-push CI wall-clock** (user is watching the run; comment to be posted with confirmation once the CI delta is known).
 
 Feature DoD: items 1–7 ✓ (all 54 triaged, avoidable opt-outs removed to the 4-entry allowlist; integration + service/mock clusters parallel; behaviour preserved; guard in place + red on planted violation; ci-learnings updated; no new Sonar issues expected — test-only + the Slice-02 `BaseMetricsService` lifetime change). Item 8 (ADO `Resolved`) + the AC-04.4 wall-clock comment land after CI confirms green + the timing delta. Mutation gate (D9): only `BaseMetricsService.cs` (Slice-02) is a touched production file; Slices 03–04 are test/docs only — mutation run deferred to finalization per the review-first convention.
+
+---
+
+## Scope extension (user-directed 2026-06-16): test-time optimization slices 05–07
+
+After Slices 02–04 landed and CI confirmed green, the parallelization win proved modest on wall-clock (CI backend job ~12.75 min baseline → 11:37 / 14:44 across two post-push runs — within the runner's noise band). A profiling pass (`profiling-followup.md`) ranked three follow-up levers; the user folded all three into #5258 rather than a separate story. So #5258 stays open past Slice-04; the ADO `Resolved` transition + AC-04.4 comment wait until the optimization slices land. The OUT-be-* KPIs are unchanged; these slices chase the same wall-clock targets by cutting absolute work rather than adding parallelism.
+
+## Wave: DELIVER / [REF] Slice-05 — cache the ArchUnitNET `Architecture` once (delivered 2026-06-16)
+
+Implementation summary: the 13 architecture/seam fixtures each built their own `new ArchLoader().LoadAssemblies(...).Build()` — 11 of them (`new ArchLoader()` users) loading the **same** Lighthouse production assembly. Extracted one shared `LighthouseArchitecture.Production` (`static` cached `Architecture`, built once on first access, immutable → safe to share read-only across parallel fixtures) and pointed the 10 Lighthouse-only fixtures at it; `DomainEventDispatcherSeamArchUnitTest` keeps its own loader (it additionally loads the DI-abstractions assembly). Net: 11 redundant graph builds → 2.
+
+Files (test-only): new `Architecture/LighthouseArchitecture.cs`; 10 arch fixtures switched to the shared instance + their now-unused `ArchLoader` / `ArchUnitNET.Loader` usings removed (Sonar S1128 hygiene — below local-build severity).
+
+Result (measured): the architecture cluster in isolation dropped to **~5 s for 33 tests** (was ~5–10 s *per fixture* under contention). **Full-suite local wall-clock unchanged (~345 s)** — the redundant builds ran concurrently and a 12-core machine absorbed them, so they were never on the critical path; the win is reduced total CPU work, which helps a core-constrained CI runner, not local wall-clock. All 2972 tests green; behaviour preserved (same arch rules, same assembly graph). Low risk — read-only shared immutable model, no production change.
+
+Critical-path insight feeding Slice-06: local wall-clock (~345 s) is floored by the longest **single-fixture serial chain** (tests within a fixture run serially), e.g. `CumulativeStateTimeReadApiIntegrationTest` = 25 tests × ~1 s. ~187–500 ms of each is WAF rebuild (per-`[SetUp]` host construction). Slice-06 (per-fixture WAF reuse) attacks that chain directly.

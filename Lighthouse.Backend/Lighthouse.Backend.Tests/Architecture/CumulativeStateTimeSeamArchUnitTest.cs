@@ -2,7 +2,6 @@ using System.Reflection;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
-using ArchLoader = ArchUnitNET.Loader.ArchLoader;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -21,9 +20,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string AgeInStatePercentilesHelperName = "ComputeAgeInStatePercentiles";
 
-        private static readonly ArchitectureModel Architecture = new ArchLoader()
-            .LoadAssemblies(typeof(BaseMetricsService).Assembly)
-            .Build();
+        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
         public void CumulativeHelpers_AreProtected_AndNotExposedViaAnyInterface()

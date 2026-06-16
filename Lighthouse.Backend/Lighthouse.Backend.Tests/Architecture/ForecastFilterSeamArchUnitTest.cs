@@ -1,4 +1,3 @@
-using ArchUnitNET.Loader;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
@@ -11,9 +10,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class ForecastFilterSeamArchUnitTest
     {
-        private static readonly ArchitectureModel Architecture = new ArchLoader()
-            .LoadAssemblies(typeof(TeamMetricsService).Assembly)
-            .Build();
+        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
         public void OnlyWhitelistedTypes_InvokeForecastFilterRuleServiceFilter()

@@ -1,4 +1,3 @@
-using ArchUnitNET.Loader;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
@@ -12,9 +11,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ForecastModelsNamespace = "Lighthouse.Backend.Models.Forecast";
         private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
 
-        private static readonly ArchitectureModel Architecture = new ArchLoader()
-            .LoadAssemblies(typeof(BlackoutDaysExtensions).Assembly)
-            .Build();
+        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
         public void ForecastModels_DoNotDependOnRepositories()

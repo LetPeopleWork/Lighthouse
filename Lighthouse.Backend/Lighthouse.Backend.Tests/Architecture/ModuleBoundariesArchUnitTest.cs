@@ -1,5 +1,4 @@
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
-using ArchUnitNET.Loader;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
@@ -27,9 +26,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string PlatformPersistencePattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth))($|\..*)";
 
-        private static readonly ArchitectureModel Architecture = new ArchLoader()
-            .LoadAssemblies(typeof(BaseMetricsService).Assembly)
-            .Build();
+        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private static readonly GivenTypesConjunctionWithDescription WorkTrackingIntegrationModule =
             Types().That().ResideInNamespaceMatching(WorkTrackingIntegrationPattern).As("WorkTracking-Integration");

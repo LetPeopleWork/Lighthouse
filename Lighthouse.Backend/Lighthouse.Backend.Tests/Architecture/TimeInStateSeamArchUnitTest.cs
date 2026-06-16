@@ -7,7 +7,6 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
-using ArchLoader = ArchUnitNET.Loader.ArchLoader;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -15,9 +14,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class TimeInStateSeamArchUnitTest
     {
-        private static readonly ArchitectureModel Architecture = new ArchLoader()
-            .LoadAssemblies(typeof(WorkItemService).Assembly)
-            .Build();
+        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
         public void WorkItem_HasNoMappedNavigationProperty_ToWorkItemStateTransition()

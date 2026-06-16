@@ -1,4 +1,3 @@
-using ArchUnitNET.Loader;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -10,9 +9,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class LicenseGateSingleSourceArchUnitTest
     {
-        private static readonly ArchitectureModel Architecture = new ArchLoader()
-            .LoadAssemblies(typeof(BaseMetricsService).Assembly)
-            .Build();
+        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
         public void TeamMetricsService_DoesNotDependOnLicenseService()
