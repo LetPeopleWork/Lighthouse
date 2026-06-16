@@ -29,7 +29,7 @@ export default defineConfig({
 		],
 		server: {
 			deps: {
-				inline: ["@mui/x-data-grid"],
+				inline: [/@mui\//],
 			},
 		},
 
