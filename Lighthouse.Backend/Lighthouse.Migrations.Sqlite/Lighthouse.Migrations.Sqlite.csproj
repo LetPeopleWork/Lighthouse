@@ -14,7 +14,7 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
 		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
-		<PackageReference Include="System.Drawing.Common" Version="10.0.8" />
+		<PackageReference Include="System.Drawing.Common" Version="10.0.9" />
 	</ItemGroup>
 
 	<ItemGroup>
