@@ -4,6 +4,20 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.6.16.14
+
+## Bugfixes and Improvements
+- **Blackout periods no longer skew forecasts** — changing a team's or portfolio's blackout configuration now refreshes the cached metrics straight away, so a forecast reflects your current non-working-day settings instead of a stale calculation. Previously, toggling blackout days could leave the *When?* forecast showing results from before the change. Reported by Chris Graves.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.6.11.3...v26.6.16.14)
+
+
 # Lighthouse v26.6.11.3
 
 ## Cycle Time, Your Way — Multiple Named Cycle Times (Premium)
