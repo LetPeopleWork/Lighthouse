@@ -49,6 +49,13 @@ external_roslyn:CA1861 ::: cs ::: (Is|Does|Has)\.\w+\(new\[\] ::: CA1861 — ext
 
 ## Build & compile
 
+### 2026-06-16 — pnpm settings (`overrides`, `onlyBuiltDependencies`) must live in `pnpm-workspace.yaml`, not `package.json`, or CI frozen-install fails
+- **Symptom**: `Verify Frontend` + `Package App` failed at `pnpm install --frozen-lockfile` with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH — The current "overrides" configuration doesn't match the value found in the lockfile`. Reproduced ONLY in CI / a `node:24` container, never locally.
+- **Root cause**: CI's runner (node 24) resolves pnpm via **corepack → pnpm 11.x**, which **ignores the `pnpm` field in `package.json`** (`pnpm.overrides`, `pnpm.onlyBuiltDependencies`) — it prints `[WARN] The "pnpm" field in package.json is no longer read by pnpm`. So pnpm 11 sees *zero* overrides while the lockfile records `{ws, form-data}` → frozen mismatch. Local dev (node 26, no corepack) ran real pnpm 10.33.2, which *does* read `package.json`, so it passed — masking the bug. Same pnpm "version" string, different effective binary.
+- **Fix**: move `overrides` and `onlyBuiltDependencies` out of `package.json#pnpm` into `Lighthouse.Frontend/pnpm-workspace.yaml` (the new canonical home, read by both pnpm 10.x and 11.x). The lockfile is unchanged (its `overrides:` section was already correct); only the *source* moved. Verified frozen-install + `pnpm build` pass in a `node:24` container under both pnpm 10.33.2 and corepack's 11.7.0.
+- **Rule going forward**: never put pnpm settings (`overrides`, `onlyBuiltDependencies`, `packageExtensions`, `patchedDependencies`, etc.) in `package.json#pnpm` — they belong in `pnpm-workspace.yaml`. To reproduce a frontend CI failure that won't repro locally, run the exact step in a `node:24` container (`docker run --rm -e CI=true -v "$PWD/Lighthouse.Frontend":/app -w /app node:24 …`) — local node/pnpm can differ from CI's corepack-resolved pnpm.
+
+
 ### 2026-05-16 — ASP.NET Core [FromQuery] params are required by default under nullable-enabled C#
 
 - **Symptom**: `OAuthController.Callback` returned 400 `"The code field is required."` when the user cancelled at the Microsoft consent screen. Microsoft redirects to `/api/oauth/callback?error=access_denied&state=...` — WITHOUT a `code` param. The controller's try/catch around `oauthService.CompleteAsync` never gets to run because the model binder rejects the request first.
