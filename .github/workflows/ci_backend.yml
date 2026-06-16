@@ -18,6 +18,10 @@ on:
         required: false
         type: string
         default: 'false'
+      github_connector:
+        required: false
+        type: string
+        default: 'false'
       connector_shared:
         required: false
         type: string
@@ -102,8 +106,7 @@ jobs:
           [ "${{ inputs.jira_connector }}"   == "true" ] && parts+=("Category=JiraIntegration")
           [ "${{ inputs.ado_connector }}"    == "true" ] && parts+=("Category=AdoIntegration")
           [ "${{ inputs.linear_connector }}" == "true" ] && parts+=("Category=LinearIntegration")
-          # GitHub-side integration tests are tiny (~2 s combined) and always run.
-          parts+=("Category=GithubIntegration")
+          [ "${{ inputs.github_connector }}" == "true" ] && parts+=("Category=GithubIntegration")
         fi
 
         filter=$(IFS='|'; echo "${parts[*]}")

@@ -22,6 +22,7 @@ $ErrorActionPreference = 'Stop'
 $JiraRegex   = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/'
 $AdoRegex    = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/AzureDevOps/'
 $LinearRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Linear/'
+$GithubRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/(Implementation|Interfaces)/[^/]*([Gg]it[Hh]ubService|LighthouseReleaseService)[^/]*\.cs$'
 $SharedRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkTrackingConnectors/[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Interfaces/WorkTrackingConnectors/I[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
 
 function Test-AnyMatch {
@@ -55,7 +56,7 @@ if ($UnitOnly) {
         if (Test-AnyMatch $diffLines $JiraRegex)   { $parts += 'Category=JiraIntegration' }
         if (Test-AnyMatch $diffLines $AdoRegex)    { $parts += 'Category=AdoIntegration' }
         if (Test-AnyMatch $diffLines $LinearRegex) { $parts += 'Category=LinearIntegration' }
-        $parts += 'Category=GithubIntegration'
+        if (Test-AnyMatch $diffLines $GithubRegex) { $parts += 'Category=GithubIntegration' }
     }
 }
 

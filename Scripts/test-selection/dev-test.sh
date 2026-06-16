@@ -65,8 +65,7 @@ build_filter() {
     [ "$(classify_jira   "$diff_list")" = "true" ] && parts+=("Category=JiraIntegration")
     [ "$(classify_ado    "$diff_list")" = "true" ] && parts+=("Category=AdoIntegration")
     [ "$(classify_linear "$diff_list")" = "true" ] && parts+=("Category=LinearIntegration")
-    # GitHub-side integration tests are tiny; always include.
-    parts+=("Category=GithubIntegration")
+    [ "$(classify_github "$diff_list")" = "true" ] && parts+=("Category=GithubIntegration")
   fi
   ( IFS='|'; echo "${parts[*]}" )
 }

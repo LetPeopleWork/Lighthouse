@@ -86,6 +86,20 @@ diff_mixed=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkT
 assert "mixed: jira=true"                "$(classify_jira "$diff_mixed")"          "true"
 assert "mixed: shared=true"              "$(classify_shared "$diff_mixed")"        "true"
 
+# Scenario 13: only GitHub service / its integration test changed
+diff_github_only=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/GitHubService.cs\nLighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/GithubServiceTest.cs'
+assert "github-only: github=true"        "$(classify_github "$diff_github_only")"  "true"
+assert "github-only: jira=false"         "$(classify_jira "$diff_github_only")"    "false"
+assert "github-only: shared=false"       "$(classify_shared "$diff_github_only")"  "false"
+
+# Scenario 14: LighthouseReleaseService (depends on GitHub) -> github=true
+diff_release=$'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/LighthouseReleaseService.cs'
+assert "release: github=true"            "$(classify_github "$diff_release")"      "true"
+
+# Scenario 15: connectors / docs do NOT trigger the GitHub suite
+assert "jira-only: github=false"         "$(classify_github "$diff_jira_only")"    "false"
+assert "docs-only: github=false"         "$(classify_github "$diff_docs_only")"    "false"
+
 echo
 echo "passed: $pass"
 echo "failed: $fail"

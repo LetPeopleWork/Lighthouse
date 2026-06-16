@@ -14,6 +14,8 @@ on:
         value: ${{ jobs.changes.outputs.ado_connector }}
       linear_connector:
         value: ${{ jobs.changes.outputs.linear_connector }}
+      github_connector:
+        value: ${{ jobs.changes.outputs.github_connector }}
       connector_shared:
         value: ${{ jobs.changes.outputs.connector_shared }}
 jobs:
@@ -26,6 +28,7 @@ jobs:
       jira_connector: ${{ steps.check.outputs.jira_connector }}
       ado_connector: ${{ steps.check.outputs.ado_connector }}
       linear_connector: ${{ steps.check.outputs.linear_connector }}
+      github_connector: ${{ steps.check.outputs.github_connector }}
       connector_shared: ${{ steps.check.outputs.connector_shared }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -160,11 +163,13 @@ jobs:
           jira_connector=$(classify_jira "$diff_list")
           ado_connector=$(classify_ado "$diff_list")
           linear_connector=$(classify_linear "$diff_list")
+          github_connector=$(classify_github "$diff_list")
           connector_shared=$(classify_shared "$diff_list")
           if [ "$github_changes" == "true" ]; then
             jira_connector="true"
             ado_connector="true"
             linear_connector="true"
+            github_connector="true"
             connector_shared="true"
           fi
 
@@ -174,6 +179,7 @@ jobs:
           echo "jira_connector=$jira_connector"
           echo "ado_connector=$ado_connector"
           echo "linear_connector=$linear_connector"
+          echo "github_connector=$github_connector"
           echo "connector_shared=$connector_shared"
 
           echo "backend=$backend" >> $GITHUB_OUTPUT
@@ -181,5 +187,6 @@ jobs:
           echo "jira_connector=$jira_connector" >> $GITHUB_OUTPUT
           echo "ado_connector=$ado_connector" >> $GITHUB_OUTPUT
           echo "linear_connector=$linear_connector" >> $GITHUB_OUTPUT
+          echo "github_connector=$github_connector" >> $GITHUB_OUTPUT
           echo "connector_shared=$connector_shared" >> $GITHUB_OUTPUT
           echo "e2e=$e2e" >> $GITHUB_OUTPUT
