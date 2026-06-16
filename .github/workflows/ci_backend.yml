@@ -116,7 +116,7 @@ jobs:
 
     - name: Test Backend
       run: |
-        dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover RunConfiguration.MaxCpuCount=0
+        dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Lighthouse]*" RunConfiguration.MaxCpuCount=0
 
     - name: Extract backend per-test timings
       if: always()
