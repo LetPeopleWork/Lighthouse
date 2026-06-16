@@ -15,7 +15,6 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
-    [NonParallelizable]
     public class PortfolioUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IRepository<Portfolio>> projectRepoMock;
@@ -117,16 +116,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupProjects(project);
             var subject = CreateSubject();
 
-            var tcs = new TaskCompletionSource<bool>();
-            domainEventDispatcherMock
-                .Setup(x => x.PublishAsync(It.Is<PortfolioFeaturesRefreshed>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
-                .Callback(() => tcs.TrySetResult(true));
-
             await subject.StartAsync(CancellationToken.None);
 
-            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
-            Assert.That(completedTask, Is.EqualTo(tcs.Task), "PortfolioFeaturesRefreshed was not published within timeout");
+            await WaitUntilVerified(() => domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.Is<PortfolioFeaturesRefreshed>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()),
+                Times.AtLeastOnce));
         }
 
         [Test]
@@ -194,7 +188,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(project), Times.Once);
+            await WaitUntilVerified(() => workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(project), Times.Once));
         }
 
         [Test]
@@ -321,31 +315,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             cleanupServiceMock.Verify(c => c.CleanupAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        private async Task WaitForEnqueue(int projectId)
+        private Task WaitForEnqueue(int projectId)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(2);
-            while (DateTime.UtcNow < deadline)
-            {
-                if (EnqueueWasRecorded(projectId))
-                {
-                    return;
-                }
-
-                await Task.Delay(10);
-            }
-        }
-
-        private bool EnqueueWasRecorded(int projectId)
-        {
-            try
-            {
-                Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, projectId, It.IsAny<Func<IServiceProvider, Task>>()));
-                return true;
-            }
-            catch (MockException)
-            {
-                return false;
-            }
+            return WaitUntilVerified(() => Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, projectId, It.IsAny<Func<IServiceProvider, Task>>())));
         }
 
         private void SetupProjects(params Portfolio[] projects)

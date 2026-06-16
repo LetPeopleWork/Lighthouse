@@ -39,5 +39,27 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             serviceProviderMock.Setup(x => x.GetService(typeof(T))).Returns(@object);
         }
+
+        protected static async Task WaitUntilVerified(Action verification)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(10);
+            while (true)
+            {
+                try
+                {
+                    verification();
+                    return;
+                }
+                catch (MockException)
+                {
+                    if (DateTime.UtcNow >= deadline)
+                    {
+                        throw;
+                    }
+
+                    await Task.Delay(10);
+                }
+            }
+        }
     }
 }

@@ -14,7 +14,6 @@ using System.Linq.Expressions;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     [TestFixture]
-    [NonParallelizable]
     public class PortfolioMetricsServiceTests
     {
         private Mock<ILogger<PortfolioMetricsService>> logger;

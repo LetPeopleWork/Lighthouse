@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {
     [TestFixture]
-    [NonParallelizable]
     public class DomainEventDispatcherGoldTest : IntegrationTestBase
     {
         private static readonly ProbeHandlerState ProbeState = new();

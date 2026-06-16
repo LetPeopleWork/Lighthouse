@@ -16,7 +16,6 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {
     [TestFixture]
-    [NonParallelizable]
     public class WorkItemDomainEventsGoldTest : IntegrationTestBase
     {
         private static readonly TransitionProbeState ProbeState = new();

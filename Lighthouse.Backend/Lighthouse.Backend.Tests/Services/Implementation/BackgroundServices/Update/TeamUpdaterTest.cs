@@ -12,7 +12,6 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
-    [NonParallelizable]
     public class TeamUpdaterTest : UpdateServiceTestBase
     {
         private Mock<IAppSettingService> appSettingServiceMock;
@@ -54,7 +53,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once);
+            await WaitUntilVerified(() => teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once));
         }
 
         [Test]
@@ -65,22 +64,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupTeams([team1, team2]);
             var subject = CreateSubject();
 
-            var tcs = new TaskCompletionSource<bool>();
-            int callCount = 0;
-            teamDataServiceMock.Setup(x => x.UpdateTeamData(It.IsAny<Team>()))
-                .Callback(() =>
-                {
-                    if (Interlocked.Increment(ref callCount) == 2)
-                        tcs.TrySetResult(true);
-                });
-
             await subject.StartAsync(CancellationToken.None);
 
-            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
-            Assert.That(completedTask, Is.EqualTo(tcs.Task), "UpdateTeamData was not called for all teams within timeout");
-
-            teamDataServiceMock.Verify(x => x.UpdateTeamData(team1), Times.Once);
-            teamDataServiceMock.Verify(x => x.UpdateTeamData(team2), Times.Once);
+            await WaitUntilVerified(() => teamDataServiceMock.Verify(x => x.UpdateTeamData(team1), Times.Once));
+            await WaitUntilVerified(() => teamDataServiceMock.Verify(x => x.UpdateTeamData(team2), Times.Once));
         }
 
         [Test]
@@ -97,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            teamDataServiceMock.Verify(x => x.UpdateTeamData(team1), Times.Once);
+            await WaitUntilVerified(() => teamDataServiceMock.Verify(x => x.UpdateTeamData(team1), Times.Once));
             teamDataServiceMock.Verify(x => x.UpdateTeamData(team2), Times.Never);
         }
 
@@ -130,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once);
+            await WaitUntilVerified(() => teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once));
         }
 
         [Test]
@@ -141,17 +128,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             var subject = CreateSubject();
 
-            var tcs = new TaskCompletionSource<bool>();
-            writeBackTriggerServiceMock.Setup(x => x.TriggerWriteBackForTeam(It.IsAny<Team>()))
-                .Callback(() => tcs.TrySetResult(true))
-                .Returns(Task.CompletedTask);
-
             await subject.StartAsync(CancellationToken.None);
 
-            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(1000));
-            Assert.That(completedTask, Is.EqualTo(tcs.Task), "TriggerWriteBackForTeam was not called within timeout");
-
-            writeBackTriggerServiceMock.Verify(x => x.TriggerWriteBackForTeam(team), Times.Once);
+            await WaitUntilVerified(() => writeBackTriggerServiceMock.Verify(x => x.TriggerWriteBackForTeam(team), Times.Once));
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)

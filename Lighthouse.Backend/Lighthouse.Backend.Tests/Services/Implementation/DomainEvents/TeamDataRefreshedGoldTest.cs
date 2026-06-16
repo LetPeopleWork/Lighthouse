@@ -10,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {
     [TestFixture]
-    [NonParallelizable]
     public class TeamDataRefreshedGoldTest : IntegrationTestBase
     {
         private static readonly RecordingForecastUpdater Recorder = new();

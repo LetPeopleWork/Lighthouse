@@ -605,3 +605,23 @@ AC check: AC-02.1 ✓ (base un-tagged, per-fixture isolation), AC-02.2 ✓ (3× 
 Remaining tagged after Slice-02: 3 security keeps + `LighthouseReleaseServiceIntegrationTest` (keeps) + the 8 service-mock fixtures (Slice-03: `*MetricsServiceTests` now cache-isolated so just need untag + verify; `*UpdaterTest` need fresh mocks; 3 `*GoldTest` need non-static probes; `TerminologySeederTests`) + the guard.
 
 Deviation note: the self-built fixtures still build their WAF per-test (`[SetUp]`), not per-fixture (`[OneTimeSetUp]`). Parallelism + correctness are achieved as-is; converting to per-fixture host reuse is a possible future wall-clock optimization, out of scope here.
+
+## Wave: DELIVER / [REF] Slice-03 — service / mock-state fixtures parallelized (delivered 2026-06-16)
+
+Implementation summary: `[NonParallelizable]` removed from all 8 service-mock fix-targets; the full backend suite (`Category!=Integration`) runs **3× consecutively green** under `ParallelScope.Fixtures` (320/299/315s, 2970 passed, 0 failures). Test-only change — no production file touched.
+
+The triage's "shared-Moq/DB/dispatcher state" hypothesis held for 6 of the 8, but the **real residual blocker was a latent timing race, not shared state**: the two `*UpdaterTest` fixtures drive `BackgroundService.StartAsync`, whose `ExecuteAsync` loop runs the `UpdateAll → TriggerUpdate → EnqueueUpdate(.Wait())` chain on a thread-pool continuation *after* `StartAsync` returns (first yield is `DelayStart`'s `Task.Delay(0)`). Several tests verified the mock **immediately** (no wait) or with a fixed `TaskCompletionSource + Task.Delay(1000)`; under full-suite parallelism the continuation is scheduled late (thread-pool pressure from 60+ concurrent WAF fixtures + the blocking `.Wait()`), so the assertion saw 0 invocations. `[NonParallelizable]` had been masking this race, not a data collision.
+
+Fix (behaviour-preserving, D8 — same assertions, only synchronization changes): a shared `WaitUntilVerified(Action)` active-poll helper on `UpdateServiceTestBase` (10ms poll, 10s ceiling, returns the instant the verification passes, rethrows the real `MockException` on timeout). Replaced every no-wait / fixed-`Task.Delay(1000)` verify in the two updater fixtures with it; `PortfolioUpdaterTest.WaitForEnqueue` refactored to delegate to the shared helper (its local 2s poll also flaked under load). A 2s ceiling was tried first and still flaked at full-suite contention → raised to 10s (free on the happy path).
+
+The 6 non-updater fixtures (`TeamMetricsServiceTests`, `PortfolioMetricsServiceTests`, the 3 `*GoldTest`, `TerminologySeederTests`) needed **only the untag**: the metrics pair already got a fresh per-test `Cache` via `Mock<IServiceProvider>` in Slice-02; the Gold tests' static probe/recorder state is class-scoped and reset in `[SetUp]` (serial within the fixture, never run in parallel with itself); `TerminologySeeder` rides the per-fixture `IntegrationTestBase` DB from Slice-02. All confirmed green 3×.
+
+Files modified (test-only):
+- `TestHelpers/UpdateServiceTestBase.cs` — add `WaitUntilVerified` poll helper.
+- `Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs` — untag; 4 timing-dependent tests now poll via the helper (dropped the TCS/`Task.Delay(1000)` plumbing).
+- `Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs` — untag; harden the no-wait premium verify + the TCS/1s dispatcher verify; `WaitForEnqueue` delegates to the shared helper.
+- Untag-only (6): `DomainEvents/DomainEventDispatcherGoldTest.cs`, `DomainEvents/TeamDataRefreshedGoldTest.cs`, `DomainEvents/WorkItemDomainEventsGoldTest.cs`, `PortfolioMetricsServiceTests.cs`, `TeamMetricsServiceTests.cs`, `Seeding/TerminologySeederTests.cs`.
+
+AC check: AC-03.1 ✓ (each fix-verdict fixture isolated/un-tagged), AC-03.2 ✓ (full suite 3× green: 320/299/315s, 0 failures), AC-03.3 ✓ (behaviour preserved — same 2970 tests; D9 N/A this slice, no production file touched).
+
+Remaining tagged after Slice-03 (the Slice-04 allowlist candidates): `S6_RateLimitingTests`, `S1_AllowedOriginsEnvVarBindingTests`, `S1_CorsFailClosedTests` (inherently serial — process-global rate-limit / CORS-env), `LighthouseReleaseServiceIntegrationTest` (shared `static IGitHubService` rate-limit workaround), plus the guard's own allowlist references. This matches the Slice-01 "genuine serial = 4" finding (the §Upstream-Issues 3-out/1-in swing is now realised: `S5`/`F_BE_1`/`LighthouseAppContextConcurrencyTest` untagged in Slice-02, `LighthouseReleaseServiceIntegrationTest` retained).
