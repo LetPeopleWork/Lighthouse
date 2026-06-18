@@ -39,7 +39,7 @@ if (telemetryConfig.Enabled) { app.MapPrometheusScrapingEndpoint("/metrics"); }
 
 ## Security (cross-cutting, decided here)
 
-`/metrics` can leak request paths → **default cluster-internal / unauthenticated, but exposure is a conscious config call** (the DISCUSS cross-cutting checklist flagged this as a Sonar security-hotspot to resolve in DESIGN). The endpoint is **OFF unless telemetry is enabled** and is documented as "expose only on a trusted network / behind the metrics scrape network policy." The network policy itself is a Productization #5306 concern; in-app, the conscious gate (off by default, mapped only when enabled) is the control.
+`/metrics` can leak request paths and carries no authentication. The **only in-app control is the off-by-default gate**: no `/metrics` endpoint is mapped unless telemetry is explicitly enabled. "Cluster-internal" is a *deployment expectation*, not a code-enforced boundary — when enabled, the endpoint is unauthenticated and its in-cluster reachability is a network-policy concern owned by Productization #5306. Operators are documented to "expose only on a trusted network / behind the metrics scrape network policy." The DISCUSS cross-cutting checklist flagged this as a Sonar security-hotspot; it is resolved in-app by the conscious off-by-default gate (mapped only when enabled) plus that documented deployment rule.
 
 ## Standalone Degradation (D1 / US-05 AC3)
 

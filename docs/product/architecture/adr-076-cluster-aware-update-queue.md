@@ -61,6 +61,8 @@ Keep each replica's in-process queue, but guard each `(UpdateType, id)` update w
 
 ## Earned-Trust Probe (MANDATORY, BOTH options — first-class design responsibility)
 
+This section fixes the probe *contract* (what it must empirically demonstrate); the probe *implementation* is a DELIVER detail, not a DESIGN one.
+
 The chosen substrate is a driven adapter on an external dependency that is known to lie. It MUST expose a `probe()` that the composition root runs at startup (wire → **probe** → use) BEFORE the cluster-aware path is permitted to serve. The probe empirically exercises the specific lie:
 - **(a) mutual exclusion**: acquire the per-entity lock (B) / claim a sentinel from the consumer group (A) from **two connections** and assert exactly one wins — catches a misconfigured advisory-lock scope or a pgBouncer transaction-mode proxy that silently breaks session affinity, and a Redis that buffers under partition.
 - **(b) exactly-once *effect* given at-least-once *delivery*** (A) / **dedup** (B): enqueue/claim a sentinel `UpdateKey` twice and assert the *effect* happens once (idempotent dedup on `UpdateKey`).
