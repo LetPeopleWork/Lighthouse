@@ -514,7 +514,7 @@ vi.mock("./WidgetShell", () => ({
 						data-testid={`widget-info-link-${widgetKey}`}
 						href={info.learnMoreUrl}
 					>
-						Learn More
+						Learn more about {info.description}
 					</a>
 				</div>
 			)}
