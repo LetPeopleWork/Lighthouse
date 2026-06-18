@@ -66,11 +66,5 @@
 		"vite": "^8.0.16",
 		"vitest": "^4.1.0",
 		"vitest-sonar-reporter": "^3.0.0"
-	},
-	"pnpm": {
-		"overrides": {
-			"undici": "^7.28.0",
-			"@babel/core": "^7.29.6"
-		}
 	}
 }
