@@ -1064,3 +1064,151 @@ This diagram makes three commitments visible:
 
 No Level 3 — the change is wiring + process, not internal component decomposition. The C4 here and in `docs/feature/website-screenshot-freshness/feature-delta.md` are the same diagram; the feature-delta also carries the 10→canonical mapping table that sizes slice-02.
 
+---
+
+# C4 Architecture Diagrams — epic-5305-k8s-readiness
+
+Feature: epic-5305-k8s-readiness (ADO Epic #5305 — Lighthouse k8s-readiness, production code)
+Wave: DESIGN (system / infrastructure layer)
+Date: 2026-06-16
+Architect: Titan (System Designer), interaction mode = PROPOSE — FIRST of three architects (→ nw-ddd-architect → nw-solution-architect)
+ADRs: ADR-075 (SignalR Redis backplane, config-gated), ADR-076 (cluster-aware update queue — **OPEN, SPIKE-gated**: 2 options + recommendation), ADR-077 (concurrent-startup migration coordination), ADR-078 (in-app observability hooks). **Amends** ADR-027 Q1/1C/3A (single-instance / `replicas: 1`) → multi-replica becomes a **config-gated capability that auto-degrades to the proven single-instance path** (D1 epic gate).
+
+**The standalone (single-container) topology is the diagram baseline, not an afterthought.** Every distributed element below (Redis backplane, shared status store, distributed queue/lock) is **null-degradable**: absent its config, the container runs exactly today's in-process path. The two diagrams below show (1) the single-container standalone — unchanged from ADO #4618's 3A shape — and (2) the multi-replica cluster topology this epic *enables* behind config.
+
+## C4 Level 1 — System Context (delta: the platform-operator)
+
+The product personas (forecaster, flow-coach, config-admin) and external systems (OIDC, Jira/ADO/Linear) are unchanged. This epic adds the **platform-operator** — the human/orchestrator that *runs* an instance — and makes the orchestrator (Kubernetes) and the reverse proxy first-class context actors. The MCP/CLI caller authenticating as themselves (US-06) is a secondary actor whose detail belongs to the solution-architect.
+
+```mermaid
+C4Context
+    title System Context — epic-5305-k8s-readiness (delta)
+
+    Person(operator, "Platform-operator", "Runs an instance: single-container self-hoster OR multi-replica SaaS operator. Sets replica count, rolls out, fronts with a proxy, scrapes metrics.")
+    Person(mcpCaller, "MCP / CLI caller", "Drives Lighthouse as themselves via their own credential (US-06; detail = solution-architect)")
+    Person(user, "Authenticated end-user", "Forecaster / flow-coach / config-admin — unchanged product personas, browser + SignalR")
+
+    System(lighthouse, "Lighthouse", "Forecasting tool. This epic makes the SAME binary cluster-safe: forwarded-header trust, health probes, graceful drain, expand-only migrations + startup coordination, observability hooks, and a config-gated multi-replica path — all auto-degrading to the single-container standalone.")
+
+    System_Ext(orchestrator, "Kubernetes / container runtime", "Sends SIGTERM on rollout; calls /health/{live,ready,startup}; scales replicas. Absent in standalone (a bare process).")
+    System_Ext(proxy, "Reverse proxy / Ingress", "Traefik / nginx. TLS-terminates; sets X-Forwarded-Proto/Host/For. Absent in standalone (direct Kestrel).")
+    System_Ext(oidc, "OIDC Provider", "Keycloak / Entra ID. Redirect/callback URLs must reflect the public HTTPS host behind the proxy (US-01).")
+    System_Ext(observ, "Cluster observability stack", "Prometheus scrapes /metrics; Loki ingests JSON stdout logs; OTLP collector receives traces. The STACK is #5306; this epic exposes the IN-APP surfaces only.")
+
+    Rel(operator, lighthouse, "Configures (replicas/proxy/Redis/telemetry), deploys, rolls out")
+    Rel(orchestrator, lighthouse, "SIGTERM on rollout; probes /health/*; scales", "process signal / HTTP")
+    Rel(user, lighthouse, "Reads forecasts; holds a SignalR connection via", "HTTPS through the proxy")
+    Rel(mcpCaller, lighthouse, "Calls /mcp with own credential (passed through)", "HTTPS")
+    Rel(proxy, lighthouse, "Forwards requests with X-Forwarded-* to", "HTTP")
+    Rel(lighthouse, oidc, "Builds redirect/callback from forwarded host; validates JWT", "OIDC")
+    Rel(observ, lighthouse, "Scrapes /metrics; ingests JSON logs; receives OTLP traces from", "HTTP / OTLP")
+```
+
+## C4 Level 2 — Container, view A: standalone single-container (the D1 baseline — UNCHANGED)
+
+This is exactly the ADO #4618 3A / 1C shape and **does not change**. No Redis, one replica, SQLite default, frontend embedded. The status store is the existing in-process `ConcurrentDictionary`; the queue is the existing in-process `Channel<Func<Task>>`; SignalR fan-out is in-memory. Every config knob this epic adds is absent ⇒ the degraded (in-process) branch runs.
+
+```mermaid
+C4Container
+    title Container Diagram — epic-5305 view A: standalone (degraded / baseline, UNCHANGED)
+
+    Person(user, "End-user", "Browser + SignalR")
+    Person(operator, "Self-hoster", "Runs one container; Ctrl-C to stop")
+
+    Container(api, "Lighthouse (single container)", "ASP.NET Core (hexagonal), SPA embedded in wwwroot", "ONE process. In-process Channel queue + single consumer; in-process ConcurrentDictionary status store; in-memory SignalR fan-out; TeamUpdater/PortfolioUpdater hosted services run here. /health/* return harmless 200; /metrics off by default; UseForwardedHeaders OFF (no proxy declared).")
+    ContainerDb(db, "SQLite (default)", "EF Core, WAL", "Single file. Database.Migrate() on boot — no lock needed (one process).")
+
+    Rel(user, api, "HTTPS + SignalR (direct to Kestrel)")
+    Rel(operator, api, "Starts / Ctrl-C (graceful drain of the in-flight queue)")
+    Rel(api, db, "EF Core (provider=sqlite)")
+```
+
+## C4 Level 2 — Container, view B: multi-replica cluster (the capability this epic ENABLES, config-gated)
+
+Behind config (`ConnectionStrings:Redis`, replica count, telemetry on), the **same binary** runs N replicas. New/changed shared infrastructure: a **Redis backplane** (SignalR fan-out, ADR-075), a **shared status store** replacing the in-process dictionary (US-07 AC3, ADR-076), a **cluster-aware update path** so syncs run once across the fleet (US-07 AC1, ADR-076 — OPEN), and a **startup migration lock** so exactly one replica migrates (US-04, ADR-077). The proxy/Ingress, orchestrator probes, and observability stack are external. Cluster-side deployment of Redis/Prometheus/Ingress is **#5306, out of scope** — shown dashed as "operator-provided".
+
+```mermaid
+C4Container
+    title Container Diagram — epic-5305 view B: multi-replica (config-gated capability)
+
+    Person(user, "End-user", "Browser pinned by sessionAffinity (A); notifications fan out cross-pod (B)")
+    Person(operator, "SaaS operator", "Sets replicas=N + Redis conn string; rolls out")
+    System_Ext(proxy, "Reverse proxy / Ingress", "TLS terminate; X-Forwarded-*; sticky to a pod for SignalR (#5306 deploys it)")
+    System_Ext(orchestrator, "Kubernetes", "SIGTERM on rollout; probes /health/*; (#5306 deploys manifests)")
+    System_Ext(observ, "Prometheus / Loki / OTLP", "Operator-provided (#5306)")
+
+    Container(api1, "Lighthouse replica 1..N", "Same ASP.NET Core binary", "UseForwardedHeaders ON (trusted proxy declared). /health/ready gated on DB+migrations; flips NotReady on ApplicationStopping. SIGTERM drains in-flight HTTP + SignalR + the update path. /metrics + JSON logs + OTLP on. SignalR uses Redis backplane.")
+    ContainerDb(pg, "PostgreSQL (shared)", "EF Core, provider=postgresql", "ONE DB for old+new pods during rollover. Migrations applied ONCE via a startup lock (ADR-077); expand-only (D4).")
+    ContainerDb(redis, "Redis (operator-provided)", "StackExchange.Redis client in-app", "(1) SignalR backplane pub/sub (ADR-075); (2) candidate substrate for the shared status store + distributed queue/lock (ADR-076, OPEN). Absent ⇒ in-process degrade (D1).")
+
+    Rel(user, proxy, "HTTPS + SignalR")
+    Rel(proxy, api1, "Forwards with X-Forwarded-* (sticky for SignalR)", "HTTP")
+    Rel(orchestrator, api1, "SIGTERM; probes /health/*; scales")
+    Rel(operator, api1, "Configures Redis + replicas")
+    Rel(api1, pg, "EF Core; one replica wins the migration lock on boot")
+    Rel(api1, redis, "SignalR pub/sub; shared status store + cluster-aware queue/lock (ADR-076)")
+    Rel(observ, api1, "Scrapes /metrics; ingests JSON logs; OTLP traces")
+```
+
+## C4 Level 3 — Component: the cluster-aware update path (ADR-076, the centerpiece, OPEN)
+
+The architecturally significant decision is **what becomes the cluster-aware unit** (D5: the *update queue itself*, covering BOTH the timer loop AND inline manual refresh — not just a timer leader). This diagram makes the existing in-process machinery explicit and marks each component's degradation seam. The two candidate shapes (Option 1 distributed-single-consumer queue; Option 2 cluster-wide per-entity lock + shared status store) both reduce to **swapping the implementation behind the existing `IUpdateQueueService` port** — the seam already exists, which is why both candidates are EXTEND, not rewrite. The winner is SPIKE-decided in DELIVER.
+
+```mermaid
+C4Component
+    title Component Diagram — cluster-aware update path (ADR-076 — OPEN, both options behind one port)
+
+    Container_Boundary(api, "Lighthouse replica") {
+        Component(teamCtrl, "TeamController / PortfolioController (EXISTING, unchanged)", "ASP.NET Core", "Manual refresh: TriggerUpdate(id) (fire-and-forget) AND DeleteTeam/DeletePortfolio: updateQueueService.EnqueueAndAwaitAsync(...). BOTH inline paths flow through the port (D5).")
+        Component(updaters, "TeamUpdater / PortfolioUpdater / ForecastUpdater (EXISTING)", "UpdateServiceBase<T> : BackgroundService", "Timer loop: while(!stopping) UpdateAll()→TriggerUpdate(id) every Interval mins. In view B these must NOT run N× (US-07 C). Leader-gating is a COMPONENT of the fix, not the whole fix.")
+        Component(queuePort, "IUpdateQueueService (EXISTING PORT)", "C# interface", "EnqueueUpdate(type,id,task) + EnqueueAndAwaitAsync(type,id,task,ct). The seam both ADR-076 options swap behind — unchanged signature (D5).")
+        Component(queueImpl, "UpdateQueueService (EXISTING, EXTENDED) → cluster-aware impl", "C# class", "TODAY: in-process Channel<Func<Task>> + single Task.Run consumer + ConcurrentDictionary<UpdateKey,TaskCompletionSource> awaiters + TryAdd dedup. ADR-076 Opt1: shared queue (Redis stream / Postgres) drained by ONE fleet consumer. Opt2: keep local queue, guard each (type,id) with a distributed lock. DEGRADE: no Redis ⇒ today's in-process impl verbatim (D1/AC4).")
+        Component(statusStore, "updateStatuses status store (EXISTING shared singleton, EXTENDED)", "ConcurrentDictionary<UpdateKey,UpdateStatus> → IUpdateStatusStore port", "TODAY: in-process dict injected into BOTH the queue AND the hub. View B: must agree across pods (US-07 AC3). Both ADR-076 options need a SHARED store (Redis hash / Postgres). DEGRADE: no Redis ⇒ in-process dict (D1).")
+        Component(maintGate, "DatabaseMaintenanceGate (EXISTING, REUSE)", "process-singleton", "Already mutual-excludes backup/restore vs background work; the cluster lock pattern (ADR-077) is modeled on this seam.")
+        Component(hub, "UpdateNotificationHub (EXISTING, [Authorize])", "SignalR Hub", "GetUpdateStatus reads the status store; Clients.Group(key).SendAsync fan-out now rides the Redis backplane (ADR-075). Cross-pod delivery restored.")
+        Component(dispatcher, "IDomainEventDispatcher (EXISTING, ADR-027)", "in-process router", "After-commit handlers run on the winning consumer/lock-holder; recovery via next re-sync (unchanged — no outbox).")
+    }
+    System_Ext(redis, "Redis (config-gated)", "queue / lock / status substrate (Opt1/Opt2)")
+    System_Ext(pg, "PostgreSQL", "advisory-lock substrate alternative for Opt2 / ADR-077")
+
+    Rel(teamCtrl, queuePort, "enqueues both trigger paths via")
+    Rel(updaters, queuePort, "timer loop enqueues via")
+    Rel(queuePort, queueImpl, "realized by (swappable per ADR-076)")
+    Rel(queueImpl, statusStore, "dedups + records progress in")
+    Rel(queueImpl, redis, "Opt1: shared queue / Opt2: distributed per-entity lock")
+    Rel(queueImpl, pg, "Opt2 alt: Postgres advisory lock")
+    Rel(statusStore, redis, "shared status store substrate (both options)")
+    Rel(hub, statusStore, "GetUpdateStatus reads")
+    Rel(queueImpl, dispatcher, "publishes after-commit on the winning consumer")
+```
+
+The diagram makes four commitments visible:
+
+1. **The port is the seam — both ADR-076 options are EXTEND, not rewrite.** `IUpdateQueueService` already abstracts enqueue + await; both candidate shapes swap the *implementation* behind it. `TeamController`/`PortfolioController`/the updaters are **unchanged** — they keep calling the port. This is why D5's "the queue itself is the cluster-aware unit" is cheap: the unit already has a boundary.
+2. **The shared status store is a separate, smaller decision than the queue.** `updateStatuses` is one shared singleton injected into both the queue and the hub; making it cluster-consistent (US-07 AC3) is needed by *both* ADR-076 options and can be extracted to an `IUpdateStatusStore` port independently. The DDD-architect owns the per-entity consistency invariant on this store.
+3. **Both trigger paths are covered by construction (D5).** The timer loop and the inline `EnqueueAndAwaitAsync` manual-refresh path both flow through the same port — so making the port cluster-aware covers both, which a timer-only leader does not (the explicit A1 "rejected as sufficient").
+4. **Degradation is the default branch, not a fallback.** Absent `ConnectionStrings:Redis`, every component above is today's in-process class verbatim (D1 / US-07 AC4) — the cluster-aware impl is the *added* branch, selected by config exactly as `DatabaseConfigurator` selects the provider.
+
+## Mermaid — graceful-shutdown / drain sequence (US-03)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant K8s as Kubernetes
+    participant LB as Service/Ingress
+    participant Host as IHostApplicationLifetime
+    participant Ready as /health/ready
+    participant Queue as IUpdateQueueService
+    participant Conn as In-flight HTTP + SignalR
+
+    K8s->>Host: SIGTERM (rollout)
+    Host->>Ready: ApplicationStopping → flip NotReady (US-03 AC2)
+    Ready-->>LB: 503 on next readiness probe
+    LB->>LB: stop routing new requests to this pod
+    Host->>Queue: stop intake; drain in-flight (or safely re-enqueue) (US-03 AC1)
+    Host->>Conn: let in-flight HTTP finish; SignalR clients reconnect to another pod (backplane)
+    Queue-->>Host: drained within ShutdownTimeout (HostOptions, bounded by terminationGracePeriodSeconds)
+    Host->>K8s: host reports Stopped → pod exits (zero dropped requests)
+    Note over K8s,Conn: Standalone (US-03 AC3): Ctrl-C → same drain → exits exactly as today
+```
+
