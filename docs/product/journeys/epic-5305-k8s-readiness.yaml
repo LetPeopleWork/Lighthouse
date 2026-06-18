@@ -1,0 +1,183 @@
+schema_version: 1
+feature_id: epic-5305-k8s-readiness
+created: 2026-06-16
+research_depth: lightweight
+note: >
+  Operational journeys for Epic 5305 "Lighthouse k8s-readiness — production code changes".
+  The actor throughout is the platform-operator (self-hoster running a single container today;
+  LPW SaaS operator running many replicas across tenants tomorrow). These journeys are
+  operational, not in-app UX: the "screen" is mostly kubectl/Helm/Grafana and the app's HTTP
+  surface (health endpoints, /metrics, OIDC redirect, /mcp). Every journey inherits the #5305
+  EPIC GATE: the change must auto-degrade to the sacrosanct single-container standalone (no
+  Redis -> in-memory; one replica works; SQLite default; frontend embedded). The north-star
+  this slices toward lives in docs/feature/l8e-kubernetes-learning/planning-stage.md (D1-D5,
+  Q1-Q5, §4 architecture). Six jobs map onto seven stories: survive-multiple-replicas (#5304,
+  migration-lock half of #5308), zero-downtime-rollout (#5308 expand-only, #5309 drain),
+  trust-pod-health (#5310), correct-behind-proxy (#5311), observe-in-cluster (#5312),
+  mcp-caller-own-identity (#5307).
+
+journeys:
+
+  - name: scale-out-without-breaking
+    goal: >
+      A platform-operator raises the API replica count past 1 behind a load balancer and
+      observes that work-tracking syncs run once across the fleet, every connected client
+      receives every update notification regardless of which pod raised it, and the per-entity
+      update status is consistent across pods — i.e. Lighthouse behaves as a normal
+      horizontally-scaled web app, not a self-corrupting singleton.
+    persona: "platform-operator (LPW SaaS operator; also any self-hoster scaling for HA)"
+    jobs: [job-operator-survive-multiple-replicas]
+    stories: ["#5304", "#5308 (migration lock)"]
+    emotional_arc:
+      start: Wary - "Lighthouse is a stateful singleton; I've been told a second pod corrupts it
+        — N× syncs, notifications that reach only one pod's clients, an inconsistent status cache."
+      middle: Testing - "I configure Redis, scale to 3, trigger a manual refresh on one pod and
+        watch the notification land on a client connected to another; I check the external system
+        was synced once, not three times."
+      end: Confident - "replica count is just a number now; a node can die and Lighthouse stays up
+        and consistent. With no Redis and one replica it's exactly the old single-instance app."
+    steps:
+      - step: Configure Redis backplane (optional) and scale the API Deployment to N replicas.
+        output: N pods Running; SignalR uses the Redis backplane when configured, in-memory otherwise.
+      - step: A client connected to pod A; a manual refresh is served by pod B (EnqueueAndAwait).
+        output: The update runs ONCE (cluster-aware queue / per-entity lock), and pod A's client
+          receives the completion notification via the backplane.
+      - step: Inspect the external work-tracking system's request log over one sync cycle.
+        output: Exactly one sync per team/portfolio across the fleet — no N× duplication, no racing
+          Postgres writes on the same rows.
+      - step: GetUpdateStatus is queried against different pods during an in-flight update.
+        output: Consistent answer across pods (shared/distributed status store, not per-process dict).
+    error_paths:
+      - trigger: Redis unreachable mid-operation.
+        recovery: Degrade to documented behaviour (configured failure mode); single-replica path
+          unaffected; surfaced in logs/health, never silent data corruption.
+      - trigger: Two pods both believe they own the timer loop.
+        recovery: Cluster-wide per-entity lock / single-consumer queue makes double-work impossible
+          even if leadership is ambiguous (leader election is necessary-not-sufficient — DESIGN solves).
+
+  - name: zero-downtime-upgrade
+    goal: >
+      A platform-operator rolls out a new Lighthouse version under a rolling update; old and new
+      pods coexist against one Postgres for the rollout window; no request is dropped and no
+      change is lost.
+    persona: "platform-operator"
+    jobs: [job-operator-zero-downtime-rollout]
+    stories: ["#5308 (expand-only)", "#5309"]
+    emotional_arc:
+      start: Cautious - "an upgrade today means killed in-flight requests and the fear that a
+        destructive migration breaks the old pods still serving."
+      middle: Reassured - "this release's migration is additive-only; terminating pods drain HTTP +
+        SignalR + the in-memory queue before they exit."
+      end: Routine - "I merge a PR during the working day and it rolls; nobody notices."
+    steps:
+      - step: Apply the new image; k8s starts new pods and sends SIGTERM to old ones.
+        output: Old pod stops accepting new work, drains in-flight requests/connections, flushes the
+          update queue, exits within terminationGracePeriodSeconds.
+      - step: New and old pods run migrations against the same Postgres during the overlap.
+        output: Migration is additive-only (expand); old pods keep working because nothing they need
+          was dropped. Destructive cleanup is deferred to a LATER release (contract).
+    error_paths:
+      - trigger: A pod cannot drain within terminationGracePeriodSeconds.
+        recovery: It exits at the deadline having stopped intake first, minimising loss; logged.
+      - trigger: A developer authors a destructive migration in the same release.
+        recovery: Caught by the expand-only guard/check (DESIGN) before merge — not at runtime.
+
+  - name: login-behind-the-proxy
+    goal: >
+      A platform-operator puts Lighthouse behind a TLS-terminating reverse proxy and a user logs
+      in via OIDC over the public HTTPS hostname with no redirect loop and a persisted session.
+    persona: "platform-operator (configures); end-user (logs in, benefits)"
+    jobs: [job-operator-correct-behind-proxy]
+    stories: ["#5311"]
+    emotional_arc:
+      start: Frustrated - "behind the proxy, OIDC redirects to http://, the callback loops, secure
+        cookies vanish — login is broken and I can't tell why."
+      middle: Diagnosing - "the app trusts its own internal http://hostname instead of the proxy's
+        X-Forwarded-Proto/-Host; I declare the proxy as trusted and enable forwarded headers."
+      end: Working - "login redirects to the real HTTPS hostname, the callback succeeds, the secure
+        cookie sticks — first try."
+    steps:
+      - step: Declare the proxy/network as trusted; enable UseForwardedHeaders (config-gated).
+        output: The app derives scheme=https and the public host from X-Forwarded-* from that proxy only.
+      - step: A user hits the public HTTPS URL and starts OIDC login.
+        output: Redirect and callback URLs use https + the public host; secure cookie set; session holds.
+    error_paths:
+      - trigger: Forwarded headers arrive from an untrusted client (spoof attempt).
+        recovery: Only the declared known-proxy set is trusted; others are ignored — no scheme/host spoof.
+      - trigger: No proxy declared (direct/standalone access).
+        recovery: Forwarded-header trust stays OFF; direct access behaves exactly as today (standalone gate).
+
+  - name: trustworthy-pod-health
+    goal: >
+      A platform-operator wires the three k8s probes to real ASP.NET Core health checks so traffic
+      reaches only serving pods and only genuinely-dead pods are restarted.
+    persona: "platform-operator"
+    jobs: [job-operator-trust-pod-health]
+    stories: ["#5310"]
+    emotional_arc:
+      start: Distrustful - "is this 503 the app or a naive shared health endpoint? a slow DB makes
+        k8s restart-loop a perfectly healthy pod."
+      middle: Wiring - "readiness checks DB + migrations-applied; liveness is shallow; a startup
+        probe covers the slow boot/migration window."
+      end: Trusting - "the probes mean what they say; rollouts are clean and nothing flaps."
+    steps:
+      - step: readiness probe -> /health/ready (DB reachable + migrations applied).
+        output: Pod stays OUT of the LB rotation until it can truly serve; no cold 500s to users.
+      - step: liveness probe -> shallow /health/live.
+        output: Pod restarts only on genuine deadlock, never because a dependency is slow.
+      - step: startup probe -> /health/startup.
+        output: Slow boot/migration tolerated without tripping liveness.
+    error_paths:
+      - trigger: DB unreachable.
+        recovery: Readiness fails (out of rotation) but liveness stays green (no restart storm).
+      - trigger: Single-container standalone with no orchestrator.
+        recovery: Endpoints are harmless/no-op-friendly; no behaviour change for self-hosters (standalone gate).
+
+  - name: observe-in-the-cluster
+    goal: >
+      A platform-operator scrapes Lighthouse's /metrics into Prometheus, ships its structured JSON
+      logs to Loki, and traces a slow request via OpenTelemetry — all from the same Grafana the
+      rest of the cluster uses.
+    persona: "platform-operator"
+    jobs: [job-operator-observe-in-cluster]
+    stories: ["#5312"]
+    emotional_arc:
+      start: Blind - "Lighthouse is a black box: no /metrics, unstructured text logs I can't query."
+      middle: Instrumenting - "I scrape /metrics, parse JSON logs by field, see traces."
+      end: Visible - "Lighthouse sits on my dashboards like any first-class service."
+    steps:
+      - step: Prometheus scrapes /metrics.
+        output: Request rate / error rate / latency visible per instance.
+      - step: Logs emitted as structured JSON to stdout; OTel traces exported.
+        output: Logs queryable by field in Loki; a slow request is traceable end to end.
+    error_paths:
+      - trigger: Self-hoster does not want the overhead.
+        recovery: Low-overhead / off-by-default where appropriate; no perf change for the single container.
+
+  - name: mcp-caller-brings-own-identity
+    goal: >
+      A platform-operator exposes the Lighthouse MCP HTTP server and each caller authenticates with
+      their OWN credential (OAuth token, or their own Lighthouse API key) that the server passes
+      through — so every caller drives Lighthouse as themselves, with their own RBAC scope and audit.
+    persona: "platform-operator (deploys/secures); MCP/CLI caller (authenticates as self)"
+    jobs: [job-mcp-caller-own-identity]
+    stories: ["#5307"]
+    emotional_arc:
+      start: Uneasy - "the mcp-http container is a confused deputy: one baked LIGHTHOUSE_API_KEY, so
+        every caller acts as that owner/scope with no per-user audit, and an unauth'd /mcp is an open hole."
+      middle: Adopting - "I move to MCP OAuth pass-through (preferred) — each caller brings their own
+        token; or the interim X-Api-Key pass-through reusing Lighthouse's owner-resolved/scoped keys."
+      end: Secured - "no shared secret to bake/seal/distribute/rotate; per-user RBAC + audit for free;
+        the single-key dev path still exists for self-hosters (standalone gate)."
+    steps:
+      - step: Caller sends its own OAuth token (or X-Api-Key) to the MCP HTTP server.
+        output: The server passes the credential through; Lighthouse owner-resolves it (ApiKey.OwnerSubject
+          -> sub) and applies that caller's ApiKeyPermission scope.
+      - step: The wrapping client method pre-checks the Lighthouse server version before calling.
+        output: An old server (no endpoint) fails with a clear "upgrade Lighthouse" message, not an opaque 404.
+    error_paths:
+      - trigger: Caller presents no credential to an exposed /mcp.
+        recovery: With pass-through there is no ambient authority to fall back on — the call is rejected,
+          not silently executed as a shared key.
+      - trigger: Self-hoster on the legacy single-key/dev path.
+        recovery: That path stays available; no break for self-hosters (standalone gate).

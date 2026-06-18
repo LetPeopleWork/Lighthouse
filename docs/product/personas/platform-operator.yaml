@@ -1,0 +1,101 @@
+schema_version: 1
+id: platform-operator
+created: 2026-06-16
+created_in_feature: epic-5305-k8s-readiness
+
+display_name: Platform Operator
+
+aliases:
+  - self-hoster
+  - k8s-operator
+  - sre
+  - devops-engineer
+  - lpw-saas-operator
+
+short_description: >
+  The person who runs a Lighthouse INSTANCE — not the one who reads flow metrics inside it.
+  They deploy Lighthouse to a server or a Kubernetes cluster, put it behind a reverse proxy,
+  wire OIDC, upgrade it without taking it down, and watch it from a monitoring stack. Two
+  flavours of the same persona: the SELF-HOSTER running a single container for their own
+  org (today's sacrosanct standalone product), and the LPW SaaS operator running many
+  replicas across many tenants. What makes them THIS persona is that they care about the
+  pod/process lifecycle, rollouts, and proxying — the operational envelope around the app —
+  not about cycle times, forecasts, or RBAC assignments. Distinct from config-admin (who
+  edits in-app configuration) and from the end-user product personas (flow-coach, etc.).
+
+primary_jobs:
+  - job-operator-survive-multiple-replicas
+  - job-operator-zero-downtime-rollout
+  - job-operator-trust-pod-health
+  - job-operator-correct-behind-proxy
+  - job-operator-observe-in-cluster
+  - job-mcp-caller-own-identity
+
+goals:
+  - Run Lighthouse with more than one replica behind a load balancer without duplicate
+    work-tracking syncs, lost SignalR notifications, or migrations racing each other
+  - Roll out a new version with zero dropped requests and zero data loss — old and new pods
+    coexisting against one database for the length of the rollout
+  - Let Kubernetes route traffic only to pods that are truly serving, and restart only pods
+    that are genuinely dead — never flap on a slow dependency
+  - Get correct HTTPS redirects, secure cookies, OIDC callback URLs and SignalR negotiation
+    when Lighthouse sits behind Traefik / nginx / an Ingress
+  - See per-instance metrics, structured logs and traces in my existing monitoring stack
+  - Never have to bake, seal, distribute and rotate a single shared API key just to expose
+    the MCP server — each caller should drive Lighthouse as themselves
+
+frustrations:
+  - Lighthouse is a stateful singleton by construction; naively running >1 replica breaks in
+    three independent ways (N× external syncs, SignalR notifications that only reach one pod's
+    clients, an in-memory status cache that answers differently per pod) with no warning
+  - Every pod races Database.Migrate() on boot — N replicas starting concurrently is undefined
+  - A rolling update kills pods mid-request because the app does not drain on SIGTERM
+  - Behind a proxy, HTTPS redirects loop, OIDC callback URLs come out as http://, secure
+    cookies get dropped — because the app trusts its own scheme/host instead of the forwarded
+    headers
+  - The published mcp-http container is a confused deputy: one baked LIGHTHOUSE_API_KEY means
+    every caller acts as that key's owner, with that key's scope, with no per-user audit
+  - The app exposes no /metrics and logs unstructured text, so it is invisible to Prometheus
+    and painful to query in Loki
+
+mental_model:
+  - The standalone single container is the simple, good-enough-for-many product and it must
+    NEVER change — every k8s-readiness change auto-degrades to the single-instance path (no
+    Redis -> in-memory; one replica works; SQLite stays the default; frontend stays embedded)
+  - Readiness != liveness — a pod that cannot reach the DB should leave the load-balancer
+    rotation (readiness) but must NOT be restarted (liveness); a slow boot needs a startup probe
+  - A release is two database states at once — new and old pods share one Postgres for the
+    rollout window, so each release's migrations must be additive (expand now, contract later)
+  - "Behind a proxy" means the app is no longer the TLS terminator; it must learn its real
+    scheme/host/client-IP from X-Forwarded-* headers, and only from a proxy it has been told
+    to trust
+  - The caller's own credential should map to the caller's own identity and rights — Lighthouse
+    already owner-resolves and scopes API keys, so the confused deputy is a packaging gap, not a
+    backend gap
+
+vocabulary:
+  - "standalone gate" — the hard acceptance rule that every change preserves the single-container
+    self-hosted product unchanged (the #5305 epic gate)
+  - "auto-degrade" — with no Redis / one replica / SQLite, the change collapses to today's
+    single-instance behaviour with no configuration required
+  - "expand-only / expand-contract" — additive migrations this release, destructive cleanup a
+    later release, so old pods never depend on a column the new release dropped
+  - "drain" — on SIGTERM, stop accepting new work and let in-flight HTTP + SignalR + queued
+    updates finish within terminationGracePeriodSeconds
+  - "confused deputy" — the mcp-http server acting on a single baked key's authority regardless
+    of who called it
+  - "forwarded headers" — X-Forwarded-Proto / -Host / -For that a reverse proxy sets and the app
+    must honour (UseForwardedHeaders with known proxies)
+  - "backplane" — the SignalR fan-out mechanism (in-memory per-process today; Redis across pods)
+
+related_personas:
+  - config-admin (runs INSIDE the instance this persona operates; the OIDC/RBAC config this
+    persona wires up is what config-admin then administers)
+  - lighthouse-maintainer (ships the chart + docs this persona consumes; sometimes the same person)
+  - first-time-system-admin (the human who bootstraps RBAC once this persona has the instance up)
+
+not_this_persona:
+  - A flow-coach / delivery-lead / forecaster — they read metrics; they do not run the process
+  - config-admin editing Team / Portfolio / Connection / RBAC settings inside the running app
+  - A developer USING the MCP/CLI client (that caller appears in job-mcp-caller-own-identity as
+    the actor, but the persona who deploys and secures the MCP server is THIS one)
