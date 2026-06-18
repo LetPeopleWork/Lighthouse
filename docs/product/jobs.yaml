@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-06-14
+updated: 2026-06-16
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -21,6 +21,7 @@ feature_context:
   - multiple-cycle-times
   - work-item-age-percentiles
   - website-screenshot-freshness
+  - epic-5305-k8s-readiness
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1914,3 +1915,176 @@ jobs:
         satisfaction: 2 - the screenshots exist and are broadly representative, just dated. Gap: 1 -
         small but real; this job is the downstream payoff of the maintainer job, not an independent ask.
 
+
+  - id: job-operator-survive-multiple-replicas
+    title: Run Lighthouse with more than one replica without it breaking
+    persona: platform-operator
+    feature: epic-5305-k8s-readiness
+    job_story: >
+      When I scale Lighthouse past a single replica behind a load balancer so it can absorb
+      load and survive a node failure,
+      I want each external work-tracking sync to run once across the fleet, every client to
+      receive every SignalR notification regardless of which pod raised it, and concurrent
+      pod startups to apply migrations exactly once,
+      so I can operate Lighthouse as a normal horizontally-scaled web app instead of a
+      single-instance singleton that corrupts itself the moment a second pod starts.
+    dimensions:
+      functional: One distributed update path (single consumer / cluster-wide per-entity lock + shared status store); SignalR Redis backplane; migration lock so exactly one pod migrates
+      emotional: Move from "I daren't run more than one pod" to "I scale this like any other service"
+      social: Stand behind an SLA — "Lighthouse stays up through a node failure" — to my own stakeholders
+    forces:
+      push: Lighthouse is a stateful singleton; >1 replica means N× syncs racing Postgres rows, notifications that reach only one pod's clients, and a per-pod status cache that answers inconsistently
+      pull: A genuinely cluster-safe app scales on CPU, rolls without flapping, and tolerates a lost node
+      anxiety: >
+        Will electing a leader for the timer fix it, when manual refreshes are handled inline on
+        whichever replica serves the request? Will I silently double-sync and not notice?
+      habit: Operators expect a web app to be stateless-enough to scale by changing a replica count
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 - hard blocker for any multi-replica / SaaS operation; nothing in Bands D-E
+        works without it. Current satisfaction: 1 - naive scale-out is actively broken in three ways.
+        Gap: 4 - the largest, highest-uncertainty job in the epic (the update-queue itself must
+        become cluster-aware; leader election is necessary-not-sufficient).
+
+  - id: job-operator-zero-downtime-rollout
+    title: Upgrade Lighthouse with no dropped requests and no data loss
+    persona: platform-operator
+    feature: epic-5305-k8s-readiness
+    job_story: >
+      When I roll out a new Lighthouse version under a Kubernetes rolling update, so old and
+      new pods briefly run side by side against one shared database,
+      I want each release's migrations to be additive-only (so an old pod never depends on a
+      column the new release dropped) and every terminating pod to drain its in-flight HTTP
+      requests, SignalR connections and queued updates before it exits,
+      so I can ship updates during the working day without a maintenance window and without a
+      user ever seeing a failed request or a half-written change.
+    dimensions:
+      functional: Expand-only (expand now / contract later) migration discipline; SIGTERM handling that stops intake and drains within terminationGracePeriodSeconds
+      emotional: Move from "upgrades are a scary after-hours event" to "I merge a PR and it rolls"
+      social: Deliver upgrades invisibly; no "Lighthouse will be down 22:00-23:00" email
+    forces:
+      push: A rolling update today kills pods mid-request (no drain) and a destructive migration can break the old pods still serving during the rollout
+      pull: Zero-downtime upgrades make Lighthouse safe to update often and cheaply
+      anxiety: Will a migration that drops/renames a column break the old replica before it's gone? Will an in-flight forecast write be lost when the pod dies?
+      habit: Operators are used to scheduling downtime for database migrations
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - required for credible SaaS upgrades and for safe self-hoster updates.
+        Current satisfaction: 1 - no drain, no expand-contract discipline today. Gap: 3.
+
+  - id: job-operator-trust-pod-health
+    title: Let Kubernetes route to only-truly-ready pods and restart only dead ones
+    persona: platform-operator
+    feature: epic-5305-k8s-readiness
+    job_story: >
+      When Kubernetes decides whether to send traffic to a Lighthouse pod or to restart it,
+      I want readiness gated on real serving capacity (DB reachable, migrations applied),
+      liveness shallow enough that a slow dependency never triggers a restart, and a startup
+      probe that covers a slow boot/migration window,
+      so I can trust that traffic only reaches pods that can actually serve and that the
+      orchestrator never restart-loops a healthy-but-slow pod.
+    dimensions:
+      functional: ASP.NET Core health checks driving three distinct probes (readiness DB+migrations, shallow liveness, startup)
+      emotional: Move from "is this 503 the app or the probe?" to "the probes mean what they say"
+      social: Show a green, trustworthy deployment status to whoever watches the cluster
+    forces:
+      push: Without real probes, k8s sends traffic to not-yet-ready pods (cold 500s) or restart-loops on a slow dependency
+      pull: Correct probes give clean rollouts and accurate health signals
+      anxiety: Will a shared liveness/readiness endpoint restart a pod that's merely waiting on the DB?
+      habit: Operators expect every serious app to expose liveness/readiness/startup endpoints
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 - prerequisite for any safe rollout. Current satisfaction: 2 - story 04
+        exercised probes as a spike but there is no product implementation. Gap: 2.
+
+  - id: job-operator-correct-behind-proxy
+    title: Serve correct HTTPS, cookies, OIDC and SignalR behind a reverse proxy
+    persona: platform-operator
+    feature: epic-5305-k8s-readiness
+    job_story: >
+      When I put Lighthouse behind Traefik / nginx / an Ingress that terminates TLS,
+      I want the app to honour X-Forwarded-Proto / -Host / -For from the proxy I trust,
+      so that HTTPS redirects, secure cookies, OIDC callback URLs and SignalR negotiation all
+      use the real public scheme and host instead of the pod's internal http://hostname.
+    dimensions:
+      functional: UseForwardedHeaders gated on a declared set of known proxies/networks
+      emotional: Move from "why does OIDC redirect to http and loop?" to "login just works behind the proxy"
+      social: Hand users a clean HTTPS URL that logs in first try
+    forces:
+      push: Behind a proxy today, HTTPS redirects loop, OIDC callbacks come out http://, secure cookies drop
+      pull: One config switch makes every reverse-proxy deployment behave correctly
+      anxiety: If I trust forwarded headers, am I opening a spoofing hole from untrusted clients?
+      habit: Operators are used to setting UseForwardedHeaders / trusted-proxy config on .NET apps behind a proxy
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - blocks correct auth on ANY reverse-proxy deployment, not just k8s.
+        Current satisfaction: 1 - broken behind a TLS-terminating proxy today. Gap: 3.
+
+  - id: job-operator-observe-in-cluster
+    title: See per-instance metrics, structured logs and traces in my monitoring stack
+    persona: platform-operator
+    feature: epic-5305-k8s-readiness
+    job_story: >
+      When I run Lighthouse in a cluster with Prometheus / Loki / an OTel collector,
+      I want the app to expose a /metrics endpoint, emit structured JSON logs to stdout, and
+      produce OpenTelemetry traces,
+      so I can monitor request rates, error rates and latency, query logs by field, and trace
+      a slow request — without bolting on a sidecar to scrape unstructured text.
+    dimensions:
+      functional: Prometheus /metrics endpoint; structured JSON logging to stdout; OpenTelemetry traces
+      emotional: Move from "Lighthouse is a black box in my cluster" to "it's a first-class citizen on my dashboards"
+      social: Report instance health/usage to stakeholders from the same Grafana everyone else uses
+    forces:
+      push: No /metrics and unstructured logs make Lighthouse invisible to Prometheus and painful in Loki
+      pull: Native instrumentation drops Lighthouse straight onto existing dashboards
+      anxiety: Will always-on tracing/metrics cost the single-container self-hoster performance?
+      habit: Operators expect cloud-native apps to expose /metrics + JSON logs out of the box
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        Importance: 3 - valuable for operating the SaaS, less critical for a single self-hoster.
+        Current satisfaction: 2 - logging exists but unstructured; no /metrics. Gap: 1 - real but
+        the smallest in the epic; off-by-default keeps the self-hoster cost at zero.
+
+  - id: job-mcp-caller-own-identity
+    title: Drive the MCP server as myself, not as a shared baked-in key
+    persona: platform-operator
+    feature: epic-5305-k8s-readiness
+    job_story: >
+      When I expose the Lighthouse MCP HTTP server so colleagues' agents can call it,
+      I want each caller to authenticate with their own credential (an OAuth token, or their
+      own Lighthouse API key) that the MCP server passes through,
+      so that every caller drives Lighthouse as themselves with their own RBAC scope and audit
+      trail — instead of every caller sharing one baked LIGHTHOUSE_API_KEY whose owner and
+      scope they all silently inherit.
+    dimensions:
+      functional: MCP spec (2025-06-18) OAuth pass-through (preferred) or X-Api-Key pass-through (interim), reusing owner-resolved/scoped Lighthouse keys
+      emotional: Move from "one shared key I must bake, seal, distribute and rotate" to "callers bring their own"
+      social: Give security review a clean answer — no ambient authority, per-user audit
+    forces:
+      push: The mcp-http container is a confused deputy - one baked key means every caller acts as that owner/scope with no per-user audit
+      pull: Per-caller identity removes the shared secret entirely; an unauth'd /mcp is no longer an open hole
+      anxiety: Is adopting the MCP OAuth framework too heavy vs the interim X-Api-Key pass-through?
+      habit: Operators are used to giving a service one API key and accepting the blast radius
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - the confused deputy is a real security gap the moment the MCP server is
+        exposed beyond ClusterIP. Current satisfaction: 1 - single baked key today. Gap: 3. Change
+        lands mostly in the lighthouse-clients repo; version-gate the endpoint per CLAUDE.md.
