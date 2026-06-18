@@ -32,5 +32,10 @@
     "@types/pngjs": "^6.0.5",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "form-data": "^4.0.6"
+    }
   }
 }
