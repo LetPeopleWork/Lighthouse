@@ -443,3 +443,93 @@ paths (the timer loop AND inline manual refresh on whatever replica serves the r
   (D1). The `frontend.mode: split` nginx path is a Productization #5306 / Band-D optimization, built then,
   defaulted off. Out of scope here — restated so DESIGN does not reopen it.
 ```
+
+---
+
+## Wave: DESIGN / [APP] Application layer — epic-5305-k8s-readiness
+
+Wave: DESIGN | Layer scope: **application / component + ports/adapters + ADR authoring** | Date: 2026-06-18
+Architect: Morgan (Solution Architect), interaction mode = **PROPOSE** — THIRD and final architect (Titan / system → Hera / DDD → **here**).
+Inputs (inherited, NOT re-litigated): `brief.md` → "## System Architecture — epic-5305-k8s-readiness" (Decisions 1–7, Reuse Analysis, the solution-architect handoff bullet) + the DDD subsection (INV-1..4, the aggregate verdict, the no-outbox/idempotency confirmation); `c4-diagrams.md` → "C4 Architecture Diagrams — epic-5305-k8s-readiness"; D1–D6; A1–A6. Code grounded at HEAD: `UpdateQueueService.cs`, `UpdateNotificationHub.cs`, `ApiKeyAuthenticationHandler.cs`, `DatabaseConfigurator.cs`, `Program.cs`.
+
+I own the **application detail behind the fixed system constraints**: health/lifecycle/middleware wiring, the `IUpdateStatusStore` + ADR-076-substrate ports/adapters, the forwarded-headers ordering + OIDC redirect-uri construction, the MCP inbound-auth split. I do **not** pick ADR-076 Option A vs B (SPIKE-gated, D5), redefine any invariant, or touch production code.
+
+### [APP] Reuse-Analysis confirmation
+
+I inherit and honour the system layer's Reuse verdicts verbatim — no new CREATE beyond what it already justified. EXTEND dominates: every cluster-aware change lands behind a seam that exists (`IUpdateQueueService`, the shared `updateStatuses` singleton, `UseForwardedHeaders`/`ConfigureForwardedHeaders`, `ApiKeyAuthenticationHandler`, the Serilog pipeline, the `app.Lifetime` hooks, the `DatabaseMaintenanceGate` mutual-exclusion pattern). The two genuine CREATEs (`/health/{live,ready,startup}` via the ASP.NET `HealthChecks` framework; OTel `/metrics` off-by-default) are standard-library-backed, each mapped to a US/AC with no seam to extend. The one *new abstraction* I introduce — `IUpdateStatusStore` — wraps the existing `ConcurrentDictionary<UpdateKey,UpdateStatus>` field; minimal new surface, in line with the system layer's "EXTEND → extract port" verdict.
+
+### [APP] US-02 + US-03 — health / lifecycle / shutdown wiring (Decisions 4, 5)
+
+**Health endpoints (US-02, Decision 5 — CREATE via `Microsoft.Extensions.Diagnostics.HealthChecks`).** Register `AddHealthChecks()` with named, tagged checks; map three endpoints with distinct predicates so each gets its own depth:
+
+- `AddHealthChecks().AddDbContextCheck<LighthouseAppContext>("db", tags: ["ready"])` (DbContext reachability) + a custom `MigrationsAppliedHealthCheck` (`tags: ["ready","startup"]`) that asserts `context.Database.GetPendingMigrations()` is empty.
+- A drain-aware flag check (`tags: ["ready"]`) that reports Unhealthy once `ApplicationStopping` has fired (US-03 AC2 — see below). A small singleton `IReadinessState` holds the flag; the readiness check reads it.
+- `MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false })` — **shallow**: no checks run, returns 200 while the process is up (never gated on a slow dependency → no restart storm, US-02 AC1).
+- `MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") })` — **deep**: 503 until DB reachable AND migrations applied (US-02 AC2), and 503 once draining (US-03 AC2).
+- `MapHealthChecks("/health/startup", new HealthCheckOptions { Predicate = c => c.Tags.Contains("startup") })` — covers slow boot (migrations applied / warm-up).
+- All three are **unauthenticated** (`[AllowAnonymous]` / mapped outside the fallback auth policy) operational endpoints carrying no business data (RBAC N/A, confirmed). Mapped in `ConfigureApp` **after** `UseRouting` and alongside `MapControllers`/`MapHub`. The Earned-Trust startup probes for ADR-076/077 substrates surface their refusal as a `health.startup.refused` event that, while distinct from these endpoints, can drive `/health/startup` to stay Unhealthy when a substrate lie is detected.
+
+**Graceful-shutdown drain (US-03, Decision 4 — EXTEND `app.Lifetime`).** Register an `ApplicationStopping` callback (alongside the existing `ApplicationStarted` registration at `Program.cs:116`) with this **ordering**:
+
+1. **Flip readiness NotReady first** — set `IReadinessState.IsDraining = true` so `/health/ready` returns 503 and the LB/Ingress stops routing **before** drain begins (US-03 AC2). This must run first so no new request is routed mid-drain.
+2. **Stop queue intake, drain in-flight** — the existing single-consumer loop (`UpdateQueueService.StartProcessingQueue`, `:181-197`) reads from an unbounded `Channel`. On stopping, complete the writer (`queue.Writer.Complete()`) so `ReadAllAsync` finishes the in-flight items then exits; the consumer's in-flight item completes (or `EnqueueAndAwaitAsync` work is allowed to finish / is safely re-enqueued for the next pod via the ADR-076 substrate at N>1). This rides the consumer's existing completion path — no new mechanism (US-03 AC1).
+3. **Let in-flight HTTP complete** — the host's normal `ShutdownTimeout` window drains in-flight HTTP; SignalR clients disconnect and reconnect to another pod via the ADR-075 backplane.
+
+Bound the whole drain with `HostOptions.ShutdownTimeout` set from `Shutdown:TimeoutSeconds` (`builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = ...)`), which in the cluster must be ≤ `terminationGracePeriodSeconds` (a #5306 deploy value). Ordering relative to middleware: ASP.NET stops accepting new connections on SIGTERM before `ApplicationStopping` fires for in-flight work; auth/SignalR middleware are unaffected (the drain is a lifecycle hook, not a middleware reorder).
+
+**Standalone degradation (D1)**: Ctrl-C raises the same `ApplicationStopping` → same ordered drain → exits exactly as today; the `WaitForShutdownAsync` path (`Program.cs:136`) is unchanged, the drain is additive and harmless at N=1 (US-02 AC3, US-03 AC3).
+
+### [APP] US-07 — ports / adapters (Decisions 1, 2; DDD INV-1..4)
+
+**`IUpdateStatusStore` (extract from the shared `updateStatuses` singleton).** Today the `ConcurrentDictionary<UpdateKey,UpdateStatus>` is created at `Program.cs:932` and injected into BOTH `UpdateQueueService` (`:14`/`:22`) AND `UpdateNotificationHub` (`:10`/`:14`, read by `GetUpdateStatus` `:50-60`). Extract a port:
+
+```
+public interface IUpdateStatusStore
+{
+    bool TryAdmit(UpdateKey key, UpdateStatus initial);        // INV-4: at-most-one active lifecycle per key, atomic cluster-wide
+    void Advance(UpdateKey key, UpdateProgress to);            // INV-1: compare-and-set on the UpdateProgress ordinal; write wins iff it advances
+    bool TryGet(UpdateKey key, out UpdateStatus status);       // INV-2: bounded-stale read tolerated
+    void Remove(UpdateKey key);                                // terminal cleanup (INV-3); a fresh lifecycle re-admits cleanly
+}
+```
+
+- **In-process adapter (degrade path, D1)** — `InProcessUpdateStatusStore` wraps the existing `ConcurrentDictionary`: `TryAdmit` = `TryAdd` (exactly today's dedup, `:46`/`:72`); `Advance` = the in-place `updateStatus.Status =` mutation, which is monotone by construction because the single consumer owns the ordered sequence; `TryGet` = `TryGetValue`; `Remove` = `TryRemove`. **Byte-identical behaviour and code path at N=1** (DDD §standalone-degradation).
+- **Shared adapter (multi-replica)** — a Redis-hash or Postgres-row adapter keyed by `UpdateKey`. It MUST implement `Advance` as a **monotonic-progress compare-and-set on the `UpdateProgress` ordinal** (write wins iff `to > current`), NOT blind LWW (INV-1, rejected by the DDD-architect). `TryAdmit` is the cluster-wide atomic admission (INV-4) — its atomicity is provided by the ADR-076 substrate's claim/lock, so the store and the queue substrate are co-designed: admission and status-store-write are the same transactional boundary. Reads are bounded-stale/eventually-consistent (INV-2) — no synchronous distributed read on the `GetUpdateStatus` hot path; the SignalR backplane push + next re-sync are the convergence mechanism (ADR-027 D2 parity).
+- **Injection points (unchanged callers)**: `UpdateQueueService` and `UpdateNotificationHub.GetUpdateStatus` take `IUpdateStatusStore` instead of the raw dictionary; the singleton registration at `Program.cs:932-934` selects the in-process vs shared adapter on the same `ConnectionStrings:Redis` gate as ADR-075/076. No controller, no hub method signature, no `[Authorize]` changes.
+
+**ADR-076 substrate seam (behind `IUpdateQueueService`).** I describe the seam, NOT the pick. Both options swap the impl behind the existing `IUpdateQueueService` port (`EnqueueUpdate` + `EnqueueAndAwaitAsync`, signatures unchanged); the config gate is `ConnectionStrings:Redis` (Option A's Redis Stream / Option B's Redis lock) and/or the Postgres connection (Option B's `pg_advisory_lock`). Absent the gate ⇒ the in-process `Channel` + `InProcessUpdateStatusStore` verbatim (US-07 AC4). The cross-pod `EnqueueAndAwaitAsync` completion signal rides the monotone terminal-status advance + the ADR-075 backplane push, NOT a durable queue (DDD Confirmation 3: no outbox; wire awaiter release off the store). **The Earned-Trust startup `probe()` for the chosen substrate belongs to the DELIVER slice (slice-07)** — referenced here, designed in ADR-076, not designed away: wire → probe → use, refuse on a substrate lie with `health.startup.refused`.
+
+**SignalR Redis backplane (ADR-075).** `.AddStackExchangeRedis(conn)` appended to the existing `AddSignalR()` registration (`Program.cs:269`) only when `ConnectionStrings:Redis` is present; hub, groups, fan-out (`:199-204`), `[Authorize]` all unchanged. Sticky-session is a #5306 deploy concern, not in-app.
+
+### [APP] US-01 — forwarded-headers ordering + OIDC redirect-uri (Decision 7)
+
+US-01 is **mostly already implemented** (Reuse Analysis). `UseForwardedHeaders()` is at `Program.cs:170` and `ConfigureForwardedHeaders` (`:538-566`) already sets `XForwardedFor|Proto|Host` and populates `KnownProxies`/`KnownIPNetworks` from `authConfig.TrustedProxies`/`TrustedNetworks` (default empty ⇒ OFF). My application detail:
+
+- **Middleware ordering (verify + lock)**: `app.UseForwardedHeaders()` (`:170`) runs **before** `UseRouting` (`:196`), `UseAuthentication` (`:207`), `UseAuthorization` (`:208`), and `MapHub` (`:212`). This is correct and load-bearing: forwarded headers must be applied to `HttpContext.Request.Scheme`/`Host` **before** auth so that the OIDC middleware, the cookie `SecurePolicy`, and the SignalR negotiation all observe the real public scheme/host. The fix is to confirm this ordering and guard it (a test), not to move anything.
+- **OIDC redirect/callback URI construction (AC1)**: the OpenIdConnect handler builds the `redirect_uri` from the current request's scheme + host. Because `UseForwardedHeaders` runs first and rewrites `Request.Scheme`→`https` and `Request.Host`→`<public>` (only from a declared known proxy), the generated redirect/callback is `https://<public>/<CallbackPath>` (`CallbackPath` from `authConfig.CallbackPath`, `:667`). The cookie `SecurePolicy = Always` (`:628`) then persists because the request is seen as HTTPS. No code change to the OIDC options is required beyond confirming forwarded headers precede auth; the redirect-uri correctness is a *consequence* of the ordering.
+- **Spoof rejection (AC2)**: forwarded headers from an **undeclared** source are ignored because `KnownProxies`/`KnownIPNetworks` are empty / do not contain the source — `UseForwardedHeaders` only honours declared proxies. This is the existing behaviour; the test proves it.
+- **Tests that prove AC1/AC2/AC3** (integration, `WebApplicationFactory`): (AC1) with `TrustedProxies` set + `X-Forwarded-Proto: https` + `X-Forwarded-Host: <public>` from the declared proxy → assert the generated OIDC redirect/challenge `Location` is `https://<public>/...` and the session cookie is `Secure`. (AC2) the same headers from an undeclared source → assert scheme/host are NOT rewritten (no spoof). (AC3) no proxy declared → assert direct/standalone access is byte-identical (forwarded-header trust OFF by default). No new RBAC surface (derives scheme/host only).
+
+### [APP] US-06 — MCP inbound-auth application detail (A4, D6)
+
+Primarily a **`lighthouse-clients`** change, **version-gated** per CLAUDE.md: the wrapping client method pre-checks the server version and fails with a clear "upgrade Lighthouse" error (not an opaque 404), pinned **strictly newer than the last released Lighthouse version** in `FEATURE_REQUIRES_SERVER_NEWER_THAN` (US-06 AC2). The credential is **passed through** per caller, not a baked `LIGHTHOUSE_API_KEY`.
+
+**Backend = REUSE `ApiKeyAuthenticationHandler` (no new RBAC port).** The handler (`ApiKeyAuthenticationHandler.cs`) already: reads `X-Api-Key` (`:14`/`:31`), validates via `apiKeyService.ValidateApiKeyWithOwnerAsync` (`:43`), **owner-resolves** via `ApiKey.OwnerSubject` → emits a `sub` claim (`:63-66`), and is wired into the `LighthouseSmartAuth` policy scheme that forwards `X-Api-Key` requests to the API-key scheme (`Program.cs:608-624`). A caller's forwarded `X-Api-Key` therefore drives Lighthouse with **that caller's** identity and `ApiKeyPermission` scope (US-06 AC1) — the confused-deputy ambient-authority hole is closed with zero new backend auth code; the MCP path honours per-caller scope through the established handler (cross-cutting RBAC checklist).
+
+**The OAuth-pass-through-preferred / X-Api-Key-interim split (A4):**
+- **Preferred — MCP OAuth pass-through**: each caller brings their own OAuth token; no shared secret to bake/seal/distribute/rotate; per-user RBAC + audit for free. *Risk*: MCP-spec (2025-06-18) OAuth maturity in the client SDK.
+- **Interim/fallback (accepted) — X-Api-Key pass-through**: caller sends its own Lighthouse API key; the MCP server forwards it; reuses the owner-resolved/scoped model above with near-zero backend change.
+- **The slice-06 SPIKE decides** which path ships first (assesses client-SDK OAuth maturity). If OAuth pass-through requires the backend to validate a third-party bearer token at `/mcp`, that is a small additional scheme in the `LighthouseSmartAuth` forwarding selector — but it is SPIKE-gated and not pre-designed here. **Standalone (D1)**: the existing single-key / dev path stays available; no break for self-hosters (US-06 AC3).
+
+**External integration annotation (for platform-architect / DEVOPS)**: the OIDC provider (US-01) and the MCP OAuth path (US-06, if chosen) are external auth integrations — **contract tests recommended** (consumer-driven, e.g. PactNet) for the OIDC token/redirect contract and any MCP OAuth token-exchange, to detect breaking changes before production. These are the highest-risk boundary in the epic.
+
+### [APP] Handoff to DISTILL (acceptance-designer)
+
+Now fixed for acceptance test design (all behavioural, no implementation coupling):
+1. **US-02**: three endpoints with distinct depth — `/health/live` 200 through a slow dependency; `/health/ready` 503 until DB-reachable AND migrations-applied (and during drain); `/health/startup` covers boot. Standalone: harmless at N=1.
+2. **US-03**: on SIGTERM, readiness flips NotReady **before** drain; in-flight HTTP + queued update complete (or re-enqueue) within `Shutdown:TimeoutSeconds`; Ctrl-C standalone behaves as today.
+3. **US-07**: `IUpdateStatusStore` enforces monotonic-progress (no reader ever observes a regressed `UpdateProgress` — the INV-1 race test the DDD-architect specified); single sync per entity at N=3; cross-pod notification delivery; standalone byte-identical.
+4. **US-01**: declared-proxy forwarded headers → `https://<public>` OIDC redirect + Secure cookie; undeclared source ignored; no-proxy standalone byte-identical.
+5. **US-06**: two callers with distinct credentials each see only their own RBAC-scoped data (credential forwarded, not baked); client version-gate gives a clear upgrade error; single-key dev path preserved.
+
+Substrate Earned-Trust probes (ADR-076/077) and the ADR-076 Option A/B pick are **DELIVER/SPIKE concerns** — the acceptance tests assert the *behaviour* (single sync, monotonic status, exactly-once migration) substrate-agnostically, so they hold whichever option the SPIKE picks. ADRs: ADR-075 (ACCEPTED), ADR-076 (PROPOSED/OPEN — SPIKE-gated), ADR-077 (ACCEPTED), ADR-078 (PROPOSED — overhead SPIKE-measured), all under `docs/product/architecture/`.
