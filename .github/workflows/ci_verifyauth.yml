@@ -26,6 +26,11 @@ jobs:
           docker compose up -d
         working-directory: ./examples/keycloak
 
+      - name: Run TLS-terminating reverse proxy (Traefik)
+        run: |
+          docker compose up -d
+        working-directory: ./examples/reverse-proxy
+
       - name: Enable Corepack and prepare pnpm
         run: |
           mkdir -p "$HOME/.local/share/pnpm"
@@ -215,6 +220,76 @@ jobs:
           path: ./Lighthouse.EndToEndTests/playwright-report/
           retention-days: 30
 
+      - name: Reset Lighthouse state for proxied-auth tests
+        if: ${{ !cancelled() }}
+        run: |
+          echo "Stopping Lighthouse..."
+          pkill Lighthouse || true
+          for i in 1 2 3 4 5; do
+            if pgrep Lighthouse > /dev/null; then
+              sleep 1
+            else
+              break
+            fi
+          done
+          echo "Removing database and logs to ensure clean state..."
+          rm -f ./linux-x64/lighthouse.db ./linux-x64/lighthouse.db-shm ./linux-x64/lighthouse.db-wal
+          rm -rf ./linux-x64/logs
+          mv ./linux-x64/lighthouse.log ./linux-x64/lighthouse-rbac.log || true
+          rm -rf ./Lighthouse.EndToEndTests/playwright-report
+          rm -rf ./Lighthouse.EndToEndTests/test-results
+        working-directory: ./Lighthouse
+
+      - name: Start Lighthouse behind reverse proxy (proxied-auth tests)
+        if: ${{ !cancelled() }}
+        run: |
+          ./Lighthouse > lighthouse.log 2>&1 &
+        working-directory: ./Lighthouse/linux-x64
+        env:
+          Database__Provider: sqlite
+          Database__ConnectionString: 'Data Source=lighthouse.db'
+          Kestrel__Endpoints__Http__Url: "http://localhost:5169"
+          Authentication__Enabled: true
+          Authentication__Authority: "http://localhost:38080/realms/Lighthouse"
+          Authentication__ClientId: "lighthouse-app"
+          Authentication__ClientSecret: "vTaGFsyZ70RtZbkHClkqrJomzov5WmB9"
+          Authentication__CallbackPath: "/api/auth/callback"
+          Authentication__SignedOutCallbackPath: "/api/auth/signout-callback"
+          Authentication__Scopes: '["openid", "profile", "email"]'
+          Authentication__AllowedOrigins__0: "https://localhost:8443"
+          Authentication__TrustedProxies__0: "127.0.0.1"
+          Authentication__TrustedProxies__1: "::1"
+          Authentication__SessionLifetimeMinutes: 480
+          Authentication__RequireHttpsMetadata: false
+          Authorization__Enabled: true
+          Authorization__EmergencySystemAdminSubjects__0: "bc58019b-61fb-4cf9-9315-976faf7238aa"
+          Authorization__GroupClaimName: "groups"
+
+      - name: Wait for reverse proxy to serve Lighthouse (proxied-auth tests)
+        if: ${{ !cancelled() }}
+        run: |
+          echo "Waiting for https://localhost:8443 to be ready..."
+          timeout 30 bash -c 'until curl --silent --fail --insecure https://localhost:8443; do sleep 1; done'
+          echo "Reverse proxy is ready!"
+
+          cat lighthouse.log
+        working-directory: ./Lighthouse/linux-x64
+
+      - name: Run proxied-auth Playwright tests
+        if: ${{ !cancelled() }}
+        run: pnpm run test:proxyauth
+        shell: bash
+        working-directory: ./Lighthouse.EndToEndTests
+        env:
+          LIGHTHOUSEURL: https://localhost:8443
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-proxyauth
+          path: ./Lighthouse.EndToEndTests/playwright-report/
+          retention-days: 30
+
       - name: Stop Lighthouse Server
         if: always()
         run: |
@@ -222,6 +297,8 @@ jobs:
           echo "===== Auth-run lighthouse log ====="
           cat ./linux-x64/lighthouse-auth.log || true
           echo "===== RBAC-run lighthouse log ====="
+          cat ./linux-x64/lighthouse-rbac.log || true
+          echo "===== Proxied-auth-run lighthouse log ====="
           cat ./linux-x64/lighthouse.log || true
           rm -rf ./linux-x64/logs
         working-directory: ./Lighthouse

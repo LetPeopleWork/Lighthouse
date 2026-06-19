@@ -1,0 +1,14 @@
+http:
+  routers:
+    lighthouse:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - websecure
+      service: lighthouse
+      tls: {}
+
+  services:
+    lighthouse:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:5169"

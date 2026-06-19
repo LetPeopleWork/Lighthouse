@@ -1,0 +1,14 @@
+name: lighthouse-reverse-proxy
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: lighthouse-traefik
+    network_mode: host
+    volumes:
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8443 && echo ok >&3"]
+      interval: 5s
+      retries: 10
