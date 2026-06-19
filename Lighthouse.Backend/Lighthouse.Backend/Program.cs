@@ -238,7 +238,7 @@ namespace Lighthouse.Backend
             var authConfig = LoadAuthenticationConfiguration(builder);
 
             ConfigureCors(builder, authConfig);
-            ConfigureForwardedHeaders(builder, authConfig);
+            ForwardedHeadersConfigurator.Configure(builder.Services, builder.Configuration, authConfig);
             ConfigureAuthentication(builder, authConfig);
             ConfigureRateLimiting(builder);
 
@@ -532,36 +532,6 @@ namespace Lighthouse.Backend
                         .AllowAnyMethod()
                         .AllowAnyHeader();
                 });
-            });
-        }
-
-        private static void ConfigureForwardedHeaders(WebApplicationBuilder builder, AuthenticationConfiguration authConfig)
-        {
-            builder.Services.Configure<ForwardedHeadersOptions>(options =>
-            {
-                options.ForwardedHeaders =
-                    Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
-                    Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto |
-                    Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedHost;
-
-                foreach (var proxy in authConfig.TrustedProxies)
-                {
-                    if (IPAddress.TryParse(proxy, out var ip))
-                    {
-                        options.KnownProxies.Add(ip);
-                    }
-                }
-
-                foreach (var network in authConfig.TrustedNetworks)
-                {
-                    var parts = network.Split('/');
-                    if (parts.Length == 2
-                        && IPAddress.TryParse(parts[0], out var prefix)
-                        && int.TryParse(parts[1], out var prefixLength))
-                    {
-                        options.KnownIPNetworks.Add(new IPNetwork(prefix, prefixLength));
-                    }
-                }
             });
         }
 

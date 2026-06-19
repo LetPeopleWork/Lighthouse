@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Net;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Lighthouse.Backend.Tests.TestHelpers.ForwardedHeaders;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
@@ -14,6 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         private const string VersionPath = "/api/v1/version/current";
         private const string PrimaryClientIp = "203.0.113.10";
         private const string SecondaryClientIp = "203.0.113.99";
+        private const string TrustedProxyIp = "127.0.0.1";
 
         private const int PermitLimit = 3;
         private const int WindowSeconds = 2;
@@ -135,11 +138,18 @@ namespace Lighthouse.Backend.Tests.API.Security
             var root = new TestWebApplicationFactory<Program>();
             return root.WithWebHostBuilder(builder =>
             {
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<IStartupFilter>(
+                        new ForwardedHeadersTestStartupFilter(IPAddress.Parse(TrustedProxyIp)));
+                });
+
                 builder.ConfigureAppConfiguration((_, configurationBuilder) =>
                 {
                     var settings = new Dictionary<string, string?>
                     {
                         ["Authentication:Enabled"] = authEnabled ? "true" : "false",
+                        ["Authentication:TrustedProxies:0"] = TrustedProxyIp,
                         ["RateLimits:Enabled"] = rateLimitsEnabled ? "true" : "false",
                         ["RateLimits:Policies:AuthLogin:PermitLimit"] = PermitLimit.ToString(CultureInfo.InvariantCulture),
                         ["RateLimits:Policies:AuthLogin:WindowSeconds"] = WindowSeconds.ToString(CultureInfo.InvariantCulture),

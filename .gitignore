@@ -458,3 +458,6 @@ test-results/
 **/.develop-progress.json
 **/deliver/execution-log.json
 social-posts/.slack-cache.json
+
+# Serena MCP server workspace (local tooling cache)
+.serena/
