@@ -533,3 +533,154 @@ Now fixed for acceptance test design (all behavioural, no implementation couplin
 5. **US-06**: two callers with distinct credentials each see only their own RBAC-scoped data (credential forwarded, not baked); client version-gate gives a clear upgrade error; single-key dev path preserved.
 
 Substrate Earned-Trust probes (ADR-076/077) and the ADR-076 Option A/B pick are **DELIVER/SPIKE concerns** — the acceptance tests assert the *behaviour* (single sync, monotonic status, exactly-once migration) substrate-agnostically, so they hold whichever option the SPIKE picks. ADRs: ADR-075 (ACCEPTED), ADR-076 (PROPOSED/OPEN — SPIKE-gated), ADR-077 (ACCEPTED), ADR-078 (PROPOSED — overhead SPIKE-measured), all under `docs/product/architecture/`.
+
+---
+
+## Wave: DISTILL
+
+Wave: DISTILL | Date: 2026-06-19 | Density: lean | Designer: Sentinel (acceptance-designer methodology), run by the main instance | Scope: all 7 US, plan + slice-01 scaffold (per `/nw-continue` scope decision — full inventory now, RED scaffolds authored per-slice at DELIVER)
+
+### [REF] Inherited commitments
+
+| Origin | Commitment | DDD | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D1 | Standalone single-container is sacrosanct — every story auto-degrades to N=1 | n/a | Every US carries a `@standalone` AC asserting byte-identical N=1 behaviour; it is the one AC that runs in plain InMemory CI for the cluster slices |
+| DISCUSS#D4 | Expand-only migrations; destructive cleanup is a later release | n/a | US-04 AC2 becomes an `@in-memory` CI guard test that parses generated migrations and fails on `DropColumn`/`DropTable`/`RenameColumn` |
+| DISCUSS#D5 | US-07 cluster-aware-queue design is OPEN (SPIKE-gated) — do not pre-pick | ADR-076 | US-07 substrate ATs assert behaviour (single sync, monotonic status, cross-pod notify) **substrate-agnostically** so they hold for Option A or B; the substrate-impl scenarios stay `[Ignore]` until the SPIKE picks the option |
+| DISCUSS#D6 | MCP auth lands primarily in `lighthouse-clients`, version-gated | n/a | US-06 splits: backend per-caller-scope AT is CI-runnable here; the version-gate + OAuth ATs are `@cross-repo` (authored in `lighthouse-clients`). Version-gate baseline = **strictly newer than v26.6.16.14** (last released) |
+| DESIGN#APP | `IUpdateStatusStore.Advance` is a monotonic compare-and-set on the `UpdateProgress` ordinal (INV-1), NOT blind LWW | ADR-076 | US-07 ships the DDD-specified INV-1 race test against both the in-process adapter (`@in-memory` CI) and the shared adapter (`@requires-docker` Testcontainers) |
+| DESIGN#APP | US-01 is mostly implemented; the fix is to confirm + guard middleware ordering (forwarded-headers before auth) | Decision 7 | US-01 ATs assert the *consequence* (https public redirect-uri, Secure cookie, spoof rejection) via `WebApplicationFactory`, not the ordering directly |
+| DESIGN#APP | Health endpoints are unauthenticated; `/health/ready` deep (DB + migrations + drain), `/health/live` shallow | Decision 5 | US-02 ATs assert per-endpoint depth: live stays 200 through a down dependency (no restart storm), ready 503 until DB-reachable AND migrations-applied AND not-draining |
+
+### [REF] Reconciliation result
+
+**Reconciliation passed — 0 contradictions.** No separate `wave-decisions.md` files exist (lean mode: all decisions live in this `feature-delta.md` as D1–D6 / A1–A6 + the DESIGN [APP] handoff). Checked every DISCUSS decision against the DESIGN layers and the DESIGN review (`design-review.md`, verdict APPROVED, zero blocking issues). The DESIGN [APP] "Handoff to DISTILL" fixes the five behavioural contracts the scenarios below assert; none contradicts DISCUSS. The one OPEN item (US-07 ADR-076 Option A/B, D5) is correctly deferred — the ATs are authored substrate-agnostically so the open decision does not block scenario writing.
+
+### [REF] Architecture of Reference + Infrastructure Policy (inherited + extended)
+
+Port-class → treatment is project-level (`docs/architecture/atdd-infrastructure-policy.md`). This epic **appends two driven-internal mechanisms** to that policy: **`Testcontainers.PostgreSql`** (real Postgres for migration-lock + concurrency races, US-04/US-07) and **`Testcontainers.Redis`** (real Redis backplane + shared status store, US-07). Rationale: the DISCUSS pre-requisites and per-slice "production data requirement: Required" are explicit that **InMemory/SQLite cannot reproduce the races** — so those ACs are promoted to automated `@requires-docker` acceptance tests rather than manual-only live runs. Multi-replica is simulated by **N `WebApplicationFactory<Program>` hosts sharing one container's connection string**. The live k3s/Traefik/Redis run (each slice's "dogfood moment") remains as a `@production-data` smoke executed locally at DELIVER, but the CI gate is the Testcontainers test.
+
+### [REF] Scenario list with tags
+
+Black-box NUnit method names (the table is the scenario SSOT — no Gherkin `.feature` files in this C#/TS project, per the infra policy). One row per AC + standalone gate. `@standalone` = the D1 N=1 byte-identical gate. `@requires-docker` = Testcontainers (real Postgres/Redis). `@cross-repo` = authored in `lighthouse-clients`. `@spike-gated` = stays `[Ignore]` until the US-07 SPIKE picks ADR-076 Option A/B.
+
+| # | Scenario (NUnit/method) | Slice / file | AC | Tags |
+|---|---|---|---|---|
+| 1 | `ForwardedHeaders_TrustedProxyHttpsProto_RequestSchemeBecomesHttps` | 01 forwarded-headers AT | US-01 AC1 | `@US-01 @real-io @happy @driving_port` |
+| 2 | `ForwardedHeaders_TrustedProxyForwardedHost_RequestHostBecomesPublicHost` | 01 | US-01 AC1 | `@US-01 @real-io @happy` |
+| 3 | `ForwardedHeaders_TrustedProxyAndHttps_OidcChallengeRedirectUriIsHttpsPublicHost` | 01 | US-01 AC1 | `@US-01 @real-io @happy @driving_port` |
+| 4 | `ForwardedHeaders_TrustedProxyAndHttps_AuthCookieIsSecure` | 01 | US-01 AC1 | `@US-01 @real-io @happy` |
+| 5 | `ForwardedHeaders_UndeclaredSourceProto_SchemeNotRewritten` | 01 | US-01 AC2 | `@US-01 @real-io @error` |
+| 6 | `ForwardedHeaders_UndeclaredSourceHost_HostNotSpoofed` | 01 | US-01 AC2 | `@US-01 @real-io @error` |
+| 7 | `ForwardedHeaders_NoProxyDeclared_DirectAccessByteIdentical` | 01 | US-01 AC3 | `@US-01 @real-io @standalone` |
+| 8 | `ForwardedHeaders_TrustOffByDefault_ForwardedHeadersIgnored` | 01 | US-01 AC3 | `@US-01 @real-io @standalone @edge` |
+| 9 | `HealthLive_ProcessUp_Returns200` | 02 health AT | US-02 AC1/AC3 | `@US-02 @real-io @happy @driving_port` |
+| 10 | `HealthLive_DependencyDownOrSlow_StillReturns200` | 02 | US-02 AC1 | `@US-02 @real-io @happy` |
+| 11 | `HealthReady_DbReachableAndMigrationsApplied_Returns200` | 02 | US-02 AC2 | `@US-02 @real-io @happy @driving_port` |
+| 12 | `HealthReady_DbUnreachable_Returns503WhileLiveStays200` | 02 | US-02 AC1 | `@US-02 @real-io @error` |
+| 13 | `HealthReady_MigrationsPending_Returns503` | 02 | US-02 AC2 | `@US-02 @real-io @error` |
+| 14 | `HealthStartup_CoversSlowBoot_503ThenHealthy` | 02 | US-02 AC2 | `@US-02 @real-io @edge` |
+| 15 | `Health_SingleContainerNoOrchestrator_EndpointsHarmless200` | 02 | US-02 AC3 | `@US-02 @real-io @standalone` |
+| 16 | `Shutdown_ApplicationStopping_ReadinessFlipsNotReadyBeforeDrain` | 03 shutdown AT | US-03 AC2 | `@US-03 @real-io @happy @driving_port` |
+| 17 | `Shutdown_InFlightQueuedUpdate_CompletesOrReenqueuesBeforeStop` | 03 (UpdateQueueService unit) | US-03 AC1 | `@US-03 @real-io @happy` |
+| 18 | `Shutdown_InFlightHttpRequest_CompletesWithinShutdownTimeout` | 03 | US-03 AC1 | `@US-03 @real-io @edge` |
+| 19 | `Shutdown_CtrlCSingleContainer_BehavesAsToday` | 03 | US-03 AC3 | `@US-03 @real-io @standalone` |
+| 20 | `Shutdown_QueueDrainExceedsTimeout_BoundedByShutdownTimeout` | 03 | US-03 AC1 | `@US-03 @real-io @error @edge` |
+| 21 | `MigrationGuard_DropColumnInRelease_FailsCheck` | 04 migration-guard unit | US-04 AC2 | `@US-04 @in-memory @error` |
+| 22 | `MigrationGuard_DropOrRenameTable_FailsCheck` | 04 | US-04 AC2 | `@US-04 @in-memory @error @edge` |
+| 23 | `MigrationGuard_AdditiveOnlyMigration_PassesCheck` | 04 | US-04 AC2 | `@US-04 @in-memory @happy` |
+| 24 | `Startup_ThreeConcurrentHostsOneRealPostgres_MigrationsAppliedExactlyOnce` | 04 (Testcontainers) | US-04 AC1 | `@US-04 @real-io @requires-docker` |
+| 25 | `Startup_MigrationLockContended_FollowersWaitThenServe` | 04 (Testcontainers) | US-04 AC1 | `@US-04 @real-io @requires-docker @edge` |
+| 26 | `Startup_SingleInstance_AutoMigratesOnBootUnchanged` | 04 | US-04 AC3 | `@US-04 @real-io @standalone` |
+| 27 | `Metrics_Endpoint_ReturnsPrometheusFormatWithHttpServerMetrics` | 05 observability AT | US-05 AC1 | `@US-05 @real-io @happy @driving_port` |
+| 28 | `Metrics_AfterHttpRequests_ExposesRequestCountAndLatency` | 05 | US-05 AC1 | `@US-05 @real-io @happy` |
+| 29 | `Logging_StructuredJsonToStdout_ContainsExpectedFields` | 05 | US-05 AC2 | `@US-05 @real-io @happy` |
+| 30 | `Telemetry_DisabledByDefault_NoExporterNoBehaviourChange` | 05 | US-05 AC3 | `@US-05 @real-io @standalone @edge` |
+| 31 | `Metrics_Exposure_OffUnlessConsciouslyConfigured` | 05 | US-05 AC3 | `@US-05 @real-io @standalone` |
+| 32 | `ApiKeyAuth_TwoCallersDistinctKeys_EachSeesOnlyOwnScopedData` | 06 mcp-auth backend AT | US-06 AC1 | `@US-06 @real-io @happy @driving_port @rbac` |
+| 33 | `ApiKeyAuth_ForwardedCallerKey_ResolvesToCallerOwnerNotBakedKey` | 06 | US-06 AC1 | `@US-06 @real-io @happy` |
+| 34 | `ApiKeyAuth_CallerWithoutScope_ForbiddenOnOutOfScopeResource` | 06 | US-06 AC1 | `@US-06 @real-io @error @rbac` |
+| 35 | `ApiKeyAuth_SingleKeyDevPath_StillWorks` | 06 | US-06 AC3 | `@US-06 @real-io @standalone` |
+| 36 | `McpClient_VersionGate_OldServerFailsWithUpgradeMessageNotOpaque404` | 06 (lighthouse-clients) | US-06 AC2 | `@US-06 @cross-repo @error` |
+| 37 | `McpClient_OAuthOrXApiKeyPassThrough_CallerCredentialForwarded` | 06 (lighthouse-clients) | US-06 AC1 | `@US-06 @cross-repo @spike-gated` |
+| 38 | `UpdateStatusStore_InProcessAdvance_NeverObservesRegressedProgress` | 07 status-store unit | US-07 AC4/INV-1 | `@US-07 @in-memory @invariant @happy` |
+| 39 | `Scalability_NoRedisOneHost_BehaviourAndCodePathIdenticalToToday` | 07 | US-07 AC4 | `@US-07 @real-io @standalone` |
+| 40 | `UpdateStatusStore_SharedAdvance_ConcurrentWriters_OrdinalNeverRegresses` | 07 (Testcontainers) | US-07 INV-1 | `@US-07 @real-io @requires-docker @invariant @spike-gated` |
+| 41 | `Scalability_RedisThreeHosts_SingleSyncPerEntity_TimerAndManualRefresh` | 07 (Testcontainers) | US-07 AC1 | `@US-07 @real-io @requires-docker @spike-gated` |
+| 42 | `Scalability_RedisBackplane_NotificationOnPodA_ReachesClientOnPodB` | 07 (Testcontainers) | US-07 AC2 | `@US-07 @real-io @requires-docker @spike-gated` |
+| 43 | `Scalability_GetUpdateStatus_ConsistentAcrossPods` | 07 (Testcontainers) | US-07 AC3 | `@US-07 @real-io @requires-docker @spike-gated` |
+
+**Error/edge/standalone coverage**: 21 of 43 scenarios (≈49%) are `@error`, `@edge`, or `@standalone` — well above the 40% sad-path floor. The standalone gate (D1) is exercised once per story (#7/8, 15, 19, 26, 30/31, 35, 39).
+
+### [REF] Walking skeleton
+
+**None — confirmed from DISCUSS** ("Walking skeleton: none; brownfield hardening"). This epic has **no new React/UI surface** (operator surfaces are HTTP/SIGTERM/kubectl, not the SPA). The end-to-end proof per slice is the **live `@production-data` dogfood smoke** (Traefik+OIDC for US-01, kill-DB for US-02, rolling-restart for US-03, 3-replica Postgres for US-04, Prometheus scrape for US-05, two-owner MCP for US-06, 3-replica+Redis for US-07), each run locally at the slice's DELIVER (Claude runs live E2E itself). No Playwright `@walking_skeleton` spec is added.
+
+### [REF] Driving adapter coverage
+
+| Driving adapter (DESIGN) | Protocol scenario(s) |
+|---|---|
+| `app.UseForwardedHeaders()` + OIDC challenge/cookie (proxy-aware) | #1–#8 via real `WebApplicationFactory` HTTP with `X-Forwarded-*` headers |
+| `GET /health/live` (shallow) | #9, #10, #15 |
+| `GET /health/ready` (deep: DB + migrations + drain) | #11, #12, #13, #16 |
+| `GET /health/startup` | #14 |
+| `GET /metrics` (Prometheus) | #27, #28, #31 |
+| `X-Api-Key` request path (`ApiKeyAuthenticationHandler` via `LighthouseSmartAuth`) → existing `/api/...` | #32, #33, #34, #35 |
+| Process signal SIGTERM / `IHostApplicationLifetime.ApplicationStopping` | #16, #17, #18, #19, #20 |
+| MCP client wrapper (version-gate + credential pass-through) | #36, #37 (`lighthouse-clients`) |
+| Config gates (`ConnectionStrings:Redis`, telemetry, `Shutdown:TimeoutSeconds`, `TrustedProxies`) | #7/8, #30/31, #39, #41 (degrade-path assertions) |
+
+No new in-app UI driving adapter (no React surface). The `/mcp` endpoint itself lives in the `lighthouse-clients` MCP server; the backend driving surface it exercises is the existing `X-Api-Key` auth path (#32–#35).
+
+### [REF] Adapter coverage table (every driven adapter has a `@real-io` scenario)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| EF `LighthouseAppContext` (SQLite, CI) | YES | every integration AT seeds + reads real EF rows |
+| Real Postgres (Testcontainers) | YES | #24, #25, #26, #40, #41, #43 — migration lock + concurrency races |
+| Real Redis (Testcontainers) | YES | #40, #41, #42, #43 — backplane + shared status store |
+| `ApiKeyAuthenticationHandler` + `IApiKeyService` (real) | YES | #32–#35 (real handler resolves owner + scope) |
+| `ForwardedHeaders` middleware (real) | YES | #1–#8 |
+| ASP.NET `HealthChecks` (real) | YES | #9–#16 |
+| OTel/Prometheus exporter + Serilog JSON (real) | YES | #27–#31 |
+| `UpdateQueueService` / `IUpdateStatusStore` in-process (real) | YES | #17, #20, #38, #39 |
+| `IUpdateStatusStore` shared adapter (real) | YES | #40, #41, #43 |
+| `IWorkTrackingConnector` (the synced external) | FAKE (`Mock`) | #41 asserts *single* sync by counting fake-connector calls across 3 hosts |
+| OIDC provider | FAKE metadata (`WithTestAuthentication`) | #3 asserts redirect-uri shape; live OIDC is the `@production-data` smoke |
+
+### [REF] Test placement + precedent
+
+| Test | Path | Precedent |
+|---|---|---|
+| US-01 forwarded-headers AT | NEW `Lighthouse.Backend.Tests/API/Integration/ForwardedHeadersIntegrationTest.cs` | `ApiKeyControllerHttpSmokeTests` / `OAuthControllerIntegrationTest` (same `WebApplicationFactory` + `WithTestAuthentication`) |
+| US-02 health AT | NEW `.../API/Integration/HealthCheckIntegrationTest.cs` | `OAuthHealthController` + integration-test pattern |
+| US-03 shutdown — readiness flip AT | extend `HealthCheckIntegrationTest` (drain → ready 503) | same |
+| US-03 queue-drain unit | extend `Services/Implementation/BackgroundServices/Update/UpdateQueueServiceTests.cs` | the shipped queue tests (128-thread dedup test is the concurrency precedent) |
+| US-04 migration-guard unit | NEW `.../Architecture/ExpandOnlyMigrationGuardTest.cs` (parses `Lighthouse.Migrations.*` files) | the `Architecture/` ArchUnitNET seam tests |
+| US-04/US-07 Testcontainers ATs | NEW `Lighthouse.Backend.Tests/Integration/Containers/*` + a `PostgresContainerFixture` / `RedisContainerFixture` | none yet — this epic bootstraps the Testcontainers helper (slice-04 then slice-07) |
+| US-05 observability AT | NEW `.../API/Integration/ObservabilityIntegrationTest.cs` | integration-test pattern; log capture via a test `ILogger` sink |
+| US-06 backend per-caller-scope AT | NEW `.../API/Integration/McpInboundAuthIntegrationTest.cs` | `ApiKeyAuthenticationHandlerTest` + RBAC integration tests |
+| US-06 version-gate + OAuth ATs | `lighthouse-clients` repo | the `work-item-age-percentiles` clients wrapper + `FEATURE_REQUIRES_SERVER_NEWER_THAN` |
+| US-07 status-store unit | extend `UpdateNotificationHubTest` / NEW `UpdateStatusStoreTest.cs` | the shipped hub + queue tests |
+
+### [REF] Scaffolds created (RED-ready)
+
+Per the `/nw-continue` scope decision (plan now + scaffold per-slice), **slice-01 is scaffolded this wave**; slices 02–07 get their RED scaffolds at the start of their own DELIVER step (US-07's substrate scaffolds wait on its SPIKE). All scaffolds: compile (`dotnet build` 0 warnings), `[Ignore("pending — DELIVER (epic-5305-k8s-readiness slice-NN)")]`, bodies `Assert.Fail(...)` carrying the GWT + seed strategy ⇒ RED-not-BROKEN (the C#/NUnit analogue of Mandate 7; no `__SCAFFOLD__` stubs in this project per the infra policy).
+
+- `Lighthouse.Backend.Tests/API/Integration/ForwardedHeadersIntegrationTest.cs` — #1–#8 (US-01).
+
+### [REF] Pre-requisites
+
+- **Testcontainers packages** — `Testcontainers.PostgreSql` + `Testcontainers.Redis` added to `Lighthouse.Backend.Tests.csproj` (slice-04 / slice-07). CI runner must provide Docker (it does for the GH Actions ubuntu runner; gate the `@requires-docker` category accordingly).
+- **US-04** — the `CreateMigration` PowerShell script (all providers) per CLAUDE.md; a real Postgres for the concurrent-startup race (Testcontainers).
+- **US-06** — `lighthouse-clients` repo access; version-gate baseline = **strictly newer than v26.6.16.14** (last released); confirm `ApiKeyAuthenticationHandler` needs no backend change for `X-Api-Key` pass-through (it does not, per DESIGN).
+- **US-07** — the ADR-076 SPIKE (Option A/B) must land before #40–#43 are un-skipped; the `IUpdateStatusStore` port (DESIGN) is the seam under test.
+- **Health/metrics/shutdown** — the `Microsoft.Extensions.Diagnostics.HealthChecks` + OTel + `app.Lifetime` wiring (DESIGN [APP]) is created in the respective slice's DELIVER; the ATs are authored against the endpoint/behaviour contract, not the wiring.
+
+### [REF] Pre-DELIVER fail-for-the-right-reason gate
+
+Run per slice at its DELIVER PREPARE phase: `dotnet test --filter "Category=epic-5305-k8s-readiness"` and confirm each new scenario fails as **RED** (`Assert.Fail` from the scaffold / a real assertion on missing behaviour), not **BROKEN** (compile/fixture/DI error). The slice-01 scaffold is already RED-by-skip (`[Ignore]`); un-skipping each scenario at DELIVER and confirming it reds for the right reason is the RED-phase entry gate (ADR-025 D2). `@requires-docker` scenarios additionally require Docker present, else they are skipped (not failed).
+
+### [REF] Handoff to DELIVER
+
+DELIVER runs slice-by-slice in the prioritized order (US-01 → 02 → 03 → 04 → 05 → 06 → 07), each: scaffold the slice's RED ATs → un-skip one at a time (Outside-In TDD) → implement → mutation ≥80% on the real surface → live `@production-data` dogfood smoke → ADO Active→Resolved → push (paused for review). US-07 is gated on its ADR-076 SPIKE before its substrate ATs (#40–#43) are written. US-06's clients-repo ATs are authored in `lighthouse-clients` at that slice. The Testcontainers helper is bootstrapped in slice-04.
