@@ -2187,16 +2187,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetCurrentThroughputForTeam_RollingWindow_WithBlackoutDays_ExcludesBlackoutDays()
+        public void GetCurrentThroughputForTeam_RollingWindow_WithBlackoutDays_KeepsFixedCalendarWindowAndStripsBlackoutDays()
         {
             testTeam.ThroughputHistory = 10;
 
-            for (var i = 0; i < 12; i++)
+            for (var dayOffset = 0; dayOffset < 12; dayOffset++)
             {
-                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-i);
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-dayOffset);
             }
 
-            // Blackout 2 days ago and 3 days ago
             var blackoutStart = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3));
             var blackoutEnd = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
             SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = blackoutStart, End = blackoutEnd });
@@ -2205,7 +2204,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(throughput.History, Is.EqualTo(10));
+                Assert.That(throughput.History, Is.EqualTo(8), "10 calendar-day window minus 2 blackout days = 8 effective days");
+                Assert.That(throughput.Total, Is.EqualTo(8), "items older than the 10 calendar-day window are not pulled in to backfill the blackout days");
             }
         }
 
@@ -2214,18 +2214,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             testTeam.ThroughputHistory = 5;
 
-            // Day 0 (today): 1 item
-            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow;
-            // Day -1: 1 item
-            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
-            // Day -2: 1 item (BLACKOUT)
-            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-2);
-            // Day -3: 1 item
-            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-3);
-            // Day -4: 1 item
-            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-4);
-            // Day -5: 1 item (extended window)
-            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-5);
+            for (var dayOffset = 0; dayOffset <= 5; dayOffset++)
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-dayOffset);
+            }
 
             var blackoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
             SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = blackoutDate, End = blackoutDate });
@@ -2234,10 +2226,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                // 5 effective days (day -2 excluded, window extended to include day -5)
-                Assert.That(throughput.History, Is.EqualTo(5));
-                // 5 items from the 5 non-blackout days
-                Assert.That(throughput.Total, Is.EqualTo(5));
+                Assert.That(throughput.History, Is.EqualTo(4), "5 calendar-day window minus 1 blackout day = 4 effective days");
+                Assert.That(throughput.Total, Is.EqualTo(4), "blackout-day item and the item older than the 5 calendar-day window are both excluded");
+            }
+        }
+
+        [Test]
+        public void GetCurrentThroughputForTeam_RollingWindow_BlackoutDaysDoNotExtendLookbackBeyondCalendarWindow()
+        {
+            testTeam.ThroughputHistory = 5;
+
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow;
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-4);
+            AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-6);
+
+            SetupEffectiveBlackoutDays(
+                new BlackoutPeriod { Id = 1, Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)), End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)) },
+                new BlackoutPeriod { Id = 2, Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2)), End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2)) },
+                new BlackoutPeriod { Id = 3, Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3)), End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3)) });
+
+            var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughput.Total, Is.EqualTo(2), "the item closed 6 days ago is outside the 5 calendar-day window and must not be pulled in by blackout stripping");
+                Assert.That(throughput.History, Is.EqualTo(2), "5 calendar-day window minus 3 blackout days = 2 effective days");
             }
         }
 
@@ -2388,25 +2401,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             testTeam.ThroughputHistory = 5;
 
-            for (var i = 0; i < 10; i++)
+            for (var dayOffset = 0; dayOffset < 10; dayOffset++)
             {
-                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-i);
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-dayOffset);
             }
 
-            // Two separate blackout periods
-            var blackout1Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
-            var blackout1End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
-            var blackout2Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-5));
-            var blackout2End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-5));
+            var blackout1 = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1));
+            var blackout2 = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3));
             SetupEffectiveBlackoutDays(
-                new BlackoutPeriod { Id = 1, Start = blackout1Start, End = blackout1End },
-                new BlackoutPeriod { Id = 2, Start = blackout2Start, End = blackout2End });
+                new BlackoutPeriod { Id = 1, Start = blackout1, End = blackout1 },
+                new BlackoutPeriod { Id = 2, Start = blackout2, End = blackout2 });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(throughput.History, Is.EqualTo(5));
+                Assert.That(throughput.History, Is.EqualTo(3), "5 calendar-day window minus 2 blackout days = 3 effective days");
+                Assert.That(throughput.Total, Is.EqualTo(3), "both blackout-day items are excluded");
             }
         }
 

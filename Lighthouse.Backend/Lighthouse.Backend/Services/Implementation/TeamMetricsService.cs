@@ -719,28 +719,12 @@ namespace Lighthouse.Backend.Services.Implementation
             return closedItemsInDateRange;
         }
 
-        private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int effectiveDaysNeeded)
+        private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int historyInCalendarDays)
         {
             var endDate = DateTime.UtcNow.Date;
-            var rollingStart = endDate.AddDays(-(effectiveDaysNeeded - 1));
+            var startDate = endDate.AddDays(-(historyInCalendarDays - 1));
 
-            var blackoutDayIndices = blackoutPeriodService.GetEffectiveBlackoutDays(rollingStart, endDate).GetBlackoutDayIndices(rollingStart, endDate);
-            while ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count < effectiveDaysNeeded)
-            {
-                var deficit = effectiveDaysNeeded - ((endDate - rollingStart).Days + 1 - blackoutDayIndices.Count);
-                rollingStart = rollingStart.AddDays(-deficit);
-                blackoutDayIndices = blackoutPeriodService.GetEffectiveBlackoutDays(rollingStart, endDate).GetBlackoutDayIndices(rollingStart, endDate);
-            }
-
-            var rollingThroughput = GetThroughputForTeam(team, rollingStart, endDate);
-            var filtered = FilterBlackoutDays(rollingThroughput, blackoutDayIndices);
-
-            if (filtered.History > effectiveDaysNeeded)
-            {
-                filtered = TrimToLatestDays(filtered, effectiveDaysNeeded);
-            }
-
-            return filtered;
+            return GetBlackoutAwareThroughputForTeam(team, startDate, endDate, ThroughputFilterMode.SkipFilter);
         }
 
         private ForecastThroughputStatus ApplyForecastFilter(Team team, RunChartData unfiltered, ThroughputFilterMode mode)
@@ -811,22 +795,5 @@ namespace Lighthouse.Backend.Services.Implementation
             return new RunChartData(filteredData);
         }
 
-        internal static RunChartData TrimToLatestDays(RunChartData runChart, int daysToKeep)
-        {
-            if (runChart.History <= daysToKeep)
-            {
-                return runChart;
-            }
-
-            var offset = runChart.History - daysToKeep;
-            var trimmedData = new Dictionary<int, List<WorkItemBase>>();
-
-            for (var i = 0; i < daysToKeep; i++)
-            {
-                trimmedData[i] = runChart.WorkItemsPerUnitOfTime[offset + i];
-            }
-
-            return new RunChartData(trimmedData);
-        }
     }
 }
