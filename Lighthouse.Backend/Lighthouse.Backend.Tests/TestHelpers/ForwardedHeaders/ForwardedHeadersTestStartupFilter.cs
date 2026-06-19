@@ -2,6 +2,10 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.Tests.TestHelpers.ForwardedHeaders
 {
@@ -33,14 +37,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers.ForwardedHeaders
                         return;
                     }
 
-                    var originalBody = context.Response.Body;
-                    using var discardedDownstreamBody = new MemoryStream();
-                    context.Response.Body = discardedDownstreamBody;
+                    var options = context.RequestServices.GetRequiredService<IOptions<ForwardedHeadersOptions>>();
+                    var forwardedHeaders = new ForwardedHeadersMiddleware(
+                        _ => Task.CompletedTask, NullLoggerFactory.Instance, options);
+                    await forwardedHeaders.Invoke(context);
 
-                    await proceed();
-
-                    context.Response.Body = originalBody;
-                    context.Response.Clear();
                     await context.Response.WriteAsJsonAsync(new ObservedRequest(
                         context.Request.Scheme,
                         context.Request.Host.Value ?? string.Empty));
