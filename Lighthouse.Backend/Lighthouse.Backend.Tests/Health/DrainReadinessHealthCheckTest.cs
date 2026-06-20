@@ -14,7 +14,11 @@ namespace Lighthouse.Backend.Tests.Health
 
             var result = await subject.CheckHealthAsync(new HealthCheckContext());
 
-            Assert.That(result.Status, Is.EqualTo(HealthStatus.Healthy));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(HealthStatus.Healthy));
+                Assert.That(result.Description, Is.Not.Empty);
+            }
         }
 
         [Test]
@@ -26,7 +30,17 @@ namespace Lighthouse.Backend.Tests.Health
 
             var result = await subject.CheckHealthAsync(new HealthCheckContext());
 
-            Assert.That(result.Status, Is.EqualTo(HealthStatus.Unhealthy));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Status, Is.EqualTo(HealthStatus.Unhealthy));
+                Assert.That(result.Description, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        public void Constructor_NullReadinessState_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new DrainReadinessHealthCheck(null!));
         }
     }
 }

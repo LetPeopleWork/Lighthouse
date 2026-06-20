@@ -40,5 +40,11 @@ namespace Lighthouse.Backend.Tests.Health
 
             updateQueue.Verify(queue => queue.DrainAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
+
+        [Test]
+        public void Constructor_NullUpdateQueue_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new GracefulShutdownService(null!));
+        }
     }
 }
