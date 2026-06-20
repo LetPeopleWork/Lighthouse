@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Metrics;
@@ -44,6 +45,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers.Telemetry
         }
 
         public bool HasMeterProvider => factory.Services.GetService<MeterProvider>() is not null;
+
+        public bool HasMetricsEndpoint => factory.Services
+            .GetRequiredService<EndpointDataSource>()
+            .Endpoints
+            .OfType<RouteEndpoint>()
+            .Any(endpoint => endpoint.RoutePattern.RawText is "/metrics" or "metrics");
 
         public async Task<TelemetryResponse> GetMetricsAsync()
         {

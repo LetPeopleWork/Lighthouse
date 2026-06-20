@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(host.HasMeterProvider, Is.True, "OpenTelemetry metrics must be registered when telemetry is on");
+                Assert.That(host.HasMetricsEndpoint, Is.True, "/metrics route must be mapped when telemetry is on");
                 Assert.That(metrics.IsOk, Is.True, $"/metrics returned {metrics.StatusCode}");
                 Assert.That(metrics.Body, Does.Contain("# TYPE"), "Prometheus exposition format marker missing");
                 Assert.That(metrics.Body, Does.Contain("http_server_request_duration_seconds"), "HTTP server metric missing");
@@ -42,29 +43,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task Metrics_Exposure_OffUnlessConsciouslyConfigured()
+        public void Metrics_Exposure_OffUnlessConsciouslyConfigured()
         {
             using var host = new TelemetryTestHost(telemetryEnabled: false);
-            await host.GetAsync(HealthCheckTestHost.LivePath);
 
-            var metrics = await host.GetMetricsAsync();
-
-            Assert.That(metrics.IsPrometheusExposition, Is.False, "no Prometheus exporter must be mapped when telemetry is off");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(host.HasMeterProvider, Is.False, "no OpenTelemetry metrics services must be registered when telemetry is off");
+                Assert.That(host.HasMetricsEndpoint, Is.False, "/metrics route must not be mapped when telemetry is off");
+            }
         }
 
         [Test]
         public async Task Telemetry_DisabledByDefault_NoExporterNoBehaviourChange()
         {
             using var host = new TelemetryTestHost();
-            await host.GetAsync(HealthCheckTestHost.LivePath);
 
-            var metrics = await host.GetMetricsAsync();
             var liveStatus = await host.GetAsync(HealthCheckTestHost.LivePath);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(host.HasMeterProvider, Is.False, "no OpenTelemetry metrics services must be registered by default");
-                Assert.That(metrics.IsPrometheusExposition, Is.False, "no exporter must run by default");
+                Assert.That(host.HasMetricsEndpoint, Is.False, "/metrics route must not be mapped by default");
                 Assert.That(liveStatus, Is.EqualTo(HttpStatusCode.OK), $"existing endpoints must be unaffected but /health/live was {liveStatus}");
             }
         }
