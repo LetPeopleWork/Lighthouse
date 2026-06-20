@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
-using OpenTelemetry.Metrics;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
@@ -214,7 +213,7 @@ namespace Lighthouse.Backend
             app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
             MapHealthEndpoints(app);
-            MapTelemetryEndpoints(app);
+            TelemetryConfigurator.MapEndpoints(app);
 
             app.Lifetime.ApplicationStopping.Register(
                 () => app.Services.GetRequiredService<IReadinessState>().BeginDraining());
@@ -251,7 +250,7 @@ namespace Lighthouse.Backend
             ConfigureRateLimiting(builder);
             ConfigureHealthChecks(builder);
             ConfigureGracefulShutdown(builder);
-            ConfigureTelemetry(builder);
+            TelemetryConfigurator.Configure(builder.Services, builder.Configuration);
 
             builder.Services
                 .AddControllers(options =>
@@ -733,37 +732,6 @@ namespace Lighthouse.Backend
             builder.Services.Configure<HostOptions>(options =>
                 options.ShutdownTimeout = TimeSpan.FromSeconds(shutdownConfig.TimeoutSeconds));
             builder.Services.AddHostedService<GracefulShutdownService>();
-        }
-
-        private static void ConfigureTelemetry(WebApplicationBuilder builder)
-        {
-            var telemetryConfig = builder.Configuration
-                .GetSection(TelemetryConfiguration.SectionName)
-                .Get<TelemetryConfiguration>() ?? new TelemetryConfiguration();
-
-            if (!telemetryConfig.Enabled)
-            {
-                return;
-            }
-
-            builder.Services.AddOpenTelemetry()
-                .WithMetrics(metrics => metrics
-                    .AddAspNetCoreInstrumentation()
-                    .AddPrometheusExporter());
-        }
-
-        private static void MapTelemetryEndpoints(WebApplication app)
-        {
-            var telemetryConfig = app.Services.GetRequiredService<IConfiguration>()
-                .GetSection(TelemetryConfiguration.SectionName)
-                .Get<TelemetryConfiguration>() ?? new TelemetryConfiguration();
-
-            if (!telemetryConfig.Enabled)
-            {
-                return;
-            }
-
-            app.MapPrometheusScrapingEndpoint().AllowAnonymous();
         }
 
         private static void MapHealthEndpoints(WebApplication app)
