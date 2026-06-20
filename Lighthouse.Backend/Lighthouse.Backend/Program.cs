@@ -598,6 +598,30 @@ namespace Lighthouse.Backend
             })
             .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
                 SmartAuthSchemeSelector.ApiKeyScheme, _ => { })
+            .AddJwtBearer(SmartAuthSchemeSelector.JwtBearerScheme, jwtOptions =>
+            {
+                // Non-browser callers (MCP, CLI tooling) present an IdP access token; validate it
+                // against the same OIDC authority the browser cookie flow trusts (ADR-079). Claims
+                // map through the existing CurrentUserProfileService + RBAC, identical to the cookie
+                // principal. Off unless an authority is configured (handled by the enclosing branch).
+                jwtOptions.Authority = authConfig.Authority;
+                jwtOptions.RequireHttpsMetadata = authConfig.RequireHttpsMetadata;
+                jwtOptions.MapInboundClaims = false;
+                if (!string.IsNullOrWhiteSpace(authConfig.MetadataAddress))
+                {
+                    jwtOptions.MetadataAddress = authConfig.MetadataAddress;
+                }
+
+                jwtOptions.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
+                    ValidateAudience = !string.IsNullOrWhiteSpace(authConfig.Audience),
+                    ValidAudience = authConfig.Audience,
+                    NameClaimType = "name",
+                };
+            })
             .AddCookie(options =>
             {
                 options.Cookie.HttpOnly = true;

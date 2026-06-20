@@ -8,6 +8,8 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string ClientId { get; init; } = string.Empty;
 
+        public string Audience { get; init; } = string.Empty;
+
         public string ClientSecret { get; init; } = string.Empty;
 
         public string CallbackPath { get; init; } = "/api/auth/callback";
