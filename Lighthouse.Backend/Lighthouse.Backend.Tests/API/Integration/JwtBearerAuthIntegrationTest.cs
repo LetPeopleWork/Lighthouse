@@ -21,6 +21,32 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task TwoTokensDistinctSubjects_EachSeesOnlyOwnTeamScope()
+        {
+            using var host = new JwtBearerTestHost();
+            await host.SeedSystemAdminAsync("system-admin");
+            var teamA = await host.SeedTeamAsync("Team A");
+            var teamB = await host.SeedTeamAsync("Team B");
+            await host.SeedTeamAdminUserAsync("owner-a", teamA);
+            await host.SeedTeamAdminUserAsync("owner-b", teamB);
+            var tokenA = host.MintToken(new JwtTokenOptions { Subject = "owner-a" });
+            var tokenB = host.MintToken(new JwtTokenOptions { Subject = "owner-b" });
+
+            var callerASeesOwnTeam = await host.GetTeamWithBearerAsync(teamA, tokenA);
+            var callerASeesOtherTeam = await host.GetTeamWithBearerAsync(teamB, tokenA);
+            var callerBSeesOwnTeam = await host.GetTeamWithBearerAsync(teamB, tokenB);
+            var callerBSeesOtherTeam = await host.GetTeamWithBearerAsync(teamA, tokenB);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(callerASeesOwnTeam, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(callerASeesOtherTeam, Is.EqualTo(HttpStatusCode.NotFound));
+                Assert.That(callerBSeesOwnTeam, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(callerBSeesOtherTeam, Is.EqualTo(HttpStatusCode.NotFound));
+            }
+        }
+
+        [Test]
         public async Task WrongAudienceToken_Rejected401()
         {
             using var host = new JwtBearerTestHost();
