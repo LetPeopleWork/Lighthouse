@@ -252,6 +252,11 @@ Design bets that learning will confirm or overturn. Revisit at each band boundar
 3. **oauth2-proxy at the edge is sufficient** alongside app-level OIDC. May be redundant for some
    surfaces; the MCP endpoint (06) likely wants token auth *instead of* browser OIDC — see Q5 for the
    inbound-auth model that decision turns on.
+   > **Update 2026-06-20 (ADR-079):** for the **MCP surface this is settled — `oauth2-proxy` is NOT
+   > used.** The MCP client drives OAuth itself and sends a Bearer that Lighthouse validates
+   > directly; a proxy would be a redundant edge gate (and a trusted-header variant would break the
+   > standalone D1 gate). oauth2-proxy may still earn its place in front of *browser* surfaces, but
+   > not for `/mcp`.
 4. **ESO + Azure Key Vault** assumes LPW stays on the Azure/Entra side for identity+secrets even if
    compute is elsewhere (e.g. Hetzner). Confirm the identity/secrets home (Q3) before 13.
 5. **Single cluster, namespace-per-tenant** is the multi-tenancy model. Fine for early scale;
@@ -308,6 +313,31 @@ These aren't blockers for Band A, but they shape Bands D–E. Decide by the band
   Lighthouse backend likely needs little/nothing. **Solve this when we productize the MCP server**
   (chart/SaaS boundary), not in the throwaway story-06 scaffold. Affects 06, 09, 11–13; CLAUDE.md
   Lighthouse-Clients cross-cutting checklist applies.
+
+  > **RESOLVED 2026-06-20 (ADR-079).** Both auth models shipped, and the earlier "backend needs
+  > little/nothing" guess was wrong — the preferred (OAuth) model needs a real backend capability:
+  > - **Interim X-Api-Key pass-through** — shipped (epic-5305 #5307 / clients): `mcp-http`
+  >   forwards the caller's own `X-Api-Key` (or Bearer) instead of a baked key. The model for
+  >   **CLI + stdio + standalone**.
+  > - **Hosted MCP OAuth (preferred)** — shipped end-to-end across two repos: the **MCP client**
+  >   does the browser OAuth flow against the **same OIDC provider as Lighthouse** and sends its
+  >   own `Authorization: Bearer`; `mcp-http` **advertises** RFC 9728 protected-resource metadata +
+  >   `401` challenge (clients #5330) and forwards the token; the **Lighthouse backend validates
+  >   the IdP JWT** (a new `JwtBearer` scheme — backend #5329) and maps it through the existing
+  >   RBAC. **No API key.** **`oauth2-proxy` is NOT needed** (the MCP client drives OAuth itself; a
+  >   proxy would be a redundant edge gate) — this overturns hypothesis #3 for the MCP surface.
+  > - **Deferred to this epic (#5306): the live end-to-end dogfood**, which needs the real
+  >   environment #5306 builds. Readiness checklist:
+  >   1. IdP (Entra/Keycloak, Q3) **exposes a Lighthouse API audience/scope** so access tokens
+  >      carry `aud = <Lighthouse API>` (the backend rejects wrong-audience tokens).
+  >   2. The MCP client requests a token **scoped to Lighthouse via RFC 8707 resource indicators**
+  >      — the SPIKE risk: confirm the client + IdP actually support this; if not, fall back to the
+  >      shipped X-Api-Key path.
+  >   3. Set `Authentication:Audience` on Lighthouse + `LIGHTHOUSE_OAUTH_ISSUER` /
+  >      `LIGHTHOUSE_OAUTH_RESOURCE` on `mcp-http` (a startup version gate refuses OAuth against a
+  >      Lighthouse ≤ v26.6.16.14).
+  >   4. Run the browser flow with a real MCP client (Claude Desktop / MCP Inspector) → two users
+  >      each see only their own RBAC-scoped data; an unauth'd `/mcp` is challenged, not open.
 
 ---
 

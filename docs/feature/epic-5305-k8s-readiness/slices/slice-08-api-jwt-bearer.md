@@ -75,9 +75,15 @@ requests against the **same OIDC authority**, map its claims through the existin
 4. **Standalone gate (integration).** With no authority configured, assert (via `EndpointDataSource`
    / scheme registration) that no JWT scheme exists and a normal request path is unchanged (AC5).
 5. **Mutation** ≥80% on the new selector + validation wiring; justify equivalents.
-6. **Live dogfood**: a real IdP (Keycloak/Entra per story-05 lineage) issues an API-audience access
-   token; drive `mcp-http` → Lighthouse with it; confirm per-user RBAC + audit. Smoke a wrong-audience
-   token → 401.
+6. **Live dogfood — DEFERRED to Productization #5306** (decision 2026-06-20). A real IdP
+   (Keycloak/Entra per story-05 lineage) issues an API-audience access token; the MCP client runs the
+   browser OAuth flow; drive `mcp-http` → Lighthouse; confirm per-user RBAC + audit; smoke a
+   wrong-audience token → 401. Deferred because the full browser-PKCE + real-IdP + ingress flow IS
+   #5306's environment (testing a partial local rig now duplicates it), the browser step needs a
+   human, and the RFC 8707 / MCP-client maturity question is a SPIKE best run there with the shipped
+   X-Api-Key path as fallback. The backend logic is already pinned by steps 1-5 (static-JWKS
+   integration + 100% selector mutation); the live gap is config/plumbing. Readiness checklist lives
+   in `docs/feature/l8e-kubernetes-learning/planning-stage.md` §6 Q5 (RESOLVED note).
 
 ## Notes / prerequisites
 
