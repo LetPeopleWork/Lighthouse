@@ -26,6 +26,10 @@ on:
         required: false
         type: string
         default: 'false'
+      coverage:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   backend:
@@ -75,8 +79,24 @@ jobs:
         
     - name: Begin SonarCloud analysis
       run: |
-        dotnet sonarscanner begin /k:"LetPeopleWork_Lighthouse" /o:"letpeoplework" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.sources="Lighthouse.Backend" /d:sonar.language="cs" /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,**/.github/**,**/.vscode/**,**/docs/**" /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**"
+        COVERAGE_ARGS=""
 
+        if [ "${{ inputs.coverage }}" = true ]; then
+          COVERAGE_ARGS='/d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"'
+        fi
+
+        dotnet sonarscanner begin \
+          /k:"LetPeopleWork_Lighthouse" \
+          /o:"letpeoplework" \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.sources="Lighthouse.Backend" \
+          /d:sonar.language="cs" \
+          $COVERAGE_ARGS \
+          /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" \
+          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,**/.github/**,**/.vscode/**,**/docs/**" \
+          /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**"
+    
     - name: Build Backend (composite)
       uses: ./.github/actions/build-backend
       with:
@@ -114,9 +134,15 @@ jobs:
         echo "filter=$filter"
         echo "filter=$filter" >> $GITHUB_OUTPUT
 
-    - name: Test Backend
+    - name: Test Backend (with Coverage)
+      if: ${{ inputs.coverage }}
       run: |
         dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Lighthouse]*" RunConfiguration.MaxCpuCount=0
+
+    - name: Test Backend (without Coverage)
+      if: ${{ !inputs.coverage }}
+      run: |
+        dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx RunConfiguration.MaxCpuCount=0
 
     - name: Extract backend per-test timings
       if: always()
