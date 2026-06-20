@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
@@ -82,13 +84,62 @@ namespace Lighthouse.Backend.Data
             });
         }
 
+        private const string AcquireMigrationLockSql = "SELECT pg_advisory_lock(53055308)";
+
+        private const string ReleaseMigrationLockSql = "SELECT pg_advisory_unlock(53055308)";
+
         public static void ApplyMigrations(IServiceProvider serviceProvider)
         {
             var context = serviceProvider.GetRequiredService<LighthouseAppContext>();
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
             logger.LogInformation("Migrating Database");
-            context.Database.Migrate();
+
+            if (context.Database.IsNpgsql())
+            {
+                MigrateUnderAdvisoryLock(context);
+            }
+            else
+            {
+                context.Database.Migrate();
+            }
+        }
+
+        private static void MigrateUnderAdvisoryLock(DbContext context)
+        {
+            var connection = context.Database.GetDbConnection();
+            var openedByUs = connection.State != ConnectionState.Open;
+            if (openedByUs)
+            {
+                connection.Open();
+            }
+
+            try
+            {
+                ExecuteNonQuery(connection, AcquireMigrationLockSql);
+                try
+                {
+                    context.Database.Migrate();
+                }
+                finally
+                {
+                    ExecuteNonQuery(connection, ReleaseMigrationLockSql);
+                }
+            }
+            finally
+            {
+                if (openedByUs)
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        private static void ExecuteNonQuery(DbConnection connection, string sql)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.ExecuteNonQuery();
         }
 
         public static void SeedDatabase(IServiceProvider serviceProvider)
