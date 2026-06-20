@@ -8,7 +8,6 @@ using Testcontainers.PostgreSql;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    [Category("RequiresDocker")]
     public class ConcurrentStartupMigrationTests
     {
         private const string MigrationsAssemblyName = "Lighthouse.Migrations.Postgres";
