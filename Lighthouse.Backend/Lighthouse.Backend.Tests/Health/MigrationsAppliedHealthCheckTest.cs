@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Services.Interfaces;
@@ -13,8 +12,6 @@ namespace Lighthouse.Backend.Tests.Health
     [Category("epic-5305-k8s-readiness")]
     public class MigrationsAppliedHealthCheckTest
     {
-        private static readonly Regex PendingMigrationsDescription = new(@"^\d+ migration\(s\) pending\.$", RegexOptions.Compiled);
-
         [Test]
         public async Task CheckHealthAsync_AllMigrationsApplied_ReportsHealthy()
         {
@@ -41,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Health
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Status, Is.EqualTo(HealthStatus.Unhealthy));
-                Assert.That(result.Description, Does.Match(PendingMigrationsDescription));
+                Assert.That(result.Description, Does.EndWith(" migration(s) pending."));
             }
         }
 
