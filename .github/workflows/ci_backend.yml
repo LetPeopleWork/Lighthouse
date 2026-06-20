@@ -142,7 +142,7 @@ jobs:
     - name: Test Backend (without Coverage)
       if: ${{ !inputs.coverage }}
       run: |
-        dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx RunConfiguration.MaxCpuCount=0
+        dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx -- RunConfiguration.MaxCpuCount=0
 
     - name: Extract backend per-test timings
       if: always()
