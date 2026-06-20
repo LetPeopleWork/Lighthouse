@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
+using OpenTelemetry.Metrics;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
@@ -40,7 +41,6 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
-using Serilog.Settings.Configuration;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
@@ -214,6 +214,7 @@ namespace Lighthouse.Backend
             app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
             MapHealthEndpoints(app);
+            MapTelemetryEndpoints(app);
 
             app.Lifetime.ApplicationStopping.Register(
                 () => app.Services.GetRequiredService<IReadinessState>().BeginDraining());
@@ -250,6 +251,7 @@ namespace Lighthouse.Backend
             ConfigureRateLimiting(builder);
             ConfigureHealthChecks(builder);
             ConfigureGracefulShutdown(builder);
+            ConfigureTelemetry(builder);
 
             builder.Services
                 .AddControllers(options =>
@@ -733,6 +735,37 @@ namespace Lighthouse.Backend
             builder.Services.AddHostedService<GracefulShutdownService>();
         }
 
+        private static void ConfigureTelemetry(WebApplicationBuilder builder)
+        {
+            var telemetryConfig = builder.Configuration
+                .GetSection(TelemetryConfiguration.SectionName)
+                .Get<TelemetryConfiguration>() ?? new TelemetryConfiguration();
+
+            if (!telemetryConfig.Enabled)
+            {
+                return;
+            }
+
+            builder.Services.AddOpenTelemetry()
+                .WithMetrics(metrics => metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddPrometheusExporter());
+        }
+
+        private static void MapTelemetryEndpoints(WebApplication app)
+        {
+            var telemetryConfig = app.Services.GetRequiredService<IConfiguration>()
+                .GetSection(TelemetryConfiguration.SectionName)
+                .Get<TelemetryConfiguration>() ?? new TelemetryConfiguration();
+
+            if (!telemetryConfig.Enabled)
+            {
+                return;
+            }
+
+            app.MapPrometheusScrapingEndpoint().AllowAnonymous();
+        }
+
         private static void MapHealthEndpoints(WebApplication app)
         {
             app.MapHealthChecks("/health/live", new HealthCheckOptions
@@ -1004,17 +1037,7 @@ namespace Lighthouse.Backend
 
             builder.Services.AddSingleton<ILogConfiguration>(serilogConfiguration);
 
-            var readerOptions = new ConfigurationReaderOptions(
-                typeof(FileLoggerConfigurationExtensions).Assembly,
-                typeof(ConsoleLoggerConfigurationExtensions).Assembly,
-                typeof(Serilog.Templates.ExpressionTemplate).Assembly
-            );
-
-            var logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration, readerOptions)
-                .MinimumLevel.ControlledBy(serilogConfiguration.LoggingLevelSwitch)
-                .Enrich.FromLogContext()
-                .CreateLogger();
+            var logger = LoggingConfigurator.CreateLogger(builder.Configuration, serilogConfiguration.LoggingLevelSwitch);
 
             Log.Logger = logger;
             builder.Host.UseSerilog(logger, true);
