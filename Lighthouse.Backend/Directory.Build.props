@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Surfaces the same SonarQube/SonarLint C# rules that SonarCloud enforces as
+       build-time warnings, so issues are caught locally and in CI long before the
+       nightly/PR Sonar scan. Applies to the whole backend (Lighthouse.Backend and
+       Lighthouse.Backend.Tests); only the generated EF migration projects are
+       excluded (they are excluded from the SonarCloud scan too). Warnings do not fail
+       the build (no TreatWarningsAsErrors). -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Lighthouse.Migrations.Sqlite' And '$(MSBuildProjectName)' != 'Lighthouse.Migrations.Postgres'">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
