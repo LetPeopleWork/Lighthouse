@@ -43,7 +43,7 @@ RBAC: confirm whether `/metrics` needs gating (it can leak request paths); defau
 
 ## DELIVER outcome (2026-06-20)
 
-**SHIPPED** (push paused for review). Scenarios #27-31 green (`MetricsEndpointIntegrationTest`, `LoggingConfiguratorTest`, `TelemetryConfigurationTest`).
+**SHIPPED + PUSHED, CI green, ADO #5312 Closed** (HEAD 93e3dd80). Scenarios #27-31 green (`MetricsEndpointIntegrationTest`, `LoggingConfiguratorTest`, `TelemetryConfigurationTest`).
 
 - SPIKE resolved: **OpenTelemetry** chosen (ADR-078 Accepted), `prometheus-net` fallback not needed. Off-by-default ⇒ zero OTel registration ⇒ no overhead (D1); confirmed structurally, not by benchmark.
 - Production surface: `Configuration/TelemetryConfiguration` (`Telemetry:Enabled`, `Telemetry:Logging:Format`), `Startup/TelemetryConfigurator` (OTel + Prometheus `/metrics`, gated), `Startup/LoggingConfigurator` (Serilog console moved here; text default / JSON-stdout when `Format=json`).
