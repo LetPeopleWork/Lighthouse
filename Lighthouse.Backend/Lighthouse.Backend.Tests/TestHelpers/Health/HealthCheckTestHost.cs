@@ -1,5 +1,6 @@
 using System.Net;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Health;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers.Health
                 AllowAutoRedirect = false,
             });
         }
+
+        public IReadinessState ReadinessState => factory.Services.GetRequiredService<IReadinessState>();
+
+        public void TriggerApplicationStopping()
+            => factory.Services.GetRequiredService<IHostApplicationLifetime>().StopApplication();
 
         public Task<ProbeResponse> GetLiveAsync() => GetProbeAsync(LivePath);
 

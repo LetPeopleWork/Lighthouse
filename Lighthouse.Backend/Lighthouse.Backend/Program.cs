@@ -215,6 +215,9 @@ namespace Lighthouse.Backend
 
             MapHealthEndpoints(app);
 
+            app.Lifetime.ApplicationStopping.Register(
+                () => app.Services.GetRequiredService<IReadinessState>().BeginDraining());
+
             app.MapGet("/.well-known/security.txt", async context =>
             {
                 var wwwroot = app.Environment.WebRootPath;
@@ -246,6 +249,7 @@ namespace Lighthouse.Backend
             ConfigureAuthentication(builder, authConfig);
             ConfigureRateLimiting(builder);
             ConfigureHealthChecks(builder);
+            ConfigureGracefulShutdown(builder);
 
             builder.Services
                 .AddControllers(options =>
@@ -713,7 +717,20 @@ namespace Lighthouse.Backend
         {
             builder.Services.AddHealthChecks()
                 .AddCheck<DatabaseConnectivityHealthCheck>("database", tags: ReadyTags)
-                .AddCheck<MigrationsAppliedHealthCheck>("migrations", tags: ReadyAndStartupTags);
+                .AddCheck<MigrationsAppliedHealthCheck>("migrations", tags: ReadyAndStartupTags)
+                .AddCheck<DrainReadinessHealthCheck>("draining", tags: ReadyTags);
+        }
+
+        private static void ConfigureGracefulShutdown(WebApplicationBuilder builder)
+        {
+            var shutdownConfig = builder.Configuration
+                .GetSection(ShutdownConfiguration.SectionName)
+                .Get<ShutdownConfiguration>() ?? new ShutdownConfiguration();
+
+            builder.Services.AddSingleton<IReadinessState, ReadinessState>();
+            builder.Services.Configure<HostOptions>(options =>
+                options.ShutdownTimeout = TimeSpan.FromSeconds(shutdownConfig.TimeoutSeconds));
+            builder.Services.AddHostedService<GracefulShutdownService>();
         }
 
         private static void MapHealthEndpoints(WebApplication app)

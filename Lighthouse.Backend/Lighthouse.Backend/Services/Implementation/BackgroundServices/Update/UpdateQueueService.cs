@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly DatabaseMaintenanceGate maintenanceGate;
+        private readonly Task processingTask;
 
         public UpdateQueueService(
             ILogger<UpdateQueueService> logger,
@@ -29,7 +30,21 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
 
-            StartProcessingQueue();
+            processingTask = StartProcessingQueue();
+        }
+
+        public async Task DrainAsync(CancellationToken cancellationToken = default)
+        {
+            queue.Writer.TryComplete();
+
+            try
+            {
+                await processingTask.WaitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogWarning("Update queue drain exceeded the shutdown timeout; abandoning in-flight work.");
+            }
         }
 
         public void EnqueueUpdate(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask)
@@ -178,9 +193,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
-        private void StartProcessingQueue()
+        private Task StartProcessingQueue()
         {
-            Task.Run(async () =>
+            return Task.Run(async () =>
             {
                 await foreach (var updateTask in queue.Reader.ReadAllAsync())
                 {

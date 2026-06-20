@@ -395,6 +395,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     throw new InvalidOperationException("boom")));
         }
 
+        [Test]
+        public async Task DrainAsync_InFlightQueuedUpdate_CompletesBeforeReturning()
+        {
+            var executed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(UpdateType.Team, 1, _ =>
+            {
+                executed.TrySetResult(true);
+                return Task.CompletedTask;
+            });
+
+            await subject.DrainAsync();
+
+            Assert.That(executed.Task.IsCompletedSuccessfully, Is.True, "Queued update must finish before drain returns");
+        }
+
+        [Test]
+        public async Task DrainAsync_QueueExceedsTimeout_ReturnsWithinBoundWithoutThrowing()
+        {
+            using var blocked = new ManualResetEventSlim(false);
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(UpdateType.Team, 1, _ => Task.Run(() => blocked.Wait()));
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+            await subject.DrainAsync(cts.Token);
+            stopwatch.Stop();
+            blocked.Set();
+
+            Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(5)), "Drain must be bounded by the shutdown timeout, not block on a stuck update");
+        }
+
         private UpdateQueueService CreateSubject()
         {
             return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, updateStatuses, serviceScopeFactoryMock.Object, gate);
