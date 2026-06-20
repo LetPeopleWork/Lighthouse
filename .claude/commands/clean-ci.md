@@ -102,28 +102,48 @@ For each failed job:
 
 ## Step 5 — SonarCloud quality gate failed
 
-The `sonar-gates` job (`ci_sonar_gates.yml`) is the gate. When it fails:
+The `sonar-gates` job (`ci_sonar_gates.yml`) is the gate. Diagnose it with the **SonarQube CLI** (`sonar`, authed via the `SONARQUBE_CLI_*` env vars) — no MCP server needed, and the CLI costs far fewer tokens. All commands are `Bash`. Swap `<key>` for `LetPeopleWork_Lighthouse` (backend) or `LetPeopleWork_Lighthouse_Frontend` (frontend), and `<branch>` for `main` (or the run's ref).
 
 1. Check both projects' gate status:
+   ```bash
+   sonar api GET "/api/qualitygates/project_status?projectKey=LetPeopleWork_Lighthouse&branch=main"
+   sonar api GET "/api/qualitygates/project_status?projectKey=LetPeopleWork_Lighthouse_Frontend&branch=main"
    ```
-   mcp__sonarqube__get_project_quality_gate_status (projectKey: LetPeopleWork_Lighthouse)
-   mcp__sonarqube__get_project_quality_gate_status (projectKey: LetPeopleWork_Lighthouse_Frontend)
+   The `conditions[]` array names each metric and its `status` (`OK`/`ERROR`). Identify which conditions failed and on which project (`new_violations`, `new_coverage`, `new_duplicated_lines_density`, `new_security_hotspots_reviewed`, …).
+
+2. For each failing condition, list the offending issues. Quick human-readable view:
+   ```bash
+   sonar list issues -p <key> --branch <branch> --statuses OPEN,CONFIRMED --format table
    ```
-   Branch parameter: `main` (or whatever ref the run is on). Identify which conditions failed and on which project.
-
-2. For each failing condition, get the offending issues:
+   For precise "new code only" filtering (what the gate judges), use the API:
+   ```bash
+   sonar api GET "/api/issues/search?projects=<key>&branch=<branch>&inNewCodePeriod=true&resolved=false"
    ```
-   mcp__sonarqube__search_sonar_issues_in_projects (projects: [<key>])
+   For each issue capture: rule key, severity, file, line, message.
+
+3. If you don't recognise a rule, read its description — don't guess:
+   ```bash
+   sonar api GET "/api/rules/show?key=<ruleKey>"
    ```
-   Filter by `inNewCodePeriod=true` if the gate is "new code" only (typical). For each issue, capture: rule key, severity, file, line, message.
 
-3. If you don't recognise a rule, call `mcp__sonarqube__show_rule` to read its description — don't guess.
+4. For coverage-on-new-code failures, find the uncovered lines on the changed files:
+   ```bash
+   sonar api GET "/api/measures/component?component=<componentKey>&metricKeys=uncovered_lines,coverage,new_coverage&branch=<branch>"
+   ```
+   (`<componentKey>` is `<key>:<path/to/file>`.) Add tests that exercise *behaviour*, not lines (TDD doctrine — see CLAUDE.md).
 
-4. For coverage-on-new-code failures: `mcp__sonarqube__get_file_coverage_details` on the changed files to see exactly which lines are uncovered. Add tests that exercise *behaviour*, not lines (TDD doctrine — see CLAUDE.md).
+5. For duplication failures:
+   ```bash
+   sonar api GET "/api/duplications/show?key=<componentKey>&branch=<branch>"
+   ```
+   Remember CLAUDE.md's rule: don't abstract structurally-similar code that represents different business concepts. If the duplication is across genuinely different domains, propose the suppression with justification rather than forcing a bad abstraction.
 
-5. For duplication failures: `mcp__sonarqube__get_duplications`. Remember CLAUDE.md's rule: don't abstract structurally-similar code that represents different business concepts. If the duplication is across genuinely different domains, propose the suppression with justification rather than forcing a bad abstraction.
-
-6. For security hotspots: `mcp__sonarqube__search_security_hotspots` then `mcp__sonarqube__show_security_hotspot` on each. Review, fix, or mark as Safe with a justification (only if it really is safe).
+6. For security hotspots:
+   ```bash
+   sonar api GET "/api/hotspots/search?projectKey=<key>&branch=<branch>"
+   sonar api GET "/api/hotspots/show?hotspot=<hotspotKey>"
+   ```
+   Review, fix, or mark as Safe with a justification (only if it really is safe).
 
 7. Apply fixes per Step 4's TDD/commit discipline. Then **wait for the next push to re-run Sonar** — don't re-trigger CI manually unless asked.
 
@@ -156,7 +176,7 @@ End the session with a 3-line summary:
 
 ## Guardrails
 
-- Never push, force-push, re-run a workflow, cancel a workflow, or merge a PR without explicit user approval. Read-only `gh` and `mcp__sonarqube__*` calls are fine without asking.
+- Never push, force-push, re-run a workflow, cancel a workflow, or merge a PR without explicit user approval. Read-only `gh` and `sonar api GET` / `sonar list` calls are fine without asking. Never use `sonar api` with a non-GET method (it mutates SonarCloud) without explicit user approval.
 - Never suppress a Sonar rule project-wide. Narrow inline suppression with a justification at the call site only.
 - Never disable, skip, or quarantine a test to make CI green. If a test is genuinely wrong, fix it as a behaviour change with the user's OK.
 - Never modify `.github/workflows/*.yml` to make a check pass. Workflow changes are deliberate, not a CI-bypass tool.

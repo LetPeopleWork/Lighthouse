@@ -154,3 +154,11 @@ A change is **not done** until every gate below passes locally. CI enforces them
 - CI runs SonarQube Cloud analysis on every PR. Do not introduce new issues of any severity (bugs, vulnerabilities, code smells, security hotspots) — the gate fails on new violations even if existing debt remains.
 - Common Sonar rules to watch: cognitive complexity, duplicated blocks, unused variables/parameters, empty `catch`, `TODO`/`FIXME` left in code, missing `await` on async calls, `any` in TS, mutable public fields in C#. The conventions above (no comments-as-TODOs, options objects to cap params, early returns, immutability) already prevent most of them — keep it that way.
 - If a Sonar rule conflicts with a deliberate decision, suppress narrowly at the call site with a justification, not project-wide.
+
+### SonarQube CLI (local tooling)
+
+- A **pre-push git hook** (`.githooks/pre-push`) runs the SonarQube CLI to scan the pushed commits for hardcoded secrets and **blocks the push** on any finding. Bypass one push with `git push --no-verify`.
+- One-time setup per clone: run `Scripts/setup-git-hooks.sh` (points `core.hooksPath` at `.githooks`). The hook no-ops if the `sonar` CLI is not installed.
+- Code-quality analysis stays in CI / SonarCloud — the CLI's local quality scan needs server-side *Agentic Analysis*, which is not available on this org's plan. The pre-push hook is **secrets-only**.
+- To diagnose SonarCloud gate failures locally without the MCP server, use the CLI directly (authed via the `SONARQUBE_CLI_*` env vars): `sonar list issues -p <projectKey> --format table` and `sonar api GET "/api/qualitygates/project_status?projectKey=<key>&branch=main"`. This is what `/clean-ci` uses — cheaper than the MCP toolset.
+- Claude Code secrets hooks + the `sonar` MCP are wired by `sonar integrate claude` (installs `.claude/hooks/sonar-secrets/` and `.mcp.json`).

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Scans the commits being pushed for hardcoded secrets with the SonarQube CLI
+# and blocks the push if any are found. Code-quality analysis stays in CI /
+# SonarCloud (the CLI's local quality scan needs server-side Agentic Analysis,
+# which is not available on this org's plan).
+#
+# Install: Scripts/setup-git-hooks.sh  (sets core.hooksPath to .githooks).
+# Bypass once: git push --no-verify.
+set -uo pipefail
+
+if ! command -v sonar >/dev/null 2>&1; then
+  if [ -x "$HOME/.local/share/sonarqube-cli/bin/sonar" ]; then
+    export PATH="$PATH:$HOME/.local/share/sonarqube-cli/bin"
+  else
+    echo "sonar CLI not found - skipping pre-push secret scan (install: https://cli.sonarqube.com)" >&2
+    exit 0
+  fi
+fi
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GATE="$HOOK_DIR/sonar_gate.py"
+ZERO="0000000000000000000000000000000000000000"
+
+base_ref=""
+while read -r _local_ref _local_sha _remote_ref remote_sha; do
+  [ -z "${_local_sha:-}" ] && continue
+  if [ "$remote_sha" != "$ZERO" ] && git cat-file -e "$remote_sha" 2>/dev/null; then
+    base_ref="$remote_sha"
+  fi
+done
+
+if [ -z "$base_ref" ]; then
+  base_ref="$(git rev-parse --verify --quiet origin/main || echo HEAD~1)"
+fi
+
+echo "sonar: scanning changes vs ${base_ref} for hardcoded secrets..." >&2
+output="$(sonar analyze --base "$base_ref" --format json 2>/dev/null)"
+
+if ! printf '%s' "$output" | python3 "$GATE"; then
+  echo "" >&2
+  echo "Push blocked: SonarQube CLI found hardcoded secrets above." >&2
+  echo "Remove them, or bypass with: git push --no-verify" >&2
+  exit 1
+fi
+
+exit 0
