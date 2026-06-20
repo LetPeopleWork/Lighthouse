@@ -1,0 +1,19 @@
+name: Nightly Backend CI
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  backend:
+    uses: ./.github/workflows/ci_backend.yml
+    with:
+      backend: "true"
+      coverage: true
+      connector_shared: "true"
+      jira_connector: "false"
+      ado_connector: "false"
+      linear_connector: "false"
+      github_connector: "false"
+    secrets: inherit
