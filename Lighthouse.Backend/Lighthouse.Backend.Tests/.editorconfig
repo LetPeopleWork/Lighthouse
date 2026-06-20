@@ -1,0 +1,30 @@
+root = false
+
+# SonarAnalyzer.CSharp (added in Directory.Build.props) raises every C# rule on
+# every .cs file. SonarCloud tags these files as test sources and does not run
+# these code-smell rules on them, so the project's quality gate is green while a
+# local build flags them. Disabling them here on test code only realigns the
+# build with SonarCloud and lets TreatWarningsAsErrors stay on without flagging
+# issues SonarCloud itself ignores. Production code keeps the full rule set.
+[*.cs]
+dotnet_diagnostic.S6966.severity = none
+dotnet_diagnostic.S1116.severity = none
+dotnet_diagnostic.S2325.severity = none
+dotnet_diagnostic.S6562.severity = none
+dotnet_diagnostic.S3878.severity = none
+dotnet_diagnostic.S1144.severity = none
+dotnet_diagnostic.S1481.severity = none
+dotnet_diagnostic.S125.severity = none
+dotnet_diagnostic.S1172.severity = none
+dotnet_diagnostic.S6580.severity = none
+dotnet_diagnostic.S3241.severity = none
+dotnet_diagnostic.S1244.severity = none
+dotnet_diagnostic.S4144.severity = none
+dotnet_diagnostic.S3459.severity = none
+dotnet_diagnostic.S3358.severity = none
+dotnet_diagnostic.S108.severity = none
+dotnet_diagnostic.S4136.severity = none
+dotnet_diagnostic.S3928.severity = none
+dotnet_diagnostic.S3218.severity = none
+dotnet_diagnostic.S1135.severity = none
+dotnet_diagnostic.S1117.severity = none

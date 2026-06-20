@@ -1,0 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
+
+[assembly: SuppressMessage("Major Code Smell", "S6960:Controllers should not have mixed responsibilities", Justification = "Reviewed and dismissed as false-positive on SonarCloud", Scope = "type", Target = "~T:Lighthouse.Backend.API.PortfolioController")]
+[assembly: SuppressMessage("Major Code Smell", "S6960:Controllers should not have mixed responsibilities", Justification = "Reviewed and dismissed as false-positive on SonarCloud", Scope = "type", Target = "~T:Lighthouse.Backend.API.SystemInfoController")]
+[assembly: SuppressMessage("Major Code Smell", "S6960:Controllers should not have mixed responsibilities", Justification = "Reviewed and dismissed as false-positive on SonarCloud", Scope = "type", Target = "~T:Lighthouse.Backend.API.WorkTrackingSystemConnectionsController")]
+[assembly: SuppressMessage("Minor Code Smell", "S1118:Utility classes should not have public constructors", Justification = "Reviewed and dismissed on SonarCloud; Program is the ASP.NET Core entry point", Scope = "type", Target = "~T:Lighthouse.Backend.Program")]
+[assembly: SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Reviewed and dismissed on SonarCloud; the Linear API endpoint is a fixed public URL", Scope = "member", Target = "~F:Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear.LinearWorkTrackingOptionNames.ApiUrl")]

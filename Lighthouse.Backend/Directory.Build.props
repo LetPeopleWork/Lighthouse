@@ -2,15 +2,26 @@
 
   <!-- Surfaces the same SonarQube/SonarLint C# rules that SonarCloud enforces as
        build-time warnings, so issues are caught locally and in CI long before the
-       nightly/PR Sonar scan. Applies to the whole backend (Lighthouse.Backend and
+       nightly/PR Sonar scan, and promotes them to build errors via
+       TreatWarningsAsErrors. Applies to the whole backend (Lighthouse.Backend and
        Lighthouse.Backend.Tests); only the generated EF migration projects are
-       excluded (they are excluded from the SonarCloud scan too). Warnings do not fail
-       the build (no TreatWarningsAsErrors). -->
+       excluded (they are excluded from the SonarCloud scan too). -->
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'Lighthouse.Migrations.Sqlite' And '$(MSBuildProjectName)' != 'Lighthouse.Migrations.Postgres'">
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
+  <!-- The backend is kept at zero Sonar warnings (production via GlobalSuppressions.cs
+       mirroring the SonarCloud triage, tests via the test-project .editorconfig), so
+       any new code-quality warning is promoted to a build error. NuGet vulnerability
+       audit warnings (NU19xx) stay warnings — transitive dependency advisories are
+       tracked/bumped separately, not via this code-quality gate. Migrations are
+       excluded so generated EF code never blocks a build. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Lighthouse.Migrations.Sqlite' And '$(MSBuildProjectName)' != 'Lighthouse.Migrations.Postgres'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
 
 </Project>
