@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
+using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
@@ -35,6 +36,7 @@ using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -211,6 +213,8 @@ namespace Lighthouse.Backend
 
             app.MapHub<UpdateNotificationHub>("api/updateNotificationHub");
 
+            MapHealthEndpoints(app);
+
             app.MapGet("/.well-known/security.txt", async context =>
             {
                 var wwwroot = app.Environment.WebRootPath;
@@ -241,6 +245,7 @@ namespace Lighthouse.Backend
             ForwardedHeadersConfigurator.Configure(builder.Services, builder.Configuration, authConfig);
             ConfigureAuthentication(builder, authConfig);
             ConfigureRateLimiting(builder);
+            ConfigureHealthChecks(builder);
 
             builder.Services
                 .AddControllers(options =>
@@ -697,6 +702,36 @@ namespace Lighthouse.Backend
                     "OIDC group-snapshot write failed for subject {Subject}; continuing sign-in.",
                     stableSubject);
             }
+        }
+
+        private const string ReadyHealthTag = "ready";
+        private const string StartupHealthTag = "startup";
+        private static readonly string[] ReadyTags = [ReadyHealthTag];
+        private static readonly string[] ReadyAndStartupTags = [ReadyHealthTag, StartupHealthTag];
+
+        private static void ConfigureHealthChecks(WebApplicationBuilder builder)
+        {
+            builder.Services.AddHealthChecks()
+                .AddCheck<DatabaseConnectivityHealthCheck>("database", tags: ReadyTags)
+                .AddCheck<MigrationsAppliedHealthCheck>("migrations", tags: ReadyAndStartupTags);
+        }
+
+        private static void MapHealthEndpoints(WebApplication app)
+        {
+            app.MapHealthChecks("/health/live", new HealthCheckOptions
+            {
+                Predicate = _ => false,
+            }).AllowAnonymous();
+
+            app.MapHealthChecks("/health/ready", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains(ReadyHealthTag),
+            }).AllowAnonymous();
+
+            app.MapHealthChecks("/health/startup", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains(StartupHealthTag),
+            }).AllowAnonymous();
         }
 
         private static void ConfigureRateLimiting(WebApplicationBuilder builder)
