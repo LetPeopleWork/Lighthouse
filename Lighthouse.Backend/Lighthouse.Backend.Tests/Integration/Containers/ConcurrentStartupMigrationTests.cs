@@ -92,10 +92,14 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
                 var pending = await context.Database.GetPendingMigrationsAsync();
-                Assert.That(pending, Is.Empty,
-                    "a non-Postgres provider must migrate on boot via the plain Migrate() path (no advisory lock)");
-                Assert.That(await context.Teams.CountAsync(), Is.Zero,
-                    "the migrated SQLite schema serves queries against migrated tables");
+                var teamCount = await context.Teams.CountAsync();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(pending, Is.Empty,
+                        "a non-Postgres provider must migrate on boot via the plain Migrate() path (no advisory lock)");
+                    Assert.That(teamCount, Is.Zero,
+                        "the migrated SQLite schema serves queries against migrated tables");
+                });
             }
             finally
             {

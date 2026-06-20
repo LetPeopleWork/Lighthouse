@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "contract release. Offending migrations: " + string.Join("; ", violations));
         }
 
-        private static IReadOnlyList<string> MigrationFilesNewerThanBaseline()
+        private static List<string> MigrationFilesNewerThanBaseline()
         {
             var repoRoot = FindRepositoryRoot();
 
