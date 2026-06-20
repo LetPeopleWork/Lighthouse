@@ -26,7 +26,7 @@ on:
         required: false
         type: string
         default: 'false'
-      coverage:
+      run_sonar:
         required: false
         type: boolean
         default: false
@@ -49,10 +49,12 @@ jobs:
         fetch-depth: '0'
 
     - name: Remove Frontend sonar-project.properties
+      if: ${{ inputs.run_sonar }}
       run: |
         rm ./Lighthouse.Frontend/sonar-project.properties
 
     - name: Set up JDK 17
+      if: ${{ inputs.run_sonar }}
       uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
       with:
         java-version: 17
@@ -74,17 +76,13 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Install SonarCloud scanner
+      if: ${{ inputs.run_sonar }}
       run: |
         dotnet tool install --global dotnet-sonarscanner
-        
+
     - name: Begin SonarCloud analysis
+      if: ${{ inputs.run_sonar }}
       run: |
-        COVERAGE_ARGS=""
-
-        if [ "${{ inputs.coverage }}" = true ]; then
-          COVERAGE_ARGS='/d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"'
-        fi
-
         dotnet sonarscanner begin \
           /k:"LetPeopleWork_Lighthouse" \
           /o:"letpeoplework" \
@@ -92,7 +90,7 @@ jobs:
           /d:sonar.host.url="https://sonarcloud.io" \
           /d:sonar.sources="Lighthouse.Backend" \
           /d:sonar.language="cs" \
-          $COVERAGE_ARGS \
+          /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
           /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" \
           /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,**/.github/**,**/.vscode/**,**/docs/**" \
           /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**"
@@ -135,12 +133,12 @@ jobs:
         echo "filter=$filter" >> $GITHUB_OUTPUT
 
     - name: Test Backend (with Coverage)
-      if: ${{ inputs.coverage }}
+      if: ${{ inputs.run_sonar }}
       run: |
         dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Lighthouse]*" RunConfiguration.MaxCpuCount=0
 
     - name: Test Backend (without Coverage)
-      if: ${{ !inputs.coverage }}
+      if: ${{ !inputs.run_sonar }}
       run: |
         dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx -- RunConfiguration.MaxCpuCount=0
 
@@ -174,10 +172,12 @@ jobs:
         if-no-files-found: warn
 
     - name: End SonarCloud analysis
+      if: ${{ inputs.run_sonar }}
       run: |
         dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Upload Sonar report metadata
+      if: ${{ inputs.run_sonar }}
       uses: actions/upload-artifact@v7.0.1
       with:
         name: sonar-report-backend

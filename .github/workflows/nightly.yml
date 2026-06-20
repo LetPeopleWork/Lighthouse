@@ -10,7 +10,7 @@ jobs:
     uses: ./.github/workflows/ci_backend.yml
     with:
       backend: "true"
-      coverage: true
+      run_sonar: true
       connector_shared: "true"
       jira_connector: "false"
       ado_connector: "false"
