@@ -244,3 +244,31 @@ docker run -e "Lighthouse__BaseUrl=https://lighthouse.example.com" ghcr.io/letpe
 The value MUST be an absolute URL (scheme + host, optional port). Omit any trailing slash — Lighthouse appends `/api/oauth/callback` itself. The full callback URL the admin pastes into the Atlassian Developer Console or the Entra ID app registration is therefore `{BaseUrl}/api/oauth/callback`.
 
 For the end-to-end Jira and Azure DevOps OAuth setup flows that consume this setting, see the OAuth section under [Jira](../concepts/worktrackingsystems/jira.html#jira-cloud-oauth) or [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#azure-devops-oauth).
+
+## Telemetry (Metrics & Structured Logs)
+
+Lighthouse can expose operational telemetry for a monitoring stack (Prometheus / Grafana / Loki). It is **off by default** — the single-container self-hosted deployment behaves exactly as before and pays no overhead unless you turn it on. Lighthouse never phones home; all telemetry is scraped or read by your own stack.
+
+**`Telemetry:Enabled`** — when `true`, Lighthouse registers OpenTelemetry metrics and exposes a Prometheus scrape endpoint at `GET /metrics` (HTTP request count, error rate and latency histograms). When `false` (the default), no metrics are collected and `/metrics` is not mapped.
+
+**`Telemetry:Logging:Format`** — set to `json` to emit logs as structured JSON to stdout (one object per line, ready for Loki). Any other value (the default `text`) keeps the human-readable console format. The file log is unaffected.
+
+{: .important}
+`/metrics` is unauthenticated and can reveal request paths. Only enable it on a deployment where the endpoint is reachable solely from your trusted monitoring network (e.g. a Kubernetes scrape network policy). Do not expose `/metrics` publicly.
+
+**Default Values:**
+- `Telemetry:Enabled`: `false`
+- `Telemetry:Logging:Format`: `text`
+
+**Override Options:**
+- Command Line: `--Telemetry:Enabled` / `--Telemetry:Logging:Format`
+- Environment Variables: `Telemetry__Enabled` / `Telemetry__Logging__Format`
+
+**Example:**
+
+```bash
+docker run -p 80:80 \
+  -e "Telemetry__Enabled=true" \
+  -e "Telemetry__Logging__Format=json" \
+  ghcr.io/letpeoplework/lighthouse:latest
+```

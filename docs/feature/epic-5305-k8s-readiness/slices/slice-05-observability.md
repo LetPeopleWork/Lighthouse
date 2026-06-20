@@ -40,3 +40,15 @@ RBAC: confirm whether `/metrics` needs gating (it can leak request paths); defau
 ## Pre-slice spike candidates
 - Pick the metrics surface (OpenTelemetry.Exporter.Prometheus vs. prometheus-net) and confirm it coexists with our logging. (~1 hr)
 - Measure overhead of always-on ASP.NET Core + EF tracing to decide the default. (~1 hr)
+
+## DELIVER outcome (2026-06-20)
+
+**SHIPPED** (push paused for review). Scenarios #27-31 green (`MetricsEndpointIntegrationTest`, `LoggingConfiguratorTest`, `TelemetryConfigurationTest`).
+
+- SPIKE resolved: **OpenTelemetry** chosen (ADR-078 Accepted), `prometheus-net` fallback not needed. Off-by-default ⇒ zero OTel registration ⇒ no overhead (D1); confirmed structurally, not by benchmark.
+- Production surface: `Configuration/TelemetryConfiguration` (`Telemetry:Enabled`, `Telemetry:Logging:Format`), `Startup/TelemetryConfigurator` (OTel + Prometheus `/metrics`, gated), `Startup/LoggingConfigurator` (Serilog console moved here; text default / JSON-stdout when `Format=json`).
+- OTLP **traces deferred** — no AC/scenario demanded them; documented follow-up behind the same gate.
+- Live dogfood: `Telemetry__Enabled=true Telemetry__Logging__Format=json` → `/metrics` served `http_server_request_duration_seconds` count/latency with labels; stdout emitted JSON log lines (`Timestamp`/`Level`/`Message`/`SourceContext` + structured props).
+- Mutation: 91.7% on the new surface (`stryker-config.epic-5305-observability.json`); lone survivor is the inert `Format` default-value string.
+- Docs: `docs/Installation/configuration.md` → new **Telemetry** section.
+- Cross-cutting: RBAC N/A (anonymous, off-by-default, security-hotspot resolved by the gate + documented trusted-network rule); Clients N/A; Website N/A.
