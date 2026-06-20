@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Auth/ApiKeyAuthenticationHandler.cs",
+      "**/Services/Implementation/Authorization/RbacAdministrationService.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~McpInboundAuthIntegrationTest|FullyQualifiedName~RbacAdministrationServiceTest|FullyQualifiedName~ApiKeyAuthenticationHandlerTest|FullyQualifiedName~CurrentUserProfileServiceTest|FullyQualifiedName~CreateRightsAcceptanceTest",
+    "reporters": [
+      "progress",
+      "html",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
