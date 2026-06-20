@@ -41,9 +41,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 await processingTask.WaitAsync(cancellationToken);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                logger.LogWarning("Update queue drain exceeded the shutdown timeout; abandoning in-flight work.");
+                logger.LogWarning(ex, "Update queue drain exceeded the shutdown timeout; abandoning in-flight work.");
             }
         }
 
