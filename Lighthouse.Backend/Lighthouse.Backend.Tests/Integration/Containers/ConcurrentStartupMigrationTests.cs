@@ -1,3 +1,4 @@
+using System.Data;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -62,6 +63,49 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await AssertSchemaServesQueriesAsync(connectionString);
         }
 
+        [Test]
+        public async Task Startup_PostgresProvider_ClosesTheMigrationConnectionItOpened()
+        {
+            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+
+            await using var provider = BuildHostServiceProvider(postgres.GetConnectionString());
+            using var scope = provider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            DatabaseConfigurator.ApplyMigrations(scope.ServiceProvider);
+
+            Assert.That(context.Database.GetDbConnection().State, Is.EqualTo(ConnectionState.Closed),
+                "the advisory-lock path opens a dedicated connection to hold the lock across the migration and " +
+                "must close it afterwards, leaving the connection exactly as it found it");
+        }
+
+        [Test]
+        public async Task Startup_NonPostgresProvider_AppliesMigrationsViaPlainMigrate()
+        {
+            var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-slice04-{Guid.NewGuid():N}.db");
+            try
+            {
+                await using var provider = BuildSqliteHostServiceProvider($"Data Source={databaseFile}");
+                using var scope = provider.CreateScope();
+
+                DatabaseConfigurator.ApplyMigrations(scope.ServiceProvider);
+
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var pending = await context.Database.GetPendingMigrationsAsync();
+                Assert.That(pending, Is.Empty,
+                    "a non-Postgres provider must migrate on boot via the plain Migrate() path (no advisory lock)");
+                Assert.That(await context.Teams.CountAsync(), Is.Zero,
+                    "the migrated SQLite schema serves queries against migrated tables");
+            }
+            finally
+            {
+                if (File.Exists(databaseFile))
+                {
+                    File.Delete(databaseFile);
+                }
+            }
+        }
+
         private static async Task<IReadOnlyList<Exception>> StartHostsConcurrentlyAsync(string connectionString, int hostCount)
         {
             using var allHostsReady = new Barrier(hostCount);
@@ -124,6 +168,18 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             services.AddDbContext<LighthouseAppContext>(options =>
                 options.UseNpgsql(connectionString,
                     npgsql => npgsql.MigrationsAssembly(MigrationsAssemblyName)));
+
+            return services.BuildServiceProvider();
+        }
+
+        private static ServiceProvider BuildSqliteHostServiceProvider(string connectionString)
+        {
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddSingleton<ICryptoService, FakeCryptoService>();
+            services.AddDbContext<LighthouseAppContext>(options =>
+                options.UseSqlite(connectionString,
+                    sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
 
             return services.BuildServiceProvider();
         }
