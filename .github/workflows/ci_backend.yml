@@ -105,8 +105,10 @@ jobs:
     - name: Compute Test Backend filter
       id: filter
       run: |
-        # Always include every non-integration test (unit, WAF, security, etc.)
-        parts=("Category!=Integration")
+        # Always include every non-integration test (unit, WAF, security, etc.).
+        # Exclude RequiresDocker (Testcontainers) tests: they need a Docker daemon
+        # and run in the dedicated Postgres verification job, not this fast lane.
+        parts=("Category!=Integration&Category!=RequiresDocker")
 
         # Force-full only when the diff touched a path on the shared-connector
         # whitelist (Auth/OAuth subfolders, top-level schema, interfaces,
