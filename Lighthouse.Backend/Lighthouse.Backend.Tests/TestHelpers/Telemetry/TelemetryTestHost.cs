@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Metrics;
 
 namespace Lighthouse.Backend.Tests.TestHelpers.Telemetry
 {
@@ -41,6 +42,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers.Telemetry
                 AllowAutoRedirect = false,
             });
         }
+
+        public bool HasMeterProvider => factory.Services.GetService<MeterProvider>() is not null;
 
         public async Task<TelemetryResponse> GetMetricsAsync()
         {

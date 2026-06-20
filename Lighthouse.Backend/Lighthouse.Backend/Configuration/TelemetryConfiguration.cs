@@ -11,10 +11,8 @@ namespace Lighthouse.Backend.Configuration
 
     public class TelemetryLoggingConfiguration
     {
-        public const string JsonFormat = "json";
-
         public string Format { get; set; } = string.Empty;
 
-        public bool IsJson => string.Equals(Format, JsonFormat, StringComparison.OrdinalIgnoreCase);
+        public bool IsJson => string.Equals(Format, "json", StringComparison.OrdinalIgnoreCase);
     }
 }

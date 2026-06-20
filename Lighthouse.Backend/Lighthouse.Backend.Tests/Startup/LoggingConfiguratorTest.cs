@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Startup
         [Test]
         public void Logging_StructuredJsonToStdout_ContainsExpectedFields()
         {
-            var configuration = ConfigurationWith(TelemetryLoggingConfiguration.JsonFormat);
+            var configuration = ConfigurationWith("json");
 
             var output = CaptureConsole(() =>
             {

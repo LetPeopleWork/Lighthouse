@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(host.HasMeterProvider, Is.True, "OpenTelemetry metrics must be registered when telemetry is on");
                 Assert.That(metrics.IsOk, Is.True, $"/metrics returned {metrics.StatusCode}");
                 Assert.That(metrics.Body, Does.Contain("# TYPE"), "Prometheus exposition format marker missing");
                 Assert.That(metrics.Body, Does.Contain("http_server_request_duration_seconds"), "HTTP server metric missing");
@@ -62,6 +63,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(host.HasMeterProvider, Is.False, "no OpenTelemetry metrics services must be registered by default");
                 Assert.That(metrics.IsPrometheusExposition, Is.False, "no exporter must run by default");
                 Assert.That(liveStatus, Is.EqualTo(HttpStatusCode.OK), $"existing endpoints must be unaffected but /health/live was {liveStatus}");
             }
