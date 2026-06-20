@@ -573,7 +573,6 @@ namespace Lighthouse.Backend
                 return;
             }
 
-            const string apiKeyScheme = "LighthouseApiKey";
             const string smartScheme = "LighthouseSmartAuth";
 
             builder.Services.AddAuthentication(options =>
@@ -587,21 +586,18 @@ namespace Lighthouse.Backend
             })
             .AddPolicyScheme(smartScheme, "Lighthouse Smart Auth", policyOptions =>
             {
-                // Route X-Api-Key requests to the API key handler; everything
-                // else (browser sessions, anonymous) goes to the cookie scheme.
+                // Route X-Api-Key to the API key handler and Authorization: Bearer to
+                // the JWT bearer handler; everything else (browser sessions, anonymous)
+                // goes to the cookie scheme.
                 policyOptions.ForwardDefaultSelector = ctx =>
-                {
-                    return ctx.Request.Headers.ContainsKey("X-Api-Key")
-                        ? apiKeyScheme
-                        : Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
-                };
+                    SmartAuthSchemeSelector.Select(ctx.Request.Headers);
                 // Challenges (unauthenticated requests) always flow through the cookie
                 // scheme, which in turn handles the API-vs-browser split.
                 policyOptions.ForwardChallenge = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
                 policyOptions.ForwardForbid = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
             })
             .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
-                apiKeyScheme, _ => { })
+                SmartAuthSchemeSelector.ApiKeyScheme, _ => { })
             .AddCookie(options =>
             {
                 options.Cookie.HttpOnly = true;
