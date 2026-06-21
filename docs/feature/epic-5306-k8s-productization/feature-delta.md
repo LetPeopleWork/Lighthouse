@@ -210,7 +210,7 @@ a runnable demo walkthrough (install → auth → MCP → scaling).
 
 #### Elevator Pitch
 - **Before:** the self-host story is undocumented; a prospect must book a call.
-- **After:** Tomás opens the published docs page and sees the architecture diagram (Ingress → oauth2-proxy → API + MCP + Postgres), a copy-paste quick-start that gets him to a running instance, a full config reference, and a demo walkthrough he can run verbatim.
+- **After:** Tomás opens the published docs page and sees the architecture diagram (Ingress → API (in-app OIDC) + optional MCP + Postgres), a copy-paste quick-start that gets him to a running instance, a full config reference, and a demo walkthrough he can run verbatim.
 - **Decision enabled:** "I can deploy this myself AND I'd pitch it internally."
 
 #### Domain Examples
@@ -228,7 +228,7 @@ Scenario: Self-hoster reaches a running instance from the quick-start
 Scenario: Prospect evaluates from the architecture and demo docs
   Given Aisha is evaluating Lighthouse without installing
   When she reads the architecture diagram and the demo walkthrough
-  Then she sees Ingress -> oauth2-proxy -> API + MCP + Postgres and a runnable install -> auth -> MCP -> scaling sequence
+  Then she sees Ingress -> API (in-app OIDC) + optional MCP + Postgres and a runnable install -> auth -> MCP -> scaling sequence
 
 Scenario: Demo walkthrough runs end to end
   Given a reader runs the demo walkthrough against the real image
@@ -242,7 +242,7 @@ Scenario: Config-reference drift is caught at finalization
 ```
 
 #### Acceptance Criteria
-- [ ] Published docs include a rendered architecture diagram (Ingress → oauth2-proxy → API + MCP + Postgres).
+- [ ] Published docs include a rendered architecture diagram (Ingress → API (in-app OIDC) + optional MCP + Postgres).
 - [ ] Quick-start, followed verbatim, reaches a responding instance using the published chart.
 - [ ] Every config-reference option maps to a real chart value (no documented-but-nonexistent knobs).
 - [ ] The demo walkthrough's four stages each produce their documented observable output.
@@ -749,4 +749,4 @@ Quality gates (slice-04): `helm lint` clean (default + enterprise, only icon INF
 
 ## Wave: DELIVER / [REF] Pending (slice-05)
 
-Enterprise docs (#5200, slice-05): helm-docs config reference + drift gate (`config-ref drift gate` stage, `helm-docs` + `git diff --exit-code`), architecture diagram (Ingress → oauth2-proxy → API + MCP + Postgres), quick-start, demo walkthrough. Per `publish-and-docs.feature` @US-02 + review-verdicts.md DELIVER action items.
+Enterprise docs (#5200, slice-05): helm-docs config reference + drift gate (`config-ref drift gate` stage, `helm-docs` + `git diff --exit-code`), architecture diagram (Ingress → API (in-app OIDC) + optional MCP + Postgres), quick-start, demo walkthrough. Per `publish-and-docs.feature` @US-02 + review-verdicts.md DELIVER action items.

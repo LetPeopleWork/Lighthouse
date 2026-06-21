@@ -37,3 +37,14 @@ None. No `distill/upstream-issues.md` — scenarios trace cleanly to US-01/US-02
 ## Pending: Final Wave Review Gate
 
 The mandatory consolidated 4-reviewer gate (Eclipse/DISCUSS + Architect/DESIGN + Forge/DEVOPS + Sentinel/DISTILL, parallel, Haiku) is NOT yet run — held for user go-ahead (4-agent fan-out; subagents flaky this session). Must be APPROVED/CONDITIONALLY_APPROVED before DELIVER handoff.
+
+## Back-propagation — slice-05 (DELIVER, 2026-06-21)
+
+Reconciled the architecture-diagram AC with the shipped chart. The DISTILL/DISCUSS-era scenario said
+"Ingress to oauth2-proxy to API", but slice-03 shipped **in-app OIDC** (`oidc.*` → `Authentication:*`)
+and ADR-085/D6 explicitly states MCP is *not behind oauth2-proxy* — the chart deploys no oauth2-proxy
+at all. Drawing it would document a component that does not exist (a phantom, the very thing the
+config-ref drift gate forbids). User decision (slice-05 review): **honest-to-chart**. Updated
+`publish-and-docs.feature`, `feature-delta.md` (elevator/UAT/AC), and `slice-05-*.md` to the real
+topology: **Ingress → API (in-app OIDC vs external IdP) + optional MCP + Postgres (+ Redis when scaled)**.
+D6/ADR-085 unchanged (already correct).

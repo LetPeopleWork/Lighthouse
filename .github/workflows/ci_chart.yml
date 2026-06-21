@@ -62,6 +62,21 @@ jobs:
           printf '%s\n' "$render" | grep -A1 'Database__Provider' | grep -qi 'postgres' || { echo "standalone gate: provider is not postgres"; exit 1; }
           echo "standalone gate OK"
 
+      - name: config-ref drift gate (helm-docs is regenerated; README must already match)
+        # ADR-084 — the chart/README.md Values table is generated from values.yaml `# --` comments.
+        # Regenerate with the pinned helm-docs and fail if it differs from the committed file, so a
+        # renamed/added/removed values key without a regen is caught before publish (zero phantom keys).
+        env:
+          HELM_DOCS_VERSION: 1.14.2
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" \
+            | tar -xz -C /tmp helm-docs
+          /tmp/helm-docs --chart-search-root chart --skip-version-footer -s file --ignore-non-descriptions
+          git diff --exit-code -- chart/README.md \
+            || { echo "config-ref drift: chart/README.md is stale — run helm-docs and commit (see chart/README.md.gotmpl)"; exit 1; }
+          echo "config-ref drift gate OK"
+
   install-smoke:
     runs-on: ubuntu-latest
     steps:

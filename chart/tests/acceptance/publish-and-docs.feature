@@ -63,4 +63,7 @@ Feature: Publish the chart and self-serve from the enterprise docs
   Scenario: The architecture diagram is present and shows the topology
     Given the published docs
     When a reader views the architecture section
-    Then a rendered diagram shows Ingress to oauth2-proxy to API plus MCP plus Postgres
+    Then a rendered diagram shows Ingress to API plus optional MCP plus Postgres
+    # Reconciled (slice-05): the chart ships in-app OIDC (oidc.* -> Authentication:*), no oauth2-proxy
+    # (ADR-085 / D6). The honest topology is Ingress -> API (in-app OIDC vs external IdP) + MCP + Postgres
+    # (+ Redis when scaled). Back-propagated to feature-delta + slice-05.

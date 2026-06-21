@@ -10,11 +10,11 @@ verbatim.
 
 ## Elevator Pitch
 - **Before:** the production self-host story is tribal knowledge; a prospect can't evaluate without a call.
-- **After:** the reader opens the published docs page and sees the architecture diagram (Ingress -> oauth2-proxy -> API + MCP + Postgres), a copy-paste quick-start, a full config reference, and a runnable demo walkthrough.
+- **After:** the reader opens the published docs page and sees the architecture diagram (Ingress -> API (in-app OIDC) + optional MCP + Postgres), a copy-paste quick-start, a full config reference, and a runnable demo walkthrough.
 - **Decision enabled (self-hoster):** "I can deploy this myself from the docs." **(prospect):** "This is real and demoable — I'd pitch it internally."
 
 ## In scope
-- Architecture diagram: Ingress -> oauth2-proxy -> API + MCP + Postgres.
+- Architecture diagram: Ingress -> API (in-app OIDC) + optional MCP + Postgres.
 - README/docs: prerequisites, quick-start, full config reference (every values-enterprise.yaml option documented with comments).
 - Demo walkthrough: install -> auth -> MCP -> scaling, reproducible step by step.
 - Publish chart + README to the LetPeopleWork GitHub org (docs surface of the publish step).
@@ -32,7 +32,7 @@ verbatim.
 A fresh reader (Claude/maintainer playing the self-hoster) runs the quick-start + demo walkthrough top to bottom on a clean cluster.
 
 ## Embedded AC (Given/When/Then)
-- Given the published docs, When a reader views the architecture section, Then a rendered diagram shows Ingress -> oauth2-proxy -> API + MCP + Postgres.
+- Given the published docs, When a reader views the architecture section, Then a rendered diagram shows Ingress -> API (in-app OIDC) + optional MCP + Postgres.
 - Given the quick-start, When a reader follows it verbatim on a conformant cluster, Then they reach a responding Lighthouse instance.
 - Given the config reference, When each documented option is checked against the chart, Then every option corresponds to a real values key (no drift).
 - Given the demo walkthrough, When a reader runs install -> auth -> MCP -> scaling, Then each stage produces the documented observable output (pods Running, OIDC login, an MCP call, replicas scaled).
