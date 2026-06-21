@@ -2,7 +2,11 @@ using System.Collections.Concurrent;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -78,16 +82,51 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore("pending — DELIVER (epic-5305-k8s-readiness slice-07)")]
         public async Task RedisBackplane_NotificationOnPodA_ReachesClientOnPodB()
         {
-            await Task.CompletedTask;
-            Assert.Fail(
-                "Scenario #42 (US-07 AC2, @requires-docker). " +
-                "Given 2 hosts wired to one Redis SignalR backplane, with a client connected to pod A, " +
-                "When an update notification is raised on pod B, " +
-                "Then the client on pod A receives it (cross-pod fan-out via .AddStackExchangeRedis). " +
-                "Seed: RedisContainerFixture; two WebApplicationFactory<Program> hosts sharing ConnectionStrings:Redis; a SignalR client against pod A's hub.");
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            var redisConnectionString = redis.GetConnectionString();
+
+            await using var podA = CreateRedisBackedHost(redisConnectionString);
+            await using var podB = CreateRedisBackedHost(redisConnectionString);
+
+            await using var clientOnPodA = new HubConnectionBuilder()
+                .WithUrl("http://localhost/api/updateNotificationHub", options =>
+                {
+                    options.HttpMessageHandlerFactory = _ => podA.Server.CreateHandler();
+                    options.Transports = HttpTransportType.LongPolling;
+                    options.Headers.Add(TestAuthHandler.SubjectHeader, "scalability-backplane-user");
+                })
+                .Build();
+
+            var notificationReceived = new TaskCompletionSource();
+            clientOnPodA.On("GlobalUpdateNotification", () => notificationReceived.TrySetResult());
+
+            Assert.That(podA.Services.GetService<IConnectionMultiplexer>(), Is.Not.Null,
+                "the host must wire the Redis path (IConnectionMultiplexer registered) for the backplane to be active");
+
+            await clientOnPodA.StartAsync();
+            await clientOnPodA.InvokeAsync("SubscribeToAllUpdates");
+
+            var hubContextOnPodB = podB.Services.GetRequiredService<IHubContext<UpdateNotificationHub>>();
+
+            var deadline = DateTime.UtcNow.AddSeconds(15);
+            while (!notificationReceived.Task.IsCompleted && DateTime.UtcNow < deadline)
+            {
+                await hubContextOnPodB.Clients.Group("GlobalUpdates").SendAsync("GlobalUpdateNotification");
+                await Task.WhenAny(notificationReceived.Task, Task.Delay(500));
+            }
+
+            Assert.That(notificationReceived.Task.IsCompleted, Is.True,
+                "a notification raised on pod B reaches the client connected to pod A — the Redis SignalR backplane " +
+                "(.AddStackExchangeRedis, gated on ConnectionStrings:Redis) fans group sends out across pods (US-07 AC2)");
+        }
+
+        private static WebApplicationFactory<Program> CreateRedisBackedHost(string redisConnectionString)
+        {
+            var root = new TestWebApplicationFactory<Program>();
+            return TestWebApplicationFactory<Program>.WithTestAuthentication(root)
+                .WithWebHostBuilder(builder => builder.UseSetting("ConnectionStrings:Redis", redisConnectionString));
         }
 
         [Test]
