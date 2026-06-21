@@ -24,12 +24,18 @@ short_description: >
   edits in-app configuration) and from the end-user product personas (flow-coach, etc.).
 
 primary_jobs:
+  # epic-5305 RUNTIME jobs (behaviour once deployed)
   - job-operator-survive-multiple-replicas
   - job-operator-zero-downtime-rollout
   - job-operator-trust-pod-health
   - job-operator-correct-behind-proxy
   - job-operator-observe-in-cluster
   - job-mcp-caller-own-identity
+  # epic-5306 INSTALL/CONFIGURE/DOCUMENT jobs (self-hoster flavour)
+  - job-operator-install-whole-stack-one-command
+  - job-operator-configure-via-values
+  - job-operator-trust-clean-first-run
+  - job-operator-self-host-from-docs
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate

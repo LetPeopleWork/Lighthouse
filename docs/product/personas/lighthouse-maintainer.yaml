@@ -19,6 +19,7 @@ short_description: >
 
 primary_jobs:
   - job-maintainer-keep-website-current
+  - job-maintainer-publish-versioned-chart  # epic-5306: publish the public Helm chart with near-zero ceremony
 
 goals:
   - Keep public screenshots accurate with near-zero per-release effort

@@ -29,6 +29,14 @@ run on it, then packaging and hosting it:
 **Sequence: #5189 → #5305 → #5306.** The app must be cluster-safe (#5305) before it is packaged and
 hosted (#5306). #5306 consumes the public Helm chart and depends on #5305.
 
+> **Scope note (2026-06-21).** Two #5306 stories were elevated from light loop to a **scoped full
+> DISCUSS** because they are public, customer-facing, repo-bound deliverables: **#5199 (Helm chart,
+> publishable)** and **#5200 (enterprise docs)**. The distribution question on card #5199 is **resolved
+> to a PUBLIC OSS chart** (GitHub Pages Helm repo, LPW org). The other nine #5306 children
+> (#5201–#5208, #5320) **stay light loop** per D3/§7. DISCUSS artifacts:
+> `docs/feature/epic-5306-k8s-productization/`. This refines, not contradicts, the D3 rule — the
+> public *self-hostable product* surface earns DISCUSS rigor; internal GitOps/ops stays light loop.
+
 **#5305 epic gate (every child story):** the change MUST keep the existing single-container standalone
 and regular server deployment working unchanged — it auto-degrades to the single-instance path (no
 Redis → in-memory backplane; single replica works; SQLite stays the default; frontend stays embedded).

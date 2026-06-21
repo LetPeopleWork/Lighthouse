@@ -1,0 +1,163 @@
+schema_version: 1
+feature_id: epic-5306-k8s-productization
+created: 2026-06-21
+research_depth: lightweight
+note: >
+  Operational journeys for the SCOPED slice of Epic 5306 "Lighthouse k8s Productization":
+  exactly two stories — #5199 (publishable Helm chart) and #5200 (enterprise setup & docs).
+  The other 9 children of #5306 (GitOps/DNS/secrets/dogfood/upgrades/observability/provisioning/
+  backup-DR/OpenTofu substrate) stay LIGHT-LOOP per the planning-stage north star and are OUT
+  of scope here.
+
+  Two actors: the platform-operator in its SELF-HOSTER flavour (the CONSUMER who runs
+  `helm install` and reads the docs) and the lighthouse-maintainer (the PUBLISHER who ships
+  and versions the chart). These journeys are operational, not in-app UX: the "screen" is
+  `helm`, `kubectl`, a browser at the rendered docs page, and the app's HTTP surface coming up.
+
+  Distribution model is LOCKED: PUBLIC OSS Helm chart published to a GitHub Pages Helm repo
+  under the LetPeopleWork GitHub org; `helm install` is available to any external self-hoster.
+
+  Every journey inherits THE STANDALONE GATE (planning-stage D4): the single-container
+  standalone/server deployment is sacrosanct and must NOT change. The chart serves both
+  topologies from one source via `frontend.mode: embedded|split` (default embedded). The chart
+  is additive — it consumes already-shipped epic-5305 k8s-readiness work (health probes,
+  forwarded headers, graceful shutdown, expand-only migrations, Redis backplane, /metrics) as
+  PRE-REQUISITES, it does not redesign them.
+
+  North star: docs/feature/l8e-kubernetes-learning/planning-stage.md (§0 epic split, §1 Band C,
+  §3 D1/D4, §4 architecture, §6 Q1-Q5). Vendor-neutral where the planning doc leaves it open
+  (Q1 substrate, Q2 DB isolation, Q3 identity home): the PUBLIC chart must not hard-code
+  LPW-internal SaaS choices; those live in the private gitops overlay (out of scope).
+
+journeys:
+
+  - name: self-host-the-whole-stack-with-one-command
+    goal: >
+      A self-hoster, who today would have to hand-assemble a pile of raw Kubernetes manifests,
+      runs a single `helm install l8e ./chart -f values-enterprise.yaml` against the published
+      public chart and watches the whole Lighthouse stack (API, optional MCP, Postgres, ingress)
+      come up healthy end to end, with post-install NOTES.txt telling them exactly what to do next.
+    persona: "platform-operator (self-hoster flavour; any external org wanting Lighthouse on k8s)"
+    jobs: [job-operator-install-whole-stack-one-command, job-operator-configure-via-values, job-operator-trust-clean-first-run]
+    stories: ["#5199"]
+    emotional_arc:
+      start: Daunted - "running Lighthouse on k8s today means hand-writing Deployment, Service,
+        Ingress, Postgres, Secrets, ConfigMaps and wiring them together myself — a day of YAML
+        and a dozen ways to get it subtly wrong."
+      middle: Configuring - "I open values-enterprise.yaml, set my image tag, replica count,
+        ingress hostname, OIDC and Postgres creds, toggle MCP on, leave frontend.mode at its
+        embedded default — it reads like a checklist, not a puzzle."
+      end: Relieved - "one command and `kubectl get pods` shows everything Running; NOTES.txt
+        printed my URL and next steps. This is a real deliverable I can stand up for my org."
+    steps:
+      - step: Add the published Helm repo and inspect the chart's default values.
+        output: "`helm repo add` + `helm show values` succeed against the GitHub Pages repo;
+          values.yaml has sensible defaults and the single-container standalone shape is the default."
+      - step: Copy values-enterprise.yaml and set image tag, replicas, ingress host, OIDC, Postgres
+          creds, MCP enabled, frontend.mode.
+        output: A self-contained production-grade values file; every knob is documented inline;
+          omitting a knob falls back to a safe default, never a crash.
+      - step: Run `helm install l8e ./chart -f values-enterprise.yaml`.
+        output: All workloads schedule and reach Running/Ready; the epic-5305 readiness probes gate
+          rollout so traffic only hits serving pods; NOTES.txt prints the access URL + next steps.
+      - step: Hit the rendered URL and confirm the app serves.
+        output: Lighthouse responds over the configured ingress hostname; the stack is operational
+          from a single command.
+    error_paths:
+      - trigger: A required value (e.g. ingress hostname or DB password) is omitted.
+        recovery: helm/template validation fails fast with a clear message naming the missing key —
+          not a half-installed broken release.
+      - trigger: Self-hoster wants the simple single-container experience, not the split topology.
+        recovery: frontend.mode defaults to embedded; leaving it untouched yields the sacrosanct
+          standalone shape (standalone gate) — the chart is additive, the simple path is the default.
+      - trigger: A pod fails to become Ready (bad image tag / unreachable DB).
+        recovery: Readiness probes (epic-5305, pre-req) keep it out of rotation; `helm status` and
+          `kubectl describe` surface the cause; the operator fixes a value and re-applies.
+
+  - name: evaluate-and-self-host-from-the-docs
+    goal: >
+      A self-hoster (and a prospect being pitched) lands on the published docs, reads an
+      architecture diagram and a quick-start, follows a full config reference and a demo
+      walkthrough (install -> auth -> MCP -> scaling), and comes away both able to self-host AND
+      convinced enough to adopt — without a sales call or a support ticket.
+    persona: "platform-operator (self-hoster, reads to deploy); prospect (reads to evaluate)"
+    jobs: [job-operator-self-host-from-docs]
+    stories: ["#5200"]
+    emotional_arc:
+      start: Skeptical - "can I actually run this myself, and is it real? Half the OSS projects I
+        evaluate have a README that stops at `docker run` and no production story."
+      middle: Following - "the architecture diagram shows Ingress -> oauth2-proxy -> API + MCP +
+        Postgres; the quick-start gets me to a running instance; the config reference explains every
+        values-enterprise.yaml option; the demo walkthrough shows auth, MCP and scaling working."
+      end: Convinced - "I can self-host this, and I'd be comfortable pitching it internally — the
+        docs are a credible, demoable artifact, not aspirational marketing."
+    steps:
+      - step: Read the architecture diagram and prerequisites.
+        output: A rendered diagram (Ingress -> oauth2-proxy -> API + MCP + Postgres) + a prerequisites
+          list make the deployment shape and requirements unambiguous before any command is run.
+      - step: Follow the quick-start to a running instance.
+        output: Copy-paste quick-start gets the reader from zero to a responding instance; it points
+          at the same published chart the install journey uses (single source of truth).
+      - step: Use the full config reference to tune values-enterprise.yaml.
+        output: Every documented option maps to a real chart value with an inline comment; the reader
+          configures OIDC, Postgres, replicas, MCP, frontend.mode without guessing.
+      - step: Run the demo walkthrough: install -> auth -> MCP -> scaling.
+        output: A scripted, reproducible demo proves the headline capabilities end to end; usable
+          verbatim as a pitch.
+    error_paths:
+      - trigger: The docs drift from the shipped chart (a value renamed, a default changed).
+        recovery: Docs reference the chart's own values.yaml comments as the single source of truth;
+          a finalization gate (lighthouse-maintainer's habit) catches drift at change time.
+      - trigger: A prospect tries the quick-start on an unsupported substrate.
+        recovery: Prerequisites state the minimum (a conformant k8s + ingress controller); the chart
+          stays vendor-neutral (no hard-coded LPW substrate, Q1/Q2/Q3 left to the operator's values).
+
+  - name: publish-and-version-the-chart-with-near-zero-ceremony
+    goal: >
+      A lighthouse-maintainer packages the chart, bumps its version, and publishes it (chart +
+      README) to the LetPeopleWork GitHub org Helm repo (GitHub Pages) as a low-ceremony,
+      automatable step at finalization time — so external self-hosters always have a current,
+      installable chart and the maintainer never does a big batched catch-up.
+    persona: "lighthouse-maintainer (the publisher who ships the chart the operator consumes)"
+    jobs: [job-maintainer-publish-versioned-chart]
+    stories: ["#5199 (package+publish)", "#5200 (publish README)"]
+    emotional_arc:
+      start: Wary - "publishing a Helm chart to a public repo sounds like a manual, drift-prone
+        chore that I'll forget or do wrong under release pressure."
+      middle: Automating - "`helm package` + index update + push to the gh-pages branch is one
+        scripted step; the version is bumped deliberately, the README ships alongside."
+      end: Confident - "a self-hoster's `helm repo update` always sees the latest; publishing is a
+        cheap default at finalization, not a release-day scramble."
+    steps:
+      - step: Package the chart and bump Chart.yaml version.
+        output: A versioned .tgz; the chart version is an explicit, single-source artifact.
+      - step: Update the Helm repo index and push to the GitHub Pages branch alongside the README.
+        output: `helm repo update` then `helm search repo` shows the new version to any external user;
+          the published README matches the shipped chart.
+    error_paths:
+      - trigger: The chart version is not bumped before publish.
+        recovery: A finalization-gate check (maintainer's "drift" allergy) flags an unchanged version;
+          publish refuses to overwrite an existing version silently.
+      - trigger: The published README drifts from the chart's values.
+        recovery: README config reference is generated from / cross-checked against values.yaml comments
+          (single source of truth), caught at finalization.
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: chart-version
+      must_match_across: ["Chart.yaml", "published Helm repo index", "NOTES.txt", "README install snippet"]
+      failure_message: "Chart version mismatch: a self-hoster installs a version the docs/index do not describe."
+    - artifact: values-enterprise-keys
+      must_match_across: ["values-enterprise.yaml", "docs config reference", "values.yaml defaults"]
+      failure_message: "A documented option does not exist as a chart value (or vice versa) — config reference lies."
+    - artifact: ingress-hostname
+      must_match_across: ["values-enterprise.yaml", "Ingress resource", "NOTES.txt access URL", "OIDC callback config"]
+      failure_message: "The hostname the operator set is not the hostname the app/NOTES/OIDC use — broken first run."
+    - artifact: helm-repo-url
+      must_match_across: ["docs quick-start `helm repo add`", "README", "actual GitHub Pages URL"]
+      failure_message: "The repo URL in the docs does not resolve — the headline one-command install fails at step 0."
+
+changelog:
+  - date: "2026-06-21"
+    feature: "epic-5306-k8s-productization"
+    change: "Created lightweight productization journeys (scoped to #5199 + #5200) — install, evaluate/document, publish/version."

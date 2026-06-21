@@ -2088,3 +2088,158 @@ jobs:
         Importance: 4 - the confused deputy is a real security gap the moment the MCP server is
         exposed beyond ClusterIP. Current satisfaction: 1 - single baked key today. Gap: 3. Change
         lands mostly in the lighthouse-clients repo; version-gate the endpoint per CLAUDE.md.
+
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # epic-5306-k8s-productization (SCOPED: stories #5199 Helm chart, #5200 docs)
+  # Install / package / configure / document / publish — the NEW job space the
+  # six epic-5305 RUNTIME jobs above do not cover. Distribution model LOCKED:
+  # PUBLIC OSS Helm chart on a GitHub Pages repo; `helm install` for any
+  # external self-hoster. Every job inherits the standalone gate (D4): the
+  # single-container shape stays the default; the chart is additive.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: job-operator-install-whole-stack-one-command
+    title: Install the whole Lighthouse stack with one command
+    persona: platform-operator
+    feature: epic-5306-k8s-productization
+    job_story: >
+      When I want to run Lighthouse on Kubernetes for my own org instead of hand-assembling raw
+      manifests,
+      I want to install the entire stack (API, optional MCP, Postgres, ingress) with a single
+      `helm install l8e ./chart -f values-enterprise.yaml` against a published public chart,
+      so I can stand up a real, production-grade Lighthouse as a unit in minutes instead of
+      spending a day writing and debugging a dozen interdependent YAML files.
+    dimensions:
+      functional: A publishable Helm chart that renders the full stack from one command; sensible defaults; embedded single-container shape as the default (standalone gate)
+      emotional: Move from "deploying this is a day of fragile YAML" to "one command and it's up"
+      social: Adopt Lighthouse for my org and show a working install, not a science project
+    forces:
+      push: Running Lighthouse on k8s today means hand-writing Deployment + Service + Ingress + Postgres + Secrets + ConfigMaps and wiring them together, with a dozen ways to get it subtly wrong
+      pull: One `helm install` brings the whole stack up healthy end to end
+      anxiety: Will the chart hide so much that I can't understand or fix what it deployed? Will it force a topology I don't want?
+      habit: Operators expect non-trivial k8s apps to ship a Helm chart, not a wall of raw manifests
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 - this IS the headline deliverable of #5199 and the gate for self-hosting on
+        k8s at all; without it there is no productized deployment. Current satisfaction: 1 - only
+        raw manifests / source clone exist today, no chart. Gap: 4 - the walking skeleton plus
+        full-stack wiring is the bulk of the chart work.
+
+  - id: job-operator-configure-via-values
+    title: Configure the deployment by editing values, not templates
+    persona: platform-operator
+    feature: epic-5306-k8s-productization
+    job_story: >
+      When I install Lighthouse from the chart and need to fit it to my environment,
+      I want to set the image tag, replica count, ingress hostname, OIDC config, Postgres creds,
+      whether MCP is enabled, and the frontend topology (embedded|split) entirely through a
+      values file,
+      so I can pin a version, place it on my own hostname and wire my own identity/DB without ever
+      editing a chart template or forking the chart.
+    dimensions:
+      functional: Parameterised chart values with safe defaults; values-enterprise.yaml as the production reference; frontend.mode toggle defaulting to embedded
+      emotional: Move from "to change anything I edit raw manifests" to "I edit a documented values file"
+      social: Hand a teammate a single reviewable values file that fully describes our deployment
+    forces:
+      push: Changing the image, hostname or auth today means editing hand-written manifests, easy to get wrong and hard to review
+      pull: A documented values file makes the whole deployment a single, reviewable, version-pinnable artifact
+      anxiety: If I omit a value, will the install silently misbehave instead of failing clearly?
+      habit: Operators expect to configure a Helm release via values overrides, not template surgery
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - configurability is what makes the chart usable across environments rather
+        than a fixed demo. Current satisfaction: 1 - no values surface exists today. Gap: 3.
+
+  - id: job-operator-trust-clean-first-run
+    title: Trust a clean first run with clear post-install guidance
+    persona: platform-operator
+    feature: epic-5306-k8s-productization
+    job_story: >
+      When I install the chart for the first time,
+      I want NOTES.txt to tell me exactly what to do next (the access URL, first steps) and a
+      production-grade values-enterprise.yaml to copy from, with omitted-required-value failures
+      that are loud and clear rather than half-broken releases,
+      so I can trust that a fresh install lands in a known-good state and I'm never left guessing
+      whether it worked or what to do next.
+    dimensions:
+      functional: NOTES.txt post-install guidance; values-enterprise.yaml as the canonical reference; fail-fast validation on missing required values
+      emotional: Move from "did that actually work, and now what?" to "it told me the URL and the next step"
+      social: Demonstrate a clean, self-explaining install to whoever I'm onboarding
+    forces:
+      push: A bare `kubectl apply` leaves the operator guessing whether it worked and what the URL is
+      pull: Post-install NOTES + a reference values file make the first run self-explaining
+      anxiety: Will a missing value half-install something broken that I then have to untangle?
+      habit: Operators expect a good Helm chart to print actionable NOTES after install
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 - first-run trust is the difference between "adopted" and "abandoned mid-eval",
+        though secondary to the install itself. Current satisfaction: 1 - no NOTES/reference today.
+        Gap: 2.
+
+  - id: job-operator-self-host-from-docs
+    title: Self-host and evaluate Lighthouse from the docs alone
+    persona: platform-operator
+    feature: epic-5306-k8s-productization
+    job_story: >
+      When I'm deciding whether to self-host Lighthouse (or pitching it internally),
+      I want published docs with an architecture diagram, a copy-paste quick-start, a full config
+      reference for values-enterprise.yaml, and a runnable demo walkthrough (install -> auth ->
+      MCP -> scaling),
+      so I can both stand it up myself AND build the case to adopt it — without a sales call or a
+      support ticket.
+    dimensions:
+      functional: Architecture diagram (Ingress -> oauth2-proxy -> API + MCP + Postgres); prerequisites; quick-start; full config reference; demo walkthrough; published to the LPW GitHub org
+      emotional: Move from "can I actually run this, and is it real?" to "I can deploy it AND I'd pitch it"
+      social: Make the case internally with a credible, demoable artifact rather than aspirational marketing
+    forces:
+      push: Most OSS projects' docs stop at `docker run` with no production or evaluation story
+      pull: Docs good enough to self-host AND evaluate remove the need for a sales call or support ticket
+      anxiety: Will the docs drift from the shipped chart so the quick-start no longer works?
+      habit: Evaluators expect a serious product to have a self-serve quick-start and a real architecture story
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - this IS #5200 and the pitch-readiness payoff; the chart is only adoptable if
+        the docs make it self-serve. Current satisfaction: 1 - no enterprise self-host docs today.
+        Gap: 3.
+
+  - id: job-maintainer-publish-versioned-chart
+    title: Publish and version the chart with near-zero per-release ceremony
+    persona: lighthouse-maintainer
+    feature: epic-5306-k8s-productization
+    job_story: >
+      When I finalize a release that touches the deployment,
+      I want to package the chart, bump its version, and publish it (chart + README) to the
+      LetPeopleWork GitHub org Helm repo as one low-ceremony, automatable step,
+      so external self-hosters always see a current installable chart via `helm repo update` and I
+      never face a big batched catch-up under release-day pressure.
+    dimensions:
+      functional: helm package + version bump + GitHub Pages Helm repo index/publish; refuse-silent-overwrite guard; README ships alongside
+      emotional: Move from "publishing a public chart is a drift-prone chore I'll get wrong" to "it's a cheap default at finalization"
+      social: Give external self-hosters a chart they can trust is current; uphold the project's low-ceremony-automation value
+    forces:
+      push: Manually packaging and publishing a chart to a public repo is exactly the chore that gets skipped or batched into an error-prone catch-up
+      pull: A scripted publish step keeps the public chart current as a side effect of work already done
+      anxiety: Will I silently overwrite a version or publish a README that drifts from the chart?
+      habit: Maintainers default to batching deployment/doc updates to release time, accumulating drift
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 - publishing is what makes the chart externally consumable, but it is the
+        plumbing behind the operator-facing jobs rather than an independent end-user ask. Current
+        satisfaction: 1 - no published chart pipeline today. Gap: 2 - real but bounded; mirrors the
+        already-shipped website-screenshot finalization-gate pattern.
