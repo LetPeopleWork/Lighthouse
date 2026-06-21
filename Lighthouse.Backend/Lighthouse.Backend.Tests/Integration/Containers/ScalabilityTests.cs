@@ -91,17 +91,49 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore("pending — DELIVER (epic-5305-k8s-readiness slice-07)")]
         public async Task GetUpdateStatus_ConsistentAcrossPods()
         {
-            await Task.CompletedTask;
-            Assert.Fail(
-                "Scenario #43 (US-07 AC3 / INV-2, @requires-docker). " +
-                "Given an update in flight admitted on pod A, with the shared Redis status store, " +
-                "When GetUpdateStatus is queried on pod B, " +
-                "Then pod B returns a consistent (bounded-stale) answer for that UpdateKey, and an EnqueueAndAwaitAsync " +
-                "caller on pod B is released when pod A advances the status to terminal (cross-pod awaiter via Redis pub/sub). " +
-                "Seed: PostgresContainerFixture + RedisContainerFixture; two WebApplicationFactory<Program> hosts; await on the follower pod.");
+            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var podA = CreatePod(multiplexer, postgres.GetConnectionString());
+            var podB = CreatePod(multiplexer, postgres.GetConnectionString());
+
+            var key = new UpdateKey(UpdateType.Team, 1);
+            var inFlightReached = new TaskCompletionSource();
+            var releaseInFlightWork = new TaskCompletionSource();
+
+            podA.EnqueueUpdate(UpdateType.Team, 1, _ =>
+            {
+                inFlightReached.TrySetResult();
+                return releaseInFlightWork.Task;
+            });
+            await inFlightReached.Task;
+
+            var statusReaderOnPodB = new RedisUpdateStatusStore(multiplexer);
+            statusReaderOnPodB.TryGet(key, out var observedOnPodB);
+
+            var crossPodAwait = podB.EnqueueAndAwaitAsync(UpdateType.Team, 1, _ => Task.CompletedTask);
+            var releasedWhileInFlight = crossPodAwait.IsCompleted;
+
+            releaseInFlightWork.SetResult();
+            var crossPodAwaitReleased = await Task.WhenAny(crossPodAwait, Task.Delay(5000)) == crossPodAwait;
+
+            await podA.DrainAsync();
+            await podB.DrainAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(observedOnPodB?.Status, Is.EqualTo(UpdateProgress.InProgress),
+                    "pod B reads the in-flight status for the UpdateKey from the shared Redis store — GetUpdateStatus " +
+                    "is consistent across pods (US-07 AC3, bounded-stale / INV-2)");
+                Assert.That(releasedWhileInFlight, Is.False,
+                    "pod B's EnqueueAndAwaitAsync for the same entity does not resolve while pod A is still running it");
+                Assert.That(crossPodAwaitReleased, Is.True,
+                    "pod B's cross-pod await is released once pod A advances the entity to terminal and publishes the " +
+                    "completion over the dedicated Redis pub/sub channel");
+            }
         }
 
         private static UpdateQueueService CreatePod(IConnectionMultiplexer multiplexer, string postgresConnectionString)
@@ -124,12 +156,14 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var sharedStatusStore = new RedisUpdateStatusStore(multiplexer);
             var executionLock = new PostgresUpdateExecutionLock(
                 Options.Create(new DatabaseConfiguration { Provider = "Postgresql", ConnectionString = postgresConnectionString }));
+            var completionNotifier = new RedisUpdateCompletionNotifier(multiplexer);
 
             return new UpdateQueueService(
                 Mock.Of<ILogger<UpdateQueueService>>(),
                 hubContext.Object,
                 sharedStatusStore,
                 executionLock,
+                completionNotifier,
                 serviceScopeFactory.Object,
                 maintenanceGate);
         }

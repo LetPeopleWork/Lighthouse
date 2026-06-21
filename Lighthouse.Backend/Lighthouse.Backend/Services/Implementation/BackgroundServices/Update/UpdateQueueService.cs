@@ -6,13 +6,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     using System.Collections.Concurrent;
     using System.Threading.Channels;
 
-    public class UpdateQueueService : IUpdateQueueService
+    public class UpdateQueueService : IUpdateQueueService, IDisposable
     {
         private readonly Channel<Func<Task>> queue = Channel.CreateUnbounded<Func<Task>>();
         private readonly ILogger<UpdateQueueService> logger;
         private readonly IHubContext<UpdateNotificationHub> hubContext;
         private readonly IUpdateStatusStore statusStore;
         private readonly IUpdateExecutionLock executionLock;
+        private readonly IUpdateCompletionNotifier completionNotifier;
+        private readonly IDisposable completionSubscription;
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly DatabaseMaintenanceGate maintenanceGate;
@@ -23,6 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             IHubContext<UpdateNotificationHub> hubContext,
             IUpdateStatusStore statusStore,
             IUpdateExecutionLock executionLock,
+            IUpdateCompletionNotifier completionNotifier,
             IServiceScopeFactory serviceScopeFactory,
             DatabaseMaintenanceGate maintenanceGate)
         {
@@ -30,10 +33,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             this.hubContext = hubContext;
             this.statusStore = statusStore;
             this.executionLock = executionLock;
+            this.completionNotifier = completionNotifier;
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
 
+            completionSubscription = completionNotifier.Subscribe(ReleaseAwaiter);
             processingTask = StartProcessingQueue();
+        }
+
+        private void ReleaseAwaiter(UpdateKey updateKey)
+        {
+            if (awaiters.TryRemove(updateKey, out var awaiter))
+            {
+                awaiter.TrySetResult(true);
+            }
         }
 
         public async Task DrainAsync(CancellationToken cancellationToken = default)
@@ -93,6 +106,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 if (awaiters.TryGetValue(updateKey, out var existing))
                 {
                     return RegisterCancellation(existing.Task, cancellationToken);
+                }
+
+                if (completionNotifier.IsDistributed)
+                {
+                    var crossPodAwaiter = awaiters.GetOrAdd(updateKey, _ => new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+                    return RegisterCancellation(crossPodAwaiter.Task, cancellationToken);
                 }
 
                 return Task.CompletedTask;
@@ -160,6 +179,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 }
 
                 statusStore.Remove(updateKey);
+                await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
             };
         }
@@ -189,6 +209,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 {
                     awaiters.TryRemove(updateKey, out _);
                     statusStore.Remove(updateKey);
+                    await completionNotifier.PublishCompletionAsync(updateKey);
                     await NotifyListeners(updateKey, terminalStatus);
                 }
             };
@@ -225,6 +246,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             await hubContext.Clients.Group(updateKey.ToString()).SendAsync(updateKey.ToString(), status);
 
             await hubContext.Clients.Group("GlobalUpdates").SendAsync("GlobalUpdateNotification");
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                completionSubscription.Dispose();
+            }
         }
     }
 }

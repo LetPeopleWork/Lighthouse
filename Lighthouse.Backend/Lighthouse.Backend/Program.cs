@@ -990,11 +990,13 @@ namespace Lighthouse.Backend
                 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
                 builder.Services.AddSingleton<IUpdateStatusStore, RedisUpdateStatusStore>();
                 builder.Services.AddSingleton<IUpdateExecutionLock, PostgresUpdateExecutionLock>();
+                builder.Services.AddSingleton<IUpdateCompletionNotifier, RedisUpdateCompletionNotifier>();
             }
             else
             {
                 builder.Services.AddSingleton<IUpdateStatusStore, InProcessUpdateStatusStore>();
                 builder.Services.AddSingleton<IUpdateExecutionLock, InProcessUpdateExecutionLock>();
+                builder.Services.AddSingleton<IUpdateCompletionNotifier, InProcessUpdateCompletionNotifier>();
             }
 
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
