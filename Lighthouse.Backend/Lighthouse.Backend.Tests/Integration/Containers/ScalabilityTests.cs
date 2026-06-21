@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 using StackExchange.Redis;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
@@ -15,17 +17,24 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     public class ScalabilityTests
     {
         [Test]
-        [Ignore("pending — DELIVER (epic-5305-k8s-readiness slice-07)")]
         public async Task NoRedisOneHost_BehaviourAndCodePathIdenticalToToday()
         {
-            await Task.CompletedTask;
-            Assert.Fail(
-                "Scenario #39 (US-07 AC4 / D1 standalone gate, @standalone). " +
-                "Given no ConnectionStrings:Redis is configured and a single host, " +
-                "When background updates and manual refreshes run, " +
-                "Then the in-process Channel queue, in-process awaiters and InProcessUpdateStatusStore are used — " +
-                "behaviour AND code path identical to today (no advisory lock, no Redis), the lock degrades to a no-op. " +
-                "Seed: build the host with no Redis connection string; assert the in-process adapters are resolved.");
+            await using var host = new TestWebApplicationFactory<Program>();
+
+            var statusStore = host.Services.GetRequiredService<IUpdateStatusStore>();
+            var executionLock = host.Services.GetRequiredService<IUpdateExecutionLock>();
+            var redisMultiplexer = host.Services.GetService<IConnectionMultiplexer>();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(statusStore, Is.TypeOf<InProcessUpdateStatusStore>(),
+                    "with no ConnectionStrings:Redis the status store is the in-process ConcurrentDictionary adapter — " +
+                    "the same code path as today (US-07 AC4 / D1 standalone gate)");
+                Assert.That(executionLock, Is.TypeOf<InProcessUpdateExecutionLock>(),
+                    "with no Redis the per-entity lock degrades to a no-op — no advisory lock is acquired");
+                Assert.That(redisMultiplexer, Is.Null,
+                    "no Redis multiplexer is registered without ConnectionStrings:Redis, so nothing connects to Redis");
+            }
         }
 
         [Test]

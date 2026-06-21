@@ -40,6 +40,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
+using StackExchange.Redis;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
@@ -276,12 +277,20 @@ namespace Lighthouse.Backend
             });
 
             // Add SignalR
-            builder.Services.AddSignalR()
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            var clusterCoordinationEnabled = !string.IsNullOrWhiteSpace(redisConnectionString);
+
+            var signalRBuilder = builder.Services.AddSignalR()
                  .AddJsonProtocol(options =>
                  {
                      options.PayloadSerializerOptions.Converters
                       .Add(new JsonStringEnumConverter());
                  });
+
+            if (clusterCoordinationEnabled)
+            {
+                signalRBuilder.AddStackExchangeRedis(redisConnectionString!);
+            }
 
             builder.Services.ConfigureAll<HttpClientFactoryOptions>(o =>
             {
@@ -974,8 +983,20 @@ namespace Lighthouse.Backend
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);
-            builder.Services.AddSingleton<IUpdateStatusStore, InProcessUpdateStatusStore>();
-            builder.Services.AddSingleton<IUpdateExecutionLock, InProcessUpdateExecutionLock>();
+
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));
+                builder.Services.AddSingleton<IUpdateStatusStore, RedisUpdateStatusStore>();
+                builder.Services.AddSingleton<IUpdateExecutionLock, PostgresUpdateExecutionLock>();
+            }
+            else
+            {
+                builder.Services.AddSingleton<IUpdateStatusStore, InProcessUpdateStatusStore>();
+                builder.Services.AddSingleton<IUpdateExecutionLock, InProcessUpdateExecutionLock>();
+            }
+
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
             builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
