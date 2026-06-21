@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void SetUp()
         {
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
-            subject = new DatabaseMaintenanceGate(updateStatuses);
+            subject = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses));
         }
 
         [Test]

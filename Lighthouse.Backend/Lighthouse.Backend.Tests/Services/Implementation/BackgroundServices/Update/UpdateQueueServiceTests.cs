@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             serviceScopeMock.Setup(s => s.ServiceProvider).Returns(serviceProviderMock.Object);
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
-            gate = new DatabaseMaintenanceGate(updateStatuses);
+            gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses));
         }
 
         [Test]

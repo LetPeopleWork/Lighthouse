@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns(Enumerable.Empty<ISeeder>());
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
-            gate = new DatabaseMaintenanceGate(updateStatuses);
+            gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses));
             tracker = new DatabaseOperationTracker();
 
             var loggerMock = new Mock<ILogger<DatabaseManagementService>>();

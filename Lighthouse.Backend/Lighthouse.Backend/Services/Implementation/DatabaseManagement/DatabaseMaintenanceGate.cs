@@ -1,6 +1,5 @@
-using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
-using System.Collections.Concurrent;
+using Lighthouse.Backend.Services.Interfaces.Update;
 
 namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 {
@@ -8,15 +7,15 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
     public class DatabaseMaintenanceGate
     {
-        private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
+        private readonly IUpdateStatusStore statusStore;
         private readonly object gateLock = new();
 
         private string? activeOperationId;
         private DatabaseOperationType? activeOperationType;
 
-        public DatabaseMaintenanceGate(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses)
+        public DatabaseMaintenanceGate(IUpdateStatusStore statusStore)
         {
-            this.updateStatuses = updateStatuses;
+            this.statusStore = statusStore;
         }
 
         public bool IsBlocked => HasActiveBackgroundWork() || activeOperationId != null;
@@ -102,8 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
         private bool HasActiveBackgroundWork()
         {
-            return updateStatuses.Values.Any(status =>
-                status.Status is UpdateProgress.Queued or UpdateProgress.InProgress);
+            return statusStore.HasActiveWork();
         }
     }
 }
