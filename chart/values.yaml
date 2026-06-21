@@ -62,3 +62,9 @@ shutdownTimeoutSeconds: 30
 telemetry:
   # -- Enable OpenTelemetry /metrics + JSON logs (epic-5305 #5312). Off by default (self-hoster).
   enabled: false
+
+redis:
+  # -- Redis connection string (ConnectionStrings:Redis). REQUIRED when replicaCount>1 — enables the
+  #    epic-5305 #5304 SignalR backplane + single-instance background work so the fleet syncs once.
+  #    Operator-provided (the chart bundles no Redis; vendor-neutral). Empty = single-replica only.
+  connectionString: ""

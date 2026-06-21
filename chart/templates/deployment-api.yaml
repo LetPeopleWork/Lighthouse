@@ -1,4 +1,5 @@
 {{- include "lighthouse.assertFrontendMode" . -}}
+{{- include "lighthouse.assertScaling" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,6 +35,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "lighthouse.secretName" . }}
                   key: Database__ConnectionString
+            {{- with .Values.redis.connectionString }}
+            # epic-5305 #5304 SignalR Redis backplane + single-instance background work (replicaCount>1).
+            - name: ConnectionStrings__Redis
+              value: {{ . | quote }}
+            {{- end }}
           # epic-5305 #5310 health probes: rollout gates on real readiness.
           startupProbe:
             httpGet:

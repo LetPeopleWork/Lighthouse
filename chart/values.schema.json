@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Lighthouse Helm chart values",
+  "description": "Typed validation for the Postgres-only Lighthouse chart (ADR-082). Conditional rules (e.g. password required when bundled/BYO) are enforced in templates via {{ required }}, not here.",
+  "type": "object",
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of API replicas. >1 requires redis.connectionString."
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string" },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["embedded", "split"],
+          "description": "embedded (default, standalone parity) or split (not implemented this version, ADR-081)."
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "host": { "type": "string" },
+        "tls": { "type": "boolean" },
+        "tlsSecretName": { "type": "string" }
+      }
+    },
+    "postgresql": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "image": { "type": "string", "minLength": 1 },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "database": { "type": "string", "minLength": 1 },
+            "username": { "type": "string", "minLength": 1 },
+            "password": { "type": "string" }
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "string", "minLength": 1 },
+            "storageClass": { "type": "string" }
+          }
+        }
+      }
+    },
+    "externalDatabase": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string" },
+        "port": { "type": "integer" },
+        "database": { "type": "string" },
+        "user": { "type": "string" },
+        "password": { "type": "string" }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "connectionString": { "type": "string" }
+      }
+    },
+    "shutdownTimeoutSeconds": { "type": "integer", "minimum": 1 },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "resources": { "type": "object" }
+  }
+}

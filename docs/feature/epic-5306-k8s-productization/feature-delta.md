@@ -706,6 +706,14 @@ Built the minimal publishable `chart/` skeleton that brings the whole stack up w
 - `helm unittest` — 10/10 pass.
 - Live kind dogfood — pods Ready, API serves SPA + health. (API restarted 2× while Postgres came up, then stabilised — readiness gating worked as designed.)
 
-## Wave: DELIVER / [REF] Pending (slices 02–05)
+## Wave: DELIVER / [REF] Implementation Summary (slice-02)
 
-values.schema.json (ADR-082 typed validation) · image/replicaCount/host parameterisation depth + values-enterprise.yaml · full stack (OIDC, MCP `mcp.enabled` workload, external Postgres BYO, Redis multi-replica) · publish pipeline (`ci_chart.yml` + release-stage package/index/no-overwrite guard, the DELIVER action items from the review gate) · helm-docs config reference + drift gate · enterprise docs (diagram/quick-start/demo). Per the review-verdicts.md DELIVER action items.
+Parameterise the install via values + typed validation. Added `values.schema.json` (ADR-082 — types, `frontend.mode` enum, `replicaCount` minimum 1, structural; conditional rules stay in `{{ required }}`). Wired the `ConnectionStrings:Redis` backplane env (epic-5305 #5304) when `redis.connectionString` is set, plus a scaling guard that fails fast when `replicaCount>1` without Redis (no double-sync). Scaffolded `chart/values-enterprise.yaml` as the production reference (image/replicas/host/TLS/resources/Redis wired now; OIDC/MCP/external-DB sections scaffolded, filled slice-03).
+
+Files: `chart/values.schema.json` (new), `chart/values-enterprise.yaml` (new), `chart/values.yaml` (+redis), `chart/templates/_helpers.tpl` (+assertScaling), `chart/templates/deployment-api.yaml` (+Redis env, +scaling guard), `chart/tests/unit/configure_test.yaml` (new).
+
+Scenarios green (slice-02): image-tag-from-values, ingress-host-from-values, replicaCount=2+Redis → 2 replicas + backplane env, replicaCount>1-without-Redis fail-fast, single-replica needs-no-Redis, schema rejects `replicaCount=0` + invalid `frontend.mode` (verified via `helm template`). **helm-unittest 15/15**; lint clean on default + `values-enterprise.yaml`. Multi-replica *runtime* dogfood (2 pods Ready + sync-once with a real Redis) deferred to the slice-03 full-stack live dogfood (render + schema asserted now).
+
+## Wave: DELIVER / [REF] Pending (slices 03–05)
+
+Full stack — OIDC (+ forwarded-headers trust), MCP `mcp.enabled` workload (ADR-085), external Postgres BYO (`externalDatabase.*`), full-stack live dogfood incl. multi-replica+Redis · publish pipeline — `ci_chart.yml` (lint + template + standalone-gate guard + kind install-test + drift) + release-stage package/`helm repo index --url https://docs.lighthouse.letpeople.work/charts`/no-overwrite + version-consistency guards, pin helm/ct/helm-docs versions · helm-docs config reference + drift gate · enterprise docs (diagram/quick-start/demo). Per the review-verdicts.md DELIVER action items.

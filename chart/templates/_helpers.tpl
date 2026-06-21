@@ -57,6 +57,13 @@ app.kubernetes.io/component: postgres
 {{- printf "%s://%s" $scheme .Values.ingress.host -}}
 {{- end -}}
 
+{{/* Scaling guard — replicaCount>1 needs the Redis backplane (epic-5305 #5304) or pods double-sync */}}
+{{- define "lighthouse.assertScaling" -}}
+{{- if and (gt (int .Values.replicaCount) 1) (not .Values.redis.connectionString) -}}
+{{- fail "replicaCount>1 requires redis.connectionString (the epic-5305 SignalR backplane / single-instance background work); set it or scale to 1" -}}
+{{- end -}}
+{{- end -}}
+
 {{/* frontend.mode guard — embedded is supported; split fails loud (ADR-081, Band D deferred) */}}
 {{- define "lighthouse.assertFrontendMode" -}}
 {{- if eq .Values.frontend.mode "split" -}}

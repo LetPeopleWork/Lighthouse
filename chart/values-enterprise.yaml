@@ -1,0 +1,92 @@
+# values-enterprise.yaml — production-grade reference for self-hosting Lighthouse on Kubernetes.
+# Copy, fill the REQUIRED values, and run:
+#   helm install l8e ./chart -f values-enterprise.yaml
+#
+# Slice-02 scaffold: image / replicas / host / TLS / resources / Redis are wired now.
+# OIDC, MCP, and external-Postgres (BYO) sections are scaffolded here and fully wired in slice-03.
+
+# --- Image -------------------------------------------------------------------
+image:
+  repository: ghcr.io/letpeoplework/lighthouse
+  # Pin an explicit published release for production (do not float). Empty = Chart.appVersion.
+  tag: "26.6.16.14"
+  pullPolicy: IfNotPresent
+
+# --- Scaling -----------------------------------------------------------------
+# replicaCount>1 REQUIRES redis.connectionString (epic-5305 #5304 backplane), or the chart fails fast.
+replicaCount: 2
+
+redis:
+  # REQUIRED for replicaCount>1. Operator-provided Redis (the chart bundles none).
+  connectionString: "redis-master.redis.svc.cluster.local:6379"
+
+# --- Ingress -----------------------------------------------------------------
+ingress:
+  enabled: true
+  className: "traefik"        # your cluster's ingress controller
+  host: "lighthouse.acme.example"   # REQUIRED — your public hostname
+  tls: true
+  tlsSecretName: "lighthouse-tls"   # a cert Secret you provide (cert-manager, etc.)
+
+# --- Resources ---------------------------------------------------------------
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+# --- Database (Postgres-only; bundled OR bring-your-own) ----------------------
+postgresql:
+  # Bundled in-chart Postgres (convenient, single-replica). For production HA, set enabled=false
+  # and use externalDatabase below (managed Postgres / CloudNativePG / RDS / Azure Database).
+  enabled: true
+  image: postgres:17
+  auth:
+    database: lighthouse
+    username: lighthouse
+    password: ""              # REQUIRED (ADR-082) — set a strong password
+  persistence:
+    size: 20Gi
+    storageClass: ""          # empty = cluster default
+
+# Bring-your-own Postgres (used when postgresql.enabled=false). Wired in slice-03.
+# externalDatabase:
+#   host: "my-postgres.internal"
+#   port: 5432
+#   database: "lighthouse"
+#   user: "lighthouse"
+#   password: ""              # REQUIRED when postgresql.enabled=false
+
+# --- Frontend topology -------------------------------------------------------
+frontend:
+  mode: embedded              # 'split' is not implemented this version (ADR-081)
+
+# --- Authentication (OIDC) — wired in slice-03 ------------------------------
+# oidc:
+#   enabled: true
+#   issuer: "https://login.example.com/realms/acme"   # your IdP authority
+#   clientId: "lighthouse"
+#   clientSecret: ""          # REQUIRED when oidc.enabled
+#   callbackPath: "/api/auth/callback"
+
+# Reverse-proxy / forwarded-headers trust (epic-5305 #5311) — needed behind the ingress for
+# correct OIDC redirect URIs + secure cookies. Wired in slice-03.
+# app:
+#   proxy:
+#     trustedProxies: []      # ingress controller pod IPs
+#     trustedNetworks: []     # or CIDR ranges
+
+# --- MCP HTTP server (optional) — wired in slice-03 -------------------------
+# mcp:
+#   enabled: false
+#   image: "ghcr.io/letpeoplework/lighthouse-mcp:latest"
+#   auth:
+#     mode: "apikey"          # apikey (pass-through) or oauth (IdP Bearer) — ADR-079/085
+
+# --- Observability (off by default; epic-5305 #5312) ------------------------
+telemetry:
+  enabled: false
+
+# --- Graceful shutdown (epic-5305 #5309) ------------------------------------
+shutdownTimeoutSeconds: 30

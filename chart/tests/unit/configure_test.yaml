@@ -1,0 +1,60 @@
+suite: configure via values (slice-02)
+# Greens install-and-configure.feature: image tag, ingress host, replicaCount+Redis.
+tests:
+  - it: API image tag comes from values
+    set:
+      postgresql.auth.password: testpass
+      image.tag: "26.6.11.3"
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/letpeoplework/lighthouse:26.6.11.3
+
+  - it: ingress host comes from values
+    set:
+      postgresql.auth.password: testpass
+      ingress.host: lh.acme.internal
+    template: templates/ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: lh.acme.internal
+
+  - it: replicaCount with Redis renders scaled API + backplane env
+    set:
+      postgresql.auth.password: testpass
+      replicaCount: 2
+      redis.connectionString: "redis:6379"
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ConnectionStrings__Redis
+            value: "redis:6379"
+
+  - it: replicaCount greater than 1 without Redis fails fast (epic-5305 pre-req)
+    set:
+      postgresql.auth.password: testpass
+      replicaCount: 2
+    template: templates/deployment-api.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "replicaCount>1 requires redis.connectionString (the epic-5305 SignalR backplane / single-instance background work); set it or scale to 1"
+
+  - it: single replica needs no Redis (default)
+    set:
+      postgresql.auth.password: testpass
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ConnectionStrings__Redis
