@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private UpdateNotificationHub CreateSubject()
         {
-            var hub = new UpdateNotificationHub(updateStatuses, Mock.Of<ILogger<UpdateNotificationHub>>())
+            var hub = new UpdateNotificationHub(new InProcessUpdateStatusStore(updateStatuses), Mock.Of<ILogger<UpdateNotificationHub>>())
             {
                 Clients = clientsMock.Object,
                 Groups = groupsMock.Object,

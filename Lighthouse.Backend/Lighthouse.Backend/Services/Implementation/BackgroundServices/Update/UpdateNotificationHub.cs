@@ -1,19 +1,19 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Lighthouse.Backend.Services.Interfaces.Update;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     [Authorize]
     public class UpdateNotificationHub : Hub
     {
-        private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
+        private readonly IUpdateStatusStore statusStore;
         private readonly ILogger<UpdateNotificationHub> logger;
         private const string GlobalUpdatesGroup = "GlobalUpdates";
 
-        public UpdateNotificationHub(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses, ILogger<UpdateNotificationHub> logger)
+        public UpdateNotificationHub(IUpdateStatusStore statusStore, ILogger<UpdateNotificationHub> logger)
         {
-            this.updateStatuses = updateStatuses;
+            this.statusStore = statusStore;
             this.logger = logger;
         }
 
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             if (TryParseUpdateType(updateType, out var parsedUpdateType))
             {
                 var updateKey = new UpdateKey(parsedUpdateType, id);
-                updateStatuses.TryGetValue(updateKey, out var updateStatus);
+                statusStore.TryGet(updateKey, out var updateStatus);
                 return updateStatus;
             }
 

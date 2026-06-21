@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly Channel<Func<Task>> queue = Channel.CreateUnbounded<Func<Task>>();
         private readonly ILogger<UpdateQueueService> logger;
         private readonly IHubContext<UpdateNotificationHub> hubContext;
-        private readonly ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
+        private readonly IUpdateStatusStore statusStore;
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly DatabaseMaintenanceGate maintenanceGate;
@@ -20,13 +20,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         public UpdateQueueService(
             ILogger<UpdateQueueService> logger,
             IHubContext<UpdateNotificationHub> hubContext,
-            ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses,
+            IUpdateStatusStore statusStore,
             IServiceScopeFactory serviceScopeFactory,
             DatabaseMaintenanceGate maintenanceGate)
         {
             this.logger = logger;
             this.hubContext = hubContext;
-            this.updateStatuses = updateStatuses;
+            this.statusStore = statusStore;
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
 
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
 
             var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
-            if (!updateStatuses.TryAdd(updateKey, updateStatus))
+            if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued or being processed.", updateType, id);
                 return;
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
 
-            if (!updateStatuses.TryAdd(updateKey, updateStatus))
+            if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued; awaiting the in-flight completion.", updateType, id);
                 if (awaiters.TryGetValue(updateKey, out var existing))
@@ -140,20 +140,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             return async () =>
             {
-                updateStatus.Status = UpdateProgress.InProgress;
+                statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
                 try
                 {
                     await ExecuteUpdateTask(updateTask);
-                    updateStatus.Status = UpdateProgress.Completed;
+                    statusStore.Advance(updateKey, UpdateProgress.Completed);
                 }
                 catch (Exception ex)
                 {
-                    updateStatus.Status = UpdateProgress.Failed;
+                    statusStore.Advance(updateKey, UpdateProgress.Failed);
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                 }
 
-                updateStatuses.TryRemove(updateKey, out _);
+                statusStore.Remove(updateKey);
                 await NotifyListeners(updateKey, updateStatus);
             };
         }
@@ -162,24 +162,24 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             return async () =>
             {
-                updateStatus.Status = UpdateProgress.InProgress;
+                statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
                 try
                 {
                     await ExecuteUpdateTask(updateTask);
-                    updateStatus.Status = UpdateProgress.Completed;
+                    statusStore.Advance(updateKey, UpdateProgress.Completed);
                     tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
-                    updateStatus.Status = UpdateProgress.Failed;
+                    statusStore.Advance(updateKey, UpdateProgress.Failed);
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                     tcs.TrySetException(ex);
                 }
                 finally
                 {
                     awaiters.TryRemove(updateKey, out _);
-                    updateStatuses.TryRemove(updateKey, out _);
+                    statusStore.Remove(updateKey);
                     await NotifyListeners(updateKey, updateStatus);
                 }
             };

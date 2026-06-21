@@ -432,7 +432,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private UpdateQueueService CreateSubject()
         {
-            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, updateStatuses, serviceScopeFactoryMock.Object, gate);
+            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new InProcessUpdateStatusStore(updateStatuses), serviceScopeFactoryMock.Object, gate);
         }
     }
 }
