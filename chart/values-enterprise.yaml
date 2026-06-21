@@ -9,7 +9,8 @@
 image:
   repository: ghcr.io/letpeoplework/lighthouse
   # Pin an explicit published release for production (do not float). Empty = Chart.appVersion.
-  tag: "26.6.16.14"
+  # 26.6.21.1 = pre-release testing image with the epic-5305 scalability work; bump at next release.
+  tag: "26.6.21.1"
   pullPolicy: IfNotPresent
 
 # --- Scaling -----------------------------------------------------------------
@@ -62,27 +63,28 @@ postgresql:
 frontend:
   mode: embedded              # 'split' is not implemented this version (ADR-081)
 
-# --- Authentication (OIDC) — wired in slice-03 ------------------------------
-# oidc:
-#   enabled: true
-#   issuer: "https://login.example.com/realms/acme"   # your IdP authority
-#   clientId: "lighthouse"
-#   clientSecret: ""          # REQUIRED when oidc.enabled
-#   callbackPath: "/api/auth/callback"
+# --- Authentication (OIDC) ---------------------------------------------------
+oidc:
+  enabled: true
+  issuer: "https://login.example.com/realms/acme"   # your IdP authority
+  clientId: "lighthouse"
+  clientSecret: ""            # REQUIRED when oidc.enabled — set your client secret
+  callbackPath: "/api/auth/callback"
 
 # Reverse-proxy / forwarded-headers trust (epic-5305 #5311) — needed behind the ingress for
-# correct OIDC redirect URIs + secure cookies. Wired in slice-03.
-# app:
-#   proxy:
-#     trustedProxies: []      # ingress controller pod IPs
-#     trustedNetworks: []     # or CIDR ranges
+# correct OIDC redirect URIs + secure cookies.
+app:
+  proxy:
+    trustedProxies: []        # ingress controller pod IPs
+    trustedNetworks:          # or CIDR ranges
+      - "10.0.0.0/8"
 
-# --- MCP HTTP server (optional) — wired in slice-03 -------------------------
-# mcp:
-#   enabled: false
-#   image: "ghcr.io/letpeoplework/lighthouse-mcp:latest"
-#   auth:
-#     mode: "apikey"          # apikey (pass-through) or oauth (IdP Bearer) — ADR-079/085
+# --- MCP HTTP server (optional) ---------------------------------------------
+mcp:
+  enabled: true
+  image: "ghcr.io/letpeoplework/lighthouse-clients/mcp-http:latest"   # pin a real tag in production
+  auth:
+    mode: "oauth"             # apikey (X-Api-Key pass-through) or oauth (IdP Bearer) — ADR-079/085
 
 # --- Observability (off by default; epic-5305 #5312) ------------------------
 telemetry:

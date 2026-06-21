@@ -45,10 +45,40 @@ app.kubernetes.io/component: postgres
 {{- printf "%s-db" (include "lighthouse.fullname" .) -}}
 {{- end -}}
 
-{{/* Npgsql connection string for the bundled Postgres (contains the password → lives in a Secret) */}}
+{{/* DB-mode guard — exactly one of bundled Postgres or externalDatabase (ADR-080/082) */}}
+{{- define "lighthouse.assertDatabase" -}}
+{{- $ext := .Values.externalDatabase | default dict -}}
+{{- if and .Values.postgresql.enabled $ext.host -}}
+{{- fail "ambiguous database config: set EITHER postgresql.enabled=true (bundled) OR externalDatabase.* (BYO), not both" -}}
+{{- else if not (or .Values.postgresql.enabled $ext.host) -}}
+{{- fail "no database configured: enable bundled Postgres (postgresql.enabled=true) or set externalDatabase.host (BYO)" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Npgsql connection string — bundled Postgres or externalDatabase (contains the password → Secret) */}}
 {{- define "lighthouse.connectionString" -}}
+{{- include "lighthouse.assertDatabase" . -}}
+{{- if .Values.postgresql.enabled -}}
 {{- $a := .Values.postgresql.auth -}}
 {{- printf "Host=%s;Port=5432;Database=%s;Username=%s;Password=%s" (include "lighthouse.postgres.host" .) $a.database $a.username (required "postgresql.auth.password is required (ADR-082): set a Postgres password" $a.password) -}}
+{{- else -}}
+{{- $e := .Values.externalDatabase -}}
+{{- printf "Host=%s;Port=%d;Database=%s;Username=%s;Password=%s" $e.host (int (default 5432 $e.port)) (required "externalDatabase.database is required" $e.database) (required "externalDatabase.user is required" $e.user) (required "externalDatabase.password is required" $e.password) -}}
+{{- end -}}
+{{- end -}}
+
+{{/* MCP guard — mcp.enabled needs an image */}}
+{{- define "lighthouse.assertMcp" -}}
+{{- if .Values.mcp.enabled -}}
+{{- if not .Values.mcp.image -}}
+{{- fail "mcp.enabled=true requires mcp.image (the lighthouse-clients mcp-http image)" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* MCP service host */}}
+{{- define "lighthouse.mcp.host" -}}
+{{- printf "%s-mcp" (include "lighthouse.fullname" .) -}}
 {{- end -}}
 
 {{/* Resolved public access URL for NOTES.txt */}}

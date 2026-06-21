@@ -714,6 +714,22 @@ Files: `chart/values.schema.json` (new), `chart/values-enterprise.yaml` (new), `
 
 Scenarios green (slice-02): image-tag-from-values, ingress-host-from-values, replicaCount=2+Redis → 2 replicas + backplane env, replicaCount>1-without-Redis fail-fast, single-replica needs-no-Redis, schema rejects `replicaCount=0` + invalid `frontend.mode` (verified via `helm template`). **helm-unittest 15/15**; lint clean on default + `values-enterprise.yaml`. Multi-replica *runtime* dogfood (2 pods Ready + sync-once with a real Redis) deferred to the slice-03 full-stack live dogfood (render + schema asserted now).
 
-## Wave: DELIVER / [REF] Pending (slices 03–05)
+## Wave: DELIVER / [REF] Implementation Summary (slice-03)
 
-Full stack — OIDC (+ forwarded-headers trust), MCP `mcp.enabled` workload (ADR-085), external Postgres BYO (`externalDatabase.*`), full-stack live dogfood incl. multi-replica+Redis · publish pipeline — `ci_chart.yml` (lint + template + standalone-gate guard + kind install-test + drift) + release-stage package/`helm repo index --url https://docs.lighthouse.letpeople.work/charts`/no-overwrite + version-consistency guards, pin helm/ct/helm-docs versions · helm-docs config reference + drift gate · enterprise docs (diagram/quick-start/demo). Per the review-verdicts.md DELIVER action items.
+Full production stack from values-enterprise.yaml. Added: **external Postgres BYO** (`externalDatabase.*` — connection-string helper switches bundled↔external; `assertDatabase` fails fast on ambiguous/none); **OIDC** (`oidc.*` → `Authentication:*` env, client secret in Secret) + **forwarded-headers trust** (`app.proxy.trustedProxies/trustedNetworks` → indexed `Authentication__TrustedProxies__N`, epic-5305 #5311); **MCP workload** (`mcp.enabled` → Deployment+Service from `mcp-http` image, `PORT`/`LIGHTHOUSE_URL`/OAuth-issuer env per ADR-079/085, fail-fast without image) + ingress `/mcp` path. Filled `values-enterprise.yaml` end to end (OIDC + MCP + proxy wired). Schema extended (oidc/app/mcp).
+
+Files: `chart/templates/mcp.yaml` (new), `_helpers.tpl` (+assertDatabase/assertMcp/connectionString-external/mcp.host), `configmap.yaml` (+OIDC+proxy env), `secret.yaml` (+conditional pg-password/client-secret), `deployment-api.yaml` (+client-secret env), `ingress.yaml` (+/mcp), `values.yaml`/`values.schema.json`/`values-enterprise.yaml` (+oidc/app/mcp/externalDatabase), `tests/unit/full-stack_test.yaml` (new).
+
+Scenarios green (slice-03): MCP render toggle (present/absent), MCP-without-image fail-fast, ingress `/mcp`, external-DB no-bundled-pod + external connstring, ambiguous-DB fail-fast, OIDC config+secret rendered, OIDC-without-secret fail-fast, forwarded-proxies indexed env. **helm-unittest 25/25**; lint clean default + enterprise.
+
+**Live full-stack dogfood (kind, image 26.6.21.1):** 2 API + MCP + Postgres + Redis all `1/1 Ready`; **rolling update to 26.6.21.1 was zero-downtime** (new pods Ready before old terminated — epic-5305 graceful-shutdown + probes working); SPA serves (`/` 200 `<title>Lighthouse</title>`). Cluster torn down.
+
+## Wave: DELIVER / [WHY] Observations / watch items
+
+- **Image pin = `26.6.21.1`** (pre-release testing image carrying epic-5305 #5304 scalability code, not yet in a tagged release). Chart `appVersion` + `values-enterprise.yaml image.tag` set to it; **bump to the newest released version at the next Lighthouse release** (per user, 2026-06-21). The prior `26.6.16.14` (latest release) predates #5304, so multi-replica sync-once is only correct on ≥ the scalability build.
+- **`/health/ready` flapped under 2 replicas** (503, 503, 200 across 3 port-forward hits) on 26.6.21.1, though pods report `1/1 Ready`. Likely the deep readiness check (DB/Redis dependency) intermittently failing, or unreleased-image roughness; single-replica (slice-01) was clean apart from startup restarts. Watch item — may need readiness `initialDelaySeconds`/`failureThreshold` tuning or resolve in the released build. Not blocking (k8s readiness gating + rolling update worked).
+- **API startup restarts** (2–3/pod) while Postgres comes up — readiness gating handles it; an init-container `wait-for-postgres` or `failureThreshold` bump (slice-04/05) would remove the churn.
+
+## Wave: DELIVER / [REF] Pending (slices 04–05)
+
+Publish pipeline — `ci_chart.yml` (lint + template + standalone-gate guard + kind install-test + drift) + release-stage package/`helm repo index --url https://docs.lighthouse.letpeople.work/charts`/no-overwrite + version-consistency guards, pin helm/ct/helm-docs versions · helm-docs config reference + drift gate · enterprise docs (diagram/quick-start/demo). Per the review-verdicts.md DELIVER action items.

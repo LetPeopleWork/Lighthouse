@@ -24,6 +24,15 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
+          {{- if .Values.mcp.enabled }}
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "lighthouse.mcp.host" . }}
+                port:
+                  name: http
+          {{- end }}
           - path: /
             pathType: Prefix
             backend:

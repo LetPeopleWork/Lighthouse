@@ -11,3 +11,16 @@ data:
   Database__Provider: "postgres"
   Telemetry__Enabled: {{ .Values.telemetry.enabled | quote }}
   Shutdown__TimeoutSeconds: {{ .Values.shutdownTimeoutSeconds | quote }}
+  {{- if .Values.oidc.enabled }}
+  Authentication__Enabled: "true"
+  Authentication__Authority: {{ required "oidc.issuer is required when oidc.enabled" .Values.oidc.issuer | quote }}
+  Authentication__ClientId: {{ required "oidc.clientId is required when oidc.enabled" .Values.oidc.clientId | quote }}
+  Authentication__CallbackPath: {{ .Values.oidc.callbackPath | quote }}
+  Authorization__Enabled: "true"
+  {{- range $i, $p := .Values.app.proxy.trustedProxies }}
+  Authentication__TrustedProxies__{{ $i }}: {{ $p | quote }}
+  {{- end }}
+  {{- range $i, $n := .Values.app.proxy.trustedNetworks }}
+  Authentication__TrustedNetworks__{{ $i }}: {{ $n | quote }}
+  {{- end }}
+  {{- end }}

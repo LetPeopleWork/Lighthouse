@@ -1,0 +1,59 @@
+{{- if .Values.mcp.enabled }}
+{{- include "lighthouse.assertMcp" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lighthouse.mcp.host" . }}
+  labels:
+    {{- include "lighthouse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "lighthouse.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "lighthouse.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: mcp
+    spec:
+      containers:
+        - name: mcp
+          image: {{ .Values.mcp.image | quote }}
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            # In-cluster Lighthouse API base URL (the MCP server forwards the caller's own credential — ADR-079).
+            - name: LIGHTHOUSE_URL
+              value: "http://{{ include "lighthouse.fullname" . }}-api"
+            {{- if eq .Values.mcp.auth.mode "oauth" }}
+            # Hosted OAuth: advertise protected-resource metadata + forward the caller Bearer (ADR-079).
+            - name: LIGHTHOUSE_OAUTH_ISSUER
+              value: {{ required "oidc.issuer is required for mcp.auth.mode=oauth" .Values.oidc.issuer | quote }}
+            {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lighthouse.mcp.host" . }}
+  labels:
+    {{- include "lighthouse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "lighthouse.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: mcp
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+{{- end }}

@@ -68,3 +68,39 @@ redis:
   #    epic-5305 #5304 SignalR backplane + single-instance background work so the fleet syncs once.
   #    Operator-provided (the chart bundles no Redis; vendor-neutral). Empty = single-replica only.
   connectionString: ""
+
+# -- Bring-your-own Postgres (used when postgresql.enabled=false). Vendor-neutral (managed / CNPG / RDS / Azure).
+externalDatabase:
+  host: ""
+  port: 5432
+  database: ""
+  user: ""
+  password: ""
+
+oidc:
+  # -- Enable OIDC login (Authentication:*). Off = no auth (standalone parity). Needs forwarded-headers behind ingress.
+  enabled: false
+  # -- OIDC authority / issuer URL.
+  issuer: ""
+  # -- OIDC client id.
+  clientId: ""
+  # -- OIDC client secret (REQUIRED when oidc.enabled).
+  clientSecret: ""
+  # -- OIDC callback path.
+  callbackPath: /api/auth/callback
+
+app:
+  proxy:
+    # -- Trusted reverse-proxy IPs (epic-5305 #5311) so OIDC redirect URIs + secure cookies are correct behind the ingress.
+    trustedProxies: []
+    # -- Trusted proxy CIDR networks.
+    trustedNetworks: []
+
+mcp:
+  # -- Deploy the optional MCP HTTP server workload (ADR-085). Orthogonal to frontend.mode.
+  enabled: false
+  # -- MCP server image (lighthouse-clients mcp-http). Pin a real tag in production.
+  image: ghcr.io/letpeoplework/lighthouse-clients/mcp-http:latest
+  auth:
+    # -- Inbound-auth model (ADR-079): apikey (caller's X-Api-Key pass-through) or oauth (IdP Bearer pass-through).
+    mode: apikey

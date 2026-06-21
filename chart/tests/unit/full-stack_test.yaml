@@ -1,0 +1,123 @@
+suite: full stack — MCP, OIDC, external DB (slice-03)
+tests:
+  - it: MCP workload is rendered when enabled
+    set:
+      postgresql.auth.password: testpass
+      mcp.enabled: true
+    template: templates/mcp.yaml
+    asserts:
+      - hasDocuments:
+          count: 2   # Deployment + Service
+      - isKind:
+          of: Deployment
+        documentIndex: 0
+      - isKind:
+          of: Service
+        documentIndex: 1
+
+  - it: MCP workload is absent when disabled
+    set:
+      postgresql.auth.password: testpass
+      mcp.enabled: false
+    template: templates/mcp.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: MCP enabled without an image fails fast
+    set:
+      postgresql.auth.password: testpass
+      mcp.enabled: true
+      mcp.image: ""
+    template: templates/mcp.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "mcp.enabled=true requires mcp.image (the lighthouse-clients mcp-http image)"
+
+  - it: ingress routes /mcp to the MCP service when enabled
+    set:
+      postgresql.auth.password: testpass
+      mcp.enabled: true
+    template: templates/ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /mcp
+
+  - it: external Postgres renders no bundled pod and wires the external host
+    set:
+      postgresql.enabled: false
+      externalDatabase.host: my-pg.example
+      externalDatabase.database: lh
+      externalDatabase.user: lh
+      externalDatabase.password: extpass
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: external Postgres connection string targets the external host
+    set:
+      postgresql.enabled: false
+      externalDatabase.host: my-pg.example
+      externalDatabase.database: lh
+      externalDatabase.user: lh
+      externalDatabase.password: extpass
+    template: templates/secret.yaml
+    asserts:
+      - matchRegex:
+          path: stringData.Database__ConnectionString
+          pattern: "Host=my-pg.example;Port=5432;Database=lh"
+
+  - it: ambiguous database config fails fast
+    set:
+      postgresql.enabled: true
+      postgresql.auth.password: testpass
+      externalDatabase.host: my-pg.example
+    template: templates/secret.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "ambiguous database config: set EITHER postgresql.enabled=true (bundled) OR externalDatabase.* (BYO), not both"
+
+  - it: OIDC config is rendered into the API config + secret
+    set:
+      postgresql.auth.password: testpass
+      oidc.enabled: true
+      oidc.issuer: https://idp.example/realms/acme
+      oidc.clientId: lighthouse
+      oidc.clientSecret: s3cret
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__Enabled
+          value: "true"
+      - equal:
+          path: data.Authentication__Authority
+          value: https://idp.example/realms/acme
+
+  - it: OIDC enabled without a client secret fails fast
+    set:
+      postgresql.auth.password: testpass
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: ""
+    template: templates/secret.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "oidc.clientSecret is required when oidc.enabled"
+
+  - it: forwarded-headers trusted proxies are rendered as indexed config
+    set:
+      postgresql.auth.password: testpass
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: s3cret
+      app.proxy.trustedProxies:
+        - 10.0.0.1
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__TrustedProxies__0
+          value: 10.0.0.1

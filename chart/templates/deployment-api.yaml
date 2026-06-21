@@ -40,6 +40,13 @@ spec:
             - name: ConnectionStrings__Redis
               value: {{ . | quote }}
             {{- end }}
+            {{- if .Values.oidc.enabled }}
+            - name: Authentication__ClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lighthouse.secretName" . }}
+                  key: Authentication__ClientSecret
+            {{- end }}
           # epic-5305 #5310 health probes: rollout gates on real readiness.
           startupProbe:
             httpGet:
