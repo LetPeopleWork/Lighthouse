@@ -1,9 +1,9 @@
-# ADR-076: Cluster-Aware Update Queue — the Queue Itself Is the Cluster-Aware Unit (Not a Timer Leader); Two Candidate Substrates (Distributed Single-Consumer Queue vs Per-Entity Lock + Shared Status Store) Behind the Existing `IUpdateQueueService` Port; **OPEN, SPIKE-Gated**, Leaning Option B
+# ADR-076: Cluster-Aware Update Queue — the Queue Itself Is the Cluster-Aware Unit (Not a Timer Leader); **ACCEPTED — Option B (Per-Entity Postgres Advisory Lock + Shared Redis Status Store)** Behind the Existing `IUpdateQueueService` Port
 
-**Status**: **Proposed (OPEN — SPIKE-gated, do NOT commit in DELIVER before the slice-07 SPIKE reports)** (2026-06-16 — Morgan, Solution Architect; interaction mode PROPOSE. Inherits System Decision 2 / A1 / D5 and the DDD invariants INV-1..4.)
-**Date**: 2026-06-16
+**Status**: **Accepted — Option B chosen (2026-06-20 design SPIKE; live Earned-Trust probe scheduled as slice-07 DELIVER step 0)** — supersedes the Proposed/OPEN state of 2026-06-16. (Morgan, Solution Architect; interaction mode PROPOSE. Inherits System Decision 2 / A1 / D5 and the DDD invariants INV-1..4.)
+**Date**: 2026-06-16 (proposed) · 2026-06-20 (SPIKE-resolved → Accepted)
 **Feature**: epic-5305-k8s-readiness (ADO Epic #5305)
-**Decider**: deferred to the slice-07 SPIKE; this ADR records the options, the recommendation, and the contract both must satisfy
+**Decider**: slice-07 design SPIKE (2026-06-20) — Option B, with Option A retained as the documented fallback if the DELIVER live probe shows advisory-lock liveness is fragile under the real pooler topology
 **Relationship to prior ADRs**: AMENDS ADR-027 (single-instance default stands; this adds the config-gated multi-replica branch behind `IUpdateQueueService`). DEPENDS on ADR-075 (the Redis it can reuse). Pairs with ADR-077. Honours the D1 standalone gate and the DDD-architect's INV-1 (monotonic progress), INV-4 (single-active-lifecycle-per-`UpdateKey`), and the no-outbox / idempotency-on-`UpdateKey` confirmation.
 
 ---
@@ -26,7 +26,7 @@ The DDD-architect has fixed the contract this port must honour:
 
 ## Decision
 
-**OPEN.** Both candidates swap the implementation **behind the existing `IUpdateQueueService` port** (signature unchanged — EXTEND, not rewrite) and **both require a shared status store** (the separately-extracted `IUpdateStatusStore`, ADR application-layer detail) to satisfy US-07 AC3 + INV-1/INV-2. The choice between them is deferred to the slice-07 SPIKE.
+**Option B — per-entity Postgres advisory lock + shared Redis status store, behind the existing `IUpdateQueueService` port.** Both candidates were evaluated against the full contract (INV-1..4, D1, the two trigger paths, cross-pod awaited completion, liveness/reclaim) in the 2026-06-20 design SPIKE; the discriminator is recorded in **§SPIKE Outcome** below. Both candidates swap the implementation **behind the existing `IUpdateQueueService` port** (signature unchanged — EXTEND, not rewrite) and **both require a shared status store** (the separately-extracted `IUpdateStatusStore`, ADR application-layer detail) to satisfy US-07 AC3 + INV-1/INV-2.
 
 ### Option A — Distributed single-consumer queue
 
@@ -58,6 +58,27 @@ Keep each replica's in-process queue, but guard each `(UpdateType, id)` update w
 4. Postgres advisory locks **auto-release on connection loss**, giving a clean liveness story the SPIKE can verify.
 
 **Do NOT pre-commit in DELIVER.** The slice-07 SPIKE prototypes **both** candidates against real Postgres + Redis with 3 hosts driving timer + manual-refresh concurrently; the one that disproves double-work (connector call count = 1 per entity per cycle, INV-4) **and** keeps awaited-completion consistent under a mid-update pod kill (INV-1/INV-2) wins.
+
+## SPIKE Outcome (2026-06-20 — design probe; live empirical probe = slice-07 DELIVER step 0)
+
+**Chosen: Option B.** The probe at this stage is a **design probe** grounded in the code at HEAD (`UpdateQueueService.cs`, `DatabaseMaintenanceGate.cs`, `DatabaseConfigurator.MigrateUnderAdvisoryLock`) plus the proven slice-04 advisory-lock pattern; the **empirical Earned-Trust probe (mutual-exclusion / dedup / reclaim against real Postgres+Redis with 3 hosts) is the FIRST DELIVER step** (`deliver/slice-07-roadmap.md` step 0), per the ADR's own "the probe implementation is a DELIVER detail" framing. The design probe is sufficient to pick the shape because the decisive discriminator is structural, not performance:
+
+**Decisive discriminator — Option A's headline advantage evaporates under the two-trigger-path reality.** Option A ("natural awaited completion on the single consumer") is only natural for callers that happen to be served by the consumer pod. With two trigger paths (timer + inline manual refresh on *whatever* pod serves the request, D5), a manual refresh served by a *follower* pod must **always** await cross-pod via the shared status store + ADR-075 backplane push anyway — exactly the wiring Option B needs too. So A buys nothing on awaited-completion, while still dragging in queue-technology semantics (consumer groups), a "who is the single consumer" liveness/election story, and a second degrade branch at N=1. Option B gets single-sync (INV-4) from the per-entity lock without any of that.
+
+**Why Option B wins on the weighted attributes (ADR-027 ranks operability highest):**
+1. **Reuse of a proven primitive.** Option B's per-entity lock is the *parameterized* form of slice-04's shipped `MigrateUnderAdvisoryLock` (`DatabaseConfigurator.cs:108-136`): session-scoped `pg_advisory_lock` on a dedicated connection, released in `finally`, **auto-released on connection drop**. Smallest new surface; the codebase already proves the pattern + its test shape (`ConcurrentStartupMigrationTests`).
+2. **Clean liveness/reclaim.** Postgres advisory locks auto-release when the holding connection dies → a pod killed mid-update releases the lock with no TTL/fencing machinery (Earned-Trust probe (c)). Redlock-style Redis locks are contested under partition (rejected as the lock substrate).
+3. **No queue technology / no leader election.** Each replica keeps its in-process `Channel` queue verbatim; the lock is the only cross-pod addition. At N=1 the lock is a no-op → byte-identical standalone (D1) with a *single* degrade branch.
+4. **Latency is a non-issue** at ~30 QPS / background-concurrency-1; uncontended manual refresh stays local (today's path), only contended work dedups to an awaited store-observation.
+
+**Chosen substrate split (co-designed admission boundary, INV-4):**
+- **Hard mutual-exclusion (INV-4 boundary) = Postgres per-entity advisory lock.** Key derived from `UpdateKey` as a stable `bigint` (`(long)(int)updateType << 32 | (uint)id`). Acquired **at execution time inside the consumer** (not at enqueue — avoids holding a session lock across the enqueue→consume thread hop), on a dedicated Npgsql connection held for the update duration and released in `finally` — the slice-04 pattern, parameterized by key. `pg_try_advisory_lock` for the non-blocking admission test; `pg_advisory_lock` (blocking) is the serialization backstop if the soft dedup races.
+- **Soft cluster-wide dedup + read/await projection (INV-1/2, AC3) = shared Redis status store.** A Redis hash keyed by `UpdateKey`; `Advance` is a **monotonic compare-and-set on the `UpdateProgress` ordinal** (Lua/`WATCH`), never blind LWW (INV-1). `TryAdmit` is `HSETNX`-style soft dedup so two pods don't both enqueue+run in the common case; the advisory lock is the hard guarantee for the race window. Reads (`GetUpdateStatus`) are bounded-stale (INV-2) — no synchronous distributed read on the hot path.
+- **Cross-pod awaiter release.** `EnqueueAndAwaitAsync` keeps an in-process `awaiters` TCS dict (`UpdateQueueService.cs:15`). For a caller awaiting on a *different* pod than the one that runs the update, the running pod publishes a terminal-advance signal over **Redis pub/sub** (a small dedicated channel, distinct from the SignalR client backplane which targets browser clients, not server-side TCS); each pod's `UpdateQueueService` subscribes and releases any local awaiter for that `UpdateKey`. In-process adapter does this in-process exactly as today.
+
+**Both substrates gated on `ConnectionStrings:Redis` present** (the same single gate as ADR-075). The hosted multi-replica topology always has Redis **and** Postgres; absent the gate ⇒ `InProcessUpdateStatusStore` + in-process `Channel` + in-process awaiters, **byte-identical to today** (D1 / US-07 AC4). A `ConnectionStrings:Redis`-set-but-SQLite-provider combination is a misconfiguration the startup probe surfaces (advisory lock needs Npgsql).
+
+**Scope correction surfaced by the SPIKE (DESIGN missed it): a THIRD consumer of the raw `updateStatuses` singleton.** `DatabaseMaintenanceGate` (`DatabaseMaintenanceGate.cs:11,103-107`) injects the same `ConcurrentDictionary<UpdateKey,UpdateStatus>` and its `HasActiveBackgroundWork()` enumerates `.Values` for `Queued`/`InProgress` before allowing a backup/restore. At N pods "is any background work active *anywhere*" is a cross-pod question, so `IUpdateStatusStore` MUST expose a `HasActiveWork()` (or enumerable) member and `DatabaseMaintenanceGate` must move onto the port. The shared adapter answers it from the Redis hash; the in-process adapter answers it from the dict (today). This is an explicit roadmap step (slice-07 step 2).
 
 ## Earned-Trust Probe (MANDATORY, BOTH options — first-class design responsibility)
 
