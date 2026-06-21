@@ -2,7 +2,8 @@
 # Executable via: release-stage guard scripts + helm repo add/install from the published index
 # (@real-io) and the helm-docs drift gate (@in-memory).
 # slice-04 @US-01 (publish): GREEN — chart/scripts/{version-guard,publish}.sh + ci_chart.yml +
-#   docs/charts/ published (verified: helm repo add/search/install from the packaged .tgz, kind dogfood).
+#   docs/charts/ published (chart 0.1.1; verified: helm repo add/search/install from the packaged
+#   .tgz, kind dogfood, non-root unprivileged-port bind 8080/8443).
 # slice-05 @US-02 (enterprise docs): RED until the docs + helm-docs drift gate exist.
 
 @feature:epic-5306-k8s-productization

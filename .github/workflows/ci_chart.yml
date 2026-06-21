@@ -34,7 +34,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
-          version: v4.2.1
+          version: v3.16.3
 
       - name: helm lint (default + enterprise values)
         run: |
@@ -43,7 +43,9 @@ jobs:
             --set postgresql.auth.password=ci --set oidc.clientSecret=ci
 
       - name: Install helm-unittest plugin
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.1.1 || helm plugin list
+        # v1.0.3 is the last release whose plugin.yaml predates the helm-v4-only `platformHooks`
+        # field, so it loads + registers the `unittest` command on helm v3 (v1.1.x does not).
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.0.3 || helm plugin list
 
       - name: helm unittest (incl. standalone-gate render guard)
         run: helm unittest -f 'tests/unit/*.yaml' ./chart
@@ -68,7 +70,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
-          version: v4.2.1
+          version: v3.16.3
 
       - name: Create kind cluster
         uses: helm/kind-action@99576bfa6ddf9a8e612d83b513da5a75875caced # v1.9.0
@@ -116,7 +118,7 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
-          version: v4.2.1
+          version: v3.16.3
 
       - name: Guard + package + index into docs/charts/
         # version-guard refuses to overwrite an already-published version and asserts

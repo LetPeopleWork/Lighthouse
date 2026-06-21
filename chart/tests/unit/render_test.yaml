@@ -58,3 +58,24 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].image
           value: ghcr.io/letpeoplework/lighthouse:26.6.21.1
+
+  - it: API binds an unprivileged container port (non-root bind, not 80)
+    set:
+      postgresql.auth.password: testpass
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 8080
+
+  - it: ConfigMap overrides the image's privileged Kestrel ports to unprivileged ones
+    set:
+      postgresql.auth.password: testpass
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data["Kestrel__Endpoints__Http__Url"]
+          value: "http://+:8080"
+      - equal:
+          path: data["Kestrel__Endpoints__Https__Url"]
+          value: "https://+:8443"

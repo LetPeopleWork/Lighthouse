@@ -25,7 +25,8 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              # Unprivileged — see Kestrel__Endpoints__Http__Url in the ConfigMap (non-root bind).
+              containerPort: 8080
           envFrom:
             - configMapRef:
                 name: {{ include "lighthouse.fullname" . }}-config

@@ -4,7 +4,7 @@ Flow metrics and probabilistic forecasting for Kubernetes. Postgres-only (ADR-08
 brings the whole stack up — API (SPA served in-process), bundled or external Postgres, optional MCP
 workload and OIDC — with one command.
 
-- **Chart version:** `0.1.0`
+- **Chart version:** `0.1.1`
 - **App image (appVersion):** `26.6.21.1`
 
 ## Install from the published Helm repo (no source checkout)
@@ -12,8 +12,8 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.0 / APP 26.6.21.1
-helm install l8e letpeoplework/lighthouse --version 0.1.0 -f values-enterprise.yaml
+helm search repo lighthouse          # shows CHART 0.1.1 / APP 26.6.21.1
+helm install l8e letpeoplework/lighthouse --version 0.1.1 -f values-enterprise.yaml
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,

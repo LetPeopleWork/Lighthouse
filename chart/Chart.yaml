@@ -3,7 +3,8 @@ name: lighthouse
 description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes. Postgres-only chart that brings the whole stack up with one command.
 type: application
 # version  — the CHART version (single source of truth; ADR-083). Bumped per release.
-version: 0.1.0
+# 0.1.1: API binds unprivileged ports (8080/8443) so it runs as non-root on standard clusters.
+version: 0.1.1
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
 # NOTE: 26.6.21.1 is a pre-release testing image carrying the epic-5305 scalability work (#5304
 # Redis backplane / single-instance background work) not yet in a tagged release. Bump to the
