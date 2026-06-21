@@ -459,5 +459,4 @@ test-results/
 **/deliver/execution-log.json
 social-posts/.slack-cache.json
 
-# Serena MCP server workspace (local tooling cache)
-.serena/
+.lean-ctx/*
