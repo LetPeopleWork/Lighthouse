@@ -975,6 +975,7 @@ namespace Lighthouse.Backend
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);
             builder.Services.AddSingleton<IUpdateStatusStore, InProcessUpdateStatusStore>();
+            builder.Services.AddSingleton<IUpdateExecutionLock, InProcessUpdateExecutionLock>();
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
             builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();

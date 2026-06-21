@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly ILogger<UpdateQueueService> logger;
         private readonly IHubContext<UpdateNotificationHub> hubContext;
         private readonly IUpdateStatusStore statusStore;
+        private readonly IUpdateExecutionLock executionLock;
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly DatabaseMaintenanceGate maintenanceGate;
@@ -21,12 +22,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             ILogger<UpdateQueueService> logger,
             IHubContext<UpdateNotificationHub> hubContext,
             IUpdateStatusStore statusStore,
+            IUpdateExecutionLock executionLock,
             IServiceScopeFactory serviceScopeFactory,
             DatabaseMaintenanceGate maintenanceGate)
         {
             this.logger = logger;
             this.hubContext = hubContext;
             this.statusStore = statusStore;
+            this.executionLock = executionLock;
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
 
@@ -140,21 +143,24 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             return async () =>
             {
+                await using var executionScope = await executionLock.AcquireAsync(updateKey);
+
                 statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
+                UpdateStatus terminalStatus;
                 try
                 {
                     await ExecuteUpdateTask(updateTask);
-                    statusStore.Advance(updateKey, UpdateProgress.Completed);
+                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
                 }
                 catch (Exception ex)
                 {
-                    statusStore.Advance(updateKey, UpdateProgress.Failed);
+                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Failed) ?? updateStatus;
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                 }
 
                 statusStore.Remove(updateKey);
-                await NotifyListeners(updateKey, updateStatus);
+                await NotifyListeners(updateKey, terminalStatus);
             };
         }
 
@@ -162,17 +168,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             return async () =>
             {
+                await using var executionScope = await executionLock.AcquireAsync(updateKey);
+
                 statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
+                UpdateStatus terminalStatus = updateStatus;
                 try
                 {
                     await ExecuteUpdateTask(updateTask);
-                    statusStore.Advance(updateKey, UpdateProgress.Completed);
+                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
                     tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
-                    statusStore.Advance(updateKey, UpdateProgress.Failed);
+                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Failed) ?? terminalStatus;
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                     tcs.TrySetException(ex);
                 }
@@ -180,7 +189,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 {
                     awaiters.TryRemove(updateKey, out _);
                     statusStore.Remove(updateKey);
-                    await NotifyListeners(updateKey, updateStatus);
+                    await NotifyListeners(updateKey, terminalStatus);
                 }
             };
         }

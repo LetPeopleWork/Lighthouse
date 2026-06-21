@@ -1,3 +1,14 @@
+using System.Collections.Concurrent;
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
+using StackExchange.Redis;
+
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
@@ -18,17 +29,43 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore("pending — DELIVER (epic-5305-k8s-readiness slice-07)")]
         public async Task RedisThreeHosts_SingleSyncPerEntity_TimerAndManualRefresh()
         {
-            await Task.CompletedTask;
-            Assert.Fail(
-                "Scenario #41 (US-07 AC1 / INV-4, @requires-docker). " +
-                "Given 3 hosts sharing one real Postgres + Redis, " +
-                "When the periodic timer and a manual refresh both target the same entity concurrently across pods, " +
-                "Then the entity is synced exactly once per cycle — the per-entity Postgres advisory lock admits at most " +
-                "one active lifecycle per UpdateKey across the fleet (no N× connector calls, no racing writes). " +
-                "Seed: PostgresContainerFixture + RedisContainerFixture; N WebApplicationFactory<Program> hosts sharing both connection strings; count connector invocations.");
+            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var connectorCalls = new ConcurrentDictionary<UpdateKey, int>();
+            var releaseInFlightWork = new TaskCompletionSource();
+
+            var pods = Enumerable.Range(0, 3)
+                .Select(_ => CreatePod(multiplexer, postgres.GetConnectionString()))
+                .ToList();
+
+            var key = new UpdateKey(UpdateType.Team, 1);
+            Task SyncEntity(IServiceProvider _)
+            {
+                connectorCalls.AddOrUpdate(key, 1, (_, count) => count + 1);
+                return releaseInFlightWork.Task;
+            }
+
+            var concurrentTriggers = pods
+                .SelectMany(pod => new[]
+                {
+                    Task.Run(() => pod.EnqueueUpdate(UpdateType.Team, 1, SyncEntity)),
+                    Task.Run(() => pod.EnqueueUpdate(UpdateType.Team, 1, SyncEntity)),
+                })
+                .ToArray();
+
+            await Task.WhenAll(concurrentTriggers);
+            releaseInFlightWork.SetResult();
+            await Task.WhenAll(pods.Select(pod => pod.DrainAsync()));
+
+            Assert.That(connectorCalls.GetValueOrDefault(key), Is.EqualTo(1),
+                "with the timer and manual refresh both targeting the same entity concurrently across 3 pods sharing " +
+                "one Redis store + Postgres lock, the entity is synced exactly once: HSETNX admission dedups the " +
+                "enqueue across the fleet and the per-entity advisory lock is the hard single-active-lifecycle backstop " +
+                "(no N× connector calls, no racing writes / US-07 AC1 / INV-4)");
         }
 
         [Test]
@@ -56,6 +93,36 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 "Then pod B returns a consistent (bounded-stale) answer for that UpdateKey, and an EnqueueAndAwaitAsync " +
                 "caller on pod B is released when pod A advances the status to terminal (cross-pod awaiter via Redis pub/sub). " +
                 "Seed: PostgresContainerFixture + RedisContainerFixture; two WebApplicationFactory<Program> hosts; await on the follower pod.");
+        }
+
+        private static UpdateQueueService CreatePod(IConnectionMultiplexer multiplexer, string postgresConnectionString)
+        {
+            var hubContext = new Mock<IHubContext<UpdateNotificationHub>>();
+            var clientProxy = new Mock<IClientProxy>();
+            clientProxy
+                .Setup(proxy => proxy.SendCoreAsync(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            hubContext.Setup(context => context.Clients.Group(It.IsAny<string>())).Returns(clientProxy.Object);
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            var serviceScope = new Mock<IServiceScope>();
+            serviceScope.Setup(scope => scope.ServiceProvider).Returns(serviceProvider.Object);
+            var serviceScopeFactory = new Mock<IServiceScopeFactory>();
+            serviceScopeFactory.Setup(factory => factory.CreateScope()).Returns(serviceScope.Object);
+
+            var maintenanceGate = new DatabaseMaintenanceGate(
+                new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>()));
+            var sharedStatusStore = new RedisUpdateStatusStore(multiplexer);
+            var executionLock = new PostgresUpdateExecutionLock(
+                Options.Create(new DatabaseConfiguration { Provider = "Postgresql", ConnectionString = postgresConnectionString }));
+
+            return new UpdateQueueService(
+                Mock.Of<ILogger<UpdateQueueService>>(),
+                hubContext.Object,
+                sharedStatusStore,
+                executionLock,
+                serviceScopeFactory.Object,
+                maintenanceGate);
         }
     }
 }
