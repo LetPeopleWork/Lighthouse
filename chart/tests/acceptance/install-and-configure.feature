@@ -73,3 +73,39 @@ Feature: Configure the install via values and bring up the full production stack
     When the manifests are produced
     Then rendering fails with a message naming the missing password key
     And no partial release is created
+
+  @error @US-01 @in-memory @env:default-values
+  Scenario: Invalid frontend.mode value is rejected by the schema
+    Given the chart is rendered with frontend.mode set to an unknown value
+    When the manifests are produced
+    Then schema validation fails naming the frontend.mode key with its allowed values
+
+  @error @US-01 @in-memory @env:default-values
+  Scenario: Non-positive replicaCount is rejected by the schema
+    Given the chart is rendered with replicaCount set to zero
+    When the manifests are produced
+    Then schema validation fails naming the replicaCount key
+
+  @error @US-01 @in-memory @env:default-values
+  Scenario: TLS without a host fails fast
+    Given the chart is rendered with ingress.tls enabled and ingress.host empty
+    When the manifests are produced
+    Then rendering fails naming the missing ingress.host key
+
+  @error @US-01 @in-memory @env:external-postgres-byo
+  Scenario: Ambiguous database config fails fast
+    Given the chart is rendered with both postgresql.enabled true and externalDatabase set
+    When the manifests are produced
+    Then rendering fails naming the conflicting database keys
+
+  @error @US-01 @in-memory @env:mcp-enabled
+  Scenario: MCP enabled without an image fails fast
+    Given the chart is rendered with mcp.enabled true and mcp.image unset
+    When the manifests are produced
+    Then rendering fails naming the missing mcp.image key
+
+# Runtime failure modes deliberately NOT acceptance-tested at the chart-render layer
+# (image-pull failure, Postgres connection timeout, OIDC issuer unreachable, Redis loss
+# at replicaCount>1, TLS cert invalid): these exercise the cluster/runtime, not the chart.
+# They are covered by epic-5305 runtime tests + the per-slice dogfood (@requires_external),
+# not by helm template/install acceptance. See distill/review-verdicts.md (Sentinel finding).

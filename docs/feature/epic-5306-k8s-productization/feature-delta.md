@@ -445,7 +445,7 @@ Strict lean mode held. Trigger evaluation:
 | Port | Type | Owner |
 |---|---|---|
 | `helm install l8e ./chart -f values-enterprise.yaml` | CLI | self-hoster |
-| `helm repo add letpeoplework https://<pages-domain>/charts` / `helm search repo` / `helm install l8e letpeoplework/lighthouse` | CLI | self-hoster |
+| `helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts` / `helm search repo` / `helm install l8e letpeoplework/lighthouse` | CLI | self-hoster |
 | NOTES.txt post-install output | stdout | self-hoster |
 | Published enterprise docs pages | rendered web | self-hoster + prospect |
 | `helm package` + `helm repo index --merge` + commit (existing release stage) | CI step | maintainer |
@@ -503,7 +503,7 @@ Zero unjustified CREATE NEW. Dominant pattern: REUSE/EXTEND of deployment, CI, a
 
 - **Live MCP OAuth dogfood** — the ADR-079 readiness checklist (IdP audience/scope, RFC 8707 resource indicators, server version gate `> v26.6.16.14`) needs the real environment; it is an enterprise-docs *prerequisite*, not chart code. Carried to DELIVER/dogfood, out of DESIGN scope.
 - **`frontend.mode: split` full wiring** — Band D, out of scope (stub only here).
-- **Helm repo public URL / CNAME path** — the concrete `https://<pages-domain>/charts` value is a DEVOPS detail (depends on the repo's Pages domain/CNAME).
+- **Helm repo public URL** — RESOLVED (review gate, Forge finding #5): `https://docs.lighthouse.letpeople.work/charts` (the repo's existing Pages CNAME). Used in `helm repo add`, the `helm repo index --url`, NOTES.txt, and the README install snippet.
 
 ## Wave: DESIGN / Changed Assumptions
 
@@ -624,7 +624,7 @@ None. DEVOPS operationalizes DESIGN without altering any DESIGN/DISCUSS assumpti
 | Demo walkthrough end to end | publish-and-docs | `@US-02 @real-io @requires_external` |
 | Architecture diagram present | publish-and-docs | `@US-02 @in-memory` |
 
-19 scenarios; error/edge = 4 (split-fail, missing-value, overwrite-refuse, drift) ≈ 21% (config-shaped feature; the bulk of "negatives" are the fail-fast/guard scenarios — proportionate, not happy-path-only).
+24 scenarios; error/edge = 9 ≈ 38% (split-fail, missing-value, overwrite-refuse, drift, + invalid-frontend.mode, non-positive-replicaCount, tls-without-host, ambiguous-DB, mcp-without-image — added post-review per Sentinel finding). Runtime failure modes (image-pull, DB timeout, OIDC-unreachable, Redis-loss, TLS-cert-invalid) are deliberately excluded from chart-render acceptance (they exercise the cluster/runtime, not the chart) — covered by epic-5305 runtime + per-slice dogfood.
 
 ## Wave: DISTILL / [REF] WS Strategy
 

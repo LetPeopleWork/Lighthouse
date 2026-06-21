@@ -2639,7 +2639,7 @@ One template set, mode-guarded. `embedded` (default) renders only the API Deploy
 | Port | Type | Owner |
 |---|---|---|
 | `helm install l8e ./chart -f values-enterprise.yaml` | CLI | self-hoster |
-| `helm repo add letpeoplework https://<pages-domain>/charts` / `helm search repo lighthouse` / `helm install l8e letpeoplework/lighthouse` | CLI | self-hoster (consumes the published repo) |
+| `helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts` / `helm search repo lighthouse` / `helm install l8e letpeoplework/lighthouse` | CLI | self-hoster (consumes the published repo) |
 | NOTES.txt post-install output | stdout | self-hoster |
 | Published enterprise docs pages (architecture / quick-start / config ref / demo walkthrough) | rendered web | self-hoster + prospect |
 | `helm package` + `helm repo index --merge` + commit (in the existing release stage) | CI step | maintainer (ADR-083) |
