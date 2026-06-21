@@ -1,4 +1,4 @@
-Lighthouse {{ include "lighthouse.imageTag" . }} installed as release "{{ .Release.Name }}".
+Lighthouse {{ include "lighthouse.imageTag" . }} installed as release "{{ .Release.Name }}" (chart {{ .Chart.Version }}).
 
 Access URL:
   {{ include "lighthouse.accessURL" . }}

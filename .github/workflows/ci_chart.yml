@@ -1,0 +1,133 @@
+name: Helm Chart
+
+# epic-5306 slice-04 — chart lifecycle (ADR-083). Standalone workflow for the new "chart" concern,
+# matching the repo's split-by-concern workflows. `validate` runs on every chart change; `publish`
+# is a manual maintainer step (the "cheap repeatable step at finalization") that packages + indexes
+# into docs/charts/ and commits, so the existing pages.yml serves it (one Pages source per repo).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "chart/**"
+      - ".github/workflows/ci_chart.yml"
+  pull_request:
+    paths:
+      - "chart/**"
+      - ".github/workflows/ci_chart.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Package + index + commit the chart to docs/charts/ (publish)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.16.3
+
+      - name: helm lint (default + enterprise values)
+        run: |
+          helm lint ./chart
+          helm lint ./chart -f ./chart/values-enterprise.yaml \
+            --set postgresql.auth.password=ci --set oidc.clientSecret=ci
+
+      - name: Install helm-unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.1.1 || helm plugin list
+
+      - name: helm unittest (incl. standalone-gate render guard)
+        run: helm unittest -f 'tests/unit/*.yaml' ./chart
+
+      - name: Standalone gate — default values render exactly one API workload, postgres provider
+        run: |
+          set -euo pipefail
+          render="$(helm template l8e ./chart --set postgresql.auth.password=ci)"
+          deploys="$(printf '%s\n' "$render" | grep -c '^kind: Deployment' || true)"
+          [ "$deploys" = "1" ] || { echo "standalone gate: expected 1 Deployment, got $deploys"; exit 1; }
+          printf '%s\n' "$render" | grep -qE 'Database__Provider' || { echo "standalone gate: Database__Provider missing"; exit 1; }
+          # The provider value must be postgres and never sqlite (Postgres-only chart, ADR-080).
+          printf '%s\n' "$render" | grep -iE '[:=]\s*"?sqlite' && { echo "standalone gate: chart must never set provider sqlite"; exit 1; }
+          printf '%s\n' "$render" | grep -A1 'Database__Provider' | grep -qi 'postgres' || { echo "standalone gate: provider is not postgres"; exit 1; }
+          echo "standalone gate OK"
+
+  install-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.16.3
+
+      - name: Create kind cluster
+        uses: helm/kind-action@99576bfa6ddf9a8e612d83b513da5a75875caced # v1.9.0
+        with:
+          cluster_name: lighthouse-chart-smoke
+
+      - name: helm install (bundled Postgres, embedded SPA, no ingress) into kind
+        run: |
+          helm install l8e ./chart \
+            --set ingress.enabled=false \
+            --set postgresql.auth.password=ci-smoke-pw \
+            --wait --timeout 5m
+          kubectl get pods -o wide
+
+      - name: Assert all workloads Ready
+        run: |
+          kubectl rollout status deploy -l app.kubernetes.io/instance=l8e --timeout=300s
+          kubectl rollout status statefulset -l app.kubernetes.io/instance=l8e --timeout=300s
+
+      - name: Assert API serves /health/ready and the SPA
+        run: |
+          set -euo pipefail
+          kubectl port-forward svc/l8e-lighthouse-api 8080:80 >/tmp/pf.log 2>&1 &
+          pf=$!; sleep 5
+          curl -fsS http://127.0.0.1:8080/health/ready
+          curl -fsS http://127.0.0.1:8080/ | grep -q '<title>Lighthouse</title>'
+          kill $pf || true
+
+      - name: Dump diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl describe pods -l app.kubernetes.io/instance=l8e || true
+          kubectl logs -l app.kubernetes.io/instance=l8e --tail=200 --all-containers || true
+
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: [validate, install-smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Setup Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.16.3
+
+      - name: Guard + package + index into docs/charts/
+        # version-guard refuses to overwrite an already-published version and asserts
+        # Chart.yaml == README == NOTES.txt == values-enterprise image.tag (appVersion).
+        run: ./chart/scripts/publish.sh
+
+      - name: Commit the published chart (pages.yml serves docs/charts/)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          version="$(helm show chart ./chart | awk '/^version:/ {print $2; exit}')"
+          git add docs/charts
+          git commit -m "chore(chart): publish lighthouse-${version} to docs/charts (ADR-083)"
+          git push origin HEAD:main

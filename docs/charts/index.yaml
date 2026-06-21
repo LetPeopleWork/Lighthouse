@@ -1,0 +1,25 @@
+apiVersion: v1
+entries:
+  lighthouse:
+  - apiVersion: v2
+    appVersion: 26.6.21.1
+    created: "2026-06-21T20:06:32.788737554+02:00"
+    description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
+      Postgres-only chart that brings the whole stack up with one command.
+    digest: 2fe8361a09abe11d54050cd836e0dafda2f762b787549cba2259d983e300f790
+    home: https://docs.lighthouse.letpeople.work
+    keywords:
+    - flow-metrics
+    - forecasting
+    - kanban
+    maintainers:
+    - name: LetPeopleWork
+      url: https://docs.lighthouse.letpeople.work
+    name: lighthouse
+    sources:
+    - https://github.com/LetPeopleWork/Lighthouse
+    type: application
+    urls:
+    - https://docs.lighthouse.letpeople.work/charts/lighthouse-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-06-21T20:06:32.787903779+02:00"

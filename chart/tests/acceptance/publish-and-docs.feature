@@ -1,6 +1,9 @@
 # Acceptance SSOT — epic-5306-k8s-productization, publish + enterprise docs (slices 04-05)
 # Executable via: release-stage guard scripts + helm repo add/install from the published index
-# (@real-io) and the helm-docs drift gate (@in-memory). RED until the publish step + docs exist.
+# (@real-io) and the helm-docs drift gate (@in-memory).
+# slice-04 @US-01 (publish): GREEN — chart/scripts/{version-guard,publish}.sh + ci_chart.yml +
+#   docs/charts/ published (verified: helm repo add/search/install from the packaged .tgz, kind dogfood).
+# slice-05 @US-02 (enterprise docs): RED until the docs + helm-docs drift gate exist.
 
 @feature:epic-5306-k8s-productization
 Feature: Publish the chart and self-serve from the enterprise docs
