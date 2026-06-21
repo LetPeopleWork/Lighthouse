@@ -1,13 +1,3 @@
 {
-  "mcpServers": {
-    "sonarqube": {
-      "command": "sonar",
-      "args": [
-        "run",
-        "mcp",
-        "--project",
-        "LetPeopleWork_Lighthouse"
-      ]
-    }
-  }
+  "mcpServers": {}
 }
