@@ -585,3 +585,91 @@ Appended to `docs/product/kpi-contracts.yaml`.
 ## Wave: DEVOPS / Changed Assumptions
 
 None. DEVOPS operationalizes DESIGN without altering any DESIGN/DISCUSS assumption. The publish mechanism (docs-tree, no chart-releaser) was already decided in DESIGN (ADR-083); DEVOPS only details the pipeline stages. No `devops/upstream-changes.md` needed.
+
+---
+
+# Feature Delta — epic-5306-k8s-productization (DISTILL wave)
+
+> **Scope (DISTILL):** acceptance scenarios for the chart + docs. Tier A only (config-shaped feature; Tier B skipped). Example-only (Helm template/install = layer-3 real adapter; no PBT). Density: **lean**. `.feature` files are the scenario SSOT. Reconciliation gate: **passed — 0 contradictions**.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN driving ports: `helm install`/`helm template`, `helm repo add`/`install`, the package+publish CI step, NOTES.txt, published docs pages.
+- DEVOPS environment matrix: `environments.yaml` (7 install topologies). Scenarios are tagged `@env:<name>` against it.
+- Reconciliation: DISCUSS (feature-delta) ↔ DESIGN ↔ DEVOPS verified consistent (Postgres-only, standalone-gate, vendor-neutral, docs-tree publish).
+
+## Wave: DISTILL / [REF] Scenario List with Tags
+
+`.feature` SSOT under `chart/tests/acceptance/`:
+
+| Scenario | File | Tags |
+|---|---|---|
+| One command brings the stack up | walking-skeleton | `@walking_skeleton @driving_port @US-01 @real-io @env:ci-kind-clean` |
+| Default values → embedded, one API workload, Postgres | walking-skeleton | `@walking_skeleton @US-01 @in-memory @standalone_gate @env:default-values` |
+| Image tag + ingress host from values | install-and-configure | `@US-01 @in-memory` |
+| replicaCount=2 + Redis → scaled, sync once | install-and-configure | `@US-01 @real-io @env:multi-replica` |
+| No overrides still renders | install-and-configure | `@US-01 @in-memory` |
+| Full stack from values-enterprise.yaml | install-and-configure | `@US-01 @real-io @env:enterprise-values` |
+| OIDC login no redirect loop | install-and-configure | `@US-01 @real-io @requires_external` |
+| MCP workload only when enabled (outline) | install-and-configure | `@US-01 @in-memory @env:mcp-enabled` |
+| BYO Postgres → no bundled pod | install-and-configure | `@US-01 @in-memory @env:external-postgres-byo` |
+| frontend.mode=split fails loud | install-and-configure | `@error @US-01 @in-memory @standalone_gate` |
+| Missing required value fails fast | install-and-configure | `@error @US-01 @in-memory @env:missing-required-value` |
+| Install from published repo, no source | publish-and-docs | `@US-01 @real-io @env:ci-kind-clean` |
+| Publish refuses silent overwrite | publish-and-docs | `@error @US-01 @kpi:OUT-chart-publish-consistency` |
+| Version consistent across surfaces | publish-and-docs | `@US-01 @kpi:OUT-chart-publish-consistency` |
+| Quick-start verbatim → running instance | publish-and-docs | `@US-02 @real-io @env:ci-kind-clean` |
+| Config reference 0 phantom keys | publish-and-docs | `@US-02 @in-memory @kpi:OUT-enterprise-docs-self-serve` |
+| Config-reference drift caught | publish-and-docs | `@error @US-02 @in-memory @kpi:OUT-enterprise-docs-self-serve` |
+| Demo walkthrough end to end | publish-and-docs | `@US-02 @real-io @requires_external` |
+| Architecture diagram present | publish-and-docs | `@US-02 @in-memory` |
+
+19 scenarios; error/edge = 4 (split-fail, missing-value, overwrite-refuse, drift) ≈ 21% (config-shaped feature; the bulk of "negatives" are the fail-fast/guard scenarios — proportionate, not happy-path-only).
+
+## Wave: DISTILL / [REF] WS Strategy
+
+One walking-skeleton scenario (`@walking_skeleton @driving_port`): `helm install l8e ./chart` into kind → API + Postgres Ready + NOTES.txt URL. Through the production composition root (the real chart, real image, real kind cluster). Litmus: a non-technical stakeholder confirms "yes — that's the one-command install we promised."
+
+## Wave: DISTILL / [REF] Adapter Coverage Table
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| Bundled Postgres (StatefulSet) | YES | WS install + full-stack (kind) |
+| External Postgres (BYO wiring) | render-only | BYO render scenario (`@in-memory`); real external DB = `@requires_external` (not in CI) |
+| OIDC issuer | `@requires_external` | OIDC-login scenario (skipped without an IdP) |
+| Redis backplane | YES | replicaCount=2 scenario (kind + operator Redis) |
+| MCP `mcp-http` image | render-only + `@requires_external` | MCP-toggle render; live MCP call in demo walkthrough |
+| Publish (index + guards) | YES | publish-from-repo + overwrite-refuse + version-consistency |
+
+No "NO — MISSING" rows: every adapter has a render or real-io scenario; genuinely-external deps (OIDC, live MCP) are `@requires_external` contract scenarios, appropriate for a self-hosted chart.
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter (DESIGN) | Scenario exercising it via its protocol |
+|---|---|
+| `helm install` (CLI) | WS one-command install (subprocess `helm install` into kind) |
+| `helm template` (render) | standalone-gate, fail-fast, split-fail, MCP-toggle, BYO (render assertions) |
+| `helm repo add`/`install` (CLI) | install-from-published-repo |
+| package+publish (CI step) | overwrite-refuse, version-consistency |
+| NOTES.txt (stdout) | WS asserts URL + next step in output |
+| published docs pages | quick-start, drift gate, demo walkthrough, diagram |
+
+Zero uncovered entry points.
+
+## Wave: DISTILL / [REF] Test Placement + Mechanism
+
+`.feature` SSOT at `chart/tests/acceptance/` (co-located with the chart it tests; no existing chart test dir — new, justified). Executable mechanism (no pytest in this layer — Helm/YAML feature):
+
+- **Render-layer (`@in-memory`)**: `helm template` + assertions via **helm-unittest** specs (`chart/tests/unit/*_test.yaml`) — standalone-gate, schema/fail-fast, split-fail, MCP-toggle, BYO. Fast, no cluster.
+- **WS + integration (`@real-io`)**: `ct lint` + `helm install` into ephemeral **kind** (the DEVOPS chart-install-test job).
+- **Publish guards**: shell assertions in the release stage (no-overwrite, version/appVersion consistency).
+- **Drift (`@in-memory`)**: helm-docs + `git diff` gate.
+- **`@requires_external`**: OIDC login + live MCP call — run in the per-slice dogfood, skipped in CI.
+
+## Wave: DISTILL / [REF] Scaffolds (RED-ready)
+
+No `src/` scaffold stubs (no application code in this feature). The **structural RED** is `chart/` not existing yet: the `.feature` files + the (DELIVER-authored) helm-unittest specs cannot pass until slice-01 creates `chart/Chart.yaml` + templates + `values.schema.json`. RED reason = `MISSING_FUNCTIONALITY` (chart absent), not import/fixture error — the honest RED for DELIVER slice-01 to turn green. helm-unittest is introduced in DELIVER slice-01 as the render-test harness (DELIVER tooling task).
+
+## Wave: DISTILL / Changed Assumptions
+
+None. Scenarios trace directly to US-01/US-02 ACs + slice ACs; no upstream gap surfaced. No `distill/upstream-issues.md`.
