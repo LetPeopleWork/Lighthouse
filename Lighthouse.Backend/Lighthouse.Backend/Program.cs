@@ -745,10 +745,15 @@ namespace Lighthouse.Backend
 
         private static void ConfigureHealthChecks(WebApplicationBuilder builder)
         {
-            builder.Services.AddHealthChecks()
+            var healthChecks = builder.Services.AddHealthChecks()
                 .AddCheck<DatabaseConnectivityHealthCheck>("database", tags: ReadyTags)
                 .AddCheck<MigrationsAppliedHealthCheck>("migrations", tags: ReadyAndStartupTags)
                 .AddCheck<DrainReadinessHealthCheck>("draining", tags: ReadyTags);
+
+            if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Redis")))
+            {
+                healthChecks.AddCheck<ClusterSubstrateHealthCheck>("cluster-substrate", tags: ReadyAndStartupTags);
+            }
         }
 
         private static void ConfigureGracefulShutdown(WebApplicationBuilder builder)
