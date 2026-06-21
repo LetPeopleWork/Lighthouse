@@ -1,0 +1,67 @@
+# environments.yaml — epic-5306-k8s-productization
+# Consumed by DISTILL for Mandate 4 (Environmental Realism): acceptance scenarios are
+# parametrized over these chart-install topologies. This is a Helm-chart feature, so the
+# "environments" are install configurations of the chart, not OS install targets.
+
+target_environments:
+  - name: ci-kind-clean
+    description: "Ephemeral kind cluster in GitHub Actions; fresh install of the chart, default values"
+    platform: [linux]                       # GitHub Actions ubuntu-latest + kind
+    preconditions: ["kind cluster up", "ingress controller installed in CI", "published/loaded Lighthouse image available"]
+
+  - name: default-values
+    description: "Install with defaults only — the simple/standalone-gate shape (embedded frontend, bundled Postgres, MCP off, single replica)"
+    platform: [linux]
+    preconditions: ["conformant k8s", "ingress controller"]
+
+  - name: enterprise-values
+    description: "Full production stack from values-enterprise.yaml (bundled-or-external Postgres + OIDC + ingress host/TLS)"
+    platform: [linux]
+    preconditions: ["conformant k8s", "ingress controller", "OIDC issuer reachable", "Postgres password set (explicit, ADR-082)"]
+
+  - name: external-postgres-byo
+    description: "postgresql.enabled=false; externalDatabase.* points at an operator/managed Postgres (no bundled DB pod)"
+    platform: [linux]
+    preconditions: ["conformant k8s", "ingress controller", "reachable external Postgres", "externalDatabase.* set"]
+
+  - name: multi-replica
+    description: "replicaCount>1 with ConnectionStrings:Redis set — horizontal scale via the #5304 backplane (no double-sync)"
+    platform: [linux]
+    preconditions: ["conformant k8s", "ingress controller", "operator-provided Redis", "sticky-session/affinity at the ingress"]
+
+  - name: mcp-enabled
+    description: "mcp.enabled=true — optional MCP HTTP workload rendered (Deployment+Service), auth per ADR-079"
+    platform: [linux]
+    preconditions: ["conformant k8s", "ingress controller", "clients mcp-http image available", "mcp.auth.* set (X-Api-Key or IdP OAuth)"]
+
+  - name: missing-required-value
+    description: "Negative: a required value omitted (e.g. Postgres password) — must fail fast naming the key, no partial release (ADR-082)"
+    platform: [linux]
+    preconditions: ["conformant k8s"]
+
+coexistence_matrix:
+  - tool: standalone single-container image (SQLite, embedded frontend)
+    must_not_break: true                    # D4 standalone gate — sacrosanct, byte-unchanged; this feature is additive
+  - tool: existing GitHub Pages docs deploy (.github/workflows/pages.yml, artifact-based, CNAME)
+    must_not_break: true                    # one Pages source per repo; the Helm repo lives under docs/charts/ in the same deploy (ADR-083)
+  - tool: existing GitHub Actions workflows (ci_*, release, nightly)
+    must_not_break: true                    # extend, never add a parallel workflow (CI-consolidation)
+  - tool: epic-5305 runtime capabilities (probes/forwarded-headers/drain/migration-lock/backplane/telemetry/MCP-auth)
+    must_not_break: true                    # chart consumes them as config surface; changes no runtime code
+
+platform_coverage:
+  kubernetes: ["k3s", "kind (CI)", "conformant managed k8s (vendor-neutral)"]
+  ingress: ["any conformant ingress controller (Traefik/NGINX/etc.)"]
+  helm: ["3.x"]
+  chart_apiVersion: ["v2"]
+  database: ["PostgreSQL only (bundled official-image StatefulSet OR external); no SQLite in the chart"]
+  CI: ["GitHub Actions ubuntu-latest + kind"]
+
+deployment_assumptions:
+  - "helm install/upgrade MUST be idempotent (re-running with the same values converges, no duplicate workloads)"
+  - "Default values MUST render the standalone-gate shape: frontend.mode=embedded, exactly one API workload (render guard test)"
+  - "Omitting a required value MUST fail at render/install time naming the key — never a partial release (ADR-082)"
+  - "frontend.mode=split MUST fail loud (not a silent no-op) — Band D, not implemented (ADR-081)"
+  - "The chart MUST be vendor-neutral: official images only, no Bitnami, no cloud-service lock-in; substrate/DB/identity stay the operator's values"
+  - "Publish MUST refuse to silently overwrite an existing chart version; Chart.yaml version == index == appVersion/image.tag (ADR-083)"
+  - "Rolling update MUST be safe under N replicas (epic-5305 graceful-shutdown + expand-only-migration startup lock + probes)"

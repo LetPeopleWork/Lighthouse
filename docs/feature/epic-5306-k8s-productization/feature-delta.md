@@ -514,3 +514,74 @@ Zero unjustified CREATE NEW. Dominant pattern: REUSE/EXTEND of deployment, CI, a
 2. **Publish mechanism refined**: DISCUSS said "GitHub Pages Helm repo (LPW org)". Refined to **`docs/charts/` on the existing artifact-based Pages deploy, in the existing release stage — not a `gh-pages` branch and not chart-releaser-action** (the repo already uses a single artifact-based Pages source; a `gh-pages` branch would conflict). Same outcome (a public GitHub Pages Helm repo), different mechanism (ADR-083). No story/AC change — `helm repo add` UX is preserved.
 
 3. **"Single-container shape" clarified**: the standalone gate / "single-container shape" means **`frontend.mode: embedded` (one *app* workload serving the SPA)**, not "no database workload". The chart always renders a Postgres workload (bundled) or wires an external one. The standalone *image* is unchanged (keeps SQLite); the chart's "simple shape" is embedded frontend + bundled Postgres + MCP off. No contradiction with DISCUSS — clarifies the term.
+
+---
+
+# Feature Delta — epic-5306-k8s-productization (DEVOPS wave)
+
+> **Scope (DEVOPS):** operationalize the DESIGN — chart CI/CD (lint→template→install→package→publish→drift-gate) folded into the existing workflows, the install-realism environment matrix, and KPI instrumentation. No new platform; this is a Helm-chart-publishing feature. Density: **lean** (Tier-1 [REF] only). All Decisions 1–9 user-confirmed as derived. Machine artifact: `environments.yaml`. SSOT: `docs/product/kpi-contracts.yaml` (3 OUT-* appended).
+
+## Wave: DEVOPS / [REF] Pre-requisites (DESIGN constraints the platform must satisfy)
+
+- Publish to **GitHub Pages via `docs/charts/`** on the existing artifact-based deploy — no `gh-pages`, no chart-releaser (ADR-083; one Pages source per repo).
+- **Extend** existing GitHub Actions workflows; never add a parallel one (CLAUDE.md CI-consolidation).
+- **Standalone gate** verified in CI: default values → embedded + exactly one API workload (render guard).
+- **No-silent-overwrite + version consistency** enforced at publish (Chart.yaml == index == appVersion/image.tag).
+- **Vendor-neutral**: official images only; no Bitnami; Redis operator-provided.
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+See `environments.yaml` (machine artifact). Topologies: `ci-kind-clean`, `default-values` (standalone-gate shape), `enterprise-values`, `external-postgres-byo`, `multi-replica` (replicas+Redis), `mcp-enabled`, `missing-required-value` (negative/fail-fast). Coexistence (must-not-break): the standalone single-container image, the existing Pages docs deploy, the existing GH Actions workflows, all epic-5305 runtime capabilities.
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+Extends the existing GitHub Actions setup; chart stages run on `docs/charts/**` / `chart/**` changes and within the existing release flow.
+
+| Stage | Trigger | Action | Gate |
+|---|---|---|---|
+| **chart-lint** | PR / push touching `chart/**` | `ct lint` + `helm template` (incl. `values.schema.json` validation) | render errors / schema violations fail |
+| **standalone-gate render guard** | same | assert default values → `frontend.mode: embedded`, exactly one API workload; assert `frontend.mode: split` → `fail` | guard assertion red = fail |
+| **chart-install-test** | same | spin an ephemeral **kind** cluster + ingress, `helm install` the image, assert all workloads Ready (smoke) | pods not Ready = fail (→ `OUT-helm-install-first-try-success`) |
+| **config-ref drift gate** | same | run `helm-docs`, `git diff --exit-code` on the generated config table | drift = fail (→ `OUT-enterprise-docs-self-serve`) |
+| **chart-package + publish** | existing **release stage** | no-overwrite version check → `helm package chart/ -d docs/charts/` → `helm repo index docs/charts/ --merge … --url …/charts` → commit; existing `pages.yml` publishes | version already in index OR `appVersion != image.tag` = fail (→ `OUT-chart-publish-consistency`) |
+
+Branching: **trunk-based** (push to `main`); chart stages gate the same `main` pushes as the rest of CI.
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+**Rolling update** (Kubernetes default), made safe by the shipped epic-5305 capabilities the chart wires: readiness/startup probes gate rollout, graceful-shutdown/drain on SIGTERM, expand-only migrations + startup advisory-lock under N replicas. **Rollback contract:** `helm rollback l8e <rev>` reverts to the prior release's values+chart; because migrations are expand-only (additive), a rollback of the app does not require a schema rollback (the prior app version runs against the expanded schema). No blue-green/canary — unnecessary for a self-hosted single-tenant install; the SaaS-tier strategies are Band D (out of scope).
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+**No new observability for this feature.** The chart exposes epic-5305's already-shipped, vendor-neutral telemetry as **off-by-default values** (`telemetry.enabled` → OpenTelemetry `/metrics` + Serilog JSON stdout, ADR-078). For the self-hoster the defaults stay quiet (zero overhead); an operator opts in and points their own Prometheus/Loki at it. The chart adds no telemetry stack of its own.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+| Outcome KPI | Instrument | Gate |
+|---|---|---|
+| `OUT-helm-install-first-try-success` (≥90% first-try Ready) | kind `chart-install-test` job + optional per-instance post-install log event | CI red if install/standalone-gate fails |
+| `OUT-enterprise-docs-self-serve` (≤15 min quick-start; 0 phantom keys) | docs-walkthrough dogfood + helm-docs `git diff` drift gate | CI red on drift |
+| `OUT-chart-publish-consistency` (index==Chart.yaml==appVersion; 0 silent overwrites) | publish-stage no-overwrite + version/appVersion consistency checks | release step red on mismatch |
+
+Appended to `docs/product/kpi-contracts.yaml`.
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**per-feature** (project default, CLAUDE.md) — but **N/A for this feature**: the chart is Helm/YAML with no mutatable C#/TS production code. The equivalent test-quality surface is `ct lint` + `helm template` + `values.schema.json` validation + the standalone-gate render guard + the kind install smoke-test. No CLAUDE.md change.
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based development** — direct push to `origin main`, no feature branches, no PRs (project convention). Chart CI stages run on the same `main` pushes; no branch-specific pipelines.
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Tool / surface | Must not break | How protected |
+|---|---|---|
+| Standalone single-container image (SQLite, embedded) | yes | chart is additive; standalone-gate render guard; no runtime code touched |
+| Existing Pages docs deploy (`pages.yml`, artifact, CNAME) | yes | Helm repo under `docs/charts/` in the same single Pages source (ADR-083) |
+| Existing GH Actions workflows (`ci_*`, release, nightly) | yes | extend in place, no parallel workflow |
+| epic-5305 runtime capabilities | yes | consumed as config surface only |
+
+## Wave: DEVOPS / Changed Assumptions
+
+None. DEVOPS operationalizes DESIGN without altering any DESIGN/DISCUSS assumption. The publish mechanism (docs-tree, no chart-releaser) was already decided in DESIGN (ADR-083); DEVOPS only details the pipeline stages. No `devops/upstream-changes.md` needed.

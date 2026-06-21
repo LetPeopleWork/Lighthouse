@@ -562,3 +562,53 @@ outcomes:
     measurement_window: per-feature (CLAUDE.md gate)
     rationale: "Assembly Parallelizable attribute must not break mutation runs (ADR-074 / DISCUSS D9)."
     alerting: []
+
+  - id: OUT-helm-install-first-try-success
+    feature: epic-5306-k8s-productization
+    title: Clean first `helm install` reaches all-pods-Ready
+    target: ">= 90% of attempted helm install runs reach all-pods-Ready on the first try"
+    measurement_scope: vendor_demo_only   # install-walkthrough E2E on the LPW demo cluster is the observable population
+    measured_by: >
+      Primary: the install-walkthrough E2E (a real `helm install` of the published image into an
+      ephemeral kind/k3s cluster, asserting all workloads Ready + standalone-gate render guard).
+      Optional per_instance: a structured post-install log event the operator's own logs carry.
+    measurement_window: every chart-CI run (kind install-test job) + each per-slice dogfood
+    rationale: >
+      North-Star KPI for epic-5306 US-01. Lighthouse is self-hosted with no central telemetry, so the
+      vendor install E2E is the measurable population; the per-instance log event is opt-in/advisory.
+    alerting:
+      - condition: "kind install-test job fails (pods not Ready, or default values do not render embedded/one-API-workload)"
+        action: "chart CI fails (red) — blocks publish"
+
+  - id: OUT-enterprise-docs-self-serve
+    feature: epic-5306-k8s-productization
+    title: Self-serve to a running instance (or eval decision) from the docs alone
+    target: "quick-start completes to a responding instance in <= 15 min in the vendor-demo walkthrough; 0 documented-but-nonexistent config keys"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      docs-walkthrough E2E (a fresh reader follows the published quick-start verbatim to a responding
+      instance) + the config-reference-vs-values drift check (helm-docs `git diff` gate, ADR-084).
+    measurement_window: per-slice dogfood (US-02) + every CI run (drift gate)
+    rationale: >
+      epic-5306 US-02. The drift gate gives the '0 phantom keys' half a hard, every-CI guarantee;
+      the <=15-min half is a vendor-demo directional measure (no central telemetry).
+    alerting:
+      - condition: "helm-docs regenerated output differs from committed config reference (drift)"
+        action: "CI fails (red) before publish"
+
+  - id: OUT-chart-publish-consistency
+    feature: epic-5306-k8s-productization
+    title: Chart-version consistency + no silent overwrite on publish
+    target: "published index always == Chart.yaml version; appVersion == values.image.tag; 0 silent overwrites"
+    measurement_scope: per_instance   # CI guardrail on the LPW publishing pipeline
+    measured_by: >
+      The publish-stage guards (ADR-083): a no-overwrite check (refuse if Chart.yaml version already in
+      docs/charts/index.yaml) + a consistency check (Chart.yaml version == index entry; appVersion ==
+      values.image.tag; NOTES.txt/README derive from Chart.yaml).
+    measurement_window: every release-stage chart publish
+    rationale: >
+      epic-5306 US-01/KPI-3 guardrail. Replaces the free no-overwrite behaviour chart-releaser would
+      have given (chart-releaser rejected — incompatible with the single artifact-based Pages source).
+    alerting:
+      - condition: "Chart.yaml version already present in index, OR appVersion != values.image.tag"
+        action: "release/publish step fails (red); no overwrite"
