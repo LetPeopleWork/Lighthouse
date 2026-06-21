@@ -2583,3 +2583,166 @@ At N=1 with no Redis / no distributed-lock provider, all four invariants are sat
 #### Handoff to the solution-architect
 
 Now **fixed** for you: (1) `IUpdateStatusStore` must enforce **monotonic-progress compare-and-set per `UpdateKey`** (write wins iff it advances `UpdateProgress`) with **bounded-stale, eventually-consistent reads** — choose Redis-hash vs Postgres-row freely, both can satisfy a CAS-on-ordinal; do **not** implement blind LWW. (2) Cluster admission for a `UpdateKey` (the chosen ADR-076 substrate's single-consumer claim or per-entity lock) is the **transactional boundary of the update-lifecycle aggregate** and MUST be atomic cluster-wide (INV-4) — it is enforcing a real invariant, so design it for correctness, not just contention. (3) The store is a **coordination projection, not an event store** — no outbox, no persisted event log; the cross-pod `EnqueueAndAwaitAsync` completion signal rides the monotone terminal-status advance + backplane push, so wire awaiter release off the store, not off a durable queue. (4) Preserve **end-to-end idempotency on `UpdateKey`** for the update task + after-commit handlers (ADR-027 D2 requirement, now load-bearing under at-least-once cluster execution). The DELIVER acceptance test for INV-1 is: race an out-of-order/stale write against an advancing lifecycle and assert no reader ever observes a regressed `UpdateProgress`.
+
+---
+
+## System Architecture — epic-5306-k8s-productization
+
+Feature: epic-5306-k8s-productization (ADO Epic #5306 — stories #5199 publishable Helm chart + #5200 enterprise docs; the other 9 children stay light-loop, out of scope)
+Wave: DESIGN | Layer scope: **system / infrastructure only** (the chart IS deployment topology) | Date: 2026-06-21
+Architect: System Designer, interaction mode = **PROPOSE** (single architect — this is a packaging/deployment feature with no new domain model or backend code).
+Inputs: `docs/feature/epic-5306-k8s-productization/feature-delta.md` (DISCUSS; US-01/02, locked decisions, story-map, KPIs), `slices/slice-01..05.md`, `docs/feature/l8e-kubernetes-learning/planning-stage.md` (north-star §4, D1 repo-split, D4 standalone gate, Q1–Q5), the `## System Architecture — epic-5305-k8s-readiness` section above (the runtime capabilities this chart consumes as config surface), ADR-075..079 (shipped k8s-readiness + MCP-auth).
+
+This section is the **system/infrastructure** view of a new deliverable: a public, vendor-neutral **Helm chart** (`chart/`) in this repo plus its enterprise docs. It introduces **no new backend C#/TS code and no new domain model** — it packages and configures already-shipped epic-5305 capabilities. There is therefore no DDD or application-architecture layer to follow; the chart's "components" are Kubernetes workloads and Helm templates.
+
+### Relationship to epic-5305 — what this consumes, never redesigns
+
+epic-5305 made the *app* safe to run on Kubernetes (Redis backplane, expand-only migrations + startup lock, graceful shutdown, health probes, forwarded-headers, metrics/logging — all config-gated, degrading to standalone). This epic exposes each as a **chart value** and wires it to the right Kubernetes primitive. The chart is purely **additive**; it changes nothing in epic-5305 and nothing in the standalone image.
+
+| epic-5305 capability (shipped) | Chart consumes it as |
+|---|---|
+| Health probes `/health/{live,ready,startup}` (#5310) | `livenessProbe`/`readinessProbe`/`startupProbe` on the API Deployment → rollout gates on real health |
+| Forwarded-headers trust (#5311) | `app.proxy.trustedProxies/trustedNetworks` values → correct OIDC redirect-uri + secure cookies behind the ingress |
+| Graceful shutdown / drain (#5309) | `terminationGracePeriodSeconds` + `Shutdown:TimeoutSeconds` value → safe rolling updates |
+| Expand-only migrations + startup advisory lock (#5308) | safe concurrent-pod boot under `replicaCount>1`; migrate-on-boot, no sync-wave needed |
+| SignalR Redis backplane + single-instance bg work (#5304) | `ConnectionStrings:Redis` value → enables `replicaCount>1` without double-sync; absent ⇒ single replica |
+| `/metrics` + structured logging (#5312) | `telemetry.enabled` / log-format values, off by default for the self-hoster |
+| MCP inbound-auth (ADR-079) | `mcp.auth.*` values (X-Api-Key pass-through or IdP JWT Bearer) |
+
+### Architectural pattern
+
+A **single Helm chart** (`apiVersion: v2`, no third-party subchart dependencies) rendering a small set of Kubernetes workloads, parameterised entirely by `values.yaml`, with `values.schema.json` validation. Two product-shaping toggles — `frontend.mode` (ADR-081) and `mcp.enabled` (ADR-085) — and one DB-mode toggle (`postgresql.enabled` bundled vs `externalDatabase.*` BYO, ADR-080) span the supported topologies from one source. The guiding principle mirrors ADR-027/epic-5305: **one chart, config-selected branches, no fork** — the default values render the simple shape (embedded frontend, bundled Postgres, MCP off), and production capability is opt-in via values.
+
+### Container decomposition (what the chart renders)
+
+| Workload / object | When rendered | Image / kind | Notes |
+|---|---|---|---|
+| **API Deployment + Service** | always | Lighthouse product image, `Deployment` | serves SPA + `/api` + `/hub` in-process (embedded); `replicaCount` scales it; probes from #5310; forwarded-headers from #5311 |
+| **Ingress** | `ingress.enabled` (default on) | `Ingress` | host + TLS; routes to the API Service; derives the access URL printed in NOTES.txt |
+| **Postgres StatefulSet + headless Service + PVC + Secret** | `postgresql.enabled` (bundled, default on) | official `postgres` image, `StatefulSet` | ADR-080; not HA; replaced by `externalDatabase.*` when off |
+| **MCP Deployment + Service** | `mcp.enabled` | clients `mcp-http` image | ADR-085; inbound-auth per ADR-079; orthogonal to all other toggles |
+| **ConfigMap / Secret(s)** | always | `ConfigMap`,`Secret` | app config (provider=Postgres, OIDC, forwarded-headers, telemetry, Redis conn) + credentials |
+| **NOTES.txt** | always | Helm notes | derived access URL + MCP/replica summary + a `kubectl get pods -l app=l8e` watch line |
+| **Redis** | never (operator-provided) | — | `ConnectionStrings:Redis` points at an operator/managed Redis; the chart does not bundle one (vendor-neutral; only needed at `replicaCount>1`) |
+| **nginx split frontend** | never (Band D) | — | `frontend.mode: split` is a loud `fail` stub (ADR-081) |
+
+### The `frontend.mode` seam (ADR-081)
+
+One template set, mode-guarded. `embedded` (default) renders only the API Deployment+Service → topology identical to the standalone image; horizontal scale is `replicaCount: N` (+ Redis at `N>1`), **not** a frontend split. `split` is reserved in the values + schema but any guarded branch renders `fail "frontend.mode=split not implemented in this chart version"` — no silent no-op, no dead template pretending to work. Full split wiring (nginx + path-ingress + runtime API base) is Band D.
+
+### Values surface (the operator's configuration contract)
+
+`image.{repository,tag}` · `replicaCount` · `ingress.{enabled,host,tls,className}` · `resources` · `frontend.mode` (embedded\|split) · `postgresql.enabled` + bundled `postgresql.{image,storage,password}` · `externalDatabase.{host,port,database,user,password}` · `mcp.{enabled,image,auth.*}` · `app.proxy.{trustedProxies,trustedNetworks}` · `oidc.{issuer,clientId,clientSecret,callbackPath}` · `redis.connectionString` · `telemetry.enabled` · `shutdown.timeoutSeconds`. `Chart.yaml: version` is the single source of truth for the chart version; `appVersion` mirrors the default `image.tag` (ADR-083).
+
+### Driving ports (entry points)
+
+| Port | Type | Owner |
+|---|---|---|
+| `helm install l8e ./chart -f values-enterprise.yaml` | CLI | self-hoster |
+| `helm repo add letpeoplework https://<pages-domain>/charts` / `helm search repo lighthouse` / `helm install l8e letpeoplework/lighthouse` | CLI | self-hoster (consumes the published repo) |
+| NOTES.txt post-install output | stdout | self-hoster |
+| Published enterprise docs pages (architecture / quick-start / config ref / demo walkthrough) | rendered web | self-hoster + prospect |
+| `helm package` + `helm repo index --merge` + commit (in the existing release stage) | CI step | maintainer (ADR-083) |
+
+### Driven ports (outbound dependencies the rendered stack talks to)
+
+| Driven dependency | Adapter / mechanism | Gated by |
+|---|---|---|
+| Postgres (bundled or external) | EF Core Npgsql provider (epic-5305 `DatabaseConfigurator`) | always (Postgres-only, ADR-080) |
+| OIDC issuer (login) | ASP.NET OpenIdConnect handler (existing) | `oidc.*` set |
+| Redis (SignalR backplane + shared status store) | `Microsoft.AspNetCore.SignalR.StackExchangeRedis` (#5304/ADR-075) | `redis.connectionString` set (only at `replicaCount>1`) |
+| Lighthouse API (from the MCP server) | `mcp-http` forwards the caller's credential (ADR-079/085) | `mcp.enabled` |
+| GitHub Pages Helm index (`docs/charts/index.yaml`) | static files via existing `pages.yml` artifact deploy (ADR-083) | publish step |
+| Helm repo index for the no-overwrite guard | `helm repo index --merge` + version-present check | publish step |
+
+### Reuse Analysis (MANDATORY hard gate — EXTEND default, CREATE justified)
+
+`chart/` does not exist yet, so the chart templates are necessarily CREATE — but the *deployment topology, CI, and docs surfaces* they plug into are overwhelmingly EXTEND/REUSE.
+
+| Component | Verdict | Evidence / justification |
+|---|---|---|
+| `chart/` templates (Deployment, Service, Ingress, ConfigMap, NOTES.txt, `values.yaml`, `values.schema.json`) | **CREATE (justified)** | No chart exists today (DISCUSS slice-01 creates the skeleton). New, but standard Helm — no bespoke mechanism. |
+| In-chart Postgres StatefulSet+Service+PVC+Secret | **CREATE (justified)** | No bundled-DB template exists; Bitnami subchart rejected (ADR-080). ~4 small templates on the official image — minimal, owned, vendor-neutral. |
+| epic-5305 runtime capabilities (probes, forwarded-headers, drain, migration lock, backplane, telemetry, MCP auth) | **REUSE (config surface only)** | All shipped + config-gated; the chart sets the values, changes no code (table above). |
+| `.github/workflows/pages.yml` (Pages deploy) | **EXTEND** | Already publishes `docs/**` via artifact deploy; the Helm index lives under `docs/charts/` and ships through it — no new Pages source, no new workflow (ADR-083). |
+| The existing release workflow / release stage | **EXTEND** | Add the `helm package` + `helm repo index --merge` + no-overwrite-guard step into the existing release flow (CI-consolidation rule); chart + app releases aligned. |
+| Per-feature docs/screenshot discipline (CLAUDE.md DELIVER) | **REUSE** | Narrative enterprise docs (diagram, quick-start, walkthrough) authored under `docs/` via the existing discipline; only the config table is generated (helm-docs, ADR-084). |
+| `helm-docs` config-reference generation + drift gate | **CREATE (justified)** | No values↔docs single-source today; generates the config table from `values.yaml` comments → 0 phantom keys by construction (ADR-084). New tool, standard. |
+
+**No "just-in-case" infrastructure**: every CREATE maps to a specific US/AC (the chart itself, the bundled DB, the config-reference generator); everything with an existing seam (Pages, the release stage, the docs discipline, all epic-5305 runtime code) is EXTEND/REUSE. No `gh-pages` branch, no chart-releaser, no second repo — the existing single-Pages-source constraint is honoured (ADR-083).
+
+### Quality-attribute strategies
+
+- **Operability / time-to-value (North Star KPI 1)**: one `helm install` → all-pods-Ready; `values.schema.json` + `required` fail-fast naming the missing key (ADR-082) so a misconfigured install fails before it half-creates a release.
+- **Maintainability / no-drift (KPI 2/3)**: `Chart.yaml` version single-source; helm-docs-generated config table with a `git diff` drift gate; no-silent-overwrite version guard (ADR-083/084).
+- **Vendor-neutrality (hard constraint)**: official images only, no Bitnami, no cloud-service lock-in; substrate/DB/identity (Q1/Q2/Q3) stay the operator's values; Redis is operator-provided.
+- **Portability**: a conformant k8s + ingress controller is the only assumption; bundled Postgres for convenience, BYO for production.
+
+### Standalone-gate enforcement (D4 — hard invariant)
+
+The chart governs only the Kubernetes target; the **standalone/server image is byte-unchanged** (it keeps SQLite, embedded frontend, single process — this epic touches none of it). Within the chart, the *default* values render the simple shape: `frontend.mode: embedded` (one app workload serving the SPA, ADR-081), `mcp.enabled: false`, single replica (no Redis required). Production capability (replicas+Redis, external DB, MCP, OIDC, telemetry) is strictly opt-in via values. A chart-render guard test asserts default values → embedded, exactly one API workload.
+
+### ADRs (this feature)
+
+- [ADR-080](./adr-080-chart-postgres-only-bundled-and-byo.md): chart is Postgres-only — bundled in-chart StatefulSet (official image) OR BYO `externalDatabase.*`; no SQLite; Bitnami rejected. ACCEPTED.
+- [ADR-081](./adr-081-frontend-mode-embedded-default-split-stub.md): `frontend.mode: embedded` default + scales via `replicaCount`; `split` = loud `fail` stub (Band D). ACCEPTED.
+- [ADR-082](./adr-082-chart-required-values-fail-fast.md): fail-fast required-value validation — `values.schema.json` + `{{ required }}` for conditionals; explicit DB password. ACCEPTED.
+- [ADR-083](./adr-083-helm-repo-via-docs-tree-pages.md): publish via `docs/charts/` on the existing artifact-based Pages, in the existing release stage; no gh-pages/chart-releaser; Chart.yaml single-source + no-overwrite guard. ACCEPTED.
+- [ADR-084](./adr-084-config-reference-helm-docs-single-source.md): config reference generated from `values.yaml` comments by helm-docs + `git diff` drift gate; narrative docs hand-authored. ACCEPTED.
+- [ADR-085](./adr-085-mcp-optional-workload-toggle.md): MCP HTTP server as an optional `mcp.enabled` workload, auth per ADR-079, orthogonal to `frontend.mode`. ACCEPTED.
+
+### C4 — System Context (L1)
+
+```mermaid
+C4Context
+    title System Context — epic-5306 public Helm chart + enterprise docs
+    Person(selfhoster, "Self-hoster / platform-operator", "Runs helm install on their own k8s; configures via values")
+    Person(prospect, "Prospect", "Evaluates from the docs without installing")
+    Person(maintainer, "Lighthouse maintainer", "Packages, versions, publishes the chart")
+    System_Boundary(repo, "lighthouse repo (public)") {
+        System(chart, "Helm chart (chart/)", "Renders the full Lighthouse stack from values")
+        System(docs, "Enterprise docs + Helm repo", "docs/ pages + docs/charts/ index.yaml on GitHub Pages")
+    }
+    System(cluster, "Operator's Kubernetes cluster", "Conformant k8s + ingress controller")
+    System_Ext(idp, "OIDC provider", "Operator's IdP (Entra / Keycloak / …) — vendor-neutral")
+    System_Ext(redis, "Redis (optional)", "Operator-provided; only for replicaCount>1")
+    Rel(maintainer, chart, "helm package + index", "release stage")
+    Rel(maintainer, docs, "publishes (pages.yml)")
+    Rel(selfhoster, docs, "helm repo add / reads quick-start")
+    Rel(prospect, docs, "reads architecture + demo")
+    Rel(selfhoster, chart, "helm install -f values-enterprise.yaml")
+    Rel(chart, cluster, "renders workloads into")
+    Rel(cluster, idp, "OIDC login (when oidc.* set)")
+    Rel(cluster, redis, "SignalR backplane + status store (when set)")
+```
+
+### C4 — Container (L2)
+
+```mermaid
+C4Container
+    title Container — rendered stack (default = embedded + bundled Postgres + MCP off)
+    Person(user, "User / browser")
+    Person(mcpclient, "MCP client (optional)", "Claude Desktop / MCP Inspector")
+    System_Boundary(cluster, "Kubernetes namespace") {
+        Container(ingress, "Ingress", "ingress controller", "host + TLS; routes to API; derives NOTES.txt URL")
+        Container(api, "Lighthouse API Deployment", "product image, replicaCount=N", "serves SPA + /api + /hub in-process (embedded, ADR-081); probes #5310; forwarded-headers #5311")
+        ContainerDb(pg, "Postgres", "bundled StatefulSet (official image) OR externalDatabase BYO", "ADR-080; Postgres-only, no SQLite")
+        Container(mcp, "MCP HTTP server (optional)", "clients mcp-http image", "mcp.enabled (ADR-085); inbound-auth per ADR-079; NOT behind oauth2-proxy")
+    }
+    System_Ext(idp, "OIDC provider")
+    System_Ext(redis, "Redis (optional, replicaCount>1)")
+    Rel(user, ingress, "HTTPS")
+    Rel(ingress, api, "/, /api, /hub")
+    Rel(mcpclient, ingress, "/mcp (Bearer / X-Api-Key)")
+    Rel(ingress, mcp, "/mcp", "when mcp.enabled")
+    Rel(api, pg, "EF Core Npgsql")
+    Rel(mcp, api, "forwards caller credential (ADR-079)")
+    Rel(api, idp, "OIDC (when oidc.* set)")
+    Rel(api, redis, "backplane + status store (when set)")
+```
+
+### Handoff (DESIGN → DEVOPS / DELIVER)
+
+- **DEVOPS** (nw-platform-architect) picks up: the CI step wiring in the existing release stage (`helm package` + `helm repo index --merge` + the no-overwrite version guard + the helm-docs `git diff` drift gate + `chart-testing`/`ct` lint+template), the GitHub Pages URL/CNAME path for the Helm repo (`docs/charts/`), and appending the 3 candidate outcomes (`OUT-helm-install-first-try-success`, `OUT-enterprise-docs-self-serve`, `OUT-chart-publish-consistency`) to `docs/product/kpi-contracts.yaml`.
+- **DELIVER** (nw-software-crafter): the chart templates + `values.schema.json` + NOTES.txt + the bundled-Postgres templates + the standalone-gate render guard test + the hand-authored enterprise docs; per-slice (01→05) per the story-map; live `helm install` dogfood against k3s per the slice "dogfood moment".
+- **Open question carried forward (out of this DESIGN scope)**: the live end-to-end MCP OAuth dogfood (ADR-079 readiness checklist — IdP audience/scope, RFC 8707 resource indicators, the server version gate) needs the real environment and is part of the chart's enterprise-docs prerequisites, not the chart code itself.

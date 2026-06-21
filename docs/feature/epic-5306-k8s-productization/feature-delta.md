@@ -407,3 +407,110 @@ Strict lean mode held. Trigger evaluation:
 - **`frontend.mode: split`** is scoped here as a *toggle stub only*; full split wiring is deferred to
   Band D (out of scope), consistent with planning-stage Q4 ("build the toggle, default it off").
 - No other planning-stage assumption changed.
+
+---
+
+# Feature Delta — epic-5306-k8s-productization (DESIGN wave)
+
+> **Scope (DESIGN):** system/infrastructure only — a public Helm chart (`chart/`) + enterprise docs. No new backend code, no new domain model (the chart packages already-shipped epic-5305 capabilities). Single architect (System Designer), PROPOSE mode. Density: **lean** — Tier-1 [REF] only; no expansion menu fired. SSOT-integrated: see `docs/product/architecture/brief.md` → `## System Architecture — epic-5306-k8s-productization` and ADR-080..085.
+
+## Wave: DESIGN / [REF] Design Decisions (DDD list)
+
+| # | Decision | Verdict / one-line rationale | ADR |
+|---|----------|------------------------------|-----|
+| D1 | Database posture | **Postgres-only** chart; bundled in-chart StatefulSet (official image) OR BYO `externalDatabase.*`; **no SQLite**; Bitnami rejected (Broadcom 2025 supply risk) | ADR-080 |
+| D2 | Frontend topology | `frontend.mode: embedded` default = the scalable shape (scale via `replicaCount`+Redis); `split` = loud `fail` stub (Band D) — split gives no API-scaling benefit | ADR-081 |
+| D3 | Required-value validation | fail-fast naming the key — `values.schema.json` (structure/types/enums/unconditional) + `{{ required }}` (conditional, e.g. DB password); explicit password (no auto-gen) | ADR-082 |
+| D4 | Publish mechanism | `docs/charts/` on the **existing artifact-based Pages**, in the existing release stage; **no gh-pages / no chart-releaser** (one Pages source per repo); Chart.yaml single-source + no-overwrite version guard | ADR-083 |
+| D5 | Config-reference drift | helm-docs generates the config table from `values.yaml` comments; `git diff` drift gate; narrative docs hand-authored | ADR-084 |
+| D6 | MCP server | optional `mcp.enabled` workload (Deployment+Service), orthogonal to `frontend.mode`; inbound-auth per ADR-079 (X-Api-Key / IdP JWT Bearer); not behind oauth2-proxy | ADR-085 |
+| D7 | Chart packaging | single chart, `apiVersion: v2`, **no third-party subchart dependency**; one-chart-config-selected-branches (no fork), mirroring ADR-027/epic-5305 | ADR-080..085 |
+
+## Wave: DESIGN / [REF] Component Decomposition (chart-rendered workloads)
+
+| Workload/object | When | Kind / image | Change type |
+|---|---|---|---|
+| API Deployment + Service | always | product image, `Deployment` (replicaCount) | CREATE template |
+| Ingress | `ingress.enabled` (default on) | `Ingress` | CREATE template |
+| Postgres StatefulSet + Service + PVC + Secret | `postgresql.enabled` (default on) | official `postgres` image | CREATE template |
+| MCP Deployment + Service | `mcp.enabled` | clients `mcp-http` image | CREATE template |
+| ConfigMap / Secret(s) | always | `ConfigMap`/`Secret` | CREATE template |
+| NOTES.txt | always | Helm notes (URL + MCP/replica summary + kubectl watch line) | CREATE template |
+| `values.yaml` + `values.schema.json` | always | chart inputs | CREATE |
+| Redis | never (operator-provided) | external | REUSE (config only) |
+| nginx split frontend | never (Band D) | `fail` stub | reserved |
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Type | Owner |
+|---|---|---|
+| `helm install l8e ./chart -f values-enterprise.yaml` | CLI | self-hoster |
+| `helm repo add letpeoplework https://<pages-domain>/charts` / `helm search repo` / `helm install l8e letpeoplework/lighthouse` | CLI | self-hoster |
+| NOTES.txt post-install output | stdout | self-hoster |
+| Published enterprise docs pages | rendered web | self-hoster + prospect |
+| `helm package` + `helm repo index --merge` + commit (existing release stage) | CI step | maintainer |
+
+## Wave: DESIGN / [REF] Driven Ports + Adapters
+
+| Driven dependency | Adapter / mechanism | Gated by |
+|---|---|---|
+| Postgres (bundled/external) | EF Core Npgsql (epic-5305 `DatabaseConfigurator`) | always |
+| OIDC issuer | ASP.NET OpenIdConnect handler (existing) | `oidc.*` |
+| Redis (backplane + status store) | SignalR StackExchangeRedis (#5304) | `redis.connectionString` (replicaCount>1) |
+| Lighthouse API (from MCP) | `mcp-http` forwards caller credential (ADR-079) | `mcp.enabled` |
+| GitHub Pages Helm index | static `docs/charts/index.yaml` via `pages.yml` | publish step |
+
+## Wave: DESIGN / [REF] Technology Choices (pinned)
+
+- Helm 3.x · Chart `apiVersion: v2` · `values.schema.json` (JSON Schema)
+- Bundled DB: official `postgres` image StatefulSet (no Bitnami, no subchart dependency)
+- `helm-docs` (config-reference generation + drift gate)
+- `chart-testing` (`ct`) for lint + template render in CI
+- GitHub Pages (existing artifact-based deploy, `docs/charts/`), LPW org
+- Publish: `helm package` + `helm repo index --merge` in the existing release workflow (no chart-releaser)
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| ID | Locked decision |
+|---|---|
+| DDD-1 | Postgres-only chart, bundled-or-BYO, no SQLite (ADR-080) |
+| DDD-2 | embedded default scales via replicaCount; split = fail stub (ADR-081) |
+| DDD-3 | fail-fast schema + required validation, explicit DB password (ADR-082) |
+| DDD-4 | publish via docs/charts on existing Pages, existing release stage, no-overwrite guard (ADR-083) |
+| DDD-5 | helm-docs single-source config reference + drift gate (ADR-084) |
+| DDD-6 | optional mcp.enabled workload, ADR-079 auth (ADR-085) |
+| DDD-7 | single chart, no subchart dependency, no-fork (ADR-080..085) |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Component | Verdict | Justification |
+|---|---|---|
+| `chart/` templates + `values.schema.json` + NOTES.txt | CREATE (justified) | no chart exists; standard Helm, no bespoke mechanism |
+| In-chart Postgres StatefulSet+Service+PVC+Secret | CREATE (justified) | no bundled-DB template; Bitnami rejected (ADR-080); ~4 small official-image templates |
+| epic-5305 runtime capabilities (probes/headers/drain/migration-lock/backplane/telemetry/MCP-auth) | REUSE (config surface) | all shipped + config-gated; chart sets values, no code change |
+| `.github/workflows/pages.yml` | EXTEND | already publishes `docs/**`; Helm index under `docs/charts/`, no new Pages source/workflow |
+| existing release workflow | EXTEND | add package+index+guard step (CI-consolidation rule) |
+| per-feature docs/screenshot discipline | REUSE | narrative docs via existing discipline; only config table generated |
+| helm-docs config-reference + drift gate | CREATE (justified) | no values↔docs single-source today; 0 phantom keys by construction (ADR-084) |
+
+Zero unjustified CREATE NEW. Dominant pattern: REUSE/EXTEND of deployment, CI, and docs surfaces; CREATE limited to the chart itself + bundled DB + config-reference generator.
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+`nwave-ai outcomes check-delta` **unavailable** (tool broken — `ModuleNotFoundError: jsonschema`, not a real exit-1 collision). The 3 candidate outcomes (`OUT-helm-install-first-try-success`, `OUT-enterprise-docs-self-serve`, `OUT-chart-publish-consistency`) occupy a net-new install/package/publish namespace with no existing `OUT-*` overlap; the DISCUSS KPI section already defers appending them to DEVOPS. No genuine collision; proceeding per contract.
+
+## Wave: DESIGN / [REF] Open Questions (deferred)
+
+- **Live MCP OAuth dogfood** — the ADR-079 readiness checklist (IdP audience/scope, RFC 8707 resource indicators, server version gate `> v26.6.16.14`) needs the real environment; it is an enterprise-docs *prerequisite*, not chart code. Carried to DELIVER/dogfood, out of DESIGN scope.
+- **`frontend.mode: split` full wiring** — Band D, out of scope (stub only here).
+- **Helm repo public URL / CNAME path** — the concrete `https://<pages-domain>/charts` value is a DEVOPS detail (depends on the repo's Pages domain/CNAME).
+
+## Wave: DESIGN / Changed Assumptions
+
+1. **Slice-01 walking skeleton now brings up API + bundled Postgres** (was: API-only, Postgres deferred to slice-03). Cause: the chart is Postgres-only with no SQLite path (ADR-080), so the first cut needs a database. Still one command. Recorded in `design/upstream-changes.md` for product-owner review of the slice docs.
+   > Original (slice-01, *Out of scope*): *"Postgres / MCP / OIDC values (slice 03)."*
+   > New: slice-01 additionally renders the bundled Postgres StatefulSet (default `postgresql.enabled: on`) so the API has a database; OIDC/MCP/full enterprise values stay in slice-03.
+
+2. **Publish mechanism refined**: DISCUSS said "GitHub Pages Helm repo (LPW org)". Refined to **`docs/charts/` on the existing artifact-based Pages deploy, in the existing release stage — not a `gh-pages` branch and not chart-releaser-action** (the repo already uses a single artifact-based Pages source; a `gh-pages` branch would conflict). Same outcome (a public GitHub Pages Helm repo), different mechanism (ADR-083). No story/AC change — `helm repo add` UX is preserved.
+
+3. **"Single-container shape" clarified**: the standalone gate / "single-container shape" means **`frontend.mode: embedded` (one *app* workload serving the SPA)**, not "no database workload". The chart always renders a Postgres workload (bundled) or wires an external one. The standalone *image* is unchanged (keeps SQLite); the chart's "simple shape" is embedded frontend + bundled Postgres + MCP off. No contradiction with DISCUSS — clarifies the term.
