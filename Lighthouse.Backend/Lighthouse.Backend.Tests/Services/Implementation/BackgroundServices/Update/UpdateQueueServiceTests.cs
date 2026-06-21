@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -149,14 +150,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             });
 
             var subject = CreateSubject();
-            subject.EnqueueUpdate(updateStatus.UpdateType, updateStatus.Id, _ => Task.CompletedTask);
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
 
             while (!wasNotified)
             {
                 await Task.Delay(100);
             }
 
-            Assert.That(wasNotified, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wasNotified, Is.True);
+                Assert.That(updateStatus.UpdateType, Is.EqualTo(updateKey.UpdateType),
+                    "The notified payload must carry the queued item's own type, not a default, so listeners route it to the right entity.");
+                Assert.That(updateStatus.Id, Is.EqualTo(updateKey.Id),
+                    "The notified payload must carry the queued item's own id, not a default.");
+            }
         }
 
         [Test]
@@ -396,6 +404,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public void EnqueueAndAwaitAsync_CancellableToken_TokenCancelledWhileGated_ReturnedTaskCancels()
+        {
+            var workGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var subject = CreateSubject();
+            using var cts = new CancellationTokenSource();
+
+            var completion = subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 31, async _ => await workGate.Task, cts.Token);
+
+            cts.Cancel();
+
+            Assert.ThrowsAsync<TaskCanceledException>(async () => await completion,
+                "Cancelling the caller's token must surface as a cancelled returned task, so a shutting-down request stops awaiting in-flight work.");
+
+            workGate.SetResult(true);
+        }
+
+        [Test]
+        public async Task EnqueueAndAwaitAsync_CancellableToken_WorkSucceeds_ReturnedTaskCompletes()
+        {
+            var subject = CreateSubject();
+            using var cts = new CancellationTokenSource();
+            var executed = false;
+
+            await subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 32, _ =>
+            {
+                executed = true;
+                return Task.CompletedTask;
+            }, cts.Token);
+
+            Assert.That(executed, Is.True,
+                "A cancellable-token caller whose token never fires must still observe successful completion through the cancellation-aware observer.");
+        }
+
+        [Test]
+        public void EnqueueAndAwaitAsync_CancellableToken_WorkThrows_ReturnedTaskFaults()
+        {
+            var subject = CreateSubject();
+            using var cts = new CancellationTokenSource();
+
+            Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await subject.EnqueueAndAwaitAsync(UpdateType.PortfolioDelete, 33, _ =>
+                    throw new InvalidOperationException("boom"), cts.Token),
+                "A cancellable-token caller must still propagate the original work fault through the cancellation-aware observer, not swallow it.");
+        }
+
+        [Test]
         public async Task DrainAsync_InFlightQueuedUpdate_CompletesBeforeReturning()
         {
             var executed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -430,9 +484,136 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(5)), "Drain must be bounded by the shutdown timeout, not block on a stuck update");
         }
 
+        [Test]
+        public void EnqueueAndAwaitAsync_DuplicateKey_DistributedSubstrate_AwaitsCrossPodCompletion()
+        {
+            var updateKey = new UpdateKey(UpdateType.PortfolioDelete, 21);
+            updateStatuses[updateKey] = new UpdateStatus { UpdateType = updateKey.UpdateType, Id = updateKey.Id, Status = UpdateProgress.InProgress };
+
+            Action<UpdateKey>? releaseAwaiter = null;
+            var notifier = new Mock<IUpdateCompletionNotifier>();
+            notifier.SetupGet(n => n.IsDistributed).Returns(true);
+            notifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>()))
+                .Callback<Action<UpdateKey>>(callback => releaseAwaiter = callback)
+                .Returns(Mock.Of<IDisposable>());
+
+            var subject = CreateSubject(notifier.Object);
+
+            var completion = subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            Assert.That(completion.IsCompleted, Is.False,
+                "On a distributed substrate a duplicate-key caller must wait for the owning pod's completion signal, not return immediately.");
+
+            releaseAwaiter!(updateKey);
+
+            Assert.That(completion.IsCompletedSuccessfully, Is.True,
+                "The cross-pod awaiter must complete once the completion notifier fans the signal back to this pod.");
+        }
+
+        [Test]
+        public void EnqueueAndAwaitAsync_DuplicateKey_NonDistributedSubstrate_ReturnsImmediately()
+        {
+            var updateKey = new UpdateKey(UpdateType.PortfolioDelete, 22);
+            updateStatuses[updateKey] = new UpdateStatus { UpdateType = updateKey.UpdateType, Id = updateKey.Id, Status = UpdateProgress.InProgress };
+
+            var notifier = new Mock<IUpdateCompletionNotifier>();
+            notifier.SetupGet(n => n.IsDistributed).Returns(false);
+            notifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>())).Returns(Mock.Of<IDisposable>());
+
+            var subject = CreateSubject(notifier.Object);
+
+            var completion = subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            Assert.That(completion.IsCompletedSuccessfully, Is.True,
+                "In-process there is no other pod to wait on: a duplicate-key caller with no local awaiter must return a completed task rather than hang.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_PublishesCompletionToNotifier()
+        {
+            var notifier = new Mock<IUpdateCompletionNotifier>();
+            notifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>())).Returns(Mock.Of<IDisposable>());
+            notifier.Setup(n => n.PublishCompletionAsync(It.IsAny<UpdateKey>())).Returns(Task.CompletedTask);
+
+            var subject = CreateSubject(notifier.Object);
+            var updateKey = new UpdateKey(UpdateType.Team, 1);
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < deadline && !updateStatuses.IsEmpty)
+            {
+                await Task.Delay(20);
+            }
+
+            notifier.Verify(n => n.PublishCompletionAsync(updateKey), Times.Once,
+                "Every terminal update must publish its completion so cross-pod awaiters on other pods are released.");
+        }
+
+        [Test]
+        public async Task EnqueueAndAwaitAsync_AfterCompletion_RemovesStatusAndPublishesCompletion()
+        {
+            var notifier = new Mock<IUpdateCompletionNotifier>();
+            notifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>())).Returns(Mock.Of<IDisposable>());
+            notifier.Setup(n => n.PublishCompletionAsync(It.IsAny<UpdateKey>())).Returns(Task.CompletedTask);
+
+            var subject = CreateSubject(notifier.Object);
+            var updateKey = new UpdateKey(UpdateType.PortfolioDelete, 41);
+
+            UpdateStatus? completionPayload = null;
+            clientProxyMock.Setup(client => client.SendCoreAsync(updateKey.ToString(), It.IsAny<object[]>(), default))
+                .Callback((string _, object[] parameters, CancellationToken _) =>
+                {
+                    var status = (UpdateStatus)parameters[0];
+                    if (status.Status == UpdateProgress.Completed)
+                    {
+                        completionPayload = status;
+                    }
+                });
+
+            await subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < deadline && (updateStatuses.ContainsKey(updateKey) || completionPayload is null))
+            {
+                await Task.Delay(20);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(updateStatuses.ContainsKey(updateKey), Is.False,
+                    "The awaitable path must remove the status entry after terminal completion, otherwise the key would be permanently blocked from re-admission.");
+                Assert.That(completionPayload, Is.Not.Null,
+                    "The awaitable path must notify listeners of the terminal status, so a UI awaiting the delete sees it finish.");
+                Assert.That(completionPayload!.UpdateType, Is.EqualTo(updateKey.UpdateType));
+                Assert.That(completionPayload.Id, Is.EqualTo(updateKey.Id));
+            }
+
+            notifier.Verify(n => n.PublishCompletionAsync(updateKey), Times.Once,
+                "The awaitable path must also publish completion so cross-pod awaiters on other pods are released, not only the fire-and-forget path.");
+        }
+
+        [Test]
+        public void Dispose_DisposesCompletionSubscription()
+        {
+            var subscription = new Mock<IDisposable>();
+            var notifier = new Mock<IUpdateCompletionNotifier>();
+            notifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>())).Returns(subscription.Object);
+
+            var subject = CreateSubject(notifier.Object);
+            subject.Dispose();
+
+            subscription.Verify(s => s.Dispose(), Times.Once,
+                "Disposing the queue service must release its completion subscription so the distributed pub/sub channel is unsubscribed cleanly.");
+        }
+
         private UpdateQueueService CreateSubject()
         {
-            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new InProcessUpdateStatusStore(updateStatuses), new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier(), serviceScopeFactoryMock.Object, gate);
+            return CreateSubject(new InProcessUpdateCompletionNotifier());
+        }
+
+        private UpdateQueueService CreateSubject(IUpdateCompletionNotifier completionNotifier)
+        {
+            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new InProcessUpdateStatusStore(updateStatuses), new InProcessUpdateExecutionLock(), completionNotifier, serviceScopeFactoryMock.Object, gate);
         }
     }
 }
