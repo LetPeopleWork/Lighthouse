@@ -1,0 +1,18 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lighthouse.postgres.host" . }}
+  labels:
+    {{- include "lighthouse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  # Headless — StatefulSet stable network identity.
+  clusterIP: None
+  selector:
+    {{- include "lighthouse.postgres.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+{{- end }}

@@ -673,3 +673,39 @@ No `src/` scaffold stubs (no application code in this feature). The **structural
 ## Wave: DISTILL / Changed Assumptions
 
 None. Scenarios trace directly to US-01/US-02 ACs + slice ACs; no upstream gap surfaced. No `distill/upstream-issues.md`.
+
+---
+
+# Feature Delta — epic-5306-k8s-productization (DELIVER wave)
+
+> **Mode:** inline, slice-by-slice (DES/pytest-crafter machinery N/A for a Helm/YAML feature; user-approved). **This commit = slice-01 (walking skeleton) only.** Slices 02–05 pending.
+
+## Wave: DELIVER / [REF] Implementation Summary (slice-01)
+
+Built the minimal publishable `chart/` skeleton that brings the whole stack up with one `helm install`: API Deployment (embedded SPA, epic-5305 health probes + graceful-shutdown grace period) + bundled Postgres StatefulSet (official `postgres:17`, ADR-080, Postgres-only) + headless Postgres Service + API Service + Ingress + ConfigMap (non-secret app config) + Secret (Npgsql connection string + Postgres password) + NOTES.txt (resolved access URL + kubectl watch line) + `_helpers.tpl` (incl. the `frontend.mode` split-fail guard, ADR-081). Config grounded in the real backend contract (`Database:Provider`/`ConnectionString`, `Shutdown:TimeoutSeconds`, `Telemetry:Enabled`; `__`→`:` env mapping; image `ghcr.io/letpeoplework/lighthouse`).
+
+## Wave: DELIVER / [REF] Files Modified (slice-01)
+
+- `chart/Chart.yaml` — apiVersion v2, version 0.1.0, appVersion 26.6.16.14
+- `chart/values.yaml` — image, replicaCount, frontend.mode, ingress, resources, bundled postgresql, shutdown, telemetry (helm-docs `# --` comments)
+- `chart/templates/` — `_helpers.tpl`, `configmap.yaml`, `secret.yaml`, `deployment-api.yaml`, `service-api.yaml`, `ingress.yaml`, `postgres-statefulset.yaml`, `postgres-service.yaml`, `NOTES.txt`
+- `chart/tests/unit/` — `standalone-gate_test.yaml`, `render_test.yaml` (helm-unittest)
+
+## Wave: DELIVER / [REF] Scenarios Green (slice-01)
+
+- `@walking_skeleton @in-memory @standalone_gate` — default values → exactly one API Deployment (embedded), `Database__Provider=postgres` (never sqlite). **GREEN** (helm-unittest).
+- `@walking_skeleton @real-io` — real `helm install l8e ./chart` into kind: `api 1/1` + `postgres 1/1` Ready; `/health/ready` → 200; `/` → 200 `<title>Lighthouse</title>` (embedded SPA in-process); NOTES.txt prints `http://lighthouse.local`. **GREEN** (live dogfood, cluster torn down).
+- Bonus render coverage now green: bundled-Postgres present/absent, ingress host, TLS-without-host fail-fast, missing-password fail-fast (ADR-082), appVersion image-tag fallback (ADR-083), split fail-loud (ADR-081).
+
+10/10 helm-unittest tests pass; `helm lint` clean (only icon-recommended INFO).
+
+## Wave: DELIVER / [REF] Quality Gates (slice-01)
+
+- `helm lint ./chart` — clean.
+- `helm template` — renders 7 objects, exactly one Deployment (standalone gate holds).
+- `helm unittest` — 10/10 pass.
+- Live kind dogfood — pods Ready, API serves SPA + health. (API restarted 2× while Postgres came up, then stabilised — readiness gating worked as designed.)
+
+## Wave: DELIVER / [REF] Pending (slices 02–05)
+
+values.schema.json (ADR-082 typed validation) · image/replicaCount/host parameterisation depth + values-enterprise.yaml · full stack (OIDC, MCP `mcp.enabled` workload, external Postgres BYO, Redis multi-replica) · publish pipeline (`ci_chart.yml` + release-stage package/index/no-overwrite guard, the DELIVER action items from the review gate) · helm-docs config reference + drift gate · enterprise docs (diagram/quick-start/demo). Per the review-verdicts.md DELIVER action items.

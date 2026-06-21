@@ -1,0 +1,57 @@
+suite: render — skeleton workloads (slice-01)
+tests:
+  - it: missing Postgres password fails fast naming the key (ADR-082)
+    template: templates/secret.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "postgresql.auth.password is required (ADR-082): set a Postgres password"
+
+  - it: bundled Postgres StatefulSet is rendered by default
+    set:
+      postgresql.auth.password: testpass
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: postgres:17
+
+  - it: bundled Postgres is absent when disabled (BYO path)
+    set:
+      postgresql.enabled: false
+      postgresql.auth.password: testpass
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: ingress carries the configured host
+    set:
+      postgresql.auth.password: testpass
+      ingress.host: lh.acme.internal
+    template: templates/ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: lh.acme.internal
+
+  - it: TLS without a host fails fast
+    set:
+      postgresql.auth.password: testpass
+      ingress.tls: true
+      ingress.host: ""
+    template: templates/ingress.yaml
+    asserts:
+      - failedTemplate: {}
+
+  - it: API image tag falls back to Chart.appVersion when unset
+    set:
+      postgresql.auth.password: testpass
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/letpeoplework/lighthouse:26.6.16.14

@@ -1,0 +1,45 @@
+suite: standalone gate (slice-01)
+# Greens walking-skeleton.feature: "Default values preserve the single-container (embedded) shape".
+templates:
+  - templates/deployment-api.yaml
+  - templates/configmap.yaml
+  - templates/service-api.yaml
+tests:
+  - it: default values render exactly one API Deployment (embedded, standalone parity)
+    set:
+      postgresql.auth.password: testpass
+    template: templates/deployment-api.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: database provider rendered is postgres, never sqlite
+    set:
+      postgresql.auth.password: testpass
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Database__Provider
+          value: "postgres"
+
+  - it: frontend.mode split fails loud (not a silent no-op)
+    set:
+      postgresql.auth.password: testpass
+      frontend.mode: split
+    template: templates/deployment-api.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "frontend.mode=split is not implemented in this chart version; use frontend.mode=embedded (ADR-081)"
+
+  - it: an unknown frontend.mode is rejected
+    set:
+      postgresql.auth.password: testpass
+      frontend.mode: bogus
+    template: templates/deployment-api.yaml
+    asserts:
+      - failedTemplate: {}

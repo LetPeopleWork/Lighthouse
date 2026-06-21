@@ -1,0 +1,64 @@
+# Lighthouse Helm chart — default values.
+# The chart is Postgres-only (ADR-080) and defaults to the standalone-parity shape:
+# frontend.mode=embedded (one API workload serving the SPA, ADR-081), bundled Postgres on.
+
+# -- Number of API replicas. >1 requires Redis (ConnectionStrings:Redis); see slice-02/03.
+replicaCount: 1
+
+image:
+  # -- Lighthouse API image repository.
+  repository: ghcr.io/letpeoplework/lighthouse
+  # -- Image tag. Empty string falls back to Chart.appVersion (ADR-083 consistency).
+  tag: ""
+  # -- Image pull policy.
+  pullPolicy: IfNotPresent
+
+frontend:
+  # -- Frontend topology: embedded (API serves the SPA, default/standalone parity) or split.
+  #    split is NOT implemented in this chart version and fails loud (ADR-081).
+  mode: embedded
+
+ingress:
+  # -- Render an Ingress for the API.
+  enabled: true
+  # -- Ingress class name (e.g. traefik, nginx). Empty uses the cluster default.
+  className: ""
+  # -- Public hostname the app is served on (drives the OIDC callback + NOTES.txt URL).
+  host: lighthouse.local
+  # -- Enable TLS on the Ingress (host must be set).
+  tls: false
+  # -- TLS secret name (when tls=true and you bring your own cert).
+  tlsSecretName: ""
+
+# -- Resource requests/limits for the API container.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 1Gi
+
+postgresql:
+  # -- Deploy a bundled in-chart Postgres StatefulSet (ADR-080). Set false to bring your own (slice-03).
+  enabled: true
+  # -- Bundled Postgres image (official, vendor-neutral).
+  image: postgres:17
+  auth:
+    # -- Database name.
+    database: lighthouse
+    # -- Database user.
+    username: lighthouse
+    # -- Database password. REQUIRED — no default (ADR-082, explicit password).
+    password: ""
+  persistence:
+    # -- PVC size for the bundled Postgres data volume.
+    size: 8Gi
+    # -- StorageClass for the PVC. Empty uses the cluster default.
+    storageClass: ""
+
+# -- Bounded graceful-shutdown drain window (seconds); maps to Shutdown:TimeoutSeconds + terminationGracePeriodSeconds (epic-5305 #5309).
+shutdownTimeoutSeconds: 30
+
+telemetry:
+  # -- Enable OpenTelemetry /metrics + JSON logs (epic-5305 #5312). Off by default (self-hoster).
+  enabled: false

@@ -1,0 +1,13 @@
+{{- include "lighthouse.assertFrontendMode" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "lighthouse.fullname" . }}-config
+  labels:
+    {{- include "lighthouse.labels" . | nindent 4 }}
+data:
+  # Lighthouse reads config via env; "__" maps to ":" (e.g. Database__Provider -> Database:Provider).
+  # The chart is Postgres-only (ADR-080) — provider is never sqlite.
+  Database__Provider: "postgres"
+  Telemetry__Enabled: {{ .Values.telemetry.enabled | quote }}
+  Shutdown__TimeoutSeconds: {{ .Values.shutdownTimeoutSeconds | quote }}

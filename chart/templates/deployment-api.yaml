@@ -1,0 +1,55 @@
+{{- include "lighthouse.assertFrontendMode" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lighthouse.fullname" . }}-api
+  labels:
+    {{- include "lighthouse.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "lighthouse.api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "lighthouse.api.selectorLabels" . | nindent 8 }}
+    spec:
+      # epic-5305 #5309 graceful shutdown: drain bounded by Shutdown:TimeoutSeconds.
+      terminationGracePeriodSeconds: {{ .Values.shutdownTimeoutSeconds }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ include "lighthouse.imageTag" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: {{ include "lighthouse.fullname" . }}-config
+          env:
+            - name: Database__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "lighthouse.secretName" . }}
+                  key: Database__ConnectionString
+          # epic-5305 #5310 health probes: rollout gates on real readiness.
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

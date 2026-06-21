@@ -1,0 +1,18 @@
+Lighthouse {{ include "lighthouse.imageTag" . }} installed as release "{{ .Release.Name }}".
+
+Access URL:
+  {{ include "lighthouse.accessURL" . }}
+
+Topology:
+  frontend.mode : {{ .Values.frontend.mode }} (one API workload serves the SPA)
+  API replicas  : {{ .Values.replicaCount }}
+  database      : {{ if .Values.postgresql.enabled }}bundled Postgres ({{ .Values.postgresql.image }}){{ else }}external{{ end }}
+
+Next steps:
+  1. Watch rollout:
+       kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -w
+  2. Once all pods are Ready, open {{ include "lighthouse.accessURL" . }} in your browser.
+{{- if not .Values.ingress.tls }}
+
+  NOTE: TLS is off (ingress.tls=false). Set ingress.tls=true with a real certificate before exposing publicly.
+{{- end }}
