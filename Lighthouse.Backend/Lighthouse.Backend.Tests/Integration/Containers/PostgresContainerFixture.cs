@@ -6,8 +6,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     {
         public static async Task<PostgreSqlContainer> StartFreshAsync()
         {
-            var container = new PostgreSqlBuilder()
-                .WithImage("postgres:16-alpine")
+            var container = new PostgreSqlBuilder("postgres:16-alpine")
                 .Build();
 
             await container.StartAsync();

@@ -6,8 +6,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     {
         public static async Task<RedisContainer> StartFreshAsync()
         {
-            var container = new RedisBuilder()
-                .WithImage("redis:7-alpine")
+            var container = new RedisBuilder("redis:7-alpine")
                 .Build();
 
             await container.StartAsync();
