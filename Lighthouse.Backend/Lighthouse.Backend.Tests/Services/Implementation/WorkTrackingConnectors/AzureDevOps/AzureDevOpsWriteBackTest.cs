@@ -5,6 +5,11 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.VisualStudio.Services.WebApi.Patch;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
@@ -20,7 +25,107 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string AgeField = "Custom.Age";
         private const string AgeFieldReference = "Age";
 
-        private const string FeatureId = "370";
+        private const string OrganizationUrl = "https://dev.azure.com/huserben";
+        private const string TeamProject = "CMFTTestTeamProject";
+        private const string IntegrationTokenEnvironmentVariable = "AzureDevOpsLighthouseIntegrationTestToken";
+
+        // Write-back integration tests mutate real Azure DevOps work items, and every write adds a
+        // revision. Azure DevOps caps a work item at 10000 revisions and then refuses all further API
+        // updates, so reusing fixed items eventually burns them permanently. Instead we create a fresh
+        // Feature and User Story per fixture run and destroy them in teardown, keeping revision counts low.
+        private string featureId = string.Empty;
+        private string storyId = string.Empty;
+        private string secondStoryId = string.Empty;
+        private readonly List<int> createdWorkItemIds = [];
+
+        [OneTimeSetUp]
+        public async Task CreateScratchWorkItems()
+        {
+            var personalAccessToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable);
+            if (string.IsNullOrEmpty(personalAccessToken))
+            {
+                // No integration token (e.g. fork PRs): non-integration tests in this fixture still run
+                // without touching Azure DevOps; integration tests will be skipped by category filter.
+                return;
+            }
+
+            using var connection = CreateVssConnection(personalAccessToken);
+            var witClient = await connection.GetClientAsync<WorkItemTrackingHttpClient>();
+
+            featureId = await CreateScratchWorkItem(witClient, "Feature");
+            storyId = await CreateScratchWorkItem(witClient, "User Story");
+            secondStoryId = await CreateScratchWorkItem(witClient, "User Story");
+        }
+
+        [OneTimeTearDown]
+        public async Task RemoveScratchWorkItems()
+        {
+            if (createdWorkItemIds.Count == 0)
+            {
+                return;
+            }
+
+            var personalAccessToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable);
+            if (string.IsNullOrEmpty(personalAccessToken))
+            {
+                return;
+            }
+
+            using var connection = CreateVssConnection(personalAccessToken);
+            var witClient = await connection.GetClientAsync<WorkItemTrackingHttpClient>();
+
+            foreach (var id in createdWorkItemIds)
+            {
+                try
+                {
+                    // The integration PAT cannot delete work items (VS403145), so instead transition the
+                    // scratch items to the terminal "Removed" state. That is a plain update the PAT is
+                    // allowed to make and keeps them off active boards.
+                    var patchDocument = new JsonPatchDocument
+                    {
+                        new JsonPatchOperation
+                        {
+                            Operation = Operation.Add,
+                            Path = "/fields/System.State",
+                            Value = "Removed"
+                        }
+                    };
+
+                    await witClient.UpdateWorkItemAsync(patchDocument, id, suppressNotifications: true);
+                }
+                catch (Exception ex)
+                {
+                    // Best-effort cleanup: a leftover scratch item is harmless, a failed teardown is not
+                    // worth failing the run over. Surface it for diagnosis without throwing.
+                    TestContext.Progress.WriteLine($"Failed to remove scratch work item {id}: {ex.Message}");
+                }
+            }
+
+            createdWorkItemIds.Clear();
+        }
+
+        private async Task<string> CreateScratchWorkItem(WorkItemTrackingHttpClient witClient, string workItemType)
+        {
+            var patchDocument = new JsonPatchDocument
+            {
+                new JsonPatchOperation
+                {
+                    Operation = Operation.Add,
+                    Path = "/fields/System.Title",
+                    Value = $"Lighthouse WriteBack scratch {workItemType} {DateTime.UtcNow:O}"
+                }
+            };
+
+            var created = await witClient.CreateWorkItemAsync(patchDocument, TeamProject, workItemType);
+            var id = created.Id!.Value;
+            createdWorkItemIds.Add(id);
+            return id.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static VssConnection CreateVssConnection(string personalAccessToken)
+        {
+            return new VssConnection(new Uri(OrganizationUrl), new VssBasicCredential(string.Empty, personalAccessToken));
+        }
 
         [Test]
         [Category("Integration")]
@@ -31,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "377", TargetFieldReference = AdditionalInfoField, Value = "42" }
+                new() { WorkItemId = storyId, TargetFieldReference = AdditionalInfoField, Value = "42" }
             };
 
             var result = await subject.WriteFieldsToWorkItems(connection, updates);
@@ -40,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(result.ItemResults, Has.Count.EqualTo(1));
                 Assert.That(result.AllSucceeded, Is.True);
-                Assert.That(result.ItemResults[0].WorkItemId, Is.EqualTo("377"));
+                Assert.That(result.ItemResults[0].WorkItemId, Is.EqualTo(storyId));
             }
         }
 
@@ -53,8 +158,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "377", TargetFieldReference = AdditionalInfoField, Value = "10" },
-                new() { WorkItemId = "365", TargetFieldReference = AdditionalInfoField, Value = "20" }
+                new() { WorkItemId = storyId, TargetFieldReference = AdditionalInfoField, Value = "10" },
+                new() { WorkItemId = secondStoryId, TargetFieldReference = AdditionalInfoField, Value = "20" }
             };
 
             var result = await subject.WriteFieldsToWorkItems(connection, updates);
@@ -75,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = "377", TargetFieldReference = "NonExistent.FieldThatDoesNotExist", Value = "42" }
+                new() { WorkItemId = storyId, TargetFieldReference = "NonExistent.FieldThatDoesNotExist", Value = "42" }
             };
 
             var result = await subject.WriteFieldsToWorkItems(connection, updates);
@@ -159,12 +264,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var isoValue = targetDate.ToString("o");
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = fieldReference, Value = isoValue }
+                new WriteBackFieldUpdate { WorkItemId = featureId, TargetFieldReference = fieldReference, Value = isoValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, fieldReference, 100);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, featureId, fieldReference, 100);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
@@ -182,12 +287,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var shortDateValue = targetDate.ToString("yyyy-MM-dd");
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = TargetDateField, Value = shortDateValue }
+                new WriteBackFieldUpdate { WorkItemId = featureId, TargetFieldReference = TargetDateField, Value = shortDateValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, TargetDateField, 101);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, featureId, TargetDateField, 101);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
@@ -205,12 +310,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var usFormatValue = targetDate.ToString("MM/dd/yyyy");
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = TargetDateField, Value = usFormatValue }
+                new WriteBackFieldUpdate { WorkItemId = featureId, TargetFieldReference = TargetDateField, Value = usFormatValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, TargetDateField, 102);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, featureId, TargetDateField, 102);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             var parsedDate = DateTime.Parse(readBackValue!, CultureInfo.InvariantCulture);
@@ -228,12 +333,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var isoValue = $"{targetDate:yyyy-MM-dd HH:mm:ss} UTC";
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = AdditionalInfoField, Value = isoValue }
+                new WriteBackFieldUpdate { WorkItemId = featureId, TargetFieldReference = AdditionalInfoField, Value = isoValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True, () => string.Join("; ", writeResult.ItemResults.Where(r => !r.Success).Select(r => $"{r.WorkItemId}/{r.TargetFieldReference}: {r.ErrorMessage}")));
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, AdditionalInfoField, 103);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, featureId, AdditionalInfoField, 103);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("2026"));
@@ -249,12 +354,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var formattedDate = "25.12.2026";
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = AdditionalInfoField, Value = formattedDate }
+                new WriteBackFieldUpdate { WorkItemId = featureId, TargetFieldReference = AdditionalInfoField, Value = formattedDate }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, AdditionalInfoField, 104);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, featureId, AdditionalInfoField, 104);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("2026"));
@@ -271,12 +376,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var longDateValue = targetDate.ToString("MMMM dd, yyyy");
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = FeatureId, TargetFieldReference = AdditionalInfoField, Value = longDateValue }
+                new WriteBackFieldUpdate { WorkItemId = featureId, TargetFieldReference = AdditionalInfoField, Value = longDateValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, AdditionalInfoField, 105);
+            var readBackValue = await ReadBackFeatureAdditionalField(subject, connection, featureId, AdditionalInfoField, 105);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("2026"));
@@ -294,12 +399,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var ageValue = "42";
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = "366", TargetFieldReference = fieldReference, Value = ageValue }
+                new WriteBackFieldUpdate { WorkItemId = storyId, TargetFieldReference = fieldReference, Value = ageValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, "366", fieldReference, 106);
+            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, storyId, fieldReference, 106);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("42"));
@@ -315,12 +420,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var cycleTimeValue = "7";
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, [
-                new WriteBackFieldUpdate { WorkItemId = "366", TargetFieldReference = AgeField, Value = cycleTimeValue }
+                new WriteBackFieldUpdate { WorkItemId = storyId, TargetFieldReference = AgeField, Value = cycleTimeValue }
             ]);
 
             Assert.That(writeResult.AllSucceeded, Is.True);
 
-            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, "366", AgeField, 107);
+            var readBackValue = await ReadBackStoryAdditionalField(subject, connection, storyId, AgeField, 107);
 
             Assert.That(readBackValue, Is.Not.Null.And.Not.Empty);
             Assert.That(readBackValue, Does.Contain("7"));
@@ -337,9 +442,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var updates = new List<WriteBackFieldUpdate>
             {
-                new() { WorkItemId = FeatureId, TargetFieldReference = TargetDateField, Value = targetDate.ToString("o") },
-                new() { WorkItemId = "367", TargetFieldReference = AdditionalInfoField, Value = "September 01, 2026" },
-                new() { WorkItemId = "375", TargetFieldReference = AgeField, Value = "15" }
+                new() { WorkItemId = featureId, TargetFieldReference = TargetDateField, Value = targetDate.ToString("o") },
+                new() { WorkItemId = storyId, TargetFieldReference = AdditionalInfoField, Value = "September 01, 2026" },
+                new() { WorkItemId = secondStoryId, TargetFieldReference = AgeField, Value = "15" }
             };
 
             var writeResult = await subject.WriteFieldsToWorkItems(connection, updates);
@@ -349,16 +454,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(writeResult.AllSucceeded, Is.True, () => string.Join("; ", writeResult.ItemResults.Where(r => !r.Success).Select(r => $"{r.WorkItemId}/{r.TargetFieldReference}: {r.ErrorMessage}")));
                 Assert.That(writeResult.SuccessCount, Is.EqualTo(3));
 
-                var dateReadBack = await ReadBackFeatureAdditionalField(subject, connection, FeatureId, TargetDateField, 108);
+                var dateReadBack = await ReadBackFeatureAdditionalField(subject, connection, featureId, TargetDateField, 108);
                 Assert.That(dateReadBack, Is.Not.Null.And.Not.Empty);
                 var parsedDate = DateTime.Parse(dateReadBack!, CultureInfo.InvariantCulture);
                 Assert.That(parsedDate.Date, Is.EqualTo(targetDate.Date));
 
-                var textReadBack = await ReadBackStoryAdditionalField(subject, connection, "367", AdditionalInfoField, 109);
+                var textReadBack = await ReadBackStoryAdditionalField(subject, connection, storyId, AdditionalInfoField, 109);
                 Assert.That(textReadBack, Is.Not.Null.And.Not.Empty);
                 Assert.That(textReadBack, Does.Contain("2026"));
 
-                var numericReadBack = await ReadBackStoryAdditionalField(subject, connection, "375", AgeField, 110);
+                var numericReadBack = await ReadBackStoryAdditionalField(subject, connection, secondStoryId, AgeField, 110);
                 Assert.That(numericReadBack, Is.Not.Null.And.Not.Empty);
                 Assert.That(numericReadBack, Does.Contain("15"));
             }
