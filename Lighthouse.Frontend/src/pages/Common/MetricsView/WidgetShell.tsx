@@ -33,7 +33,7 @@ type WidgetFooter = {
 type WidgetInfo = {
 	readonly description: string;
 	readonly learnMoreUrl: string;
-	readonly statusGuidance: WidgetStatusGuidance;
+	readonly statusGuidance?: WidgetStatusGuidance;
 };
 
 export type ViewDataPayload = {
@@ -287,7 +287,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 															color="text.secondary"
 															sx={{ lineHeight: 1.45 }}
 														>
-															{info.statusGuidance[guidanceKey]}
+															{info.statusGuidance?.[guidanceKey]}
 														</Typography>
 													</Box>
 												))}

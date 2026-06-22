@@ -525,6 +525,11 @@ function buildViewData(
 			items: inputs.inProgressItems,
 			highlightColumn: ageHighlight,
 		},
+		workItemAgePercentiles: {
+			title: `${inputs.title} in Progress`,
+			items: inputs.inProgressItems,
+			highlightColumn: ageHighlight,
+		},
 		throughput: {
 			title: `${inputs.title} Completed`,
 			items: throughputItems,
