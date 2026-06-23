@@ -17,6 +17,7 @@ describe("widgetInfoMetadata", () => {
 			"predictabilityScore",
 			"predictabilityScoreDetails",
 			"percentiles",
+			"workItemAgePercentiles",
 			"totalWorkItemAge",
 			"throughput",
 			"cycleScatter",
@@ -53,9 +54,13 @@ describe("widgetInfoMetadata", () => {
 			expect(entry.description.length).toBeGreaterThan(0);
 			expect(entry.learnMoreUrl).toContain(DOCS_BASE);
 			expect(entry.learnMoreUrl).toMatch(/#.+/);
-			expect(entry.statusGuidance.sustain.length).toBeGreaterThan(0);
-			expect(entry.statusGuidance.observe.length).toBeGreaterThan(0);
-			expect(entry.statusGuidance.act.length).toBeGreaterThan(0);
+			// statusGuidance is optional: widgets without a RAG status indicator
+			// (e.g. Work Item Age Percentiles) omit it. When present it must be complete.
+			if (entry.statusGuidance) {
+				expect(entry.statusGuidance.sustain.length).toBeGreaterThan(0);
+				expect(entry.statusGuidance.observe.length).toBeGreaterThan(0);
+				expect(entry.statusGuidance.act.length).toBeGreaterThan(0);
+			}
 		}
 	});
 
@@ -75,13 +80,13 @@ describe("widgetInfoMetadata", () => {
 		expect(info).toBeDefined();
 		expect(info?.description.length).toBeGreaterThan(0);
 		expect(info?.learnMoreUrl).toBe(`${DOCS_BASE}#cumulative-time-per-state`);
-		expect(info?.statusGuidance.sustain).toBe(
+		expect(info?.statusGuidance?.sustain).toBe(
 			"No single state holds 40% or more of the total time.",
 		);
-		expect(info?.statusGuidance.observe).toBe(
+		expect(info?.statusGuidance?.observe).toBe(
 			"One state holds between 40% and 60% of the total time.",
 		);
-		expect(info?.statusGuidance.act).toBe(
+		expect(info?.statusGuidance?.act).toBe(
 			"One state holds more than 60% of the total time, or no time is in scope. Investigate the bottleneck or widen the filter.",
 		);
 	});

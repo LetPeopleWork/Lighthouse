@@ -3701,6 +3701,48 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
+	describe("Work Item Age Percentiles widget chrome", () => {
+		// Regression: the workItemAgePercentiles widget shipped without any
+		// chrome wiring, so WidgetShell rendered no header bar (no info button,
+		// no view-data button). Per the docs this widget has info + view-data
+		// but intentionally no status indicator and no trend.
+		it("wires info and view-data chrome but no status badge or trend", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			// flow-overview default category includes workItemAgePercentiles
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-info-workItemAgePercentiles"),
+				).toBeInTheDocument();
+				expect(
+					screen.getByTestId("widget-info-link-workItemAgePercentiles"),
+				).toHaveAttribute(
+					"href",
+					expect.stringContaining("widgets.html#work-item-age-percentiles"),
+				);
+				expect(
+					screen.getByTestId("widget-view-data-workItemAgePercentiles"),
+				).toBeInTheDocument();
+			});
+
+			// Documented behaviour: no RAG status indicator and no trend arrow
+			expect(
+				screen.queryByTestId("widget-rag-workItemAgePercentiles"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("widget-trend-workItemAgePercentiles"),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	describe("View Data Shell Wiring", () => {
 		it("passes viewData to cycle time percentiles widget", async () => {
 			renderWithRouter(

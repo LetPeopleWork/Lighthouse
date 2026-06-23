@@ -9,7 +9,9 @@ export interface WidgetStatusGuidance {
 export interface WidgetInfoEntry {
 	readonly description: string;
 	readonly learnMoreUrl: string;
-	readonly statusGuidance: WidgetStatusGuidance;
+	// Optional: widgets without a RAG status indicator (e.g. snapshot metrics)
+	// provide no status guidance and render only the description + Learn More.
+	readonly statusGuidance?: WidgetStatusGuidance;
 }
 
 export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
@@ -98,6 +100,11 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 				"The percentage of items within SLE is below target by up to 20 percentage points.",
 			act: "No SLE is configured, no closed items exist in range, or within-SLE performance is more than 20 percentage points below target.",
 		},
+	},
+	workItemAgePercentiles: {
+		description:
+			"The 50th, 70th, 85th, and 95th percentiles of Work Item Age for the items that are currently in progress — a live snapshot of how long your in-progress work has been ageing right now.",
+		learnMoreUrl: `${DOCS_BASE}#work-item-age-percentiles`,
 	},
 	totalWorkItemAge: {
 		description:
