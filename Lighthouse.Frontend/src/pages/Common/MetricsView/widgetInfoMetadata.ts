@@ -103,7 +103,7 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 	},
 	workItemAgePercentiles: {
 		description:
-			"Work Item Age percentiles (50th, 70th, 85th, and 95th) for the items currently in progress — a live snapshot of how long your in-progress work has been ageing right now. Unlike Cycle Time Percentiles, which summarizes completed work, this has no status indicator.",
+			"The 50th, 70th, 85th, and 95th percentiles of Work Item Age for the items that are currently in progress — a live snapshot of how long your in-progress work has been ageing right now.",
 		learnMoreUrl: `${DOCS_BASE}#work-item-age-percentiles`,
 	},
 	totalWorkItemAge: {
