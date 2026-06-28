@@ -266,6 +266,18 @@ external_roslyn:CA1861 ::: cs ::: (Is|Does|Has)\.\w+\(new\[\] ::: CA1861 — ext
 
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
 
+### 2026-06-28 — shelldre:S7688: shell `.sh` files are Sonar-linted; use `[[ ]]` not `[ ]`
+- **Symptom**: `sonar-gates` `new_violations = 5` (MAJOR `shelldre:S7688`, "Use '[[' instead of '[' for conditional tests") on `chart/scripts/version-guard.sh:21,22,26,39` and `chart/scripts/publish.sh:24`. The backend SonarCloud quality gate on `main` was `ERROR`; every GH Actions job was otherwise fine. A local build never sees this — shell files aren't compiled.
+- **Root cause**: The SonarScanner-for-.NET indexes ALL of `sonar.sources`, including bash `.sh` scripts, and lints them with the `shelldre` (shell) analyzer — the bash sibling of the `powershelldre` rules already in this ledger. POSIX `[ ]` `test` is flagged in favour of bash `[[ ]]` (safer: no word-splitting/glob on operands, supports `&&`/`==`/pattern-match).
+- **Fix**: Replaced every `[ … ]` with `[[ … ]]` in the two chart scripts (and `=` → `==` for the string compare). `chart/scripts/{version-guard,publish}.sh`.
+- **Rule going forward**: In any committed bash script (shebang `#!/usr/bin/env bash`), always use `[[ … ]]` for conditionals, never `[ … ]` — Sonar fires `shelldre:S7688` (MAJOR) otherwise. Note the gate-clear path below.
+
+### 2026-06-28 — pushes to main don't re-scan Sonar; only PRs and the Nightly do
+- **Symptom**: After fixing `new_violations` and pushing straight to `main`, the gate stayed `ERROR`. Manually dispatching the `Build And Deploy Lighthouse` workflow also did nothing.
+- **Root cause**: `ci.yml` runs the backend Sonar SCAN only on PRs (`run_sonar: ${{ github.event_name == 'pull_request' }}`); a push to `main` runs `sonar-gates` as an API STATUS-CHECK against the last analysis (no new scan). A `workflow_dispatch` of the main CI skips even that (the check is `github.event_name == 'push'`-gated). The only thing that re-analyses `main` is the **Nightly Backend CI** (`.github/workflows/nightly.yml`, `run_sonar: true`, `workflow_dispatch`-able).
+- **Fix**: Land the code fix on `main`, then dispatch **Nightly Backend CI** to re-scan and clear the gate.
+- **Rule going forward**: To clear a backend Sonar gate failure on `main` (trunk-based, no PRs), fix + push, then trigger the **Nightly Backend CI** workflow (`gh workflow run nightly.yml -R LetPeopleWork/Lighthouse`) — dispatching the main `Build And Deploy` workflow will NOT re-scan.
+
 ### 2026-06-20 — external_roslyn:SYSLIB1045: don't `new Regex(...)`, prefer no regex (or `[GeneratedRegex]`)
 - **Symptom**: `sonar-gates` `new_violations = 1` (INFO `external_roslyn:SYSLIB1045`, "Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time") on `Lighthouse.Backend.Tests/Health/MigrationsAppliedHealthCheckTest.cs:16` after the epic-5305 slice-02 health-checks push (HEAD ba0a928f). Every other job green; a clean Release `dotnet build` did NOT catch it (INFO, Sonar-only).
 - **Root cause**: a test asserted a message format with `private static readonly Regex = new(@"...", RegexOptions.Compiled)`. SYSLIB1045 flags any runtime-constructed `Regex` that has a constant pattern, steering you to the source-generated `[GeneratedRegex]` partial method instead.
