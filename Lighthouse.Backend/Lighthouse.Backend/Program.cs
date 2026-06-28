@@ -247,6 +247,7 @@ namespace Lighthouse.Backend
 
             ConfigureCors(builder, authConfig);
             ForwardedHeadersConfigurator.Configure(builder.Services, builder.Configuration, authConfig);
+            ConfigureDataProtection(builder);
             ConfigureAuthentication(builder, authConfig);
             ConfigureRateLimiting(builder);
             ConfigureHealthChecks(builder);
@@ -772,6 +773,36 @@ namespace Lighthouse.Backend
             builder.Services.Configure<HostOptions>(options =>
                 options.ShutdownTimeout = TimeSpan.FromSeconds(shutdownConfig.TimeoutSeconds));
             builder.Services.AddHostedService<GracefulShutdownService>();
+        }
+
+        private static void ConfigureDataProtection(WebApplicationBuilder builder)
+        {
+            // Auth cookies and the OIDC correlation cookie are encrypted with Data Protection keys.
+            // When more than one replica runs, every pod has to share the same key ring, otherwise a
+            // cookie issued by one pod cannot be read by another and the OIDC login round trip fails
+            // with a redirect loop. The key ring goes to Redis (the same store the scaling backplane
+            // uses) when one is configured, and to the local filesystem otherwise for single instance
+            // and standalone. A stable application name keeps the ring name identical on every pod.
+            var dataProtection = builder.Services
+                .AddDataProtection()
+                .SetApplicationName("Lighthouse");
+
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            if (string.IsNullOrWhiteSpace(redisConnectionString))
+            {
+                var keyStoreDir = ResolveDataProtectionKeyStoreDir(builder);
+                Directory.CreateDirectory(keyStoreDir);
+                dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyStoreDir));
+                return;
+            }
+
+            // Lazy connect so a not-yet-ready Redis at boot does not crash startup; the key ring is
+            // first touched on the first auth request, by which point Redis is up.
+            var multiplexer = new Lazy<IConnectionMultiplexer>(
+                () => ConnectionMultiplexer.Connect(redisConnectionString));
+            dataProtection.PersistKeysToStackExchangeRedis(
+                () => multiplexer.Value.GetDatabase(),
+                "Lighthouse:DataProtection:Keys");
         }
 
         private static void MapHealthEndpoints(WebApplication app)
