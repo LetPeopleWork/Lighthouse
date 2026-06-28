@@ -7,6 +7,16 @@ nav_order: 3
 
 # Run Lighthouse on Kubernetes with Helm
 
+{: .warning }
+> ## 🚧 Preview
+>
+> **Kubernetes / Helm support is a preview feature and under active development.** The chart works and
+> is dogfooded end to end (simple install, OIDC login, horizontal scaling, MCP), but values and defaults
+> may still change between versions, and some pieces are not finished — most notably, **MCP OAuth
+> auto-discovery through the Ingress is still being completed** (see [Scenario 4](#scenario-4--mcp-server-oidc-oauth)).
+> Validate it in a non-production environment before you rely on it, and pin a specific chart + image
+> version. Feedback welcome.
+
 Lighthouse ships an official Helm chart so you can run the **Server** edition on any Kubernetes
 cluster — bundled or external PostgreSQL, optional OIDC login, an optional MCP server, and horizontal
 scaling — from a public chart repository, with no source checkout and no sales call.
@@ -163,25 +173,45 @@ ingress:
 
 Other controllers (Traefik, etc.) have their own equivalent; `ingress.annotations` passes any through.
 
-## Demo walkthrough
+## How-to: the four scenarios
 
-A reproducible end-to-end tour against the real published image. Run the stages in order; each prints
-its documented observable output.
+A progressive walkthrough that builds a full deployment one capability at a time. Each scenario is a
+`helm upgrade --reuse-values` on top of the previous one, so you can stop at the shape you need:
 
-### 1. Install
+1. **[Simple](#scenario-1--simple-no-auth)** — bundled Postgres + the backend, no auth.
+2. **[Login](#scenario-2--add-login-oidc)** — add OIDC sign-in (Keycloak, Entra, Auth0, …).
+3. **[Scale out](#scenario-3--scale-out)** — multiple replicas behind a Redis backplane.
+4. **[MCP server](#scenario-4--mcp-server-oidc-oauth)** — expose the MCP HTTP server with OAuth.
+
+### Scenario 1 — simple, no auth
+
+The smallest working instance: one API workload (it serves the SPA in-process) and a bundled Postgres.
+No Ingress, no identity provider — reach it with a port-forward.
 
 ```sh
 helm install l8e letpeoplework/lighthouse \
-  --set postgresql.auth.password='change-me' --set ingress.enabled=false --wait --timeout 5m
-kubectl get pods -l app.kubernetes.io/instance=l8e
+  --set postgresql.auth.password='change-me' \
+  --set ingress.enabled=false --wait --timeout 5m
+
+kubectl port-forward svc/l8e-lighthouse-api 8080:80
+# open http://localhost:8080
 ```
 
-**Observable:** `l8e-lighthouse-api-*` and `l8e-lighthouse-postgres-0` both `Running` (`1/1`).
+**You should see:** `l8e-lighthouse-api-*` and `l8e-lighthouse-postgres-0` both `Running` (`1/1`), and
+the Lighthouse landing page with **no login prompt**. (An init container waits for Postgres first, so
+the API does not crash-loop on a cold database.)
 
-### 2. Auth (OIDC)
+### Scenario 2 — add login (OIDC)
 
-OIDC login is **Premium** — import your licence first (Settings → Licence) while auth is still off, then
-point the instance at your identity provider and upgrade (see [Login (OIDC)](#login-oidc) for the why):
+Turn on sign-in against your identity provider. This is a **Premium** feature, and the order matters —
+read [Login (OIDC)](#login-oidc) for the full why. In short:
+
+**Step 1 — import your licence while auth is still off** (Settings → Licence in the app from Scenario 1).
+Without a valid Premium licence the instance stays in *blocked* mode and nobody can sign in; and once
+OIDC is on you can no longer reach the licence import unauthenticated. So licence first, OIDC second.
+
+**Step 2 — enable OIDC + the Ingress** (and TLS for any real IdP — Entra and most providers reject
+non-HTTPS redirect URIs):
 
 ```sh
 helm upgrade l8e letpeoplework/lighthouse --reuse-values \
@@ -189,54 +219,73 @@ helm upgrade l8e letpeoplework/lighthouse --reuse-values \
   --set oidc.issuer='https://your-idp.example/realms/lighthouse' \
   --set oidc.clientId='lighthouse' \
   --set oidc.clientSecret='<client-secret>' \
-  --set ingress.enabled=true --set ingress.host='lighthouse.example.com'
-  # add --set oidc.requireHttpsMetadata=false ONLY for a plain-HTTP dev issuer
+  --set ingress.enabled=true --set ingress.className=nginx \
+  --set ingress.host='lighthouse.example.com' \
+  --set ingress.tls=true --set ingress.tlsSecretName='lighthouse-tls' \
+  --set 'app.proxy.trustedNetworks[0]=10.0.0.0/8' \
+  --set 'ingress.annotations.nginx\.ingress\.kubernetes\.io/proxy-buffer-size=16k'
+  # plain-HTTP dev issuer only: add --set oidc.requireHttpsMetadata=false
 ```
 
-**Observable:** `/api/latest/auth/mode` returns `Enabled`; an unauthenticated request to the app
-redirects to the IdP's login page; after sign-in the IdP returns to `oidc.callbackPath`
-(`/api/auth/callback`) and you land in Lighthouse.
+Register the redirect URI **`https://<ingress.host>/api/auth/callback`** in your IdP.
 
-### 3. MCP
+{: .important }
+The `proxy-buffer-size` annotation is **required behind ingress-nginx** — the OIDC callback's large
+`Set-Cookie` overflows the default 4 KB buffer and login fails with **502**. See
+[Login (OIDC)](#login-oidc).
 
-Enable the MCP HTTP server so AI clients can query your flow data. With `mcp.auth.mode=oauth` the MCP
-server reuses the same `oidc.issuer` + `oidc.audience` you configured in step 2 — callers present their
-own IdP Bearer token, which the MCP server forwards to the API:
+**You should see:** `/api/latest/auth/mode` returns `Enabled`; opening `https://<ingress.host>` redirects
+you to the IdP, and after sign-in you land back in Lighthouse authenticated. The **same `oidc.*` block**
+works for any provider — only the values change.
 
-```sh
-helm upgrade l8e letpeoplework/lighthouse --reuse-values \
-  --set mcp.enabled=true --set mcp.auth.mode=oauth
-  # requires oidc.audience (set in step 2); the MCP server needs both issuer and resource
-kubectl rollout status deploy/l8e-lighthouse-mcp
-kubectl port-forward svc/l8e-lighthouse-mcp 3000:80
-# initialize handshake responds (text/event-stream)
-curl -s -X POST http://127.0.0.1:3000/mcp \
-  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"c","version":"1"}}}'
-```
+### Scenario 3 — scale out
 
-**Observable:** the `l8e-lighthouse-mcp` Deployment becomes available and answers on the `/mcp` Ingress
-path. Tool calls that reach the API without a valid Bearer token are rejected (`unauthorized`) — auth is
-enforced end to end.
-
-### 4. Scaling
-
-Scale the API horizontally — this **requires** Redis as the backplane:
+Run more than one API replica behind a Redis backplane. Redis is the SignalR backplane, the
+single-instance background-work lock (so the fleet syncs once), **and** the shared Data Protection key
+store — that last part is what lets a login cookie issued by one pod be read by another, so OIDC keeps
+working across replicas. The chart wires all three automatically once `redis.connectionString` is set.
 
 ```sh
 helm upgrade l8e letpeoplework/lighthouse --reuse-values \
   --set replicaCount=2 \
   --set redis.connectionString='redis-master.redis.svc.cluster.local:6379'
 kubectl rollout status deploy -l app.kubernetes.io/instance=l8e
-kubectl get pods -l app.kubernetes.io/instance=l8e
 ```
 
-**Observable:** two API pods run side by side, the rolling update completes with zero downtime, and
-background sync still runs once across the fleet (the Redis single-instance lock).
+**You should see:** two API pods running side by side, a zero-downtime rolling update, and — still able
+to sign in (the login round-trip survives requests landing on either pod). Background sync runs once
+across the fleet.
 
 {: .note}
-Setting `replicaCount > 1` without `redis.connectionString` is rejected at install time (fail-fast) —
-the chart will not bring up a split-brain fleet.
+`replicaCount > 1` **requires** `redis.connectionString` — the chart rejects the install otherwise, so it
+never brings up a split-brain fleet.
+
+### Scenario 4 — MCP server (OIDC oauth)
+
+Expose the optional MCP HTTP server so AI clients can query your flow data. With `mcp.auth.mode=oauth`
+the MCP server reuses the **same** `oidc.issuer` + `oidc.audience` from Scenario 2 — you configure the
+identity once. Callers present their own IdP Bearer token, which the MCP server forwards to the API; the
+API validates it. No-auth and shared-API-key modes are not used here.
+
+```sh
+helm upgrade l8e letpeoplework/lighthouse --reuse-values \
+  --set mcp.enabled=true --set mcp.auth.mode=oauth \
+  --set mcp.image='ghcr.io/letpeoplework/lighthouse-clients/mcp-http:1.3.0'
+  # mcp.auth.mode=oauth requires oidc.audience (set in Scenario 2) — the server needs issuer AND resource
+kubectl rollout status deploy/l8e-lighthouse-mcp
+```
+
+**You should see:** the `l8e-lighthouse-mcp` Deployment available on the `/mcp` Ingress path; the MCP
+server advertises RFC 9728 protected-resource metadata at `/.well-known/oauth-protected-resource`
+(naming your IdP as the authorization server and `oidc.audience` as the resource); and a tool call
+without a valid Bearer is rejected with `401` + a `WWW-Authenticate` challenge — auth is enforced end to
+end.
+
+{: .warning }
+> **Preview limitation.** OAuth **auto-discovery from an external MCP client (e.g. Claude Desktop)
+> through the Ingress is not finished yet** — the advertised metadata URL currently uses the wrong scheme
+> and path behind the `/mcp` ingress mount, so a client cannot complete the browser OAuth flow against
+> the public host. Direct-to-service access and enforcement are correct. Tracked and being completed.
 
 ## Uninstall
 

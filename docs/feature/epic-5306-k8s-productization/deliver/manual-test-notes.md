@@ -176,6 +176,8 @@ Findings:
 
 | 11 | OIDC login breaks at replicaCount>1 — Data Protection keys not shared across pods (redirect loop) | FIX-NOW (backend) | ⏳ Program.cs `PersistKeysToFileSystem` → per-pod local dir. At scale, the OIDC cookie set by pod A is undecryptable on pod B → "too many redirects". epic-5305 shipped the Redis backplane + advisory lock but missed DP key sharing. Fix: `PersistKeysToStackExchangeRedis` + `SetApplicationName` when Redis is configured (same trigger as the backplane). Also covers the per-pod OAuth state secret. Live-repro on kind at replicaCount=2 + Entra. |
 
+| 12 | MCP OAuth discovery broken through the public ingress (mcp-http 1.3.0) | INVESTIGATE | ⏳ Direct-to-service works (metadata + 401 challenge + enforcement all correct). But via the ingress the `WWW-Authenticate` `resource_metadata` URL is (a) `http://` not `https://` (mcp-http ignores X-Forwarded-Proto), and (b) at root `/.well-known/oauth-protected-resource`, which the chart ingress routes to the API (`/` catch-all → 302), not MCP; `/mcp/.well-known/...` → 404 (mcp-http serves at root, not under the /mcp mount). External MCP clients can't auto-discover the IdP. Spans: chart ingress routing for the well-known path + the LIGHTHOUSE_OAUTH_RESOURCE value (root vs /mcp) + mcp-http forwarded-proto/base-path handling (lighthouse-clients). Needs design. **Story ADO #5362 created (child of Epic 5306) — deferred.** Root cause pinpointed: mcp-http `bin.ts:227` hardcodes `http://${req.headers.host}/.well-known/...`. |
+
 ### Browser round-trip (manual, on kind-l8e-test via /etc/hosts → node bridge IP 172.23.0.2)
 - **Scenario 1** ✅ (port-forward, no auth) — landing page, no login.
 - **Scenario 2a (Keycloak)** ✅ **full browser login confirmed** — lighthouse.local → Keycloak login →
