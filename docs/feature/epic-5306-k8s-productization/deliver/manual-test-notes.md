@@ -172,3 +172,12 @@ Findings:
 | 7 | `cluster-substrate` readiness probe destructive + ERROR-spams every 10s on healthy scaled pods (epic-5305 BACKEND, not chart) | FIX-NOW | ✅ Fixed (Program.cs `StartupOnlyTags` — substrate gates startup only, off readiness) + regression test `ClusterSubstrateProbeRegistrationTest`. Build + 111 health/security tests green. |
 | 8 | MCP server binds 127.0.0.1 → Service/Ingress 502 | FIX-NOW | ✅ Fixed in chart (`HOST=0.0.0.0` in mcp.yaml). helm-unittest + docs added. |
 | 9 | MCP oauth doesn't advertise protected-resource metadata (RFC 9728) | FIX-NOW (chart) + RELEASE (clients) | ✅ Root cause: (a) chart never set `LIGHTHOUSE_OAUTH_RESOURCE` / `Authentication:Audience`; (b) published mcp-http 1.2.1 predates the feature. Feature IS implemented in lighthouse-clients HEAD (commit c2efcf1, ADR-079, pending changeset release). **Chart fix**: new `oidc.audience` → `Authentication__Audience` + MCP `LIGHTHOUSE_OAUTH_RESOURCE`, required when `mcp.auth.mode=oauth` (mcp-http needs BOTH issuer+resource or it refuses to start). Pin `mcp.image` to the release that includes c2efcf1 once published. |
+| 10 | OIDC login 502s out-of-the-box behind ingress-nginx — large callback Set-Cookie overflows the default 4k proxy buffer | FIX-NOW | ✅ Found during live browser login (Keycloak): `upstream sent too big header ... POST /api/auth/callback`. Added `ingress.annotations` passthrough; set `nginx.ingress.kubernetes.io/proxy-buffer-size: 16k`. Verified live — login round-trip completes. helm-unittest + docs added. |
+
+### Browser round-trip (manual, on kind-l8e-test via /etc/hosts → node bridge IP 172.23.0.2)
+- **Scenario 1** ✅ (port-forward, no auth) — landing page, no login.
+- **Scenario 2a (Keycloak)** ✅ **full browser login confirmed** — lighthouse.local → Keycloak login →
+  testuser/testpass → callback (after the buffer fix) → authenticated. Exercised AllowedOrigins +
+  requireHttpsMetadata=false + licence-before-OIDC ordering + the new proxy-buffer annotation.
+- Lab note: this box's docker loopback DNAT (127.0.0.1:80) is broken; browser reaches the ingress via
+  the kind node bridge IP (172.23.0.2), not 127.0.0.1. Not a chart issue.

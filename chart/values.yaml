@@ -21,6 +21,12 @@ frontend:
 ingress:
   # -- Render an Ingress for the API.
   enabled: true
+  # -- Extra annotations for the Ingress (controller-specific). When OIDC is enabled behind
+  #    ingress-nginx you MUST raise the proxy buffer, or the large Set-Cookie response on the OIDC
+  #    callback overflows the default 4k buffer and the login round-trip fails with 502. Example:
+  #    annotations:
+  #      nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+  annotations: {}
   # -- Ingress class name (e.g. traefik, nginx). Empty uses the cluster default.
   className: ""
   # -- Public hostname the app is served on (drives the OIDC callback + NOTES.txt URL).

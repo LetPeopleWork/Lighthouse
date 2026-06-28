@@ -55,6 +55,7 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | image.pullPolicy | string | `"IfNotPresent"` | Image pull policy. |
 | frontend.mode | string | `"embedded"` | Frontend topology: embedded (API serves the SPA, default/standalone parity) or split.    split is NOT implemented in this chart version and fails loud (ADR-081). |
 | ingress.enabled | bool | `true` | Render an Ingress for the API. |
+| ingress.annotations | object | `{}` | Extra annotations for the Ingress (controller-specific). When OIDC is enabled behind    ingress-nginx you MUST raise the proxy buffer, or the large Set-Cookie response on the OIDC    callback overflows the default 4k buffer and the login round-trip fails with 502. Example:    annotations:      nginx.ingress.kubernetes.io/proxy-buffer-size: "16k" |
 | ingress.className | string | `""` | Ingress class name (e.g. traefik, nginx). Empty uses the cluster default. |
 | ingress.host | string | `"lighthouse.local"` | Public hostname the app is served on (drives the OIDC callback + NOTES.txt URL). |
 | ingress.tls | bool | `false` | Enable TLS on the Ingress (host must be set). |

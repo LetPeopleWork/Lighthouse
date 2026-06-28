@@ -148,6 +148,21 @@ Key OIDC values:
 The same `oidc.*` block drives any OIDC provider — Keycloak, Microsoft Entra, Auth0, Okta — and is
 reused by the MCP server (`mcp.auth.mode=oauth`); you configure the issuer once.
 
+{: .important}
+**Behind ingress-nginx, raise the proxy buffer for OIDC.** The OIDC callback returns a large
+`Set-Cookie` (the session holds the IdP tokens), which overflows ingress-nginx's default 4&nbsp;KB
+response-header buffer — the login round-trip then fails with **502 Bad Gateway** on
+`/api/auth/callback`. Set it via `ingress.annotations`:
+
+```yaml
+ingress:
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+```
+
+Other controllers (Traefik, etc.) have their own equivalent; `ingress.annotations` passes any through.
+
 ## Demo walkthrough
 
 A reproducible end-to-end tour against the real published image. Run the stages in order; each prints

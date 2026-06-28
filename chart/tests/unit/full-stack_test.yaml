@@ -34,6 +34,17 @@ tests:
       - failedTemplate:
           errorMessage: "mcp.enabled=true requires mcp.image (the lighthouse-clients mcp-http image)"
 
+  - it: ingress renders controller-specific annotations (e.g. nginx OIDC proxy buffer)
+    set:
+      postgresql.auth.password: pw
+      ingress.annotations:
+        nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    template: templates/ingress.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-buffer-size"]
+          value: "16k"
+
   - it: ingress routes /mcp to the MCP service when enabled
     set:
       postgresql.auth.password: testpass
