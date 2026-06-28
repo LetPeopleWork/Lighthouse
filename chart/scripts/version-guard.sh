@@ -18,12 +18,12 @@ fail() { echo "✗ publish guard: $*" >&2; exit 1; }
 chart_meta="$(helm show chart "$CHART_DIR")"
 chart_version="$(printf '%s\n' "$chart_meta" | awk '/^version:/    {print $2; exit}' | tr -d '"')"
 app_version="$(printf '%s\n'   "$chart_meta" | awk '/^appVersion:/ {print $2; exit}' | tr -d '"')"
-[ -n "$chart_version" ] || fail "could not read Chart.yaml version"
-[ -n "$app_version" ]   || fail "could not read Chart.yaml appVersion"
+[[ -n "$chart_version" ]] || fail "could not read Chart.yaml version"
+[[ -n "$app_version" ]]   || fail "could not read Chart.yaml appVersion"
 
 # --- 1. appVersion == values-enterprise.yaml image.tag (the pinned production image) -----------
 ent_tag="$(awk '/^image:/{f=1} f&&/^[[:space:]]*tag:/{gsub(/"/,"",$2); print $2; exit}' "$CHART_DIR/values-enterprise.yaml")"
-[ "$ent_tag" = "$app_version" ] || fail "appVersion ($app_version) != values-enterprise.yaml image.tag ($ent_tag)"
+[[ "$ent_tag" == "$app_version" ]] || fail "appVersion ($app_version) != values-enterprise.yaml image.tag ($ent_tag)"
 
 # --- 2. NOTES.txt surfaces the live chart version (templated → agrees by construction) ---------
 grep -q '\.Chart\.Version' "$CHART_DIR/templates/NOTES.txt" \
@@ -36,7 +36,7 @@ grep -qF "$app_version" "$CHART_DIR/README.md" \
   || fail "README does not reference appVersion $app_version"
 
 # --- 4. no silent overwrite of an already-published version ------------------------------------
-if [ -f "$INDEX" ] && grep -qE "version:[[:space:]]*${chart_version//./\\.}([^0-9]|$)" "$INDEX"; then
+if [[ -f "$INDEX" ]] && grep -qE "version:[[:space:]]*${chart_version//./\\.}([^0-9]|$)" "$INDEX"; then
   fail "chart version $chart_version already exists in $INDEX — bump Chart.yaml version before publishing (no silent overwrite)"
 fi
 

@@ -21,7 +21,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$OUT"
 helm package "$CHART_DIR" -d "$OUT"
 
-if [ -f "$OUT/index.yaml" ]; then
+if [[ -f "$OUT/index.yaml" ]]; then
   helm repo index "$OUT" --url "$REPO_URL" --merge "$OUT/index.yaml"
 else
   helm repo index "$OUT" --url "$REPO_URL"
