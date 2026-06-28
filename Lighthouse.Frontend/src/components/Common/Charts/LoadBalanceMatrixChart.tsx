@@ -53,7 +53,7 @@ function formatTick(value: number): string {
 	if (value >= 1) {
 		return value.toFixed(1).replace(".0", "");
 	}
-	return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+	return `${Number(value.toFixed(2))}`;
 }
 
 function clamp(value: number, min: number, max: number): number {
