@@ -19,6 +19,26 @@ spec:
     spec:
       # epic-5305 #5309 graceful shutdown: drain bounded by Shutdown:TimeoutSeconds.
       terminationGracePeriodSeconds: {{ .Values.shutdownTimeoutSeconds }}
+      # Wait for the database to accept connections before starting the API, so a not-yet-ready
+      # Postgres (bundled StatefulSet still booting, or a managed DB warming up) does not crash-loop
+      # the API on first boot. Standalone is unaffected (it does not use this chart).
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "lighthouse.db.host" . }} {{ include "lighthouse.db.port" . }}; do
+                echo "waiting for database {{ include "lighthouse.db.host" . }}:{{ include "lighthouse.db.port" . }}"
+                sleep 2
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
       containers:
         - name: api
           image: "{{ .Values.image.repository }}:{{ include "lighthouse.imageTag" . }}"

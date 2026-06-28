@@ -86,8 +86,23 @@ oidc:
   clientId: ""
   # -- OIDC client secret (REQUIRED when oidc.enabled).
   clientSecret: ""
+  # -- API audience / resource identifier (Authentication:Audience). When set, the backend validates the
+  #    JWT `aud` claim on bearer tokens, and the MCP server advertises it as the RFC 9728 protected
+  #    resource (LIGHTHOUSE_OAUTH_RESOURCE). REQUIRED when mcp.auth.mode=oauth. Empty = no audience
+  #    validation (browser cookie login still works). Deployment-specific — set it to the API's resource
+  #    identifier registered in your IdP (e.g. an Entra Application ID URI, or a Keycloak audience).
+  audience: ""
   # -- OIDC callback path.
   callbackPath: /api/auth/callback
+  # -- Require the OIDC issuer/metadata to be served over HTTPS (Authentication:RequireHttpsMetadata).
+  #    Keep true in production (Entra, Keycloak-behind-TLS, etc.). Set false ONLY for a plain-HTTP
+  #    issuer in local/dev clusters — the backend otherwise refuses to load HTTP OIDC metadata.
+  requireHttpsMetadata: true
+  # -- Browser-facing origins allowed to call the API under auth (Authentication:AllowedOrigins).
+  #    The backend fails closed if auth is on and this is empty (no wildcard CORS). Empty list =
+  #    derive the single ingress origin (scheme+host) from ingress.host/ingress.tls automatically.
+  #    Override only to allow extra origins (e.g. a separate SPA host).
+  allowedOrigins: []
 
 app:
   proxy:

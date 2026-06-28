@@ -30,13 +30,22 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            # Bind all interfaces — the mcp-http server defaults to 127.0.0.1, which is unreachable
+            # via the Service/Ingress in a pod (kube-proxy targets the pod IP). Without this the MCP
+            # Service refuses connections and the Ingress returns 502.
+            - name: HOST
+              value: "0.0.0.0"
             # In-cluster Lighthouse API base URL (the MCP server forwards the caller's own credential — ADR-079).
             - name: LIGHTHOUSE_URL
               value: "http://{{ include "lighthouse.fullname" . }}-api"
             {{- if eq .Values.mcp.auth.mode "oauth" }}
-            # Hosted OAuth: advertise protected-resource metadata + forward the caller Bearer (ADR-079).
+            # Hosted OAuth: advertise RFC 9728 protected-resource metadata + forward the caller Bearer
+            # (ADR-079). Issuer + resource come from the single oidc.* config (provided once); the
+            # mcp-http server requires BOTH or it refuses to start.
             - name: LIGHTHOUSE_OAUTH_ISSUER
               value: {{ required "oidc.issuer is required for mcp.auth.mode=oauth" .Values.oidc.issuer | quote }}
+            - name: LIGHTHOUSE_OAUTH_RESOURCE
+              value: {{ required "oidc.audience is required for mcp.auth.mode=oauth (the API resource identifier; mcp-http needs both issuer and resource)" .Values.oidc.audience | quote }}
             {{- end }}
 ---
 apiVersion: v1

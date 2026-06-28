@@ -121,3 +121,178 @@ tests:
       - equal:
           path: data.Authentication__TrustedProxies__0
           value: 10.0.0.1
+
+  # --- manual-test fixes (epic-5306 e2e dogfood): AllowedOrigins, RequireHttpsMetadata, MCP HOST, DB-wait ---
+
+  - it: AllowedOrigins defaults to the ingress origin (http) so auth does not fail closed
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+      ingress.host: lighthouse.example
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__AllowedOrigins__0
+          value: http://lighthouse.example
+
+  - it: AllowedOrigins uses https when ingress TLS is on
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+      ingress.host: lighthouse.example
+      ingress.tls: true
+      ingress.tlsSecretName: tls
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__AllowedOrigins__0
+          value: https://lighthouse.example
+
+  - it: AllowedOrigins can be overridden with explicit origins
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+      oidc.allowedOrigins:
+        - https://app.acme.example
+        - https://admin.acme.example
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__AllowedOrigins__0
+          value: https://app.acme.example
+      - equal:
+          path: data.Authentication__AllowedOrigins__1
+          value: https://admin.acme.example
+
+  - it: RequireHttpsMetadata defaults to true (production HTTPS issuers)
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__RequireHttpsMetadata
+          value: "true"
+
+  - it: RequireHttpsMetadata can be disabled for a plain-HTTP issuer
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: http://keycloak.local/realms/lighthouse
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+      oidc.requireHttpsMetadata: false
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__RequireHttpsMetadata
+          value: "false"
+
+  - it: MCP container binds all interfaces (HOST=0.0.0.0) so the Service is reachable
+    set:
+      postgresql.auth.password: pw
+      mcp.enabled: true
+    template: templates/mcp.yaml
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HOST
+            value: "0.0.0.0"
+
+  - it: MCP oauth mode reuses the single oidc.issuer + audience as the resource
+    set:
+      postgresql.auth.password: pw
+      mcp.enabled: true
+      mcp.auth.mode: oauth
+      oidc.issuer: https://idp.example/realms/acme
+      oidc.audience: https://lighthouse.acme/api
+    template: templates/mcp.yaml
+    documentIndex: 0
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LIGHTHOUSE_OAUTH_ISSUER
+            value: https://idp.example/realms/acme
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LIGHTHOUSE_OAUTH_RESOURCE
+            value: https://lighthouse.acme/api
+
+  - it: MCP oauth without an audience fails fast (mcp-http needs issuer AND resource)
+    set:
+      postgresql.auth.password: pw
+      mcp.enabled: true
+      mcp.auth.mode: oauth
+      oidc.issuer: https://idp.example/realms/acme
+    template: templates/mcp.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "oidc.audience is required for mcp.auth.mode=oauth (the API resource identifier; mcp-http needs both issuer and resource)"
+
+  - it: audience drives the API JWT aud validation when set
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+      oidc.audience: https://lighthouse.acme/api
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Authentication__Audience
+          value: https://lighthouse.acme/api
+
+  - it: no audience key when audience is unset
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: cs
+    template: templates/configmap.yaml
+    asserts:
+      - notExists:
+          path: data.Authentication__Audience
+
+  - it: API waits for the bundled database before starting
+    set:
+      postgresql.auth.password: pw
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-db
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].command[2]
+          pattern: "nc -z RELEASE-NAME-lighthouse-postgres 5432"
+
+  - it: API waits for an external database host and port
+    set:
+      postgresql.enabled: false
+      externalDatabase.host: pg.acme.internal
+      externalDatabase.port: 6543
+      externalDatabase.database: lh
+      externalDatabase.user: lh
+      externalDatabase.password: pw
+    template: templates/deployment-api.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].command[2]
+          pattern: "nc -z pg.acme.internal 6543"

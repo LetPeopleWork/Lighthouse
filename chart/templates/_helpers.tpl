@@ -45,6 +45,24 @@ app.kubernetes.io/component: postgres
 {{- printf "%s-db" (include "lighthouse.fullname" .) -}}
 {{- end -}}
 
+{{/* Effective DB host — bundled Postgres service or externalDatabase.host (for the startup wait) */}}
+{{- define "lighthouse.db.host" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- include "lighthouse.postgres.host" . -}}
+{{- else -}}
+{{- .Values.externalDatabase.host -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Effective DB port — bundled Postgres is 5432, else externalDatabase.port (default 5432) */}}
+{{- define "lighthouse.db.port" -}}
+{{- if .Values.postgresql.enabled -}}
+5432
+{{- else -}}
+{{- .Values.externalDatabase.port | default 5432 -}}
+{{- end -}}
+{{- end -}}
+
 {{/* DB-mode guard — exactly one of bundled Postgres or externalDatabase (ADR-080/082) */}}
 {{- define "lighthouse.assertDatabase" -}}
 {{- $ext := .Values.externalDatabase | default dict -}}

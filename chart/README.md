@@ -75,7 +75,10 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | oidc.issuer | string | `""` | OIDC authority / issuer URL. |
 | oidc.clientId | string | `""` | OIDC client id. |
 | oidc.clientSecret | string | `""` | OIDC client secret (REQUIRED when oidc.enabled). |
+| oidc.audience | string | `""` | API audience / resource identifier (Authentication:Audience). When set, the backend validates the    JWT `aud` claim on bearer tokens, and the MCP server advertises it as the RFC 9728 protected    resource (LIGHTHOUSE_OAUTH_RESOURCE). REQUIRED when mcp.auth.mode=oauth. Empty = no audience    validation (browser cookie login still works). Deployment-specific — set it to the API's resource    identifier registered in your IdP (e.g. an Entra Application ID URI, or a Keycloak audience). |
 | oidc.callbackPath | string | `"/api/auth/callback"` | OIDC callback path. |
+| oidc.requireHttpsMetadata | bool | `true` | Require the OIDC issuer/metadata to be served over HTTPS (Authentication:RequireHttpsMetadata).    Keep true in production (Entra, Keycloak-behind-TLS, etc.). Set false ONLY for a plain-HTTP    issuer in local/dev clusters — the backend otherwise refuses to load HTTP OIDC metadata. |
+| oidc.allowedOrigins | list | `[]` | Browser-facing origins allowed to call the API under auth (Authentication:AllowedOrigins).    The backend fails closed if auth is on and this is empty (no wildcard CORS). Empty list =    derive the single ingress origin (scheme+host) from ingress.host/ingress.tls automatically.    Override only to allow extra origins (e.g. a separate SPA host). |
 | app.proxy.trustedProxies | list | `[]` | Trusted reverse-proxy IPs (epic-5305 #5311) so OIDC redirect URIs + secure cookies are correct behind the ingress. |
 | app.proxy.trustedNetworks | list | `[]` | Trusted proxy CIDR networks. |
 | mcp.enabled | bool | `false` | Deploy the optional MCP HTTP server workload (ADR-085). Orthogonal to frontend.mode. |

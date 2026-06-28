@@ -53,7 +53,8 @@ flowchart LR
 - **Ingress → API.** The API serves the React SPA in-process (`frontend.mode=embedded`, the
   standalone-parity shape). Authentication is **in-app OIDC** (`oidc.*` → `Authentication:*`); there is
   no separate auth proxy — the API validates the IdP itself. Forwarded-headers (`app.proxy.*`) make the
-  redirect URIs and secure cookies correct behind the Ingress.
+  redirect URIs and secure cookies correct behind the Ingress. OIDC login is a **Premium** feature and
+  needs a valid licence — see [Login (OIDC)](#login-oidc).
 - **Ingress → MCP** (optional, `mcp.enabled`). The MCP HTTP server is an independent workload on the
   `/mcp` path; inbound auth is pass-through (`mcp.auth.mode` = `apikey` or `oauth`).
 - **API → PostgreSQL.** Bundled (`postgresql.enabled=true`, a StatefulSet) or external
@@ -118,9 +119,34 @@ for every option. The common production knobs:
 |---|---|
 | **Public URL + TLS** | `ingress.host`, `ingress.tls=true`, `ingress.tlsSecretName` |
 | **External database** | `postgresql.enabled=false`, `externalDatabase.{host,port,database,user,password}` |
-| **Login (OIDC)** | `oidc.enabled=true`, `oidc.issuer`, `oidc.clientId`, `oidc.clientSecret`, plus `app.proxy.trustedProxies`/`trustedNetworks` |
+| **Login (OIDC)** | `oidc.enabled=true`, `oidc.issuer`, `oidc.clientId`, `oidc.clientSecret`, plus `app.proxy.trustedProxies`/`trustedNetworks`. See [Login (OIDC)](#login-oidc) — **Premium**. |
 | **MCP server** | `mcp.enabled=true`, `mcp.image`, `mcp.auth.mode` |
 | **Horizontal scaling** | `replicaCount: N` **and** `redis.connectionString` (required together) |
+
+### Login (OIDC)
+
+OIDC login is a **Premium feature**. With `oidc.enabled=true` the chart wires the IdP correctly, but
+until the instance has a **valid Premium licence** it stays in *blocked* mode (`/api/latest/auth/mode`
+returns `Blocked`) and no one can sign in.
+
+{: .important}
+**Import your licence _before_ you enable OIDC.** The licence-import API requires an authenticated
+system admin, but with OIDC on and no valid Premium licence yet there is no way to authenticate —
+a chicken-and-egg. So: install with auth off → open the app → import the licence (Settings → Licence)
+→ *then* `helm upgrade --set oidc.enabled=true`.
+
+Key OIDC values:
+
+| Value | Default | Notes |
+|---|---|---|
+| `oidc.issuer` / `oidc.clientId` / `oidc.clientSecret` | — | Your IdP. Register the redirect URI `https://<ingress.host>/api/auth/callback` (most IdPs require HTTPS for non-`localhost` hosts). |
+| `oidc.audience` | _(empty)_ | The API's resource/audience identifier in your IdP. When set, the API validates the JWT `aud` on bearer tokens; the MCP server advertises it as the RFC 9728 protected resource. **Required when `mcp.auth.mode=oauth`** — the MCP server needs both issuer and resource. Configure it once; it feeds both the API and the MCP server. |
+| `oidc.requireHttpsMetadata` | `true` | Keep `true` for production HTTPS issuers (Entra, Keycloak-behind-TLS). Set `false` **only** for a plain-HTTP issuer in a dev cluster, or the API refuses to load the OIDC metadata. |
+| `oidc.allowedOrigins` | _(auto)_ | Browser-facing origins permitted under auth. Defaults to your ingress origin (`scheme://ingress.host`) automatically — override only to allow additional origins. The API fails closed if this ends up empty. |
+| `app.proxy.trustedProxies` / `trustedNetworks` | `[]` | Needed behind the Ingress so redirect URIs and secure cookies use the right scheme/host. |
+
+The same `oidc.*` block drives any OIDC provider — Keycloak, Microsoft Entra, Auth0, Okta — and is
+reused by the MCP server (`mcp.auth.mode=oauth`); you configure the issuer once.
 
 ## Demo walkthrough
 
@@ -139,7 +165,8 @@ kubectl get pods -l app.kubernetes.io/instance=l8e
 
 ### 2. Auth (OIDC)
 
-Point the instance at your identity provider and upgrade:
+OIDC login is **Premium** — import your licence first (Settings → Licence) while auth is still off, then
+point the instance at your identity provider and upgrade (see [Login (OIDC)](#login-oidc) for the why):
 
 ```sh
 helm upgrade l8e letpeoplework/lighthouse --reuse-values \
@@ -148,24 +175,34 @@ helm upgrade l8e letpeoplework/lighthouse --reuse-values \
   --set oidc.clientId='lighthouse' \
   --set oidc.clientSecret='<client-secret>' \
   --set ingress.enabled=true --set ingress.host='lighthouse.example.com'
+  # add --set oidc.requireHttpsMetadata=false ONLY for a plain-HTTP dev issuer
 ```
 
-**Observable:** an unauthenticated request to the app redirects to the IdP's login page; after sign-in
-the IdP returns to `oidc.callbackPath` (`/api/auth/callback`) and you land in Lighthouse.
+**Observable:** `/api/latest/auth/mode` returns `Enabled`; an unauthenticated request to the app
+redirects to the IdP's login page; after sign-in the IdP returns to `oidc.callbackPath`
+(`/api/auth/callback`) and you land in Lighthouse.
 
 ### 3. MCP
 
-Enable the MCP HTTP server so AI clients can query your flow data:
+Enable the MCP HTTP server so AI clients can query your flow data. With `mcp.auth.mode=oauth` the MCP
+server reuses the same `oidc.issuer` + `oidc.audience` you configured in step 2 — callers present their
+own IdP Bearer token, which the MCP server forwards to the API:
 
 ```sh
-helm upgrade l8e letpeoplework/lighthouse --reuse-values --set mcp.enabled=true
+helm upgrade l8e letpeoplework/lighthouse --reuse-values \
+  --set mcp.enabled=true --set mcp.auth.mode=oauth
+  # requires oidc.audience (set in step 2); the MCP server needs both issuer and resource
 kubectl rollout status deploy/l8e-lighthouse-mcp
 kubectl port-forward svc/l8e-lighthouse-mcp 3000:80
-curl -s http://127.0.0.1:3000/   # MCP HTTP endpoint responds (200)
+# initialize handshake responds (text/event-stream)
+curl -s -X POST http://127.0.0.1:3000/mcp \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"c","version":"1"}}}'
 ```
 
-**Observable:** the `l8e-lighthouse-mcp` Deployment becomes available and the MCP endpoint answers on
-the `/mcp` Ingress path.
+**Observable:** the `l8e-lighthouse-mcp` Deployment becomes available and answers on the `/mcp` Ingress
+path. Tool calls that reach the API without a valid Bearer token are rejected (`unauthorized`) — auth is
+enforced end to end.
 
 ### 4. Scaling
 

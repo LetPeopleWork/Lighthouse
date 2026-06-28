@@ -22,7 +22,21 @@ data:
   Authentication__Authority: {{ required "oidc.issuer is required when oidc.enabled" .Values.oidc.issuer | quote }}
   Authentication__ClientId: {{ required "oidc.clientId is required when oidc.enabled" .Values.oidc.clientId | quote }}
   Authentication__CallbackPath: {{ .Values.oidc.callbackPath | quote }}
+  Authentication__RequireHttpsMetadata: {{ .Values.oidc.requireHttpsMetadata | quote }}
+  {{- with .Values.oidc.audience }}
+  # Validate the JWT `aud` claim on bearer tokens (MCP/CLI). Same value as the MCP resource indicator.
+  Authentication__Audience: {{ . | quote }}
+  {{- end }}
   Authorization__Enabled: "true"
+  # Browser-facing origins permitted under auth — the backend fails closed on an empty list (no
+  # wildcard CORS). Default to the single ingress origin (scheme+host); override via oidc.allowedOrigins.
+  {{- $origins := .Values.oidc.allowedOrigins | default (list) }}
+  {{- if not $origins }}
+  {{- $origins = list (include "lighthouse.accessURL" .) }}
+  {{- end }}
+  {{- range $i, $o := $origins }}
+  Authentication__AllowedOrigins__{{ $i }}: {{ $o | quote }}
+  {{- end }}
   {{- range $i, $p := .Values.app.proxy.trustedProxies }}
   Authentication__TrustedProxies__{{ $i }}: {{ $p | quote }}
   {{- end }}
