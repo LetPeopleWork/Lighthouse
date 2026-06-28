@@ -742,6 +742,7 @@ namespace Lighthouse.Backend
         private const string StartupHealthTag = "startup";
         private static readonly string[] ReadyTags = [ReadyHealthTag];
         private static readonly string[] ReadyAndStartupTags = [ReadyHealthTag, StartupHealthTag];
+        private static readonly string[] StartupOnlyTags = [StartupHealthTag];
 
         private static void ConfigureHealthChecks(WebApplicationBuilder builder)
         {
@@ -752,7 +753,12 @@ namespace Lighthouse.Backend
 
             if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Redis")))
             {
-                healthChecks.AddCheck<ClusterSubstrateHealthCheck>("cluster-substrate", tags: ReadyAndStartupTags);
+                // Startup-only on purpose. The substrate probe validates deployment-constant invariants
+                // such as session-mode pooling, atomic shared-store admission, and advisory-lock reclaim
+                // on holder death. It is destructive by design, so it belongs on the startup gate, not on
+                // the readiness gate that fires every few seconds for the life of a healthy pod. Readiness
+                // keeps the non-destructive database and draining checks instead.
+                healthChecks.AddCheck<ClusterSubstrateHealthCheck>("cluster-substrate", tags: StartupOnlyTags);
             }
         }
 
