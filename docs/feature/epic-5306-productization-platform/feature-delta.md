@@ -1033,3 +1033,108 @@ directly; OpenBao single-node + operator-held unseal keys is the O-5 WS posture,
 
 **Outcomes registry (S04)**: SKIPPED — no new application typed-contract surface (chart values +
 GitOps config, per D-6 gate-scoping).
+
+## Wave: DISTILL / [REF] Scenario list (S05 wildcard-routing)
+
+| Scenario | File | Tags |
+|---|---|---|
+| Routing a tenant without a host fails fast | slice-05-wildcard-routing.feature | `@error @US-05 @in-memory` |
+| A tenant's host routes only to that tenant's namespace | slice-05-wildcard-routing.feature | `@US-05 @in-memory` |
+| A configuration change re-stamps the workload so the running app reloads it | slice-05-wildcard-routing.feature | `@US-05 @in-memory` |
+| The tenant workload is wired to reload on its managed secrets | slice-05-wildcard-routing.feature | `@US-05 @in-memory` |
+| Standalone defaults carry no routing or auto-reload wiring | slice-05-wildcard-routing.feature | `@US-05 @in-memory @env:standalone-defaults` |
+| A never-before-configured subdomain serves over trusted HTTPS | slice-05-wildcard-routing.feature | `@US-05 @real-io @requires_external` |
+| Tenant Zero's route is migrated onto the wildcard mechanism with no change to its URL | slice-05-wildcard-routing.feature | `@US-05 @real-io @requires_external` |
+| A new tenant's host and namespace are derived from its identifier alone | slice-05-wildcard-routing.feature | `@US-05 @real-io @requires_external` |
+| Rotating a store-sourced credential reaches the running app with no manual restart | slice-05-wildcard-routing.feature | `@US-05 @real-io @requires_external` |
+
+**Chart delta driving S05** (chart **0.1.4**, public): (a) **host-mandatory guard** — under the
+wildcard mechanism every tenant needs a host, so `ingress.enabled` with an empty `ingress.host`
+fails fast (generalises slice-03's `tls && !host` guard). (b) **auto-reload binding** folding in
+carry-over finding #3: a `checksum/config` pod-template annotation over the rendered ConfigMap
+(catches chart-rendered config changes at render time) **plus** a reloader-watch binding naming the
+DB + login Secrets (catches ESO rotations, which change the Secret OUT-OF-BAND of Helm — a checksum
+alone never sees them). D0 standalone defaults byte-unchanged: no managed store + no ingress host →
+no reload binding, single-container shape intact. The five `@in-memory` scenarios become CI-runnable
+helm-unittest cases once 0.1.4 lands. Wildcard DNS `*.lighthouse.letpeople.work` + the
+base-domain-keyed ApplicationSet host derivation (`host = {id}.base`, `namespace = tenant-{id}` from
+the one CC-6 id) are PRIVATE-repo platform deltas, exercised only by the `@requires_external` band.
+
+**Driven-adapter coverage (S05 additions)**:
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| Wildcard DNS record (provider zone) | YES | S05 never-configured-subdomain + tenant-by-id (@requires_external) |
+| cert-manager (automatic TLS issuance) | YES | S05 subdomain HTTPS + Tenant-Zero migration (@requires_external) |
+| Reloader controller (config/secret → rollout) | YES | S05 rotation-reaches-app-without-restart (@requires_external) |
+| ingress-nginx (host → namespace routing) | YES | render-layer + S05 live host routing |
+
+**Error/edge coverage**: 1 explicit `@error` (ingress enabled, no host) + the no-regression
+migration, identifier-only derivation, and rotation-without-restart-or-commit negative-space paths
+≈ 50% of the slice's intent.
+
+**Reconciliation HARD GATE (S05)**: PASSED — 0 contradictions. Slice-05 implements the ADR-092
+provisioning data-flow (every name derived from the tenant id; chart/route/cert as sync-waved
+overlays) and the architecture summary's "wildcard-routed TLS subdomain"; the reloader binding is an
+additive, D0-gated overlay (no standalone change). DESIGN `wave-decisions.md` records "Upstream
+Changes: None".
+
+**Outcomes registry (S05)**: SKIPPED — no new application typed-contract surface (chart values +
+GitOps/DNS config, per D-6 gate-scoping).
+
+**Pre-DELIVER fail-for-the-right-reason gate (S05)**: deferred to DELIVER S05 entry. The
+`@requires_external` band needs live wildcard DNS + cert-manager + reloader (not runnable here); the
+`@in-memory` band goes RED structurally until chart 0.1.4 adds the host-mandatory guard + checksum +
+reload binding.
+
+## Wave: DELIVER / [REF] Implementation summary (S05 wildcard-routing)
+
+Shipped the chart + GitOps surface that turns the 5 `@in-memory` render scenarios GREEN and sets up
+the 4 `@requires_external` scenarios for live proof. Two parts; IaC/chart shape (no `src/` TDD —
+helm-unittest is the test gate, matching S01–S04).
+
+**PART A — PUBLIC chart 0.1.4** (this repo):
+- `templates/ingress.yaml` — host-mandatory guard: `ingress.enabled` with empty `ingress.host` now
+  fails fast (generalises the old `tls && !host` guard). Default host `lighthouse.local` keeps
+  standalone safe.
+- `templates/_helpers.tpl` — `lighthouse.reloadSecrets` (comma-joined existingSecret names) +
+  `lighthouse.reloadEnabled` (true iff any managed secret in use).
+- `templates/deployment-api.yaml` — pod-template `annotations` (gated on `reloadEnabled`):
+  `checksum/config` (sha256 of the rendered ConfigMap — re-stamps on chart config change) +
+  `secret.reloader.stakater.com/reload` naming the DB + login Secrets (catches ESO rotations that
+  change the Secret OUT-OF-BAND of Helm). Standalone defaults → no annotations → D0 byte-clean.
+- `Chart.yaml` 0.1.3→**0.1.4** + README regenerated (helm-docs). No new values surface (reload
+  derives from the existing `*.existingSecret` signals).
+- `tests/unit/reload_test.yaml` — 7 helm-unittest cases (host-guard `@error`, host+TLS routing,
+  checksum present/well-formed, both-secrets named, DB-only named, standalone-no-annotations).
+
+**PART B — PRIVATE platform repo** (`LetPeopleWork/lighthouse-platform`):
+- `gitops/platform/reloader.yaml` — NEW ArgoCD Application: stakater/reloader chart **2.2.12**
+  (`reloadStrategy: annotations`, watch-globally). This is what makes the 0.1.4 annotations act —
+  reloader rolls the Deployment when a watched Secret rotates, with no manual restart / no git commit.
+- `gitops/tenants/lpw/tenant.yaml` — `chartVersion` 0.1.3→**0.1.4**.
+- `gitops/tenants/_generator/applicationset.yaml` — comment-only (host already derives from the id;
+  `subdomain`→`id` defaulting deferred to slice-07, needs a missingkey=error-safe accessor validated
+  against a live ArgoCD goTemplate — `dig`/`.subdomain` could not be proven safe under helm locally).
+
+### [REF] Scenarios green / pending (S05)
+
+| Band | Count | Status |
+|---|---|---|
+| `@in-memory` (helm-unittest, render-diff) | 5 | **GREEN** — `helm unittest` 53/53; render-diff proves checksum stable-on-identical / differs-on-config-change; D0 default render has 0 reload-wiring matches; `helm lint` clean. |
+| `@requires_external` (live cluster) | 4 | **PENDING** live proof — needs chart 0.1.4 published + wildcard DNS record + private push so ArgoCD syncs reloader + tenant 0.1.4. |
+
+### [REF] Quality gates (S05)
+
+- helm-unittest: **53/53** (5 suites). `helm lint`: 0 failed.
+- Render-diff: `checksum/config` `f08d72…`==`f08d72…` (identical input) ≠ `af67c7…` (telemetry changed).
+- D0 standalone gate: default render `grep -c 'checksum/config|stakater'` = **0** (byte-clean; reload
+  wiring is gated on a managed `existingSecret`, absent in standalone).
+- Tenant Zero values rendered against 0.1.4: host-guard passes, reload watches `lighthouse-db,lighthouse-oidc`.
+
+### [REF] Pending operator actions for live done=observable (S05)
+
+1. **Publish chart 0.1.4** — `chart/scripts/publish.sh` (package + index into `docs/charts/`), commit + push (Pages serves it) BEFORE the private tenant 0.1.4 can resolve.
+2. **Wildcard DNS** — one GoDaddy A record `*.lighthouse.letpeople.work` → ingress LB `179.237.75.110` (replaces per-host A records; like slice-03's single host, operator-made).
+3. **Push private platform** → ArgoCD syncs `reloader` + tenant `tenant-lpw` onto 0.1.4.
+4. **Live verify** (Claude runs locally): a never-configured `demo.lighthouse.letpeople.work` resolves + serves trusted HTTPS; `lpw.…` still serves (no regression); rotate `lighthouse-db` in OpenBao → reloader rolls the API with NO manual restart and NO git commit (tightens slice-04).

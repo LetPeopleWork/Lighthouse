@@ -78,8 +78,31 @@
      (b) chart has **no config-checksum** on the pod template → ConfigMap/Secret changes (incl. ESO
      rotation) need a manual `rollout restart` to reach the running app; consider a checksum annotation
      or stakater/reloader (slice-05+). ADO #5203 → Resolved (PENDING user confirm).
-5. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
-6. **DISTILL S05-S11 per-slice** as DELIVER reaches them; S12 deferred.
+5. ◐ **DELIVER S05 — code GREEN local, live proof PENDING (2026-06-29)** — wildcard-routing (#5202).
+   DISTILL: `tests/platform/epic-5306/acceptance/slice-05-wildcard-routing.feature` (9 scenarios:
+   5 @in-memory + 4 @requires_external). Reconciliation gate PASSED.
+   - PUBLIC chart **0.1.4** (local, UNCOMMITTED): `ingress.yaml` host-mandatory guard;
+     `_helpers.tpl` `reloadSecrets`/`reloadEnabled`; `deployment-api.yaml` pod-template annotations
+     (`checksum/config` + `secret.reloader.stakater.com/reload`) gated on a managed `existingSecret`
+     (standalone byte-clean); `Chart.yaml`→0.1.4 + README regen; `tests/unit/reload_test.yaml` (+7).
+     GATES: `helm unittest` **53/53**; render-diff checksum stable-on-identical/differs-on-config
+     (`f08d72…`≠`af67c7…`); D0 default render 0 reload-wiring matches; `helm lint` 0 failed.
+   - PRIVATE platform (local, UNCOMMITTED): `gitops/platform/reloader.yaml` NEW (stakater/reloader
+     chart 2.2.12); `tenant.yaml` chartVersion→0.1.4; `applicationset.yaml` comment-only.
+     Tenant-Zero values rendered vs 0.1.4 → host-guard passes, reload watches `lighthouse-db,lighthouse-oidc`.
+   - **subdomain→id defaulting DEFERRED to slice-07**: `dig`/`.subdomain` fallback could not be proven
+     safe under helm locally (`.Values` is a custom type, not the ArgoCD param map); a wrong guess +
+     `missingkey=error` would break the ApplicationSet for ALL tenants incl Tenant Zero. Host still
+     derives from id (subdomain==id by convention); the wildcard mechanism is unaffected.
+   - **NEXT (operator actions, ORDER MATTERS, await user confirm — never auto-push):**
+     1. Publish chart 0.1.4: `chart/scripts/publish.sh` → package+index into `docs/charts/`, commit+push (Pages) FIRST.
+     2. Wildcard DNS: GoDaddy A `*.lighthouse.letpeople.work` → LB `179.237.75.110` (one record, replaces per-host).
+     3. Push PUBLIC chart source + DISTILL/DELIVER docs; push PRIVATE platform → ArgoCD syncs reloader + tenant 0.1.4.
+     4. Live verify (Claude runs locally): never-configured `demo.…` serves trusted HTTPS; `lpw.…` no regression;
+        rotate `lighthouse-db` in OpenBao → reloader rolls API with NO manual restart, NO git commit.
+   - ADO #5202 → Resolved AFTER live done=observable met (NOT before).
+6. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
+7. **DISTILL S06-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
