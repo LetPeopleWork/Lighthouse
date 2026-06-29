@@ -896,3 +896,101 @@ OpenTofu 1.8.x · terraform-provider-openstack ~>2.1 · k3s v1.31.x · Calico 3.
 | O-3 | ✅ **RESOLVED 2026-06-29**: **RPO 24h / RTO 30m now, tighten to RPO ≤1h once proven**. | daily base backup + continuous WAL; rehearse restore ≤30m | CNPG backup schedule + alert thresholds (ADR-091) |
 | O-4 | ✅ **RESOLVED 2026-06-29**: **start small (~5–10, fits free shared control plane ≤10 nodes), design cardinality + sizing for ≥20/cluster**; move to dedicated control plane when real tenants land. | ≥20 design target, ~5–10 to start | cardinality budget (ADR-090) + node-pool sizing (ADR-088) |
 | O-5 | ✅ **RESOLVED 2026-06-29**: **single OpenBao + operator-held unseal keys for the walking skeleton; HA (3-node Raft) + auto-unseal before real customer tenants**. | single→HA | ADR-087 production hardening |
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions
+
+> **Wave**: DISTILL (walking-skeleton-first, per user 2026-06-29). **Mode**: lean. **Designer**: Sentinel.
+> **Scope this pass**: S01-S03 only (the walking skeleton line). S04-S11 are distilled per-slice as
+> DELIVER reaches them; S12 deferred. Reconciliation HARD GATE: **0 contradictions** — DESIGN
+> `wave-decisions.md` records "No DISCUSS assumption was contradicted"; O-1..O-5 all resolved.
+
+- **DT-1 — Deliverable shape: infrastructure-as-code, not application code.** DESIGN is explicit
+  ("system / infrastructure only … No application or domain code"). Therefore DISTILL emits **Gherkin
+  `.feature` SSOT + helm/tofu/argocd render-and-lint assertions**, NOT pytest/NUnit/Vitest suites and
+  **no RED `.cs`/`.ts` scaffold stubs** (Mandate 7 has no application-module target here). The RED
+  state is structural: the IaC/GitOps directories the scenarios drive do not exist yet.
+- **DT-2 — Two-band tagging by CI-runnability.** `@in-memory` = static/render assertions runnable in
+  CI today (`tofu validate`, `kubeconform`, `helm template` against the shipped chart). `@requires_external`
+  = needs a real provider account + cluster + ArgoCD/ingress/cert (cannot run in CI; proven on Tenant
+  Zero during DELIVER). Every cluster-dependent scenario carries `@requires_external` so the suite is
+  honest about what CI can and cannot assert.
+- **DT-3 — Tier A only (no Tier B state-machine PBT).** The platform is config-shaped (declarative IaC
+  + GitOps records); the observables are "did the cluster converge / does the host serve", not a
+  domain state machine over rich inputs. Mandate 10 Tier-B trigger not met.
+- **DT-4 — Architecture-of-Reference treatment.** Driving ports = operator CLIs (`tofu`, `argocd`,
+  `kubectl`, `curl`, `helm`) — exercised via their real protocol (real-io), never a service shim.
+  Driven externals (the cloud API, DNS, ACME/cert issuer, OpenBao) are real in `@requires_external`
+  scenarios and out-of-scope for `@in-memory` ones. No fakes introduced — IaC has no in-process seam.
+
+## Wave: DISTILL / [REF] Scenario list (S01-S03)
+
+| Scenario | File | Tags |
+|---|---|---|
+| Tenant Zero reachable over HTTPS through the full platform path | walking-skeleton.feature | `@walking_skeleton @driving_port @US-03 @real-io @requires_external` |
+| Substrate module is well-formed and valid | slice-01-substrate.feature | `@US-01 @in-memory @env:ci` |
+| Substrate stands up from code on the chosen provider | slice-01-substrate.feature | `@US-01 @real-io @requires_external` |
+| Shipped chart installs onto the substrate unchanged | slice-01-substrate.feature | `@US-01 @real-io @requires_external` |
+| Teardown leaves no orphans; re-apply reproduces | slice-01-substrate.feature | `@US-01 @real-io @requires_external` |
+| GitOps repo layout names where tenants live (CC-2) | slice-02-gitops.feature | `@US-02 @in-memory @env:ci` |
+| Every ArgoCD manifest is schema-valid | slice-02-gitops.feature | `@US-02 @in-memory @env:ci` |
+| A merged PR changes the cluster with no manual apply | slice-02-gitops.feature | `@US-02 @real-io @requires_external` |
+| Manual drift is self-healed | slice-02-gitops.feature | `@US-02 @real-io @requires_external` |
+| A break-glass live fix stands until committed back | slice-02-gitops.feature | `@US-02 @real-io @requires_external` |
+| First run fails fast on a missing required value | slice-03-tenant-zero.feature | `@error @US-03 @in-memory` |
+| tenant-lpw record routes a single explicit host | slice-03-tenant-zero.feature | `@US-03 @in-memory` |
+| LPW runs isolated in its own namespace on real data | slice-03-tenant-zero.feature | `@US-03 @real-io @requires_external` |
+| Tenant Zero established as the permanent canary | slice-03-tenant-zero.feature | `@US-03 @real-io @requires_external` |
+
+**Error/edge coverage**: 1 explicit `@error` + the destroy/drift/break-glass/no-misroute negative
+paths ≈ 40%+ of the line's intent. The standalone-gate render guard is inherited from the shipped
+chart's `tests/unit/standalone-gate_test.yaml` (not re-authored — D0 sacrosanct, already green).
+
+## Wave: DISTILL / [REF] Walking Skeleton strategy
+
+WS = **one** `@walking_skeleton @driving_port` scenario (walking-skeleton.feature): Tenant Zero reachable
+over HTTPS through substrate → ArgoCD → chart → DNS → hand-made secret. Litmus: a non-technical
+stakeholder confirms "yes — LPW's own Lighthouse is live on the platform." It is `@requires_external`
+(the genuine end-to-end thread needs the real cluster) and is proven during DELIVER S03 on Tenant Zero.
+
+## Wave: DISTILL / [REF] Driving-adapter & driven-adapter coverage
+
+| Driving adapter (operator port) | Slice | Covered by |
+|---|---|---|
+| `tofu` CLI (substrate module) | S01 | validate (@in-memory) + apply/destroy (@requires_external) |
+| `argocd` CLI + git repo | S02 | manifest lint (@in-memory) + reconcile/drift (@requires_external) |
+| GitOps tenant record → `helm`/ingress/`curl` | S03 | render fail-fast (@in-memory) + reachable HTTPS (@requires_external) |
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| Cloud provider API (Infomaniak) | YES | S01 apply/destroy (@requires_external) |
+| ArgoCD reconciler | YES | S02 PR-sync + drift self-heal (@requires_external) |
+| ingress-nginx + cert-manager (ACME) | YES | WS + S03 reachable-over-HTTPS (@requires_external) |
+| Shipped #5199 chart | YES | S01 installs-unchanged + S03 render (@in-memory + @real-io) |
+
+No "NO — MISSING" rows. external-dns / ESO+OpenBao / CNPG / kube-prometheus-stack adapters land in
+S04/S05/S09/S10 and are distilled with those slices (out of this WS-first pass).
+
+## Wave: DISTILL / [REF] Test placement & scaffolds
+
+- **Placement** (user-chosen 2026-06-29): `tests/platform/epic-5306/acceptance/` — a new platform test
+  home, separate from `chart/tests/` (the shipped chart's own tests). One `.feature` per slice + the
+  single `walking-skeleton.feature`. Precedent for format/tags: `chart/tests/acceptance/*.feature`.
+- **Scaffolds (Mandate 7, IaC-adapted)**: no source-module stubs. RED is structural — DELIVER S01-S03
+  create the targets the scenarios drive: `infra/substrate/` (OpenTofu module), `gitops/bootstrap/`
+  + `gitops/platform/` (ArgoCD app-of-apps), `gitops/tenants/lpw/` (Tenant Zero record). Until they
+  exist: `tofu validate` errors (no module), `kubeconform` finds no manifests, the `@requires_external`
+  thread has nothing to sync — i.e. RED-for-the-right-reason (missing functionality, not test bug).
+
+## Wave: DISTILL / [REF] Pre-requisites & gate status
+
+- **Pre-reqs**: shipped #5199 chart (ADR-080..085) ✅; resolved O-1..O-5 (provider, base domain,
+  RPO/RTO, density, OpenBao posture) ✅; a provider account + DNS control for `lighthouse.letpeople.work`
+  needed before the `@requires_external` band can run (DELIVER S01).
+- **Reconciliation HARD GATE**: PASSED — 0 contradictions (DESIGN `wave-decisions.md` "Upstream
+  Changes: None").
+- **Outcomes registry**: SKIPPED — this pass introduces no new application typed-contract surface
+  (per D-6 gate-scoping, IaC/GitOps config is not a code-feature pipeline contract).
+- **Pre-DELIVER fail-for-the-right-reason gate**: deferred to DELIVER S01 entry — the `@requires_external`
+  band cannot be run in this environment; the `@in-memory` band goes RED structurally (targets absent).
