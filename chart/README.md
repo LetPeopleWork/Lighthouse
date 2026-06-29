@@ -4,7 +4,7 @@ Flow metrics and probabilistic forecasting for Kubernetes. Postgres-only (ADR-08
 brings the whole stack up — API (SPA served in-process), bundled or external Postgres, optional MCP
 workload and OIDC — with one command.
 
-- **Chart version:** `0.1.2`
+- **Chart version:** `0.1.3`
 - **App image (appVersion):** `26.6.21.1`
 
 > This README's **Values** section is generated from `values.yaml` by [`helm-docs`](https://github.com/norwoodj/helm-docs).
@@ -16,8 +16,8 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.2 / APP 26.6.21.1
-helm install l8e letpeoplework/lighthouse --version 0.1.2 -f values-enterprise.yaml
+helm search repo lighthouse          # shows CHART 0.1.3 / APP 26.6.21.1
+helm install l8e letpeoplework/lighthouse --version 0.1.3 -f values-enterprise.yaml
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,
@@ -76,7 +76,8 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | oidc.enabled | bool | `false` | Enable OIDC login (Authentication:*). Off = no auth (standalone parity). Needs forwarded-headers behind ingress. |
 | oidc.issuer | string | `""` | OIDC authority / issuer URL. |
 | oidc.clientId | string | `""` | OIDC client id. |
-| oidc.clientSecret | string | `""` | OIDC client secret (REQUIRED when oidc.enabled). |
+| oidc.clientSecret | string | `""` | OIDC client secret (REQUIRED when oidc.enabled, unless existingSecret is set). |
+| oidc.existingSecret | string | `""` | Read the OIDC client secret from a pre-existing Secret instead of rendering it from    oidc.clientSecret. The Secret MUST provide the key `Authentication__ClientSecret`. Lets an    external secret store (ESO/OpenBao, slice-04) own the OIDC credential without passing it as a    Helm value (CC-3). When set, the render-time clientSecret `required` is relaxed. Empty = the    chart renders the OIDC key into its own Secret from oidc.clientSecret. Mirrors    postgresql.auth.existingSecret (slice-03) for the OIDC client secret. |
 | oidc.audience | string | `""` | API audience / resource identifier (Authentication:Audience). When set, the backend validates the    JWT `aud` claim on bearer tokens, and the MCP server advertises it as the RFC 9728 protected    resource (LIGHTHOUSE_OAUTH_RESOURCE). REQUIRED when mcp.auth.mode=oauth. Empty = no audience    validation (browser cookie login still works). Deployment-specific — set it to the API's resource    identifier registered in your IdP (e.g. an Entra Application ID URI, or a Keycloak audience). |
 | oidc.callbackPath | string | `"/api/auth/callback"` | OIDC callback path. |
 | oidc.requireHttpsMetadata | bool | `true` | Require the OIDC issuer/metadata to be served over HTTPS (Authentication:RequireHttpsMetadata).    Keep true in production (Entra, Keycloak-behind-TLS, etc.). Set false ONLY for a plain-HTTP    issuer in local/dev clusters — the backend otherwise refuses to load HTTP OIDC metadata. |
