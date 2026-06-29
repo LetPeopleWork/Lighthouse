@@ -53,8 +53,33 @@
      external-dns controller; today's single explicit host is deliberate slice-03 thinness.
    - ⚠️ hand-made lighthouse-db Postgres password appeared in chat transcript (cluster-internal DB,
      slice-04 ESO rotates it — low stakes). ADO #5204 + thin #5202 → transition to Resolved.
-4. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
-5. **DISTILL S04-S11 per-slice** as DELIVER reaches them; S12 deferred.
+4. ✅ **DELIVER S04 done (LIVE 2026-06-29)** — managed-secrets (#5203). Tenant Zero's secrets now
+   store-sourced from self-hosted OpenBao via ESO. ALL "done=observable" met.
+   - PUBLIC chart 0.1.3 (04e78058 + README 2cf70908): `oidc.existingSecret` escape hatch mirroring
+     slice-03's `postgresql.auth.existingSecret`. New helpers `lighthouse.oidc.secretName` +
+     `renderOidcKey`; secret.yaml skips chart-owned OIDC key (renders no empty Secret) + relaxes the
+     clientSecret `required` when set; deployment OIDC env → `oidc.secretName`. 47/47 unittest +
+     install-smoke green. Packaged+indexed; DISTILL `slice-04-managed-secrets.feature` SSOT.
+   - PRIVATE platform (8fd4b53..eeca622): `platform/external-secrets.yaml` (ESO 0.10.7) +
+     `platform/openbao.yaml` (OpenBao 2.3.1, single-node file storage, O-5 operator-held keys) +
+     standalone `tenant-secrets` app over `gitops/tenant-secrets/lpw/secrets.yaml` (SecretStore via
+     ESO vault provider + k8s auth, SA `openbao-auth`, `lighthouse-db` + `lighthouse-oidc`
+     ExternalSecrets). tenant.yaml chartVersion 0.1.3 + oidcEnabled/oidcIssuer/oidcClientId;
+     ApplicationSet renders oidc block + nginx proxy-buffer + app.proxy.trustedNetworks when
+     oidcEnabled.
+   - LIVE: OpenBao init/unsealed (keys at `~/.openbao-lpw-init.json`, 0600, NOT in git/transcript);
+     kv-v2 `secret/`, k8s auth role `tenant-lpw` → policy read `secret/tenants/lpw/*`. DB creds seeded
+     from the hand-made Secret; `lighthouse-db` now ESO-owned (hand-made deleted), API restarts clean.
+     OIDC (Auth0 `dev-xlw0xiiyqjdtaaid.us.auth0.com`) login round-trips: 302 → /authorize with the
+     store-sourced client secret, **https** redirect_uri. Rotation PROVEN: store change → Secret sha
+     changed → restored, zero git edits.
+   - ⚠️ FINDINGS (not blockers): (a) Tenant Zero is in **AuthMode.Blocked** — "auth configured
+     correctly, but Premium licensing not valid"; import a premium license for full function.
+     (b) chart has **no config-checksum** on the pod template → ConfigMap/Secret changes (incl. ESO
+     rotation) need a manual `rollout restart` to reach the running app; consider a checksum annotation
+     or stakater/reloader (slice-05+). ADO #5203 → Resolved (PENDING user confirm).
+5. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
+6. **DISTILL S05-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
