@@ -22,12 +22,16 @@
 
 ## Next
 1. **Rotate INFOMANIAK_TOKEN** (exposed in transcript). Re-export new one for any further tofu/API.
-2. **DELIVER S02 @requires_external** — code DONE + pushed (`gitops/` app-of-apps, kubeconform green).
-   Remaining: install ArgoCD onto the live cluster, give ArgoCD **read access to the PRIVATE repo**
-   (deploy key or PAT — new credential decision), apply `gitops/bootstrap/root-app.yaml`, prove
-   PR-sync + drift self-heal. kubeconfig: `~/.kube/lpw-substrate.yaml`.
-3. **DELIVER S03** — `gitops/tenants/lpw/tenant.yaml` already committed; bring Tenant Zero up
-   reachable at `https://lpw.lighthouse.letpeople.work` (DNS + hand-made secret). Completes WS.
+2. ✅ **DELIVER S02 done (live)** — ArgoCD v3.4.4 installed on lpw-substrate; root app-of-apps
+   reconciling from the PRIVATE repo over a read-only SSH **deploy key** (`argocd-readonly`, key
+   `~/.ssh/lpw-platform-argocd`; argocd repo secret `lighthouse-platform-repo`). platform-root/
+   platform/tenants/cert-manager Synced/Healthy. ApplicationSet generated tenant-lpw. Manifests use
+   SSH repoURLs. (Optional remaining: explicit drift-self-heal demo.)
+3. **DELIVER S03 (next)** — tenant-lpw is Unknown: chart fails-fast on missing DB password (ADR-082,
+   proves slice-03 @error AC). Bring Tenant Zero up: hand-made Postgres/OIDC secret in tenant-lpw ns,
+   confirm chart published at docs.lighthouse.letpeople.work/charts (v0.1.1), DNS for
+   lpw.lighthouse.letpeople.work → ingress LB, cert. Completes the WS. NOTE: chart values reference
+   secret — wire the hand-made secret name into the ApplicationSet helm values or chart.
 4. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
 5. **DISTILL S04-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
