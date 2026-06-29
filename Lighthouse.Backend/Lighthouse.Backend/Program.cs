@@ -241,6 +241,9 @@ namespace Lighthouse.Backend
             });
         }
 
+        private const string RedisIdentifier = "Redis";
+
+
         private static void ConfigureServices(WebApplicationBuilder builder)
         {
             var authConfig = LoadAuthenticationConfiguration(builder);
@@ -278,7 +281,7 @@ namespace Lighthouse.Backend
             });
 
             // Add SignalR
-            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            var redisConnectionString = builder.Configuration.GetConnectionString(RedisIdentifier);
             var clusterCoordinationEnabled = !string.IsNullOrWhiteSpace(redisConnectionString);
 
             var signalRBuilder = builder.Services.AddSignalR()
@@ -752,7 +755,7 @@ namespace Lighthouse.Backend
                 .AddCheck<MigrationsAppliedHealthCheck>("migrations", tags: ReadyAndStartupTags)
                 .AddCheck<DrainReadinessHealthCheck>("draining", tags: ReadyTags);
 
-            if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString("Redis")))
+            if (!string.IsNullOrWhiteSpace(builder.Configuration.GetConnectionString(RedisIdentifier)))
             {
                 // Startup-only on purpose. The substrate probe validates deployment-constant invariants
                 // such as session-mode pooling, atomic shared-store admission, and advisory-lock reclaim
@@ -787,7 +790,7 @@ namespace Lighthouse.Backend
                 .AddDataProtection()
                 .SetApplicationName("Lighthouse");
 
-            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            var redisConnectionString = builder.Configuration.GetConnectionString(RedisIdentifier);
             if (string.IsNullOrWhiteSpace(redisConnectionString))
             {
                 var keyStoreDir = ResolveDataProtectionKeyStoreDir(builder);
@@ -1026,7 +1029,7 @@ namespace Lighthouse.Backend
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);
 
-            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            var redisConnectionString = builder.Configuration.GetConnectionString(RedisIdentifier);
             if (!string.IsNullOrWhiteSpace(redisConnectionString))
             {
                 builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnectionString));

@@ -37,11 +37,11 @@ namespace Lighthouse.Backend.Tests.Health
                 .SingleOrDefault(r => r.Name == "cluster-substrate");
 
             Assert.That(registration, Is.Not.Null, "cluster-substrate must be registered when Redis is configured");
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(registration!.Tags, Does.Contain(StartupTag), "substrate must gate startup");
                 Assert.That(registration.Tags, Does.Not.Contain(ReadyTag), "substrate must NOT run on readiness (it is destructive)");
-            });
+            }
         }
 
         private static void ReplaceWithSqlite(IServiceCollection services)
