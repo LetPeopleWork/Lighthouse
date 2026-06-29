@@ -68,6 +68,28 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/* OIDC Secret name — a pre-existing Secret (oidc.existingSecret) or the chart-owned one. When set,
+     an external secret store (ESO/OpenBao, slice-04) owns the OIDC client secret, so it is never a
+     Helm value (CC-3). The Secret MUST provide the key Authentication__ClientSecret. */}}
+{{- define "lighthouse.oidc.secretName" -}}
+{{- if .Values.oidc.existingSecret -}}
+{{- .Values.oidc.existingSecret -}}
+{{- else -}}
+{{- include "lighthouse.secretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Whether the chart renders the OIDC client-secret key into its own Secret. False when a
+     pre-existing Secret supplies it (oidc.existingSecret) — then the render-time clientSecret
+     `required` is relaxed, since the credential lives outside the chart. */}}
+{{- define "lighthouse.renderOidcKey" -}}
+{{- if .Values.oidc.existingSecret -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
 {{/* Effective DB host — bundled Postgres service or externalDatabase.host (for the startup wait) */}}
 {{- define "lighthouse.db.host" -}}
 {{- if .Values.postgresql.enabled -}}

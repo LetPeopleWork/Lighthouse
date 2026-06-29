@@ -994,3 +994,42 @@ S04/S05/S09/S10 and are distilled with those slices (out of this WS-first pass).
   (per D-6 gate-scoping, IaC/GitOps config is not a code-feature pipeline contract).
 - **Pre-DELIVER fail-for-the-right-reason gate**: deferred to DELIVER S01 entry — the `@requires_external`
   band cannot be run in this environment; the `@in-memory` band goes RED structurally (targets absent).
+
+## Wave: DISTILL / [REF] Scenario list (S04 managed-secrets)
+
+| Scenario | File | Tags |
+|---|---|---|
+| Enabling login without a credential source still fails fast | slice-04-managed-secrets.feature | `@error @US-04 @in-memory` |
+| A managed login credential lets the tenant render without any secret in its values | slice-04-managed-secrets.feature | `@US-04 @in-memory` |
+| The running app reads its login credential from the managed source | slice-04-managed-secrets.feature | `@US-04 @in-memory` |
+| With database and login both managed, the tenant carries no secret material | slice-04-managed-secrets.feature | `@US-04 @in-memory` |
+| The GitOps repositories hold no plaintext secret | slice-04-managed-secrets.feature | `@US-04 @real-io @requires_external` |
+| Tenant Zero's database secret is materialised from the store | slice-04-managed-secrets.feature | `@US-04 @real-io @requires_external` |
+| Rotating a credential in the store reaches the tenant without touching git | slice-04-managed-secrets.feature | `@US-04 @real-io @requires_external` |
+| Tenant Zero logs in with a store-sourced login credential | slice-04-managed-secrets.feature | `@US-04 @real-io @requires_external` |
+
+**Chart delta driving S04**: store-sourcing the OIDC client secret needs a chart escape hatch
+`oidc.existingSecret` (chart **0.1.3**), mirroring slice-03's `postgresql.auth.existingSecret`. The
+chart already store-sources the DB secret; OIDC's `Authentication__ClientSecret` was rendered from a
+Helm value (would be plaintext-in-git, CC-3 violation). New helpers `lighthouse.oidc.secretName` +
+`lighthouse.renderOidcKey`; `secret.yaml` skips the chart-owned OIDC key (and renders no empty Secret)
+when set; the API deployment's OIDC env ref → `oidc.secretName`. D0 standalone defaults byte-unchanged
+(`oidc.existingSecret: ""` → old render path). The first four `@in-memory` scenarios become CI-runnable
+helm-unittest cases once 0.1.3 lands.
+
+**Driven-adapter coverage (S04 additions)**:
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| External Secrets Operator (reconciler) | YES | S04 materialise + rotation (@requires_external) |
+| OpenBao (kv-v2 + Kubernetes auth) | YES | S04 materialise + git-grep-zero + rotation (@requires_external) |
+| Identity provider (Auth0/Okta OIDC) | YES | S04 store-sourced login round-trip (@requires_external) |
+
+**Error/edge coverage**: 1 explicit `@error` (login enabled, no credential source) + the
+no-plaintext-in-git and rotation-without-commit negative-space paths ≈ 40%+ of the slice's intent.
+
+**Reconciliation HARD GATE (S04)**: PASSED — 0 contradictions. Slice-04 implements CC-3 (ADR-087)
+directly; OpenBao single-node + operator-held unseal keys is the O-5 WS posture, not a contradiction.
+
+**Outcomes registry (S04)**: SKIPPED — no new application typed-contract surface (chart values +
+GitOps config, per D-6 gate-scoping).

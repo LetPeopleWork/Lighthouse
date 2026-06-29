@@ -133,3 +133,50 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.key
           value: Database__ConnectionString
+
+  # --- slice-04: oidc.existingSecret (ESO/OpenBao-owned OIDC client secret, CC-3) ---
+
+  - it: oidc.existingSecret relaxes the OIDC clientSecret required (no clientSecret value needed)
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.existingSecret: tenant-lpw-oidc
+    template: templates/secret.yaml
+    asserts:
+      # Chart still owns the DB Secret (no DB existingSecret here) but NOT the OIDC key.
+      - hasDocuments:
+          count: 1
+      - exists:
+          path: stringData.Database__ConnectionString
+      - notExists:
+          path: stringData.Authentication__ClientSecret
+
+  - it: API reads the OIDC client secret from oidc.existingSecret
+    set:
+      postgresql.auth.password: pw
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.existingSecret: tenant-lpw-oidc
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name
+          value: tenant-lpw-oidc
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.key
+          value: Authentication__ClientSecret
+
+  - it: both DB and OIDC existingSecret set → chart owns no Secret at all
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.existingSecret: tenant-lpw-oidc
+    template: templates/secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

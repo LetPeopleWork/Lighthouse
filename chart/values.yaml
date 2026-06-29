@@ -98,8 +98,15 @@ oidc:
   issuer: ""
   # -- OIDC client id.
   clientId: ""
-  # -- OIDC client secret (REQUIRED when oidc.enabled).
+  # -- OIDC client secret (REQUIRED when oidc.enabled, unless existingSecret is set).
   clientSecret: ""
+  # -- Read the OIDC client secret from a pre-existing Secret instead of rendering it from
+  #    oidc.clientSecret. The Secret MUST provide the key `Authentication__ClientSecret`. Lets an
+  #    external secret store (ESO/OpenBao, slice-04) own the OIDC credential without passing it as a
+  #    Helm value (CC-3). When set, the render-time clientSecret `required` is relaxed. Empty = the
+  #    chart renders the OIDC key into its own Secret from oidc.clientSecret. Mirrors
+  #    postgresql.auth.existingSecret (slice-03) for the OIDC client secret.
+  existingSecret: ""
   # -- API audience / resource identifier (Authentication:Audience). When set, the backend validates the
   #    JWT `aud` claim on bearer tokens, and the MCP server advertises it as the RFC 9728 protected
   #    resource (LIGHTHOUSE_OAUTH_RESOURCE). REQUIRED when mcp.auth.mode=oauth. Empty = no audience

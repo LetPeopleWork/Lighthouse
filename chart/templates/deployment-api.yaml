@@ -65,7 +65,7 @@ spec:
             - name: Authentication__ClientSecret
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "lighthouse.secretName" . }}
+                  name: {{ include "lighthouse.oidc.secretName" . }}
                   key: Authentication__ClientSecret
             {{- end }}
           # epic-5305 #5310 health probes: rollout gates on real readiness.

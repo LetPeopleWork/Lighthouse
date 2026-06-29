@@ -126,7 +126,7 @@ tests:
     template: templates/secret.yaml
     asserts:
       - failedTemplate:
-          errorMessage: "oidc.clientSecret is required when oidc.enabled"
+          errorMessage: "oidc.clientSecret is required when oidc.enabled (or set oidc.existingSecret)"
 
   - it: forwarded-headers trusted proxies are rendered as indexed config
     set:
