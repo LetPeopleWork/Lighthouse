@@ -9,30 +9,12 @@ on:
       backend-ran:
         type: boolean
         required: true
-      backend-status-check:
-        type: boolean
-        required: false
-        default: false
 
 jobs:
   sonar-gates:
-    if: inputs.frontend-ran || inputs.backend-ran || inputs.backend-status-check
+    if: inputs.frontend-ran || inputs.backend-ran
     runs-on: ubuntu-latest
     steps:
-      - name: Verify Backend Quality Gate (no scan, status check)
-        if: inputs.backend-status-check
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          status=$(curl -sf -H "Authorization: Bearer ${SONAR_TOKEN}" \
-            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=LetPeopleWork_Lighthouse&branch=main" \
-            | jq -r '.projectStatus.status')
-          echo "Backend SonarCloud quality gate on main: $status"
-          if [ "$status" != "OK" ]; then
-            echo "::error::Backend SonarCloud quality gate is '$status' on main. The last analysis is not green — open a PR or run the nightly to re-analyse after cleaning it up (pushes to main no longer re-scan)."
-            exit 1
-          fi
-
       - name: Download Frontend Sonar report
         if: inputs.frontend-ran
         uses: actions/download-artifact@v8

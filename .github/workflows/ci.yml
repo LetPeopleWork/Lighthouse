@@ -40,10 +40,9 @@ jobs:
       linear_connector: ${{ needs.changes.outputs.linear_connector }}
       github_connector: ${{ needs.changes.outputs.github_connector }}
       connector_shared: ${{ needs.changes.outputs.connector_shared }}
-      # Full backend Sonar scan (with coverage) only on PRs. Pushes to main skip
-      # the scan to keep the pipeline fast; the gate is verified against the last
-      # analysis instead (see sonar-gates), and the nightly run does a full scan.
-      run_sonar: ${{ github.event_name == 'pull_request' }}
+      # Backend Sonar scan (with coverage) runs on every backend CI run — PRs and
+      # pushes to main — so the quality gate always evaluates the code just pushed.
+      run_sonar: true
     secrets: inherit
 
   frontend:
@@ -66,14 +65,10 @@ jobs:
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     uses: ./.github/workflows/ci_sonar_gates.yml
     with:
-      # A fresh scan report exists only when the job actually scanned: frontend
-      # scans whenever it runs; backend scans on PRs only.
+      # A fresh scan report exists whenever the job ran: frontend scans whenever it
+      # runs; backend now scans on every run, so the gate always waits on the fresh report.
       frontend-ran: ${{ needs.frontend.result == 'success' }}
-      backend-ran: ${{ needs.backend.result == 'success' && github.event_name == 'pull_request' }}
-      # On pushes to main the backend is not scanned, so assert its last analysis
-      # is still green via the Quality Gate API — this forces a clean-up if the
-      # project drifted red since the last scan.
-      backend-status-check: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      backend-ran: ${{ needs.backend.result == 'success' }}
     secrets: inherit
 
   packageapp:
