@@ -36,6 +36,16 @@ primary_jobs:
   - job-operator-configure-via-values
   - job-operator-trust-clean-first-run
   - job-operator-self-host-from-docs
+  # epic-5306-productization-platform FLEET / MULTI-TENANT jobs (LPW SaaS-operator flavour)
+  - job-saas-operator-provision-substrate
+  - job-saas-operator-declare-platform-as-code
+  - job-saas-operator-onboard-tenant
+  - job-saas-operator-route-tenant-by-subdomain
+  - job-saas-operator-isolate-tenant-secrets
+  - job-saas-operator-upgrade-all-tenants-safely
+  - job-saas-operator-observe-fleet
+  - job-saas-operator-recover-from-disaster
+  - job-saas-operator-dogfood-tenant-zero
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate

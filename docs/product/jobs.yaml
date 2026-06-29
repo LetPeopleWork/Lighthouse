@@ -22,6 +22,8 @@ feature_context:
   - work-item-age-percentiles
   - website-screenshot-freshness
   - epic-5305-k8s-readiness
+  - epic-5306-k8s-productization
+  - epic-5306-productization-platform
 
 jobs:
   - id: job-rbac-bootstrap
@@ -2243,3 +2245,286 @@ jobs:
         plumbing behind the operator-facing jobs rather than an independent end-user ask. Current
         satisfaction: 1 - no published chart pipeline today. Gap: 2 - real but bounded; mirrors the
         already-shipped website-screenshot finalization-gate pattern.
+
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # epic-5306-productization-platform (the SaaS-OPERATOR flavour of platform-operator)
+  # The SECOND flavour the persona already names: "the LPW SaaS operator running
+  # many replicas across MANY TENANTS". The epic-5305 jobs above are RUNTIME (one
+  # instance behaves in a cluster); the epic-5306-k8s-productization jobs are
+  # INSTALL/CONFIGURE (a self-hoster stands up ONE instance from the chart). These
+  # jobs are FLEET / MULTI-TENANT: substrate → gitops → routing → secrets →
+  # provisioning → upgrades → observability → backup/DR, with LPW as Tenant Zero.
+  # Every job inherits the STANDALONE GATE (the single-container product stays
+  # byte-unchanged) and VENDOR-NEUTRALITY (official images, OpenTofu, no cloud
+  # lock-in). The platform is built ON the shipped #5199 chart (ADR-080..085), not
+  # instead of it. Tenancy model is the central shared decision (named, not yet
+  # finalized — see feature-delta DISCUSS decisions).
+  # ───────────────────────────────────────────────────────────────────────────
+
+  - id: job-saas-operator-provision-substrate
+    title: Stand up a hosting cluster on any provider without lock-in
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When I need a Kubernetes cluster to host Lighthouse tenants and I do not want to be
+      married to one cloud vendor's console,
+      I want to declare the whole substrate (cluster, node pools, ingress controller, base
+      add-ons) in OpenTofu and `tofu apply` it against whichever provider I choose,
+      so I can create, reproduce or tear down the platform substrate as reviewable code on
+      Infomaniak Public Cloud today and a different provider tomorrow, instead of hand-clicking a console and
+      pinning the platform to a single vendor's proprietary surface.
+    dimensions:
+      functional: OpenTofu modules producing a conformant cluster (control plane, nodes, CNI, ingress controller, storage class) parameterised per provider; one `tofu apply` stands it up, `tofu destroy` removes it
+      emotional: Move from "the platform lives in a cloud console nobody dares touch" to "the substrate is code I can review, diff and rebuild"
+      social: Tell prospects and security that hosting has no single-cloud lock-in — substrate is portable by construction
+    forces:
+      push: Hand-built clusters drift, can't be reproduced, and chain the platform to one vendor's proprietary console and managed services
+      pull: One declarative `tofu apply` reproduces the whole substrate on any conformant provider; teardown is as cheap as creation
+      anxiety: Will the abstraction leak so the "neutral" module is really only tested on one provider? Will provider-specific bits (load balancer, storage) bleed into the platform layer?
+      habit: Operators reach for the cloud console or a provider-specific CLI for the first cluster, then never codify it
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 - the substrate is the foundation every other platform job stands on, and
+        vendor-neutrality is an explicit epic constraint. Current satisfaction: 1 - no substrate-as-code
+        exists; LPW's own hosting is hand-assembled. Gap: 4 - large and foundational; the substrate
+        decision gates GitOps, DNS, secrets and tenancy.
+
+  - id: job-saas-operator-declare-platform-as-code
+    title: Change the platform by merging a PR, and trust drift is auto-corrected
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When I need the platform's running state to always match what has been reviewed and
+      version-controlled,
+      I want every platform component and every tenant declared in a git repo that ArgoCD
+      continuously reconciles against the cluster,
+      so I can change the platform by merging a pull request and trust that manual drift is
+      detected and corrected, instead of `kubectl apply`-ing changes by hand and never being
+      sure the cluster matches the repo.
+    dimensions:
+      functional: ArgoCD app-of-apps reconciling platform components + tenants from a git repo; git is the source of truth; drift is detected and self-healed; a merged PR changes the cluster
+      emotional: Move from "I think the cluster matches what's in git" to "the cluster IS what's in git, continuously"
+      social: Give reviewers a real change-control story — every platform change is a reviewable, revertable PR
+    forces:
+      push: Hand-applied kubectl changes drift silently; there is no audit trail and no guarantee the live state matches the repo
+      pull: GitOps makes the repo authoritative — drift self-heals, rollback is a git revert, every change is reviewed
+      anxiety: Will ArgoCD fight a hotfix I genuinely need to apply live during an incident? Will the repo layout make tenants hard to reason about?
+      habit: Operators are used to kubectl apply / helm upgrade by hand against the live cluster
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - GitOps is the control-plane discipline that makes a multi-tenant platform
+        operable and auditable; it carries the tenant-provisioning model. Current satisfaction: 1 -
+        no GitOps today. Gap: 3.
+
+  - id: job-saas-operator-onboard-tenant
+    title: Provision a fully isolated tenant with one declarative action
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When a new customer signs up for hosted Lighthouse,
+      I want to provision their isolated instance — namespace, database, secrets, subdomain
+      route and the Lighthouse app itself — with a single declarative action (one tenant entry
+      committed to the GitOps repo),
+      so I can onboard a customer in minutes with no hand-crafted per-tenant YAML and no risk of
+      one tenant seeing another's data, instead of copy-pasting and tweaking a pile of manifests
+      and hoping I isolated everything.
+    dimensions:
+      functional: One declarative tenant entry (ApplicationSet generator entry / tenant CR / values record) expands into a full isolated tenant — namespace, Postgres, secrets, ingress route, app workload — reconciled by ArgoCD; provisioning and de-provisioning are both one action
+      emotional: Move from "onboarding a tenant is a careful manual ritual I can get wrong" to "I add one tenant record and the platform builds the rest"
+      social: Offer customers same-day onboarding and a credible isolation guarantee
+    forces:
+      push: Per-tenant onboarding by hand is slow, error-prone, and a cross-tenant data-leak risk if isolation is missed
+      pull: A single tenant declaration that fans out into a complete isolated instance makes onboarding a minutes-long, repeatable, reviewable act
+      anxiety: Will the isolation actually hold (DB, secrets, network), or will a missed boundary leak one tenant into another? Will de-provisioning leave orphans?
+      habit: Operators expect to write/duplicate manifests per environment; "one record provisions everything" is a new trust step
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 - automated, isolated tenant provisioning IS the productization payoff; without
+        it there is no SaaS. Current satisfaction: 1 - nothing automates multi-tenant provisioning today.
+        Gap: 4 - large; binds the tenancy model, routing, secrets and DB isolation into one act.
+
+  - id: job-saas-operator-route-tenant-by-subdomain
+    title: Give every tenant its own subdomain with valid TLS, automatically
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When I provision a tenant,
+      I want them reachable at their own `{tenant}.lighthouse.letpeople.work` subdomain
+      automatically — wildcard DNS plus ingress routing plus a valid TLS certificate — with no
+      per-tenant DNS record to create by hand,
+      so a tenant gets a clean, branded, HTTPS URL the moment they are provisioned, instead of me
+      editing DNS and requesting a certificate for every new customer.
+    dimensions:
+      functional: Wildcard DNS (`*.lighthouse.letpeople.work`) + ingress host routing per tenant + automatic TLS (wildcard or per-host cert via cert-manager); a new subdomain serves the right tenant with a trusted cert with zero manual DNS/cert steps
+      emotional: Move from "every new tenant means a DNS ticket and a cert request" to "their URL just works the moment they exist"
+      social: Hand each customer a branded `{them}.lighthouse.letpeople.work` URL that logs in first try
+    forces:
+      push: Per-tenant DNS records and certificates are manual, slow, and a step that gets forgotten — a tenant with no route or an invalid cert looks broken
+      pull: Wildcard DNS + automatic TLS means routing is solved once and every future tenant inherits it for free
+      anxiety: Will one tenant's host accidentally route to another's pods? Will wildcard TLS or per-host issuance hit rate limits / fail silently?
+      habit: Operators are used to adding a DNS record and a cert per hostname
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - without automatic per-tenant routing, provisioning is not actually one action.
+        Current satisfaction: 1 - no wildcard/multi-tenant routing today. Gap: 3.
+
+  - id: job-saas-operator-isolate-tenant-secrets
+    title: Keep each tenant's secrets isolated and out of git, never in plaintext
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When each tenant needs its own database credentials, OIDC client config and license, and I
+      keep all platform state in a GitOps repo,
+      I want those secrets generated, stored and injected per tenant from a managed secret store
+      — never committed as plaintext to the repo —
+      so a tenant's credentials stay isolated and rotatable and I can keep desired state in git
+      without ever leaking a secret into version control, instead of choosing between "secrets in
+      git" and "secrets managed outside GitOps and therefore drifting".
+    dimensions:
+      functional: Per-tenant secrets sourced from a managed store (External Secrets Operator + cloud/secret-manager backend, or Sealed Secrets, or Vault — decision named for DESIGN); injected into the tenant namespace; no plaintext secret in the GitOps repo; rotatable per tenant
+      emotional: Move from "secrets are the awkward exception to GitOps" to "secrets flow through the platform like everything else, but stay encrypted/external"
+      social: Give security review a clean answer — no plaintext secrets in git, per-tenant isolation, rotation supported
+    forces:
+      push: GitOps wants everything in git, but secrets must never be plaintext in a repo; the naive workaround leaks credentials or breaks the GitOps model
+      pull: A managed secret store referenced from git gives both — declarative tenants AND encrypted, isolated, rotatable secrets
+      anxiety: Will a tenant's secret ever be readable by another tenant or land in git history? Will rotation break a running tenant?
+      habit: Operators paste secrets into a values file or a kubectl-created Secret and forget about rotation/isolation
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 - secret isolation is a hard security and compliance requirement for multi-tenant
+        hosting; getting it wrong is a breach. Current satisfaction: 1 - no per-tenant managed-secret
+        model today. Gap: 4 - foundational and security-critical.
+
+  - id: job-saas-operator-upgrade-all-tenants-safely
+    title: Roll a new Lighthouse version across every tenant with zero downtime
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When a new Lighthouse version ships,
+      I want to roll it out across every tenant automatically — a single version bump in git that
+      ArgoCD propagates, each tenant taking it as a zero-downtime rolling update with expand-only
+      migrations —
+      so all tenants get the update during the working day with no dropped requests and no tenant
+      stuck on a broken release, instead of upgrading each tenant by hand or scheduling a
+      fleet-wide maintenance window.
+    dimensions:
+      functional: A version bump in the GitOps repo propagated to all tenants by ArgoCD; each tenant upgrades via the epic-5305 rolling-update + graceful-drain + expand-only-migration path; staged/canaryable rollout; rollback = git revert + helm rollback (additive migrations, no schema rollback)
+      emotional: Move from "upgrading the fleet is a scary all-night batch job" to "I bump a version, merge, and the fleet rolls itself safely"
+      social: Promise customers updates with no maintenance window and deliver it across the whole fleet
+    forces:
+      push: Upgrading tenants one by one does not scale and risks a tenant left behind on a broken or insecure version; a fleet-wide window is customer-hostile
+      pull: One declarative bump rolls the fleet on the already-shipped safe-rollout primitives, during the working day, with a git-revert rollback
+      anxiety: Will an expand-only violation break a tenant mid-rollout? Will a bad version take down ALL tenants at once instead of one? (→ staged rollout)
+      habit: Operators schedule maintenance windows and upgrade environments one at a time
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - fleet-wide safe upgrades are what make many tenants operable by a small team;
+        builds directly on epic-5305 zero-downtime work. Current satisfaction: 1 - no fleet upgrade
+        automation today. Gap: 3.
+
+  - id: job-saas-operator-observe-fleet
+    title: See the health of every tenant and the whole fleet from one place
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When I operate many tenants,
+      I want per-tenant and fleet-wide metrics, logs and traces in one monitoring stack with
+      per-tenant attribution,
+      so I can spot a single tenant degrading, answer "is the platform healthy right now?" at a
+      glance, and stand behind an availability commitment — without logging into each tenant
+      individually to check it is alive.
+    dimensions:
+      functional: epic-5305's off-by-default OTel/`/metrics`/Serilog-JSON turned on per tenant, scraped into one Prometheus/Loki/Grafana (or OTel collector) with per-tenant labels; fleet dashboard + per-tenant drill-down; alerting on per-tenant and fleet SLOs
+      emotional: Move from "each tenant is a black box I check by hand" to "one dashboard shows the whole fleet and flags the one tenant that's sick"
+      social: Report fleet health and per-tenant SLAs to stakeholders from one Grafana
+    forces:
+      push: Without per-tenant attribution in one stack, finding the one degraded tenant among many means logging into each — invisible failures fester
+      pull: One observability stack with per-tenant labels turns "is everyone OK?" into a glance and pinpoints the sick tenant
+      anxiety: Will per-tenant cardinality blow up the metrics store? Will turning telemetry on cost the standalone self-hoster (it must stay off-by-default for them)?
+      habit: Operators expect cloud-native fleets to be observable per-instance from a central stack
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 - fleet observability is required to operate many tenants and to honour SLAs.
+        Current satisfaction: 2 - epic-5305 already ships the per-instance signals (off by default);
+        the gap is fleet aggregation + per-tenant attribution, not the signals themselves. Gap: 2.
+
+  - id: job-saas-operator-recover-from-disaster
+    title: Back up every tenant and restore one within a known RPO/RTO
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When a tenant's data is lost or corrupted, or the cluster itself fails,
+      I want automated per-tenant backups and a rehearsed restore that brings a single tenant (or
+      the whole platform) back within a known recovery-point and recovery-time objective,
+      so I can offer customers a real data-durability guarantee and recover from disaster on a
+      tested runbook, instead of discovering at the worst moment that I only hoped the database
+      was fine.
+    dimensions:
+      functional: Scheduled per-tenant Postgres backups to off-cluster storage (RPO target); a rehearsed restore runbook for one tenant and for the whole platform (RTO target); restore verified against Tenant Zero, not just assumed
+      emotional: Move from "I hope the data is safe" to "I have restored a tenant from backup and timed it"
+      social: Offer customers a stated RPO/RTO backed by a rehearsed restore, not a promise
+    forces:
+      push: No automated per-tenant backup means a data-loss or cluster-failure event is unrecoverable; an untested backup is no backup
+      pull: Scheduled backups plus a rehearsed restore turn disaster into a bounded, recoverable event with a stated RPO/RTO
+      anxiety: Will the restore actually work when needed, or fail on a detail never tested? Will one tenant's backup ever be restorable into another's space?
+      habit: Operators set up backups and never test the restore until a real incident forces it
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 - data durability is table-stakes for hosting customer data; the restore must be
+        rehearsed to be real. Current satisfaction: 1 - no automated multi-tenant backup/restore today.
+        Gap: 3.
+
+  - id: job-saas-operator-dogfood-tenant-zero
+    title: Run LetPeopleWork's own instance as the first tenant on the platform
+    persona: platform-operator
+    feature: epic-5306-productization-platform
+    job_story: >
+      When I build the hosting platform,
+      I want LetPeopleWork's own production Lighthouse to run as Tenant Zero on that very
+      platform, ahead of any customer tenant,
+      so every platform capability — provisioning, routing, secrets, upgrades, observability,
+      backup/restore — is proven on our own production data and we feel the operator pain we are
+      asking customers to avoid, instead of shipping a platform we have never actually run
+      ourselves.
+    dimensions:
+      functional: LPW's real instance provisioned as the first tenant through the same substrate→gitops→routing→secrets→provisioning path every customer tenant will use; it is the walking skeleton and the permanent canary for every later capability
+      emotional: Move from "we built a hosting platform on paper" to "we host our own production on it, first"
+      social: Tell customers "we run our own business on this exact platform" — the strongest possible adoption signal
+    forces:
+      push: A platform never run by its makers ships latent operator pain straight to the first customer
+      pull: Dogfooding on real production data surfaces every rough edge before a customer hits it and makes the adoption pitch honest
+      anxiety: Will making LPW production depend on a new platform put our own instance at risk before it is proven? (→ tenant zero IS the thinnest skeleton, de-risked first; backup/restore rehearsed early)
+      habit: Teams build the platform and test it with throwaway demo data, then onboard real users onto an unproven system
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 - tenant zero is the walking skeleton AND the dogfood that validates every other
+        job on production data before a customer lands. Current satisfaction: 1 - LPW is not yet hosted
+        on this platform. Gap: 4 - it is the end-to-end thread the whole epic hangs on.

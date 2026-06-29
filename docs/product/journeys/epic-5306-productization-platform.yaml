@@ -1,0 +1,187 @@
+schema_version: 1
+feature_id: epic-5306-productization-platform
+created: 2026-06-29
+research_depth: comprehensive
+note: >
+  Operational journeys for the WHOLE remaining Epic 5306 — the multi-tenant Kubernetes
+  productization platform that hosts many Lighthouse instances across many tenants. This is the
+  LPW SaaS-operator flavour of the platform-operator persona (the second flavour the persona
+  already names), NOT the self-hoster flavour covered by epic-5306-k8s-productization (#5199/#5200,
+  shipped). The "user" here is the OPERATOR, not a flow-metrics end-user; the "screen" is `tofu`,
+  `argocd`, `kubectl`, `helm`, a browser at a tenant's subdomain, and a Grafana fleet dashboard.
+
+  Built ON the shipped public Helm chart (ADR-080..085): Postgres-only, embedded frontend default,
+  fail-fast values, MCP optional, expand-only migrations, epic-5305 runtime primitives (probes,
+  forwarded headers, graceful drain, Redis backplane, off-by-default OTel). The platform consumes
+  these as PRE-REQUISITES; it does not redesign them.
+
+  HARD CONSTRAINTS inherited by every journey: the STANDALONE GATE (single-container product stays
+  byte-unchanged; every platform capability is additive and auto-degrades), VENDOR-NEUTRALITY
+  (official images only, OpenTofu multi-provider, no single-cloud lock-in), EXPAND-ONLY migrations
+  across rolling updates, EXTEND existing GitHub Actions (no parallel workflow), trunk-based.
+
+  THE CENTRAL SHARED DECISION is the TENANCY MODEL (namespace-per-tenant vs cluster-per-tenant vs
+  shared-instance row-level). DISCUSS names it and its options; DESIGN converges. It drives DNS
+  routing scope, secret isolation, the provisioning unit, DB isolation and backup scope. The
+  working assumption carried into these journeys is namespace-per-tenant on a shared cluster with
+  DB-per-tenant — flagged as an assumption needing confirmation, not a finalized architecture.
+
+  Walking skeleton = LPW as TENANT ZERO brought up end-to-end through the thinnest viable path:
+  substrate → (existing) chart → DNS → secret → one tenant reachable. Tenant Zero is also the
+  permanent canary and the production data every later capability is proven against.
+
+journeys:
+
+  - name: bring-up-the-substrate-and-the-control-plane
+    goal: >
+      A SaaS operator declares the hosting substrate in OpenTofu and `tofu apply`s a conformant
+      cluster on their chosen provider, then bootstraps ArgoCD as the GitOps control plane so the
+      platform's running state is reconciled from a reviewed git repo — the foundation every
+      tenant stands on.
+    persona: "platform-operator (LPW SaaS-operator flavour)"
+    jobs: [job-saas-operator-provision-substrate, job-saas-operator-declare-platform-as-code]
+    stories: ["#5320", "#5201"]
+    emotional_arc:
+      start: Daunted - "hosting many tenants means a cluster nobody dares rebuild and a pile of
+        hand-applied manifests that drift the moment I look away."
+      middle: Codifying - "the substrate is an OpenTofu module I can diff and rebuild; ArgoCD watches
+        the repo and the cluster becomes whatever the repo says."
+      end: Grounded - "the foundation is code. I change the platform by merging a PR; drift self-heals."
+    steps:
+      - step: Declare the cluster (control plane, nodes, CNI, ingress controller, storage class) in OpenTofu and `tofu apply`.
+        output: A conformant cluster on the chosen provider, reproducible from code; `kubectl get nodes` shows the fleet; `tofu destroy` removes it cleanly.
+      - step: Bootstrap ArgoCD and an app-of-apps root pointing at the platform git repo.
+        output: ArgoCD reconciles platform components from git; a merged PR changes the cluster; manual drift is detected and self-healed.
+    error_paths:
+      - trigger: A provider-specific resource (load balancer, storage class) leaks into the platform layer.
+        recovery: The OpenTofu module isolates provider-specific bits behind a provider boundary; the platform layer consumes only conformant-cluster primitives (vendor-neutrality constraint).
+      - trigger: An operator needs an emergency live hotfix during an incident while ArgoCD wants to revert it.
+        recovery: A documented break-glass path (app sync-window / temporary auto-sync disable) lets a live fix stand until it is committed back to git — named as a red card for DESIGN.
+
+  - name: onboard-tenant-zero-and-make-it-reachable
+    goal: >
+      The operator provisions LetPeopleWork's own production Lighthouse as Tenant Zero through the
+      same path every customer tenant will use — the existing chart installed via GitOps into an
+      isolated namespace, reachable at its own subdomain with valid TLS, with its secrets sourced
+      from a managed store rather than committed to git. This is the walking skeleton and the
+      dogfood.
+    persona: "platform-operator (LPW SaaS-operator flavour)"
+    jobs: [job-saas-operator-dogfood-tenant-zero, job-saas-operator-route-tenant-by-subdomain, job-saas-operator-isolate-tenant-secrets]
+    stories: ["#5204", "#5202", "#5203"]
+    emotional_arc:
+      start: Exposed - "we are about to depend on a brand-new platform for our own production instance."
+      middle: Wiring - "tenant zero's namespace, DB, secret and route come up; wildcard DNS gives it
+        lpw.lighthouse.letpeople.work with a trusted cert; the secret comes from the store, not git."
+      end: Proven - "our own production runs on the platform, first. Every later capability gets tested
+        here before any customer sees it."
+    steps:
+      - step: Provision the Tenant Zero namespace and install the existing chart into it via ArgoCD.
+        output: LPW's Lighthouse runs in an isolated namespace, rendered by the shipped chart at its default embedded shape; `kubectl get pods -n tenant-lpw` shows Running/Ready.
+      - step: Route the tenant at its subdomain with wildcard DNS + automatic TLS.
+        output: `https://lpw.lighthouse.letpeople.work` serves LPW's instance with a valid cert; no per-tenant DNS record was created by hand.
+      - step: Source the tenant's secrets (DB creds, OIDC, license) from the managed secret store.
+        output: The tenant's secrets are injected from the store; the GitOps repo contains a secret REFERENCE, never a plaintext secret.
+    error_paths:
+      - trigger: A required tenant value (DB password, OIDC) is missing.
+        recovery: The chart's fail-fast values (ADR-082) refuse a partial release with a clear message; no half-provisioned tenant.
+      - trigger: A tenant's hostname accidentally routes to another tenant's pods.
+        recovery: Ingress host rules are derived from the tenant record (single source); a routing-isolation check asserts host→namespace correctness before a tenant is marked ready.
+      - trigger: A secret would be committed to git as plaintext.
+        recovery: The platform model forbids plaintext secrets in the repo; only encrypted/external references are committed (secrets strategy decision, named for DESIGN).
+
+  - name: provision-the-next-tenant-with-one-action
+    goal: >
+      With Tenant Zero proven, the operator onboards a customer tenant by committing a single
+      declarative tenant record; the platform fans it out into a complete isolated instance
+      (namespace, Postgres, secrets, subdomain route, app) reconciled by ArgoCD — onboarding a
+      customer in minutes, not a day of hand-crafted YAML.
+    persona: "platform-operator (LPW SaaS-operator flavour)"
+    jobs: [job-saas-operator-onboard-tenant]
+    stories: ["#5207"]
+    emotional_arc:
+      start: Wary - "onboarding a real customer by hand is slow and one missed isolation boundary is a breach."
+      middle: Declaring - "I add one tenant record — name, subdomain, plan — commit it, and ArgoCD builds the rest."
+      end: Confident - "Acme is live at acme.lighthouse.letpeople.work in minutes, fully isolated, and I can de-provision them just as cleanly."
+    steps:
+      - step: Add one tenant record (name, subdomain, sizing) to the GitOps repo and merge.
+        output: The tenant generator expands the record into namespace + DB + secrets + route + app; ArgoCD reconciles them; `argocd app list` shows the new tenant's apps Healthy/Synced.
+      - step: Verify isolation and reachability.
+        output: The new tenant serves at its subdomain with its own DB and secrets; it cannot see Tenant Zero's data; provisioning took minutes.
+    error_paths:
+      - trigger: A second tenant reuses a subdomain or DB name already taken.
+        recovery: The provisioning step validates uniqueness of tenant identifiers before apply; a clash fails the PR check, not the live cluster.
+      - trigger: De-provisioning leaves orphaned resources (PVCs, secrets, DNS).
+        recovery: Removing the tenant record triggers a complete teardown (ArgoCD prune + finalizers); a leftover-resource check flags orphans.
+
+  - name: upgrade-the-whole-fleet-safely
+    goal: >
+      A new Lighthouse version ships; the operator bumps one version in git and ArgoCD rolls it
+      across every tenant as a zero-downtime rolling update with expand-only migrations — the
+      whole fleet updated during the working day, with a git-revert rollback and no tenant left on
+      a broken release.
+    persona: "platform-operator (LPW SaaS-operator flavour)"
+    jobs: [job-saas-operator-upgrade-all-tenants-safely]
+    stories: ["#5205"]
+    emotional_arc:
+      start: Tense - "upgrading every tenant by hand does not scale and a bad version could take everyone down at once."
+      middle: Rolling - "I bump appVersion in git; the rollout is staged — Tenant Zero canaries it first, then the fleet follows."
+      end: Calm - "every tenant is on the new version, no dropped requests, and a bad release is a git revert away."
+    steps:
+      - step: Bump the chart appVersion / image tag in the GitOps repo, canary on Tenant Zero first.
+        output: Tenant Zero takes the new version via the epic-5305 rolling-update + drain + expand-only path with zero dropped requests; health holds.
+      - step: Promote the version to the rest of the fleet.
+        output: Every tenant rolls to the new version automatically; `argocd app list` shows all tenants Synced on the new revision; no maintenance window was needed.
+    error_paths:
+      - trigger: A migration in the new release is destructive (violates expand-only) and would break old pods mid-rollout.
+        recovery: The expand-only migration guard (epic-5305) blocks the release in CI before it reaches any tenant.
+      - trigger: The new version is bad and is degrading tenants.
+        recovery: The canary-on-Tenant-Zero gate catches it before fleet promotion; rollback = git revert + `helm rollback` (additive migrations need no schema rollback).
+
+  - name: observe-the-fleet-and-recover-from-disaster
+    goal: >
+      The operator watches every tenant and the whole fleet from one monitoring stack with
+      per-tenant attribution, and — when data is lost or the cluster fails — restores a tenant (or
+      the platform) from automated backups within a known RPO/RTO on a rehearsed runbook.
+    persona: "platform-operator (LPW SaaS-operator flavour)"
+    jobs: [job-saas-operator-observe-fleet, job-saas-operator-recover-from-disaster]
+    stories: ["#5206", "#5208"]
+    emotional_arc:
+      start: Anxious - "with many tenants I cannot check each one by hand, and I only HOPE the backups work."
+      middle: Watching - "one Grafana shows per-tenant and fleet health and flags the one degraded tenant;
+        backups run on a schedule to off-cluster storage."
+      end: Assured - "I have restored Tenant Zero from backup and timed it; I can state an RPO/RTO and a
+        per-tenant SLA and back them up."
+    steps:
+      - step: Turn on epic-5305's off-by-default telemetry per tenant and scrape it into one stack with per-tenant labels.
+        output: A fleet dashboard shows per-tenant request/error/latency and "is everyone OK?" at a glance; alerts fire per-tenant and fleet-wide.
+      - step: Run scheduled per-tenant backups to off-cluster storage.
+        output: Every tenant's Postgres is backed up on schedule within the RPO target; backup success is itself monitored.
+      - step: Rehearse a restore of Tenant Zero (and a customer tenant) and time it.
+        output: A tenant is restored from backup within the RTO target on a tested runbook; the restore is verified, not assumed.
+    error_paths:
+      - trigger: Per-tenant metric cardinality threatens to overwhelm the metrics store.
+        recovery: Per-tenant labels are bounded and aggregated; cardinality is a named DESIGN constraint, not discovered in production.
+      - trigger: A restore fails on an untested detail during a real incident.
+        recovery: The restore is rehearsed against Tenant Zero as part of delivery (not deferred); the runbook is proven before a customer relies on it.
+      - trigger: Turning on telemetry would cost the single-container self-hoster performance.
+        recovery: Telemetry stays OFF by default (standalone gate); it is enabled only per hosted tenant, never in the standalone product.
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: tenant-identifier
+      must_match_across: ["tenant record (GitOps)", "namespace name", "subdomain host", "DB name", "secret store path", "backup object prefix", "metrics tenant label"]
+      failure_message: "A tenant's identity is represented differently across routing/secrets/DB/backup/metrics — the root cause of cross-tenant bleed and orphaned resources."
+    - artifact: base-domain
+      must_match_across: ["wildcard DNS record", "ingress host template", "per-tenant TLS cert SAN", "OIDC callback URL template", "tenant subdomain URLs in NOTES/docs"]
+      failure_message: "The base hosting domain differs between DNS, ingress, TLS and OIDC — tenants get unreachable URLs or broken login."
+    - artifact: chart-version
+      must_match_across: ["GitOps appVersion/image.tag", "Tenant Zero canary revision", "fleet tenant revisions after promotion"]
+      failure_message: "Tenants are on mixed chart versions after a rollout — the fleet upgrade did not converge."
+    - artifact: tenancy-model
+      must_match_across: ["provisioning unit", "DNS routing scope", "secret isolation boundary", "DB isolation boundary", "backup scope", "metrics attribution"]
+      failure_message: "The tenancy model is assumed differently by routing/secrets/DB/backup — the central shared decision was not applied coherently (DESIGN must converge it)."
+
+changelog:
+  - date: "2026-06-29"
+    feature: "epic-5306-productization-platform"
+    change: "Created comprehensive operator journeys for the whole multi-tenant productization platform (substrate, GitOps, tenant-zero walking skeleton, provisioning, fleet upgrades, observability, backup/DR). Tenancy model surfaced as the central shared decision for DESIGN."

@@ -2746,3 +2746,217 @@ C4Container
 - **DEVOPS** (nw-platform-architect) picks up: the CI step wiring in the existing release stage (`helm package` + `helm repo index --merge` + the no-overwrite version guard + the helm-docs `git diff` drift gate + `chart-testing`/`ct` lint+template), the GitHub Pages URL/CNAME path for the Helm repo (`docs/charts/`), and appending the 3 candidate outcomes (`OUT-helm-install-first-try-success`, `OUT-enterprise-docs-self-serve`, `OUT-chart-publish-consistency`) to `docs/product/kpi-contracts.yaml`.
 - **DELIVER** (nw-software-crafter): the chart templates + `values.schema.json` + NOTES.txt + the bundled-Postgres templates + the standalone-gate render guard test + the hand-authored enterprise docs; per-slice (01→05) per the story-map; live `helm install` dogfood against k3s per the slice "dogfood moment".
 - **Open question carried forward (out of this DESIGN scope)**: the live end-to-end MCP OAuth dogfood (ADR-079 readiness checklist — IdP audience/scope, RFC 8707 resource indicators, the server version gate) needs the real environment and is part of the chart's enterprise-docs prerequisites, not the chart code itself.
+
+---
+
+## System Architecture — epic-5306-productization-platform
+
+Feature: epic-5306-productization-platform (ADO Epic #5306 — the 9 remaining children: #5320 substrate, #5201 GitOps, #5204 Tenant Zero, #5202 routing, #5203 secrets, #5207 provisioning, #5205 upgrades, #5206 observability, #5208 backup/DR)
+Wave: DESIGN (combined, whole-platform) | Layer scope: **system / infrastructure only** (IaC/YAML orchestrating Kubernetes — no application or domain code) | Date: 2026-06-29
+Architect: Titan (System Designer), interaction mode = **PROPOSE** (single architect — pure infrastructure: OpenTofu + Helm + ArgoCD + cert-manager/external-dns + ESO/OpenBao + CNPG + kube-prometheus-stack).
+Inputs: `docs/feature/epic-5306-productization-platform/feature-delta.md` (DISCUSS, APPROVED 2026-06-29; 9 stories, CC-1..6, KPIs), `slices/slice-01..12-*.md`, the `## System Architecture — epic-5306-k8s-productization` section above (the shipped #5199 chart this composes), the `## System Architecture — epic-5305-k8s-readiness` section (runtime primitives), ADR-075..079 (epic-5305 runtime), ADR-080..085 (shipped chart), ADR-086..093 (this feature).
+
+This is the **system/infrastructure** view of the LPW **SaaS-operator** platform: a multi-tenant Kubernetes hosting platform that runs **many isolated Lighthouse tenants** on a shared cluster, with LPW's own production as **Tenant Zero**. It introduces **no backend C#/TS code and no domain model** — it is IaC + Helm + GitOps overlays that *compose* the already-shipped #5199 chart and epic-5305 runtime primitives. There is therefore no DDD or application-architecture layer; the "components" are OpenTofu modules, ArgoCD Applications, Kubernetes operators and Helm releases.
+
+### Locked decisions (constraints, not re-litigated)
+
+- **CC-1 tenancy = namespace-per-tenant on a shared cluster** (isolation via NetworkPolicy / RBAC / ResourceQuota; density ≥20/cluster, headroom ~200).
+- **CC-5 = DB-per-tenant** (one CNPG `Cluster` per tenant namespace — ADR-091).
+- **Substrate = Infomaniak Public Cloud (Swiss-sovereign)** → **primary adapter = Infomaniak managed Kubernetes** (OpenTofu connector, free shared control plane ≤10 nodes + CHF 300 credit; O-1 confirmed 2026-06-29); **fallback adapter = k3s-on-compute** for **Hetzner (EU alternative)** / any OpenStack. AWS-EKS parity deferred to slice-12; all land behind the same CC-4 contract.
+- **D0 standalone gate sacrosanct**; **D0b vendor-neutral** (official images only, no Bitnami, no single-cloud lock-in in the platform layer); **D0c expand-only migrations**; **D0d extend existing GH Actions, trunk-based**; **D0e built ON the shipped chart**.
+
+### Converged decisions (this DESIGN → ADRs)
+
+| CC / Red card | Decision | ADR |
+|---|---|---|
+| CC-2 GitOps layout | A tenant IS a `tenants/<id>/tenant.yaml` record; ArgoCD **ApplicationSet (Git-files generator)** fans it; mono-repo, directory-separated `bootstrap/`+`platform/`+`tenants/`; **no bespoke controller** | [ADR-086](./adr-086-gitops-repo-layout-applicationset.md) |
+| CC-3 secrets | **External Secrets Operator + self-hosted OpenBao**; only `ExternalSecret` refs in git; rotation = update store; Sealed Secrets + Vault(BSL) rejected | [ADR-087](./adr-087-secrets-eso-openbao.md) |
+| CC-4 substrate boundary | Module outputs a **conformant-cluster contract** (CNI+NetworkPolicy / ingress / default StorageClass / LoadBalancer / API / egress); **primary adapter = Infomaniak managed k8s** (OpenTofu connector, Swiss), **fallback = k3s-on-compute** (Hetzner EU / any OpenStack); CAPO/EKS drop-in behind the same boundary | [ADR-088](./adr-088-substrate-boundary-openstack-k3s.md) |
+| Red card — break-glass | Per-incident **auto-sync disable on the single affected Application**; standing `ArgoCDAutoSyncDisabled` alert makes it self-expiring | [ADR-089](./adr-089-break-glass-gitops-path.md) |
+| Red card — cardinality | `tenant` is the **one bounded** label; drop unbounded labels at scrape; **recording rules** pre-aggregate the fleet dashboard; cardinality-budget alert | [ADR-090](./adr-090-metric-cardinality-bounding.md) |
+| CC-5 topology | One **CNPG `Cluster` per tenant**; CNPG-native WAL + scheduled backup to off-cluster S3-compatible object storage keyed by id; namespace-isolated, rehearsed restore | [ADR-091](./adr-091-per-tenant-cnpg-backup-restore.md) |
+| Provisioning flow | One record → **sync-wave-ordered** app-of-apps (ns/quota/netpol → DB/secret → chart/route/cert); names derive from id; PR-time uniqueness; removal prunes all | [ADR-092](./adr-092-provisioning-data-flow.md) |
+| Upgrade flow | Tenant-Zero **canary (`canaryVersion`) → promote (`promotedVersion`)**; expand-only CI guard pre-flight; rollback = git revert + helm rollback | [ADR-093](./adr-093-automated-upgrade-flow.md) |
+
+### Architectural pattern
+
+**GitOps-reconciled, namespace-per-tenant multi-tenancy with declarative fan-out.** The substrate (OpenTofu) hands the platform a conformant cluster; ArgoCD's app-of-apps reconciles the whole platform + every tenant from one mono-repo; a single `tenant.yaml` record is fanned by an ApplicationSet into a fully isolated tenant; the shipped #5199 chart is the per-tenant workload, parameterised by values. The guiding discipline mirrors ADR-080/086: **off-the-shelf operators + config-selected branches, no bespoke code, no fork** — every capability is an additive overlay composing shipped primitives.
+
+### Component decomposition (platform components — all `platform/` ArgoCD Applications unless noted)
+
+| Component | Kind | Change-type | Role |
+|---|---|---|---|
+| OpenTofu substrate module | IaC (OpenStack provider) | **CREATE (justified)** | stands up the conformant cluster (ADR-088); only IaC, no app code |
+| ArgoCD + app-of-apps root | GitOps controller (off-the-shelf) | **REUSE (off-the-shelf)** | reconciles platform + tenants from git (ADR-086); self-managed |
+| ApplicationSet (tenant generator) | ArgoCD CR (ships with ArgoCD) | **CREATE (config)** | fans `tenants/*/tenant.yaml` → per-tenant app-of-apps (ADR-086/092) |
+| ingress-nginx | controller (official) | **REUSE (off-the-shelf)** | host-based routing to tenant namespaces |
+| cert-manager + external-dns | controllers (official) | **REUSE (off-the-shelf)** | wildcard/per-host TLS + DNS (US-04/slice-05) |
+| External Secrets Operator + OpenBao | operator + store (off-the-shelf) | **REUSE (off-the-shelf)** | per-tenant secret materialisation (ADR-087) |
+| CloudNativePG operator | operator (official) | **REUSE (off-the-shelf)** | per-tenant Postgres + backup/restore (ADR-091) |
+| kube-prometheus-stack + Grafana | stack (official) | **REUSE (off-the-shelf)** | fleet + per-tenant observability (ADR-090) |
+| #5199 Helm chart | shipped chart | **REUSE (config surface)** | the per-tenant workload; `externalDatabase.*` → CNPG; secret ← ESO; epic-5305 values |
+| epic-5305 runtime primitives | shipped app code | **REUSE (config surface)** | probes/drain/migration-lock/backplane/OTel/MCP-auth — set via chart values, no code change |
+| tenant records + sync-wave manifests + recording rules + CI guards | GitOps YAML | **CREATE (config)** | the declarative glue (ADR-092/093) |
+
+### Reuse Analysis verdict
+
+**Zero unjustified CREATE NEW.** Every overlapping component is REUSE (the shipped chart, all epic-5305 primitives, and every platform capability is an off-the-shelf CNCF/official operator). The only CREATE items are (a) the **OpenTofu substrate module** — irreducibly new IaC, there is no prior substrate to extend, standard provider resources, no bespoke mechanism; and (b) **GitOps configuration** (tenant records, ApplicationSet, sync-wave manifests, recording rules, CI uniqueness/expand-only guards) — config-as-code, not application code. No bespoke controller, no forked chart, no custom secret/DB/backup mechanism. The substrate CREATE is justified by US-01 (no substrate exists); the config CREATEs are justified per-story (US-02/05/06/07/08/09).
+
+### Driving ports (operator entry points)
+
+| Port | Type | Owner | Story |
+|---|---|---|---|
+| `tofu apply` / `tofu destroy` | CLI | operator | US-01 |
+| git PR merge (platform component / `tenant.yaml` / version bump) | git | operator | US-02/06/07 |
+| `argocd app list` / `argocd app set --sync-policy …` (break-glass) | CLI | operator | US-02 |
+| `kubectl` / `curl https://<sub>.lighthouse.letpeople.work` | CLI | operator | US-03/04 |
+| Grafana fleet dashboard | web | operator | US-08 |
+| restore runbook (CNPG `bootstrap.recovery` into scratch ns) | runbook | operator | US-09 |
+
+### Driven ports / adapters (outbound)
+
+| Driven dependency | Adapter / mechanism | Behind CC-4 boundary? |
+|---|---|---|
+| OpenStack (Nova/Neutron/Cinder/Octavia/Swift) | OpenTofu OpenStack provider + cloud-init k3s | **Yes** (provider-specific) |
+| Off-cluster object storage (backups) | CNPG Barman → S3-compatible API (Infomaniak Swift/S3) | **Yes** (endpoint + creds) |
+| OpenBao secret store | ESO `SecretStore` (k8s auth, per-tenant path) | No (vendor-neutral) |
+| DNS zone `lighthouse.letpeople.work` | external-dns | No |
+| ACME CA (Let's Encrypt) | cert-manager `ClusterIssuer` | No |
+| OIDC issuer (per tenant) | chart `oidc.*` values | No |
+
+### Technology choices (pinned — verify latest patch at DELIVER)
+
+| Tool | Pinned version (intent) | Note |
+|---|---|---|
+| OpenTofu | 1.8.x | not proprietary Terraform (D0b) |
+| OpenStack Terraform/Tofu provider | terraform-provider-openstack ~> 2.1 | portable across any OpenStack |
+| k3s | v1.31.x (k3s channel) | Flannel disabled → Calico CNI |
+| Calico | 3.28.x | NetworkPolicy enforcement (CC-1) |
+| ArgoCD | 2.13.x (app-of-apps + ApplicationSet) | official images |
+| cert-manager | 1.16.x | ACME wildcard/per-host |
+| external-dns | 0.15.x | DNS automation |
+| External Secrets Operator | 0.10.x | ESO |
+| OpenBao | 2.1.x | MPL-2.0 Vault fork |
+| CloudNativePG | 1.24.x | per-tenant Postgres + backup |
+| kube-prometheus-stack | 65.x chart (Prometheus 2.55.x / Grafana 11.x) | observability |
+
+> Versions are DESIGN intent; DELIVER (nw-platform-architect) pins exact patch + records in the repo's tooling manifest. Vendor-neutral, official/CNCF images only.
+
+### Standalone-gate enforcement (D0 — hard invariant)
+
+The entire platform is a hosted-only overlay. The standalone single-container product and the #5199 chart's standalone defaults are **byte-unchanged**: telemetry stays off-by-default (ADR-090 verifies the gate), the chart still installs standalone with default values (slice-01 AC), and no platform component is a chart dependency. Every capability auto-degrades (no ESO → plain Secret; no CNPG → bundled Postgres; no Redis → single replica; no telemetry → off).
+
+### C4 — System Context (L1)
+
+```mermaid
+C4Context
+    title System Context — epic-5306 multi-tenant SaaS platform
+    Person(operator, "SaaS operator (Benjamin)", "Provisions substrate, declares platform + tenants via git, operates the fleet")
+    Person(tenantUser, "Tenant end-user", "Uses Lighthouse inside one provisioned tenant")
+    System_Boundary(platform, "LPW hosting platform") {
+        System(gitops, "GitOps repo + ArgoCD", "Single source of truth; reconciles platform + every tenant")
+        System(cluster, "Shared Kubernetes cluster", "Infomaniak managed k8s (Swiss); k3s-on-compute fallback for Hetzner EU; namespace-per-tenant")
+    }
+    System_Ext(openstack, "Infomaniak Public Cloud (OpenStack)", "Nova/Neutron/Cinder/Octavia/Swift — behind the CC-4 substrate boundary")
+    System_Ext(objstore, "Off-cluster object storage", "S3-compatible; per-tenant backups keyed by tenant id")
+    System_Ext(acme, "ACME CA (Let's Encrypt)", "Automatic TLS")
+    System_Ext(dns, "DNS zone *.lighthouse.letpeople.work", "Wildcard + per-tenant hosts")
+    System_Ext(idp, "OIDC provider(s)", "Per-tenant login — vendor-neutral")
+    Rel(operator, gitops, "tofu apply; git PR; argocd")
+    Rel(gitops, cluster, "reconciles (app-of-apps + ApplicationSet)")
+    Rel(cluster, openstack, "provisioned on / LoadBalancer + storage")
+    Rel(cluster, objstore, "CNPG backups (per tenant)")
+    Rel(cluster, acme, "cert-manager issuance")
+    Rel(cluster, dns, "external-dns")
+    Rel(tenantUser, cluster, "HTTPS <sub>.lighthouse.letpeople.work")
+    Rel(cluster, idp, "OIDC (per tenant)")
+```
+
+### C4 — Container (L2)
+
+```mermaid
+C4Container
+    title Container — platform control plane + one tenant namespace
+    Person(operator, "SaaS operator")
+    Person(tenantUser, "Tenant end-user")
+    System_Boundary(cluster, "Shared Kubernetes cluster (managed k8s primary / k3s+Calico fallback; NetworkPolicy probe-verified)") {
+        Container(argocd, "ArgoCD", "app-of-apps + ApplicationSet", "Reconciles platform/ + tenants/ from git; self-managed")
+        Container(ingress, "ingress-nginx", "controller", "Host-based routing to tenant namespaces")
+        Container(certmgr, "cert-manager + external-dns", "controllers", "Wildcard TLS + DNS")
+        Container(eso, "ESO + OpenBao", "operator + store", "Per-tenant ExternalSecret → Secret (ADR-087)")
+        Container(cnpgop, "CloudNativePG operator", "operator", "Manages per-tenant Postgres + backups (ADR-091)")
+        Container(prom, "kube-prometheus-stack + Grafana", "stack", "Per-tenant + fleet metrics; recording rules (ADR-090)")
+        System_Boundary(tns, "Namespace tenant-<id> (NetworkPolicy + ResourceQuota)") {
+            Container(app, "Lighthouse (#5199 chart)", "product image, embedded", "epic-5305 probes/drain/migration-lock; values-configured")
+            ContainerDb(tdb, "CNPG Cluster <id>-db", "Postgres (per-tenant)", "DB-per-tenant; WAL archive → object storage")
+            Container(tsecret, "ExternalSecret → Secret", "ESO", "DB/OIDC/license from OpenBao secret/tenants/<id>/*")
+        }
+    }
+    System_Ext(objstore, "Object storage (backups/<id>/)")
+    System_Ext(openbao, "OpenBao paths")
+    Rel(operator, argocd, "git PR → sync")
+    Rel(argocd, app, "renders chart release")
+    Rel(argocd, tdb, "renders CNPG Cluster")
+    Rel(argocd, tsecret, "renders ExternalSecret")
+    Rel(tenantUser, ingress, "HTTPS")
+    Rel(ingress, app, "host → /, /api, /hub")
+    Rel(app, tdb, "EF Core Npgsql (externalDatabase.*)")
+    Rel(eso, tsecret, "materialises")
+    Rel(tsecret, openbao, "reads per-tenant path")
+    Rel(cnpgop, objstore, "WAL + scheduled backup")
+    Rel(app, tdb, "uses secret from ExternalSecret")
+```
+
+### C4 — Component (L3): the provisioning flow (one record → isolated tenant, ADR-092)
+
+```mermaid
+flowchart TB
+    rec["tenants/&lt;id&gt;/tenant.yaml<br/>{ id, subdomain, plan }"] --> ci{"PR-time CI:<br/>id/subdomain/DB unique?"}
+    ci -- "duplicate" --> reject["reject PR<br/>(never reaches cluster)"]
+    ci -- "unique, merged" --> appset["ApplicationSet<br/>(Git-files generator)"]
+    appset --> aoa["per-tenant app-of-apps Application"]
+    aoa --> w0["wave 0 — isolation shell:<br/>Namespace tenant-&lt;id&gt; +<br/>ResourceQuota + NetworkPolicy"]
+    w0 --> w1["wave 1 — data + secrets:<br/>CNPG Cluster &lt;id&gt;-db +<br/>ExternalSecret → OpenBao secret/tenants/&lt;id&gt;/* +<br/>backup → backups/&lt;id&gt;/"]
+    w1 --> w2["wave 2 — workload + route:<br/>#5199 chart (externalDatabase.* → CNPG) +<br/>Ingress &lt;subdomain&gt;.lighthouse.letpeople.work +<br/>cert-manager Certificate + external-dns"]
+    w2 --> probe["provision.probe:<br/>200 over valid cert +<br/>cross-tenant access DENIED"]
+    probe --> ready["tenant Healthy<br/>(emit onboarding-lead-time KPI)"]
+    rmrec["remove tenant.yaml"] -.-> prune["ApplicationSet prunes Application →<br/>cascade ns/DB/secret/route/DNS<br/>(backup retained per DR policy)"]
+```
+
+### Quality-attribute strategies
+
+- **Onboarding lead time (North Star ≤10 min)**: one committed record → sync-wave fan-out → synthetic provision-probe emits the PR-merge→200 timestamp (ADR-092).
+- **Fleet upgrade safety (KPI-2)**: Tenant-Zero canary → promote, on top of epic-5305 zero-downtime primitives + expand-only CI guard (ADR-093).
+- **Durability (KPI-3/4)**: per-tenant CNPG WAL+backup to off-cluster storage; rehearsed, timed restore; backup-age + restore-rehearsal alerts (ADR-091).
+- **Isolation (guardrail = 0 incidents)**: namespace + NetworkPolicy (Calico) + per-tenant OpenBao path + per-tenant CNPG + per-tenant backup prefix — all keyed off the one CC-6 id; probed live (ADR-088/092).
+- **No-drift / change-control (KPI-6)**: GitOps app-of-apps + self-heal; break-glass is observable + self-expiring (ADR-089).
+- **Cardinality bound (KPI-8 store health)**: one `tenant` label + label drops + recording rules + budget alert (ADR-090).
+
+### Earned-Trust probes (the platform proves its substrate, never assumes it)
+
+| Probe | Asserts empirically | Refusal signal |
+|---|---|---|
+| `substrate.probe` (post-`tofu apply`) | NetworkPolicy actually drops cross-ns traffic; LoadBalancer gets an IP; default StorageClass binds | `health.startup.refused{component=substrate, lie=…}` (ADR-088) |
+| `secrets.probe` (ESO/OpenBao bring-up) | round-trip secret materialises; cross-tenant read denied | `health.startup.refused{component=eso, lie=…}` (ADR-087) |
+| `provision.probe` (post-tenant-sync) | 200 over valid cert; tenant cannot reach another's ns/DB | tenant flagged unhealthy (ADR-092) |
+| `dr.restore.rehearsed` (per release) | Tenant-Zero backup restores + serves within RTO | alert if failed/over-RTO (ADR-091) |
+| `BackupStale` / `ArgoCDAutoSyncDisabled` / cardinality-budget | backups run; no forgotten break-glass; TSDB within budget | standing alerts (ADR-089/090/091) |
+
+Self-application: `substrate.probe` and `secrets.probe` re-run after every k3s/Calico/CCM/CSI and ESO/OpenBao version bump; `dr.restore.rehearsed` runs per release.
+
+### ADRs (this feature)
+
+- [ADR-086](./adr-086-gitops-repo-layout-applicationset.md): GitOps layout — tenant = record, ApplicationSet generator, mono-repo, no controller (CC-2). PROPOSED.
+- [ADR-087](./adr-087-secrets-eso-openbao.md): secrets — ESO + OpenBao, refs-only in git, rotate via store (CC-3). PROPOSED.
+- [ADR-088](./adr-088-substrate-boundary-openstack-k3s.md): substrate boundary — conformant-cluster contract; primary = Infomaniak managed k8s (Swiss, free tier), fallback = k3s-on-compute (Hetzner EU / OpenStack) (CC-4 + O-1 resolved). PROPOSED.
+- [ADR-089](./adr-089-break-glass-gitops-path.md): break-glass — per-app auto-sync disable + self-expiring alert. PROPOSED.
+- [ADR-090](./adr-090-metric-cardinality-bounding.md): cardinality — one bounded `tenant` label + recording rules + budget alert. PROPOSED.
+- [ADR-091](./adr-091-per-tenant-cnpg-backup-restore.md): per-tenant CNPG + off-cluster backup + isolated rehearsed restore (CC-5 topology). PROPOSED.
+- [ADR-092](./adr-092-provisioning-data-flow.md): provisioning data-flow — sync-wave fan-out from one record, names from id, PR-time uniqueness. PROPOSED.
+- [ADR-093](./adr-093-automated-upgrade-flow.md): upgrade — Tenant-Zero canary → promote, expand-only guard, git-revert rollback. PROPOSED.
+
+### Handoff (DESIGN → DELIVER, slice-ordered)
+
+- **slice-01..03 (WS)**: substrate module (ADR-088) → ArgoCD app-of-apps (ADR-086) → Tenant Zero reachable (interim hand-made secret/route). **slice-04**: ESO+OpenBao (ADR-087). **slice-05**: wildcard routing (cert-manager/external-dns). **slice-06**: second tenant by hand (validates CC-1). **slice-07**: ApplicationSet provisioning (ADR-092) + CNPG (ADR-091 DB). **slice-08**: canary→promote upgrade (ADR-093). **slice-09**: observability (ADR-090). **slice-10/11**: backup + rehearsed restore (ADR-091). **slice-12**: EKS parity behind the CC-4 boundary (deferred).
+- **DEVOPS** (nw-platform-architect): pin exact tool versions in the repo tooling manifest; wire the PR-time uniqueness + expand-only guards into the existing GH Actions workflow; size the cardinality budget + RPO/RTO targets; provision OpenBao unseal/object-store credentials out-of-band.
+
