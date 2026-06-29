@@ -47,7 +47,11 @@
           "properties": {
             "database": { "type": "string", "minLength": 1 },
             "username": { "type": "string", "minLength": 1 },
-            "password": { "type": "string" }
+            "password": { "type": "string" },
+            "existingSecret": {
+              "type": "string",
+              "description": "Pre-existing Secret name supplying Database__ConnectionString + postgres-password. When set, auth.password is not required."
+            }
           }
         },
         "persistence": {

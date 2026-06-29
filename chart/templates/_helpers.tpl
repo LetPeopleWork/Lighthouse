@@ -45,6 +45,29 @@ app.kubernetes.io/component: postgres
 {{- printf "%s-db" (include "lighthouse.fullname" .) -}}
 {{- end -}}
 
+{{/* DB Secret name — a pre-existing Secret (postgresql.auth.existingSecret) or the chart-owned one.
+     When set, an operator (slice-03 hand-made) or an external secret store (ESO/OpenBao, slice-04)
+     owns the credential, so the password is never a Helm value (CC-3). The Secret MUST provide both
+     keys the chart consumes: Database__ConnectionString and postgres-password. */}}
+{{- define "lighthouse.db.secretName" -}}
+{{- if .Values.postgresql.auth.existingSecret -}}
+{{- .Values.postgresql.auth.existingSecret -}}
+{{- else -}}
+{{- include "lighthouse.secretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Whether the chart renders the DB keys into its own Secret. False when a pre-existing Secret
+     supplies them (postgresql.auth.existingSecret) — then the render-time password `required`
+     (ADR-082) is relaxed, since the credential lives outside the chart. */}}
+{{- define "lighthouse.renderDbKeys" -}}
+{{- if .Values.postgresql.auth.existingSecret -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
 {{/* Effective DB host — bundled Postgres service or externalDatabase.host (for the startup wait) */}}
 {{- define "lighthouse.db.host" -}}
 {{- if .Values.postgresql.enabled -}}

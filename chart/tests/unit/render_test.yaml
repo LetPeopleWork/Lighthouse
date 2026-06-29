@@ -79,3 +79,57 @@ tests:
       - equal:
           path: data["Kestrel__Endpoints__Https__Url"]
           value: "https://+:8443"
+
+  # --- slice-03: postgresql.auth.existingSecret (operator/ESO-owned credential, CC-3) ---
+
+  - it: existingSecret relaxes the ADR-082 password required (no failure with password omitted)
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+    template: templates/secret.yaml
+    asserts:
+      # No OIDC, no chart-rendered DB keys → the chart owns no Secret at all.
+      - hasDocuments:
+          count: 0
+
+  - it: existingSecret does not render chart-owned DB keys but still renders the OIDC secret
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: shh
+    template: templates/secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: stringData.Database__ConnectionString
+      - notExists:
+          path: stringData["postgres-password"]
+      - equal:
+          path: stringData.Authentication__ClientSecret
+          value: shh
+
+  - it: bundled Postgres reads POSTGRES_PASSWORD from the existing Secret
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+    template: templates/postgres-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[2].valueFrom.secretKeyRef.name
+          value: tenant-lpw-db
+      - equal:
+          path: spec.template.spec.containers[0].env[2].valueFrom.secretKeyRef.key
+          value: postgres-password
+
+  - it: API reads Database__ConnectionString from the existing Secret
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name
+          value: tenant-lpw-db
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.key
+          value: Database__ConnectionString

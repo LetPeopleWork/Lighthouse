@@ -4,7 +4,7 @@ Flow metrics and probabilistic forecasting for Kubernetes. Postgres-only (ADR-08
 brings the whole stack up — API (SPA served in-process), bundled or external Postgres, optional MCP
 workload and OIDC — with one command.
 
-- **Chart version:** `0.1.1`
+- **Chart version:** `0.1.2`
 - **App image (appVersion):** `26.6.21.1`
 
 > This README's **Values** section is generated from `values.yaml` by [`helm-docs`](https://github.com/norwoodj/helm-docs).
@@ -16,8 +16,8 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.1 / APP 26.6.21.1
-helm install l8e letpeoplework/lighthouse --version 0.1.1 -f values-enterprise.yaml
+helm search repo lighthouse          # shows CHART 0.1.2 / APP 26.6.21.1
+helm install l8e letpeoplework/lighthouse --version 0.1.2 -f values-enterprise.yaml
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,
@@ -65,7 +65,8 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | postgresql.image | string | `"postgres:17"` | Bundled Postgres image (official, vendor-neutral). |
 | postgresql.auth.database | string | `"lighthouse"` | Database name. |
 | postgresql.auth.username | string | `"lighthouse"` | Database user. |
-| postgresql.auth.password | string | `""` | Database password. REQUIRED — no default (ADR-082, explicit password). |
+| postgresql.auth.password | string | `""` | Database password. REQUIRED — no default (ADR-082, explicit password). Ignored when    existingSecret is set. |
+| postgresql.auth.existingSecret | string | `""` | Read DB credentials from a pre-existing Secret instead of rendering them from auth.password.    The Secret MUST provide both keys the chart consumes: `Database__ConnectionString` (the full    Npgsql string) and `postgres-password` (POSTGRES_PASSWORD for the bundled StatefulSet). Lets an    operator (slice-03) or an external secret store (ESO/OpenBao, slice-04) own the credential    without passing it as a Helm value (CC-3). When set, the ADR-082 render-time password `required`    is relaxed. Empty = the chart renders its own Secret from auth.password. |
 | postgresql.persistence.size | string | `"8Gi"` | PVC size for the bundled Postgres data volume. |
 | postgresql.persistence.storageClass | string | `""` | StorageClass for the PVC. Empty uses the cluster default. |
 | shutdownTimeoutSeconds | int | `30` | Bounded graceful-shutdown drain window (seconds); maps to Shutdown:TimeoutSeconds + terminationGracePeriodSeconds (epic-5305 #5309). |

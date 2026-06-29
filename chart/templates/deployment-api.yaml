@@ -54,7 +54,7 @@ spec:
             - name: Database__ConnectionString
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "lighthouse.secretName" . }}
+                  name: {{ include "lighthouse.db.secretName" . }}
                   key: Database__ConnectionString
             {{- with .Values.redis.connectionString }}
             # epic-5305 #5304 SignalR Redis backplane + single-instance background work (replicaCount>1).

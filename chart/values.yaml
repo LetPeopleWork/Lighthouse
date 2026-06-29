@@ -54,8 +54,16 @@ postgresql:
     database: lighthouse
     # -- Database user.
     username: lighthouse
-    # -- Database password. REQUIRED — no default (ADR-082, explicit password).
+    # -- Database password. REQUIRED — no default (ADR-082, explicit password). Ignored when
+    #    existingSecret is set.
     password: ""
+    # -- Read DB credentials from a pre-existing Secret instead of rendering them from auth.password.
+    #    The Secret MUST provide both keys the chart consumes: `Database__ConnectionString` (the full
+    #    Npgsql string) and `postgres-password` (POSTGRES_PASSWORD for the bundled StatefulSet). Lets an
+    #    operator (slice-03) or an external secret store (ESO/OpenBao, slice-04) own the credential
+    #    without passing it as a Helm value (CC-3). When set, the ADR-082 render-time password `required`
+    #    is relaxed. Empty = the chart renders its own Secret from auth.password.
+    existingSecret: ""
   persistence:
     # -- PVC size for the bundled Postgres data volume.
     size: 8Gi
