@@ -12,19 +12,24 @@
   (ADR-086..093), 12 slice docs. O-1..O-5 resolved.
 - ✅ DISTILL (WS-first S01-S03): `.feature` SSOT in public Lighthouse; Tier-1 [REF] wave-delta in
   feature-delta.md. Reconciliation gate PASSED. Committed c19c4eeb (Lighthouse, local).
-- ✅ DELIVER S01 substrate (#5320): OpenTofu module in private repo, pushed to main. `@in-memory`
-  band GREEN (`tofu fmt` + `tofu validate` vs real openstack provider v2.1). Dual adapter
-  (managed-k8s Magnum primary + k3s-compute fallback) behind CC-4 contract per ADR-088.
+- ✅ DELIVER S01 substrate (#5320): OpenTofu module (private repo). Managed adapter = REAL Infomaniak
+  KaaS provider `Infomaniak/infomaniak` (`infomaniak_kaas` + `_instance_pool`), NOT Magnum (O-1
+  fully resolved). k3s-compute fallback behind same CC-4 contract.
+  **APPLIED + LIVE**: cluster `lpw-substrate` kaas_id=4323 (cloud 21349 / project 44008 PCP-6ROXJE3),
+  status Active, 2 nodes Ready v1.33.8 (k8s 1.31 deprecated → 1.33). kubeconfig at
+  `~/.kube/lpw-substrate.yaml` (local, 0600). tofu state LOCAL (move to Infomaniak S3 before CI/team).
+  Billing against CHF 300 credit. ⚠️ INFOMANIAK_TOKEN exposed in chat transcript — ROTATE.
 
 ## Next
-1. **S01 @requires_external** — operator runs `tofu apply`/`destroy` with Infomaniak creds
-   (OS_* env). Confirm Infomaniak managed-k8s resource shape vs the Magnum modelling (residual O-1)
-   before first apply — boundary is contained to `modules/managed-k8s/`.
-2. **DISTILL S02 is done** (slice-02-gitops.feature exists). **DELIVER S02** — `gitops/bootstrap/`
-   + `gitops/platform/` ArgoCD app-of-apps (ADR-086) in the private repo; greens slice-02 @in-memory
-   (kubeconform manifest lint) then @requires_external reconcile/drift.
-3. **DELIVER S03** — `gitops/tenants/lpw/` Tenant Zero record; completes the WS line.
-4. **DISTILL S04-S11 per-slice** as DELIVER reaches them; S12 deferred.
+1. **Rotate INFOMANIAK_TOKEN** (exposed in transcript). Re-export new one for any further tofu/API.
+2. **DELIVER S02 @requires_external** — code DONE + pushed (`gitops/` app-of-apps, kubeconform green).
+   Remaining: install ArgoCD onto the live cluster, give ArgoCD **read access to the PRIVATE repo**
+   (deploy key or PAT — new credential decision), apply `gitops/bootstrap/root-app.yaml`, prove
+   PR-sync + drift self-heal. kubeconfig: `~/.kube/lpw-substrate.yaml`.
+3. **DELIVER S03** — `gitops/tenants/lpw/tenant.yaml` already committed; bring Tenant Zero up
+   reachable at `https://lpw.lighthouse.letpeople.work` (DNS + hand-made secret). Completes WS.
+4. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
+5. **DISTILL S04-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
