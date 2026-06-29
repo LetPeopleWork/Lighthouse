@@ -28,18 +28,31 @@
    platform/tenants/cert-manager Synced/Healthy. ApplicationSet generated tenant-lpw. Manifests use
    SSH repoURLs. Drift self-heal PROVEN (deleted cert-manager deploy → ArgoCD recreated it).
    ADO #5201 = Resolved.
-3. **DELIVER S03 (next)** — tenant-lpw is Unknown: chart fails-fast on missing DB password (ADR-082,
-   proves slice-03 @error AC). Bring Tenant Zero up: hand-made Postgres/OIDC secret in tenant-lpw ns,
-   confirm chart published at docs.lighthouse.letpeople.work/charts (v0.1.1), DNS for
-   lpw.lighthouse.letpeople.work → ingress LB, cert. Completes the WS. NOTE: chart values reference
-   secret — wire the hand-made secret name into the ApplicationSet helm values or chart.
-   **DECIDED (2026-06-29):** add `postgresql.auth.existingSecret` to the PUBLIC chart (#5199) — chart
-   reads password from a pre-existing k8s Secret via secretKeyRef, relax the ADR-082 render-time
-   `required` when existingSecret set. DURABLE: slice-03 hand-creates that Secret; slice-04 ESO
-   creates the SAME Secret from OpenBao — chart reference unchanged. Do NOT pass password as a helm
-   value (CC-3 violation, ESO-incompatible). Chart change = secret.yaml + deployment secretKeyRef +
-   values + values.schema.json + a render test. Then: ingress-nginx Application in platform/, DNS
-   lpw.lighthouse.letpeople.work → ingress LB, cert-manager ClusterIssuer (Let's Encrypt).
+3. ✅ **DELIVER S03 done (LIVE 2026-06-29)** — Tenant Zero reachable at
+   **https://lpw.lighthouse.letpeople.work** over a trusted Let's Encrypt cert. ALL three
+   "done=observable" met (pods Ready, trusted HTTPS serves LPW, real secret out-of-band).
+   - PUBLIC chart 0.1.2 (pushed 7f4da742): `postgresql.auth.existingSecret` — chart reads DB creds
+     from a pre-existing Secret. CRUX: Npgsql connection string is monolithic, so the existing Secret
+     supplies BOTH keys (`Database__ConnectionString` + `postgres-password`), not just the password.
+     New helpers `lighthouse.db.secretName` + `lighthouse.renderDbKeys`; secret.yaml skips chart-owned
+     DB keys (and renders no empty Secret) when set; deployment+statefulset DB refs → db.secretName.
+     ADR-082 `required` relaxed by NOT calling connectionString helper (no helper edit). 44/44 unittest.
+     Packaged+indexed into docs/charts; served via Pages.
+   - PRIVATE platform (pushed b652934): tenant-lpw chartVersion→0.1.2 + `existingSecret: lighthouse-db`
+     + ingress TLS/cert annotation in ApplicationSet values; new platform/ingress-nginx.yaml
+     (LoadBalancer, default IngressClass nginx) + platform/cluster-issuer.yaml (letsencrypt-prod,
+     HTTP-01, contact contact@letpeople.work).
+   - LIVE: ingress-nginx LB **179.237.75.110** (Infomaniak Octavia). DNS A lpw.lighthouse→IP (GoDaddy,
+     letpeople.work zone, user-made). cert-manager HTTP-01 → cert lpw-tls READY. tenant-lpw api+postgres
+     1/1; API↔Postgres via hand-made `lighthouse-db` Secret (ns tenant-lpw, out-of-band, NOT in git).
+   - NO OIDC on Tenant Zero yet (ApplicationSet sets only ingress.host; oidc defaults off = standalone
+     parity). DECIDED: add OIDC in slice-04 so the client secret is ESO-sourced from day one (avoid
+     hand-made-then-migrate). Chart keeps OIDC clientSecret in `lighthouse.secretName` (separate from
+     the DB existingSecret) → enabling OIDC is an independent flip.
+   - DNS long-term: slice-05 wildcard `*.lighthouse.letpeople.work`→LB (one record, all tenants) or
+     external-dns controller; today's single explicit host is deliberate slice-03 thinness.
+   - ⚠️ hand-made lighthouse-db Postgres password appeared in chat transcript (cluster-internal DB,
+     slice-04 ESO rotates it — low stakes). ADO #5204 + thin #5202 → transition to Resolved.
 4. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
 5. **DISTILL S04-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
