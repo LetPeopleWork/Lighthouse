@@ -26,12 +26,20 @@
    reconciling from the PRIVATE repo over a read-only SSH **deploy key** (`argocd-readonly`, key
    `~/.ssh/lpw-platform-argocd`; argocd repo secret `lighthouse-platform-repo`). platform-root/
    platform/tenants/cert-manager Synced/Healthy. ApplicationSet generated tenant-lpw. Manifests use
-   SSH repoURLs. (Optional remaining: explicit drift-self-heal demo.)
+   SSH repoURLs. Drift self-heal PROVEN (deleted cert-manager deploy → ArgoCD recreated it).
+   ADO #5201 = Resolved.
 3. **DELIVER S03 (next)** — tenant-lpw is Unknown: chart fails-fast on missing DB password (ADR-082,
    proves slice-03 @error AC). Bring Tenant Zero up: hand-made Postgres/OIDC secret in tenant-lpw ns,
    confirm chart published at docs.lighthouse.letpeople.work/charts (v0.1.1), DNS for
    lpw.lighthouse.letpeople.work → ingress LB, cert. Completes the WS. NOTE: chart values reference
    secret — wire the hand-made secret name into the ApplicationSet helm values or chart.
+   **DECIDED (2026-06-29):** add `postgresql.auth.existingSecret` to the PUBLIC chart (#5199) — chart
+   reads password from a pre-existing k8s Secret via secretKeyRef, relax the ADR-082 render-time
+   `required` when existingSecret set. DURABLE: slice-03 hand-creates that Secret; slice-04 ESO
+   creates the SAME Secret from OpenBao — chart reference unchanged. Do NOT pass password as a helm
+   value (CC-3 violation, ESO-incompatible). Chart change = secret.yaml + deployment secretKeyRef +
+   values + values.schema.json + a render test. Then: ingress-nginx Application in platform/, DNS
+   lpw.lighthouse.letpeople.work → ingress LB, cert-manager ClusterIssuer (Let's Encrypt).
 4. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
 5. **DISTILL S04-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
