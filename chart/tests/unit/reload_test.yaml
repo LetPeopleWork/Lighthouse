@@ -1,0 +1,80 @@
+suite: wildcard routing + auto-reload (slice-05)
+# Greens slice-05-wildcard-routing.feature @in-memory band: host-mandatory routing + the config
+# checksum + the managed-secret reloader watch that lets an out-of-band ESO/OpenBao rotation reach
+# the running API without a manual `rollout restart` (carry-over finding #3).
+tests:
+  # --- @error: Routing a tenant without a host fails fast ---
+  - it: ingress enabled with an empty host fails fast naming the missing host
+    set:
+      postgresql.auth.password: pw
+      ingress.enabled: true
+      ingress.host: ""
+    template: templates/ingress.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "ingress.enabled is set but ingress.host is empty — every routed tenant needs a host under the wildcard mechanism (epic-5306 slice-05); set ingress.host"
+
+  # --- A tenant's host routes only to that tenant, and carries automatic TLS ---
+  - it: the configured host is bound and carries a TLS block for an auto-issued cert
+    set:
+      postgresql.auth.password: pw
+      ingress.host: lpw.lighthouse.letpeople.work
+      ingress.tls: true
+      ingress.annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+    template: templates/ingress.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: lpw.lighthouse.letpeople.work
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: lpw.lighthouse.letpeople.work
+      - equal:
+          path: metadata.annotations["cert-manager.io/cluster-issuer"]
+          value: letsencrypt-prod
+
+  # --- A configuration change re-stamps the workload (checksum present + well-formed) ---
+  # The differs-on-change / stable-on-identical property is proven by a render-diff smoke check
+  # (helm template twice); here we assert the fingerprint is present and a real sha256 when a
+  # managed credential is in use.
+  - it: a managed-credential tenant carries a config checksum on the API pod template
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+    template: templates/deployment-api.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/config"]
+          pattern: ^[a-f0-9]{64}$
+
+  # --- The tenant workload is wired to reload on its managed secrets, naming DB + login ---
+  - it: both managed secrets are named as the ones to watch for reload
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.existingSecret: tenant-lpw-oidc
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["secret.reloader.stakater.com/reload"]
+          value: tenant-lpw-db,tenant-lpw-oidc
+
+  - it: a DB-only managed tenant watches just the database secret
+    set:
+      postgresql.auth.existingSecret: tenant-lpw-db
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["secret.reloader.stakater.com/reload"]
+          value: tenant-lpw-db
+
+  # --- Standalone defaults carry no auto-reload wiring (D0 byte-unchanged) ---
+  - it: standalone defaults add no reload annotations to the API pod template
+    set:
+      postgresql.auth.password: pw
+    template: templates/deployment-api.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations

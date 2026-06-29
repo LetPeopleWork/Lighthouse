@@ -14,6 +14,17 @@ spec:
       {{- include "lighthouse.api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if eq (include "lighthouse.reloadEnabled" .) "true" }}
+      annotations:
+        # epic-5306 slice-05 (carry-over finding #3): make config + managed-secret changes reach the
+        # running API without a manual `rollout restart`. checksum/config re-stamps the pod when the
+        # chart-rendered ConfigMap changes (a render-time hash). The reloader watch handles Secrets that
+        # rotate OUTSIDE Helm — ESO/OpenBao materialises them after render, so the checksum never sees
+        # them; stakater/reloader observes the named Secret(s) at runtime and rolls the Deployment.
+        # Only emitted when a managed (existingSecret) credential is in use → standalone stays unchanged.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secret.reloader.stakater.com/reload: {{ include "lighthouse.reloadSecrets" . | quote }}
+      {{- end }}
       labels:
         {{- include "lighthouse.api.selectorLabels" . | nindent 8 }}
     spec:

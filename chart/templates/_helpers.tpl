@@ -90,6 +90,24 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/* Managed secrets the API must reload on when they rotate OUT-OF-BAND of Helm (ESO/OpenBao, slice-04).
+     Only existingSecret-sourced credentials are listed: ESO materialises them after Helm has rendered,
+     so a config checksum (a render-time hash) never sees the rotated value — a reloader watch on the
+     named Secret(s) is what restarts the pod (epic-5306 slice-05, carry-over finding #3). Empty for
+     standalone defaults (no managed store) → no reload wiring is emitted → D0 byte-unchanged. */}}
+{{- define "lighthouse.reloadSecrets" -}}
+{{- $names := list -}}
+{{- with .Values.postgresql.auth.existingSecret }}{{- $names = append $names . -}}{{- end -}}
+{{- with .Values.oidc.existingSecret }}{{- $names = append $names . -}}{{- end -}}
+{{- $names | uniq | join "," -}}
+{{- end -}}
+
+{{/* True when the workload uses any managed (existingSecret) credential and therefore gets the
+     auto-reload wiring (checksum/config + reloader watch). False for standalone defaults. */}}
+{{- define "lighthouse.reloadEnabled" -}}
+{{- if include "lighthouse.reloadSecrets" . -}}true{{- else -}}false{{- end -}}
+{{- end -}}
+
 {{/* Effective DB host — bundled Postgres service or externalDatabase.host (for the startup wait) */}}
 {{- define "lighthouse.db.host" -}}
 {{- if .Values.postgresql.enabled -}}
