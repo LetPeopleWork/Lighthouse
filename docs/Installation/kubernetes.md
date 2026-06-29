@@ -11,9 +11,8 @@ nav_order: 3
 > ## 🚧 Preview
 >
 > **Kubernetes / Helm support is a preview feature and under active development.** The chart works and
-> is dogfooded end to end (simple install, OIDC login, horizontal scaling, MCP), but values and defaults
-> may still change between versions, and some pieces are not finished — most notably, **MCP OAuth
-> auto-discovery through the Ingress is still being completed** (see [Scenario 4](#scenario-4--mcp-server-oidc-oauth)).
+> is dogfooded end to end (simple install, OIDC login, horizontal scaling, MCP with OAuth
+> auto-discovery), but values and defaults may still change between versions.
 > Validate it in a non-production environment before you rely on it, and pin a specific chart + image
 > version. Feedback welcome.
 
@@ -270,22 +269,23 @@ API validates it. No-auth and shared-API-key modes are not used here.
 ```sh
 helm upgrade l8e letpeoplework/lighthouse --reuse-values \
   --set mcp.enabled=true --set mcp.auth.mode=oauth \
-  --set mcp.image='ghcr.io/letpeoplework/lighthouse-clients/mcp-http:1.3.0'
+  --set mcp.image='ghcr.io/letpeoplework/lighthouse-clients/mcp-http:1.3.2'
   # mcp.auth.mode=oauth requires oidc.audience (set in Scenario 2) — the server needs issuer AND resource
 kubectl rollout status deploy/l8e-lighthouse-mcp
 ```
 
 **You should see:** the `l8e-lighthouse-mcp` Deployment available on the `/mcp` Ingress path; the MCP
-server advertises RFC 9728 protected-resource metadata at `/.well-known/oauth-protected-resource`
-(naming your IdP as the authorization server and `oidc.audience` as the resource); and a tool call
-without a valid Bearer is rejected with `401` + a `WWW-Authenticate` challenge — auth is enforced end to
-end.
+server advertises RFC 9728 protected-resource metadata at `/.well-known/oauth-protected-resource/mcp`
+(the chart routes that root well-known path to the MCP server; it names your IdP as the authorization
+server and `oidc.audience` as the resource); and a tool call without a valid Bearer is rejected with
+`401` + a `WWW-Authenticate` challenge whose `resource_metadata` points at that `https://` URL — so an
+external MCP client can auto-discover the IdP and run the browser OAuth flow. Auth is enforced end to end.
 
-{: .warning }
-> **Preview limitation.** OAuth **auto-discovery from an external MCP client (e.g. Claude Desktop)
-> through the Ingress is not finished yet** — the advertised metadata URL currently uses the wrong scheme
-> and path behind the `/mcp` ingress mount, so a client cannot complete the browser OAuth flow against
-> the public host. Direct-to-service access and enforcement are correct. Tracked and being completed.
+> **Note (IdP support).** Auto-discovery follows RFC 9728/8414: the client reads the authorization server
+> from the protected-resource metadata, then fetches that server's metadata and (if needed) registers a
+> client. IdPs that serve their metadata at the issuer's well-known and support dynamic client
+> registration (e.g. Keycloak) work out of the box; Microsoft Entra needs a pre-registered public client
+> (no DCR) and serves its metadata under the tenant path, so configure the client app explicitly there.
 
 ## Uninstall
 

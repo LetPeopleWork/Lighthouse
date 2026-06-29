@@ -29,6 +29,16 @@ spec:
       http:
         paths:
           {{- if .Values.mcp.enabled }}
+          # RFC 9728 OAuth protected-resource metadata is anchored at the host
+          # root (/.well-known/oauth-protected-resource[/mcp]); route it to the
+          # MCP server, not the API, so clients can auto-discover the IdP (#5362).
+          - path: /.well-known/oauth-protected-resource
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "lighthouse.mcp.host" . }}
+                port:
+                  name: http
           - path: /mcp
             pathType: Prefix
             backend:

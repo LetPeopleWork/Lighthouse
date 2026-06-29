@@ -45,15 +45,25 @@ tests:
           path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-buffer-size"]
           value: "16k"
 
-  - it: ingress routes /mcp to the MCP service when enabled
+  - it: ingress routes /mcp and the OAuth well-known to the MCP service when enabled
     set:
       postgresql.auth.password: testpass
       mcp.enabled: true
     template: templates/ingress.yaml
     asserts:
+      # RFC 9728 metadata is root-anchored; the chart routes it to MCP (#5362).
       - equal:
           path: spec.rules[0].http.paths[0].path
+          value: /.well-known/oauth-protected-resource
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: RELEASE-NAME-lighthouse-mcp
+      - equal:
+          path: spec.rules[0].http.paths[1].path
           value: /mcp
+      - equal:
+          path: spec.rules[0].http.paths[1].backend.service.name
+          value: RELEASE-NAME-lighthouse-mcp
 
   - it: external Postgres renders no bundled pod and wires the external host
     set:
