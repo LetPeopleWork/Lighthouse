@@ -55,7 +55,7 @@ jobs:
 
     - name: Set up JDK 17
       if: ${{ inputs.run_sonar }}
-      uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287
+      uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520
       with:
         java-version: 17
         distribution: 'zulu'
@@ -68,7 +68,7 @@ jobs:
         python Scripts/generate_license.py private_key.pem Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json "1886" "Lighthouse CI" "ci@lighthouse.test" "Lighthouse Test Organization" "$(date -d '+2 days' '+%Y-%m-%d')" "$(date -d '-3 days' '+%Y-%m-%d')"
 
     - name: Cache NuGet packages
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/Lighthouse.Backend/**/*.csproj') }}
