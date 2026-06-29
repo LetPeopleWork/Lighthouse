@@ -1,11 +1,17 @@
-# RESUME — MCP OAuth discovery fix (ADO #5362)
+# RESUME — MCP OAuth discovery fix (ADO #5362) — ✅ DONE (code; pin image on release)
 
-> **This is the NEXT thing to do (step 1 of 2).** Flow: **bugfix** (`/nw-bugfix`), NOT full nWave waves.
-> RCA is already done. Sibling of #5330. Child of Epic 5306.
+> **Step 1 of 2 — DONE 2026-06-29.** Flow: **bugfix** (`/nw-bugfix`). Next = step 2 (combined
+> DISCUSS/DESIGN), see `docs/feature/epic-5306-productization-platform/RESUME.md`.
+> RCA was already done. Sibling of #5330. Child of Epic 5306.
 
 ## Status
 - **RCA: DONE.** Root cause pinpointed during the epic-5306 manual k8s dogfood (finding #12).
-- **Code: not started.** Spans two repos: `lighthouse-clients` (mcp-http) + the Lighthouse Helm chart.
+- **Code: DONE.** Option (a), `lighthouse-clients` `96da0a7` (mcp-http only — base-path-aware +
+  `X-Forwarded-Proto`/`X-Forwarded-Host`; serves metadata at root and `/mcp/.well-known/...`).
+  Regression tests in `bin.oauth.test.ts`; changeset = patch. Repo `ci` (lint+test+typecheck+build) green.
+  **No Helm chart change** — ingress already routes the `/mcp` prefix to the MCP service.
+- **Remaining:** pin `mcp.image` to the published release carrying `96da0a7` (changeset must release first).
+  Live re-verify with Claude Desktop against `https://lighthouse.local/mcp` once the image is pinned.
 
 ## Root cause
 `lighthouse-clients/packages/mcp-http/src/bin.ts:227`:
