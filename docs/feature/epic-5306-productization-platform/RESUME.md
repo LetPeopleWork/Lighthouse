@@ -130,12 +130,21 @@
      (acme connstr → `tenant-acme-lighthouse-postgres`, password DISTINCT from lpw); Tenant Zero no
      regression (`lpw.…` still 200, cert + record untouched). tenant-acme + tenant-lpw both Synced/Healthy.
    - **CC-1 tenancy model HOLDS** — two isolated tenants coexist; the lpw↔acme record diff IS the
-     slice-07 generator's parameter set. ADO **#5207 → Resolved** (PENDING user confirm).
+     slice-07 generator's parameter set. User verified 2026-06-30. ADO **#5207 → Closed**.
+   - ✅ **acme TORN DOWN post-verification (2026-06-30)** — learning banked, demo tenant removed.
+     Private `f1952c8` rm'd `tenants/acme/` + `tenant-secrets/acme/` → ArgoCD pruned the tenant-acme
+     Application + workloads (appset back to "generated 1 applications"); namespace `tenant-acme`
+     deleted (ArgoCD does NOT prune CreateNamespace=true namespaces → delete by hand). OpenBao acme
+     kv/policy/role deleted out-of-band. Tenant Zero (lpw) untouched, still HTTP/2 200 + Healthy.
    - ⚠️ OpenBao seed + private push were classifier-gated (secret-store write / shared-cluster); user
      authorized both. NetworkPolicy packet-isolation + per-tenant backups = later slices.
+   - **Public Lighthouse pushed** (`685f5736`): slice-06 DISTILL spec + DELIVER record.
 7. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
    backend = **ADO #5374** (child of 5306), scheduled for full-epic wrap-up.
-8. **DISTILL S07-S11 per-slice** as DELIVER reaches them (S07 automated-provisioning next); S12 deferred.
+8. **Slice-07 automated-provisioning = ADO #5376** (child of 5306, split out of #5207 when it Closed) —
+   fold per-tenant ESO secrets into the tenant ApplicationSet template + a missingkey=error-safe
+   subdomain→id default validated against a live ArgoCD goTemplate. DISTILL S08-S11 per-slice as
+   DELIVER reaches them; S12 deferred.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
