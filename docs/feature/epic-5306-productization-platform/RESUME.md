@@ -162,7 +162,17 @@
      restart the shared repo-server (out of scope); just wait the poll. ADO **#5376 → Resolved** (PENDING confirm).
 8. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
    backend = **ADO #5374** (child of 5306), scheduled for full-epic wrap-up.
-9. **DISTILL S08-S11 per-slice** as DELIVER reaches them (S08 fleet-upgrade next); S12 deferred.
+9. **DISTILL S08-S11 per-slice** as DELIVER reaches them; S12 deferred.
+   - ✅ **DISTILL S08 fleet-upgrade done (2026-06-30)** — `tests/platform/epic-5306/acceptance/slice-08-fleet-upgrade.feature`
+     (10 scenarios: 3 `@in-memory` incl. reuse of epic-5305 `ExpandOnlyMigrationGuard` + helm single-source-version
+     render; 7 `@requires_external` canary→promote→revert + failed-canary-not-promoted + partial-fleet + transient-retry)
+     + feature-delta DISTILL S08 [REF] section. Reconciliation PASSED (ADR-093 canary/promote/expand-only/git-revert;
+     ADR-086). Chart UNCHANGED (image tag already → `Chart.appVersion`, ADR-083).
+     **Sentinel reviewed (conditionally_approved, 1 blocker + 3 high — ALL applied)**: declarative permanent-canary,
+     atomic Then split, 4/10 `@error` (40%, +partial-fleet +transient-retry), zero-dropped reframed to observable.
+     **NEXT for S08 = DELIVER**: private `tenants` ApplicationSet grows `canaryVersion` (Tenant Zero) +
+     `promotedVersion` (fleet) staged params; release workflow wires `ExpandOnlyMigrationGuard` as a
+     tenant-rollout gate; roll on Tenant Zero. S09 fleet-observability is the next DISTILL.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.

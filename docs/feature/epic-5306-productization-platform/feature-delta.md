@@ -1358,3 +1358,68 @@ later adopted them. **Lesson:** removing an ArgoCD Application's finalizer does 
 re-adds it) — to truly orphan, annotate the resources with `argocd.argoproj.io/sync-options: Delete=false`
 (or `Prune=false`) BEFORE removing the app, or migrate ownership by editing the managing app's source
 rather than deleting the app. Net outcome: zero downtime, but via fast recovery, not a clean adoption.
+
+## Wave: DISTILL / [REF] Scenario list (S08 fleet-upgrade)
+
+| Scenario | File | Tags |
+|---|---|---|
+| One shipped-version bump is the single source every tenant inherits | slice-08-fleet-upgrade.feature | `@US-08 @in-memory @env:release-candidate` |
+| A release carrying a destructive migration is blocked before any tenant upgrades | slice-08-fleet-upgrade.feature | `@error @US-08 @in-memory @env:release-candidate` |
+| An additive-only migration passes the pre-flight and is cleared to roll | slice-08-fleet-upgrade.feature | `@US-08 @in-memory @env:release-candidate` |
+| Tenant Zero canaries the new version first, with zero dropped requests | slice-08-fleet-upgrade.feature | `@US-08 @real-io @requires_external @env:tenant-zero` |
+| A canary that fails health on Tenant Zero is not promoted to the fleet | slice-08-fleet-upgrade.feature | `@error @US-08 @real-io @requires_external @env:tenant-zero` |
+| After a healthy canary is promoted, every tenant converges on the new revision | slice-08-fleet-upgrade.feature | `@US-08 @real-io @requires_external @env:fleet` |
+| A tenant that fails to roll during promotion is surfaced, not silently skipped | slice-08-fleet-upgrade.feature | `@error @US-08 @real-io @requires_external @env:fleet` |
+| A transient failure mid-rollout is retried, never left half-applied | slice-08-fleet-upgrade.feature | `@error @US-08 @real-io @requires_external @env:fleet` |
+| Reverting the version in git rolls the whole fleet back to the prior revision | slice-08-fleet-upgrade.feature | `@US-08 @real-io @requires_external @env:fleet` |
+| Tenant Zero is the permanent canary, taking every release before any customer tenant | slice-08-fleet-upgrade.feature | `@US-08 @real-io @requires_external @env:tenant-zero` |
+
+**Private-repo + CI deltas driving S08** (no public chart change — the #5199 chart image tag already
+defaults to `Chart.appVersion`, ADR-083, so a version bump is ALREADY a single-source change). Slice-08
+adds the **staged rollout** in the PRIVATE `tenants` ApplicationSet: a `canaryVersion` override pinned to
+Tenant Zero and a `promotedVersion` default the fleet inherits, so the new version hits Tenant Zero FIRST
+and the fleet follows only a healthy canary (ADR-093). The existing GitHub Actions release workflow wires
+the epic-5305 `ExpandOnlyMigrationGuard` (`Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuard.cs`)
+as a **tenant-rollout pre-flight gate** — a destructive (Drop/Rename) migration is rejected before any
+tenant rolls. The rolling-update + connection-drain primitives are epic-5305's; this slice COMPOSES them
+across the fleet rather than adding new ones. Rollback = `git revert` (+ `helm rollback`); additive-only
+migrations need no schema rollback.
+
+**Driven-adapter coverage (S08 additions)**:
+
+| Adapter | @real-io scenario | Covered by |
+|---|---|---|
+| ArgoCD staged rollout (`canaryVersion` on Tenant Zero → `promotedVersion` fleet default) | YES | S08 canary (@requires_external) + promote-convergence (@requires_external) |
+| Kubernetes rolling update + connection drain (epic-5305 primitive, zero-downtime) | YES | S08 zero-dropped-requests canary + per-tenant continuous-serve on promote |
+| `ExpandOnlyMigrationGuard` (epic-5305 CI pre-flight, fleet-rollout gate) | render-layer / CI | S08 destructive-blocked (@error @in-memory) + additive-accepted (@in-memory) |
+| Helm `imageTag`→`Chart.appVersion` default (ADR-083 single-source version) | render-layer | S08 single-source-version (@in-memory) |
+| ArgoCD self-heal + sync-status (partial-fleet visibility, transient retry) | YES | S08 tenant-fails-to-roll + transient-retry (@error @requires_external) |
+| ArgoCD `git revert` + `helm rollback` (recovery path) | YES | S08 fleet-rollback (@requires_external) |
+
+**Error-path ratio (S08)**: 4 of 10 scenarios are `@error` (40%, target met) — destructive-migration-blocked,
+failed-canary-not-promoted, a tenant that fails to roll during promotion (surfaced as out-of-sync, not
+silently skipped), and a transient mid-rollout failure (retried, never left half-applied) — plus the
+`git revert` recovery scenario. The two GATE failures earn the "safe" claim (destructive migration caught
+in CI before any tenant; a bad release stops at the Tenant Zero canary); the two OPERATIONAL failures
+(Sentinel S08-003) prove the staged rollout degrades visibly and self-heals rather than stranding the
+fleet in an unknown state. Per Sentinel review (2026-06-30, conditionally_approved): blocker S08-001
+(declarative permanent-canary), S08-002 (atomic Then split), S08-003 (operational error coverage), and
+S08-004 (zero-dropped-requests reframed to observable: continuous successful responses + readiness-gated
+drain, which the DELIVER live-proof measures by polling the URL through the roll) all applied.
+
+**Reconciliation HARD GATE (S08)**: PASSED — 0 contradictions. Slice-08 implements ADR-093 (Tenant-Zero
+canary → promote, expand-only pre-flight, git-revert rollback) and ADR-086 (one generator, no production
+special-casing — Tenant Zero upgrades by the same mechanism every customer tenant does, it just goes
+first). DESIGN `wave-decisions.md` records "No DISCUSS assumption was contradicted" and the D0c
+expand-only / D0 standalone-sacrosanct constraints are honored (chart unchanged; the gate is CI-side).
+
+**Outcomes registry (S08)**: SKIPPED — no new application typed-contract surface (GitOps ApplicationSet
+overlay + a CI workflow gate reusing the existing epic-5305 guard). Per DISTILL D-6 gate-scoping, IaC/CI
+config is out of the code-feature-pipeline registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S08)**: the `@in-memory` band is partly GREEN today — the
+`ExpandOnlyMigrationGuard` destructive/additive scenarios run against the existing epic-5305 guard, and
+the single-source-version render is a helm-unittest against the unchanged chart; these go RED only where
+the release WORKFLOW has not yet wired the guard as a rollout gate. The `@requires_external` band needs
+the live cluster + the new `canaryVersion`/`promotedVersion` ApplicationSet params + a pushed version
+bump (not runnable until DELIVER S08 rolls it on Tenant Zero).
