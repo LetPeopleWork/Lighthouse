@@ -139,12 +139,30 @@
    - ⚠️ OpenBao seed + private push were classifier-gated (secret-store write / shared-cluster); user
      authorized both. NetworkPolicy packet-isolation + per-tenant backups = later slices.
    - **Public Lighthouse pushed** (`685f5736`): slice-06 DISTILL spec + DELIVER record.
-7. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
+7. ✅ **DELIVER S07 done (LIVE 2026-06-30)** — automated-provisioning (#5376), the SaaS payoff. FULL
+   ADR-092 one-record generator, all PRIVATE-repo GitOps + CI (no public chart change). DISTILL:
+   `slice-07-automated-provisioning.feature` (9 scenarios) + feature-delta [REF] (Lighthouse, local).
+   - PRIVATE platform: NEW `gitops/_charts/tenant-runtime` chart (tracked Namespace + plan ResourceQuota
+     + LimitRange + 5 default-deny NetworkPolicies + ESO SecretStore/ExternalSecret(s); 12/12 helm-unittest)
+     `c3ec493`; NEW `tenants-runtime` ApplicationSet gated by post-selector `runtime: enabled`; chart
+     appset drops CreateNamespace + `hasKey` subdomain→id/oidc defaults; `scripts/validate-tenants.sh` +
+     `.github/workflows/validate-tenants.yml` (first CI). riverbank `59781e7`→deprovision `76e37c1`; TZ
+     migrate `c732396`.
+   - **LIVE-PROVEN:** riverbank from ONE record → `riverbank.lighthouse` HTTP/2 200 + LE cert, ESO synced,
+     **NetworkPolicy ENFORCES** (probe: own DB reachable, cross-ns lpw DB BLOCKED via Cilium). Remove
+     record → both apps + the **tracked namespace** pruned, zero orphans cluster-wide (closes slice-06's
+     ns-orphan gap). Tenant Zero dogfooded onto the generator (tenant-lpw + tenant-lpw-runtime
+     Synced/Healthy, tenant-secrets app retired) — **API pod never restarted, 200 throughout**.
+   - ⚠️ DURABLE: **orphan-then-adopt scare** — removing an ArgoCD app's `resources-finalizer` does NOT
+     stick (controller re-adds it) → prune cascaded → ESO `Owner` deleted lpw's Secrets. Running pod kept
+     its env (no downtime) but recovery was a fast manual `helm template -s templates/secrets.yaml | kubectl
+     apply`. To truly orphan: annotate resources `argocd.argoproj.io/sync-options: Delete=false` BEFORE
+     removing the app, OR migrate by editing the managing app's source rather than deleting it.
+   - ⚠️ Recurring **repo-server git-cache ~2min lag** after every push before AppSets regenerate — don't
+     restart the shared repo-server (out of scope); just wait the poll. ADO **#5376 → Resolved** (PENDING confirm).
+8. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
    backend = **ADO #5374** (child of 5306), scheduled for full-epic wrap-up.
-8. **Slice-07 automated-provisioning = ADO #5376** (child of 5306, split out of #5207 when it Closed) —
-   fold per-tenant ESO secrets into the tenant ApplicationSet template + a missingkey=error-safe
-   subdomain→id default validated against a live ArgoCD goTemplate. DISTILL S08-S11 per-slice as
-   DELIVER reaches them; S12 deferred.
+9. **DISTILL S08-S11 per-slice** as DELIVER reaches them (S08 fleet-upgrade next); S12 deferred.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.

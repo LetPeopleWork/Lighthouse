@@ -1244,3 +1244,117 @@ Synced/Healthy.
 boundary. The lpw↔acme record diff IS the slice-07 parameter set (id → namespace/host/tls-secret/store
 path; OIDC as an independent per-tenant flip). NetworkPolicy packet-level isolation + per-tenant backup
 scope remain later slices. ADO **#5207 → Resolved** (all done=observable met; pending user confirm).
+
+## Wave: DISTILL / [REF] Scenario list (S07 automated-provisioning)
+
+| Scenario | File | Tags |
+|---|---|---|
+| One record fans into a complete isolated tenant runtime | slice-07-automated-provisioning.feature | `@US-07 @in-memory @env:tenant-record` |
+| A record that names no subdomain defaults its host to the tenant identifier | slice-07-automated-provisioning.feature | `@US-07 @in-memory @env:tenant-record` |
+| The tenant namespace is a tracked resource so off-boarding can prune it | slice-07-automated-provisioning.feature | `@US-07 @in-memory @env:tenant-record` |
+| The tenant is isolated by a default-deny network posture | slice-07-automated-provisioning.feature | `@US-07 @in-memory @env:tenant-record` |
+| A tenant with login off renders only its database secret | slice-07-automated-provisioning.feature | `@US-07 @in-memory @env:tenant-record` |
+| A duplicate identifier or subdomain is rejected before it can merge | slice-07-automated-provisioning.feature | `@error @US-07 @in-memory @env:tenant-records` |
+| One committed record yields a reachable, isolated tenant in minutes | slice-07-automated-provisioning.feature | `@US-07 @real-io @requires_external @env:tenant-riverbank` |
+| Removing the record off-boards the tenant with no orphaned resources | slice-07-automated-provisioning.feature | `@US-07 @real-io @requires_external @env:tenant-riverbank` |
+| Tenant Zero is produced by the same generator, not a bespoke special case | slice-07-automated-provisioning.feature | `@US-07 @real-io @requires_external @env:tenant-zero` |
+
+**Scope = FULL ADR-092** (user decision 2026-06-30): the generator fans ONE record into ns +
+ResourceQuota + default-deny NetworkPolicy + store-sourced secrets + #5199 chart + wildcard-TLS route,
+sync-wave-ordered, with PR-time uniqueness and prune-on-remove. Per-tenant NetworkPolicy + ResourceQuota
+are IN this slice (not deferred).
+
+**Private-repo deltas driving S07** (no public chart change — the #5199 chart is unchanged; everything
+is GitOps overlay): (a) a new in-repo **`tenant-runtime` helm chart** rendering, from the record, the
+Namespace + ResourceQuota (plan-sized) + default-deny NetworkPolicy (allow: ingress-nginx ingress, DNS,
+intra-namespace, outbound HTTPS) + SA + SecretStore + ESO ExternalSecret(s) (DB always; OIDC iff
+`oidcEnabled`). (b) a new **`tenants-runtime` ApplicationSet** over the same `tenants/*/tenant.yaml`
+records → one `tenant-<id>-runtime` Application per record; the existing `tenants` (chart) ApplicationSet
+drops `CreateNamespace=true` (the runtime now OWNS the namespace as a tracked manifest → prune deletes
+it) and defaults `subdomain`→`id` via a `hasKey` goTemplate guard (missingkey=error-safe). (c) a PR-time
+**uniqueness check** in the private repo's GitHub Actions over the committed records (dup id/subdomain).
+This folds slice-06's separate hand-written `tenant-secrets/<id>/secrets.yaml` INTO the one record.
+
+**Convergence model**: two Applications per tenant (runtime + chart) reconcile independently; the chart
+app retries until the runtime's namespace + Secret exist (the same selfHeal-retry that already converged
+slice-06's tenant-secrets). Sync-wave annotations document intent; correctness comes from retry.
+
+**Driven-adapter coverage (S07 additions)**:
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| ArgoCD ApplicationSet (one record → runtime + chart) | YES | S07 one-record-provisions (@requires_external) |
+| ArgoCD prune (record removal → full teardown incl ns) | YES | S07 no-orphans (@requires_external) |
+| Kubernetes NetworkPolicy (default-deny posture) | render-layer + live | S07 default-deny scenario + live isolation |
+| Kubernetes ResourceQuota (plan-sized cap) | render-layer | S07 one-record-fans scenario |
+| GitHub Actions (PR-time uniqueness gate) | n/a (CI) | S07 duplicate-rejected (@error @in-memory) |
+
+**Error/edge coverage**: 1 explicit `@error` (duplicate id/subdomain rejected) + the no-orphans
+off-boarding and missing-subdomain-default negative-space paths.
+
+**Reconciliation HARD GATE (S07)**: PASSED — implements ADR-092 (one record → sync-wave-ordered
+isolated tenant, names from id, PR-time uniqueness, prune-on-remove) and ADR-086 (one generator, no
+production special-casing — the dogfood scenario re-expresses Tenant Zero through the generator). No
+public chart change; the #5199 chart stays the per-tenant workload composed via values.
+
+**Outcomes registry (S07)**: SKIPPED — no new application typed-contract surface (GitOps overlay + CI).
+
+**Pre-DELIVER fail-for-the-right-reason gate (S07)**: the `@in-memory` band goes RED until the
+`tenant-runtime` chart + uniqueness check exist (nothing to render/lint yet). The `@requires_external`
+band needs the live cluster + a pushed record + the new ApplicationSet (not runnable until DELIVER S07).
+Tenant-Zero re-expression is the LAST DELIVER step (zero-downtime), proven after a throwaway `riverbank`
+tenant exercises provision + de-provision end to end.
+
+## Wave: DELIVER / [REF] Implementation summary (S07 automated-provisioning)
+
+Shipped the one-record generator (full ADR-092) entirely as PRIVATE-repo GitOps + CI — **no public
+chart change** (the #5199 chart is unchanged). Scope per user decision: full ADR-092 (ns + quota +
+default-deny netpol + secrets + chart + route), riverbank-first then Tenant-Zero-last.
+
+**PART A — PRIVATE platform repo** (`LetPeopleWork/lighthouse-platform`):
+- `gitops/_charts/tenant-runtime/` — NEW in-repo helm chart: Namespace (tracked → prunable),
+  plan-sized ResourceQuota + a LimitRange (injects default container limits so the quota's cpu/mem caps
+  are satisfiable without touching the #5199 chart), 5 NetworkPolicies (default-deny + allow
+  intra-ns / DNS / ingress-nginx / 443-egress), SA + ESO SecretStore + ExternalSecret(s) (DB always,
+  OIDC iff `oidcEnabled`). **12/12 helm-unittest.**
+- `gitops/tenants/_generator/applicationset-runtime.yaml` — NEW `tenants-runtime` ApplicationSet over
+  the same records, **post-selector `runtime: enabled`** (opt-in, so a tenant migrates onto the overlay
+  deliberately).
+- `gitops/tenants/_generator/applicationset.yaml` — drop `CreateNamespace` (runtime owns the ns),
+  `subdomain`→`id` default via `hasKey`, `oidc*` now optional via `hasKey`.
+- `scripts/validate-tenants.sh` + `.github/workflows/validate-tenants.yml` — PR-time uniqueness +
+  naming gate + chart lint/unit-test (the project's first CI).
+
+**PART B — live proof (2026-06-30):**
+- **riverbank (throwaway, one record):** committed a single `tenant.yaml` (`runtime: enabled`, no hand
+  secrets file) → ArgoCD fanned `tenant-riverbank-runtime` (ns/quota/netpol/ESO) + `tenant-riverbank`
+  (chart). `riverbank.lighthouse.letpeople.work` → HTTP/2 200 + Let's Encrypt cert; ESO `SecretSynced`;
+  secret isolation (its SA can't read lpw secrets); **NetworkPolicy ENFORCES** — a probe pod reached its
+  own DB but was **blocked** reaching `tenant-lpw`'s DB (Cilium default-deny). Then **removed the record**
+  → ArgoCD pruned both apps **and the tracked namespace** → zero orphans cluster-wide (the slice-06
+  namespace-orphan gap is closed). done=observable #1 + #2 met.
+- **Tenant Zero (dogfood, live prod):** added `runtime: enabled` to the lpw record + retired the
+  standalone `tenant-secrets` app and `gitops/tenant-secrets/lpw`. `tenant-lpw` + `tenant-lpw-runtime`
+  both Synced/Healthy; lpw served HTTP/2 200 throughout and the **API pod never restarted** (0 restarts,
+  unchanged start time) — true zero-downtime. done=observable #3 met.
+
+### [REF] Scenarios green (S07)
+
+| Band | Count | Status |
+|---|---|---|
+| `@in-memory` (helm-unittest + uniqueness lint) | 6 | **GREEN** — 12/12 helm-unittest on tenant-runtime; `validate-tenants.sh` passes on real records and exits 1 on an injected dup subdomain. |
+| `@requires_external` (live cluster) | 3 | **GREEN** — riverbank provision (serves+isolated, netpol enforced) + de-provision (zero orphans incl ns) + Tenant Zero produced by the generator, served 200 throughout. |
+
+### [REF] Durable lesson — the orphan-then-adopt scare (recovered)
+
+The plan was to orphan Tenant Zero's ESO objects (remove the `tenant-secrets` app's
+`resources-finalizer`, let the prune leave the live objects) then have `tenant-lpw-runtime` adopt them.
+**ArgoCD re-added the finalizer** after the patch, so the prune CASCADED and ESO `creationPolicy: Owner`
+deleted the `lighthouse-db` + `lighthouse-oidc` Secrets. The running API pod kept its env (already
+injected at start) so HTTP stayed 200, but a restart would have crashlooped. **Recovery:** immediately
+`helm template tenant-runtime -s templates/secrets.yaml | kubectl apply -f -` recreated the SecretStore
++ ExternalSecrets → ESO re-materialised both Secrets within seconds (before any roll); `tenant-lpw-runtime`
+later adopted them. **Lesson:** removing an ArgoCD Application's finalizer does NOT stick (the controller
+re-adds it) — to truly orphan, annotate the resources with `argocd.argoproj.io/sync-options: Delete=false`
+(or `Prune=false`) BEFORE removing the app, or migrate ownership by editing the managing app's source
+rather than deleting the app. Net outcome: zero downtime, but via fast recovery, not a clean adoption.
