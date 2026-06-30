@@ -18,10 +18,13 @@
   **APPLIED + LIVE**: cluster `lpw-substrate` kaas_id=4323 (cloud 21349 / project 44008 PCP-6ROXJE3),
   status Active, 2 nodes Ready v1.33.8 (k8s 1.31 deprecated → 1.33). kubeconfig at
   `~/.kube/lpw-substrate.yaml` (local, 0600). tofu state LOCAL (move to Infomaniak S3 before CI/team).
-  Billing against CHF 300 credit. ⚠️ INFOMANIAK_TOKEN exposed in chat transcript — ROTATE.
+  Billing against CHF 300 credit. ✅ INFOMANIAK_TOKEN: exposed token DELETED at Infomaniak 2026-06-30
+  (leaked value now dead, no replacement created) — mint a fresh token on demand before any further
+  tofu/API work.
 
 ## Next
-1. **Rotate INFOMANIAK_TOKEN** (exposed in transcript). Re-export new one for any further tofu/API.
+1. ✅ **INFOMANIAK_TOKEN secured (2026-06-30)** — exposed token deleted at Infomaniak (leaked value
+   dead). No active token exists; mint a fresh one + re-export before the next tofu/API run.
 2. ✅ **DELIVER S02 done (live)** — ArgoCD v3.4.4 installed on lpw-substrate; root app-of-apps
    reconciling from the PRIVATE repo over a read-only SSH **deploy key** (`argocd-readonly`, key
    `~/.ssh/lpw-platform-argocd`; argocd repo secret `lighthouse-platform-repo`). platform-root/
@@ -78,30 +81,39 @@
      (b) chart has **no config-checksum** on the pod template → ConfigMap/Secret changes (incl. ESO
      rotation) need a manual `rollout restart` to reach the running app; consider a checksum annotation
      or stakater/reloader (slice-05+). ADO #5203 → Resolved (PENDING user confirm).
-5. ◐ **DELIVER S05 — code GREEN local, live proof PENDING (2026-06-29)** — wildcard-routing (#5202).
-   DISTILL: `tests/platform/epic-5306/acceptance/slice-05-wildcard-routing.feature` (9 scenarios:
-   5 @in-memory + 4 @requires_external). Reconciliation gate PASSED.
-   - PUBLIC chart **0.1.4** (local, UNCOMMITTED): `ingress.yaml` host-mandatory guard;
-     `_helpers.tpl` `reloadSecrets`/`reloadEnabled`; `deployment-api.yaml` pod-template annotations
+5. ✅ **DELIVER S05 — SHIPPED + 4/4 live-proven (demo-subdomain proof passed 2026-06-30)** —
+   wildcard-routing (#5202). DISTILL: `slice-05-wildcard-routing.feature` (9 scenarios). Gate PASSED.
+   - PUBLIC chart **0.1.4** PUSHED (4511b3b9 feat + 594b1f4b specs/docs + 3b173fb6 publish
+     0.1.4.tgz→docs/charts): `ingress.yaml` host-mandatory guard; `_helpers.tpl`
+     `reloadSecrets`/`reloadEnabled`; `deployment-api.yaml` pod-template annotations
      (`checksum/config` + `secret.reloader.stakater.com/reload`) gated on a managed `existingSecret`
-     (standalone byte-clean); `Chart.yaml`→0.1.4 + README regen; `tests/unit/reload_test.yaml` (+7).
-     GATES: `helm unittest` **53/53**; render-diff checksum stable-on-identical/differs-on-config
-     (`f08d72…`≠`af67c7…`); D0 default render 0 reload-wiring matches; `helm lint` 0 failed.
-   - PRIVATE platform (local, UNCOMMITTED): `gitops/platform/reloader.yaml` NEW (stakater/reloader
-     chart 2.2.12); `tenant.yaml` chartVersion→0.1.4; `applicationset.yaml` comment-only.
-     Tenant-Zero values rendered vs 0.1.4 → host-guard passes, reload watches `lighthouse-db,lighthouse-oidc`.
-   - **subdomain→id defaulting DEFERRED to slice-07**: `dig`/`.subdomain` fallback could not be proven
-     safe under helm locally (`.Values` is a custom type, not the ArgoCD param map); a wrong guess +
-     `missingkey=error` would break the ApplicationSet for ALL tenants incl Tenant Zero. Host still
-     derives from id (subdomain==id by convention); the wildcard mechanism is unaffected.
-   - **NEXT (operator actions, ORDER MATTERS, await user confirm — never auto-push):**
-     1. Publish chart 0.1.4: `chart/scripts/publish.sh` → package+index into `docs/charts/`, commit+push (Pages) FIRST.
-     2. Wildcard DNS: GoDaddy A `*.lighthouse.letpeople.work` → LB `179.237.75.110` (one record, replaces per-host).
-     3. Push PUBLIC chart source + DISTILL/DELIVER docs; push PRIVATE platform → ArgoCD syncs reloader + tenant 0.1.4.
-     4. Live verify (Claude runs locally): never-configured `demo.…` serves trusted HTTPS; `lpw.…` no regression;
-        rotate `lighthouse-db` in OpenBao → reloader rolls API with NO manual restart, NO git commit.
-   - ADO #5202 → Resolved AFTER live done=observable met (NOT before).
-6. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088); move tofu state to Infomaniak S3.
+     (standalone byte-clean). `helm unittest` 53/53; render-diff checksum proof; D0 0 matches; lint clean.
+   - PRIVATE platform PUSHED (eeca622..0e96ee9): `gitops/platform/reloader.yaml` NEW (stakater/reloader
+     2.2.12); `tenant.yaml` chartVersion→0.1.4; `applicationset.yaml` comment-only.
+   - **subdomain→id defaulting DEFERRED to slice-07**: `dig`/`.subdomain` fallback unprovable under
+     helm (`.Values` ≠ ArgoCD param map); wrong guess + `missingkey=error` breaks ALL tenants. Host
+     still derives from id (subdomain==id by convention); wildcard mechanism unaffected.
+   - **LIVE-PROVEN (2026-06-29):** ArgoCD synced both. Tenant Zero on chart 0.1.4 — API deploy carries
+     `checksum/config: c7659a2f…` + `reload: lighthouse-db,lighthouse-oidc`. reloader controller
+     Running, watching secrets all-namespaces. ✅ `lpw.lighthouse…` HTTP/2 200, Let's Encrypt cert
+     (NO regression). ✅ **reloader auto-roll PROVEN** on a throwaway Secret (v1→v2 → "Changes
+     detected… updated 'probe' Deployment", gen 1→2, new pod, NO manual restart / NO git commit) —
+     the exact path that fires on an ESO/OpenBao rotation of the watched secrets. Tightens slice-04.
+   - ✅ **never-configured `demo.lighthouse…` serves trusted HTTPS (2026-06-30)** — root cause was NOT
+     a missing/wrong wildcard. The `*.lighthouse`→179.237.75.110 A record was correct all along (random
+     labels synthesized fine). A stale `asuid.demo.lighthouse` TXT (Azure App Service custom-domain
+     verification, leftover from an old Azure demo env) made `demo.lighthouse` an **empty non-terminal**,
+     which per RFC 4592 **suppresses wildcard synthesis** for that exact name → NODATA on every type at
+     `demo` while siblings resolved. Deleting the TXT (SOA serial bumped, ~600s negative-cache wait) let
+     `demo.lighthouse` fall through to the wildcard. Scratch Ingress `demo-wildcard-proof` (host
+     demo.lighthouse, cluster-issuer letsencrypt-prod, backend `tenant-lpw-lighthouse-api:80`) → HTTP-01
+     auto-issued → `curl --resolve` = HTTP/2 200, CN=demo.lighthouse, issuer Let's Encrypt prod, TLS 1.3;
+     `lpw.lighthouse` still 200 (no regression). Scratch ingress+cert+secret deleted.
+     ⚠️ DURABLE LESSON: a stale `asuid.<sub>` TXT (or any leftover descendant record) silently shadows a
+     working DNS wildcard — check for empty-non-terminals before suspecting the wildcard itself.
+   - ADO #5202 → Resolved (all 4/4 done=observable met; 2026-06-30).
+6. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
+   backend = **ADO #5374** (child of 5306), scheduled for full-epic wrap-up.
 7. **DISTILL S06-S11 per-slice** as DELIVER reaches them; S12 deferred.
 
 ## Tooling note
