@@ -173,6 +173,20 @@
      **NEXT for S08 = DELIVER**: private `tenants` ApplicationSet grows `canaryVersion` (Tenant Zero) +
      `promotedVersion` (fleet) staged params; release workflow wires `ExpandOnlyMigrationGuard` as a
      tenant-rollout gate; roll on Tenant Zero. S09 fleet-observability is the next DISTILL.
+   - ✅ **DELIVER S08 done (LIVE 2026-06-30)** — automated upgrade (#5205), ADR-093. PRIVATE-repo GitOps only
+     (public chart UNCHANGED; image tag already → Chart.appVersion). `tenants` ApplicationSet generator → **matrix**
+     folding records (git) with one fleet `promotedVersion` (list); `targetRevision` hasKey-guarded so a record's
+     `chartVersion` is its CANARY override, else it inherits `promotedVersion`. lpw dropped its pin → inherits 0.1.4
+     (render-unchanged). Expand-only pre-flight = existing epic-5305 `ExpandOnlyMigrationGuard` (fails dotnet test on
+     Drop/Rename) — already the release gate.
+     Private commits: 1987835 mechanism → **7c72e3f FIX** (single-quote targetRevision; double-quote broke appset
+     unmarshal → 0 apps, TZ preserved — see [[project_argocd_gotemplate_scalar_single_quote]]) → 89c095c provision
+     canarytest@0.1.3 → 5f0c00b promote (drop override→0.1.4) → 7cad97f revert (rollback→0.1.3) → 684c36b teardown.
+     **LIVE-PROVEN (throwaway-tenant path, user-chosen):** no-op (lpw 0.1.4 via promotedVersion, 200); canarytest
+     0.1.3 serves 200; PROMOTE rolled 0.1.3→0.1.4 (deployRev 1→2, reloader pod-anno appeared = real chart roll),
+     200 mid-roll; git-revert ROLLBACK 0.1.4→0.1.3 (deployRev→3, anno gone), 200; TEARDOWN pruned both apps + ns,
+     zero orphans. **Tenant Zero 0.1.4/Healthy/200 throughout, never version-moved.** OpenBao canarytest kv/policy/role
+     seeded + cleaned out-of-band (user). ADO **#5205 → Resolved** (PENDING user confirm).
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.

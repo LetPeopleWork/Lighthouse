@@ -1423,3 +1423,56 @@ the single-source-version render is a helm-unittest against the unchanged chart;
 the release WORKFLOW has not yet wired the guard as a rollout gate. The `@requires_external` band needs
 the live cluster + the new `canaryVersion`/`promotedVersion` ApplicationSet params + a pushed version
 bump (not runnable until DELIVER S08 rolls it on Tenant Zero).
+
+## Wave: DELIVER / [REF] Implementation summary (S08 fleet-upgrade)
+
+> **Wave**: DELIVER (live, 2026-06-30). **Mode**: hands-on (IaC/GitOps + live cluster, no app code).
+> ADO **#5205**. All change is PRIVATE-repo GitOps + a no-op on the public chart (image tag already
+> defaults to `Chart.appVersion`, ADR-083). Tenant Zero (live LPW prod) was NEVER version-moved.
+
+### [REF] What shipped (ADR-093 staged upgrade)
+
+The PRIVATE `tenants` ApplicationSet generator became a **matrix** folding each tenant record (git
+files generator) with ONE fleet-wide `promotedVersion` (list generator). `targetRevision` is now a
+`hasKey`-guarded `'{{ if hasKey . "chartVersion" }}{{ .chartVersion }}{{ else }}{{ .promotedVersion }}{{ end }}'`
+— a record's own `chartVersion` is its **canary override** (run ahead of the fleet); a record without
+one inherits `promotedVersion`. Bumping the whole fleet = editing the single `promotedVersion` value
+(the promote); canarying = adding `chartVersion` to one record. Tenant Zero (`lpw`) dropped its
+per-record `chartVersion: 0.1.4` and inherits the fleet default — render-unchanged. The expand-only
+pre-flight is the existing epic-5305 `ExpandOnlyMigrationGuard` (`RealMigrations_AddedAfterBaseline_AreAdditiveOnly`),
+which already fails `dotnet test` (and thus every release build) on a Drop/Rename in a post-baseline
+migration — so a destructive migration is structurally blocked before any tenant can roll.
+
+Private-repo commits: `1987835` (matrix + promotedVersion + lpw inherit) → `7c72e3f` (**fix**: the
+`targetRevision` template had to be SINGLE-quoted YAML — a double-quoted scalar's inner `"chartVersion"`
+quotes closed the scalar early, ArgoCD failed to unmarshal the appset and generated 0 apps; Tenant Zero
+was preserved, ArgoCD does not prune on generator error — see durable lesson) → `89c095c` (provision
+throwaway `canarytest@0.1.3`, behind the fleet) → `5f0c00b` (promote: drop its override → inherit 0.1.4)
+→ `7cad97f` (revert the promote → rollback to 0.1.3) → `684c36b` (teardown). No public chart change.
+
+### [REF] Live done=observable proof (S08, 2026-06-30, cluster `lpw-substrate`)
+
+| done=observable | Proof |
+|---|---|
+| One version bump is the single source every tenant inherits | After the matrix landed, `tenant-lpw` resolves `lighthouse@0.1.4` via `promotedVersion` (no per-record pin) — render-identical, `ErrorOccurred=False`, image `26.6.21.1` unchanged, https 200. **No-op for prod.** |
+| A destructive migration is blocked in CI before reaching any tenant | `ExpandOnlyMigrationGuard` (epic-5305) fails the build on Drop/Rename in a post-baseline `Up()`; additive passes. Runs in `dotnet test` = the release gate. |
+| Tenant Zero canaries / a tenant upgrades with zero dropped requests | `canarytest` provisioned at 0.1.3 (Synced/Healthy, ESO DB secret materialised, https 200), then PROMOTE rolled it 0.1.3→0.1.4 (`deployRev` 1→2; the 0.1.4-only `secret.reloader…/reload` pod-template annotation appeared, proving a real chart-version roll, not a no-op); served **200 mid-roll and after**. |
+| `argocd app list` shows every tenant Synced on the new revision after promotion | `tenant-canarytest=0.1.4/Synced/Healthy` post-promote; `tenant-lpw=0.1.4/Healthy` — both on the new revision. |
+| `git revert` rolls the fleet back | Reverting `5f0c00b` rolled `canarytest` 0.1.4→0.1.3 (`deployRev`→3, reloader annotation gone), Synced/Healthy, https 200 — additive-only migrations need no schema rollback. |
+| No tenant left behind / no orphans on teardown | Removing the record pruned both `tenant-canarytest` + `tenant-canarytest-runtime` Applications **and** the tracked namespace (slice-07 no-orphan teardown); zero orphans. |
+
+**Tenant Zero throughout:** `0.1.4/Healthy`, image `26.6.21.1`, https 200 at every checkpoint — including
+through the operator's own YAML-quote bug + fix. The staged model means LPW prod never moved version
+while the whole canary→promote→rollback flow was proven on a throwaway alongside it.
+
+### [REF] Durable lesson — single-quote ArgoCD goTemplate scalars
+
+An appset `template.spec` scalar whose value is a Go template containing inner double-quotes
+(`hasKey . "x"`) MUST be single-quoted YAML, else ArgoCD fails to unmarshal `applicationset.yaml`, the
+bootstrap app goes `ComparisonError`, the live appset keeps its OLD definition, and (because the record
+change applied but the appset change did not) the generator errors → **0 applications generated**.
+Existing children are preserved (no prune on generator error), so no outage, but the fleet generator is
+dead until fixed. Validate appset YAML (`yaml.safe_load`) BEFORE pushing; diagnose via
+`kubectl -n argocd get applicationset <n> -o jsonpath='{.status.conditions}'`. The throwaway-tenant
+convergence proof was chosen (over a forward canary on Tenant Zero) precisely to keep prod's version
+fixed while exercising the mechanic — and it caught nothing on prod when the bug hit.
