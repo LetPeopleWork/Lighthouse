@@ -1476,3 +1476,404 @@ dead until fixed. Validate appset YAML (`yaml.safe_load`) BEFORE pushing; diagno
 `kubectl -n argocd get applicationset <n> -o jsonpath='{.status.conditions}'`. The throwaway-tenant
 convergence proof was chosen (over a forward canary on Tenant Zero) precisely to keep prod's version
 fixed while exercising the mechanic — and it caught nothing on prod when the bug hit.
+
+## Wave: DISCUSS / [REF] slice-08 RESCOPE (#5205 reopened — Renovate merge-only automation)
+
+> **Wave**: DISCUSS (rescope, 2026-06-30). **PO**: Luna. The DELIVERED slice-08 above shipped only the
+> upgrade *substrate*; ADO #5205's real acceptance (Renovate merge-only release, Tenant-Zero auto-canary,
+> one-click fleet promote, sync-wave migration ordering, post-sync smoke-test + alert, broken-image
+> rollback drill) was unmet, so **#5205 was moved back to Active** and rescoped. Full artifacts in
+> `discuss/slice-08-rescope-*` + slice briefs `slices/slice-08a|08b|08c-*.md`.
+
+**Slice split (Elephant Carpaccio — oversized-as-one → 3 thin slices, sequence 08a→08b→08c):**
+
+| Slice | Outcome | Stories |
+|---|---|---|
+| **08a** renovate-merge-only-release | Renovate raises the fleet-bump PR · Tenant Zero auto-canaries hands-off · one merge rolls the fleet (the #5205 exit criterion) | US-08a-1/2/3 |
+| **08b** ordered-upgrade-smoketest-alert | migrations run before the new API serves · post-sync smoke-test alerts (tenant+version named) on an unhealthy upgrade | US-08b-1/2 |
+| **08c** broken-image-rollback-drill | rehearsed broken-image detect→`git revert`→recover on a throwaway tenant, timed; Tenant Zero untouched | US-08c-1 |
+
+All 6 stories trace to `job-saas-operator-upgrade-all-tenants-safely`, are operator-observable (none
+`@infrastructure`), DoR 6/6 READY. **North-Star KPI: release-to-fleet operator actions = 1 merge**
+(publish→TZ-canaried ≤30 min / 0 human actions; unhealthy-upgrade detected ≤5 min; detect→recover ≤15 min).
+
+**Open design questions deferred to DESIGN (mechanism, NOT locked in DISCUSS):**
+- **O-08-1 (headline)** Tenant-Zero auto-canary mechanism — Renovate auto-merge of a TZ-only PR vs mutable
+  `latest` tag (gotcha: registry-mutable, ArgoCD tracks git not registry) vs scoped automerge rule.
+- **O-08-2** migration-before-API ordering — on-boot `Database.Migrate()`+expand-only already enough, or a
+  dedicated pre-upgrade migration Job on an earlier ArgoCD sync-wave?
+- **O-08-3** smoke-test surface (ArgoCD PostSync hook?) + **alert channel** (slice-09 observability stack
+  not built yet — may need a thin standalone alert path first).
+- **O-08-4** Renovate hosting (GitHub App vs self-hosted CI) + watch scope.
+- **O-08-5** rollback posture — manual `git revert` now; auto-rollback-on-smoke-fail flagged, not built.
+
+**Back-propagation**: the job's `functional` dimension is refined toward merge-only release in
+`discuss/slice-08-rescope-wave-decisions.md` (`## Changed Assumptions`); `docs/product/jobs.yaml` (DISCOVER
+SSOT) left unedited per directive.
+
+## Wave: DESIGN / [REF] slice-08 RESCOPE (#5205 — merge-only release mechanism)
+
+> **Wave**: DESIGN (rescope, brownfield infra). **Mode**: PROPOSE. **Date**: 2026-06-30. **Architect**: Titan
+> (System Designer). **Scope**: system/infrastructure only — GitOps + CI mechanism in the PRIVATE repo
+> `LetPeopleWork/lighthouse-platform`. NO application/domain code; the public #5199 chart stays
+> byte-unchanged. Designed ON the LIVE slice-08 substrate (matrix ApplicationSet + per-record `chartVersion`
+> override + fleet `promotedVersion`), NOT a redesign. **ADRs**: adr-094..097.
+>
+> **Substrate-vs-ADR-093 note**: ADR-093 *proposed* a separate `canaryVersion` value; slice-08 DELIVER
+> *shipped* a per-record `chartVersion` override + a single `promotedVersion` list element (lpw dropped its
+> override to inherit). This DESIGN targets the **shipped** shape — Tenant Zero re-gains a `chartVersion`
+> anchor as the always-ahead, Renovate-auto-merged canary.
+
+### [REF] DDD / decision list (infra)
+
+| # | Decision | Chosen | ADR | Resolves |
+|---|----------|--------|-----|----------|
+| O-08-1 | Tenant-Zero auto-canary mechanism | **Renovate auto-merges a TZ-scoped `chartVersion`-override PR** (everything in git); fleet `promotedVersion` PR never auto-merged | 094 | headline |
+| O-08-2 | Migration-before-API ordering | **No pre-upgrade Job / sync-wave** — emergent from readiness-gated rolling update + on-boot advisory-lock `Database.Migrate()` + expand-only guard | 095 | — |
+| O-08-3 | Smoke-test surface + alert channel | **Version-stamped per-tenant ArgoCD PostSync hook Job** → asserts served version + health → opens/updates a **GitHub issue** (user-locked) on failure | 096 | — |
+| O-08-4 | Renovate hosting + watch scope + automerge | **Mend Renovate GitHub App** (user-locked); watch the published `lighthouse` chart + tracked platform components; automerge ONLY the TZ `chartVersion`, never the fleet `promotedVersion` | 097 | — |
+| O-08-5 | Rollback posture | **Operator-initiated `git revert`** (proven in substrate); smoke-test is detect+alert only; auto-rollback OUT (future) | 096 | confirmed |
+
+### [REF] Scale framing (control-plane, not data-plane)
+
+This is a fleet **control-plane** design: ~tens of tenants (DESIGN O-4 density ≥20/cluster, headroom ~200),
+release cadence ~weekly. Per roll: a handful of PostSync Jobs, ≤1 health GET each, ≤1 GitHub-issue API call
+on failure. GitHub's authenticated rate limit (5000/h) is never approached; no component is throughput-bound.
+The binding constraints are **latency budgets** (KPI-2 publish→canary ≤30 min, KPI-4 detect ≤5 min, KPI-5
+detect→recover ≤15 min) and **correctness/ordering guarantees** — not QPS. No new scaling component is
+justified; every addition below traces to a specific gap, not "just in case" (Critical Rule 1).
+
+### [REF] Component decomposition
+
+```mermaid
+C4Container
+    title slice-08 RESCOPE — merge-only release flow (private repo + hosted bots)
+    Person(op, "Benjamin (LPW operator)", "Reviews TZ; merges ONE fleet PR")
+    System_Ext(ghcr, "GHCR + Helm chart repo", "docs.lighthouse.letpeople.work/charts; image tag = Chart.appVersion (ADR-083)")
+    System_Ext(mend, "Mend Renovate App", "hosted bot; scans, raises PRs, auto-merges TZ PR")
+    System_Ext(ghapi, "GitHub Issues API", "the upgrade-health alert channel (O-08-3)")
+    System_Boundary(repo, "LetPeopleWork/lighthouse-platform (PRIVATE)") {
+        Container(renovate, "renovate.json", "config (CREATE)", "custom managers + automerge split (ADR-097)")
+        Container(lpw, "tenants/lpw/tenant.yaml", "GitOps record (EXTEND)", "chartVersion canary anchor — Renovate-automerged")
+        Container(appset, "applicationset.yaml", "matrix appset (REUSE)", "fleet promotedVersion + per-record chartVersion")
+        Container(rtset, "applicationset-runtime.yaml", "runtime appset (EXTEND)", "fold in promotedVersion → version-stamp the smoke-test")
+        Container(runtime, "_charts/tenant-runtime", "overlay (EXTEND)", "+ PostSync smoke-test Job + GitHub-token ESO")
+        Container(ci, "validate-tenants.yml", "CI (EXTEND)", "+ optional renovate-config-validator")
+    }
+    System_Ext(argocd, "ArgoCD", "reconciles git → tenants (REUSE)")
+    System_Ext(tenants, "Tenant fleet", "lpw (canary) + customers; epic-5305 health probe")
+    Rel(ghcr, mend, "new chart version")
+    Rel(mend, lpw, "auto-merge TZ chartVersion PR (zero op action)")
+    Rel(mend, appset, "open fleet promotedVersion PR (no automerge)")
+    Rel(op, appset, "merge ONE PR → promote fleet")
+    Rel(appset, argocd, "git state")
+    Rel(rtset, argocd, "git state")
+    Rel(argocd, tenants, "rolling update (readiness-gated; migrate-on-boot)")
+    Rel(runtime, tenants, "PostSync Job: assert served version + health")
+    Rel(runtime, ghapi, "on failure: open/update issue (tenant+version named)")
+    Rel(ghapi, op, "alert")
+```
+
+**Components:**
+- **`renovate.json`** (CREATE NEW — justified: no prior Renovate config; the merge-only entry point). Mend
+  App; two custom managers (lpw `chartVersion` automerge=true; appset `promotedVersion` automerge=false);
+  helm datasource; tracked platform components no-automerge. Shape in ADR-097.
+- **`gitops/tenants/lpw/tenant.yaml`** (EXTEND): re-add an explicit `chartVersion: <current>` canary anchor
+  with a `# renovate:` marker. Faithful re-introduction of the override slice-08 dropped — now the
+  always-ahead canary (ADR-094).
+- **`gitops/tenants/_generator/applicationset.yaml`** (REUSE, no change): the `hasKey`-guarded
+  `targetRevision` already runs lpw's `chartVersion` ahead of the fleet — the mechanism is unchanged.
+- **`gitops/tenants/_generator/applicationset-runtime.yaml`** (EXTEND): fold in the `promotedVersion` matrix
+  (same proven shape as the workload appset) and pass the resolved version into the runtime chart so the
+  smoke-test Job is **version-stamped** → its PostSync hook re-fires on every roll (ADR-096).
+- **`gitops/_charts/tenant-runtime/`** (EXTEND): add a PostSync-hook smoke-test Job (minimal curl image),
+  the issue-raising script, and an ESO ExternalSecret for the issues:write GitHub token (recommended: a
+  shared `platform` namespace so the token lives once; the Job hits the tenant's public health URL).
+- **`.github/workflows/validate-tenants.yml`** (EXTEND, optional): add `renovate-config-validator` so the
+  watch-scope config stays honest (self-application of the Earned-Trust probe contract).
+- **Migration ordering** (NO new component — ADR-095): emergent property; documented + probed, not built.
+
+### [REF] Driving / driven ports
+
+- **Driving** (actor → system): the Renovate-raised PR (US-08a-1); the auto-merged TZ `chartVersion` commit
+  (US-08a-2); the operator's single git merge of the fleet `promotedVersion` PR (US-08a-3); the resolved
+  per-tenant `targetRevision` (canary ahead of fleet).
+- **Driven** (system → outside): the Helm chart datasource (Renovate reads published versions); ArgoCD
+  reconcile (git → cluster); the tenant health/served-version endpoint (smoke-test reads — epic-5305 probe);
+  the GitHub Issues API (smoke-test writes); ESO/OpenBao (token materialisation, ADR-087).
+
+### [REF] Reuse Analysis
+
+| Component | Verdict | Justification |
+|-----------|---------|---------------|
+| matrix ApplicationSet + `promotedVersion`/`chartVersion` knobs | **REUSE** | the canary/promote knobs already ship LIVE; Renovate merely writes them. No appset change for the workload path. |
+| `ExpandOnlyMigrationGuard` (epic-5305, ADR-077) | **REUSE** | the CI pre-flight that makes the no-pre-upgrade-Job decision (ADR-095) safe — destructive migrations cannot reach a tenant. |
+| on-boot `Database.Migrate()` + Postgres advisory lock (ADR-077) | **REUSE** | delivers migration-before-API ordering by construction; no Job. |
+| readiness-gated rolling update + graceful drain (epic-5305) | **REUSE** | the ordering gate (traffic only after boot+migrate) + zero-downtime. |
+| `tenant-runtime` overlay | **EXTEND** | add the PostSync smoke-test Job + GitHub-token ESO (no chart fork). |
+| `applicationset-runtime.yaml` | **EXTEND** | fold in `promotedVersion` matrix to version-stamp the smoke-test. |
+| `applicationset.yaml` (workload) | **REUSE** | unchanged — `hasKey` targetRevision already supports the canary override. |
+| `validate-tenants.yml` workflow | **EXTEND** | add `renovate-config-validator` lint (optional, recommended). |
+| ESO + OpenBao (ADR-087) | **REUSE** | materialise the issues:write token; no new secret mechanism. |
+| epic-5305 chart health/version probe | **REUSE** | the smoke-test's served-version + health assertion target. |
+| `renovate.json` | **CREATE NEW** | no prior Renovate config; the merge-only automation entry point (ADR-097). |
+| PostSync smoke-test Job + issue script | **CREATE NEW** | no prior post-upgrade health gate; thin standalone alert (slice-09 Alertmanager absent) (ADR-096). |
+| lpw `chartVersion` canary anchor | **EXTEND (re-add)** | re-introduce the per-record override slice-08 dropped — now the Renovate-tracked always-ahead canary (ADR-094). |
+
+**Zero unjustified CREATE NEW.** The two creates (`renovate.json`, the smoke-test Job) each close a named
+gap (no release-surfacing automation; no post-upgrade health gate). Everything else REUSE/EXTEND.
+
+### [REF] Technology choices
+
+Mend Renovate GitHub App (hosted, O-08-4 locked) · Renovate custom **regex managers** + **helm datasource**
+(registry `https://docs.lighthouse.letpeople.work/charts`) · ArgoCD **PostSync resource hook**
+(`hook-delete-policy: HookSucceeded`) · GitHub **Issues REST API** via `curl` + Bearer token (not `gh` —
+not guaranteed in a minimal image) · minimal `curl`/alpine image for the Job · ESO-materialised **fine-grained
+PAT** (issues:write, single repo) from OpenBao. All compose with the existing platform stack (DESIGN
+`wave-decisions.md` Technology Stack); no new platform component class.
+
+### [REF] Decisions table
+
+| Question | Answer | Why |
+|----------|--------|-----|
+| Auto-canary mechanism | Renovate auto-merge of TZ `chartVersion` PR | keeps everything in git (auditable/revertable), reuses the substrate override, no new controller (ADR-094) |
+| Mutable `latest` tag for TZ? | **No** | registry-mutable; ArgoCD reconciles git not registry; breaks rollback clarity; our knob is the chart version not the image tag (ADR-094) |
+| Pre-upgrade migration Job/sync-wave? | **No** | redundant with readiness gating + expand-only; would break zero-downtime and add a failure mode (ADR-095) |
+| Smoke-test surface | per-tenant version-stamped PostSync hook Job | fires on the roll, asserts served version (race-robust), per-tenant attribution (ADR-096) |
+| Alert channel | GitHub issue in lighthouse-platform | user-locked O-08-3; no observability stack needed; slice-09 supersedes later (ADR-096) |
+| Rollback | operator `git revert` only | proven in substrate; auto-rollback OUT/future (ADR-096) |
+| Renovate automerge scope | TZ `chartVersion` only | fleet `promotedVersion` stays the one-click human gate (ADR-097) |
+
+### [REF] Open questions for DISTILL / DELIVER
+
+- The chart's health/info endpoint path + **served-version field** (epic-5305 probe) — needed for the
+  version-match assertion (ADR-095/096).
+- GitHub token type (fine-grained PAT vs GitHub App installation token) + OpenBao path + ExternalSecret
+  placement (recommended: shared `platform` ns — least secret spread) (ADR-096).
+- Smoke-test **retry window / backoff** (must exceed tenant cold-start; feeds KPI-4 ≤5 min) — tune against
+  the first measured roll and the 08c drill.
+- Branch protection on `main` requiring the `validate-tenants` check (operator one-time setup — the automerge
+  gate, ADR-094).
+- Renovate **scan interval / schedule** vs KPI-2 (≤30 min publish→canary) — start at the Mend default
+  (~hourly), measure, tighten if needed (ADR-097).
+- Whether to add `renovate-config-validator` to `validate-tenants.yml` (recommended).
+- The exact pinned platform-component list in Renovate scope at DELIVER (CNPG/cert-manager/ingress-nginx/
+  ESO/external-dns/reloader confirmed; OpenBao/kube-prometheus as added) (ADR-097).
+
+## Wave: DISTILL / [REF] Scenario list (S08a renovate-merge-only)
+
+> **Wave**: DISTILL (rescope, 2026-06-30). **Designer**: Quinn. Slice-08a of the #5205 RESCOPE.
+> Driving port: a release-watcher-raised PR + the auto-merged Tenant-Zero version-override commit + the
+> operator's ONE git merge of the fleet-version PR. SSOT: `slice-08a-renovate-merge-only.feature`.
+> IaC/GitOps + CI → no .cs/.ts/.py scaffolds (Mandate 7 has no application-module target; RED = the
+> release-watch config + the Tenant-Zero canary anchor do not exist yet in the PRIVATE repo).
+
+| Scenario | File | Tags |
+|---|---|---|
+| The release-watch configuration is well-formed and covers the right versions | slice-08a-renovate-merge-only.feature | `@US-08a-1 @in-memory @env:release-candidate` |
+| Only Tenant Zero's version is allowed to merge itself | slice-08a-renovate-merge-only.feature | `@US-08a-2 @in-memory @env:tenant-zero` |
+| A version bump cannot merge itself until tenant validation passes | slice-08a-renovate-merge-only.feature | `@US-08a-3 @in-memory @env:release-candidate` |
+| A malformed Tenant Zero record cannot auto-canary | slice-08a-renovate-merge-only.feature | `@error @US-08a-2 @in-memory @env:tenant-zero` |
+| A new Lighthouse release raises a fleet-bump pull request | slice-08a-renovate-merge-only.feature | `@US-08a-1 @real-io @requires_external @env:release-candidate` |
+| A new platform-component version raises its own separate pull request | slice-08a-renovate-merge-only.feature | `@US-08a-1 @real-io @requires_external @env:release-candidate` |
+| A week with no new versions raises no pull request | slice-08a-renovate-merge-only.feature | `@US-08a-1 @real-io @requires_external @env:release-candidate` |
+| Tenant Zero takes the new release first with no operator action | slice-08a-renovate-merge-only.feature | `@US-08a-2 @real-io @requires_external @env:tenant-zero` |
+| The canary runs ahead of the fleet until the fleet is promoted | slice-08a-renovate-merge-only.feature | `@US-08a-2 @real-io @requires_external @env:tenant-zero` |
+| A bad canary on Tenant Zero is never auto-promoted to the fleet | slice-08a-renovate-merge-only.feature | `@error @US-08a-2 @real-io @requires_external @env:tenant-zero` |
+| Merging one pull request rolls the whole fleet | slice-08a-renovate-merge-only.feature | `@US-08a-3 @real-io @requires_external @env:fleet` |
+| Releasing to the whole fleet costs exactly one operator action | slice-08a-renovate-merge-only.feature | `@US-08a-3 @real-io @requires_external @env:fleet` |
+| Holding the merge leaves the fleet on the prior version | slice-08a-renovate-merge-only.feature | `@error @US-08a-3 @real-io @requires_external @env:fleet` |
+
+**Driven-adapter coverage (S08a)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| Renovate / Mend App (release-watch config + automerge policy) | `@in-memory` (config-validator + automerge-scope + gate-required) · `@real-io` (live PR raise / no-churn / distinct component PR) | config-well-formed, only-TZ-automerges, gate-required (in-memory); release-raises-PR, separate-component-PR, quiet-week-no-PR (requires_external) |
+| validate-tenants gate (the required automerge check) | `@in-memory` (gate-required + malformed-record-blocked) | gate-required-before-merge, malformed-record-cannot-auto-canary |
+| matrix appset + `chartVersion`/`promotedVersion` knobs (REUSE, unchanged) | `@real-io` | TZ-first, canary-ahead, one-merge-converges, hold-merge-no-roll |
+| ArgoCD reconcile (git → fleet) | `@real-io` | one-merge-rolls-fleet, canary-ahead-until-promote |
+
+**Error-path ratio (S08a)**: 3 of 13 `@error` (23%) — malformed-record-cannot-auto-canary, bad-canary-not-
+auto-promoted, hold-the-merge-leaves-fleet-unchanged. **Below the 40% target, documented honestly**: 08a is
+the convergence/automation slice (per the house-pattern note for upgrade-convergence slices) — its value is
+in proving the happy automation path (release surfaced → TZ hands-off → one merge converges) and its guardrails
+(nothing auto-promotes off a failed canary; nothing auto-canaries off a malformed record). The no-churn /
+distinct-PR scenarios are boundary cases that lift edge-coverage above the bare error count. The two
+guardrail `@error` paths plus the malformed-record gate are the safety-critical failures and they are all
+covered; manufacturing more sad paths would be synthetic for a merge-only release surface.
+
+**Reconciliation HARD GATE (S08a)**: PASSED — 0 contradictions. 08a implements ADR-094 (Renovate
+auto-merges the TZ `chartVersion`; fleet `promotedVersion` never auto-merged) + ADR-097 (Mend App hosting,
+watch scope, automerge split). DISCUSS deferred O-08-1/O-08-4 to DESIGN explicitly (mechanism, not
+requirement); DESIGN resolved them — a refinement of a deferred question, not a reversal of any DISCUSS
+commitment. D0 standalone-sacrosanct honored (private-repo config + hosted bot; public chart byte-unchanged).
+
+**Outcomes registry (S08a)**: SKIPPED — no new application typed-contract surface (Renovate config +
+GitOps record anchor + a required CI check). Per DISTILL D-6 gate-scoping, IaC/CI config is out of the
+code-feature-pipeline registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S08a)**: the `@in-memory` band goes RED because the
+release-watch configuration (`renovate.json`) + the lpw `chartVersion` anchor do not exist yet — a
+config-validator run has nothing to validate and the automerge-scope/gate assertions have no file to read
+(MISSING_FUNCTIONALITY, correct RED). The `@requires_external` band needs the live Mend App + GitHub +
+cluster + a real published release (not runnable until DELIVER S08a wires the config and a release lands).
+
+## Wave: DISTILL / [REF] Scenario list (S08b ordered-upgrade-smoketest)
+
+> **Wave**: DISTILL (rescope, 2026-06-30). **Designer**: Quinn. Slice-08b of the #5205 RESCOPE.
+> Driving ports: the per-tenant rolling upgrade (served behaviour through the roll) + a post-upgrade
+> health check → ops alert channel. SSOT: `slice-08b-ordered-upgrade-smoketest.feature`. IaC/GitOps + CI
+> → no scaffolds; RED = the version-stamped smoke-test Job + issues-write token + version-stamp do not
+> exist yet (the epic-5305 expand-only guard already ships and runs in the release build today).
+
+| Scenario | File | Tags |
+|---|---|---|
+| The post-upgrade health check is stamped with the version it must confirm | slice-08b-ordered-upgrade-smoketest.feature | `@US-08b-2 @in-memory @env:release-candidate` |
+| A destructive schema change is blocked before any tenant rolls | slice-08b-ordered-upgrade-smoketest.feature | `@error @US-08b-1 @in-memory @env:release-candidate` |
+| An additive-only schema change is cleared to roll | slice-08b-ordered-upgrade-smoketest.feature | `@US-08b-1 @in-memory @env:release-candidate` |
+| A tenant under upgrade serves continuously and never exposes an un-migrated schema | slice-08b-ordered-upgrade-smoketest.feature | `@US-08b-1 @real-io @requires_external @env:tenant-riverbank` |
+| The health check waits for the new version before judging health | slice-08b-ordered-upgrade-smoketest.feature | `@US-08b-2 @real-io @requires_external @env:tenant-riverbank` |
+| A healthy upgraded tenant raises no alert | slice-08b-ordered-upgrade-smoketest.feature | `@US-08b-2 @real-io @requires_external @env:tenant-riverbank` |
+| An unhealthy upgraded tenant raises a named alert within the detection target | slice-08b-ordered-upgrade-smoketest.feature | `@error @US-08b-2 @real-io @requires_external @env:tenant-riverbank` |
+| Only the unhealthy tenant is named when one of several upgrades fails | slice-08b-ordered-upgrade-smoketest.feature | `@error @US-08b-2 @real-io @requires_external @env:fleet` |
+| An undeliverable alert fails loudly instead of passing silently | slice-08b-ordered-upgrade-smoketest.feature | `@error @US-08b-2 @real-io @requires_external @env:tenant-riverbank` |
+
+**Driven-adapter coverage (S08b)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| ArgoCD PostSync hook smoke-test Job (version-stamped) | `@in-memory` (helm render carries version + health target) · `@real-io` (waits-for-version, healthy-silent, unhealthy-alert) | stamped-check (in-memory); waits-for-version, healthy-no-alert, unhealthy-named-alert, only-sick-named (requires_external) |
+| `ExpandOnlyMigrationGuard` (epic-5305 ADR-077, CI pre-flight) | `@in-memory` / CI | destructive-blocked (@error), additive-cleared |
+| GitHub Issues API (the alert channel) | `@real-io` | unhealthy-named-alert, only-sick-named |
+| epic-5305 served-version + health probe (`GET /api/latest/version/current` + `/health/ready`) | `@real-io` | waits-for-version, healthy-silent, unhealthy-alert |
+| readiness-gated rolling update + on-boot advisory-lock `Database.Migrate()` (epic-5305, REUSE) | `@real-io` | continuous-serve-through-roll (migration-before-API, emergent per ADR-095) |
+
+**Error-path ratio (S08b)**: 4 of 9 `@error` (44%, above target) — destructive-schema-blocked,
+unhealthy-tenant-named-alert, only-the-sick-tenant-named, and **undeliverable-alert-fails-loudly** (added per
+Sentinel rescope review high finding: if the ops channel is unreachable the smoke-test fails visibly rather
+than passing silently, so an undelivered alert is never mistaken for health). The first is the CI gate that
+earns the safe-roll claim; the rest are the post-upgrade detection failures (the whole point of the
+smoke-test) with correct per-tenant attribution.
+
+**Sentinel rescope review (2026-06-30) — verdict + dispositions.** `needs_revision` → resolved to
+conditionally-approved-equivalent: (1) HIGH — missing GitHub-issue-API-failure sad path: **ACCEPTED + added**
+(the undeliverable-alert scenario above; S08b now 9 scenarios / 44% @error; suite total 26 / 8 @error / 31%).
+(2) BLOCKER — missing `@contract-shape:` tags on all scenarios: **documented exception, NOT applied.** The
+`@contract-shape` mandate is a PBT layer-1/2 (`pure-function`/`bounded-change`/`unbounded-preservation`)
+classification; all epic-5306 acceptance specs are layer-3 example-based IaC/live-cluster `.feature` files
+(Tier-A only, no PBT — DT-1/DT-3 from the original DISTILL). The four already-SHIPPED specs (slice-05/06/07/08)
+carry zero such tags and the same Sentinel agent did NOT flag it when it reviewed slice-08 the prior turn —
+so applying it to only 08a/b/c would break feature-internal consistency for a tag that does not apply to this
+test layer. Recorded as an explicit reasoned N/A (no silent skip).
+
+**Reconciliation HARD GATE (S08b)**: PASSED — 0 contradictions. 08b implements ADR-095 (migration-before-API
+is emergent, NO pre-upgrade Job — resolves DISCUSS-deferred O-08-2) + ADR-096 (version-stamped PostSync
+smoke-test → GitHub-issue alert — resolves DISCUSS-deferred O-08-3). DISCUSS said "ops channel"; DESIGN
+locked it to a GitHub issue — a refinement of the explicitly-deferred O-08-3, not a reversal. D0c expand-only
++ D0 standalone honored (guard is CI-side; smoke-test is a private overlay; public chart byte-unchanged).
+
+**Outcomes registry (S08b)**: SKIPPED — no new application typed-contract surface. The served-version
+endpoint (`/api/latest/version/current`) already EXISTS in the application (epic-5305) and is REUSED, not
+introduced; the smoke-test Job + alert are GitOps/CI overlay config. Per D-6 gate-scoping, out of registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S08b)**: the `@in-memory` stamped-check goes RED because the
+`tenant-runtime` overlay has no smoke-test Job to render (MISSING_FUNCTIONALITY). The expand-only
+destructive/additive scenarios are partly GREEN today (the epic-5305 guard runs in `dotnet test`), going RED
+only where the release WORKFLOW has not yet wired the guard as the rollout pre-flight. The `@requires_external`
+band needs the live cluster + the new version-stamped Job + the ESO issues-token + a real roll.
+
+## Wave: DISTILL / [REF] Scenario list (S08c rollback-drill)
+
+> **Wave**: DISTILL (rescope, 2026-06-30). **Designer**: Quinn. Slice-08c of the #5205 RESCOPE.
+> Driving ports: the post-upgrade smoke-test + alert (detect, from 08b) and `git revert` → ArgoCD
+> (recover, from the substrate). SSOT: `slice-08c-rollback-drill.feature`. Mostly `@requires_external`
+> (a live timed drill). IaC/GitOps + CI → no scaffolds; RED = the rehearsed broken-image runbook does not
+> exist yet (the recovery mechanic — `git revert` + additive-only migrations — already shipped in slice-08).
+
+| Scenario | File | Tags |
+|---|---|---|
+| Rolling back needs no schema rollback because migrations are additive-only | slice-08c-rollback-drill.feature | `@US-08c-1 @in-memory @env:release-candidate` |
+| A deliberately broken release on a throwaway tenant is detected, not silently served | slice-08c-rollback-drill.feature | `@error @US-08c-1 @real-io @requires_external @env:tenant-canarytest` |
+| Reverting the bump restores the prior healthy revision within the rollback target | slice-08c-rollback-drill.feature | `@US-08c-1 @real-io @requires_external @env:tenant-canarytest` |
+| Production is untouched throughout the rollback drill | slice-08c-rollback-drill.feature | `@US-08c-1 @real-io @requires_external @env:tenant-zero` |
+
+**Driven-adapter coverage (S08c)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| slice-08b smoke-test + GitHub-issue alert (the DETECT half) | `@real-io` | broken-release-detected (@error) |
+| ArgoCD `git revert` → restore prior revision (the RECOVER half, substrate REUSE) | `@real-io` | revert-restores-prior-healthy-revision |
+| additive-only migration invariant (expand-only, makes revert pure) | `@in-memory` | no-schema-rollback-needed |
+| slice-07 throwaway provisioning + no-orphan teardown (REUSE) | `@real-io` | drill runs on `canarytest`; teardown in trailing comment |
+| Tenant Zero isolation (production untouched) | `@real-io` | production-untouched-throughout |
+
+**Error-path ratio (S08c)**: 1 of 4 `@error` (25%). **Below 40%, documented honestly**: 08c is a
+single-story rehearsal slice whose ONE error path — the broken-release must be DETECTED, not silently served
+— is the safety-critical link the whole drill exists to prove. The remaining scenarios are the recovery
+(revert-restores-within-target) and the isolation invariant (production-untouched), both happy by nature; a
+rehearsal that recovers is a success, not an error. Inflating the sad-path count would be synthetic.
+
+**Reconciliation HARD GATE (S08c)**: PASSED — 0 contradictions. 08c implements ADR-096 (smoke-test is
+detect+alert ONLY; rollback stays operator-initiated `git revert`; auto-rollback OUT — resolves
+DISCUSS-deferred O-08-5) + ADR-093 (the substrate revert path). DISCUSS flagged auto-rollback as future,
+not built; DESIGN confirmed — consistent, no reversal.
+
+**Outcomes registry (S08c)**: SKIPPED — no new application typed-contract surface (a rehearsed runbook +
+reuse of the 08b alert and substrate revert path). Per D-6 gate-scoping, out of registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S08c)**: the `@in-memory` additive-only-invariant scenario is
+reasoning over the expand-only guarantee (partly GREEN via the epic-5305 guard). The `@requires_external`
+drill is inherently not runnable until DELIVER: it depends on the slice-08b smoke-test/alert existing
+(DETECT) and on a live throwaway tenant + a deliberately broken image (the rehearsal itself is the artifact).
+
+## Wave: DISTILL / [REF] Residual DELIVER prerequisites (slice-08 RESCOPE — S08a/S08b/S08c)
+
+Flagged here, NOT blocking DISTILL (per the open-question handling — these are DELIVER mechanism details, the
+observable outcomes are captured in the scenarios above):
+
+1. **Chart served-version field (RESOLVED at DISTILL, confirm exact mapping at DELIVER)** — the application
+   exposes `GET /api/latest/version/current` (anonymous, returns the running version string;
+   `Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs`) plus `/health/ready` + `/health/live` +
+   `/health/startup` (`chart/templates/deployment-api.yaml`). The smoke-test (ADR-096) asserts on these. **One
+   DELIVER mapping to pin**: the image tag = `Chart.appVersion` (ADR-083, e.g. `26.7.0`), while the canary/
+   fleet knob the smoke-test is STAMPED from is the *chart version* (e.g. `0.1.5`). The version-stamp passed
+   into the Job MUST be the chart's resolved **appVersion** (= image tag = the value `/version/current`
+   serves), NOT the chart version `0.1.5`, or the version-match wait never satisfies. DELIVER must thread
+   `Chart.appVersion` (not `chartVersion`/`promotedVersion`) into the Job's expected-version stamp.
+2. **Smoke-test retry/backoff window (named budget; pin exact value at DELIVER)** — must exceed tenant
+   cold-start and fit inside KPI-4 (detect ≤5 min). **Named budget for the spec/DELIVER**: total wait ≤ 5 min
+   (KPI-4), composed of retry interval × max attempts that EXCEEDS observed tenant cold-start (epic-5305
+   readiness + first-request JIT). **Proposed starting value to tune against the first measured roll**: 15s
+   interval × up to 16 attempts ≈ 4 min ceiling (headroom under the 5-min KPI). Exact value pinned against the
+   08c drill's measured detect time. Rollback target for 08c: KPI-5 detect→recover ≤15 min.
+3. **Operator one-time setup (DELIVER, manual, outside the test harness)** — (a) install the Mend Renovate
+   GitHub App on `LetPeopleWork/lighthouse-platform` + grant repo access; (b) enable branch protection on
+   `main` requiring the `validate-tenants` status check (the automerge gate, ADR-094 — without it Renovate
+   automerge has nothing to gate on); (c) store the fine-grained issues-write PAT (issues:write, single repo)
+   in OpenBao + materialise it via ESO (recommended placement: a shared `platform` namespace — least secret
+   spread, ADR-096).
+4. **Renovate scan interval vs KPI-2 (≤30 min publish→canary)** — start at the Mend App default (~hourly),
+   measure the first real roll, tighten the `schedule` only if the default misses KPI-2 (ADR-097).
+5. **Exact pinned platform-component list in Renovate watch scope** — CNPG / cert-manager / ingress-nginx /
+   ESO / external-dns / reloader confirmed; OpenBao / kube-prometheus added as they land (ADR-097).
+
+## Wave: DISTILL / [REF] Slice-08 RESCOPE roll-up (S08a + S08b + S08c)
+
+| Slice | Scenarios | `@error` | `@in-memory` | `@real-io @requires_external` | Stories |
+|---|---|---|---|---|---|
+| 08a renovate-merge-only | 13 | 3 (23%) | 4 | 9 | US-08a-1/2/3 |
+| 08b ordered-upgrade-smoketest | 8 | 3 (37.5%) | 3 | 5 | US-08b-1/2 |
+| 08c rollback-drill | 4 | 1 (25%) | 1 | 3 | US-08c-1 |
+| **Total** | **25** | **7 (28%)** | **8** | **17** | 6 stories |
+
+**Story coverage**: all 6 RESCOPE stories covered (US-08a-1/2/3, US-08b-1/2, US-08c-1). **Pillar 1** (domain
+language): scenarios speak the operator's ubiquitous language — release, pull request, version, tenant,
+canary, fleet, revision, schema change, health, alert — with config internals (`renovate.json`, custom
+managers, PostSync hook, PAT, ExternalSecret) confined to header/trailing comments. **Pillar 2** (chained
+narrative): within each slice the `Given` of N reuses N-1's established state (08a: release-published →
+TZ-canaried → fleet-PR-open → merged; 08b: synced → health-checked → alerted; 08c: broken-pushed →
+detected → reverted → recovered). **Tier B**: NOT added — these are config-shaped IaC/GitOps slices
+(single-shot release config, render assertions, a live drill), not domain-rich chained-input journeys
+(Mandate 10 skip criteria: config-shaped + the observable is "did it roll / did it alert", no rich input
+space to model). **Mandate 7**: N/A — no application-module import target; RED is the absence of the
+`renovate.json` / canary anchor / smoke-test Job / runbook in the PRIVATE repo, not a missing Python/C# stub.

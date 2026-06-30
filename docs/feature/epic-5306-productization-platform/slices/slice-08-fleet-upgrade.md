@@ -1,5 +1,14 @@
 # Slice 08 — fleet-upgrade
 
+> **STATUS (2026-06-30): SUBSTRATE ONLY — superseded by the #5205 rescope.** This slice DELIVERED the
+> staged-upgrade *mechanism* (matrix `promotedVersion` + per-record `chartVersion` canary override,
+> expand-only guard, git-revert rollback) and proved it live. It did NOT deliver the merge-only
+> automation ADO #5205 actually asks for (Renovate, auto-canary, one-click promote, sync-wave migration
+> ordering, post-sync smoke-test + alert, broken-image rollback drill). #5205 was reopened (Active) and
+> RESCOPED into three thin slices — **08a** renovate-merge-only-release, **08b**
+> ordered-upgrade-smoketest-alert, **08c** broken-image-rollback-drill — see `slice-08a/08b/08c-*.md`
+> and `discuss/slice-08-rescope-*`. This brief is retained as the substrate record those slices build on.
+
 - **ADO story**: #5205 (Automated upgrades)
 - **job_id**: `job-saas-operator-upgrade-all-tenants-safely`
 - **Band**: Fleet operations
