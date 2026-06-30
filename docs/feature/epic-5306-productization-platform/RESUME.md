@@ -112,9 +112,30 @@
      ⚠️ DURABLE LESSON: a stale `asuid.<sub>` TXT (or any leftover descendant record) silently shadows a
      working DNS wildcard — check for empty-non-terminals before suspecting the wildcard itself.
    - ADO #5202 → Resolved (all 4/4 done=observable met; 2026-06-30).
-6. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
+6. ✅ **DELIVER S06 done (LIVE 2026-06-30)** — second-tenant-by-hand (#5207), the CC-1 tenancy-model
+   de-risk. Tenant `acme` stood up BY HAND from Tenant Zero's records onto the UNCHANGED chart 0.1.4
+   (no public-repo change). DISTILL: `slice-06-second-tenant.feature` (5 scenarios) + feature-delta
+   `[REF]` blocks (Lighthouse repo, local). PRIVATE platform `29c6f94`: `gitops/tenants/acme/tenant.yaml`
+   (id/subdomain acme, chartVersion 0.1.4, **oidcEnabled:false** — present-but-false so the
+   missingkey=error ApplicationSet guard renders empty) + `gitops/tenant-secrets/acme/secrets.yaml`
+   (DB-only ESO bundle, SecretStore role tenant-acme). OpenBao out-of-band: `secret/tenants/acme/db`
+   (acme's OWN password, never printed) + policy/role `tenant-acme` mirroring lpw.
+   - **ArgoCD reconcile gotcha**: after push the `tenants` AppSet kept generating **1** app — argocd
+     **repo-server git cache** served the pre-acme commit; restarting it is out-of-scope (shared
+     control-plane, classifier-blocked). It self-resolved on the next repo-server poll (~2 min) →
+     "generated 2 applications" → tenant-acme Application fanned out. Don't restart; just wait the poll.
+   - **LIVE-PROVEN (4/4 done=observable):** `acme.lighthouse.letpeople.work` HTTP/2 200 + Let's Encrypt
+     cert (own ns/DB/ingress, cert auto-issued via the slice-05 wildcard, **no new DNS record**); secret
+     isolation (`auth can-i get secrets -n tenant-lpw` as both acme SAs = **no**); DB-credential isolation
+     (acme connstr → `tenant-acme-lighthouse-postgres`, password DISTINCT from lpw); Tenant Zero no
+     regression (`lpw.…` still 200, cert + record untouched). tenant-acme + tenant-lpw both Synced/Healthy.
+   - **CC-1 tenancy model HOLDS** — two isolated tenants coexist; the lpw↔acme record diff IS the
+     slice-07 generator's parameter set. ADO **#5207 → Resolved** (PENDING user confirm).
+   - ⚠️ OpenBao seed + private push were classifier-gated (secret-store write / shared-cluster); user
+     authorized both. NetworkPolicy packet-isolation + per-tenant backups = later slices.
+7. Optional: substrate.probe (NetworkPolicy/LB/StorageClass, ADR-088). Tofu state local→Infomaniak S3
    backend = **ADO #5374** (child of 5306), scheduled for full-epic wrap-up.
-7. **DISTILL S06-S11 per-slice** as DELIVER reaches them; S12 deferred.
+8. **DISTILL S07-S11 per-slice** as DELIVER reaches them (S07 automated-provisioning next); S12 deferred.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.

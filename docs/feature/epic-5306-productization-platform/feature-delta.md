@@ -1138,3 +1138,109 @@ helm-unittest is the test gate, matching S01–S04).
 2. **Wildcard DNS** — one GoDaddy A record `*.lighthouse.letpeople.work` → ingress LB `179.237.75.110` (replaces per-host A records; like slice-03's single host, operator-made).
 3. **Push private platform** → ArgoCD syncs `reloader` + tenant `tenant-lpw` onto 0.1.4.
 4. **Live verify** (Claude runs locally): a never-configured `demo.lighthouse.letpeople.work` resolves + serves trusted HTTPS; `lpw.…` still serves (no regression); rotate `lighthouse-db` in OpenBao → reloader rolls the API with NO manual restart and NO git commit (tightens slice-04).
+
+## Wave: DISTILL / [REF] Scenario list (S06 second-tenant)
+
+| Scenario | File | Tags |
+|---|---|---|
+| A second tenant's record differs from Tenant Zero only by its identifier-derived parameters | slice-06-second-tenant.feature | `@US-06 @in-memory @env:tenant-records` |
+| The hand-provisioned second tenant serves over trusted HTTPS at its own subdomain | slice-06-second-tenant.feature | `@US-06 @real-io @requires_external` |
+| The second tenant cannot read Tenant Zero's secrets | slice-06-second-tenant.feature | `@US-06 @real-io @requires_external @isolation` |
+| The second tenant runs on its own database credential, not Tenant Zero's | slice-06-second-tenant.feature | `@US-06 @real-io @requires_external @isolation` |
+| Tenant Zero is unaffected by the second tenant's provisioning | slice-06-second-tenant.feature | `@US-06 @real-io @requires_external @env:tenant-zero` |
+
+**No chart delta driving S06.** Slice-06 is the CC-1 tenancy-model de-risk: it stands up a SECOND
+tenant (`acme`) by hand from Tenant Zero's records onto the UNCHANGED chart 0.1.4 — that the same
+template serves both is the whole point (ADR-086, no production special-casing). The only new artifacts
+are PRIVATE-repo GitOps records (`gitops/tenants/acme/tenant.yaml` +
+`gitops/tenant-secrets/acme/secrets.yaml`) + out-of-band OpenBao seeding (`secret/tenants/acme/*` + a
+`tenant-acme` k8s-auth role). `acme` is a demo tenant with OIDC OFF (no Auth0 app — isolation, not auth,
+is the learning), so its record omits the `oidc*` fields and its ESO bundle carries only the DB
+ExternalSecret. Host `acme.lighthouse.letpeople.work` resolves through the slice-05 wildcard
+(`*.lighthouse...` → LB `179.237.75.110`) with NO new DNS record.
+
+**The single `@in-memory` scenario** is a committed-file diff (CI-runnable without the cluster): the
+lpw↔acme record diff must reduce to the id-derived parameters (`id`, `subdomain`, secret-store path,
+namespace) plus the demo-tenant OIDC-off delta — which is exactly the parameter set the slice-07
+generator must template. Nothing helm-renderable changes this slice, so there is no helm-unittest case.
+
+**Driven-adapter coverage (S06 additions)**:
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| ArgoCD ApplicationSet (Git-files generator fans a second tenant) | YES | S06 serves-HTTPS (@requires_external) |
+| Kubernetes RBAC (namespace Secret-read boundary) | YES | S06 secret-isolation (@requires_external @isolation) |
+| ESO/OpenBao per-tenant store path (distinct DB credential) | YES | S06 db-credential-isolation (@requires_external @isolation) |
+| cert-manager + wildcard (second host, no per-host step) | YES | S06 serves-HTTPS reuses the slice-05 wildcard mechanism |
+
+**Isolation / edge coverage**: 2 explicit `@isolation` scenarios (cross-namespace Secret read denied;
+distinct DB credential per store path) + the Tenant-Zero no-regression negative-space path. NetworkPolicy
+packet-level isolation is deliberately OUT (defence-in-depth, a later slice) — the tenancy decision is
+proven at the credential + RBAC boundary, which is what slice-07 must preserve.
+
+**Reconciliation HARD GATE (S06)**: PASSED — 0 contradictions. Slice-06 implements ADR-086 (one
+generator, no production special-casing) and the CC-1 namespace-per-tenant isolation model verbatim;
+it adds NO chart change and NO new application contract. DESIGN `wave-decisions.md` records the tenancy
+model as the thing slice-06 validates by hand (Shared Artifacts Registry: "one model applied across all
+slices; slice-06 validates it by hand"). The lpw↔acme diff being the slice-07 parameter set is the
+DESIGN-stated bridge into automation.
+
+**Outcomes registry (S06)**: SKIPPED — no new application typed-contract surface (GitOps records +
+out-of-band store seeding only, per D-6 gate-scoping).
+
+**Pre-DELIVER fail-for-the-right-reason gate (S06)**: the `@in-memory` diff goes RED until
+`gitops/tenants/acme/` + `gitops/tenant-secrets/acme/` exist (no second record to diff against). The
+`@requires_external` band needs the live cluster + a committed+pushed acme record + a seeded OpenBao
+acme path (not runnable until DELIVER S06 stands acme up).
+
+## Wave: DELIVER / [REF] Implementation summary (S06 second-tenant)
+
+Stood up a SECOND tenant `acme` by hand from Tenant Zero's records onto the UNCHANGED chart 0.1.4 —
+**no chart change this slice** (the public repo's `chart/` is untouched). All work is PRIVATE-repo
+GitOps + out-of-band OpenBao seeding; the live cluster reconciled it.
+
+**PART A — PRIVATE platform repo** (`LetPeopleWork/lighthouse-platform`, commit `29c6f94`):
+- `gitops/tenants/acme/tenant.yaml` — copied from `tenants/lpw/tenant.yaml`, parameterised by the one
+  CC-6 id: `id`/`subdomain` `lpw`→`acme`; `chartVersion` 0.1.4 (same as Tenant Zero); `oidcEnabled: false`
+  (demo tenant, no Auth0). `oidcEnabled` is present-but-false on purpose — the ApplicationSet runs
+  goTemplate `missingkey=error`, so an omitted key would error the `{{- if .oidcEnabled }}` guard; false
+  renders the oidc/proxy blocks empty and lets the issuer/clientId fields be omitted.
+- `gitops/tenant-secrets/acme/secrets.yaml` — copied from `tenant-secrets/lpw/secrets.yaml`: SA
+  `openbao-auth`, SecretStore `tenant-acme-store`, one `lighthouse-db` ExternalSecret (no
+  `lighthouse-oidc` — OIDC off). Picked up automatically by the `recurse:true` `tenant-secrets` app.
+
+**PART B — out-of-band OpenBao** (seeded into `openbao-0`, never in git, CC-3):
+- kv `secret/tenants/acme/db` = `{connectionString (Host=tenant-acme-lighthouse-postgres…),
+  postgresPassword}` — acme's OWN fresh password, generated in-pod, never printed.
+- policy `tenant-acme` (read `secret/data/tenants/acme/*`) + k8s-auth role `tenant-acme` → SA
+  `tenant-acme/openbao-auth`, mirroring the lpw role exactly.
+
+**Reconcile**: pushed → ArgoCD `tenants` ApplicationSet fanned out a `tenant-acme` Application
+(generated 2 applications) → namespace + bundled Postgres + API + ingress; the `tenant-secrets` app
+materialised acme's `lighthouse-db` Secret via ESO (`SecretSynced=True`); cert-manager auto-issued
+`acme-tls` through the slice-05 wildcard (**no new DNS record**). Both `tenant-acme` + `tenant-lpw`
+Synced/Healthy.
+
+### [REF] Scenarios green (S06)
+
+| Band | Count | Status |
+|---|---|---|
+| `@in-memory` (committed-file diff) | 1 | **GREEN** — lpw↔acme `tenant.yaml`/`secrets.yaml` diff reduces to the id-derived params (id, subdomain, namespace, store path) + the demo OIDC-off delta = exactly the slice-07 generator's template set. Chart renders clean for acme (host-guard passes, no oidc, `existingSecret` wired). |
+| `@requires_external` (live cluster) | 4 | **GREEN — live-proven 2026-06-30** (below). |
+
+### [REF] Live done=observable proof (S06, 2026-06-30)
+
+- **Serves trusted HTTPS** — `https://acme.lighthouse.letpeople.work` → HTTP/2 **200**, Let's Encrypt
+  cert `CN=acme.lighthouse.letpeople.work`. Own namespace `tenant-acme`, own bundled Postgres, API Ready.
+- **Secret isolation** — `kubectl auth can-i get secrets -n tenant-lpw` as both
+  `tenant-acme/openbao-auth` and `tenant-acme/default` = **no** (default-RBAC namespace boundary).
+- **DB-credential isolation** — acme's materialised connstr points at `tenant-acme-lighthouse-postgres`
+  (its own in-ns DB); acme's `postgresPassword` is **DISTINCT** from lpw's (compared in OpenBao, neither
+  printed); acme API healthy against its own DB.
+- **Tenant Zero no regression** — `https://lpw.lighthouse.letpeople.work` still HTTP/2 **200**, cert
+  `CN=lpw.lighthouse.letpeople.work` unchanged; no lpw record or secret was touched.
+
+**CC-1 tenancy model HOLDS**: two tenants coexist with no cross-tenant bleed at the credential + RBAC
+boundary. The lpw↔acme record diff IS the slice-07 parameter set (id → namespace/host/tls-secret/store
+path; OIDC as an independent per-tenant flip). NetworkPolicy packet-level isolation + per-tenant backup
+scope remain later slices. ADO **#5207 → Resolved** (all done=observable met; pending user confirm).
