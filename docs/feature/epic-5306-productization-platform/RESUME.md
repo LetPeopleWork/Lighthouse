@@ -186,7 +186,27 @@
      0.1.3 serves 200; PROMOTE rolled 0.1.3→0.1.4 (deployRev 1→2, reloader pod-anno appeared = real chart roll),
      200 mid-roll; git-revert ROLLBACK 0.1.4→0.1.3 (deployRev→3, anno gone), 200; TEARDOWN pruned both apps + ns,
      zero orphans. **Tenant Zero 0.1.4/Healthy/200 throughout, never version-moved.** OpenBao canarytest kv/policy/role
-     seeded + cleaned out-of-band (user). ADO **#5205 → Resolved** (PENDING user confirm).
+     seeded + cleaned out-of-band (user). [SUPERSEDED — substrate only; #5205 reopened + rescoped into 08a/08b/08c.]
+   - ✅ **DISTILL S08a/08b/08c done** — `tests/platform/epic-5306/acceptance/slice-08a-renovate-merge-only.feature`
+     (+08b ordered-upgrade-smoketest, +08c rollback-drill). DESIGN ADR-094..097 (ADR-095 committed public).
+   - ✅ **DELIVER S08a done — in-repo + CI GREEN (2026-06-30)** — merge-only release via Renovate (#5205,
+     ADR-094/097). PRIVATE platform `4a7fa91` (public chart UNCHANGED): `renovate.json` (Mend App; 2 custom
+     managers over the published `lighthouse` helm datasource — lpw `chartVersion` automerge **ON**, fleet
+     `promotedVersion` automerge **OFF** — + argocd manager watching cert-manager/external-secrets/openbao/
+     reloader/ingress-nginx, no automerge); re-added the lpw `chartVersion: "0.1.4"` canary anchor
+     (==promotedVersion → render-unchanged); `scripts/validate-renovate-policy.sh` (jq assertion = executable
+     form of the @in-memory US-08a-1/2/3); `validate-tenants.yml` +renovate-config-validator +policy check,
+     triggers broadened.
+   - ✅ **PLATFORM BUILD FIXED (red since slice-07)** — same commit pins helm-unittest **v1.0.3** so its
+     plugin.yaml loads on CI helm v3.16.2 (v1.1.x `platformHooks` → `unknown command unittest` → exit 1; see
+     [[project_epic5306_k8s_productization_design]]). `validate-tenants` run **28476255400 GREEN** (all 8 steps).
+     ⚠️ CI renovate-config-validator must run renovate **latest** (43+) — `managerFilePatterns` is rejected by
+     cached old 37.x; clean CI runners pull latest so it passes (local stale-cache trap only).
+   - ⏳ **S08a @requires_external = operator one-time setup** (then live scenarios go live): install the **Mend
+     Renovate App** on `LetPeopleWork/lighthouse-platform` + mark `validate-tenants` a **required status check**
+     (branch protection on `main`) so the TZ auto-canary has its gate. ADO **#5205 stays Active** (08b/08c pending).
+   - ▶ **NEXT: DELIVER S08b** (ordered-upgrade PostSync smoke-test Job + GitHub-issue alert, ADR-096 — needs a
+     GitHub PAT in OpenBao), then **S08c** broken-image rollback drill.
 
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
