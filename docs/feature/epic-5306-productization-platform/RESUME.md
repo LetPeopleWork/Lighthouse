@@ -208,6 +208,74 @@
    - ▶ **NEXT: DELIVER S08b** (ordered-upgrade PostSync smoke-test Job + GitHub-issue alert, ADR-096 — needs a
      GitHub PAT in OpenBao), then **S08c** broken-image rollback drill.
 
+## SLEEP HANDOFF (2026-07-01) — #5205 state + tomorrow's steps
+
+**#5205 status:** 08a ✅ DONE+live-proven · 08b ✅ code shipped (live happy-path proof BLOCKED on the ESO
+incident below) · 08c ⬜ one drill left. Story NOT closed yet.
+
+### S08a — DONE (auto-canary live-proven)
+Renovate (Mend App) on `LetPeopleWork/lighthouse-platform`. `renovate.json`: 2 custom managers over the
+published `lighthouse` helm datasource (lpw `chartVersion` automerge ON, fleet `promotedVersion` automerge
+OFF) + argocd manager for the 5 platform components (no automerge). `mode:full` (Mend defaults silent).
+Drill: dropped lpw anchor 0.1.4→0.1.3 → Renovate raised canary PR#1 → `validate-tenants` gated green →
+**auto-merged hands-off** (`edc6d98`) → ArgoCD rolled TZ 0.1.3→0.1.4, **200 throughout**. Anchor DRILL
+comment cleaned (`0300a50`). NOTE: free private-org plan ⇒ no GitHub branch protection/rulesets (403);
+auto-merge gates via Renovate `ignoreTests:false` wait-for-tests (accepted). `config:recommended` also
+pulled in github-actions/terraform(openstack)/helm managers ⇒ extra no-automerge PRs (noise; scope later).
+Fleet manual-promote PR NOT demoed (only lpw exists; deferred to final e2e per user).
+
+### ⚠️ ESO INCIDENT (must clear first tomorrow — blocks 08b/08c live)
+User merged Renovate component PRs: cert-manager v1.16.2→v1.20.3 (fine) and **external-secrets
+0.10.7→0.20.4** which **DROPPED the `external-secrets.io/v1beta1` API** (cluster now serves `v1` only,
+storage=v1). FIXED in git: migrated all 5 ESO manifests v1beta1→v1 (`efc0490`/`df9ff38`) + chart
+bump 0.1.1→0.1.2 to bust repo-server cache (`beda74e`). **Platform stayed UP** (lpw 200 throughout;
+`lighthouse-db`/`oidc` ExternalSecrets SecretSynced True as v1). BUT `tenant-lpw-runtime` + `platform`
+argo apps still show **OutOfSync** citing the old v1beta1 — this is ArgoCD's stale **cluster discovery /
+REST-mapper cache** for the removed CRD version, NOT a data problem. `github-issues-token` Secret not yet
+materialised because the sync can't complete.
+**TOMORROW STEP 1 — clear it:** `KUBECONFIG=~/.kube/lpw-substrate.yaml`; hard-refresh
+(`kubectl annotate app tenant-lpw-runtime platform -n argocd argocd.argoproj.io/refresh=hard --overwrite`);
+if still OutOfSync with v1beta1 error after ~10min, the argocd-application-controller discovery cache is
+stale → restart it (`kubectl rollout restart deploy argocd-application-controller -n argocd` — or statefulset;
+shared control-plane, classifier-gated, get user OK). Then verify: both apps Synced/Healthy;
+`kubectl get externalsecrets.v1.external-secrets.io -A` all True; `kubectl get secret github-issues-token -n
+tenant-lpw` exists.
+
+### S08b — code shipped (`16a0ad9`), VERIFY happy-path after recovery
+chart `tenant-runtime` 0.1.2: `smoke-test-job.yaml` (PostSync hook; **rollout-based version attribution**
+— Deployment image tag==expected + rollout-complete + `/health/ready` 200, because `/api/v1/version` is
+**OIDC-gated→401**, only `/health/*` anonymous), `smoke-test-rbac.yaml` (SA+Role get deployments),
+`smoke-test-secret.yaml` (github-issues-token via ClusterSecretStore `platform-store`). values `smokeTest`
+(off by default). `applicationset-runtime.yaml` folded onto `promotedAppVersion: "26.6.21.1"` matrix
+(version-stamp). `platform/external-secrets-platform-store.yaml` (ClusterSecretStore + SA
+platform-token-reader, ns external-secrets). 17/17 helm-unittest. OpenBao prereqs SEEDED by user: policy
+`platform-read` + k8s role `platform`(SA external-secrets/platform-token-reader) + PAT raw at
+`secret/platform/github-issues-token` key `token`. **VERIFY after recovery:** the PostSync smoke-test on
+tenant-lpw PASSES (lpw on 26.6.21.1, healthy → exit 0 → hook auto-deletes; no GitHub issue opened).
+
+### S08c — fast broken-image-rollback drill (DO after 08b verified)
+Throwaway tenant, NO OpenBao DB seed needed (the breakage IS the missing workload). Steps (fish):
+1. create `gitops/tenants/driltest/tenant.yaml`: `id: driltest`, `subdomain: driltest`, `plan: standard`,
+   `runtime: enabled`, `chartVersion: "9.9.9"` (non-existent chart → workload never deploys).
+2. commit + push. ArgoCD provisions driltest runtime (ns/quota/netpol + github-issues-token ESO via
+   platform-store); workload app errors (chart 9.9.9 not found) → no deploy → smoke-test Job waits
+   maxAttempts (30×10s=5min) → **opens GitHub issue** "tenant driltest unhealthy after upgrade to
+   26.6.21.1 (health 000)" (= @error US-08b-2 alert proven).
+3. note detect time; ROLLBACK = `git rm -r gitops/tenants/driltest`, commit, push → ArgoCD prunes the
+   app + namespace (zero orphans). note recover time; close the issue.
+4. record runbook + detect→recover in feature-delta DELIVER S08c [REF].
+
+### After 08c: close-out
+- feature-delta `[REF]` DELIVER blocks for S08a/08b/08c; supersede the slice-08 substrate banner.
+- ADO **#5205 → Resolved/Closed** (08a/08b/08c all delivered).
+- Optional cleanups: scope `renovate.json` to drop github-actions/terraform/helm manager noise; revisit
+  the open component PRs (#2 helm, dashboard #3); the `helm` binary PR + cert-manager already merged.
+- Final full e2e (real release → canary auto + fleet MANUAL promote PR + smoke-test + broken-image
+  rollback) deferred per user — run at epic wrap-up alongside ADO #5374 (tofu state→S3).
+
+**Public docs (this repo) committed LOCAL, UNPUSHED:** `e8cf158d` (slice-08a record) + this handoff edit —
+push both when convenient (platform-repo side already pushed).
+
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
 helm/kubectl/kind/az already present. tflint NOT installed (used tofu fmt/validate instead).
