@@ -335,6 +335,45 @@ helm/kubectl/kind/az already present. tflint NOT installed (used tofu fmt/valida
 
 ### (historical) NEXT: S09 @requires_external LIVE PROOF — DONE, see close-out above
 
+---
+
+## ▶ Story #5208 Backup & DR — DISTILL done + DELIVER S10 @in-memory GREEN (2026-07-01)
+
+**DISTILL S10+S11 (story #5208):** `.feature` SSOT in public Lighthouse —
+`slice-10-per-tenant-backups.feature` (10 scenarios, 40% @error) + `slice-11-restore-rehearsal.feature`
+(9 scenarios, 44% @error) + feature-delta DISTILL S10/S11 [REF] blocks. **Reconciliation HARD GATE**: 1
+contradiction (ADO pg_dump ↔ ADR-091 CNPG, vs delivered bundled Postgres StatefulSet) surfaced + USER-
+RESOLVED → **pg_dump logical dump against the bundled Postgres → off-cluster Infomaniak S3**; ADR-091 CNPG
+WAL **DEFERRED**. **O-3 RESOLVED**: RPO ≤24h / RTO ≤30min. **Sentinel APPROVED** (0 blocker/high/low, all
+dims 10). Public LOCAL, unpushed.
+
+**DELIVER S10 @in-memory GREEN (PRIVATE repo, LOCAL unpushed; public chart byte-unchanged):**
+- `tenant-runtime` 0.1.5→**0.1.6**: `backup-cronjob.yaml` (per-tenant pg_dump→off-cluster S3 CronJob,
+  id-keyed, initContainer postgres + mc upload), `backup-secret.yaml` (ESO S3 cred via platform-store),
+  `_helpers.tpl` two isolation guards (storageKey==id, endpoint off-cluster) = the @error scenarios as
+  `fail`s, `values.yaml` backup block (off by default). **No new NetworkPolicy** — reuses allow-intra-
+  namespace (→Postgres) + allow-https-egress (→S3:443). **29/29 unittest**.
+- `fleet-monitoring` 0.1.1→**0.1.2**: `tenant:backup_age_seconds` recording rule + `BackupStale` alert
+  (stale-success OR never-succeeded branch, names tenant) + `thresholds.backupStaleSeconds: 86400`.
+  **17/17 unittest**.
+- `applicationset-runtime.yaml`: hosted tenants INHERIT `backup.enabled: true` (opt out `backupEnabled:false`).
+- Both charts lint clean; `validate-tenants.sh` OK; CI auto-picks new `tests/unit/`.
+
+**▶ NEXT — S10 @requires_external LIVE PROOF (needs user at cluster, mirrors S09):**
+1. Seed OpenBao `secret/platform/backup-s3` (accessKey+secretKey for an Infomaniak Object Storage bucket
+   `lighthouse-backups`); platform-store ClusterSecretStore already reads `secret/platform/*` (slice-08b).
+2. ArgoCD sync tenant-runtime 0.1.6 + fleet-monitoring 0.1.2; confirm TZ `lighthouse-backup-lpw` CronJob +
+   `lighthouse-backup-s3` Secret; run one manual job → artifact `lighthouse-backups/lpw/lpw-<ts>.sql.gz`
+   off-cluster within RPO (dogfood done=observable).
+3. Prove `BackupStale` fires on a prevented/never-succeeded backup, names the tenant, others unflagged.
+4. Record DELIVER S10 live proof; **then DELIVER S11** (restore rehearsal — parameterised id-keyed restore
+   + runbook; rehearse TZ restore into a scratch ns, verify integrity, time < RTO 30min, isolation check).
+
+**Both public + private are LOCAL, UNPUSHED** — push when ready (public: slice-10/11 specs + feature-delta;
+private: tenant-runtime 0.1.6 + fleet-monitoring 0.1.2 + appset). ADO **#5208 stays Active**.
+
+### (historical earlier NEXT) — S09 @requires_external LIVE PROOF — DONE, see close-out above
+
 - **DISTILL**: `tests/platform/epic-5306/acceptance/slice-09-fleet-observability.feature` (12 scenarios,
   5 @error=42%, @US-09; @in-memory×7 + @real-io @requires_external×5). Reconciliation PASSED (ADR-090).
   Sentinel reviewed; 2 findings reconciled as epic-convention false-positives (slice-number @US tag; no

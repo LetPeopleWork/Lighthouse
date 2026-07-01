@@ -2077,3 +2077,195 @@ request (private `a338b0e`).
 **Deliberately deferred (user):** the induced-fault drill proving `TenantDegraded` actually *fires* (alert
 rule is loaded + healthy; firing behavior unproven). Grafana admin via ESO + SSO + dashboard hardening also
 later. **#5206 → Resolved** on the scrape + bounded-attribution + recording/alert + dashboard proof.
+
+## Wave: DISTILL / [REF] Scenario list (S10 per-tenant-backups)
+
+> **Wave**: DISTILL (2026-07-01). **Designer**: Quinn. Slice-10 = story #5208 (Backup & disaster
+> recovery) — **Part A**. Driving ports: (1) the per-hosted-tenant BACKUP ENABLEMENT (a tenant's
+> generator record turns on a scheduled backup of its own database to off-cluster storage, keyed by
+> exactly one identifier — its id), and (2) the monitoring-stack GitOps config (a standing
+> backup-freshness alert reconciled by ArgoCD). SSOT: `slice-10-per-tenant-backups.feature`.
+> IaC/GitOps feature → no .cs/.ts/.py scaffolds (Mandate 7 has no application-module target; RED = the
+> per-tenant backup template + its off-cluster storage credential + the `BackupStale` alert rule do not
+> exist yet in the PRIVATE repo). The public #5199 chart's standalone defaults stay byte-unchanged (D0
+> gate) — backup is a hosted overlay, off-by-default.
+
+**Mechanism reconciliation (2026-07-01, USER DECISION)**: ADO story text (pg_dump CronJob→MinIO) ↔ ADR-091
+(CloudNativePG WAL→S3) disagreed, and the delivered reality is the #5199 chart's plain bundled Postgres
+StatefulSet — **no CNPG operator installed anywhere** (`_charts/` = fleet-monitoring + tenant-runtime only).
+Resolved to **a scheduled logical dump per tenant of the bundled Postgres → off-cluster Infomaniak Object
+Storage (S3-compatible)**. No DB-engine migration in this slice; **ADR-091's CNPG WAL path is
+DEFERRED/superseded for backups**. **O-3 RESOLVED**: RPO ≤24h, RTO ≤30min (slice-11). Scenarios are written
+at the observable level so they hold for the logical-dump mechanism today and for a CNPG restore later.
+
+| Scenario | File | Tags |
+|---|---|---|
+| A hosted tenant renders a scheduled backup of its own data to off-cluster storage | slice-10-per-tenant-backups.feature | `@US-10 @in-memory @env:tenant-runtime` |
+| A newly added tenant inherits backups with no per-tenant setup | slice-10-per-tenant-backups.feature | `@US-10 @in-memory @env:tenant-runtime` |
+| A standing alert is defined for a backup that goes stale beyond the recovery-point window | slice-10-per-tenant-backups.feature | `@US-10 @in-memory @env:monitoring-stack` |
+| The standalone product renders with no scheduled backup | slice-10-per-tenant-backups.feature | `@US-10 @in-memory @env:standalone` |
+| A backup destination that is not off-cluster is rejected | slice-10-per-tenant-backups.feature | `@error @US-10 @in-memory @env:tenant-runtime` |
+| A backup that would write under another tenant's storage key is rejected | slice-10-per-tenant-backups.feature | `@error @US-10 @in-memory @env:tenant-runtime` |
+| A backup older than the recovery-point window is flagged, never silently tolerated | slice-10-per-tenant-backups.feature | `@error @US-10 @in-memory @env:monitoring-stack` |
+| Tenant Zero has a fresh backup off-cluster within the recovery-point window | slice-10-per-tenant-backups.feature | `@US-10 @real-io @requires_external @env:tenant-zero` |
+| Every hosted tenant has a recent off-cluster backup with no gaps | slice-10-per-tenant-backups.feature | `@US-10 @real-io @requires_external @env:fleet` |
+| A missed backup raises the stale-backup alert rather than passing unnoticed | slice-10-per-tenant-backups.feature | `@error @US-10 @real-io @requires_external @env:fleet` |
+
+**Driven-adapter coverage (S10)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| Per-tenant scheduled-backup template (logical dump of the bundled Postgres → off-cluster storage, keyed by id; CREATE in `tenant-runtime`) | `@in-memory` (renders scheduled backup, off-cluster + id-keyed) · `@real-io` (artifact lands off-cluster within RPO) | hosted-tenant-renders-backup, newly-added-inherits (in-memory); tenant-zero-fresh, fleet-no-gaps (requires_external) |
+| Off-cluster storage credential (Infomaniak Object Storage via ESO) | `@in-memory` (destination is off-cluster + id-keyed) · `@real-io` (artifact stored off-cluster only under own id) | destination-not-off-cluster-rejected, wrong-key-rejected (in-memory); fleet-no-gaps own-key (requires_external) |
+| `BackupStale` alert rule (CREATE in `fleet-monitoring`, sibling to `TenantDegraded`) | `@in-memory` (rule defined, names the tenant) · `@real-io` (fires on a missed backup) | stale-alert-defined, stale-flagged-never-silent (in-memory); missed-backup-alerts (requires_external) |
+| Standalone off-by-default gate (D0, chart standalone defaults byte-unchanged) | `@in-memory` (renders no backup) | standalone-renders-no-backup |
+
+**Error-path ratio (S10)**: 4 of 10 `@error` (40%, meets target) — destination-not-off-cluster-rejected,
+wrong-storage-key-rejected, stale-flagged-never-silent, missed-backup-alerts. Safety-critical failure modes
+covered: a backup that shares the tenant's own failure domain cannot merge (the off-cluster CRUX at PR time),
+a backup keyed to the wrong id cannot merge (the isolation CRUX at PR time), and a silently-missed backup —
+the exact failure this slice exists to prevent — trips a standing alert both by definition (in-memory) and
+live (requires_external).
+
+**Walking-skeleton note (S10)**: no per-slice `@walking_skeleton` — the epic walking skeleton was S03. Per
+the retired per-feature WS-strategy, slice-10 inherits the Architecture of Reference defaults: driving ports
+via the real ArgoCD/cluster path (`@real-io`), render-layer via helm-unittest of the GitOps config
+(`@in-memory`). The `@real-io` "Tenant Zero has a fresh backup off-cluster" scenario is the demo proof a
+non-technical stakeholder confirms ("yes, our own production is backed up, and I can see when").
+
+**Reconciliation HARD GATE (S10)**: PASSED — 1 contradiction SURFACED and RESOLVED by the user (not silently
+picked). DISCUSS/ADO (pg_dump CronJob) ↔ DESIGN ADR-091 (CloudNativePG WAL→S3), against a delivered reality
+(bundled Postgres StatefulSet, no CNPG) that neither fully matched. User chose the pg_dump-against-bundled-
+Postgres path; ADR-091's CNPG recorded DEFERRED/superseded for backups. O-3 (RPO/RTO) — previously OPEN in
+`design/wave-decisions.md` — RESOLVED to RPO ≤24h / RTO ≤30min, matching the ADO exit criterion ("restore in
+under 30 minutes"). No remaining DISCUSS/DESIGN/DEVOPS contradiction. D0 standalone-sacrosanct honored —
+backup is a hosted-only overlay; standalone chart defaults render byte-unchanged.
+
+**Outcomes registry (S10)**: SKIPPED — no new application typed-contract surface (per-tenant backup GitOps
+template + off-cluster storage credential + a Prometheus alert rule). Per DISTILL D-6 gate-scoping,
+IaC/GitOps/observability config is out of the code-feature-pipeline registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S10)**: the `@in-memory` band goes RED because the per-tenant
+backup template + its off-cluster storage credential + the `BackupStale` alert rule do not exist yet in the
+PRIVATE repo — the render/validate assertions have no file to read (MISSING_FUNCTIONALITY, correct RED). The
+`@requires_external` band needs the live cluster + ArgoCD + off-cluster storage + a schedule that has run at
+least once (not runnable until DELIVER S10 lands the config). The standalone off-by-default assertion runs
+today against the shipped chart defaults and is expected GREEN — the regression guard that the hosted overlay
+never leaks into standalone.
+
+## Wave: DISTILL / [REF] Scenario list (S11 restore-rehearsal)
+
+> **Wave**: DISTILL (2026-07-01). **Designer**: Quinn. Slice-11 = story #5208 (Backup & disaster
+> recovery) — **Part B**, the slice that makes backups real. Driving ports: (1) the per-tenant RESTORE
+> procedure (parameterised, keyed by exactly one identifier — the tenant id — that reads that tenant's own
+> off-cluster backup and rebuilds its data into a scratch/replacement destination and nothing else), and
+> (2) the rehearsal run against Tenant Zero. SSOT: `slice-11-restore-rehearsal.feature`. IaC/GitOps
+> feature → no .cs/.ts/.py scaffolds (RED = the parameterised restore procedure + runbook do not exist yet
+> in the PRIVATE repo). ADR-091 (namespace-isolated rehearsed restore keyed off the one id). Inherits the
+> slice-10 mechanism reconciliation: the restore reloads a tenant's own logical dump; CNPG restore DEFERRED.
+
+| Scenario | File | Tags |
+|---|---|---|
+| A tenant's restore reads its own backup and writes only into its own destination | slice-11-restore-rehearsal.feature | `@US-11 @in-memory @env:tenant-runtime` |
+| The restore procedure is the same for every tenant, parameterised by identifier only | slice-11-restore-rehearsal.feature | `@US-11 @in-memory @env:tenant-runtime` |
+| A restore aimed at another tenant's destination is rejected before it runs | slice-11-restore-rehearsal.feature | `@error @US-11 @in-memory @env:tenant-runtime` |
+| A restore with no source backup is rejected rather than producing an empty instance | slice-11-restore-rehearsal.feature | `@error @US-11 @in-memory @env:tenant-runtime` |
+| Tenant Zero is restored from backup into a scratch destination and serves | slice-11-restore-rehearsal.feature | `@US-11 @real-io @requires_external @env:tenant-zero` |
+| The restored data is verified intact, not assumed | slice-11-restore-rehearsal.feature | `@US-11 @real-io @requires_external @env:tenant-zero` |
+| The rehearsed restore completes within the recovery-time target | slice-11-restore-rehearsal.feature | `@US-11 @real-io @requires_external @env:tenant-zero` |
+| Restoring one tenant leaves every other tenant untouched | slice-11-restore-rehearsal.feature | `@error @US-11 @real-io @requires_external @env:fleet` |
+| A restore from a corrupt or absent backup fails loudly, not into a half-restored instance | slice-11-restore-rehearsal.feature | `@error @US-11 @real-io @requires_external @env:tenant-zero` |
+
+**Driven-adapter coverage (S11)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| Parameterised restore procedure (reload a tenant's own logical dump from off-cluster storage into a scratch destination, keyed by id; CREATE in `tenant-runtime`) | `@in-memory` (id-scoped source + destination) · `@real-io` (Tenant Zero restored + serves) | reads-own-writes-own, parameterised-by-id-only (in-memory); tenant-zero-restored-serves (requires_external) |
+| Restore isolation (id-keyed source + destination; cannot touch another tenant) | `@in-memory` (wrong-destination-rejected) · `@real-io` (one restore leaves others untouched) | wrong-destination-rejected (in-memory); restore-leaves-others-untouched (requires_external) |
+| Data-integrity verification (restored data checked against the backup) | `@real-io` (verified intact) | restored-data-verified |
+| Recovery-time budget (RTO ≤30min, timed rehearsal) | `@real-io` (serving within RTO, time recorded) | restore-within-rto |
+| Loud-failure guard (missing/corrupt source fails, never half-restores) | `@in-memory` (no-source-rejected) · `@real-io` (corrupt/absent fails loudly) | no-source-rejected (in-memory); corrupt-backup-fails-loudly (requires_external) |
+
+**Error-path ratio (S11)**: 4 of 9 `@error` (44%, exceeds target) — wrong-destination-rejected,
+no-source-rejected, restore-leaves-others-untouched, corrupt-backup-fails-loudly. Safety-critical failure
+modes covered: a restore can never write into a tenant it was not scoped to (the isolation CRUX, at PR time
+AND live), and a restore from a missing/corrupt backup fails loudly rather than producing a half-restored or
+empty instance that looks recovered (the "untested backup is no backup" CRUX).
+
+**Walking-skeleton note (S11)**: no per-slice `@walking_skeleton` — the epic walking skeleton was S03. The
+`@real-io` "Tenant Zero is restored from backup and serves" scenario is the demo proof a non-technical
+stakeholder confirms ("yes, we actually brought our own production back, and it answered, under 30 minutes").
+
+**Reconciliation HARD GATE (S11)**: PASSED — 0 new contradictions (inherits the slice-10 resolution: logical
+dump per tenant, CNPG DEFERRED; RPO ≤24h / RTO ≤30min). S11 implements ADR-091's namespace-isolated rehearsed
+restore keyed off the one id. DISCUSS/ADO exit criterion ("restore any tenant from backup in under 30
+minutes; runbook written and tested against a real restore") maps 1:1 → tenant-zero-restored-serves +
+restore-within-rto + restored-data-verified + the runbook. No DESIGN/DEVOPS decision contradicts DISCUSS.
+
+**Outcomes registry (S11)**: SKIPPED — no new application typed-contract surface (a parameterised restore
+GitOps procedure + a runbook). Per DISTILL D-6 gate-scoping, IaC/GitOps config is out of the
+code-feature-pipeline registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S11)**: the `@in-memory` band goes RED because the
+parameterised restore procedure does not exist yet in the PRIVATE repo (MISSING_FUNCTIONALITY, correct RED).
+The `@requires_external` band needs the live cluster + ArgoCD + off-cluster storage + a Tenant-Zero backup to
+restore from (depends on DELIVER S10) — not runnable until DELIVER S11 runs the rehearsal. This slice closes
+story #5208: S10 gives the recovery POINT, S11 proves the recovery.
+
+## Wave: DELIVER / [REF] S10 per-tenant-backups (@in-memory GREEN, live-proof pending)
+
+> **Wave**: DELIVER (2026-07-01). **Crafter**: implementation. Slice-10 = story #5208 Part A. PRIVATE-repo
+> GitOps only; **public #5199 chart byte-unchanged** (backup is a hosted-only overlay in `tenant-runtime`,
+> not a chart feature — the standalone product has no backup by construction, honoring the D0 gate). Mechanism
+> per the DISTILL reconciliation: scheduled logical dump (pg_dump) of the bundled Postgres → off-cluster
+> Infomaniak Object Storage (S3), keyed by the tenant id; ADR-091 CNPG WAL DEFERRED. RPO ≤24h.
+
+**What shipped (PRIVATE `LetPeopleWork/lighthouse-platform`, LOCAL — unpushed):**
+- `gitops/_charts/tenant-runtime` **0.1.5 → 0.1.6**:
+  - `templates/backup-cronjob.yaml` NEW — per-tenant `CronJob lighthouse-backup-<id>` (daily `17 2 * * *` →
+    recovery point ≤24h; `concurrencyPolicy: Forbid`; `startingDeadlineSeconds` so a missed slot is a
+    recorded miss, not a silent skip). Two-stage pod: **initContainer** `postgres:16-alpine` runs `pg_dump`
+    against the tenant's OWN `tenant-<id>-lighthouse-postgres` (superuser password from the ESO `lighthouse-db`
+    Secret, key `postgres-password`) → compressed artifact on a shared `emptyDir`; **main container**
+    `minio/mc` uploads to `off/<bucket>/<id>/<id>-<ts>.sql.gz` (S3 creds from the ESO `lighthouse-backup-s3`
+    Secret). Gated `backup.enabled` (off by default).
+  - `templates/backup-secret.yaml` NEW — ESO `ExternalSecret lighthouse-backup-s3` reading the ONE platform
+    S3 credential from the shared `platform-store` ClusterSecretStore (`secret/platform/backup-s3`), mirroring
+    the slice-08b github-issues-token pattern. Value seeded out-of-band (CC-3).
+  - `_helpers.tpl` — two render-time isolation guards (the `@error @in-memory` scenarios as executable
+    `fail`s): `tenant-runtime.backupStorageKey` rejects a `storageKey ≠ id` (no tenant writes under another's
+    key); `tenant-runtime.assertBackupOffCluster` rejects a non-https / `.svc` / `.cluster.local` / in-cluster
+    MinIO endpoint (a backup in the tenant's own failure domain is not a backup).
+  - `values.yaml` — `backup` block (enabled:false, schedule, pgUser/pgDatabase/pgImage, retentionDays, s3
+    endpoint/region/bucket/image, credentialStore).
+  - **Reuses the existing isolation posture unchanged — NO new NetworkPolicy.** The backup pod egresses to
+    its own Postgres via `allow-intra-namespace` and to off-cluster S3 via `allow-https-egress` (:443).
+- `gitops/_charts/fleet-monitoring` **0.1.1 → 0.1.2**:
+  - `recording-rules.yaml` += `tenant:backup_age_seconds` (kube-state-metrics `kube_cronjob_status_last_
+    successful_time` for `lighthouse-backup-.*`, `label_replace` namespace→tenant so it joins the fleet series).
+  - `alert-rules.yaml` += `BackupStale` (fires when a tenant's backup age crosses the RPO window OR the backup
+    CronJob has scheduled but NEVER succeeded — a never-successful backup must not look healthy by absence;
+    carries `tenant`).
+  - `values.yaml` += `thresholds.backupStaleSeconds: 86400` (O-3 RPO ≤24h).
+- `gitops/tenants/_generator/applicationset-runtime.yaml` — every hosted (`runtime: enabled`) tenant now
+  INHERITS `backup.enabled: true` with no per-tenant setup; opt out with `backupEnabled: false` on the record.
+
+**@in-memory GREEN (CI-runnable, no cluster):**
+- `tenant-runtime` helm-unittest **29/29** (+9 new `tests/unit/backup_test.yaml`: id-keyed off-cluster CronJob,
+  own-Postgres + ESO password, off-cluster S3 credential, second-tenant inherit, off-by-default renders
+  nothing ×2, `@error` off-cluster-rejected, `@error` wrong-key-rejected). `fleet-monitoring` **17/17** (+3:
+  backup-age recording rule, BackupStale defined, BackupStale two-branch expr + names tenant). Both charts
+  `helm lint` clean; `helm template` renders valid CronJob YAML; `validate-tenants.sh` OK. CI (`validate-
+  tenants.yml`) picks up the new `tests/unit/` files with no workflow change.
+
+**Pending live done=observable (@requires_external — needs user at cluster, mirrors S09):**
+1. Seed the off-cluster S3 credential out-of-band in OpenBao: `secret/platform/backup-s3` keys `accessKey` +
+   `secretKey` (an Infomaniak Object Storage bucket `lighthouse-backups`); confirm the `platform-store`
+   ClusterSecretStore policy already reads `secret/platform/*` (it does — slice-08b).
+2. ArgoCD syncs tenant-runtime 0.1.6 + fleet-monitoring 0.1.2. Confirm Tenant Zero's `lighthouse-backup-lpw`
+   CronJob + `lighthouse-backup-s3` ESO Secret materialise; trigger one manual run (`kubectl create job --from=
+   cronjob/lighthouse-backup-lpw`) → an artifact lands at `lighthouse-backups/lpw/lpw-<ts>.sql.gz` off-cluster,
+   timestamped within the RPO window (the dogfood done=observable).
+3. Prove BackupStale: a demo tenant whose backup is prevented (or never succeeds) → `tenant:backup_age_seconds`
+   crosses 86400 / the never-succeeded branch fires → `BackupStale` names it; the other tenants stay unflagged.
+4. Then record the DELIVER S10 live proof + transition #5208 (Part A). **#5208 stays Active** (Part B = S11).
