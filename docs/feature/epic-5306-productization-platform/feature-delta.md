@@ -2258,10 +2258,18 @@ story #5208: S10 gives the recovery POINT, S11 proves the recovery.
   `helm lint` clean; `helm template` renders valid CronJob YAML; `validate-tenants.sh` OK. CI (`validate-
   tenants.yml`) picks up the new `tests/unit/` files with no workflow change.
 
+**Backup storage is OpenTofu-managed (private `infra/substrate/object-storage.tf`):** the bucket
+(`openstack_objectstorage_container_v1.backups`) + the S3 credential
+(`openstack_identity_ec2_credential_v3.backup`) are declarative infra, not hand-clicked — reusing the
+substrate's already-wired OpenStack provider. Needs an OpenStack application credential
+(`OS_APPLICATION_CREDENTIAL_*`, the same one #5374 uses for remote state). `tofu fmt`+`validate` clean.
+
 **Pending live done=observable (@requires_external — needs user at cluster, mirrors S09):**
-1. Seed the off-cluster S3 credential out-of-band in OpenBao: `secret/platform/backup-s3` keys `accessKey` +
-   `secretKey` (an Infomaniak Object Storage bucket `lighthouse-backups`); confirm the `platform-store`
-   ClusterSecretStore policy already reads `secret/platform/*` (it does — slice-08b).
+1. `tofu apply` (with `OS_APPLICATION_CREDENTIAL_*` set) creates the bucket + S3 key, then seed its VALUES
+   out-of-band into OpenBao from the tofu outputs: `secret/platform/backup-s3` keys `accessKey` +
+   `secretKey` (`tofu output -raw backups_s3_access_key` / `backups_s3_secret_key`). tofu cannot seed
+   OpenBao itself (OpenBao runs in-cluster). Confirm the `platform-store` ClusterSecretStore already reads
+   `secret/platform/*` (it does — slice-08b).
 2. ArgoCD syncs tenant-runtime 0.1.6 + fleet-monitoring 0.1.2. Confirm Tenant Zero's `lighthouse-backup-lpw`
    CronJob + `lighthouse-backup-s3` ESO Secret materialise; trigger one manual run (`kubectl create job --from=
    cronjob/lighthouse-backup-lpw`) → an artifact lands at `lighthouse-backups/lpw/lpw-<ts>.sql.gz` off-cluster,

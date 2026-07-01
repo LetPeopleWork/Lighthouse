@@ -360,8 +360,10 @@ dims 10). Public LOCAL, unpushed.
 - Both charts lint clean; `validate-tenants.sh` OK; CI auto-picks new `tests/unit/`.
 
 **▶ NEXT — S10 @requires_external LIVE PROOF (needs user at cluster, mirrors S09):**
-1. Seed OpenBao `secret/platform/backup-s3` (accessKey+secretKey for an Infomaniak Object Storage bucket
-   `lighthouse-backups`); platform-store ClusterSecretStore already reads `secret/platform/*` (slice-08b).
+1. `tofu apply` (with `OS_APPLICATION_CREDENTIAL_*`) creates the bucket + S3 key (now tofu-managed:
+   `infra/substrate/object-storage.tf`, `backups_enabled` default true). Seed OpenBao
+   `secret/platform/backup-s3` accessKey+secretKey from `tofu output -raw backups_s3_access_key` /
+   `backups_s3_secret_key`; platform-store ClusterSecretStore already reads `secret/platform/*` (slice-08b).
 2. ArgoCD sync tenant-runtime 0.1.6 + fleet-monitoring 0.1.2; confirm TZ `lighthouse-backup-lpw` CronJob +
    `lighthouse-backup-s3` Secret; run one manual job → artifact `lighthouse-backups/lpw/lpw-<ts>.sql.gz`
    off-cluster within RPO (dogfood done=observable).
