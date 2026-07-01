@@ -208,7 +208,36 @@
    - ▶ **NEXT: DELIVER S08b** (ordered-upgrade PostSync smoke-test Job + GitHub-issue alert, ADR-096 — needs a
      GitHub PAT in OpenBao), then **S08c** broken-image rollback drill.
 
-## SLEEP HANDOFF (2026-07-01) — #5205 state + tomorrow's steps
+## ✅ #5205 CLOSED — Resolved 2026-07-01 (supersedes the SLEEP HANDOFF below)
+
+**08a/08b/08c all delivered + verified; ADO #5205 → Resolved.**
+- **ESO incident CLEARED (not the predicted stale cache).** The batched Renovate PRs had taken ESO
+  0.20.4→**2.7.0** (dropped `v1beta1`) + openbao 0.16.1→0.28.4. v2.7.0 controller CrashLoopBackOff'd — the
+  big `secretstores`/`clustersecretstores` CRDs couldn't patch to v1 (client-side-apply `last-applied`
+  annotation >262144B) so they stayed v1beta1-stored while the binary that converts them was gone.
+  Fix-forward: revert to 0.20.4 → `conversion.strategy: None` relabel (v1beta1→v1 is schema-compatible) +
+  re-encode SecretStores to v1 + prune CRD `storedVersions` to `[v1]` → re-upgrade to 2.7.0 with
+  `ServerSideApply=true`. openbao STS immutable-field fixed via orphan-delete (OnDelete + selector re-adopt,
+  no unseal). Private `76c45e3`,`fd4573b`,`040ddc5`. Tenant Zero stayed 200 throughout.
+- **08b VERIFIED** after two latent smoke-test bugs found on first live run + fixed: (1) kube-apiserver
+  egress blocked by the tenant default-deny (apiserver is an EXTERNAL non-443 endpoint on Infomaniak KaaS,
+  Cilium drops it) → new smoke-test-scoped **CiliumNetworkPolicy** `toEntities: [kube-apiserver]` + bounded
+  kubectl/curl timeouts (`a363b46`); (2) `alpine/k8s` kubectl doesn't auto-select in-cluster config
+  (localhost:8080) → point it at the apiserver explicitly from the mounted SA (`c40905b`). chart
+  `tenant-runtime` 0.1.2→0.1.4, 19/19 unittest.
+- **08c @error PROVEN** — driltest (workload chart 9.9.9) → smoke-test opened the GitHub alert + exited
+  non-zero (issue #15, closed) → torn down (`80c32b1`,`a19f9ca`). Alert proven via a controlled one-off Job
+  because ArgoCD health-gates PostSync behind the tenant's DB ExternalSecret (needs an OpenBao seed the
+  drill deliberately skips); zero-orphan prune already proven in slice-07.
+- Records: feature-delta DELIVER S08a/08b/08c (public `a1242423`). Closed a false-alert issue #14 (pre-fix
+  smoke-test misfire on healthy lpw).
+- **Minor follow-up (cosmetic):** the smoke-test health code renders `000000` (curl `|| echo 000` doubles
+  with `%{http_code}`) in the alert title — harmless, tidy on the next chart touch. openbao app shows a
+  benign OutOfSync (agent-injector webhook caBundle self-injection, Healthy).
+
+---
+
+## SLEEP HANDOFF (2026-07-01) — [DONE — kept for the incident audit trail]
 
 **#5205 status:** 08a ✅ DONE+live-proven · 08b ✅ code shipped (live happy-path proof BLOCKED on the ESO
 incident below) · 08c ⬜ one drill left. Story NOT closed yet.
