@@ -1899,3 +1899,142 @@ Chart `tenant-runtime` 0.1.2 → 0.1.4; +2 helm-unittests (CNP entity + componen
 **⚠️ DURABLE — ESO v2 storage-migration incident (2026-07-01).** Merging the batched Renovate component PRs took `external-secrets` 0.20.4→**2.7.0** (dropped `external-secrets.io/v1beta1`) and `openbao` 0.16.1→0.28.4. The v2.7.0 controller CrashLoopBackOff'd (`no matches for kind "SecretStore" in version "v1"`) because the big `secretstores`/`clustersecretstores` CRDs couldn't patch to v1 — client-side apply's `last-applied-configuration` annotation exceeds the 262144-byte limit — so they stayed v1beta1-stored while the binary that could convert them was gone. `github-issues-token` never materialised → 08b/08c blocked (Tenant Zero itself stayed 200 throughout; the target Secrets persist). Recovery (chosen fix-forward): (1) revert ESO to 0.20.4; (2) since neither version could convert the stranded objects, set the CRDs' `conversion.strategy: None` (the v1beta1→v1 change is schema-compatible = a pure relabel), which un-stranded them; re-encode both SecretStores to v1 storage + prune CRD `storedVersions` to `[v1]`; (3) re-upgrade to 2.7.0 with `ServerSideApply=true` (writes no last-applied annotation → the oversized v2 CRDs patch cleanly), now unstranded. openbao STS immutable-field patch resolved by an orphan-delete (`updateStrategy=OnDelete` + unchanged selector re-adopts the running unsealed pod). Private: `76c45e3`, `fd4573b`, `040ddc5`. **Lesson: never cross an ESO major that drops an API version until the stored objects are migrated off it (storedVersions pruned) on a version that still converts; and any oversized CRD needs `ServerSideApply=true` in ArgoCD.**
 
 **S08c broken-image rollback — @error alert PROVEN.** Throwaway tenant `driltest` (workload pinned to non-existent chart `9.9.9` → never renders). The smoke-test correctly saw the missing workload (empty image tag, health down), exhausted its attempts, and **opened the GitHub alert issue** (`POST 201`, "tenant driltest unhealthy after upgrade to 26.6.21.1"), exiting non-zero — the `@error` US-08b-2 path end-to-end. driltest removed (`git rm`) → ArgoCD prunes the runtime app + tracked namespace (the zero-orphan GitOps prune was already proven in slice-07, so not re-run here). **Gotcha found:** ArgoCD health-gates PostSync hooks, so a tenant whose DB `ExternalSecret` can't sync (no OpenBao seed) never runs its smoke-test — the drill's alert was proven with a controlled one-off Job carrying the (already-synced) `github-issues-token` rather than the full provision. Detect budget in production is `maxAttempts×sleepSeconds` = 30×10s = 5min.
+
+## Wave: DISTILL / [REF] Scenario list (S09 fleet-observability)
+
+> **Wave**: DISTILL (2026-07-01). **Designer**: Quinn. Slice-09 = story #5206 (Observability).
+> Driving ports: (1) the per-hosted-tenant telemetry ENABLEMENT (turns on the epic-5305 off-by-default
+> signals + exposes the tenant to the fleet scrape with one bounded `tenant` attribution), and (2) the
+> monitoring-stack GitOps config (scrape + recording rules + per-tenant/fleet/cardinality-budget alert
+> rules + the fleet dashboard) reconciled by ArgoCD. SSOT: `slice-09-fleet-observability.feature`.
+> IaC/GitOps feature → no .cs/.ts/.py scaffolds (Mandate 7 has no application-module target; RED = the
+> monitoring stack + per-tenant telemetry-enablement values do not exist yet in the PRIVATE repo). The
+> public #5199 chart's standalone defaults stay byte-unchanged (D0 gate) — enablement is a hosted overlay.
+
+| Scenario | File | Tags |
+|---|---|---|
+| Enabling telemetry for a hosted tenant attributes it by exactly one bounded identifier | slice-09-fleet-observability.feature | `@US-09 @in-memory @env:tenant-telemetry` |
+| The fleet dashboard reads pre-aggregated fleet health, not raw per-tenant series | slice-09-fleet-observability.feature | `@US-09 @in-memory @env:monitoring-stack` |
+| The scrape keeps only the bounded tenant attribution and drops the rest | slice-09-fleet-observability.feature | `@US-09 @in-memory @env:monitoring-stack` |
+| A degraded tenant and an unhealthy fleet each have a standing alert defined | slice-09-fleet-observability.feature | `@US-09 @in-memory @env:monitoring-stack` |
+| The standalone product renders with telemetry off by default | slice-09-fleet-observability.feature | `@US-09 @in-memory @env:standalone` |
+| A telemetry attribution that is not bounded is rejected before it can merge | slice-09-fleet-observability.feature | `@error @US-09 @in-memory @env:monitoring-stack` |
+| A cardinality-budget alert is defined to catch a series explosion | slice-09-fleet-observability.feature | `@error @US-09 @in-memory @env:monitoring-stack` |
+| The fleet's health is visible at a glance with per-tenant attribution | slice-09-fleet-observability.feature | `@US-09 @real-io @requires_external @env:fleet` |
+| Tenant Zero is watched on the same dashboard customers get | slice-09-fleet-observability.feature | `@US-09 @real-io @requires_external @env:tenant-zero` |
+| A degraded tenant is flagged and a per-tenant alert fires | slice-09-fleet-observability.feature | `@error @US-09 @real-io @requires_external @env:fleet` |
+| Fleet metric cardinality stays bounded as the fleet grows | slice-09-fleet-observability.feature | `@error @US-09 @real-io @requires_external @env:fleet` |
+| The standalone product emits no telemetry when run with default values | slice-09-fleet-observability.feature | `@US-09 @real-io @requires_external @env:standalone` |
+
+**Driven-adapter coverage (S09)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| Per-tenant telemetry enablement (epic-5305 signals ON + one bounded `tenant` relabel, REUSE+config) | `@in-memory` (one-bounded-attribution render) · `@real-io` (every tenant on the dashboard) | one-bounded-identifier, unbounded-rejected (in-memory); fleet-at-a-glance, cardinality-bounded (requires_external) |
+| Monitoring-stack scrape (kube-prometheus-stack; drop unbounded labels at scrape) | `@in-memory` (scrape-keeps-only-tenant) · `@real-io` (cardinality-bounded live) | scrape-drops-unbounded, cardinality-stays-bounded |
+| Recording rules (pre-aggregate the fleet dashboard, ADR-090) | `@in-memory` (dashboard-reads-preaggregated) · `@real-io` (fleet-at-a-glance) | dashboard-not-raw-series, fleet-at-a-glance |
+| Alert rules (per-tenant + fleet + cardinality-budget) | `@in-memory` (rules-defined) · `@real-io` (alert-fires) | per-tenant-and-fleet-alert-defined, cardinality-budget-alert-defined (in-memory); degraded-tenant-flagged-and-alerts (requires_external) |
+| Fleet dashboard (Grafana) | `@in-memory` (data-source-inspected) · `@real-io` (opened live) | dashboard-reads-preaggregated; fleet-at-a-glance, tenant-zero-dogfood, degraded-flagged |
+| Standalone off-by-default gate (D0, chart standalone defaults byte-unchanged) | `@in-memory` (renders-telemetry-off) · `@real-io` (emits-nothing live) | standalone-renders-off, standalone-emits-nothing |
+
+**Error-path ratio (S09)**: 5 of 12 `@error` (42%, meets the 40% target) — unbounded-attribution-rejected,
+cardinality-budget-alert-defined, degraded-tenant-flagged-and-alerts, fleet-cardinality-stays-bounded, and
+(via the standalone pair) the off-by-default gate as a negative. The safety-critical failure modes are all
+covered: an unbounded attribution cannot merge (guards ADR-090 at PR time), a series explosion trips a
+standing alert (guards ADR-090 at runtime), a degraded tenant is flagged + alerts (the core value), and the
+standalone product stays telemetry-off (the D0 gate as a negative on a hosted-only overlay).
+
+**Walking-skeleton note (S09)**: no per-slice `@walking_skeleton` scenario — the epic walking skeleton was
+S03 (Tenant Zero reachable). Per the retired per-feature WS-strategy, slice-09 inherits the Architecture of
+Reference defaults: driving ports exercised via the real ArgoCD/cluster path (`@real-io`), render-layer via
+helm-unittest of the GitOps config (`@in-memory`). The `@real-io` fleet-at-a-glance scenario is the demo
+proof a non-technical stakeholder confirms ("yes, that is the one dashboard I need").
+
+**Reconciliation HARD GATE (S09)**: PASSED — 0 contradictions. S09 implements ADR-090 (one bounded `tenant`
+label; drop unbounded labels at scrape; recording rules pre-aggregate the fleet dashboard; cardinality-budget
+alert) on the kube-prometheus-stack pinned in the DESIGN tech stack. DISCUSS US-08 (#5206) acceptance criteria
+map 1:1 (per-tenant+fleet attribution → fleet-at-a-glance; degraded flagged + alerts → degraded-tenant scenario;
+bounded cardinality → scrape-drops-unbounded + cardinality-bounded + budget-alert; standalone off-by-default →
+standalone render + emits-nothing). No DESIGN/DEVOPS decision contradicts DISCUSS. D0 standalone-sacrosanct
+honored — the enablement is a hosted-only overlay; the standalone chart defaults render byte-unchanged.
+
+**Sentinel review (S09)**: dispatched (`@nw-acceptance-designer-reviewer`, mandatory structural gate). All
+scored dimensions ≥9 except traceability; mandates CM-A/B/C pass; 42% error-path; 0 functional issues. Two
+raised "blockers" RECONCILED as false-positives against the epic's established convention (verified across the
+8 sibling slice `.feature` files): (1) `@US-09`→`@US-08` REJECTED — this epic tags by SLICE number, not the
+DISCUSS US-N (slice-07→`@US-07`, slice-08a→`@US-08a`); switching to `@US-08` would COLLIDE with slice-08a/b/c.
+(2) mandatory `@contract-shape` tag REJECTED for corpus consistency — no sibling slice carries it, and this
+IaC/GitOps epic has no unit/PBT layer for the classification to drive (scenarios execute via helm-unittest +
+live cluster, not property tests). Net: CONDITIONALLY APPROVED, both deviations documented (same resolution
+shape as S08a's Sentinel pass).
+
+**Outcomes registry (S09)**: SKIPPED — no new application typed-contract surface (monitoring-stack GitOps
+config + per-tenant telemetry-enablement values + Prometheus recording/alert rules + a Grafana dashboard). Per
+DISTILL D-6 gate-scoping, IaC/GitOps/observability config is out of the code-feature-pipeline registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S09)**: the `@in-memory` band goes RED because the monitoring
+stack (scrape config, recording rules, alert rules, dashboard) and the per-hosted-tenant telemetry-enablement
+values do not exist yet in the PRIVATE repo — the render/validate assertions have no file to read
+(MISSING_FUNCTIONALITY, correct RED). The `@requires_external` band needs the live cluster + ArgoCD + the
+deployed stack + an inducible fault on a demo tenant (not runnable until DELIVER S09 lands the config). The
+standalone off-by-default assertions run today against the shipped chart defaults and are expected GREEN — they
+are the regression guard that the hosted overlay never leaks into standalone.
+
+**NEXT for S09 = DELIVER**: PRIVATE platform repo grows a `monitoring` platform app (kube-prometheus-stack:
+Prometheus + Grafana), a per-tenant scrape (PodMonitor/ServiceMonitor selecting tenant workloads) with one
+`tenant` relabel + unbounded-label drop, recording rules pre-aggregating fleet health, per-tenant + fleet +
+cardinality-budget alert rules, and the fleet dashboard; the tenant telemetry-enablement values flip epic-5305
+signals ON per hosted tenant (via ApplicationSet values, NOT a chart default). Depends on S07 (a fleet to
+observe) — LIVE. Dogfood: Tenant Zero is the first instance on the dashboard.
+
+## Wave: DELIVER / [REF] Implementation summary (S09 fleet-observability)
+
+> **Wave**: DELIVER (2026-07-01). Slice-09 of #5206 (Observability), ADR-090. PRIVATE-repo GitOps only
+> (+ one test-only assertion in the public chart). The public #5199 chart is byte-unchanged (D0
+> standalone-sacrosanct honored — telemetry is enabled per HOSTED tenant via the ApplicationSet, never a
+> chart default). `@in-memory` band SHIPPED + GREEN locally; `@requires_external` live proof PENDING (a
+> live cluster + an inducible fault — see runbook below).
+
+**What shipped (private `af7e961`):**
+- `gitops/_charts/fleet-monitoring` (NEW chart): a **PodMonitor** scraping every hosted tenant's
+  OpenTelemetry `/metrics` with exactly ONE bounded `tenant` attribution (relabel from the namespace
+  `tenant-<id>`) and a `labeldrop` of unbounded per-pod/target labels **at scrape** (ADR-090); **recording
+  rules** pre-aggregating per-tenant (`tenant:http_requests:rate5m`, `tenant:http_errors:ratio5m`,
+  `tenant:http_latency:p95_5m`) + fleet (`fleet:http_errors:ratio5m`, `fleet:tenants_degraded:count`)
+  health; **alert rules** `TenantDegraded` / `TenantDown` (per-tenant, name the tenant) + `FleetUnhealthy`
+  (fleet) + `FleetMetricCardinalityBudgetExceeded` (series-count budget); the **Grafana fleet-dashboard**
+  ConfigMap (sidecar-discovered) reading the pre-aggregated series. **13 helm-unittests.**
+- `gitops/platform/monitoring.yaml` (NEW): kube-prometheus-stack Application (Prometheus + Grafana),
+  `*SelectorNilUsesHelmValues: false` so it picks up the overlay's PodMonitor/PrometheusRules cluster-wide,
+  `ServerSideApply=true` for the large CRDs (avoids the slice-08 ESO-class last-applied-annotation limit).
+- `gitops/platform/fleet-monitoring.yaml` (NEW): Application for the in-repo overlay, sync-wave 1 (after
+  monitoring's CRDs land; selfHeal retries until then).
+- `applicationset.yaml`: `telemetry.enabled: true` in the per-tenant Helm values — the hosted-only
+  enablement (standalone never renders through this appset → D0 gate holds).
+- `validate-tenants.yml`: helm lint + unittest fleet-monitoring in CI (path trigger added).
+
+**Public (test-only, chart bytes unchanged):** `chart/tests/unit/standalone-gate_test.yaml` — asserts
+`Telemetry__Enabled == "false"` at defaults, the executable form of the D0 off-by-default scenario.
+
+### [REF] Scenarios green / pending (S09)
+
+- **`@in-memory` (7)** — GREEN locally: fleet-monitoring `helm lint` clean + `helm unittest` **13/13**
+  (PodMonitor bounded-relabel + unbounded-labeldrop; recording rules aggregate BY tenant; per-tenant +
+  fleet + cardinality-budget alerts defined; dashboard reads pre-aggregated series, not the raw
+  histogram); public standalone gate **5/5** (telemetry-off-by-default). All manifests + the appset parse
+  clean (kubeconform, 0 errors).
+- **`@requires_external` (5)** — PENDING live proof on `lpw-substrate` (needs the deployed stack + an
+  inducible fault). Runbook: push → ArgoCD syncs `monitoring` (wave 0, pin the exact available
+  kube-prometheus-stack patch — DESIGN intent 65.x, placeholder `65.5.1`) then `fleet-monitoring` (wave 1);
+  Tenant Zero re-syncs with `telemetry.enabled` → confirm Prometheus scrapes `tenant="lpw"`; open the
+  **Lighthouse Fleet** Grafana dashboard (port-forward) and confirm per-tenant tiles + fleet summary
+  (dogfood: lpw is the first instance); induce a fault on a throwaway tenant → its tile flags +
+  `TenantDegraded` fires; confirm cardinality bounded (only `tenant`). Grafana ingress + ESO-sourced admin
+  + SSO = later hardening (Grafana is cluster-internal via port-forward this slice).
+
+### [REF] Quality gates (S09)
+
+fleet-monitoring `helm lint` clean · `helm unittest` 13/13 · public standalone gate 5/5 · kubeconform 0
+errors on all new/edited manifests · PodMonitor render confirmed. Live done=observable (4 checks) PENDING.
+
+**ADO #5206 stays Active** until the `@requires_external` live done=observable are proven.

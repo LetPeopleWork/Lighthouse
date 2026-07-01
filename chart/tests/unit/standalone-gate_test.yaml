@@ -27,6 +27,15 @@ tests:
           path: data.Database__Provider
           value: "postgres"
 
+  - it: telemetry is OFF by default (epic-5306 slice-09 #5206 D0 gate — hosted-only enablement never leaks to standalone)
+    set:
+      postgresql.auth.password: testpass
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Telemetry__Enabled
+          value: "false"
+
   - it: frontend.mode split fails loud (not a silent no-op)
     set:
       postgresql.auth.password: testpass
