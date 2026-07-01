@@ -582,6 +582,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 				id: "sizeAxis",
 				scaleType: "time" as const,
 				label: "Closed Date",
+				height: 56,
 				max: today,
 				valueFormatter: dateValueFormatter,
 			}
@@ -589,6 +590,7 @@ const FeatureSizeScatterPlotChart: React.FC<
 				id: "sizeAxis",
 				scaleType: "linear" as const,
 				label: `${sizeTerm} (Child Items)`,
+				height: 56,
 				min: 0,
 				max:
 					fixedXAxisMax ??
@@ -742,8 +744,8 @@ const FeatureSizeScatterPlotChart: React.FC<
 								/>
 							);
 						})}
-						<ChartsXAxis />
-						<ChartsYAxis />
+						<ChartsXAxis axisId="sizeAxis" />
+						<ChartsYAxis axisId="timeAxis" />
 						<ScatterPlot
 							slots={{
 								marker: (props) =>

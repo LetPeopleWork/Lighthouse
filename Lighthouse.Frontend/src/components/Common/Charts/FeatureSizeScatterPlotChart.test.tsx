@@ -1,3 +1,4 @@
+import * as MuiCharts from "@mui/x-charts";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
@@ -41,6 +42,8 @@ vi.mock("@mui/x-charts", () => {
 		children: React.ReactNode;
 		height: number;
 		xAxis?: Array<{
+			id?: string;
+			height?: number;
 			max?: number;
 			label?: string;
 			valueFormatter?: (v: number) => string;
@@ -77,6 +80,8 @@ vi.mock("@mui/x-charts", () => {
 				<div
 					data-testid="chart-container"
 					data-height={height}
+					data-x-axis-id={xAxis?.[0]?.id}
+					data-x-axis-height={xAxis?.[0]?.height}
 					data-x-axis-max={xAxis?.[0]?.max}
 					data-x-axis-label={xAxis?.[0]?.label}
 					data-y-axis-label={yAxis?.[0]?.label}
@@ -199,8 +204,8 @@ vi.mock("@mui/x-charts", () => {
 				</div>
 			);
 		},
-		ChartsXAxis: () => <div data-testid="x-axis">X Axis</div>,
-		ChartsYAxis: () => <div data-testid="y-axis">Y Axis</div>,
+		ChartsXAxis: vi.fn(() => <div data-testid="x-axis">X Axis</div>),
+		ChartsYAxis: vi.fn(() => <div data-testid="y-axis">Y Axis</div>),
 		ChartsTooltip: () => <div data-testid="tooltip">Tooltip</div>,
 		ChartsReferenceLine: ({
 			label,
@@ -305,6 +310,37 @@ describe("FeatureSizeScatterPlotChart", () => {
 			expect(screen.getByTestId("x-axis")).toBeInTheDocument();
 			expect(screen.getByTestId("y-axis")).toBeInTheDocument();
 			expect(screen.getByTestId("tooltip")).toBeInTheDocument();
+		});
+
+		// Regression: the x-axis tick labels disappeared because
+		// ChartsXAxis/ChartsYAxis were rendered without an explicit axisId while
+		// the axes are registered under custom ids ("sizeAxis" / "timeAxis").
+		// Mirrors the fix pattern from CycleTimeScatterPlotChart.
+		it("uses explicit axis IDs and x-axis height for stable tick rendering", () => {
+			render(<FeatureSizeScatterPlotChart sizeDataPoints={basicFeatures} />);
+
+			const container = screen.getByTestId("chart-container");
+			expect(container.dataset.xAxisId).toBe("sizeAxis");
+			expect(container.dataset.xAxisHeight).toBe("56");
+
+			const xAxisMock = MuiCharts.ChartsXAxis as unknown as {
+				mock: { calls: Array<[Record<string, unknown>]> };
+			};
+			const yAxisMock = MuiCharts.ChartsYAxis as unknown as {
+				mock: { calls: Array<[Record<string, unknown>]> };
+			};
+
+			expect(
+				xAxisMock.mock.calls.some(
+					([props]) => (props as { axisId?: string })?.axisId === "sizeAxis",
+				),
+			).toBe(true);
+
+			expect(
+				yAxisMock.mock.calls.some(
+					([props]) => (props as { axisId?: string })?.axisId === "timeAxis",
+				),
+			).toBe(true);
 		});
 
 		it("renders visible markers as SVG circles", () => {
