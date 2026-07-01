@@ -308,3 +308,41 @@ push both when convenient (platform-repo side already pushed).
 ## Tooling note
 OpenTofu v1.12.3 installed to ~/.local/bin (was absent); allowlisted via `lean-ctx allow tofu`.
 helm/kubectl/kind/az already present. tflint NOT installed (used tofu fmt/validate instead).
+
+---
+
+## ✅ S09 fleet-observability (#5206) — DISTILL + DELIVER(@in-memory) SHIPPED 2026-07-01 (live proof PENDING)
+
+**ADO #5206 = Active** (stays Active until the live done=observable are proven).
+
+- **DISTILL**: `tests/platform/epic-5306/acceptance/slice-09-fleet-observability.feature` (12 scenarios,
+  5 @error=42%, @US-09; @in-memory×7 + @real-io @requires_external×5). Reconciliation PASSED (ADR-090).
+  Sentinel reviewed; 2 findings reconciled as epic-convention false-positives (slice-number @US tag; no
+  @contract-shape corpus-wide — see [[project_argocd_gotemplate_scalar_single_quote]] sibling epic notes).
+  feature-delta DISTILL + DELIVER S09 [REF] blocks. Public `046cfe76`.
+- **DELIVER (@in-memory, GREEN)** — PRIVATE `af7e961` (public chart byte-unchanged; +1 test-only
+  standalone-gate assertion Telemetry__Enabled=false):
+  - `gitops/_charts/fleet-monitoring` NEW: PodMonitor (one bounded `tenant` relabel from namespace +
+    unbounded labeldrop at scrape, ADR-090); recording rules (tenant:* + fleet:* pre-aggregation); alert
+    rules TenantDegraded/TenantDown/FleetUnhealthy/FleetMetricCardinalityBudgetExceeded; Grafana
+    fleet-dashboard ConfigMap (sidecar-discovered, reads pre-aggregated). 13 helm-unittests.
+  - `gitops/platform/monitoring.yaml` NEW (kube-prometheus-stack, selectors opened, ServerSideApply);
+    `gitops/platform/fleet-monitoring.yaml` NEW (overlay app, sync-wave 1).
+  - `applicationset.yaml`: `telemetry.enabled: true` per HOSTED tenant (hosted-only → D0 gate holds).
+  - `validate-tenants.yml`: lint+unittest fleet-monitoring. **Private CI GREEN** (run 28504171391).
+
+### ▶ NEXT: S09 @requires_external LIVE PROOF (on lpw-substrate; needs user at cluster)
+1. Confirm ArgoCD synced `monitoring` (wave 0) then `fleet-monitoring` (wave 1); both Synced/Healthy.
+   **PIN the exact kube-prometheus-stack patch** in `gitops/platform/monitoring.yaml` — I placeholdered
+   `65.5.1` (DESIGN intent 65.x). If that tag 404s, Renovate/the operator sets the available patch.
+2. Tenant Zero re-syncs on chart 0.1.4 with `telemetry.enabled` → `/metrics` exposed; confirm Prometheus
+   scrapes `tenant="lpw"` (the PodMonitor podSelector is `app.kubernetes.io/name: lighthouse` +
+   namespaceSelector `app.kubernetes.io/part-of: lighthouse-saas` — **verify the live pod label matches**;
+   tune the selector if the chart labels pods differently).
+3. `kubectl -n monitoring port-forward svc/<kps>-grafana 3000` → open **Lighthouse Fleet** dashboard →
+   per-tenant tiles + fleet summary (dogfood: lpw first instance).
+4. Induce a fault on a throwaway tenant → tile flags + `TenantDegraded` fires; confirm cardinality bounded
+   (only `tenant`). Then record DELIVER S09 [REF] live done=observable + transition **#5206 → Resolved**.
+- Grafana ingress + ESO-sourced admin + SSO = later hardening (internal via port-forward this slice).
+- OTel metric name assumed `http_server_request_duration_seconds` (values `metricName`) — **tune vs the
+  live /metrics output** if ASP.NET/OTel emits a different name; recording rules key off it.
