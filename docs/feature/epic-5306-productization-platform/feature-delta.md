@@ -2038,3 +2038,42 @@ fleet-monitoring `helm lint` clean · `helm unittest` 13/13 · public standalone
 errors on all new/edited manifests · PodMonitor render confirmed. Live done=observable (4 checks) PENDING.
 
 **ADO #5206 stays Active** until the `@requires_external` live done=observable are proven.
+
+### [REF] LIVE PROOF (2026-07-01) — `@requires_external` GREEN, #5206 → Resolved
+
+The `@in-memory` band shipped, but the first live sync produced **zero scraped tenants**. Two latent
+defects in the DELIVER config, both found + fixed live:
+
+1. **PodMonitor `namespaceSelector.matchLabels` is invalid for prometheus-operator** (private
+   `e70c940`, fleet-monitoring 0.1.0→0.1.1). The operator's `NamespaceSelector` is NOT a k8s label
+   selector — it supports only `any: true` or `matchNames: [..]`. The PodMonitor CRD's structural schema
+   silently **pruned** the unknown `matchLabels` to `{}`, which the operator reads as "the PodMonitor's own
+   namespace" (`monitoring`) → the scrapePool discovered no tenant pods, AND ArgoCD showed **perpetual
+   OutOfSync** (git rendered `matchLabels`, the live object was pruned to `{}` on every apply). Fix: render
+   `namespaceSelector: {any: true}`; the `podSelector` (`app.kubernetes.io/name=lighthouse`) already bounds
+   the scrape to tenant API pods. +regression unit test locking the `any` shape; **14/14**.
+2. **default-deny NetworkPolicy blocked the cross-namespace scrape** (private `934beda`, tenant-runtime
+   0.1.4→0.1.5). Slice-07's isolation posture only allows ingress from `ingress-nginx` + intra-namespace, so
+   Prometheus in `monitoring` was dropped by Cilium even once a target existed. Fix: a fifth policy
+   `allow-metrics-from-monitoring` — ingress from the `monitoring` namespace to the **api-component pods
+   only**, on the metrics port (Postgres stays unreachable despite sharing the name label). **20/20** unittest.
+
+**done=observable (dogfooded on Tenant Zero `lpw`):**
+- `up{tenant="lpw"} == 1`, target healthy, scraping `…:8080/metrics`.
+- OTel metric name `http_server_request_duration_seconds` matches the values default — **no tuning needed**.
+- recording rules producing series: `tenant:http_requests:rate5m`, `tenant:http_latency:p95_5m`,
+  `fleet:tenants_degraded:count`.
+- 4 alert rules loaded + healthy (`TenantDegraded`/`TenantDown`/`FleetUnhealthy`/`FleetMetricCardinality
+  BudgetExceeded`), all `inactive` on a healthy fleet.
+- **cardinality bounded** — 2211 clean app series for one tenant; the only `pod`/`instance`-bearing series
+  are the 5 synthetic scrape-meta series (`up`, `scrape_*`) Prometheus adds *after* metricRelabelings and
+  which cannot be dropped. The `labeldrop` removes every unbounded per-pod label from the real metrics.
+- Grafana reachable (ingress added this slice, beyond the port-forward-only DESIGN intent).
+
+**Also fixed live:** Grafana was OOMKilled (exit 137) → ingress 503, because it sat at the stack-default
+200Mi while the #5206 capacity pass had sized every *other* monitoring pod. Bumped to 384Mi limit / 160Mi
+request (private `a338b0e`).
+
+**Deliberately deferred (user):** the induced-fault drill proving `TenantDegraded` actually *fires* (alert
+rule is loaded + healthy; firing behavior unproven). Grafana admin via ESO + SSO + dashboard hardening also
+later. **#5206 → Resolved** on the scrape + bounded-attribution + recording/alert + dashboard proof.

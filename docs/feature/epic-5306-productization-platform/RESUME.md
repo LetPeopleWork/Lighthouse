@@ -311,9 +311,29 @@ helm/kubectl/kind/az already present. tflint NOT installed (used tofu fmt/valida
 
 ---
 
-## ✅ S09 fleet-observability (#5206) — DISTILL + DELIVER(@in-memory) SHIPPED 2026-07-01 (live proof PENDING)
+## ✅ S09 fleet-observability (#5206) — DISTILL + DELIVER + LIVE-PROVEN 2026-07-01 → #5206 RESOLVED
 
-**ADO #5206 = Active** (stays Active until the live done=observable are proven).
+**ADO #5206 = Resolved** (live done=observable proven on Tenant Zero; induced-fault firing drill deferred per user).
+
+### Live-proof close-out (2026-07-01) — two latent config bugs fixed live, then GREEN
+- **Bug 1 — PodMonitor `namespaceSelector.matchLabels` invalid for prometheus-operator** (private
+  `e70c940`, fleet-monitoring 0.1.0→0.1.1). Operator `NamespaceSelector` = `any`/`matchNames` ONLY (not a
+  label selector); CRD structural schema pruned `matchLabels`→`{}` = "own namespace (monitoring)" → 0
+  targets + perpetual ArgoCD OutOfSync. Fix: `namespaceSelector: {any: true}` (podSelector bounds it).
+  +regression unittest, 14/14.
+- **Bug 2 — default-deny blocked the scrape** (private `934beda`, tenant-runtime 0.1.4→0.1.5). New
+  `allow-metrics-from-monitoring` NetworkPolicy: ingress from ns `monitoring` → api-component pods only,
+  metrics port. 20/20 unittest.
+- **Grafana OOM→503 fixed** (private `a338b0e`): 200Mi stack-default → 384Mi/160Mi (every other monitoring
+  pod was already sized in the #5206 capacity pass; grafana was missed).
+- **GREEN:** `up{tenant="lpw"}=1` healthy; metric name `http_server_request_duration_seconds` matches (no
+  tune); recording series `tenant:http_requests:rate5m`/`tenant:http_latency:p95_5m`/`fleet:tenants_degraded:count`;
+  4 alerts loaded+healthy; cardinality bounded (2211 clean series/tenant; only the 5 synthetic scrape-meta
+  series carry pod/instance — unavoidable, bounded). Public docs record: feature-delta DELIVER S09 LIVE PROOF block.
+- **Deferred (user):** induced-fault drill proving `TenantDegraded` *fires* (rule loaded, firing unproven);
+  Grafana ESO-admin + SSO + dashboard hardening.
+
+### (historical) NEXT: S09 @requires_external LIVE PROOF — DONE, see close-out above
 
 - **DISTILL**: `tests/platform/epic-5306/acceptance/slice-09-fleet-observability.feature` (12 scenarios,
   5 @error=42%, @US-09; @in-memory×7 + @real-io @requires_external×5). Reconciliation PASSED (ADR-090).
