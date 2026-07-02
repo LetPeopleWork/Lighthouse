@@ -1,5 +1,25 @@
 # RESUME — Epic 5306 productization platform
 
+## ▶▶ RE-DISCUSS 2026-07-02 — productization-completion (READ FIRST)
+Sanity-check on "what's pending" vs 4 user goals (git-completeness/multi-machine · multi-provider ·
+platform docs · guided customer onboarding). Full analysis + new stories US-10/11/12 + decisions:
+`discuss/re-discuss-2026-07-02-productization-completion.md`. **Pending backlog = 4 tracks:**
+- **A — git-completeness readiness** (US-10): A1 tofu state→Infomaniak S3 (**= #5374, PROMOTE to blocker**,
+  it's the multi-machine unblocker) · A2 operator-bootstrap runbook + local-config audit.
+- **B — onboarding decision workflow** (US-11): extend tenant record (`mcpEnabled`, `authMode`, `placement`,
+  license/backup tier) + commented template + onboarding runbook. *(record today lacks MCP + placement.)*
+- **C — documentation backfill** (US-12): ✅ **DRAFTED 2026-07-02** (private repo, uncommitted) — refreshed
+  top README + `docs/architecture-overview.md` + 11 learning pages (substrate, provider-addition, argocd,
+  secrets, tenant-mgmt, onboarding-a-customer, wildcard-dns, auto-updates, observability, backup-recovery,
+  operator-bootstrap). All cross-links resolve. Bug fixed en route: `terraform.tfvars.example` node_flavor
+  a1-ram2→a2-ram4 (now passes variables.tf validation). PENDING: user review + commit/push.
+- **D — finish core**: S10 backups live-proof + S11 restore DELIVER (below).
+Decisions (2026-07-02): multi-provider = DOCUMENT-PATH-ONLY (S12 delivery deferred; ref provider AWS→
+Hetzner/Oracle in docs); readiness = everything reproducible from git; **auth + licence MANDATORY for
+every tenant (no opt-out)**. **SEQUENCE: C (docs) FIRST** — git-only, works from any machine.
+**A1 (#5374) must run from the machine holding the current local tfstate** (state→S3 migration).
+ADO go-ahead GIVEN: promote #5374 to blocker, A2 folds into #5374, create new stories for B + C.
+
 ## Repo split (decided 2026-06-29)
 - **Public Lighthouse** (this repo): product, chart #5199, design docs, acceptance `.feature` SSOT
   (`tests/platform/epic-5306/acceptance/`). Specs stay here (methodology artifacts).
