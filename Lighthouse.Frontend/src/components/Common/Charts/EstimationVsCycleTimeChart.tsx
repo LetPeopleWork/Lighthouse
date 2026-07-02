@@ -118,6 +118,7 @@ const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 			id: "estimationAxis",
 			scaleType: "linear" as const,
 			label: xAxisLabel,
+			height: 56,
 		};
 
 		if (data.useNonNumericEstimation && data.categoryValues.length > 0) {
@@ -237,8 +238,8 @@ const EstimationVsCycleTimeChart: React.FC<EstimationVsCycleTimeChartProps> = ({
 							},
 						]}
 					>
-						<ChartsXAxis />
-						<ChartsYAxis />
+						<ChartsXAxis axisId="estimationAxis" />
+						<ChartsYAxis axisId="cycleTimeAxis" />
 						<ScatterPlot
 							slots={{
 								marker: (props) =>
