@@ -2297,7 +2297,7 @@ substrate's already-wired OpenStack provider. Needs an OpenStack application cre
   health ok; scratch rule then deleted (cluster back to pre-drill). The `by (tenant)` grouping keeps other
   tenants unflagged.
 
-## Wave: DELIVER / [REF] S11 restore-rehearsal (@in-memory GREEN, live-proof pending)
+## Wave: DELIVER / [REF] S11 restore-rehearsal (@in-memory GREEN; live proof recorded below)
 
 > **Wave**: DELIVER (2026-07-02). Slice-11 = story #5208 Part B. PRIVATE-repo GitOps only; **public #5199
 > chart byte-unchanged** (restore is a hosted-only overlay in `tenant-runtime`). Mechanism per the DISTILL
@@ -2353,13 +2353,28 @@ substrate's already-wired OpenStack provider. Needs an OpenStack application cre
 - **DISTILL reconciled (2026-07-02):** 4 automated-rehearsal scenarios added to `slice-11-restore-rehearsal.feature`
   and the "automation is OUT / a follow-up" note flipped to "pulled into this slice".
 
-**Pending live done=observable (@requires_external — needs user at cluster; S11 rehearsal restores from a real
-S10 artifact, which now exists):**
-1. ArgoCD syncs tenant-runtime 0.1.7 + fleet-monitoring 0.1.3. Confirm Tenant Zero's
-   `lighthouse-restore-rehearsal-lpw` CronJob materialises.
-2. One-time manual rehearsal (the runbook path) restores TZ's latest backup into a scratch namespace and
-   **serves**, data **verified intact**, **timed < RTO 30min**, cross-tenant **isolation** held.
-3. Confirm the weekly CronJob passes on lpw; prove the failure path opens a GitHub issue (induced-fail drill)
-   and `RestoreRehearsalStale` surfaces an unproven backup.
-4. Then record the DELIVER S11 live proof + flip the runbook banner to "rehearsed <date>, RTO N min" +
-   transition **#5208 → Resolved/Closed** (Parts A+B delivered).
+## Wave: DELIVER / [REF] S11 restore-rehearsal — LIVE PROOF DONE (2026-07-02)
+
+> **Wave**: DELIVER live proof (2026-07-02). All `@requires_external @env:tenant-zero` scenarios met on the
+> LPW production tenant. Charts shipped: tenant-runtime **0.1.8** (0.1.7 + fetch-fix), fleet-monitoring
+> **0.1.3**. Private `61951ba` (S11) + `9283a08` (fetch-fix); public `b3c01f20`.
+
+- ✅ **A tenant's restore reads its own backup, verified, timed, isolated** — `scripts/restore-tenant.sh --id
+  lpw --apply` rendered the id-keyed restore Job (guards passed), which fetched the tenant's OWN artifact
+  `off/lighthouse-backups/lpw/lpw-20260702T110935Z.sql.gz` (69.36 KiB), created scratch DB `lhr_lpw_…`,
+  reloaded the logical dump → **32 public tables** (COPY rows: 1134/4589/371/…), verified non-empty, in
+  **~8 s** (≪ 30-min RTO). Live `lighthouse` DB untouched; scratch dropped after inspection.
+- ✅ **scheduled rehearsal proves restorable + tears down** — a manual run of the ArgoCD-synced
+  `lighthouse-restore-rehearsal-lpw` CronJob restored **32 tables in 3 s**, verified, and `trap cleanup EXIT`
+  **dropped** the throwaway DB (post-run: only `lighthouse` remained). Pass path opened NO issue.
+- ✅ **a failed rehearsal informs the operator** — induced-fail drill (fetch pointed at a non-existent key)
+  → `fail`→`alert()` → GitHub issue **#25** opened (label `restore-rehearsal-alert`, wget POST **201**), Job
+  exited non-zero (never recorded green → `RestoreRehearsalStale` backstop holds). Issue closed as a drill.
+- **Live bug found + fixed (0.1.7→0.1.8):** the fetch initContainer runs in `minio/mc`, which ships no
+  coreutils — the `latest`-artifact selection `mc ls | awk | grep | sort | tail` died with `grep/awk: command
+  not found` and falsely reported "no backup artifact found". Rewritten to select the newest artifact with mc
+  + shell builtins only (list→`/work/ls.txt`, keep the last `.sql.gz` line; `mc ls` is lexical-ascending and
+  our `YYYYMMDDTHHMMSSZ` timestamps sort chronologically). Applied to both restore-job + rehearsal-cronjob;
+  the on-demand restore then proved the fix live. Unit **41/41** after the fix.
+- **Runbook**: `docs/backup-and-recovery.md` status banner flipped to "shipped and live-proven on Tenant Zero
+  (2026-07-02)" with the measured figures. **#5208 → Resolved/Closed** (Parts A+B delivered).

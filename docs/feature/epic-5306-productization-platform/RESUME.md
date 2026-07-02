@@ -357,7 +357,7 @@ helm/kubectl/kind/az already present. tflint NOT installed (used tofu fmt/valida
 
 ---
 
-## ▶ Story #5208 Backup & DR — S10 LIVE-PROVEN (2026-07-02); S11 restore rehearsal = NEXT
+## ✅ Story #5208 Backup & DR — S10 + S11 LIVE-PROVEN (2026-07-02); #5208 = DONE
 
 ### ✅ S10 @requires_external LIVE PROOF DONE (2026-07-02) — all 3 done=observable met
 Yesterday's "bucket not found" was PRE-`tofu apply` (bucket didn't exist yet). `tofu apply` since created
@@ -399,15 +399,28 @@ dims 10). Public LOCAL, unpushed.
 - `applicationset-runtime.yaml`: hosted tenants INHERIT `backup.enabled: true` (opt out `backupEnabled:false`).
 - Both charts lint clean; `validate-tenants.sh` OK; CI auto-picks new `tests/unit/`.
 
-**▶ NEXT — DELIVER S11 restore rehearsal (S10 above now LIVE-PROVEN):**
-S11 DISTILL already done (`slice-11-restore-rehearsal.feature`, 9 scenarios, 44% @error). S11 live rehearsal
-is UNBLOCKED — a real artifact now exists off-cluster (`lighthouse-backups/lpw/lpw-20260702T110935Z.sql.gz`).
-1. **S11 @in-memory** (offline, mirrors S10 build): parameterised id-keyed restore mechanism in
-   `tenant-runtime` (restore Job — download `<bucket>/<id>/<id>-<ts>.sql.gz`, gunzip, `psql`/`pg_restore`
-   into a scratch DB/ns) + isolation guards (restore only from OWN id's key) + runbook + helm-unittest GREEN.
-2. **S11 @requires_external LIVE**: rehearse TZ restore into a scratch namespace from the real artifact,
-   verify row/integrity, time it < RTO 30min, prove cross-tenant isolation (can't restore another id's key).
-3. Record DELIVER S11 [REF]; feature-delta DELIVER S10+S11 LIVE-PROOF blocks; **then #5208 → Resolved/Closed**.
+### ✅ S11 restore rehearsal — DELIVER + LIVE PROOF DONE (2026-07-02)
+Scope pulled in per user: the AUTOMATED weekly rehearsal shipped alongside the manual restore + operator
+script (all off-by-default; hosted tenants inherit rehearsal via the ApplicationSet).
+**Shipped** (private `61951ba` S11 + `9283a08` fetch-fix; charts tenant-runtime **0.1.8**, fleet-monitoring
+**0.1.3**; public `b3c01f20` DISTILL reconcile + records): id-keyed `restore-job.yaml` (scratch-DB, no
+in-place mode), `restore-rehearsal-cronjob.yaml` (weekly `23 3 * * 1` → scratch → verify → drop, timed vs
+RTO, GitHub-issue on failure), 3 restore isolation guards in `_helpers.tpl`, `scripts/restore-tenant.sh`
+(dry-run-by-default safe front-end), `tenant:restore_rehearsal_age_seconds` + `RestoreRehearsalStale` alert.
+Unit: tenant-runtime **41/41**, fleet-monitoring **20/20**.
+**Live-proven on Tenant Zero (lpw), all @requires_external scenarios met:**
+1. ✅ **restore serves + verified + timed + isolated** — on-demand restore of `lpw-20260702T110935Z.sql.gz`
+   rebuilt **32 public tables** into scratch DB `lhr_lpw_…` in **~8 s** (≪ 30-min RTO); live `lighthouse`
+   DB untouched; scratch dropped after. Reads only the tenant's own `…/lpw/…` key.
+2. ✅ **scheduled rehearsal proves restorable + drops scratch** — manual run of the synced CronJob restored
+   32 tables in **3 s**, verified non-empty, `trap cleanup EXIT` dropped the throwaway DB (only `lighthouse`
+   remained); pass path opened NO issue.
+3. ✅ **failure informs the operator** — induced-fail drill (fetch pointed at a non-existent key) → GitHub
+   issue **#25** opened (`restore-rehearsal-alert`, POST **201**), Job exited non-zero; issue closed as drill.
+**Live bug found + fixed (0.1.7→0.1.8):** the fetch initContainer runs in the `minio/mc` image, which ships
+NO coreutils — `mc ls | awk | grep | sort | tail` failed with `grep/awk: command not found`. Now selects the
+newest artifact with mc + shell builtins only (list→file, keep last `.sql.gz` line; mc ls is lexical-ascending
+and our `YYYYMMDDTHHMMSSZ` timestamps sort chronologically). **REMAINING: ADO #5208 → Resolved/Closed.**
 
 **Both public + private are LOCAL, UNPUSHED** — push when ready (public: slice-10/11 specs + feature-delta;
 private: tenant-runtime 0.1.6 + fleet-monitoring 0.1.2 + appset). ADO **#5208 stays Active**.
