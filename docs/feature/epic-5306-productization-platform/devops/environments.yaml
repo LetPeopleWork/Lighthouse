@@ -1,0 +1,119 @@
+# DEVOPS wave — target environments for Track A / US-10 / #5374
+# (OpenTofu remote-state migration + operator-bootstrap runbook).
+#
+# Wave: DEVOPS. Architect: Apex. Date: 2026-07-02. Mode: DESIGN-ONLY (no irreversible action).
+# Scope: the substrate state-management plane only (infra/substrate/). NOT the tenant data-plane,
+# which ArgoCD already reconciles from git on every machine today.
+#
+# All DEVOPS platform decisions are INHERITED from shipped S01–S11 (Infomaniak/OpenStack, k3s/KaaS,
+# GitHub Actions, trunk-based, ESO+OpenBao, GitOps rolling + Tenant-Zero canary). This file only
+# describes WHERE tofu state lives and WHO can plan/apply, before vs after #5374.
+
+meta:
+  feature: epic-5306-productization-platform
+  track: A
+  story: US-10
+  ado: 5374
+  folds_in: A2  # operator-bootstrap runbook + local-config audit (per RD-2 resolution)
+  irreversible_actions_deferred: true   # init -migrate-state / apply gated on user confirmation
+
+environments:
+
+  - id: operator-workstation-primary
+    role: source-of-truth-today
+    description: >
+      The one machine that first ran `tofu apply` and therefore holds the ONLY copy of
+      terraform.tfstate today (it is *.tfstate-gitignored, CC-3). This is where the one-time
+      state migration to S3 is executed. After migration it reads/locks the shared S3 backend
+      like any other machine — it loses its privileged position, which is the goal.
+    holds_local_state: true
+    can_tofu_apply:
+      before_5374: true    # only machine that can, today
+      after_5374: true     # via shared backend + lock
+    toolbelt: [tofu>=1.10, kubectl, helm, bao, mc, git, openstack-cli]
+    credentials_present: [INFOMANIAK_TOKEN, OS_APPLICATION_CREDENTIAL, kubeconfig, terraform.tfvars]
+    migration_actor: true
+
+  - id: operator-workstation-fresh-clone
+    role: bootstrap-target
+    description: >
+      The 2nd machine (e.g. the notebook). Freshly `git clone`d — has the full platform
+      definition but NONE of the gitignored artifacts. This environment is the AC done=observable
+      probe: following ONLY the runbook + git, the operator must reach `tofu plan` = no-op and
+      `kubectl get nodes` = live cluster. Cannot apply today (no local state); can after #5374
+      because it downloads + locks the shared S3 state.
+    holds_local_state: false
+    can_tofu_apply:
+      before_5374: false   # THE blocker US-10 removes
+      after_5374: true     # downloads state from S3 on `tofu init`
+    toolbelt: [tofu>=1.10, kubectl, helm, bao, mc, git, openstack-cli]
+    credentials_to_regenerate:   # every gitignored artifact, from a documented source (AC-2)
+      - INFOMANIAK_TOKEN            # Infomaniak console → export
+      - OS_APPLICATION_CREDENTIAL   # Infomaniak/OpenStack console → clouds.yaml
+      - AWS_ACCESS_KEY_ID/SECRET    # NEW: mint EC2/S3 keypair from the OpenStack app-cred (openstack ec2 credentials create); project-scoped → reads shared state bucket
+      - terraform.tfvars           # copy terraform.tfvars.example, fill 2 numeric IDs (non-secret)
+      - kubeconfig                 # tofu output -raw kubeconfig (AFTER state downloads)
+      - openbao-unseal-keys        # operator out-of-band store (never near git)
+      - argocd-deploy-key          # ArgoCD repo secret (SSH key)
+    verification_gate:
+      - "tofu init -backend-config=backends/infomaniak.s3.tfbackend  # downloads state (no -migrate-state)"
+      - "tofu plan            # MUST be no-op → proves shared state agrees (AC-1)"
+      - "kubectl get nodes    # live cluster reachable (done=observable)"
+
+  - id: ci
+    role: git-only-validator
+    description: >
+      GitHub Actions. Today CI does NOT run tofu apply — infra provisioning is deliberately
+      operator-gated (D0d, and the standing rule: no unattended cloud mutation). CI runs the
+      git-only gates: validate-tenants.yml, renovate-config-validator, expand-only migration guard.
+      It is a state CONSUMER only if drift-detection (`tofu plan`) is added later — out of scope
+      for #5374 and would require the S3 creds as GH Actions secrets (flagged future, not now).
+    holds_local_state: false
+    can_tofu_apply:
+      before_5374: false
+      after_5374: false    # unchanged — CI never applies infra by design
+    tofu_plan_future: optional   # drift-detection only; needs AWS_* GH secrets; explicitly deferred
+
+coexistence_matrix:
+  # Who can safely `tofu plan`/`apply` at each phase, and against which state.
+  before_migration:
+    primary:      "apply OK — local terraform.tfstate (authoritative, single copy)"
+    fresh_clone:  "apply BLOCKED — no state; would not know what exists (do NOT apply)"
+    ci:           "no tofu — git-only validation"
+    divergence_risk: "N/A — only one machine can apply, so no two-writer race"
+  after_migration:
+    primary:      "apply OK — shared S3 state + use_lockfile lock"
+    fresh_clone:  "apply OK — same shared S3 state + lock (the unblock)"
+    ci:           "no tofu — unchanged"
+    divergence_risk: "eliminated — single remote state, serialized by S3 conditional-write lock"
+  migration_window:
+    note: >
+      One-time, single-actor (primary only). No concurrent apply during migration. Local
+      terraform.tfstate + explicit .pre-s3-migration.bak retained until fresh-clone verifies.
+
+platform_coverage:
+  provider: Infomaniak Public Cloud (OpenStack / Swift+S3)
+  state_backend: "s3 (S3-compatible) → https://s3.pub1.infomaniak.cloud"
+  backend_wiring: "partial config — empty backend \"s3\" {} + committed backends/<provider>.s3.tfbackend"
+  state_bucket: lighthouse-tfstate                        # SEPARATE from lighthouse-backups (slice-10)
+  state_key: substrate/infomaniak-dc4/terraform.tfstate   # PROVIDER/region-scoped → provider #2 = new key, no collision
+  multi_provider: "add backends/hetzner.s3.tfbackend + own S3 cred + new key prefix; substrate module byte-identical (RD-1)"
+  locking: use_lockfile (S3 conditional-write; OpenTofu >= 1.10; NO DynamoDB — Infomaniak has none)
+  versioning: enabled                         # mc version enable — corrupt-state recovery
+  credential: EC2/S3 keypair from OpenStack application credential (project-scoped)
+
+deployment_assumptions:
+  idempotency:
+    - "tofu init is repeatable; re-running against the S3 backend is a no-op download."
+    - "Bucket create (mc mb) is one-time out-of-band; tolerate 'already exists' on re-run."
+    - "tofu plan = no-op is the post-migration correctness gate on every machine."
+  state_lock_safety:
+    - "use_lockfile serializes concurrent apply via S3 conditional writes (no DynamoDB)."
+    - "A stale .tflock is force-releasable with `tofu force-unlock <id>` (documented, rare)."
+  no_secret_in_git:
+    - "backend.tf (empty block) + backends/*.s3.tfbackend are committed and hold NO credentials."
+    - "AWS_* mapped from a project-scoped EC2 credential minted from the OpenStack app-cred."
+    - ".gitignore blankets *.tfstate/*.tfvars/clouds.yaml/kubeconfig/*.key/*.pem — NOT *.tfbackend (CC-3)."
+  rollback:
+    - "Pre-migration: keep terraform.tfstate + .pre-s3-migration.bak; removing backend.tf + re-init pulls state back local."
+    - "Post-migration: bucket versioning lets `mc cp --version-id` restore a clobbered state object."

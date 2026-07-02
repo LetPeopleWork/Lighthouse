@@ -2378,3 +2378,89 @@ substrate's already-wired OpenStack provider. Needs an OpenStack application cre
   the on-demand restore then proved the fix live. Unit **41/41** after the fix.
 - **Runbook**: `docs/backup-and-recovery.md` status banner flipped to "shipped and live-proven on Tenant Zero
   (2026-07-02)" with the measured figures. **#5208 → Resolved/Closed** (Parts A+B delivered).
+
+## Wave: DEVOPS / [REF] Track A — remote state + operator bootstrap (#5374)
+
+> **Wave**: DEVOPS. **Architect**: Apex. **Date**: 2026-07-02. **Mode**: DESIGN-ONLY — no
+> `init -migrate-state`, no `apply`, no live-account touch. The `.tf` edits + the irreversible state
+> migration execute in a follow-up, gated on explicit user confirmation. Full design:
+> `devops/wave-decisions.md`; environments: `devops/environments.yaml`. New ADR proposed: **ADR-098**.
+> Inherited (locked S01–S11): Infomaniak/OpenStack, k3s/KaaS, GitHub Actions, trunk-based, ESO+OpenBao.
+
+**Problem (the multi-machine blocker).** Substrate tofu state is local-only on the machine that first
+ran `apply` (`*.tfstate` gitignored, CC-3). A freshly-cloned 2nd machine can edit git but cannot
+`tofu apply` (no shared state) nor reach the cluster (no kubeconfig). ADR-088 already names this the
+remote-state gap; RD-2 folded the operator-bootstrap runbook (A2) into #5374.
+
+**Environment matrix.** Three environments (detail in `devops/environments.yaml`):
+`operator-workstation-primary` holds today's local state and is the sole migration actor (loses its
+privileged position afterwards — the goal); `operator-workstation-fresh-clone` is the 2nd-machine
+bootstrap target and the AC done=observable probe; `ci` stays git-only (no `tofu apply` — infra is
+operator-gated by design; optional drift-detection `tofu plan` is explicitly deferred). Coexistence:
+before-migration only `primary` can apply (no two-writer race); after-migration both workstations
+plan/apply against one shared S3 state serialized by `use_lockfile` — divergence eliminated.
+
+**Key decisions.**
+- **Separate state bucket** `lighthouse-tfstate`, **provider/region-scoped key**
+  `substrate/infomaniak-dc4/terraform.tfstate`, versioning ON — distinct from the slice-10
+  `lighthouse-backups` bucket (different blast radius, lifecycle, writer). Reconciles
+  `object-storage.tf`'s "same credential #5374 uses": same *kind* of project-scoped EC2/S3 credential,
+  but not co-mingled state + tenant dumps.
+- **Partial backend config (multi-provider baked in NOW, user decision 2026-07-02)**: `backend.tf`
+  commits an **empty** `backend "s3" {}`; all values live in committed per-provider
+  `backends/<provider>.s3.tfbackend` files supplied at `tofu init -backend-config=…`. `*.tfbackend` is
+  not gitignored (only `*.tfvars`/`*.tfstate`/creds are) and holds no secrets. The single-bucket/single-
+  key inline form was explicitly rejected.
+- **Chicken-and-egg** solved by creating the bucket **out-of-band** (`mc mb` + `mc version enable`),
+  left **unmanaged by tofu** (standard bootstrap pattern; matches slice-10's out-of-band OpenBao seed).
+  A mini bootstrap-module was rejected — it only moves the local-state problem down one level.
+- **Backend credential** = project-scoped EC2/S3 keypair from the OpenStack app-cred → `AWS_*` env;
+  `backend.tf` committed and credential-free. On a fresh machine the operator **mints its own** EC2
+  cred (`openstack ec2 credentials create`) — project-scoped, so it reads the shared bucket. This
+  credential is a true root-of-trust: it CANNOT come from OpenBao (circular — OpenBao is in the cluster
+  whose kubeconfig is in the state behind these creds).
+- **Locking** = `use_lockfile` (S3 conditional-write; OpenTofu ≥ 1.10 — this machine is v1.12.3);
+  raise `versions.tf` floor `>= 1.8.0` → `>= 1.10.0`. DynamoDB rejected (Infomaniak has none).
+
+**Multi-provider state scaling.** The state backend is orthogonal to the compute provider — S3 is a
+protocol (Infomaniak/Hetzner/Oracle all speak it) and state is tiny metadata, so the scaling axis is
+organization (isolation + independence + per-provider credential), not storage capacity. Solved by
+key-prefix + partial config: adding provider #2 = drop `backends/hetzner.s3.tfbackend` + mint that
+provider's own S3 cred + `tofu init -reconfigure -backend-config=…` under a new key prefix; the
+`backend "s3" {}` block and the whole substrate module stay byte-identical. This makes RD-1's deferred
+multi-provider path a real "add a file", not a redesign. Independence trade-off documented: all state
+co-locates in the Infomaniak bucket initially (simplest, isolated by key prefix); each provider's state
+can later move into its own object store (config-only) — a flagged future least-privilege/independence
+split, not required now.
+
+**Migration procedure (proposed, single-actor on primary).** backup-first (`cp` to
+`.pre-s3-migration.bak`) → obtain S3 creds (`tofu output` slice-10 pair, or mint) → `mc mb` +
+`mc version enable` → add committed empty `backend.tf` + `backends/infomaniak.s3.tfbackend` + bump
+`versions.tf` → **`tofu init -migrate-state -backend-config=backends/infomaniak.s3.tfbackend`** (the
+gated irreversible step) → **`tofu plan` = no-op** (AC-1 correctness gate; also proves the lock) →
+`rm terraform.tfstate` (keep `.bak` until 2nd machine verifies) → commit + push. **Rollback-first**:
+local `.tfstate` + explicit `.bak` retained; removing `backend.tf` + re-init pulls state back local;
+bucket versioning lets `mc cp --version-id` restore a clobbered state object; `tofu force-unlock` for a
+stale lock. Exact `backend.tf` (empty block) + `backends/infomaniak.s3.tfbackend` content (non-AWS
+override flags: `endpoints.s3`, dummy `region`, `use_path_style`, `skip_*`, `use_lockfile`) is in
+`devops/wave-decisions.md §6`.
+
+**Bootstrap runbook outline (EXTEND `docs/operator-bootstrap.md`, do not replace).** (a) one new
+artifacts row — the S3 backend creds, with the root-of-trust note; (b) flip the ⚠️ "state is LOCAL /
+don't apply from a 2nd machine" caveat to the resolved
+`tofu init -backend-config=backends/infomaniak.s3.tfbackend` → shared-backend flow, and flip the
+"what works from any machine" table's last row to ✅; (c) add a "how the state moved" pointer to ADR-098
++ flip `substrate-opentofu.md`'s "Where the state lives (known gap)" section; (d) add `openstack` CLI to
+the toolbelt (`mc` already listed). **AC-3 audit**: `backend.tf` is the one local-only-by-omission,
+safely git-able config → committed (the AC-3 win); `terraform.tfvars` is non-secret but account-specific
+→ reproducible from the committed `.example` (operator may commit the IDs if preferred); every other
+gitignored file is a genuine secret with a documented regeneration source. No secret withheld, none committed.
+
+**Open questions for the user before execution** (none blocking the design):
+1. Confirm the `versions.tf` floor bump to `>= 1.10.0` (enables `use_lockfile`); any operator machine
+   pinned < 1.10 would otherwise fall back to unlocked state — not acceptable for two writers.
+2. Reuse the slice-10 EC2 credential for the state backend now (fast), with a flagged future split to a
+   dedicated least-privilege state credential? Or mint a separate one immediately?
+3. Confirm the state bucket name `lighthouse-tfstate` and provider-scoped key
+   `substrate/infomaniak-dc4/terraform.tfstate` (and the region tag `infomaniak-dc4`).
+4. Go-ahead to author the canonical `adr-098-s3-remote-state-backend.md` (public repo) at execution.
