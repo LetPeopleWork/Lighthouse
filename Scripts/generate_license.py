@@ -1,6 +1,7 @@
 import sys
 import json
 import base64
+import unicodedata
 from datetime import datetime
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -40,16 +41,25 @@ def main():
         print("Valid from date must be in YYYY-MM-DD format")
         sys.exit(1)
 
+    # Normalize text fields to Unicode NFC so the signed bytes match what the
+    # backend verifier produces (it also normalizes to NFC). Without this,
+    # decomposed vs precomposed spellings of accented characters would diverge.
+    def nfc(value):
+        return unicodedata.normalize("NFC", value)
+
     license_data = {
         "license_number": str(license_number),  # ensure string for JSON stability
-        "name": name,
-        "email": email,
-        "organization": organization,
+        "name": nfc(name),
+        "email": nfc(email),
+        "organization": nfc(organization),
         "expiry": expiry,
         "valid_from": valid_from,
     }
 
-    license_json = json.dumps(license_data, separators=(',', ':'), sort_keys=True).encode("utf-8")
+    # ensure_ascii=False emits raw UTF-8 (e.g. accented characters as themselves)
+    # rather than \uXXXX escapes, matching the backend's canonical byte form.
+    # See Bug 5382 - lowercase Python escapes never matched C#'s uppercase escapes.
+    license_json = json.dumps(license_data, separators=(',', ':'), sort_keys=True, ensure_ascii=False).encode("utf-8")
 
     with open(private_key_path, "rb") as f:
         private_key = serialization.load_pem_private_key(

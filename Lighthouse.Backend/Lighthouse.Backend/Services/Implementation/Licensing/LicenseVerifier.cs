@@ -1,8 +1,9 @@
-﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing
@@ -44,7 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             }
         }
 
-        private static string CanonicalizeJson(LicenseInformation license)
+        internal static string CanonicalizeJson(LicenseInformation license)
         {
             var dict = new SortedDictionary<string, object>
             {
@@ -61,7 +62,16 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
             }
 
             using var stream = new MemoryStream();
-            using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
+
+            // Emit raw UTF-8 with only the JSON-mandatory escapes so the canonical bytes are
+            // byte-identical to the signer (Python json.dumps with ensure_ascii=False). The
+            // default encoder escapes non-ASCII (e.g. "e-acute") and HTML-sensitive ASCII
+            // ("&"), diverging from the signed bytes and rejecting valid licenses (Bug 5382).
+            using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
+            {
+                Indented = false,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            });
 
             writer.WriteStartObject();
             foreach (var kvp in dict)
@@ -71,7 +81,9 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 switch (kvp.Value)
                 {
                     case string stringValue:
-                        writer.WriteStringValue(stringValue);
+                        // Normalize to NFC so decomposed and precomposed spellings of the same
+                        // character (e.g. "e" + combining acute vs "e-acute") produce identical bytes.
+                        writer.WriteStringValue(stringValue.Normalize(NormalizationForm.FormC));
                         break;
                     case DateTime dateValue:
                         writer.WriteStringValue(dateValue.ToString("yyyy-MM-dd"));
