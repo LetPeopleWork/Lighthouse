@@ -1,6 +1,7 @@
 import sys
 import json
 import base64
+import unicodedata
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.backends import default_backend
@@ -27,7 +28,13 @@ def main():
         print("Invalid license file format")
         sys.exit(1)
 
-    license_json = json.dumps(license_data, separators=(',', ':'), sort_keys=True).encode("utf-8")
+    # Match the signer/backend canonicalization: NFC-normalize text fields and emit
+    # raw UTF-8 (ensure_ascii=False) so the verified bytes are byte-identical. See Bug 5382.
+    license_data = {
+        key: unicodedata.normalize("NFC", value) if isinstance(value, str) else value
+        for key, value in license_data.items()
+    }
+    license_json = json.dumps(license_data, separators=(',', ':'), sort_keys=True, ensure_ascii=False).encode("utf-8")
     signature = base64.b64decode(signature_b64)
 
     try:
