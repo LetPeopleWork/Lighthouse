@@ -109,11 +109,46 @@ Feature: A rehearsed restore brings Tenant Zero back from backup — verified, t
     Then it fails loudly and names the unusable backup
     And it leaves no half-restored instance that could be mistaken for recovered
 
+  # --- AUTOMATED restore rehearsal (scope pulled in 2026-07-02: an untested backup is not a backup, so
+  #     every hosted tenant's backup is proven restorable on a schedule, not just once by hand) ---
+
+  @US-11 @in-memory @env:tenant-runtime
+  Scenario: A hosted tenant renders a scheduled rehearsal of its own backup on a recurring cadence
+    Given a hosted tenant's restore-rehearsal procedure
+    When it is rendered for that tenant
+    Then it runs on a recurring schedule against that tenant's own off-cluster backup, keyed by the tenant's identifier
+    And it restores into a throwaway destination that is torn down afterwards, never the live database
+
+  @error @US-11 @in-memory @env:tenant-runtime
+  Scenario: A rehearsal that cannot prove the backup restorable is wired to alert, not to pass silently
+    Given a hosted tenant's restore-rehearsal procedure
+    When it is rendered for that tenant
+    Then a failure to restore, an empty result, or a run over the recovery-time target raises an alert naming the tenant
+    And the run reports failure rather than being recorded as a successful rehearsal
+
+  @US-11 @real-io @requires_external @env:tenant-zero
+  Scenario: The scheduled rehearsal proves Tenant Zero's latest backup restorable and intact within the recovery-time target
+    Given the scheduled restore rehearsal for Tenant Zero
+    When it runs on its cadence
+    Then it restores Tenant Zero's most recent backup into a throwaway destination, verifies it is intact, and completes within the recovery-time target
+    And the throwaway destination is removed, leaving the live tenant untouched
+
+  @error @US-11 @real-io @requires_external @env:tenant-zero
+  Scenario: A failed rehearsal informs the operator rather than failing silently
+    Given a scheduled rehearsal whose backup cannot be restored
+    When the rehearsal runs
+    Then the operator is actively informed, with the tenant named
+    And the rehearsal is not recorded as successful, so the unproven backup also surfaces on the fleet health view
+
 # The parameterised restore procedure (reload a tenant's own logical dump from off-cluster Infomaniak
-# Object Storage into a scratch/replacement destination, keyed by the tenant id) and the restore runbook
-# live in the PRIVATE platform repo (LetPeopleWork/lighthouse-platform). The rehearsal dogfoods Tenant Zero
-# (LPW production) so the runbook is proven before any customer relies on it. ADR-091's CloudNativePG
-# restore path is DEFERRED/superseded (reconciliation 2026-07-01) — the restore reloads a logical dump.
-# Full-cluster DR failover automation is documented in the runbook but its automation is OUT; automated
-# periodic restore-testing is noted as a follow-up. This slice closes story #5208 (Backup & disaster
-# recovery): slice-10 gives the recovery POINT, slice-11 proves the recovery.
+# Object Storage into a scratch/replacement destination, keyed by the tenant id), the AUTOMATED weekly
+# rehearsal of it, and the restore runbook live in the PRIVATE platform repo
+# (LetPeopleWork/lighthouse-platform). The rehearsal dogfoods Tenant Zero (LPW production) so the runbook
+# is proven before any customer relies on it. ADR-091's CloudNativePG restore path is DEFERRED/superseded
+# (reconciliation 2026-07-01) — the restore reloads a logical dump. Full-cluster DR failover automation is
+# documented in the runbook but its automation is OUT. Automated periodic restore-TESTING was a noted
+# follow-up and has now been PULLED INTO this slice (reconciliation 2026-07-02, user decision): a weekly
+# CronJob rehearses every hosted tenant's backup into a throwaway database, times it against the RTO, and
+# opens a GitHub issue (the slice-08b alert channel) on any failure — with the passive RestoreRehearsalStale
+# alert as the fleet-health backstop. This slice closes story #5208 (Backup & disaster recovery): slice-10
+# gives the recovery POINT, slice-11 proves the recovery — once by hand and continuously thereafter.

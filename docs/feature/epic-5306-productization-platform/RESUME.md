@@ -357,7 +357,27 @@ helm/kubectl/kind/az already present. tflint NOT installed (used tofu fmt/valida
 
 ---
 
-## ▶ Story #5208 Backup & DR — DISTILL done + DELIVER S10 @in-memory GREEN (2026-07-01)
+## ▶ Story #5208 Backup & DR — S10 LIVE-PROVEN (2026-07-02); S11 restore rehearsal = NEXT
+
+### ✅ S10 @requires_external LIVE PROOF DONE (2026-07-02) — all 3 done=observable met
+Yesterday's "bucket not found" was PRE-`tofu apply` (bucket didn't exist yet). `tofu apply` since created
+`openstack_objectstorage_container_v1.backups[0]` + `openstack_identity_ec2_credential_v3.backup[0]`; OpenBao
+`secret/platform/backup-s3` seeded; ESO `lighthouse-backup-s3` Secret SecretSynced=True in tenant-lpw.
+1. ✅ **artifact off-cluster within RPO** — manual `kubectl create job --from=cronjob/lighthouse-backup-lpw`
+   → pg-dump 71023 B → upload → `off/lighthouse-backups/lpw/lpw-20260702T110935Z.sql.gz` (69.36 KiB) landed
+   at `s3.pub1.infomaniak.cloud`. CronJob `.status.lastSuccessfulTime` = 11:09:40Z.
+2. ✅ **monitoring plumbing live+healthy** — `kube_cronjob_status_last_successful_time{cronjob="lighthouse-backup-lpw"}`
+   exposed by KSM; recording rule `tenant:backup_age_seconds{tenant="lpw"}` evaluates (126s fresh);
+   real `BackupStale` correctly NOT firing while fresh.
+3. ✅ **BackupStale FIRES + names tenant** — fast scratch-rule drill (`backup-stale-drill`, same recording-rule
+   + label path, `for:1m`, threshold 60s) tripped lpw's live age → `/api/v1/alerts` state=**firing**,
+   `tenant=lpw`, value=366 (real age s), rule health=ok. Scratch rule deleted; cluster back to pre-drill
+   (drill group+alert gone, real BackupStale still 0 active). "Others unflagged" holds by per-tenant `by(tenant)`.
+**No git change needed** — S10 code (tenant-runtime 0.1.6 + fleet-monitoring 0.1.2) already shipped+pushed
+(public `07ad4a34`/`cfe0bc0b`, private `659a9f7`/`4056897`). PENDING: feature-delta DELIVER S10 LIVE-PROOF
+[REF] block; ADO #5208 note. **#5208 stays Active until S11 restore rehearsal delivered.**
+
+### (historical) DISTILL done + DELIVER S10 @in-memory GREEN (2026-07-01)
 
 **DISTILL S10+S11 (story #5208):** `.feature` SSOT in public Lighthouse —
 `slice-10-per-tenant-backups.feature` (10 scenarios, 40% @error) + `slice-11-restore-rehearsal.feature`
@@ -379,17 +399,15 @@ dims 10). Public LOCAL, unpushed.
 - `applicationset-runtime.yaml`: hosted tenants INHERIT `backup.enabled: true` (opt out `backupEnabled:false`).
 - Both charts lint clean; `validate-tenants.sh` OK; CI auto-picks new `tests/unit/`.
 
-**▶ NEXT — S10 @requires_external LIVE PROOF (needs user at cluster, mirrors S09):**
-1. `tofu apply` (with `OS_APPLICATION_CREDENTIAL_*`) creates the bucket + S3 key (now tofu-managed:
-   `infra/substrate/object-storage.tf`, `backups_enabled` default true). Seed OpenBao
-   `secret/platform/backup-s3` accessKey+secretKey from `tofu output -raw backups_s3_access_key` /
-   `backups_s3_secret_key`; platform-store ClusterSecretStore already reads `secret/platform/*` (slice-08b).
-2. ArgoCD sync tenant-runtime 0.1.6 + fleet-monitoring 0.1.2; confirm TZ `lighthouse-backup-lpw` CronJob +
-   `lighthouse-backup-s3` Secret; run one manual job → artifact `lighthouse-backups/lpw/lpw-<ts>.sql.gz`
-   off-cluster within RPO (dogfood done=observable).
-3. Prove `BackupStale` fires on a prevented/never-succeeded backup, names the tenant, others unflagged.
-4. Record DELIVER S10 live proof; **then DELIVER S11** (restore rehearsal — parameterised id-keyed restore
-   + runbook; rehearse TZ restore into a scratch ns, verify integrity, time < RTO 30min, isolation check).
+**▶ NEXT — DELIVER S11 restore rehearsal (S10 above now LIVE-PROVEN):**
+S11 DISTILL already done (`slice-11-restore-rehearsal.feature`, 9 scenarios, 44% @error). S11 live rehearsal
+is UNBLOCKED — a real artifact now exists off-cluster (`lighthouse-backups/lpw/lpw-20260702T110935Z.sql.gz`).
+1. **S11 @in-memory** (offline, mirrors S10 build): parameterised id-keyed restore mechanism in
+   `tenant-runtime` (restore Job — download `<bucket>/<id>/<id>-<ts>.sql.gz`, gunzip, `psql`/`pg_restore`
+   into a scratch DB/ns) + isolation guards (restore only from OWN id's key) + runbook + helm-unittest GREEN.
+2. **S11 @requires_external LIVE**: rehearse TZ restore into a scratch namespace from the real artifact,
+   verify row/integrity, time it < RTO 30min, prove cross-tenant isolation (can't restore another id's key).
+3. Record DELIVER S11 [REF]; feature-delta DELIVER S10+S11 LIVE-PROOF blocks; **then #5208 → Resolved/Closed**.
 
 **Both public + private are LOCAL, UNPUSHED** — push when ready (public: slice-10/11 specs + feature-delta;
 private: tenant-runtime 0.1.6 + fleet-monitoring 0.1.2 + appset). ADO **#5208 stays Active**.

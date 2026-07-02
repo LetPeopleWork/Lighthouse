@@ -2175,6 +2175,10 @@ never leaks into standalone.
 | The rehearsed restore completes within the recovery-time target | slice-11-restore-rehearsal.feature | `@US-11 @real-io @requires_external @env:tenant-zero` |
 | Restoring one tenant leaves every other tenant untouched | slice-11-restore-rehearsal.feature | `@error @US-11 @real-io @requires_external @env:fleet` |
 | A restore from a corrupt or absent backup fails loudly, not into a half-restored instance | slice-11-restore-rehearsal.feature | `@error @US-11 @real-io @requires_external @env:tenant-zero` |
+| A hosted tenant renders a scheduled rehearsal of its own backup on a recurring cadence *(scope pulled in 2026-07-02)* | slice-11-restore-rehearsal.feature | `@US-11 @in-memory @env:tenant-runtime` |
+| A rehearsal that cannot prove the backup restorable is wired to alert, not to pass silently | slice-11-restore-rehearsal.feature | `@error @US-11 @in-memory @env:tenant-runtime` |
+| The scheduled rehearsal proves Tenant Zero's latest backup restorable and intact within the recovery-time target | slice-11-restore-rehearsal.feature | `@US-11 @real-io @requires_external @env:tenant-zero` |
+| A failed rehearsal informs the operator rather than failing silently | slice-11-restore-rehearsal.feature | `@error @US-11 @real-io @requires_external @env:tenant-zero` |
 
 **Driven-adapter coverage (S11)**:
 
@@ -2277,3 +2281,85 @@ substrate's already-wired OpenStack provider. Needs an OpenStack application cre
 3. Prove BackupStale: a demo tenant whose backup is prevented (or never succeeds) → `tenant:backup_age_seconds`
    crosses 86400 / the never-succeeded branch fires → `BackupStale` names it; the other tenants stay unflagged.
 4. Then record the DELIVER S10 live proof + transition #5208 (Part A). **#5208 stays Active** (Part B = S11).
+
+**DELIVER S10 LIVE PROOF — DONE (2026-07-02), all 3 done=observable met:**
+- Backup path proven end-to-end: `tofu apply` created the bucket + EC2 S3 credential; OpenBao
+  `secret/platform/backup-s3` seeded; ESO `lighthouse-backup-s3` SecretSynced. A manual
+  `kubectl create job --from=cronjob/lighthouse-backup-lpw` ran pg-dump (71 023 B) → upload → artifact
+  **`lighthouse-backups/lpw/lpw-20260702T110935Z.sql.gz` (69.36 KiB)** landed off-cluster at
+  `s3.pub1.infomaniak.cloud`, within the RPO window. *(Earlier "bucket not found" was pre-`tofu apply` —
+  the bucket did not yet exist; resolved once applied.)*
+- Monitoring plumbing live + healthy: KSM exposes `kube_cronjob_status_last_successful_time` for the backup
+  CronJob; `tenant:backup_age_seconds{tenant="lpw"}` evaluates (126 s fresh); real `BackupStale` correctly
+  NOT firing while fresh.
+- `BackupStale` firing proven via a fast scratch-rule drill (same recording-rule + label path, `for:1m`,
+  threshold 60 s): `/api/v1/alerts` → **state=firing, tenant=lpw, value=366** (real backup age s), rule
+  health ok; scratch rule then deleted (cluster back to pre-drill). The `by (tenant)` grouping keeps other
+  tenants unflagged.
+
+## Wave: DELIVER / [REF] S11 restore-rehearsal (@in-memory GREEN, live-proof pending)
+
+> **Wave**: DELIVER (2026-07-02). Slice-11 = story #5208 Part B. PRIVATE-repo GitOps only; **public #5199
+> chart byte-unchanged** (restore is a hosted-only overlay in `tenant-runtime`). Mechanism per the DISTILL
+> reconciliation: an id-keyed logical restore of a tenant's OWN off-cluster dump into a **scratch database**
+> in its own Postgres (never the live DB, never another tenant); ADR-091 CNPG restore DEFERRED. RTO ≤30min.
+> **Scope pulled in 2026-07-02 (user decision):** the automated periodic rehearsal — previously a noted
+> follow-up — is delivered here, because an untested backup is not a backup.
+
+**What shipped (PRIVATE `LetPeopleWork/lighthouse-platform`, LOCAL — unpushed):**
+- `gitops/_charts/tenant-runtime` **0.1.6 → 0.1.7**:
+  - `templates/restore-job.yaml` NEW — on-demand `Job lighthouse-restore-<id>` rendered by the operator
+    script. initContainer `mc` downloads exactly ONE artifact under the tenant's own key (`latest` → newest,
+    or a concrete UTC timestamp; a missing object fails loudly); main container `postgres` runs
+    `CREATE DATABASE lhr_<artifact>` → `gunzip | psql` reload → verifies ≥1 public table, refusing an empty
+    schema and refusing a scratch name that collides with the live DB. **Leaves the scratch DB in place**
+    (promotion is a deliberate separate step); it can never overwrite a live tenant.
+  - `templates/restore-rehearsal-cronjob.yaml` NEW — weekly `CronJob lighthouse-restore-rehearsal-<id>`
+    (`23 3 * * 1`, off-peak). Restores the latest backup into a throwaway DB, verifies it is non-empty,
+    times the run against `rtoSeconds` (1800), and **always drops the scratch DB** (trap). On ANY failure
+    (missing/corrupt source, reload error, empty schema, RTO breach) it **opens a GitHub issue** (label
+    `restore-rehearsal-alert`, via the `github-issues-token` ESO Secret) and exits non-zero — so a bad
+    rehearsal is never green and also stops advancing the CronJob's last-success time.
+  - `_helpers.tpl` — three render-time guards (the `@error @in-memory` scenarios as executable `fail`s):
+    `restoreSourceKey` (reads only own key), `restoreTargetId` (writes only own tenant),
+    `assertRestoreSource` (source must be `latest` or a valid timestamp — no empty/malformed source).
+  - `backup-secret.yaml` / `smoke-test-secret.yaml` — gates widened so the S3 credential and the
+    GitHub-issues token also render when `restore.enabled` / `restoreRehearsal.enabled` (identical ESO
+    objects, rendered once).
+  - `values.yaml` — `restore` (enabled:false, sourceTimestamp:latest, sourceStorageKey, targetId) +
+    `restoreRehearsal` (enabled:false, weekly schedule, rtoSeconds:1800, githubRepo) blocks. Reuses
+    `backup.s3` + `backup.credentialStore` (restore where you backed up) — no duplicated storage config.
+  - **NO new NetworkPolicy** — restore/rehearsal egress to their own Postgres (`allow-intra-namespace`) and
+    to off-cluster S3 + api.github.com (`allow-https-egress` :443); no kubectl, no apiserver access.
+- `scripts/restore-tenant.sh` NEW — the SAFE front-end: **scratch-only by construction** (no in-place mode),
+  **dry-run by default** (renders the plan + runs the isolation guards, writes nothing), real run needs
+  `--apply` AND typing the tenant id to confirm; preflights the namespace + ESO credential; streams the Job.
+- `gitops/_charts/fleet-monitoring` **0.1.2 → 0.1.3**:
+  - `recording-rules.yaml` += `tenant:restore_rehearsal_age_seconds` (off the rehearsal CronJob last-success,
+    namespace→tenant relabel).
+  - `alert-rules.yaml` += `RestoreRehearsalStale` (fires when no SUCCESSFUL rehearsal within the window OR a
+    scheduled-but-never-succeeded rehearsal; carries `tenant`) — the passive fleet-health backstop to the
+    Job's active GitHub-issue.
+  - `values.yaml` += `thresholds.restoreRehearsalStaleSeconds: 691200` (weekly + one missed run + buffer).
+- `gitops/tenants/_generator/applicationset-runtime.yaml` — every hosted tenant INHERITS
+  `restoreRehearsal.enabled: true`; opt out with `rehearsalEnabled: false` on the record.
+
+**@in-memory GREEN (CI-runnable, no cluster):**
+- `tenant-runtime` helm-unittest **41/41** (+ `tests/unit/restore_test.yaml`: own-key/own-destination restore,
+  second-tenant parameterised-by-id, `@error` wrong-destination + wrong-source-key + no-source + malformed-source,
+  off-by-default renders nothing, weekly rehearsal render + RTO + GitHub-issue wiring, rehearsal off-by-default,
+  credential/token render on restore/rehearsal). `fleet-monitoring` **20/20** (+3: restore-rehearsal age rule,
+  RestoreRehearsalStale defined, two-branch expr names tenant). Both charts `helm lint` clean; `validate-tenants.sh` OK.
+- **DISTILL reconciled (2026-07-02):** 4 automated-rehearsal scenarios added to `slice-11-restore-rehearsal.feature`
+  and the "automation is OUT / a follow-up" note flipped to "pulled into this slice".
+
+**Pending live done=observable (@requires_external — needs user at cluster; S11 rehearsal restores from a real
+S10 artifact, which now exists):**
+1. ArgoCD syncs tenant-runtime 0.1.7 + fleet-monitoring 0.1.3. Confirm Tenant Zero's
+   `lighthouse-restore-rehearsal-lpw` CronJob materialises.
+2. One-time manual rehearsal (the runbook path) restores TZ's latest backup into a scratch namespace and
+   **serves**, data **verified intact**, **timed < RTO 30min**, cross-tenant **isolation** held.
+3. Confirm the weekly CronJob passes on lpw; prove the failure path opens a GitHub issue (induced-fail drill)
+   and `RestoreRehearsalStale` surfaces an unproven backup.
+4. Then record the DELIVER S11 live proof + flip the runbook banner to "rehearsed <date>, RTO N min" +
+   transition **#5208 → Resolved/Closed** (Parts A+B delivered).
