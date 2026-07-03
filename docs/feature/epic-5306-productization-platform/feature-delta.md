@@ -2607,9 +2607,24 @@ Claude Desktop). Covered by the `@in-memory` omit-render test (a record without 
 workload) + slice-07's proven ArgoCD prune mechanics — every MCP object is `{{- if .Values.mcp.enabled }}`-
 gated, so `mcpEnabled: false` prunes the Deployment/Service/routes identically.
 
-**Client note:** external MCP clients (Claude Desktop) reach it via the `mcp-remote` bridge
-(`npx -y mcp-remote https://lpw.lighthouse.letpeople.work/mcp`), which discovers the metadata, runs the
-Auth0 browser flow, and proxies stdio↔HTTP with the Bearer.
+**Client note:** external MCP clients reach it either as a native **Custom Connector** (Claude Desktop /
+claude.ai: Settings → Connectors → add the `/mcp` URL — no bridge) or via the `mcp-remote` bridge
+(`npx -y mcp-remote https://lpw.lighthouse.letpeople.work/mcp`). Both discover the metadata and run the
+Auth0 browser flow. **Auth0 as the IdP needs a first-party client** (DCR-registered third-party apps fail
+with `no connections enabled for the client`); create a Regular Web App, authorize `.../mcp`, add the
+connector redirect `https://claude.ai/api/mcp/auth_callback`, and pass its Client ID/Secret to the connector.
+
+**⚠️ CORRECTION (2026-07-03) — what "LIVE PROOF" above actually covers.** The three done=observable items
+are the MCP **workload + OAuth discovery + handshake** (401 challenge, RFC 9728 metadata, provisioning, no
+app regression) — those are genuinely live. The earlier claim over-reached: **end-to-end tool DATA access is
+NOT yet working.** A real client (Claude connector) completes the OAuth handshake but tool calls return
+**401 from the Lighthouse API** — the Auth0 access token is scoped to `/userinfo`, not the `.../mcp` API
+(Auth0 keys audience off its own `audience` param, not the RFC 8707 `resource` the connector sends), so the
+backend's `aud` check (`Authentication__Audience=.../mcp`) rejects it. Our chain is correct end-to-end (mcp
+forwards the Bearer; backend `AddJwtBearer` validates aud/issuer; configmap is right) — the gap is the IdP
+token audience. Tracked as **follow-up bug #5388** (child of #5306); NOT a Track B wiring defect. Setting the
+Auth0 tenant Default Audience to `.../mcp` did not resolve it in first testing (likely needs a connector
+token re-mint, or Auth0 resource-indicator support).
 
 **Follow-up (not blocking #5387):** the chart's `mcp.image` default is still a moving `:latest`; the fleet
 pin lives in the ApplicationSet (`1.3.2`). Renovate's argocd manager should track `mcp-http` releases so the

@@ -494,9 +494,17 @@ image pinned `mcp-http:1.3.2` (the #5362 fix commit `87a73e9`, serves metadata a
 unauth → **401 + WWW-Authenticate resource_metadata** (https, /mcp-suffixed well-known); metadata endpoint
 **200** with resource=audience + authorization_servers=Auth0; app root **200** (login unaffected — aud on
 bearer only). Flip-off leg NOT churned on prod (user keeps MCP on for Claude Desktop); covered by in-memory
-omit-render + slice-07 prune (all mcp objects `{{- if .Values.mcp.enabled }}`-gated). Claude Desktop via
-`npx -y mcp-remote https://lpw.lighthouse.letpeople.work/mcp`. Follow-up: Renovate should track mcp-http so
-the appset `1.3.2` pin auto-bumps (next platform touch).
+omit-render + slice-07 prune (all mcp objects `{{- if .Values.mcp.enabled }}`-gated).
+
+⚠️ **CORRECTION: LIVE PROOF covers workload + OAuth discovery + handshake only — NOT end-to-end tool DATA
+access.** A real Claude connector completes the OAuth handshake but tool calls 401 from the Lighthouse API:
+the Auth0 token is scoped to `/userinfo`, not the `.../mcp` API (Auth0 keys aud off its own `audience` param,
+not the RFC 8707 `resource` the connector sends), so the backend's `Authentication__Audience=.../mcp` check
+rejects it. Our chain is correct (mcp forwards Bearer; `AddJwtBearer` validates aud/issuer; configmap right).
+**Follow-up bug #5388** (child #5306). Auth0 client MUST be first-party (DCR third-party → `no connections
+enabled for the client`); connector redirect `https://claude.ai/api/mcp/auth_callback`. Default Audience
+=.../mcp did not fix it in first testing (maybe needs connector token re-mint, or Auth0 resource-indicator
+support). Follow-up: Renovate should track mcp-http so the appset `1.3.2` pin auto-bumps.
 
 ### (superseded) original DELIVER checklist
 1. **Generator** `gitops/tenants/_generator/applicationset.yaml`: thread `mcpEnabled` → chart `mcp.enabled`
