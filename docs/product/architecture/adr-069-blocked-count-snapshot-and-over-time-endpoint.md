@@ -47,6 +47,8 @@ A handler `BlockedCountSnapshotRecordingHandler` reacts to the existing refresh-
 - Idempotency is date-keyed `(OwnerId, OwnerType, RecordedAt)` — same-day re-run overwrites today's row in place (NOT a `=true` sentinel; the forecast-minimum-data-guard lesson, ADR-049).
 - Hook point: DELIVER selects the post-sync seam where blocked status is fresh (mirroring how `PortfolioFeaturesRefreshed`/`WorkItemBlocked` are dispatched after sync). If a clean post-blocked-recompute event does not exist for teams, a small `TeamWorkItemsRefreshed`-style event is added at the symmetric seam (consistent with ADR-049's "new event for the genuinely-fresh moment" rationale). Forward-only: no backfill, no reconstruction.
 
+**Contract shape (Mandate-12 / ADR-025)**: `BlockedCountSnapshotRecordingHandler` is a **bounded-change contract** — universe: work items matching `IsBlocked` in one owner scope; delta: upsert exactly one date-keyed `BlockedCountSnapshot` row per day (idempotent). No mutation outside that single `(OwnerId, OwnerType, RecordedAt)` row; the counting read routes through the pure `IBlockedItemService.IsBlocked` (ADR-025 / Mandate-12 effect-isolation rationale).
+
 ### 3. Read endpoint — NEW route, client version-gated
 
 A new metrics-history read endpoint per owner (mirroring ADR-050's metrics-history shape):
@@ -57,8 +59,15 @@ GET .../metrics/blockedCountHistory?startDate&endDate   [RbacGuard(TeamRead / Po
 ```
 
 - Returns the daily blocked count over the window; empty when no snapshots ⇒ the FE renders the honest forward-only empty state ("blocked trend builds forward from today — no snapshots yet"), never a flat zero (D7).
+- **FE boundary validation (Zod)**: the `blockedCountHistory` endpoint response MUST validate with a Zod schema on the FE, per the rolling-adoption rule in `docs/ci-learnings.md`. DELIVER gates Zod-schema presence on this contract before merge.
 - The chart composes with the existing team/portfolio/type/date-range filter. **Type/scope filtering**: the snapshot stores the TOTAL in-scope blocked count per day; a per-type breakdown over time would require recording per-type counts. DECISION: record the total count only in slice 03 (the AC3 "respects the active filter" is satisfied for team/portfolio/date-range, which scope the OWNER and the window; work-item-type filtering of the historical series is deferred — a per-type snapshot column is an additive follow-up if demanded). This is recorded as an upstream clarification (see §AC note) — the slice-03 AC3 "filters to type Bug" is the one sub-case the forward total-count snapshot cannot serve without a per-type column; flagged to DISTILL.
 - **Client version-gate (the decisive contrast with ADR-062)**: this is a NEW endpoint (new route), so an old server returns an opaque 404. Per the CLAUDE.md rule and ADR-055, the client wrapper MUST pre-check server version and fail with "upgrade Lighthouse", pinning `FEATURE_REQUIRES_SERVER_NEWER_THAN` strictly newer than the last released version (**v26.6.7.1** at design time — DELIVER bumps to the then-latest release). Unlike ADR-062's additive field (no gate), a new route DOES gate. Clients repo only — not edited here.
+
+### 3a. Scope limitation — per-type breakdown deferred (UC-2)
+
+This ADR records the **total in-scope blocked count per day**. Per-type-over-time (blocked-count broken down by work-item type across the historical series) is a **future additive enhancement** — UC-2, `@deferred` in DISTILL. The slice-03 AC3 "respects the active filter" is satisfied for team/portfolio/date-range (which scope the owner and the window); historical filtering to a specific work-item type is the one sub-case the total-count snapshot cannot serve without a per-type column.
+
+The identity index `(OwnerId, OwnerType, RecordedAt)` is **forward-compatible**: a future per-type enhancement widens the grain to `(OwnerId, OwnerType, RecordedAt, ItemType)` — an additive discriminator column + widened index that ADDS rows, with NO migration of the existing total-count rows. The deferral therefore carries an explicit no-rework guarantee (see the schema forward-compatibility probe below).
 
 ---
 

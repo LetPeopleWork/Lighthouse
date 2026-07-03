@@ -666,6 +666,7 @@ ADR-026 locked "a blocked item must NOT also be flagged stale" via `&& !item.isB
 - **RBAC** (unchanged): all blocked CONFIG writes ride the existing team/portfolio settings gate (`IRbacAdministrationService`, UI via `useRbac()` `isTeamAdmin`/`isPortfolioAdmin`); reads inherit existing metric/work-item read gating. No new authorization surface.
 - **Non-premium** (verified): no premium gate anywhere in this epic. **Website N/A** (non-premium).
 - **EF migrations** via the `CreateMigration` PowerShell script (all providers); real-provider read-your-writes tests required (InMemory misses migrations); mind the `--no-incremental` stale-DLL trap.
+- **Migration-testing gate**: every slice touching schema (01–04) MUST ship a NUnit integration test exercising real-provider migrations (SQLite + Postgres) generated via the `CreateMigration` PowerShell script. InMemory-only migration coverage FAILS the gate.
 - **Zod** at the changed settings boundary + the new `blockedCountHistory` boundary (rolling-adoption rule).
 - **CI**: immutability (records/ImmutableList), Nullable enable + TreatWarningsAsErrors, TS strict; consult `docs/ci-learnings.md` rule families (CA1859, S2325, NUnit4002…) when coding.
 - **Architectural enforcement**: ArchUnitNET (single `IsBlocked` path, evaluator purity, transition-entity distinctness); grep/Vitest for FE single-selector.
@@ -677,3 +678,107 @@ ADR-026 locked "a blocked item must NOT also be flagged stale" via `&& !item.isB
 - **UC-3** (slice-05): pre-slice-05 SPIKE scheduled (does not block slices 01–04). (DELIVER — software-crafter.)
 
 All three recorded in `design/upstream-changes.md`. None block the DESIGN handoff.
+
+## Wave: DISTILL
+
+Date: 2026-07-03 | Author: Quinn (acceptance-designer) | Density: LEAN (Tier-1 [REF] only) | Scope: slices 01–04 (slice-05 SKIPPED — pre-slice-05 SPIKE gate, ADR-071).
+
+### [REF] Inherited commitments
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D-ENGINE / DESIGN#DDD-1 | Blocked = third Include consumer of `RuleEvaluator<WorkItem>` over `blockedRuleSetJson`; legacy `BlockedStates`/`BlockedTags` removed | ADR-067 | Acceptance suite drives `blockedRuleSetJson` at the team settings port; single-`IsBlocked` asserted at the WIP read port |
+| DISCUSS#D-CAPTURE / DESIGN#DDD-3 | Per-item blocked duration via `WorkItemBlockedTransition` (`blockedSince`) | ADR-068 | Slice-02 ATs assert `blockedSince` on the WIP read surface (present-even-when-null contract) |
+| DISCUSS#D-CHART / DESIGN#DDD-4 | Forward-only daily blocked-count via new `blockedCountHistory` read endpoint | ADR-069 | Slice-03 ATs drive the new endpoint; honest empty-state (empty array, never flat zero) |
+| DISCUSS#D-STALE / DESIGN#DDD-5 | Distinct blocked-duration staleness trigger; new `blockedStalenessThresholdDays` (0=off, `≥`) | ADR-070 | Slice-04 ATs drive the threshold settings contract; stale rendering (driver+context) is FE Vitest in DELIVER |
+| DESIGN#UC-2 | Per-TYPE historical blocked-count filtering deferred (total-count snapshot is forward-only) | ADR-069 | Slice-03 per-type scenario authored but `@deferred` — NOT enabled in DELIVER (see `distill/upstream-issues.md`) |
+
+### [REF] Wave-Decision Reconciliation HARD GATE
+
+**Result: PASS — 0 contradictions.** DISCUSS decisions (D-ENGINE/MIGRATE/CAPTURE/CHART/STALE/PREMIUM) and DESIGN decisions (DDD-1..7, ADR-067..072) are consistent. OQ1 (`≥` blocked vs `>` time-in-state) and OQ2 (chart in Flow Metrics area) resolved and reflected. UC-1/UC-2 are DISTILL-wording/scope confirmations (applied), not contradictions. UC-3/slice-05 excluded from scope.
+
+### [REF] Scenario list with tags
+
+21 backend acceptance scenarios (NUnit + `WebApplicationFactory<Program>`, black-box HTTP/JSON). ONE walking skeleton GREEN; 20 `[Ignore]`-pending (one-at-a-time in DELIVER). Full per-scenario RED classification in `distill/red-classification.md`.
+
+| Slice | Scenario | Tags | Status |
+|---|---|---|---|
+| 01 | An_admin_saves_a_teams_blocked_definition_and_reads_it_back | @walking_skeleton @driving_port @real-io @us-01 | GREEN |
+| 01 | Existing_blocked_config_is_preserved_as_equivalent_rules | @driving_port @migration @us-01 | RED |
+| 01 | A_custom_field_condition_makes_an_item_read_blocked | @driving_port @us-01 | RED |
+| 01 | Saved_blocked_rules_persist_across_reload | @driving_port @us-01 | RED |
+| 01 | An_item_matching_the_blocked_rules_reads_blocked_everywhere | @property @us-01 | RED |
+| 01 | A_team_with_no_blocked_config_blocks_nothing | @edge @us-01 | RED |
+| 01 | A_blocked_rule_set_exceeding_the_maximum_conditions_is_rejected | @error @us-01 | RED |
+| 01 | A_blocked_rule_referencing_an_unknown_field_is_rejected | @error @us-01 | RED |
+| 01 | A_non_admin_cannot_change_the_blocked_definition | @error @rbac @us-01 | PASS-WHEN-ENABLED |
+| 02 | A_newly_blocked_item_shows_how_long_it_has_been_blocked | @driving_port @us-02 | RED |
+| 02 | An_unblocked_item_no_longer_shows_a_blocked_duration | @edge @us-02 | RED |
+| 02 | A_first_observation_blocked_item_shows_no_duration_until_a_baseline_exists | @edge @us-02 | RED |
+| 02 | An_item_that_does_not_match_the_blocked_rules_has_no_blocked_duration | @property @us-02 | RED |
+| 03 | The_blocked_count_trend_is_available_over_time | @driving_port @us-03 | RED |
+| 03 | A_new_team_sees_an_honest_empty_trend | @edge @us-03 | RED |
+| 03 | The_blocked_trend_can_be_filtered_to_a_single_work_item_type | @deferred @us-03 | RED / DEFERRED (UC-2) |
+| 04 | The_blocked_staleness_threshold_is_saved_and_read_back | @driving_port @us-04 | RED |
+| 04 | A_new_team_defaults_the_blocked_staleness_threshold_to_zero | @edge @us-04 | RED |
+| 04 | A_blocked_staleness_threshold_below_range_is_rejected | @error @us-04 | RED |
+| 04 | A_blocked_staleness_threshold_above_range_is_rejected | @error @us-04 | RED |
+| 04 | A_non_admin_cannot_change_the_blocked_staleness_threshold | @error @rbac @us-04 | PASS-WHEN-ENABLED |
+
+Non-happy-path (error/edge/property/deferred) = 14/21 ≈ **67%** (target ≥40% ✓).
+
+### [REF] WS strategy (Architecture of Reference)
+
+Per project `docs/architecture/atdd-infrastructure-policy.md` — the Python-pilot per-feature A/B/C/D strategy is retired. Driving port (HTTP) = real `WebApplicationFactory<Program>`; driven-internal (EF `LighthouseAppContext`, repositories) = real via the test factory with `EnsureDeleted`/`EnsureCreated`; driven-external (`ILicenseService`) = `Mock`. ONE walking skeleton (`@walking_skeleton @driving_port @real-io`) closes config-write → persist → settings-read through the production composition root and is GREEN today (proves the wiring the whole epic extends).
+
+### [REF] Driving-adapter coverage
+
+| Driving port (DESIGN) | Exercised by | Verb |
+|---|---|---|
+| Team settings PUT (`/api/latest/teams/{id}`) | slices 01, 04 | real HTTP PUT (typed DTO + raw-JSON member for not-yet-typed fields) |
+| Team settings GET (`/api/latest/teams/{id}/settings`) | slices 01, 04 | real HTTP GET + JSON assertions |
+| Team metrics WIP read (`/api/latest/teams/{id}/metrics/wip`) | slices 01, 02 | real HTTP GET — `WorkItemDto.isBlocked` / `blockedSince` |
+| Team metrics blocked-count history (NEW `…/metrics/blockedCountHistory`) | slice 03 | real HTTP GET — currently 404→SPA (RED) |
+| RBAC guard (TeamWrite) on the extended contract | slices 01, 04 | `AsViewer` → 403 |
+
+### [REF] Driven-adapter coverage (Mandate 6)
+
+| Adapter | @real-io scenario | Covered by |
+|---|---|---|
+| EF `LighthouseAppContext` + `IRepository<Team>` / `IWorkItemRepository` | YES | Every scenario seeds + reads through real EF (Sqlite in CI) |
+| `ILicenseService` (external) | Faked | `Mock<ILicenseService>` (premium=true) via `RemoveAll`+`AddScoped` |
+| Jira/ADO connector (`IWorkTrackingConnector`) | N/A this slice-set | Blocked evaluation is Lighthouse-side (L1); connector fetch faked by seeding synced items directly |
+
+### [REF] Scaffolds
+
+**None created — and none required.** Per `atdd-infrastructure-policy.md`, this project excludes the Python `__SCAFFOLD__` stub mechanism. Black-box HTTP/JSON ATs compile against today's `Program` + DTOs (verified: `dotnet build` → 0 errors) and fail on missing behaviour (assertion RED), never on a missing type (compile BROKEN). Not-yet-typed contract members (`blockedRuleSetJson`, `blockedStalenessThresholdDays`) are attached at the JSON layer via `BlockedItemsJson.WithBlockedRuleSet` / `WithBlockedStalenessThreshold`, so the tests are RED-ready without production stubs.
+
+### [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/` — sibling of the existing `API/Integration/` fixtures (`ForecastFilterTeamSettingsIntegrationTest`, `TimeInStateReadApiIntegrationTest`, `PortfolioStalenessThresholdSettingsIntegrationTest`), whose structure this suite clones. Polyglot C# idiom (partial `*Scenarios.cs` narrative + `*Specifications.cs` step bodies):
+
+- `BlockedItemsAcceptanceTest.cs` — shared production-composition harness (SSOT; base class).
+- `BlockedItemsJson.cs` — pure rule-set/JSON builders (domain-vocabulary SSOT).
+- `Slice0{1..4}…Scenarios.cs` + `Slice0{1..4}…Specifications.cs` — per-slice partial pairs.
+
+FE (Vitest) selector/component tests and ONE Playwright demo-data POM walking-skeleton E2E are authored in DELIVER (see `distill/red-classification.md` → FE/E2E coverage).
+
+### [REF] Mandate compliance evidence
+
+- **CM-A (hexagonal)**: all steps enter through driving ports (HTTP), zero internal-component imports.
+- **CM-B (business language)**: Gherkin-named `[Test]` + step methods (`GivenATeamWhoseBlockedConfigIs`, `WhenTheAdminSavesTheBlockedRuleSet`, `ThenTheItemReadsBlocked`); no HTTP/DB jargon in scenario/step names.
+- **CM-C (journeys)**: each scenario is a complete config-admin/flow-coach/delivery-lead journey with observable value.
+- **Pillar 3**: SUT = production `WebApplicationFactory<Program>`; only `ILicenseService` faked.
+- **No Fixture Theater (Critical Rule 7)**: walking-skeleton assertion targets the blocked-definition fields specifically (not the whole payload, which also mentions states in `doingStates`), so it cannot pass vacuously.
+- **Mandate-12 (SSOT)**: domain vocabulary in `BlockedItemsJson` (typed `BlockedCondition` + `StateEquals`/`TagsContains`/`FieldIsNotEmpty` builders); step bodies delegate to base-class port helpers, no inline business logic. Step-reuse-ratio is **informational** (~3–4× across the 4 fixtures via shared base + JSON helper); config-shaped settings scenarios naturally cap here — not gated.
+- **Mandate 9/11**: layer-3 (real host + real EF) → example-only; no PBT machinery imported. `@property`-tagged scenarios are example-pinned single-definition invariants, not generative.
+
+### [REF] Self-completeness audit
+
+Verdict: **COMPLETE for the in-scope backend contract.** 15-item mechanical intent — happy/error/edge/boundary/RBAC/property all present per slice; forward-only empty-state, first-observation baseline, disabled-threshold, and single-definition invariants covered. Gaps classified `AT_GAP_IN_DELIVERY_SCOPE` and filled in-suite; the only routed items are UC-2 (deferred, product confirmation) and the FE-derived rendering (Vitest, DELIVER) — neither is a `SPECIFICATION_AMBIGUITY` blocker.
+
+### [REF] Pre-requisites (for DELIVER)
+
+- DESIGN driving ports (settings PUT/GET, WIP read, new `blockedCountHistory`) + ADR-067..070.
+- Env: dotnet 10 SDK; Sqlite in-memory-per-test via the existing test factory (no Docker for these slices).
+- `distill/red-classification.md` (RED genuineness) + `distill/upstream-issues.md` (UC-2 deferral, outcomes-registry skip).

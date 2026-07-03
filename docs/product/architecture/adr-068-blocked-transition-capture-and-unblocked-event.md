@@ -45,6 +45,8 @@ Persisted as an owned collection on the work item (mirroring `WorkItemStateTrans
 
 Leave is a domain EVENT (not inline detection) because: (a) the codebase is standardizing cross-aggregate reactions on the bus (ADR-027/5121, memory "prefer the domain-event bus"); (b) it makes enter and leave symmetric and independently testable; (c) `WorkItemUnblocked` is a genuinely useful domain signal future features (notifications, the over-time recorder cross-check) can consume — it is not speculative, it pairs an event that already half-exists. The edge-trigger seam already computes `WasBlockedBeforeSync` — adding the symmetric branch is one condition.
 
+**Contract shape (Mandate-12 / ADR-025)**: `WorkItemBlockedTransitionRecordingHandler` and `WorkItemUnblockedHandler` are **bounded-change contracts** — universe: one work item; delta: open/close exactly one blocked spell on that item's owned `WorkItemBlockedTransition` collection; no cross-item mutation. The declared mutation set is aggregate-bounded to the single work item, so "a handler wrote to some other item" is non-representable (ADR-025 / Mandate-12 effect-isolation rationale).
+
 ### 3. "blocked \<N>d" (current spell) and first-observation "—" derivation
 
 - Per-item blocked duration = `now − EnteredAt` of the item's OPEN spell (`LeftAt == null`). Surfaced on `WorkItemDto` as a new field `blockedSince : DateTime?` (the open spell's `EnteredAt`, or null) — the FE computes the day count with the SAME day convention the time-in-state badge uses (ADR-026 day-count consistency), and renders "blocked Nd" + an "Approximate — based on sync cadence" tooltip.

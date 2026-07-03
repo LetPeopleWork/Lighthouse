@@ -63,6 +63,7 @@ The DISCUSS weight-note (R3) asked: thin additive flag (≤1 day, no spike) OR n
   2. An integration test for EACH threading point (a–d above) — concrete tests, not "open questions": a user-PUT-omits-predefined test, a slot-count test, a DTO-projection test, a re-sync-idempotency test.
   3. A `WriteBackMappingDefinition` compatibility finding: does any write-back mapping reference an additional field by id, and if so MUST a predefined field's `Reference` be immutable after registration? Record the answer with the code pointer.
   4. A go/re-slice verdict: if any coupling exceeds the four touch-points (e.g. ordering, a second connector hook, a write-back constraint), record the revised ADR-071 OR-clause and re-size slice 05 BEFORE commitment.
+- **SPIKE completion gate + re-scope trigger**: the SPIKE MUST complete with an explicit go/no-go verdict BEFORE slice 05 is committed to DELIVER. If the SPIKE finds coupling that exceeds the four threading points above (e.g. ordering, a second connector hook, a write-back immutability constraint), slice 05 is re-scoped or deferred — MoSCoW **Could** permits deferral — rather than carrying the discovered debt forward into code. The SPIKE start, end, and verdict are recorded in `distill/upstream-changes.md`.
 - This SPIKE does NOT block slices 01–04 (slice 05 is MoSCoW Could, last by priority). It is a pre-slice-05 gate only.
 
 ---

@@ -52,6 +52,8 @@ Both delegate to the shared `RuleEvaluator<T>` (Include: matched ⇒ blocked). T
 
 The `WasBlocked` precedent computation in `WorkItemService` (L103) routes through the same `IBlockedItemService.IsBlocked` so enter/leave detection (slice 02) reads the single definition.
 
+**Contract shape (Mandate-12 / ADR-025)**: `IBlockedItemService.IsBlocked` is a **pure-function contract** — deterministic, no side effects, reads the owner's Team/Portfolio `BlockedRuleSet` + the item's `AdditionalFieldValues` only. It returns a bool and mutates nothing; the driving port exposes no write method. This makes the bug class "the blocked check silently persisted something" non-representable rather than merely tested-around (ADR-025 / Mandate-12 effect-isolation rationale).
+
 ### 3. One-time auto-migration is application-layer + idempotent, NOT an EF data-migration
 
 Each existing `BlockedStates` value → a `State equals <value>` condition; each `BlockedTags` value → a `Tags contains <value>` condition; OR-combined (`Mode = "or"`). Run **once per owner in the application layer** on first access after deploy, guarded by a natural condition (`BlockedRuleSetJson is null AND (BlockedStates or BlockedTags non-empty)`), NOT by a `=true` sentinel (forecast-minimum-data-guard non-idempotency lesson).
@@ -62,6 +64,8 @@ Each existing `BlockedStates` value → a `State equals <value>` condition; each
 ### 4. Validation rides the existing settings write, mirroring the forecast-filter validator
 
 `BlockedRuleSetJson` validates on the team/portfolio settings PUT exactly as `ForecastFilterRuleSetJson` does in `TeamController.ValidateForecastFilterRuleSet` (deserialize → null/empty is valid → else `IRuleEvaluator.IsValid(ruleSet, schema)`). This is added to BOTH `TeamController` and `PortfolioController` settings PUT (Portfolio currently validates no rule set — it gains the blocked validation). The schema is composed from the owner's connection additional-field definitions (the existing `GetRuleSchema` composition).
+
+**FE boundary validation (Zod)**: the combined settings DTO (now carrying `blockedRuleSet` in place of `blockedStates`/`blockedTags`) MUST validate with a Zod schema on the FE, per the rolling-adoption rule in `docs/ci-learnings.md`. DELIVER gates Zod-schema presence on this contract before merge.
 
 ---
 

@@ -144,6 +144,12 @@ The badge, the Stale Items widget, and the aging chart route through the one sel
 | Item stale once; reasons listed; no double count | Vitest: two-reason item ⇒ one `isStale`, `reasons.length` correct; widget counts it once |
 | `blockedStalenessThresholdDays` additive ⇒ no client gate | Clients handoff note: additive settings field, no registry entry |
 
+**Exhaustive selector-use audit (mandate)**: the return-type widening (`boolean → StalenessResult`) touches every `deriveStaleness` caller. Grep the ENTIRE Frontend for `deriveStaleness` call sites and verify EVERY one consumes `StalenessResult.isStale` + `reasons[]`, NOT a residual boolean read. Code-review gate: no merge without exhaustive-audit evidence (the list of call sites with their consumption confirmed). A single missed call site silently reading the object as truthy is the exact failure this audit exists to catch.
+
+**Earned-Trust probe (three call sites)**: all three ADR-026 surfaces — badge, Stale Items widget, aging chart — render `isStale` + `reasons`. Vitest asserts that for an input with `isStale = true`, all three emit identical red-state emphasis (one stale-once rendering, driver + context reasons shown), so no surface diverges in how a stale item is emphasised.
+
+**ADR-026 backward-compat audit (mandate)**: ADR-026 encoded "a blocked item is never stale". Audit production code for latent assumptions built on that retired premise — notifications, telemetry gates, integrations that branch on blocked-vs-stale. Record findings in `distill/upstream-changes.md`. Any path assuming blocked items cannot be stale MUST be updated to allow blocked-duration staleness BEFORE this amendment lands (a stale-blocked item must not be silently dropped by a downstream consumer that still believes the old exclusion).
+
 ---
 
 ## Cross-feature impact
