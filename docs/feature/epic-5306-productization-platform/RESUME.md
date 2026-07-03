@@ -458,3 +458,64 @@ private: tenant-runtime 0.1.6 + fleet-monitoring 0.1.2 + appset). ADO **#5208 st
 - Grafana ingress + ESO-sourced admin + SSO = later hardening (internal via port-forward this slice).
 - OTel metric name assumed `http_server_request_duration_seconds` (values `metricName`) — **tune vs the
   live /metrics output** if ASP.NET/OTel emits a different name; recording rules key off it.
+
+---
+
+## ▶ Track B #5387 — tenant-record fields (mcpEnabled, placement/provider) — DISTILL DONE (2026-07-03)
+
+**ADO #5387 = Active.** Track A (#5374 remote-state) + Track C (#5386 docs) both Closed; #5320 multi-provider
+Active/deferred. This is the Track B onboarding-decision workflow (US-11 / re-discuss RD-2).
+
+- ✅ **DISCUSS**: re-discuss 2026-07-02 US-11 (ACs + RD-2 auth+licence MANDATORY). **DESIGN** settled at epic
+  level (ADR-092 generator + ADR-085 MCP workload + ADR-079 MCP OAuth all exist).
+- ✅ **DISTILL DONE** — `tests/platform/epic-5306/acceptance/slice-13-tenant-track-b-fields.feature`
+  (10 scenarios, 4 @error = 40%) + feature-delta DISTILL S13 [REF] block. **Sentinel APPROVED** (0
+  blocker/high/low, all dims 10). Reconciliation HARD GATE PASSED (RD-2 is an EXTENSION of the slice-07
+  validate-tenants gate, not a contradiction). **Public LOCAL, UNPUSHED.**
+- **Scope recap**: the #5199 chart ALREADY ships MCP (`chart/templates/mcp.yaml`, `mcp.enabled` +
+  `mcp.auth.mode` apikey|oauth) and oidc.audience. Track B = PRIVATE-repo gitops + specs + doc-flip; NO
+  public chart change expected.
+
+### ✅ DELIVER S13 @in-memory GREEN (2026-07-03, PRIVATE repo LOCAL/unpushed) — live-proof PENDING
+Public chart BYTE-UNCHANGED (already ships MCP + oauth + full unittest). Private diff: `applicationset.yaml`
+(mcpEnabled→mcp.enabled+oauth+oidcAudience, hasKey-guarded; no-effect placement), NEW
+`gitops/tenants/_TEMPLATE.tenant.yaml` (glob-safe copy-me), `validate-tenants.sh` (auth-mandatory +
+mcpEnabled-shape + audience guards; **fixed latent set-e/pipefail bug** — `field()` returned nonzero on an
+ABSENT key, silently killing the script; `|| true`), docs flip. **@in-memory proven local**: validator
+rejects auth-off/malformed-mcp/mcp-no-audience + passes good + ignores template; `helm template` of the
+public chart with the threaded MCP values renders the MCP Deployment+Service + oauth env + /mcp & well-known
+routes. Sentinel APPROVED.
+
+### ✅ DELIVER S13 LIVE-PROOF DONE (2026-07-03) — #5387 → Resolved. Dogfooded on prod Tenant Zero (lpw).
+Auth0 API registered for lpw (identifier `https://lpw.lighthouse.letpeople.work/api` = oidcAudience); MCP
+image pinned `mcp-http:1.3.2` (the #5362 fix commit `87a73e9`, serves metadata at
+`/.well-known/oauth-protected-resource/mcp`; supersedes the mislocated 1.3.1/96da0a7). Private pushed
+`14bdab3`+`58bda41`. Reconcile ~240s → mcp Deployment+Service 1/1, Synced/Healthy. **PROVEN:** `POST /mcp`
+unauth → **401 + WWW-Authenticate resource_metadata** (https, /mcp-suffixed well-known); metadata endpoint
+**200** with resource=audience + authorization_servers=Auth0; app root **200** (login unaffected — aud on
+bearer only). Flip-off leg NOT churned on prod (user keeps MCP on for Claude Desktop); covered by in-memory
+omit-render + slice-07 prune (all mcp objects `{{- if .Values.mcp.enabled }}`-gated). Claude Desktop via
+`npx -y mcp-remote https://lpw.lighthouse.letpeople.work/mcp`. Follow-up: Renovate should track mcp-http so
+the appset `1.3.2` pin auto-bumps (next platform touch).
+
+### (superseded) original DELIVER checklist
+1. **Generator** `gitops/tenants/_generator/applicationset.yaml`: thread `mcpEnabled` → chart `mcp.enabled`
+   (hasKey-guarded, missingkey=error-safe, mirror the `oidcEnabled` block); when `mcpEnabled && oidcEnabled`
+   set `mcp.auth.mode: oauth` + `oidc.audience` (the chart's OAuth MCP requires issuer+audience — records
+   currently carry no `oidcAudience`, so ADD an `oidcAudience` field too). Record a no-effect
+   `placement`/`provider` (metadata only until #5320).
+2. **Onboarding template**: a commented copy-me record placed WHERE THE GLOB `gitops/tenants/*/tenant.yaml`
+   CANNOT CATCH IT (e.g. `gitops/tenants/_TEMPLATE.tenant.yaml` file, or a `.example` suffix — NOT
+   `tenants/_template/tenant.yaml`, which WOULD fan out a bogus tenant). Documents each decision inline +
+   the MANDATORY auth + licence-seed step.
+3. **`scripts/validate-tenants.sh`**: extend with (a) auth-MANDATORY guard (reject a record without
+   `oidcEnabled: true` + issuer/clientId), (b) `mcpEnabled` must be true/false, (c) skip/ignore the template
+   file. Keep it dependency-free (grep/awk) — CI + local parity.
+4. **helm-unittest**: add render tests proving `mcpEnabled: true` → MCP Deployment+Service+ingress route;
+   omit/false → none; oauth wiring present with issuer+audience; no-audience fails.
+5. **Doc-flip** (private repo): `docs/onboarding-a-customer.md` + `docs/tenant-management.md` "Planned
+   (Track B)" → live.
+6. **Live-proof** (@requires_external): commit a throwaway `mcpEnabled: true` tenant → MCP endpoint answers
+   over its subdomain + advertises RFC 9728 metadata; flip off → surface removed, app still 200; tear down.
+   ⚠️ private push + OpenBao/live steps are classifier-gated — get user OK; pause before every push.
+7. Then feature-delta DELIVER S13 [REF] + ADO #5387 → Resolved.

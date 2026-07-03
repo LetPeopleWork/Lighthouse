@@ -2464,3 +2464,153 @@ gitignored file is a genuine secret with a documented regeneration source. No se
 3. Confirm the state bucket name `lighthouse-tfstate` and provider-scoped key
    `substrate/infomaniak-dc4/terraform.tfstate` (and the region tag `infomaniak-dc4`).
 4. Go-ahead to author the canonical `adr-098-s3-remote-state-backend.md` (public repo) at execution.
+
+## Wave: DISTILL / [REF] Scenario list (S13 tenant-record Track B fields)
+
+> **Wave**: DISTILL (2026-07-03). **Designer**: Quinn. Slice-13 = story #5387 (Tenant record Track B
+> fields) — the Track B onboarding-decision workflow from the 2026-07-02 re-discussion (US-11). Driving
+> port: the declarative tenant record `gitops/tenants/<id>/tenant.yaml` (the same one-record port as
+> slice-07) plus a commented copy-me onboarding template. This slice formalises the per-customer DECISIONS
+> on the record — `mcpEnabled` (opt into the optional MCP server), a forward-looking `placement`/`provider`
+> (multi-provider once #5320 lands), `backupEnabled` stays a field — and makes authentication + a valid
+> licence MANDATORY for every tenant (no auth-off path, RD-2). SSOT: `slice-13-tenant-track-b-fields.feature`.
+> The #5199 chart already ships the MCP workload (ADR-085) and its OAuth inbound-auth model (ADR-079); this
+> slice WIRES the record's decision to `mcp.enabled` + `mcp.auth.mode=oauth` + the OAuth issuer/audience.
+> IaC/GitOps feature → no .cs/.ts/.py scaffolds (RED = the wiring, template, and extended validator do not
+> exist yet in the PRIVATE repo).
+
+| Scenario | File | Tags |
+|---|---|---|
+| A record that opts into the MCP server provisions the MCP workload alongside the app | slice-13-tenant-track-b-fields.feature | `@US-11 @in-memory @env:tenant-record` |
+| A record that does not opt in gets no MCP workload, and the missing choice is not an error | slice-13-tenant-track-b-fields.feature | `@US-11 @in-memory @env:tenant-record` |
+| Enabling the MCP server on an authenticated tenant selects OAuth and supplies both values it needs | slice-13-tenant-track-b-fields.feature | `@US-11 @in-memory @env:tenant-record` |
+| Placement is recorded for the future but does not change where a tenant deploys today | slice-13-tenant-track-b-fields.feature | `@US-11 @in-memory @env:tenant-record` |
+| The onboarding template is a complete, valid record once its decisions are filled in | slice-13-tenant-track-b-fields.feature | `@US-11 @in-memory @env:onboarding-template` |
+| A record with authentication turned off is rejected before it can merge | slice-13-tenant-track-b-fields.feature | `@error @US-11 @in-memory @env:tenant-records` |
+| Enabling the MCP server with no audience configured is rejected loudly | slice-13-tenant-track-b-fields.feature | `@error @US-11 @in-memory @env:tenant-record` |
+| The onboarding template never provisions a tenant of its own | slice-13-tenant-track-b-fields.feature | `@error @US-11 @in-memory @env:onboarding-template` |
+| A record whose MCP decision is not a yes-or-no value is rejected before merge | slice-13-tenant-track-b-fields.feature | `@error @US-11 @in-memory @env:tenant-records` |
+| A committed record with the MCP server enabled serves it, and disabling it removes the surface | slice-13-tenant-track-b-fields.feature | `@US-11 @real-io @requires_external @env:tenant-mcp` |
+
+**Driven-adapter coverage (S13)**:
+
+| Adapter | Band | Covered by |
+|---|---|---|
+| `mcpEnabled` → chart `mcp.enabled` wiring (hasKey-guarded ApplicationSet value; renders/omits the MCP Deployment+Service + RFC 9728 ingress route) | `@in-memory` (opt-in renders, omit renders nothing) · `@real-io` (live MCP endpoint answers, off removes it) | mcp-opt-in-renders, mcp-omit-no-workload (in-memory); mcp-live-serves-then-off (requires_external) |
+| MCP OAuth wiring (`mcp.auth.mode=oauth` + issuer + audience threaded for an authenticated tenant; ADR-079) | `@in-memory` (oauth selected, both values present) · `@error` (no-audience rejected) | mcp-oauth-both-values (in-memory); mcp-no-audience-rejected (error) |
+| Forward-looking `placement`/`provider` (recorded, no render effect while one provider exists; relates #5320) | `@in-memory` (placement recorded, destination unchanged) | placement-no-effect-today |
+| Commented onboarding template (copy-me, placed where the `tenants/*/tenant.yaml` generator glob cannot catch it) | `@in-memory` (filled copy validates+renders) · `@error` (unfilled template fans out nothing) | template-fills-valid (in-memory); template-not-a-tenant (error) |
+| Extended `validate-tenants.sh` guards (auth-mandatory; `mcpEnabled` is yes/no) | `@error` (auth-off rejected, malformed mcp rejected) | auth-off-rejected, malformed-mcp-rejected |
+
+**Error-path ratio (S13)**: 4 of 10 `@error` (40%) — auth-off-rejected, mcp-no-audience-rejected,
+template-not-a-tenant, malformed-mcp-rejected. Safety-critical failure modes covered: an unauthenticated
+or half-configured record can never merge (closes Tenant Zero's `AuthMode.Blocked` gap at PR time), the
+OAuth MCP server cannot be provisioned without the audience it needs to start, and an unfilled template
+never fans out a placeholder tenant.
+
+**Walking-skeleton note (S13)**: no per-slice `@walking_skeleton` — the epic walking skeleton was S03. The
+`@real-io` "committed `mcpEnabled` record serves the MCP endpoint over its subdomain" scenario is the demo
+proof a stakeholder confirms ("yes, one line on the record turned the customer's MCP server on, and it
+answered over its own HTTPS host").
+
+**Reconciliation HARD GATE (S13)**: PASSED — 0 contradictions. DISCUSS (re-discuss 2026-07-02, US-11 +
+RD-2) is consistent with DESIGN: ADR-092 one-record generator, ADR-085 MCP workload, ADR-079 MCP inbound
+OAuth all already exist; Track B WIRES the record decision to them. RD-2's "auth + licence MANDATORY for
+every tenant" is a NEW invariant that EXTENDS the slice-07 `validate-tenants.sh` gate (which validated only
+id/uniqueness/reserved) — an extension, not a contradiction of any prior decision. Licence stays a required
+onboarding STEP (out-of-band seed), not a record field, per RD-2.
+
+**Outcomes registry (S13)**: SKIPPED — no new application typed-contract surface (GitOps record schema +
+ApplicationSet wiring + a bash validator). Per DISTILL D-6 gate-scoping, IaC/GitOps config is out of the
+code-feature-pipeline registry scope.
+
+**Pre-DELIVER fail-for-the-right-reason gate (S13)**: the `@in-memory` band goes RED because the generator
+wiring, the template, and the extended validator guards do not exist yet in the PRIVATE repo
+(MISSING_FUNCTIONALITY, correct RED). The `@requires_external` band needs the live cluster + ArgoCD to
+provision a throwaway `mcpEnabled` tenant — not runnable until DELIVER lands the wiring. DELIVER also flips
+`docs/onboarding-a-customer.md` + `docs/tenant-management.md` from "Planned (Track B)" to live.
+
+## Wave: DELIVER / [REF] S13 tenant-record Track B fields (@in-memory GREEN, live-proof pending)
+
+> **Wave**: DELIVER (2026-07-03). Story #5387. All changes in the PRIVATE platform repo
+> (LetPeopleWork/lighthouse-platform); **the public #5199 chart is byte-unchanged** — it already ships the
+> MCP workload (`templates/mcp.yaml`, `mcp.enabled` + `mcp.auth.mode` apikey|oauth), its OAuth issuer/
+> audience wiring (ADR-079), and full helm-unittest coverage incl. the oauth-without-audience fail-fast
+> (`chart/tests/unit/full-stack_test.yaml`). Track B only WIRES the record decision to that existing chart.
+
+**PRIVATE-repo changes (LOCAL, unpushed):**
+- `gitops/tenants/_generator/applicationset.yaml` — thread `mcpEnabled` (hasKey-guarded, missingkey=error-
+  safe, mirrors the `oidcEnabled` block) → chart `mcp.enabled: true` + `mcp.auth.mode: oauth`; add
+  `oidc.audience` (from a new `oidcAudience` record field) inside the oidc block so the OAuth MCP server has
+  BOTH values it needs. `placement`/`provider` is a no-effect record field (never referenced by the
+  template → recorded metadata only, destination unchanged; goes live with #5320).
+- `gitops/tenants/_TEMPLATE.tenant.yaml` (NEW) — commented copy-me onboarding record documenting every
+  decision inline + the MANDATORY auth + out-of-band licence-seed step. A sibling FILE, so the
+  `gitops/tenants/*/tenant.yaml` generator glob AND `validate-tenants.sh` both skip it (never fans out a
+  placeholder tenant — the `@error` template scenario, structurally).
+- `scripts/validate-tenants.sh` — extended guards: auth MANDATORY (reject a record without `oidcEnabled:
+  true` + issuer/clientId — RD-2, closes the AuthMode.Blocked gap at PR time); `mcpEnabled` must be
+  true/false; `mcpEnabled: true` requires `oidcAudience`. **Bug fixed en route**: `field()` returned
+  non-zero on an ABSENT key (`grep` no-match + `set -o pipefail`), and `set -e` then killed the script
+  SILENTLY at the first `x="$(field ...)"` for any record omitting an optional field — latent since
+  slice-07 (only masked because lpw sets every field it read). Fixed with `|| true` on the pipeline; this
+  also hardens the pre-existing optional-`subdomain` path.
+- `docs/onboarding-a-customer.md` + `docs/tenant-management.md` — flipped `mcpEnabled` + `placement`/
+  `provider` from "Planned (Track B)" to live (mcp = works-today with the audience requirement; placement =
+  recorded-but-no-effect-yet); added the copy-the-template onboarding step; added `oidcAudience` + the new
+  fields to the schema table.
+
+**@in-memory band — GREEN (local, no cluster):**
+- `validate-tenants.sh` proven against crafted fixtures: rejects auth-off, malformed `mcpEnabled: maybe`,
+  and `mcpEnabled: true` without audience (each with a naming error); passes a full MCP record (audience +
+  placement) and the real lpw record; the `_TEMPLATE` sibling is ignored (record count unaffected).
+- Public chart `helm template` with the exact values the appset threads for an MCP tenant renders the MCP
+  Deployment + Service, `LIGHTHOUSE_OAUTH_ISSUER` + `LIGHTHOUSE_OAUTH_RESOURCE`, and the `/mcp` +
+  `/.well-known/oauth-protected-resource` ingress routes — the threaded values are chart-valid end-to-end.
+
+**Sentinel (DISTILL) APPROVED; no crafter-reviewer (IaC/GitOps, no execution log).**
+
+**⏳ Live-proof PENDING — dogfood on lpw Tenant Zero (per user, not a throwaway tenant).** Prerequisites
+(external / user): (1) an Auth0 **API audience** registered for lpw + the client authorized (lpw has no
+`oidcAudience` today; #5362 proved MCP OAuth in a kind lab against Keycloak/Entra, never lpw's Auth0);
+(2) `mcp.image` pinned to a published `mcp-http` tag carrying the #5362 discovery fix (`96da0a7`) rather
+than `:latest`; (3) authorization to push the private repo + enable MCP on production Tenant Zero. Then:
+set `mcpEnabled: true` + `oidcAudience` on lpw's record → ArgoCD reconciles → the MCP endpoint answers over
+`https://lpw.lighthouse.letpeople.work/mcp` + advertises RFC 9728 metadata, the app stays 200; flip off →
+MCP surface gone, app still serving. Record the DELIVER S13 LIVE PROOF [REF] + transition **#5387 →
+Resolved**.
+
+## Wave: DELIVER / [REF] S13 tenant-record Track B fields — LIVE PROOF DONE (2026-07-03)
+
+> Story **#5387 → Resolved.** Dogfooded on **production Tenant Zero (lpw)** per user (not a throwaway
+> tenant). Private `14bdab3` (mechanism) + `58bda41` (lpw dogfood flip); public specs + this record.
+> Prerequisites resolved: user registered an Auth0 API for lpw with identifier
+> `https://lpw.lighthouse.letpeople.work/api` (= `oidcAudience` = `LIGHTHOUSE_OAUTH_RESOURCE`); MCP image
+> pinned fleet-wide to `mcp-http:1.3.2` — the tag carrying the #5362 RFC 9728 discovery fix (commit
+> `87a73e9`, which supersedes the mislocated 1.3.1/`96da0a7` attempt: metadata is served at
+> `/.well-known/oauth-protected-resource/mcp`, the path a spec-compliant MCP client builds).
+
+**Live done=observable (all met on lpw):**
+1. ✅ **MCP served over the tenant's trusted-HTTPS subdomain, OAuth-gated.** `POST https://lpw.lighthouse.letpeople.work/mcp`
+   unauthenticated → **HTTP 401** with `WWW-Authenticate: Bearer resource_metadata="https://lpw.lighthouse.letpeople.work/.well-known/oauth-protected-resource/mcp"`.
+2. ✅ **RFC 9728 protected-resource metadata reachable + correct.** `GET /.well-known/oauth-protected-resource/mcp`
+   → **200** `{"resource":"https://lpw.lighthouse.letpeople.work/api","authorization_servers":["https://dev-xlw0xiiyqjdtaaid.us.auth0.com/"],"bearer_methods_supported":["header"]}`
+   — https, the audience as the resource, the lpw Auth0 tenant as the authorization server.
+3. ✅ **Provisioned by the one-record generator, no regression.** ArgoCD reconciled the `tenants` ApplicationSet
+   ~240s after push (repo-server git cache) → `tenant-lpw-lighthouse-mcp` Deployment + Service appeared,
+   rolled out 1/1, image `mcp-http:1.3.2`; tenant-lpw Application Synced/Healthy. Ingress routes `/mcp` +
+   `/.well-known/oauth-protected-resource` → mcp service, `/` → api. **App root stays HTTP 200** (web login
+   unaffected — `aud` validation applies to MCP bearer tokens only, not the cookie session).
+
+**"Flip off removes the surface" leg** NOT churned on production (user keeps MCP ON for dogfooding via
+Claude Desktop). Covered by the `@in-memory` omit-render test (a record without `mcpEnabled` renders no MCP
+workload) + slice-07's proven ArgoCD prune mechanics — every MCP object is `{{- if .Values.mcp.enabled }}`-
+gated, so `mcpEnabled: false` prunes the Deployment/Service/routes identically.
+
+**Client note:** external MCP clients (Claude Desktop) reach it via the `mcp-remote` bridge
+(`npx -y mcp-remote https://lpw.lighthouse.letpeople.work/mcp`), which discovers the metadata, runs the
+Auth0 browser flow, and proxies stdio↔HTTP with the Bearer.
+
+**Follow-up (not blocking #5387):** the chart's `mcp.image` default is still a moving `:latest`; the fleet
+pin lives in the ApplicationSet (`1.3.2`). Renovate's argocd manager should track `mcp-http` releases so the
+pin bumps on a new client release — scope into the release-watch config on the next platform touch.
