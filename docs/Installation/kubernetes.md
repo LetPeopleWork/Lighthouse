@@ -7,14 +7,10 @@ nav_order: 3
 
 # Run Lighthouse on Kubernetes with Helm
 
-{: .warning }
-> ## 🚧 Preview
->
-> **Kubernetes / Helm support is a preview feature and under active development.** The chart works and
-> is dogfooded end to end (simple install, OIDC login, horizontal scaling, MCP with OAuth
-> auto-discovery), but values and defaults may still change between versions.
-> Validate it in a non-production environment before you rely on it, and pin a specific chart + image
-> version. Feedback welcome.
+{: .note }
+> The chart is dogfooded end to end (simple install, OIDC login, horizontal scaling, MCP with OAuth
+> auto-discovery). For production, pin a specific chart + image version rather than floating, and
+> validate upgrades in a non-production environment first. Feedback welcome.
 
 Lighthouse ships an official Helm chart so you can run the **Server** edition on any Kubernetes
 cluster — bundled or external PostgreSQL, optional OIDC login, an optional MCP server, and horizontal

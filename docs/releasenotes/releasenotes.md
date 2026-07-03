@@ -4,6 +4,27 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.7.3.1
+
+## Self-Host Lighthouse on Kubernetes — Official Helm Chart
+You can now run the **Server** edition on any Kubernetes cluster from an official, public Helm chart — no source checkout and no sales call. A single `helm install` brings up a working instance with a bundled PostgreSQL; for production you point it at your own managed database. Optional OIDC login, an optional MCP server with OAuth auto-discovery, and horizontal scaling via Redis are all configurable through `values.yaml`.
+
+See [Run Lighthouse on Kubernetes with Helm](https://docs.lighthouse.letpeople.work/Installation/kubernetes.html).
+
+## Bugfixes and Improvements
+- **Licenses with accented or non-ASCII names now import correctly** — a license issued to a name containing accents (for example *Janée*) previously failed to import.
+- **Scatter chart axis labels restored** — the estimation and feature-size scatter charts show their x-axis tick labels again.
+- **Work Item Age Percentiles widget polish** — chrome fixes to the widget shipped last release.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Janée McConnell](https://www.linkedin.com/in/janeemcconnell/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.6.16.14...v26.7.3.1)
+
+
 # Lighthouse v26.6.16.14
 
 ## Bugfixes and Improvements
