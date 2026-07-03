@@ -1,5 +1,12 @@
 # RESUME — Epic 5306 productization platform
 
+## ✅✅ FINALIZED 2026-07-03 — epic complete, all children Closed
+Evolution doc: `docs/evolution/2026-07-03-epic-5306-productization-platform.md`. Final onboarding e2e
+passed: a throwaway `demo` tenant walked the entire `onboarding-a-customer.md` runbook (record → OpenBao
+seed → push → ArgoCD reconcile → **200 + trusted LE cert + cross-tenant isolation + Auth0 login + premium
+licence** → clean de-provision, lpw untouched). ADRs 094–097 flipped PROPOSED→ACCEPTED. UX journey migrated
+to `docs/ux/`. Workspace preserved (feeds the wave matrix). Everything below is historical.
+
 ## ▶▶ RE-DISCUSS 2026-07-02 — productization-completion (READ FIRST)
 Sanity-check on "what's pending" vs 4 user goals (git-completeness/multi-machine · multi-provider ·
 platform docs · guided customer onboarding). Full analysis + new stories US-10/11/12 + decisions:
@@ -463,8 +470,14 @@ private: tenant-runtime 0.1.6 + fleet-monitoring 0.1.2 + appset). ADO **#5208 st
 
 ## ▶ Track B #5387 — tenant-record fields (mcpEnabled, placement/provider) — DISTILL DONE (2026-07-03)
 
-**ADO #5387 = Active.** Track A (#5374 remote-state) + Track C (#5386 docs) both Closed; #5320 multi-provider
-Active/deferred. This is the Track B onboarding-decision workflow (US-11 / re-discuss RD-2).
+**ADO #5387 = Resolved.** Track A (#5374 remote-state) + Track C (#5386 docs) both Closed; **#5320 multi-provider
+CLOSED 2026-07-03** (close-as-is per RD-1: substrate delivered+live, multi-provider = document-path-only via
+provider-addition-howto.md, 2nd-provider stand-up deferred pull-on-demand). This is the Track B
+onboarding-decision workflow (US-11 / re-discuss RD-2).
+
+**Epic 5306 remaining = ONLY #5388** (New — MCP OAuth pass-through: Auth0 token not audience-scoped to the MCP
+API → Lighthouse API 401 on tool calls; child of 5306, spawned from #5387 live-proof correction). Every other
+child Closed. #5388 is the last fucker before the epic wraps.
 
 - ✅ **DISCUSS**: re-discuss 2026-07-02 US-11 (ACs + RD-2 auth+licence MANDATORY). **DESIGN** settled at epic
   level (ADR-092 generator + ADR-085 MCP workload + ADR-079 MCP OAuth all exist).

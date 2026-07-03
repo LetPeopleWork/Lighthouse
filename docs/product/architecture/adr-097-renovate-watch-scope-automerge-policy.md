@@ -1,6 +1,6 @@
 # ADR-097: Renovate Hosting = Mend Renovate GitHub App; Watch Scope = the Published Lighthouse Chart + Tracked Platform-Component Versions; Automerge ONLY the Tenant-Zero `chartVersion` Override, NEVER the Fleet `promotedVersion`
 
-**Status**: **PROPOSED** (2026-06-30, Titan — PROPOSE mode, awaiting Benjamin)
+**Status**: **ACCEPTED** (implemented + live-proven, epic-5306 slice-08; finalized 2026-07-03)
 **Date**: 2026-06-30
 **Feature**: epic-5306-productization-platform (ADO Epic #5306, story #5205 RESCOPE slice-08a, US-08a-1/2/3) — resolves open question **O-08-4** and is the policy through which ADR-094 (auto-canary) is expressed
 **Decider**: Benjamin (product owner) + Titan (System Designer)

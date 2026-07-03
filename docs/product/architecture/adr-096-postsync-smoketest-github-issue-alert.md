@@ -1,6 +1,6 @@
 # ADR-096: Post-Sync Health Smoke-Test = a Version-Stamped ArgoCD PostSync Hook Job (Per Tenant) That Asserts the Served Version + Health and, on Failure, Opens/Updates a GitHub Issue in `LetPeopleWork/lighthouse-platform`
 
-**Status**: **PROPOSED** (2026-06-30, Titan — PROPOSE mode, awaiting Benjamin)
+**Status**: **ACCEPTED** (implemented + live-proven, epic-5306 slice-08; finalized 2026-07-03)
 **Date**: 2026-06-30
 **Feature**: epic-5306-productization-platform (ADO Epic #5306, story #5205 RESCOPE slice-08b/08c, US-08b-2 + US-08c-1) — resolves open question **O-08-3**
 **Decider**: Benjamin (product owner) + Titan (System Designer)

@@ -1,0 +1,162 @@
+schema_version: 1
+
+journey:
+  name: "Ship a release = merge one PR"
+  goal: "Roll a new Lighthouse version across the whole fleet by reviewing Tenant Zero and merging one Renovate PR; everything else is automatic."
+  persona: "platform-operator (LPW SaaS-operator flavour) — Benjamin"
+  job_id: job-saas-operator-upgrade-all-tenants-safely
+  builds_on: "DELIVERED slice-08 substrate (matrix ApplicationSet, promotedVersion/chartVersion canary override, expand-only guard, git-revert rollback)"
+
+  emotional_arc:
+    start: "Tense — a fleet upgrade is a scary batch job I do by hand, and a bad version could hit everyone."
+    middle: "Reassured — Tenant Zero already took the release hands-off and is healthy; I'm reviewing real production, not guessing."
+    end: "Calm + assured — one click rolls the fleet, and a post-sync smoke-test will alert me fast if any tenant comes back sick."
+
+steps:
+  - id: 1
+    name: "A new version is published"
+    command: "CI publishes ghcr.io/letpeoplework/lighthouse:<newtag> (no operator action)"
+    shared_artifacts:
+      - name: released-image-tag
+        source: "published GHCR image / GitHub release"
+        displayed_as: "${released-image-tag}"
+        consumers: ["Renovate watch target", "Tenant Zero auto-canary", "fleet promotedVersion bump PR"]
+    emotional_state:
+      entry: "passive"
+      exit: "calm — the platform notices the release, not me"
+    failure_modes:
+      - "A new tag is published but Renovate never raises a PR (watch scope gap) — a release is silently skipped."
+
+  - id: 2
+    name: "Tenant Zero auto-canaries, hands-off; Renovate raises the fleet PR"
+    command: "(automatic) Tenant Zero record tracks latest; Renovate opens a PR bumping fleet promotedVersion"
+    shared_artifacts:
+      - name: tenant-zero-canary-version
+        source: "private gitops tenants/lpw record (chartVersion override)"
+        displayed_as: "${tenant-zero-canary-version}"
+        consumers: ["Tenant Zero resolved targetRevision (ahead of fleet)"]
+    integration_checkpoint: |
+      Tenant Zero is running ${released-image-tag} BEFORE the fleet PR is merged, with no human merge or edit.
+    emotional_state:
+      entry: "passive"
+      exit: "reassured — prod already took it, hands-off"
+    failure_modes:
+      - "Tenant Zero canary version does not track latest (mechanism O-08-1) — the canary is stale and the gate is meaningless."
+    gherkin: |
+      Scenario: Tenant Zero runs the latest release before any fleet merge
+        Given a new Lighthouse version has been published
+        When the auto-canary mechanism applies it to Tenant Zero
+        Then Tenant Zero serves the new version with no human merge or edit
+        And the rest of the fleet is still on the prior version
+
+  - id: 3
+    name: "Review Tenant Zero"
+    command: "argocd app list ; curl -sI https://lpw.lighthouse.letpeople.work"
+    emotional_state:
+      entry: "watchful"
+      exit: "confident — TZ proves the release on production data"
+    failure_modes:
+      - "Tenant Zero is unhealthy on the new version — the human gate holds: the fleet PR is NOT merged."
+    gherkin: |
+      Scenario: An unhealthy canary blocks fleet promotion
+        Given Tenant Zero has auto-canaried a new version
+        And Tenant Zero is unhealthy on that version
+        When Benjamin reviews Tenant Zero before promoting
+        Then the fleet PR remains unmerged
+        And no customer tenant is moved to the bad version
+
+  - id: 4
+    name: "Merge one PR (the one click)"
+    command: "Merge the Renovate fleet PR (bumps promotedVersion)"
+    shared_artifacts:
+      - name: promotedVersion
+        source: "private gitops tenants ApplicationSet values"
+        displayed_as: "${promotedVersion}"
+        consumers: ["every non-canary tenant's resolved targetRevision"]
+    integration_checkpoint: |
+      Merging exactly ONE PR is the only operator action required to release to the whole fleet.
+    emotional_state:
+      entry: "decisive"
+      exit: "calm — one click, not a hand-edit of YAML"
+    failure_modes:
+      - "Releasing requires more than one merge (hand-edits, multiple PRs) — the exit criterion is not met."
+    gherkin: |
+      Scenario: The whole fleet is promoted by merging one PR
+        Given Tenant Zero is healthy on the new version
+        And a Renovate PR bumping the fleet promotedVersion is open
+        When Benjamin merges that one PR
+        Then every non-canary tenant rolls to the new version automatically
+        And no other manual step is required
+
+  - id: 5
+    name: "The fleet rolls; migrations run before the API serves"
+    command: "(automatic) ArgoCD rolls each tenant; migration ordered before new API"
+    emotional_state:
+      entry: "calm"
+      exit: "calm — no maintenance window, the substrate rolls itself"
+    failure_modes:
+      - "A new API pod serves before its schema migration is applied — an API-before-migration window (O-08-2)."
+      - "A destructive migration would break old pods mid-rollout — blocked by ExpandOnlyMigrationGuard in CI before any tenant rolls."
+    gherkin: |
+      Scenario: Schema migrations are applied before the new API serves
+        Given a tenant is upgrading to the new version
+        When the upgrade rolls
+        Then the schema migration is applied before the new API version serves traffic
+        And the tenant serves continuous successful responses through the roll
+
+  - id: 6
+    name: "Verify health; alert on failure; recover if needed"
+    command: "(automatic) post-sync smoke-test per tenant -> alert on failure ; (drill) git revert"
+    shared_artifacts:
+      - name: ops-alert-channel
+        source: "platform config (DESIGN/DEVOPS to name — O-08-3)"
+        displayed_as: "${ops-alert-channel}"
+        consumers: ["post-sync smoke-test failure notification"]
+      - name: tenant-health-endpoint
+        source: "shipped chart health/readiness probe (epic-5305)"
+        displayed_as: "${tenant-health-endpoint}"
+        consumers: ["post-sync smoke-test"]
+    integration_checkpoint: |
+      A tenant that returns unhealthy after upgrade produces a visible alert naming the tenant + version within the detection target.
+    emotional_state:
+      entry: "watchful"
+      exit: "assured — I'm told fast if a tenant came back sick, and rollback is rehearsed"
+    failure_modes:
+      - "A tenant comes back unhealthy but no alert fires — a silent bad upgrade."
+      - "A broken release is shipped (08c drill) — smoke-test catches it, git-revert restores the prior revision within the RTO."
+    gherkin: |
+      Scenario: An unhealthy tenant after upgrade raises an alert
+        Given a tenant has synced a new version
+        And the tenant's health endpoint returns unhealthy
+        When the post-sync smoke-test runs
+        Then an alert naming that tenant and version reaches the ops channel within the detection target
+
+      Scenario: A deliberately broken release is caught and rolled back (rehearsed drill)
+        Given a deliberately broken image is pushed to a throwaway canary tenant
+        When the post-sync smoke-test runs
+        Then the smoke-test fails and an alert fires
+        And reverting the version bump in git restores the prior healthy revision within the rollback target
+        And Tenant Zero (production) is untouched throughout
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: chart-version (released-image-tag / tenant-zero-canary-version / promotedVersion)
+      must_match_across: ["released-image-tag", "tenant-zero-canary-version (TZ first)", "promotedVersion (fleet, after merge)"]
+      failure_message: "The fleet upgrade has not converged until Tenant Zero (canary), the merged promotedVersion, and the latest released image tag all agree."
+
+open_design_questions:
+  - id: O-08-1
+    question: "Tenant-Zero auto-canary mechanism — INTENT captured, mechanism deferred. Renovate auto-merge of a TZ-only PR vs literal mutable 'latest' tag (known gotcha: ArgoCD tracks git not registry) vs scoped automerge rule."
+  - id: O-08-2
+    question: "Migration-before-API ordering — does on-boot Database.Migrate() + expand-only + rolling update already satisfy it, or is a dedicated pre-upgrade migration Job (earlier sync-wave) needed?"
+  - id: O-08-3
+    question: "Smoke-test surface (ArgoCD PostSync hook?) + alert channel; note slice-09 observability stack does not exist yet — 08b may need a thin standalone alert path."
+  - id: O-08-4
+    question: "Renovate hosting (self-hosted GH-Actions cron vs GitHub App) + exact chart/platform-component watch scope."
+  - id: O-08-5
+    question: "Rollback posture — operator-initiated git revert (this scope) vs a future auto-rollback on smoke-test failure (flagged, not built)."
+
+changelog:
+  - date: "2026-06-30"
+    feature: "epic-5306-productization-platform"
+    change: "Created the merge-only fleet-upgrade journey for the slice-08 RESCOPE (ADO #5205): Renovate PR + Tenant-Zero auto-canary + one-click fleet promote + ordered upgrade + post-sync smoke-test/alert + rehearsed broken-image rollback. Builds on the DELIVERED staged-rollout substrate; mechanism questions flagged for DESIGN."

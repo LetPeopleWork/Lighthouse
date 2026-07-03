@@ -1,6 +1,6 @@
 # ADR-095: Migration-Before-API Ordering Is an Emergent Property of On-Boot `Database.Migrate()` (Advisory-Lock Coordinated) + Readiness-Gated Rolling Update + the Expand-Only Guard — No Dedicated Pre-Upgrade Migration Job / Sync-Wave Is Warranted
 
-**Status**: **PROPOSED** (2026-06-30, Titan — PROPOSE mode, awaiting Benjamin)
+**Status**: **ACCEPTED** (implemented + live-proven, epic-5306 slice-08; finalized 2026-07-03)
 **Date**: 2026-06-30
 **Feature**: epic-5306-productization-platform (ADO Epic #5306, story #5205 RESCOPE slice-08b, US-08b-1) — resolves open question **O-08-2**
 **Decider**: Benjamin (product owner) + Titan (System Designer)

@@ -1,6 +1,6 @@
 # ADR-094: Tenant-Zero Auto-Canary = Renovate Auto-Merges a Tenant-Zero-Scoped `chartVersion` Override PR (Everything Stays in Git); the Fleet `promotedVersion` PR Is Never Auto-Merged
 
-**Status**: **PROPOSED** (2026-06-30, Titan — PROPOSE mode, awaiting Benjamin)
+**Status**: **ACCEPTED** (implemented + live-proven, epic-5306 slice-08; finalized 2026-07-03)
 **Date**: 2026-06-30
 **Feature**: epic-5306-productization-platform (ADO Epic #5306, story #5205 RESCOPE slice-08a) — resolves headline open question **O-08-1**
 **Decider**: Benjamin (product owner) + Titan (System Designer)
