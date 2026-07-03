@@ -2585,7 +2585,7 @@ Resolved**.
 > Story **#5387 → Resolved.** Dogfooded on **production Tenant Zero (lpw)** per user (not a throwaway
 > tenant). Private `14bdab3` (mechanism) + `58bda41` (lpw dogfood flip); public specs + this record.
 > Prerequisites resolved: user registered an Auth0 API for lpw with identifier
-> `https://lpw.lighthouse.letpeople.work/api` (= `oidcAudience` = `LIGHTHOUSE_OAUTH_RESOURCE`); MCP image
+> `https://lpw.lighthouse.letpeople.work/mcp` (= `oidcAudience` = `LIGHTHOUSE_OAUTH_RESOURCE`); MCP image
 > pinned fleet-wide to `mcp-http:1.3.2` — the tag carrying the #5362 RFC 9728 discovery fix (commit
 > `87a73e9`, which supersedes the mislocated 1.3.1/`96da0a7` attempt: metadata is served at
 > `/.well-known/oauth-protected-resource/mcp`, the path a spec-compliant MCP client builds).
