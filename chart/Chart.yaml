@@ -8,12 +8,11 @@ type: application
 # 0.1.3: oidc.existingSecret — read the OIDC client secret from a pre-existing Secret (ESO/OpenBao, CC-3).
 # 0.1.4: host-mandatory ingress guard + auto-reload wiring (checksum/config + stakater/reloader watch)
 #        so an out-of-band ESO/OpenBao rotation reaches the running API without a manual restart.
-version: 0.1.4
+# 0.1.5: track the v26.7.3.1 release — appVersion moves off the pre-release testing image to the
+#        first tagged release carrying the scalability work; Helm/Kubernetes support is now GA.
+version: 0.1.5
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-# NOTE: 26.6.21.1 is a pre-release testing image carrying the epic-5305 scalability work (#5304
-# Redis backplane / single-instance background work) not yet in a tagged release. Bump to the
-# newest released version at the next Lighthouse release.
-appVersion: "26.6.21.1"
+appVersion: "26.7.3.1"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse

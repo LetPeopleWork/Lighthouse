@@ -9,8 +9,7 @@
 image:
   repository: ghcr.io/letpeoplework/lighthouse
   # Pin an explicit published release for production (do not float). Empty = Chart.appVersion.
-  # 26.6.21.1 = pre-release testing image with the epic-5305 scalability work; bump at next release.
-  tag: "26.6.21.1"
+  tag: "26.7.3.1"
   pullPolicy: IfNotPresent
 
 # --- Scaling -----------------------------------------------------------------
