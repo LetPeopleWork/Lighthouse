@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { WorkItemsDialog } from "./WorkItemsDialog";
 
 export class MetricsWidget {
@@ -58,6 +58,15 @@ export class MetricsWidget {
 
 	async getStaleOverviewCount(): Promise<number> {
 		const text = (await this.staleOverviewCount.innerText()) ?? "0";
+		return Number(text.replace(/\D/g, ""));
+	}
+
+	get blockedOverviewCount(): Locator {
+		return this.Widget.getByTestId("blocked-overview-count");
+	}
+
+	async getBlockedOverviewCount(): Promise<number> {
+		const text = (await this.blockedOverviewCount.innerText()) ?? "0";
 		return Number(text.replace(/\D/g, ""));
 	}
 
@@ -202,6 +211,160 @@ export const MetricsWidgetNames = {
 	FeatureSizeProcessBehaviourChart: "Feature Size Process Behaviour Chart",
 	FeatureSizePercentiles: "Feature Size Percentiles",
 };
+
+/**
+ * Drives the rule-based Blocked Items configuration in the shared Flow Metrics
+ * Configuration group (team + portfolio settings). The blocked rule set reuses
+ * the shared DeliveryRuleBuilder (third consumer, mirroring ForecastFilterEditor),
+ * so the rule-row selectors match the builder's data-testids exactly.
+ */
+export class BlockedRuleConfigEditor {
+	constructor(public readonly page: Page) {}
+
+	get flowMetricsConfigurationHeader(): Locator {
+		return this.page.getByText("Flow Metrics Configuration", { exact: true });
+	}
+
+	get enableCheckbox(): Locator {
+		return this.page.getByLabel("Configure Blocked Work Items");
+	}
+
+	get builder(): Locator {
+		// The settings page hosts two shared DeliveryRuleBuilder instances
+		// (Forecast Filter + Blocked). Scope to the blocked one by its title.
+		return this.page
+			.getByTestId("delivery-rule-builder")
+			.filter({ hasText: "as blocked where" });
+	}
+
+	get addRuleButton(): Locator {
+		return this.builder.getByTestId("add-rule-button");
+	}
+
+	get ruleRows(): Locator {
+		return this.builder.getByTestId("rule-row");
+	}
+
+	/**
+	 * Removes any pre-existing rule rows so a freshly added rule is the sole
+	 * blocked definition — makes the resulting blocked count fully attributable
+	 * to the rule this test saves.
+	 */
+	async clearExistingRules(): Promise<void> {
+		await expect
+			.poll(
+				async () => {
+					const count = await this.ruleRows.count();
+					if (count === 0) {
+						return 0;
+					}
+					await this.builder
+						.getByTestId("rule-delete-0")
+						.click()
+						.catch(() => {});
+					return this.ruleRows.count();
+				},
+				{ timeout: 15_000 },
+			)
+			.toBe(0);
+	}
+
+	async enable(): Promise<void> {
+		await expect
+			.poll(
+				async () => {
+					if (!(await this.enableCheckbox.isVisible())) {
+						await this.flowMetricsConfigurationHeader.click().catch(() => {});
+						return false;
+					}
+					if (!(await this.enableCheckbox.isChecked())) {
+						await this.enableCheckbox.check().catch(() => {});
+					}
+					return this.enableCheckbox.isChecked();
+				},
+				{ timeout: 15_000 },
+			)
+			.toBe(true);
+
+		// The builder only renders once the config admin's rule schema resolves.
+		await expect(this.builder).toBeVisible({ timeout: 15_000 });
+	}
+
+	async addFieldEqualsRule(
+		fieldDisplayName: string,
+		value: string,
+	): Promise<void> {
+		await this.addRuleButton.click();
+
+		const ruleIndex = (await this.ruleRows.count()) - 1;
+
+		await this.chooseFromSelect(
+			this.builder.getByTestId(`rule-field-select-${ruleIndex}`),
+			fieldDisplayName,
+		);
+		await this.chooseFromSelect(
+			this.builder.getByTestId(`rule-operator-select-${ruleIndex}`),
+			"Equals",
+		);
+
+		const valueInput = this.builder
+			.getByTestId(`rule-value-input-${ruleIndex}`)
+			.locator("input");
+
+		// The settings form auto-saves on a debounce, and the "saved" indicator does
+		// not flip to "saving" until the debounce fires — so a caller that navigates
+		// as soon as it reads "saved" can leave before the value's save dispatches,
+		// dropping it. Wait for the settings PUT that actually carries this rule value
+		// before returning, so the saved blocked rule set is guaranteed to include it.
+		const valuePersisted = this.page.waitForResponse(
+			(response) => {
+				const request = response.request();
+				if (
+					request.method() !== "PUT" ||
+					!/\/teams\/\d+$/.test(response.url())
+				) {
+					return false;
+				}
+				try {
+					const body = JSON.parse(request.postData() ?? "");
+					const ruleSet = body.blockedRuleSetJson
+						? JSON.parse(body.blockedRuleSetJson)
+						: null;
+					return Boolean(
+						ruleSet?.conditions?.some(
+							(condition: { value?: string }) => condition.value === value,
+						),
+					);
+				} catch {
+					return false;
+				}
+			},
+			{ timeout: 15_000 },
+		);
+
+		await valueInput.fill(value);
+		await expect(valueInput).toHaveValue(value);
+		await valuePersisted;
+	}
+
+	/**
+	 * Opens a MUI Select and picks an option, waiting for the option menu to
+	 * detach so its (invisible) backdrop cannot intercept the next click.
+	 */
+	private async chooseFromSelect(
+		trigger: Locator,
+		optionName: string,
+	): Promise<void> {
+		await trigger.click();
+		await this.page
+			.getByRole("option", { name: optionName, exact: true })
+			.click();
+		await this.page
+			.getByRole("listbox")
+			.waitFor({ state: "detached" })
+			.catch(() => {});
+	}
+}
 
 export class MetricsPage {
 	page: Page;
