@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -166,7 +167,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Mock.Of<IRepository<Team>>(),
                 transitionRepository,
                 featureTransitionRepository,
-                Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>());
+                Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>(),
+                new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()));
         }
     }
 }

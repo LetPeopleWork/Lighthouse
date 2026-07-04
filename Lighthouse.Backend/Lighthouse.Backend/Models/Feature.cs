@@ -61,8 +61,6 @@ namespace Lighthouse.Backend.Models
 
         public string OwningTeam { get; set; } = string.Empty;
 
-        public override bool IsBlocked => Portfolios.Any(p => p.BlockedStates.Contains(State) || p.BlockedTags.Any(Tags.Contains));
-
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);
 

@@ -5,7 +5,8 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class FeatureDto : WorkItemDto
     {
-        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null) : base(feature, namedCycleTimes ?? [])
+        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null)
+            : base(feature, FeatureIsBlocked(feature), namedCycleTimes ?? [])
         {
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
@@ -51,5 +52,13 @@ namespace Lighthouse.Backend.API.DTO
         public Dictionary<int, int> TotalWork { get; } = new Dictionary<int, int>();
 
         public List<WhenForecastDto> Forecasts { get; } = new List<WhenForecastDto>();
+
+        // Feature blocked status preserves the prior model-level semantics. NOTE: the FEATURE surface is out
+        // of ADR-067 slice-01 scope (which routes the WORK-ITEM read path through IBlockedItemService). Routing
+        // this feature-level derivation through IBlockedItemService.IsBlocked(feature, portfolio) is a bounded
+        // follow-up spanning the FeatureDto build sites in the portfolio/delivery controllers.
+        private static bool FeatureIsBlocked(Feature feature)
+            => feature.Portfolios.Any(portfolio =>
+                portfolio.BlockedStates.Contains(feature.State) || portfolio.BlockedTags.Any(feature.Tags.Contains));
     }
 }

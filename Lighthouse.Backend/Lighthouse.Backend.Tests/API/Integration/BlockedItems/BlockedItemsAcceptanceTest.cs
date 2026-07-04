@@ -61,6 +61,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var dbContext = setupScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
             dbContext.Database.EnsureDeleted();
             dbContext.Database.EnsureCreated();
+
+            // Match production startup seeding (and the TimeInState metrics-read precedent): the metrics
+            // read ports resolve TeamMetricsService, whose constructor reads the TeamDataRefresh AppSettings.
+            // EnsureCreated does not run the runtime seeders, so seed them explicitly here.
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<Lighthouse.Backend.Services.Interfaces.Seeding.ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
         }
 
         [TearDown]
@@ -111,6 +119,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 DoneItemsCutoffDays = 0,
                 BlockedStates = blockedStates ?? [],
                 BlockedTags = blockedTags ?? [],
+                // Align work-item-related settings with BuildTeamSettings so a later settings-save PUT is
+                // NOT detected as a work-item-related change (which would RemoveWorkItemsForTeam and wipe the
+                // seeded item before the WIP read). See TeamExtensions.WorkItemRelatedSettingsChanged.
+                DataRetrievalValue = "project = TEST",
+                WorkItemTypes = ["Story", "Bug"],
+                ToDoStates = ["New"],
+                DoingStates = ["In Progress", "Blocked", "On Hold"],
+                DoneStates = ["Done"],
             };
 
             var teamRepository = sp.GetRequiredService<IRepository<Team>>();
@@ -130,7 +146,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             string referenceId,
             string state,
             List<string>? tags = null,
-            DateTime? currentStateEnteredAt = null)
+            DateTime? currentStateEnteredAt = null,
+            Dictionary<int, string?>? additionalFieldValues = null)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -154,6 +171,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 Order = referenceId,
                 CurrentStateEnteredAt = currentStateEnteredAt,
                 Tags = tags ?? [],
+                AdditionalFieldValues = additionalFieldValues ?? new(),
             };
 
             workItemRepository.Add(item);

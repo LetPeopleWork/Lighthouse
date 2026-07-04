@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
@@ -19,17 +20,20 @@ namespace Lighthouse.Backend.API
         private readonly IWorkItemRepository workItemRepository;
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IRbacAdministrationService rbacAdministrationService;
+        private readonly IBlockedItemService blockedItemService;
 
         public FeaturesController(
             IRepository<Feature> featureRepository,
             IWorkItemRepository workItemRepository,
             IBlackoutPeriodService blackoutPeriodService,
-            IRbacAdministrationService rbacAdministrationService)
+            IRbacAdministrationService rbacAdministrationService,
+            IBlockedItemService blockedItemService)
         {
             this.featureRepository = featureRepository;
             this.workItemRepository = workItemRepository;
             this.blackoutPeriodService = blackoutPeriodService;
             this.rbacAdministrationService = rbacAdministrationService;
+            this.blockedItemService = blockedItemService;
         }
 
         [HttpGet("ids")]
@@ -74,7 +78,8 @@ namespace Lighthouse.Backend.API
             }
 
             var items = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId)
-                .Select(w => new WorkItemDto(w))
+                .AsEnumerable()
+                .Select(w => new WorkItemDto(w, w.Team != null && blockedItemService.IsBlocked(w, w.Team)))
                 .ToList();
 
             return Ok(items);

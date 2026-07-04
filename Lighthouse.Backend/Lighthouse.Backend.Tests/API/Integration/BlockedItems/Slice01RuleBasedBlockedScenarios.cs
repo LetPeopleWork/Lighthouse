@@ -45,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-01
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (custom-field blocked rule)")]
         public async Task A_custom_field_condition_makes_an_item_read_blocked()
         {
             var team = GivenATeamWithAFlaggedFieldAndOneFlaggedItem("PHX-204");
@@ -72,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @driving_port @us-01 @property (single definition drives every blocked signal)
         [Test]
         [Category("property")]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (single rule-based IsBlocked)")]
         public async Task An_item_matching_the_blocked_rules_reads_blocked_everywhere()
         {
             var team = GivenATeamReadyForConfiguration();
@@ -86,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-01 (empty rule set blocks nothing)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (empty migration)")]
         public async Task A_team_with_no_blocked_config_blocks_nothing()
         {
             var team = GivenATeamReadyForConfiguration();

@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -22,13 +23,15 @@ namespace Lighthouse.Backend.API
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IBlackoutPeriodService blackoutPeriodService;
+        private readonly IBlockedItemService blockedItemService;
         private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
             this.blackoutPeriodService = blackoutPeriodService;
+            this.blockedItemService = blockedItemService;
             this.logger = logger;
         }
 
@@ -109,7 +112,7 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate);
-                return workItems.Select(w => new WorkItemDto(w));
+                return workItems.Select(w => new WorkItemDto(w, blockedItemService.IsBlocked(w, team)));
             });
         }
 
@@ -215,7 +218,7 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cycleTimeData", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate)
-                    .Select(entry => new WorkItemDto(entry.WorkItem, entry.NamedCycleTimes)));
+                    .Select(entry => new WorkItemDto(entry.WorkItem, blockedItemService.IsBlocked(entry.WorkItem, team), entry.NamedCycleTimes)));
         }
 
         private static bool IsNamedRequest(int? definitionId) => definitionId is > 0;

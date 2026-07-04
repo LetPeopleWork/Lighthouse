@@ -5,8 +5,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 {
     public class RuleEvaluator<T> : IRuleEvaluator<T> where T : class
     {
-        private const string TagsFieldKey = "feature.tags";
-
         public IEnumerable<T> Match(WorkItemRuleSet ruleSet, IEnumerable<T> items, IRuleFieldProvider<T> fieldProvider)
         {
             if (RuleSetHasError(ruleSet, fieldProvider))
@@ -126,7 +124,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
         {
             var op = condition.Operator.ToLowerInvariant();
 
-            if (condition.FieldKey.Equals(TagsFieldKey, StringComparison.OrdinalIgnoreCase))
+            if (IsMultiValueField(condition.FieldKey, fieldProvider))
             {
                 var tags = fieldProvider.GetTagsForField(item, condition.FieldKey);
                 return EvaluateTagsCondition(tags, op, condition.Value);
@@ -143,6 +141,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
                 RuleOperators.IsNotEmpty => !string.IsNullOrEmpty(fieldValue),
                 _ => false,
             };
+        }
+
+        private static bool IsMultiValueField(string fieldKey, IRuleFieldProvider<T> fieldProvider)
+        {
+            return fieldProvider.GetFixedFields()
+                .Any(field => field.IsMultiValue && field.FieldKey.Equals(fieldKey, StringComparison.OrdinalIgnoreCase));
         }
 
         private static bool EvaluateTagsCondition(IReadOnlyList<string> tags, string op, string value)

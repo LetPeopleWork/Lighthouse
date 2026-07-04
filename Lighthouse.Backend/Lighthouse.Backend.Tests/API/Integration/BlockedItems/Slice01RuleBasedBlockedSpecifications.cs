@@ -26,7 +26,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         private SeededTeam GivenATeamWithAFlaggedFieldAndOneFlaggedItem(string flaggedItem)
         {
             var team = SeedTeam(withFlaggedAdditionalField: true);
-            SeedWorkItem(team.TeamId, flaggedItem, state: "In Progress", tags: []);
+            SeedWorkItem(
+                team.TeamId,
+                flaggedItem,
+                state: "In Progress",
+                tags: [],
+                additionalFieldValues: new() { [team.FlaggedFieldId] = "Impediment" });
             return team;
         }
 

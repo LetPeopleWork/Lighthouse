@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -147,7 +148,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Mock.Of<IRepository<Team>>(),
                 transitionRepository,
                 Mock.Of<IFeatureStateTransitionRepository>(),
-                ServiceProvider.GetRequiredService<IDomainEventDispatcher>());
+                ServiceProvider.GetRequiredService<IDomainEventDispatcher>(),
+                new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()));
         }
 
         private sealed class TransitionProbeState

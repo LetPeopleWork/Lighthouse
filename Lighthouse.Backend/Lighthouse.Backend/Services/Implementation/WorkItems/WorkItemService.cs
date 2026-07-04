@@ -21,7 +21,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IRepository<Team> teamRepository,
         IWorkItemStateTransitionRepository stateTransitionRepository,
         IFeatureStateTransitionRepository featureStateTransitionRepository,
-        IDomainEventDispatcher domainEventDispatcher)
+        IDomainEventDispatcher domainEventDispatcher,
+        IBlockedItemService blockedItemService)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -100,25 +101,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await PublishDomainEvents(events);
         }
 
-        private static bool WasBlocked(Team team, WorkItem? existingItem)
+        private bool WasBlocked(Team team, WorkItem? existingItem)
         {
             if (existingItem == null)
             {
                 return false;
             }
 
-            return team.BlockedStates.IsItemInList(existingItem.State)
-                || existingItem.Tags.Any(team.BlockedTags.IsItemInList);
+            return blockedItemService.IsBlocked(existingItem, team);
         }
 
-        private static List<IDomainEvent> CollectDomainEvents(Team team, SyncedItem syncedItem, IReadOnlyList<WorkItemStateTransition> newTransitions, DateTime syncTime)
+        private List<IDomainEvent> CollectDomainEvents(Team team, SyncedItem syncedItem, IReadOnlyList<WorkItemStateTransition> newTransitions, DateTime syncTime)
         {
             var workItem = syncedItem.PersistedItem;
 
             var events = new List<IDomainEvent>();
             events.AddRange(newTransitions.Select(transition => new WorkItemTransitioned(workItem.Id, transition.FromState, transition.ToState)));
 
-            if (!syncedItem.WasBlockedBeforeSync && workItem.IsBlocked)
+            if (!syncedItem.WasBlockedBeforeSync && blockedItemService.IsBlocked(workItem, team))
             {
                 events.Add(new WorkItemBlocked(workItem.Id, ResolveBlockReason(team, workItem)));
             }
@@ -151,7 +151,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return workItem.State;
             }
 
-            return workItem.Tags.First(team.BlockedTags.IsItemInList);
+            // The blocked DECISION is owned by IBlockedItemService (which may match on a custom rule with no
+            // legacy state/tag). This only supplies human-readable reason text, so fall back to the state
+            // when no legacy tag matches rather than throwing on an empty First().
+            return workItem.Tags.FirstOrDefault(team.BlockedTags.IsItemInList) ?? workItem.State;
         }
 
         private static bool IsStale(Team team, WorkItem workItem, DateTime syncTime)

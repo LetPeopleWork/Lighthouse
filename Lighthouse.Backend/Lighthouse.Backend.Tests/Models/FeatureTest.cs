@@ -47,66 +47,8 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(subject.OwningTeam, Is.EqualTo(otherItem.OwningTeam));
         }
 
-        [Test]
-        [TestCase("In Progress", new[] { "On Hold", "Waiting for Customer" }, false)]
-        [TestCase("Waiting", new[] { "On Hold", "Waiting for Customer" }, false)]
-        [TestCase("On Hold", new[] { "On Hold", "Waiting for Customer" }, true)]
-        [TestCase("Waiting for Customer", new[] { "On Hold", "Waiting for Customer" }, true)]
-        public void IsBlocked_TeamHasBlockedStates_ReturnsTrueIfItemIsInBlockedState(string itemState, string[] blockedStates, bool expectedResult)
-        {
-            var item = CreateSubject();
-            item.Portfolios.Add(
-                new Portfolio
-                {
-                    BlockedStates = [.. blockedStates]
-                });
-
-            item.State = itemState;
-
-            Assert.That(item.IsBlocked, Is.EqualTo(expectedResult));
-        }
-
-        [Test]
-        [TestCase(new[] { "In Progress" }, new[] { "On Hold", "Waiting for Customer" }, false)]
-        [TestCase(new[] { "In Progress", "On Hold" }, new[] { "On Hold", "Waiting for Customer" }, true)]
-        [TestCase(new[] { "On Hold" }, new[] { "On Hold", "Waiting for Customer" }, true)]
-        [TestCase(new[] { "" }, new[] { "On Hold", "Waiting for Customer" }, false)]
-        public void IsBlocked_TeamHasBlockedTags_ReturnsTrueIfItemHasBlockedTag(string[] itemTags, string[] blockedTags, bool expectedResult)
-        {
-            var item = CreateSubject();
-            item.Portfolios.Add(
-                new Portfolio
-                {
-                    BlockedTags = [.. blockedTags]
-                });
-
-            item.Tags = [.. itemTags];
-
-            Assert.That(item.IsBlocked, Is.EqualTo(expectedResult));
-        }
-
-        [Test]
-        [TestCase("Active", new[] { "My Tag" }, new[] { "Waiting for Customer" }, new[] { "Blocked" }, false)]
-        [TestCase("Active", new[] { "Blocked" }, new[] { "Waiting for Customer" }, new[] { "Blocked" }, true)]
-        [TestCase("Waiting for Customer", new[] { "My Tag" }, new[] { "Waiting for Customer" }, new[] { "Blocked" }, true)]
-        [TestCase("Waiting for Customer", new[] { "Blocked" }, new[] { "Waiting for Customer" }, new[] { "Blocked" }, true)]
-        [TestCase("Waiting for Customer", new[] { "Blocked" }, new[] { "" }, new[] { "" }, false)]
-        public void IsBlocked_TeamHasBlockedStatesAndTags_ReturnsTrueIfAnyIsMatching(string itemState, string[] itemTags, string[] blockedStates, string[] blockedTags, bool expectedResult)
-        {
-
-            var item = CreateSubject();
-            item.Portfolios.Add(
-                new Portfolio
-                {
-                    BlockedStates = [.. blockedStates],
-                    BlockedTags = [.. blockedTags]
-                });
-
-            item.State = itemState;
-            item.Tags = [.. itemTags];
-
-            Assert.That(item.IsBlocked, Is.EqualTo(expectedResult));
-        }
+        // Blocked evaluation moved off the model into IBlockedItemService (ADR-067, single rule-based read
+        // path). The former Feature.IsBlocked portfolio state/tag cases now live in BlockedItemServiceTest.
 
         [Test]
         public void GetFeatureSize_WhenFeautureHasNoWork_ReturnsZero()

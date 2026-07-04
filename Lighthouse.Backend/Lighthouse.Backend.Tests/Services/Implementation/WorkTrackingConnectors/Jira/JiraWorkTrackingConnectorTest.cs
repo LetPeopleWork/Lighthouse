@@ -156,37 +156,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("Flagged")]
         [TestCase("FLAGGED")]
         [TestCase("flagged")]
-        public async Task GetWorkItemsForTeam_ItemIsFlagged_FlaggedConfiguredAsBlockingTag_TreatsAsBlocked(string flaggedTag)
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlaggedLabelAsTag(string flaggedTag)
         {
+            // Blocked evaluation is Lighthouse-side (L1, via IBlockedItemService) — the connector's only job
+            // is to CAPTURE the flag as a tag (case-insensitively). See ADR-067 / README L1.
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-23");
-            
-            team.BlockedTags.Clear();
-            team.BlockedTags.Add(flaggedTag);
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
 
-            Assert.That(workItem.IsBlocked, Is.True);
+            Assert.That(workItem.Tags, Has.Some.Matches<string>(tag => string.Equals(tag, flaggedTag, StringComparison.OrdinalIgnoreCase)),
+                "A flagged Jira item must capture its flag as a tag; blocked evaluation happens Lighthouse-side, not in the connector.");
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_ItemIsNotFlagged_FlaggedConfiguredAsBlockingTag_TreatsNotBlocked()
+        public async Task GetWorkItemsForTeam_ItemIsNotFlagged_DoesNotCaptureFlaggedTag()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-18");
-            
-            team.BlockedTags.Clear();
-            team.BlockedTags.Add("Flagged");
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-18");
 
-            Assert.That(workItem.IsBlocked, Is.False);
+            Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                "An unflagged Jira item must not capture a Flagged tag.");
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_ItemIsFlagged_FlaggedNotConfiguredAsBlockingTag_TreatsNotBlocked()
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlaggedTagIndependentlyOfBlockingConfiguration()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-23");
@@ -194,7 +192,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
 
-            Assert.That(workItem.IsBlocked, Is.False);
+            Assert.That(workItem.Tags, Has.Some.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                "Tag capture is independent of any blocked configuration — the connector always records the flag as a tag.");
         }
 
         [Test]

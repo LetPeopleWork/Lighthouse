@@ -131,5 +131,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             Assert.That(CreateSut().IsBlocked(item, team), Is.False);
         }
+
+        [Test]
+        public void IsBlocked_ReturnsTrue_WhenItemTagMatchesASynthesizedTagCondition()
+        {
+            var team = new Team { BlockedStates = [], BlockedTags = ["Blocked"] };
+            var item = new WorkItem { State = "In Progress", Tags = ["Blocked"] };
+
+            Assert.That(CreateSut().IsBlocked(item, team), Is.True);
+        }
+
+        [Test]
+        public void IsBlocked_ReturnsTrue_WhenAdditionalFieldRuleMatchesANonEmptyFieldValue()
+        {
+            var team = new Team { BlockedRuleSetJson = AdditionalFieldNotEmptyRuleSet(42) };
+            var item = new WorkItem { State = "In Progress", Tags = [], AdditionalFieldValues = { [42] = "Impediment" } };
+
+            Assert.That(CreateSut().IsBlocked(item, team), Is.True);
+        }
+
+        [Test]
+        public void IsBlocked_ReturnsFalse_WhenAdditionalFieldRuleTargetsAnEmptyFieldValue()
+        {
+            var team = new Team { BlockedRuleSetJson = AdditionalFieldNotEmptyRuleSet(42) };
+            var item = new WorkItem { State = "In Progress", Tags = [] };
+
+            Assert.That(CreateSut().IsBlocked(item, team), Is.False);
+        }
+
+        [Test]
+        public void IsBlocked_ForFeature_ReturnsTrue_WhenPortfolioBlockedStateMatches()
+        {
+            var portfolio = new Portfolio { BlockedStates = ["On Hold"], BlockedTags = [] };
+            var feature = new Feature { State = "On Hold", Tags = [] };
+
+            Assert.That(CreateSut().IsBlocked(feature, portfolio), Is.True);
+        }
+
+        [Test]
+        public void IsBlocked_ForFeature_ReturnsFalse_WhenPortfolioHasNoBlockedConfiguration()
+        {
+            var portfolio = new Portfolio { BlockedStates = [], BlockedTags = [] };
+            var feature = new Feature { State = "On Hold", Tags = [] };
+
+            Assert.That(CreateSut().IsBlocked(feature, portfolio), Is.False);
+        }
+
+        private static string AdditionalFieldNotEmptyRuleSet(int fieldId)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [new WorkItemRuleCondition { FieldKey = $"additionalField.{fieldId}", Operator = "isnotempty", Value = string.Empty }],
+            };
+
+            return JsonSerializer.Serialize(ruleSet);
+        }
     }
 }
