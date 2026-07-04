@@ -97,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-01 (schema limit)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (MaxRules validation on blocked rule set)")]
         public async Task A_blocked_rule_set_exceeding_the_maximum_conditions_is_rejected()
         {
             var team = GivenATeamReadyForConfiguration();
@@ -110,7 +109,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-01 (unknown field key)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (unknown-field validation on blocked rule set)")]
         public async Task A_blocked_rule_referencing_an_unknown_field_is_rejected()
         {
             var team = GivenATeamReadyForConfiguration();
