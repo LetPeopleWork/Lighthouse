@@ -1,18 +1,52 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	blockedRuleSetSchema,
+	parseBlockedRuleSet,
+	serializeBlockedRuleSet,
+} from "../../../models/Common/BaseSettings";
+import type { IWorkItemRuleSchema } from "../../../models/WorkItemRules";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
 import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationComponent";
 
-// Mock the useTheme hook
-vi.mock("@mui/material", async () => {
-	const actual = await vi.importActual("@mui/material");
-	return {
-		...actual,
-		useTheme: () => testTheme,
-	};
-});
+const testRuleSchema: IWorkItemRuleSchema = {
+	fields: [
+		{ fieldKey: "state", displayName: "State", isMultiValue: false },
+		{
+			fieldKey: "customfield.flagged",
+			displayName: "Flagged",
+			isMultiValue: false,
+		},
+	],
+	operators: ["equals", "notequals", "isempty", "isnotempty"],
+	maxRules: 20,
+	maxValueLength: 500,
+};
+
+const adminRbac = {
+	isLoading: false,
+	isRbacEnabled: false,
+	isSystemAdmin: true,
+	canCreateTeam: true,
+	canCreatePortfolio: true,
+	isTeamAdmin: (_id: number) => true,
+	isPortfolioAdmin: (_id: number) => true,
+	summary: {},
+};
+
+const rbacRef = vi.hoisted(() => ({ current: null as unknown }));
+
+const schemaRef = vi.hoisted(() => ({
+	getForecastFilterSchema: vi.fn(),
+	getRuleSchema: vi.fn(),
+}));
+
+vi.mock("../../../hooks/useRbac", () => ({
+	useRbac: () => rbacRef.current,
+}));
 
 // Mock the useTheme hook
 vi.mock("@mui/material", async () => {
@@ -39,57 +73,18 @@ vi.mock("../InputGroup/InputGroup", () => ({
 	),
 }));
 
-// Mock the ItemListManager component
-vi.mock("../ItemListManager/ItemListManager", () => ({
-	default: ({
-		title,
-		items,
-		onAddItem,
-		onRemoveItem,
-	}: {
-		title: string;
-		items: string[];
-		onAddItem: (item: string) => void;
-		onRemoveItem: (item: string) => void;
-	}) => (
-		<div data-testid="item-list-manager">
-			<div data-testid="item-list-title">{title}</div>
-			<div data-testid="item-list-items">
-				{items.map((item) => (
-					<div key={item} data-testid={`item-${item}`}>
-						{item}
-						<button
-							type="button"
-							data-testid={`remove-item-${item}`}
-							onClick={() => onRemoveItem(item)}
-						>
-							Remove
-						</button>
-					</div>
-				))}
-			</div>
-			<button
-				type="button"
-				data-testid="add-item-button"
-				onClick={() => onAddItem("test-item")}
-			>
-				Add {title}
-			</button>
-		</div>
-	),
-}));
-
-// Mock the ApiServiceContext
-vi.mock("../../../services/Api/ApiServiceContext", () => ({
-	ApiServiceContext: {
-		Provider: ({ children }: { children: React.ReactNode }) => children,
-	},
-}));
-
-vi.mock("react", async () => {
-	const actual = await vi.importActual("react");
+// Provide a real context whose default value carries stub schema services, so
+// FlowMetricsConfigurationComponent can fetch the blocked rule schema without a Provider.
+vi.mock("../../../services/Api/ApiServiceContext", async () => {
+	const { createContext } =
+		await vi.importActual<typeof import("react")>("react");
 	return {
-		...actual,
+		ApiServiceContext: createContext({
+			teamService: {
+				getForecastFilterSchema: schemaRef.getForecastFilterSchema,
+			},
+			deliveryService: { getRuleSchema: schemaRef.getRuleSchema },
+		}),
 	};
 });
 
@@ -105,6 +100,9 @@ describe("FlowMetricsConfigurationComponent", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		rbacRef.current = adminRbac;
+		schemaRef.getForecastFilterSchema.mockResolvedValue(testRuleSchema);
+		schemaRef.getRuleSchema.mockResolvedValue(testRuleSchema);
 	});
 
 	it("renders with correct title", () => {
@@ -619,380 +617,140 @@ describe("FlowMetricsConfigurationComponent", () => {
 		});
 	});
 
-	describe("Blocked Tags Configuration", () => {
-		it("should not render blocked tags section when blocked items is disabled", () => {
+	describe("Blocked Rule Set Configuration (DeliveryRuleBuilder)", () => {
+		const flaggedRuleSet = serializeBlockedRuleSet({
+			version: 1,
+			mode: "or",
+			conditions: [
+				{ fieldKey: "customfield.flagged", operator: "isnotempty", value: "" },
+			],
+		});
+
+		const twoRuleSet = serializeBlockedRuleSet({
+			version: 1,
+			mode: "and",
+			conditions: [
+				{ fieldKey: "state", operator: "equals", value: "Blocked" },
+				{ fieldKey: "customfield.flagged", operator: "isnotempty", value: "" },
+			],
+		});
+
+		it("renders the migrated blocked rule set in the reused DeliveryRuleBuilder", async () => {
 			render(
 				<FlowMetricsConfigurationComponent
-					settings={mockSettings}
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
 					onSettingsChange={mockOnSettingsChange}
 					stalenessSeedDefault={5}
 				/>,
 			);
 
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedTagsGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked Tags",
-			);
-			expect(blockedTagsGroup).toBeUndefined();
+			expect(
+				await screen.findByTestId("delivery-rule-builder"),
+			).toBeInTheDocument();
+			const rows = await screen.findAllByTestId("rule-row");
+			expect(rows).toHaveLength(1);
+			// The migrated flagged condition uses a valueless operator, so no value input.
+			expect(
+				screen.queryByTestId("rule-value-input-0"),
+			).not.toBeInTheDocument();
 		});
 
-		it("should render blocked tags section when blocked items is enabled", async () => {
+		it("threads an added field condition through save as blockedRuleSetJson", async () => {
 			const user = userEvent.setup();
 			render(
 				<FlowMetricsConfigurationComponent
-					settings={mockSettings}
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
 					onSettingsChange={mockOnSettingsChange}
 					stalenessSeedDefault={5}
 				/>,
 			);
 
-			// Enable blocked items
-			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Work Items",
-			);
-			await user.click(blockedItemsCheckbox);
+			await user.click(await screen.findByTestId("add-rule-button"));
 
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedTagsGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked Tags",
+			const call = mockOnSettingsChange.mock.calls.find(
+				(c) => c[0] === "blockedRuleSetJson",
 			);
-			expect(blockedTagsGroup).toBeInTheDocument();
+			expect(call).toBeTruthy();
+			const persisted = parseBlockedRuleSet(call?.[1] as string);
+			expect(persisted?.conditions).toHaveLength(2);
 		});
 
-		it("should render blocked tags section when settings already have blocked tags", () => {
-			const settingsWithBlockedTags = {
-				...mockSettings,
-				blockedTags: ["urgent", "bug"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedTags}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedTagsGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked Tags",
-			);
-			expect(blockedTagsGroup).toBeInTheDocument();
-		});
-
-		it("should display existing blocked tags", () => {
-			const settingsWithBlockedTags = {
-				...mockSettings,
-				blockedTags: ["urgent", "bug"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedTags}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			expect(screen.getByTestId("item-urgent")).toBeInTheDocument();
-			expect(screen.getByTestId("item-bug")).toBeInTheDocument();
-		});
-
-		it("should add new blocked tag when add button is clicked", async () => {
+		it("threads the OR match mode through save", async () => {
 			const user = userEvent.setup();
-			vi.clearAllMocks();
-
-			const settingsWithBlockedTags = {
-				...mockSettings,
-				blockedTags: ["existing"],
-			};
-
 			render(
 				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedTags}
+					settings={{ ...mockSettings, blockedRuleSetJson: twoRuleSet }}
 					onSettingsChange={mockOnSettingsChange}
 					stalenessSeedDefault={5}
 				/>,
 			);
 
-			const addButtons = screen.getAllByTestId("add-item-button");
-			const addTagButton = addButtons.find((button) =>
-				button.textContent?.includes("Blocked Tag"),
+			await user.click(
+				await screen.findByRole("button", { name: /Match any rule \(OR\)/i }),
 			);
 
-			if (addTagButton) {
-				await user.click(addTagButton);
-				expect(mockOnSettingsChange).toHaveBeenCalledWith("blockedTags", [
-					"existing",
-					"test-item",
-				]);
-			}
+			const call = mockOnSettingsChange.mock.calls.find(
+				(c) => c[0] === "blockedRuleSetJson",
+			);
+			expect(call).toBeTruthy();
+			expect(parseBlockedRuleSet(call?.[1] as string)?.mode).toBe("or");
 		});
 
-		it("should remove blocked tag when remove button is clicked", async () => {
-			const user = userEvent.setup();
-			vi.clearAllMocks();
-
-			const settingsWithBlockedTags = {
-				...mockSettings,
-				blockedTags: ["urgent", "bug"],
+		it("hides the blocked rule editor for a non-admin", async () => {
+			rbacRef.current = {
+				...adminRbac,
+				isRbacEnabled: true,
+				isSystemAdmin: false,
+				isTeamAdmin: (_id: number) => false,
+				isPortfolioAdmin: (_id: number) => false,
 			};
 
 			render(
 				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedTags}
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
 					onSettingsChange={mockOnSettingsChange}
 					stalenessSeedDefault={5}
 				/>,
 			);
 
-			const removeButton = screen.getByTestId("remove-item-urgent");
-			await user.click(removeButton);
-
-			expect(mockOnSettingsChange).toHaveBeenCalledWith("blockedTags", ["bug"]);
-		});
-
-		it("should clear blocked tags when blocked items checkbox is unchecked", async () => {
-			const user = userEvent.setup();
-			vi.clearAllMocks();
-
-			const settingsWithBlockedTags = {
-				...mockSettings,
-				blockedTags: ["urgent", "bug"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedTags}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Work Items",
-			);
-			await user.click(blockedItemsCheckbox);
-
-			expect(mockOnSettingsChange).toHaveBeenCalledWith("blockedTags", []);
-			expect(mockOnSettingsChange).toHaveBeenCalledWith("blockedStates", []);
+			await waitFor(() => {
+				expect(
+					screen.getByText("Configure Blocked Work Items"),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("delivery-rule-builder"),
+			).not.toBeInTheDocument();
+			expect(schemaRef.getRuleSchema).not.toHaveBeenCalled();
 		});
 	});
 
-	describe("Blocked States Configuration", () => {
-		it("should not render blocked states section when blocked items is disabled", () => {
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={mockSettings}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedStatesGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked States",
-			);
-			expect(blockedStatesGroup).toBeUndefined();
+	describe("blockedRuleSetSchema (Zod boundary)", () => {
+		it("accepts a well-formed blocked rule set", () => {
+			const result = blockedRuleSetSchema.safeParse({
+				version: 1,
+				mode: "or",
+				conditions: [
+					{ fieldKey: "state", operator: "equals", value: "Blocked" },
+				],
+			});
+			expect(result.success).toBe(true);
 		});
 
-		it("should render blocked states section when blocked items is enabled", async () => {
-			const user = userEvent.setup();
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={mockSettings}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			// Enable blocked items
-			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Work Items",
-			);
-			await user.click(blockedItemsCheckbox);
-
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedStatesGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked States",
-			);
-			expect(blockedStatesGroup).toBeInTheDocument();
+		it("rejects a malformed blocked rule set at the boundary", () => {
+			const result = blockedRuleSetSchema.safeParse({
+				version: "not-a-number",
+				mode: "sometimes",
+				conditions: "nope",
+			});
+			expect(result.success).toBe(false);
 		});
 
-		it("should render blocked states section when settings already have blocked states", () => {
-			const settingsWithBlockedStates = {
-				...mockSettings,
-				blockedStates: ["In Progress", "Testing"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedStates}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedStatesGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked States",
-			);
-			expect(blockedStatesGroup).toBeInTheDocument();
-		});
-
-		it("should display existing blocked states", () => {
-			const settingsWithBlockedStates = {
-				...mockSettings,
-				blockedStates: ["In Progress", "Testing"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedStates}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			expect(screen.getByTestId("item-In Progress")).toBeInTheDocument();
-			expect(screen.getByTestId("item-Testing")).toBeInTheDocument();
-		});
-
-		it("should add new blocked state when add button is clicked", async () => {
-			const user = userEvent.setup();
-			vi.clearAllMocks();
-
-			const settingsWithBlockedStates = {
-				...mockSettings,
-				blockedStates: ["existing"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedStates}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const addButtons = screen.getAllByTestId("add-item-button");
-			const addStateButton = addButtons.find((button) =>
-				button.textContent?.includes("Blocked State"),
-			);
-
-			if (addStateButton) {
-				await user.click(addStateButton);
-				expect(mockOnSettingsChange).toHaveBeenCalledWith("blockedStates", [
-					"existing",
-					"test-item",
-				]);
-			}
-		});
-
-		it("should remove blocked state when remove button is clicked", async () => {
-			const user = userEvent.setup();
-			vi.clearAllMocks();
-
-			const settingsWithBlockedStates = {
-				...mockSettings,
-				blockedStates: ["In Progress", "Testing"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedStates}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const removeButton = screen.getByTestId("remove-item-In Progress");
-			await user.click(removeButton);
-
-			expect(mockOnSettingsChange).toHaveBeenCalledWith("blockedStates", [
-				"Testing",
-			]);
-		});
-
-		it("should use doingStates from settings as suggestions for blocked states", () => {
-			const settingsWithDoingStates = {
-				...mockSettings,
-				doingStates: ["In Progress", "Development", "Testing"],
-				blockedStates: ["In Progress"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithDoingStates}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			// The mock ItemListManager should receive the doingStates as suggestions
-			// This verifies that suggestions come from settings.doingStates, not from a service
-			const inputGroups = screen.getAllByTestId("input-group-title");
-			const blockedStatesGroup = inputGroups.find(
-				(group) => group.textContent === "Blocked States",
-			);
-			expect(blockedStatesGroup).toBeInTheDocument();
-		});
-	});
-
-	describe("Blocked Items Enable/Disable", () => {
-		it("should show blocked items checkbox unchecked when both tags and states are empty", () => {
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={mockSettings}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Work Items",
-			);
-			expect(blockedItemsCheckbox).not.toBeChecked();
-		});
-
-		it("should show blocked items checkbox checked when tags are present", () => {
-			const settingsWithBlockedTags = {
-				...mockSettings,
-				blockedTags: ["urgent"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedTags}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Work Items",
-			);
-			expect(blockedItemsCheckbox).toBeChecked();
-		});
-
-		it("should show blocked items checkbox checked when states are present", () => {
-			const settingsWithBlockedStates = {
-				...mockSettings,
-				blockedStates: ["In Progress"],
-			};
-
-			render(
-				<FlowMetricsConfigurationComponent
-					settings={settingsWithBlockedStates}
-					onSettingsChange={mockOnSettingsChange}
-					stalenessSeedDefault={5}
-				/>,
-			);
-
-			const blockedItemsCheckbox = screen.getByLabelText(
-				"Configure Blocked Work Items",
-			);
-			expect(blockedItemsCheckbox).toBeChecked();
+		it("returns null when parsing malformed JSON at the boundary", () => {
+			expect(parseBlockedRuleSet('{"conditions": ')).toBeNull();
+			expect(parseBlockedRuleSet('{"mode":"maybe"}')).toBeNull();
+			expect(parseBlockedRuleSet(null)).toBeNull();
+			expect(parseBlockedRuleSet("")).toBeNull();
 		});
 	});
 

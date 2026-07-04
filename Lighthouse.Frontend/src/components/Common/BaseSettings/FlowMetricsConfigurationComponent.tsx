@@ -1,27 +1,44 @@
 import WarningIcon from "@mui/icons-material/Warning";
 import {
-	Box,
 	Button,
 	Checkbox,
 	FormControlLabel,
 	Switch,
 	TextField,
 	Tooltip,
-	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { useRbac } from "../../../hooks/useRbac";
+import {
+	BLOCKED_RULE_SET_SCHEMA_VERSION,
+	type IBaseSettings,
+	parseBlockedRuleSet,
+	serializeBlockedRuleSet,
+} from "../../../models/Common/BaseSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type {
+	IWorkItemRuleCondition,
+	IWorkItemRuleSchema,
+} from "../../../models/WorkItemRules";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { DeliveryRuleBuilder } from "../DeliveryRuleBuilder/DeliveryRuleBuilder";
+import type { DeliveryRuleGroupMode } from "../DeliveryRuleBuilder/types";
 import InputGroup from "../InputGroup/InputGroup";
-import ItemListManager from "../ItemListManager/ItemListManager";
 
 interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
 	settings: T;
 	onSettingsChange: (
 		key: keyof T,
-		value: number | boolean | string[] | Date | null,
+		value: number | boolean | string | string[] | Date | null,
 	) => void;
 	showFeatureWip?: boolean;
 	stalenessSeedDefault: number;
@@ -44,10 +61,32 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 	const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+	const { teamService, deliveryService } = useContext(ApiServiceContext);
+	const { isTeamAdmin, isPortfolioAdmin } = useRbac();
+	const [blockedSchema, setBlockedSchema] =
+		useState<IWorkItemRuleSchema | null>(null);
+
+	// Teams pass showFeatureWip; portfolios do not — this is the owner discriminator
+	// that already flows into the shared component from both settings pages.
+	const ownerIsTeam = showFeatureWip;
+	const ownerId = settings.id;
+	const canEditBlockedRules = ownerIsTeam
+		? isTeamAdmin(ownerId)
+		: isPortfolioAdmin(ownerId);
+
+	const blockedRuleSet = useMemo(
+		() =>
+			parseBlockedRuleSet(settings.blockedRuleSetJson) ?? {
+				version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+				mode: "and" as DeliveryRuleGroupMode,
+				conditions: [],
+			},
+		[settings.blockedRuleSetJson],
+	);
+
 	const { getTerm } = useTerminology();
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const tagTerm = getTerm(TERMINOLOGY_KEYS.TAG);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const wipTerm = getTerm(TERMINOLOGY_KEYS.WIP);
 	const serviceLevelExpectationTerm = getTerm(
@@ -66,7 +105,8 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 				Number(settings.featureWIP) > 0,
 		);
 		setIsBlockedItemsEnabled(
-			(settings.blockedTags && settings.blockedTags.length > 0) ||
+			blockedRuleSet.conditions.length > 0 ||
+				(settings.blockedTags && settings.blockedTags.length > 0) ||
 				(settings.blockedStates && settings.blockedStates.length > 0),
 		);
 		setIsStalenessEnabled(settings.stalenessThresholdDays > 0);
@@ -79,7 +119,43 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		setProbabilityInputValue(
 			settings.serviceLevelExpectationProbability.toString(),
 		);
-	}, [settings, showFeatureWip]);
+	}, [settings, showFeatureWip, blockedRuleSet]);
+
+	// Fetch the rule schema for the blocked rule builder, mirroring how
+	// ForecastFilterEditor consumes the shared DeliveryRuleBuilder. Only config
+	// admins ever fetch/render the editor.
+	useEffect(() => {
+		if (!isBlockedItemsEnabled || !canEditBlockedRules) {
+			return;
+		}
+
+		let cancelled = false;
+		const request = ownerIsTeam
+			? teamService.getForecastFilterSchema(ownerId)
+			: deliveryService.getRuleSchema(ownerId);
+		request
+			.then((data) => {
+				if (!cancelled) {
+					setBlockedSchema(data);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setBlockedSchema(null);
+				}
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		isBlockedItemsEnabled,
+		canEditBlockedRules,
+		ownerIsTeam,
+		ownerId,
+		teamService,
+		deliveryService,
+	]);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -177,37 +253,37 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		}
 	};
 
-	const handleAddBlockedTag = (tag: string) => {
-		if (tag.trim()) {
-			const newTags = [...(settings.blockedTags || []), tag.trim()];
-			onSettingsChange("blockedTags" as keyof T, newTags);
-		}
-	};
-
-	const handleRemoveBlockedTag = (tag: string) => {
-		const newTags = (settings.blockedTags || []).filter((item) => item !== tag);
-		onSettingsChange("blockedTags" as keyof T, newTags);
-	};
-
-	const handleAddBlockedState = (state: string) => {
-		if (state.trim()) {
-			const newStates = [...(settings.blockedStates || []), state.trim()];
-			onSettingsChange("blockedStates" as keyof T, newStates);
-		}
-	};
-
-	const handleRemoveBlockedState = (state: string) => {
-		const newStates = (settings.blockedStates || []).filter(
-			(item) => item !== state,
+	const persistBlockedRuleSet = (
+		conditions: IWorkItemRuleCondition[],
+		mode: DeliveryRuleGroupMode,
+	) => {
+		onSettingsChange(
+			"blockedRuleSetJson" as keyof T,
+			conditions.length === 0
+				? null
+				: serializeBlockedRuleSet({
+						version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+						mode,
+						conditions,
+					}),
 		);
-		onSettingsChange("blockedStates" as keyof T, newStates);
+	};
+
+	const handleBlockedRulesChange = (conditions: IWorkItemRuleCondition[]) => {
+		persistBlockedRuleSet(conditions, blockedRuleSet.mode);
+	};
+
+	const handleBlockedRulesModeChange = (mode: DeliveryRuleGroupMode) => {
+		persistBlockedRuleSet(blockedRuleSet.conditions, mode);
 	};
 
 	const handleBlockedItemsEnableChange = (checked: boolean) => {
 		setIsBlockedItemsEnabled(checked);
 
 		if (!checked) {
-			// Clear both blocked tags and blocked states when disabled
+			// Clear the rule-based definition; legacy fields remain expand-only until the
+			// backend cleanup migration but are emptied so no stale blocked signal lingers.
+			onSettingsChange("blockedRuleSetJson" as keyof T, null);
 			onSettingsChange("blockedTags" as keyof T, []);
 			onSettingsChange("blockedStates" as keyof T, []);
 		}
@@ -259,9 +335,6 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		onSettingsChange("processBehaviourChartBaselineStartDate" as keyof T, null);
 		onSettingsChange("processBehaviourChartBaselineEndDate" as keyof T, null);
 	};
-
-	// Get only "Doing" states for blocked states suggestions
-	const doingStatesSuggestions = settings.doingStates ?? [];
 
 	return (
 		<InputGroup title={"Flow Metrics Configuration"} initiallyExpanded={false}>
@@ -422,55 +495,26 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 				/>
 			</Grid>
 
-			{/* Blocked Tags Configuration */}
-			{isBlockedItemsEnabled && (
+			{/* Blocked Rule Set — reuses the shared DeliveryRuleBuilder (third consumer,
+			    mirroring ForecastFilterEditor). Only config admins see/edit the rules. */}
+			{isBlockedItemsEnabled && canEditBlockedRules && blockedSchema && (
 				<Grid size={{ xs: 12 }}>
 					<InputGroup
-						title={`${blockedTerm} ${tagTerm}s`}
+						title={`${blockedTerm} ${workItemsTerm} Rules`}
 						initiallyExpanded={true}
 					>
 						<Grid size={{ xs: 12 }}>
-							<ItemListManager
-								title={`${blockedTerm} ${tagTerm}`}
-								items={settings.blockedTags || []}
-								onAddItem={handleAddBlockedTag}
-								onRemoveItem={handleRemoveBlockedTag}
-								suggestions={[]}
-								isLoading={false}
-							/>
-						</Grid>
-					</InputGroup>
-				</Grid>
-			)}
-
-			{/* Blocked States Configuration */}
-			{isBlockedItemsEnabled && (
-				<Grid size={{ xs: 12 }}>
-					<InputGroup title={`${blockedTerm} States`} initiallyExpanded={false}>
-						<Grid size={{ xs: 12 }}>
-							<Box
-								sx={{
-									display: "flex",
-									alignItems: "center",
-									mb: 2,
-									color: "warning.main",
-									padding: 1,
-									borderRadius: 1,
-								}}
-							>
-								<WarningIcon sx={{ mr: 1, fontSize: 20 }} />
-								<Typography variant="body2">
-									We do not recommend using states for identifying blocked
-									items. Preferably you use Tags.
-								</Typography>
-							</Box>
-							<ItemListManager
-								title={`${blockedTerm} State`}
-								items={settings.blockedStates || []}
-								onAddItem={handleAddBlockedState}
-								onRemoveItem={handleRemoveBlockedState}
-								suggestions={doingStatesSuggestions}
-								isLoading={false}
+							<DeliveryRuleBuilder
+								rules={blockedRuleSet.conditions}
+								onChange={handleBlockedRulesChange}
+								fields={blockedSchema.fields}
+								operators={blockedSchema.operators}
+								maxRules={blockedSchema.maxRules}
+								maxValueLength={blockedSchema.maxValueLength}
+								mode={blockedRuleSet.mode}
+								onModeChange={handleBlockedRulesModeChange}
+								title={`Mark ${workItemsTerm.toLowerCase()} as ${blockedTerm.toLowerCase()} where…`}
+								emptyStateMessage={`Add at least one rule to mark ${workItemsTerm.toLowerCase()} as ${blockedTerm.toLowerCase()}.`}
 							/>
 						</Grid>
 					</InputGroup>
