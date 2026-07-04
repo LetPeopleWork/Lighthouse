@@ -403,11 +403,17 @@ namespace Lighthouse.Backend.Tests.API
 
         private PortfolioController CreateSubject()
         {
+            var blockedItemServiceMock = new Mock<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>();
+            blockedItemServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(new Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet());
+
             return new PortfolioController(
                 portfolioRepoMock.Object,
                 teamRepoMock.Object,
                 portfolioUpdaterMock.Object,
                 rbacAdministrationServiceMock.Object,
+                blockedItemServiceMock.Object,
                 updateQueueServiceMock.Object
             );
         }

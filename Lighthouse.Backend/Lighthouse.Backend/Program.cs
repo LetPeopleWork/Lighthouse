@@ -950,6 +950,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleEvaluator<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.RuleEvaluator<WorkItem>>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleFieldProvider<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.WorkItemFieldProvider>();
             builder.Services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService, Lighthouse.Backend.Services.Implementation.WorkItems.BlockedItemService>();
             builder.Services.AddScoped<IWriteBackService, WriteBackService>();
             builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();
 

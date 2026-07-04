@@ -16,6 +16,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -33,6 +34,7 @@ namespace Lighthouse.Backend.API
         IUpdateQueueService updateQueueService,
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService,
+        IBlockedItemService blockedItemService,
         ILicenseService licenseService)
         : ControllerBase
     {
@@ -150,6 +152,12 @@ namespace Lighthouse.Backend.API
                 {
                     return BadRequest(filterValidation.ErrorMessage);
                 }
+
+                var blockedError = ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, teamForValidation);
+                if (blockedError != null)
+                {
+                    return BadRequest(blockedError);
+                }
             }
 
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
@@ -178,6 +186,7 @@ namespace Lighthouse.Backend.API
                 }
 
                 team.SyncTeamWithTeamSettings(teamSetting);
+                team.BlockedRuleSetJson = teamSetting.BlockedRuleSetJson;
 
                 teamRepository.Update(team);
 
@@ -197,7 +206,14 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
         public ActionResult<TeamSettingDto> GetTeamSettings(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => new TeamSettingDto(team));
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            {
+                var teamSettingDto = new TeamSettingDto(team)
+                {
+                    BlockedRuleSetJson = JsonSerializer.Serialize(blockedItemService.GetEffectiveRuleSet(team)),
+                };
+                return teamSettingDto;
+            });
         }
 
         [HttpGet("forecast-filter/schema")]
@@ -235,6 +251,36 @@ namespace Lighthouse.Backend.API
             }
 
             return ForecastFilterValidationResult.Valid();
+        }
+
+        private string? ValidateBlockedRuleSet(string? ruleSetJson, Team team)
+        {
+            if (string.IsNullOrWhiteSpace(ruleSetJson))
+            {
+                return null;
+            }
+
+            WorkItemRuleSet? ruleSet;
+            try
+            {
+                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson);
+            }
+            catch (JsonException)
+            {
+                return "Blocked rule set is not valid JSON.";
+            }
+
+            if (ruleSet == null || ruleSet.Conditions.Count == 0)
+            {
+                return null;
+            }
+
+            if (!blockedItemService.ValidateRuleSet(ruleSet, team))
+            {
+                return "Blocked rule set is invalid: unknown field key, unsupported operator, value exceeds maximum length, or rule count exceeds the allowed maximum.";
+            }
+
+            return null;
         }
 
         private sealed record ForecastFilterValidationResult(bool IsValid, string? ErrorMessage)

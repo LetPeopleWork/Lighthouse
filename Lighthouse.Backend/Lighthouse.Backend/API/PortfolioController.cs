@@ -1,7 +1,9 @@
-﻿using Lighthouse.Backend.API.DTO;
+﻿using System.Text.Json;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -10,6 +12,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +26,7 @@ namespace Lighthouse.Backend.API
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
         IRbacAdministrationService rbacAdministrationService,
+        IBlockedItemService blockedItemService,
         IUpdateQueueService updateQueueService)
         : ControllerBase
     {
@@ -105,9 +109,20 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Staleness threshold must be between {TeamController.MinStalenessThresholdDays} and {TeamController.MaxStalenessThresholdDays} days.");
             }
 
+            var portfolioForValidation = portfolioRepository.GetById(portfolioId);
+            if (portfolioForValidation != null)
+            {
+                var blockedError = ValidateBlockedRuleSet(portfolioSetting.BlockedRuleSetJson, portfolioForValidation);
+                if (blockedError != null)
+                {
+                    return BadRequest(blockedError);
+                }
+            }
+
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
                 portfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);
+                portfolio.BlockedRuleSetJson = portfolioSetting.BlockedRuleSetJson;
 
                 portfolioRepository.Update(portfolio);
 
@@ -143,9 +158,42 @@ namespace Lighthouse.Backend.API
                 var readableTeamIdSet = (readableTeamIds ?? relatedTeamIdArray)
                     .ToHashSet();
 
-                var portfolioSettingDto = new PortfolioSettingDto(portfolio, readableTeamIdSet);
+                var portfolioSettingDto = new PortfolioSettingDto(portfolio, readableTeamIdSet)
+                {
+                    BlockedRuleSetJson = JsonSerializer.Serialize(blockedItemService.GetEffectiveRuleSet(portfolio)),
+                };
                 return portfolioSettingDto;
             });
+        }
+
+        private string? ValidateBlockedRuleSet(string? ruleSetJson, Portfolio portfolio)
+        {
+            if (string.IsNullOrWhiteSpace(ruleSetJson))
+            {
+                return null;
+            }
+
+            WorkItemRuleSet? ruleSet;
+            try
+            {
+                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson);
+            }
+            catch (JsonException)
+            {
+                return "Blocked rule set is not valid JSON.";
+            }
+
+            if (ruleSet == null || ruleSet.Conditions.Count == 0)
+            {
+                return null;
+            }
+
+            if (!blockedItemService.ValidateRuleSet(ruleSet, portfolio))
+            {
+                return "Blocked rule set is invalid: unknown field key, unsupported operator, value exceeds maximum length, or rule count exceeds the allowed maximum.";
+            }
+
+            return null;
         }
     }
 }

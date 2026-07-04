@@ -44,6 +44,8 @@ namespace Lighthouse.Backend.Models
 
         public List<string> BlockedTags { get; set; } = [];
 
+        public string? BlockedRuleSetJson { get; set; }
+
         public List<StateMapping> StateMappings { get; set; } = [];
 
         public List<CycleTimeDefinition> CycleTimeDefinitions { get; set; } = [];

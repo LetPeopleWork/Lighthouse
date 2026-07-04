@@ -34,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-01 @migration
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (migration to blockedRuleSetJson)")]
         public async Task Existing_blocked_config_is_preserved_as_equivalent_rules()
         {
             var team = GivenATeamWhoseBlockedConfigIs(states: ["Blocked"], tags: ["impediment"]);
@@ -59,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-01 read-your-writes
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (blockedRuleSetJson round-trip)")]
         public async Task Saved_blocked_rules_persist_across_reload()
         {
             var team = GivenATeamReadyForConfiguration();

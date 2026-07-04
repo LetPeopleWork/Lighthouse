@@ -740,8 +740,13 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
+            var blockedItemServiceMock = new Mock<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>();
+            blockedItemServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(new WorkItemRuleSet());
+
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, licenseServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object);
         }
     }
 }

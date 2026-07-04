@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
             modelBuilder.Entity("DeliveryFeature", b =>
                 {
@@ -661,6 +661,9 @@ namespace Lighthouse.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BlockedRuleSetJson")
+                        .HasColumnType("TEXT");
+
                     b.PrimitiveCollection<string>("BlockedStates")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -855,6 +858,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<bool>("AutomaticallyAdjustFeatureWIP")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("BlockedRuleSetJson")
+                        .HasColumnType("TEXT");
 
                     b.PrimitiveCollection<string>("BlockedStates")
                         .IsRequired()
