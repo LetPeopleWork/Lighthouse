@@ -120,7 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-01 @rbac (config-admin gate on the extended contract; passes today via existing guard)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-01 (RBAC gate on blocked-rule write; GREEN-when-enabled, pre-existing TeamWrite guard)")]
         public async Task A_non_admin_cannot_change_the_blocked_definition()
         {
             var team = GivenATeamReadyForConfiguration();
