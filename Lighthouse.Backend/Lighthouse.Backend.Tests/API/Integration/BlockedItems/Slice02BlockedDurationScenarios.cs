@@ -52,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @property @us-02 (duration derives only from rule-matched items — single definition)
         [Test]
         [Category("property")]
-        [Ignore("DISTILL pending — enable in DELIVER slice-02 (blockedSince only for IsBlocked items)")]
         public async Task An_item_that_does_not_match_the_blocked_rules_has_no_blocked_duration()
         {
             var team = GivenATeamThatTreatsAStateAsBlocked("Blocked");
