@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     {
         private static readonly JsonSerializerOptions CaseInsensitive = new() { PropertyNameCaseInsensitive = true };
 
+        private static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
         private static BlockedItemService CreateSut()
             => new(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider());
 
@@ -185,8 +187,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Mode = WorkItemRuleSet.ModeOr,
                 Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.state", Operator = "equals", Value = "Blocked" }],
             };
-            var camelOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-            var camelJson = JsonSerializer.Serialize(stored, camelOptions);
+            var camelJson = JsonSerializer.Serialize(stored, CamelCase);
             var upperJson = camelJson.Replace("\"mode\"", "\"MODE\"").Replace("\"conditions\"", "\"CONDITIONS\"");
 
             var team = new Team { BlockedRuleSetJson = upperJson };
