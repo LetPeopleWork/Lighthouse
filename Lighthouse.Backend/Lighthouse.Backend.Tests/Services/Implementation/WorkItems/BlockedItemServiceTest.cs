@@ -177,6 +177,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(CreateSut().IsBlocked(feature, portfolio), Is.False);
         }
 
+        [Test]
+        public void GetEffectiveRuleSet_DeserializesWithCaseInsensitivePropertyNames()
+        {
+            var stored = new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.state", Operator = "equals", Value = "Blocked" }],
+            };
+            var camelOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var camelJson = JsonSerializer.Serialize(stored, camelOptions);
+            var upperJson = camelJson.Replace("\"mode\"", "\"MODE\"").Replace("\"conditions\"", "\"CONDITIONS\"");
+
+            var team = new Team { BlockedRuleSetJson = upperJson };
+
+            var ruleSet = CreateSut().GetEffectiveRuleSet(team);
+
+            Assert.That(ruleSet.Conditions, Has.Count.EqualTo(1));
+            Assert.That(ruleSet.Conditions[0].FieldKey, Is.EqualTo("workitem.state"));
+        }
+
+        [Test]
+        public void GetEffectiveRuleSet_FallsBackToLegacy_WhenStoredJsonIsNull()
+        {
+            var team = new Team { BlockedRuleSetJson = null, BlockedStates = ["Blocked"], BlockedTags = [] };
+
+            var ruleSet = CreateSut().GetEffectiveRuleSet(team);
+
+            Assert.That(ruleSet.Conditions, Has.Count.EqualTo(1));
+            Assert.That(ruleSet.Conditions[0].Value, Is.EqualTo("Blocked"));
+        }
+
         private static string AdditionalFieldNotEmptyRuleSet(int fieldId)
         {
             var ruleSet = new WorkItemRuleSet

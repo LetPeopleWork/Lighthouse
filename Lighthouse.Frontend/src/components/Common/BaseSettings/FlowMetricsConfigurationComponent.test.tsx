@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	BLOCKED_RULE_SET_SCHEMA_VERSION,
 	blockedRuleSetSchema,
 	parseBlockedRuleSet,
 	serializeBlockedRuleSet,
@@ -750,7 +751,39 @@ describe("FlowMetricsConfigurationComponent", () => {
 			expect(parseBlockedRuleSet('{"conditions": ')).toBeNull();
 			expect(parseBlockedRuleSet('{"mode":"maybe"}')).toBeNull();
 			expect(parseBlockedRuleSet(null)).toBeNull();
+			expect(parseBlockedRuleSet(undefined)).toBeNull();
 			expect(parseBlockedRuleSet("")).toBeNull();
+			expect(parseBlockedRuleSet("   ")).toBeNull();
+		});
+
+		it("parses a well-formed blocked rule set JSON string", () => {
+			const result = parseBlockedRuleSet(
+				JSON.stringify({
+					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+					mode: "or",
+					conditions: [{ fieldKey: "state", operator: "equals", value: "Blocked" }],
+				}),
+			);
+			expect(result).not.toBeNull();
+			expect(result!.mode).toBe("or");
+			expect(result!.conditions).toHaveLength(1);
+			expect(result!.conditions[0].fieldKey).toBe("state");
+		});
+
+		it("serializes a blocked rule set to JSON", () => {
+			const ruleSet = {
+				version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+				mode: "or" as const,
+				conditions: [{ fieldKey: "state", operator: "equals", value: "Blocked" }],
+			};
+			const json = serializeBlockedRuleSet(ruleSet);
+			expect(json).toBe(
+				JSON.stringify({
+					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+					mode: "or",
+					conditions: [{ fieldKey: "state", operator: "equals", value: "Blocked" }],
+				}),
+			);
 		});
 	});
 
