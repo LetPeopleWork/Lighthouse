@@ -17,6 +17,7 @@ import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import {
 	certainColor,
 	confidentColor,
@@ -210,7 +211,13 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 						>
 							{value}
 							{row.isBlocked && (
-								<Tooltip title={`This ${workItemTerm} is ${blockedTerm}`}>
+								<Tooltip
+									title={
+										row.blockedSince
+											? `Blocked for ${formatBlockedSince(row.blockedSince)}`
+											: `This ${workItemTerm} is ${blockedTerm}`
+									}
+								>
 									<BlockIcon
 										sx={{
 											color: "error.main",

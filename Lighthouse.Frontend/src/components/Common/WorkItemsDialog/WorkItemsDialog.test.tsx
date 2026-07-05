@@ -586,6 +586,57 @@ describe("WorkItemsDialog Component", () => {
 			const timeCells = screen.getAllByTestId("additionalColumnContent");
 			expect(timeCells[0]).toHaveStyle("font-weight: 700"); // Bold due to SLE
 		});
+
+		test("displays blocked-duration tooltip when blockedSince is present", () => {
+			const now = new Date("2026-07-05T15:00:00Z");
+			vi.useFakeTimers();
+			vi.setSystemTime(now);
+
+			const blockedSinceItem: IWorkItem = {
+				...mockWorkItems[0],
+				id: 99,
+				name: "Blocked Since Item",
+				state: "In Progress",
+				stateCategory: "Doing" as StateCategory,
+				referenceId: "US-999",
+				url: null,
+				workItemAge: 3,
+				isBlocked: true,
+				blockedSince: "2026-07-03T12:00:00Z",
+			};
+
+			render(<WorkItemsDialog {...defaultProps} items={[blockedSinceItem]} />);
+
+			// Should show duration in tooltip (2d 3h from 07-03T12:00 to 07-05T15:00)
+			const tooltip = screen.getByLabelText(/Blocked for 2d 3h/);
+			expect(tooltip).toBeInTheDocument();
+
+			vi.useRealTimers();
+		});
+
+		test("does not display blocked-duration tooltip when blockedSince is absent on blocked item", () => {
+			render(
+				<WorkItemsDialog {...defaultProps} items={mockBlockedWorkItems} />,
+			);
+
+			// Should only have the standard "Blocked" tooltips, no duration
+			const standardTooltips = screen.getAllByLabelText(
+				"This Work Item is Blocked",
+			);
+			expect(standardTooltips).toHaveLength(2);
+
+			const durationTooltips = screen.queryAllByLabelText(/Blocked for \d+d/);
+			expect(durationTooltips).toHaveLength(0);
+		});
+
+		test("omits blocked badge entirely when item is not blocked and blockedSince absent", () => {
+			render(<WorkItemsDialog {...defaultProps} />);
+
+			expect(screen.queryByTestId("BlockIcon")).not.toBeInTheDocument();
+			expect(
+				screen.queryByLabelText(/This Work Item is Blocked/),
+			).not.toBeInTheDocument();
+		});
 	});
 
 	describe("Time in State column functionality", () => {
