@@ -761,27 +761,33 @@ describe("FlowMetricsConfigurationComponent", () => {
 				JSON.stringify({
 					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
 					mode: "or",
-					conditions: [{ fieldKey: "state", operator: "equals", value: "Blocked" }],
+					conditions: [
+						{ fieldKey: "state", operator: "equals", value: "Blocked" },
+					],
 				}),
 			);
 			expect(result).not.toBeNull();
-			expect(result!.mode).toBe("or");
-			expect(result!.conditions).toHaveLength(1);
-			expect(result!.conditions[0].fieldKey).toBe("state");
+			expect(result?.mode).toBe("or");
+			expect(result?.conditions).toHaveLength(1);
+			expect(result?.conditions[0].fieldKey).toBe("state");
 		});
 
 		it("serializes a blocked rule set to JSON", () => {
 			const ruleSet = {
 				version: BLOCKED_RULE_SET_SCHEMA_VERSION,
 				mode: "or" as const,
-				conditions: [{ fieldKey: "state", operator: "equals", value: "Blocked" }],
+				conditions: [
+					{ fieldKey: "state", operator: "equals", value: "Blocked" },
+				],
 			};
 			const json = serializeBlockedRuleSet(ruleSet);
 			expect(json).toBe(
 				JSON.stringify({
 					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
 					mode: "or",
-					conditions: [{ fieldKey: "state", operator: "equals", value: "Blocked" }],
+					conditions: [
+						{ fieldKey: "state", operator: "equals", value: "Blocked" },
+					],
 				}),
 			);
 		});
