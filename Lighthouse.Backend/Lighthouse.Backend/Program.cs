@@ -907,6 +907,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
             builder.Services.AddScoped<IWorkItemStateTransitionRepository, WorkItemStateTransitionRepository>();
             builder.Services.AddScoped<IFeatureStateTransitionRepository, FeatureStateTransitionRepository>();
+            builder.Services.AddScoped<IWorkItemBlockedTransitionRepository, WorkItemBlockedTransitionRepository>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
             builder.Services.AddScoped<IRepository<OptionalFeature>, OptionalFeatureRepository>();
@@ -1054,6 +1055,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
             builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedRefreshLogCleanupHandler>();
             builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
+            builder.Services.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();
+            builder.Services.AddScoped<IDomainEventHandler<WorkItemUnblocked>, WorkItemBlockedTransitionCloseHandler>();
 
             // Authentication
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));

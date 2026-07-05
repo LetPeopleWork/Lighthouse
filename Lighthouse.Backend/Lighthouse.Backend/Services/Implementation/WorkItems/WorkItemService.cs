@@ -123,6 +123,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 events.Add(new WorkItemBlocked(workItem.Id, ResolveBlockReason(team, workItem)));
             }
 
+            if (syncedItem.WasBlockedBeforeSync && !blockedItemService.IsBlocked(workItem, team))
+            {
+                events.Add(new WorkItemUnblocked(workItem.Id));
+            }
+
             AddStalenessEventIfThresholdCrossed(team, workItem, syncTime, events);
 
             return events;
@@ -184,6 +189,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                     break;
                 case WorkItemBlocked blocked:
                     await domainEventDispatcher.PublishAsync(blocked);
+                    break;
+                case WorkItemUnblocked unblocked:
+                    await domainEventDispatcher.PublishAsync(unblocked);
                     break;
                 case WorkItemBecameStale becameStale:
                     await domainEventDispatcher.PublishAsync(becameStale);

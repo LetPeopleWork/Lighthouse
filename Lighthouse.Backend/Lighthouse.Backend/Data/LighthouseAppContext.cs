@@ -63,6 +63,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<OAuthCredential> OAuthCredentials { get; set; } = null!;
 
+        public DbSet<WorkItemBlockedTransition> WorkItemBlockedTransitions { get; set; } = null!;
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database
@@ -220,6 +222,15 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<WorkItemStateTransition>()
                 .HasIndex(t => new { t.WorkItemId, t.TransitionedAt });
+
+            modelBuilder.Entity<WorkItemBlockedTransition>()
+                .HasOne<WorkItem>()
+                .WithMany()
+                .HasForeignKey(t => t.WorkItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WorkItemBlockedTransition>()
+                .HasIndex(t => new { t.WorkItemId, t.EnteredAt });
 
             modelBuilder.Entity<FeatureStateTransition>()
                 .HasOne<Feature>()

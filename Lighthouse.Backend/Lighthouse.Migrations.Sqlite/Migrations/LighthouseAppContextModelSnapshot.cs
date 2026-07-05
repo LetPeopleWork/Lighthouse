@@ -1077,6 +1077,28 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("WorkItems");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.WorkItemBlockedTransition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("EnteredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LeftAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("WorkItemId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkItemId", "EnteredAt");
+
+                    b.ToTable("WorkItemBlockedTransitions");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkItemStateTransition", b =>
                 {
                     b.Property<int>("Id")
@@ -1410,6 +1432,15 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.WorkItemBlockedTransition", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.WorkItem", null)
+                        .WithMany()
+                        .HasForeignKey("WorkItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkItemStateTransition", b =>
