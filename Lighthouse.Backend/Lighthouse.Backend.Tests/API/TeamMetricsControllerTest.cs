@@ -412,7 +412,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result.StatusCode, Is.EqualTo(200));
 
                 var actualItems = ((IEnumerable<WorkItemDto>)result.Value!).ToList();
-                Assert.That(actualItems.Count, Is.EqualTo(2));
+                Assert.That(actualItems, Has.Count.EqualTo(2));
 
                 var blockedDto = actualItems.First(dto => dto.IsBlocked);
                 Assert.That(blockedDto.IsBlocked, Is.True);

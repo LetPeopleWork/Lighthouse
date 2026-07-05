@@ -27,6 +27,7 @@ deterministic, low-false-positive line pattern. Format (4 fields, ` ::: ` delimi
 typescript:S7735 ::: ts,tsx ::: (!==|!=)\s*(undefined|null)\s*\? ::: Negated condition in a ternary — flip to `X === undefined ? falsy : truthy` (no `!==`/`!=` in a ternary condition). See the 2026-05-16 S7735 entry.
 dotnet-nunit:NUnit4002 ::: cs ::: Is\.EqualTo\(0\) ::: Use `Is.Zero`, never `Is.EqualTo(0)` (NUnit4002).
 external_roslyn:CA1861 ::: cs ::: (Is|Does|Has)\.\w+\(new\[\] ::: CA1861 — extract the inline `new[] {...}` assertion array to a `private static readonly` field; Roslyn flags constant array args passed to repeatedly-called methods.
+external_roslyn:NUnit2046 ::: cs ::: Assert\.That\(\w+\.(Count|Length)\b ::: NUnit2046 — Use `Assert.That(collection, Has.Count.EqualTo(N))` / `Has.Length.EqualTo(N)` instead of raw `.Count`/`.Length` on the collection.
 <!-- LEDGER-CHECKS:END -->
 
 ## Formatting & linting
@@ -99,6 +100,13 @@ external_roslyn:CA1861 ::: cs ::: (Is|Does|Has)\.\w+\(new\[\] ::: CA1861 — ext
 - **Rule going forward**: Any reverse-proxy, preview-deploy, or dev-tunnel deployment of Lighthouse MUST include the *public* (browser-facing) origin in `Authentication:AllowedOrigins`, not just the internal container URL. The IdP-driven callback redirect path uses the same CORS fail-closed guard as direct UI traffic — if you can reach the Lighthouse UI in a browser but OAuth callbacks fail with no `OAuthController` log line, check `AllowedOrigins` against the public origin first.
 
 ## Tests
+
+### 2026-07-05 — NUnit2046: `Assert.That(collection.Count, …)` must use `Has.Count.EqualTo(…)`
+
+- **Symptom**: `sonar-gates` failed with `new_violations=1` (INFO) — `external_roslyn:NUnit2046` on `TeamMetricsControllerTest.cs:415`: `Assert.That(actualItems.Count, Is.EqualTo(2))`.
+- **Root cause**: the Roslyn NUnit analyzer prefers `Has.Count.EqualTo()` over raw `.Count` assertions for better failure messages and consistency. A local `dotnet build` was warning-clean — NUnit2046 is INFO severity and only fails the Sonar gate.
+- **Fix**: `Assert.That(actualItems, Has.Count.EqualTo(2))`.
+- **Rule going forward**: Never write `Assert.That(collection.Count, Is.EqualTo(N))` — use `Assert.That(collection, Has.Count.EqualTo(N))`. The pre-commit ledger now greps for this pattern.
 
 ### 2026-06-20 — CA1859 + NUnit2045 in NEW test code slipped past the pre-commit ledger grep to the Sonar gate (slice-04 migration tests)
 - **Symptom**: `sonar-gates` failed with `new_violations=2` (both INFO) after a green backend build/test: `external_roslyn:CA1859` on a private test helper returning `IReadOnlyList<string>` ("change return type to `List<string>` for performance"), and `external_roslyn:NUnit2045` on two adjacent independent `Assert.That` calls.
