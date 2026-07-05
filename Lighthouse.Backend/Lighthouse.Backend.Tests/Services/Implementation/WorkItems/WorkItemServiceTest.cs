@@ -1190,6 +1190,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Times.Never);
         }
 
+        [Test]
+        public async Task UpdateWorkItemsForTeam_UnblockTransition_PublishesWorkItemUnblockedWhenBlockedItemLeavesBlockedState()
+        {
+            var team = CreateTeam();
+            team.BlockedStates.Add("Blocked");
+
+            var existing = CreateWorkItemWithTransitions(team, "Blocked");
+            existing.State = "Blocked";
+            existing.StateCategory = StateCategories.Doing;
+            workItems.Add(existing);
+
+            var unblocked = CreateIncomingFor(existing, "Doing", StateCategories.Doing);
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync([unblocked]);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<WorkItemUnblocked>(e => e.WorkItemId == existing.Id),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(It.IsAny<WorkItemBlocked>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
         private static WorkItem CreateIncomingFor(WorkItem existing, string newState, StateCategories stateCategory, params (string fromState, string toState, DateTime transitionedAt)[] transitions)
         {
             var syncedTransitions = transitions

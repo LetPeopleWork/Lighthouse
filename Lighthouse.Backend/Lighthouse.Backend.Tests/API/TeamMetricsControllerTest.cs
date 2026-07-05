@@ -7,6 +7,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -18,6 +19,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
+        private Mock<IBlockedItemService> blockedItemServiceMock;
 
         [SetUp]
         public void Setup()
@@ -25,6 +27,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blockedItemServiceMock = new Mock<IBlockedItemService>();
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
@@ -360,6 +363,66 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(actualItems?.Count(), Is.EqualTo(2));
                 Assert.That(actualItems?.First().Name, Is.EqualTo("Vfl"));
                 Assert.That(actualItems?.Last().Name, Is.EqualTo("GCZ"));
+            }
+        }
+
+        [Test]
+        public void GetWipForTeam_BlockedItem_IncludesBlockedSince()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var blockedAt = new DateTime(2025, 6, 10, 8, 0, 0, DateTimeKind.Utc);
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+
+            var item1 = new WorkItem
+            {
+                Name = "Blocked Item",
+                Team = team,
+                State = "Blocked",
+                CurrentStateEnteredAt = blockedAt,
+            };
+
+            var item2 = new WorkItem
+            {
+                Name = "Active Item",
+                Team = team,
+                State = "In Progress",
+            };
+
+            var expectedItems = new List<WorkItem> { item1, item2 };
+            teamMetricsServiceMock.Setup(service => service.GetWipSnapshotForTeam(team, asOfDate)).Returns(expectedItems);
+
+            blockedItemServiceMock
+                .Setup(s => s.IsBlocked(item1, team))
+                .Returns(true);
+            blockedItemServiceMock
+                .Setup(s => s.IsBlocked(item2, team))
+                .Returns(false);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCurrentWipForTeam(team.Id, asOfDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+
+                var result = response.Result as OkObjectResult;
+                Assert.That(result.StatusCode, Is.EqualTo(200));
+
+                var actualItems = ((IEnumerable<WorkItemDto>)result.Value!).ToList();
+                Assert.That(actualItems.Count, Is.EqualTo(2));
+
+                var blockedDto = actualItems.First(dto => dto.IsBlocked);
+                Assert.That(blockedDto.IsBlocked, Is.True);
+                Assert.That(blockedDto.BlockedSince, Is.EqualTo(blockedAt),
+                    "blockedSince must be the CurrentStateEnteredAt for blocked items");
+
+                var activeDto = actualItems.First(dto => !dto.IsBlocked);
+                Assert.That(activeDto.IsBlocked, Is.False);
+                Assert.That(activeDto.BlockedSince, Is.Null,
+                    "blockedSince must be null for non-blocked items");
             }
         }
 
@@ -1486,7 +1549,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), new Mock<ILogger<TeamMetricsController>>().Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
         }
     }
 }

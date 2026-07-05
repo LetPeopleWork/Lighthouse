@@ -76,6 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             transitionRepositoryMock.Verify(r => r.Add(It.IsAny<WorkItemBlockedTransition>()), Times.Never);
             transitionRepositoryMock.Verify(r => r.Save(), Times.Never);
+            VerifyLoggerCalled(captureLoggerMock, LogLevel.Information, "skipping capture");
         }
 
         [Test]
@@ -123,6 +124,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             transitionRepositoryMock.Verify(r => r.Update(It.IsAny<WorkItemBlockedTransition>()), Times.Never);
             transitionRepositoryMock.Verify(r => r.Save(), Times.Never);
+            VerifyLoggerCalled(closeLoggerMock, LogLevel.Information, "skipping close");
+        }
+
+        private static void VerifyLoggerCalled<T>(Mock<ILogger<T>> loggerMock, LogLevel level, string contains)
+        {
+            loggerMock.Verify(
+                x => x.Log(
+                    level,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(contains)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
         }
     }
 }
