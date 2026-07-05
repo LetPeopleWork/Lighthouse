@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-02 (first-observation baseline)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-02 (first-observation shows no fabricated history)")]
         public async Task A_first_observation_blocked_item_shows_no_duration_until_a_baseline_exists()
         {
             var team = GivenATeamThatTreatsAStateAsBlocked("Blocked");
