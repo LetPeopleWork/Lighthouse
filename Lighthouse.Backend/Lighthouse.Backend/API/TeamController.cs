@@ -144,20 +144,10 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
             }
 
-            var teamForValidation = teamRepository.GetById(teamId);
-            if (teamForValidation != null)
+            var ruleSetError = ValidateTeamRuleSets(teamId, teamSetting);
+            if (ruleSetError != null)
             {
-                var filterValidation = ValidateForecastFilterRuleSet(teamSetting.ForecastFilterRuleSetJson, teamForValidation);
-                if (!filterValidation.IsValid)
-                {
-                    return BadRequest(filterValidation.ErrorMessage);
-                }
-
-                var blockedError = ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, teamForValidation);
-                if (blockedError != null)
-                {
-                    return BadRequest(blockedError);
-                }
+                return BadRequest(ruleSetError);
             }
 
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
@@ -221,6 +211,23 @@ namespace Lighthouse.Backend.API
         public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
+        }
+
+        private string? ValidateTeamRuleSets(int teamId, TeamSettingDto teamSetting)
+        {
+            var team = teamRepository.GetById(teamId);
+            if (team == null)
+            {
+                return null;
+            }
+
+            var filterValidation = ValidateForecastFilterRuleSet(teamSetting.ForecastFilterRuleSetJson, team);
+            if (!filterValidation.IsValid)
+            {
+                return filterValidation.ErrorMessage;
+            }
+
+            return ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, team);
         }
 
         private ForecastFilterValidationResult ValidateForecastFilterRuleSet(string? ruleSetJson, Team team)

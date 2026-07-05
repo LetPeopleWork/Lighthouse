@@ -25,9 +25,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
 
-        private static readonly IRuleEvaluator<Feature> FeatureRuleEvaluator = new RuleEvaluator<Feature>();
+        private static readonly RuleEvaluator<Feature> FeatureRuleEvaluator = new();
 
-        private static readonly IRuleFieldProvider<Feature> FeatureFieldProvider = new FeatureFieldProvider();
+        private static readonly FeatureFieldProvider FeatureFieldProvider = new();
 
         public bool IsBlocked(WorkItem item, Team owner)
         {

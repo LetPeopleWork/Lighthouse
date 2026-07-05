@@ -8,27 +8,31 @@ export class ForecastFilterEditor {
 	}
 
 	get root(): Locator {
-		return this.page.getByTestId("delivery-rule-builder");
+		// The team edit page hosts two shared DeliveryRuleBuilder instances
+		// (Forecast Filter + Blocked). Scope to the forecast one by its title.
+		return this.page
+			.getByTestId("delivery-rule-builder")
+			.filter({ hasText: "Exclude items where" });
 	}
 
 	get addRuleButton(): Locator {
-		return this.page.getByTestId("add-rule-button");
+		return this.root.getByTestId("add-rule-button");
 	}
 
 	get groupModeToggle(): Locator {
-		return this.page.getByTestId("rule-group-mode-toggle");
+		return this.root.getByTestId("rule-group-mode-toggle");
 	}
 
 	fieldSelect(ruleIndex: number): Locator {
-		return this.page.getByTestId(`rule-field-select-${ruleIndex}`);
+		return this.root.getByTestId(`rule-field-select-${ruleIndex}`);
 	}
 
 	operatorSelect(ruleIndex: number): Locator {
-		return this.page.getByTestId(`rule-operator-select-${ruleIndex}`);
+		return this.root.getByTestId(`rule-operator-select-${ruleIndex}`);
 	}
 
 	valueInput(ruleIndex: number): Locator {
-		return this.page.getByTestId(`rule-value-input-${ruleIndex}`);
+		return this.root.getByTestId(`rule-value-input-${ruleIndex}`);
 	}
 
 	async addExcludeByTypeRule(typeValue: string): Promise<void> {

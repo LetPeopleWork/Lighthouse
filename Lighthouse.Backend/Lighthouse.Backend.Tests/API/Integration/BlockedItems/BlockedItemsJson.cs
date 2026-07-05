@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// </summary>
     internal static class BlockedItemsJson
     {
+        private static readonly JsonSerializerOptions CaseInsensitiveOptions = new() { PropertyNameCaseInsensitive = true };
+
         /// <summary>A single blocked rule condition in domain terms: field + operator + value.</summary>
         internal readonly record struct BlockedCondition(string FieldKey, string Operator, string Value);
 
@@ -54,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         internal static WorkItemRuleSet? Parse(string? json)
             => string.IsNullOrWhiteSpace(json)
                 ? null
-                : JsonSerializer.Deserialize<WorkItemRuleSet>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                : JsonSerializer.Deserialize<WorkItemRuleSet>(json, CaseInsensitiveOptions);
 
         /// <summary>
         /// Take a serialised TeamSettingDto and attach the blocked rule set as a raw JSON member.

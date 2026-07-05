@@ -45,9 +45,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
                 $"A team with no snapshots must still get an honest forward-only response, not an error. Body: {response.Body}");
             var series = ParseSeries(response.Body);
-            Assert.That(series.ValueKind, Is.EqualTo(JsonValueKind.Array), response.Body);
-            Assert.That(series.GetArrayLength(), Is.Zero,
-                $"With no snapshots the series must be empty (empty state = 'builds forward from today'), never a fabricated flat-zero line. Body: {response.Body}");
+            Assert.Multiple(() =>
+            {
+                Assert.That(series.ValueKind, Is.EqualTo(JsonValueKind.Array), response.Body);
+                Assert.That(series.GetArrayLength(), Is.Zero,
+                    $"With no snapshots the series must be empty (empty state = 'builds forward from today'), never a fabricated flat-zero line. Body: {response.Body}");
+            });
         }
 
         /// <summary>
