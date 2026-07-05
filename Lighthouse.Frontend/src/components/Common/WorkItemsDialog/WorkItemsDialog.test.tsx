@@ -475,6 +475,66 @@ describe("WorkItemsDialog Component", () => {
 			// 5 days should be confident (50% of SLE)
 			expect(cycleTimeCells[4]).toHaveStyle("color: rgb(76, 175, 80)"); // RGB equivalent of lightgreen
 		});
+
+		test("applies realistic color to items at exact SLE boundary", () => {
+			const sleBoundaryItems: IWorkItem[] = [
+				{
+					...mockWorkItems[0],
+					id: 50,
+					name: "At SLE Boundary",
+					referenceId: "SLE-BND",
+					url: null,
+					workItemAge: 10,
+				},
+			];
+
+			render(
+				<WorkItemsDialog {...defaultProps} items={sleBoundaryItems} sle={10} />,
+			);
+
+			const ageCells = screen.getAllByTestId("additionalColumnContent");
+			expect(ageCells[0]).toHaveStyle("color: rgb(255, 152, 0)");
+		});
+
+		test("applies realistic color to items at exact 70% SLE", () => {
+			const seventySleItems: IWorkItem[] = [
+				{
+					...mockWorkItems[0],
+					id: 51,
+					name: "At 70% SLE",
+					referenceId: "SLE-70",
+					url: null,
+					workItemAge: 7,
+				},
+			];
+
+			render(
+				<WorkItemsDialog {...defaultProps} items={seventySleItems} sle={10} />,
+			);
+
+			const ageCells = screen.getAllByTestId("additionalColumnContent");
+			expect(ageCells[0]).toHaveStyle("color: rgb(255, 152, 0)");
+		});
+
+		test("applies confident color to items at exact 50% SLE", () => {
+			const fiftySleItems: IWorkItem[] = [
+				{
+					...mockWorkItems[0],
+					id: 52,
+					name: "At 50% SLE",
+					referenceId: "SLE-50",
+					url: null,
+					workItemAge: 5,
+				},
+			];
+
+			render(
+				<WorkItemsDialog {...defaultProps} items={fiftySleItems} sle={10} />,
+			);
+
+			const ageCells = screen.getAllByTestId("additionalColumnContent");
+			expect(ageCells[0]).toHaveStyle("color: rgb(76, 175, 80)");
+		});
 	});
 
 	describe("Blocked items functionality", () => {
@@ -627,6 +687,79 @@ describe("WorkItemsDialog Component", () => {
 
 			const durationTooltips = screen.queryAllByLabelText(/Blocked for \d+d/);
 			expect(durationTooltips).toHaveLength(0);
+		});
+
+		test("shows standard blocked tooltip when blockedSince is an invalid date string", () => {
+			const invalidDateItem: IWorkItem = {
+				...mockWorkItems[0],
+				id: 100,
+				name: "Invalid BlockedSince Item",
+				state: "In Progress",
+				stateCategory: "Doing" as StateCategory,
+				referenceId: "US-INV",
+				url: null,
+				workItemAge: 1,
+				isBlocked: true,
+				blockedSince: "not-a-valid-date",
+			};
+
+			render(<WorkItemsDialog {...defaultProps} items={[invalidDateItem]} />);
+
+			expect(
+				screen.getByLabelText("This Work Item is Blocked"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByLabelText(/Blocked for \d+d/),
+			).not.toBeInTheDocument();
+		});
+
+		test("shows standard blocked tooltip when blockedSince is far in the future", () => {
+			const futureDateItem: IWorkItem = {
+				...mockWorkItems[0],
+				id: 101,
+				name: "Future BlockedSince Item",
+				state: "In Progress",
+				stateCategory: "Doing" as StateCategory,
+				referenceId: "US-FUT",
+				url: null,
+				workItemAge: 1,
+				isBlocked: true,
+				blockedSince: "2099-01-01T00:00:00Z",
+			};
+
+			render(<WorkItemsDialog {...defaultProps} items={[futureDateItem]} />);
+
+			expect(
+				screen.getByLabelText("This Work Item is Blocked"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByLabelText(/Blocked for \d+d/),
+			).not.toBeInTheDocument();
+		});
+
+		test("displays blocked-duration tooltip with correct boundary rounding when blockedSince is exactly 48h ago", () => {
+			const now = new Date("2026-07-05T12:00:00Z");
+			vi.useFakeTimers();
+			vi.setSystemTime(now);
+
+			const twoDaysAgoItem: IWorkItem = {
+				...mockWorkItems[0],
+				id: 102,
+				name: "Two Days Blocked Item",
+				state: "In Progress",
+				stateCategory: "Doing" as StateCategory,
+				referenceId: "US-2D",
+				url: null,
+				workItemAge: 2,
+				isBlocked: true,
+				blockedSince: "2026-07-03T12:00:00Z",
+			};
+
+			render(<WorkItemsDialog {...defaultProps} items={[twoDaysAgoItem]} />);
+
+			expect(screen.getByLabelText(/Blocked for 2d 0h/)).toBeInTheDocument();
+
+			vi.useRealTimers();
 		});
 
 		test("omits blocked badge entirely when item is not blocked and blockedSince absent", () => {
