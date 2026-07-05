@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     {
         // @driving_port @us-02
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-02 (blockedSince capture on the read surface)")]
         public async Task A_newly_blocked_item_shows_how_long_it_has_been_blocked()
         {
             var team = GivenATeamThatTreatsAStateAsBlocked("Blocked");

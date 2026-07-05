@@ -6,11 +6,16 @@ namespace Lighthouse.Backend.API.DTO
     public class WorkItemDto
     {
         public WorkItemDto(WorkItemBase workItem, bool isBlocked)
-            : this(workItem, isBlocked, [])
+            : this(workItem, isBlocked, [], null)
         {
         }
 
         public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
+            : this(workItem, isBlocked, namedCycleTimes, null)
+        {
+        }
+
+        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince)
         {
             Name = workItem.Name;
             Id = workItem.Id;
@@ -27,6 +32,7 @@ namespace Lighthouse.Backend.API.DTO
             WorkItemAge = workItem.WorkItemAge;
             IsBlocked = isBlocked;
             CurrentStateEnteredAt = workItem.CurrentStateEnteredAt;
+            BlockedSince = blockedSince;
             Approximate = false;
         }
 
@@ -45,6 +51,8 @@ namespace Lighthouse.Backend.API.DTO
         public string State { get; }
 
         public bool IsBlocked { get; }
+
+        public DateTime? BlockedSince { get; }
 
         public StateCategories StateCategory { get; }
 

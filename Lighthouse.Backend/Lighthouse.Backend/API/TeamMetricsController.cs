@@ -112,7 +112,12 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate);
-                return workItems.Select(w => new WorkItemDto(w, blockedItemService.IsBlocked(w, team)));
+                return workItems.Select(w =>
+                {
+                    var isBlocked = blockedItemService.IsBlocked(w, team);
+                    var blockedSince = isBlocked ? w.CurrentStateEnteredAt : null;
+                    return new WorkItemDto(w, isBlocked, [], blockedSince);
+                });
             });
         }
 
