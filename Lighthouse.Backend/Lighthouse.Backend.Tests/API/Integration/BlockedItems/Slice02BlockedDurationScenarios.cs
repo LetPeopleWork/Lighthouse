@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-02 (unblocked item clears its duration)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-02 (spell closes on unblock)")]
         public async Task An_unblocked_item_no_longer_shows_a_blocked_duration()
         {
             var team = GivenATeamThatTreatsAStateAsBlocked("Blocked");
