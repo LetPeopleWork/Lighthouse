@@ -1,0 +1,55 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md", "CLAUDE.md"],
+  "lsp": true,
+  "permission": {
+    "bash": {
+      "des-verify-integrity *": "allow",
+      "dotnet build *": "allow",
+      "dotnet test *": "allow",
+      "dotnet run *": "allow",
+      "dotnet publish *": "allow",
+      "npx tsc *": "allow",
+      "npx playwright *": "allow",
+      "npx vitest *": "allow",
+      "pnpm test *": "allow",
+      "pnpm build *": "allow",
+      "pnpm dlx *": "allow",
+      "pnpm exec *": "allow",
+      "pnpm screenshots": "allow",
+      "git add *": "allow",
+      "git commit *": "allow",
+      "git push *": "allow",
+      "git status *": "allow",
+      "git diff *": "allow",
+      "git log *": "allow",
+      "git merge-base *": "allow",
+      "git tag *": "allow",
+      "git -C *": "allow",
+      "git stash *": "allow",
+      "git restore *": "allow",
+      "git checkout *": "allow",
+      "curl *": "allow",
+      "sqlite3 *": "allow",
+      "az *": "allow",
+      "gh *": "allow",
+      "sonar *": "allow",
+      "lsof *": "allow",
+      "sleep *": "allow",
+      "python3 *": "allow",
+      "pwsh *": "allow",
+      "rm -f *": "allow",
+      "rm -rf *": "allow",
+      "mkdir -p *": "allow",
+      "sed *": "allow",
+      "jq *": "allow"
+    }
+  },
+  "mcp": {
+    "lean-ctx": {
+      "type": "local",
+      "command": ["lean-ctx"],
+      "enabled": true
+    }
+  }
+}
