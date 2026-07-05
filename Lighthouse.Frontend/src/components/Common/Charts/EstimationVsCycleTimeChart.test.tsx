@@ -214,7 +214,8 @@ describe("EstimationVsCycleTimeChart component", () => {
 
 		expect(
 			xAxisMock.mock.calls.some(
-				([props]) => (props as { axisId?: string })?.axisId === "estimationAxis",
+				([props]) =>
+					(props as { axisId?: string })?.axisId === "estimationAxis",
 			),
 		).toBe(true);
 
