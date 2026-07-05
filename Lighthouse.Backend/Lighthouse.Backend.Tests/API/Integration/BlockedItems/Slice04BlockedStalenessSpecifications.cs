@@ -49,13 +49,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         private static void ThenTheThresholdIs(string settingsBody, int expected)
         {
             using var document = JsonDocument.Parse(settingsBody);
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(document.RootElement.TryGetProperty("blockedStalenessThresholdDays", out var prop), Is.True,
                     $"Settings payload must carry blockedStalenessThresholdDays (twin of stalenessThresholdDays). Body: {settingsBody}");
                 Assert.That(prop.GetInt32(), Is.EqualTo(expected),
                     $"blockedStalenessThresholdDays must round-trip. Body: {settingsBody}");
-            });
+            }
         }
 
         private static void ThenTheThresholdSaveSucceeds(HttpResponseMessage response)

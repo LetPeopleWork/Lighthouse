@@ -42,24 +42,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private static void ThenTheItemExposesABlockedDuration(JsonElement item)
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(item.TryGetProperty("blockedSince", out var blockedSince), Is.True,
                     $"A blocked item's read surface must expose blockedSince (per-item blocked duration). Item: {item}");
                 Assert.That(blockedSince.ValueKind, Is.EqualTo(JsonValueKind.String),
                     $"blockedSince must carry the enter-blocked timestamp for a captured spell. Item: {item}");
-            });
+            }
         }
 
         private static void ThenTheItemExposesNoBlockedDuration(JsonElement item)
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(item.TryGetProperty("blockedSince", out var blockedSince), Is.True,
                     $"blockedSince must be present on the contract even when null (first-observation / not blocked). Item: {item}");
                 Assert.That(blockedSince.ValueKind, Is.EqualTo(JsonValueKind.Null),
                     $"An item with no open blocked spell must surface blockedSince as null, not a fabricated value. Item: {item}");
-            });
+            }
         }
     }
 }
