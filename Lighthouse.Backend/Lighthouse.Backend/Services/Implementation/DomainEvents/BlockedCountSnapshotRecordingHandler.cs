@@ -88,7 +88,6 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             if (existing != null)
             {
                 existing.BlockedCount = blockedCount;
-                snapshotRepository.Update(existing);
             }
             else
             {

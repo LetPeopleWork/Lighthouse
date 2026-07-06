@@ -1134,6 +1134,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetBlockedCountHistory_PortfolioExists_ReturnsSnapshots()
         {
+            portfolioRepository.Setup(x => x.GetById(1)).Returns(project);
             var snapshots = new List<BlockedCountSnapshot>
             {
                 new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Portfolio, RecordedAt = new DateOnly(2026, 7, 1), BlockedCount = 5 },
@@ -1167,6 +1168,20 @@ namespace Lighthouse.Backend.Tests.API
             var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 5), new DateTime(2026, 7, 1));
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_SameStartAndEndDate_ReturnsOk()
+        {
+            portfolioRepository.Setup(x => x.GetById(1)).Returns(project);
+            var sameDate = new DateTime(2026, 7, 1);
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(new List<BlockedCountSnapshot>().AsQueryable());
+
+            var response = subject.GetBlockedCountHistory(1, sameDate, sameDate);
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
         }
 
         [Test]

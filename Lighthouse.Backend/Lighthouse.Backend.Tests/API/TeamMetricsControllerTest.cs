@@ -1600,6 +1600,22 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetBlockedCountHistory_SameStartAndEndDate_ReturnsOk()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var sameDate = new DateTime(2026, 7, 1);
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(new List<BlockedCountSnapshot>().AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, sameDate, sameDate);
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        [Test]
         public void GetBlockedCountHistory_NoSnapshots_ReturnsEmptyArray()
         {
             var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };

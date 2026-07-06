@@ -455,5 +455,84 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must be recorded for empty portfolio");
             Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
         }
+
+        [Test]
+        public async Task TeamDataRefreshed_OnlyMatchesCorrectOwnerInPredicate()
+        {
+            var team1 = CreateTeam(1);
+            var team2 = CreateTeam(2);
+            var workItem = CreateWorkItem(10, team1.Id);
+
+            teamRepositoryMock.Setup(x => x.GetById(team1.Id)).Returns(team1);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(new List<WorkItem> { workItem }.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team1))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var otherDay = Today.AddDays(-1);
+            context.BlockedCountSnapshots.Add(new BlockedCountSnapshot
+            {
+                OwnerId = team1.Id, OwnerType = OwnerType.Team,
+                RecordedAt = otherDay, BlockedCount = 99,
+            });
+            context.BlockedCountSnapshots.Add(new BlockedCountSnapshot
+            {
+                OwnerId = team2.Id, OwnerType = OwnerType.Team,
+                RecordedAt = Today, BlockedCount = 99,
+            });
+            await context.SaveChangesAsync();
+
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team1.Id), CancellationToken.None);
+
+            var rowCount = await SnapshotRowCountForOwner(context, team2.Id, OwnerType.Team, Today);
+            Assert.That(rowCount, Is.EqualTo(1),
+                "team2's snapshot must not be overwritten");
+            var team2Snapshot = await FindSnapshot(context, team2.Id, OwnerType.Team, Today);
+            Assert.That(team2Snapshot!.BlockedCount, Is.EqualTo(99),
+                "non-matching owner's count must remain unchanged");
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_ChangedBlockedCount_UpdatesExistingSnapshot()
+        {
+            var team = CreateTeam(1);
+            var workItem1 = CreateWorkItem(10, team.Id);
+            var workItem2 = CreateWorkItem(20, team.Id);
+            var workItem3 = CreateWorkItem(30, team.Id);
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(new List<WorkItem> { workItem1, workItem2, workItem3 }.AsQueryable());
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // First run: only w1 is blocked
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns((WorkItem item, Team _) => item.Id == workItem1.Id);
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var first = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(first!.BlockedCount, Is.EqualTo(1));
+
+            // Second run: w1 AND w2 are blocked — count changes to 2
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns((WorkItem item, Team _) => item.Id == workItem1.Id || item.Id == workItem2.Id);
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var updated = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(updated!.BlockedCount, Is.EqualTo(2),
+                "same-day re-run with a changed blocked count must update the existing snapshot");
+            var rowCount = await SnapshotRowCountForOwner(context, team.Id, OwnerType.Team, Today);
+            Assert.That(rowCount, Is.EqualTo(1));
+        }
     }
 }
