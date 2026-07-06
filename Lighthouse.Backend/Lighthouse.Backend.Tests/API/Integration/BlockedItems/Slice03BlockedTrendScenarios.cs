@@ -32,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-03 (honest forward-only empty state)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-03 (forward-only empty state, never a flat zero)")]
         public async Task A_new_team_sees_an_honest_empty_trend()
         {
             var team = GivenATeam();
