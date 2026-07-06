@@ -8,16 +8,25 @@ namespace Lighthouse.Backend.Tests.API.DTO
     [Category("epic-5074-blocked-items")]
     public class BlockedCountSnapshotDtoTests
     {
+        private static readonly JsonSerializerOptions CamelCaseOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
+        private static readonly JsonSerializerOptions CaseInsensitiveOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        };
         [Test]
         public void DefaultConstructor_HasEmptyRecordedAt()
         {
             var dto = new BlockedCountSnapshotDto();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(dto.RecordedAt, Is.EqualTo(string.Empty));
-                Assert.That(dto.BlockedCount, Is.EqualTo(0));
-            });
+                Assert.That(dto.BlockedCount, Is.Zero);
+            }
         }
 
         [Test]
@@ -29,11 +38,11 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 BlockedCount = 5,
             };
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(dto.RecordedAt, Is.EqualTo("2026-07-01"));
                 Assert.That(dto.BlockedCount, Is.EqualTo(5));
-            });
+            }
         }
 
         [Test]
@@ -45,10 +54,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 BlockedCount = 3,
             };
 
-            var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            });
+            var json = JsonSerializer.Serialize(dto, CamelCaseOptions);
 
             Assert.That(json, Does.Contain("\"recordedAt\""));
             Assert.That(json, Does.Contain("\"blockedCount\""));
@@ -62,16 +68,15 @@ namespace Lighthouse.Backend.Tests.API.DTO
         public void Deserialize_FromCamelCaseJson_RoundTrips()
         {
             var json = """{"recordedAt":"2026-07-01","blockedCount":9}""";
-            var options = new JsonSerializerOptions
+
+            var dto = JsonSerializer.Deserialize<BlockedCountSnapshotDto>(json, CaseInsensitiveOptions);
+
+            using (Assert.EnterMultipleScope())
             {
-                PropertyNameCaseInsensitive = true,
-            };
-
-            var dto = JsonSerializer.Deserialize<BlockedCountSnapshotDto>(json, options);
-
-            Assert.That(dto, Is.Not.Null);
-            Assert.That(dto!.RecordedAt, Is.EqualTo("2026-07-01"));
-            Assert.That(dto.BlockedCount, Is.EqualTo(9));
+                Assert.That(dto, Is.Not.Null);
+                Assert.That(dto!.RecordedAt, Is.EqualTo("2026-07-01"));
+                Assert.That(dto.BlockedCount, Is.EqualTo(9));
+            }
         }
 
         [Test]
@@ -80,9 +85,12 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var json = """{"RecordedAt":"2026-07-01","BlockedCount":9}""";
             var dto = JsonSerializer.Deserialize<BlockedCountSnapshotDto>(json);
 
-            Assert.That(dto, Is.Not.Null);
-            Assert.That(dto!.RecordedAt, Is.EqualTo("2026-07-01"));
-            Assert.That(dto.BlockedCount, Is.EqualTo(9));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dto, Is.Not.Null);
+                Assert.That(dto!.RecordedAt, Is.EqualTo("2026-07-01"));
+                Assert.That(dto.BlockedCount, Is.EqualTo(9));
+            }
         }
 
         [Test]
@@ -94,10 +102,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 BlockedCount = 0,
             };
 
-            var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            });
+            var json = JsonSerializer.Serialize(dto, CamelCaseOptions);
 
             Assert.That(json, Does.Contain("\"blockedCount\":0"));
         }

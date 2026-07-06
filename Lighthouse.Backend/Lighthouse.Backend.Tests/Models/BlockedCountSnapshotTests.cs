@@ -13,14 +13,14 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var snapshot = new BlockedCountSnapshot();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                Assert.That(snapshot.Id, Is.EqualTo(0));
-                Assert.That(snapshot.OwnerId, Is.EqualTo(0));
-                Assert.That(snapshot.OwnerType, Is.EqualTo(default(OwnerType)));
-                Assert.That(snapshot.RecordedAt, Is.EqualTo(default(DateOnly)));
-                Assert.That(snapshot.BlockedCount, Is.EqualTo(0));
-            });
+                Assert.That(snapshot.Id, Is.Zero);
+                Assert.That(snapshot.OwnerId, Is.Zero);
+                Assert.That(snapshot.OwnerType, Is.Default);
+                Assert.That(snapshot.RecordedAt, Is.Default);
+                Assert.That(snapshot.BlockedCount, Is.Zero);
+            }
         }
 
         [Test]
@@ -35,14 +35,14 @@ namespace Lighthouse.Backend.Tests.Models
                 BlockedCount = 5,
             };
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshot.Id, Is.EqualTo(42));
                 Assert.That(snapshot.OwnerId, Is.EqualTo(7));
                 Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Team));
                 Assert.That(snapshot.RecordedAt, Is.EqualTo(new DateOnly(2026, 7, 1)));
                 Assert.That(snapshot.BlockedCount, Is.EqualTo(5));
-            });
+            }
         }
 
         [TestCase(OwnerType.Team)]
@@ -79,10 +79,13 @@ namespace Lighthouse.Backend.Tests.Models
                 BlockedCount = 3,
             };
 
-            Assert.That(a.Equals(b), Is.False, "IDs differ — unique index (OwnerId, OwnerType, RecordedAt) is the planned DB backstop, not entity equality");
-            Assert.That(a.OwnerId, Is.EqualTo(b.OwnerId));
-            Assert.That(a.OwnerType, Is.EqualTo(b.OwnerType));
-            Assert.That(a.RecordedAt, Is.EqualTo(b.RecordedAt));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(a, Is.Not.EqualTo(b), "IDs differ — unique index (OwnerId, OwnerType, RecordedAt) is the planned DB backstop, not entity equality");
+                Assert.That(a.OwnerId, Is.EqualTo(b.OwnerId));
+                Assert.That(a.OwnerType, Is.EqualTo(b.OwnerType));
+                Assert.That(a.RecordedAt, Is.EqualTo(b.RecordedAt));
+            }
         }
 
         [Test]

@@ -1571,12 +1571,15 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
             var result = (response.Result as OkObjectResult)!;
             var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
-            Assert.That(dtos, Is.Not.Null);
-            Assert.That(dtos!.Count(), Is.EqualTo(2));
-            Assert.That(dtos.First().RecordedAt, Is.EqualTo("2026-07-01"));
-            Assert.That(dtos.First().BlockedCount, Is.EqualTo(3));
-            Assert.That(dtos.Last().RecordedAt, Is.EqualTo("2026-07-02"));
-            Assert.That(dtos.Last().BlockedCount, Is.EqualTo(7));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dtos, Is.Not.Null);
+                Assert.That(dtos!.Count(), Is.EqualTo(2));
+                Assert.That(dtos!.First().RecordedAt, Is.EqualTo("2026-07-01"));
+                Assert.That(dtos!.First().BlockedCount, Is.EqualTo(3));
+                Assert.That(dtos!.Last().RecordedAt, Is.EqualTo("2026-07-02"));
+                Assert.That(dtos!.Last().BlockedCount, Is.EqualTo(7));
+            }
         }
 
         [Test]

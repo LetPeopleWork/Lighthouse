@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             return new LighthouseAppContext(options, cryptoServiceMock.Object, appContextLoggerMock.Object);
         }
 
-        private IBlockedCountSnapshotRepository CreateSnapshotRepository(LighthouseAppContext context)
+        private BlockedCountSnapshotRepository CreateSnapshotRepository(LighthouseAppContext context)
         {
             return new BlockedCountSnapshotRepository(context, Mock.Of<ILogger<BlockedCountSnapshotRepository>>());
         }
@@ -292,11 +292,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             // Assert
             var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
-            Assert.That(snapshot, Is.Not.Null);
-            Assert.That(snapshot!.OwnerId, Is.EqualTo(team.Id));
-            Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Team));
-            Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
-            Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot, Is.Not.Null);
+                Assert.That(snapshot!.OwnerId, Is.EqualTo(team.Id));
+                Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Team));
+                Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
+                Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
+            }
         }
 
         // -----------------------------------------------------------------
@@ -327,11 +330,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             // Assert
             var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, Today);
-            Assert.That(snapshot, Is.Not.Null);
-            Assert.That(snapshot!.OwnerId, Is.EqualTo(portfolio.Id));
-            Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Portfolio));
-            Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
-            Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot, Is.Not.Null);
+                Assert.That(snapshot!.OwnerId, Is.EqualTo(portfolio.Id));
+                Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Portfolio));
+                Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
+                Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
+            }
         }
 
         [Test]
@@ -345,7 +351,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await subject.HandleAsync(new TeamDataRefreshed(999), CancellationToken.None);
 
             var count = await context.BlockedCountSnapshots.CountAsync();
-            Assert.That(count, Is.EqualTo(0), "no snapshot should be recorded when team is null");
+            Assert.That(count, Is.Zero, "no snapshot should be recorded when team is null");
         }
 
         [Test]
@@ -359,7 +365,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await subject.HandleAsync(new PortfolioFeaturesRefreshed(999), CancellationToken.None);
 
             var count = await context.BlockedCountSnapshots.CountAsync();
-            Assert.That(count, Is.EqualTo(0), "no snapshot should be recorded when portfolio is null");
+            Assert.That(count, Is.Zero, "no snapshot should be recorded when portfolio is null");
         }
 
         [Test]
@@ -387,7 +393,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
             Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must still be recorded");
-            Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
+            Assert.That(snapshot!.BlockedCount, Is.Zero);
         }
 
         [Test]
@@ -432,7 +438,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
             Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must be recorded for empty team");
-            Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
+            Assert.That(snapshot!.BlockedCount, Is.Zero);
         }
 
         [Test]
@@ -453,7 +459,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, Today);
             Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must be recorded for empty portfolio");
-            Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
+            Assert.That(snapshot!.BlockedCount, Is.Zero);
         }
 
         [Test]
