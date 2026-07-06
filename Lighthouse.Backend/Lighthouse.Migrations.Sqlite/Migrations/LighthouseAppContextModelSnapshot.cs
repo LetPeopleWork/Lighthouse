@@ -294,6 +294,32 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("BlackoutPeriods");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.BlockedCountSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BlockedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OwnerType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("RecordedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "OwnerType", "RecordedAt")
+                        .IsUnique();
+
+                    b.ToTable("BlockedCountSnapshots");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Delivery", b =>
                 {
                     b.Property<int>("Id")

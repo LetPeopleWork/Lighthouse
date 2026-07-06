@@ -65,6 +65,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<WorkItemBlockedTransition> WorkItemBlockedTransitions { get; set; } = null!;
 
+        public DbSet<BlockedCountSnapshot> BlockedCountSnapshots { get; set; } = null!;
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database
@@ -231,6 +233,14 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<WorkItemBlockedTransition>()
                 .HasIndex(t => new { t.WorkItemId, t.EnteredAt });
+
+            modelBuilder.Entity<BlockedCountSnapshot>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+
+                entity.HasIndex(s => new { s.OwnerId, s.OwnerType, s.RecordedAt })
+                      .IsUnique();
+            });
 
             modelBuilder.Entity<FeatureStateTransition>()
                 .HasOne<Feature>()
