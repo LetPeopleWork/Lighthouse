@@ -357,6 +357,11 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			act: "One state holds more than 60% of the total time, or no time is in scope. Investigate the bottleneck or widen the filter.",
 		},
 	},
+	blockedCountHistory: {
+		description:
+			"Daily blocked item count over the selected date range. Shows how the number of blocked items trends over time.",
+		learnMoreUrl: `${DOCS_BASE}#blocked-items-over-time`,
+	},
 };
 
 export function getWidgetInfo(widgetKey: string): WidgetInfoEntry | undefined {

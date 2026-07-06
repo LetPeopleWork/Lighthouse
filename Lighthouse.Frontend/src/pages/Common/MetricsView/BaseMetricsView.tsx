@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
+import BlockedItemsOverTimeChart from "../../../components/Common/Charts/BlockedItemsOverTimeChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
 import CumulativeStateTimeItemPicker from "../../../components/Common/Charts/CumulativeStateTimeItemPicker";
 import CumulativeStateTimeScopeControl from "../../../components/Common/Charts/CumulativeStateTimeScopeControl";
@@ -33,6 +34,7 @@ import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItem
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
+import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IFeature } from "../../../models/Feature";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
@@ -789,6 +791,7 @@ function buildWidgetNodes(ctx: {
 	waitStates: string[];
 	stateMappings: IStateMapping[];
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
+	blockedCountHistory: BlockedCountSnapshot[] | null;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -958,6 +961,12 @@ function buildWidgetNodes(ctx: {
 				displayTotal={true}
 			/>
 		) : null,
+		blockedCountHistory: (
+			<BlockedItemsOverTimeChart
+				snapshots={ctx.blockedCountHistory}
+				title={`${ctx.blockedTerm} Over Time`}
+			/>
+		),
 		totalThroughput: ctx.throughputInfo ? (
 			<TotalThroughputWidget data={ctx.throughputInfo} />
 		) : null,
@@ -1085,6 +1094,7 @@ export const BaseMetricsView = <
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
 		cumulativeStateTime,
+		blockedCountHistory,
 		refetchThroughputPbc,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
 
@@ -1411,6 +1421,7 @@ export const BaseMetricsView = <
 		waitStates,
 		stateMappings,
 		refetchThroughputPbc,
+		blockedCountHistory,
 	});
 
 	const widgetFooters = buildWidgetFooters({

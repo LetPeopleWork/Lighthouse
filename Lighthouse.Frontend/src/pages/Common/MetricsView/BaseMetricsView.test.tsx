@@ -773,6 +773,7 @@ describe("BaseMetricsView component", () => {
 				.mockResolvedValue({ items: [] }),
 			getFlowEfficiencyInfoForTeam: vi.fn(),
 			getFlowEfficiencyInfoForPortfolio: vi.fn(),
+			getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1359,6 +1360,7 @@ describe("BaseMetricsView component", () => {
 				.mockResolvedValue({ items: [] }),
 			getFlowEfficiencyInfoForTeam: vi.fn(),
 			getFlowEfficiencyInfoForPortfolio: vi.fn(),
+			getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -2028,6 +2030,9 @@ describe("BaseMetricsView component", () => {
 					.mockResolvedValue({ items: [] }),
 				getFlowEfficiencyInfoForTeam: vi.fn(),
 				getFlowEfficiencyInfoForPortfolio: vi.fn(),
+				getBlockedCountHistory: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
 			};
 
 			const consoleSpy = vi
@@ -3963,6 +3968,7 @@ describe("BaseMetricsView component", () => {
 					.mockResolvedValue({ state: "Doing", items: [] }),
 				getFlowEfficiencyInfoForTeam: vi.fn(),
 				getFlowEfficiencyInfoForPortfolio: vi.fn(),
+				getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 			};
 		};
 

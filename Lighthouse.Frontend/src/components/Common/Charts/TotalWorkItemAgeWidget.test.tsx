@@ -61,6 +61,7 @@ describe("TotalWorkItemAgeWidget", () => {
 			.mockResolvedValue({ items: [] }),
 		getFlowEfficiencyInfoForTeam: vi.fn(),
 		getFlowEfficiencyInfoForPortfolio: vi.fn(),
+		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 	});
 
 	it("renders loading state initially", () => {

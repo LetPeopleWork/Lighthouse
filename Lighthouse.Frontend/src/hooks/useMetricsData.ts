@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
+import type { BlockedCountSnapshot } from "../models/BlockedCountSnapshot";
 import type { IFeature } from "../models/Feature";
 import type { IForecastPredictabilityScore } from "../models/Forecasts/ForecastPredictabilityScore";
 import type { IFeatureOwner } from "../models/IFeatureOwner";
@@ -64,6 +65,7 @@ export interface MetricsData<T> {
 	totalWorkItemAgeInfo: ITotalWorkItemAgeInfo | null;
 	predictabilityScoreInfo: IPredictabilityScoreInfo | null;
 	cycleTimePercentilesInfo: ICycleTimePercentilesInfo | null;
+	blockedCountHistory: BlockedCountSnapshot[] | null;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }
 
@@ -162,6 +164,9 @@ export function useMetricsData<
 		useState<IPredictabilityScoreInfo | null>(null);
 	const [cycleTimePercentilesInfo, setCycleTimePercentilesInfo] =
 		useState<ICycleTimePercentilesInfo | null>(null);
+	const [blockedCountHistory, setBlockedCountHistory] = useState<
+		BlockedCountSnapshot[] | null
+	>(null);
 	useEffect(() => {
 		blackoutPeriodService
 			.getAll()
@@ -364,6 +369,15 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate]);
 
 	useEffect(() => {
+		metricsService
+			.getBlockedCountHistory(entity.id, startDate, endDate)
+			.then(setBlockedCountHistory)
+			.catch((error) =>
+				console.error("Error fetching blocked count history:", error),
+			);
+	}, [entity, metricsService, startDate, endDate]);
+
+	useEffect(() => {
 		if (!isTeamMetricsService(metricsService)) return;
 		metricsService
 			.getFeaturesWorkedOnInfo(entity.id, startDate, endDate)
@@ -449,6 +463,7 @@ export function useMetricsData<
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
+		blockedCountHistory,
 		refetchThroughputPbc,
 	};
 }

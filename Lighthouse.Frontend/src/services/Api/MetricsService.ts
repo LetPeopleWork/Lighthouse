@@ -1,3 +1,4 @@
+import type { BlockedCountSnapshot } from "../../models/BlockedCountSnapshot";
 import type { IFeature } from "../../models/Feature";
 import type { IForecastInputCandidates } from "../../models/Forecasts/ForecastInputCandidates";
 import {
@@ -194,6 +195,12 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<ICycleTimePercentilesInfo>;
+
+	getBlockedCountHistory(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<BlockedCountSnapshot[]>;
 
 	getFlowEfficiencyInfoForTeam(
 		id: number,
@@ -707,6 +714,19 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ICycleTimePercentilesInfo>(
 				`/${this.api}/${id}/metrics/cycleTimePercentilesInfo?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getBlockedCountHistory(
+		id: number,
+		startDate: Date,
+		endDate: Date,
+	): Promise<BlockedCountSnapshot[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<BlockedCountSnapshot[]>(
+				`/${this.api}/${id}/metrics/blockedCountHistory?${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
 		});

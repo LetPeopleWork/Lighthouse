@@ -122,6 +122,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 			.mockResolvedValue({ items: [] }),
 		getFlowEfficiencyInfoForTeam: vi.fn(),
 		getFlowEfficiencyInfoForPortfolio: vi.fn(),
+		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 	};
 }
 
