@@ -1,0 +1,337 @@
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.DomainEvents;
+using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
+using Moq;
+using NUnit.Framework;
+
+namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
+{
+    [TestFixture]
+    [Category("epic-5074-blocked-items")]
+    public class BlockedCountSnapshotRecordingHandlerTests
+    {
+        private DbContextOptions<LighthouseAppContext> options = null!;
+        private Mock<ICryptoService> cryptoServiceMock = null!;
+        private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
+
+        private Mock<IWorkItemRepository> workItemRepositoryMock = null!;
+        private Mock<IRepository<Feature>> featureRepositoryMock = null!;
+        private Mock<IRepository<Team>> teamRepositoryMock = null!;
+        private Mock<IRepository<Portfolio>> portfolioRepositoryMock = null!;
+        private Mock<IBlockedItemService> blockedItemServiceMock = null!;
+        private Mock<ILogger<BlockedCountSnapshotRecordingHandler>> handlerLoggerMock = null!;
+
+        [SetUp]
+        public void SetUp()
+        {
+            options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+
+            cryptoServiceMock = new Mock<ICryptoService>();
+            appContextLoggerMock = new Mock<ILogger<LighthouseAppContext>>();
+
+            workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            teamRepositoryMock = new Mock<IRepository<Team>>();
+            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
+            blockedItemServiceMock = new Mock<IBlockedItemService>();
+            handlerLoggerMock = new Mock<ILogger<BlockedCountSnapshotRecordingHandler>>();
+        }
+
+        private LighthouseAppContext CreateContext()
+        {
+            return new LighthouseAppContext(options, cryptoServiceMock.Object, appContextLoggerMock.Object);
+        }
+
+        private IBlockedCountSnapshotRepository CreateSnapshotRepository(LighthouseAppContext context)
+        {
+            return new BlockedCountSnapshotRepository(context, Mock.Of<ILogger<BlockedCountSnapshotRepository>>());
+        }
+
+        private BlockedCountSnapshotRecordingHandler CreateSubject(LighthouseAppContext context)
+        {
+            var snapshotRepo = CreateSnapshotRepository(context);
+            return new BlockedCountSnapshotRecordingHandler(
+                workItemRepositoryMock.Object,
+                featureRepositoryMock.Object,
+                teamRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                blockedItemServiceMock.Object,
+                snapshotRepo,
+                handlerLoggerMock.Object);
+        }
+
+        private static Team CreateTeam(int id = 1)
+        {
+            return new Team
+            {
+                Id = id,
+                Name = $"Test Team {id}",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = "Connection",
+                    WorkTrackingSystem = WorkTrackingSystems.Jira,
+                },
+            };
+        }
+
+        private static Portfolio CreatePortfolio(int id = 1)
+        {
+            return new Portfolio
+            {
+                Id = id,
+                Name = $"Test Portfolio {id}",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = "Connection",
+                    WorkTrackingSystem = WorkTrackingSystems.Jira,
+                },
+            };
+        }
+
+        private static WorkItem CreateWorkItem(int id, int teamId)
+        {
+            var team = CreateTeam(teamId);
+            var item = new WorkItem(new WorkItemBase
+            {
+                ReferenceId = $"WI-{id}",
+                Name = $"Work Item {id}",
+                State = "Active",
+                StateCategory = StateCategories.Doing,
+                Type = "Story",
+                Url = $"https://letpeople.work/{id}",
+            }, team);
+            item.Id = id;
+            return item;
+        }
+
+        private static Feature CreateFeature(int id, List<Portfolio>? portfolios = null)
+        {
+            var feature = new Feature
+            {
+                Name = $"Feature {id}",
+                ReferenceId = $"FEAT-{id}",
+                Order = id.ToString(),
+            };
+            feature.Id = id;
+            if (portfolios != null)
+            {
+                foreach (var portfolio in portfolios)
+                {
+                    feature.Portfolios.Add(portfolio);
+                }
+            }
+            return feature;
+        }
+
+        private DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+
+        private async Task<BlockedCountSnapshot?> FindSnapshot(
+            LighthouseAppContext context, int ownerId, OwnerType ownerType, DateOnly recordedAt)
+        {
+            return await context.BlockedCountSnapshots
+                .SingleOrDefaultAsync(s =>
+                    s.OwnerId == ownerId &&
+                    s.OwnerType == ownerType &&
+                    s.RecordedAt == recordedAt);
+        }
+
+        private async Task<int> SnapshotRowCountForOwner(
+            LighthouseAppContext context, int ownerId, OwnerType ownerType, DateOnly recordedAt)
+        {
+            return await context.BlockedCountSnapshots
+                .CountAsync(s =>
+                    s.OwnerId == ownerId &&
+                    s.OwnerType == ownerType &&
+                    s.RecordedAt == recordedAt);
+        }
+
+        // -----------------------------------------------------------------
+        // FRESHNESS probe
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task Freshness_RecordedCountEqualsLiveCountOfIsBlocked_AtRecordTime()
+        {
+            // Arrange
+            var team = CreateTeam(1);
+            var blockedItem = CreateWorkItem(10, team.Id);
+            var unblockedItem = CreateWorkItem(20, team.Id);
+            var workItems = new List<WorkItem> { blockedItem, unblockedItem };
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), It.IsAny<Team>()))
+                .Returns((WorkItem item, Team _) => item.Id == blockedItem.Id);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // Act
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            // Assert
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot, Is.Not.Null);
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(1),
+                "BlockedCount must match the live count from IBlockedItemService");
+        }
+
+        // -----------------------------------------------------------------
+        // IDEMPOTENCY probe
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task Idempotency_SameDayReRunProducesExactlyOneRow()
+        {
+            // Arrange
+            var team = CreateTeam(1);
+            var workItem = CreateWorkItem(10, team.Id);
+            var workItems = new List<WorkItem> { workItem };
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // Act — run twice on the same day
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            // Assert
+            var rowCount = await SnapshotRowCountForOwner(context, team.Id, OwnerType.Team, Today);
+            Assert.That(rowCount, Is.EqualTo(1),
+                "same-day re-run must produce exactly one row for the owner and date");
+        }
+
+        // -----------------------------------------------------------------
+        // SINGLE-DEFINITION probe
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task SingleDefinition_CountDerivesOnlyFromIBlockedItemService()
+        {
+            // Arrange
+            var team = CreateTeam(1);
+            var itemA = CreateWorkItem(10, team.Id);
+            var itemB = CreateWorkItem(20, team.Id);
+            var itemC = CreateWorkItem(30, team.Id);
+            var workItems = new List<WorkItem> { itemA, itemB, itemC };
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+
+            // Only itemA and itemC are blocked
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(itemA, team))
+                .Returns(true);
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(itemB, team))
+                .Returns(false);
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(itemC, team))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // Act
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            // Assert
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot, Is.Not.Null);
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(2),
+                "the count must derive exclusively from IBlockedItemService.IsBlocked — " +
+                "not from WorkItem.States, not from WorkItem.Tags, not from any other path");
+        }
+
+        // -----------------------------------------------------------------
+        // TeamDataRefreshed -> team snapshot
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_RecordsTeamSnapshot()
+        {
+            // Arrange
+            var team = CreateTeam(42);
+            var workItem = CreateWorkItem(10, team.Id);
+            var workItems = new List<WorkItem> { workItem };
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // Act
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            // Assert
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot, Is.Not.Null);
+            Assert.That(snapshot!.OwnerId, Is.EqualTo(team.Id));
+            Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Team));
+            Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
+            Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
+        }
+
+        // -----------------------------------------------------------------
+        // PortfolioFeaturesRefreshed -> portfolio snapshot
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_RecordsPortfolioSnapshot()
+        {
+            // Arrange
+            var portfolio = CreatePortfolio(7);
+            var blockedFeature = CreateFeature(100, portfolios: [portfolio]);
+            var unblockedFeature = CreateFeature(200, portfolios: [portfolio]);
+            var features = new List<Feature> { blockedFeature, unblockedFeature };
+
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            featureRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns(features.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<Feature>(), portfolio))
+                .Returns((Feature item, Portfolio _) => item.Id == blockedFeature.Id);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // Act
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            // Assert
+            var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, Today);
+            Assert.That(snapshot, Is.Not.Null);
+            Assert.That(snapshot!.OwnerId, Is.EqualTo(portfolio.Id));
+            Assert.That(snapshot.OwnerType, Is.EqualTo(OwnerType.Portfolio));
+            Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
+            Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
+        }
+    }
+}
