@@ -5,12 +5,14 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -20,6 +22,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
+        private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
 
         [SetUp]
         public void Setup()
@@ -28,6 +31,7 @@ namespace Lighthouse.Backend.Tests.API
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blockedItemServiceMock = new Mock<IBlockedItemService>();
+            blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
@@ -1547,9 +1551,76 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public void GetBlockedCountHistory_TeamExists_ReturnsSnapshots()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 1), BlockedCount = 3 },
+                new() { Id = 2, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 2), BlockedCount = 7 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(snapshots.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 1), new DateTime(2026, 7, 5));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
+            Assert.That(dtos, Is.Not.Null);
+            Assert.That(dtos!.Count(), Is.EqualTo(2));
+            Assert.That(dtos.First().RecordedAt, Is.EqualTo("2026-07-01"));
+            Assert.That(dtos.First().BlockedCount, Is.EqualTo(3));
+            Assert.That(dtos.Last().RecordedAt, Is.EqualTo("2026-07-02"));
+            Assert.That(dtos.Last().BlockedCount, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_TeamNotFound_ReturnsNotFound()
+        {
+            teamRepositoryMock.Setup(x => x.GetById(1337)).Returns((Team?)null);
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1337, new DateTime(2026, 7, 1), new DateTime(2026, 7, 5));
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 5), new DateTime(2026, 7, 1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_NoSnapshots_ReturnsEmptyArray()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(new List<BlockedCountSnapshot>().AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 1), new DateTime(2026, 7, 5));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
+            Assert.That(dtos, Is.Not.Null);
+            Assert.That(dtos!, Is.Empty);
+        }
+
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, new Mock<IBlockedCountSnapshotRepository>().Object, new Mock<ILogger<TeamMetricsController>>().Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
         }
     }
 }

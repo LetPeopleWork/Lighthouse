@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -20,6 +21,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Portfolio>> portfolioRepository;
         private Mock<IPortfolioMetricsService> projectMetricsService;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
+        private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
 
@@ -30,7 +32,8 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService = new Mock<IPortfolioMetricsService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, new Mock<IBlockedCountSnapshotRepository>().Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
+            blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
 
             project = new Portfolio
             {
@@ -1126,6 +1129,60 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result!.Value, Is.EqualTo(expectedInfo));
             }
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_PortfolioExists_ReturnsSnapshots()
+        {
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Portfolio, RecordedAt = new DateOnly(2026, 7, 1), BlockedCount = 5 },
+                new() { Id = 2, OwnerId = 1, OwnerType = OwnerType.Portfolio, RecordedAt = new DateOnly(2026, 7, 2), BlockedCount = 8 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(snapshots.AsQueryable());
+
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 1), new DateTime(2026, 7, 5));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
+            Assert.That(dtos, Is.Not.Null);
+            Assert.That(dtos!.Count(), Is.EqualTo(2));
+            Assert.That(dtos.First().BlockedCount, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_PortfolioNotFound_ReturnsNotFound()
+        {
+            var response = subject.GetBlockedCountHistory(999, new DateTime(2026, 7, 1), new DateTime(2026, 7, 5));
+
+            Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_StartDateAfterEndDate_ReturnsBadRequest()
+        {
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 5), new DateTime(2026, 7, 1));
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_NoSnapshots_ReturnsEmptyArray()
+        {
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(new List<BlockedCountSnapshot>().AsQueryable());
+
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 1), new DateTime(2026, 7, 5));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
+            Assert.That(dtos, Is.Not.Null);
+            Assert.That(dtos!, Is.Empty);
         }
     }
 }

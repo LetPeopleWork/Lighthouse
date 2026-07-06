@@ -634,5 +634,49 @@ describe("useMetricsData", () => {
 			expect(result.current.throughputData).toBeNull();
 			consoleSpy.mockRestore();
 		});
+
+		it("fetches blockedCountHistory and populates the blockedCountHistory field", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+			const mockSnapshots = [
+				{ recordedAt: "2026-07-01", blockedCount: 3 },
+				{ recordedAt: "2026-07-02", blockedCount: 7 },
+			];
+			vi.mocked(service.getBlockedCountHistory).mockResolvedValue(
+				mockSnapshots,
+			);
+
+			const { result } = renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate),
+			);
+
+			await waitFor(() => {
+				expect(result.current.blockedCountHistory).not.toBeNull();
+			});
+
+			expect(result.current.blockedCountHistory).toEqual(mockSnapshots);
+		});
+
+		it("sets blockedCountHistory to null on fetch error", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+			vi.mocked(service.getBlockedCountHistory).mockRejectedValue(
+				new Error("Service error"),
+			);
+			const consoleSpy = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+
+			const { result } = renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate),
+			);
+
+			await waitFor(() => {
+				expect(consoleSpy).toHaveBeenCalled();
+			});
+
+			expect(result.current.blockedCountHistory).toBeNull();
+			consoleSpy.mockRestore();
+		});
 	});
 });

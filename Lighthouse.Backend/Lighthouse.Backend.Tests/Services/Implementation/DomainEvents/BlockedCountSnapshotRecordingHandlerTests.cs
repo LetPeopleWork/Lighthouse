@@ -333,5 +333,127 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(snapshot.RecordedAt, Is.EqualTo(Today));
             Assert.That(snapshot.BlockedCount, Is.EqualTo(1));
         }
+
+        [Test]
+        public async Task TeamDataRefreshed_NullTeam_ReturnsWithoutRecording()
+        {
+            teamRepositoryMock.Setup(x => x.GetById(999)).Returns((Team?)null);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(999), CancellationToken.None);
+
+            var count = await context.BlockedCountSnapshots.CountAsync();
+            Assert.That(count, Is.EqualTo(0), "no snapshot should be recorded when team is null");
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_NullPortfolio_ReturnsWithoutRecording()
+        {
+            portfolioRepositoryMock.Setup(x => x.GetById(999)).Returns((Portfolio?)null);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(999), CancellationToken.None);
+
+            var count = await context.BlockedCountSnapshots.CountAsync();
+            Assert.That(count, Is.EqualTo(0), "no snapshot should be recorded when portfolio is null");
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_ZeroBlockedItems_RecordsZeroCount()
+        {
+            var team = CreateTeam(1);
+            var workItems = new List<WorkItem>
+            {
+                CreateWorkItem(10, team.Id),
+                CreateWorkItem(20, team.Id),
+            };
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns(false);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must still be recorded");
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_AllItemsBlocked_RecordsFullSetCount()
+        {
+            var team = CreateTeam(1);
+            var workItems = Enumerable.Range(1, 10).Select(i => CreateWorkItem(i, team.Id)).ToList();
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot, Is.Not.Null);
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(10));
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_NoWorkItems_RecordsZeroCount()
+        {
+            var team = CreateTeam(1);
+            var workItems = new List<WorkItem>();
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(workItems.AsQueryable());
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must be recorded for empty team");
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_NoFeatures_RecordsZeroCount()
+        {
+            var portfolio = CreatePortfolio(7);
+            var features = new List<Feature>();
+
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            featureRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns(features.AsQueryable());
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, Today);
+            Assert.That(snapshot, Is.Not.Null, "a zero-count snapshot must be recorded for empty portfolio");
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(0));
+        }
     }
 }
