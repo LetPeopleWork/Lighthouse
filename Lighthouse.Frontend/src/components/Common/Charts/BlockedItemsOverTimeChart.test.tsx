@@ -1,9 +1,11 @@
 import { render, screen } from "@testing-library/react";
+import { BarChart } from "@mui/x-charts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	BlockedCountHistoryResponseSchema,
 	type BlockedCountSnapshot,
 } from "../../../models/BlockedCountSnapshot";
+import { errorColor } from "../../../utils/theme/colors";
 import BlockedItemsOverTimeChart from "./BlockedItemsOverTimeChart";
 
 // Mock MUI-X BarChart (same pattern as BarRunChart.test.tsx)
@@ -115,5 +117,16 @@ describe("BlockedItemsOverTimeChart", () => {
 		rerender(<BlockedItemsOverTimeChart snapshots={differentSnapshots} />);
 
 		expect(screen.getByTestId("mock-bar-chart")).toBeInTheDocument();
+	});
+
+	it("renders bars using the blocked/error color", () => {
+		const snapshots: BlockedCountSnapshot[] = [
+			{ recordedAt: "2026-06-01", blockedCount: 3 },
+		];
+
+		render(<BlockedItemsOverTimeChart snapshots={snapshots} />);
+
+		const lastCall = BarChart.mock.calls.at(-1);
+		expect(lastCall?.[0]?.series?.[0]?.color).toBe(errorColor);
 	});
 });

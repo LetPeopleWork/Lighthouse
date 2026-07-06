@@ -2,6 +2,7 @@ import { Box, Card, CardContent, Typography } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import type React from "react";
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
+import { errorColor } from "../../../utils/theme/colors";
 
 interface BlockedItemsOverTimeChartProps {
 	snapshots: BlockedCountSnapshot[] | null;
@@ -69,6 +70,7 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 							{
 								dataKey: "value",
 								label: "Blocked",
+								color: errorColor,
 							},
 						]}
 					/>
