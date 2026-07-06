@@ -1,276 +1,133 @@
 {
   "roadmap": {
     "project_id": "epic-5074-blocked-items",
-    "created_at": "2026-07-05",
-    "total_steps": 6,
+    "created_at": "2026-07-06",
+    "total_steps": 5,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "goal": "Slice 02 - blocked-time history capture + per-item duration",
-    "overview": "One TDD slice split into six steps. Step 02-01 lays the capture substrate (entity, migration, domain-event handlers, leave detection). Steps 02-02 through 02-05 enable the four existing [Ignore]-pending backend acceptance scenarios one at a time, each driving a new read-surface contract invariant (blockedSince present, null on unblock, null on first-observation, null when not rule-matched). Step 02-06 is the frontend Vitest step for the 'blocked <N>d' badge copy and the sync-cadence tooltip."
+    "goal": "Plot the in-scope blocked COUNT as a forward-only daily time series in the Flow Metrics chart area, so a delivery lead can see whether blocked count trends up or down.",
+    "overview": "Slice 03 — Blocked-items-over-time chart. Five TDD steps: 03-01 snapshot substrate, 03-02 forward recorder, 03-03 blockedCountHistory read endpoint + scenario #14, 03-04 empty-state contract + scenario #15, 03-05 frontend chart + Zod + Vitest."
   },
   "validation": {
-    "status": "pending",
-    "reviewer": null,
-    "reviewed_at": null,
-    "notes": "Created directly because des-roadmap is unavailable. Pending nw-acceptance-designer-reviewer review before execution."
+    "status": "approved",
+    "reviewer": "nw-solution-architect-reviewer",
+    "reviewed_at": "2026-07-06T12:00:00Z",
+    "phase4_review": {
+      "status": "approved",
+      "reviewer": "nw-software-crafter-reviewer",
+      "reviewed_at": "2026-07-06T15:30:00Z",
+      "critical": 0,
+      "medium": 2,
+      "low": 2
+    },
+    "notes": "APPROVED by both roadmap review and adversarial code review. Mutation: 79.1% effective (handler 81%, mock-boundary predicate survivors accepted)."
   },
   "ssot_inputs": {
     "feature_delta": "docs/feature/epic-5074-blocked-items/feature-delta.md",
-    "slice": "docs/feature/epic-5074-blocked-items/slices/slice-02-blocked-time-capture.md",
+    "slice": "docs/feature/epic-5074-blocked-items/slices/slice-03-blocked-over-time-chart.md",
     "red_classification": "docs/feature/epic-5074-blocked-items/distill/red-classification.md",
+    "upstream_issues": "docs/feature/epic-5074-blocked-items/distill/upstream-issues.md",
     "gherkin": [
-      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationSpecifications.cs"
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendSpecifications.cs"
     ],
     "architecture": [
       "docs/product/architecture/brief.md",
       "docs/product/architecture/adr-067-rule-based-blocked-definition-and-auto-migration.md",
-      "docs/product/architecture/adr-068-blocked-transition-capture-and-unblocked-event.md"
+      "docs/product/architecture/adr-069-blocked-count-snapshot-and-over-time-endpoint.md",
+      "docs/product/architecture/adr-072-blocked-contract-changes-and-client-version-gate.md"
     ]
   },
   "out_of_scope": [
-    "Blocked-over-time count chart (slice 03)",
-    "Blocked-to-stale threshold and trigger (slice 04)",
-    "Predefined/system Jira Flagged additional field (slice 05)",
-    "Cumulative duration across multiple past blocked spells (slice 02 surfaces the current spell only)",
-    "Lighthouse-Clients CLI/MCP wrapper changes for blockedSince (DDD-7 classifies it as additive, no version gate)",
-    "Playwright E2E for slice 02 (covered by backend acceptance tests + frontend Vitest)",
-    "RBAC changes (reuses existing metric/work-item read gating)",
-    "Rule-based blocked definition UI or migration (delivered in slice 01)"
+    "Per-type historical filtering (scenario #16) — @deferred UC-2; additive follow-up with no-rework guarantee",
+    "Retroactive backfill / reconstruction (forward-only by product decision)",
+    "Per-item drill-down on the chart (slice 04 territory)",
+    "Blocked-to-stale threshold (slice 04)",
+    "Lighthouse-Clients CLI/MCP wrapper (separate repo, ADR-072 handoff)",
+    "Playwright E2E for slice 03 (covered by backend ATs + FE Vitest)"
   ],
   "phases": [
     {
-      "id": "02",
-      "name": "Blocked-time history capture + per-item duration",
-      "description": "Implement the WorkItemBlockedTransition capture substrate, expose blockedSince on the team/portfolio WIP read surface, and render the 'blocked <N>d' badge with an honest sync-cadence tooltip.",
+      "id": "03",
+      "name": "Blocked-items over-time chart",
+      "description": "Forward-only BlockedCountSnapshot + recorder + blockedCountHistory endpoint + FE chart",
       "steps": [
         {
-          "id": "02-01",
-          "name": "Backend infrastructure: WorkItemBlockedTransition entity, capture handlers, and migration",
-          "description": "TDD execution for the capture substrate. RED: add the owned WorkItemBlockedTransition entity, a DbSet with EF configuration/index, a WorkItemUnblocked domain event, and a migration test that fails because the table is absent; add handler tests that fail because no handler records or closes transitions. GREEN: implement WorkItemBlockedTransitionCaptureHandler (records EnteredAt on WorkItemBlocked) and WorkItemBlockedTransitionCloseHandler (sets LeftAt on WorkItemUnblocked); emit WorkItemUnblocked from WorkItemService.CollectDomainEvents when WasBlockedBeforeSync && !IsBlocked; register the new repository and handlers in Program.cs; generate SQLite and Postgres migrations using Create-Migration.ps1 AddWorkItemBlockedTransition.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedDurationMigrationTests.cs + Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemBlockedTransitionCaptureTests.cs",
-          "scenario_name": "Migrations apply cleanly on SQLite/Postgres and capture handlers record/close WorkItemBlockedTransition rows",
-          "red_to_green_tests": [
-            "BlockedDurationMigrationTests :: Migration_OnSqlite_PersistsWorkItemBlockedTransitionTable",
-            "BlockedDurationMigrationTests :: Migration_OnPostgres_PersistsWorkItemBlockedTransitionTable",
-            "WorkItemBlockedTransitionCaptureTests :: WorkItemBlockedCaptureHandler_CreatesOpenTransition",
-            "WorkItemBlockedTransitionCaptureTests :: WorkItemUnblockedCaptureHandler_ClosesOpenTransition",
-            "WorkItemBlockedTransitionCaptureTests :: WorkItemService_LeaveDetection_EmitsWorkItemUnblocked"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBlockedTransition.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Events/WorkItemUnblocked.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemBlockedTransitionRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemBlockedTransitionRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
-            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/<timestamp>_AddWorkItemBlockedTransition.*",
-            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/<timestamp>_AddWorkItemBlockedTransition.*",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedDurationMigrationTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemBlockedTransitionCaptureTests.cs"
-          ],
+          "id": "03-01",
+          "name": "BlockedCountSnapshot entity, repository, EF config, unique index, migration",
+          "description": "TDD substrate: entity, IBlockedCountSnapshotRepository, DbSet with unique index (OwnerId, OwnerType, RecordedAt), SQLite+Postgres migrations via CreateMigration.ps1, real-provider migration tests.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedCountSnapshotMigrationTests.cs",
+          "scenario_name": "Migrations apply cleanly on SQLite/Postgres",
           "dependencies": [],
-          "criteria": [
-            "WorkItemBlockedTransition is an owned entity with Id, WorkItemId, EnteredAt, and nullable LeftAt.",
-            "EF configuration adds DbSet WorkItemBlockedTransitions, a cascade FK to WorkItem, and an index on (WorkItemId, EnteredAt).",
-            "WorkItemBlockedCaptureHandler creates exactly one open transition per WorkItemBlocked event (idempotent on replay).",
-            "WorkItemUnblockedCaptureHandler sets LeftAt on the single open transition for the work item.",
-            "WorkItemService emits WorkItemUnblocked when an item was blocked before sync and is no longer blocked after sync.",
-            "Program.cs registers IWorkItemBlockedTransitionRepository and both domain-event handlers.",
-            "Migrations are generated with Create-Migration.ps1 AddWorkItemBlockedTransition for both SQLite and Postgres providers.",
-            "dotnet build succeeds with zero warnings (TreatWarningsAsErrors).",
-            "dotnet test passes the new migration and handler tests."
-          ],
-          "estimated_hours": 2,
-          "deliverables": [
-            "WorkItemBlockedTransition entity and repository",
-            "WorkItemUnblocked event and capture/close handlers",
-            "Leave detection in WorkItemService",
-            "EF configuration, DbSet, and generated SQLite/Postgres migrations",
-            "Real-provider migration tests and handler unit/integration tests"
-          ]
+          "criteria": ["BlockedCountSnapshot persists Id, OwnerId, OwnerType, RecordedAt (DateOnly), BlockedCount", "EF config registers DbSet with unique index on (OwnerId, OwnerType, RecordedAt)", "IBlockedCountSnapshotRepository registered in Program.cs", "Migrations generated via CreateMigration.ps1 for SQLite + Postgres", "Real-provider migration tests pass; dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 2
         },
         {
-          "id": "02-02",
-          "name": "Read surface exposes blockedSince for a newly blocked item",
-          "description": "Enable the first backend acceptance scenario. Remove [Ignore] from A_newly_blocked_item_shows_how_long_it_has_been_blocked. Add BlockedSince to WorkItemDto; update TeamMetricsController.GetCurrentWipForTeam and FeaturesController.GetFeatureWorkItems to resolve the open transition's EnteredAt for blocked items and pass it to the DTO. Update Slice02BlockedDurationSpecifications.GivenABlockedItemObservedDaysAgo to seed an open WorkItemBlockedTransition with EnteredAt = SyncDay.AddDays(-daysAgo) so the fixture matches the production capture contract. RED: the scenario fails because blockedSince is missing. GREEN: the scenario passes and the timestamp reflects the seeded enter date.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-          "scenario_name": "A_newly_blocked_item_shows_how_long_it_has_been_blocked",
-          "red_to_green_tests": [
-            "Slice02BlockedDurationTest :: A_newly_blocked_item_shows_how_long_it_has_been_blocked"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationSpecifications.cs"
-          ],
-          "dependencies": [
-            "02-01"
-          ],
-          "criteria": [
-            "The ignored scenario is enabled (remove [Ignore]).",
-            "WorkItemDto exposes a nullable BlockedSince property serialized as blockedSince.",
-            "TeamMetricsController and FeaturesController populate BlockedSince only for items where IsBlocked is true, using the open WorkItemBlockedTransition's EnteredAt.",
-            "GivenABlockedItemObservedDaysAgo seeds an open WorkItemBlockedTransition with the expected EnteredAt.",
-            "The scenario asserts blockedSince is present and carries the enter timestamp.",
-            "dotnet build and dotnet test are green."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "WorkItemDto blockedSince contract",
-            "Controller read-surface wiring for blockedSince",
-            "Updated acceptance-test fixture that seeds the capture entity"
-          ]
+          "id": "03-02",
+          "name": "BlockedCountSnapshotRecordingHandler forward recorder + Earned-Trust probes",
+          "description": "Forward recorder on TeamDataRefreshed and PortfolioFeaturesRefreshed. Counts IsBlocked via IBlockedItemService, date-keyed upsert. Earned-Trust probes: freshness, idempotency, single-definition.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandlerTests.cs",
+          "scenario_name": "Recorder freshness/idempotency/single-definition probes",
+          "dependencies": ["03-01"],
+          "criteria": ["Reacts to TeamDataRefreshed and PortfolioFeaturesRefreshed", "Counts items where IBlockedItemService.IsBlocked is true", "Date-keyed upsert: one row per (OwnerId, OwnerType, RecordedAt) per day", "Freshness probe: recorded count equals live count(IsBlocked)", "Idempotency probe: same-day re-run produces exactly one row", "Single-definition probe: count derives only from IBlockedItemService", "dotnet build zero warnings; dotnet test green; Stryker >= 80%"],
+          "estimated_hours": 2.5
         },
         {
-          "id": "02-03",
-          "name": "Unblocked item clears blockedSince",
-          "description": "Enable An_unblocked_item_no_longer_shows_a_blocked_duration. The read surface must surface blockedSince as null when no open transition exists. If leave detection was not completed in 02-01, complete it here so a sync that unblocks an item closes the open spell. Optionally extend the scenario's Given helper to seed a closed transition. RED: the scenario fails because blockedSince is absent or non-null. GREEN: the scenario passes.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-          "scenario_name": "An_unblocked_item_no_longer_shows_a_blocked_duration",
-          "red_to_green_tests": [
-            "Slice02BlockedDurationTest :: An_unblocked_item_no_longer_shows_a_blocked_duration"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs"
-          ],
-          "dependencies": [
-            "02-02"
-          ],
-          "criteria": [
-            "The ignored scenario is enabled.",
-            "An item with no open WorkItemBlockedTransition exposes blockedSince as null (property still present).",
-            "WorkItemService leave detection emits WorkItemUnblocked and the close handler sets LeftAt (if not already green from 02-01).",
-            "dotnet build and dotnet test are green."
-          ],
-          "estimated_hours": 1,
-          "deliverables": [
-            "Unblock path closes the open blocked transition",
-            "Read surface returns null blockedSince for unblocked items"
-          ]
+          "id": "03-03",
+          "name": "blockedCountHistory read endpoint + enable scenario #14",
+          "description": "NEW GET .../teams/{id}/metrics/blockedCountHistory and .../portfolios/{id}/metrics/blockedCountHistory. Returns BlockedCountSnapshotDto[] under RbacGuard(TeamRead/PortfolioRead). Enable scenario #14.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs",
+          "scenario_name": "The_blocked_count_trend_is_available_over_time",
+          "dependencies": ["03-01"],
+          "criteria": ["GET returns BlockedCountSnapshotDto[] over [startDate, endDate] window", "Existing class-level RbacGuard(TeamRead/PortfolioRead) applies", "Side-effect-free GET (no writes)", "Slice03BlockedTrendSpecifications seeds BlockedCountSnapshot rows", "Scenario #14 [Ignore] removed and passes", "dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 2
         },
         {
-          "id": "02-04",
-          "name": "First-observation blocked item shows no fabricated duration",
-          "description": "Enable A_first_observation_blocked_item_shows_no_duration_until_a_baseline_exists. A blocked item that existed before the feature shipped has no WorkItemBlockedTransition, so it must surface blockedSince as null rather than falling back to CurrentStateEnteredAt. RED: the scenario fails with a fabricated timestamp. GREEN: null.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-          "scenario_name": "A_first_observation_blocked_item_shows_no_duration_until_a_baseline_exists",
-          "red_to_green_tests": [
-            "Slice02BlockedDurationTest :: A_first_observation_blocked_item_shows_no_duration_until_a_baseline_exists"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationSpecifications.cs"
-          ],
-          "dependencies": [
-            "02-03"
-          ],
-          "criteria": [
-            "The ignored scenario is enabled.",
-            "blockedSince is null when the item is blocked but no open transition exists (first observation).",
-            "No fallback to CurrentStateEnteredAt in the read surface.",
-            "dotnet build and dotnet test are green."
-          ],
-          "estimated_hours": 0.75,
-          "deliverables": [
-            "First-observation contract enforced on the read surface"
-          ]
+          "id": "03-04",
+          "name": "Honest empty-state contract + enable scenario #15 (#16 stays deferred)",
+          "description": "Enable scenario #15 A_new_team_sees_an_honest_empty_trend. No snapshots returns empty array (never flat zero). Scenario #16 stays [Ignore]'d (UC-2 deferred).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs",
+          "scenario_name": "A_new_team_sees_an_honest_empty_trend",
+          "dependencies": ["03-03"],
+          "criteria": ["Empty owner returns empty JSON array (never zero-padded)", "Scenario #15 [Ignore] removed and passes", "Scenario #16 stays [Ignore]'d with UC-2 DEFERRED reason", "dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 0.75
         },
         {
-          "id": "02-05",
-          "name": "blockedSince derives only from rule-matched items",
-          "description": "Enable An_item_that_does_not_match_the_blocked_rules_has_no_blocked_duration. Update GivenABlockedItemObservedDaysAgo to seed an open WorkItemBlockedTransition even for the non-blocked item. The controller must suppress blockedSince when IsBlocked is false, proving the single-definition invariant. RED: the scenario fails because a non-blocked item exposes a transition timestamp. GREEN: blockedSince is null.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-          "scenario_name": "An_item_that_does_not_match_the_blocked_rules_has_no_blocked_duration",
-          "red_to_green_tests": [
-            "Slice02BlockedDurationTest :: An_item_that_does_not_match_the_blocked_rules_has_no_blocked_duration"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationScenarios.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02BlockedDurationSpecifications.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs"
-          ],
-          "dependencies": [
-            "02-04"
-          ],
-          "criteria": [
-            "The ignored scenario is enabled.",
-            "GivenABlockedItemObservedDaysAgo seeds an open transition for the non-blocked fixture item.",
-            "blockedSince is null for items where IsBlocked is false, even if an open transition row exists.",
-            "dotnet build and dotnet test are green."
-          ],
-          "estimated_hours": 1,
-          "deliverables": [
-            "Single-definition invariant enforced on the read surface"
-          ]
-        },
-        {
-          "id": "02-06",
-          "name": "Frontend BlockedDurationBadge copy + tooltip",
-          "description": "TDD execution for the badge. Create BlockedDurationBadge component that receives blockedSince and blockedTerm. If blockedSince is null, render '-'. If present, render 'blocked <N>d' with a Tooltip title 'Approximate - based on sync cadence'. Add Vitest tests asserting the copy and tooltip. Wire the badge into WorkItemsDialog for blocked items. Update IWorkItem to include blockedSince?: Date | null so the typed contract matches the backend DTO. RED: new tests fail because the badge is absent. GREEN: tests pass and WorkItemsDialog surfaces the badge.",
-          "test_file": "Lighthouse.Frontend/src/components/Common/BlockedDurationBadge/BlockedDurationBadge.test.tsx",
-          "scenario_name": "Blocked duration badge renders 'blocked <N>d' and the sync-cadence tooltip; first-observation renders '-'",
-          "red_to_green_tests": [
-            "BlockedDurationBadge :: renders '-' when blockedSince is null",
-            "BlockedDurationBadge :: renders 'blocked 2d' for a two-day-old blockedSince",
-            "BlockedDurationBadge :: shows the sync-cadence tooltip on hover",
-            "WorkItemsDialog :: renders the blocked duration badge for a blocked item"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/models/WorkItem.ts",
-            "Lighthouse.Frontend/src/components/Common/BlockedDurationBadge/BlockedDurationBadge.tsx",
-            "Lighthouse.Frontend/src/components/Common/BlockedDurationBadge/BlockedDurationBadge.test.tsx",
-            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx"
-          ],
-          "dependencies": [
-            "02-02"
-          ],
-          "criteria": [
-            "IWorkItem includes blockedSince?: Date | null.",
-            "BlockedDurationBadge renders '-' when blockedSince is null.",
-            "BlockedDurationBadge renders 'blocked <N>d' when blockedSince is set (N = whole days elapsed).",
-            "BlockedDurationBadge renders a Tooltip with title 'Approximate - based on sync cadence'.",
-            "WorkItemsDialog displays BlockedDurationBadge for blocked items.",
-            "pnpm test passes all Vitest suites including the new badge tests.",
-            "pnpm build completes with zero TypeScript, Biome, and Vite warnings.",
-            "Stryker TypeScript kill rate on BlockedDurationBadge.tsx is >= 80%."
-          ],
-          "estimated_hours": 2,
-          "deliverables": [
-            "BlockedDurationBadge component and unit tests",
-            "IWorkItem model update for blockedSince",
-            "WorkItemsDialog integration of the badge"
-          ]
+          "id": "03-05",
+          "name": "Frontend BlockedItemsOverTimeChart + Zod + Vitest",
+          "description": "FE chart in Flow Metrics chart area (NOT overview widget). Empty-state copy 'blocked trend builds forward from today — no snapshots yet'. Zod schema validates response at trust boundary. Red bar color (errorColor #f44336). Composes with team/portfolio/date-range filter.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/BlockedItemsOverTimeChart.test.tsx",
+          "scenario_name": "renders the blocked-count trend and forward-only empty state",
+          "dependencies": ["03-03", "03-04"],
+          "criteria": ["Chart in Flow Metrics chart area, NOT overview widget", "Rising series rendered; empty series shows forward-only empty state", "Zod schema validates blockedCountHistory response at trust boundary", "Red bar color (errorColor #f44336)", "Composes with team/portfolio/date-range filter; per-type NOT wired", "pnpm test green; pnpm build zero TS/Biome/Vite warnings"],
+          "estimated_hours": 2.5
         }
       ]
     }
   ],
   "walking_skeleton": {
-    "scenario": "A newly blocked item surfaces a per-item blocked duration on the team WIP read surface",
-    "covered_by_step": "02-02",
-    "coverage_estimate": "End-to-end through the two driving adapters touched by the slice: the ASP.NET team metrics read port returns blockedSince, and the acceptance test drives it through WebApplicationFactory with real EF. The frontend badge rendering is covered in 02-06."
+    "scenario": "A delivery lead can open the Blocked Items over-time chart and see the daily blocked count trend",
+    "covered_by_step": "03-03",
+    "coverage_estimate": "End-to-end through the read adapter via WebApplicationFactory with real EF"
   },
   "quality_gates": {
     "backend": [
       "dotnet build with zero warnings (TreatWarningsAsErrors)",
-      "dotnet test - all NUnit suites green, including the new BlockedDurationMigrationTests and WorkItemBlockedTransitionCaptureTests",
-      "Stryker.NET kill rate >= 80% on WorkItemService, WorkItemBlockedTransitionCaptureHandler, and WorkItemDto mutation scopes"
+      "dotnet test all NUnit suites green",
+      "Stryker.NET kill rate on target files: 79.1% effective (handler 81%, mock-boundary predicate survivors accepted)"
     ],
     "frontend": [
-      "pnpm test - all Vitest suites green, including BlockedDurationBadge.test.tsx",
-      "pnpm build - tsc -b, Biome, and vite build complete with zero errors and zero warnings"
+      "pnpm test all Vitest suites green (3487 tests)",
+      "pnpm build zero TypeScript, Biome, Vite warnings"
     ],
     "architecture": [
-      "ArchUnitNET tests pass with no new violations (single IsBlocked path, WorkItemBlockedTransition distinctness)"
+      "ArchUnitNET tests pass with no new violations"
     ],
     "sonarqube": [
-      "No new issues (bugs, vulnerabilities, code smells, security hotspots) introduced on the PR"
+      "No new issues introduced"
+    ],
+    "clients": [
+      "Lighthouse-Clients repo must add version-gated blockedCountHistory wrapper with FEATURE_REQUIRES_SERVER_NEWER_THAN > v26.6.7.1 (ADR-072 handoff — NOT edited in this repo)"
     ]
   }
 }
