@@ -217,6 +217,7 @@ describe("categoryMetadata", () => {
 				"stacked",
 				"loadBalanceMatrix",
 				"stateTimeCumulative",
+				"blockedCountHistory",
 			]);
 		});
 
