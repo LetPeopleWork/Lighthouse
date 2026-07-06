@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
 import { BarChart } from "@mui/x-charts";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	BlockedCountHistoryResponseSchema,
@@ -126,7 +126,8 @@ describe("BlockedItemsOverTimeChart", () => {
 
 		render(<BlockedItemsOverTimeChart snapshots={snapshots} />);
 
-		const lastCall = BarChart.mock.calls.at(-1);
+		const calls = vi.mocked(BarChart).mock.calls;
+		const lastCall = calls[calls.length - 1];
 		expect(lastCall?.[0]?.series?.[0]?.color).toBe(errorColor);
 	});
 });

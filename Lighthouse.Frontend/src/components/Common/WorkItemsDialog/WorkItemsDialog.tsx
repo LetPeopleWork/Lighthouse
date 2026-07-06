@@ -212,16 +212,14 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 							{value}
 							{row.isBlocked && (
 								<Tooltip
-									title={
-										(() => {
-											const duration = row.blockedSince
-												? formatBlockedSince(row.blockedSince)
-												: null;
-											return duration
-												? `Blocked for ${duration}`
-												: `This ${workItemTerm} is ${blockedTerm}`;
-										})()
-									}
+									title={(() => {
+										const duration = row.blockedSince
+											? formatBlockedSince(row.blockedSince)
+											: null;
+										return duration
+											? `Blocked for ${duration}`
+											: `This ${workItemTerm} is ${blockedTerm}`;
+									})()}
 								>
 									<BlockIcon
 										sx={{
