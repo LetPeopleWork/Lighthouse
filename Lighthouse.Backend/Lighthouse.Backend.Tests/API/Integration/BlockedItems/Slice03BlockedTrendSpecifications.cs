@@ -1,6 +1,9 @@
 using System.Net;
 using System.Text.Json;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
@@ -17,6 +20,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private SeededTeam GivenATeam()
             => SeedTeam(blockedStates: ["Blocked"]);
+
+        protected void GivenBlockedCountSnapshots(SeededTeam team, List<(DateOnly Date, int Count)> snapshots)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IBlockedCountSnapshotRepository>();
+            foreach (var (date, count) in snapshots)
+            {
+                repo.Add(new BlockedCountSnapshot
+                {
+                    OwnerId = team.TeamId,
+                    OwnerType = OwnerType.Team,
+                    RecordedAt = date,
+                    BlockedCount = count,
+                });
+            }
+
+            repo.Save().GetAwaiter().GetResult();
+        }
 
         // --- When ---
 

@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> portfolioRepository,
         IPortfolioMetricsService portfolioMetricsService,
         IBlackoutPeriodService blackoutPeriodService,
+        IBlockedCountSnapshotRepository blockedCountSnapshotRepository,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
     {
@@ -440,6 +441,31 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) => portfolioMetricsService.GetFeatureSizeEstimationData(portfolio, startDate, endDate));
+        }
+
+        [HttpGet("blockedCountHistory")]
+        public ActionResult<IEnumerable<BlockedCountSnapshotDto>> GetBlockedCountHistory(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+            {
+                var start = DateOnly.FromDateTime(startDate.Date);
+                var end = DateOnly.FromDateTime(endDate.Date);
+                return blockedCountSnapshotRepository
+                    .GetAllByPredicate(s => s.OwnerId == portfolioId && s.OwnerType == OwnerType.Portfolio
+                                            && s.RecordedAt >= start && s.RecordedAt <= end)
+                    .OrderBy(s => s.RecordedAt)
+                    .AsEnumerable()
+                    .Select(s => new BlockedCountSnapshotDto
+                    {
+                        RecordedAt = s.RecordedAt.ToString("yyyy-MM-dd"),
+                        BlockedCount = s.BlockedCount,
+                    });
+            });
         }
 
         private int[] GetBlackoutDayIndicesArray(DateTime startDate, DateTime endDate)

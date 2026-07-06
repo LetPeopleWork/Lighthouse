@@ -24,14 +24,16 @@ namespace Lighthouse.Backend.API
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IBlockedItemService blockedItemService;
+        private readonly IBlockedCountSnapshotRepository blockedCountSnapshotRepository;
         private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
             this.blackoutPeriodService = blackoutPeriodService;
             this.blockedItemService = blockedItemService;
+            this.blockedCountSnapshotRepository = blockedCountSnapshotRepository;
             this.logger = logger;
         }
 
@@ -434,6 +436,31 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) => teamMetricsService.GetEstimationVsCycleTimeData(team, startDate, endDate));
+        }
+
+        [HttpGet("blockedCountHistory")]
+        public ActionResult<IEnumerable<BlockedCountSnapshotDto>> GetBlockedCountHistory(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            if (startDate.Date > endDate.Date)
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var start = DateOnly.FromDateTime(startDate.Date);
+                var end = DateOnly.FromDateTime(endDate.Date);
+                return blockedCountSnapshotRepository
+                    .GetAllByPredicate(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team
+                                            && s.RecordedAt >= start && s.RecordedAt <= end)
+                    .OrderBy(s => s.RecordedAt)
+                    .AsEnumerable()
+                    .Select(s => new BlockedCountSnapshotDto
+                    {
+                        RecordedAt = s.RecordedAt.ToString("yyyy-MM-dd"),
+                        BlockedCount = s.BlockedCount,
+                    });
+            });
         }
 
         private int[] GetBlackoutDayIndicesArray(DateTime startDate, DateTime endDate)

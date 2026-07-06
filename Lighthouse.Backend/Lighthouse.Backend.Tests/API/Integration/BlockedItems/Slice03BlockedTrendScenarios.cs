@@ -15,10 +15,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     {
         // @driving_port @us-03
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-03 (blockedCountHistory endpoint)")]
         public async Task The_blocked_count_trend_is_available_over_time()
         {
             var team = GivenATeam();
+            GivenBlockedCountSnapshots(team, new List<(DateOnly Date, int Count)>
+            {
+                (DateOnly.FromDateTime(SyncDay.AddDays(-21)), 3),
+                (DateOnly.FromDateTime(SyncDay.AddDays(-14)), 6),
+                (DateOnly.FromDateTime(SyncDay.AddDays(-7)), 9),
+            });
 
             var response = await WhenTheDeliveryLeadOpensTheBlockedTrend(team);
 

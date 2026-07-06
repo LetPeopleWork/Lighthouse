@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API
             projectMetricsService = new Mock<IPortfolioMetricsService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, new Mock<IBlockedCountSnapshotRepository>().Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
 
             project = new Portfolio
             {

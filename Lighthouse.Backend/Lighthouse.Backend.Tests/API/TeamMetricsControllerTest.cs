@@ -1549,7 +1549,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, new Mock<ILogger<TeamMetricsController>>().Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, new Mock<IBlockedCountSnapshotRepository>().Object, new Mock<ILogger<TeamMetricsController>>().Object);
         }
     }
 }
