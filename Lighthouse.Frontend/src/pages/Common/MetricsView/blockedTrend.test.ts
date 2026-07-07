@@ -8,7 +8,7 @@ import { computeBlockedTrend } from "./blockedTrend";
  * one at a time (ADR-025). The trend feeds the EXISTING WidgetShell trend chrome (direction up/down/flat),
  * asserted end-to-end against the widget-trend-* test-ids in BaseMetricsView.test.tsx during DELIVER.
  */
-describe.skip("computeBlockedTrend — previous-period trend (B3)", () => {
+describe("computeBlockedTrend — previous-period trend (B3)", () => {
 	const snap = (
 		recordedAt: string,
 		blockedCount: number,
