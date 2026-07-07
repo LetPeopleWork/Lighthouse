@@ -43,3 +43,37 @@ DESIGN surfaced three points that require a DISCUSS/acceptance-design confirmati
 | UC-1 | S04 AC2 | RESOLVED at DESIGN (driver+context); Gherkin wording only | No | acceptance-designer (DISTILL — wording) |
 | UC-2 | S03 AC3 | scope clarification (per-type deferred) | No | product-owner / delivery-lead (DISTILL) |
 | UC-3 | S05 / R3 | SPIKE gate confirmed | No (slices 01–04 proceed) | software-crafter (pre-slice-05 SPIKE) |
+
+---
+
+# Enhancement batch (2026-07-07) — DESIGN back-propagation (slices 06-08)
+
+DESIGN codebase analysis found that widget chrome the DISCUSS enhancement batch treated as *new* already exists. Three assumptions refined. None changes a user-facing outcome or a locked product decision (B1 reconstruct, B2 max-age, B3 prior-period) — they **shrink the build**. No re-approval needed; flagged for the product owner / acceptance-designer.
+
+## UC-EB1 — B2 RAG already exists (count-driven), B2 re-drives it
+
+- **DISCUSS (US-EB2 / D-EB2)**: "RAG status on the overview widget" framed as a NEW indicator.
+- **Reality**: `computeBlockedOverviewRag(blockedCount, hasBlockedConfig, terms)` in `ragRules.ts` already returns red/amber/green, rendered by `WidgetShell`'s RAG chip, driven by `blockedCount ≥ 2`.
+- **Refined**: B2 **re-keys** that function to MAX blocked age vs `blockedStalenessThresholdDays` (user-chosen driver) — EXTEND one fn + its call site, not new UI.
+
+## UC-EB2 — B3 trend chrome already exists, B3 feeds it
+
+- **DISCUSS (US-EB3 / D-EB3)**: "previous-period trend indicator" framed as a NEW indicator.
+- **Reality**: `WidgetShell` already renders a trend arrow + delta tooltip from `TrendPayload` (`trendTypes.ts`, `TrendChrome`), wired via `widgetTrends` in `BaseMetricsView.tsx`, gated by `trendPolicy` in `categoryMetadata.ts`; Throughput/Arrivals/FeatureSize widgets already use it.
+- **Refined**: B3 supplies a `TrendPayload` for `blockedOverview` via a new pure `computeBlockedTrend(...)` selector + flips `trendPolicy.blockedOverview` off `"none"`. No new trend UI.
+
+## UC-EB3 — B1 current-set dialog already exists, B1's new work is historical only
+
+- **DISCUSS (US-EB1 / D-EB1)**: "click a chart bar → WorkItemsDialog of items blocked at that point" framed whole.
+- **Reality**: `WidgetShell.viewData` already opens a `WorkItemsDialog` of the CURRENT blocked set (`widgetViewData.blockedOverview`).
+- **Refined**: B1's genuinely-new surface is (a) the `blockedItemsAtDate` reconstruct endpoint (ADR-099) and (b) the chart-bar `onItemClick` → dialog for HISTORICAL dates. Latest bar reuses live `IsBlocked`; rendering reuses `WorkItemsDialog`.
+
+## Summary (enhancement batch)
+
+| Ref | Slice / Story | Type | Blocks DESIGN? | Action owner |
+|---|---|---|---|---|
+| UC-EB1 | S07 / US-EB2 | RAG exists (count) → re-drive to max-age | No | crafter; acceptance-designer targets `rag-status` test-id |
+| UC-EB2 | S06 / US-EB3 | trend chrome exists → feed `TrendPayload` | No | crafter; acceptance-designer targets `widget-trend-*` test-id |
+| UC-EB3 | S08 / US-EB1 | current dialog exists → only historical reconstruct is new | No | crafter (endpoint + chart click); ADR-099 |
+
+DISTILL should author ATs against the EXISTING chrome test-ids (`rag-status`, `widget-trend-*`, `widget-view-data-*`), not new widgets.

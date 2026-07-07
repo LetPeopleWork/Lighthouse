@@ -968,3 +968,88 @@ Decision enabled: escalate/investigate the named blockers behind a bad week, not
 - Constraints: no `BlockedCountSnapshot` schema change; reuse `blockedStalenessThresholdDays`; one blocked definition; B1 endpoint version-gated.
 - Upstream changes: none to DISCOVER; SSOT `jobs.yaml` (+3 jobs) and journey `read-blocked-signals` (+3 steps, +`blockedMembershipAtDate` artifact) extended.
 - **NEXT = /nw-design** for the three slices (B1 reconstruct endpoint is the main design surface; B2/B3 are FE-shaped). ADO: add Stories #… under Epic #5074 (confirm before create per /ado-sync).
+
+---
+
+## Wave: DESIGN / [REF] Enhancement Batch (2026-07-07)
+
+Date: 2026-07-07 | Scope: Application (@nw-solution-architect) | Mode: propose | Paradigm: OOP | Style: modular monolith + ports-and-adapters (unchanged) | Density: lean
+
+**Headline (codebase reality changes the slices):** the widget infrastructure the DISCUSS batch assumed as *new* already exists. `WidgetShell` already renders a RAG chip (from `computeBlockedOverviewRag`, count-driven today), a trend arrow+tooltip (`TrendPayload`/`TrendChrome`), and a "view data" → `WorkItemsDialog`. So B2 and B3 are **re-drive/feed** of existing chrome, not new UI; B1's *current-set* dialog is already covered — only *historical reconstruction* is genuinely new. Three DISCUSS assumptions refined (back-prop → `design/upstream-changes.md`).
+
+### [REF] DDD list (enhancement batch)
+
+- **D-EB-D1 (B1 reconstruct, not persist)** — items-blocked-at-date T are reconstructed on read from `WorkItemBlockedTransition` interval overlap (`EnteredAt.Date ≤ T ∧ (LeftAt is null ∨ LeftAt.Date ≥ T)`), joined to `WorkItem.TeamId` (Team) / feature owner (Portfolio). No persisted membership; `BlockedCountSnapshot` unchanged; no migration. New ADR-099. Verdict: ACCEPTED (user-locked D-EB1).
+- **D-EB-D2 (B1 endpoint mirrors ADR-069)** — new `GET .../metrics/blockedItemsAtDate?date=T` on `TeamMetricsController` + `PortfolioMetricsController`, same `GetEntityByIdAnExecuteAction` shape as `blockedCountHistory`; returns the existing `WorkItemDto[]` (FE reuses `WorkItemsDialog`). Latest date reconstructs from live `IsBlocked`. Version-gated for CLI/MCP (ADR-072 pattern). Verdict: ACCEPTED.
+- **D-EB-D3 (B1 reconciliation guard)** — the reconstructed count for T is compared to `BlockedCountSnapshot.blockedCount` for T where both exist; divergence surfaces a capture-gap note, never silent. Verdict: ACCEPTED.
+- **D-EB-D4 (B2 re-drive existing RAG)** — `computeBlockedOverviewRag` is re-keyed from `blockedCount ≥ 2` to MAX blocked age vs the existing `blockedStalenessThresholdDays` (RED past threshold, AMBER within an aging band = default fraction of threshold, GREEN none aging; threshold 0 ⇒ `"none"`). Signature gains blocked items' `blockedSince` + threshold. EXTEND the existing function + its one call site. Verdict: ACCEPTED.
+- **D-EB-D5 (B3 feed existing trend chrome)** — a new pure client selector `computeBlockedTrend(blockedCountHistory, startDate, endDate): TrendPayload` computes the prior-period-boundary baseline and direction/delta; wired into the existing `widgetTrends` map for `blockedOverview` and the `trendPolicy` flag flipped off `"none"`. No backend, no new UI (`WidgetShell.trend` renders it). No baseline ⇒ `direction: "none"` (chrome hidden). Verdict: ACCEPTED.
+- **D-EB-D6 (single blocked source preserved)** — every enhancement derives from the ONE `IsBlocked`/`blockedRuleSet` + the ONE `WorkItemBlockedTransition` capture. No second evaluation path (ADR-067/068 invariant upheld). Verdict: ACCEPTED.
+
+### [REF] Component decomposition (enhancement batch)
+
+| Component | Path | Slice | Change |
+|---|---|---|---|
+| `computeBlockedOverviewRag` | `pages/Common/MetricsView/ragRules.ts` | 07 (B2) | EXTEND — re-key to max blocked age + threshold |
+| blocked RAG call site | `pages/Common/MetricsView/BaseMetricsView.tsx` (~L264) | 07 | MODIFY — pass `blockedItems` (with `blockedSince`) + `blockedStalenessThresholdDays` |
+| `computeBlockedTrend` (new) | `pages/Common/MetricsView/blockedTrend.ts` (new) | 06 (B3) | CREATE NEW — pure selector, `blockedCountHistory` → `TrendPayload` |
+| `widgetTrends` map + `trendPolicy` | `BaseMetricsView.tsx`, `categoryMetadata.ts` | 06 | EXTEND — add `blockedOverview` trend entry; flip policy off `"none"` |
+| `BlockedItemsOverTimeChart` | `components/Common/Charts/BlockedItemsOverTimeChart.tsx` | 08 (B1) | EXTEND — `BarChart` `onItemClick` → resolve date → open `WorkItemsDialog` |
+| `blockedItemsAtDate` endpoint | `API/TeamMetricsController.cs`, `API/PortfolioMetricsController.cs` | 08 | CREATE NEW — mirrors `blockedCountHistory` |
+| reconstruct query | `Services/…/Repositories/WorkItemBlockedTransitionRepository.cs` (+interface) | 08 | EXTEND — interval-overlap-at-date predicate (or `GetAllByPredicate`) |
+| `WorkItemsDialog` | `components/Common/WorkItemsDialog/` | 08 | REUSE — render reconstructed set |
+| `WidgetShell` viewData/trend/RAG chrome | `pages/Common/MetricsView/WidgetShell.tsx` | 06/07/08 | REUSE — no change; already renders all three |
+
+### [REF] Driving ports
+
+- B1: `GET /api/{teams|portfolios}/{id}/metrics/blockedItemsAtDate?date=YYYY-MM-DD` (new read endpoint; version-gated).
+- B2/B3: none (client-side off already-loaded `blockedItems` + `blockedCountHistory`).
+
+### [REF] Driven ports + adapters
+
+- B1: `IWorkItemBlockedTransitionRepository` (existing owned-entity store) — read-only interval-overlap query. No new adapter.
+- B2/B3: none.
+
+### [REF] Technology choices
+
+No new tech. Backend C# .NET 10 (existing metrics controllers + EF repo). Frontend React 18 + TS + MUI-X `BarChart` `onItemClick` (existing dep). Zod at the new `blockedItemsAtDate` response boundary (reuses the `WorkItemDto` schema). No new package, no migration.
+
+### [REF] Decisions table
+
+| ID | Decision |
+|---|---|
+| D-EB-D1 | B1 reconstruct from transition intervals, not persist (ADR-099) |
+| D-EB-D2 | B1 endpoint mirrors `blockedCountHistory`, returns `WorkItemDto[]`, version-gated |
+| D-EB-D3 | B1 count reconciles with `BlockedCountSnapshot`; divergence surfaced |
+| D-EB-D4 | B2 re-drives `computeBlockedOverviewRag` from max blocked age + `blockedStalenessThresholdDays` |
+| D-EB-D5 | B3 feeds existing `WidgetShell` trend via `computeBlockedTrend` selector |
+| D-EB-D6 | single blocked source preserved (ADR-067/068 invariant) |
+
+### [REF] Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `computeBlockedOverviewRag` | `ragRules.ts` | Blocked widget RAG (count-driven) | EXTEND | Re-key inputs to max-age + threshold; ~15 LOC vs a new RAG fn + wiring |
+| `WidgetShell` trend chrome + `TrendPayload`/`TrendChrome` | `WidgetShell.tsx`, `trendTypes.ts` | Trend arrow + delta tooltip UI | REUSE | UI already renders `blockedOverview` trend once a payload is supplied |
+| `widgetTrends` map | `BaseMetricsView.tsx` | Per-widget trend wiring | EXTEND | Add one `blockedOverview` entry (mirrors `wipOverview?.comparison`) |
+| `trendPolicy` | `categoryMetadata.ts` | Gates trend display | EXTEND | Flip `blockedOverview` off `"none"` |
+| `WidgetShell` viewData → `WorkItemsDialog` | `WidgetShell.tsx` | Current blocked-set dialog | REUSE | `widgetViewData.blockedOverview` already lists current blocked items — B1's live case is done |
+| `BlockedItemsOverTimeChart` | `Charts/BlockedItemsOverTimeChart.tsx` | Over-time bars | EXTEND | Add `onItemClick`; ~existing MUI-X `BarChart` prop |
+| `WorkItemsDialog` | `WorkItemsDialog/` | Item-list dialog | REUSE | Render the reconstructed set |
+| `blockedCountHistory` endpoint | `TeamMetricsController.cs`, `PortfolioMetricsController.cs` | Metrics read-endpoint pattern | EXTEND (mirror) | New sibling endpoint, same `GetEntityByIdAnExecuteAction` shape |
+| `IWorkItemBlockedTransitionRepository` | `…/Repositories/` | Interval store | EXTEND | Add interval-overlap-at-date read (or `GetAllByPredicate`) |
+| **point-in-time membership reconstruction** | — | none | **CREATE NEW** | No existing code reconstructs blocked membership at date T; the sole genuinely-new surface (B1) — justified by D-EB-D1 |
+
+### [REF] Open questions
+
+- **OQ-EB-D1 (B2 AMBER band)**: the aging fraction of `blockedStalenessThresholdDays` for AMBER (proposed default: ≥ 75% of threshold). Confirm the default at DELIVER; not a user setting.
+- **OQ-EB-D2 (B3 period boundary)**: "last day of previous period" for a selected range `[start,end]` = the snapshot on `start − 1 day` (proposed). Confirm vs `start` at DELIVER.
+- **OQ-EB-D3 (B1 Portfolio owner join)**: Team joins via `WorkItem.TeamId`; the Portfolio/Feature owner link for the reconstruct query is confirmed at DELIVER (features carry their own transitions; same interval predicate).
+
+### [REF] Wave Decisions Summary (DESIGN)
+
+- Pattern/paradigm: modular monolith + ports-and-adapters, OOP (unchanged). No new bounded context.
+- Net-new surface is small: one backend read endpoint + one interval query (B1), one FE selector (B3), one FE function re-key (B2). Everything else EXTENDS/REUSES shipped widget chrome.
+- ADR-099 (B1 reconstruct-not-persist) added; ADR-067/068/069/072 unchanged and upheld.
+- Back-prop: 3 DISCUSS assumptions refined (RAG/trend/current-dialog already exist) → `design/upstream-changes.md`.
+- **NEXT = /nw-devops (KPIs)** then **/nw-distill** (acceptance tests). ADO: 3 Stories under #5074 (confirm before create).
