@@ -106,10 +106,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         /// </summary>
         private static List<string> ParseReferenceIds((HttpStatusCode Status, string Body) response)
         {
-            Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
-                $"The blockedItemsAtDate endpoint must serve the reconstructed item set. Body: {response.Body}");
-            Assert.That(response.Body.TrimStart(), Does.StartWith("["),
-                $"blockedItemsAtDate must return a JSON array of work items, not HTML/other — the endpoint appears unimplemented. Body starts: {response.Body[..Math.Min(60, response.Body.Length)]}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
+                    $"The blockedItemsAtDate endpoint must serve the reconstructed item set. Body: {response.Body}");
+                Assert.That(response.Body.TrimStart(), Does.StartWith("["),
+                    $"blockedItemsAtDate must return a JSON array of work items, not HTML/other — the endpoint appears unimplemented. Body starts: {response.Body[..Math.Min(60, response.Body.Length)]}");
+            }
 
             using var document = JsonDocument.Parse(response.Body);
             var references = new List<string>();

@@ -262,16 +262,23 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		conditions: IWorkItemRuleCondition[],
 		mode: DeliveryRuleGroupMode,
 	) => {
-		onSettingsChange(
-			"blockedRuleSetJson" as keyof T,
-			conditions.length === 0
-				? null
-				: serializeBlockedRuleSet({
-						version: BLOCKED_RULE_SET_SCHEMA_VERSION,
-						mode,
-						conditions,
-					}),
-		);
+		if (conditions.length === 0) {
+			// Clear legacy fields alongside the rule set so the backend's
+			// GetEffectiveRuleSetJson doesn't synthesize rules from leftover
+			// BlockedTags/BlockedStates when BlockedRuleSetJson is null.
+			onSettingsChange("blockedRuleSetJson" as keyof T, null);
+			onSettingsChange("blockedTags" as keyof T, []);
+			onSettingsChange("blockedStates" as keyof T, []);
+		} else {
+			onSettingsChange(
+				"blockedRuleSetJson" as keyof T,
+				serializeBlockedRuleSet({
+					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+					mode,
+					conditions,
+				}),
+			);
+		}
 	};
 
 	const handleBlockedRulesChange = (conditions: IWorkItemRuleCondition[]) => {
