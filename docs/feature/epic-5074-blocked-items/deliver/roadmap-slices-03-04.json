@@ -1,0 +1,198 @@
+{
+  "roadmap": {
+    "project_id": "epic-5074-blocked-items",
+    "created_at": "2026-07-06",
+    "total_steps": 10,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Slice 03: blocked-count over-time chart. Slice 04: Blocked → Stale linkage — blocked-duration staleness OR'd into deriveStaleness with distinct reason.",
+    "overview": "Two-phase DELIVER. Phase 03 (complete, 5 steps): BlockedCountSnapshot + recorder + endpoint + FE chart. Phase 04 (5 steps): blockedStalenessThresholdDays settings contract (model/column/DTO/write/validation/migration), DISTILL scenarios 17-21, deriveStaleness selector extension (StalenessResult), 3 call sites + prop threading, FE settings pass-through + UI + Zod."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-solution-architect-reviewer",
+    "reviewed_at": "2026-07-06T12:00:00Z",
+    "phase3_review": {
+      "status": "approved",
+      "reviewer": "nw-software-crafter-reviewer",
+      "reviewed_at": "2026-07-06T15:30:00Z",
+      "critical": 0,
+      "medium": 2,
+      "low": 2
+    },
+    "notes": "Phase 03 APPROVED (mutation 79.1%). Phase 04 DELIVERED 2026-07-07 (all steps 04-01..04-05 EXECUTED PASS); code review slices 01-04 done (see review-slices-01-04.md). Pending: slice-04 mutation gate + finalize."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5074-blocked-items/feature-delta.md",
+    "slices": [
+      "docs/feature/epic-5074-blocked-items/slices/slice-03-blocked-over-time-chart.md",
+      "docs/feature/epic-5074-blocked-items/slices/slice-04-blocked-stale-linkage.md"
+    ],
+    "red_classification": "docs/feature/epic-5074-blocked-items/distill/red-classification.md",
+    "upstream_issues": "docs/feature/epic-5074-blocked-items/distill/upstream-issues.md",
+    "gherkin": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendSpecifications.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice04BlockedStalenessScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice04BlockedStalenessSpecifications.cs"
+    ],
+    "architecture": [
+      "docs/product/architecture/brief.md",
+      "docs/product/architecture/adr-067-rule-based-blocked-definition-and-auto-migration.md",
+      "docs/product/architecture/adr-069-blocked-count-snapshot-and-over-time-endpoint.md",
+      "docs/product/architecture/adr-070-blocked-duration-staleness-amends-026.md",
+      "docs/product/architecture/adr-072-blocked-contract-changes-and-client-version-gate.md"
+    ]
+  },
+  "out_of_scope": [
+    "Per-type historical filtering (scenario #16) — @deferred UC-2; additive follow-up with no-rework guarantee",
+    "Retroactive backfill / reconstruction (forward-only by product decision)",
+    "Per-item drill-down on the chart (slice 04 territory)",
+    "Lighthouse-Clients CLI/MCP wrapper (separate repo, ADR-072 handoff)",
+    "Playwright E2E for slice 03 (covered by backend ATs + FE Vitest)",
+    "Playwright E2E for slice 04 (stale rendering covered by backend ATs + FE Vitest per component)"
+  ],
+  "phases": [
+    {
+      "id": "03",
+      "name": "Blocked-items over-time chart",
+      "description": "Forward-only BlockedCountSnapshot + recorder + blockedCountHistory endpoint + FE chart",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "BlockedCountSnapshot entity, repository, EF config, unique index, migration",
+          "description": "TDD substrate: entity, IBlockedCountSnapshotRepository, DbSet with unique index (OwnerId, OwnerType, RecordedAt), SQLite+Postgres migrations via CreateMigration.ps1, real-provider migration tests.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedCountSnapshotMigrationTests.cs",
+          "scenario_name": "Migrations apply cleanly on SQLite/Postgres",
+          "dependencies": [],
+          "criteria": ["BlockedCountSnapshot persists Id, OwnerId, OwnerType, RecordedAt (DateOnly), BlockedCount", "EF config registers DbSet with unique index on (OwnerId, OwnerType, RecordedAt)", "IBlockedCountSnapshotRepository registered in Program.cs", "Migrations generated via CreateMigration.ps1 for SQLite + Postgres", "Real-provider migration tests pass; dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 2
+        },
+        {
+          "id": "03-02",
+          "name": "BlockedCountSnapshotRecordingHandler forward recorder + Earned-Trust probes",
+          "description": "Forward recorder on TeamDataRefreshed and PortfolioFeaturesRefreshed. Counts IsBlocked via IBlockedItemService, date-keyed upsert. Earned-Trust probes: freshness, idempotency, single-definition.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandlerTests.cs",
+          "scenario_name": "Recorder freshness/idempotency/single-definition probes",
+          "dependencies": ["03-01"],
+          "criteria": ["Reacts to TeamDataRefreshed and PortfolioFeaturesRefreshed", "Counts items where IBlockedItemService.IsBlocked is true", "Date-keyed upsert: one row per (OwnerId, OwnerType, RecordedAt) per day", "Freshness probe: recorded count equals live count(IsBlocked)", "Idempotency probe: same-day re-run produces exactly one row", "Single-definition probe: count derives only from IBlockedItemService", "dotnet build zero warnings; dotnet test green; Stryker >= 80%"],
+          "estimated_hours": 2.5
+        },
+        {
+          "id": "03-03",
+          "name": "blockedCountHistory read endpoint + enable scenario #14",
+          "description": "NEW GET .../teams/{id}/metrics/blockedCountHistory and .../portfolios/{id}/metrics/blockedCountHistory. Returns BlockedCountSnapshotDto[] under RbacGuard(TeamRead/PortfolioRead). Enable scenario #14.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs",
+          "scenario_name": "The_blocked_count_trend_is_available_over_time",
+          "dependencies": ["03-01"],
+          "criteria": ["GET returns BlockedCountSnapshotDto[] over [startDate, endDate] window", "Existing class-level RbacGuard(TeamRead/PortfolioRead) applies", "Side-effect-free GET (no writes)", "Slice03BlockedTrendSpecifications seeds BlockedCountSnapshot rows", "Scenario #14 [Ignore] removed and passes", "dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 2
+        },
+        {
+          "id": "03-04",
+          "name": "Honest empty-state contract + enable scenario #15 (#16 stays deferred)",
+          "description": "Enable scenario #15 A_new_team_sees_an_honest_empty_trend. No snapshots returns empty array (never flat zero). Scenario #16 stays [Ignore]'d (UC-2 deferred).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs",
+          "scenario_name": "A_new_team_sees_an_honest_empty_trend",
+          "dependencies": ["03-03"],
+          "criteria": ["Empty owner returns empty JSON array (never zero-padded)", "Scenario #15 [Ignore] removed and passes", "Scenario #16 stays [Ignore]'d with UC-2 DEFERRED reason", "dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 0.75
+        },
+        {
+          "id": "03-05",
+          "name": "Frontend BlockedItemsOverTimeChart + Zod + Vitest",
+          "description": "FE chart in Flow Metrics chart area (NOT overview widget). Empty-state copy 'blocked trend builds forward from today — no snapshots yet'. Zod schema validates response at trust boundary. Red bar color (errorColor #f44336). Composes with team/portfolio/date-range filter.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/BlockedItemsOverTimeChart.test.tsx",
+          "scenario_name": "renders the blocked-count trend and forward-only empty state",
+          "dependencies": ["03-03", "03-04"],
+          "criteria": ["Chart in Flow Metrics chart area, NOT overview widget", "Rising series rendered; empty series shows forward-only empty state", "Zod schema validates blockedCountHistory response at trust boundary", "Red bar color (errorColor #f44336)", "Composes with team/portfolio/date-range filter; per-type NOT wired", "pnpm test green; pnpm build zero TS/Biome/Vite warnings"],
+          "estimated_hours": 2.5
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Blocked → Stale linkage",
+      "description": "blockedStalenessThresholdDays settings contract + deriveStaleness selector extension + call site migration + FE settings UI",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "blockedStalenessThresholdDays — model column, DTO, write path, validation, EF migration",
+          "description": "Add blockedStalenessThresholdDays as twin of StalenessThresholdDays on WorkTrackingSystemOptionsOwner (virtual int, default 0), Team.cs + Portfolio.cs overrides, SettingsOwnerDtoBase constructor + property, TeamExtensions + PortfolioExtensions settings write, TeamController + PortfolioController range validation (0-365, reuses existing Min/MaxStalenessThresholdDays), EF migration via CreateMigration.ps1 for SQLite + Postgres, real-provider migration test.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedStalenessThresholdMigrationTests.cs",
+          "scenario_name": "blockedStalenessThresholdDays column migrates cleanly on SQLite/Postgres",
+          "dependencies": [],
+          "criteria": ["blockedStalenessThresholdDays column on WorkTrackingSystemOptionsOwner (virtual int, default 0)", "Team.cs + Portfolio.cs override the virtual property", "SettingsOwnerDtoBase exposes blockedStalenessThresholdDays in constructor + property", "TeamExtensions.SyncTeamWithTeamSettings + PortfolioExtensions.SyncWithPortfolioSettings persist the field on settings write", "TeamController.UpdateTeam + PortfolioController.UpdatePortfolio validate range 0-365 (reuses MinStalenessThresholdDays/MaxStalenessThresholdDays)", "Migrations generated via CreateMigration.ps1 for SQLite + Postgres", "Real-provider migration test passes on both providers", "dotnet build zero warnings; dotnet test green"],
+          "estimated_hours": 2
+        },
+        {
+          "id": "04-02",
+          "name": "Enable DISTILL scenarios 17–21 (settings contract acceptance)",
+          "description": "Un-ignore all 5 Slice04BlockedStaleness scenarios. Scenarios 17 (round-trip), 18 (default zero), 19 (below range rejected), 20 (above range rejected) go RED → GREEN. Scenario 21 (non-admin 403) PASS-WHEN-ENABLED via pre-existing TeamWrite guard.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice04BlockedStalenessScenarios.cs",
+          "scenario_name": null,
+          "dependencies": ["04-01"],
+          "criteria": ["Scenario 17 The_blocked_staleness_threshold_is_saved_and_read_back [Ignore] removed and passes", "Scenario 18 A_new_team_defaults_the_blocked_staleness_threshold_to_zero [Ignore] removed and passes", "Scenario 19 A_blocked_staleness_threshold_below_range_is_rejected [Ignore] removed and passes", "Scenario 20 A_blocked_staleness_threshold_above_range_is_rejected [Ignore] removed and passes", "Scenario 21 A_non_admin_cannot_change_the_blocked_staleness_threshold [Ignore] removed — PASS-WHEN-ENABLED (pre-existing 403 guard)", "dotnet build zero warnings; dotnet test --filter BlockedItems green (21 total)"],
+          "estimated_hours": 1
+        },
+        {
+          "id": "04-03",
+          "name": "deriveStaleness selector — StalenessResult types, blocked-duration logic, comprehensive Vitest",
+          "description": "Extend deriveStaleness from boolean → StalenessResult per ADR-070. New types: StalenessReason (driver: time-in-state|blocked-duration; context: context-time-in-state), StalenessResult {isStale, reasons[]}. StalenessCandidate gains blockedSince? + currentStateName fields. Time-in-state preserves !isBlocked guard + emits context-time-in-state when blocked-duration fires (UC-1 driver+context split). Blocked-duration uses ≥ (OQ1), time-in-state keeps >. Comprehensive Vitest: ADR-026 preservation, new trigger, driver+context, boundary probes (at-threshold + one-over), disabled probe, stale-once.",
+          "test_file": "Lighthouse.Frontend/src/utils/staleness/deriveStaleness.test.ts",
+          "scenario_name": "deriveStaleness returns StalenessResult with correct drivers, context, and boundaries",
+          "dependencies": [],
+          "criteria": ["StalenessCandidate exposes blockedSince? (string|null) and currentStateName (string)", "deriveStaleness returns StalenessResult {isStale: boolean, reasons: StalenessReason[]}", "Time-in-state trigger: stalenessThresholdDays > 0 && !isBlocked && daysInState > threshold → driver entry; isBlocked=true emits context-time-in-state when both triggers could fire", "Blocked-duration trigger: blockedStalenessThresholdDays > 0 && isBlocked && blockedSince valid && blockedDays ≥ threshold → driver entry", "ADR-026 preserved: !isBlocked guard in time-in-state branch; blocked item never emits time-in-state driver", "Boundary: blocked-duration uses ≥ (at-threshold=stale), time-in-state uses > (at-threshold NOT stale)", "Vitest covering: ADR-026 preservation, new trigger, driver+context (UC-1), boundary probes, disabled (threshold=0), stale-once", "pnpm test -- deriveStaleness green; pnpm build zero TS/Biome warnings"],
+          "estimated_hours": 2
+        },
+        {
+          "id": "04-04",
+          "name": "3 call sites — StalenessResult consumption + blockedStalenessThresholdDays prop threading + Vitest",
+          "description": "Update all deriveStaleness call sites to consume StalenessResult (not boolean). Thread blockedStalenessThresholdDays prop from TeamMetricsView/PortfolioMetricsView → BaseMetricsView → TimeInStateBadge + StaleOverviewWidget + WorkItemAgingChart. Exhaustive selector-use audit per ADR-070 mandate (grep, verify every call site). Vitest per component: stale-once rendering, driver+context reasons shown, cross-surface consistency.",
+          "test_file": null,
+          "scenario_name": null,
+          "dependencies": ["04-03"],
+          "criteria": ["TimeInStateBadge reads result.isStale + renders result.reasons in tooltip; accepts blockedStalenessThresholdDays prop", "BaseMetricsView StaleOverviewWidget count filters on result.isStale (not raw boolean); passes blockedStalenessThresholdDays to selector", "WorkItemAgingChart stale dots use result.isStale; passes blockedStalenessThresholdDays to selector", "Exhaustive selector-use audit: grep all deriveStaleness call sites → every one consumes .isStale + .reasons[] (no residual boolean read)", "All three surfaces render identical stale emphasis for same input (Earned-Trust probe per ADR-070)", "component-level Vitest: stale-once rendering, driver+context reasons, cross-surface consistency", "pnpm test green (badge + BaseMetricsView + WorkItemAgingChart suites); pnpm build zero TS/Biome/Vite warnings"],
+          "estimated_hours": 2.5
+        },
+        {
+          "id": "04-05",
+          "name": "FE settings pass-through + Zod + Flow Metrics Configuration UI twin",
+          "description": "Add blockedStalenessThresholdDays to IBaseSettings + all defaults (EditTeam/EditPortfolio/CreateTeamWizard/CreatePortfolioWizard → 0). Thread through read chain: TeamMetricsView/PortfolioMetricsView → BaseMetricsView. Zod at trust boundary (rolling-adoption — new field only). FlowMetricsConfigurationComponent: twin UI (checkbox toggle + number field, identical pattern to StalenessThresholdDays). TestDataProvider seeds default 0. Vitest: settings defaults, UI toggle, pass-through chain.",
+          "test_file": null,
+          "scenario_name": null,
+          "dependencies": ["04-04"],
+          "criteria": ["IBaseSettings gains blockedStalenessThresholdDays: number (twin of stalenessThresholdDays)", "EditTeam/EditPortfolio/CreateTeamWizard/CreatePortfolioWizard default blockedStalenessThresholdDays to 0", "TeamMetricsView/PortfolioMetricsView read blockedStalenessThresholdDays from settings and pass through BaseMetricsView to call sites", "Zod validates blockedStalenessThresholdDays ≥ 0 at settings trust boundary (rolling-adoption rule — new field only)", "FlowMetricsConfigurationComponent renders twin UI (checkbox toggle + number field) with same pattern as stalenessThresholdDays", "TestDataProvider seeds blockedStalenessThresholdDays: 0", "Vitest: settings defaults (component tests), UI toggle (FlowMetricsConfigurationComponent.test.tsx), pass-through chain (BaseMetricsView.test.tsx)", "pnpm test green; pnpm build zero TS/Biome/Vite warnings"],
+          "estimated_hours": 2
+        }
+      ]
+    }
+  ],
+  "walking_skeleton": {
+    "scenario": "A delivery lead can open the Blocked Items over-time chart and see the daily blocked count trend",
+    "covered_by_step": "03-03",
+    "coverage_estimate": "End-to-end through the read adapter via WebApplicationFactory with real EF"
+  },
+  "quality_gates": {
+    "backend": [
+      "dotnet build with zero warnings (TreatWarningsAsErrors)",
+      "dotnet test all NUnit suites green",
+      "Stryker.NET kill rate >= 80% on target files (per-feature strategy)"
+    ],
+    "frontend": [
+      "pnpm test all Vitest suites green (3487 tests + Phase 04 additions)",
+      "pnpm build zero TypeScript, Biome, Vite warnings"
+    ],
+    "architecture": [
+      "ArchUnitNET tests pass with no new violations",
+      "Exhaustive deriveStaleness call-site audit: grep confirms no residual boolean reads (ADR-070 mandate)"
+    ],
+    "sonarqube": [
+      "No new issues introduced"
+    ],
+    "clients": [
+      "Lighthouse-Clients repo: blockedStalenessThresholdDays is additive settings field — NO version gate (ADR-064/056 rule, per ADR-070 §3)",
+      "Lighthouse-Clients repo: must add version-gated blockedCountHistory wrapper with FEATURE_REQUIRES_SERVER_NEWER_THAN > v26.6.7.1 (ADR-072 handoff — NOT edited in this repo)"
+    ]
+  }
+}
