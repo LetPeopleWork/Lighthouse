@@ -67,6 +67,7 @@ const NULLABLE_FIELDS = new Set([
 	"estimationUnit",
 	"owningTeam",
 	"forecastFilterRuleSetJson",
+	"blockedRuleSetJson",
 ]);
 
 function withToken<T extends ModifySettingsBase>(
