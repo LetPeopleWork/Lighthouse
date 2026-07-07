@@ -1507,6 +1507,57 @@ describe("BaseMetricsView component", () => {
 		);
 	});
 
+	it("the blockedOverview widget renders the rag-status chip driven by max blocked age", async () => {
+		const fifteenDaysAgo = new Date();
+		fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+		// A single blocked item — count-driven RAG would be AMBER (1 blocked item);
+		// max-blocked-age RAG must be RED because it has been blocked 15 days, past the
+		// 10-day staleness threshold.
+		const blockedScenarioItems: IWorkItem[] = [
+			{
+				...mockInProgressItems[0],
+				id: 21,
+				isBlocked: true,
+				blockedSince: fifteenDaysAgo.toISOString(),
+			},
+		];
+
+		const team = new Team();
+		team.name = "Blocked Age Team";
+		team.id = 88;
+		team.systemWIPLimit = 6;
+		team.lastUpdated = new Date();
+
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+			getInProgressItems: vi.fn().mockResolvedValue(blockedScenarioItems),
+		};
+
+		localStorage.setItem(
+			`lighthouse:metrics:team:${team.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={team}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				doingStates={["To Do", "In Progress", "Review"]}
+				hasBlockedConfig={true}
+				blockedStalenessThresholdDays={10}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-rag-blockedOverview"),
+			).toHaveTextContent("red");
+		});
+	});
+
 	it("renders flow overview trend chrome for team overview widgets", async () => {
 		const team = new Team();
 		team.name = "Trend Team";

@@ -64,6 +64,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
+import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
 import { computeBlockedTrend } from "./blockedTrend";
 import { getWidgetsForCategory } from "./categoryMetadata";
 import type { DashboardItem } from "./Dashboard";
@@ -80,7 +81,6 @@ import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
 import {
 	computeArrivalsRunChartRag,
-	computeBlockedOverviewRag,
 	computeCumulativeStateTimeRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
@@ -196,14 +196,38 @@ function buildWorkItemLookup(
 }
 
 type RagFooter = {
-	readonly ragStatus: "red" | "amber" | "green";
+	readonly ragStatus: "red" | "amber" | "green" | "none";
 	readonly tipText: string;
 };
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/**
+ * Maximum, across the blocked items, of (now - blockedSince) in whole days. Items with no
+ * established blockedSince baseline are excluded. Returns null when no blocked item has a baseline.
+ */
+function computeMaxBlockedAgeDays(
+	blockedItems: readonly IWorkItem[],
+	now: number,
+): number | null {
+	let max: number | null = null;
+	for (const item of blockedItems) {
+		if (!item.blockedSince) continue;
+		const since = new Date(item.blockedSince).getTime();
+		if (Number.isNaN(since)) continue;
+		const days = Math.floor((now - since) / MS_PER_DAY);
+		if (max === null || days > max) {
+			max = days;
+		}
+	}
+	return max;
+}
 
 type RagInputs = {
 	readonly wipCount: number;
 	readonly systemWipLimit: number | undefined;
-	readonly blockedCount: number;
+	readonly maxBlockedAgeDays: number | null;
+	readonly blockedStalenessThresholdDays: number;
 	readonly hasBlockedConfig: boolean;
 	readonly staleCount: number;
 	readonly hasStaleConfig: boolean;
@@ -262,9 +286,9 @@ function buildWidgetFooters(
 			inputs.systemWipLimit,
 			inputs.terms,
 		),
-		blockedOverview: computeBlockedOverviewRag(
-			inputs.blockedCount,
-			inputs.hasBlockedConfig,
+		blockedOverview: computeBlockedMaxAgeRag(
+			inputs.maxBlockedAgeDays,
+			inputs.blockedStalenessThresholdDays,
 			inputs.terms,
 		),
 		staleOverview: computeStaleOverviewRag(
@@ -1444,7 +1468,8 @@ export const BaseMetricsView = <
 		wipCount: inProgressItems.length,
 		systemWipLimit:
 			entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
-		blockedCount: blockedItems.length,
+		maxBlockedAgeDays: computeMaxBlockedAgeDays(blockedItems, Date.now()),
+		blockedStalenessThresholdDays: blockedStalenessThresholdDays ?? 0,
 		hasBlockedConfig,
 		staleCount: staleItems.length,
 		hasStaleConfig,

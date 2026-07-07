@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
 	computeArrivalsRunChartRag,
-	computeBlockedOverviewRag,
 	computeCumulativeStateTimeRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
@@ -74,38 +73,6 @@ describe("ragRules", () => {
 			const result = computeWipOverviewRag(0, 0, terms);
 			expect(result.ragStatus).toBe("red");
 			expect(result.tipText).toContain("Define System WIP Limit");
-		});
-	});
-
-	describe("computeBlockedOverviewRag", () => {
-		it("returns red when no blocked config is defined", () => {
-			const result = computeBlockedOverviewRag(0, false, terms);
-			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("Define Blocked indicators");
-		});
-
-		it("returns red when 2+ items are blocked", () => {
-			const result = computeBlockedOverviewRag(2, true, terms);
-			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("Focus on unblocking");
-		});
-
-		it("returns red when many items are blocked", () => {
-			const result = computeBlockedOverviewRag(5, true, terms);
-			expect(result.ragStatus).toBe("red");
-			expect(result.tipText).toContain("Focus on unblocking");
-		});
-
-		it("returns amber when 1 item is blocked", () => {
-			const result = computeBlockedOverviewRag(1, true, terms);
-			expect(result.ragStatus).toBe("amber");
-			expect(result.tipText).toContain("Do not ignore");
-		});
-
-		it("returns green when no items are blocked", () => {
-			const result = computeBlockedOverviewRag(0, true, terms);
-			expect(result.ragStatus).toBe("green");
-			expect(result.tipText).toContain("No Blocked");
 		});
 	});
 

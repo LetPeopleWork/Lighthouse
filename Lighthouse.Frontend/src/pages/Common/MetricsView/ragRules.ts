@@ -45,35 +45,6 @@ export function computeWipOverviewRag(
 	};
 }
 
-export function computeBlockedOverviewRag(
-	blockedCount: number,
-	hasBlockedConfig: boolean,
-	terms: RagTerms,
-): RagResult {
-	if (!hasBlockedConfig) {
-		return {
-			ragStatus: "red",
-			tipText: `Define ${terms.blocked} indicators in settings to track blocked work.`,
-		};
-	}
-	if (blockedCount >= 2) {
-		return {
-			ragStatus: "red",
-			tipText: `${blockedCount} ${terms.blocked} ${terms.workItems}. Focus on unblocking them before starting new work.`,
-		};
-	}
-	if (blockedCount === 1) {
-		return {
-			ragStatus: "amber",
-			tipText: `1 ${terms.blocked} ${terms.workItem}. Do not ignore it.`,
-		};
-	}
-	return {
-		ragStatus: "green",
-		tipText: `No ${terms.blocked} ${terms.workItems}.`,
-	};
-}
-
 export function computeStaleOverviewRag(
 	staleCount: number,
 	hasStaleConfig: boolean,
