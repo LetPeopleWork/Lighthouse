@@ -10,7 +10,6 @@ using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Linq.Expressions;
 using Moq;
 using NUnit.Framework;
 
@@ -24,8 +23,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private Mock<ICryptoService> cryptoServiceMock = null!;
         private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
 
-        private Mock<IWorkItemRepository> workItemRepositoryMock = null!;
-        private Mock<IRepository<Feature>> featureRepositoryMock = null!;
+        private Mock<ITeamMetricsService> teamMetricsServiceMock = null!;
+        private Mock<IPortfolioMetricsService> portfolioMetricsServiceMock = null!;
         private Mock<IRepository<Team>> teamRepositoryMock = null!;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock = null!;
         private Mock<IBlockedItemService> blockedItemServiceMock = null!;
@@ -41,8 +40,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             cryptoServiceMock = new Mock<ICryptoService>();
             appContextLoggerMock = new Mock<ILogger<LighthouseAppContext>>();
 
-            workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
+            portfolioMetricsServiceMock = new Mock<IPortfolioMetricsService>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             blockedItemServiceMock = new Mock<IBlockedItemService>();
@@ -63,8 +62,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var snapshotRepo = CreateSnapshotRepository(context);
             return new BlockedCountSnapshotRecordingHandler(
-                workItemRepositoryMock.Object,
-                featureRepositoryMock.Object,
+                teamMetricsServiceMock.Object,
+                portfolioMetricsServiceMock.Object,
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 blockedItemServiceMock.Object,
@@ -170,9 +169,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItems = new List<WorkItem> { blockedItem, unblockedItem };
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), It.IsAny<Team>()))
                 .Returns((WorkItem item, Team _) => item.Id == blockedItem.Id);
@@ -202,9 +201,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItems = new List<WorkItem> { workItem };
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
                 .Returns(true);
@@ -236,9 +235,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItems = new List<WorkItem> { itemA, itemB, itemC };
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
 
             // Only itemA and itemC are blocked
             blockedItemServiceMock
@@ -277,9 +276,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItems = new List<WorkItem> { workItem };
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
                 .Returns(true);
@@ -315,9 +314,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var features = new List<Feature> { blockedFeature, unblockedFeature };
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            featureRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(features.AsQueryable());
+            portfolioMetricsServiceMock
+                .Setup(x => x.GetInProgressFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>()))
+                .Returns(features);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<Feature>(), portfolio))
                 .Returns((Feature item, Portfolio _) => item.Id == blockedFeature.Id);
@@ -379,9 +378,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             };
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
                 .Returns(false);
@@ -403,9 +402,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItems = Enumerable.Range(1, 10).Select(i => CreateWorkItem(i, team.Id)).ToList();
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
                 .Returns(true);
@@ -427,9 +426,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItems = new List<WorkItem>();
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(workItems.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(workItems);
 
             using var context = CreateContext();
             var subject = CreateSubject(context);
@@ -448,9 +447,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var features = new List<Feature>();
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            featureRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns(features.AsQueryable());
+            portfolioMetricsServiceMock
+                .Setup(x => x.GetInProgressFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>()))
+                .Returns(features);
 
             using var context = CreateContext();
             var subject = CreateSubject(context);
@@ -470,9 +469,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItem = CreateWorkItem(10, team1.Id);
 
             teamRepositoryMock.Setup(x => x.GetById(team1.Id)).Returns(team1);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(new List<WorkItem> { workItem }.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(new List<WorkItem> { workItem });
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team1))
                 .Returns(true);
@@ -512,9 +511,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var workItem3 = CreateWorkItem(30, team.Id);
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns(new List<WorkItem> { workItem1, workItem2, workItem3 }.AsQueryable());
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(new List<WorkItem> { workItem1, workItem2, workItem3 });
 
             using var context = CreateContext();
             var subject = CreateSubject(context);
@@ -539,6 +538,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 "same-day re-run with a changed blocked count must update the existing snapshot");
             var rowCount = await SnapshotRowCountForOwner(context, team.Id, OwnerType.Team, Today);
             Assert.That(rowCount, Is.EqualTo(1));
+        }
+
+        // -----------------------------------------------------------------
+        // BUG 1 regression: the blocked-count trend must match the overview
+        // widget, which counts blocked items over the WIP set only. A Done
+        // item that still matches the blocked rule must NOT inflate the
+        // snapshot, because it is excluded from GetWipSnapshotForTeam.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_CountsBlockedOverWipSetOnly_ExcludesDoneItems()
+        {
+            var team = CreateTeam(1);
+            var inProgressBlocked = CreateWorkItem(10, team.Id);
+
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+
+            // The WIP snapshot already excludes Done items — a Done blocked item
+            // never reaches the recorder, so the count derives from WIP alone.
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(new List<WorkItem> { inProgressBlocked });
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(1),
+                "the snapshot must count blocked items over the WIP set (matching the overview), not over all items");
+            teamMetricsServiceMock.Verify(
+                x => x.GetWipSnapshotForTeam(team, It.IsAny<DateTime>()), Times.Once,
+                "the recorder must source its items from the WIP snapshot, not from the full item repository");
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_CountsBlockedOverInProgressFeaturesOnly()
+        {
+            var portfolio = CreatePortfolio(7);
+            var inProgressBlocked = CreateFeature(100, portfolios: [portfolio]);
+
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            portfolioMetricsServiceMock
+                .Setup(x => x.GetInProgressFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>()))
+                .Returns(new List<Feature> { inProgressBlocked });
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<Feature>(), portfolio))
+                .Returns(true);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, Today);
+            Assert.That(snapshot!.BlockedCount, Is.EqualTo(1),
+                "the snapshot must count blocked features over the in-progress set (matching the overview), not over all features");
+            portfolioMetricsServiceMock.Verify(
+                x => x.GetInProgressFeaturesForPortfolio(portfolio, It.IsAny<DateTime>()), Times.Once,
+                "the recorder must source its features from the in-progress set, not from the full feature repository");
         }
     }
 }

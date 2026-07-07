@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
@@ -11,8 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         : IDomainEventHandler<TeamDataRefreshed>,
           IDomainEventHandler<PortfolioFeaturesRefreshed>
     {
-        private readonly IWorkItemRepository workItemRepository;
-        private readonly IRepository<Feature> featureRepository;
+        private readonly ITeamMetricsService teamMetricsService;
+        private readonly IPortfolioMetricsService portfolioMetricsService;
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IBlockedItemService blockedItemService;
@@ -20,16 +21,16 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly ILogger<BlockedCountSnapshotRecordingHandler> logger;
 
         public BlockedCountSnapshotRecordingHandler(
-            IWorkItemRepository workItemRepository,
-            IRepository<Feature> featureRepository,
+            ITeamMetricsService teamMetricsService,
+            IPortfolioMetricsService portfolioMetricsService,
             IRepository<Team> teamRepository,
             IRepository<Portfolio> portfolioRepository,
             IBlockedItemService blockedItemService,
             IBlockedCountSnapshotRepository snapshotRepository,
             ILogger<BlockedCountSnapshotRecordingHandler> logger)
         {
-            this.workItemRepository = workItemRepository;
-            this.featureRepository = featureRepository;
+            this.teamMetricsService = teamMetricsService;
+            this.portfolioMetricsService = portfolioMetricsService;
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
             this.blockedItemService = blockedItemService;
@@ -47,11 +48,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return Task.CompletedTask;
             }
 
-            var workItems = workItemRepository
-                .GetAllByPredicate(w => w.TeamId == domainEvent.TeamId)
-                .ToList();
+            var workItemsInProgress = teamMetricsService.GetWipSnapshotForTeam(team, DateTime.Today);
 
-            var blockedCount = workItems.Count(item => blockedItemService.IsBlocked(item, team));
+            var blockedCount = workItemsInProgress.Count(item => blockedItemService.IsBlocked(item, team));
 
             UpsertSnapshot(domainEvent.TeamId, OwnerType.Team, blockedCount);
 
@@ -68,11 +67,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return Task.CompletedTask;
             }
 
-            var features = featureRepository
-                .GetAllByPredicate(f => f.Portfolios.Any(p => p.Id == domainEvent.PortfolioId))
-                .ToList();
+            var featuresInProgress = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, DateTime.Today);
 
-            var blockedCount = features.Count(item => blockedItemService.IsBlocked(item, portfolio));
+            var blockedCount = featuresInProgress.Count(item => blockedItemService.IsBlocked(item, portfolio));
 
             UpsertSnapshot(domainEvent.PortfolioId, OwnerType.Portfolio, blockedCount);
 
