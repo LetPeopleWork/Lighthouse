@@ -603,5 +603,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 x => x.GetInProgressFeaturesForPortfolio(portfolio, It.IsAny<DateTime>()), Times.Once,
                 "the recorder must source its features from the in-progress set, not from the full feature repository");
         }
+
+        // -----------------------------------------------------------------
+        // REGRESSION (verifypostgres flake): the snapshot Save MUST be awaited.
+        // A fire-and-forget snapshotRepository.Save() returns before its
+        // SaveChangesAsync finishes; the DomainEventDispatcher scope then disposes
+        // the DbContext mid-write on the shared Npgsql connection, desyncing the
+        // wire protocol ("BindComplete while expecting ReadyForQueryMessage").
+        // The InMemory-based probes above never caught it because InMemory's
+        // SaveChangesAsync completes synchronously. Gate Save on a TCS and assert
+        // HandleAsync does not complete until the save resolves.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task HandleAsync_DoesNotCompleteUntilTheSnapshotSaveCompletes()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            teamMetricsServiceMock
+                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(new List<WorkItem>());
+
+            var saveGate = new TaskCompletionSource();
+            var snapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
+            snapshotRepositoryMock
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<BlockedCountSnapshot, bool>>()))
+                .Returns((BlockedCountSnapshot?)null);
+            snapshotRepositoryMock.Setup(x => x.Save()).Returns(saveGate.Task);
+
+            var subject = new BlockedCountSnapshotRecordingHandler(
+                teamMetricsServiceMock.Object,
+                portfolioMetricsServiceMock.Object,
+                teamRepositoryMock.Object,
+                portfolioRepositoryMock.Object,
+                blockedItemServiceMock.Object,
+                snapshotRepositoryMock.Object,
+                handlerLoggerMock.Object);
+
+            var handleTask = subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            Assert.That(handleTask.IsCompleted, Is.False,
+                "HandleAsync must await snapshotRepository.Save(); a fire-and-forget Save races DbContext "
+                + "disposal on the shared connection and desyncs Npgsql (the verifypostgres flake).");
+
+            saveGate.SetResult();
+            await handleTask;
+            snapshotRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
     }
 }

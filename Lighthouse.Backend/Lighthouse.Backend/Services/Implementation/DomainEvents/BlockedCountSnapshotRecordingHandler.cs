@@ -38,45 +38,41 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.logger = logger;
         }
 
-        public Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)
+        public async Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)
         {
             logger.LogDebug("Recording blocked-item snapshot for Team {TeamId}", domainEvent.TeamId);
 
             var team = teamRepository.GetById(domainEvent.TeamId);
             if (team == null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var workItemsInProgress = teamMetricsService.GetWipSnapshotForTeam(team, DateTime.Today);
 
             var blockedCount = workItemsInProgress.Count(item => blockedItemService.IsBlocked(item, team));
 
-            UpsertSnapshot(domainEvent.TeamId, OwnerType.Team, blockedCount);
-
-            return Task.CompletedTask;
+            await UpsertSnapshotAsync(domainEvent.TeamId, OwnerType.Team, blockedCount);
         }
 
-        public Task HandleAsync(PortfolioFeaturesRefreshed domainEvent, CancellationToken cancellationToken)
+        public async Task HandleAsync(PortfolioFeaturesRefreshed domainEvent, CancellationToken cancellationToken)
         {
             logger.LogDebug("Recording blocked-item snapshot for Portfolio {PortfolioId}", domainEvent.PortfolioId);
 
             var portfolio = portfolioRepository.GetById(domainEvent.PortfolioId);
             if (portfolio == null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             var featuresInProgress = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, DateTime.Today);
 
             var blockedCount = featuresInProgress.Count(item => blockedItemService.IsBlocked(item, portfolio));
 
-            UpsertSnapshot(domainEvent.PortfolioId, OwnerType.Portfolio, blockedCount);
-
-            return Task.CompletedTask;
+            await UpsertSnapshotAsync(domainEvent.PortfolioId, OwnerType.Portfolio, blockedCount);
         }
 
-        private void UpsertSnapshot(int ownerId, OwnerType ownerType, int blockedCount)
+        private async Task UpsertSnapshotAsync(int ownerId, OwnerType ownerType, int blockedCount)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             var existing = snapshotRepository.GetByPredicate(
@@ -98,7 +94,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 snapshotRepository.Add(snapshot);
             }
 
-            snapshotRepository.Save();
+            await snapshotRepository.Save();
         }
     }
 }
