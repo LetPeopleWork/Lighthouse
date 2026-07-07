@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     {
         // @driving_port @us-04 (threshold round-trips)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-04 (blockedStalenessThresholdDays round-trip)")]
         public async Task The_blocked_staleness_threshold_is_saved_and_read_back()
         {
             var team = GivenATeam();
@@ -30,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-04 (0 = disabled, and is the default)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-04 (default threshold 0 = blocked-staleness disabled)")]
         public async Task A_new_team_defaults_the_blocked_staleness_threshold_to_zero()
         {
             var team = GivenATeam();
@@ -42,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-04 (below range)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-04 (range validation, below range)")]
         public async Task A_blocked_staleness_threshold_below_range_is_rejected()
         {
             var team = GivenATeam();
@@ -54,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-04 (above range)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-04 (range validation, above range)")]
         public async Task A_blocked_staleness_threshold_above_range_is_rejected()
         {
             var team = GivenATeam();
@@ -66,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-04 @rbac (config-admin gate; GREEN-when-enabled via pre-existing TeamWrite guard)
         [Test]
-        [Ignore("DISTILL pending — enable in DELIVER slice-04 (RBAC gate on threshold write; GREEN-when-enabled)")]
         public async Task A_non_admin_cannot_change_the_blocked_staleness_threshold()
         {
             var team = GivenATeam();
