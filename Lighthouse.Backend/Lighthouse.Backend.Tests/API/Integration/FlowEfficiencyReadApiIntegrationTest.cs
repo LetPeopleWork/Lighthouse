@@ -423,6 +423,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ["automaticallyAdjustFeatureWIP"] = false,
                 ["doneItemsCutoffDays"] = 365,
                 ["stalenessThresholdDays"] = 0,
+                ["blockedStalenessThresholdDays"] = 0,
                 ["estimationCategoryValues"] = new JsonArray(),
                 ["useNonNumericEstimation"] = false,
                 ["stateMappings"] = new JsonArray(new JsonObject
