@@ -49,16 +49,18 @@ describe("TimeInStateBadge", () => {
 	});
 
 	test.each([
-		["2026-05-23T23:00:00Z", 3, false],
-		["2026-05-23T23:00:00Z", 4, false],
-		["2026-05-23T23:00:00Z", 2, true],
-		["2026-05-23T23:00:00Z", 1, true],
-	])("applies the stale treatment only when days strictly exceed the threshold for %s with threshold %d", (enteredAt, stalenessThresholdDays, expectsStale) => {
+		// [enteredAt, stalenessThresholdDays, blockedThresholdDays, expectsStale]
+		["2026-05-23T23:00:00Z", 3, 0, false],
+		["2026-05-23T23:00:00Z", 4, 0, false],
+		["2026-05-23T23:00:00Z", 2, 0, true],
+		["2026-05-23T23:00:00Z", 1, 0, true],
+	])("applies the stale treatment only when days strictly exceed the threshold for %s with threshold %d", (enteredAt, stalenessThresholdDays, blockedThresholdDays, expectsStale) => {
 		render(
 			<TimeInStateBadge
 				currentStateEnteredAt={new Date(enteredAt)}
 				currentStateName="In Progress"
 				stalenessThresholdDays={stalenessThresholdDays}
+				blockedStalenessThresholdDays={blockedThresholdDays}
 				now={now}
 			/>,
 		);
@@ -75,14 +77,15 @@ describe("TimeInStateBadge", () => {
 	});
 
 	test.each([
-		[0],
-		[undefined],
-	])("never applies the stale treatment when the threshold is %s (highlighting disabled)", (stalenessThresholdDays) => {
+		[0, 0],
+		[undefined, undefined],
+	])("never applies the stale treatment when the threshold is %s (highlighting disabled)", (stalenessThresholdDays, blockedStalenessThresholdDays) => {
 		render(
 			<TimeInStateBadge
 				currentStateEnteredAt={new Date("2026-05-15T12:00:00Z")}
 				currentStateName="In Progress"
 				stalenessThresholdDays={stalenessThresholdDays}
+				blockedStalenessThresholdDays={blockedStalenessThresholdDays}
 				now={now}
 			/>,
 		);
@@ -97,6 +100,7 @@ describe("TimeInStateBadge", () => {
 				currentStateEnteredAt={null}
 				currentStateName="In Progress"
 				stalenessThresholdDays={1}
+				blockedStalenessThresholdDays={0}
 				now={now}
 			/>,
 		);
@@ -105,7 +109,7 @@ describe("TimeInStateBadge", () => {
 		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
 	});
 
-	test("does not apply the stale treatment to a blocked item over the threshold (blocked precedence)", () => {
+	test("does not apply the stale treatment to a blocked item over the staleness threshold (blocked has precedence with no blockedThreshold)", () => {
 		render(
 			<TimeInStateBadge
 				currentStateEnteredAt={new Date("2026-05-23T23:00:00Z")}
@@ -118,5 +122,75 @@ describe("TimeInStateBadge", () => {
 
 		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
 		expect(screen.getByText("3d in In Progress")).toBeInTheDocument();
+	});
+
+	test("marks a blocked item as stale when blocked duration exceeds blockedStalenessThresholdDays", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-20T12:00:00Z")}
+				currentStateName="In Progress"
+				stalenessThresholdDays={10}
+				blockedStalenessThresholdDays={2}
+				isBlocked={true}
+				blockedSince={"2026-05-22T12:00:00Z"}
+				now={now}
+			/>,
+		);
+
+		const stale = screen.queryByTestId("time-in-state-stale");
+		expect(stale).toBeInTheDocument();
+		expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
+	});
+
+	test("renders stale reasons in an accessible label on the stale badge", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-20T12:00:00Z")}
+				currentStateName="In Progress"
+				stalenessThresholdDays={1}
+				isBlocked={false}
+				now={now}
+			/>,
+		);
+
+		const stale = screen.getByTestId("time-in-state-stale");
+		expect(stale).toHaveAttribute("aria-label");
+		expect(stale.getAttribute("aria-label")).toContain("In Progress");
+	});
+
+	test("renders blocked-duration driver and context-time-in-state reasons when both triggers fire", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-20T12:00:00Z")}
+				currentStateName="In Progress"
+				stalenessThresholdDays={1}
+				blockedStalenessThresholdDays={2}
+				isBlocked={true}
+				blockedSince={"2026-05-22T12:00:00Z"}
+				now={now}
+			/>,
+		);
+
+		const stale = screen.getByTestId("time-in-state-stale");
+		expect(stale).toBeInTheDocument();
+		expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
+		const label = stale.getAttribute("aria-label") ?? "";
+		// blocked-duration reason included
+		expect(label).toContain("Blocked");
+	});
+
+	test("cross-surface consistency: same emphasis colour as BaseMetricsView uses for stale items", () => {
+		render(
+			<TimeInStateBadge
+				currentStateEnteredAt={new Date("2026-05-20T12:00:00Z")}
+				currentStateName="In Progress"
+				stalenessThresholdDays={1}
+				isBlocked={false}
+				now={now}
+			/>,
+		);
+
+		const stale = screen.getByTestId("time-in-state-stale");
+		expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
 	});
 });

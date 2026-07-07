@@ -67,7 +67,10 @@ vi.mock("../WorkItemsDialog/WorkItemsDialog", () => ({
 			items?: IWorkItem[];
 			open: boolean;
 			onClose: () => void;
-			timeInStateColumn?: { stalenessThresholdDays?: number };
+			timeInStateColumn?: {
+				stalenessThresholdDays?: number;
+				blockedStalenessThresholdDays?: number;
+			};
 		}) => {
 			if (!open) return null;
 			return (
@@ -712,6 +715,7 @@ describe("WorkItemAgingChart component", () => {
 		const seriesColorOf = (
 			items: IWorkItem[],
 			stalenessThresholdDays: number,
+			blockedStalenessThresholdDays = 0,
 		): string | undefined => {
 			render(
 				<WorkItemAgingChart
@@ -720,6 +724,7 @@ describe("WorkItemAgingChart component", () => {
 					serviceLevelExpectation={mockSLE}
 					doingStates={["To Do", "In Progress", "Review"]}
 					stalenessThresholdDays={stalenessThresholdDays}
+					blockedStalenessThresholdDays={blockedStalenessThresholdDays}
 					now={now}
 				/>,
 			);
@@ -750,7 +755,7 @@ describe("WorkItemAgingChart component", () => {
 			expect(seriesColorOf([oldButNotStaleItem], 0)).not.toBe(errorColor);
 		});
 
-		it("gives the bubble dialog a Time in State column carrying the staleness threshold", async () => {
+		it("gives the bubble dialog a Time in State column carrying both staleness thresholds", async () => {
 			const { default: WorkItemsDialogMock } = await import(
 				"../WorkItemsDialog/WorkItemsDialog"
 			);
@@ -762,6 +767,7 @@ describe("WorkItemAgingChart component", () => {
 					serviceLevelExpectation={mockSLE}
 					doingStates={["To Do", "In Progress", "Review"]}
 					stalenessThresholdDays={7}
+					blockedStalenessThresholdDays={3}
 					now={now}
 				/>,
 			);
@@ -776,6 +782,7 @@ describe("WorkItemAgingChart component", () => {
 			expect(dialogProps?.timeInStateColumn).toEqual({
 				now,
 				stalenessThresholdDays: 7,
+				blockedStalenessThresholdDays: 3,
 			});
 		});
 	});

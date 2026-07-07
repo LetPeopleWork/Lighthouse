@@ -51,6 +51,7 @@ export interface HighlightColumnDefinition {
 export interface TimeInStateColumnDefinition {
 	now?: Date;
 	stalenessThresholdDays?: number;
+	blockedStalenessThresholdDays?: number;
 }
 
 const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
@@ -249,7 +250,11 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 						currentStateEnteredAt={row.currentStateEnteredAt ?? null}
 						currentStateName={row.state}
 						stalenessThresholdDays={timeInStateColumn.stalenessThresholdDays}
+						blockedStalenessThresholdDays={
+							timeInStateColumn.blockedStalenessThresholdDays
+						}
 						isBlocked={row.isBlocked}
+						blockedSince={row.blockedSince ?? null}
 						now={timeInStateColumn.now}
 					/>
 				),

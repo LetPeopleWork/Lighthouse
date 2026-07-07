@@ -1491,6 +1491,7 @@ describe("BaseMetricsView component", () => {
 				title="Work Items"
 				doingStates={["To Do", "In Progress", "Review"]}
 				stalenessThresholdDays={1}
+				blockedStalenessThresholdDays={0}
 			/>,
 		);
 

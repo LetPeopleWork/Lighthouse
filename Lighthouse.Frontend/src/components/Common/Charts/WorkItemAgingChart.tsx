@@ -292,6 +292,7 @@ const groupWorkItems = (
 	items: IWorkItem[],
 	doingStates: string[],
 	stalenessThresholdDays: number | undefined,
+	blockedStalenessThresholdDays: number | undefined,
 	now: Date,
 ): IGroupedWorkItem[] => {
 	const groups: Record<string, IGroupedWorkItem> = {};
@@ -328,7 +329,14 @@ const groupWorkItems = (
 			groups[key].hasBlockedItems = true;
 		}
 
-		if (deriveStaleness(item, stalenessThresholdDays, now)) {
+		if (
+			deriveStaleness(
+				item,
+				stalenessThresholdDays,
+				blockedStalenessThresholdDays,
+				now,
+			).isStale
+		) {
 			groups[key].hasStaleItems = true;
 		}
 	}
@@ -344,6 +352,7 @@ interface WorkItemAgingChartProps {
 	serviceLevelExpectation?: IPercentileValue | null;
 	doingStates: string[];
 	stalenessThresholdDays?: number;
+	blockedStalenessThresholdDays?: number;
 	now?: Date;
 	perStatePercentileValues?: IPerStatePercentileValues[];
 	workItemAgePercentileValues?: IPercentileValue[];
@@ -355,6 +364,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	serviceLevelExpectation = null,
 	doingStates,
 	stalenessThresholdDays,
+	blockedStalenessThresholdDays,
 	now: providedNow,
 	perStatePercentileValues = [],
 	workItemAgePercentileValues = [],
@@ -440,6 +450,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 			inProgressItems,
 			doingStates,
 			stalenessThresholdDays,
+			blockedStalenessThresholdDays,
 			new Date(nowTime),
 		);
 		const filtered = grouped.filter((g) => {
@@ -455,6 +466,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 		doingStates,
 		visibleTypes,
 		stalenessThresholdDays,
+		blockedStalenessThresholdDays,
 		nowTime,
 	]);
 
@@ -752,6 +764,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				timeInStateColumn={{
 					now,
 					stalenessThresholdDays,
+					blockedStalenessThresholdDays,
 				}}
 			/>
 		</>

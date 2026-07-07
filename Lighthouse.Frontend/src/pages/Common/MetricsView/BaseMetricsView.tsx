@@ -128,6 +128,7 @@ export interface BaseMetricsViewProps<
 	hasForecastFilter?: boolean;
 	forecastFilterConditions?: readonly EvaluatorCondition[];
 	stalenessThresholdDays?: number;
+	blockedStalenessThresholdDays?: number;
 	waitStates?: string[];
 	stateMappings?: IStateMapping[];
 	cycleTimeDefinitions?: ICycleTimeDefinition[];
@@ -420,6 +421,7 @@ type ViewDataInputs = {
 	readonly arrivalsData: RunChartData | null;
 	readonly workItemLookup: Map<number, IWorkItem>;
 	readonly stalenessThresholdDays: number | undefined;
+	readonly blockedStalenessThresholdDays: number | undefined;
 	readonly terms: {
 		workItems: string;
 		features: string;
@@ -494,6 +496,7 @@ function buildViewData(
 			highlightColumn: ageHighlight,
 			timeInStateColumn: {
 				stalenessThresholdDays: inputs.stalenessThresholdDays,
+				blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
 			},
 		},
 		blockedOverview: {
@@ -507,6 +510,7 @@ function buildViewData(
 			highlightColumn: ageHighlight,
 			timeInStateColumn: {
 				stalenessThresholdDays: inputs.stalenessThresholdDays,
+				blockedStalenessThresholdDays: inputs.blockedStalenessThresholdDays,
 			},
 		},
 		featuresWorkedOnOverview: inputs.featuresInProgress
@@ -778,6 +782,7 @@ function buildWidgetNodes(ctx: {
 	hasForecastFilter: boolean;
 	forecastFilterConditions: readonly EvaluatorCondition[];
 	stalenessThresholdDays: number | undefined;
+	blockedStalenessThresholdDays?: number;
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	displayedCumulativeStateTime: ICumulativeStateTimeResponse | null;
 	cumulativeScopeDefinitionId: number | null;
@@ -894,6 +899,7 @@ function buildWidgetNodes(ctx: {
 				serviceLevelExpectation={ctx.serviceLevelExpectation}
 				doingStates={ctx.doingStates}
 				stalenessThresholdDays={ctx.stalenessThresholdDays}
+				blockedStalenessThresholdDays={ctx.blockedStalenessThresholdDays}
 				perStatePercentileValues={ctx.perStatePercentileValues}
 				workItemAgePercentileValues={ctx.workItemAgePercentilesValues}
 			/>
@@ -1025,6 +1031,7 @@ export const BaseMetricsView = <
 	hasForecastFilter = false,
 	forecastFilterConditions = [],
 	stalenessThresholdDays,
+	blockedStalenessThresholdDays,
 	waitStates = [],
 	stateMappings = [],
 	cycleTimeDefinitions = [],
@@ -1327,8 +1334,13 @@ export const BaseMetricsView = <
 	};
 
 	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
-	const staleItems = inProgressItems.filter((item) =>
-		deriveStaleness(item, stalenessThresholdDays),
+	const staleItems = inProgressItems.filter(
+		(item) =>
+			deriveStaleness(
+				item,
+				stalenessThresholdDays,
+				blockedStalenessThresholdDays,
+			).isStale,
 	);
 	const hasStaleConfig = (stalenessThresholdDays ?? 0) > 0;
 
@@ -1402,6 +1414,7 @@ export const BaseMetricsView = <
 		hasForecastFilter,
 		forecastFilterConditions,
 		stalenessThresholdDays,
+		blockedStalenessThresholdDays,
 		cumulativeStateTime,
 		displayedCumulativeStateTime:
 			scopedCumulativeStateTime ??
@@ -1465,7 +1478,11 @@ export const BaseMetricsView = <
 		agingItems: inProgressItems.map((item) => ({
 			workItemAge: item.workItemAge,
 			isBlocked: item.isBlocked,
-			isStale: deriveStaleness(item, stalenessThresholdDays),
+			isStale: deriveStaleness(
+				item,
+				stalenessThresholdDays,
+				blockedStalenessThresholdDays,
+			).isStale,
 		})),
 		wipOverTimeValues: wipOverTimeData
 			? Array.from({ length: wipOverTimeData.history }, (_, i) =>
@@ -1529,6 +1546,7 @@ export const BaseMetricsView = <
 		arrivalsData,
 		workItemLookup,
 		stalenessThresholdDays,
+		blockedStalenessThresholdDays,
 		terms: {
 			workItems: ragTerms.workItems,
 			features: ragTerms.features,
