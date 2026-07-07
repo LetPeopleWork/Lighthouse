@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.API
             {
                 var teamSettingDto = new TeamSettingDto(team)
                 {
-                    BlockedRuleSetJson = JsonSerializer.Serialize(blockedItemService.GetEffectiveRuleSet(team)),
+                    BlockedRuleSetJson = blockedItemService.GetEffectiveRuleSetJson(team),
                 };
                 return teamSettingDto;
             });

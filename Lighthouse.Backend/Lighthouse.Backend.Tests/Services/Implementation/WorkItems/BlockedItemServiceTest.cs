@@ -209,6 +209,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(ruleSet.Conditions[0].Value, Is.EqualTo("Blocked"));
         }
 
+        [Test]
+        public void GetEffectiveRuleSetJson_SerializesCamelCase_MatchingFrontendContract()
+        {
+            // Bug 3 regression: the frontend rule builder parses camelCase (version/mode/conditions/
+            // fieldKey/operator/value). A PascalCase payload fails its zod parse and silently renders
+            // the empty "add at least one rule" state despite a configured rule.
+            var team = new Team { BlockedStates = ["Blocked"], BlockedTags = [] };
+
+            var json = CreateSut().GetEffectiveRuleSetJson(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(json, Does.Contain("\"version\""));
+                Assert.That(json, Does.Contain("\"mode\""));
+                Assert.That(json, Does.Contain("\"conditions\""));
+                Assert.That(json, Does.Contain("\"fieldKey\""));
+                Assert.That(json, Does.Contain("\"operator\""));
+                Assert.That(json, Does.Contain("\"value\""));
+                Assert.That(json, Does.Not.Contain("\"FieldKey\""),
+                    "PascalCase keys break the frontend zod parse");
+                Assert.That(json, Does.Not.Contain("\"Version\""));
+            }
+        }
+
+        [Test]
+        public void GetEffectiveRuleSetJson_RoundTripsStoredRuleSet_AsCamelCase()
+        {
+            var storedCamel = JsonSerializer.Serialize(
+                new WorkItemRuleSet
+                {
+                    Mode = WorkItemRuleSet.ModeOr,
+                    Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.state", Operator = "equals", Value = "Blocked" }],
+                },
+                CamelCase);
+            var team = new Team { BlockedRuleSetJson = storedCamel };
+
+            var json = CreateSut().GetEffectiveRuleSetJson(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(json, Does.Contain("\"fieldKey\""));
+                Assert.That(json, Does.Not.Contain("\"FieldKey\""));
+            }
+        }
+
         private static string AdditionalFieldNotEmptyRuleSet(int fieldId)
         {
             var ruleSet = new WorkItemRuleSet

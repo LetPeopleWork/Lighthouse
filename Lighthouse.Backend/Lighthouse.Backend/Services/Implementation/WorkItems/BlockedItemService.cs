@@ -23,7 +23,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private const string StateFieldSuffix = "state";
         private const string TagsFieldSuffix = "tags";
 
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
 
         private static readonly RuleEvaluator<Feature> FeatureRuleEvaluator = new();
 
@@ -63,6 +67,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             return SynthesizeFromLegacyConfiguration(owner);
+        }
+
+        public string GetEffectiveRuleSetJson(WorkTrackingSystemOptionsOwner owner)
+        {
+            return JsonSerializer.Serialize(GetEffectiveRuleSet(owner), JsonSerializerOptions);
         }
 
         public bool ValidateRuleSet(WorkItemRuleSet ruleSet, WorkTrackingSystemOptionsOwner owner)

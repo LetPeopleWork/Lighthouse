@@ -21,6 +21,14 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkItems
 
         WorkItemRuleSet GetEffectiveRuleSet(WorkTrackingSystemOptionsOwner owner);
 
+        /// <summary>
+        /// Serializes <see cref="GetEffectiveRuleSet"/> as camelCase JSON — the exact contract the
+        /// frontend rule builder parses. Read endpoints MUST use this rather than a raw
+        /// <c>JsonSerializer.Serialize</c>, whose PascalCase output the frontend cannot parse
+        /// (it silently falls back to an empty rule set).
+        /// </summary>
+        string GetEffectiveRuleSetJson(WorkTrackingSystemOptionsOwner owner);
+
         bool ValidateRuleSet(WorkItemRuleSet ruleSet, WorkTrackingSystemOptionsOwner owner);
     }
 }

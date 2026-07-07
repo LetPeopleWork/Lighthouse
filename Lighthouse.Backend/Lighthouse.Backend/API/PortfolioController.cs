@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.API
 
                 var portfolioSettingDto = new PortfolioSettingDto(portfolio, readableTeamIdSet)
                 {
-                    BlockedRuleSetJson = JsonSerializer.Serialize(blockedItemService.GetEffectiveRuleSet(portfolio)),
+                    BlockedRuleSetJson = blockedItemService.GetEffectiveRuleSetJson(portfolio),
                 };
                 return portfolioSettingDto;
             });
