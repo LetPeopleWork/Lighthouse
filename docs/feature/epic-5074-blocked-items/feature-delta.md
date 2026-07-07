@@ -841,3 +841,130 @@ Added `blockedStalenessThresholdDays` settings field (twin of `StalenessThreshol
 - DISTILL red-classification.md (scenarios #17-21 RED-verified)
 - ADR-070 (blocked-duration staleness, amends ADR-026)
 - ADR-072 (contract changes + client version-gate matrix)
+
+---
+
+## Wave: DISCUSS / [REF] Enhancement Batch (2026-07-07) — Reading Confirmation
+
+Date: 2026-07-07 | Mode: lean + ask-intelligent | Type: user-facing | Skeleton: no (foundation shipped)
+Batch input: `enhancement-backlog.md` (B1 chart drill-through, B2 RAG status, B3 previous-period trend).
+
+- Read SSOT: `jobs.yaml` (blocked-rules + flow-coach/delivery-lead jobs), `journeys/epic-5074-blocked-items.yaml` (both journeys), personas config-admin/flow-coach/delivery-lead-rte (present).
+- Read code reality: `BlockedOverviewWidget.tsx` (currently `blockedCount` only), `BlockedItemsOverTimeChart.tsx` (MUI-X BarChart, snapshots only, non-interactive), `BlockedCountSnapshot.cs` (`{OwnerId, OwnerType, RecordedAt, BlockedCount}` — COUNT only, no membership), `WorkItemsDialog/` (exists, reusable), `BaseMetricsView.tsx` L811-975 (widget site receives `ctx.blockedItems`, `ctx.blockedStalenessThresholdDays`, `ctx.blockedCountHistory`).
+- Reconciliation: no contradiction with the shipped foundation. All three extend the non-premium `read-blocked-signals` journey; the single-`IsBlocked` invariant (blockedRuleSet) is preserved — no new definition of "blocked".
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Wave Decisions
+
+- **D-EB1 (B1 drill-through source)**: Reconstruct blocked membership at a past date from `WorkItemBlockedTransition` enter/leave intervals (ADR-068) via a NEW read endpoint. **Rejected**: persisting an item-id set per snapshot (would amend ADR-069 + migration; unnecessary). **Rejected**: current-only click (kept as the SPIKE fallback if reconstruction fails to reconcile). Latest bar reconstructs from live `IsBlocked`. (User-locked.)
+- **D-EB2 (B2 RAG driver)**: RAG on the overview widget keyed on MAX blocked age vs the existing `blockedStalenessThresholdDays` (RED past threshold, AMBER aging toward, GREEN none aging; 0 = disabled/neutral). **Rejected**: %-of-WIP-blocked and absolute-count drivers — max-age reuses the line the admin already tuned and matches the blocked→stale signal. (User-locked.)
+- **D-EB3 (B3 trend baseline)**: Previous-period trend = current count vs `BlockedCountSnapshot` on the LAST DAY of the previous period; "period" = the dashboard's selected date range. Client-side off the already-loaded `blockedCountHistory`; no new endpoint. No-baseline ⇒ "—", never a fake zero-delta. (Defaulted; user-confirmed the compare-to-prior-period intent.)
+- **D-EB4 (premium)**: All three stay non-premium (twin of the shipped widget). Website marketing N/A.
+- **D-EB5 (single blocked definition)**: All three derive from the ONE `IsBlocked`/`blockedRuleSet` + the ONE `WorkItemBlockedTransition` capture — no second evaluation path.
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Scope Assessment
+
+**PASS (right-sized).** 3 thin vertical slices, 1 bounded context (blocked-items, app-scope, no new context), each ships end-to-end ≤1 day (B1 ≤1.5d with a ~2h de-risk spike). Signals checked: <10 stories (3), <3 contexts (1), <5 integration points, <2 weeks, and the three outcomes ship independently. No split needed. Deeper carpaccio in slice briefs `slices/slice-06..08-*.md`.
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Story Map & Prioritization
+
+Backbone (delivery lead + flow coach reading blocked signals) → 3 slices, sequenced by dependency + learning leverage + dogfood cadence:
+
+1. **Slice 06 — B3 previous-period trend** (`job-delivery-lead-tell-blocked-trend-vs-last-period`). First: cheapest (client-side, no endpoint/migration), proves the widget-enrichment path, immediate dogfood on Tenant Zero.
+2. **Slice 07 — B2 RAG status** (`job-flow-coach-read-blocked-health-at-a-glance`). Reuses `blockedSince` + `blockedStalenessThresholdDays`; no new endpoint.
+3. **Slice 08 — B1 chart drill-through** (`job-flow-coach-drill-into-blocked-trend-point`). Last: largest, carries the reconstruct risk (new endpoint + interval-overlap query); pre-slice ~2h SPIKE validates reconciliation vs `BlockedCountSnapshot`, else fall back to current-only click.
+
+## Wave: DISCUSS / [REF] Enhancement Batch — User Stories
+
+### US-EB1 — Previous-period trend on the Blocked widget
+As a **delivery lead**, I want the Blocked overview widget to show whether the blocked count is up or down vs the end of the previous period, so I can tell leadership whether we are clearing blockers faster than they arrive.
+`job_id: job-delivery-lead-tell-blocked-trend-vs-last-period`
+
+#### Elevator Pitch
+Before: the delivery lead sees a bare blocked count with no baseline — "16 blocked" is uninterpretable.
+After: open a team/portfolio metrics page → the Blocked widget shows `16` with a `▲ +4 vs last period` indicator (or `—` when no prior-period snapshot).
+Decision enabled: raise blockers in the review when trending worse; report a downward trend when improving.
+
+**Acceptance criteria**
+1. Current count > prior-period-boundary count ⇒ up/worse direction + positive delta; < ⇒ down/better; = ⇒ flat.
+2. Baseline = `BlockedCountSnapshot` on the last day of the previous period (period = selected date range); computed client-side from `blockedCountHistory`, no new endpoint.
+3. No snapshot at/before the previous-period boundary ⇒ "—" with "no prior-period baseline yet" tooltip; never a delta of 0.
+4. Works on both Team and Portfolio metrics views.
+
+### US-EB2 — Max-blocked-age RAG status on the Blocked widget
+As a **flow coach**, I want the Blocked widget to show red/amber/green based on how long the longest-blocked item has been stuck, so I can judge urgency at a glance without opening each item.
+`job_id: job-flow-coach-read-blocked-health-at-a-glance`
+
+#### Elevator Pitch
+Before: the coach can't tell whether "5 blocked" is all fresh or one stuck three weeks without opening each item.
+After: open a team metrics page → the Blocked widget is RED/AMBER/GREEN with a tooltip "oldest blocker: N days".
+Decision enabled: dig into blockers this session when red; move on when green.
+
+**Acceptance criteria**
+1. An item blocked past `blockedStalenessThresholdDays` ⇒ RED (tooltip names the oldest blocker's age).
+2. Oldest item aging toward but not past the threshold ⇒ AMBER; all well within ⇒ GREEN.
+3. `blockedStalenessThresholdDays = 0` ⇒ neutral (RAG disabled).
+4. Items with no established `blockedSince` baseline are excluded from the max-age computation.
+5. Colour is not the only signal (label/tooltip carries the age) — accessible, matches the stale treatment.
+
+### US-EB3 — Drill from a blocked-over-time bar into that day's blocked items
+As a **flow coach**, I want to click a bar on the Blocked-Items-over-time chart and see which items were blocked at that date, so I can name the specific blockers behind a spike instead of only seeing the count moved.
+`job_id: job-flow-coach-drill-into-blocked-trend-point`
+
+#### Elevator Pitch
+Before: the over-time chart shows how many were blocked, never which ones — a dead end for investigation.
+After: click a bar on the Blocked-Items-over-time chart → a `WorkItemsDialog` lists the items blocked at that date.
+Decision enabled: escalate/investigate the named blockers behind a bad week, not just the trend line.
+
+**Acceptance criteria**
+1. Click a bar at date T ⇒ `WorkItemsDialog` lists exactly the items whose `WorkItemBlockedTransition` interval covers T; latest bar reconstructs from live `IsBlocked`.
+2. Membership reconstructed (read-only) from transition intervals via a new read endpoint — `BlockedCountSnapshot` unchanged, no persisted membership, no migration.
+3. Reconstructed count for T reconciles with `BlockedCountSnapshot.blockedCount` where both exist; a mismatch shows a capture-gap note (no silent divergence).
+4. Date before transition-capture start ⇒ partial set + "complete only from {captureStartDate}" note.
+5. No items blocked at T ⇒ empty dialog with "no items blocked on this date"; new read endpoint version-gated for CLI/MCP clients (ADR-072 pattern).
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Out of Scope
+
+- Persisting per-snapshot blocked membership (B1 reconstructs instead — no `BlockedCountSnapshot` schema change).
+- A RAG threshold separate from `blockedStalenessThresholdDays` (deliberately reuse the tuned line).
+- Sparkline/mini-chart on the widget; per-type filtering of the over-time chart (UC-2, still deferred, ADR-069).
+- Actioning items from the drill-through dialog (read-only list).
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Outcome KPIs
+
+- **B3**: ≥60% of the prior-period-boundary snapshots present across active teams within 2 weeks (else the "—" state dominates and the trend adds no value). Measure: share of team/portfolio views where the indicator renders a delta vs "—".
+- **B2**: RAG RED fires within one sync of an item crossing `blockedStalenessThresholdDays` (parity with blocked→stale). Measure: agreement rate between widget RED and blocked→stale on the same items.
+- **B1**: reconstructed date-T count reconciles with `BlockedCountSnapshot.blockedCount` within ±1 for ≥95% of sampled historical dates (else fall back to current-only). Measure: reconciliation sample in the slice-08 spike + a backend integration assertion.
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Definition of Ready
+
+| DoR Item | Status |
+|---|---|
+| 1. Problem in domain language | PASS (3 job stories in `jobs.yaml`) |
+| 2. Persona with characteristics | PASS (delivery-lead-rte, flow-coach) |
+| 3. 3+ domain examples | PASS (per-story AC) |
+| 4. UAT G/W/T | PASS (AC per story; Gherkin at DISTILL) |
+| 5. AC derived from jobs | PASS |
+| 6. Right-sized (≤1d/slice) | PASS (scope assessment; B1 +spike) |
+| 7. Technical notes + cross-cutting | PASS (code-grounded in slice briefs) |
+| 8. Dependencies tracked | PASS (slices 02/03/04 shipped) |
+| 9. Outcome KPIs measurable | PASS (above) |
+| Job traceability | PASS (every story → real `job_id`) |
+| Elevator pitch (real entry point + observable output) | PASS (3/3) |
+| Slice composition (≥1 value story/slice) | PASS (no `@infrastructure`-only slice) |
+| RBAC | PASS (read-only, existing metrics-view gating; no new surface) |
+| Clients version-gate | B1 new read endpoint gated (ADR-072); B2/B3 FE-only, no gate |
+| Website | N/A (non-premium) |
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Risks & Open Questions
+
+- **R-EB1 (B1 reconstruction fidelity)**: `WorkItemBlockedTransition` L1 capture (sync cadence; re-block within a cadence collapses to one spell) may make reconstructed membership diverge from the snapshot count → the ~2h slice-08 SPIKE gates it, with current-only click as the fallback. HIGH-uncertainty, sequenced last.
+- **OQ-EB1 (B2 AMBER band)**: the exact aging fraction of `blockedStalenessThresholdDays` for AMBER is a DESIGN default (documented), not a user setting — confirm the default at DESIGN.
+- **OQ-EB2 (B2 prop threading)**: verify `blockedSince` reaches the `blockedOverview` widget site (currently only `blockedItems.length` is used) — thin prop-threading folded into slice 07 if absent.
+
+## Wave: DISCUSS / [REF] Enhancement Batch — Wave Decisions Summary
+
+- Primary needs: turn the blocked count/trend from a bare number into (B3) a directional signal, (B2) an at-a-glance urgency cue, and (B1) an investigable record — all on the shipped non-premium foundation, all from the single `IsBlocked`/transition source.
+- Feature type: user-facing. Skeleton: none (extends shipped slices 01-04). Slices 06-08.
+- Constraints: no `BlockedCountSnapshot` schema change; reuse `blockedStalenessThresholdDays`; one blocked definition; B1 endpoint version-gated.
+- Upstream changes: none to DISCOVER; SSOT `jobs.yaml` (+3 jobs) and journey `read-blocked-signals` (+3 steps, +`blockedMembershipAtDate` artifact) extended.
+- **NEXT = /nw-design** for the three slices (B1 reconstruct endpoint is the main design surface; B2/B3 are FE-shaped). ADO: add Stories #… under Epic #5074 (confirm before create per /ado-sync).

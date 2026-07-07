@@ -2806,3 +2806,151 @@ jobs:
         only. Gap: 2 — genuine but contained; reuses the staleness signal, treatment, and threshold model
         wholesale, adding a second trigger source keyed on the new blockedSince capture.
 
+  - id: job-delivery-lead-tell-blocked-trend-vs-last-period
+    title: Tell at a glance whether blocked is getting better or worse than last period
+    persona: delivery-lead-rte
+    feature_context: epic-5074-blocked-items
+    job_story: >
+      When I open a team's or portfolio's dashboard for a delivery review and I see the current
+      blocked count,
+      I want the Blocked widget to also show whether that count is up, down, or flat versus the
+      blocked count at the end of the previous period,
+      so I can tell leadership whether we are clearing blockers faster than they arrive — not just
+      how many are blocked at this instant.
+    dimensions:
+      functional: >
+        A trend indicator on the Blocked overview widget: a direction (up/down/flat) plus the numeric
+        delta vs the blocked count on the last day of the previous period, where "period" is the
+        dashboard's currently-selected date range. Reads from the existing blockedCountHistory
+        (BlockedCountSnapshot) already loaded on the metrics view — no new capture.
+      emotional: >
+        Move from "we have N blocked right now" (a static number that could be normal or a crisis) to
+        "N blocked, and that's 4 more than the end of last period" — a direction that tells me whether
+        to raise it.
+      social: >
+        Be the delivery lead who reports a trend ("blockers are trending down two periods running"),
+        not just a snapshot leadership can't interpret.
+    forces:
+      push: >
+        The Blocked widget shows only the current count. A count with no baseline is uninterpretable —
+        leadership asks "is that good or bad?" and there is no answer on the screen, so the trend
+        conversation happens off a manually-kept spreadsheet or not at all.
+      pull: >
+        One indicator on the widget the lead already reads answers "better or worse than last period"
+        the moment the dashboard opens, using data Lighthouse already snapshots forward.
+      anxiety: >
+        Will the comparison mislead when there's no snapshot at the previous-period boundary yet
+        (forward-only history just started)? (Mitigated: no-baseline state shows "—", never a fake
+        delta.)
+      habit: >
+        Leads read the number today; a delta next to it is the same glance with a direction added —
+        the same muscle memory as the WIP/throughput trend widgets they already scan.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — turns an uninterpretable snapshot into a directional signal for review
+        conversations, but is an enrichment of an existing widget, not a new capability. Current
+        satisfaction: 1 — the widget shows only the instantaneous count; there is no baseline on
+        screen. Gap: 2 — real and cheap: the history already exists in BlockedCountSnapshot, so the
+        job is a lookback + delta render with no new capture or endpoint.
+
+  - id: job-flow-coach-read-blocked-health-at-a-glance
+    title: Read blocked health at a glance without reading each blocked item
+    persona: flow-coach
+    feature_context: epic-5074-blocked-items
+    job_story: >
+      When I scan a team's dashboard during a flow review and I want to know whether blocked items
+      need attention right now,
+      I want the Blocked widget to show a red/amber/green status driven by how long the
+      longest-blocked item has been stuck,
+      so I can decide whether to dig into blockers this session without opening and reading the age of
+      every blocked item.
+    dimensions:
+      functional: >
+        A RAG (red/amber/green) indicator on the Blocked overview widget keyed on MAX blocked age
+        across the currently-blocked items, calibrated against the existing
+        blockedStalenessThresholdDays: red = an item has been blocked past the threshold, amber = an
+        item is aging toward it, green = nothing is aging. Uses the blockedSince already available on
+        the blocked items in the metrics view.
+      emotional: >
+        Move from "there are 5 blocked, but I don't know if any are urgent" to "the widget is red — the
+        oldest blocker has crossed our line, dig in now" — an at-a-glance triage cue.
+      social: >
+        Be the coach whose dashboard surfaces the urgent case immediately, so the team trusts the widget
+        to flag "this needs a conversation today".
+    forces:
+      push: >
+        The Blocked widget shows a bare count. A count of 5 blocked hides whether they are all
+        one-day-old (fine) or one has been stuck three weeks (a fire) — the coach must open each item
+        to tell, so the urgency signal is buried.
+      pull: >
+        A colour on the widget the coach already glances at answers "is any blocker urgent?" instantly,
+        reusing the blocked-staleness threshold the admin already tuned.
+      anxiety: >
+        Will red-for-everything cause alert fatigue? (Mitigated: RAG keys on the SAME
+        blockedStalenessThresholdDays that already gates blocked-staleness, so it fires exactly when the
+        stale signal does — no new calibration surface, and 0 disables.)
+      habit: >
+        Coaches already read RAG-style urgency from the stale red treatment; the same colour language on
+        the Blocked widget is the same mental model, one glance earlier.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — converts a count into a triage cue that reuses the coach's existing urgency
+        language, but enriches an existing widget rather than adding a capability. Current satisfaction:
+        1 — urgency of blocked items is invisible on the widget; it requires opening each item. Gap: 2 —
+        contained and cheap: reuses blockedSince and the existing blockedStalenessThresholdDays, so it is
+        a max-age computation plus a colour, no new setting or endpoint.
+
+  - id: job-flow-coach-drill-into-blocked-trend-point
+    title: Drill from a point on the blocked trend into the exact items blocked then
+    persona: flow-coach
+    feature_context: epic-5074-blocked-items
+    job_story: >
+      When I read the Blocked-Items-over-time chart and I see the count spiked on a particular day,
+      I want to click that point and see exactly which work items were blocked at that moment,
+      so I can name the specific blockers behind the number instead of only knowing the count moved.
+    dimensions:
+      functional: >
+        Clicking a bar in the Blocked-Items-over-time chart opens the existing WorkItemsDialog listing
+        the items that were blocked at that date. Membership at a past date is RECONSTRUCTED from
+        WorkItemBlockedTransition enter/leave intervals (ADR-068) — no new persisted membership — valid
+        back to when transition capture started. The latest point reconstructs from live IsBlocked.
+      emotional: >
+        Move from "the trend went up three weeks ago and I don't remember why" to "these four items were
+        the blockers that week — two are still open" — turning the trend line into an investigable
+        record.
+      social: >
+        Be the coach who walks the team through the actual blockers behind a bad trend, not just a line
+        that went up, in the retro.
+    forces:
+      push: >
+        The over-time chart answers "how many were blocked" but not "which ones". The practitioner's very
+        next question is always "which items?", and today there is no path from the trend to the
+        membership — the chart is a dead end for investigation.
+      pull: >
+        One click on the bar the coach is already looking at opens the item list for that day, reusing
+        the WorkItemsDialog they already know from other charts.
+      anxiety: >
+        Will the reconstructed membership be trustworthy for old dates? (Mitigated: it derives from the
+        same WorkItemBlockedTransition capture that drives per-item duration; for dates before capture
+        started, the dialog states the record is only complete from the capture-start date.)
+      habit: >
+        Coaches already click chart points to open a WorkItemsDialog elsewhere in Lighthouse; the blocked
+        trend gains the same affordance they already expect.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — closes the trend-to-action loop that is the whole point of showing a blocked
+        trend: "which items?" is the question every count provokes, and answering it in-place is high
+        leverage. Current satisfaction: 1 — the chart is currently non-interactive; there is no path from
+        a point to its membership. Gap: 3 — real and the largest of the three enhancements, because it
+        needs a new reconstruct-membership-at-date query over WorkItemBlockedTransition and a new read
+        endpoint, not just a client-side render.
+

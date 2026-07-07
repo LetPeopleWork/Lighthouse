@@ -252,6 +252,69 @@ journeys:
           - Threshold set to 0: blocked->stale is disabled; only time-in-state staleness applies. Not an
             error — it is the opt-out.
 
+      # --- Enhancement batch (2026-07-07): three widget/chart enrichments on the shipped foundation ---
+
+      - id: step-read-blocked-trend-vs-last-period
+        action: >
+          A delivery lead opens the dashboard and reads whether the current blocked count is up or down
+          versus the end of the previous period, straight off the Blocked overview widget. (Job:
+          job-delivery-lead-tell-blocked-trend-vs-last-period.)
+        expected_output: >
+          The Blocked overview widget shows the current count PLUS a trend indicator: a direction
+          (up/down/flat) and the numeric delta against the blocked count on the LAST DAY of the previous
+          period, where "period" is the dashboard's currently-selected date range. Computed client-side
+          from the blockedCountHistory (BlockedCountSnapshot) already loaded on the view. When no snapshot
+          exists at the previous-period boundary, the indicator shows "—" (no baseline), never a fake
+          delta of zero.
+        emotional_state: Oriented — "16 blocked, and that's 4 more than end of last period — worse, flag it"
+        shared_artifacts:
+          - blockedCountHistory (existing — BlockedCountSnapshot series; the trend reads the prior-period boundary value)
+          - currentFilter (existing — the selected date range defines "the period")
+        failure_modes:
+          - No snapshot at or before the previous-period boundary (forward-only history just began):
+            indicator renders "—" with a "no prior-period baseline yet" tooltip. Not an error.
+
+      - id: step-read-blocked-health-rag
+        action: >
+          Priya glances at the Blocked overview widget to see whether any blocker is urgent, without
+          opening each blocked item. (Job: job-flow-coach-read-blocked-health-at-a-glance.)
+        expected_output: >
+          The Blocked overview widget carries a red/amber/green status driven by the MAX blocked age
+          across the currently-blocked items, calibrated on the existing blockedStalenessThresholdDays:
+          RED = an item has been blocked past the threshold, AMBER = an item is aging toward it, GREEN =
+          nothing is aging. Uses the blockedSince already present on the blocked items in the metrics
+          view. With the threshold at 0, RAG is disabled (neutral).
+        emotional_state: Alerted — "the widget's red — the oldest blocker crossed our line, dig in now"
+        shared_artifacts:
+          - blockedSince (existing from slice-02 — drives max blocked age)
+          - settings.blockedStalenessThresholdDays (existing from slice-04 — the RAG calibration line)
+        failure_modes:
+          - blockedStalenessThresholdDays = 0: RAG disabled, widget renders neutral (no colour). The
+            opt-out, matching blocked->stale.
+          - A blocked item still establishing its baseline (blockedSince "—"): excluded from the max-age
+            computation until a baseline exists, same tolerance as the per-item badge.
+
+      - id: step-drill-into-blocked-trend-point
+        action: >
+          Priya sees the blocked count spiked on a past day in the Blocked-Items-over-time chart and
+          clicks that bar to see which items were blocked then. (Job:
+          job-flow-coach-drill-into-blocked-trend-point.)
+        expected_output: >
+          Clicking a bar opens the existing WorkItemsDialog listing the items that were blocked at that
+          date. Membership at a past date is RECONSTRUCTED from WorkItemBlockedTransition enter/leave
+          intervals (ADR-068) via a new read endpoint — no new persisted membership — valid back to when
+          transition capture started; the latest bar reconstructs from live IsBlocked. For a date before
+          capture began, the dialog states the record is complete only from the capture-start date.
+        emotional_state: Investigative — "these four were the blockers that week — two are still open"
+        shared_artifacts:
+          - blockedMembershipAtDate (new — reconstructed item set at date T from WorkItemBlockedTransition intervals; read-only, not persisted)
+          - blockedSince (existing — the same WorkItemBlockedTransition capture that reconstruction reads)
+        failure_modes:
+          - Clicked date precedes transition-capture start: dialog shows the reconstructable set and a
+            note that membership is complete only from the capture-start date.
+          - No items were blocked at the clicked date: dialog opens empty with a "no items blocked on
+            this date" message, not an error.
+
     error_paths_summary:
       - First-observation blocked items (no prior enter timestamp): per-item badge shows "—" and the
         item does not yet count toward blocked-staleness until a baseline exists.
@@ -294,9 +357,17 @@ shared_artifacts_registry:
     source_of_truth: "Forward-only daily snapshot of the in-scope blocked count per Team/Portfolio (delivery-metrics history pattern; recorded going forward, never reconstructed)"
     consumers:
       - "Blocked Items over-time chart"
+      - "Blocked overview widget previous-period trend indicator (reads the prior-period-boundary value; enhancement batch)"
     owner: epic-5074-blocked-items
-    integration_risk: "MEDIUM — forward-only means the chart is empty until snapshots accrue; the empty state must read 'builds forward from today', never a flat zero that reads as 'never blocked'."
-    validation: "With snapshots present the chart plots the daily blocked count over the window; with none it shows the forward-only empty state."
+    integration_risk: "MEDIUM — forward-only means the chart is empty until snapshots accrue; the empty state must read 'builds forward from today', never a flat zero that reads as 'never blocked'. The trend indicator MUST render '—' when no snapshot exists at the previous-period boundary, never a fabricated zero-delta."
+    validation: "With snapshots present the chart plots the daily blocked count over the window; with none it shows the forward-only empty state. The trend indicator shows a direction+delta only when a prior-period-boundary snapshot exists, else '—'."
+  blockedMembershipAtDate:
+    source_of_truth: "RECONSTRUCTED (read-only, not persisted) from WorkItemBlockedTransition enter/leave intervals — the set of items whose blocked spell covers date T — via a new read endpoint. NEVER a new persisted membership column on BlockedCountSnapshot."
+    consumers:
+      - "Blocked-Items-over-time chart bar click -> WorkItemsDialog (enhancement batch B1)"
+    owner: epic-5074-blocked-items
+    integration_risk: "MEDIUM — reconstruction is only valid back to when WorkItemBlockedTransition capture started (slice-02); for earlier dates the dialog must state the record is complete only from the capture-start date. The count returned for date T SHOULD reconcile with the BlockedCountSnapshot.blockedCount for that date where both exist (differences reveal capture gaps — surface, do not silently diverge)."
+    validation: "Clicking a bar at date T opens WorkItemsDialog with the items whose blocked interval covers T; the latest bar reconstructs from live IsBlocked; a pre-capture date shows the partial set plus the completeness note."
 
 changelog:
   - date: "2026-06-11"
@@ -306,3 +377,13 @@ changelog:
       hardcoded BlockedStates/BlockedTags via ADR-013 reuse + auto-migration) and read-blocked-signals
       (per-item duration, blocked-over-time chart, blocked->stale linkage). Anchored to the existing
       rule engine, the epic-5121 WorkItemBlocked seam, and the non-premium BlockedOverviewWidget.
+  - date: "2026-07-07"
+    feature: epic-5074-blocked-items
+    change: >
+      Enhancement batch on the shipped foundation (slices 01-04). Extended read-blocked-signals with
+      three widget/chart enrichments: previous-period trend indicator on the Blocked overview widget
+      (client-side delta off existing blockedCountHistory), max-blocked-age RAG status on the same
+      widget (reuses blockedSince + blockedStalenessThresholdDays), and drill-through from a
+      blocked-over-time bar to a WorkItemsDialog of items blocked at that date (membership reconstructed
+      from WorkItemBlockedTransition intervals, new read endpoint, no persisted membership). Added
+      shared artifacts blockedMembershipAtDate; extended blockedCountSnapshot consumers. Slices 06-08.
