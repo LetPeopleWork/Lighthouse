@@ -106,6 +106,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         }
 
+        [Test]
+        public async Task PutTeam_BlockedStalenessThresholdAtUpperBoundary365_ReturnsOk()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var response = await PutTeamWithBlockedStalenessThreshold(seededTeamId, 365);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        }
+
         // --- Portfolio validation ---
 
         [Test]
@@ -134,6 +144,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             client.AsPortfolioAdmin(seededPortfolioId);
 
             var response = await PutPortfolioWithBlockedStalenessThreshold(seededPortfolioId, 10);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        }
+
+        [Test]
+        public async Task PutPortfolio_BlockedStalenessThresholdAtUpperBoundary365_ReturnsOk()
+        {
+            client.AsPortfolioAdmin(seededPortfolioId);
+
+            var response = await PutPortfolioWithBlockedStalenessThreshold(seededPortfolioId, 365);
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         }

@@ -1,0 +1,35 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/Models/Team.cs",
+      "**/Models/Portfolio.cs",
+      "**/API/DTO/SettingsOwnerDtoBase.cs",
+      "**/API/TeamController.cs",
+      "**/API/PortfolioController.cs",
+      "**/API/Helpers/TeamExtensions.cs",
+      "**/API/Helpers/PortfolioExtensions.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~Slice04BlockedStaleness|FullyQualifiedName~BlockedStalenessThresholdValidationTests|FullyQualifiedName~TeamControllerTest|FullyQualifiedName~PortfolioControllerTest",
+    "reporters": [
+      "progress",
+      "html",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
