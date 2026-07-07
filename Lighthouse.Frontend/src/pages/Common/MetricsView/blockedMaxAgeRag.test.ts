@@ -22,7 +22,7 @@ const terms: RagTerms = {
 	sle: "SLE",
 };
 
-describe.skip("computeBlockedMaxAgeRag — max-blocked-age RAG (B2)", () => {
+describe("computeBlockedMaxAgeRag — max-blocked-age RAG (B2)", () => {
 	const threshold = 10;
 
 	it("is RED when an item is blocked past the threshold", () => {

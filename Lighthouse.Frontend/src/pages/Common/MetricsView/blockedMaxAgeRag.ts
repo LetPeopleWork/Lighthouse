@@ -1,6 +1,10 @@
 import type { RagTerms } from "./ragRules";
 
-export const __SCAFFOLD__ = true;
+/**
+ * Aging band as a fraction of the staleness threshold: at/above this fraction (but below the
+ * threshold) the oldest blocker is AMBER. Fixed default per OQ-EB-D1 — not a user setting.
+ */
+const AMBER_BAND_FRACTION = 0.75;
 
 export type BlockedRagStatus = "red" | "amber" | "green" | "none";
 
@@ -23,9 +27,41 @@ export type BlockedRagResult = {
  * RED scaffold — authored by DISTILL (ADR-025); implemented in DELIVER slice-07.
  */
 export function computeBlockedMaxAgeRag(
-	_maxBlockedAgeDays: number | null,
-	_thresholdDays: number,
-	_terms: RagTerms,
+	maxBlockedAgeDays: number | null,
+	thresholdDays: number,
+	terms: RagTerms,
 ): BlockedRagResult {
-	throw new Error("Not yet implemented — RED scaffold (DISTILL slice-07)");
+	if (thresholdDays <= 0) {
+		return {
+			ragStatus: "none",
+			tipText: `Define a ${terms.blocked} staleness threshold in settings to track aging ${terms.workItems}.`,
+		};
+	}
+
+	if (maxBlockedAgeDays === null) {
+		return {
+			ragStatus: "green",
+			tipText: `No ${terms.blocked} ${terms.workItems}.`,
+		};
+	}
+
+	// At-threshold counts as past, consistent with the shipped blocked-duration staleness `>=` rule.
+	if (maxBlockedAgeDays >= thresholdDays) {
+		return {
+			ragStatus: "red",
+			tipText: `Oldest ${terms.blocked} ${terms.workItem} has been blocked ${maxBlockedAgeDays} days, past the ${thresholdDays}-day threshold. Unblock it now.`,
+		};
+	}
+
+	if (maxBlockedAgeDays >= AMBER_BAND_FRACTION * thresholdDays) {
+		return {
+			ragStatus: "amber",
+			tipText: `Oldest ${terms.blocked} ${terms.workItem} has been blocked ${maxBlockedAgeDays} days, aging toward the ${thresholdDays}-day threshold. Keep it moving.`,
+		};
+	}
+
+	return {
+		ragStatus: "green",
+		tipText: `Oldest ${terms.blocked} ${terms.workItem} has been blocked ${maxBlockedAgeDays} days, well within the ${thresholdDays}-day threshold.`,
+	};
 }
