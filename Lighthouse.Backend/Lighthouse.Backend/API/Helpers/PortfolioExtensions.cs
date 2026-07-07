@@ -53,6 +53,7 @@ namespace Lighthouse.Backend.API.Helpers
         {
             project.BlockedStates = TrimListEntries(portfolioSetting.BlockedStates);
             project.BlockedTags = portfolioSetting.BlockedTags;
+            project.BlockedRuleSetJson = portfolioSetting.BlockedRuleSetJson;
         }
 
         private static void SyncWaitStates(Portfolio project, PortfolioSettingDto portfolioSetting)

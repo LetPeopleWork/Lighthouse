@@ -88,6 +88,7 @@ namespace Lighthouse.Backend.API.Helpers
         {
             team.BlockedStates = TrimListEntries(teamSetting.BlockedStates);
             team.BlockedTags = TrimListEntries(teamSetting.BlockedTags);
+            team.BlockedRuleSetJson = teamSetting.BlockedRuleSetJson;
         }
 
         private static void SyncWaitStates(Team team, TeamSettingDto teamSetting)
