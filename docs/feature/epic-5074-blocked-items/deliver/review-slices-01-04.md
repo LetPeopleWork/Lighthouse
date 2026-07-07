@@ -36,3 +36,12 @@ Both Haiku reviewers raised "blocking" issues that verification **disproved**:
 - Bugs 1 + 3 → Phase C (`/nw-bugfix`), RCA banked here.
 - D5 + D2 + upsert-race → address opportunistically in Phase C commits or backlog; none block finalize.
 - Proceed to Phase B (slice-04 mutation) — no finding blocks it.
+
+## Post-review discoveries (Phase C)
+
+Bug 3's real root cause turned out to be a **PascalCase/camelCase serialization mismatch**, not "effective ruleset not surfaced" — `GET /settings` already injected `GetEffectiveRuleSet`, but serialized it PascalCase while the FE zod parser expects camelCase. Fixed via `GetEffectiveRuleSetJson` (camelCase). During that fix two adjacent defects surfaced:
+
+1. **Blocked rule-set validation is a silent no-op (NEW follow-up, not yet fixed).** `TeamController.ValidateBlockedRuleSet` (`:278`) and `PortfolioController` (`:184`) deserialize the incoming camelCase `BlockedRuleSetJson` with **default case-sensitive** `JsonSerializer.Deserialize` → `Conditions` never populates → the `Conditions.Count == 0` early-return treats every posted ruleset as valid. `MaxRules (20)`, unknown-field, operator, and value-length checks are all bypassed. Not the reported bug (rules still store + display), but a real validation hole. Fix: deserialize with case-insensitive options (or route through the service). Deferred out of Bug 3 to keep that fix minimal + low-risk; schedule as its own bugfix.
+2. **Forecast-filter validation likely has the identical pattern** (`TeamController.ValidateForecastFilterRuleSet:248`) — same default-options deserialize. OUT OF SCOPE for Epic 5074 (different feature); flag for the forecast-filter owner to verify whether its FE sends camelCase. Do not fix blind here.
+
+Bugs 1 + 3 fixed and committed (WIP-set recorder; camelCase effective ruleset). Backend green, build zero-warning.
