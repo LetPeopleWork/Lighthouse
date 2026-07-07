@@ -1,4 +1,4 @@
-﻿﻿namespace Lighthouse.Backend.Models
+﻿namespace Lighthouse.Backend.Models
 {
     public class Team : WorkTrackingSystemOptionsOwner
     {
@@ -21,6 +21,8 @@
         public override int DoneItemsCutoffDays { get; set; } = 365;
 
         public override int StalenessThresholdDays { get; set; }
+
+        public override int BlockedStalenessThresholdDays { get; set; }
 
         public List<Portfolio> Portfolios { get; } = [];
 

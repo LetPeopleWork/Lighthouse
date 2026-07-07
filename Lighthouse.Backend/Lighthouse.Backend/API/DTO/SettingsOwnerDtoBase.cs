@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.API.DTO
             UseNonNumericEstimation = workTrackingSystemOptionsOwner.UseNonNumericEstimation;
             EstimationCategoryValues = workTrackingSystemOptionsOwner.EstimationCategoryValues;
             StalenessThresholdDays = workTrackingSystemOptionsOwner.StalenessThresholdDays;
+            BlockedStalenessThresholdDays = workTrackingSystemOptionsOwner.BlockedStalenessThresholdDays;
             StateMappings = workTrackingSystemOptionsOwner.StateMappings.Select(sm => new StateMappingDto(sm)).ToList();
             CycleTimeDefinitions = workTrackingSystemOptionsOwner.CycleTimeDefinitions
                 .Select(definition => new CycleTimeDefinitionDto(definition, workTrackingSystemOptionsOwner.IsCycleTimeDefinitionValid(definition)))
@@ -98,6 +99,9 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonRequired]
         public int StalenessThresholdDays { get; set; }
+
+        [JsonRequired]
+        public int BlockedStalenessThresholdDays { get; set; }
 
         public DataRetrievalSchemaDto? DataRetrievalSchema { get; set; }
     }

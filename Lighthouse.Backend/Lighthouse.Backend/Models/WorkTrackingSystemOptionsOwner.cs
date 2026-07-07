@@ -54,6 +54,8 @@ namespace Lighthouse.Backend.Models
 
         public virtual int StalenessThresholdDays { get; set; }
 
+        public virtual int BlockedStalenessThresholdDays { get; set; }
+
         public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
 
         public DateTime? ProcessBehaviourChartBaselineEndDate { get; set; }

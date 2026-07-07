@@ -52,6 +52,7 @@ namespace Lighthouse.Backend.API.Helpers
                 team.ProcessBehaviourChartBaselineEndDate = teamSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;
                 team.ForecastFilterRuleSetJson = teamSetting.ForecastFilterRuleSetJson;
                 team.StalenessThresholdDays = teamSetting.StalenessThresholdDays;
+                team.BlockedStalenessThresholdDays = teamSetting.BlockedStalenessThresholdDays;
 
                 SyncStates(team, teamSetting);
                 SyncStateMappings(team, teamSetting);

@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API.Helpers
             project.DefaultWorkItemPercentile = portfolioSetting.DefaultWorkItemPercentile;
             project.PercentileHistoryInDays = portfolioSetting.PercentileHistoryInDays;
             project.StalenessThresholdDays = portfolioSetting.StalenessThresholdDays;
+            project.BlockedStalenessThresholdDays = portfolioSetting.BlockedStalenessThresholdDays;
             project.SizeEstimateAdditionalFieldDefinitionId = portfolioSetting.SizeEstimateAdditionalFieldDefinitionId;
             project.OverrideRealChildCountStates = portfolioSetting.OverrideRealChildCountStates;
             project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;

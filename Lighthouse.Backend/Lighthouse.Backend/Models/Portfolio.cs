@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.Models
 
         public override int StalenessThresholdDays { get; set; }
 
+        public override int BlockedStalenessThresholdDays { get; set; }
+
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 
         public void UpdateFeatures(IEnumerable<Feature> features)

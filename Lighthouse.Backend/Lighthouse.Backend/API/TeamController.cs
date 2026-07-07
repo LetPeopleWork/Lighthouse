@@ -144,6 +144,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
             }
 
+            if (!IsStalenessThresholdInRange(teamSetting.BlockedStalenessThresholdDays))
+            {
+                return BadRequest($"Blocked staleness threshold must be between {MinStalenessThresholdDays} and {MaxStalenessThresholdDays} days.");
+            }
+
             var ruleSetError = ValidateTeamRuleSets(teamId, teamSetting);
             if (ruleSetError != null)
             {

@@ -690,6 +690,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("BlockedRuleSetJson")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("BlockedStalenessThresholdDays")
+                        .HasColumnType("INTEGER");
+
                     b.PrimitiveCollection<string>("BlockedStates")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -887,6 +890,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<string>("BlockedRuleSetJson")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("BlockedStalenessThresholdDays")
+                        .HasColumnType("INTEGER");
 
                     b.PrimitiveCollection<string>("BlockedStates")
                         .IsRequired()

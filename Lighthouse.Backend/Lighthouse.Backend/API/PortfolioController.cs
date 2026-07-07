@@ -109,6 +109,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Staleness threshold must be between {TeamController.MinStalenessThresholdDays} and {TeamController.MaxStalenessThresholdDays} days.");
             }
 
+            if (!TeamController.IsStalenessThresholdInRange(portfolioSetting.BlockedStalenessThresholdDays))
+            {
+                return BadRequest($"Blocked staleness threshold must be between {TeamController.MinStalenessThresholdDays} and {TeamController.MaxStalenessThresholdDays} days.");
+            }
+
             var portfolioForValidation = portfolioRepository.GetById(portfolioId);
             if (portfolioForValidation != null)
             {
