@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
     {
         public async Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
         {
-            using var scope = serviceScopeFactory.CreateScope();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
             var handlers = scope.ServiceProvider.GetServices<IDomainEventHandler<TEvent>>();
 
             foreach (var handler in handlers)
