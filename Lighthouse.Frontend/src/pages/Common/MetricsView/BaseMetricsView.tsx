@@ -1342,7 +1342,9 @@ export const BaseMetricsView = <
 				blockedStalenessThresholdDays,
 			).isStale,
 	);
-	const hasStaleConfig = (stalenessThresholdDays ?? 0) > 0;
+	const hasStaleConfig =
+		(stalenessThresholdDays ?? 0) > 0 ||
+		(blockedStalenessThresholdDays ?? 0) > 0;
 
 	const loadBalanceData = useMemo(
 		() =>

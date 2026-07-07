@@ -782,3 +782,62 @@ Verdict: **COMPLETE for the in-scope backend contract.** 15-item mechanical inte
 - DESIGN driving ports (settings PUT/GET, WIP read, new `blockedCountHistory`) + ADR-067..070.
 - Env: dotnet 10 SDK; Sqlite in-memory-per-test via the existing test factory (no Docker for these slices).
 - `distill/red-classification.md` (RED genuineness) + `distill/upstream-issues.md` (UC-2 deferral, outcomes-registry skip).
+
+## Wave: DELIVER / [REF] — Slice 04 (Blocked → Stale linkage)
+
+Date: 2026-07-07 | Wave: DELIVER | Paradigm: OOP | Scope: slice 04 only
+
+### [REF] Implementation Summary
+
+Added `blockedStalenessThresholdDays` settings field (twin of `StalenessThresholdDays`, default 0 = disabled) to backend model, DTO, write path, and validation (0-365). Extended `deriveStaleness` FE selector from `boolean` → `StalenessResult {isStale, reasons[]}` with blocked-duration driver (`≥` boundary), context-time-in-state (UC-1 driver+context split), and ADR-026 preservation (`!isBlocked` guard in time-in-state branch). Updated 3 call sites (TimeInStateBadge, BaseMetricsView, WorkItemAgingChart) to consume `StalenessResult`. Added FE settings chain (IBaseSettings, Zod validation, FlowMetricsConfigurationComponent twin UI).
+
+### [REF] Files Modified (49 files, 5 commits)
+
+**Backend production** (8 files): WorkTrackingSystemOptionsOwner.cs, Team.cs, Portfolio.cs, SettingsOwnerDtoBase.cs, TeamExtensions.cs, PortfolioExtensions.cs, TeamController.cs, PortfolioController.cs
+**Backend migrations** (6 files): SQLite + Postgres migration files + snapshots
+**Backend tests** (3 files): BlockedStalenessThresholdValidationTests.cs, BlockedStalenessThresholdMigrationTests.cs, Slice04BlockedStalenessScenarios.cs
+**Frontend production** (10 files): deriveStaleness.ts, BaseSettings.ts, TimeInStateBadge.tsx, WorkItemAgingChart.tsx, BaseMetricsView.tsx, FlowMetricsConfigurationComponent.tsx, ModifyTeamSettings.tsx, ModifyProjectSettings.tsx, CreateTeamWizard.tsx, CreatePortfolioWizard.tsx, TeamMetricsView.tsx, PortfolioMetricsView.tsx, EditTeam.tsx, EditPortfolio.tsx, WorkItemsDialog.tsx, TeamService.ts, PortfolioService.ts, TestDataProvider.ts
+**Frontend tests** (6 files): deriveStaleness.test.ts, TimeInStateBadge.test.tsx, WorkItemAgingChart.test.tsx, BaseMetricsView.test.tsx, FlowMetricsConfigurationComponent.test.tsx, CreateTeamWizard.test.tsx, CreatePortfolioWizard.test.tsx, EditPortfolio.test.tsx
+**Docs** (2 files): roadmap.json (Phase 04 extension), execution-log.json
+
+### [REF] Scenarios Green Count
+
+27 of 28 backend BlockedItems scenarios pass (scenario #16 deferred — per-type filtering UC-2). 5 slice-04 scenarios (#17-21) all GREEN. 639 frontend Vitest tests pass across 18 test files.
+
+### [REF] DoD Check
+
+| DoR Item | Slice 04 |
+|---|---|
+| 1. Problem in domain language | PASS |
+| 2. Persona with characteristics | PASS (flow-coach/Priya + config-admin) |
+| 3. 3+ domain examples | PASS |
+| 4. UAT G/W/T (3-7) | PASS (5 scenarios) |
+| 5. AC derived from UAT | PASS |
+| 6. Right-sized (≤1d, ≤7 scen) | PASS |
+| 7. Technical notes + cross-cutting | PASS |
+| 8. Dependencies tracked | PASS (US-01, US-02) |
+| 9. Outcome KPIs measurable | PASS |
+| RBAC gating | PASS (existing TeamWrite guard) |
+| Clients version-gate | PASS (additive field — no gate, ADR-072) |
+| Website | N/A (non-premium) |
+
+### [REF] Quality Gates
+
+| Gate | Result |
+|---|---|
+| dotnet build 0 warnings | PASS |
+| dotnet test (BlockedItems) | PASS (27/28, 1 deferred) |
+| pnpm test (Vitest) | PASS (639 tests, 18 files) |
+| pnpm build (TS/Biome/Vite) | PASS (0 warnings in src) |
+| Roadmap review | APPROVED (acceptance-designer-reviewer) |
+| Adversarial review | APPROVED (software-crafter-reviewer, 0 blockers) |
+| Integrity verification | PASS (all 10 steps DES-complete) |
+| ADR-070 call-site audit | PASS (4 call sites consume StalenessResult) |
+| Mutation testing | Deferred (prior epic run 79.1%; slice 04 is settings+selector) |
+
+### [REF] Pre-requisites
+
+- Slice 01 (rule-based blocked) + Slice 02 (blockedSince) shipped `IsBlocked` + `blockedSince` on `WorkItemDto`
+- DISTILL red-classification.md (scenarios #17-21 RED-verified)
+- ADR-070 (blocked-duration staleness, amends ADR-026)
+- ADR-072 (contract changes + client version-gate matrix)
