@@ -51,6 +51,7 @@ export function createMockTeamSettings(): ITeamSettings {
 		processBehaviourChartBaselineStartDate: null,
 		processBehaviourChartBaselineEndDate: null,
 		stalenessThresholdDays: 7,
+		blockedStalenessThresholdDays: 0,
 	};
 }
 
@@ -86,6 +87,7 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		processBehaviourChartBaselineStartDate: null,
 		processBehaviourChartBaselineEndDate: null,
 		stalenessThresholdDays: 14,
+		blockedStalenessThresholdDays: 0,
 	};
 }
 

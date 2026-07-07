@@ -42,6 +42,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
 		number | undefined
 	>(undefined);
+	const [blockedStalenessThresholdDays, setBlockedStalenessThresholdDays] =
+		useState<number | undefined>(undefined);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 	const [featureWip, setFeatureWip] = useState<number | undefined>(undefined);
@@ -96,6 +98,9 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
 				setStalenessThresholdDays(settings.stalenessThresholdDays);
+				setBlockedStalenessThresholdDays(
+					settings.blockedStalenessThresholdDays,
+				);
 				setForecastFilterConditions(
 					parseForecastFilterConditions(settings.forecastFilterRuleSetJson),
 				);
@@ -137,6 +142,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			hasForecastFilter={forecastFilterConditions.length > 0}
 			forecastFilterConditions={forecastFilterConditions}
 			stalenessThresholdDays={stalenessThresholdDays}
+			blockedStalenessThresholdDays={blockedStalenessThresholdDays}
 		/>
 	);
 };

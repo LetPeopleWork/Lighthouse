@@ -42,6 +42,7 @@ interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
 	) => void;
 	showFeatureWip?: boolean;
 	stalenessSeedDefault: number;
+	blockedStalenessSeedDefault?: number;
 }
 
 const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
@@ -49,12 +50,15 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	onSettingsChange,
 	showFeatureWip = false,
 	stalenessSeedDefault,
+	blockedStalenessSeedDefault = 5,
 }: FlowMetricsConfigurationComponentProps<T>) => {
 	const [isSleEnabled, setIsSleEnabled] = useState(false);
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
 	const [isStalenessEnabled, setIsStalenessEnabled] = useState(false);
+	const [isBlockedStalenessEnabled, setIsBlockedStalenessEnabled] =
+		useState(false);
 	const [isBaselineEnabled, setIsBaselineEnabled] = useState(false);
 	const [probabilityInputValue, setProbabilityInputValue] =
 		useState<string>("");
@@ -110,6 +114,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 				(settings.blockedStates && settings.blockedStates.length > 0),
 		);
 		setIsStalenessEnabled(settings.stalenessThresholdDays > 0);
+		setIsBlockedStalenessEnabled(settings.blockedStalenessThresholdDays > 0);
 		setIsBaselineEnabled(
 			settings.processBehaviourChartBaselineStartDate != null &&
 				settings.processBehaviourChartBaselineEndDate != null,
@@ -302,6 +307,25 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		const newThreshold = Number.parseInt(value, 10);
 		if (!Number.isNaN(newThreshold)) {
 			onSettingsChange("stalenessThresholdDays" as keyof T, newThreshold);
+		}
+	};
+
+	const handleBlockedStalenessEnableChange = (checked: boolean) => {
+		setIsBlockedStalenessEnabled(checked);
+
+		onSettingsChange(
+			"blockedStalenessThresholdDays" as keyof T,
+			checked ? blockedStalenessSeedDefault : 0,
+		);
+	};
+
+	const handleBlockedStalenessThresholdChange = (value: string) => {
+		const newThreshold = Number.parseInt(value, 10);
+		if (!Number.isNaN(newThreshold)) {
+			onSettingsChange(
+				"blockedStalenessThresholdDays" as keyof T,
+				newThreshold,
+			);
 		}
 	};
 
@@ -549,6 +573,42 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 							},
 						}}
 						onChange={(e) => handleStalenessThresholdChange(e.target.value)}
+					/>
+				</Grid>
+			)}
+
+			{/* Blocked Staleness Threshold Configuration */}
+			<Grid size={{ xs: 12 }}>
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={isBlockedStalenessEnabled}
+							onChange={(e) =>
+								handleBlockedStalenessEnableChange(e.target.checked)
+							}
+						/>
+					}
+					label={`Set Blocked ${workItemsTerm} Staleness Threshold`}
+				/>
+			</Grid>
+			{isBlockedStalenessEnabled && (
+				<Grid size={{ xs: 12 }}>
+					<TextField
+						label={`Blocked ${workItemsTerm} Staleness Threshold (days)`}
+						type="number"
+						fullWidth
+						margin="normal"
+						value={settings.blockedStalenessThresholdDays}
+						slotProps={{
+							htmlInput: {
+								min: 0,
+								max: 365,
+								step: 1,
+							},
+						}}
+						onChange={(e) =>
+							handleBlockedStalenessThresholdChange(e.target.value)
+						}
 					/>
 				</Grid>
 			)}

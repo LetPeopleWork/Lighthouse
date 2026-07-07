@@ -245,6 +245,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							settings={projectSettings}
 							onSettingsChange={updateSettings}
 							stalenessSeedDefault={14}
+							blockedStalenessSeedDefault={14}
 						/>
 
 						<EstimationFieldComponent

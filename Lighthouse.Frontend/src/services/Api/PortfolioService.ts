@@ -1,3 +1,4 @@
+import { parseBlockedStalenessThreshold } from "../../models/Common/BaseSettings";
 import type { IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IPortfolioSettings } from "../../models/Portfolio/PortfolioSettings";
 import { ApiError } from "./ApiError";
@@ -62,6 +63,10 @@ export class PortfolioService
 				`/portfolios/${id}/settings`,
 			);
 			const settings = response.data;
+
+			settings.blockedStalenessThresholdDays = parseBlockedStalenessThreshold(
+				response.data.blockedStalenessThresholdDays,
+			);
 
 			settings.processBehaviourChartBaselineStartDate = response.data
 				.processBehaviourChartBaselineStartDate

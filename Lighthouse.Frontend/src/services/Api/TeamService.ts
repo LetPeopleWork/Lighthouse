@@ -1,3 +1,4 @@
+import { parseBlockedStalenessThreshold } from "../../models/Common/BaseSettings";
 import type { ITeam, Team } from "../../models/Team/Team";
 import type { ITeamSettings } from "../../models/Team/TeamSettings";
 import type { IWorkItemRuleSchema } from "../../models/WorkItemRules";
@@ -55,6 +56,11 @@ export class TeamService extends BaseApiService implements ITeamService {
 				`/teams/${id}/settings`,
 			);
 			const teamSettings = response.data;
+
+			teamSettings.blockedStalenessThresholdDays =
+				parseBlockedStalenessThreshold(
+					response.data.blockedStalenessThresholdDays,
+				);
 
 			teamSettings.throughputHistoryStartDate = new Date(
 				response.data.throughputHistoryStartDate,

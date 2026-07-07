@@ -1148,6 +1148,101 @@ describe("FlowMetricsConfigurationComponent", () => {
 		});
 	});
 
+	describe("Blocked Staleness opt-in", () => {
+		const BLOCKED_CHECKBOX_LABEL = "Set Blocked Work Items Staleness Threshold";
+		const BLOCKED_FIELD_LABEL = "Blocked Work Items Staleness Threshold (days)";
+
+		it("shows the checkbox unchecked and hides the field when blockedStalenessThresholdDays is 0", () => {
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedStalenessThresholdDays: 0 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(screen.getByLabelText(BLOCKED_CHECKBOX_LABEL)).not.toBeChecked();
+			expect(
+				screen.queryByLabelText(BLOCKED_FIELD_LABEL),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows the checkbox checked and reveals the field when blockedStalenessThresholdDays is greater than 0", () => {
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedStalenessThresholdDays: 9 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(screen.getByLabelText(BLOCKED_CHECKBOX_LABEL)).toBeChecked();
+			expect(screen.getByLabelText(BLOCKED_FIELD_LABEL)).toHaveValue(9);
+		});
+
+		it("seeds the blocked staleness threshold with the owner-specific default on enable", async () => {
+			const user = userEvent.setup();
+			vi.clearAllMocks();
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedStalenessThresholdDays: 0 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+					blockedStalenessSeedDefault={7}
+				/>,
+			);
+
+			await user.click(screen.getByLabelText(BLOCKED_CHECKBOX_LABEL));
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"blockedStalenessThresholdDays",
+				7,
+			);
+		});
+
+		it("resets the blocked staleness threshold to 0 on disable", async () => {
+			const user = userEvent.setup();
+			vi.clearAllMocks();
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedStalenessThresholdDays: 14 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(screen.getByLabelText(BLOCKED_CHECKBOX_LABEL));
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"blockedStalenessThresholdDays",
+				0,
+			);
+		});
+
+		it("propagates an edited blocked staleness threshold through onSettingsChange", () => {
+			vi.clearAllMocks();
+
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedStalenessThresholdDays: 5 }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			fireEvent.change(screen.getByLabelText(BLOCKED_FIELD_LABEL), {
+				target: { value: "21" },
+			});
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"blockedStalenessThresholdDays",
+				21,
+			);
+		});
+	});
+
 	describe("Input Validation", () => {
 		it("should properly handle non-numeric input for systemWIPLimit", async () => {
 			const user = userEvent.setup();

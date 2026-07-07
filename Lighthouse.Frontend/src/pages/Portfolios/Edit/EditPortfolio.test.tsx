@@ -191,6 +191,7 @@ describe("EditPortfolio", () => {
 			useNonNumericEstimation: false,
 			estimationCategoryValues: [],
 			stalenessThresholdDays: 0,
+			blockedStalenessThresholdDays: 0,
 		});
 		mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems.mockResolvedValue(
 			[],

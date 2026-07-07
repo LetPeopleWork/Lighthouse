@@ -22,6 +22,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
 		number | undefined
 	>(undefined);
+	const [blockedStalenessThresholdDays, setBlockedStalenessThresholdDays] =
+		useState<number | undefined>(undefined);
 	const [cycleTimeDefinitions, setCycleTimeDefinitions] = useState<
 		ICycleTimeDefinition[]
 	>([]);
@@ -44,6 +46,9 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
 				);
 				setStalenessThresholdDays(settings.stalenessThresholdDays);
+				setBlockedStalenessThresholdDays(
+					settings.blockedStalenessThresholdDays,
+				);
 				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
 			} catch (err) {
 				console.error("Error fetching portfolio settings:", err);
@@ -65,6 +70,7 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			stateMappings={stateMappings}
 			cycleTimeDefinitions={cycleTimeDefinitions}
 			stalenessThresholdDays={stalenessThresholdDays}
+			blockedStalenessThresholdDays={blockedStalenessThresholdDays}
 		/>
 	);
 };

@@ -215,6 +215,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onSettingsChange={updateSettings}
 							showFeatureWip={true}
 							stalenessSeedDefault={5}
+							blockedStalenessSeedDefault={5}
 						/>
 
 						<EstimationFieldComponent
