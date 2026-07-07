@@ -5,6 +5,20 @@
 ## Goal (one sentence)
 Show a direction + delta on the Blocked overview widget comparing the current blocked count against the blocked count on the last day of the previous period.
 
+### Elevator Pitch
+Before: the delivery lead sees a bare blocked count with no baseline — "16 blocked" is uninterpretable.
+After: open a team/portfolio metrics page → the Blocked widget shows `16` with a `▲ +4 vs last period` indicator (or `—` when no prior-period snapshot).
+Decision enabled: raise blockers in the review when trending worse; report a downward trend when improving.
+
+### Domain examples
+1. Team Phoenix, current blocked = 5, prior-period-boundary snapshot = 3 → widget shows `5` + up arrow, delta `+2`.
+2. Current = 3, boundary = 9 → down arrow, delta `−6` (improving).
+3. Current = 4, boundary = 4 → flat.
+4. Forward-only history began this period, no boundary snapshot → `—` (no fabricated zero-delta).
+
+### Outcome KPI
+Per feature-delta B3 KPI: ≥60% of team/portfolio views render a delta (not `—`) within 2 weeks. Job: `job-delivery-lead-tell-blocked-trend-vs-last-period` (jobs.yaml).
+
 ## IN scope
 - Trend indicator on `BlockedOverviewWidget` (`pages/Common/MetricsView/BlockedOverviewWidget.tsx`): direction (up/down/flat) + numeric delta.
 - Baseline = the `BlockedCountSnapshot` value on the last day of the **previous period**, where "period" = the dashboard's currently-selected date range (same range that already drives the view).

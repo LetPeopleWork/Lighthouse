@@ -43,7 +43,7 @@ describe.skip("computeBlockedTrend — previous-period trend (B3)", () => {
 		expect(trend?.direction).toBe("flat");
 	});
 
-	it("returns undefined (chrome hidden) when no snapshot exists at/before the prior-period boundary", () => {
+	it("shows no trend when no snapshot exists at or before the prior-period boundary", () => {
 		const history = [snap("2026-06-14", 9)];
 
 		const trend = computeBlockedTrend(history, start, end);

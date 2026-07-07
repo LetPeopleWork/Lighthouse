@@ -5,6 +5,21 @@
 ## Goal (one sentence)
 Give the Blocked overview widget a red/amber/green status driven by the maximum blocked age across the currently-blocked items, calibrated on the existing `blockedStalenessThresholdDays`.
 
+### Elevator Pitch
+Before: the coach can't tell whether "5 blocked" is all fresh or one stuck three weeks without opening each item.
+After: open a team metrics page → the Blocked widget is RED/AMBER/GREEN with a tooltip "oldest blocker: N days".
+Decision enabled: dig into blockers this session when red; move on when green.
+
+### Domain examples (threshold = 10 days)
+1. Oldest blocker 12d → RED (past threshold), tooltip "oldest blocker: 12 days".
+2. Oldest blocker 8d (≥75% aging band) → AMBER.
+3. Oldest blocker 2d → GREEN.
+4. `blockedStalenessThresholdDays` = 0 → neutral (RAG disabled).
+5. Blocked item still establishing `blockedSince` baseline → excluded from max-age (doesn't force a colour).
+
+### Outcome KPI
+Per feature-delta B2 KPI: widget RED fires within one sync of an item crossing the threshold (parity with blocked→stale). Job: `job-flow-coach-read-blocked-health-at-a-glance` (jobs.yaml).
+
 ## IN scope
 - RAG indicator on `BlockedOverviewWidget`: RED = an item is blocked past `blockedStalenessThresholdDays`, AMBER = an item is aging toward it, GREEN = nothing aging.
 - Drive from `ctx.blockedItems` (already passed to the widget site in `BaseMetricsView`) using each item's `blockedSince` (shipped slice 02) to compute max blocked age; threshold from `ctx.blockedStalenessThresholdDays` (shipped slice 04).

@@ -5,6 +5,21 @@
 ## Goal (one sentence)
 Clicking a bar in the Blocked-Items-over-time chart opens a `WorkItemsDialog` of the items that were blocked at that date, with membership reconstructed from `WorkItemBlockedTransition` intervals.
 
+### Elevator Pitch
+Before: the over-time chart shows how many were blocked, never which ones — a dead end for investigation.
+After: click a bar on the Blocked-Items-over-time chart → a `WorkItemsDialog` lists the items blocked at that date.
+Decision enabled: escalate/investigate the named blockers behind a bad week, not just the trend line.
+
+### Domain examples
+1. Date T; BLK-1 (spell −14d→open) and BLK-2 (−12d→−5d) cover T, OPEN (−20d→−15d) does not → dialog lists BLK-1, BLK-2.
+2. Latest bar (today); NOW-1 currently `IsBlocked` → dialog lists NOW-1 (live reconstruction).
+3. Date with no covering interval → empty dialog "no items blocked on this date".
+4. Reconstructed count for T = 2 and `BlockedCountSnapshot`(T) = 2 → reconcile; on mismatch, capture-gap note.
+5. Date before transition capture began → partial set + "complete only from {captureStartDate}" note.
+
+### Outcome KPI
+Per feature-delta B1 KPI: reconstructed date-T count reconciles with `BlockedCountSnapshot.blockedCount` within ±1 for ≥95% of sampled dates (else current-only fallback). Job: `job-flow-coach-drill-into-blocked-trend-point` (jobs.yaml).
+
 ## IN scope
 - Bar click on `BlockedItemsOverTimeChart` (`components/Common/Charts/BlockedItemsOverTimeChart.tsx`) → open the existing `WorkItemsDialog` (`components/Common/WorkItemsDialog/`).
 - New **read-only** backend endpoint: items blocked at date T for a Team/Portfolio, `blockedMembershipAtDate`, reconstructed from `WorkItemBlockedTransition` enter/leave intervals (ADR-068) — an item is included when its blocked spell covers T. **No new persisted membership** on `BlockedCountSnapshot`.
