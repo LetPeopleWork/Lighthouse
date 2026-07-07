@@ -99,6 +99,31 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             command.CommandText = "SELECT pg_terminate_backend(@pid)";
             command.Parameters.AddWithValue("pid", holderPid);
             await command.ExecuteScalarAsync();
+
+            // pg_terminate_backend signals termination asynchronously; wait until the
+            // backend actually disappears so the advisory lock is released before the
+            // reclaim attempt. Without this wait the test flakes on slower runners.
+            await WaitUntilBackendDisappearsAsync(terminator, holderPid);
+        }
+
+        private static async Task WaitUntilBackendDisappearsAsync(NpgsqlConnection connection, int pid)
+        {
+            const int maxAttempts = 50;
+            const int delayMilliseconds = 100;
+
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandText = "SELECT COUNT(*) FROM pg_stat_activity WHERE pid = @pid";
+                command.Parameters.AddWithValue("pid", pid);
+                var count = (long)(await command.ExecuteScalarAsync())!;
+                if (count == 0)
+                {
+                    return;
+                }
+
+                await Task.Delay(delayMilliseconds);
+            }
         }
     }
 }
