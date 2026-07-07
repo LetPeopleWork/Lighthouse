@@ -64,6 +64,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
+import { computeBlockedTrend } from "./blockedTrend";
 import { getWidgetsForCategory } from "./categoryMetadata";
 import type { DashboardItem } from "./Dashboard";
 import Dashboard from "./Dashboard";
@@ -1570,6 +1571,11 @@ export const BaseMetricsView = <
 					.trendPayload
 			: undefined,
 		wipOverview: wipOverviewInfo?.comparison,
+		blockedOverview: computeBlockedTrend(
+			blockedCountHistory,
+			startDate,
+			endDate,
+		),
 		featuresWorkedOnOverview: featuresWorkedOnInfo?.comparison,
 		totalWorkItemAge: totalWorkItemAgeInfo?.comparison,
 		predictabilityScore: predictabilityScoreInfo?.comparison,

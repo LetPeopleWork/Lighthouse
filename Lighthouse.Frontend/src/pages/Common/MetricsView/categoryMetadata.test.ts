@@ -286,6 +286,7 @@ describe("categoryMetadata", () => {
 				"totalArrivals",
 				"percentiles",
 				"featureSizePercentiles",
+				"blockedOverview",
 			];
 			for (const widgetKey of previousPeriodWidgets) {
 				expect(
@@ -297,7 +298,6 @@ describe("categoryMetadata", () => {
 
 		it("no-trend widgets have none trend policy", () => {
 			const noTrendWidgets = [
-				"blockedOverview",
 				"staleOverview",
 				"predictabilityScoreDetails",
 				"throughputPbc",

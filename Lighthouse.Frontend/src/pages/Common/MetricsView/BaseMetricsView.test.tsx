@@ -1596,6 +1596,57 @@ describe("BaseMetricsView component", () => {
 		});
 	});
 
+	it("the blockedOverview widget renders the widget-trend-* chrome when a trend payload is supplied", async () => {
+		const dateDaysAgo = (days: number): string => {
+			const date = new Date();
+			date.setDate(date.getDate() - days);
+			return date.toISOString().split("T")[0];
+		};
+
+		// One snapshot on/before the previous-period boundary (baseline) and one
+		// within the current period (current) → a non-"none" previous-period trend.
+		const blockedCountHistory = [
+			{ recordedAt: dateDaysAgo(40), blockedCount: 2 },
+			{ recordedAt: dateDaysAgo(0), blockedCount: 5 },
+		];
+
+		const team = new Team();
+		team.name = "Blocked Trend Team";
+		team.id = 111;
+		team.systemWIPLimit = 6;
+		team.lastUpdated = new Date();
+
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+			getBlockedCountHistory: vi.fn().mockResolvedValue(blockedCountHistory),
+		};
+
+		localStorage.setItem(
+			`lighthouse:metrics:team:${team.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={team}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				hasBlockedConfig={true}
+				doingStates={["To Do", "In Progress", "Review"]}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("widget-trend-blockedOverview"),
+			).toBeInTheDocument();
+			expect(
+				screen.getByTestId("widget-trend-direction-blockedOverview"),
+			).toHaveTextContent("up");
+		});
+	});
+
 	it("renders predictability score trend for portfolio flow overview", async () => {
 		const project = new Portfolio();
 		project.name = "Trend Project";

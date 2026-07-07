@@ -121,7 +121,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	workDistribution: "none",
 	featureSize: "none",
 	aging: "none",
-	blockedOverview: "none",
+	blockedOverview: "previous-period",
 	staleOverview: "none",
 	flowEfficiency: "none",
 	throughputPbc: "none",
