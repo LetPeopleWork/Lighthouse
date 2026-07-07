@@ -1053,3 +1053,73 @@ No new tech. Backend C# .NET 10 (existing metrics controllers + EF repo). Fronte
 - ADR-099 (B1 reconstruct-not-persist) added; ADR-067/068/069/072 unchanged and upheld.
 - Back-prop: 3 DISCUSS assumptions refined (RAG/trend/current-dialog already exist) → `design/upstream-changes.md`.
 - **NEXT = /nw-devops (KPIs)** then **/nw-distill** (acceptance tests). ADO: 3 Stories under #5074 (confirm before create).
+
+---
+
+## Wave: DISTILL / [REF] Enhancement Batch (2026-07-07)
+
+Date: 2026-07-07 | Density: lean | Stack: NUnit (backend acceptance via `WebApplicationFactory`) + Vitest/RTL (frontend) + Playwright POM (E2E) — project idiom wins over the skill's Python examples.
+
+**Reconciliation gate: PASSED — 0 contradictions.** DESIGN's back-prop (RAG/trend/current-dialog already exist) REFINES the DISCUSS stories toward the same outcomes; no decision reversed. DEVOPS skipped (user, 2026-07-07) → default env matrix; KPIs from the DISCUSS batch section stand.
+
+### [REF] Scenario list with tags
+
+**B1 (slice-08) — backend acceptance, `Slice08BlockedDrilldownScenarios.cs` (+ `.Specifications.cs`), all `[Ignore]`-pending (RED-ready, ADR-025):**
+
+| Scenario | Tags |
+|---|---|
+| Items blocked at a past date reconstructed from transition intervals | `@driving_port @us-eb1` |
+| Latest date reconstructs from the live blocked set | `@driving_port @us-eb1` |
+| A date with no blocked items returns an empty dialog | `@edge @us-eb1` |
+| Reconstructed membership count reconciles with the snapshot count | `@invariant @us-eb1` |
+| A date before capture started is served as a partial set | `@edge @us-eb1` |
+
+**B2 (slice-07) — `blockedMaxAgeRag.test.ts`, `describe.skip` (RED-ready):** RED past threshold; AMBER aging band; GREEN none aging; GREEN when no blocked items (max age null); `none` when threshold 0. `@us-eb2`
+
+**B3 (slice-06) — `blockedTrend.test.ts`, `describe.skip` (RED-ready):** up when current > prior-period boundary; down when <; flat when =; undefined (chrome hidden) when no boundary snapshot; undefined for empty/null history. `@us-eb3`
+
+**Authored in DELIVER (against existing chrome, not new scaffolds):** the B1 chart-bar `onItemClick` → `WorkItemsDialog` wiring (Vitest on `BlockedItemsOverTimeChart.test.tsx`) and the widget-level end-to-end assertions on the existing test-ids `rag-status` (B2), `widget-trend-*` (B3) in `BaseMetricsView.test.tsx`; plus one Playwright walking-skeleton per user-visible slice (demo-data, POM) — B1 drill-through is the clearest E2E. Per the E2E-minimalism standing rule, the invariant assertions live in the backend AT above; Playwright proves wiring only.
+
+### [REF] WS strategy (Architecture of Reference)
+
+- **Driving port** (HTTP `GET .../metrics/blockedItemsAtDate`) → real adapter via `WebApplicationFactory<Program>` + `AsTeamAdmin` (existing project policy, slices 01-04 precedent).
+- **Driven internal** (`IWorkItemBlockedTransitionRepository` read, `IBlockedCountSnapshotRepository` reconcile) → real via EF InMemory (project default).
+- Walking skeleton = the B1 reconstruct scenario through the real host. FE B2/B3 = in-memory pure-selector unit specs; E2E walking skeleton (Playwright) authored in DELIVER.
+
+### [REF] Adapter coverage table
+
+| Adapter | @real-io scenario | Covered by |
+|---|---|---|
+| `IWorkItemBlockedTransitionRepository` (interval read) | YES | B1 scenarios (real EF InMemory, seeded transitions) |
+| `IBlockedCountSnapshotRepository` (reconcile) | YES | B1 "reconciles with the snapshot count" |
+| (B2/B3 are client-side — no driven adapter) | n/a | pure selectors, Vitest |
+
+### [REF] Scaffolds (Mandate 7)
+
+- `Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.ts` — `__SCAFFOLD__`, `computeBlockedTrend(...)` throws (B3).
+- `Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts` — `__SCAFFOLD__`, `computeBlockedMaxAgeRag(...)` throws (B2).
+- **Backend B1: no scaffold** — the endpoint is absent, so the request 404s / falls to the SPA HTML fallback; the `Specifications` `Then` helper asserts a clean RED ("endpoint appears unimplemented") rather than a raw parse crash. DELIVER adds the endpoint.
+
+### [REF] Test placement
+
+- Backend: `Lighthouse.Backend.Tests/API/Integration/BlockedItems/` — precedent: Slice01-04 paired `*Scenarios.cs` + `*Specifications.cs` (C# partial-class idiom, polyglot matrix row).
+- Frontend: co-located next to source in `pages/Common/MetricsView/` — precedent: `ragRules.test.ts`, `trendTypes.test.ts`.
+
+### [REF] Driving adapter coverage
+
+`GET /api/latest/teams/{id}/metrics/blockedItemsAtDate?date=` — covered by 5 HTTP scenarios (real host, exit status + JSON body + reconstructed membership). B2/B3 have no HTTP surface (client-side off already-loaded data). Portfolio endpoint twin is authored in DELIVER alongside `PortfolioMetricsController` (same interval predicate).
+
+### [REF] Pre-requisites
+
+- DESIGN driving port `blockedItemsAtDate` (ADR-099); `WorkItemBlockedTransition` capture (slice-02, shipped) — the interval source; `BlockedCountSnapshot` (slice-03, shipped) — reconcile source; `WorkItemsDialog` + `WidgetShell` trend/RAG chrome (shipped) — FE reuse targets.
+
+### [REF] Verification gates run
+
+- Backend test project: `dotnet build` — **0 errors** (RED-ready, not BROKEN; `[Ignore]`-pending compiles).
+- Frontend: Biome clean; `tsc -b` exit 0; `vitest` on the 2 new specs = 10 skipped (imports resolve — RED-ready). `red-classification.md` written.
+- Outcomes registry: N/A — `nwave-ai` CLI is not part of this product repo (nWave methodology tooling); the new `blockedItemsAtDate` operation is recorded here + in ADR-099 instead.
+- Mandate-12: C# ATs use the existing typed `SeededTeam` record + `*Specifications.cs` service-delegating step helpers (no business logic in steps); step-reuse informational — batch is 3 thin slices, reuse ceiling naturally low.
+
+### [REF] Final Wave Review Gate — PENDING (user-gated)
+
+The mandatory 4-reviewer gate (Eclipse/Architect/Forge/Sentinel on Haiku, in parallel over the full 4-wave `feature-delta.md`) is NOT auto-dispatched — surfaced for the user to trigger (spawning agents is user-gated in this session). Sentinel (`@nw-acceptance-designer-reviewer`) is the structural-correctness reviewer that never skips.

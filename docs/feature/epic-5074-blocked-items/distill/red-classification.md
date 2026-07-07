@@ -56,3 +56,41 @@ These observables are FE-derived (the `deriveStaleness` selector, MUI-X charts, 
 - Slice-03: the chart placement in the Flow Metrics chart area + the "builds forward from today — no snapshots yet" empty-state copy (Vitest on the chart component; backend supplies `blockedCountHistory`).
 - Slice-04: the stale RENDERING — stale-once with a blocked-duration **driver** reason plus a time-in-state **context** reason (UC-1) — computed by `deriveStaleness` (Vitest on the selector; backend supplies `blockedStalenessThresholdDays` + `blockedSince`).
 - Walking-skeleton E2E: ONE Playwright demo-data POM scenario (config-admin saves a blocked rule → an item reads blocked in the overview widget) is planned for DELIVER; the backend walking skeleton above is the single DISTILL green skeleton.
+
+---
+
+# Enhancement batch (2026-07-07) — slices 06-08 RED classification
+
+Gate: pre-DELIVER fail-for-the-right-reason. Every scenario RED-ready (skip/pending markers, ADR-025); when enabled fails on `MISSING_FUNCTIONALITY`, not import/fixture/setup.
+
+## Execution evidence
+
+- `dotnet build Lighthouse.Backend.Tests` → **Build succeeded, 0 errors** (8 pre-existing NU1903 SQLite advisory warnings). `Slice08BlockedDrilldownScenarios/Specifications.cs` compile against today's types → RED-eligible, not BROKEN. Per the project policy, backend black-box HTTP ATs need **no `__SCAFFOLD__` stub** — the missing endpoint 404s / SPA-HTML-falls-through and the `ParseReferenceIds` guard converts that into a clean assertion.
+- Frontend: `blockedTrend.ts` + `blockedMaxAgeRag.ts` scaffolds present with `__SCAFFOLD__` (FE modules MUST exist for import resolution). `pnpm biome check` clean; `pnpm tsc -b` exit 0; `pnpm vitest run blockedTrend.test.ts blockedMaxAgeRag.test.ts` → **10 skipped, 0 errored** (imports resolve → RED-ready, not BROKEN).
+
+## Per-scenario classification
+
+| # | Slice | Scenario | Tags | Classification | RED reason |
+|---|---|---|---|---|---|
+| 22 | 08 | Items_blocked_at_a_past_date_are_reconstructed_from_transition_intervals | @driving_port @us-eb1 | RED | `blockedItemsAtDate` endpoint absent (SPA fallback → clean assertion) |
+| 23 | 08 | The_latest_date_reconstructs_from_the_live_blocked_set | @driving_port @us-eb1 | RED | endpoint absent |
+| 24 | 08 | A_date_with_no_blocked_items_returns_an_empty_dialog | @edge @us-eb1 | RED | endpoint absent |
+| 25 | 08 | The_reconstructed_membership_count_reconciles_with_the_snapshot_count | @invariant @us-eb1 | RED | endpoint absent |
+| 26 | 08 | A_date_before_capture_started_is_served_as_a_partial_set | @edge @us-eb1 | RED | endpoint absent |
+| 27 | 07 | computeBlockedMaxAgeRag — RED past threshold | @us-eb2 | RED | scaffold throws (max-age RAG unimplemented) |
+| 28 | 07 | computeBlockedMaxAgeRag — AMBER aging band | @us-eb2 | RED | scaffold throws |
+| 29 | 07 | computeBlockedMaxAgeRag — GREEN none aging | @us-eb2 | RED | scaffold throws |
+| 30 | 07 | computeBlockedMaxAgeRag — GREEN when no blocked items | @edge @us-eb2 | RED | scaffold throws |
+| 31 | 07 | computeBlockedMaxAgeRag — none when threshold 0 | @edge @us-eb2 | RED | scaffold throws |
+| 32 | 06 | computeBlockedTrend — up when current > prior boundary | @us-eb3 | RED | scaffold throws |
+| 33 | 06 | computeBlockedTrend — down when current < prior boundary | @us-eb3 | RED | scaffold throws |
+| 34 | 06 | computeBlockedTrend — flat when equal | @us-eb3 | RED | scaffold throws |
+| 35 | 06 | computeBlockedTrend — undefined when no boundary snapshot | @edge @us-eb3 | RED | scaffold throws |
+| 36 | 06 | computeBlockedTrend — undefined for empty/null history | @edge @us-eb3 | RED | scaffold throws |
+
+## Summary (enhancement batch)
+
+- 15 scenarios: **15 RED (MISSING_FUNCTIONALITY)**, **0 BROKEN**, 0 GREEN (foundation walking skeleton already shipped slices 01-04 — these extend it, no new skeleton needed).
+- Error/edge/invariant (non-happy-path) = 8/15 ≈ **53%** (target ≥40%). ✓
+- Authored in DELIVER (against EXISTING chrome, not new scaffolds): B1 chart `onItemClick` → `WorkItemsDialog` (Vitest); widget-level assertions on existing test-ids `rag-status` (B2), `widget-trend-*` (B3); one Playwright drill-through walking skeleton (demo-data POM).
+- Gate verdict: **PASS — RED is genuine.** DELIVER may proceed one scenario at a time (backend: remove `[Ignore]`; frontend: `describe.skip` → `describe`, implement, remove `__SCAFFOLD__`).
