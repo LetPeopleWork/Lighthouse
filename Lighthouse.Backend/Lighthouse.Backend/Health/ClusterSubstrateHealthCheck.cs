@@ -122,6 +122,33 @@ namespace Lighthouse.Backend.Health
             command.CommandText = "SELECT pg_terminate_backend(@pid)";
             command.Parameters.AddWithValue("pid", backendProcessId);
             await command.ExecuteScalarAsync();
+
+            // pg_terminate_backend is asynchronous; the session-scoped advisory lock
+            // is only released once the backend process actually exits. Wait for the
+            // process to disappear from pg_stat_activity before allowing the reclaim
+            // check to run, otherwise the probe falsely reports unhealthy on slower
+            // substrates or under load.
+            await WaitUntilBackendDisappearsAsync(terminator, backendProcessId);
+        }
+
+        private static async Task WaitUntilBackendDisappearsAsync(NpgsqlConnection connection, int backendProcessId)
+        {
+            const int maxAttempts = 50;
+            const int delayMilliseconds = 100;
+
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandText = "SELECT COUNT(*) FROM pg_stat_activity WHERE pid = @pid";
+                command.Parameters.AddWithValue("pid", backendProcessId);
+                var count = (long)(await command.ExecuteScalarAsync())!;
+                if (count == 0)
+                {
+                    return;
+                }
+
+                await Task.Delay(delayMilliseconds);
+            }
         }
 
         private static async Task<bool> TryAdvisoryLockAsync(NpgsqlConnection connection, long key)
