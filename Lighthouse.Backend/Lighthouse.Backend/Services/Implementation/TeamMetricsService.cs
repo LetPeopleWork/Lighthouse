@@ -587,6 +587,19 @@ namespace Lighthouse.Backend.Services.Implementation
             , logger);
         }
 
+        public IEnumerable<WorkItem> GetBlockedEligibleItemsForTeam(Team team)
+        {
+            logger.LogDebug("Getting blocked-eligible (To Do + In Progress) items for Team {TeamName}", team.Name);
+
+            // Blocked items are those in an open state category (To Do OR Doing) — an item can be
+            // stuck in To Do precisely because it is blocked, so it must be eligible. Done/Unknown
+            // are excluded. The blocked-rule match itself is applied by the caller via IBlockedItemService.
+            return workItemRepository.GetAllByPredicate(
+                i => i.TeamId == team.Id &&
+                     (i.StateCategory == StateCategories.ToDo || i.StateCategory == StateCategories.Doing))
+                .ToList();
+        }
+
         public ThroughputInfoDto GetThroughputInfoForTeam(Team team, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Throughput Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);

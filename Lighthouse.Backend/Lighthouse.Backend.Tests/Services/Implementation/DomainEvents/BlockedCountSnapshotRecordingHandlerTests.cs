@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), It.IsAny<Team>()))
@@ -202,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
@@ -236,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
 
             // Only itemA and itemC are blocked
@@ -277,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
@@ -315,7 +315,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             portfolioMetricsServiceMock
-                .Setup(x => x.GetInProgressFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleFeaturesForPortfolio(It.IsAny<Portfolio>()))
                 .Returns(features);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<Feature>(), portfolio))
@@ -379,7 +379,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
@@ -403,7 +403,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
@@ -427,7 +427,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(workItems);
 
             using var context = CreateContext();
@@ -448,7 +448,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             portfolioMetricsServiceMock
-                .Setup(x => x.GetInProgressFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleFeaturesForPortfolio(It.IsAny<Portfolio>()))
                 .Returns(features);
 
             using var context = CreateContext();
@@ -470,7 +470,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team1.Id)).Returns(team1);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(new List<WorkItem> { workItem });
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team1))
@@ -512,7 +512,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(new List<WorkItem> { workItem1, workItem2, workItem3 });
 
             using var context = CreateContext();
@@ -542,22 +542,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         // -----------------------------------------------------------------
         // BUG 1 regression: the blocked-count trend must match the overview
-        // widget, which counts blocked items over the WIP set only. A Done
-        // item that still matches the blocked rule must NOT inflate the
-        // snapshot, because it is excluded from GetWipSnapshotForTeam.
+        // widget, which counts blocked items over the blocked-eligible set
+        // (To Do + In Progress). A Done item that still matches the blocked
+        // rule must NOT inflate the snapshot, because it is excluded from
+        // GetBlockedEligibleItemsForTeam.
         // -----------------------------------------------------------------
         [Test]
-        public async Task TeamDataRefreshed_CountsBlockedOverWipSetOnly_ExcludesDoneItems()
+        public async Task TeamDataRefreshed_CountsBlockedOverBlockedEligibleSetOnly_ExcludesDoneItems()
         {
             var team = CreateTeam(1);
             var inProgressBlocked = CreateWorkItem(10, team.Id);
 
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
 
-            // The WIP snapshot already excludes Done items — a Done blocked item
-            // never reaches the recorder, so the count derives from WIP alone.
+            // The blocked-eligible set already excludes Done items — a Done blocked
+            // item never reaches the recorder, so the count derives from To Do +
+            // In Progress alone.
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(new List<WorkItem> { inProgressBlocked });
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team))
@@ -572,8 +574,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(snapshot!.BlockedCount, Is.EqualTo(1),
                 "the snapshot must count blocked items over the WIP set (matching the overview), not over all items");
             teamMetricsServiceMock.Verify(
-                x => x.GetWipSnapshotForTeam(team, It.IsAny<DateTime>()), Times.Once,
-                "the recorder must source its items from the WIP snapshot, not from the full item repository");
+                x => x.GetBlockedEligibleItemsForTeam(team), Times.Once,
+                "the recorder must source its items from the blocked-eligible (To Do + In Progress) set, not from the full item repository");
         }
 
         [Test]
@@ -585,7 +587,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
 
             portfolioMetricsServiceMock
-                .Setup(x => x.GetInProgressFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleFeaturesForPortfolio(It.IsAny<Portfolio>()))
                 .Returns(new List<Feature> { inProgressBlocked });
             blockedItemServiceMock
                 .Setup(x => x.IsBlocked(It.IsAny<Feature>(), portfolio))
@@ -600,8 +602,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(snapshot!.BlockedCount, Is.EqualTo(1),
                 "the snapshot must count blocked features over the in-progress set (matching the overview), not over all features");
             portfolioMetricsServiceMock.Verify(
-                x => x.GetInProgressFeaturesForPortfolio(portfolio, It.IsAny<DateTime>()), Times.Once,
-                "the recorder must source its features from the in-progress set, not from the full feature repository");
+                x => x.GetBlockedEligibleFeaturesForPortfolio(portfolio), Times.Once,
+                "the recorder must source its features from the blocked-eligible (To Do + In Progress) set, not from the full feature repository");
         }
 
         // -----------------------------------------------------------------
@@ -620,7 +622,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var team = CreateTeam(1);
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamMetricsServiceMock
-                .Setup(x => x.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Setup(x => x.GetBlockedEligibleItemsForTeam(It.IsAny<Team>()))
                 .Returns(new List<WorkItem>());
 
             var saveGate = new TaskCompletionSource();

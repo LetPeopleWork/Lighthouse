@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetInProgressFeaturesForPortfolio(Portfolio portfolio, DateTime asOfDate);
 
+        IEnumerable<Feature> GetBlockedEligibleFeaturesForPortfolio(Portfolio portfolio);
+
         IEnumerable<PercentileValue> GetCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetWorkItemAgePercentilesForPortfolio(Portfolio portfolio, DateTime endDate);

@@ -48,9 +48,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return;
             }
 
-            var workItemsInProgress = teamMetricsService.GetWipSnapshotForTeam(team, DateTime.Today);
+            var blockedEligibleItems = teamMetricsService.GetBlockedEligibleItemsForTeam(team);
 
-            var blockedCount = workItemsInProgress.Count(item => blockedItemService.IsBlocked(item, team));
+            var blockedCount = blockedEligibleItems.Count(item => blockedItemService.IsBlocked(item, team));
 
             await UpsertSnapshotAsync(domainEvent.TeamId, OwnerType.Team, blockedCount);
         }
@@ -65,9 +65,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return;
             }
 
-            var featuresInProgress = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, DateTime.Today);
+            var blockedEligibleFeatures = portfolioMetricsService.GetBlockedEligibleFeaturesForPortfolio(portfolio);
 
-            var blockedCount = featuresInProgress.Count(item => blockedItemService.IsBlocked(item, portfolio));
+            var blockedCount = blockedEligibleFeatures.Count(item => blockedItemService.IsBlocked(item, portfolio));
 
             await UpsertSnapshotAsync(domainEvent.PortfolioId, OwnerType.Portfolio, blockedCount);
         }

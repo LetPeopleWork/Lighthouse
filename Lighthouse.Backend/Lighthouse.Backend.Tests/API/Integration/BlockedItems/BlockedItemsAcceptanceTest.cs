@@ -147,7 +147,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             string state,
             List<string>? tags = null,
             DateTime? currentStateEnteredAt = null,
-            Dictionary<int, string?>? additionalFieldValues = null)
+            Dictionary<int, string?>? additionalFieldValues = null,
+            StateCategories stateCategory = StateCategories.Doing)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -164,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 Name = $"Story {referenceId}",
                 Type = "Story",
                 State = state,
-                StateCategory = StateCategories.Doing,
+                StateCategory = stateCategory,
                 CreatedDate = SyncDay.AddDays(-30),
                 StartedDate = SyncDay.AddDays(-20),
                 ClosedDate = null,

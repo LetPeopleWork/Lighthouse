@@ -48,6 +48,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             transitionRepository.Save().GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// Seed a rule-matching (State "Blocked") work item in a specific state category, with NO transition.
+        /// Used to prove the latest-date drill-through lists blocked items in the OPEN categories (To Do +
+        /// In Progress) and excludes Done — an item can be stuck in To Do precisely because it is blocked.
+        /// </summary>
+        private void GivenABlockedItemInStateCategory(SeededTeam team, string referenceId, StateCategories stateCategory)
+            => SeedWorkItem(team.TeamId, referenceId, state: "Blocked", stateCategory: stateCategory);
+
         protected void GivenBlockedCountSnapshots(SeededTeam team, List<(DateOnly Date, int Count)> snapshots)
         {
             using var scope = Factory.Services.CreateScope();

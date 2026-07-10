@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Portfolio portfolio;
         private List<Feature> features;
 
+        private static readonly string[] ExpectedBlockedEligibleReferenceIds = ["F3", "F4"];
+
         [SetUp]
         public void Setup()
         {
@@ -129,6 +131,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result, Has.Count.EqualTo(1));
                 Assert.That(result[0].ReferenceId, Is.EqualTo("F3"));
+            }
+        }
+
+        [Test]
+        public void GetBlockedEligibleFeaturesForPortfolio_ReturnsToDoAndDoingFeatures_ExcludesDone()
+        {
+            // A feature can sit in To Do precisely because it is blocked, so To Do + Doing are eligible;
+            // Done (F1, F2) must be excluded. F3 is Doing; add a To Do feature to prove To Do is included.
+            var toDoFeature = new Feature
+            {
+                Id = 4,
+                Name = "Feature 4",
+                ReferenceId = "F4",
+                StartedDate = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                StateCategory = StateCategories.ToDo,
+            };
+            toDoFeature.Portfolios.Add(portfolio);
+            features.Add(toDoFeature);
+
+            var result = subject.GetBlockedEligibleFeaturesForPortfolio(portfolio).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Select(f => f.ReferenceId), Is.EquivalentTo(ExpectedBlockedEligibleReferenceIds));
+                Assert.That(result.Select(f => f.StateCategory), Has.None.EqualTo(StateCategories.Done));
             }
         }
 

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
@@ -43,6 +44,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var response = await WhenTheCoachDrillsIntoTheBlockedTrendAt(team, DateOnly.FromDateTime(SyncDay));
 
             ThenTheDialogListsExactly(response, "NOW-1");
+        }
+
+        // @invariant @us-eb1 (post-review bug fix: the latest-date set is the OPEN blocked population —
+        // To Do + In Progress — matching the bar/overview count; a Done item that still matches the rule
+        // must NOT appear, and a blocked To Do item MUST appear)
+        [Test]
+        public async Task The_latest_date_lists_to_do_and_in_progress_blocked_items_but_not_done()
+        {
+            var team = GivenATeam();
+            GivenABlockedItemInStateCategory(team, "TODO-BLK", StateCategories.ToDo);
+            GivenABlockedItemInStateCategory(team, "DOING-BLK", StateCategories.Doing);
+            GivenABlockedItemInStateCategory(team, "DONE-BLK", StateCategories.Done);
+
+            // Drill at the real "today" (UtcNow.Date) so the endpoint takes the live latest-date branch —
+            // the fixed test SyncDay (2026-06-15) is in the past and would route to interval reconstruction.
+            var response = await WhenTheCoachDrillsIntoTheBlockedTrendAt(team, DateOnly.FromDateTime(DateTime.UtcNow.Date));
+
+            ThenTheDialogListsExactly(response, "TODO-BLK", "DOING-BLK");
         }
 
         // @edge @us-eb1 (no items blocked at the clicked date -> honest empty, not an error)

@@ -50,6 +50,8 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate);
 
+        IEnumerable<WorkItem> GetBlockedEligibleItemsForTeam(Team team);
+
         ThroughputInfoDto GetThroughputInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
         ArrivalsInfoDto GetArrivalsInfoForTeam(Team team, DateTime startDate, DateTime endDate);

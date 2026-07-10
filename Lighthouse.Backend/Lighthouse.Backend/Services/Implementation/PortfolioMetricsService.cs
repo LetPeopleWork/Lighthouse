@@ -237,6 +237,19 @@ namespace Lighthouse.Backend.Services.Implementation
             , logger);
         }
 
+        public IEnumerable<Feature> GetBlockedEligibleFeaturesForPortfolio(Portfolio portfolio)
+        {
+            logger.LogDebug("Getting blocked-eligible (To Do + In Progress) features for Portfolio {PortfolioName}", portfolio.Name);
+
+            // Features in an open state category (To Do OR Doing) are eligible to read as blocked — a
+            // feature can sit in To Do because it is blocked. Done/Unknown are excluded. The blocked-rule
+            // match is applied by the caller via IBlockedItemService.
+            return featureRepository.GetAllByPredicate(f =>
+                f.Portfolios.Any(p => p.Id == portfolio.Id) &&
+                (f.StateCategory == StateCategories.ToDo || f.StateCategory == StateCategories.Doing))
+                .ToList();
+        }
+
         public IEnumerable<PercentileValue> GetCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Cycle Time Percentiles for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);

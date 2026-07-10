@@ -481,7 +481,8 @@ namespace Lighthouse.Backend.API
 
                 if (targetDate >= today)
                 {
-                    return portfolio.Features
+                    return portfolioMetricsService
+                        .GetBlockedEligibleFeaturesForPortfolio(portfolio)
                         .Where(f => blockedItemService.IsBlocked(f, portfolio))
                         .Select(f => new WorkItemDto(f, isBlocked: true, [], f.CurrentStateEnteredAt));
                 }

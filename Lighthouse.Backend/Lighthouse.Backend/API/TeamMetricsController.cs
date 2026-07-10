@@ -477,9 +477,8 @@ namespace Lighthouse.Backend.API
 
                 if (targetDate >= today)
                 {
-                    return workItemRepository
-                        .GetAllByPredicate(w => w.TeamId == teamId)
-                        .AsEnumerable()
+                    return teamMetricsService
+                        .GetBlockedEligibleItemsForTeam(team)
                         .Where(w => blockedItemService.IsBlocked(w, team))
                         .Select(w => new WorkItemDto(w, isBlocked: true, [], w.CurrentStateEnteredAt));
                 }
