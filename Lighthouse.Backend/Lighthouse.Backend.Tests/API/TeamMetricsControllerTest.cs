@@ -1665,10 +1665,16 @@ namespace Lighthouse.Backend.Tests.API
                 .Setup(x => x.GetAll())
                 .Returns(new List<WorkItemBlockedTransition>());
 
-            // ...but the captured snapshot for that date says 3 — a divergence that must never be silent.
+            // ...but the captured snapshot for THIS owner/type/date says 3 — a divergence that must never be
+            // silent. Apply the guard's predicate against a candidate set so a mis-scoped lookup (wrong owner,
+            // type, or date) selects nothing and the warning would not fire.
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = targetDate, BlockedCount = 3 },
+            };
             blockedCountSnapshotRepositoryMock
                 .Setup(x => x.GetByPredicate(It.IsAny<Func<BlockedCountSnapshot, bool>>()))
-                .Returns(new BlockedCountSnapshot { OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = targetDate, BlockedCount = 3 });
+                .Returns((Func<BlockedCountSnapshot, bool> p) => snapshots.FirstOrDefault(p));
 
             var subject = CreateSubject();
             subject.GetBlockedItemsAtDate(1, pastDate);
@@ -1703,8 +1709,9 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                var items = ((result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>)?.ToList();
                 Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "LIVE-10" }));
+                Assert.That(items?.All(i => i.IsBlocked), Is.True, "drilled items must carry the blocked flag");
             }
         }
 
@@ -1727,8 +1734,9 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                var items = ((result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>)?.ToList();
                 Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "BLK-42" }));
+                Assert.That(items?.All(i => i.IsBlocked), Is.True, "reconstructed items must carry the blocked flag");
             }
         }
 

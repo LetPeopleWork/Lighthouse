@@ -26,25 +26,44 @@ describe("computeBlockedMaxAgeRag — max-blocked-age RAG (B2)", () => {
 	const threshold = 10;
 
 	it("is RED when an item is blocked past the threshold", () => {
-		expect(computeBlockedMaxAgeRag(12, threshold, terms).ragStatus).toBe("red");
+		const result = computeBlockedMaxAgeRag(12, threshold, terms);
+		expect(result.ragStatus).toBe("red");
+		expect(result.tipText).toContain("blocked 12 days");
+		expect(result.tipText).toContain("past the 10-day threshold");
+	});
+
+	it("is RED at exactly the threshold (at-threshold counts as past)", () => {
+		// Pins the `>=` boundary: at maxAge === threshold the oldest blocker is already stale.
+		expect(computeBlockedMaxAgeRag(10, threshold, terms).ragStatus).toBe("red");
 	});
 
 	it("is AMBER when the oldest blocker is aging toward the threshold", () => {
-		expect(computeBlockedMaxAgeRag(8, threshold, terms).ragStatus).toBe(
-			"amber",
-		);
+		const result = computeBlockedMaxAgeRag(8, threshold, terms);
+		expect(result.ragStatus).toBe("amber");
+		expect(result.tipText).toContain("aging toward the 10-day threshold");
+	});
+
+	it("is AMBER at exactly the aging-band boundary (0.75 x threshold)", () => {
+		// threshold 8 -> band 6.0; pins both the `>=` boundary and the 0.75 band fraction.
+		const result = computeBlockedMaxAgeRag(6, 8, terms);
+		expect(result.ragStatus).toBe("amber");
 	});
 
 	it("is GREEN when nothing is aging", () => {
-		expect(computeBlockedMaxAgeRag(2, threshold, terms).ragStatus).toBe(
-			"green",
-		);
+		const result = computeBlockedMaxAgeRag(2, threshold, terms);
+		expect(result.ragStatus).toBe("green");
+		expect(result.tipText).toContain("well within the 10-day threshold");
+	});
+
+	it("is just below the aging band and still GREEN", () => {
+		// threshold 8 -> band 6.0; 5 sits below the band, distinguishing amber from green.
+		expect(computeBlockedMaxAgeRag(5, 8, terms).ragStatus).toBe("green");
 	});
 
 	it("is GREEN when there are no blocked items (max age is null)", () => {
-		expect(computeBlockedMaxAgeRag(null, threshold, terms).ragStatus).toBe(
-			"green",
-		);
+		const result = computeBlockedMaxAgeRag(null, threshold, terms);
+		expect(result.ragStatus).toBe("green");
+		expect(result.tipText).toContain("No Blocked");
 	});
 
 	it("is red (prompt to configure) when the threshold is 0", () => {

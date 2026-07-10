@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
+        private Mock<ILogger<PortfolioMetricsController>> loggerMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
 
@@ -36,7 +37,8 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
             blockedItemServiceMock = new Mock<IBlockedItemService>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
+            loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, loggerMock.Object);
 
             project = new Portfolio
             {
@@ -516,8 +518,9 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                var items = ((result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>)?.ToList();
                 Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "F1" }));
+                Assert.That(items?.All(i => i.IsBlocked), Is.True, "drilled features must carry the blocked flag");
             }
         }
 
@@ -536,6 +539,34 @@ namespace Lighthouse.Backend.Tests.API
                 var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
                 Assert.That(items, Is.Empty);
             }
+        }
+
+        [Test]
+        public void GetBlockedItemsAtDate_PastDateWithCapturedSnapshot_LogsCaptureGapWarning()
+        {
+            // The past-date reconstruction is empty for a Portfolio, but a captured snapshot for THIS
+            // owner/type/date records blocked features — that divergence is a capture gap and must never be
+            // silent. The guard's snapshot lookup must be scoped to the requested owner/type/date.
+            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var targetDate = DateOnly.FromDateTime(pastDate);
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { OwnerId = 1, OwnerType = OwnerType.Portfolio, RecordedAt = targetDate, BlockedCount = 2 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<BlockedCountSnapshot, bool>>()))
+                .Returns((Func<BlockedCountSnapshot, bool> p) => snapshots.FirstOrDefault(p));
+
+            subject.GetBlockedItemsAtDate(1, pastDate);
+
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
         }
 
         [Test]

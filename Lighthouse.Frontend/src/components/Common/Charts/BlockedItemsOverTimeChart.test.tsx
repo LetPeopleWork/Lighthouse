@@ -397,5 +397,33 @@ describe("BlockedItemsOverTimeChart", () => {
 		expect(screen.getByTestId("dialog-title")).not.toHaveTextContent(
 			"per-item detail isn't recorded",
 		);
+		// No note means no separator: the empty-string return path must stay empty (not any text).
+		expect(screen.getByTestId("dialog-title")).not.toHaveTextContent("·");
+	});
+
+	it("ignores a bar click whose dataIndex resolves to no bar", () => {
+		const service = createMockMetricsService([workItem(1, "Blocked Alpha")]);
+		render(
+			<BlockedItemsOverTimeChart
+				snapshots={[{ recordedAt: "2026-06-01", blockedCount: 3 }]}
+				metricsService={service}
+				ownerId={1}
+			/>,
+		);
+
+		// Fire the real onItemClick contract with an out-of-range index — the guard must swallow it
+		// (no fetch, no dialog, no throw) rather than dereference an undefined bar.
+		const calls = vi.mocked(BarChart).mock.calls;
+		const onItemClick = calls[calls.length - 1]?.[0]?.onItemClick;
+		expect(() =>
+			onItemClick?.(new MouseEvent("click"), {
+				type: "bar",
+				seriesId: "value",
+				dataIndex: 99,
+			}),
+		).not.toThrow();
+
+		expect(service.getBlockedItemsAtDate).not.toHaveBeenCalled();
+		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
 	});
 });
