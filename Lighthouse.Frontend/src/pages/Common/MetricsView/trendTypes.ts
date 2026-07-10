@@ -15,4 +15,12 @@ export type TrendPayload = {
 	readonly previousValue?: string;
 	readonly percentageDelta?: string;
 	readonly detailRows?: readonly TrendDetailRow[];
+	/**
+	 * Set when a directional comparison cannot be computed because there is no previous-period
+	 * baseline yet. The chrome renders a neutral "—" placeholder plus {@link hintText} instead of an
+	 * arrow, so the widget reads as "awaiting baseline" rather than inert.
+	 */
+	readonly noBaseline?: boolean;
+	/** Explanatory line shown in the trend tooltip (used to explain the {@link noBaseline} state). */
+	readonly hintText?: string;
 };

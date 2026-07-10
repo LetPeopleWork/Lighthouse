@@ -1,6 +1,7 @@
 import EastIcon from "@mui/icons-material/East";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import NorthEastIcon from "@mui/icons-material/NorthEast";
+import RemoveIcon from "@mui/icons-material/Remove";
 import SouthEastIcon from "@mui/icons-material/SouthEast";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import {
@@ -91,6 +92,15 @@ function buildTrendTooltipContent(trend: TrendPayload): React.ReactNode {
 			<Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
 				{trend.metricLabel}
 			</Typography>
+			{trend.hintText && (
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					sx={{ display: "block", mb: 0.25 }}
+				>
+					{trend.hintText}
+				</Typography>
+			)}
 			{trend.currentLabel && (
 				<Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
 					<Typography
@@ -165,17 +175,20 @@ const TrendChrome: React.FC<{
 			>
 				<Box
 					data-testid={`widget-trend-arrow-${widgetKey}`}
+					data-nobaseline={trend.noBaseline ? "true" : undefined}
 					sx={{
 						display: "inline-flex",
 						alignItems: "center",
 						color: "text.secondary",
 					}}
 				>
-					{
+					{trend.noBaseline ? (
+						<RemoveIcon fontSize="small" />
+					) : (
 						trendArrowMap[
 							trend.direction as Exclude<TrendPayload["direction"], "none">
 						]
-					}
+					)}
 				</Box>
 			</Box>
 		</Tooltip>
@@ -198,7 +211,8 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 	const infoAnchorRef = useRef<HTMLButtonElement>(null);
 
 	const hasViewData = !!viewData && viewData.items.length > 0;
-	const hasTrend = !!trend && trend.direction !== "none";
+	const hasTrend =
+		!!trend && (trend.direction !== "none" || trend.noBaseline === true);
 	const hasHeader =
 		!!title || (header && showTips) || !!info || hasViewData || hasTrend;
 	const showInfoGuidance = showTips && !!info?.statusGuidance;

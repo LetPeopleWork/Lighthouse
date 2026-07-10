@@ -433,6 +433,34 @@ describe("WidgetShell", () => {
 			).not.toBeInTheDocument();
 		});
 
+		it("renders a neutral no-baseline placeholder when noBaseline is set", async () => {
+			const user = userEvent.setup();
+			const noBaselineTrend: TrendPayload = {
+				direction: "none",
+				metricLabel: "Blocked Items",
+				noBaseline: true,
+				hintText: "No previous-period baseline yet — the trend appears once…",
+			};
+			render(
+				<WidgetShell widgetKey="test-widget" trend={noBaselineTrend}>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+
+			// Unlike direction "none" (fully hidden), the no-baseline marker DOES render
+			// the chrome so the widget does not read as inert.
+			expect(
+				screen.getByTestId("widget-trend-test-widget"),
+			).toBeInTheDocument();
+			const marker = screen.getByTestId("widget-trend-arrow-test-widget");
+			expect(marker).toHaveAttribute("data-nobaseline", "true");
+
+			await user.hover(screen.getByTestId("widget-trend-test-widget"));
+			expect(
+				await screen.findByText(/No previous-period baseline yet/),
+			).toBeInTheDocument();
+		});
+
 		it("does not render trend indicator when trend prop is absent", () => {
 			render(
 				<WidgetShell widgetKey="test-widget">

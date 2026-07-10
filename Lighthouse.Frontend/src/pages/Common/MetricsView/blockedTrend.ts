@@ -47,14 +47,30 @@ const formatDelta = (current: number, previous: number): string | undefined => {
 	return `${signOf(change)}${Math.abs(change).toFixed(1)}%`;
 };
 
+const NO_BASELINE_HINT =
+	"No previous-period baseline yet — the trend appears once a blocked-count snapshot exists on or before the day before the selected range.";
+
+/**
+ * Marker payload rendered as a neutral "—" placeholder (with an explanatory tooltip) when a real
+ * directional comparison cannot be computed yet. BlockedCountSnapshot is forward-only, so a freshly
+ * recording instance legitimately has no snapshot before the previous-period boundary; surfacing the
+ * hint keeps the widget from reading as inert without fabricating a zero-delta.
+ */
+const noBaselineTrend = (): TrendPayload => ({
+	direction: "none",
+	metricLabel: METRIC_LABEL,
+	noBaseline: true,
+	hintText: NO_BASELINE_HINT,
+});
+
 /**
  * B3 (slice-06): previous-period trend for the Blocked overview widget.
  *
  * Compares the current blocked count against the BlockedCountSnapshot on the LAST DAY of the previous
  * period — where "period" is the dashboard's selected [startDate, endDate] range — and returns a
- * TrendPayload for the EXISTING WidgetShell trend chrome (no new UI). Returns undefined (chrome hidden)
- * when no snapshot exists at or before the previous-period boundary, so the widget never shows a
- * fabricated zero-delta.
+ * TrendPayload for the EXISTING WidgetShell trend chrome (no new UI). When no snapshot exists at or
+ * before the previous-period boundary, returns a no-baseline marker so the chrome shows a neutral "—"
+ * hint instead of nothing (and never a fabricated zero-delta).
  *
  * Pure selector: read-only over the already-loaded BlockedCountSnapshot history. No side effects.
  */
@@ -64,18 +80,18 @@ export function computeBlockedTrend(
 	endDate: Date,
 ): TrendPayload | undefined {
 	if (!history || history.length === 0) {
-		return undefined;
+		return noBaselineTrend();
 	}
 
 	const boundary = startDate.getTime() - ONE_DAY_MS;
 	const baseline = latestAtOrBefore(history, boundary);
 	if (!baseline) {
-		return undefined;
+		return noBaselineTrend();
 	}
 
 	const current = latestAtOrBefore(history, endDate.getTime());
 	if (!current) {
-		return undefined;
+		return noBaselineTrend();
 	}
 
 	const percentageDelta = formatDelta(

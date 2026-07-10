@@ -43,16 +43,23 @@ describe("computeBlockedTrend — previous-period trend (B3)", () => {
 		expect(trend?.direction).toBe("flat");
 	});
 
-	it("shows no trend when no snapshot exists at or before the prior-period boundary", () => {
+	it("marks no-baseline (not a direction) when no snapshot exists at or before the prior-period boundary", () => {
 		const history = [snap("2026-06-14", 9)];
 
 		const trend = computeBlockedTrend(history, start, end);
 
-		expect(trend).toBeUndefined();
+		expect(trend?.direction).toBe("none");
+		expect(trend?.noBaseline).toBe(true);
+		expect(trend?.hintText).toContain("No previous-period baseline yet");
 	});
 
-	it("returns undefined for empty history", () => {
-		expect(computeBlockedTrend([], start, end)).toBeUndefined();
-		expect(computeBlockedTrend(null, start, end)).toBeUndefined();
+	it("marks no-baseline for empty or null history", () => {
+		for (const empty of [
+			computeBlockedTrend([], start, end),
+			computeBlockedTrend(null, start, end),
+		]) {
+			expect(empty?.direction).toBe("none");
+			expect(empty?.noBaseline).toBe(true);
+		}
 	});
 });
