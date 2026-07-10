@@ -7,7 +7,7 @@
        Lighthouse.Backend.Tests); only the generated EF migration projects are
        excluded (they are excluded from the SonarCloud scan too). -->
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'Lighthouse.Migrations.Sqlite' And '$(MSBuildProjectName)' != 'Lighthouse.Migrations.Postgres'">
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.27.0.140913">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.28.0.143324">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
