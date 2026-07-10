@@ -4,5 +4,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 {
     public interface IWorkItemBlockedTransitionRepository : IRepository<WorkItemBlockedTransition>
     {
+        IReadOnlyList<int> GetBlockedWorkItemIdsAt(DateOnly date);
     }
 }
