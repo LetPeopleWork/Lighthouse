@@ -1,9 +1,12 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.Tests.Models
 {
     public class DeliveryTest
     {
+        private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
+
         [Test]
         public void Constructor_WithValidData_CreatesDelivery()
         {
@@ -79,6 +82,52 @@ namespace Lighthouse.Backend.Tests.Models
             // Assert
             Assert.That(delivery.Features, Has.Count.EqualTo(1));
             Assert.That(delivery.Features, Does.Contain(feature));
+        }
+
+        [Test]
+        public void CalculateMetrics_MultipleFeaturesTiedOnLikelihood_WhenDistributionReflectsLatestCompletingFeature()
+        {
+            // Regression for ADO #5435: for large deliveries the forecast dates were taken from
+            // an arbitrary feature. Selection ranked features by likelihood-for-target-date, which
+            // saturates to 100% for every feature once the target date is comfortably far out, so
+            // the tie-break fell back to collection order instead of the latest-completing feature.
+            // A delivery is only done when its LATEST feature finishes.
+            var deliveryDate = DateTime.UtcNow.AddDays(200); // comfortably far -> every feature is 100% likely
+
+            var lateFeature = new Feature { Id = 1 };
+            lateFeature.Forecasts.Add(CreateForecastCompletingInDays(50));
+            lateFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 5 });
+
+            var earlyFeature = new Feature { Id = 2 };
+            earlyFeature.Forecasts.Add(CreateForecastCompletingInDays(5));
+            earlyFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 5 });
+
+            var delivery = new Delivery { Id = 1, Name = "Large Delivery", Date = deliveryDate };
+            // Late feature added first: the buggy selection returns the last-ranked (early) feature on a likelihood tie.
+            delivery.Features.Add(lateFeature);
+            delivery.Features.Add(earlyFeature);
+
+            var metrics = delivery.CalculateMetrics(NoBlackoutPeriods, 70, 85, 95);
+
+            var expectedLatestDate = DateTime.UtcNow.Date.AddDays(50);
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var percentile in metrics.WhenDistribution)
+                {
+                    Assert.That(percentile.ExpectedDate, Is.EqualTo(expectedLatestDate),
+                        $"Percentile {percentile.Percentile} must reflect the latest-completing feature");
+                }
+            }
+        }
+
+        private static WhenForecast CreateForecastCompletingInDays(int days)
+        {
+            var simulationResult = new Dictionary<int, int> { { days, 100 } };
+            var forecast = new WhenForecast();
+            forecast.GetType()
+                .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                .Invoke(forecast, [simulationResult]);
+            return forecast;
         }
 
         #region SelectionMode Tests

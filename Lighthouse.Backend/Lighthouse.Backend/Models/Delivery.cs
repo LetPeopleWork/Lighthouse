@@ -58,8 +58,17 @@ namespace Lighthouse.Backend.Models
                 return new DeliveryMetricsProjection(0.0, [], featureBreakdown);
             }
 
+            var forecastingFeatures = Features
+                .Where(feature => feature.FeatureWork.Sum(work => work.RemainingWorkItems) > 0)
+                .ToList();
+
+            if (forecastingFeatures.Count == 0)
+            {
+                forecastingFeatures.Add(leastLikelyFeature);
+            }
+
             var whenDistribution = percentiles
-                .Select(percentile => ToWhenPercentile(leastLikelyFeature.Forecast, percentile, blackoutPeriods))
+                .Select(percentile => ToLatestWhenPercentile(forecastingFeatures, percentile, blackoutPeriods))
                 .ToList();
 
             return new DeliveryMetricsProjection(leastLikelyFeature.GetLikelhoodForDate(Date, blackoutPeriods), whenDistribution, featureBreakdown);
@@ -96,6 +105,16 @@ namespace Lighthouse.Backend.Models
             }
 
             return rankedFeatures[^1].feature;
+        }
+
+        private static DeliveryWhenPercentile ToLatestWhenPercentile(IReadOnlyList<Feature> forecastingFeatures, int percentile, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        {
+            // A delivery finishes only when its latest feature finishes, so the delivery's date for a
+            // given percentile is the latest of the contributing features' dates - never a single feature
+            // chosen by likelihood (which saturates and picks arbitrarily for large deliveries, ADO #5435).
+            return forecastingFeatures
+                .Select(feature => ToWhenPercentile(feature.Forecast, percentile, blackoutPeriods))
+                .MaxBy(when => when.ExpectedDate)!;
         }
 
         private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
