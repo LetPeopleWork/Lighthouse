@@ -1710,7 +1710,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var items = ((result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>)?.ToList();
-                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "LIVE-10" }));
+                string[] expectedRefs = ["LIVE-10"];
+                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(expectedRefs));
                 Assert.That(items?.All(i => i.IsBlocked), Is.True, "drilled items must carry the blocked flag");
             }
         }
@@ -1735,7 +1736,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var items = ((result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>)?.ToList();
-                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "BLK-42" }));
+                string[] expectedRefs = ["BLK-42"];
+                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(expectedRefs));
                 Assert.That(items?.All(i => i.IsBlocked), Is.True, "reconstructed items must carry the blocked flag");
             }
         }

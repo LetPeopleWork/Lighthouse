@@ -29,7 +29,9 @@ namespace Lighthouse.Backend.API
         private readonly IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository;
         private readonly ILogger<TeamMetricsController> logger;
 
+#pragma warning disable S107 // The blocked-drill-through endpoint (slice-08) genuinely needs the snapshot repo, work-item repo and blocked-transition repo alongside the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as OAuthService).
         public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, ILogger<TeamMetricsController> logger)
+#pragma warning restore S107
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;

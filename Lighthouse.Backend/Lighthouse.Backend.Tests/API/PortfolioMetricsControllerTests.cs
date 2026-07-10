@@ -519,7 +519,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var items = ((result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>)?.ToList();
-                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "F1" }));
+                string[] expectedRefs = ["F1"];
+                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(expectedRefs));
                 Assert.That(items?.All(i => i.IsBlocked), Is.True, "drilled features must carry the blocked flag");
             }
         }
