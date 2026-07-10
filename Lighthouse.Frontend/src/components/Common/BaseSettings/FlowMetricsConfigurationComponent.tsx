@@ -55,7 +55,17 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isSleEnabled, setIsSleEnabled] = useState(false);
 	const [isWipLimitEnabled, setIsWipLimitEnabled] = useState(false);
 	const [isFeatureWipEnabled, setIsFeatureWipEnabled] = useState(false);
-	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(false);
+	// Lazy-initialized once from the settings this component mounted with (the
+	// owning page only renders it after the settings fetch resolves, and remounts
+	// on owner switch — see the resync-effect comment below for why this must NOT
+	// also be recomputed on every settings change).
+	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(
+		() =>
+			(parseBlockedRuleSet(settings.blockedRuleSetJson)?.conditions.length ??
+				0) > 0 ||
+			(settings.blockedTags && settings.blockedTags.length > 0) ||
+			(settings.blockedStates && settings.blockedStates.length > 0),
+	);
 	const [isStalenessEnabled, setIsStalenessEnabled] = useState(false);
 	const [isBlockedStalenessEnabled, setIsBlockedStalenessEnabled] =
 		useState(false);
@@ -108,11 +118,14 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 				"featureWIP" in settings &&
 				Number(settings.featureWIP) > 0,
 		);
-		setIsBlockedItemsEnabled(
-			blockedRuleSet.conditions.length > 0 ||
-				(settings.blockedTags && settings.blockedTags.length > 0) ||
-				(settings.blockedStates && settings.blockedStates.length > 0),
-		);
+		// isBlockedItemsEnabled is deliberately NOT resynced here — see its
+		// lazy useState initializer above. Clearing rule rows down to zero
+		// (persistBlockedRuleSet) mutates settings.blockedRuleSetJson/blockedTags/
+		// blockedStates the same way an explicit "disable" does, so recomputing
+		// this flag from settings on every change would hide the whole rule
+		// editor mid-edit the moment a config admin deletes the last row before
+		// adding a replacement — exactly the flow the BlockedItems E2E walking
+		// skeleton exercises.
 		setIsStalenessEnabled(settings.stalenessThresholdDays > 0);
 		setIsBlockedStalenessEnabled(settings.blockedStalenessThresholdDays > 0);
 		setIsBaselineEnabled(
@@ -124,7 +137,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		setProbabilityInputValue(
 			settings.serviceLevelExpectationProbability.toString(),
 		);
-	}, [settings, showFeatureWip, blockedRuleSet]);
+	}, [settings, showFeatureWip]);
 
 	// Fetch the rule schema for the blocked rule builder, mirroring how
 	// ForecastFilterEditor consumes the shared DeliveryRuleBuilder. Only config

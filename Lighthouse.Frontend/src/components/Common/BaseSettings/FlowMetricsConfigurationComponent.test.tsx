@@ -697,6 +697,42 @@ describe("FlowMetricsConfigurationComponent", () => {
 			expect(parseBlockedRuleSet(call?.[1] as string)?.mode).toBe("or");
 		});
 
+		it("keeps the blocked rule editor open after the last rule row is cleared", async () => {
+			// Regression test for the BlockedItems E2E walking-skeleton failure:
+			// deleting the last rule row makes persistBlockedRuleSet null out
+			// blockedRuleSetJson/blockedTags/blockedStates, exactly like an explicit
+			// "disable" would. isBlockedItemsEnabled must NOT resync off that —
+			// otherwise the editor (and its Add Rule button) disappears mid-edit,
+			// stranding a config admin who is about to add a replacement rule.
+			const { rerender } = render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(
+				await screen.findByTestId("delivery-rule-builder"),
+			).toBeInTheDocument();
+
+			rerender(
+				<FlowMetricsConfigurationComponent
+					settings={{
+						...mockSettings,
+						blockedRuleSetJson: null,
+						blockedTags: [],
+						blockedStates: [],
+					}}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(screen.getByTestId("delivery-rule-builder")).toBeInTheDocument();
+			expect(screen.getByTestId("add-rule-button")).toBeInTheDocument();
+		});
+
 		it("hides the blocked rule editor for a non-admin", async () => {
 			rbacRef.current = {
 				...adminRbac,
