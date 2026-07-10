@@ -438,6 +438,12 @@ StrykerOutput/
 **/.stryker-tmp-*/
 reports/mutation/
 
+# Stryker mutation-testing configs are local tooling, not source — keep them out of git
+**/stryker-config*.json
+**/stryker.config*.mjs
+**/stryker.*.config.mjs
+**/vitest.stryker*.ts
+
 .claude/scheduled_tasks.lock
 .claude/worktrees/
 Lighthouse.Frontend/reports/mutation/*
