@@ -14,13 +14,11 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
-import { useRbac } from "../../../hooks/useRbac";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
-import LogSettings from "../LogSettings/LogSettings";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BlackoutSettings from "./BlackoutSettings";
 
@@ -37,8 +35,6 @@ const SystemSettingsTab: React.FC = () => {
 
 	const { optionalFeatureService, licensingService } =
 		useContext(ApiServiceContext);
-
-	const { isSystemAdmin } = useRbac();
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -173,12 +169,6 @@ const SystemSettingsTab: React.FC = () => {
 			<InputGroup title={`${featureTerm} Refresh`}>
 				<RefreshSettingUpdater title={featureTerm} settingName="Feature" />
 			</InputGroup>
-
-			{isSystemAdmin && (
-				<Box data-testid="log-level-section">
-					<LogSettings />
-				</Box>
-			)}
 		</Box>
 	);
 };

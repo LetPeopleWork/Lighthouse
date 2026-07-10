@@ -2,12 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { UserAuthorizationSummary } from "../../../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
-import type { ILogService } from "../../../services/Api/LogService";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
-import type { IRbacService } from "../../../services/Api/RbacService";
 import type { ISettingsService } from "../../../services/Api/SettingsService";
 import type { ITerminologyService } from "../../../services/Api/TerminologyService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
@@ -15,9 +12,7 @@ import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
 	createMockLicensingService,
-	createMockLogService,
 	createMockOptionalFeatureService,
-	createMockRbacService,
 	createMockSettingsService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
@@ -50,20 +45,6 @@ const mockBlackoutPeriodService = createMockBlackoutPeriodService();
 const mockGetAllBlackoutPeriods = vi.fn();
 mockBlackoutPeriodService.getAll = mockGetAllBlackoutPeriods;
 
-const mockRbacService: IRbacService = createMockRbacService();
-const mockGetAuthorizationSummary = vi.fn();
-mockRbacService.getAuthorizationSummary = mockGetAuthorizationSummary;
-
-const mockLogService: ILogService = createMockLogService();
-const mockGetLogs = vi.fn();
-const mockGetLogLevel = vi.fn();
-const mockGetSupportedLogLevels = vi.fn();
-const mockSetLogLevel = vi.fn();
-mockLogService.getLogs = mockGetLogs;
-mockLogService.getLogLevel = mockGetLogLevel;
-mockLogService.getSupportedLogLevels = mockGetSupportedLogLevels;
-mockLogService.setLogLevel = mockSetLogLevel;
-
 const MockApiServiceProvider = ({
 	children,
 }: {
@@ -75,8 +56,6 @@ const MockApiServiceProvider = ({
 		terminologyService: mockTerminologyService,
 		licensingService: mockLicensingService,
 		blackoutPeriodService: mockBlackoutPeriodService,
-		rbacService: mockRbacService,
-		logService: mockLogService,
 	});
 
 	const queryClient = new QueryClient({
@@ -102,18 +81,6 @@ const renderWithMockApiProvider = () => {
 		</MockApiServiceProvider>,
 	);
 };
-
-const buildSummary = (
-	overrides: Partial<UserAuthorizationSummary> = {},
-): UserAuthorizationSummary => ({
-	isRbacEnabled: true,
-	isSystemAdmin: true,
-	canCreateTeam: true,
-	canCreatePortfolio: true,
-	adminTeamIds: [],
-	adminPortfolioIds: [],
-	...overrides,
-});
 
 describe("SystemSettingsTab Component", () => {
 	beforeEach(() => {
@@ -162,12 +129,6 @@ describe("SystemSettingsTab Component", () => {
 				value: "Work Items",
 			},
 		]);
-
-		mockGetAuthorizationSummary.mockResolvedValue(buildSummary());
-		mockGetLogs.mockResolvedValue("");
-		mockGetLogLevel.mockResolvedValue("info");
-		mockGetSupportedLogLevels.mockResolvedValue(["info", "warn", "error"]);
-		mockSetLogLevel.mockResolvedValue(undefined);
 	});
 
 	afterEach(() => {
@@ -265,46 +226,6 @@ describe("SystemSettingsTab Component", () => {
 
 		expect(optionalFeaturesTitle).not.toBeInTheDocument();
 		expect(table).not.toBeInTheDocument();
-	});
-
-	it("hides Log Level section for non-System-Admin users", async () => {
-		mockGetAuthorizationSummary.mockResolvedValue(
-			buildSummary({ isSystemAdmin: false }),
-		);
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(
-				screen.getByText("Blackout Periods & Recurring Rules"),
-			).toBeInTheDocument();
-		});
-
-		expect(screen.queryByTestId("log-level-section")).not.toBeInTheDocument();
-	});
-
-	it("shows Log Level section for System Admin", async () => {
-		mockGetAuthorizationSummary.mockResolvedValue(
-			buildSummary({ isSystemAdmin: true }),
-		);
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(screen.getByTestId("log-level-section")).toBeInTheDocument();
-		});
-	});
-
-	it("shows Log Level section in non-RBAC deployment (PERMISSIVE)", async () => {
-		mockGetAuthorizationSummary.mockResolvedValue(
-			buildSummary({ isRbacEnabled: false, isSystemAdmin: true }),
-		);
-
-		renderWithMockApiProvider();
-
-		await waitFor(() => {
-			expect(screen.getByTestId("log-level-section")).toBeInTheDocument();
-		});
 	});
 
 	it("should disable the toggle if the feature is premium and the user has no premium license", async () => {
