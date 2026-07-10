@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IPortfolioMetricsService> projectMetricsService;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
+        private Mock<IBlockedItemService> blockedItemServiceMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
 
@@ -34,7 +35,8 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, new Mock<IBlockedItemService>().Object, new Mock<IWorkItemBlockedTransitionRepository>().Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
+            blockedItemServiceMock = new Mock<IBlockedItemService>();
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, new Mock<ILogger<PortfolioMetricsController>>().Object);
 
             project = new Portfolio
             {
@@ -493,6 +495,46 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = result.Result as OkObjectResult;
                 var featureDtos = okResult?.Value as IEnumerable<FeatureDto>;
                 Assert.That(featureDtos?.Count(), Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void GetBlockedItemsAtDate_LatestDate_ReturnsBlockedEligibleFeaturesFilteredByIsBlocked()
+        {
+            var blockedFeature = new Feature { Id = 1, Name = "Blocked", ReferenceId = "F1", StateCategory = StateCategories.ToDo };
+            var notBlockedFeature = new Feature { Id = 2, Name = "Open", ReferenceId = "F2", StateCategory = StateCategories.Doing };
+
+            projectMetricsService
+                .Setup(x => x.GetBlockedEligibleFeaturesForPortfolio(project))
+                .Returns([blockedFeature, notBlockedFeature]);
+            blockedItemServiceMock
+                .Setup(x => x.IsBlocked(It.IsAny<Feature>(), project))
+                .Returns((Feature f, Portfolio _) => f.Id == 1);
+
+            var result = subject.GetBlockedItemsAtDate(1, DateTime.UtcNow.Date);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "F1" }));
+            }
+        }
+
+        [Test]
+        public void GetBlockedItemsAtDate_PastDate_ReturnsEmpty_FeaturesHaveNoTransitionHistory()
+        {
+            // Features never emit WorkItemBlocked, so there is no per-feature transition history to
+            // reconstruct — a past date must return empty rather than a bogus WorkItem-id join.
+            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+
+            var result = subject.GetBlockedItemsAtDate(1, pastDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                Assert.That(items, Is.Empty);
             }
         }
 
