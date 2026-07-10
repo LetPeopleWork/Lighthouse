@@ -90,6 +90,40 @@ export class MetricsWidget {
 		await this.staleAgingBubbles.first().click();
 		return new WorkItemsDialog(this.page);
 	}
+
+	// The blocked-over-time chart is a MUI-X BarChart; each column snapshot is a
+	// <rect class="MuiBarChart-element">. The rightmost bar is the most recent
+	// (today) snapshot.
+	get blockedOverTimeBars(): Locator {
+		return this.Widget.locator("rect.MuiBarChart-element");
+	}
+
+	async countBlockedOverTimeBars(): Promise<number> {
+		return this.blockedOverTimeBars.count();
+	}
+
+	get blockedItemsDialog(): Locator {
+		return this.page.getByRole("dialog");
+	}
+
+	get blockedItemsDialogRows(): Locator {
+		return this.blockedItemsDialog.locator(".MuiDataGrid-row");
+	}
+
+	async countBlockedItemsDialogRows(): Promise<number> {
+		return this.blockedItemsDialogRows.count();
+	}
+
+	/**
+	 * Clicks the latest (rightmost) bar on the Blocked Items Over Time chart,
+	 * which drills into the items blocked at that date (08-04 endpoint) and
+	 * lists them in the shared WorkItemsDialog.
+	 */
+	async openBlockedOverTimeDialogByLatestBar(): Promise<WorkItemsDialog> {
+		await this.blockedOverTimeBars.last().click();
+		await this.blockedItemsDialog.waitFor({ state: "visible" });
+		return new WorkItemsDialog(this.page);
+	}
 }
 
 export class WorkItemAgePercentilesCard {
@@ -200,6 +234,7 @@ export const MetricsWidgetNames = {
 	ThroughputProcessBehaviourChart: "Throughput Process Behaviour Chart",
 	WorkItemsInProgressOverTime: "Work Items In Progress Over Time",
 	TotalWorkItemAgeOverTime: "Total Work Item Age Over Time",
+	BlockedItemsOverTime: "Blocked Items Over Time",
 	WorkInProgressProcessBehaviourChart:
 		"Work In Progress Process Behaviour Chart",
 	TotalWorkItemAgeProcessBehaviourChart:
@@ -394,6 +429,7 @@ export class MetricsPage {
 			["Arrivals Run Chart", "arrivals"],
 			["Simplified Cumulative Flow Diagram", "stacked"],
 			["Load Balance Matrix", "loadBalanceMatrix"],
+			["Blocked Items Over Time", "blockedCountHistory"],
 		],
 		[MetricsCategories.Predictability]: [
 			["Predictability Score Details", "predictabilityScoreDetails"],
