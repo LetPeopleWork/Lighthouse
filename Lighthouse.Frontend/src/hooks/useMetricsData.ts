@@ -37,6 +37,7 @@ export interface MetricsData<T> {
 	throughputData: RunChartData | null;
 	wipOverTimeData: RunChartData | null;
 	inProgressItems: IWorkItem[];
+	blockedItems: IWorkItem[];
 	cycleTimeData: T[];
 	percentileValues: IPercentileValue[];
 	workItemAgePercentilesValues: IPercentileValue[];
@@ -107,6 +108,7 @@ export function useMetricsData<
 		null,
 	);
 	const [inProgressItems, setInProgressItems] = useState<IWorkItem[]>([]);
+	const [blockedItems, setBlockedItems] = useState<IWorkItem[]>([]);
 	const [cycleTimeData, setCycleTimeData] = useState<T[]>([]);
 	const [percentileValues, setPercentileValues] = useState<IPercentileValue[]>(
 		[],
@@ -205,6 +207,14 @@ export function useMetricsData<
 		const fetch = async () => {
 			const items = await metricsService.getInProgressItems(entity.id, endDate);
 			setInProgressItems(items);
+			// The blocked overview spans BOTH open state categories (To Do + In Progress) — an item
+			// can be stuck in To Do because it is blocked — so it is sourced from the blocked-eligible
+			// endpoint, not filtered out of the WIP (in-progress-only) set.
+			const blocked = await metricsService.getBlockedItemsAtDate(
+				entity.id,
+				endDate,
+			);
+			setBlockedItems(blocked);
 			const wipData = await metricsService.getWorkInProgressOverTime(
 				entity.id,
 				startDate,
@@ -435,6 +445,7 @@ export function useMetricsData<
 		throughputData,
 		wipOverTimeData,
 		inProgressItems,
+		blockedItems,
 		cycleTimeData,
 		percentileValues,
 		workItemAgePercentilesValues,

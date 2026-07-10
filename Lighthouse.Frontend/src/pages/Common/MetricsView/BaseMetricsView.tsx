@@ -1108,6 +1108,7 @@ export const BaseMetricsView = <
 		throughputData,
 		wipOverTimeData,
 		inProgressItems,
+		blockedItems,
 		cycleTimeData,
 		percentileValues,
 		workItemAgePercentilesValues,
@@ -1367,7 +1368,8 @@ export const BaseMetricsView = <
 		sle: getTerm(TERMINOLOGY_KEYS.SLE),
 	};
 
-	const blockedItems = inProgressItems.filter((item) => item.isBlocked);
+	// blockedItems spans To Do + In Progress (from useMetricsData's blocked-eligible fetch), so the
+	// overview count/RAG include items blocked while still in To Do — not just the WIP (in-progress) set.
 	const staleItems = inProgressItems.filter(
 		(item) =>
 			deriveStaleness(

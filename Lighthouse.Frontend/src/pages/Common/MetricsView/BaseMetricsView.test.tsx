@@ -1509,6 +1509,52 @@ describe("BaseMetricsView component", () => {
 		);
 	});
 
+	it("counts blocked items across To Do and In Progress, not just the WIP set", async () => {
+		// Two blocked items come back from the blocked-eligible endpoint (one In Progress, one still
+		// in To Do — blocked before it started), but only one is in the WIP (in-progress) set. The
+		// overview count must be 2, proving it is not derived from WIP alone (the reported bug).
+		const blockedAcrossCategories: IWorkItem[] = [
+			{ ...mockInProgressItems[0], id: 31, isBlocked: true },
+			{ ...mockInProgressItems[0], id: 32, isBlocked: true },
+		];
+
+		const team = new Team();
+		team.name = "Blocked Category Team";
+		team.id = 76;
+		team.systemWIPLimit = 6;
+		team.lastUpdated = new Date();
+
+		const teamMetricsService = {
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+			getInProgressItems: vi
+				.fn()
+				.mockResolvedValue([blockedAcrossCategories[0]]),
+			getBlockedItemsAtDate: vi.fn().mockResolvedValue(blockedAcrossCategories),
+		};
+
+		localStorage.setItem(
+			`lighthouse:metrics:team:${team.id}:category`,
+			"flow-overview",
+		);
+
+		renderWithRouter(
+			<BaseMetricsView
+				entity={team}
+				metricsService={teamMetricsService}
+				title="Work Items"
+				doingStates={["To Do", "In Progress", "Review"]}
+				hasBlockedConfig={true}
+			/>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("blocked-overview-count")).toHaveTextContent(
+				"2",
+			);
+		});
+	});
+
 	it("the blocked-over-time widget renders the rag-status chip driven by max blocked age", async () => {
 		const fifteenDaysAgo = new Date();
 		fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
@@ -1535,6 +1581,9 @@ describe("BaseMetricsView component", () => {
 			...createMockMetricsService<IWorkItem>(),
 			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
 			getInProgressItems: vi.fn().mockResolvedValue(blockedScenarioItems),
+			// The blocked overview/RAG sources its items from the blocked-eligible (To Do + In
+			// Progress) endpoint, so the aged blocked item must come back from here.
+			getBlockedItemsAtDate: vi.fn().mockResolvedValue(blockedScenarioItems),
 		};
 
 		localStorage.setItem(
