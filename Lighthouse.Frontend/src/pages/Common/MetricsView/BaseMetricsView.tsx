@@ -81,6 +81,7 @@ import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
 import {
 	computeArrivalsRunChartRag,
+	computeBlockedOverviewRag,
 	computeCumulativeStateTimeRag,
 	computeCycleTimePercentilesRag,
 	computeCycleTimeScatterplotRag,
@@ -226,6 +227,7 @@ function computeMaxBlockedAgeDays(
 type RagInputs = {
 	readonly wipCount: number;
 	readonly systemWipLimit: number | undefined;
+	readonly blockedCount: number;
 	readonly maxBlockedAgeDays: number | null;
 	readonly blockedStalenessThresholdDays: number;
 	readonly hasBlockedConfig: boolean;
@@ -286,7 +288,12 @@ function buildWidgetFooters(
 			inputs.systemWipLimit,
 			inputs.terms,
 		),
-		blockedOverview: computeBlockedMaxAgeRag(
+		blockedOverview: computeBlockedOverviewRag(
+			inputs.blockedCount,
+			inputs.hasBlockedConfig,
+			inputs.terms,
+		),
+		blockedCountHistory: computeBlockedMaxAgeRag(
 			inputs.maxBlockedAgeDays,
 			inputs.blockedStalenessThresholdDays,
 			inputs.terms,
@@ -1468,6 +1475,7 @@ export const BaseMetricsView = <
 		wipCount: inProgressItems.length,
 		systemWipLimit:
 			entity.systemWIPLimit > 0 ? entity.systemWIPLimit : undefined,
+		blockedCount: blockedItems.length,
 		maxBlockedAgeDays: computeMaxBlockedAgeDays(blockedItems, Date.now()),
 		blockedStalenessThresholdDays: blockedStalenessThresholdDays ?? 0,
 		hasBlockedConfig,

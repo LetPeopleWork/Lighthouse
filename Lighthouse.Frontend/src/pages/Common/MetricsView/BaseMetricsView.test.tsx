@@ -1507,13 +1507,13 @@ describe("BaseMetricsView component", () => {
 		);
 	});
 
-	it("the blockedOverview widget renders the rag-status chip driven by max blocked age", async () => {
+	it("the blocked-over-time widget renders the rag-status chip driven by max blocked age", async () => {
 		const fifteenDaysAgo = new Date();
 		fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
-		// A single blocked item — count-driven RAG would be AMBER (1 blocked item);
-		// max-blocked-age RAG must be RED because it has been blocked 15 days, past the
-		// 10-day staleness threshold.
+		// A single blocked item — the max-blocked-age RAG on the over-time widget must be
+		// RED because it has been blocked 15 days, past the 10-day staleness threshold.
+		// The overview count tile keeps its own count-based RAG (covered in ragRules.test.ts).
 		const blockedScenarioItems: IWorkItem[] = [
 			{
 				...mockInProgressItems[0],
@@ -1537,7 +1537,7 @@ describe("BaseMetricsView component", () => {
 
 		localStorage.setItem(
 			`lighthouse:metrics:team:${team.id}:category`,
-			"flow-overview",
+			"flow-metrics",
 		);
 
 		renderWithRouter(
@@ -1553,7 +1553,7 @@ describe("BaseMetricsView component", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByTestId("widget-rag-blockedOverview"),
+				screen.getByTestId("widget-rag-blockedCountHistory"),
 			).toHaveTextContent("red");
 		});
 	});
