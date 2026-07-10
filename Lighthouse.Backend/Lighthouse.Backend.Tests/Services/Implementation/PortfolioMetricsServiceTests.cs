@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Portfolio portfolio;
         private List<Feature> features;
 
-        private static readonly string[] ExpectedBlockedEligibleReferenceIds = ["F3", "F4"];
+        private static readonly string[] ExpectedBlockedEligibleReferenceIds = ["F3", "F4", "F5"];
 
         [SetUp]
         public void Setup()
@@ -149,6 +149,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             };
             toDoFeature.Portfolios.Add(portfolio);
             features.Add(toDoFeature);
+
+            // A feature shared with ANOTHER portfolio must still be included (membership is Any-of, not
+            // All-of) — pins the Portfolios.Any(...) predicate against the Any->All mutation.
+            var sharedFeature = new Feature
+            {
+                Id = 5,
+                Name = "Feature 5",
+                ReferenceId = "F5",
+                StartedDate = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                StateCategory = StateCategories.Doing,
+            };
+            sharedFeature.Portfolios.Add(portfolio);
+            sharedFeature.Portfolios.Add(new Portfolio { Id = 2, Name = "Other Portfolio" });
+            features.Add(sharedFeature);
 
             var result = subject.GetBlockedEligibleFeaturesForPortfolio(portfolio).ToList();
 

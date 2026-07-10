@@ -494,13 +494,10 @@ namespace Lighthouse.Backend.API
                     .ToList();
 
                 ReconcileReconstructedCountWithSnapshot(teamId, OwnerType.Team, targetDate, reconstructed.Count);
-                AnnotateCaptureCompleteness(targetDate, teamWorkItems.Select(w => w.Id).ToList());
 
                 return reconstructed;
             });
         }
-
-        private const string ReconstructionCompleteFromHeader = "X-Blocked-Reconstruction-Complete-From";
 
         // Reconciliation guard (ADR-099): where a captured BlockedCountSnapshot exists for the requested date,
         // compare it against the interval-reconstructed membership count. A divergence signals a
@@ -518,28 +515,6 @@ namespace Lighthouse.Backend.API
             logger.LogWarning(
                 "Blocked-membership reconstruction for {OwnerType} {OwnerId} at {Date:yyyy-MM-dd} diverged from the captured snapshot (reconstructed {ReconstructedCount}, snapshot {SnapshotCount}); a transition-capture gap is likely.",
                 ownerType, ownerId, targetDate, reconstructedCount, snapshot.BlockedCount);
-        }
-
-        // Capture-completeness note: reconstruction is only complete from the earliest captured transition
-        // onwards. When the requested date predates that point the returned set may be partial, so advertise
-        // the completeness boundary out-of-band via a response header (the body stays a bare WorkItemDto[]).
-        private void AnnotateCaptureCompleteness(DateOnly targetDate, IReadOnlyCollection<int> ownerWorkItemIds)
-        {
-            var earliestCapture = workItemBlockedTransitionRepository.GetAll()
-                .Where(t => ownerWorkItemIds.Contains(t.WorkItemId))
-                .Select(t => (DateTime?)t.EnteredAt)
-                .Min();
-
-            if (earliestCapture is null)
-            {
-                return;
-            }
-
-            var captureStartDate = DateOnly.FromDateTime(earliestCapture.Value);
-            if (targetDate < captureStartDate)
-            {
-                Response.Headers[ReconstructionCompleteFromHeader] = captureStartDate.ToString("yyyy-MM-dd");
-            }
         }
 
         private int[] GetBlackoutDayIndicesArray(DateTime startDate, DateTime endDate)

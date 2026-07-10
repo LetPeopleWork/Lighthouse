@@ -24,6 +24,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var enteredAfter = await GivenPersistedWorkItem();
             var enteredOnDate = await GivenPersistedWorkItem();
             var leftOnDate = await GivenPersistedWorkItem();
+            // Boundary items pinning the exact interval-overlap inequalities (EnteredAt < startOfNextDate,
+            // LeftAt >= startOfDate): entered at the first instant of the NEXT day is NOT covering; left at
+            // the first instant of the date IS still covering (date-granular, ADR-099).
+            var enteredAtStartOfNextDay = await GivenPersistedWorkItem();
+            var leftAtStartOfDate = await GivenPersistedWorkItem();
 
             var subject = CreateSubject();
 
@@ -33,6 +38,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             subject.Add(BlockedTransition(enteredAfter.Id, Utc(2026, 6, 16, 9), null));
             subject.Add(BlockedTransition(enteredOnDate.Id, Utc(2026, 6, 15, 9), null));
             subject.Add(BlockedTransition(leftOnDate.Id, Utc(2026, 6, 13, 9), Utc(2026, 6, 15, 8)));
+            subject.Add(BlockedTransition(enteredAtStartOfNextDay.Id, Utc(2026, 6, 16, 0), null));
+            subject.Add(BlockedTransition(leftAtStartOfDate.Id, Utc(2026, 6, 13, 9), Utc(2026, 6, 15, 0)));
             await subject.Save();
 
             var blockedWorkItemIds = subject.GetBlockedWorkItemIdsAt(ReconstructDate);
@@ -43,6 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 closedSpellCovering.Id,
                 enteredOnDate.Id,
                 leftOnDate.Id,
+                leftAtStartOfDate.Id,
             };
             Assert.That(blockedWorkItemIds, Is.EquivalentTo(expected));
         }
