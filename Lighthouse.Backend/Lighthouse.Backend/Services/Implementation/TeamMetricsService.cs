@@ -589,6 +589,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IEnumerable<WorkItem> GetBlockedEligibleItemsForTeam(Team team)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Getting blocked-eligible (To Do + In Progress) items for Team {TeamName}", team.Name);
 
             // Blocked items are those in an open state category (To Do OR Doing) — an item can be

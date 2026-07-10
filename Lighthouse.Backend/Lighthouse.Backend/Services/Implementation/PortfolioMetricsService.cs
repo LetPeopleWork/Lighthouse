@@ -239,6 +239,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IEnumerable<Feature> GetBlockedEligibleFeaturesForPortfolio(Portfolio portfolio)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Getting blocked-eligible (To Do + In Progress) features for Portfolio {PortfolioName}", portfolio.Name);
 
             // Features in an open state category (To Do OR Doing) are eligible to read as blocked — a

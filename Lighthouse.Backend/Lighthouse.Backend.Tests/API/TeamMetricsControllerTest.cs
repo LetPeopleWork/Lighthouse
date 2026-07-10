@@ -1684,6 +1684,55 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void GetBlockedItemsAtDate_LatestDate_ReturnsLiveBlockedEligibleItemsFilteredByIsBlocked()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var liveBlocked = new WorkItem { Id = 10, ReferenceId = "LIVE-10", TeamId = 1 };
+            var liveNotBlocked = new WorkItem { Id = 11, ReferenceId = "OPEN-11", TeamId = 1 };
+            teamMetricsServiceMock.Setup(x => x.GetBlockedEligibleItemsForTeam(team)).Returns(new List<WorkItem> { liveBlocked, liveNotBlocked });
+            blockedItemServiceMock.Setup(x => x.IsBlocked(It.IsAny<WorkItem>(), team)).Returns((WorkItem w, Team _) => w.Id == 10);
+            // The past branch would return something different (nothing) — pins targetDate >= today onto the live branch.
+            workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>())).Returns(new List<WorkItem>().AsQueryable());
+            workItemBlockedTransitionRepositoryMock.Setup(x => x.GetBlockedWorkItemIdsAt(It.IsAny<DateOnly>())).Returns(new List<int>());
+
+            var subject = CreateSubject();
+            var result = subject.GetBlockedItemsAtDate(1, DateTime.UtcNow.Date);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "LIVE-10" }));
+            }
+        }
+
+        [Test]
+        public void GetBlockedItemsAtDate_PastDate_ReturnsIntervalReconstructedItems()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var targetDate = DateOnly.FromDateTime(pastDate);
+            var covering = new WorkItem { Id = 42, ReferenceId = "BLK-42", TeamId = 1 };
+            var notCovering = new WorkItem { Id = 43, ReferenceId = "OPEN-43", TeamId = 1 };
+            workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>())).Returns(new List<WorkItem> { covering, notCovering }.AsQueryable());
+            workItemBlockedTransitionRepositoryMock.Setup(x => x.GetBlockedWorkItemIdsAt(targetDate)).Returns(new List<int> { 42 });
+
+            var subject = CreateSubject();
+            var result = subject.GetBlockedItemsAtDate(1, pastDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                var items = (result.Result as OkObjectResult)?.Value as IEnumerable<WorkItemDto>;
+                Assert.That(items?.Select(i => i.ReferenceId), Is.EqualTo(new[] { "BLK-42" }));
+            }
+        }
+
+        [Test]
         public void GetBlockedItemsAtDate_ReconstructedCountMatchesSnapshot_DoesNotWarn()
         {
             var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };

@@ -40,6 +40,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
         public async Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Recording blocked-item snapshot for Team {TeamId}", domainEvent.TeamId);
 
             var team = teamRepository.GetById(domainEvent.TeamId);
@@ -57,6 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
         public async Task HandleAsync(PortfolioFeaturesRefreshed domainEvent, CancellationToken cancellationToken)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Recording blocked-item snapshot for Portfolio {PortfolioId}", domainEvent.PortfolioId);
 
             var portfolio = portfolioRepository.GetById(domainEvent.PortfolioId);

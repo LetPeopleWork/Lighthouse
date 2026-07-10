@@ -512,6 +512,7 @@ namespace Lighthouse.Backend.API
                 return;
             }
 
+            // Stryker disable once all: diagnostic log text is not behaviour (the guard condition above is what matters)
             logger.LogWarning(
                 "Blocked-membership reconstruction for {OwnerType} {OwnerId} at {Date:yyyy-MM-dd} diverged from the captured snapshot (reconstructed {ReconstructedCount}, snapshot {SnapshotCount}); a transition-capture gap is likely.",
                 ownerType, ownerId, targetDate, reconstructedCount, snapshot.BlockedCount);
