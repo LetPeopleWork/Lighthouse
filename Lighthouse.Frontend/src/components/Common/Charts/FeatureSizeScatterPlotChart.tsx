@@ -86,6 +86,7 @@ type MarkerOptions = {
 const renderFallbackMarker = (
 	props: ScatterPropsExtended,
 	theme: Theme,
+	featuresTerm: string,
 ): JSX.Element => {
 	const providedColor = props.color;
 	const fallbackColor = providedColor ?? theme.palette.primary.main;
@@ -100,13 +101,13 @@ const renderFallbackMarker = (
 				color: fallbackColor,
 				isHighlighted: props.isHighlighted,
 				theme,
-				title: "Feature (unknown group) - click for details",
+				title: `${featuresTerm} (unknown group) - click for details`,
 			})}
 			{renderMarkerButton({
 				x: props.x,
 				y: props.y,
 				size: fallbackSize,
-				ariaLabel: "View feature details",
+				ariaLabel: `View ${featuresTerm.toLowerCase()} details`,
 				onClick: () => {},
 			})}
 		</>
@@ -123,7 +124,11 @@ const ScatterMarker = (props: ScatterMarkerProps, options: MarkerOptions) => {
 	];
 
 	if (!group) {
-		return renderFallbackMarker(props as ScatterPropsExtended, theme);
+		return renderFallbackMarker(
+			props as ScatterPropsExtended,
+			theme,
+			featuresTerm,
+		);
 	}
 
 	const bubbleSize = getBubbleSize(group.items.length);

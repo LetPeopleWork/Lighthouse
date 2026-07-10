@@ -14,6 +14,19 @@ vi.mock("react-router-dom", async () => {
 	};
 });
 
+vi.mock("../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => {
+			const terms: Record<string, string> = {
+				deliveries: "Deliveries",
+				feature: "Epic",
+				features: "Epics",
+			};
+			return terms[key] || key;
+		},
+	}),
+}));
+
 // Mock matchMedia before each test
 beforeEach(() => {
 	Object.defineProperty(globalThis, "matchMedia", {
@@ -527,6 +540,58 @@ describe("DataOverviewTable", () => {
 			expect(detailsHrefs).toContain("/teams/1");
 			expect(detailsHrefs).toContain("/teams/2");
 			expect(detailsHrefs).toContain("/teams/3");
+		});
+
+		it("renders Features column header with custom terminology", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			expect(screen.getByText("Epics")).toBeInTheDocument();
+		});
+
+		it("renders feature count cell with custom terminology", () => {
+			renderWithRouter(
+				<DataOverviewTable
+					data={sampleTeamData.slice(0, 1)}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			expect(screen.getByText("5 Epics")).toBeInTheDocument();
+		});
+
+		it("renders singular feature count with custom terminology", () => {
+			const singularData: IFeatureOwner[] = [
+				{
+					id: 1,
+					name: "Team 1",
+					remainingFeatures: 1,
+					features: [],
+					tags: [],
+					lastUpdated: new Date(),
+					serviceLevelExpectationProbability: 0,
+					serviceLevelExpectationRange: 0,
+					systemWIPLimit: 0,
+				},
+			];
+			renderWithRouter(
+				<DataOverviewTable
+					data={singularData}
+					title="teams"
+					api="teams"
+					onDelete={vi.fn()}
+					filterText=""
+				/>,
+			);
+			expect(screen.getByText("1 Epic")).toBeInTheDocument();
 		});
 
 		it("shows demo data link when no data is available", () => {

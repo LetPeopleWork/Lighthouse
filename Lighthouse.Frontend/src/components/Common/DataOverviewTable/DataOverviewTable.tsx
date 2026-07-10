@@ -54,6 +54,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	const { getTerm } = useTerminology();
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	const filteredData = data
 		.filter((item) => isMatchingFilterText(item))
@@ -116,14 +118,14 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 				},
 				{
 					field: "remainingFeatures",
-					headerName: "Features",
+					headerName: featuresTerm,
 					width: 120,
 					hideable: !isMobile,
 					renderCell: ({ value }) => {
 						const count = value as number;
 						return (
 							<Typography variant="body2">
-								{count} feature{count === 1 ? "" : "s"}
+								{count} {count === 1 ? featureTerm : featuresTerm}
 							</Typography>
 						);
 					},
@@ -279,6 +281,8 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 			isTablet,
 			hasAnyPortfolios,
 			getTerm,
+			featureTerm,
+			featuresTerm,
 			isPortfolio,
 			onDelete,
 			handleClone,

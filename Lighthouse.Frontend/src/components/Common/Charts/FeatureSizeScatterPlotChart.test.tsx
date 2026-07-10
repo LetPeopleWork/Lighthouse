@@ -240,6 +240,7 @@ vi.mock("../../../services/TerminologyContext", () => ({
 			const terms: Record<string, string> = {
 				features: "Features",
 				cycleTime: "Cycle Time",
+				feature: "Feature",
 			};
 			return terms[key] || key;
 		},

@@ -27,6 +27,7 @@ const FeatureSizePercentilesWidget: React.FC<FeatureSizePercentilesWidgetProps> 
 	const { getTerm } = useTerminology();
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	const formatItems = (value: number): string =>
 		value === 1 ? `${value} ${workItemTerm}` : `${value} ${workItemsTerm}`;
@@ -62,7 +63,7 @@ const FeatureSizePercentilesWidget: React.FC<FeatureSizePercentilesWidgetProps> 
 						noWrap
 						style={{ fontSize: "clamp(0.9rem, 1.8vw, 1rem)" }}
 					>
-						Feature Size Percentiles
+						{featuresTerm} Size Percentiles
 					</Typography>
 				</Box>
 
