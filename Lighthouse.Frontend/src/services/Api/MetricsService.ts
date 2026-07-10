@@ -202,6 +202,8 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		endDate: Date,
 	): Promise<BlockedCountSnapshot[]>;
 
+	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]>;
+
 	getFlowEfficiencyInfoForTeam(
 		id: number,
 		startDate: Date,
@@ -729,6 +731,30 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				`/${this.api}/${id}/metrics/blockedCountHistory?${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
+		});
+	}
+
+	async getBlockedItemsAtDate(
+		id: number,
+		date: Date | string,
+	): Promise<IWorkItem[]> {
+		return this.withErrorHandling(async () => {
+			const formattedDate =
+				typeof date === "string" ? date : this.formatLocalDate(date);
+			const response = await this.apiService.get<IWorkItem[]>(
+				`/${this.api}/${id}/metrics/blockedItemsAtDate?date=${formattedDate}`,
+			);
+
+			const workItems = response.data.map((workItem) => {
+				workItem.startedDate = new Date(workItem.startedDate);
+				workItem.closedDate = new Date(workItem.closedDate);
+				workItem.currentStateEnteredAt = workItem.currentStateEnteredAt
+					? new Date(workItem.currentStateEnteredAt)
+					: workItem.currentStateEnteredAt;
+				return workItem;
+			});
+
+			return workItems;
 		});
 	}
 

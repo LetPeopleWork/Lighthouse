@@ -1002,6 +1002,8 @@ function buildWidgetNodes(ctx: {
 		blockedCountHistory: (
 			<BlockedItemsOverTimeChart
 				snapshots={ctx.blockedCountHistory}
+				metricsService={ctx.metricsService}
+				ownerId={ctx.entity.id}
 				title={`${ctx.blockedTerm} Over Time`}
 			/>
 		),

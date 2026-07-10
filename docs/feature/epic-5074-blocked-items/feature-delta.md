@@ -1127,3 +1127,4 @@ The mandatory 4-reviewer gate (Eclipse/Architect/Forge/Sentinel on Haiku, in par
 ## Wave: DELIVER / [WHY] Upstream Issues
 
 - Slice-08 capture-gap/partial-set note delivered via response header (`X-Blocked-Reconstruction-Complete-From`) + structured log warning, not body — the DISTILL ATs #22-24 pin the body to a bare `WorkItemDto[]` array.
+- 08-05 MetricsService.getBlockedItemsAtDate mirrors the existing typed apiService.get idiom rather than Zod — the codebase has no Zod imports yet (Story 5232 'awaiting go'); introducing the first Zod boundary here is out of scope. The `X-Blocked-Reconstruction-Complete-From` header note is deferred at the FE (apiService.get returns only `.data`, not headers) — TODO left in BlockedItemsOverTimeChart; the click→WorkItemsDialog drill-in flow shipped.
