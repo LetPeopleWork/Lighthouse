@@ -25,15 +25,19 @@ namespace Lighthouse.Backend.API
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IBlockedItemService blockedItemService;
         private readonly IBlockedCountSnapshotRepository blockedCountSnapshotRepository;
+        private readonly IWorkItemRepository workItemRepository;
+        private readonly IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository;
         private readonly ILogger<TeamMetricsController> logger;
 
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, ILogger<TeamMetricsController> logger)
         {
             this.teamRepository = teamRepository;
             this.teamMetricsService = teamMetricsService;
             this.blackoutPeriodService = blackoutPeriodService;
             this.blockedItemService = blockedItemService;
             this.blockedCountSnapshotRepository = blockedCountSnapshotRepository;
+            this.workItemRepository = workItemRepository;
+            this.workItemBlockedTransitionRepository = workItemBlockedTransitionRepository;
             this.logger = logger;
         }
 
@@ -460,6 +464,31 @@ namespace Lighthouse.Backend.API
                         RecordedAt = s.RecordedAt.ToString("yyyy-MM-dd"),
                         BlockedCount = s.BlockedCount,
                     });
+            });
+        }
+
+        [HttpGet("blockedItemsAtDate")]
+        public ActionResult<IEnumerable<WorkItemDto>> GetBlockedItemsAtDate(int teamId, [FromQuery] DateTime date)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+            {
+                var targetDate = DateOnly.FromDateTime(date.Date);
+                var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+                if (targetDate >= today)
+                {
+                    return workItemRepository
+                        .GetAllByPredicate(w => w.TeamId == teamId)
+                        .AsEnumerable()
+                        .Where(w => blockedItemService.IsBlocked(w, team))
+                        .Select(w => new WorkItemDto(w, isBlocked: true, [], w.CurrentStateEnteredAt));
+                }
+
+                var blockedIds = workItemBlockedTransitionRepository.GetBlockedWorkItemIdsAt(targetDate);
+                return workItemRepository
+                    .GetAllByPredicate(w => w.TeamId == teamId && blockedIds.Contains(w.Id))
+                    .AsEnumerable()
+                    .Select(w => new WorkItemDto(w, isBlocked: true, [], null));
             });
         }
 

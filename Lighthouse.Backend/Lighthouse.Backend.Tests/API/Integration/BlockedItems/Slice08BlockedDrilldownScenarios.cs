@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     {
         // @driving_port @us-eb1 (happy: reconstruct membership at a past date from transition intervals)
         [Test]
-        [Ignore("DISTILL RED-pending — blockedItemsAtDate endpoint (ADR-099) built in DELIVER slice-08")]
         public async Task Items_blocked_at_a_past_date_are_reconstructed_from_transition_intervals()
         {
             var team = GivenATeam();
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-eb1 (happy: latest bar reconstructs from live IsBlocked)
         [Test]
-        [Ignore("DISTILL RED-pending — blockedItemsAtDate endpoint (ADR-099) built in DELIVER slice-08")]
         public async Task The_latest_date_reconstructs_from_the_live_blocked_set()
         {
             var team = GivenATeam();
@@ -49,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-eb1 (no items blocked at the clicked date -> honest empty, not an error)
         [Test]
-        [Ignore("DISTILL RED-pending — blockedItemsAtDate endpoint (ADR-099) built in DELIVER slice-08")]
         public async Task A_date_with_no_blocked_items_returns_an_empty_dialog()
         {
             var team = GivenATeam();

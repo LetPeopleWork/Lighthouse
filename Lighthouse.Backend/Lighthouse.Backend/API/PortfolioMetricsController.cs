@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -20,6 +21,8 @@ namespace Lighthouse.Backend.API
         IPortfolioMetricsService portfolioMetricsService,
         IBlackoutPeriodService blackoutPeriodService,
         IBlockedCountSnapshotRepository blockedCountSnapshotRepository,
+        IBlockedItemService blockedItemService,
+        IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
     {
@@ -465,6 +468,28 @@ namespace Lighthouse.Backend.API
                         RecordedAt = s.RecordedAt.ToString("yyyy-MM-dd"),
                         BlockedCount = s.BlockedCount,
                     });
+            });
+        }
+
+        [HttpGet("blockedItemsAtDate")]
+        public ActionResult<IEnumerable<WorkItemDto>> GetBlockedItemsAtDate(int portfolioId, [FromQuery] DateTime date)
+        {
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+            {
+                var targetDate = DateOnly.FromDateTime(date.Date);
+                var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+                if (targetDate >= today)
+                {
+                    return portfolio.Features
+                        .Where(f => blockedItemService.IsBlocked(f, portfolio))
+                        .Select(f => new WorkItemDto(f, isBlocked: true, [], f.CurrentStateEnteredAt));
+                }
+
+                var blockedIds = workItemBlockedTransitionRepository.GetBlockedWorkItemIdsAt(targetDate).ToHashSet();
+                return portfolio.Features
+                    .Where(f => blockedIds.Contains(f.Id))
+                    .Select(f => new WorkItemDto(f, isBlocked: true, [], null));
             });
         }
 
