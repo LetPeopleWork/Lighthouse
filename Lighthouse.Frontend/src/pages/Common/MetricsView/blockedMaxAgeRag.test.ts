@@ -47,7 +47,9 @@ describe("computeBlockedMaxAgeRag — max-blocked-age RAG (B2)", () => {
 		);
 	});
 
-	it("is none (disabled) when the threshold is 0", () => {
-		expect(computeBlockedMaxAgeRag(20, 0, terms).ragStatus).toBe("none");
+	it("is red (prompt to configure) when the threshold is 0", () => {
+		const result = computeBlockedMaxAgeRag(20, 0, terms);
+		expect(result.ragStatus).toBe("red");
+		expect(result.tipText).toContain("staleness threshold");
 	});
 });

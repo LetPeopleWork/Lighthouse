@@ -315,4 +315,87 @@ describe("BlockedItemsOverTimeChart", () => {
 		);
 		expect(screen.getByText("Live Blocked")).toBeInTheDocument();
 	});
+
+	it("surfaces a capture-gap note when reconstruction returns nothing for a counted bar", async () => {
+		// The bar records 5 blocked on this date, but transition capture doesn't reach that far
+		// back, so the endpoint reconstructs none — the dialog must say so, not show a bare empty.
+		const snapshots: BlockedCountSnapshot[] = [
+			{ recordedAt: "2026-06-01", blockedCount: 5 },
+		];
+		const service = createMockMetricsService([]);
+
+		render(
+			<BlockedItemsOverTimeChart
+				snapshots={snapshots}
+				metricsService={service}
+				ownerId={1}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("bar-0"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument(),
+		);
+
+		expect(screen.getByTestId("dialog-title")).toHaveTextContent(
+			"5 blocked on this date — per-item detail isn't recorded this far back",
+		);
+	});
+
+	it("surfaces a partial capture-gap note when reconstruction returns fewer than the counted bar", async () => {
+		const snapshots: BlockedCountSnapshot[] = [
+			{ recordedAt: "2026-06-01", blockedCount: 5 },
+		];
+		const service = createMockMetricsService([
+			workItem(1, "Blocked Alpha"),
+			workItem(2, "Blocked Beta"),
+		]);
+
+		render(
+			<BlockedItemsOverTimeChart
+				snapshots={snapshots}
+				metricsService={service}
+				ownerId={1}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("bar-0"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument(),
+		);
+
+		expect(screen.getByTestId("dialog-title")).toHaveTextContent(
+			"showing 2 of 5 — earlier per-item detail isn't recorded this far back",
+		);
+	});
+
+	it("shows no capture-gap note when reconstruction matches the counted bar", async () => {
+		const snapshots: BlockedCountSnapshot[] = [
+			{ recordedAt: "2026-06-01", blockedCount: 2 },
+		];
+		const service = createMockMetricsService([
+			workItem(1, "Blocked Alpha"),
+			workItem(2, "Blocked Beta"),
+		]);
+
+		render(
+			<BlockedItemsOverTimeChart
+				snapshots={snapshots}
+				metricsService={service}
+				ownerId={1}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("bar-0"));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument(),
+		);
+
+		expect(screen.getByTestId("dialog-title")).not.toHaveTextContent(
+			"per-item detail isn't recorded",
+		);
+	});
 });

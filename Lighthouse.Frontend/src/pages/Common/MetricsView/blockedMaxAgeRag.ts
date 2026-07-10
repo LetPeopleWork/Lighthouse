@@ -32,8 +32,10 @@ export function computeBlockedMaxAgeRag(
 	terms: RagTerms,
 ): BlockedRagResult {
 	if (thresholdDays <= 0) {
+		// Unconfigured is surfaced as RED (not hidden) so the widget prompts the user to configure
+		// the threshold, consistent with how other RAG states flag missing configuration.
 		return {
-			ragStatus: "none",
+			ragStatus: "red",
 			tipText: `Define a ${terms.blocked} staleness threshold in settings to track aging ${terms.workItems}.`,
 		};
 	}

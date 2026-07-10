@@ -36,6 +36,7 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [dialogItems, setDialogItems] = useState<IWorkItem[]>([]);
 	const [dialogDate, setDialogDate] = useState("");
+	const [dialogNote, setDialogNote] = useState("");
 
 	if (!snapshots || snapshots.length === 0) {
 		return (
@@ -54,13 +55,30 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 		value: s.blockedCount,
 	}));
 
-	const openBlockedItemsForDate = async (date: string): Promise<void> => {
+	// Historical membership is reconstructed from blocked transitions, which only reach back to when
+	// transition capture began. When fewer items come back than the bar's recorded count, that gap is a
+	// capture limitation — surface it honestly instead of showing a bare empty dialog.
+	const buildCaptureGapNote = (
+		shown: number,
+		recordedCount: number,
+	): string => {
+		if (recordedCount <= shown) {
+			return "";
+		}
+		return shown === 0
+			? `${recordedCount} blocked on this date — per-item detail isn't recorded this far back`
+			: `showing ${shown} of ${recordedCount} — earlier per-item detail isn't recorded this far back`;
+	};
+
+	const openBlockedItemsForDate = async (
+		date: string,
+		recordedCount: number,
+	): Promise<void> => {
 		const items = await metricsService.getBlockedItemsAtDate(ownerId, date);
 		setDialogItems(items);
 		setDialogDate(date);
+		setDialogNote(buildCaptureGapNote(items.length, recordedCount));
 		setDialogOpen(true);
-		// TODO(08): surface X-Blocked-Reconstruction-Complete-From header note
-		// once apiService.get exposes response headers (deferred — see feature-delta.md).
 	};
 
 	return (
@@ -76,7 +94,7 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 						onItemClick={(_event, params) => {
 							const clicked = dataset[params.dataIndex];
 							if (clicked) {
-								void openBlockedItemsForDate(clicked.label);
+								void openBlockedItemsForDate(clicked.label, clicked.value);
 							}
 						}}
 						yAxis={[
@@ -107,7 +125,11 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 				</Box>
 			</CardContent>
 			<WorkItemsDialog
-				title={`${title} — ${dialogDate}`}
+				title={
+					dialogNote
+						? `${title} — ${dialogDate} · ${dialogNote}`
+						: `${title} — ${dialogDate}`
+				}
 				items={dialogItems}
 				open={dialogOpen}
 				onClose={() => setDialogOpen(false)}
