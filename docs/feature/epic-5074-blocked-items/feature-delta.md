@@ -1123,3 +1123,7 @@ Date: 2026-07-07 | Density: lean | Stack: NUnit (backend acceptance via `WebAppl
 ### [REF] Final Wave Review Gate — PENDING (user-gated)
 
 The mandatory 4-reviewer gate (Eclipse/Architect/Forge/Sentinel on Haiku, in parallel over the full 4-wave `feature-delta.md`) is NOT auto-dispatched — surfaced for the user to trigger (spawning agents is user-gated in this session). Sentinel (`@nw-acceptance-designer-reviewer`) is the structural-correctness reviewer that never skips.
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+- Slice-08 capture-gap/partial-set note delivered via response header (`X-Blocked-Reconstruction-Complete-From`) + structured log warning, not body — the DISTILL ATs #22-24 pin the body to a bare `WorkItemDto[]` array.

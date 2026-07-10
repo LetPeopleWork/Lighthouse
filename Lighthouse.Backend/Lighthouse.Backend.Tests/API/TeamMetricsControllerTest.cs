@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -23,6 +24,9 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
         private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
+        private Mock<IWorkItemRepository> workItemRepositoryMock;
+        private Mock<IWorkItemBlockedTransitionRepository> workItemBlockedTransitionRepositoryMock;
+        private Mock<ILogger<TeamMetricsController>> loggerMock;
 
         [SetUp]
         public void Setup()
@@ -32,6 +36,9 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blockedItemServiceMock = new Mock<IBlockedItemService>();
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
+            workItemRepositoryMock = new Mock<IWorkItemRepository>();
+            workItemBlockedTransitionRepositoryMock = new Mock<IWorkItemBlockedTransitionRepository>();
+            loggerMock = new Mock<ILogger<TeamMetricsController>>();
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
@@ -1637,9 +1644,87 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(dtos!, Is.Empty);
         }
 
+        [Test]
+        public void GetBlockedItemsAtDate_ReconstructedCountDivergesFromSnapshot_LogsCaptureGapWarning()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var targetDate = DateOnly.FromDateTime(pastDate);
+
+            // Interval reconstruction recovers exactly ONE blocked item at the target date...
+            var blockedItem = new WorkItem { Id = 42, ReferenceId = "BLK-42", TeamId = 1 };
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(new List<WorkItem> { blockedItem }.AsQueryable());
+            workItemBlockedTransitionRepositoryMock
+                .Setup(x => x.GetBlockedWorkItemIdsAt(targetDate))
+                .Returns(new List<int> { 42 });
+            workItemBlockedTransitionRepositoryMock
+                .Setup(x => x.GetAll())
+                .Returns(new List<WorkItemBlockedTransition>());
+
+            // ...but the captured snapshot for that date says 3 — a divergence that must never be silent.
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<BlockedCountSnapshot, bool>>()))
+                .Returns(new BlockedCountSnapshot { OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = targetDate, BlockedCount = 3 });
+
+            var subject = CreateSubject();
+            subject.GetBlockedItemsAtDate(1, pastDate);
+
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Test]
+        public void GetBlockedItemsAtDate_ReconstructedCountMatchesSnapshot_DoesNotWarn()
+        {
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+
+            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var targetDate = DateOnly.FromDateTime(pastDate);
+
+            var blockedItem = new WorkItem { Id = 42, ReferenceId = "BLK-42", TeamId = 1 };
+            workItemRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Returns(new List<WorkItem> { blockedItem }.AsQueryable());
+            workItemBlockedTransitionRepositoryMock
+                .Setup(x => x.GetBlockedWorkItemIdsAt(targetDate))
+                .Returns(new List<int> { 42 });
+            workItemBlockedTransitionRepositoryMock
+                .Setup(x => x.GetAll())
+                .Returns(new List<WorkItemBlockedTransition>());
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<BlockedCountSnapshot, bool>>()))
+                .Returns(new BlockedCountSnapshot { OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = targetDate, BlockedCount = 1 });
+
+            var subject = CreateSubject();
+            subject.GetBlockedItemsAtDate(1, pastDate);
+
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Never);
+        }
+
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, new Mock<IWorkItemRepository>().Object, new Mock<IWorkItemBlockedTransitionRepository>().Object, new Mock<ILogger<TeamMetricsController>>().Object);
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, loggerMock.Object)
+            {
+                ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+            };
         }
     }
 }

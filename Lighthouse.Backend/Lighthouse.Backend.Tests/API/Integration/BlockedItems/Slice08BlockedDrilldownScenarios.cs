@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @invariant @us-eb1 (reconciliation: reconstructed count == BlockedCountSnapshot for that date)
         [Test]
-        [Ignore("DISTILL RED-pending — blockedItemsAtDate endpoint (ADR-099) built in DELIVER slice-08")]
         public async Task The_reconstructed_membership_count_reconciles_with_the_snapshot_count()
         {
             var team = GivenATeam();
@@ -75,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @edge @us-eb1 (a date before capture started -> honest partial set, never a fabricated full history)
         [Test]
-        [Ignore("DISTILL RED-pending — blockedItemsAtDate endpoint (ADR-099) built in DELIVER slice-08")]
         public async Task A_date_before_capture_started_is_served_as_a_partial_set()
         {
             var team = GivenATeam();
