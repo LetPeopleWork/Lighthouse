@@ -5,8 +5,15 @@ import FeatureSizePercentilesWidget from "./FeatureSizePercentilesWidget";
 
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) =>
-			key === "WORK_ITEM" ? "work item" : "work items",
+		getTerm: (key: string) => {
+			const terms: Record<string, string> = {
+				workItem: "work item",
+				workItems: "work items",
+				feature: "Epic",
+				features: "Epics",
+			};
+			return terms[key] || key;
+		},
 	}),
 }));
 
@@ -72,9 +79,9 @@ describe("FeatureSizePercentilesWidget", () => {
 		expect(ninetyFiveIdx).toBeLessThan(fiftyIdx);
 	});
 
-	it("renders title text", () => {
+	it("renders title text with custom terminology", () => {
 		render(<FeatureSizePercentilesWidget data={defaultData} />);
-		expect(screen.getByText("Feature Size Percentiles")).toBeInTheDocument();
+		expect(screen.getByText("Epics Size Percentiles")).toBeInTheDocument();
 	});
 
 	it("exposes comparison payload via getTrendPayload", () => {
