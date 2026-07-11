@@ -52,9 +52,9 @@ Flow Overview widgets display trend indicators comparing the current date range 
 | Method | Widgets | How it works |
 |---|---|---|
 | **Snapshot compare** | WIP Overview, Features Worked On (Teams), Total Work Item Age | Compares the snapshot value at the end date against the snapshot value at the start date. |
-| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Feature Size Percentiles | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
+| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Feature Size Percentiles, Blocked Overview | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
 
-Blocked Overview does not show a trend indicator.
+Blocked Overview compares the current blocked count against the blocked-count snapshot on the last day of the previous period. Because blocked-count history is recorded going forward, a freshly-recording instance may not have a snapshot before the previous-period boundary yet — in that case the trend shows a neutral `—` with a hint, not a fabricated zero.
 
 For percentile widgets (Cycle Time Percentiles and Feature Size Percentiles), the trend tooltip shows a per-percentile breakdown in `previous → **current**` format with the current-period values emphasized.
 
@@ -92,14 +92,14 @@ Use the **View Data** button to open the full list of in-progress items that cur
 | **Flow Metric** | Work Item Age |
 | **Affected by Filtering** | No |
 
-This widget shows how many items are currently blocked.
+This widget shows how many items are currently blocked. The status is driven by the **count** of blocked items — the target is always zero, so even a single blocked item raises a warning. It also shows a previous-period trend (see [Trend Indicators](#trend-indicators)).
 
 ![Blocked Overview](../assets/features/metrics/blockedOverview.png)
 
 The target is always zero blocked items. Use the **View Data** button to see all currently blocked items.
 
 {: .important}
-This widget is **not affected** by the date filtering. It always shows the **current** blocked state.
+The blocked **count** is **not affected** by date filtering — it always shows the **current** blocked state. The trend indicator, however, compares against the previous period of the selected date range (see [Trend Indicators](#trend-indicators)).
 
 ## Status Indicator
 
@@ -108,6 +108,26 @@ This widget is **not affected** by the date filtering. It always shows the **cur
 | 🔴 Act | No blocked indicators are configured, *or* 2 or more items are blocked. |
 | 🟡 Observe | Exactly 1 item is blocked. |
 | 🟢 Sustain | No items are blocked. |
+
+# Blocked Over Time
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Work Item Age |
+| **Affected by Filtering** | Yes — bars span the selected date range |
+
+This chart plots how many items were blocked on each recorded day, so you can see whether blocking is trending up or down over time. Values come from the forward-only blocked-count snapshots Lighthouse records each sync — history begins when the instance first started recording, not retroactively.
+
+Click any bar to drill into the items that were blocked on that date. Lighthouse reconstructs the point-in-time membership from its blocked-transition history and lists those items in the standard **View Data** dialog. When the reconstructed list is smaller than the recorded count for that day — because capture began part-way through, or a sync gap dropped a transition — the dialog title carries an honest capture-gap note so the number is never silently misrepresented.
+
+## Status Indicator
+The status reflects how long the oldest currently-blocked item has been blocked, relative to the blocked staleness threshold (`t` days). The amber band starts at 75% of the threshold.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No blocked staleness threshold is configured, *or* the oldest blocked item has been blocked ≥ `t` days. |
+| 🟡 Observe | The oldest blocked item has been blocked ≥ 75% of `t` (aging toward the threshold) but less than `t`. |
+| 🟢 Sustain | No items are blocked, *or* the oldest blocked item is well within the threshold. |
 
 # Stale Items Overview
 
@@ -233,9 +253,6 @@ The chart distinguishes items by type, using different colors for each item type
 
 {: .note}
 If there is a blocked item, it will appear as a red dot in the chart.
-
-{: .note}
-Jira note: Lighthouse identifies blocked items using the blocked tags or blocked states configured on Teams/Portfolios. If you use Jira's built-in `Flag` feature, add a `Flagged` label to your blocked tags so flagged issues appear as blocked in charts and widgets.
 
 ## Cycle Time vs. Work Item Age Reference Lines
 

@@ -236,19 +236,13 @@ You can enable a Service Level Expectation (SLE) for your teams. If you do, you 
 If you enable the SLE, you will get additional information in the [Metrics View](../metrics/metrics.html).
 
 ## Blocked Items
-You can configure how you identify blocked items in your process. Lighthouse offers two options for this.
-
-### Tags
-If you use tags (*labels* in Jira), you can specify which tag mean that an item is blocked. You are free to define whatever and how many tags you like.
-
-{: .note}
-Jira note: If you use Jira's built-in `Flag` functionality, add `Flagged` to the blocked tags in Lighthouse and flagged issues will be detected and visualized as blocked.
-
-### States
-You can also specify states that indicate a blockage of your work. You can pick any state that you defined as [doing state](#states).
+Enable **Configure Blocked Items** to define what "blocked" means for your process. Lighthouse uses a **rule builder** ("Mark work items as blocked where…") — the same rule engine used elsewhere in the product. Add one or more conditions on a field (for example a tag/label, a state, or any other work item field), pick an operator and a value, and combine them with **and** / **or**. An item counts as blocked when the rule matches.
 
 {: .important}
-We do not recommend using states for identifying blocked work. Tags work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
+We do not recommend identifying blocked work by *state* alone. Tags/labels work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
+
+### Blocked Staleness Threshold
+Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/widgets.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one.
 
 ## Process Behaviour Chart Baseline
 Lighthouse can show **Process Behaviour Charts (PBC)** in the Metrics view. To enable them, configure a **baseline start** and **baseline end** date.
