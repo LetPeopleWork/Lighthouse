@@ -1,0 +1,320 @@
+{
+  "roadmap": {
+    "project_id": "epic-5074-blocked-items",
+    "created_at": "2026-07-07",
+    "total_steps": 10,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Enhancement batch (slices 06-08) on the shipped Blocked-Items foundation: B3 previous-period trend on the Blocked overview widget (06), B2 max-blocked-age RAG status on the same widget (07), B1 drill from a blocked-over-time bar into the items blocked at that date via reconstruction from WorkItemBlockedTransition intervals (08).",
+    "overview": "Three phases sequenced cheapest/lowest-risk first. Phase 06 (2 steps, FE-only): implement computeBlockedTrend in the existing scaffold + feed the existing WidgetShell trend chrome (widgetTrends map + trendPolicy). Phase 07 (2 steps, FE-only): implement computeBlockedMaxAgeRag in the existing scaffold + re-drive the existing computeBlockedOverviewRag call site from count to max blocked age vs blockedStalenessThresholdDays. Phase 08 (6 steps, backend + FE + E2E): ~2h reconcile SPIKE go/no-go, then interval-overlap reconstruct query, blockedItemsAtDate endpoint (Team + Portfolio twin, version-gated per ADR-072), reconciliation guard + partial-set note, FE BarChart onItemClick -> existing WorkItemsDialog, and one Playwright demo-data drill-through. All chrome (WidgetShell RAG chip, trend arrow, WorkItemsDialog) is REUSED per the DESIGN reuse-analysis table; only B1 point-in-time reconstruction is genuinely new (ADR-099)."
+  },
+  "validation": {
+    "status": "pending",
+    "reviewer": "nw-solution-architect-reviewer",
+    "reviewed_at": null,
+    "notes": "Enhancement batch roadmap for slices 06-08. Slices 01-05 already shipped (05 skipped per ADR-071). RED classification scenarios #22-36 (15 RED, 0 BROKEN) drive the outer loop. DESIGN back-prop confirmed RAG/trend/current-dialog chrome already exists -> B2/B3 are re-drive/feed, B1's live-set dialog is already covered, only historical reconstruction is new."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5074-blocked-items/feature-delta.md",
+    "slices": [
+      "docs/feature/epic-5074-blocked-items/slices/slice-06-blocked-previous-period-trend.md",
+      "docs/feature/epic-5074-blocked-items/slices/slice-07-blocked-rag-status.md",
+      "docs/feature/epic-5074-blocked-items/slices/slice-08-blocked-chart-drilldown.md"
+    ],
+    "red_classification": "docs/feature/epic-5074-blocked-items/distill/red-classification.md",
+    "gherkin": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownSpecifications.cs",
+      "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.test.ts",
+      "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts"
+    ],
+    "architecture": [
+      "docs/product/architecture/brief.md",
+      "docs/product/architecture/adr-099-blocked-membership-at-date-reconstruction.md",
+      "docs/product/architecture/adr-072-blocked-contract-changes-and-client-version-gate.md"
+    ]
+  },
+  "out_of_scope": [
+    "Lighthouse-Clients CLI/MCP wrapper for the new blockedItemsAtDate read endpoint (separate repo, ADR-072 handoff — version-gate the wrapper there, NOT edited in this repo)",
+    "Per-work-item-type historical filtering (scenario #16) — @deferred UC-2; additive follow-up with no-rework guarantee",
+    "Persisting per-snapshot item-id membership on BlockedCountSnapshot (explicitly rejected by ADR-099 — reconstruct on read instead; BlockedCountSnapshot unchanged, no migration)",
+    "A separate RAG threshold distinct from blockedStalenessThresholdDays (B2 deliberately reuses the one line the admin already tuned)",
+    "Any new backend endpoint or persisted field for B2/B3 (client-side off already-loaded blockedItems + blockedCountHistory)",
+    "Sparkline / mini-chart on the widget (the existing over-time chart already covers that)"
+  ],
+  "phases": [
+    {
+      "id": "06",
+      "name": "B3 — previous-period trend on the Blocked overview widget",
+      "description": "FE-only. Implement the computeBlockedTrend pure selector in the existing scaffold and feed the existing WidgetShell trend chrome. Baseline = BlockedCountSnapshot on the last day of the prior period (period = the selected [startDate,endDate]); direction none when no boundary snapshot. No backend.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Implement computeBlockedTrend selector + enable blockedTrend RED specs",
+          "description": "Implement computeBlockedTrend(blockedCountHistory, startDate, endDate): TrendPayload in the existing scaffold blockedTrend.ts (remove __SCAFFOLD__). Baseline = the BlockedCountSnapshot value on the last day of the previous period (the snapshot at startDate - 1 day per OQ-EB-D2); direction up/down/flat vs current with numeric delta; direction 'none' (chrome hidden) when no snapshot at/before the boundary and for empty/null history. Flip blockedTrend.test.ts describe.skip -> describe.",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.test.ts",
+          "scenario_name": "reports an up/worse direction when current exceeds the prior-period boundary",
+          "dependencies": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.test.ts"
+          ],
+          "criteria": [
+            "computeBlockedTrend returns a TrendPayload with direction (up/down/flat/none) + numeric delta, matching the existing TrendPayload/TrendChrome contract",
+            "Baseline = BlockedCountSnapshot on the last day of the previous period (snapshot at startDate - 1 day); no fabricated zero-delta",
+            "direction 'none' (chrome hidden) when no snapshot at/before the boundary, and for empty/null history",
+            "__SCAFFOLD__ marker removed; blockedTrend.test.ts describe.skip -> describe; all 5 specs green (#32-#36)",
+            "Pure selector — no side effects, no backend call",
+            "pnpm test -- blockedTrend green; pnpm build zero TS/Biome/Vite warnings"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): the RED specs authored in DISTILL (blockedTrend.test.ts, #32-#36) are the acceptance contract for this pure selector — implement to GREEN, do not author new tests here (acceptance-designer owns test authoring). Selector is a pure function (return-only contract shape, principle 12) over already-loaded blockedCountHistory; no capability injection needed. EXEMPT FROM PARADIGM at property level: contract is a small enumerated direction set already covered by the 5 example specs; the boundary (start-1d present/absent) is the invariant those examples pin."
+        },
+        {
+          "id": "06-02",
+          "name": "Wire computeBlockedTrend into widgetTrends + flip blockedOverview trendPolicy",
+          "description": "Add a blockedOverview entry to the existing widgetTrends map in BaseMetricsView.tsx (mirrors wipOverview?.comparison) fed by computeBlockedTrend, and flip trendPolicy.blockedOverview off 'none' in categoryMetadata.ts so WidgetShell renders the trend chrome. No new UI — WidgetShell.trend already renders the payload.",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "the blockedOverview widget renders the widget-trend-* chrome when a trend payload is supplied",
+          "dependencies": ["06-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "criteria": [
+            "widgetTrends map gains a blockedOverview entry fed by computeBlockedTrend(blockedCountHistory, startDate, endDate)",
+            "trendPolicy.blockedOverview flipped off 'none' in categoryMetadata.ts",
+            "WidgetShell renders the widget-trend-* chrome for blockedOverview (existing chrome reused, no new component)",
+            "No-baseline case renders no arrow (direction 'none' -> chrome hidden), never a delta of 0",
+            "Works for both Team and Portfolio (same widget, same blockedCountHistory shape)",
+            "pnpm test green; pnpm build zero TS/Biome/Vite warnings"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): wiring assertion is single-example (verifies the widget-trend-* test-id renders for blockedOverview) — this is integration wiring, not an invariant, so example-based is correct. Reuse the existing WidgetShell trend chrome and the widgetTrends map shape (mirror wipOverview?.comparison); do NOT introduce a new widget or trend component (DESIGN reuse-analysis: WidgetShell trend chrome = REUSE)."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "B2 — max-blocked-age RAG status on the Blocked overview widget",
+      "description": "FE-only. Implement computeBlockedMaxAgeRag in the existing scaffold and re-drive the existing computeBlockedOverviewRag call site from count to max blocked age vs blockedStalenessThresholdDays: RED past threshold, AMBER in an aging band (default >= 75% of threshold), GREEN otherwise, 'none' at threshold 0. No backend.",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "Implement computeBlockedMaxAgeRag selector + enable blockedMaxAgeRag RED specs",
+          "description": "Implement computeBlockedMaxAgeRag(blockedItems, blockedStalenessThresholdDays) in the existing scaffold blockedMaxAgeRag.ts (remove __SCAFFOLD__). Computes MAX blocked age across currently-blocked items from each item's blockedSince: RED when max age >= threshold, AMBER when in the aging band (default >= 75% of threshold, documented default OQ-EB-D1, not a user setting), GREEN when nothing aging or no blocked items (max age null), 'none' when threshold is 0. Items still establishing a blockedSince baseline are excluded from the max-age computation. Flip blockedMaxAgeRag.test.ts describe.skip -> describe.",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts",
+          "scenario_name": "is RED when an item is blocked past the threshold",
+          "dependencies": ["06-02"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts"
+          ],
+          "criteria": [
+            "computeBlockedMaxAgeRag returns RED past threshold, AMBER in the aging band (default >= 75% of blockedStalenessThresholdDays), GREEN when nothing aging",
+            "GREEN when there are no blocked items (max age null); 'none' (RAG disabled) when threshold is 0",
+            "Items with no established blockedSince baseline are excluded from the max-age computation (do not force a colour)",
+            "AMBER-band fraction is a documented default constant (OQ-EB-D1), not a new user setting",
+            "__SCAFFOLD__ marker removed; blockedMaxAgeRag.test.ts describe.skip -> describe; all 5 specs green (#27-#31)",
+            "pnpm test -- blockedMaxAgeRag green; pnpm build zero TS/Biome/Vite warnings"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): the RED specs authored in DISTILL (blockedMaxAgeRag.test.ts, #27-#31) are the acceptance contract — implement to GREEN, do not author new tests. Pure function (return-only contract shape, principle 12) over already-loaded blockedItems. Boundary discipline: RED uses >= (at-threshold = stale) consistent with the shipped blocked-duration staleness rule; verify at-threshold and one-over via the enumerated specs."
+        },
+        {
+          "id": "07-02",
+          "name": "Re-drive computeBlockedOverviewRag call site to max-blocked-age + thread blockedSince",
+          "description": "In BaseMetricsView.tsx (~L264) swap the existing computeBlockedOverviewRag call to computeBlockedMaxAgeRag, feeding blockedItems (with blockedSince) + ctx.blockedStalenessThresholdDays. Confirm blockedSince reaches the blockedOverview widget site; thread the prop through if only blockedItems.length is currently carried (slice-07 watch-item). WidgetShell rag-status chip is reused — no new UI.",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "the blockedOverview widget renders the rag-status chip driven by max blocked age",
+          "dependencies": ["07-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "criteria": [
+            "blockedOverview RAG call site re-keyed from count to computeBlockedMaxAgeRag(blockedItems, blockedStalenessThresholdDays)",
+            "blockedSince confirmed present on the blockedItems handed to the blockedOverview widget site (prop threaded if it was only length before)",
+            "Existing WidgetShell rag-status chip reused (no new indicator component); RED/AMBER/GREEN/none reflected on the chip",
+            "Accessible: colour is not the only signal — tooltip states the oldest blocker's age (consistent with the app's stale treatment)",
+            "Works for both Team and Portfolio",
+            "pnpm test green; pnpm build zero TS/Biome/Vite warnings"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): call-site re-drive is integration wiring — single-example assertion on the rag-status test-id is correct. Reuse the existing WidgetShell rag-status chrome and the single computeBlockedOverviewRag call site (DESIGN reuse-analysis: EXTEND the one call site, do not add a second RAG path). Verify blockedItems carries blockedSince to the widget site before wiring."
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "B1 — drill from a blocked-over-time bar into the items blocked at that date",
+      "description": "Backend + FE + E2E. Start with a ~2h reconcile SPIKE (go/no-go on interval-overlap reconstruction). Then a new read-only GET .../metrics/blockedItemsAtDate?date=T on TeamMetricsController + PortfolioMetricsController twin, reconstructing membership from WorkItemBlockedTransition interval overlap (EnteredAt.Date <= T AND (LeftAt null OR LeftAt.Date >= T)) joined to owner work items, returning WorkItemDto[]; latest date reconstructs from live IsBlocked; version-gated per ADR-072. FE wires BlockedItemsOverTimeChart BarChart onItemClick to the existing WorkItemsDialog. One Playwright demo-data drill-through. Reconstruct-not-persist per ADR-099 — BlockedCountSnapshot unchanged, no migration.",
+      "steps": [
+        {
+          "id": "08-01",
+          "name": "Pre-slice SPIKE — reconcile interval-overlap reconstruction vs snapshot count",
+          "description": "De-risk gate (ADR-099). Build a throwaway reconciliation probe that reconstructs blocked membership at sampled past dates from WorkItemBlockedTransition interval overlap and compares the count against BlockedCountSnapshot.blockedCount for those dates. Go if reconciled within +/-1 for the sampled dates; NO-GO -> fall back to current-only click (latest bar interactive, historical bars inert) and record the decision. Output is a recorded go/no-go finding plus the probe, which seeds scenario #25's reconciliation assertion.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownSpecifications.cs",
+          "scenario_name": "reconciliation probe: reconstructed count matches BlockedCountSnapshot within tolerance on sampled dates",
+          "dependencies": ["07-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownSpecifications.cs"
+          ],
+          "criteria": [
+            "Reconciliation probe reconstructs membership at sampled past dates via interval overlap and compares count to BlockedCountSnapshot.blockedCount",
+            "GO decision recorded when reconstructed count is within +/-1 of the snapshot count on the sampled dates",
+            "NO-GO path documented: fall back to current-only click (latest bar only) and mark historical bars non-interactive",
+            "Probe reuses the seeded WorkItemBlockedTransition + BlockedCountSnapshot fixtures (real EF InMemory); no production code shipped in this step",
+            "dotnet build zero warnings; dotnet test green"
+          ],
+          "estimated_hours": 2,
+          "implementation_notes": "Earned-Trust (principle 13): this SPIKE is the empirical probe that the reconstruction contract can be honoured against real transition data before the endpoint is committed — asking 'what happens if the capture gaps lie?' up front. It is a mandated de-risk gate (ADR-099, slice-08 brief), not a generic validation step. Deliverable is the recorded go/no-go finding + the reusable probe that becomes scenario #25's basis (Specifications.cs reconcile helper)."
+        },
+        {
+          "id": "08-02",
+          "name": "Interval-overlap-at-date reconstruct query on WorkItemBlockedTransition repository",
+          "description": "Add a read-only interval-overlap-at-point read to IWorkItemBlockedTransitionRepository + its implementation: given an owner and date T, return the WorkItemIds whose blocked spell covers T (EnteredAt.Date <= T AND (LeftAt is null OR LeftAt.Date >= T)). Reuses the existing owned-entity store; no new adapter, no schema change.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs",
+          "scenario_name": "Items_blocked_at_a_past_date_are_reconstructed_from_transition_intervals",
+          "dependencies": ["08-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemBlockedTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemBlockedTransitionRepository.cs"
+          ],
+          "criteria": [
+            "IWorkItemBlockedTransitionRepository exposes a read-only interval-overlap-at-date query (or GetAllByPredicate use) returning covering transitions/WorkItemIds for date T",
+            "Predicate is EnteredAt.Date <= T AND (LeftAt is null OR LeftAt.Date >= T) per ADR-099",
+            "Read-only — no writes, no new persisted membership; BlockedCountSnapshot untouched",
+            "Reuses the existing owned-entity store; no new adapter",
+            "dotnet build zero warnings; dotnet test green"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): driven-adapter behaviour is exercised via the B1 backend ATs over real EF InMemory (adapter coverage table) — single-example integration is correct for wiring the query; the interval-overlap invariant is pinned by the covering vs non-covering seed in scenario #22. Principle 12: this is a read-only driving-port-serving query — the repository read surface must NOT expose write methods (split read/write). ADR-099 reconstruct-not-persist upheld."
+        },
+        {
+          "id": "08-03",
+          "name": "blockedItemsAtDate endpoint (Team + Portfolio twin) + enable scenarios #22-#24",
+          "description": "New GET /api/latest/teams/{id}/metrics/blockedItemsAtDate?date=T on TeamMetricsController and the twin on PortfolioMetricsController, mirroring the blockedCountHistory GetEntityByIdAnExecuteAction shape under the existing class-level RbacGuard. Reconstructs via the 08-02 query joined to owner work items (WorkItem.TeamId for Team, feature owner for Portfolio), returns WorkItemDto[]; latest date reconstructs from live IsBlocked; empty date returns an empty array. Version-gate per ADR-072. Remove [Ignore] from scenarios #22 (past date), #23 (latest live), #24 (empty dialog) one at a time.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs",
+          "scenario_name": "The_latest_date_reconstructs_from_the_live_blocked_set",
+          "dependencies": ["08-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs"
+          ],
+          "criteria": [
+            "GET .../teams/{id}/metrics/blockedItemsAtDate?date=T returns WorkItemDto[] for the reconstructed set; Portfolio twin on PortfolioMetricsController with the same interval predicate",
+            "Existing class-level RbacGuard (TeamRead/PortfolioRead) applies; side-effect-free GET (no writes)",
+            "Latest date reconstructs from live IsBlocked; a date with no covering interval returns an empty array",
+            "New read endpoint version-gated for CLI/MCP per ADR-072 (wrapper handoff, not edited here)",
+            "Scenario #22 Items_blocked_at_a_past_date_are_reconstructed_from_transition_intervals [Ignore] removed and passes",
+            "Scenario #23 The_latest_date_reconstructs_from_the_live_blocked_set [Ignore] removed and passes",
+            "Scenario #24 A_date_with_no_blocked_items_returns_an_empty_dialog [Ignore] removed and passes",
+            "dotnet build zero warnings; dotnet test --filter BlockedItems green"
+          ],
+          "estimated_hours": 2.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): the DISTILL-authored ATs (#22-#24, Slice08BlockedDrilldownScenarios/Specifications.cs) are the acceptance contract over the real host (WebApplicationFactory + AsTeamAdmin) — implement to GREEN, do not author new tests. Walking skeleton for the batch = scenario #22 through the real adapter. Mirror the existing blockedCountHistory endpoint shape (DESIGN reuse-analysis: EXTEND/mirror). Principle 10/13: new read endpoint is version-gated per ADR-072; the Portfolio owner join (OQ-EB-D3) is confirmed here."
+        },
+        {
+          "id": "08-04",
+          "name": "Reconciliation guard + partial-set note + enable scenarios #25-#26",
+          "description": "Add the reconciliation guard (compare reconstructed count for T against BlockedCountSnapshot.blockedCount where both exist; surface a capture-gap note on divergence, never silent) and the pre-capture-start partial-set note (complete only from {captureStartDate}) to both controllers' endpoint response. Remove [Ignore] from scenario #25 (reconciles with snapshot count) and #26 (partial set before capture).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs",
+          "scenario_name": "The_reconstructed_membership_count_reconciles_with_the_snapshot_count",
+          "dependencies": ["08-03"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs"
+          ],
+          "criteria": [
+            "Reconstructed count for T is compared to BlockedCountSnapshot.blockedCount where both exist; a divergence surfaces a capture-gap note (never silent) per ADR-099",
+            "A date before transition capture started returns the reconstructable partial set plus a 'complete only from {captureStartDate}' note",
+            "Guard applies identically on Team and Portfolio endpoints",
+            "Scenario #25 The_reconstructed_membership_count_reconciles_with_the_snapshot_count [Ignore] removed and passes",
+            "Scenario #26 A_date_before_capture_started_is_served_as_a_partial_set [Ignore] removed and passes",
+            "dotnet build zero warnings; dotnet test --filter BlockedItems green (all 5 slice-08 scenarios pass); Stryker >= 80% on the new reconstruct/guard surface"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM (mandatory): ATs #25 (@invariant) and #26 (@edge) are the contract — implement to GREEN. Earned-Trust (principle 13): the reconciliation guard is the empirical honesty check that reconstruction matches the independently-captured snapshot count; a divergence must be surfaced structurally (capture-gap note), not swallowed. This is the acceptance signal that reconstruction is faithful (ADR-099 consequences)."
+        },
+        {
+          "id": "08-05",
+          "name": "FE chart BarChart onItemClick -> WorkItemsDialog + MetricsService client + Vitest",
+          "description": "Add BarChart onItemClick to BlockedItemsOverTimeChart.tsx: resolve the clicked bar to its date, call a new MetricsService.getBlockedItemsAtDate(owner, date) that fetches the endpoint (Zod-validated at the trust boundary, reusing the WorkItemDto schema), and open the existing WorkItemsDialog with the reconstructed set. Empty result opens the dialog with a 'no items blocked on this date' message. Vitest on BlockedItemsOverTimeChart.test.tsx.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/BlockedItemsOverTimeChart.test.tsx",
+          "scenario_name": "clicking a bar opens the WorkItemsDialog with the items blocked at that date",
+          "dependencies": ["08-04"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/BlockedItemsOverTimeChart.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/BlockedItemsOverTimeChart.test.tsx"
+          ],
+          "criteria": [
+            "BarChart onItemClick resolves the clicked bar to its date and opens the existing WorkItemsDialog (REUSE — no new dialog)",
+            "MetricsService.getBlockedItemsAtDate(owner, date) fetches blockedItemsAtDate; Zod validates the WorkItemDto[] response at the trust boundary",
+            "Empty result opens the dialog with a 'no items blocked on this date' message (not an error)",
+            "Capture-gap / partial-set note from the endpoint is surfaced in the dialog rather than silently dropped",
+            "Vitest covers: click -> dialog open with item rows, empty-date message, latest-bar live case",
+            "pnpm test green; pnpm build zero TS/Biome/Vite warnings"
+          ],
+          "estimated_hours": 2,
+          "implementation_notes": "TEST PARADIGM (mandatory): Vitest on BlockedItemsOverTimeChart.test.tsx verifies wiring (click -> fetch -> dialog) — single-example is correct for a UI flow. Reuse the existing WorkItemsDialog and MetricsService pattern (DESIGN reuse-analysis: WorkItemsDialog = REUSE, MetricsService mirrors getBlockedCountHistory). Principle 13: validate the response at the Zod trust boundary, reusing the WorkItemDto schema."
+        },
+        {
+          "id": "08-06",
+          "name": "E2E — Playwright demo-data POM drill-through walking skeleton",
+          "description": "One Playwright demo-data POM scenario: on a team metrics page, click a bar on the blocked-over-time chart and assert the WorkItemsDialog opens with >= 1 item row. Extend the existing BlockedItems.spec.ts + MetricsPage POM (add a drill-through method); invariant assertions already live in the backend ATs (E2E-minimalism standing rule — Playwright proves wiring only).",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/BlockedItems.spec.ts",
+          "scenario_name": "clicking a blocked-over-time bar opens the dialog with its blocked items",
+          "dependencies": ["08-05"],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/BlockedItems.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "criteria": [
+            "ONE demo-data Playwright scenario drives a real team metrics page through the POM (no inline page.locator in the spec)",
+            "Clicking a bar on the blocked-over-time chart opens the WorkItemsDialog; POM asserts the dialog and >= 1 item row (not a raw pixel)",
+            "Spec run locally green before commit (never commit an unrun spec/locator)",
+            "Playwright proves wiring only; membership/reconciliation invariants remain in the backend ATs",
+            "pnpm build (E2E project) zero warnings"
+          ],
+          "estimated_hours": 1.5,
+          "implementation_notes": "TEST PARADIGM: E2E REMAINS single-example — it verifies wiring, not invariants. Extend the existing BlockedItems.spec.ts + MetricsPage POM (project idiom: Page Object Model, demo data). Run the spec locally before committing (project standing rule). This is the user-visible walking skeleton for the batch."
+        }
+      ]
+    }
+  ],
+  "walking_skeleton": {
+    "scenario": "A flow coach clicks a bar on the Blocked-Items-over-time chart and sees the WorkItemsDialog list the items that were blocked at that date, reconstructed from transition intervals",
+    "covered_by_step": "08-03",
+    "coverage_estimate": "End-to-end through the real read adapter (blockedItemsAtDate) via WebApplicationFactory with real EF InMemory; FE drill-through wiring proven in 08-05 and the Playwright skeleton in 08-06"
+  },
+  "quality_gates": {
+    "backend": [
+      "dotnet build with zero warnings (TreatWarningsAsErrors)",
+      "dotnet test all NUnit suites green (dotnet test --filter BlockedItems green: all 5 slice-08 scenarios pass)",
+      "Stryker.NET kill rate >= 80% on the new reconstruct query + endpoint + reconciliation guard (per-feature strategy)"
+    ],
+    "frontend": [
+      "pnpm test all Vitest suites green (blockedTrend, blockedMaxAgeRag, BaseMetricsView, BlockedItemsOverTimeChart)",
+      "pnpm build zero TypeScript, Biome, Vite warnings"
+    ],
+    "e2e": [
+      "Playwright demo-data drill-through spec run locally green before commit; POM asserts dialog + item rows (no raw pixel)"
+    ],
+    "architecture": [
+      "ArchUnitNET tests pass with no new violations",
+      "ADR-099 reconstruct-not-persist upheld: BlockedCountSnapshot unchanged, no migration, no persisted membership",
+      "Single blocked source preserved (ADR-067/068 invariant): reconstruction reads the same WorkItemBlockedTransition intervals; no second evaluation path"
+    ],
+    "sonarqube": [
+      "No new issues introduced (bugs, vulnerabilities, code smells, security hotspots)"
+    ],
+    "clients": [
+      "Lighthouse-Clients repo: add a version-gated blockedItemsAtDate wrapper (ADR-072 pattern, new read endpoint) — separate repo, NOT edited here"
+    ]
+  }
+}
