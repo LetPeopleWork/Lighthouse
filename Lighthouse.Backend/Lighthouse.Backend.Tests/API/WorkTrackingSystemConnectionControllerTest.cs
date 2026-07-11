@@ -1,9 +1,11 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -15,6 +17,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         [SetUp]
         public void Setup()
@@ -23,10 +26,17 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
+
+            var connectorMock = new Mock<IWorkTrackingConnector>();
+            connectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>()))
+                .Returns([]);
+            workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            workTrackingConnectorFactoryMock.Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(connectorMock.Object);
         }
 
         [Test]
-        public void GetWorkTrackingSystemConnection_ConnectionExists_ReturnsConnection()
+        public async Task GetWorkTrackingSystemConnection_ConnectionExists_ReturnsConnection()
         {
             var existingConnection = new WorkTrackingSystemConnection
             {
@@ -38,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var result = subject.GetWorkTrackingSystemConnection(12);
+            var result = await subject.GetWorkTrackingSystemConnection(12);
 
             using (Assert.EnterMultipleScope())
             {
@@ -54,13 +64,13 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWorkTrackingSystemConnection_ConnectionDoesNotExist_ReturnsNotFound()
+        public async Task GetWorkTrackingSystemConnection_ConnectionDoesNotExist_ReturnsNotFound()
         {
             repositoryMock.Setup(x => x.GetById(12)).Returns((WorkTrackingSystemConnection?)null);
 
             var subject = CreateSubject();
 
-            var result = subject.GetWorkTrackingSystemConnection(12);
+            var result = await subject.GetWorkTrackingSystemConnection(12);
 
             using (Assert.EnterMultipleScope())
             {
@@ -290,7 +300,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object);
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object);
         }
     }
 }

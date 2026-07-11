@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.API.DTO
             Id = field.Id;
             DisplayName = field.DisplayName;
             Reference = field.Reference;
+            IsPredefined = field.IsPredefined;
         }
 
         public int Id { get; set; }
@@ -21,18 +22,21 @@ namespace Lighthouse.Backend.API.DTO
 
         public string Reference { get; set; } = string.Empty;
 
+        public bool IsPredefined { get; set; }
+
         public AdditionalFieldDefinition ToModel()
         {
             if (Id < 0)
             {
                 Id = 0;
             }
-            
+
             return new AdditionalFieldDefinition
             {
                 Id = Id,
                 DisplayName = DisplayName,
-                Reference = Reference
+                Reference = Reference,
+                IsPredefined = IsPredefined
             };
         }
     }

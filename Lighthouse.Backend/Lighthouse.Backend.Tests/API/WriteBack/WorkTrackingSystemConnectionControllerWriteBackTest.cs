@@ -2,8 +2,11 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -15,6 +18,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         [SetUp]
         public void Setup()
@@ -24,6 +28,13 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var connectorMock = new Mock<IWorkTrackingConnector>();
+            connectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>()))
+                .Returns([]);
+            workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            workTrackingConnectorFactoryMock.Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(connectorMock.Object);
         }
 
         [Test]
@@ -198,7 +209,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
 
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object);
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object);
         }
     }
 }

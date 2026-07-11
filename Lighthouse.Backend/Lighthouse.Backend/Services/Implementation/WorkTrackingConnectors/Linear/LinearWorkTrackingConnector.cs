@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
+        public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
+
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}", team.Name);

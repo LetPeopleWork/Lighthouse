@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static readonly Dictionary<int, Dictionary<string, string>> FieldNames = new();
 
+        private const string DefaultFlaggedFieldReference = "customfield_10001";
+
         private const string BoardsEndpoint = "rest/agile/latest/board";
 
         private static readonly SocketsHttpHandler SharedHandler = new()
@@ -47,6 +49,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly ConcurrentDictionary<string, string> CloudIdCache = new();
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
+
+        // Jira contributes exactly one system-owned (predefined) additional field: the flagged/impediment
+        // field. Its Reference is resolved WITHOUT a live Jira call — from the connection's already-discovered
+        // flagged field mapping when present, otherwise the stable Jira Cloud default. This keeps the field
+        // deterministic and its Reference immutable across syncs (ADR-071).
+        public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)
+        {
+            return
+            [
+                new AdditionalFieldDefinition
+                {
+                    DisplayName = JiraFieldNames.FlaggedName,
+                    Reference = ResolveFlaggedFieldReference(connection.Id),
+                    IsPredefined = true,
+                },
+            ];
+        }
+
+        private static string ResolveFlaggedFieldReference(int workTrackingSystemConnectionId)
+        {
+            if (FieldNames.TryGetValue(workTrackingSystemConnectionId, out var mapping)
+                && mapping.TryGetValue(JiraFieldNames.FlaggedName, out var flaggedReference)
+                && !string.IsNullOrEmpty(flaggedReference))
+            {
+                return flaggedReference;
+            }
+
+            return DefaultFlaggedFieldReference;
+        }
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {

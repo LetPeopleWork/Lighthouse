@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
+        public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
+
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
 
         private static readonly ConcurrentDictionary<string, IVssHttpClient> ClientCache = new();

@@ -2,6 +2,7 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -16,14 +17,46 @@ namespace Lighthouse.Backend.API
         IRepository<WorkTrackingSystemConnection> repository,
         IRepository<Team> teamRepository,
         IRepository<Portfolio> portfolioRepository,
-        ILicenseService licenseService)
+        ILicenseService licenseService,
+        IWorkTrackingConnectorFactory workTrackingConnectorFactory)
         : ControllerBase
     {
         [HttpGet]
-        public ActionResult<WorkTrackingSystemConnectionDto> GetWorkTrackingSystemConnection(int workTrackingSystemConnectionId)
+        public async Task<ActionResult<WorkTrackingSystemConnectionDto>> GetWorkTrackingSystemConnection(int workTrackingSystemConnectionId)
         {
-            return this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, connection =>
-                new WorkTrackingSystemConnectionDto(connection));
+            return await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async connection =>
+            {
+                await EnsurePredefinedAdditionalFieldsRegistered(connection);
+                return new WorkTrackingSystemConnectionDto(connection);
+            });
+        }
+
+        private async Task EnsurePredefinedAdditionalFieldsRegistered(WorkTrackingSystemConnection connection)
+        {
+            var connector = workTrackingConnectorFactory.GetWorkTrackingConnector(connection.WorkTrackingSystem);
+
+            var missingPredefinedFields = connector.GetPredefinedAdditionalFields(connection)
+                .Where(predefined => connection.AdditionalFieldDefinitions
+                    .All(existing => !existing.IsPredefined || existing.Reference != predefined.Reference))
+                .ToList();
+
+            if (missingPredefinedFields.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var predefined in missingPredefinedFields)
+            {
+                connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                {
+                    DisplayName = predefined.DisplayName,
+                    Reference = predefined.Reference,
+                    IsPredefined = true,
+                });
+            }
+
+            repository.Update(connection);
+            await repository.Save();
         }
 
         [HttpPut]

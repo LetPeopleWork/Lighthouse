@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return !string.IsNullOrWhiteSpace(GetStateEnteredDateColumn(connection));
         }
 
+        public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
+
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             var workItems = new List<WorkItem>();

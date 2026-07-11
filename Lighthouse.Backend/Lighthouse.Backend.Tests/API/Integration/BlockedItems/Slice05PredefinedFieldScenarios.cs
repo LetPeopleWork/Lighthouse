@@ -110,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         [TestCase(WorkTrackingSystems.AzureDevOps, false)]
         [TestCase(WorkTrackingSystems.Linear, false)]
         [TestCase(WorkTrackingSystems.Csv, false)]
-        [Ignore("DELIVER slice-05 — GetPredefinedAdditionalFields connector port method absent; Jira must contribute [Flagged], others []")]
         public async Task Only_a_jira_connection_contributes_a_predefined_flagged_field(WorkTrackingSystems system, bool expectsPredefinedField)
         {
             var connectionId = SeedConnection(system);
@@ -130,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @edge @us-05 (Auto-registration idempotency — re-reading a Jira connection surfaces exactly one
         // predefined field, never a duplicate and never a =true sentinel)
         [Test]
-        [Ignore("DELIVER slice-05 — idempotent get-or-create auto-registration absent; re-sync must keep exactly one predefined field per connection")]
         public async Task A_jira_connection_surfaces_exactly_one_predefined_field_stably()
         {
             var connectionId = GivenAJiraConnection();
