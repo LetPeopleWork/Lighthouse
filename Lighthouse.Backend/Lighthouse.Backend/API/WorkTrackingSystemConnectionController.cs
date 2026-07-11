@@ -217,8 +217,11 @@ namespace Lighthouse.Backend.API
             var existingById = existingConnection.AdditionalFieldDefinitions.ToDictionary(f => f.Id);
             var updatedIds = new HashSet<int>(updatedFields.Where(f => f.Id != 0).Select(f => f.Id));
 
+            // Predefined (system-owned) fields are auto-registered and inbound-only: they are never candidates
+            // for removal and are never mutated by the incoming user payload (a settings save that omits them
+            // must preserve them, and their DisplayName/Reference are owned by auto-registration).
             var toRemove = existingConnection.AdditionalFieldDefinitions
-                .Where(f => !updatedIds.Contains(f.Id))
+                .Where(f => !f.IsPredefined && !updatedIds.Contains(f.Id))
                 .ToList();
             foreach (var field in toRemove)
             {
@@ -229,6 +232,11 @@ namespace Lighthouse.Backend.API
             {
                 if (fieldDto.Id != 0 && existingById.TryGetValue(fieldDto.Id, out var existingField))
                 {
+                    if (existingField.IsPredefined)
+                    {
+                        continue;
+                    }
+
                     // Update existing field (preserve Id)
                     existingField.DisplayName = fieldDto.DisplayName;
                     existingField.Reference = fieldDto.Reference;

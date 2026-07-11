@@ -73,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @error @edge @us-05 (AC2 — reconcile merge-back: a settings save that omits the predefined field
         // must NOT delete it; today UpdateAdditionalFieldDefinitions removes anything not in the incoming set)
         [Test]
-        [Ignore("DELIVER slice-05 — predefined field auto-registration + reconcile merge-back absent; a user PUT omitting it must preserve it")]
         public async Task A_settings_save_that_omits_the_predefined_field_preserves_it()
         {
             var connectionId = GivenAJiraConnection(("Team", "customfield_10050"));
