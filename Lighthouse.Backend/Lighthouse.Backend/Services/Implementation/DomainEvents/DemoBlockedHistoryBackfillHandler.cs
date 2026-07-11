@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IBlockedCountSnapshotRepository snapshotRepository;
         private readonly ILogger<DemoBlockedHistoryBackfillHandler> logger;
 
+#pragma warning disable S107 // This demo backfill genuinely needs both metrics services, both owner repos, the connection repo (demo gate), the blocked-item service and both the transition + snapshot repos; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as BlockedCountSnapshotRecordingHandler + TeamMetricsController).
         public DemoBlockedHistoryBackfillHandler(
             ITeamMetricsService teamMetricsService,
             IPortfolioMetricsService portfolioMetricsService,
@@ -45,6 +46,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IWorkItemBlockedTransitionRepository transitionRepository,
             IBlockedCountSnapshotRepository snapshotRepository,
             ILogger<DemoBlockedHistoryBackfillHandler> logger)
+#pragma warning restore S107
         {
             this.teamMetricsService = teamMetricsService;
             this.portfolioMetricsService = portfolioMetricsService;
@@ -101,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     && bool.TryParse(option.Value, out var synthesize) && synthesize);
         }
 
-        private async Task BackfillAsync(int ownerId, OwnerType ownerType, IReadOnlyList<(int WorkItemId, DateTime? StartedDate)> blockedItems)
+        private async Task BackfillAsync(int ownerId, OwnerType ownerType, List<(int WorkItemId, DateTime? StartedDate)> blockedItems)
         {
             if (blockedItems.Count == 0)
             {
@@ -151,7 +153,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         }
 
         private static List<(int WorkItemId, DateTime EnteredAt)> SpreadEnteredDates(
-            IReadOnlyList<(int WorkItemId, DateTime? StartedDate)> blockedItems, DateTime today)
+            List<(int WorkItemId, DateTime? StartedDate)> blockedItems, DateTime today)
         {
             var count = blockedItems.Count;
 

@@ -62,7 +62,10 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 	}
 
 	get stalenessThresholdField(): Locator {
-		return this.page.getByLabel("Staleness Threshold (days)");
+		// exact: the blocked-staleness field ("Blocked … Staleness Threshold (days)") is a
+		// substring superset of this label and renders whenever a blocked staleness threshold
+		// is configured (demo data now seeds one), so a non-exact match resolves to 2 elements.
+		return this.page.getByLabel("Staleness Threshold (days)", { exact: true });
 	}
 
 	async setStalenessThreshold(days: number): Promise<void> {
