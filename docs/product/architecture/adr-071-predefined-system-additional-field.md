@@ -1,10 +1,36 @@
 # ADR-071: Predefined (System-Owned) Additional Field — Additive `IsPredefined` Flag, Auto-Registered for Jira, Excluded From User CRUD + Slot Limits; PRE-SLICE SPIKE REQUIRED
 
-**Status**: Accepted (2026-06-12 — Morgan, interaction mode PROPOSE)
+**Status**: Accepted (2026-06-12 — Morgan, interaction mode PROPOSE); **Amended 2026-07-11** (see Amendment below)
 **Date**: 2026-06-12
 **Feature**: epic-5074-blocked-items (Slice 05 — Jira flagged via a predefined additional field)
-**Decider**: Morgan (Solution Architect)
+**Decider**: Morgan (Solution Architect); amendment: user decision (2026-07-11)
 **Relationship to prior ADRs**: depends on ADR-067 (rule engine as the single blocked definition + `additionalField.{id}` as first-class rule keys). Resolves DISCUSS D-FLAGGED and R3 (the SPIKE question).
+
+---
+
+## Amendment (2026-07-11) — SPIKE WAIVED + auto-registration promoted to a connector PORT method
+
+Two changes to the original decision, both by explicit user decision at the start of slice-05 DESIGN:
+
+**A. The pre-slice SPIKE (§5) is WAIVED.** The user accepted the four threading points as designed and chose to answer the SPIKE's open questions at design time (below) rather than via a throwaway probe branch, carrying them into DELIVER as the enumerated NUnit/integration tests. The design-time answers:
+
+- **(a) reconcile merge-back** — `UpdateAdditionalFieldDefinitions` filters `IsPredefined` OUT of the user-editable set entirely, so a user PUT that omits predefined fields can never place them in `toRemove`. Merge-back is "never in the reconcile set", not "diff-and-re-add". Covered by an NUnit user-PUT-omits-predefined preservation test (§Architectural Enforcement).
+- **(b) slot-count split** — `SupportsAdditionalFields()` counts `where !IsPredefined`; predefined fields are total-count but not user-count. Clean split, one predicate.
+- **(c) `WriteBackMappingDefinition` compatibility + `Reference` immutability** — VERIFIED: `WriteBackMappingDefinition.AdditionalFieldDefinitionId` (`Backend/.../Models/WriteBack/WriteBackMappingDefinition.cs` L11) CAN target an additional field by id. RESOLUTION: predefined fields are **inbound-only** (Jira "Flagged" is read FROM Jira), so a predefined field MUST NOT be a write-back TARGET — exclude `IsPredefined` from the write-back mapping target picker (same DTO-split principle as the rule picker, applied to the write-back surface), and treat the auto-registered `Reference` as **immutable** after registration (get-or-create never mutates it). This is the inverse of the rule-picker split and adds no coupling beyond the four known surfaces.
+- **(d) single idempotent Jira hook** — superseded by change B (now a port method); still one Jira implementation, get-or-create by `(connectionId, IsPredefined, Reference)`.
+- **(e) FE DTO split** — the settings DTO carries `isPredefined`; the FE filters the editable list by `!isPredefined` and includes all fields in the rule field-key picker. Unchanged from the original decision.
+
+Waiver risk accepted: MoSCoW **Could**; if DELIVER discovers coupling beyond these four surfaces, slice 05 is re-sliced or deferred at that point rather than pre-empted by a probe.
+
+**B. Auto-registration is promoted from a single Jira hook to a connector PORT method** (extensibility seam). Instead of Jira-specific registration logic, add to `IWorkTrackingConnector`:
+
+```csharp
+// Predefined (system-owned) additional fields this connector contributes for the given
+// connection. Jira returns the resolved "Flagged" field; ADO/Linear/Csv return []. 
+IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection);
+```
+
+The registration/merge site (sync setup) calls the port and get-or-creates the returned rows as `IsPredefined = true` — connector-agnostic. Jira's implementation reuses the existing `FieldNames[...][FlaggedName]` resolution to populate `Reference`. Other connectors get a default `[]` (a base/default implementation, so adding a connector never forces the method). A future connector contributes its own predefined fields by returning a non-empty set — **zero change to the merge site, CRUD exclusion, slot gate, DTO split, or rule path**. This supersedes original Decision §2's "single Jira hook" wording; §2's idempotency/get-or-create semantics are unchanged.
 
 ---
 
@@ -37,7 +63,7 @@ public bool IsPredefined { get; set; } = false;   // system-owned, not user-crea
 
 Predefined fields live in the SAME `AdditionalFieldDefinitions` list (so the generic fetch/value/rule-schema paths work unchanged — the GENERIC id-keyed path is the whole reason this is cheap) but are tagged `IsPredefined = true`. Generic by design: nothing hard-codes "Flagged"; the flag is data.
 
-### 2. Auto-registration for Jira connections, idempotent
+### 2. Auto-registration for Jira connections, idempotent — via the `GetPredefinedAdditionalFields` PORT method (see Amendment B)
 
 On Jira connection sync/setup, Lighthouse ensures a predefined `AdditionalFieldDefinition { DisplayName = "Flagged", Reference = <the connection-resolved flagged custom-field reference>, IsPredefined = true }` exists (get-or-create by `(connectionId, IsPredefined, Reference)` — idempotent, NOT a `=true` sentinel). The connection already resolves the flagged custom-field reference per sync (the existing `FieldNames[...][FlaggedName]` resolution) — auto-registration reuses that resolution to populate `Reference`, so NO per-connector special logic beyond the single Jira registration hook. The flagged value then flows through the EXISTING `PopulateAdditionalFieldValues` generic path into `AdditionalFieldValues[predefinedId]`.
 
@@ -51,7 +77,11 @@ On Jira connection sync/setup, Lighthouse ensures a predefined `AdditionalFieldD
 
 Delete the `IssueFactory` synthetic-`"Flagged"`-label injection (L32–40) and the `JiraFieldNames.FlaggedName`-based label wiring. The flag flows ONLY through the predefined additional field. A grep test asserts no synthetic-label injection remains (slice-05 AC3).
 
-### 5. **PRE-SLICE SPIKE REQUIRED (timeboxed, ~half-day) — verdict: SPIKE, not a thin additive slice**
+### 5. ~~PRE-SLICE SPIKE REQUIRED~~ — **WAIVED 2026-07-11 (see Amendment A)**
+
+> **Superseded by Amendment A.** The verdict below was the original 2026-06-12 reasoning; the SPIKE is now waived by user decision, its five questions answered at design time (Amendment A) and carried into DELIVER as the enumerated NUnit/integration tests. The original text is retained for provenance.
+
+**PRE-SLICE SPIKE REQUIRED (timeboxed, ~half-day) — verdict: SPIKE, not a thin additive slice** *(original — now WAIVED)*
 
 The DISCUSS weight-note (R3) asked: thin additive flag (≤1 day, no spike) OR needs a SPIKE? **VERDICT: a timeboxed SPIKE is required before committing slice 05.** Evidence-based rationale (the coupling is BROAD across surfaces and there is NO existing precedent for a system-registered field):
 
@@ -70,9 +100,12 @@ The DISCUSS weight-note (R3) asked: thin additive flag (≤1 day, no spike) OR n
 
 ## Alternatives Considered
 
-**Option A (chosen): additive `IsPredefined` flag in the SAME list, generic, + a pre-slice SPIKE.**
-- Pros: reuses the entirely generic fetch/value/rule-schema/provider path (the expensive part is already generic); the flag is data not code; one Jira registration hook; the SPIKE de-risks the four threading points before sizing.
-- Cons: threads exclusion through four surfaces; no system-registered-field precedent ⇒ SPIKE needed. Honest.
+**Option A (chosen): additive `IsPredefined` flag in the SAME list, generic, auto-registered via the `GetPredefinedAdditionalFields` connector PORT method (Amendment B). SPIKE WAIVED (Amendment A).**
+- Pros: reuses the entirely generic fetch/value/rule-schema/provider path (the expensive part is already generic); the flag is data not code; the port method makes the registration seam connector-agnostic (Jira returns `[Flagged]`, others `[]`) so a future connector adds predefined fields with zero core change; the four threading-point answers are pinned at design time (Amendment A).
+- Cons: threads exclusion through four surfaces; the port method is one more interface member on `IWorkTrackingConnector` (defaulted to `[]`, so no burden on non-Jira connectors). Honest.
+
+**Option A′ (original, now superseded): additive flag + a SINGLE Jira-specific registration hook + a pre-slice SPIKE.**
+- Cons: the Jira hook is not an extensibility seam (a second connector's predefined field would need a parallel hook); the SPIKE cost was judged unnecessary once the four threading-point answers were fixed at design time. Superseded by Amendment A+B.
 
 **Option B: a SEPARATE `PredefinedAdditionalField` collection/table distinct from the user list.**
 - Cons: the generic fetch/value/rule-schema paths all read the ONE `AdditionalFieldDefinitions` list — a separate collection would force every generic consumer (two connectors, two schema builders, the provider) to union two lists, multiplying the touch-points the chosen option avoids. Rejected — the same-list-plus-flag keeps the generic path generic.
@@ -118,15 +151,17 @@ The DISCUSS weight-note (R3) asked: thin additive flag (≤1 day, no spike) OR n
 | Predefined fields excluded from user CRUD (no silent delete on PUT) | NUnit on `UpdateAdditionalFieldDefinitions`: user PUT omitting a predefined field preserves it |
 | Predefined fields do not consume a user slot | NUnit on `SupportsAdditionalFields`: count excludes `IsPredefined` |
 | Predefined field auto-registered once per Jira connection (idempotent) | NUnit: re-sync ⇒ one predefined field; get-or-create, no sentinel |
+| Registration seam is connector-agnostic (port method) | NUnit: `GetPredefinedAdditionalFields` returns `[Flagged]` for Jira, `[]` for ADO/Linear/Csv; merge site consumes the port, not Jira-specific code |
+| Predefined field is inbound-only (not a write-back target) | NUnit: `IsPredefined` excluded from the write-back mapping target set; `Reference` immutable after registration |
 | Value/fetch/rule paths unchanged (generic id-keyed) | Integration: flagged value in `AdditionalFieldValues`; rule resolves it; ArchUnitNET: no per-field special-casing |
 | Synthetic "Flagged" label injection removed | Grep test asserts no `FlaggedName` label wiring (slice-05 AC3) |
-| Pre-slice SPIKE completed before slice-05 commitment | DELIVER gate: SPIKE findings recorded; slice re-sized if coupling exceeds the four touch-points |
+| ~~Pre-slice SPIKE completed before slice-05 commitment~~ | **WAIVED 2026-07-11 (Amendment A)** — the five SPIKE questions answered at design time; enforced by the enumerated NUnit/integration tests above instead of a probe branch |
 
 ---
 
 ## Cross-feature impact
 
 - ADR-067: predefined field is referenced as an `additionalField.{id}` rule key in the single blocked definition.
-- Connectors: a single Jira auto-registration hook; ADO/others unchanged.
+- Connectors: a new `IWorkTrackingConnector.GetPredefinedAdditionalFields(connection)` port member (Amendment B) — Jira returns `[Flagged]`, ADO/Linear/Csv return `[]` (default). Extensible: a future connector contributes predefined fields by returning a non-empty set, zero change to the merge/CRUD/slot/DTO/rule surfaces.
 - Lighthouse-Clients: the additional-field/settings contract gains an `IsPredefined` read-only distinction — version-gated (ADR-072 §predefined).
 - No new bounded context; extends the existing additional-field mechanism.

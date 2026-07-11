@@ -94,3 +94,49 @@ Gate: pre-DELIVER fail-for-the-right-reason. Every scenario RED-ready (skip/pend
 - Error/edge/invariant (non-happy-path) = 8/15 ≈ **53%** (target ≥40%). ✓
 - Authored in DELIVER (against EXISTING chrome, not new scaffolds): B1 chart `onItemClick` → `WorkItemsDialog` (Vitest); widget-level assertions on existing test-ids `rag-status` (B2), `widget-trend-*` (B3); one Playwright drill-through walking skeleton (demo-data POM).
 - Gate verdict: **PASS — RED is genuine.** DELIVER may proceed one scenario at a time (backend: remove `[Ignore]`; frontend: `describe.skip` → `describe`, implement, remove `__SCAFFOLD__`).
+
+---
+
+# Slice 05 (Story 5269) — Jira flagged via a predefined (system) additional field — RED classification
+
+Feature-id: `epic-5074-blocked-items` | Wave: DISTILL | Date: 2026-07-11 | Design authority: ADR-071 (amended — SPIKE WAIVED; `GetPredefinedAdditionalFields` connector port method). Scope: slice-05 (previously deferred behind the pre-slice-05 SPIKE gate, now in scope).
+
+Gate procedure identical to slices 01–04: build → confirm COMPILES (RED-eligible, not BROKEN) → run → classify → spot-check two representative RED scenarios for a clean assertion, then re-`[Ignore]`.
+
+## Execution evidence
+
+- `dotnet build Lighthouse.Backend.Tests` → **Build succeeded, 0 errors** (8 pre-existing NU1903 SQLite advisory warnings, unrelated). `Slice05PredefinedFieldScenarios/Specifications.cs`, `Slice05SyntheticLabelRemovalTests.cs`, and `Integration/Containers/PredefinedAdditionalFieldMigrationTests.cs` all compile against **today's** production types → every scenario is **RED-eligible, not BROKEN**. Per the project's `atdd-infrastructure-policy.md`, black-box HTTP/JSON ATs need **no `__SCAFFOLD__` stub**. The new observables that do not exist yet — the additional-field DTO's `isPredefined` flag, the auto-registered predefined field, the `IsPredefined` model/column, and the `GetPredefinedAdditionalFields` port method — are **never referenced as typed members**; every predefined-specific step asserts on served JSON (or reads the column via raw SQL), keeping the suite compiling black-box.
+- `dotnet test --filter Slice05` → **Passed: 1 (walking skeleton), Skipped: 10, Failed: 0** (with all `[Ignore]`s in place; the migration `[Ignore]`d Testcontainers pair is excluded from the fast filter).
+- Spot-check (un-ignored, run, re-ignored):
+  - `Slice05SyntheticLabelRemovalTests.A_flagged_jira_issue_is_built_without_a_synthetic_flagged_label` → FAIL, clean assertion: *"IssueFactory must not inject a synthetic \"Flagged\" label … Expected: not some item equal to \"Flagged\" But was: < \"Lagunitas\", \"Flagged\" >"* → **MISSING_FUNCTIONALITY (correct RED)**. This is the behavioural equivalent of the ADR-071 "grep asserts no `FlaggedName` label wiring" enforcement rule (AC3).
+  - `Slice05…A_settings_save_that_omits_the_predefined_field_preserves_it` → FAIL, clean assertion: *"A settings save that omits the predefined field must NOT delete it (reconcile merge-back). The predefined field must still be served after the save. … Expected: not <empty> But was: <empty>"* → **MISSING_FUNCTIONALITY (correct RED)**. The served body confirms `additionalFieldDefinitions:[{"id":1,"displayName":"Team","reference":"customfield_10050"}]` — no `isPredefined` member, no auto-registered field.
+- Frontend: `pnpm vitest run AdditionalFieldsEditor.predefined.test.tsx` → **1 passed (control), 3 skipped**. Spot-check un-skipping the pending `describe` → **3 failed on clean assertions** (`expect(queryByText("Flagged")).not.toBeInTheDocument()` — *found <span>Flagged</span>*; edit/delete controls present; free-plan Add button disabled) → **MISSING_FUNCTIONALITY**, then reverted to `describe.skip`. `pnpm biome check` clean.
+
+## Per-scenario classification
+
+Legend as above. Several slice-05 REDs depend on the *auto-registered, served* predefined field (see UC-5 in `upstream-issues.md`): they are genuinely RED now (no predefined field is surfaced by today's code) and become GREEN in DELIVER once auto-registration is wired to fire in the WAF host.
+
+| # | Scenario | Tags | Classification | RED reason |
+|---|---|---|---|---|
+| 37 | A_connection_round_trips_its_additional_field_configuration | @walking_skeleton @driving_port @real-io @us-05 | **GREEN** (verified) | — (proves the connection additional-field read/write round-trip wiring slice-05 extends) |
+| 38 | A_flagged_item_reads_blocked_through_the_flagged_field_without_a_synthetic_label | @driving_port @us-05 | RED | rule-based `IsBlocked` over the flagged field absent (generic id-keyed path); no synthetic label on tags |
+| 39 | The_flagged_field_value_drives_blocked_through_the_generic_field_path (flagged=true) | @driving_port @property @us-05 | RED | rule-based `IsBlocked` absent |
+| 40 | The_flagged_field_value_drives_blocked_through_the_generic_field_path (flagged=false) | @driving_port @property @us-05 | RED | rule-based `IsBlocked` absent (negative case) |
+| 41 | A_settings_save_that_omits_the_predefined_field_preserves_it | @error @edge @us-05 | RED (verified) | auto-registration + reconcile merge-back absent (predefined field not surfaced; today's reconcile removes anything not in the incoming set) |
+| 42 | A_predefined_field_does_not_consume_a_user_field_slot_on_a_non_premium_connection | @edge @us-05 | RED | `SupportsAdditionalFields` slot-count exclusion (`where !IsPredefined`) + auto-registration absent |
+| 43 | Only_a_jira_connection_contributes_a_predefined_flagged_field (Jira) | @property @us-05 | RED | `GetPredefinedAdditionalFields` port method absent — Jira must contribute `[Flagged]` |
+| 44 | Only_a_jira_connection_contributes_a_predefined_flagged_field (ADO/Linear/Csv) | @property @us-05 | RED / PASS-WHEN-ENABLED | others must contribute `[]`; passes trivially today (none surfaced), pins the port default |
+| 45 | A_jira_connection_surfaces_exactly_one_predefined_field_stably | @edge @us-05 | RED | idempotent get-or-create auto-registration absent (no duplicate, no `=true` sentinel) |
+| 46 | A_predefined_field_is_inbound_only | @error @us-05 | RED | `Reference` immutability + write-back-target exclusion absent (predefined field not surfaced) |
+| 47 | A_flagged_jira_issue_is_built_without_a_synthetic_flagged_label (AC3) | @error @us-05 | RED (verified) | `IssueFactory` L32–40 still injects the synthetic `FlaggedName` label |
+| 48 | Migration_On{Sqlite,Postgres}_PersistsColumnAndDefaultsToFalse | @real-io @us-05 | RED | additive `IsPredefined` column + migration not yet authored (raw-SQL column read; Testcontainers/SQLite) |
+| FE | AdditionalFieldsEditor.predefined — 3 pending (`describe.skip`) | @us-05 | RED (verified) | editable list must filter `!isPredefined`; predefined not editable/deletable; predefined consumes no free-plan slot |
+
+## Summary (slice 05)
+
+- 11 backend scenario cases (walking skeleton + 8 `[Ignore]`-pending HTTP incl. 2 parametrized TestCase families + AC3 IssueFactory + migration pair) + 3 FE pending Vitest tests + 1 FE GREEN control.
+- **1 GREEN** (walking skeleton), rest **RED (MISSING_FUNCTIONALITY)**, **0 BROKEN** — the whole slice-05 suite compiles and each RED fires on a business assertion (or raw-SQL column absence, for the migration probe).
+- Error/edge/property (non-happy-path) share among the slice-05 scenarios ≈ **80%** (target ≥40%). ✓
+- Contract-shape (2026-05-15 mandate): walking skeleton = *unbounded-preservation* (round-trip, system otherwise unchanged); AC1/AC4 flagged-reads-blocked = *bounded-change* (one item's `isBlocked` flips, no synthetic label added); AC3 = *unbounded-preservation* (issue built with the flag consumed but **no** synthetic label appended). Expressed via assertions (no Gherkin-tag surface in this NUnit repo — see `upstream-issues.md`).
+- **DELIVER wiring note (UC-5)**: the auto-registration-dependent REDs (#41, #42, #43, #45, #46) need a WAF DI seam so the predefined field is surfaced without a live Jira — mirror the existing `ILicenseService` fake. Documented in `upstream-issues.md`.
+- Gate verdict: **PASS — RED is genuine.** DELIVER may proceed one scenario at a time from the walking skeleton (backend: remove `[Ignore]`; frontend: `describe.skip` → `describe`).

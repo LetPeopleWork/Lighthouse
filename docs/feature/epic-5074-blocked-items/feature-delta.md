@@ -594,7 +594,7 @@ Default = modular monolith + ports-and-adapters (unchanged); no style change; no
 | DDD-3 | Blocked-transition capture entity | New owned `WorkItemBlockedTransition {WorkItemId, EnteredAt, LeftAt?}`; enter=existing `WorkItemBlocked`, leave=NEW `WorkItemUnblocked` domain event; `blockedSince` = open spell's `EnteredAt`; first-observation = null = "—" | **DECIDED** | Symmetric enter/leave on the bus (memory: prefer domain events); orthogonal to state (not `WorkItemStateTransition`); current-spell (D6); honest no-fabrication | ADR-068 |
 | DDD-4 | Blocked-over-time count snapshot | NEW owner-grained sibling `BlockedCountSnapshot {OwnerId, OwnerType, RecordedAt, BlockedCount}`; forward recorder post-sync; date-keyed upsert; NEW `blockedCountHistory` read endpoint | **DECIDED** | Grain differs from delivery-keyed `DeliveryMetricSnapshot` (owner not delivery); forward-only PATTERN reused; honest empty state | ADR-069 |
 | DDD-5 | Blocked→stale vs ADR-026 (CRITICAL) | `deriveStaleness` returns `StalenessResult {isStale, reasons[]}`; time-in-state KEEPS `!isBlocked` guard; NEW blocked-duration trigger (`≥ blockedStalenessThresholdDays`, 0=off) OR's in with distinct reason; stale-once | **DECIDED** | AMENDS ADR-026 (exclusion narrowed to time-in-state); single-selector invariant upheld + extended; OQ1 resolved (`≥` blocked, `>` time-in-state) | ADR-070 |
-| DDD-6 | Predefined/system additional field | Additive `IsPredefined` flag in the SAME list; auto-registered for Jira; excluded from user CRUD + slot count; generic id-keyed value/rule path; synthetic-label hack deleted | **DECIDED + SPIKE** | Value/fetch/rule paths already generic; exclusion threads 4 surfaces + no system-field precedent ⇒ pre-slice-05 SPIKE | ADR-071 |
+| DDD-6 | Predefined/system additional field | Additive `IsPredefined` flag in the SAME list; auto-registered via `GetPredefinedAdditionalFields` connector **port method** (Jira `[Flagged]`, others `[]`); excluded from user CRUD + slot count + write-back targets (inbound-only, immutable `Reference`); generic id-keyed value/rule path; synthetic-label hack deleted | **DECIDED (SPIKE WAIVED 2026-07-11)** | Value/fetch/rule paths already generic; port seam makes registration connector-agnostic + extensible; 4 threading-point questions answered at design time (ADR-071 Amendment A) | ADR-071 |
 | DDD-7 | Settings/contract + client version-gate | Matrix: changed settings contract (#1) GATE, `blockedSince` (#2) no gate, new endpoint (#3) GATE, `blockedStalenessThresholdDays` (#4) no gate, `IsPredefined` write (#5) GATE; baseline strictly `> v26.6.7.1` | **DECIDED** | Additive ⇒ no gate (ADR-062); changed/new ⇒ gate (loud "upgrade" beats silent divergence); last released = v26.6.7.1 | ADR-072 |
 
 ### [REF] Component Decomposition
@@ -609,14 +609,14 @@ Default = modular monolith + ports-and-adapters (unchanged); no style change; no
 | `BlockedCountSnapshot` store + repo + recorder + endpoint | CREATE NEW (forward-only pattern reused) | snapshot/read | ADR-069 |
 | `deriveStaleness` selector (boolean → `StalenessResult`) | EXTEND (return type widened; 3 call sites) | FE staleness | ADR-070 |
 | `blockedStalenessThresholdDays` settings field | EXTEND (twin of `StalenessThresholdDays`) | settings | ADR-070 |
-| `IsPredefined` flag on `AdditionalFieldDefinition` + Jira auto-reg + CRUD/slot exclusion | EXTEND (additive flag) / CREATE (registration hook) | additional fields | ADR-071 |
+| `IsPredefined` flag on `AdditionalFieldDefinition` + `GetPredefinedAdditionalFields` port method + CRUD/slot/write-back exclusion | EXTEND (additive flag) / CREATE (port method + Jira impl) | additional fields | ADR-071 |
 | `DeliveryRuleBuilder` (blocked rule builder UI) | EXTEND (third consumer; ForecastFilterEditor is the precedent) | FE config | ADR-067 |
 | `BlockedOverviewWidget`, blocked badge, `WorkItemDto.IsBlocked` | EXTEND (consume rule-derived `IsBlocked` unchanged) | FE read | ADR-067 |
 
 ### [REF] Driving / Driven Ports
 
 - **Driving** (inbound): team/portfolio settings PUT (blocked rule validation, blocked-staleness threshold) via `TeamController`/`PortfolioController` (existing, extended); `GET blockedCountHistory` (new); the per-sync work-item pipeline (existing) emitting `WorkItemBlocked`/`WorkItemUnblocked`.
-- **Driven** (outbound): `IBlockedCountSnapshotRepository : IRepository<BlockedCountSnapshot>` (new); existing `IRepository<Team/Portfolio/WorkItem>`; the domain-event dispatcher (existing); Jira/ADO connectors (existing additional-field fetch, generic).
+- **Driven** (outbound): `IBlockedCountSnapshotRepository : IRepository<BlockedCountSnapshot>` (new); existing `IRepository<Team/Portfolio/WorkItem>`; the domain-event dispatcher (existing); Jira/ADO connectors (existing additional-field fetch, generic) — EXTENDED with `IWorkTrackingConnector.GetPredefinedAdditionalFields(connection)` (new port member; Jira `[Flagged]`, ADO/Linear/Csv `[]`; ADR-071 Amendment B).
 - **Core (no I/O)**: `RuleEvaluator<T>` (pure, ADR-012 purity invariant), `IBlockedItemService` (composes evaluator + provider), `deriveStaleness` (pure FE selector, ADR-026/070).
 
 ### [REF] Technology Choices
@@ -645,9 +645,18 @@ No CREATE-NEW without an EXTEND attempt first. The two genuinely-new entities (`
 
 ADR-026 locked "a blocked item must NOT also be flagged stale" via `&& !item.isBlocked` in `deriveStaleness`. ADR-070 AMENDS this: the rule is NARROWED from "staleness" to "TIME-IN-STATE staleness" (the original premise had only one staleness source). PRESERVED: blocked excludes time-in-state stale (clock paused). ADDED: a distinct blocked-DURATION trigger that fires *because* the item is blocked too long, OR'd into one `StalenessResult` with a distinct reason, stale-once. The single-selector architecture is upheld and extended; only the exclusion's scope changes. ADR-070 carries a `## Changed Assumptions` section quoting ADR-026 verbatim.
 
-### [REF] Slice-05 SPIKE Verdict
+### [REF] Slice-05 SPIKE Verdict — WAIVED 2026-07-11
 
-**VERDICT: pre-slice-05 SPIKE REQUIRED (timeboxed ~half-day), NOT a thin additive slice.** Evidence: the value/fetch/rule paths are fully GENERIC (favourable, cheap) BUT the predefined-field exclusion threads through FOUR surfaces (CRUD reconcile `UpdateAdditionalFieldDefinitions`, license slot gate `SupportsAdditionalFields`, DTO user-list/rule-picker split, connector auto-registration) and there is NO existing system-registered-field precedent. SPIKE must answer: reconcile-merge (no silent delete on user PUT), slot-count split (user vs total), `WriteBackMappingDefinition` compatibility + `Reference` immutability, single idempotent Jira hook, FE DTO split. Does NOT block slices 01–04 (slice 05 = MoSCoW Could, last). Detail: ADR-071 §5, upstream-changes UC-3.
+**Original verdict (2026-06-12): pre-slice-05 SPIKE REQUIRED.** ~~Timeboxed ~half-day, NOT a thin additive slice.~~ Evidence: the value/fetch/rule paths are fully GENERIC (favourable, cheap) BUT the predefined-field exclusion threads through FOUR surfaces (CRUD reconcile `UpdateAdditionalFieldDefinitions`, license slot gate `SupportsAdditionalFields`, DTO user-list/rule-picker split, connector auto-registration) and there is NO existing system-registered-field precedent.
+
+**AMENDED verdict (2026-07-11): SPIKE WAIVED by user decision.** The five SPIKE questions are answered at design time (ADR-071 Amendment A) and carried into DELIVER as enumerated NUnit/integration tests rather than a probe branch:
+- **reconcile merge-back** — `IsPredefined` filtered OUT of the user-editable reconcile set entirely (never in `toRemove`); a user PUT omitting predefined fields cannot delete them.
+- **slot-count split** — `SupportsAdditionalFields()` counts `where !IsPredefined`.
+- **`WriteBackMappingDefinition` compatibility** — VERIFIED `AdditionalFieldDefinitionId` (L11) can target a field; RESOLVED: predefined = inbound-only ⇒ excluded from write-back targets, `Reference` immutable after registration.
+- **registration seam** — promoted to a `GetPredefinedAdditionalFields` connector **port method** (Jira `[Flagged]`, others `[]`) — connector-agnostic + extensible (Amendment B), replacing the "single Jira hook".
+- **FE DTO split** — `isPredefined` on the DTO; FE filters editable list by `!isPredefined`, includes all in the rule picker.
+
+Waiver risk accepted (MoSCoW Could): if DELIVER finds coupling beyond these four surfaces, slice 05 is re-sliced/deferred at that point. Detail: ADR-071 Amendment A+B, design/upstream-changes.md UC-3 (updated).
 
 ### [REF] Decisions Table
 
@@ -657,7 +666,7 @@ ADR-026 locked "a blocked item must NOT also be flagged stale" via `&& !item.isB
 | DDD-3 blocked-transition capture + `WorkItemUnblocked` | ADR-068 | Accepted |
 | DDD-4 blocked-count snapshot + endpoint | ADR-069 | Accepted |
 | DDD-5 blocked→stale AMENDS ADR-026 | ADR-070 | Accepted |
-| DDD-6 predefined/system additional field + SPIKE | ADR-071 | Accepted |
+| DDD-6 predefined/system additional field (port seam; SPIKE waived 2026-07-11) | ADR-071 | Accepted + Amended |
 | DDD-7 contract changes + client version-gate matrix | ADR-072 | Accepted |
 | DDD-2 (migration) | folded into ADR-067 | Accepted |
 
@@ -1123,6 +1132,64 @@ Date: 2026-07-07 | Density: lean | Stack: NUnit (backend acceptance via `WebAppl
 ### [REF] Final Wave Review Gate — PENDING (user-gated)
 
 The mandatory 4-reviewer gate (Eclipse/Architect/Forge/Sentinel on Haiku, in parallel over the full 4-wave `feature-delta.md`) is NOT auto-dispatched — surfaced for the user to trigger (spawning agents is user-gated in this session). Sentinel (`@nw-acceptance-designer-reviewer`) is the structural-correctness reviewer that never skips.
+
+## Wave: DISTILL / [REF] Slice 05 (Story 5269) — Predefined (system) Jira flagged field
+
+Date: 2026-07-11 | Author: Quinn (acceptance-designer) | Density: LEAN (Tier-1 [REF] only) | Scope: slice-05 only (previously deferred behind the pre-slice-05 SPIKE gate — now IN scope after ADR-071 Amendment A WAIVED the SPIKE). Does NOT rewrite slices 01–04/06–08 DISTILL content.
+
+### [REF] Inherited commitments (slice-05)
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D-FLAGGED / DESIGN#DDD-6 | Jira flag = predefined (system-owned) additional field in the SAME list; additive `IsPredefined`; generic id-keyed value/rule path reused | ADR-071 | AC1/AC4 ATs drive a flagged item to read blocked via a rule referencing the flagged field at the WIP read port, with no synthetic label |
+| DESIGN#DDD-6 (Amendment B) | Auto-registration promoted to `IWorkTrackingConnector.GetPredefinedAdditionalFields` port method — Jira `[Flagged]`, ADO/Linear/Csv `[]` | ADR-071 | Port-seam AT (parametrized over the 4 connectors) + idempotency AT assert on the served connection (the method is not a typed member yet) |
+| DESIGN#DDD-6 (Amendment A, waived-SPIKE answers) | Predefined field excluded from user CRUD reconcile (merge-back), the license slot count (`where !IsPredefined`), and write-back targets (inbound-only, immutable `Reference`) | ADR-071 | Reconcile-merge-back, slot-split, and inbound-only ATs at the connection settings GET/PUT port |
+| DESIGN#DDD-6 (cleanup) | Delete the synthetic `FlaggedName` label injection (`IssueFactory` L32–40) | ADR-071 | AC3 behavioural test on `IssueFactory` (grep-equivalent enforcement) — flag consumed only as the predefined field |
+| DESIGN#DDD-7 | `IsPredefined` write is a client-gated contract change (baseline `> v26.6.7.1`) | ADR-072 | FE DTO split (`isPredefined`) drives the editable-list filter; version-gate handled in the clients wrapper (out of DISTILL scope) |
+
+### [REF] Wave-Decision Reconciliation HARD GATE (slice-05)
+
+**Result: PASS — 0 contradictions** across DISCUSS (D-FLAGGED), DESIGN (DDD-6/7, ADR-071 amended + ADR-072), and DEVOPS (no slice-05-specific infra decision). The 2026-07-11 SPIKE waiver (ADR-071 Amendment A + `design/upstream-changes.md` UC-3 UPDATE) is a decision *refinement*, not a contradiction — it removes a gate and pins the five answers. Amendment B (port method) is additive.
+
+### [REF] Scenario list with tags (slice-05)
+
+Backend: NUnit + `WebApplicationFactory<Program>` black-box HTTP/JSON (`Slice05PredefinedFieldScenarios/Specifications.cs`), plus an `IssueFactory` behavioural test (`Slice05SyntheticLabelRemovalTests.cs`) and a Testcontainers additive-migration pair (`PredefinedAdditionalFieldMigrationTests.cs`). ONE walking skeleton GREEN; all others `[Ignore]`-pending. Frontend: Vitest (`AdditionalFieldsEditor.predefined.test.tsx`) — 1 GREEN control + 3 `describe.skip` pending. Full per-scenario RED classification + evidence in `distill/red-classification.md` (rows 37–48 + FE).
+
+| Scenario | Tags | Status |
+|---|---|---|
+| A_connection_round_trips_its_additional_field_configuration | @walking_skeleton @driving_port @real-io @us-05 | GREEN |
+| A_flagged_item_reads_blocked_through_the_flagged_field_without_a_synthetic_label (AC1) | @driving_port @us-05 | RED |
+| The_flagged_field_value_drives_blocked_through_the_generic_field_path (AC4, TestCase true/false) | @driving_port @property @us-05 | RED |
+| A_settings_save_that_omits_the_predefined_field_preserves_it (AC2 merge-back) | @error @edge @us-05 | RED |
+| A_predefined_field_does_not_consume_a_user_field_slot_on_a_non_premium_connection (AC2 slot split) | @edge @us-05 | RED |
+| Only_a_jira_connection_contributes_a_predefined_flagged_field (port seam, TestCase ×4 connectors) | @property @us-05 | RED |
+| A_jira_connection_surfaces_exactly_one_predefined_field_stably (idempotency) | @edge @us-05 | RED |
+| A_predefined_field_is_inbound_only (write-back exclusion + Reference immutability) | @error @us-05 | RED |
+| A_flagged_jira_issue_is_built_without_a_synthetic_flagged_label (AC3) | @error @us-05 | RED |
+| Migration_On{Sqlite,Postgres}_PersistsColumnAndDefaultsToFalse | @real-io @us-05 | RED |
+| FE AdditionalFieldsEditor.predefined — editable-list filter / no edit-delete / no slot (3 pending) | @us-05 | RED |
+
+Non-happy-path (error/edge/property) share ≈ **80%** (target ≥40%). ✓
+
+### [REF] Adapter coverage (slice-05)
+
+| Driven adapter / surface | @real-io scenario | Covered by |
+|---|---|---|
+| Connection settings GET/PUT (real EF) | YES | walking skeleton + reconcile/slot/inbound-only ATs (real host, real EF) |
+| Team settings PUT + WIP read (rule engine, real EF) | YES | AC1/AC4 flagged-reads-blocked |
+| `IssueFactory` (Jira issue construction) | YES | AC3 behavioural — no synthetic label |
+| EF migration (SQLite + Postgres) | YES | additive `IsPredefined` column probe (Testcontainers) |
+| Connector port seam (`GetPredefinedAdditionalFields`) | via served connection | port-seam AT (parametrized ×4) — pins the Jira `[Flagged]` / others `[]` contract |
+
+### [REF] Test placement (slice-05)
+
+`Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05PredefinedField{Scenarios,Specifications}.cs` + `Slice05SyntheticLabelRemovalTests.cs` (mirrors the Slice01/04 pair idiom + the `BlockedItemsJson`/`BlockedItemsAcceptanceTest` shared harness); `Lighthouse.Backend.Tests/Integration/Containers/PredefinedAdditionalFieldMigrationTests.cs` (mirrors `BlockedStalenessThresholdMigrationTests`); `Lighthouse.Frontend/src/pages/Settings/Connections/AdditionalFieldsEditor.predefined.test.tsx` (mirrors `AdditionalFieldsEditor.test.tsx`).
+
+### [REF] Pre-requisites / DELIVER notes (slice-05)
+
+- **Compile-today black-box**: the not-yet-existing `isPredefined` DTO flag, `IsPredefined` model/column, and `GetPredefinedAdditionalFields` port method are never referenced as typed members — predefined-specific steps assert on served JSON (or raw-SQL column). Build: **0 errors**. No production scaffold files created (per project `atdd-infrastructure-policy.md`).
+- **DELIVER wiring (UC-5, `distill/upstream-issues.md`)**: five auto-registration-dependent REDs need a WAF DI seam (mirror the `ILicenseService` fake) so the predefined field is surfaced without a live Jira; the ADR-071 Architectural-Enforcement unit tests (`GetPredefinedAdditionalFields`, `SupportsAdditionalFields` count, `UpdateAdditionalFieldDefinitions` merge-back) are authored in DELIVER once the members exist.
+- **Mandate-12**: reuses the typed `SeededTeam` record + `BlockedItemsJson` rule builders + `*Specifications.cs` service-delegating steps (no business logic in step bodies). Step-reuse informational — a single config-shaped slice, natural low reuse ceiling.
 
 ## Wave: DELIVER / [WHY] Upstream Issues
 

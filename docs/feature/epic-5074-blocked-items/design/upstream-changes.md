@@ -34,6 +34,8 @@ DESIGN surfaced three points that require a DISCUSS/acceptance-design confirmati
 
 **Resolution (VERDICT: SPIKE)**: a timeboxed (~half-day) pre-slice-05 SPIKE is required before slice 05 is sized/committed, answering: reconcile-merge (no silent delete on user PUT), license slot-count split (user vs total), `WriteBackMappingDefinition` compatibility + `Reference` immutability, single-hook idempotent auto-registration, and the FE DTO list/picker split. **Action**: schedule the SPIKE at the start of slice 05; does NOT block slices 01–04 (slice 05 is MoSCoW Could, last). Re-size/re-slice slice 05 if the SPIKE finds coupling beyond the four touch-points.
 
+**UPDATE — SPIKE WAIVED (2026-07-11, user decision at start of slice-05 DESIGN).** The user accepted the four threading points as designed and answered the SPIKE's five questions at design time (recorded in ADR-071 Amendment A), carrying them into DELIVER as enumerated NUnit/integration tests rather than a throwaway probe branch. Key design-time answers: (a) reconcile merge-back = `IsPredefined` filtered OUT of the user-editable set (never in `toRemove`); (b) slot split = `count where !IsPredefined`; (c) `WriteBackMappingDefinition.AdditionalFieldDefinitionId` (L11) CAN target a field ⇒ predefined = inbound-only, excluded from write-back targets, `Reference` immutable; (d) auto-registration promoted to a `GetPredefinedAdditionalFields` connector **port method** (extensibility seam, ADR-071 Amendment B) — Jira `[Flagged]`, others `[]`; (e) FE DTO split via `isPredefined`. **Waiver risk accepted** (MoSCoW Could): if DELIVER discovers coupling beyond these four surfaces, slice 05 is re-sliced/deferred at that point. Verdict: **GO to DISTILL/DELIVER, no SPIKE.**
+
 ---
 
 ## Summary
