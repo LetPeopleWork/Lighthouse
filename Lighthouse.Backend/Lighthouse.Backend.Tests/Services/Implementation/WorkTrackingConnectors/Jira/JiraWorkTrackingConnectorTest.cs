@@ -14,6 +14,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class JiraWorkTrackingConnectorTest
     {
         [Test]
+        public void GetPredefinedAdditionalFields_JiraConnection_ContributesFlaggedFieldAsPredefined()
+        {
+            var subject = CreateSubject();
+            var connection = new WorkTrackingSystemConnection
+            {
+                Id = 987654,
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Name = "Fresh Jira Connection",
+            };
+
+            var predefinedFields = subject.GetPredefinedAdditionalFields(connection);
+
+            var flagged = predefinedFields.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(flagged.DisplayName, Is.EqualTo(JiraFieldNames.FlaggedName),
+                    "Jira contributes exactly one predefined field: the Flagged field.");
+                Assert.That(flagged.IsPredefined, Is.True,
+                    "the flagged field must be marked IsPredefined so it is inbound-only and slot-excluded.");
+                Assert.That(flagged.Reference, Is.EqualTo("customfield_10001"),
+                    "an unsynced connection resolves the flagged Reference to the stable Jira Cloud default.");
+            }
+        }
+
+        [Test]
         public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()
         {
             var subject = CreateSubject();

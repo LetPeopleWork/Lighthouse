@@ -2,6 +2,7 @@ using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
@@ -103,6 +104,52 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 "auto-registration is get-or-create: repeated reads must never persist a duplicate predefined row.");
         }
 
+        // #6 (drift reconcile — mutation-hardening of EnsurePredefinedAdditionalFieldsRegistered) — a predefined
+        // row persisted with a STALE Reference (the stable default resolved before the flagged field key was known)
+        // must be RECONCILED IN PLACE to the connector-resolved Reference on the next GET: never duplicated, never
+        // left stale. This pins the get-or-create UPDATE branch. An add-only dedup (match on Reference) would append
+        // a SECOND predefined row here, orphaning write-back and rule additionalField.{id} references.
+        [Test]
+        public async Task A_predefined_field_with_a_stale_reference_is_reconciled_in_place_not_duplicated()
+        {
+            var connectionId = SeedJiraConnectionWithPredefinedField("Flagged", "customfield_stale");
+
+            await WhenTheConnectionConfigurationIsRead(connectionId);
+
+            var persisted = ReadPersistedConnection(connectionId);
+            var predefined = persisted.AdditionalFieldDefinitions.Where(f => f.IsPredefined).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(predefined, Has.Count.EqualTo(1),
+                    "a stale predefined row must be reconciled IN PLACE — never duplicated by an add-only registration.");
+                Assert.That(predefined[0].Reference, Is.EqualTo("customfield_10001"),
+                    "the predefined field's Reference must be updated to the connector-resolved value on registration.");
+            }
+        }
+
+        private int SeedJiraConnectionWithPredefinedField(string displayName, string reference)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>();
+
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = $"Connection {Guid.NewGuid():N}",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                AuthenticationMethodKey = AuthenticationMethodKeys.GetDefaultForSystem(WorkTrackingSystems.Jira),
+            };
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = displayName,
+                Reference = reference,
+                IsPredefined = true,
+            });
+
+            repository.Add(connection);
+            repository.Save().GetAwaiter().GetResult();
+            return connection.Id;
+        }
+
         private WorkTrackingSystemConnection ReadPersistedConnection(int connectionId)
         {
             using var scope = Factory.Services.CreateScope();
@@ -183,6 +230,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
             Assert.That(serialized["isPredefined"]?.GetValue<bool>(), Is.True,
                 "the FE isPredefined DTO split relies on the BE serializing IsPredefined as camelCase 'isPredefined'.");
+        }
+
+        [Test]
+        public void ToModel_round_trips_the_is_predefined_flag()
+        {
+            var dto = new AdditionalFieldDefinitionDto
+            {
+                Id = 7,
+                DisplayName = "Flagged",
+                Reference = "customfield_10001",
+                IsPredefined = true,
+            };
+
+            var model = dto.ToModel();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(model.Id, Is.EqualTo(7));
+                Assert.That(model.DisplayName, Is.EqualTo("Flagged"));
+                Assert.That(model.Reference, Is.EqualTo("customfield_10001"));
+                Assert.That(model.IsPredefined, Is.True,
+                    "ToModel must carry IsPredefined through so a predefined field survives a DTO round-trip.");
+            }
         }
     }
 }

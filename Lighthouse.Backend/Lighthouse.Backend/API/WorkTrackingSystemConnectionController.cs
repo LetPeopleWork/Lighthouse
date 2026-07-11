@@ -35,24 +35,37 @@ namespace Lighthouse.Backend.API
         {
             var connector = workTrackingConnectorFactory.GetWorkTrackingConnector(connection.WorkTrackingSystem);
 
-            var missingPredefinedFields = connector.GetPredefinedAdditionalFields(connection)
-                .Where(predefined => connection.AdditionalFieldDefinitions
-                    .All(existing => !existing.IsPredefined || existing.Reference != predefined.Reference))
-                .ToList();
-
-            if (missingPredefinedFields.Count == 0)
+            // Get-or-create keyed on (IsPredefined, DisplayName) — mirrors the connector sync-path
+            // (JiraWorkTrackingConnector.EnsurePredefinedAdditionalFieldsRegistered) so the two writers use
+            // ONE dedup key. Matching on the resolved Reference instead would be add-only: a drifted Reference
+            // (default resolved before the flagged field key was known, real one after) would append a SECOND
+            // predefined row rather than reconcile it. Update the Reference in place; never duplicate.
+            var changed = false;
+            foreach (var predefined in connector.GetPredefinedAdditionalFields(connection))
             {
-                return;
+                var existing = connection.AdditionalFieldDefinitions
+                    .FirstOrDefault(field => field.IsPredefined && field.DisplayName == predefined.DisplayName);
+
+                if (existing is null)
+                {
+                    connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                    {
+                        DisplayName = predefined.DisplayName,
+                        Reference = predefined.Reference,
+                        IsPredefined = true,
+                    });
+                    changed = true;
+                }
+                else if (existing.Reference != predefined.Reference)
+                {
+                    existing.Reference = predefined.Reference;
+                    changed = true;
+                }
             }
 
-            foreach (var predefined in missingPredefinedFields)
+            if (!changed)
             {
-                connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
-                {
-                    DisplayName = predefined.DisplayName,
-                    Reference = predefined.Reference,
-                    IsPredefined = true,
-                });
+                return;
             }
 
             repository.Update(connection);
