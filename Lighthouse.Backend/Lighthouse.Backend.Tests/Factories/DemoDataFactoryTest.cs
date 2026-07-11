@@ -73,6 +73,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
                 Assert.That(demoTeam.BlockedTags, Has.Count.EqualTo(1));
                 Assert.That(demoTeam.BlockedTags, Contains.Item("Blocked"));
+                Assert.That(demoTeam.BlockedStalenessThresholdDays, Is.EqualTo(5));
 
                 Assert.That(demoTeam.DataRetrievalValue, Is.Not.Empty);
                 Assert.That(demoTeam.DataRetrievalValue, Does.Not.Contain("{"));
@@ -113,6 +114,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
                 Assert.That(demoProject.BlockedTags, Has.Count.EqualTo(1));
                 Assert.That(demoProject.BlockedTags, Contains.Item("Blocked"));
+                Assert.That(demoProject.BlockedStalenessThresholdDays, Is.EqualTo(5));
 
                 Assert.That(demoProject.DataRetrievalValue, Is.Not.Empty);
                 Assert.That(demoProject.DataRetrievalValue, Does.Not.Contain("{"));

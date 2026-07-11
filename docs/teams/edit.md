@@ -238,6 +238,8 @@ If you enable the SLE, you will get additional information in the [Metrics View]
 ## Blocked Items
 Enable **Configure Blocked Items** to define what "blocked" means for your process. Lighthouse uses a **rule builder** ("Mark work items as blocked where…") — the same rule engine used elsewhere in the product. Add one or more conditions on a field (for example a tag/label, a state, or any other work item field), pick an operator and a value, and combine them with **and** / **or**. An item counts as blocked when the rule matches.
 
+![Blocked Items rule editor](../assets/features/metrics/blockedRuleEditor.png)
+
 {: .important}
 We do not recommend identifying blocked work by *state* alone. Tags/labels work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
 

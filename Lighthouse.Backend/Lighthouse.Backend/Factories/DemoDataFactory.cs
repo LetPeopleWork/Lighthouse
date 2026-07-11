@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Factories
             {
                 Name = name,
                 BlockedTags = new List<string> { "Blocked" },
+                BlockedStalenessThresholdDays = 5,
                 ToDoStates = new List<string> { "Backlog" },
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },
@@ -38,6 +39,7 @@ namespace Lighthouse.Backend.Factories
                 Name = name,
                 AutomaticallyAdjustFeatureWIP = false,
                 BlockedTags = new List<string> { "Blocked" },
+                BlockedStalenessThresholdDays = 5,
                 ToDoStates = new List<string> { "Backlog" },
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
                 DoneStates = new List<string> { "Done" },

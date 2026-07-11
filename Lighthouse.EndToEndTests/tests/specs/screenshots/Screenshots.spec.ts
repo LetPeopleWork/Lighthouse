@@ -16,6 +16,7 @@ import {
 	FlowEfficiencyOverviewTile,
 } from "../../models/metrics/FlowEfficiencyWidget";
 import {
+	BlockedRuleConfigEditor,
 	MetricsCategories,
 	MetricsWidgetNames,
 	WorkItemAgePercentilesCard,
@@ -392,6 +393,26 @@ testWithDemo(
 		await takeElementScreenshot(
 			cumulative.chart,
 			"features/metrics/stateTimeCumulativeScoped.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of the blocked items rule editor",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(testData.teams[0].name);
+
+		await teamDetail.editTeam();
+
+		const blockedEditor = new BlockedRuleConfigEditor(page);
+		await blockedEditor.enable();
+		await expect(blockedEditor.builder).toBeVisible();
+		await expect.poll(() => blockedEditor.ruleRows.count()).toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			blockedEditor.builder,
+			"features/metrics/blockedRuleEditor.png",
 		);
 	},
 );
