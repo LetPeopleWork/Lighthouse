@@ -79,6 +79,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return DefaultFlaggedFieldReference;
         }
 
+        // Idempotent get-or-create of the connector's predefined additional field(s) on the connection's
+        // in-memory definitions — mirrors WorkTrackingSystemConnectionController.EnsurePredefinedAdditionalFieldsRegistered
+        // (minus persistence, which the sync path neither owns nor needs). Matching on IsPredefined keeps the
+        // resolved Reference authoritative across syncs and prevents a duplicate when a stale default-Reference
+        // definition was persisted before the flagged field key was first resolved.
+        private void EnsurePredefinedAdditionalFieldsRegistered(WorkTrackingSystemConnection connection)
+        {
+            foreach (var predefined in GetPredefinedAdditionalFields(connection))
+            {
+                var existing = connection.AdditionalFieldDefinitions
+                    .FirstOrDefault(field => field.IsPredefined && field.DisplayName == predefined.DisplayName);
+
+                if (existing is null)
+                {
+                    connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+                    {
+                        DisplayName = predefined.DisplayName,
+                        Reference = predefined.Reference,
+                        IsPredefined = true,
+                    });
+                }
+                else
+                {
+                    existing.Reference = predefined.Reference;
+                }
+            }
+        }
+
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             var workItems = new List<WorkItem>();
@@ -87,6 +115,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
             var issues = await GetIssuesByQuery(team, query);
+
+            // The Jira flag flows into a work item ONLY through the predefined additional field (ADR-071).
+            // GetWorkItemsForTeam does not pass through the controller, so the predefined field must be
+            // registered on the connection here — after GetIssuesByQuery has resolved the flagged field key
+            // (SetStoredFieldKeys) — so PopulateAdditionalFieldValues picks it up with the resolved Reference.
+            EnsurePredefinedAdditionalFieldsRegistered(team.WorkTrackingSystemConnection);
 
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
@@ -1120,11 +1154,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 isLast = maxResultsOverride.HasValue || totalResultsActual < startAt;
 
                 var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
-                var flaggedFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.FlaggedName];
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, flaggedFieldName);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName);
                     issues.Add(issue);
                 }
             }
@@ -1164,7 +1197,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var issuesArray = json.RootElement.GetProperty("issues");
 
                 var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
-                var flaggedFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.FlaggedName];
 
                 foreach (var jsonIssue in issuesArray.EnumerateArray())
                 {
@@ -1188,7 +1220,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
                     }
 
-                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName, flaggedFieldName);
+                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName);
                     issues.Add(issue);
                 }
 

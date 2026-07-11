@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @error @us-05 (AC3 — no synthetic "Flagged" label injection remains)
         [Test]
-        [Ignore("DELIVER slice-05 — IssueFactory still injects the synthetic Flagged label (L32-40); the flag must flow only through the predefined additional field")]
         public void A_flagged_jira_issue_is_built_without_a_synthetic_flagged_label()
         {
             var owner = new FlaggedFieldQueryOwner();

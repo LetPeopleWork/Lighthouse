@@ -145,55 +145,71 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(workItem.Tags, Has.Count.EqualTo(3));
+                // The synthetic "Flagged" label is gone (ADR-071 slice-05) — only the real Jira labels remain.
+                Assert.That(workItem.Tags, Has.Count.EqualTo(2));
                 Assert.That(workItem.Tags, Contains.Item("TagTest"));
                 Assert.That(workItem.Tags, Contains.Item("ExistingLabel"));
-                Assert.That(workItem.Tags, Contains.Item("Flagged"));
             }
         }
 
         [Test]
-        [TestCase("Flagged")]
-        [TestCase("FLAGGED")]
-        [TestCase("flagged")]
-        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlaggedLabelAsTag(string flaggedTag)
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlagAsPredefinedAdditionalFieldValue()
         {
-            // Blocked evaluation is Lighthouse-side (L1, via IBlockedItemService) — the connector's only job
-            // is to CAPTURE the flag as a tag (case-insensitively). See ADR-067 / README L1.
+            // ADR-071 slice-05: the Jira flag flows ONLY through the predefined additional field. The flagged
+            // custom-field value lands in AdditionalFieldValues keyed by the auto-registered predefined field's
+            // Id — NOT as a synthetic "Flagged" tag. Blocked evaluation stays Lighthouse-side (L1, IBlockedItemService).
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-23");
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+            var flaggedField = PredefinedFlaggedField(team);
 
-            Assert.That(workItem.Tags, Has.Some.Matches<string>(tag => string.Equals(tag, flaggedTag, StringComparison.OrdinalIgnoreCase)),
-                "A flagged Jira item must capture its flag as a tag; blocked evaluation happens Lighthouse-side, not in the connector.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.AdditionalFieldValues[flaggedField.Id], Is.Not.Empty,
+                    "A flagged Jira item must expose its flag as the predefined additional field value.");
+                Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                    "The flag must not be captured as a synthetic tag — only as the predefined additional field.");
+            }
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_ItemIsNotFlagged_DoesNotCaptureFlaggedTag()
+        public async Task GetWorkItemsForTeam_ItemIsNotFlagged_HasNoFlagValueAndNoFlaggedTag()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-18");
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-18");
+            var flaggedField = PredefinedFlaggedField(team);
 
-            Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
-                "An unflagged Jira item must not capture a Flagged tag.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.AdditionalFieldValues[flaggedField.Id], Is.Empty,
+                    "An unflagged Jira item must expose an empty predefined flag field value.");
+                Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                    "An unflagged Jira item must not capture a Flagged tag.");
+            }
         }
 
         [Test]
-        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlaggedTagIndependentlyOfBlockingConfiguration()
+        public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlagIndependentlyOfBlockingConfiguration()
         {
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-23");
 
             var workItems = await subject.GetWorkItemsForTeam(team);
             var workItem = workItems.Single(wi => wi.ReferenceId == "PROJ-23");
+            var flaggedField = PredefinedFlaggedField(team);
 
-            Assert.That(workItem.Tags, Has.Some.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
-                "Tag capture is independent of any blocked configuration — the connector always records the flag as a tag.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.AdditionalFieldValues[flaggedField.Id], Is.Not.Empty,
+                    "Flag capture is independent of any blocked configuration — the connector always records the flag as the predefined additional field value.");
+                Assert.That(workItem.Tags, Has.None.Matches<string>(tag => string.Equals(tag, "Flagged", StringComparison.OrdinalIgnoreCase)),
+                    "No synthetic Flagged tag may be recorded regardless of blocking configuration.");
+            }
         }
 
         [Test]
@@ -746,6 +762,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Message, Is.Not.Empty);
             }
+        }
+
+        private static AdditionalFieldDefinition PredefinedFlaggedField(Team team)
+        {
+            return team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Single(field => field.IsPredefined);
         }
 
         private Team CreateTeam(string query)

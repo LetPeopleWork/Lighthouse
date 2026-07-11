@@ -12,6 +12,9 @@ namespace Lighthouse.Backend.Factories
 
         private const string DefaultRankField = "customfield_10019";
 
+        // flaggedField is retained on the contract (callers still resolve the flagged custom-field key), but the
+        // synthetic "Flagged" label injection is gone (ADR-071 slice-05): the flag now flows only through the
+        // predefined additional field (generic id-keyed path), so the factory no longer consumes this value.
         public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? rankFieldName = null, string? flaggedField = null)
         {
             // If the rank field is not set, use the default one and try our luck
@@ -28,16 +31,6 @@ namespace Lighthouse.Backend.Factories
             var state = GetStateFromFields(fields);
 
             var (startedDate, closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
-
-            if (!string.IsNullOrEmpty(flaggedField))
-            {
-                var flaggedFieldValue = fields.GetFieldValue(flaggedField);
-
-                if (!string.IsNullOrEmpty(flaggedFieldValue))
-                {
-                    labels.Add(JiraFieldNames.FlaggedName);
-                }
-            }
 
             return new Issue
             {
