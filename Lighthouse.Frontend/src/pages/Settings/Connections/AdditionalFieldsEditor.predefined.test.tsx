@@ -87,7 +87,7 @@ describe("AdditionalFieldsEditor — user fields (control)", () => {
 	});
 });
 
-describe.skip("AdditionalFieldsEditor — predefined field split (Slice 05, pending)", () => {
+describe("AdditionalFieldsEditor — predefined field split (Slice 05, pending)", () => {
 	beforeEach(() => {
 		withLicense(premiumLicense);
 	});

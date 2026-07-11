@@ -4,4 +4,6 @@ export interface IAdditionalFieldDefinition {
 	displayName: string;
 
 	reference: string;
+
+	isPredefined?: boolean;
 }

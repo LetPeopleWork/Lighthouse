@@ -163,7 +163,14 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 		workTrackingSystemType !== "Linear" &&
 		workTrackingSystemType !== "Csv";
 
-	const canAddField = licenseStatus?.canUsePremiumFeatures || fields.length < 1;
+	// Predefined (system-owned) fields are surfaced read-only: they are not
+	// editable/deletable and do not consume a user field slot. Filter only at
+	// this editable-list boundary — the rule field-key picker still receives the
+	// full `fields` prop, predefined included.
+	const editableFields = fields.filter((field) => !field.isPredefined);
+
+	const canAddField =
+		licenseStatus?.canUsePremiumFeatures || editableFields.length < 1;
 
 	const handleAddField = () => {
 		// Use negative IDs for new fields (will be assigned server-side)
@@ -241,20 +248,20 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 				</LicenseTooltip>
 			</Box>
 
-			{!licenseStatus?.canUsePremiumFeatures && fields.length >= 1 && (
+			{!licenseStatus?.canUsePremiumFeatures && editableFields.length >= 1 && (
 				<Alert severity="info" sx={{ mt: 1, mb: 1 }}>
 					You've reached the limit of 1 additional field on the free plan.
 					Upgrade to premium to add more custom fields.
 				</Alert>
 			)}
 
-			{fields.length === 0 ? (
+			{editableFields.length === 0 ? (
 				<Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
 					No additional fields configured.
 				</Typography>
 			) : (
 				<List dense>
-					{fields.map((field) => (
+					{editableFields.map((field) => (
 						<ListItem
 							key={field.id}
 							divider
