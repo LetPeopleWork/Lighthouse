@@ -182,6 +182,17 @@ namespace Lighthouse.Backend.API
             WorkTrackingSystemConnection existingConnection,
             List<WriteBackMappingDefinitionDto> updatedMappings)
         {
+            // Predefined (system-owned) fields are inbound-only: they must never be persisted as a
+            // write-back mapping target. Drop any incoming mapping that targets a predefined field id.
+            var predefinedFieldIds = existingConnection.AdditionalFieldDefinitions
+                .Where(f => f.IsPredefined)
+                .Select(f => f.Id)
+                .ToHashSet();
+            updatedMappings = updatedMappings
+                .Where(m => !m.AdditionalFieldDefinitionId.HasValue
+                    || !predefinedFieldIds.Contains(m.AdditionalFieldDefinitionId.Value))
+                .ToList();
+
             var existingById = existingConnection.WriteBackMappingDefinitions.ToDictionary(m => m.Id);
             var updateIds = new HashSet<int>(updatedMappings.Where(m => m.Id != 0).Select(m => m.Id));
 

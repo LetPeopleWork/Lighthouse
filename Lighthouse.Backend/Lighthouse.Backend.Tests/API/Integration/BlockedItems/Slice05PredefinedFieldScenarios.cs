@@ -141,7 +141,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @error @us-05 (Write-back exclusion + Reference immutability — a predefined field is inbound-only:
         // its Reference cannot be changed by a settings save, and it is never persisted as a write-back target)
         [Test]
-        [Ignore("DELIVER slice-05 — predefined field must be inbound-only: Reference immutable + excluded from write-back mapping targets")]
         public async Task A_predefined_field_is_inbound_only()
         {
             var connectionId = GivenAJiraConnection();
