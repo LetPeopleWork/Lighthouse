@@ -417,6 +417,68 @@ testWithDemo(
 	},
 );
 
+// Scenario 1 ("Too Much WIP" = Team Voyager) carries several blocked items, so the demo
+// blocked-history backfill produces a Blocked Items Over Time chart with a real trend to
+// screenshot and drill into.
+const testWithBlockedHistory = testWithDemoData(1);
+
+testWithBlockedHistory(
+	"Take @screenshot of the blocked items over time chart",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetail.goToMetrics();
+
+		const flowMetrics = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const overTime = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.BlockedItemsOverTime,
+			flowMetrics,
+		);
+		await expect(overTime.Widget).toBeVisible();
+		await expect
+			.poll(() => overTime.countBlockedOverTimeBars())
+			.toBeGreaterThan(0);
+
+		await takeElementScreenshot(
+			overTime.Widget,
+			"features/metrics/blockedCountHistory.png",
+		);
+	},
+);
+
+testWithBlockedHistory(
+	"Take @screenshot of the blocked over time drill-through dialog",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetail = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetail.goToMetrics();
+
+		const flowMetrics = await metricsPage.switchCategory(
+			MetricsCategories.FlowMetrics,
+		);
+		const overTime = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.BlockedItemsOverTime,
+			flowMetrics,
+		);
+		await expect(overTime.Widget).toBeVisible();
+		await expect
+			.poll(() => overTime.countBlockedOverTimeBars())
+			.toBeGreaterThan(0);
+
+		await overTime.openBlockedOverTimeDialogByLatestBar();
+		await expect
+			.poll(() => overTime.countBlockedItemsDialogRows())
+			.toBeGreaterThan(0);
+
+		await takeDialogScreenshot(
+			overTime.blockedItemsDialog,
+			"features/metrics/blockedOverTimeDrilldown.png",
+		);
+	},
+);
+
 testWithDemo(
 	"@screenshot a flow coach reads the Work Item Age Percentiles card and switches the aging chart between cycle time and work item age percentiles",
 	async ({ page, testData, overviewPage }) => {

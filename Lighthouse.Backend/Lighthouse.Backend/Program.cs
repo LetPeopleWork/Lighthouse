@@ -1056,6 +1056,8 @@ namespace Lighthouse.Backend
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, BlockedCountSnapshotRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
+             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoBlockedHistoryBackfillHandler>();
+             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoBlockedHistoryBackfillHandler>();
             builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedRefreshLogCleanupHandler>();
             builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
             builder.Services.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();

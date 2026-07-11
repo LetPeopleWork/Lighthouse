@@ -118,7 +118,11 @@ The blocked **count** is **not affected** by date filtering — it always shows 
 
 This chart plots how many items were blocked on each recorded day, so you can see whether blocking is trending up or down over time. Values come from the forward-only blocked-count snapshots Lighthouse records each sync — history begins when the instance first started recording, not retroactively.
 
+![Blocked Over Time](../assets/features/metrics/blockedCountHistory.png)
+
 Click any bar to drill into the items that were blocked on that date. Lighthouse reconstructs the point-in-time membership from its blocked-transition history and lists those items in the standard **View Data** dialog. When the reconstructed list is smaller than the recorded count for that day — because capture began part-way through, or a sync gap dropped a transition — the dialog title carries an honest capture-gap note so the number is never silently misrepresented.
+
+![Blocked Over Time drill-through](../assets/features/metrics/blockedOverTimeDrilldown.png)
 
 ## Status Indicator
 The status reflects how long the oldest currently-blocked item has been blocked, relative to the blocked staleness threshold (`t` days). The amber band starts at 75% of the threshold.
