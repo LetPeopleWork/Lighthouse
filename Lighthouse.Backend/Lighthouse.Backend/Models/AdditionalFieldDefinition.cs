@@ -8,6 +8,8 @@ namespace Lighthouse.Backend.Models
 
         public string Reference { get; set; } = string.Empty;
 
+        public bool IsPredefined { get; set; }
+
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public WorkTrackingSystemConnection? WorkTrackingSystemConnection { get; set; }

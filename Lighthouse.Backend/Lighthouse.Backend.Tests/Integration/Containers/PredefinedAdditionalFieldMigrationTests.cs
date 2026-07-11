@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     public class PredefinedAdditionalFieldMigrationTests
     {
         [Test]
-        [Ignore("DELIVER slice-05 — additive IsPredefined column + migration not yet authored")]
         public async Task Migration_OnSqlite_PersistsColumnAndDefaultsToFalse()
         {
             var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-pf-5074-{Guid.NewGuid():N}.db");
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore("DELIVER slice-05 — additive IsPredefined column + migration not yet authored")]
         public async Task Migration_OnPostgres_PersistsColumnAndDefaultsToFalse()
         {
             await using var postgres = await PostgresContainerFixture.StartFreshAsync();

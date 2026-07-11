@@ -65,6 +65,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsPredefined")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Reference")
                         .IsRequired()
                         .HasColumnType("text");
