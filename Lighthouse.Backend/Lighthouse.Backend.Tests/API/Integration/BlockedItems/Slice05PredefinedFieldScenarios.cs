@@ -88,7 +88,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @edge @us-05 (AC2 — slot split: a predefined field does not consume a user field slot;
         // SupportsAdditionalFields must count where !IsPredefined)
         [Test]
-        [Ignore("DELIVER slice-05 — predefined field must be excluded from the license slot count (count where !IsPredefined)")]
         public async Task A_predefined_field_does_not_consume_a_user_field_slot_on_a_non_premium_connection()
         {
             GivenTheConnectionIsOnANonPremiumPlan();

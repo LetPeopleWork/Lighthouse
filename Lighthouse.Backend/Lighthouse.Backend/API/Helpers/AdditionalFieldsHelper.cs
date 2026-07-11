@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.API.Helpers
         public static bool SupportsAdditionalFields(this IEnumerable<AdditionalFieldDefinition> additionalFields,
             ILicenseService licenseService)
         {
-            return licenseService.CanUsePremiumFeatures() || additionalFields.Count() < 2;
+            return licenseService.CanUsePremiumFeatures() || additionalFields.Count(f => !f.IsPredefined) < 2;
         }
     }
 }
