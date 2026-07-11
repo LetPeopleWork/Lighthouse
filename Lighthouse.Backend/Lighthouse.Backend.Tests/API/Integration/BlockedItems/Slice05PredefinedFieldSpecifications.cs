@@ -278,7 +278,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 $"Item {referenceId} flagged={expectedBlocked} must read isBlocked={expectedBlocked} via the generic id-keyed field path. Body: {body}");
         }
 
-        private static IEnumerable<string> Tags(JsonElement item)
+        private static List<string> Tags(JsonElement item)
         {
             if (!item.TryGetProperty("tags", out var tags) || tags.ValueKind != JsonValueKind.Array)
             {

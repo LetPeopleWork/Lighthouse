@@ -215,6 +215,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-05")]
     public class Slice05AdditionalFieldDtoSerializationTest
     {
+        private static readonly JsonSerializerOptions WebSerializerOptions = new(JsonSerializerDefaults.Web);
+
         [Test]
         public void The_additional_field_dto_serializes_is_predefined_as_camel_case()
         {
@@ -226,7 +228,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 IsPredefined = true,
             });
 
-            var serialized = JsonSerializer.SerializeToNode(dto, new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
+            var serialized = JsonSerializer.SerializeToNode(dto, WebSerializerOptions)!.AsObject();
 
             Assert.That(serialized["isPredefined"]?.GetValue<bool>(), Is.True,
                 "the FE isPredefined DTO split relies on the BE serializing IsPredefined as camelCase 'isPredefined'.");
