@@ -43,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-05 (AC1 — a flagged item reads blocked, with no synthetic "Flagged" label)
         [Test]
-        [Ignore("DELIVER slice-05 — rule-based IsBlocked over the predefined flagged field is absent; the flag must read blocked with no synthetic Flagged label")]
         public async Task A_flagged_item_reads_blocked_through_the_flagged_field_without_a_synthetic_label()
         {
             var team = GivenAJiraTeamWithAFlaggedFieldAndOneFlaggedItem("PHX-300");
@@ -58,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // whether set or not; offered as a selectable rule field key)
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore("DELIVER slice-05 — rule-based IsBlocked over the predefined flagged field is absent (generic id-keyed path)")]
         public async Task The_flagged_field_value_drives_blocked_through_the_generic_field_path(bool flagged)
         {
             var team = GivenAJiraTeamWithAFlaggedField();
