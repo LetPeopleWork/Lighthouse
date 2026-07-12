@@ -172,7 +172,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Check out with a maintainer PAT (same secret ci_release.yml uses for the GitHub Release).
+      # The publish step pushes a commit to main, and main's ruleset requires 7 status checks;
+      # only Admin/Maintain roles bypass it. The default GITHUB_TOKEN (GitHub Actions) is NOT a
+      # ruleset bypass actor and cannot be added as one (422: "integration must be part of the
+      # ruleset source or owner organization"), so the push must authenticate as an admin user.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          token: ${{ secrets.RELEASE_CREATION_TOKEN }}
 
       - name: Setup Helm
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
