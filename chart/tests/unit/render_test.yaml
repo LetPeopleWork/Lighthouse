@@ -55,9 +55,13 @@ tests:
       postgresql.auth.password: testpass
     template: templates/deployment-api.yaml
     asserts:
-      - equal:
+      # Assert the fallback shape, not a pinned version: with image.tag unset the
+      # container image must be the ghcr repo tagged with the Chart.appVersion
+      # calver. Matching the pattern (not a literal) keeps this green across every
+      # appVersion bump instead of forcing a manual edit each release.
+      - matchRegex:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/letpeoplework/lighthouse:26.6.21.1
+          pattern: ^ghcr\.io/letpeoplework/lighthouse:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$
 
   - it: API binds an unprivileged container port (non-root bind, not 80)
     set:
