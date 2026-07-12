@@ -4,6 +4,36 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.7.11.4
+
+## See What's Blocked — and for How Long
+Blocked work is where flow quietly dies, but Lighthouse had no first-class notion of it. This release replaces the fixed-state handling with a generic, **rule-based definition of blocked**: you describe what "blocked" means for your workflow once, in the Flow Metrics configuration, and Lighthouse applies it everywhere. This allows you to filter based on any additional field or rules you might have.
+
+On top of that definition you get:
+
+- **Blocked duration** — Lighthouse captures when each item entered and left the blocked state, so you can see how long something has been stuck right on the work-item card.
+- **Blocked items go stale** — an item blocked longer than your staleness threshold is flagged stale, so long-blocked work surfaces alongside your other neglected items instead of hiding in plain sight.
+- **Blocked Items Over Time** — a new Flow Metrics chart showing how many items were blocked across time, at both Team and Portfolio level, so you can tell whether you're improving. Click any bar to drill through to exactly which items were blocked on that day.
+- **RAG status** — the Blocked overview widget turns amber or red off the age of your longest-blocked item, with a previous-period trend.
+
+![Blocked Items Over Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/blockedCountHistory.png)
+
+The Lighthouse **CLI and MCP clients** now expose the blocked-over-time trend as well, so scripts and AI agents can query how blockage is evolving (and read each in-progress item's `blockedSince`).
+
+Configure it under [Blocked Overview](https://docs.lighthouse.letpeople.work/metrics/widgets.html#blocked-overview) and read about the [Blocked Over Time](https://docs.lighthouse.letpeople.work/metrics/widgets.html#blocked-over-time) chart.
+
+## Bugfixes and Improvements
+- **Delivery forecasts for large deliveries now show correct dates** — a large delivery could show wrong forecast dates while smaller ones were fine; the forecast now derives its dates from the latest-completing feature. Reported by Chris Graves.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.7.3.1...v26.7.11.4)
+
+
 # Lighthouse v26.7.3.1
 
 ## Self-Host Lighthouse on Kubernetes — Official Helm Chart

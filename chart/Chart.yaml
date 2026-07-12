@@ -10,9 +10,10 @@ type: application
 #        so an out-of-band ESO/OpenBao rotation reaches the running API without a manual restart.
 # 0.1.5: track the v26.7.3.1 release — appVersion moves off the pre-release testing image to the
 #        first tagged release carrying the scalability work; Helm/Kubernetes support is now GA.
-version: 0.1.5
+# 0.1.6: track the v26.7.11.4 release — rule-based blocked items (Epic 5074).
+version: 0.1.6
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-appVersion: "26.7.3.1"
+appVersion: "26.7.11.4"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse

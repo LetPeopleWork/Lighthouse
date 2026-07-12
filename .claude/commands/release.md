@@ -53,12 +53,16 @@ Commit the docs + screenshots + release-notes changes (conventional message, e.g
    CLAST=$(gh release view --repo LetPeopleWork/lighthouse-clients --json tagName -q .tagName 2>/dev/null)
    git -C /storage/repos/lighthouse-clients log --oneline "${CLAST:-HEAD~20}"..HEAD
    ```
-2. **If there are pending changesets** (or unreleased client commits), a new client version is warranted. **MVP: tell the user to trigger it manually** — the clients' `release` job is gated on the `Release` environment of the `Client CI` workflow. Surface the latest green `Client CI` run on `main` and instruct the user to approve its `Release` deployment in GitHub Actions (this consumes the changesets, bumps the package versions, and publishes). Provide the run URL:
-   ```bash
-   gh run list --repo LetPeopleWork/lighthouse-clients --workflow "Client CI" --branch main --limit 1 \
-     --json databaseId,status,conclusion,url
-   ```
-   Do not block the server release on this — note it as a parallel action the user takes.
+2. **If there are pending changesets** (or unreleased client commits), a new client version is warranted. The clients publish via a **manual version bump, then auto-publish on `main`** (there is NO `Release`-environment approval gate — earlier drafts of this doc wrongly said there was one):
+   1. Land the feature commit(s) **with** their `.changeset/*.md` on `main` (the pre-commit `pnpm ci` hook enforces a changeset is present).
+   2. Run `pnpm release:version` in `/storage/repos/lighthouse-clients` — consumes the changesets, bumps `package.json` versions + writes CHANGELOGs, deletes the changeset files. This commit touches `package.json` with no changeset, so the pre-commit hook blocks it: commit with `SKIP_SIMPLE_GIT_HOOKS=1` (documented escape in `docs/release-model.md`), message `chore(release): version packages — <summary>`, and push to `main`.
+   3. On that push, the `Client CI` `release` job **auto-publishes** the bumped packages to npm (no human approval) and runs smoke tests. Confirm publication:
+      ```bash
+      npm view @letpeoplework/lighthouse-client version   # etc. per package
+      gh run list --repo LetPeopleWork/lighthouse-clients --workflow "Client CI" --branch main --limit 1 \
+        --json databaseId,status,conclusion,url
+      ```
+   `release:version` needs the `GITHUB_TOKEN_CHANGESET` credential (the changelog-github plugin); if it's not in the shell, have the user run the bump. Don't block the server release on this — it proceeds in parallel.
 3. **If there are no pending changesets**, say "clients unchanged since last release — nothing to publish" and move on.
 
 ## Phase 5 — cut the release (signed standalones + GitHub release)
@@ -85,8 +89,10 @@ The `release` job on the Phase-3 green run tags the commit, signs + cosigns the 
    gh release view --repo LetPeopleWork/Lighthouse --json tagName,isPrerelease,assets -q '.tagName, (.assets | length)'
    ```
    Capture the **real tag** (e.g. `v26.6.6.3`). Sanity-check the asset list includes the win/msi/dmg/app/AppImage + `.sig` files and the SBOM.
-4. **Reconcile the version**: set the top release-notes heading to the real tag if it was a placeholder:
-   - if `docs/releasenotes/releasenotes.md` opens with `# Lighthouse vNext` (or a guessed date), edit it to `# Lighthouse <real tag>`, commit (`docs(release): pin <real tag>`), and push. (Skip if it already matches.)
+4. **Reconcile the version + Helm chart** (one dedicated commit, pushed *after* the GitHub release is live so the real calver tag is known):
+   - **Release-notes heading**: if `docs/releasenotes/releasenotes.md` opens with `# Lighthouse vNext` (or a guessed date), edit it to `# Lighthouse <real tag>`. (Skip if it already matches.)
+   - **Helm chart** (`chart/Chart.yaml`): bump `appVersion` to the new app calver (the tag without the leading `v`, e.g. `26.7.12.1`) and bump the chart `version` (SemVer, e.g. `0.1.5` → `0.1.6`). Also refresh any pinned chart/app version in the k8s quick-start docs snippets (grep `docs/` for the previous chart + appVersion strings — last release touched `docs/` k8s quick-start). The chart is published from this bump, so it must track every app release; the chart lagging the app is a release defect.
+   - Commit both together (`docs(release): pin <real tag> + chart <newchartver>`) and push to `main`.
 
 ## Phase 6 — announce on Slack
 
@@ -98,6 +104,7 @@ Summarize:
 - Released version (real tag) + GitHub release URL + asset count.
 - Docs/screenshots: which images changed.
 - Release notes: headline count + contributors (and any first-timers added).
+- Helm chart: new `version` + `appVersion` (must match the app calver).
 - Clients: published a new version / told user to trigger it / unchanged.
 - Slack: posted (permalink) / saved draft only.
 - Any follow-ups (e.g. ADO items to close, a clients `Release` approval still pending).
