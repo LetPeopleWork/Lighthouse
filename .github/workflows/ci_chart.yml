@@ -1,9 +1,14 @@
 name: Helm Chart
 
 # epic-5306 slice-04 — chart lifecycle (ADR-083). Standalone workflow for the new "chart" concern,
-# matching the repo's split-by-concern workflows. `validate` runs on every chart change; `publish`
-# is a manual maintainer step (the "cheap repeatable step at finalization") that packages + indexes
-# into docs/charts/ and commits, so the existing pages.yml serves it (one Pages source per repo).
+# matching the repo's split-by-concern workflows. `validate` runs on every chart change. `publish`
+# packages + indexes into docs/charts/ and commits, so the existing pages.yml serves it (one Pages
+# source per repo). Publishing is gated on the `Release` GitHub environment — the SAME approval gate
+# as the server release (ci_release.yml) and analogous to the lighthouse-clients publish flow: a push
+# to main that carries a NOT-yet-published Chart.yaml version auto-requests publish and waits for a
+# maintainer to approve the gate (no separate manual run). `detect-publish` suppresses the gate for
+# chart edits that don't bump the version (docs/template tweaks). A `workflow_dispatch` with
+# publish=true forces a (still version-guarded) republish for backfills.
 
 on:
   push:
@@ -121,10 +126,49 @@ jobs:
           kubectl describe pods -l app.kubernetes.io/instance=l8e || true
           kubectl logs -l app.kubernetes.io/instance=l8e --tail=200 --all-containers || true
 
-  publish:
-    if: github.event_name == 'workflow_dispatch' && inputs.publish
-    needs: [validate, install-smoke]
+  # Decide whether there is a new chart version to publish, so the Release gate only appears when
+  # there is actually something to ship. On a push to main: "Chart.yaml version not yet in
+  # docs/charts/index.yaml". On workflow_dispatch: honour the publish input (the version-guard in
+  # publish.sh still blocks a real overwrite, so forcing it is safe). Never on pull_request.
+  detect-publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.decide.outputs.should_publish }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.16.3
+
+      - name: Decide whether a new chart version needs publishing
+        id: decide
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "workflow_dispatch: publish input = ${{ inputs.publish }}"
+            echo "should_publish=${{ inputs.publish }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          version="$(helm show chart ./chart | awk '/^version:/ {print $2; exit}' | tr -d '"')"
+          if grep -qE "version:[[:space:]]*${version//./\\.}([^0-9]|$)" docs/charts/index.yaml 2>/dev/null; then
+            echo "chart $version is already published — no publish needed, no gate"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "chart $version is not yet published — requesting Release-gated publish"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: [validate, install-smoke, detect-publish]
+    if: needs.detect-publish.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    # Reuse the server release gate: publishing the chart waits for the same maintainer approval
+    # as ci_release.yml. Configure required reviewers on the `Release` environment in repo settings.
+    environment:
+      name: Release
     permissions:
       contents: write
     steps:
