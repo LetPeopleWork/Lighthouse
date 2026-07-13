@@ -1,5 +1,6 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { parseBlockedRuleSet } from "../../../models/Common/BaseSettings";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { ICycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
@@ -43,7 +44,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 				setWaitStates(settings.waitStates ?? []);
 				setStateMappings(settings.stateMappings);
 				setHasBlockedConfig(
-					settings.blockedStates.length > 0 || settings.blockedTags.length > 0,
+					(parseBlockedRuleSet(settings.blockedRuleSetJson)?.conditions
+						.length ?? 0) > 0,
 				);
 				setStalenessThresholdDays(settings.stalenessThresholdDays);
 				setBlockedStalenessThresholdDays(

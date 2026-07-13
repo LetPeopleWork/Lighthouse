@@ -396,4 +396,72 @@ describe("TeamMetricsView component", () => {
 			});
 		});
 	});
+
+	describe("blocked config wiring (ADO #5480)", () => {
+		const renderWithBlockedSettings = (settings: {
+			blockedStates?: string[];
+			blockedTags?: string[];
+			blockedRuleSetJson?: string | null;
+		}) => {
+			const team = new Team();
+			team.id = 1;
+			team.name = "Blocked Team";
+
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
+				doingStates: ["In Progress"],
+				blockedStates: settings.blockedStates ?? [],
+				blockedTags: settings.blockedTags ?? [],
+				blockedRuleSetJson: settings.blockedRuleSetJson,
+			});
+
+			const mockContext = createMockApiServiceContext({
+				teamMetricsService: mockTeamMetricsService,
+				teamService: mockTeamService,
+			});
+
+			return render(
+				<ApiServiceContext.Provider value={mockContext}>
+					<TeamMetricsView team={team} />
+				</ApiServiceContext.Provider>,
+			);
+		};
+
+		it("passes hasBlockedConfig=false when no rule set and no legacy fields are configured", async () => {
+			renderWithBlockedSettings({ blockedRuleSetJson: null });
+
+			await waitFor(() => {
+				expect(screen.getByTestId("has-blocked-config")).toHaveTextContent(
+					"false",
+				);
+			});
+		});
+
+		it("passes hasBlockedConfig=true from blockedRuleSetJson even when legacy blockedStates/blockedTags are empty", async () => {
+			// Regression test for ADO #5480: a team configured purely through the
+			// rule-based editor (Epic 5074) never populates the legacy blockedStates/
+			// blockedTags arrays. hasBlockedConfig must be derived from the rule set
+			// the backend already returns effective (legacy-synthesized) — not from
+			// the legacy arrays, which stay empty forever for rule-only teams.
+			const ruleSet = JSON.stringify({
+				version: 1,
+				mode: "or",
+				conditions: [
+					{ fieldKey: "workitem.state", operator: "equals", value: "Blocked" },
+				],
+			});
+
+			renderWithBlockedSettings({
+				blockedStates: [],
+				blockedTags: [],
+				blockedRuleSetJson: ruleSet,
+			});
+
+			await waitFor(() => {
+				expect(screen.getByTestId("has-blocked-config")).toHaveTextContent(
+					"true",
+				);
+			});
+		});
+	});
 });
