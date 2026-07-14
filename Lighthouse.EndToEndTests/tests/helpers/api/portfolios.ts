@@ -32,8 +32,6 @@ export async function createPortfolio(
 			systemWIPLImit: 2,
 			stalenessThresholdDays: 0,
 			parentOverrideField: "",
-			blockedStates: [],
-			blockedTags: [],
 			doneItemsCutoffDays: 365,
 		},
 	});

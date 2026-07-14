@@ -30,8 +30,6 @@ export async function createTeam(
 			serviceLevelExpectationRange: 7,
 			systemWIPLimit: 6,
 			stalenessThresholdDays: 0,
-			blockedStates: [],
-			blockedTags: ["Blocked"],
 			doneItemsCutoffDays: 180,
 			processBehaviourChartBaselineStartDate: sixWeeksAgo,
 			processBehaviourChartBaselineEndDate: fourWeeksAgo,
