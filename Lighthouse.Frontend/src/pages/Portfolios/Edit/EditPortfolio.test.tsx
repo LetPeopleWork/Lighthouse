@@ -176,8 +176,6 @@ describe("EditPortfolio", () => {
 			parentOverrideAdditionalFieldDefinitionId: null,
 			sizeEstimateAdditionalFieldDefinitionId: null,
 			featureOwnerAdditionalFieldDefinitionId: null,
-			blockedStates: [],
-			blockedTags: [],
 			stateMappings: [],
 			overrideRealChildCountStates: [],
 			usePercentileToCalculateDefaultAmountOfWorkItems: false,

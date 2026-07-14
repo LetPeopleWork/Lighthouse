@@ -147,8 +147,6 @@ describe("EditTeam", () => {
 			serviceLevelExpectationProbability: 70,
 			serviceLevelExpectationRange: 7,
 			systemWIPLimit: 6,
-			blockedStates: [],
-			blockedTags: [],
 			processBehaviourChartBaselineStartDate: null,
 			processBehaviourChartBaselineEndDate: null,
 		});

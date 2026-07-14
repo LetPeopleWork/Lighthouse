@@ -62,9 +62,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(
 		() =>
 			(parseBlockedRuleSet(settings.blockedRuleSetJson)?.conditions.length ??
-				0) > 0 ||
-			(settings.blockedTags && settings.blockedTags.length > 0) ||
-			(settings.blockedStates && settings.blockedStates.length > 0),
+				0) > 0,
 	);
 	const [isStalenessEnabled, setIsStalenessEnabled] = useState(false);
 	const [isBlockedStalenessEnabled, setIsBlockedStalenessEnabled] =
@@ -120,8 +118,8 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		);
 		// isBlockedItemsEnabled is deliberately NOT resynced here — see its
 		// lazy useState initializer above. Clearing rule rows down to zero
-		// (persistBlockedRuleSet) mutates settings.blockedRuleSetJson/blockedTags/
-		// blockedStates the same way an explicit "disable" does, so recomputing
+		// (persistBlockedRuleSet) mutates settings.blockedRuleSetJson the same
+		// way an explicit "disable" does, so recomputing
 		// this flag from settings on every change would hide the whole rule
 		// editor mid-edit the moment a config admin deletes the last row before
 		// adding a replacement — exactly the flow the BlockedItems E2E walking
@@ -276,12 +274,9 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		mode: DeliveryRuleGroupMode,
 	) => {
 		if (conditions.length === 0) {
-			// Clear legacy fields alongside the rule set so the backend's
-			// GetEffectiveRuleSetJson doesn't synthesize rules from leftover
-			// BlockedTags/BlockedStates when BlockedRuleSetJson is null.
+			// BlockedRuleSetJson is the sole blocked-rule source; clearing it to
+			// null fully removes the blocked definition.
 			onSettingsChange("blockedRuleSetJson" as keyof T, null);
-			onSettingsChange("blockedTags" as keyof T, []);
-			onSettingsChange("blockedStates" as keyof T, []);
 		} else {
 			onSettingsChange(
 				"blockedRuleSetJson" as keyof T,
@@ -306,11 +301,8 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		setIsBlockedItemsEnabled(checked);
 
 		if (!checked) {
-			// Clear the rule-based definition; legacy fields remain expand-only until the
-			// backend cleanup migration but are emptied so no stale blocked signal lingers.
+			// Clear the rule-based definition so no stale blocked signal lingers.
 			onSettingsChange("blockedRuleSetJson" as keyof T, null);
-			onSettingsChange("blockedTags" as keyof T, []);
-			onSettingsChange("blockedStates" as keyof T, []);
 		}
 	};
 

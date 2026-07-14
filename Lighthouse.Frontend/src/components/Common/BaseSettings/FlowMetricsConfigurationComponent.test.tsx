@@ -700,7 +700,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 		it("keeps the blocked rule editor open after the last rule row is cleared", async () => {
 			// Regression test for the BlockedItems E2E walking-skeleton failure:
 			// deleting the last rule row makes persistBlockedRuleSet null out
-			// blockedRuleSetJson/blockedTags/blockedStates, exactly like an explicit
+			// blockedRuleSetJson, exactly like an explicit
 			// "disable" would. isBlockedItemsEnabled must NOT resync off that —
 			// otherwise the editor (and its Add Rule button) disappears mid-edit,
 			// stranding a config admin who is about to add a replacement rule.
@@ -721,8 +721,6 @@ describe("FlowMetricsConfigurationComponent", () => {
 					settings={{
 						...mockSettings,
 						blockedRuleSetJson: null,
-						blockedTags: [],
-						blockedStates: [],
 					}}
 					onSettingsChange={mockOnSettingsChange}
 					stalenessSeedDefault={5}
@@ -759,6 +757,65 @@ describe("FlowMetricsConfigurationComponent", () => {
 				screen.queryByTestId("delivery-rule-builder"),
 			).not.toBeInTheDocument();
 			expect(schemaRef.getRuleSchema).not.toHaveBeenCalled();
+		});
+
+		it("mounts the Configure Blocked checkbox CHECKED from blockedRuleSetJson with no legacy fields", () => {
+			// blockedRuleSetJson is the sole blocked-rule source now that the
+			// legacy BlockedStates/BlockedTags fields have been removed.
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(
+				screen.getByRole("checkbox", {
+					name: /Configure Blocked Work Items/i,
+				}),
+			).toBeChecked();
+		});
+
+		it("mounts the Configure Blocked checkbox UNCHECKED when blockedRuleSetJson is null", () => {
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: null }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			expect(
+				screen.getByRole("checkbox", {
+					name: /Configure Blocked Work Items/i,
+				}),
+			).not.toBeChecked();
+		});
+
+		it("disabling emits blockedRuleSetJson=null and never writes legacy fields", async () => {
+			const user = userEvent.setup();
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(
+				screen.getByRole("checkbox", {
+					name: /Configure Blocked Work Items/i,
+				}),
+			);
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith(
+				"blockedRuleSetJson",
+				null,
+			);
+			const changedKeys = mockOnSettingsChange.mock.calls.map((c) => c[0]);
+			expect(changedKeys).not.toContain("blockedTags");
+			expect(changedKeys).not.toContain("blockedStates");
 		});
 	});
 

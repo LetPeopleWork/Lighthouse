@@ -73,8 +73,6 @@ export interface IBaseSettings {
 	serviceLevelExpectationRange: number;
 	systemWIPLimit: number;
 	parentOverrideAdditionalFieldDefinitionId: number | null;
-	blockedStates: string[];
-	blockedTags: string[];
 	blockedRuleSetJson?: string | null;
 	stateMappings: IStateMapping[];
 	cycleTimeDefinitions?: ICycleTimeDefinition[];

@@ -42,8 +42,6 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 			serviceLevelExpectationRange: 0,
 			systemWIPLimit: 0,
 			parentOverrideAdditionalFieldDefinitionId: null,
-			blockedStates: [],
-			blockedTags: [],
 			stateMappings: [],
 			doneItemsCutoffDays: 365,
 			processBehaviourChartBaselineStartDate: null,

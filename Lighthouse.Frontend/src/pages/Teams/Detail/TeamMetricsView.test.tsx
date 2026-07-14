@@ -83,8 +83,6 @@ describe("TeamMetricsView component", () => {
 		const mockTeamService = createMockTeamService();
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			doingStates: ["In Progress", "Review"],
-			blockedStates: [],
-			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -150,8 +148,6 @@ describe("TeamMetricsView component", () => {
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			automaticallyAdjustFeatureWIP: false,
 			doingStates: ["In Progress"],
-			blockedStates: [],
-			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -181,8 +177,6 @@ describe("TeamMetricsView component", () => {
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			automaticallyAdjustFeatureWIP: false,
 			doingStates: ["In Progress"],
-			blockedStates: [],
-			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -215,8 +209,6 @@ describe("TeamMetricsView component", () => {
 		mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 			automaticallyAdjustFeatureWIP: true,
 			doingStates: ["In Progress"],
-			blockedStates: [],
-			blockedTags: [],
 		});
 
 		const mockContext = createMockApiServiceContext({
@@ -346,8 +338,6 @@ describe("TeamMetricsView component", () => {
 			mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 				automaticallyAdjustFeatureWIP: true,
 				doingStates: ["In Progress"],
-				blockedStates: [],
-				blockedTags: [],
 				forecastFilterRuleSetJson,
 			});
 
@@ -399,8 +389,6 @@ describe("TeamMetricsView component", () => {
 
 	describe("blocked config wiring (ADO #5480)", () => {
 		const renderWithBlockedSettings = (settings: {
-			blockedStates?: string[];
-			blockedTags?: string[];
 			blockedRuleSetJson?: string | null;
 		}) => {
 			const team = new Team();
@@ -410,8 +398,6 @@ describe("TeamMetricsView component", () => {
 			const mockTeamService = createMockTeamService();
 			mockTeamService.getTeamSettings = vi.fn().mockResolvedValue({
 				doingStates: ["In Progress"],
-				blockedStates: settings.blockedStates ?? [],
-				blockedTags: settings.blockedTags ?? [],
 				blockedRuleSetJson: settings.blockedRuleSetJson,
 			});
 
@@ -427,7 +413,7 @@ describe("TeamMetricsView component", () => {
 			);
 		};
 
-		it("passes hasBlockedConfig=false when no rule set and no legacy fields are configured", async () => {
+		it("passes hasBlockedConfig=false when no rule set is configured", async () => {
 			renderWithBlockedSettings({ blockedRuleSetJson: null });
 
 			await waitFor(() => {
@@ -437,12 +423,11 @@ describe("TeamMetricsView component", () => {
 			});
 		});
 
-		it("passes hasBlockedConfig=true from blockedRuleSetJson even when legacy blockedStates/blockedTags are empty", async () => {
-			// Regression test for ADO #5480: a team configured purely through the
-			// rule-based editor (Epic 5074) never populates the legacy blockedStates/
-			// blockedTags arrays. hasBlockedConfig must be derived from the rule set
-			// the backend already returns effective (legacy-synthesized) — not from
-			// the legacy arrays, which stay empty forever for rule-only teams.
+		it("passes hasBlockedConfig=true from blockedRuleSetJson", async () => {
+			// Regression test for ADO #5480: a team configured through the
+			// rule-based editor (Epic 5074) exposes its blocked definition solely
+			// through blockedRuleSetJson. hasBlockedConfig must be derived from the
+			// rule set the backend returns.
 			const ruleSet = JSON.stringify({
 				version: 1,
 				mode: "or",
@@ -452,8 +437,6 @@ describe("TeamMetricsView component", () => {
 			});
 
 			renderWithBlockedSettings({
-				blockedStates: [],
-				blockedTags: [],
 				blockedRuleSetJson: ruleSet,
 			});
 
