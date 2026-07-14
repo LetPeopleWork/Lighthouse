@@ -18,11 +18,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IRuleFieldProvider<WorkItem> workItemFieldProvider)
         : IBlockedItemService
     {
-        private const string WorkItemFieldPrefix = "workitem";
-        private const string FeatureFieldPrefix = "feature";
-        private const string StateFieldSuffix = "state";
-        private const string TagsFieldSuffix = "tags";
-
         private static readonly JsonSerializerOptions JsonSerializerOptions = new()
         {
             PropertyNameCaseInsensitive = true,
@@ -66,7 +61,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 }
             }
 
-            return SynthesizeFromLegacyConfiguration(owner);
+            return new WorkItemRuleSet
+            {
+                Version = WorkItemRuleSet.SchemaVersion,
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [],
+            };
         }
 
         public string GetEffectiveRuleSetJson(WorkTrackingSystemOptionsOwner owner)
@@ -77,39 +77,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         public bool ValidateRuleSet(WorkItemRuleSet ruleSet, WorkTrackingSystemOptionsOwner owner)
         {
             return workItemRuleEvaluator.IsValid(ruleSet, GetSchema(owner));
-        }
-
-        private static WorkItemRuleSet SynthesizeFromLegacyConfiguration(WorkTrackingSystemOptionsOwner owner)
-        {
-            var prefix = FieldPrefixFor(owner);
-
-            var conditions = new List<WorkItemRuleCondition>();
-            foreach (var state in owner.BlockedStates)
-            {
-                conditions.Add(new WorkItemRuleCondition
-                {
-                    FieldKey = $"{prefix}.{StateFieldSuffix}",
-                    Operator = RuleOperators.Equals,
-                    Value = state,
-                });
-            }
-
-            foreach (var tag in owner.BlockedTags)
-            {
-                conditions.Add(new WorkItemRuleCondition
-                {
-                    FieldKey = $"{prefix}.{TagsFieldSuffix}",
-                    Operator = RuleOperators.Contains,
-                    Value = tag,
-                });
-            }
-
-            return new WorkItemRuleSet
-            {
-                Version = WorkItemRuleSet.SchemaVersion,
-                Mode = WorkItemRuleSet.ModeOr,
-                Conditions = conditions,
-            };
         }
 
         private WorkItemRuleSchema GetSchema(WorkTrackingSystemOptionsOwner owner)
@@ -140,11 +107,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return owner is Portfolio
                 ? FeatureFieldProvider.GetFixedFields()
                 : workItemFieldProvider.GetFixedFields();
-        }
-
-        private static string FieldPrefixFor(WorkTrackingSystemOptionsOwner owner)
-        {
-            return owner is Portfolio ? FeatureFieldPrefix : WorkItemFieldPrefix;
         }
     }
 }

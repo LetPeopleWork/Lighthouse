@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.API.Helpers
             var allDirectStates = settings.ToDoStates
                 .Concat(settings.DoingStates)
                 .Concat(settings.DoneStates)
-                .Concat(settings.BlockedStates)
                 .ToList();
 
             return Validate(mappings, allDirectStates);

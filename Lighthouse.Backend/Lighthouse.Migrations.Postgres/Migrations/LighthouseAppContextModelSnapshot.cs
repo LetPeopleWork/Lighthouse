@@ -738,14 +738,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("BlockedStalenessThresholdDays")
                         .HasColumnType("integer");
 
-                    b.PrimitiveCollection<List<string>>("BlockedStates")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<List<string>>("BlockedTags")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<Guid>("ConcurrencyToken")
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
@@ -944,14 +936,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("BlockedStalenessThresholdDays")
                         .HasColumnType("integer");
-
-                    b.PrimitiveCollection<List<string>>("BlockedStates")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.PrimitiveCollection<List<string>>("BlockedTags")
-                        .IsRequired()
-                        .HasColumnType("text[]");
 
                     b.Property<Guid>("ConcurrencyToken")
                         .IsConcurrencyToken()

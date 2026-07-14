@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (!syncedItem.WasBlockedBeforeSync && blockedItemService.IsBlocked(workItem, team))
             {
-                events.Add(new WorkItemBlocked(workItem.Id, ResolveBlockReason(team, workItem)));
+                events.Add(new WorkItemBlocked(workItem.Id, ResolveBlockReason(workItem)));
             }
 
             if (syncedItem.WasBlockedBeforeSync && !blockedItemService.IsBlocked(workItem, team))
@@ -149,17 +149,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
         }
 
-        private static string ResolveBlockReason(Team team, WorkItem workItem)
+        private static string ResolveBlockReason(WorkItem workItem)
         {
-            if (team.BlockedStates.IsItemInList(workItem.State))
-            {
-                return workItem.State;
-            }
-
-            // The blocked DECISION is owned by IBlockedItemService (which may match on a custom rule with no
-            // legacy state/tag). This only supplies human-readable reason text, so fall back to the state
-            // when no legacy tag matches rather than throwing on an empty First().
-            return workItem.Tags.FirstOrDefault(team.BlockedTags.IsItemInList) ?? workItem.State;
+            // The blocked DECISION is owned by IBlockedItemService (rule-set based, ADR-067); this only
+            // supplies human-readable reason text for the WorkItemBlocked event, so the item's current
+            // state is the simplest faithful description of "why" without re-deriving the rule match.
+            return workItem.State;
         }
 
         private static bool IsStale(Team team, WorkItem workItem, DateTime syncTime)

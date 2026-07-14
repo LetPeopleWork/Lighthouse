@@ -273,8 +273,7 @@ namespace Lighthouse.Backend.Tests.API
                 AutomaticallyAdjustFeatureWIP = true,
                 ServiceLevelExpectationRange = 18,
                 ServiceLevelExpectationProbability = 86,
-                BlockedStates = ["Waiting for Peter"],
-                BlockedTags = ["Customer Input Needed"],
+                BlockedRuleSetJson = "{\"version\":1,\"mode\":\"or\",\"conditions\":[{\"fieldKey\":\"workitem.state\",\"operator\":\"equals\",\"value\":\"Waiting for Peter\"},{\"fieldKey\":\"workitem.tags\",\"operator\":\"contains\",\"value\":\"Customer Input Needed\"}]}",
             };
 
             var subject = CreateSubject();
@@ -304,8 +303,8 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(teamSettingDto.AutomaticallyAdjustFeatureWIP, Is.EqualTo(updatedTeamSettings.AutomaticallyAdjustFeatureWIP));
                 Assert.That(teamSettingDto.ServiceLevelExpectationProbability, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationProbability));
                 Assert.That(teamSettingDto.ServiceLevelExpectationRange, Is.EqualTo(updatedTeamSettings.ServiceLevelExpectationRange));
-                Assert.That(teamSettingDto.BlockedStates, Contains.Item("Waiting for Peter"));
-                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
+                Assert.That(teamSettingDto.BlockedRuleSetJson, Does.Contain("Waiting for Peter"));
+                Assert.That(teamSettingDto.BlockedRuleSetJson, Does.Contain("Customer Input Needed"));
             }
         }
 

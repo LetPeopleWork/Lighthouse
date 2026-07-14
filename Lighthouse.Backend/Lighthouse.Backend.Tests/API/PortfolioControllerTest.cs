@@ -229,8 +229,7 @@ namespace Lighthouse.Backend.Tests.API
                 ServiceLevelExpectationProbability = 95,
                 ServiceLevelExpectationRange = 5,
                 SystemWIPLimit = 12,
-                BlockedStates = ["On Hold"],
-                BlockedTags = ["Waiting for Review", "Customer Feedback"]
+                BlockedRuleSetJson = "{\"version\":1,\"mode\":\"or\",\"conditions\":[{\"fieldKey\":\"feature.state\",\"operator\":\"equals\",\"value\":\"On Hold\"},{\"fieldKey\":\"feature.tags\",\"operator\":\"contains\",\"value\":\"Waiting for Review\"},{\"fieldKey\":\"feature.tags\",\"operator\":\"contains\",\"value\":\"Customer Feedback\"}]}"
             };
 
             var subject = CreateSubject();
@@ -268,9 +267,9 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(portfolioSettingDto.SystemWIPLimit, Is.EqualTo(updatedPortfolioSettings.SystemWIPLimit));
 
-                Assert.That(portfolioSettingDto.BlockedStates, Contains.Item("On Hold"));
-                Assert.That(portfolioSettingDto.BlockedTags, Contains.Item("Waiting for Review"));
-                Assert.That(portfolioSettingDto.BlockedTags, Contains.Item("Customer Feedback"));
+                Assert.That(portfolioSettingDto.BlockedRuleSetJson, Does.Contain("On Hold"));
+                Assert.That(portfolioSettingDto.BlockedRuleSetJson, Does.Contain("Waiting for Review"));
+                Assert.That(portfolioSettingDto.BlockedRuleSetJson, Does.Contain("Customer Feedback"));
             }
         }
 

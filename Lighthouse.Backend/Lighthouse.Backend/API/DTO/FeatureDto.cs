@@ -1,5 +1,8 @@
-﻿using Lighthouse.Backend.Models;
+﻿using System.Text.Json;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -53,12 +56,39 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<WhenForecastDto> Forecasts { get; } = new List<WhenForecastDto>();
 
+        private static readonly JsonSerializerOptions RuleSetJsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
+        private static readonly RuleEvaluator<Feature> FeatureRuleEvaluator = new();
+
+        private static readonly FeatureFieldProvider FeatureFieldProvider = new();
+
         // Feature blocked status preserves the prior model-level semantics. NOTE: the FEATURE surface is out
         // of ADR-067 slice-01 scope (which routes the WORK-ITEM read path through IBlockedItemService). Routing
-        // this feature-level derivation through IBlockedItemService.IsBlocked(feature, portfolio) is a bounded
-        // follow-up spanning the FeatureDto build sites in the portfolio/delivery controllers.
+        // this feature-level derivation through a DI-resolved IBlockedItemService.IsBlocked(feature, portfolio)
+        // is a bounded follow-up spanning the FeatureDto build sites in the portfolio/delivery controllers
+        // (FeatureDto is constructed with `new`, not resolved via DI, so it mirrors BlockedItemService's own
+        // stateless-construction pattern here rather than threading the port through four controllers).
         private static bool FeatureIsBlocked(Feature feature)
-            => feature.Portfolios.Any(portfolio =>
-                portfolio.BlockedStates.Contains(feature.State) || portfolio.BlockedTags.Any(feature.Tags.Contains));
+            => feature.Portfolios.Any(portfolio => IsBlockedByPortfolioRuleSet(feature, portfolio));
+
+        private static bool IsBlockedByPortfolioRuleSet(Feature feature, Portfolio portfolio)
+        {
+            if (string.IsNullOrWhiteSpace(portfolio.BlockedRuleSetJson))
+            {
+                return false;
+            }
+
+            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(portfolio.BlockedRuleSetJson, RuleSetJsonOptions);
+            if (ruleSet == null || ruleSet.Conditions.Count == 0)
+            {
+                return false;
+            }
+
+            return FeatureRuleEvaluator.Match(ruleSet, [feature], FeatureFieldProvider).Any();
+        }
     }
 }

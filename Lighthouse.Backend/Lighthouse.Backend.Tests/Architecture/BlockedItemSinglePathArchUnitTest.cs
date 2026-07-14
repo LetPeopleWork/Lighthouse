@@ -11,8 +11,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// Single rule-based IsBlocked read path (ADR-067). Locks the invariant that "is this item blocked?" is
     /// resolved in exactly ONE place — <see cref="IBlockedItemService"/>, delegating to the pure
     /// <see cref="IRuleEvaluator{T}"/> — and is NOT recomputed as a getter on the domain model. The legacy
-    /// BlockedStates/BlockedTags columns are RETAINED under expand-only migration; this rule scopes to the
-    /// EVALUATION surface (the model getters that used to read them), not the columns themselves.
+    /// BlockedStates/BlockedTags columns have been fully removed (post-backfill drop-column migration);
+    /// <c>BlockedRuleSetJson</c> is now the sole persisted configuration, so the evaluation surface and the
+    /// storage surface are one and the same single path.
     /// </summary>
     [TestFixture]
     public class BlockedItemSinglePathArchUnitTest

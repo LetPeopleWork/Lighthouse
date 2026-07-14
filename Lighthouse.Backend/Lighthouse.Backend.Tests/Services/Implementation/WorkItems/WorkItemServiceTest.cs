@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
@@ -11,6 +12,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
@@ -1147,7 +1149,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateWorkItemsForTeam_BlockTransition_PublishesWorkItemBlockedOnceWhileStillBlockedPublishesNoMore()
         {
             var team = CreateTeam();
-            team.BlockedStates.Add("Blocked");
+            team.BlockedRuleSetJson = BlockedByStateRuleSetJson("Blocked");
 
             var existing = CreateWorkItemWithTransitions(team, "Doing");
             existing.State = "Doing";
@@ -1172,7 +1174,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateWorkItemsForTeam_NeverBlocked_PublishesNoWorkItemBlocked()
         {
             var team = CreateTeam();
-            team.BlockedStates.Add("Blocked");
+            team.BlockedRuleSetJson = BlockedByStateRuleSetJson("Blocked");
 
             var existing = CreateWorkItemWithTransitions(team, "To Do");
             existing.State = "To Do";
@@ -1194,7 +1196,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public async Task UpdateWorkItemsForTeam_UnblockTransition_PublishesWorkItemUnblockedWhenBlockedItemLeavesBlockedState()
         {
             var team = CreateTeam();
-            team.BlockedStates.Add("Blocked");
+            team.BlockedRuleSetJson = BlockedByStateRuleSetJson("Blocked");
 
             var existing = CreateWorkItemWithTransitions(team, "Blocked");
             existing.State = "Blocked";
@@ -1308,6 +1310,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             teams.Add(team);
 
             return team;
+        }
+
+        private static string BlockedByStateRuleSetJson(string state)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [new WorkItemRuleCondition { FieldKey = "workitem.state", Operator = RuleOperators.Equals, Value = state }],
+            };
+
+            return JsonSerializer.Serialize(ruleSet);
         }
 
         private static void AddAdditionalField(Portfolio portfolio, int id, string reference,

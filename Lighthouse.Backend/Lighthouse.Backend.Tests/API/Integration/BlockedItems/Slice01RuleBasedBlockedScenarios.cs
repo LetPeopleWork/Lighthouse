@@ -32,17 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheBlockedDefinitionIncludes(settings, "Blocked");
         }
 
-        // @driving_port @us-01 @migration
-        [Test]
-        public async Task Existing_blocked_config_is_preserved_as_equivalent_rules()
-        {
-            var team = GivenATeamWhoseBlockedConfigIs(states: ["Blocked"], tags: ["impediment"]);
-
-            var settings = await WhenTheBlockedConfigurationIsRead(team);
-
-            ThenTheMigratedRuleSetExpresses(settings, "workitem.state equals Blocked", "workitem.tags contains impediment");
-        }
-
         // @driving_port @us-01
         [Test]
         public async Task A_custom_field_condition_makes_an_item_read_blocked()

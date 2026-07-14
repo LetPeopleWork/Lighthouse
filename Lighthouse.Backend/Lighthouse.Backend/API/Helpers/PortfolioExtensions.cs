@@ -51,8 +51,6 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static void SyncBlockedItems(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
-            project.BlockedStates = TrimListEntries(portfolioSetting.BlockedStates);
-            project.BlockedTags = portfolioSetting.BlockedTags;
             project.BlockedRuleSetJson = portfolioSetting.BlockedRuleSetJson;
         }
 

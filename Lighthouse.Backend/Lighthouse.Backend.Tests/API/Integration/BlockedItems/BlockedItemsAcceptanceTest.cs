@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -89,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         protected SeededTeam SeedTeam(
             List<string>? blockedStates = null,
-            List<string>? blockedTags = null,
             bool withFlaggedAdditionalField = false)
         {
             using var scope = Factory.Services.CreateScope();
@@ -117,8 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 Name = $"Team {Guid.NewGuid():N}",
                 WorkTrackingSystemConnection = connection,
                 DoneItemsCutoffDays = 0,
-                BlockedStates = blockedStates ?? [],
-                BlockedTags = blockedTags ?? [],
+                BlockedRuleSetJson = blockedStates is { Count: > 0 } ? BlockedByStatesRuleSetJson(blockedStates) : null,
                 // Align work-item-related settings with BuildTeamSettings so a later settings-save PUT is
                 // NOT detected as a work-item-related change (which would RemoveWorkItemsForTeam and wipe the
                 // seeded item before the WIP read). See TeamExtensions.WorkItemRelatedSettingsChanged.
@@ -139,6 +138,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             }
 
             return new SeededTeam(team.Id, connection.Id, flaggedFieldId);
+        }
+
+        private static string BlockedByStatesRuleSetJson(List<string> states)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [.. states.Select(state => new WorkItemRuleCondition { FieldKey = "workitem.state", Operator = RuleOperators.Equals, Value = state })],
+            };
+
+            return JsonSerializer.Serialize(ruleSet);
         }
 
         protected void SeedWorkItem(

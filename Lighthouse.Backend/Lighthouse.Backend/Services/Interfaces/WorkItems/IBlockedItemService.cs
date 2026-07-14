@@ -9,9 +9,8 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkItems
     /// MATCHES the owner's blocked rule set IS blocked. The port is read-only — it exposes no write
     /// method, so the "the blocked check silently persisted something" bug class is non-representable.
     ///
-    /// <see cref="GetEffectiveRuleSet"/> is the application-layer auto-migration backfill: when an owner
-    /// has no <c>BlockedRuleSetJson</c> yet, the legacy <c>BlockedStates</c>/<c>BlockedTags</c> are
-    /// synthesized (on read, idempotently) into the equivalent OR'd rule set.
+    /// <see cref="GetEffectiveRuleSet"/> reads <c>BlockedRuleSetJson</c> exclusively: when an owner has
+    /// never configured a blocking rule, it returns a default empty rule set (no legacy fallback).
     /// </summary>
     public interface IBlockedItemService
     {

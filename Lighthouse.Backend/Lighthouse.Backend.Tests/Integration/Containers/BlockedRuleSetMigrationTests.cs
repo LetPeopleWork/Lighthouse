@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -14,13 +15,16 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// ADR-067 loss-free-migration probe (slice-01 hard AC). Proves against REAL relational providers
-    /// (SQLite + Postgres — InMemory misses migrations) that (a) the additive <c>BlockedRuleSetJson</c>
-    /// column applied by the generated migration persists across a reload, and (b) the application-layer
-    /// auto-migration backfill is loss-free: for a fixture corpus, an item's blocked status computed the
-    /// legacy way (BlockedStates lists) equals the status computed via the synthesized rule set — no item
-    /// flips. The migration itself is expand-only (adds a nullable column, no data step); the backfill is
-    /// the read-side synthesis in <see cref="BlockedItemService"/>.
+    /// ADR-067 loss-free-migration probe (slice-01 hard AC) + Phase-B drop-column probe. Proves against
+    /// REAL relational providers (SQLite + Postgres — InMemory misses migrations) that (a) the additive
+    /// <c>BlockedRuleSetJson</c> column applied by the generated migration persists across a reload, and
+    /// (b) the migration-time backfill (raw SQL inside the generated migration, not application code) is
+    /// loss-free: a legacy row whose only configuration was BlockedStates/BlockedTags ends up with a
+    /// BlockedRuleSetJson that reproduces the same blocked decisions. Both migrations are expand-then-drop:
+    /// the backfill populates BlockedRuleSetJson first (earlier timestamp), a later migration then drops
+    /// the now-unused legacy columns — so seeding "legacy" rows here goes through raw SQL against the
+    /// column names directly (the Team/Portfolio model no longer declares BlockedStates/BlockedTags, by
+    /// design, once the columns are dropped).
     /// </summary>
     [TestFixture]
     [Category("epic-5074-blocked-items")]
@@ -34,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private const string PreviousMigrationIdPostgres = "20260711064256_AddIsPredefinedToAdditionalFieldDefinition";
 
         [Test]
-        public async Task Migration_OnSqlite_PersistsColumn_AndBackfillIsLossFree()
+        public async Task Migration_OnSqlite_PersistsBlockedRuleSetJsonColumn()
         {
             var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-blocked-5074-{Guid.NewGuid():N}.db");
             try
@@ -42,7 +46,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 await using var provider = BuildSqliteProvider($"Data Source={databaseFile};Pooling=False");
                 await MigrateAsync(provider);
                 await AssertColumnPersistsAsync(provider);
-                await AssertBackfillIsLossFreeAsync(provider);
             }
             finally
             {
@@ -54,14 +57,13 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        public async Task Migration_OnPostgres_PersistsColumn_AndBackfillIsLossFree()
+        public async Task Migration_OnPostgres_PersistsBlockedRuleSetJsonColumn()
         {
             await using var postgres = await PostgresContainerFixture.StartFreshAsync();
 
             await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
             await MigrateAsync(provider);
             await AssertColumnPersistsAsync(provider);
-            await AssertBackfillIsLossFreeAsync(provider);
         }
 
         [Test]
@@ -98,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await context.Database.MigrateAsync();
 
             var pending = await context.Database.GetPendingMigrationsAsync();
-            Assert.That(pending, Is.Empty, "the generated AddBlockedRuleSetJson migration must apply cleanly on a real provider");
+            Assert.That(pending, Is.Empty, "every generated migration must apply cleanly on a real provider");
         }
 
         private static async Task AssertColumnPersistsAsync(ServiceProvider provider)
@@ -111,9 +113,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             {
                 var context = writeScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
 
-                var teamWithRuleSet = NewTeam(blockedStates: []);
+                var teamWithRuleSet = NewTeam();
                 teamWithRuleSet.BlockedRuleSetJson = ruleSetJson;
-                var teamWithoutRuleSet = NewTeam(blockedStates: []);
+                var teamWithoutRuleSet = NewTeam();
 
                 context.Teams.Add(teamWithRuleSet);
                 context.Teams.Add(teamWithoutRuleSet);
@@ -137,50 +139,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        private static async Task AssertBackfillIsLossFreeAsync(ServiceProvider provider)
-        {
-            int teamId;
-            using (var writeScope = provider.CreateScope())
-            {
-                var context = writeScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                var legacyTeam = NewTeam(blockedStates: [BlockedStateOne, BlockedStateTwo]);
-                context.Teams.Add(legacyTeam);
-                await context.SaveChangesAsync();
-                teamId = legacyTeam.Id;
-            }
-
-            using var readScope = provider.CreateScope();
-            var readContext = readScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var team = await readContext.Teams.SingleAsync(t => t.Id == teamId);
-
-            var blockedItemService = new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider());
-
-            var corpus = new[]
-            {
-                NewWorkItem("PHX-1", BlockedStateOne),
-                NewWorkItem("PHX-2", BlockedStateTwo),
-                NewWorkItem("PHX-3", "blocked"),
-                NewWorkItem("PHX-4", "In Progress"),
-                NewWorkItem("PHX-5", "Done"),
-            };
-
-            var flippedItems = corpus
-                .Where(item => LegacyIsBlocked(team, item) != blockedItemService.IsBlocked(item, team))
-                .Select(item => item.ReferenceId)
-                .ToList();
-
-            var newlyBlocked = corpus.Count(item => blockedItemService.IsBlocked(item, team));
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(flippedItems, Is.Empty,
-                    "the auto-migration backfill is loss-free: no fixture item changes blocked status between the legacy " +
-                    "BlockedStates definition and the synthesized rule set");
-                Assert.That(newlyBlocked, Is.EqualTo(3),
-                    "the parity corpus is non-vacuous — the two blocked states plus a case-insensitive match resolve blocked");
-            }
-        }
-
         private static async Task AssertBackfillIsAppliedAndIdempotentAsync(ServiceProvider provider, string previousMigrationId)
         {
             int teamId;
@@ -192,9 +150,17 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 await migrator.MigrateAsync(previousMigrationId);
 
-                var legacyTeam = NewTeam(blockedStates: [BlockedStateOne, BlockedStateTwo]);
-                legacyTeam.BlockedTags = [BlockedTagOne];
-                var legacyPortfolio = NewPortfolio(blockedStates: [BlockedStateOne], blockedTags: [BlockedTagOne]);
+                // At previousMigrationId the legacy columns are NOT NULL, but years of unrelated later
+                // table rebuilds (SQLite recreates the whole table on ANY column change) or the original
+                // Postgres AddColumn (which specified no default) mean the columns may no longer have a
+                // usable DEFAULT — and the CURRENT Team/Portfolio model doesn't declare these properties,
+                // so the plain EF Add()/SaveChanges() below can't supply a value for them either. Restore
+                // a working default first so that insert can proceed; the real values are set afterwards.
+                await EnsureLegacyColumnsHaveWorkingDefaultAsync(context, "Teams");
+                await EnsureLegacyColumnsHaveWorkingDefaultAsync(context, "Portfolios");
+
+                var legacyTeam = NewTeam();
+                var legacyPortfolio = NewPortfolio();
 
                 context.Teams.Add(legacyTeam);
                 context.Portfolios.Add(legacyPortfolio);
@@ -202,6 +168,13 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 teamId = legacyTeam.Id;
                 portfolioId = legacyPortfolio.Id;
+
+                // Emulate an installation that predates this feature: at previousMigrationId the legacy
+                // BlockedStates/BlockedTags columns still exist on disk, but the current Team/Portfolio
+                // model no longer declares them (they are dropped by a later migration), so seed the raw
+                // columns directly instead of going through the EF model.
+                await SeedLegacyBlockedColumnsAsync(context, "Teams", teamId, [BlockedStateOne, BlockedStateTwo], [BlockedTagOne]);
+                await SeedLegacyBlockedColumnsAsync(context, "Portfolios", portfolioId, [BlockedStateOne], [BlockedTagOne]);
 
                 await migrator.MigrateAsync();
 
@@ -222,17 +195,20 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 var blockedItemService = new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider());
 
-                var teamCorpus = new[]
+                // Expected outcomes mirror the legacy seed above (BlockedStateOne/Two + BlockedTagOne) —
+                // literal, not derived from a model getter, because BlockedStates/BlockedTags no longer
+                // exist as C# properties once the columns are dropped.
+                var teamCorpus = new (WorkItem Item, bool ExpectedBlocked)[]
                 {
-                    NewWorkItem("TEAM-1", BlockedStateOne),
-                    NewWorkItem("TEAM-2", BlockedStateTwo),
-                    NewWorkItem("TEAM-3", "In Progress"),
+                    (NewWorkItem("TEAM-1", BlockedStateOne), true),
+                    (NewWorkItem("TEAM-2", BlockedStateTwo), true),
+                    (NewWorkItem("TEAM-3", "In Progress"), false),
                 };
 
-                var featureCorpus = new[]
+                var featureCorpus = new (Feature Item, bool ExpectedBlocked)[]
                 {
-                    NewFeature("FEAT-1", BlockedStateOne),
-                    NewFeature("FEAT-2", "In Progress"),
+                    (NewFeature("FEAT-1", BlockedStateOne), true),
+                    (NewFeature("FEAT-2", "In Progress"), false),
                 };
 
                 using (Assert.EnterMultipleScope())
@@ -242,23 +218,24 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     Assert.That(portfolioRuleSetAfterFirstRun, Is.Not.Null,
                         "the migration must backfill BlockedRuleSetJson for a Portfolio whose only configuration was legacy BlockedStates/BlockedTags");
 
-                    foreach (var item in teamCorpus)
+                    foreach (var (item, expectedBlocked) in teamCorpus)
                     {
-                        Assert.That(blockedItemService.IsBlocked(item, team), Is.EqualTo(LegacyIsBlocked(team, item)),
+                        Assert.That(blockedItemService.IsBlocked(item, team), Is.EqualTo(expectedBlocked),
                             $"backfilled Team rule set must reproduce legacy blocked behaviour for {item.ReferenceId}");
                     }
 
-                    foreach (var feature in featureCorpus)
+                    foreach (var (feature, expectedBlocked) in featureCorpus)
                     {
-                        Assert.That(blockedItemService.IsBlocked(feature, portfolio), Is.EqualTo(LegacyIsBlocked(portfolio, feature)),
+                        Assert.That(blockedItemService.IsBlocked(feature, portfolio), Is.EqualTo(expectedBlocked),
                             $"backfilled Portfolio rule set must reproduce legacy blocked behaviour for {feature.ReferenceId}");
                     }
                 }
             }
 
-            // Idempotency: force the backfill migration's Up() to run a second time (Down() is a schema
-            // no-op — it only removes the migration history row) and confirm the already-backfilled rows
-            // are untouched.
+            // Idempotency: force the backfill migration's Up() to run a second time (Down() of the
+            // later drop-column migration re-adds the now-empty legacy columns; Down() of the backfill
+            // migration itself is a data no-op — see its comment) and confirm the already-backfilled
+            // rows are untouched.
             using (var rerunScope = provider.CreateScope())
             {
                 var context = rerunScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -282,10 +259,53 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        private static bool LegacyIsBlocked(Portfolio portfolio, Feature item)
-            => portfolio.BlockedStates.Any(state => string.Equals(state, item.State, StringComparison.OrdinalIgnoreCase));
+        // EF1002/EF1003 flag any non-constant SQL text passed to ExecuteSqlRaw as a possible injection
+        // risk. tableName here is always one of two fixed literals ("Teams"/"Portfolios") supplied by this
+        // test's own call sites — never external input — so building the DDL by concatenation is safe;
+        // ExecuteSqlRaw's `{n}` parameters are still used for every actual data value.
+#pragma warning disable EF1002, EF1003
+        private static async Task EnsureLegacyColumnsHaveWorkingDefaultAsync(LighthouseAppContext context, string tableName)
+        {
+            var isSqlite = context.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
+            if (isSqlite)
+            {
+                // SQLite has no ALTER COLUMN; recreate the column so it carries a DEFAULT again (it is
+                // about to be overwritten by SeedLegacyBlockedColumnsAsync anyway).
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE " + tableName + " DROP COLUMN BlockedStates");
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE " + tableName + " DROP COLUMN BlockedTags");
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE " + tableName + " ADD COLUMN BlockedStates TEXT NOT NULL DEFAULT '[]'");
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE " + tableName + " ADD COLUMN BlockedTags TEXT NOT NULL DEFAULT '[]'");
+            }
+            else
+            {
+                // ExecuteSqlRaw uses composite formatting for its {n} parameter placeholders, so a literal
+                // '{}' (empty Postgres array) must be escaped as '{{}}'.
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"" + tableName + "\" ALTER COLUMN \"BlockedStates\" SET DEFAULT '{{}}'");
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"" + tableName + "\" ALTER COLUMN \"BlockedTags\" SET DEFAULT '{{}}'");
+            }
+        }
+#pragma warning restore EF1002, EF1003
 
-        private static Portfolio NewPortfolio(List<string> blockedStates, List<string> blockedTags)
+        private static async Task SeedLegacyBlockedColumnsAsync(LighthouseAppContext context, string tableName, int id, string[] states, string[] tags)
+        {
+            var isSqlite = context.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
+
+            // Built via concatenation (not a $"..." interpolated string) so the {0}/{1}/{2} placeholders
+            // stay literal for ExecuteSqlRaw's own parameterization (EF1002) — tableName is one of two
+            // fixed literals ("Teams"/"Portfolios") from this test's own call sites, never external input.
+            if (isSqlite)
+            {
+                var sql = "UPDATE " + tableName + " SET BlockedStates = {0}, BlockedTags = {1} WHERE Id = {2}";
+                await context.Database.ExecuteSqlRawAsync(sql, JsonSerializer.Serialize(states), JsonSerializer.Serialize(tags), id);
+            }
+            else
+            {
+                var sql = "UPDATE \"" + tableName + "\" SET \"BlockedStates\" = {0}, \"BlockedTags\" = {1} WHERE \"Id\" = {2}";
+                await context.Database.ExecuteSqlRawAsync(sql, states, tags, id);
+            }
+        }
+
+        private static Portfolio NewPortfolio()
         {
             return new Portfolio
             {
@@ -295,8 +315,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     Name = $"Connection {Guid.NewGuid():N}",
                     WorkTrackingSystem = WorkTrackingSystems.Jira,
                 },
-                BlockedStates = blockedStates,
-                BlockedTags = blockedTags,
             };
         }
 
@@ -312,10 +330,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             };
         }
 
-        private static bool LegacyIsBlocked(Team team, WorkItem item)
-            => team.BlockedStates.Any(state => string.Equals(state, item.State, StringComparison.OrdinalIgnoreCase));
-
-        private static Team NewTeam(List<string> blockedStates)
+        private static Team NewTeam()
         {
             return new Team
             {
@@ -326,8 +341,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     WorkTrackingSystem = WorkTrackingSystems.Jira,
                 },
                 DoneItemsCutoffDays = 0,
-                BlockedStates = blockedStates,
-                BlockedTags = [],
             };
         }
 

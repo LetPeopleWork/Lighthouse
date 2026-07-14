@@ -71,8 +71,8 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoTeam.WorkItemTypes, Contains.Item("User Story"));
                 Assert.That(demoTeam.WorkItemTypes, Contains.Item("Bug"));
 
-                Assert.That(demoTeam.BlockedTags, Has.Count.EqualTo(1));
-                Assert.That(demoTeam.BlockedTags, Contains.Item("Blocked"));
+                Assert.That(demoTeam.BlockedRuleSetJson, Does.Contain("workitem.tags"));
+                Assert.That(demoTeam.BlockedRuleSetJson, Does.Contain("Blocked"));
                 Assert.That(demoTeam.BlockedStalenessThresholdDays, Is.EqualTo(5));
 
                 Assert.That(demoTeam.DataRetrievalValue, Is.Not.Empty);
@@ -112,8 +112,8 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoProject.WorkItemTypes, Has.Count.EqualTo(1));
                 Assert.That(demoProject.WorkItemTypes, Contains.Item("Epic"));
 
-                Assert.That(demoProject.BlockedTags, Has.Count.EqualTo(1));
-                Assert.That(demoProject.BlockedTags, Contains.Item("Blocked"));
+                Assert.That(demoProject.BlockedRuleSetJson, Does.Contain("feature.tags"));
+                Assert.That(demoProject.BlockedRuleSetJson, Does.Contain("Blocked"));
                 Assert.That(demoProject.BlockedStalenessThresholdDays, Is.EqualTo(5));
 
                 Assert.That(demoProject.DataRetrievalValue, Is.Not.Empty);

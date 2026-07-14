@@ -3,7 +3,12 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class ExpandOnlyMigrationGuardTest
     {
-        private const long ExpandOnlyBaselineTimestamp = 20260609073926;
+        // Bumped past 20260713194145_RemoveLegacyBlockedConfiguration (Postgres) / 
+        // 20260713194134_RemoveLegacyBlockedConfiguration (Sqlite): a conscious, documented contract
+        // release dropping the legacy BlockedStates/BlockedTags columns, run only after Phase A's
+        // 20260713183553/20260713183603_BackfillBlockedRuleSetJson migrations populated BlockedRuleSetJson
+        // for every configured owner (expand-then-contract, per DISCUSS D4).
+        private const long ExpandOnlyBaselineTimestamp = 20260713194145;
 
         private static readonly string[] DropAndRenameTableOperations = { "DropTable", "RenameTable" };
 

@@ -99,8 +99,7 @@ namespace Lighthouse.Backend.Tests.API
                 ServiceLevelExpectationProbability = 90,
                 ServiceLevelExpectationRange = 10,
                 SystemWIPLimit = 7,
-                BlockedStates = ["Blocked"],
-                BlockedTags = ["Waiting", "Customer Input"],
+                BlockedRuleSetJson = "{\"version\":1,\"mode\":\"or\",\"conditions\":[{\"fieldKey\":\"feature.state\",\"operator\":\"equals\",\"value\":\"Blocked\"},{\"fieldKey\":\"feature.tags\",\"operator\":\"contains\",\"value\":\"Waiting\"},{\"fieldKey\":\"feature.tags\",\"operator\":\"contains\",\"value\":\"Customer Input\"}]}",
             };
 
             var subject = CreateSubject();
@@ -136,9 +135,9 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(portfolioSettingDto.SystemWIPLimit, Is.EqualTo(newPortfolioSetting.SystemWIPLimit));
 
-                Assert.That(portfolioSettingDto.BlockedStates, Contains.Item("Blocked"));
-                Assert.That(portfolioSettingDto.BlockedTags, Contains.Item("Waiting"));
-                Assert.That(portfolioSettingDto.BlockedTags, Contains.Item("Customer Input"));
+                Assert.That(portfolioSettingDto.BlockedRuleSetJson, Does.Contain("Blocked"));
+                Assert.That(portfolioSettingDto.BlockedRuleSetJson, Does.Contain("Waiting"));
+                Assert.That(portfolioSettingDto.BlockedRuleSetJson, Does.Contain("Customer Input"));
             }
         }
 

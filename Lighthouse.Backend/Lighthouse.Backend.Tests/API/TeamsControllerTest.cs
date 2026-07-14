@@ -222,8 +222,7 @@ namespace Lighthouse.Backend.Tests.API
                 ServiceLevelExpectationProbability = 50,
                 ServiceLevelExpectationRange = 2,
                 SystemWIPLimit = 3,
-                BlockedStates = ["Blocked"],
-                BlockedTags = ["Waiting", "Customer Input Needed"],
+                BlockedRuleSetJson = "{\"version\":1,\"mode\":\"or\",\"conditions\":[{\"fieldKey\":\"workitem.state\",\"operator\":\"equals\",\"value\":\"Blocked\"},{\"fieldKey\":\"workitem.tags\",\"operator\":\"contains\",\"value\":\"Waiting\"},{\"fieldKey\":\"workitem.tags\",\"operator\":\"contains\",\"value\":\"Customer Input Needed\"}]}",
             };
 
             var subject = CreateSubject();
@@ -260,9 +259,9 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(teamSettingDto.SystemWIPLimit, Is.EqualTo(newTeamSettings.SystemWIPLimit));
 
-                Assert.That(teamSettingDto.BlockedStates, Contains.Item("Blocked"));
-                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Waiting"));
-                Assert.That(teamSettingDto.BlockedTags, Contains.Item("Customer Input Needed"));
+                Assert.That(teamSettingDto.BlockedRuleSetJson, Does.Contain("Blocked"));
+                Assert.That(teamSettingDto.BlockedRuleSetJson, Does.Contain("Waiting"));
+                Assert.That(teamSettingDto.BlockedRuleSetJson, Does.Contain("Customer Input Needed"));
             }
         }
 

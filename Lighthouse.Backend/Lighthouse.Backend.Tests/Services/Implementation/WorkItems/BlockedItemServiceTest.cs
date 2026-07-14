@@ -9,8 +9,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     /// <summary>
     /// Unit tests for the single blocked-evaluation authority (ADR-067). Real rule engine + field
-    /// provider inside the hexagon (classical TDD, no mocks). Pins the auto-migration synthesis and the
-    /// Include (matched ⇒ blocked) evaluation the black-box acceptance tests only exercise by example.
+    /// provider inside the hexagon (classical TDD, no mocks). BlockedRuleSetJson is the sole persisted
+    /// configuration (legacy BlockedStates/BlockedTags columns have been dropped); pins the "no
+    /// configuration -> empty rule set, nothing blocked" default and the Include (matched ⇒ blocked)
+    /// evaluation the black-box acceptance tests only exercise by example.
     /// </summary>
     [TestFixture]
     [Category("epic-5074-blocked-items")]
@@ -24,41 +26,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             => new(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider());
 
         [Test]
-        public void GetEffectiveRuleSet_SynthesizesStateEqualsCondition_ForEachBlockedState()
+        public void GetEffectiveRuleSet_ReturnsEmptyRuleSet_WhenNoConfigurationExists()
         {
-            var team = new Team { BlockedStates = ["Blocked", "On Hold"] };
-
-            var ruleSet = CreateSut().GetEffectiveRuleSet(team);
-
-            var tokens = ruleSet.Conditions.Select(c => $"{c.FieldKey} {c.Operator} {c.Value}").ToList();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ruleSet.Mode, Is.EqualTo(WorkItemRuleSet.ModeOr));
-                Assert.That(tokens, Does.Contain("workitem.state equals Blocked"));
-                Assert.That(tokens, Does.Contain("workitem.state equals On Hold"));
-            }
-        }
-
-        [Test]
-        public void GetEffectiveRuleSet_SynthesizesTagsContainsCondition_ForEachBlockedTag()
-        {
-            var team = new Team { BlockedTags = ["impediment", "waiting"] };
-
-            var ruleSet = CreateSut().GetEffectiveRuleSet(team);
-
-            var tokens = ruleSet.Conditions.Select(c => $"{c.FieldKey} {c.Operator} {c.Value}").ToList();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ruleSet.Mode, Is.EqualTo(WorkItemRuleSet.ModeOr));
-                Assert.That(tokens, Does.Contain("workitem.tags contains impediment"));
-                Assert.That(tokens, Does.Contain("workitem.tags contains waiting"));
-            }
-        }
-
-        [Test]
-        public void GetEffectiveRuleSet_ReturnsEmptyRuleSet_WhenLegacyConfigurationIsEmpty()
-        {
-            var team = new Team { BlockedStates = [], BlockedTags = [] };
+            var team = new Team();
 
             var ruleSet = CreateSut().GetEffectiveRuleSet(team);
 
@@ -70,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public void GetEffectiveRuleSet_ReturnsStoredRuleSetVerbatim_WhenColumnAlreadySet()
+        public void GetEffectiveRuleSet_ReturnsStoredRuleSetVerbatim_WhenColumnIsSet()
         {
             var stored = new WorkItemRuleSet
             {
@@ -79,26 +49,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             };
             var team = new Team
             {
-                BlockedStates = ["Legacy"],
-                BlockedTags = ["legacy-tag"],
                 BlockedRuleSetJson = JsonSerializer.Serialize(stored),
             };
 
             var ruleSet = CreateSut().GetEffectiveRuleSet(team);
 
             var values = ruleSet.Conditions.Select(c => c.Value).ToList();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(values, Does.Contain("Stored"));
-                Assert.That(values, Does.Not.Contain("Legacy"));
-                Assert.That(values, Does.Not.Contain("legacy-tag"));
-            }
+            Assert.That(values, Does.Contain("Stored"));
         }
 
         [Test]
         public void GetEffectiveRuleSet_IsIdempotent_WhenReadRepeatedly()
         {
-            var team = new Team { BlockedStates = ["Blocked"], BlockedTags = ["impediment"] };
+            var team = new Team { BlockedRuleSetJson = RuleSetJson(("workitem.state", "equals", "Blocked"), ("workitem.tags", "contains", "impediment")) };
             var sut = CreateSut();
 
             var first = JsonSerializer.Serialize(sut.GetEffectiveRuleSet(team), CaseInsensitive);
@@ -108,18 +71,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public void IsBlocked_ReturnsFalse_WhenRuleSetIsEmpty()
+        public void IsBlocked_ReturnsFalse_WhenNoRuleSetConfigured()
         {
-            var team = new Team { BlockedStates = [], BlockedTags = [] };
+            var team = new Team();
             var item = new WorkItem { State = "In Progress", Tags = [] };
 
             Assert.That(CreateSut().IsBlocked(item, team), Is.False);
         }
 
         [Test]
-        public void IsBlocked_ReturnsTrue_WhenItemStateMatchesASynthesizedCondition()
+        public void IsBlocked_ReturnsTrue_WhenItemStateMatchesAConfiguredEqualsCondition()
         {
-            var team = new Team { BlockedStates = ["Blocked"], BlockedTags = [] };
+            var team = new Team { BlockedRuleSetJson = RuleSetJson(("workitem.state", "equals", "Blocked")) };
             var item = new WorkItem { State = "Blocked", Tags = [] };
 
             Assert.That(CreateSut().IsBlocked(item, team), Is.True);
@@ -128,16 +91,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         [Test]
         public void IsBlocked_ReturnsFalse_WhenItemStateDoesNotMatchAnyCondition()
         {
-            var team = new Team { BlockedStates = ["Blocked"], BlockedTags = [] };
+            var team = new Team { BlockedRuleSetJson = RuleSetJson(("workitem.state", "equals", "Blocked")) };
             var item = new WorkItem { State = "In Progress", Tags = [] };
 
             Assert.That(CreateSut().IsBlocked(item, team), Is.False);
         }
 
         [Test]
-        public void IsBlocked_ReturnsTrue_WhenItemTagMatchesASynthesizedTagCondition()
+        public void IsBlocked_ReturnsTrue_WhenItemTagMatchesAConfiguredContainsCondition()
         {
-            var team = new Team { BlockedStates = [], BlockedTags = ["Blocked"] };
+            var team = new Team { BlockedRuleSetJson = RuleSetJson(("workitem.tags", "contains", "Blocked")) };
             var item = new WorkItem { State = "In Progress", Tags = ["Blocked"] };
 
             Assert.That(CreateSut().IsBlocked(item, team), Is.True);
@@ -162,9 +125,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public void IsBlocked_ForFeature_ReturnsTrue_WhenPortfolioBlockedStateMatches()
+        public void IsBlocked_ForFeature_ReturnsTrue_WhenPortfolioRuleSetStateMatches()
         {
-            var portfolio = new Portfolio { BlockedStates = ["On Hold"], BlockedTags = [] };
+            var portfolio = new Portfolio { BlockedRuleSetJson = RuleSetJson(("feature.state", "equals", "On Hold")) };
             var feature = new Feature { State = "On Hold", Tags = [] };
 
             Assert.That(CreateSut().IsBlocked(feature, portfolio), Is.True);
@@ -173,7 +136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         [Test]
         public void IsBlocked_ForFeature_ReturnsFalse_WhenPortfolioHasNoBlockedConfiguration()
         {
-            var portfolio = new Portfolio { BlockedStates = [], BlockedTags = [] };
+            var portfolio = new Portfolio();
             var feature = new Feature { State = "On Hold", Tags = [] };
 
             Assert.That(CreateSut().IsBlocked(feature, portfolio), Is.False);
@@ -199,23 +162,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public void GetEffectiveRuleSet_FallsBackToLegacy_WhenStoredJsonIsNull()
-        {
-            var team = new Team { BlockedRuleSetJson = null, BlockedStates = ["Blocked"], BlockedTags = [] };
-
-            var ruleSet = CreateSut().GetEffectiveRuleSet(team);
-
-            Assert.That(ruleSet.Conditions, Has.Count.EqualTo(1));
-            Assert.That(ruleSet.Conditions[0].Value, Is.EqualTo("Blocked"));
-        }
-
-        [Test]
         public void GetEffectiveRuleSetJson_SerializesCamelCase_MatchingFrontendContract()
         {
             // Bug 3 regression: the frontend rule builder parses camelCase (version/mode/conditions/
             // fieldKey/operator/value). A PascalCase payload fails its zod parse and silently renders
             // the empty "add at least one rule" state despite a configured rule.
-            var team = new Team { BlockedStates = ["Blocked"], BlockedTags = [] };
+            var team = new Team { BlockedRuleSetJson = RuleSetJson(("workitem.state", "equals", "Blocked")) };
 
             var json = CreateSut().GetEffectiveRuleSetJson(team);
 
@@ -252,6 +204,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Assert.That(json, Does.Contain("\"fieldKey\""));
                 Assert.That(json, Does.Not.Contain("\"FieldKey\""));
             }
+        }
+
+        private static string RuleSetJson(params (string FieldKey, string Operator, string Value)[] conditions)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [.. conditions.Select(c => new WorkItemRuleCondition { FieldKey = c.FieldKey, Operator = c.Operator, Value = c.Value })],
+            };
+
+            return JsonSerializer.Serialize(ruleSet);
         }
 
         private static string AdditionalFieldNotEmptyRuleSet(int fieldId)

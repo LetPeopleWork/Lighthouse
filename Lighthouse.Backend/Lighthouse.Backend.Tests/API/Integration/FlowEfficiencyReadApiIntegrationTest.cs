@@ -412,8 +412,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ["toDoStates"] = new JsonArray("To Do"),
                 ["doingStates"] = new JsonArray(WorkflowDoingStates.Select(s => (JsonNode)s!).ToArray()),
                 ["doneStates"] = new JsonArray(Done),
-                ["blockedStates"] = new JsonArray(),
-                ["blockedTags"] = new JsonArray(),
                 ["serviceLevelExpectationProbability"] = 0,
                 ["serviceLevelExpectationRange"] = 0,
                 ["systemWIPLimit"] = 0,

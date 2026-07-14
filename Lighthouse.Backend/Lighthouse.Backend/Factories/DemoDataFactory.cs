@@ -1,4 +1,6 @@
-﻿﻿using Lighthouse.Backend.Models;
+﻿﻿using System.Text.Json;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using System.Text.RegularExpressions;
@@ -19,7 +21,7 @@ namespace Lighthouse.Backend.Factories
             var demoProject = new Portfolio
             {
                 Name = name,
-                BlockedTags = new List<string> { "Blocked" },
+                BlockedRuleSetJson = BlockedTagRuleSetJson("feature.tags"),
                 BlockedStalenessThresholdDays = 5,
                 ToDoStates = new List<string> { "Backlog" },
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
@@ -38,7 +40,7 @@ namespace Lighthouse.Backend.Factories
             {
                 Name = name,
                 AutomaticallyAdjustFeatureWIP = false,
-                BlockedTags = new List<string> { "Blocked" },
+                BlockedRuleSetJson = BlockedTagRuleSetJson("workitem.tags"),
                 BlockedStalenessThresholdDays = 5,
                 ToDoStates = new List<string> { "Backlog" },
                 DoingStates = new List<string> { "Next", "Analysing", "Implementation", "Waiting for Verification", "Verification" },
@@ -139,6 +141,17 @@ namespace Lighthouse.Backend.Factories
         private static bool IsWeekend(DateTime date)
         {
             return date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+        }
+
+        private static string BlockedTagRuleSetJson(string fieldKey)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions = [new WorkItemRuleCondition { FieldKey = fieldKey, Operator = RuleOperators.Contains, Value = "Blocked" }],
+            };
+
+            return JsonSerializer.Serialize(ruleSet);
         }
     }
 

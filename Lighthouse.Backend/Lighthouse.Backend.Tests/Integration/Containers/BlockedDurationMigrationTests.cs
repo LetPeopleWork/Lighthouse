@@ -79,8 +79,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     WorkTrackingSystem = WorkTrackingSystems.Jira,
                 },
                 DoneItemsCutoffDays = 0,
-                BlockedStates = [],
-                BlockedTags = [],
             };
 
             var workItem = new WorkItem

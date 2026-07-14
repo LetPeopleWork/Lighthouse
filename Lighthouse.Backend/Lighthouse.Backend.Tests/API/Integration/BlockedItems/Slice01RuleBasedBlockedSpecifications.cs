@@ -20,9 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         private SeededTeam GivenATeamReadyForConfiguration()
             => SeedTeam();
 
-        private SeededTeam GivenATeamWhoseBlockedConfigIs(List<string> states, List<string> tags)
-            => SeedTeam(blockedStates: states, blockedTags: tags);
-
         private SeededTeam GivenATeamWithAFlaggedFieldAndOneFlaggedItem(string flaggedItem)
         {
             var team = SeedTeam(withFlaggedAdditionalField: true);
@@ -43,9 +40,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         private async Task<HttpResponseMessage> WhenTheAdminDefinesBlockedByState(SeededTeam team, params string[] blockedStates)
         {
             Client.AsTeamAdmin(team.TeamId);
-            var settings = BuildTeamSettings(team);
-            settings.BlockedStates = [.. blockedStates];
-            return await PutTeamSettings(team.TeamId, settings);
+            var ruleSetJson = OrRuleSet([.. blockedStates.Select(StateEquals)]);
+            var payload = WithBlockedRuleSet(ToJsonObject(BuildTeamSettings(team)), ruleSetJson);
+            return await PutTeamSettings(team.TeamId, payload);
         }
 
         private async Task<HttpResponseMessage> WhenTheAdminSavesTheBlockedRuleSet(SeededTeam team, string ruleSetJson)
@@ -90,24 +87,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var root = document.RootElement;
 
             // The observable is "the team's blocked DEFINITION round-trips" — asserted specifically on the
-            // blocked-definition fields (never the whole payload, which also mentions states elsewhere).
-            // Today the definition lives in blockedStates; after slice-01 it lives in blockedRuleSetJson.
-            // Assert on the union so the walking skeleton stays green across the slice-01 migration (the
-            // migration AC guarantees the definition is preserved, not lost) while never passing vacuously.
-            var definitionSurfaces = new List<string>();
-            if (root.TryGetProperty("blockedStates", out var blockedStates) && blockedStates.ValueKind == JsonValueKind.Array)
-            {
-                definitionSurfaces.AddRange(blockedStates.EnumerateArray().Select(e => e.GetString() ?? string.Empty));
-            }
+            // blocked-definition field (never the whole payload, which also mentions states elsewhere).
+            // blockedRuleSetJson is the sole persisted definition surface (legacy BlockedStates/BlockedTags
+            // columns have been dropped).
+            Assert.That(root.TryGetProperty("blockedRuleSetJson", out var ruleSetProp) && ruleSetProp.ValueKind == JsonValueKind.String,
+                $"Settings payload must expose blockedRuleSetJson. Body: {settingsBody}");
 
-            if (root.TryGetProperty("blockedRuleSetJson", out var ruleSetProp) && ruleSetProp.ValueKind == JsonValueKind.String)
-            {
-                definitionSurfaces.Add(ruleSetProp.GetString() ?? string.Empty);
-            }
-
-            Assert.That(definitionSurfaces, Has.Some.Contains(expectedToken),
-                $"The saved blocked definition must be readable on reload via a blocked-definition field. " +
-                $"Definition surfaces: [{string.Join(" | ", definitionSurfaces)}]. Body: {settingsBody}");
+            var ruleSetJson = ruleSetProp.GetString() ?? string.Empty;
+            Assert.That(ruleSetJson, Does.Contain(expectedToken),
+                $"The saved blocked definition must be readable on reload via blockedRuleSetJson. " +
+                $"blockedRuleSetJson: {ruleSetJson}. Body: {settingsBody}");
         }
 
         private static void ThenTheMigratedRuleSetExpresses(string settingsBody, params string[] expectedConditionTokens)
