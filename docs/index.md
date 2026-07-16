@@ -4,7 +4,7 @@ layout: home
 nav_order: 1
 ---
 
-Lighthouse is a tool that helps you run probabilistic forecasts using Monte Carlo Simulations in a continuous and simple way. It connects to your Work Tracking Tool (currently Jira, Azure DevOps, and CSV are supported) and will automatically update your team's Throughput and your portfolio's forecasted delivery dates.
+Lighthouse is an open-source, self-hosted flow metrics and Monte Carlo forecasting tool for software delivery teams. It helps you run probabilistic forecasts in a continuous and simple way: it connects to your Work Tracking Tool (currently Jira, Azure DevOps, Linear, and CSV are supported) and will automatically update your team's flow metrics and Throughput as well as your portfolio's forecasted delivery dates. Everything runs on your own infrastructure, so your data never leaves your network.
 
 <div style="text-align: center;">
     <img src="./assets/features/teamdetail.png" alt="Team Forecasts" style="max-width: 500px;">
