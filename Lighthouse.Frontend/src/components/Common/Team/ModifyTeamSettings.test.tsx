@@ -58,7 +58,7 @@ vi.mock(
 							type="button"
 							onClick={() =>
 								onWorkTrackingSystemChange?.({
-									target: { value: "System 1" },
+									target: { value: "System 2" },
 								} as React.ChangeEvent<{ value: unknown }>)
 							}
 						>
@@ -336,6 +336,11 @@ describe("ModifyTeamSettings", () => {
 		fireEvent.click(screen.getByText("Add New Work Tracking System"));
 
 		expect(screen.getByText("GeneralInputsComponent")).toBeInTheDocument();
+		await waitFor(() =>
+			expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+				expect.objectContaining({ workTrackingSystemConnectionId: 2 }),
+			),
+		);
 	});
 
 	it("auto-saves a valid change after the debounce window", async () => {

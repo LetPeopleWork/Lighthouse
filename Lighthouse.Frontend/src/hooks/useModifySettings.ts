@@ -336,6 +336,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		const system = workTrackingSystems.find((s) => s.name === name) ?? null;
 		setSelectedWorkTrackingSystem(system);
 		if (system) {
+			hasInteractedRef.current = true;
 			setSettings((prev) =>
 				prev
 					? {

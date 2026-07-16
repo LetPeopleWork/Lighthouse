@@ -91,6 +91,16 @@ const viewerCannotSave: AutoSaveOptions = {
 	debounceMs: DEBOUNCE_MS,
 };
 
+// The reporter's scenario needs two connections to switch BETWEEN; the shared
+// makeArgs fixture only seeds one.
+const twoTrackerConnections = () =>
+	vi
+		.fn()
+		.mockResolvedValue([
+			makeConnection(1, "Atlas Tracker"),
+			makeConnection(2, "Borealis Tracker", "Jira"),
+		]);
+
 describe("@US-01 @in-memory auto-save general team settings", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -596,5 +606,89 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		});
 
 		expect(saveSettings).not.toHaveBeenCalled();
+	});
+});
+
+describe("@US-01 @in-memory switching the work tracking system connection", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
+	});
+
+	it("@US-01 auto-saves the newly picked connection when the work tracking system is the only change", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs(
+			{ saveSettings, getWorkTrackingSystems: twoTrackerConnections() },
+			teamAdminCanSave,
+		);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		await waitFor(() =>
+			expect(result.current.selectedWorkTrackingSystem?.id).toBe(1),
+		);
+
+		act(() =>
+			result.current.handleWorkTrackingSystemChange("Borealis Tracker"),
+		);
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		const saved = saveSettings.mock.calls[0][0] as SimpleSettings;
+		expect(saved.workTrackingSystemConnectionId).toBe(2);
+	});
+
+	it("@US-01 @error stays silent on mount and after a conflict reload re-selects the connection", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs(
+			{ saveSettings, getWorkTrackingSystems: twoTrackerConnections() },
+			teamAdminCanSave,
+		);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		await waitFor(() => expect(result.current.formValid).toBe(true));
+
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+		});
+		expect(saveSettings).not.toHaveBeenCalled();
+
+		await act(async () => {
+			await result.current.reloadAfterConflict();
+		});
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+		});
+
+		expect(saveSettings).not.toHaveBeenCalled();
+		expect(result.current.selectedWorkTrackingSystem?.id).toBe(1);
+	});
+
+	it("@US-01 @error ignores an unknown system name instead of auto-saving a missing connection", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs(
+			{ saveSettings, getWorkTrackingSystems: twoTrackerConnections() },
+			teamAdminCanSave,
+		);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		await waitFor(() =>
+			expect(result.current.selectedWorkTrackingSystem?.id).toBe(1),
+		);
+
+		act(() =>
+			result.current.handleWorkTrackingSystemChange("Nonexistent System"),
+		);
+		await act(async () => {
+			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+		});
+
+		expect(saveSettings).not.toHaveBeenCalled();
+		expect(result.current.selectedWorkTrackingSystem).toBeNull();
 	});
 });

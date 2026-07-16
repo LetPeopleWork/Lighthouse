@@ -42,7 +42,7 @@ vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 						type="button"
 						onClick={() =>
 							onWorkTrackingSystemChange?.({
-								target: { value: "System 1" },
+								target: { value: "System 2" },
 							} as React.ChangeEvent<{ value: unknown }>)
 						}
 					>
@@ -502,6 +502,11 @@ describe("ModifyProjectSettings", () => {
 		fireEvent.click(screen.getByText("Add New Work Tracking System"));
 
 		expect(screen.getByText("GeneralSettingsComponent")).toBeInTheDocument();
+		await waitFor(() =>
+			expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+				expect.objectContaining({ workTrackingSystemConnectionId: 2 }),
+			),
+		);
 	});
 
 	it("auto-saves a valid portfolio field change after the debounce window", async () => {
