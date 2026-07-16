@@ -1,0 +1,46 @@
+{
+  "roadmap": {
+    "project_id": "fix-work-tracking-system-switch",
+    "created_at": "2026-07-16T19:40:00Z",
+    "total_steps": 1,
+    "source": "ADO Bug #5499 — RCA at docs/feature/fix-work-tracking-system-switch/deliver/rca-context.md"
+  },
+  "validation": {
+    "status": "approved",
+    "approved_by": "orchestrator (nw-bugfix minimal roadmap; user approved minimal scope 2026-07-16)",
+    "notes": "Bugfix roadmap per /nw-bugfix: regression test (RED) + minimal fix (GREEN) collapse into one DES 3-phase cycle. Splitting RED and GREEN across two DES steps would leave step 01-01 permanently red, which can never reach COMMIT/PASS."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression test and dirty-flag fix",
+      "description": "Reproduce ADO #5499 with a failing test, then apply the one-line dirty-flag fix in the work-tracking-system change handler.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Auto-save fires on work tracking system switch",
+          "agent": "nw-software-crafter",
+          "deps": [],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "auto-saves a work tracking system switch made on its own",
+          "criteria": [
+            "Switching work tracking system with no other edit auto-saves the new workTrackingSystemConnectionId; test fails before fix",
+            "No auto-save fires on mount or after reloadAfterConflict",
+            "Unknown system name does not auto-save workTrackingSystemConnectionId 0",
+            "Team and portfolio component tests assert save called with the new connection id",
+            "pnpm test green and pnpm build zero errors zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "implementation_notes": "ROOT CAUSE: handleWorkTrackingSystemChange (useModifySettings.ts:333-350) never sets hasInteractedRef.current = true, so the auto-save effect returns early at :268 and never schedules the debounce timer. FIX: add `hasInteractedRef.current = true;` as the first statement INSIDE the existing `if (system) {` block at :338 — NOT at the top of the function, because selectedConnectionId is `selectedWorkTrackingSystem?.id ?? 0` (:170) and flagging dirty on the null branch would auto-save connectionId 0 into an FK violation. Full RCA with file:line evidence: docs/feature/fix-work-tracking-system-switch/deliver/rca-context.md. STRICT SCOPE: this one line is the ONLY production change permitted."
+        }
+      ]
+    }
+  ]
+}
