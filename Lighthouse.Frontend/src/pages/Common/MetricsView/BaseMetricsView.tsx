@@ -276,6 +276,7 @@ type RagInputs = {
 	readonly loadBalanceAverageWip: number | null;
 	readonly loadBalanceAverageTotalWorkItemAge: number | null;
 	readonly cumulativeStateTime: ICumulativeStateTimeResponse | null;
+	readonly percentilesScopeDefinitionId: number | null;
 	readonly terms: RagTerms;
 };
 
@@ -318,11 +319,17 @@ function buildWidgetFooters(
 			inputs.predictabilityScore,
 			inputs.terms,
 		),
-		percentiles: computeCycleTimePercentilesRag(
-			inputs.sle,
-			inputs.cycleTimes,
-			inputs.terms,
-		),
+		percentiles:
+			inputs.percentilesScopeDefinitionId !== null
+				? {
+						ragStatus: "none",
+						tipText: `${inputs.terms.sle} applies to the Default ${inputs.terms.cycleTime}. Named ${inputs.terms.cycleTime}s have no ${inputs.terms.sle} target.`,
+					}
+				: computeCycleTimePercentilesRag(
+						inputs.sle,
+						inputs.cycleTimes,
+						inputs.terms,
+					),
 		totalWorkItemAge:
 			inputs.totalWorkItemAge === null
 				? undefined
@@ -784,6 +791,9 @@ function buildWidgetNodes(ctx: {
 	onFetchNamedCycleTimePercentiles: (
 		definitionId: number,
 	) => Promise<IPercentileValue[]>;
+	cycleTimePercentileValues: IPercentileValue[];
+	percentilesScopeDefinitionId: number | null;
+	onPercentilesScopeChange: (definitionId: number | null) => void;
 	throughputData: RunChartData | null;
 	wipOverTimeData: RunChartData | null;
 	allFeaturesForSizeChart: IFeature[];
@@ -880,7 +890,12 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		percentiles: (
-			<CycleTimePercentiles percentileValues={ctx.percentileValues} />
+			<CycleTimePercentiles
+				percentileValues={ctx.cycleTimePercentileValues}
+				namedCycleTimeDefinitions={ctx.namedCycleTimeDefinitions}
+				scopeDefinitionId={ctx.percentilesScopeDefinitionId}
+				onScopeChange={ctx.onPercentilesScopeChange}
+			/>
 		),
 		workItemAgePercentiles: (
 			<WorkItemAgePercentiles
@@ -1163,6 +1178,34 @@ export const BaseMetricsView = <
 		[metricsService, entity.id, startDate, endDate],
 	);
 
+	const [percentilesScopeDefinitionId, setPercentilesScopeDefinitionId] =
+		useState<number | null>(null);
+	const [scopedPercentileValues, setScopedPercentileValues] = useState<
+		IPercentileValue[] | null
+	>(null);
+
+	const handlePercentilesScopeChange = useCallback(
+		(definitionId: number | null) => {
+			setPercentilesScopeDefinitionId(definitionId);
+			if (definitionId === null) {
+				setScopedPercentileValues(null);
+				return;
+			}
+			void metricsService
+				.getCycleTimePercentiles(entity.id, startDate, endDate, definitionId)
+				.then(setScopedPercentileValues);
+		},
+		[metricsService, entity.id, startDate, endDate],
+	);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: entity/window are reset triggers, not values read in the body — a scope chosen for one team/window must not leak into the next.
+	useEffect(() => {
+		setPercentilesScopeDefinitionId(null);
+		setScopedPercentileValues(null);
+	}, [entity.id, startDate, endDate]);
+
+	const displayedPercentileValues = scopedPercentileValues ?? percentileValues;
+
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
@@ -1422,6 +1465,9 @@ export const BaseMetricsView = <
 		cycleTimeData: cycleTimeData as unknown as IWorkItem[],
 		namedCycleTimeDefinitions,
 		onFetchNamedCycleTimePercentiles,
+		cycleTimePercentileValues: displayedPercentileValues,
+		percentilesScopeDefinitionId,
+		onPercentilesScopeChange: handlePercentilesScopeChange,
 		throughputData,
 		wipOverTimeData,
 		allFeaturesForSizeChart,
@@ -1490,6 +1536,7 @@ export const BaseMetricsView = <
 		featureWip,
 		predictabilityScore: predictabilityData?.predictabilityScore ?? null,
 		sle: serviceLevelExpectation,
+		percentilesScopeDefinitionId,
 		percentileValues,
 		startedTotal: arrivalsData?.total ?? 0,
 		closedTotal: throughputData?.total ?? 0,

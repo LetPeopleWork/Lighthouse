@@ -2,26 +2,55 @@ import {
 	Box,
 	Card,
 	CardContent,
+	FormControl,
+	MenuItem,
+	Select,
 	Table,
 	TableBody,
 	TableCell,
 	TableRow,
 	Typography,
 } from "@mui/material";
+import { useEffect } from "react";
+import type { INamedCycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 
+const DEFAULT_SCOPE = "default";
+
 interface CycleTimePercentilesProps {
 	percentileValues: IPercentileValue[];
+	namedCycleTimeDefinitions?: INamedCycleTimeDefinition[];
+	scopeDefinitionId?: number | null;
+	onScopeChange?: (definitionId: number | null) => void;
 }
 
 const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 	percentileValues,
+	namedCycleTimeDefinitions = [],
+	scopeDefinitionId = null,
+	onScopeChange,
 }) => {
 	const { getTerm } = useTerminology();
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
+	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
+
+	const hasSelector = namedCycleTimeDefinitions.length > 0;
+	const isNamedSelection = scopeDefinitionId !== null;
+
+	useEffect(() => {
+		if (scopeDefinitionId === null || onScopeChange === undefined) {
+			return;
+		}
+		const selected = namedCycleTimeDefinitions.find(
+			(definition) => definition.id === scopeDefinitionId,
+		);
+		if (!selected || selected.isValid === false) {
+			onScopeChange(null);
+		}
+	}, [scopeDefinitionId, namedCycleTimeDefinitions, onScopeChange]);
 
 	const formatDays = (days: number): string => {
 		return days === 1 ? `${days.toFixed(0)} day` : `${days.toFixed(0)} days`;
@@ -62,6 +91,7 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 						display: "flex",
 						justifyContent: "space-between",
 						alignItems: "center",
+						gap: 1,
 					}}
 				>
 					<Typography
@@ -73,7 +103,47 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					>
 						{`${cycleTimeTerm} Percentiles`}
 					</Typography>
+					{hasSelector && (
+						<FormControl size="small" sx={{ minWidth: 140, flexShrink: 0 }}>
+							<Select
+								value={
+									scopeDefinitionId === null
+										? DEFAULT_SCOPE
+										: String(scopeDefinitionId)
+								}
+								onChange={(event) => {
+									const value = event.target.value;
+									onScopeChange?.(
+										value === DEFAULT_SCOPE ? null : Number(value),
+									);
+								}}
+								SelectDisplayProps={{ "aria-label": "Cycle time scope" }}
+							>
+								<MenuItem value={DEFAULT_SCOPE}>Default</MenuItem>
+								{namedCycleTimeDefinitions.map((definition) => (
+									<MenuItem
+										key={definition.id}
+										value={String(definition.id)}
+										disabled={definition.isValid === false}
+									>
+										{definition.isValid === false
+											? `${definition.name} (invalid — fix its states)`
+											: definition.name}
+									</MenuItem>
+								))}
+							</Select>
+						</FormControl>
+					)}
 				</Box>
+				{hasSelector && isNamedSelection && (
+					<Typography
+						variant="caption"
+						color="text.secondary"
+						sx={{ display: "block", mb: 0.5 }}
+					>
+						{`${sleTerm} applies to the Default ${cycleTimeTerm}. Named ${cycleTimeTerm}s have no ${sleTerm} target.`}
+					</Typography>
+				)}
 				{percentileValues.length > 0 ? (
 					/* Use a flexed box for the table so it shrinks to available space instead of causing scrolling */
 					<Box sx={{ overflow: "hidden", flex: "1 1 auto", minHeight: 0 }}>

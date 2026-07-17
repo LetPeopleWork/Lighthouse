@@ -103,9 +103,39 @@ vi.mock(
 );
 
 vi.mock("../../../components/Common/Charts/CycleTimePercentiles", () => ({
-	default: ({ percentileValues }: { percentileValues: IPercentileValue[] }) => (
+	default: ({
+		percentileValues,
+		namedCycleTimeDefinitions,
+		scopeDefinitionId,
+		onScopeChange,
+	}: {
+		percentileValues: IPercentileValue[];
+		namedCycleTimeDefinitions?: { id: number; name: string }[];
+		scopeDefinitionId?: number | null;
+		onScopeChange?: (definitionId: number | null) => void;
+	}) => (
 		<div data-testid="cycle-time-percentiles">
 			<div data-testid="percentile-values-count">{percentileValues.length}</div>
+			<div data-testid="percentile-scope">{scopeDefinitionId ?? "default"}</div>
+			<div data-testid="percentile-defs">
+				{(namedCycleTimeDefinitions ?? []).map((d) => d.name).join(",")}
+			</div>
+			<button
+				type="button"
+				data-testid="percentile-select-named"
+				onClick={() =>
+					onScopeChange?.(namedCycleTimeDefinitions?.[0]?.id ?? null)
+				}
+			>
+				select named
+			</button>
+			<button
+				type="button"
+				data-testid="percentile-select-default"
+				onClick={() => onScopeChange?.(null)}
+			>
+				select default
+			</button>
 		</div>
 	),
 }));
@@ -4520,6 +4550,114 @@ describe("BaseMetricsView component", () => {
 					screen.getByTestId("aging-work-item-age-percentile-values-count"),
 				).toHaveTextContent("0");
 			});
+		});
+	});
+	describe("Cycle Time Percentiles named scope (lifted state)", () => {
+		const namedDefinition = {
+			id: 10,
+			name: "Concept to Cash",
+			startState: "Planned",
+			endState: "Done",
+			isValid: true,
+		};
+
+		function renderPercentilesWidget() {
+			const service = {
+				...createMockMetricsService<IWorkItem>(),
+				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+			};
+			const team = new Team();
+			team.name = "Phoenix";
+			team.id = 7;
+			team.featureWip = 3;
+			team.lastUpdated = new Date();
+			team.serviceLevelExpectationProbability = 80;
+			team.serviceLevelExpectationRange = 10;
+
+			localStorage.setItem(
+				`lighthouse:metrics:team:${team.id}:category`,
+				"flow-overview",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					doingStates={["To Do", "In Progress", "Review"]}
+					cycleTimeDefinitions={[namedDefinition]}
+				/>,
+			);
+
+			return { service, team };
+		}
+
+		it("threads the named definitions into the widget and keeps the default RAG SLE-anchored", async () => {
+			renderPercentilesWidget();
+
+			await screen.findByTestId("cycle-time-percentiles");
+			await waitFor(() => {
+				expect(screen.getByTestId("percentile-defs")).toHaveTextContent(
+					"Concept to Cash",
+				);
+			});
+
+			expect(screen.getByTestId("percentile-scope")).toHaveTextContent(
+				"default",
+			);
+			expect(
+				screen.getByTestId("widget-rag-percentiles"),
+			).not.toHaveTextContent("none");
+		});
+
+		it("fetches percentiles with the definition id and neutralizes the RAG footer on a named selection", async () => {
+			const { service, team } = renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+			(service.getCycleTimePercentiles as Mock).mockClear();
+
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			await waitFor(() => {
+				expect(service.getCycleTimePercentiles).toHaveBeenCalledWith(
+					team.id,
+					expect.any(Date),
+					expect.any(Date),
+					namedDefinition.id,
+				);
+			});
+
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-percentiles")).toHaveTextContent(
+					"none",
+				);
+				expect(screen.getByTestId("widget-tip-percentiles")).toHaveTextContent(
+					"Named Cycle Times have no SLE target",
+				);
+			});
+		});
+
+		it("restores the SLE-anchored RAG footer when the selection returns to Default", async () => {
+			renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+			await waitFor(() => {
+				expect(screen.getByTestId("widget-rag-percentiles")).toHaveTextContent(
+					"none",
+				);
+			});
+
+			await userEvent.click(screen.getByTestId("percentile-select-default"));
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-percentiles"),
+				).not.toHaveTextContent("none");
+			});
+			expect(screen.getByTestId("percentile-scope")).toHaveTextContent(
+				"default",
+			);
 		});
 	});
 });
