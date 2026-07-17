@@ -26,6 +26,8 @@ primary_jobs:
   - job-config-admin-define-recurring-blackout-rule  # recurring-blackout-events (2026-06-06, #4577): define a recurring non-working-day rule once
   - job-config-admin-define-named-cycle-time  # multiple-cycle-times (2026-06-08, #5251): define a named start->end cycle-time window once
   - job-config-admin-define-blocked-rules  # epic-5074-blocked-items (2026-06-11, #5074): define "blocked" as a flexible rule set (FOUNDATION)
+  - job-config-admin-quiet-jira-writeback  # quiet-jira-writeback (2026-07-16, #5500): keep Jira write-back on without emailing every watcher
+  - job-config-admin-know-writeback-is-quiet  # quiet-jira-writeback (2026-07-16, #5500): see upfront whether the credential can actually suppress notifications
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted
@@ -33,6 +35,10 @@ goals:
     Connection / RBAC assignment
   - When a conflict does happen, understand it immediately and recover by reloading the
     current value, rather than discovering days later that my change vanished
+  - Own a work-tracking Connection that behaves like a good citizen in the team's Jira — it
+    writes what Lighthouse knows without emailing everyone who watches the issue
+  - Be told plainly when a Connection's credential cannot do what Lighthouse claims, before
+    the team is affected — never discover it from a complaint
 
 frustrations:
   - Two admins editing the same Team settings can clobber each other with no warning — the
@@ -41,6 +47,11 @@ frustrations:
     like it saved successfully
   - The blanket save-and-retry behaviour means a stale write is reloaded and re-applied on
     top of fresh data instead of being surfaced as a conflict
+  - Enabling Jira write-back spams every watcher on every sync, so the only way to stop the
+    complaints is to switch a Premium feature off entirely — and the ADO connector has
+    behaved correctly all along, which makes it feel like an oversight rather than a limit
+  - A Connection can be silently under-permissioned: Lighthouse reports a successful
+    write-back while Jira quietly ignores the suppression request and mails everyone anyway
 
 mental_model:
   - A config aggregate (this Team, this Connection) is a single shared document; editing it is
@@ -50,6 +61,10 @@ mental_model:
   - Read-your-writes: once MY save succeeds, reloading the page must show MY value
   - High-churn machine-synced data (work items, features) is NOT my concern — that is the
     sync engine's, single-writer, and does not need this protection
+  - An integration should be quiet by default; I should not have to find a toggle to stop a
+    tool from emailing my team, and I should not have to trade a broad admin permission for it
+  - If a Connection's credential is too weak to do what the product promises, the product
+    should say so on the page where I configure it — not fail invisibly
 
 vocabulary:
   - "stale edit" — an edit made against a version of the config that someone else has since
@@ -61,6 +76,11 @@ vocabulary:
     (UserProfile/RbacGroupMapping/ApiKey), Delivery — the human-edited roots that get tokens
   - "sync entity" — WorkItem, Feature, FeatureWork, WorkItemStateTransition — high-churn,
     machine-written, deliberately NOT tokened
+  - "write-back" — Lighthouse pushing a value it computed (forecast percentile, feature size,
+    work-item age) back into a field on the work-tracking system
+  - "noise" / "quiet" — whether a write-back emails the issue's watchers. "Quiet" means NO
+    watcher email; it does NOT mean invisible — the change is always recorded in issue history
+    and always fires webhooks, on every Jira deployment
 
 related_personas:
   - delivery-lead-rte (often the same person at portfolio scope; owns Portfolio config)
@@ -70,3 +90,5 @@ related_personas:
 not_this_persona:
   - Viewer (read-only; never saves config, so never hits a 409)
   - The sync engine (machine writer of work items; single-writer, no human-conflict surface)
+  - The issue watchers who receive the write-back noise — they are affected by this persona's
+    configuration but never act on it themselves

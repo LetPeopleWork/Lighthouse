@@ -1,0 +1,132 @@
+schema_version: 1
+feature_id: quiet-jira-writeback
+created: 2026-07-16
+research_depth: lightweight
+ado: Story #5500 "Prevent 'noise' when doing write-backs on Jira" (tag Release Notes; reported by Manuel, Chris)
+note: >
+  Lightweight journey map for a brownfield connector fix. Only ONE persona acts (config-admin); the
+  team's watchers are affected by the noise but never act, so they are not modelled as a persona. The
+  fix itself is deliberately invisible — always-on, no toggle, no new control (D3, mirroring the ADO
+  connector) — so the only NEW visible surface in the whole feature is the honest permission status on
+  the Jira connection (D5). That is why this journey is short: most of the value is the absence of
+  something (email), not the presence of UI.
+
+  Anchors to verified code reality: JiraWorkTrackingConnector.cs:325 is a bare
+  PUT rest/api/latest/issue/{id} with no suppression parameter, while
+  AzureDevOpsWorkTrackingConnector.cs:356 already passes suppressNotifications: true. Write-back fires
+  from WriteBackTriggerService.TriggerWriteBackForTeam on Team/Portfolio update and is premium-gated.
+
+  Scope ceiling (D1), stated here so no future reader mistakes it for a bug: Jira can suppress watcher
+  EMAIL only. Issue history, the Updated timestamp, webhooks, listeners and automation rules fire on
+  every deployment regardless — verbatim from JRASERVER-34423: "changes will still be logged, added to
+  the issue change history, events will still be sent to listeners, webhooks will still fire."
+
+journeys:
+
+  - name: quiet-jira-writeback
+    goal: >
+      A Configuration Administrator who switched Jira write-back OFF (because every forecast update
+      emailed the whole team) switches it back on, confirms from the connection page that Lighthouse
+      can actually stay quiet with the credential it has, and watches forecasts land in Jira without a
+      single watcher email.
+    persona: "config-admin (Carlos Mendez, Jira connection owner)"
+    jobs:
+      - job-config-admin-quiet-jira-writeback
+      - job-config-admin-know-writeback-is-quiet
+    emotional_arc:
+      start: Resigned — "write-back is genuinely useful, but I had to turn it off; the team said
+        Lighthouse was spamming them and they were right."
+      middle: Reassured — "the connection page tells me straight out whether it can stay quiet with
+        this credential, and exactly what to grant if not. It isn't guessing on my behalf."
+      end: Confident — "forecasts are updating in Jira and nobody has said a word. That's the point."
+
+    steps:
+
+      - id: step-recognise-the-noise
+        action: >
+          Carlos has write-back mappings configured (forecast percentiles onto a Jira field) but has
+          disabled write-back after the team complained that every sync emailed every watcher.
+        expected_output: >
+          Today: nothing changes — this is the status quo the feature removes. Every genuine forecast
+          change triggers a watcher email, because the write is an ordinary issue edit. Note the noise
+          is NOT Lighthouse over-writing: WriteBackService.GetChangedFields already emits only values
+          that actually changed. Every email corresponds to a real change; there are simply a lot of
+          real changes, because forecast percentiles move.
+        emotional_state: Resigned — "the feature works, but I can't inflict it on the team"
+        shared_artifacts:
+          - connection.writeBackMappingDefinitions (existing — what to write, and where)
+          - writeBackValueSource (existing — ForecastPercentile50/70/85/95, FeatureSize, WorkItemAgeCycleTime)
+
+      - id: step-see-permission-verdict
+        action: >
+          Carlos opens the Jira connection in Settings -> Work Tracking Systems. Lighthouse has probed
+          GET /rest/api/{2,3}/mypermissions for the permission its deployment needs.
+        expected_output: >
+          A read-only status line, in one of three honest states: (a) write-backs will not email
+          watchers; (b) write-backs WILL email watchers — naming the exact permission to grant and the
+          account to grant it to; or (c) unknown, when the probe failed or timed out. Never blocks
+          saving. Shown only for Jira connections with write-back mappings — never ADO, Linear or CSV.
+        emotional_state: Reassured — "it tells me the truth before my team does"
+        shared_artifacts:
+          - connection.authenticationMethodKey (existing — the deployment discriminator, D4)
+          - writeBackPermissionStatus (new — quiet | will-email | unknown; derived, never persisted)
+        error_paths:
+          - Probe times out or errors -> status degrades to "unknown"; saving the connection still
+            works; Lighthouse makes no claim of quiet.
+          - Credential lacks the permission -> status says write-backs WILL email watchers, names the
+            permission. This is the case that matters most: if Jira silently ignores an
+            under-permissioned notifyUsers=false (unresolved in Atlassian's docs — SPIKE-00 settles
+            it), this status line is the ONLY signal anywhere that suppression is not working.
+
+      - id: step-grant-permission-in-jira
+        action: >
+          If the status says write-backs will email watchers, Carlos grants the named permission to
+          Lighthouse's account in Jira — "Make bulk changes" on Cloud, or project admin on DC — and
+          reloads the connection page.
+        expected_output: >
+          The status flips to quiet-confirmed. The grant itself happens in Jira, deliberately not
+          automated by Lighthouse (D3): Lighthouse reports, the Jira admin decides.
+        emotional_state: In control — "one permission, and I know exactly which one and why"
+        shared_artifacts:
+          - writeBackPermissionStatus (re-probed on load)
+
+      - id: step-writeback-lands-quietly
+        action: >
+          Carlos re-enables write-back and triggers a Team update. WriteBackTriggerService fires;
+          changed forecast values are written to Jira — via the bulk edit API with
+          sendBulkNotification:false on Cloud, or PUT ?notifyUsers=false on DC.
+        expected_output: >
+          The forecast value is visible in the Jira field. No watcher receives an email. The change
+          IS recorded in the issue's history and the Updated timestamp does move (D1) — expected and
+          unavoidable, not a defect.
+        emotional_state: Confident — "it works and nobody noticed, which is exactly right"
+        shared_artifacts:
+          - writeBackResult.itemResults (existing — per-item success/failure; the Cloud bulk path is
+            async and MUST map its taskId/polling outcomes back onto this same contract)
+        error_paths:
+          - Bulk task fails or polling times out -> each item recorded failed and logged; never a
+            silent success.
+          - More than 1000 changed issues -> chunked into <=1000-issue requests (Atlassian's cap).
+          - Watcher still emailed despite a quiet-confirmed status -> disproves the probe's predictive
+            value; the honest surface must then be driven by observed write-back results instead of a
+            pre-flight probe. Guarded by SPIKE-00 Q6 before the surface is built.
+
+shared_artifacts_registry:
+  - name: connection.authenticationMethodKey
+    source: WorkTrackingSystemConnection (existing, persisted)
+    consumers: [deployment routing (D4), permission probe selection]
+    note: >
+      jira.datacenter -> DC path; jira.cloud / jira.scopedtoken / jira.oauth -> Cloud path. SINGLE
+      source of truth for the deployment split. Open risk carried to DESIGN: Jira DC also supports
+      OAuth, so jira.oauth must be proven Cloud-only (SPIKE-00 Q7) before it is routed to the
+      Cloud-only bulk API.
+  - name: writeBackPermissionStatus
+    source: the mypermissions probe (new, derived per request — never persisted)
+    consumers: [Jira connection settings status line]
+    note: Derived-only by design; a stale persisted verdict would recreate the false-promise problem.
+  - name: writeBackResult.itemResults
+    source: WriteBackService / connector (existing contract)
+    consumers: [WriteBackService logging, TeamUpdater / PortfolioUpdater / ForecastUpdater]
+    note: >
+      Sync per-item shape today. The Cloud bulk transport is async (taskId + progress polling) and must
+      map onto this SAME shape — the single biggest design risk in the feature.

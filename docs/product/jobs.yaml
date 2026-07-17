@@ -2953,4 +2953,156 @@ jobs:
         a point to its membership. Gap: 3 — real and the largest of the three enhancements, because it
         needs a new reconstruct-membership-at-date query over WorkItemBlockedTransition and a new read
         endpoint, not just a client-side render.
+  - id: job-config-admin-quiet-jira-writeback
+    title: Keep write-back switched on without emailing every watcher on every sync
+    persona: config-admin
+    feature_context: quiet-jira-writeback
+    created: 2026-07-16
+    note: >
+      NEW in quiet-jira-writeback (ADO Story #5500 "Prevent 'noise' when doing write-backs on Jira",
+      Premium; reported by Manuel and Chris). Lighthouse's Jira write-back
+      (JiraWorkTrackingConnector.cs:325) issues a bare PUT rest/api/latest/issue/{id}, so Jira treats it
+      as an ordinary user edit and emails EVERY watcher. The Azure DevOps connector already gets this
+      right (AzureDevOpsWorkTrackingConnector.cs:356 passes suppressNotifications: true, always-on, no
+      setting) — so this is a CONNECTOR PARITY GAP, not a missing platform capability. Scope is bounded
+      by Atlassian reality (D1): notifyUsers/sendBulkNotification suppress EMAIL ONLY — issue history,
+      the Updated timestamp, webhooks, listeners and automation rules fire regardless, on every
+      deployment (JRASERVER-34423, verbatim). End state is deployment-split (D2): Jira Cloud uses the
+      bulk edit API with sendBulkNotification:false (needs only "Make bulk changes", NOT Administer
+      Jira); Jira DC/Server uses PUT ?notifyUsers=false (needs admin or project admin) because DC has no
+      bulk API at all. Always-on, no toggle (D3), mirroring ADO. NOT about write-back cadence:
+      WriteBackService.GetChangedFields already emits only genuinely-changed values — the noise is
+      entirely Jira-side.
+    job_story: >
+      When Lighthouse writes our forecast percentiles back into Jira on every sync — and forecast numbers
+      move often, so these are real changes, not redundant writes — I want those updates to land without
+      emailing every watcher on the issue, so I can keep write-back switched on and let the team read the
+      forecast in Jira, instead of switching the feature off to stop the inbox complaints.
+    dimensions:
+      functional: >
+        Jira write-back suppresses watcher email on both deployments, always-on with no setting to find
+        or forget (D3, ADO parity). Jira Cloud routes through POST /rest/api/3/bulk/issues/fields with
+        sendBulkNotification: false — pinned to v3 because the bulk API does not exist in v2 and
+        Lighthouse currently calls rest/api/latest — chunked at <=1000 issues, async submit + progress
+        poll, with per-item outcomes mapped back onto the existing WriteBackResult.ItemResults contract.
+        Jira DC/Server routes through the existing per-issue PUT with ?notifyUsers=false (7.2.0+).
+        Deployment discriminated by the connection's AuthenticationMethodKey (D4). Premium-gated via
+        licenseService.CanUsePremiumFeatures(), like write-back itself. Linear and CSV are unaffected
+        (both throw NotSupportedException for write-back); ADO is already correct.
+      emotional: >
+        Move from "I turned write-back off because the team said Lighthouse was spamming them" to "the
+        forecast just appears in Jira and nobody notices the machinery". Relief at no longer being the
+        admin whose integration broke everyone's inbox — and, on Cloud, relief at not having to ask
+        security for Administer Jira just to buy quiet.
+      social: >
+        Be the admin who introduced a tool that behaves like a good citizen in the team's Jira — it
+        writes what it knows and stays quiet about it — rather than the one who wired up a bot that
+        shouts on every sync.
+    forces:
+      push: >
+        Every genuine forecast change emails every watcher of the issue. Forecast percentiles move
+        frequently, so the volume is real and recurring. Two customers (Manuel, Chris) reported it. The
+        only lever an admin has today is switching write-back off — which kills a Premium feature to
+        solve an inbox problem — or asking the team to unwatch their own issues, which costs them the
+        notifications they actually want.
+      pull: >
+        Write-back that behaves exactly like the ADO connector already does: the value lands in the
+        field, nobody gets mailed, no setting to discover. On Cloud, achieved under least privilege.
+      anxiety: >
+        "Will Lighthouse claim it's quiet and spam my team anyway?" — the sharpest risk, because
+        Atlassian's docs suggest an under-permissioned notifyUsers=false may be SILENTLY IGNORED (204 +
+        emails sent), while a community report quotes a hard permission error instead. Unresolved in the
+        docs, so SPIKE-00 settles it before D4/D5 are designed (D7), and
+        job-config-admin-know-writeback-is-quiet exists to make the answer visible either way. "Do I have
+        to grant Lighthouse Administer Jira?" — on Cloud, no: that is exactly why D2 routes Cloud through
+        the bulk API. On DC, yes (admin or project admin), and the connection surface says so plainly
+        rather than failing quietly. "Will the change vanish from the audit trail?" — no, and
+        deliberately so: history still records every write (D1), and slice 01 asserts the history entry
+        EXISTS so the unsuppressible channel is never mistaken for a regression later.
+      habit: >
+        Admins already expect integrations to be quiet by default — ADO write-back in this very product
+        already is, so the expectation is set inside Lighthouse itself. Nothing new to learn: the fix is
+        invisible, with no toggle and no migration. The only behaviour change is on Jira's side, where an
+        admin may need to grant one permission — surfaced by the companion job rather than left to fail.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — customer-reported by two named people (Manuel, Chris); the noise is severe enough
+        that the documented workaround is disabling a Premium feature entirely, so it is an adoption
+        blocker rather than a polish item. Current satisfaction: 0 — verified: the Jira write-back path
+        has NO suppression of any kind (JiraWorkTrackingConnector.cs:325 is a bare PUT), and no
+        workaround preserves the feature. Gap: 4 — the largest in this feature and a credibility gap too,
+        since the sibling ADO connector has behaved correctly all along. Kept tractable by the fact that
+        the DC half is a query parameter; the real work is the Cloud bulk transport, bought deliberately
+        to avoid demanding Administer Jira.
 
+  - id: job-config-admin-know-writeback-is-quiet
+    title: See upfront whether Lighthouse can actually be quiet with the credential I gave it
+    persona: config-admin
+    feature_context: quiet-jira-writeback
+    created: 2026-07-16
+    note: >
+      NEW in quiet-jira-writeback (ADO Story #5500). The honesty half of the feature (D5). Both
+      suppression mechanisms are PERMISSION-GATED — DC's notifyUsers=false needs Administer Jira or
+      project admin; Cloud's bulk edit needs the "Make bulk changes" global permission — and Atlassian's
+      docs indicate an under-permissioned request may be SILENTLY IGNORED (HTTP 204, watchers emailed
+      anyway) rather than rejected. If so, Lighthouse would log a successful write-back while the email
+      storm continues, with no signal anywhere that suppression failed. This job makes the invisible
+      failure visible: a deployment-aware GET /rest/api/{2,3}/mypermissions probe whose verdict is
+      surfaced read-only on the Jira connection. Same stance as job-forecast-no-false-certainty — never
+      present a confident answer the product cannot stand behind.
+    job_story: >
+      When I set up or inherit a Jira connection with write-back mappings, I want Lighthouse to tell me
+      whether the credential I gave it can actually suppress notifications — and if not, exactly which
+      permission to grant to which account — so that I find out from the settings page rather than from
+      my team's complaints two weeks later.
+    dimensions:
+      functional: >
+        A read-only status on the Jira connection settings surface, shown only for Jira connections that
+        have write-back mappings (never for ADO/Linear/CSV). Backed by a deployment-routed
+        GET /rest/api/{2,3}/mypermissions probe (D4): DC checks ADMINISTER / ADMINISTER_PROJECTS, Cloud
+        checks the permission validated by SPIKE-00 (BULK_CHANGE once the bulk path lands). Three honest
+        states: quiet confirmed; will-email plus the exact permission and account to fix it; or unknown
+        when the probe fails or times out. Never blocks saving the connection. No toggle and no
+        remediation action (D3) — granting the permission is a Jira-side admin act, deliberately not
+        automated.
+      emotional: >
+        Move from "I have no idea if this is working until someone shouts" to "the connection page told
+        me plainly, before anyone else was affected". Confidence that Lighthouse will not quietly
+        over-promise on my behalf.
+      social: >
+        Be the admin who knew about the permission gap first and fixed it, rather than the one who is
+        informed of it by an annoyed team.
+    forces:
+      push: >
+        Suppression is permission-gated and may fail SILENTLY. Without a surfaced verdict there is no
+        signal at all — not in the UI, not in the logs — that write-backs are still emailing watchers.
+        The admin's first notification of failure is a human complaint.
+      pull: >
+        The connection page states the truth before any sync runs, and names the exact permission and
+        account needed to change it.
+      anxiety: >
+        "Can I trust the probe more than the write-back itself?" — SPIKE-00 Q6 validates that
+        mypermissions predicts observed behaviour before this is built; if it does not, the surface must
+        be driven by the observed write-back result instead. "Which project does it check?" — project
+        admin is per-project while a write-back batch can span several; a genuine open question carried
+        into DESIGN rather than assumed away. "Will a failing probe block my work?" — no: it degrades to
+        an honest unknown and saving still succeeds.
+      habit: >
+        Admins already read connection-level validation state on this exact surface (connection
+        validation, RequiresReconnect); this is one more line in a place they already look, in the same
+        read-only idiom.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 0
+      gap: 3
+      rationale: >
+        Importance: 3 — lower than the noise fix itself because it enables trust rather than removing the
+        pain; an admin with adequate permissions never needs it. But it is what separates a real fix from
+        a false promise, and under the silent-ignore failure mode it is the ONLY way to know the feature
+        works at all. Current satisfaction: 0 — nothing in the product reports write-back permission
+        state; write-back has no docs page either (verified: zero grep hits under docs/). Gap: 3 — real
+        but bounded: one probe against an endpoint that already exists, plus one status line on a
+        surface that already renders connection state.
