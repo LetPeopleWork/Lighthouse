@@ -339,7 +339,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("cycleTimePercentilesInfo")]
-        public ActionResult<CycleTimePercentilesInfoDto> GetCycleTimePercentilesInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<CycleTimePercentilesInfoDto> GetCycleTimePercentilesInfo(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? definitionId = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.API
             }
 
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
-                portfolioMetricsService.GetCycleTimePercentilesInfoForPortfolio(portfolio, startDate, endDate));
+                portfolioMetricsService.GetCycleTimePercentilesInfoForPortfolio(portfolio, startDate, endDate, definitionId));
         }
 
         [HttpGet("throughput/pbc")]

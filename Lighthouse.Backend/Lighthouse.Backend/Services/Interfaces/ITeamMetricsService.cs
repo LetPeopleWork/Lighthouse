@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         PredictabilityScoreInfoDto GetPredictabilityScoreInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 
-        CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate);
+        CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate, int? definitionId = null);
 
         FlowEfficiencyInfoDto GetFlowEfficiencyInfoForTeam(Team team, DateTime startDate, DateTime endDate);
 

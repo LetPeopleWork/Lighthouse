@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         PredictabilityScoreInfoDto GetPredictabilityScoreInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
-        CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
+        CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId = null);
 
         FlowEfficiencyInfoDto GetFlowEfficiencyInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 

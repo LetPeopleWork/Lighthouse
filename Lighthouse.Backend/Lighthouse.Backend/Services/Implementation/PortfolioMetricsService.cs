@@ -682,19 +682,40 @@ namespace Lighthouse.Backend.Services.Implementation
             }, logger);
         }
 
-        public CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
+        public CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId = null)
         {
             logger.LogDebug("Getting Cycle Time Percentiles Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            return GetFromCacheIfExists(portfolio, $"CycleTimePercentilesInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
+            var isNamed = definitionId is > 0;
+            var cacheKey = isNamed
+                ? $"CycleTimePercentilesInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}"
+                : $"CycleTimePercentilesInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}";
+
+            return GetFromCacheIfExists(portfolio, cacheKey, () =>
             {
-                var currentPercentiles = GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
                 var periodDays = (endDate.Date - startDate.Date).Days + 1;
                 var previousEnd = startDate.AddDays(-1);
                 var previousStart = startDate.AddDays(-periodDays);
-                var previousPercentiles = GetCycleTimePercentilesForPortfolio(portfolio, previousStart, previousEnd).ToList();
+                var currentPercentiles = PercentilesForInfo(portfolio, startDate, endDate, isNamed, definitionId).ToList();
+                var previousPercentiles = PercentilesForInfo(portfolio, previousStart, previousEnd, isNamed, definitionId).ToList();
                 return BuildCycleTimePercentilesInfoDto(currentPercentiles, previousPercentiles, startDate, endDate, previousStart, previousEnd);
             }, logger);
+        }
+
+        private IEnumerable<PercentileValue> PercentilesForInfo(Portfolio portfolio, DateTime startDate, DateTime endDate, bool isNamed, int? definitionId)
+        {
+            if (!isNamed)
+            {
+                return GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate);
+            }
+
+            var namedDurations = ComputeNamedDurations(portfolio, startDate, endDate, definitionId!.Value);
+            if (namedDurations.Count == 0)
+            {
+                return [];
+            }
+
+            return BuildPercentiles(namedDurations);
         }
 
         public FlowEfficiencyInfoDto GetFlowEfficiencyInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
