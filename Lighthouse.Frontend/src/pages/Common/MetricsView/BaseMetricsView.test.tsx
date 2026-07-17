@@ -4801,5 +4801,51 @@ describe("BaseMetricsView component", () => {
 				"default",
 			);
 		});
+
+		it("keeps the Default trend info fetch free of a definition id", async () => {
+			const { service } = renderPercentilesWidget();
+
+			await screen.findByTestId("cycle-time-percentiles");
+
+			await waitFor(() => {
+				expect(service.getCycleTimePercentilesInfo).toHaveBeenCalledWith(
+					expect.any(Number),
+					expect.any(Date),
+					expect.any(Date),
+				);
+			});
+			expect(service.getCycleTimePercentilesInfo).not.toHaveBeenCalledWith(
+				expect.any(Number),
+				expect.any(Date),
+				expect.any(Date),
+				expect.anything(),
+			);
+		});
+
+		it("routes the trend footer through the named definition on selection", async () => {
+			const { service, team } = renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+			(service.getCycleTimePercentilesInfo as Mock).mockResolvedValue({
+				percentiles: [],
+				comparison: { direction: "up", metricLabel: "Named Cycle Time Trend" },
+			});
+
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			await waitFor(() => {
+				expect(service.getCycleTimePercentilesInfo).toHaveBeenCalledWith(
+					team.id,
+					expect.any(Date),
+					expect.any(Date),
+					namedDefinition.id,
+				);
+			});
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-trend-label-percentiles"),
+				).toHaveTextContent("Named Cycle Time Trend");
+			});
+		});
 	});
 });

@@ -46,6 +46,7 @@ import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/Est
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
 import type {
 	IArrivalsInfo,
+	ICycleTimePercentilesInfo,
 	IFeatureSizePercentilesInfo,
 	IThroughputInfo,
 } from "../../../models/Metrics/InfoWidgetData";
@@ -1216,17 +1217,28 @@ export const BaseMetricsView = <
 	const [scopedPercentileValues, setScopedPercentileValues] = useState<
 		IPercentileValue[] | null
 	>(null);
+	const [scopedPercentilesInfo, setScopedPercentilesInfo] =
+		useState<ICycleTimePercentilesInfo | null>(null);
 
 	const handlePercentilesScopeChange = useCallback(
 		(definitionId: number | null) => {
 			setPercentilesScopeDefinitionId(definitionId);
 			if (definitionId === null) {
 				setScopedPercentileValues(null);
+				setScopedPercentilesInfo(null);
 				return;
 			}
 			void metricsService
 				.getCycleTimePercentiles(entity.id, startDate, endDate, definitionId)
 				.then(setScopedPercentileValues);
+			void metricsService
+				.getCycleTimePercentilesInfo(
+					entity.id,
+					startDate,
+					endDate,
+					definitionId,
+				)
+				.then(setScopedPercentilesInfo);
 		},
 		[metricsService, entity.id, startDate, endDate],
 	);
@@ -1235,6 +1247,7 @@ export const BaseMetricsView = <
 	useEffect(() => {
 		setPercentilesScopeDefinitionId(null);
 		setScopedPercentileValues(null);
+		setScopedPercentilesInfo(null);
 	}, [entity.id, startDate, endDate]);
 
 	const displayedPercentileValues = scopedPercentileValues ?? percentileValues;
@@ -1698,7 +1711,8 @@ export const BaseMetricsView = <
 		featuresWorkedOnOverview: featuresWorkedOnInfo?.comparison,
 		totalWorkItemAge: totalWorkItemAgeInfo?.comparison,
 		predictabilityScore: predictabilityScoreInfo?.comparison,
-		percentiles: cycleTimePercentilesInfo?.comparison,
+		percentiles: (scopedPercentilesInfo ?? cycleTimePercentilesInfo)
+			?.comparison,
 	};
 
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);

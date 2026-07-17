@@ -448,6 +448,52 @@ describe("MetricsService cycle time percentiles with definitionId", () => {
 	});
 });
 
+describe("MetricsService cycle time percentiles info with definitionId", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("omits the definitionId query param for the default trend info", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: { percentiles: [], comparison: {} },
+		});
+
+		await metricsService.getCycleTimePercentilesInfo(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cycleTimePercentilesInfo?startDate=2023-01-01&endDate=2023-01-31",
+		);
+	});
+
+	it("appends the definitionId query param for a named definition trend info", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: { percentiles: [], comparison: {} },
+		});
+
+		await metricsService.getCycleTimePercentilesInfo(
+			7,
+			new Date("2023-01-01"),
+			new Date("2023-01-31"),
+			1,
+		);
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/cycleTimePercentilesInfo?startDate=2023-01-01&endDate=2023-01-31&definitionId=1",
+		);
+	});
+});
+
 describe("MetricsService getCycleTimeData named cycle times", () => {
 	let metricsService: TeamMetricsService;
 

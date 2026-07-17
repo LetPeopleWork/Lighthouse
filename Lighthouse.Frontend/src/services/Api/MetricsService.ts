@@ -194,6 +194,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		definitionId?: number,
 	): Promise<ICycleTimePercentilesInfo>;
 
 	getBlockedCountHistory(
@@ -712,10 +713,13 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		id: number,
 		startDate: Date,
 		endDate: Date,
+		definitionId?: number,
 	): Promise<ICycleTimePercentilesInfo> {
 		return this.withErrorHandling(async () => {
+			const definitionSuffix =
+				definitionId === undefined ? "" : `&definitionId=${definitionId}`;
 			const response = await this.apiService.get<ICycleTimePercentilesInfo>(
-				`/${this.api}/${id}/metrics/cycleTimePercentilesInfo?${this.getDateFormatString(startDate, endDate)}`,
+				`/${this.api}/${id}/metrics/cycleTimePercentilesInfo?${this.getDateFormatString(startDate, endDate)}${definitionSuffix}`,
 			);
 			return response.data;
 		});
