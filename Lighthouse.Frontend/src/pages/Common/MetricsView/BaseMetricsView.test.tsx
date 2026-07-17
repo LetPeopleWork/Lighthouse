@@ -513,7 +513,16 @@ vi.mock("./WidgetShell", () => ({
 		children: ReactNode;
 		header?: { ragStatus: string; tipText: string };
 		info?: { description: string; learnMoreUrl: string };
-		viewData?: { title: string; items: unknown[] };
+		viewData?: {
+			title: string;
+			items: IWorkItem[];
+			highlightColumn?: {
+				title: string;
+				description: string;
+				valueGetter: (item: IWorkItem) => number;
+			};
+			sle?: number;
+		};
 		trend?: { direction: string; metricLabel: string };
 	}) => (
 		<div data-testid={`widget-shell-${widgetKey}`}>
@@ -555,6 +564,20 @@ vi.mock("./WidgetShell", () => ({
 					</span>
 					<span data-testid={`widget-view-data-count-${widgetKey}`}>
 						{viewData.items.length}
+					</span>
+					<span data-testid={`widget-view-data-highlight-title-${widgetKey}`}>
+						{viewData.highlightColumn?.title ?? ""}
+					</span>
+					<span data-testid={`widget-view-data-highlight-values-${widgetKey}`}>
+						{(viewData.highlightColumn
+							? viewData.items.map((item) =>
+									viewData.highlightColumn?.valueGetter(item),
+								)
+							: []
+						).join(",")}
+					</span>
+					<span data-testid={`widget-view-data-sle-${widgetKey}`}>
+						{viewData.sle ?? "none"}
 					</span>
 				</div>
 			)}
@@ -4591,6 +4614,125 @@ describe("BaseMetricsView component", () => {
 
 			return { service, team };
 		}
+
+		const namedItems: IWorkItem[] = [
+			{
+				...mockCycleTimeData[0],
+				id: 101,
+				cycleTime: 9,
+				namedCycleTimes: [{ definitionId: namedDefinition.id, days: 4 }],
+			},
+			{
+				...mockCycleTimeData[1],
+				id: 102,
+				cycleTime: 10,
+				namedCycleTimes: [{ definitionId: namedDefinition.id, days: 7 }],
+			},
+			{
+				...mockCycleTimeData[0],
+				id: 103,
+				cycleTime: 11,
+				namedCycleTimes: [{ definitionId: 999, days: 3 }],
+			},
+		];
+
+		function renderWithNamedItems() {
+			const service = {
+				...createMockMetricsService<IWorkItem>(),
+				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+				getCycleTimeData: vi.fn().mockResolvedValue(namedItems),
+			};
+			const team = new Team();
+			team.name = "Phoenix";
+			team.id = 7;
+			team.featureWip = 3;
+			team.lastUpdated = new Date();
+			team.serviceLevelExpectationProbability = 80;
+			team.serviceLevelExpectationRange = 10;
+
+			localStorage.setItem(
+				`lighthouse:metrics:team:${team.id}:category`,
+				"flow-overview",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					doingStates={["To Do", "In Progress", "Review"]}
+					cycleTimeDefinitions={[namedDefinition]}
+				/>,
+			);
+
+			return { service, team };
+		}
+
+		it("View Data Default selection: the highlight column shows the cycle time for all closed items", async () => {
+			renderWithNamedItems();
+
+			await screen.findByTestId("cycle-time-percentiles");
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+				).toHaveTextContent("Cycle Time");
+			});
+			expect(
+				screen.getByTestId("widget-view-data-count-percentiles"),
+			).toHaveTextContent("3");
+			expect(
+				screen.getByTestId("widget-view-data-highlight-values-percentiles"),
+			).toHaveTextContent("9,10,11");
+			expect(
+				screen.getByTestId("widget-view-data-sle-percentiles"),
+			).not.toHaveTextContent("none");
+		});
+
+		it("View Data Named selection: highlight column titled with the definition name and valued from namedCycleTimes", async () => {
+			renderWithNamedItems();
+
+			await screen.findByTestId("percentile-select-named");
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+				).toHaveTextContent("Concept to Cash");
+			});
+			expect(
+				screen.getByTestId("widget-view-data-highlight-values-percentiles"),
+			).toHaveTextContent("4,7");
+		});
+
+		it("View Data Named selection: rows filtered to the named population equal to the percentile population", async () => {
+			renderWithNamedItems();
+
+			await screen.findByTestId("percentile-select-named");
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-count-percentiles"),
+				).toHaveTextContent("2");
+			});
+		});
+
+		it("View Data Named selection: no SLE line is drawn in the dialog", async () => {
+			renderWithNamedItems();
+
+			await screen.findByTestId("percentile-select-named");
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+				).toHaveTextContent("Concept to Cash");
+			});
+			expect(
+				screen.getByTestId("widget-view-data-sle-percentiles"),
+			).toHaveTextContent("none");
+		});
 
 		it("threads the named definitions into the widget and keeps the default RAG SLE-anchored", async () => {
 			renderPercentilesWidget();

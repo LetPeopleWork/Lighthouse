@@ -456,6 +456,8 @@ type ViewDataInputs = {
 	readonly wipOverTimeData: RunChartData | null;
 	readonly allFeaturesForSizeChart: IFeature[];
 	readonly serviceLevelExpectation: IPercentileValue | null;
+	readonly percentilesScopeDefinitionId: number | null;
+	readonly namedCycleTimeDefinitions: INamedCycleTimeDefinition[];
 	readonly estimationVsCycleTimeData: IEstimationVsCycleTimeResponse | null;
 	readonly arrivalsData: RunChartData | null;
 	readonly workItemLookup: Map<number, IWorkItem>;
@@ -528,6 +530,24 @@ function buildViewData(
 			)
 			.filter((item): item is IWorkItem => item !== undefined) ?? [];
 
+	const namedPercentilesScope = (() => {
+		const id = inputs.percentilesScopeDefinitionId;
+		if (id === null) {
+			return null;
+		}
+		const definition = inputs.namedCycleTimeDefinitions.find(
+			(candidate) => candidate.id === id,
+		);
+		if (definition === undefined) {
+			return null;
+		}
+		return {
+			name: definition.name,
+			valueFor: (item: IWorkItem) =>
+				item.namedCycleTimes?.find((value) => value.definitionId === id)?.days,
+		};
+	})();
+
 	return {
 		wipOverview: {
 			title: `${inputs.title} in Progress`,
@@ -559,12 +579,25 @@ function buildViewData(
 					highlightColumn: ageHighlight,
 				}
 			: undefined,
-		percentiles: {
-			title: `Closed ${terms.workItems}`,
-			items: inputs.cycleTimeData,
-			highlightColumn: cycleTimeHighlight,
-			sle: inputs.serviceLevelExpectation?.value,
-		},
+		percentiles: namedPercentilesScope
+			? {
+					title: `Closed ${terms.workItems}`,
+					items: inputs.cycleTimeData.filter(
+						(item) => namedPercentilesScope.valueFor(item) !== undefined,
+					),
+					highlightColumn: {
+						title: namedPercentilesScope.name,
+						description: "days",
+						valueGetter: (item: IWorkItem) =>
+							namedPercentilesScope.valueFor(item) ?? 0,
+					},
+				}
+			: {
+					title: `Closed ${terms.workItems}`,
+					items: inputs.cycleTimeData,
+					highlightColumn: cycleTimeHighlight,
+					sle: inputs.serviceLevelExpectation?.value,
+				},
 		totalWorkItemAge: {
 			title: `${inputs.title} in Progress`,
 			items: inputs.inProgressItems,
@@ -1629,6 +1662,8 @@ export const BaseMetricsView = <
 		wipOverTimeData,
 		allFeaturesForSizeChart,
 		serviceLevelExpectation,
+		percentilesScopeDefinitionId,
+		namedCycleTimeDefinitions,
 		estimationVsCycleTimeData,
 		arrivalsData,
 		workItemLookup,
