@@ -285,6 +285,184 @@ journeys:
         per reporting cycle, and the "where does our time really go?" question stops being answered by
         the started->finished window alone or by an offline spreadsheet.
 
+  - name: read-named-cycle-time-on-flow-overview
+    goal: >
+      A Delivery Lead / RTE reading the Flow Overview - the landing page that answers "how is my flow
+      performing right now?" - switches the Cycle Time Percentiles widget from Default to a named
+      definition and reads the recomputed 50/70/85/95, with the widget's RAG, View Data and Trend all
+      following the selection, without leaving the page for the Flow Metrics scatterplot.
+    persona: "delivery-lead-rte (Priya Nair, Team Phoenix delivery lead)"
+    feature_context: flow-overview-named-cycle-time
+    ado: 5509
+    added: 2026-07-17
+    note: >
+      EXTENSION of read-named-cycle-time (Epic 5251) onto a new surface - NOT a new job. D1/D2/D5/D9/D10
+      are load-bearing here and unchanged. D6 named the scatterplot + cumulative chart as the MVP
+      surfaces; 5509 ADDS the Flow Overview percentiles widget rather than changing that - an amendment,
+      not an override. Anchored to verified code: the flow-overview category holds
+      { widgetKey: "percentiles", size: "small" } (categoryMetadata.ts:62), rendering
+      <CycleTimePercentiles percentileValues={...} /> with NO selector (BaseMetricsView.tsx:882);
+      the per-definition percentile endpoint already exists and is reused unchanged
+      (cycleTimePercentiles?definitionId=, TeamMetricsController.cs:140).
+
+    emotional_arc:
+      start: Complacent-then-uneasy - "Overview says P85 is 12 days and the widget is green. But we
+        keep landing late. The chart that shows why is on another tab, so I mostly don't look."
+      middle: Confirmed - "one selector on the widget I already read: Concept to Cash P85 is 47 days,
+        and the RAG honestly says it has no SLE target rather than flashing a fake red."
+      end: Decisive - "the number, the items behind it, and whether it's improving - all on the page I
+        land on and the page leadership sees."
+
+    design_decisions_resolved:
+      - id: D11
+        question: What does the SLE-anchored RAG do when a named cycle time is selected?
+        decision: >
+          RAG goes NEUTRAL ("none") with an explaining tip: "SLE applies to the Default cycle time.
+          Named cycle times have no SLE target." Forced by code reality: computeCycleTimePercentilesRag
+          (ragRules.ts:174) compares against the SLE, and the SLE is ONE
+          (ServiceLevelExpectationProbability, ServiceLevelExpectationRange) pair per owner
+          (WorkTrackingSystemOptionsOwner.cs:33-35) defined against the DEFAULT started->finished
+          window. A named window is legitimately wider, so comparing it to the default SLE renders a
+          FALSE red (Concept-to-Cash P85 47d vs SLE "85% @ 12d"). Default selection keeps today's RAG
+          untouched. REJECTED: per-definition SLE (reopens the Epic 5251 config surface + an EF
+          migration; revisit only on demand); reusing the default SLE anyway (knowingly ships a
+          misleading red).
+      - id: D12
+        question: How does the previous-period Trend work for a named cycle time?
+        decision: >
+          Extend GET /{teams|portfolios}/{id}/metrics/cycleTimePercentilesInfo with an optional
+          [FromQuery] int? definitionId, mirroring the sibling cycleTimePercentiles action
+          (TeamMetricsController.cs:140-151). The service already calls the percentile method twice
+          (current + previous period, TeamMetricsService.cs:693-697); the named path calls the shipped
+          GetNamedCycleTimePercentilesForTeam twice instead and feeds the existing
+          BuildCycleTimePercentilesInfoDto. No new DTO, no new error contract. TRAP: the cache key
+          CycleTimePercentilesInfo_{start}_{end} (TeamMetricsService.cs:691) has NO definition segment -
+          it MUST gain one (mirroring NamedCycleTimePercentiles_{start}_{end}_Def_{definitionId}) or a
+          named trend and a default trend collide for the same range and one silently returns the
+          other's numbers. REJECTED: hiding Trend for named ("is our Concept-to-Cash improving?" is the
+          persona's core question).
+      - id: D13
+        question: Where does the selection live, and is it shared with the scatterplot's selector?
+        decision: >
+          Lifted to BaseMetricsView, consumed ONLY by the percentiles widget. The scatterplot keeps its
+          own component-local useState (CycleTimeScatterPlotChart.tsx:169) and is NOT touched - no
+          cross-tab coupling and no Epic 5251 regression surface. Lifting is FORCED, not stylistic: the
+          ViewData payload is assembled by buildViewData() at BaseMetricsView level
+          (BaseMetricsView.tsx:466) and handed to WidgetShell as a prop, so widget-local state could
+          never reach it and D15 would be impossible. This is NOT a new pattern -
+          cumulativeScopeDefinitionId + onCumulativeScopeChange (BaseMetricsView.tsx:1191, 1462)
+          already does exactly this for CumulativeStateTimeScopeControl, including the D5 invalid-
+          definition self-reset and the length===0 early return. Follow that component's shape.
+          REJECTED: sharing with the scatterplot (changes shipped behaviour); shared + persisted
+          (needs a persistence ADR - a later story).
+      - id: D14
+        question: Which Flow Overview widgets are in scope?
+        decision: >
+          ONLY the percentiles widget (CycleTimePercentiles), at Team AND Portfolio scope - both already
+          thread cycleTimeDefinitions through BaseMetricsView (BaseMetricsView.tsx:136, 1071), so
+          Portfolio is near-free and consistent with D7. OUT: workItemAgePercentiles (measures the age
+          of IN-PROGRESS items; a named cycle time is a closed-item start->end window, so it is
+          conceptually N/A) and cycleTimePbc (Predictability tab; not named in 5509).
+      - id: D15
+        question: Does the widget's View Data follow the selection?
+        decision: >
+          YES. The highlight column becomes the named duration: title = definition name, value =
+          item.namedCycleTimes.find(v => v.definitionId === id)?.days (WorkItem.ts:16 - already on the
+          item, already loaded, no new fetch). Default selection keeps item.cycleTime
+          (BaseMetricsView.tsx:471-475). Forced by both 5509's text ("the widgets RAG, View Data, and
+          Trend should adjust based on the selection") and coherence: without it the widget contradicts
+          itself on screen - P85 reads 47d while the table behind it lists 12d values - the exact
+          divergence the cycleTimeDefinitions registry entry flags as HIGH integration risk. No SLE line
+          is drawn for a named selection (consistent with D11).
+      - id: D16
+        question: Which rows does View Data list under a named selection?
+        decision: >
+          ONLY items carrying a value for that definition. D9 excludes items that never cross BOTH
+          boundaries from a named series, so the percentiles are computed over fewer items than
+          cycleTimeData holds; the table lists exactly that population, so table count == percentile
+          population and "see the data behind them" stays literally true. Default selection is
+          unfiltered, as today. REJECTED: listing all closed items with blank cells for non-crossers
+          (a superset of the population the P85 actually came from).
+
+    steps:
+
+      - id: step-land-on-flow-overview
+        action: >
+          Priya opens /teams/{teamId} and lands on Flow Overview. The Cycle Time Percentiles widget
+          shows the Default window's 50/70/85/95 with its SLE-derived RAG, as today.
+        expected_output: >
+          The widget renders exactly as today PLUS a cycle-time selector defaulting to "Default", listing
+          each valid named definition. With no named definitions, or without premium, NO selector renders
+          and the widget is untouched.
+        emotional_state: Familiar - "the widget I read every morning; there's a new selector on it"
+        shared_artifacts:
+          - percentileValues (existing - Default 50/70/85/95)
+          - cycleTimeDefinitions (existing from Epic 5251 - populates the selector)
+
+      - id: step-switch-percentiles-to-named
+        action: >
+          Priya picks "Concept to Cash" from the widget's selector.
+        expected_output: >
+          The 50/70/85/95 recompute over that definition's window via the EXISTING
+          cycleTimePercentiles?definitionId= endpoint (no new read contract). The RAG footer goes NEUTRAL
+          with "SLE applies to the Default cycle time. Named cycle times have no SLE target." (D11) -
+          never a red derived from the default SLE. The scatterplot on the Flow Metrics tab is unaffected
+          and still reads "Default" (D13).
+        emotional_state: Confirmed - "P85 47 days, not 12. And the RAG is honest about having no target
+          rather than flashing a fake red at me."
+        failure_modes:
+          - Selected definition invalidated by state removal (D5) -> selection self-resets to Default;
+            the invalid definition is not selectable; no crash.
+          - Few items after switch (D9) -> plots and shows the percentiles exactly like the default
+            cycle time; no threshold, no special low-sample state.
+          - Not premium -> no selector renders at all (namedCycleTimeDefinitions is []).
+        shared_artifacts:
+          - percentilesScopeDefinitionId (new - lifted to BaseMetricsView, consumed only by this widget)
+          - percentileValues (new per-definition series from the existing read endpoint)
+
+      - id: step-inspect-items-behind-the-number
+        action: >
+          Priya opens View Data on the widget with "Concept to Cash" still selected.
+        expected_output: >
+          The dialog lists exactly the items the percentiles were computed from - the 34 of 51 closed
+          items that crossed both boundaries (D16) - with the highlight column titled "Concept to Cash"
+          showing each item's named duration from item.namedCycleTimes (D15). No new fetch is issued; no
+          SLE line is drawn.
+        emotional_state: Specific - "these are the items that dragged it; I have names and numbers for
+          the retro, not just an aggregate."
+        shared_artifacts:
+          - percentilesScopeDefinitionId (new - drives the ViewData column and row filter)
+          - namedCycleTimes (existing on the work item - the per-definition durations)
+
+      - id: step-tell-whether-it-is-moving
+        action: >
+          Priya reads the widget's trend footer with "Concept to Cash" selected.
+        expected_output: >
+          The footer compares that definition's current-period percentiles against the SAME definition's
+          previous-period percentiles (e.g. "down 5 days vs previous period") via the extended
+          cycleTimePercentilesInfo?definitionId= (D12). Default selection keeps today's trend
+          byte-identical.
+        emotional_state: Accountable - "last quarter we attacked the validation queue. The number moved.
+          I can say so with the chart on the page leadership already looks at."
+        shared_artifacts:
+          - cycleTimePercentilesInfo (extended - now per-definition; cache key MUST carry a definition
+            segment or named and default trends collide)
+
+    error_paths_summary:
+      - Named selection + SLE-anchored RAG (D11): RAG is neutral with an explaining tip, never a false
+        red from a default-anchored SLE. The Default selection's RAG is untouched.
+      - Invalid definition from state removal/rename (D5): the selection self-resets to Default and the
+        definition is not selectable - the same mechanism CumulativeStateTimeScopeControl already ships.
+      - No named definitions, or no premium: no selector renders; the widget behaves exactly as today.
+      - Named trend vs default trend cache collision (D12): a real hazard, not hypothetical - the Info
+        cache key has no definition segment today and MUST gain one.
+      - Few items (D9): unchanged - plots and shows percentiles like the default cycle time.
+
+    success_signal:
+      - Delivery leads on owners with a named definition switch the Flow Overview selector at least once
+        per reporting cycle, and "where does our time really go?" stops requiring a tab-hop to the
+        scatterplot.
+
 shared_artifacts_registry:
   cycleTimeDefinitions:
     source_of_truth: "WorkTrackingSystemOptionsOwner.CycleTimeDefinitions (List of { name, startState, endState }) on Team/Portfolio settings"
@@ -293,9 +471,12 @@ shared_artifacts_registry:
       - "Cycle Time Scatterplot cycle-time selector (Default + each named definition)"
       - "Cumulative-time-per-state chart scope switch (scope bars to a named window)"
       - "Per-definition scatter/percentile read endpoint (computes the named series)"
+      - "Flow Overview Cycle Time Percentiles widget selector (2026-07-17, #5509) - and, following it,
+         that widget's RAG (neutral for named, D11), View Data column + row filter (D15/D16), and
+         previous-period Trend (D12)"
     owner: multiple-cycle-times
     integration_risk: "HIGH - single source; the SAME { name, startState, endState } threads from settings -> scatterplot selector -> percentile computation -> cumulative-chart scope. A definition invalidated by state removal (D5) MUST read consistently as disabled across every consumer; a divergent read (selectable on one surface, broken on another) would confuse users and risk a crash."
-    validation: "A definition saved in settings appears in BOTH chart selectors; a definition whose boundary state is removed reads as DISABLED+warned in BOTH the config list AND the chart selectors; end-after-start is validated at the single save path."
+    validation: "A definition saved in settings appears in BOTH chart selectors AND the Flow Overview percentiles selector; a definition whose boundary state is removed reads as DISABLED+warned in the config list and the chart selectors, and self-resets the Flow Overview selection to Default; end-after-start is validated at the single save path. Since 2026-07-17 (#5509) the SAME definition must additionally read consistently across the percentiles widget's own RAG, View Data and Trend - a widget whose percentiles say one window while its View Data says another is the divergence this entry exists to prevent."
   cycleTimeBoundaryOrder:
     source_of_truth: "WorkTrackingSystemOptionsOwner.AllStates (= ToDoStates ++ DoingStates ++ DoneStates, mapping-expanded via GetRawStatesForCategory) - the total workflow order"
     consumers:
@@ -314,3 +495,7 @@ changelog:
   - date: "2026-06-08"
     feature: multiple-cycle-times
     change: "Refinements folded in: D9 pinned - a named series behaves EXACTLY like the default cycle time for few items (plots them, shows count + percentiles, no threshold, no special low-sample state); removed the old 'explicit low-sample state' language across the read journey. Added D10 - cycle time is time-to-REACH the end, measured over the half-open span [entering startState ... entering endState), so the end state's dwell is excluded, endState may be the final state, and the cumulative scope shows no bar for the end state. Reconciled step-switch-to-named-definition, step-scope-cumulative-chart, error_paths_summary, and the cycleTimeBoundaryOrder registry entry to D10."
+  - date: "2026-07-17"
+    feature: flow-overview-named-cycle-time
+    ado: 5509
+    change: "Added journey read-named-cycle-time-on-flow-overview + D11-D16, extending the named-cycle-time READ onto the Flow Overview percentiles widget (ADO Story 5509). D6's scatterplot+cumulative MVP surfaces are AMENDED (a surface added), not overridden; D1/D2/D5/D9/D10 consumed unchanged. D11 - RAG goes NEUTRAL+explained under a named selection, because the SLE is a single per-owner pair anchored to the DEFAULT window and would otherwise render a false red on a legitimately-wider named window; per-definition SLE rejected for now. D12 - cycleTimePercentilesInfo gains an optional definitionId (the named path reuses the shipped GetNamedCycleTimePercentiles twice); its cache key MUST gain a definition segment or named and default trends collide. D13 - selection lifted to BaseMetricsView and consumed ONLY by the percentiles widget (forced: buildViewData is assembled there, so widget-local state could not drive D15); the scatterplot's own local selector is untouched. D14 - scope is the percentiles widget only, Team+Portfolio; workItemAgePercentiles and cycleTimePbc explicitly out. D15/D16 - View Data column follows the selection and rows are filtered to the D9 population, so the widget never contradicts itself on screen. No new job: same job-delivery-lead-see-time-over-custom-window, new surface (jobs.yaml gains a surfaces amendment rather than a duplicate entry)."

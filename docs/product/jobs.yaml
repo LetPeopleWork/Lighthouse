@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-06-16
+updated: 2026-07-17
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -25,6 +25,7 @@ feature_context:
   - epic-5306-k8s-productization
   - epic-5306-productization-platform
   - epic-5074-blocked-items
+  - flow-overview-named-cycle-time
 
 jobs:
   - id: job-rbac-bootstrap
@@ -1761,6 +1762,33 @@ jobs:
         spreadsheet. Gap: 3 - a genuine missing capability; kept tractable because it reuses the
         existing scatterplot/percentile machinery and the cumulative chart, adding a per-definition read
         endpoint and a selector/switch rather than a new analysis engine.
+    surfaces:
+      - surface: Cycle Time Scatterplot selector (flow-metrics category)
+        feature: multiple-cycle-times
+        shipped: 2026-06-08
+      - surface: Cumulative-time-per-state chart scope switch (flow-metrics category)
+        feature: multiple-cycle-times
+        shipped: 2026-06-08
+      - surface: Cycle Time Percentiles widget selector (flow-overview category), with RAG,
+          View Data and Trend following the selection - Team and Portfolio
+        feature: flow-overview-named-cycle-time
+        added: 2026-07-17
+        ado: 5509
+        note: >
+          SAME job, NEW surface - deliberately NOT a new job (a second job for a second surface
+          would be a tech-surface backlog entry, the anti-pattern the STANDING rule warns about).
+          The delivery lead lands on Flow Overview first ("how is my flow performing right now?");
+          before this, answering "where does our time really go?" meant leaving that page for the
+          Flow Metrics tab. Decisions D11-D16 in journeys/multiple-cycle-times.yaml. Notably RAG
+          goes NEUTRAL under a named selection (D11): the SLE is a single per-owner pair anchored
+          to the default started->finished window, so RAG-ing a legitimately-wider named window
+          would ship a false red.
+    satisfaction_review:
+      due: after flow-overview-named-cycle-time ships
+      note: >
+        current_satisfaction stays 1 until delivery - re-score then, not now. The scatterplot
+        surface (2026-06-08) partially served this job already; the Overview surface is the
+        remaining gap for leads who never leave the landing page.
 
   - id: job-flow-coach-gauge-wip-age-spread
     title: Gauge how old my current work-in-progress is, at a glance
