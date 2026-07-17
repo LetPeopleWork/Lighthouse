@@ -391,3 +391,109 @@ Outcome KPIs section only; note the Epic 5015 telemetry gap).
 **DESIGN must resolve**: (1) the trend cache-key segment (D12/Risk b); (2) whether the Trend service
 change warrants an ADR or rides ADR-062's contract precedent; (3) the `size: "small"` layout approach
 (Risk c). Risk (a) (demo data) is CLOSED - verified present, no work.
+
+---
+
+## Wave: DESIGN / [REF] DDD list (D-numbered, verdicts)
+
+DESIGN adds no new D-numbers - DISCUSS's D11-D16 are the design decisions, now with placement fixed and ADRs written. Verdicts:
+
+| ID | Verdict | Placement / ADR |
+|----|---------|-----------------|
+| D11 RAG neutral for named | LOCKED | FE-only; **ADR-100**. `computeCycleTimePercentilesRag` runs on the default path only; named ⇒ `ragStatus:"none"` + SLE-anchoring tip. |
+| D12 trend `definitionId` + cache key | LOCKED | BE; **ADR-101**. Additive param on `cycleTimePercentilesInfo`; cache key gains `_Def_{id}`; invalid ⇒ empty-series (sibling parity). |
+| D13 lifted selection state | LOCKED | FE; brief delta. Mirror `cumulativeScopeDefinitionId`; scatterplot untouched. |
+| D14 scope = percentiles widget, Team+Portfolio | LOCKED | brief delta. `workItemAgePercentiles`/`cycleTimePbc` out. |
+| D15 View Data follows selection | LOCKED | FE; brief delta. Conditional `highlightColumn` off `namedCycleTimes`. |
+| D16 View Data rows = named population | LOCKED | FE; brief delta. Row filter to items with a value for the definition. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path | Change |
+|-----------|------|--------|
+| `Team/PortfolioMetricsController` | `Lighthouse.Backend/.../API/{Team,Portfolio}MetricsController.cs` | EXTEND - optional `definitionId` on `cycleTimePercentilesInfo` via existing `IsNamedRequest` idiom |
+| `Team/PortfolioMetricsService` | `Lighthouse.Backend/.../Services/Implementation/{Team,Portfolio}MetricsService.cs` | EXTEND - `GetCycleTimePercentilesInfoFor…` named branch (calls `GetNamedCycleTimePercentiles…` twice); cache key `_Def_{id}` |
+| `CycleTimePercentiles.tsx` | `Lighthouse.Frontend/src/components/Common/Charts/CycleTimePercentiles.tsx` | EXTEND - compact selector in the existing header slot; named-vs-default percentile source; neutral-RAG branch |
+| `BaseMetricsView.tsx` | `Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx` | EXTEND - lifted `percentilesScopeDefinitionId` + handler; `buildViewData()` conditional column + row filter; RAG/trend source by lifted state |
+| `MetricsService.ts` | `Lighthouse.Frontend/src/services/Api/MetricsService.ts` | EXTEND - `getCycleTimePercentilesInfo` gains `definitionId` suffix (mirror `getCycleTimePercentiles`) |
+| compact selector control | (DELIVER decision) | CREATE NEW (thin) OR inline `Select` - see Open questions |
+
+## Wave: DESIGN / [REF] Driving ports (inbound)
+
+- `GET /{teams\|portfolios}/{id}/metrics/cycleTimePercentiles?startDate&endDate&definitionId` - **already exists** (ADR-062); reused unchanged for the widget's percentile body.
+- `GET /{teams\|portfolios}/{id}/metrics/cycleTimePercentilesInfo?startDate&endDate[&definitionId]` - **EXTENDED** (ADR-101); additive optional param for the Trend footer. No new route.
+
+## Wave: DESIGN / [REF] Driven ports + adapters
+
+None new. Named info reuses `GetNamedCycleTimePercentilesForTeam → ComputeNamedDurations → NamedCycleTimeDays` over the existing closed-items + transition-log repository reads (`GetWorkItemsClosedInDateRange`, `AssociateSyncedTransitions`). No new external integration ⇒ no probe contract / no contract tests owed at the DEVOPS handoff.
+
+## Wave: DESIGN / [REF] Technology choices
+
+Unchanged from the project baseline: C# .NET 10 ASP.NET Core (backend, OOP, ports-and-adapters); React 18 + TypeScript (frontend); MUI `Select` for the selector; NUnit + Moq + EF InMemory (backend tests); Vitest + RTL (frontend tests); Playwright POM (E2E). No new language, framework, runtime, or library pinned.
+
+## Wave: DESIGN / [REF] Decisions table
+
+| DDD-N | Decision |
+|-------|----------|
+| DDD-1 | RAG neutral under a named selection (ADR-100). |
+| DDD-2 | Trend `definitionId` additive param + `_Def_{id}` cache key + empty-series-on-invalid (ADR-101). |
+| DDD-3 | Selection state lifted to `BaseMetricsView`, percentiles-widget-only. |
+| DDD-4 | Scope = flow-overview percentiles widget, Team + Portfolio. |
+| DDD-5 | View Data highlight column + row filter follow the selection. |
+| DDD-6 | Compact `Select` in the existing widget header slot (layout fork). |
+| DDD-7 | No per-definition SLE (rejected, ADR-100). |
+| DDD-8 | ADR-062's additive-param no-gate reasoning amended for the field-vs-param asymmetry (ADR-101 §5). |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|-------------------|------|---------|----------|---------------|
+| `GetCycleTimePercentilesInfoForTeam` | `TeamMetricsService.cs:687` | Current-vs-previous percentile comparison | EXTEND | Add a named branch reusing the shipped named percentile method twice; ~15 LOC vs a parallel info builder |
+| `GetNamedCycleTimePercentilesForTeam` | `TeamMetricsService.cs:340` | Named-series percentiles for one period | REUSE AS-IS | Exactly what the named info needs per period; call it, don't reimplement |
+| `BuildCycleTimePercentilesInfoDto` | `TeamMetricsService.cs` | Info DTO assembly | REUSE AS-IS | Shape is identical for named; only the two percentile inputs change source |
+| `_Def_{id}` cache suffix | `TeamMetricsService.cs:344,404` | Per-definition cache segmentation | REUSE (idiom) | Same convention the named percentile + cumulative scope already use |
+| `IsNamedRequest(definitionId)` | `TeamMetricsController.cs:140-151` | Named-vs-default routing | REUSE (idiom) | Same branch the sibling `cycleTimePercentiles` action uses |
+| `computeCycleTimePercentilesRag` | `ragRules.ts:174` | SLE-anchored RAG | REUSE AS-IS (default path only) | Called unchanged for Default; never fed named durations |
+| `CycleTimePercentiles.tsx` header slot | `CycleTimePercentiles.tsx` | `space-between` flex row w/ empty right slot | EXTEND | Selector drops into the slot already present; no layout redesign |
+| `cumulativeScopeDefinitionId` pattern | `BaseMetricsView.tsx:1191,1462` | Lifted controlled selector + invalid self-reset | REUSE (pattern) | Copy the shape for `percentilesScopeDefinitionId`; do not invent a new state pattern |
+| `CumulativeStateTimeScopeControl` | `CumulativeStateTimeScopeControl.tsx` | Controlled definition selector component | EXTEND-or-COPY (thin) | Compact variant OR inline `Select`; ≤ few dozen LOC - the only "CREATE NEW", and minimal |
+| `WorkItemDto.namedCycleTimes` | (ADR-062) | Per-item named durations | REUSE AS-IS | Already on the item; View Data reads it, no new fetch |
+
+**Zero unjustified CREATE NEW.** The single new artifact is a thin compact selector that may collapse to reuse.
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+N/A - the `nwave-ai` CLI is not available in this environment and no `docs/product/outcomes/registry.yaml` exists in this repo (Lighthouse is not the nWave DES project). No contract registry to deduplicate against. Recorded explicitly rather than skipped. Codebase-level dedup is covered by the Reuse Analysis above.
+
+## Wave: DESIGN / [REF] Open questions (deferred to DELIVER)
+
+- **Compact selector: new thin component vs inline `Select`?** DELIVER judgement. Both ≤ a few dozen LOC. Lean toward inline `Select` in `CycleTimePercentiles.tsx` header unless a second widget needs the same control (YAGNI). Not architecturally significant either way.
+- **Exact tip wording for the neutral RAG.** ADR-100 gives the semantics ("SLE applies to the Default window; named cycle times have no SLE target"); final copy is a DELIVER/prose call, terminology-term interpolated.
+- **Trend footer label under a named selection.** Whether the footer reads "vs previous period" verbatim or names the window. Cosmetic; DELIVER.
+
+## Wave: DESIGN / [REF] DESIGN wave-decisions
+
+### Key decisions
+- [D11/ADR-100] RAG neutral for named - the single per-owner SLE is default-window-anchored; judging a wider named window against it is a false red. Per-definition SLE rejected.
+- [D12/ADR-101] `cycleTimePercentilesInfo` gains additive `definitionId`; cache key MUST segment by definition; invalid ⇒ empty-series (sibling parity with `cycleTimePercentiles`, NOT the cumulative path's default-fallback).
+- [D13] Selection lifted to `BaseMetricsView` (forced by `buildViewData` placement); mirrors `cumulativeScopeDefinitionId`; scatterplot untouched.
+- [DDD-6] Compact `Select` in the existing header slot (layout fork resolved).
+
+### Architecture summary
+- Pattern: modular monolith, ports-and-adapters (unchanged). Paradigm: OOP backend, functional-leaning React frontend (unchanged).
+- Key components: `Team/PortfolioMetricsService` (+ named info branch), `CycleTimePercentiles.tsx` (+ selector/RAG), `BaseMetricsView.tsx` (+ lifted state/ViewData).
+
+### Technology stack
+- No change. See Technology choices above.
+
+### Constraints established
+- The single per-owner SLE anchors to the default window only - any named-window RAG is meaningless without a per-definition SLE (not built).
+- Additive query *param* does NOT give the same graceful-degradation guarantee as an additive *field* (silent wrong answer vs detectable absence) - constrains future clients gating (ADR-101 §5).
+- Default read/render paths must stay byte-identical (no-regression guardrail).
+
+### Upstream changes
+- **None.** No DISCUSS decision reversed. ADR-101 amends ADR-062's *reasoning* (field-vs-param asymmetry) without changing its outcome. The DISCUSS feature-delta's "Epic 5251 debt" framing of the clients gap is corrected to "documented decision in ADR-062, with a now-recorded asymmetry caveat" - see the correction note in the Cross-cutting section.
+
+## Wave: DESIGN / [REF] Correction to the DISCUSS cross-cutting note
+
+The DISCUSS cross-cutting checklist called the clients' un-gated `definitionId` forwarding on `getTeamCycleTimePercentiles` "Epic 5251 debt / a bug." DESIGN correction: ADR-062 §4 made the no-gate call **deliberately** (additive param). It is not an oversight. HOWEVER, ADR-101 §5 establishes that the additive-param graceful-degradation argument is weaker than the additive-field one - an old server returns a silent wrong answer, not a 404 - so the clients SHOULD gate `definitionId`-bearing reads at wrap-time despite the "additive" classification. Net: still not fixed in 5509 (the clients don't expose definition discovery, so the path is unreachable today), but reclassified from "bug" to "documented decision with a recorded caveat for future clients work."

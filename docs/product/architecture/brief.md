@@ -2223,6 +2223,74 @@ C4Component
 
 ---
 
+## Application Architecture — flow-overview-named-cycle-time (ADO Story #5509)
+
+Feature: flow-overview-named-cycle-time — Premium, brownfield. Extends the shipped named-cycle-time READ (Epic 5251, `multiple-cycle-times`) from the Flow Metrics scatterplot onto the **Flow Overview** `Cycle Time Percentiles` widget (`categoryMetadata.ts:62`, `size:"small"`). A cycle-time selector on the widget re-computes its 50/70/85/95, and the widget's three companions follow the selection: **RAG** goes neutral, **View Data** shows named durations, **Trend** compares the named window vs the previous period. Team + Portfolio. Analysis only.
+Wave: DESIGN · Date: 2026-07-17 · Architect: Morgan (Solution Architect), interaction mode = PROPOSE · Paradigm: **OOP (C# backend), functional-leaning React frontend** (unchanged). ADRs: **ADR-100** (RAG neutrality + SLE anchoring, D11), **ADR-101** (trend contract + cache key, D12). Cross-refs **ADR-062** (read contract this extends), **ADR-061** (`NamedCycleTimeDays`), **ADR-063** (validity SSOT), **ADR-055** (client version-gate pattern).
+
+This section is **additive** to all prior `## Application Architecture` deltas. Pattern (ports-and-adapters / hexagonal), paradigm, and core invariants are **unchanged**. **NO new architectural style, NO new external integration, NO new external library, NO new endpoint route, NO new computation engine, NO new mapping resolver, NO new DTO shape, NO EF migration, NO new permission.** The whole feature is one additive optional query param on an existing endpoint plus frontend wiring of already-shipped data.
+
+### Key invariants introduced
+
+- **RAG under a named selection is NEUTRAL, not a threshold verdict (ADR-100, D11).** `computeCycleTimePercentilesRag` (`ragRules.ts:174`) is SLE-anchored, and the SLE is a single per-owner pair (`WorkTrackingSystemOptionsOwner.cs:33-35`) defined against the DEFAULT started→finished window. A named window is generally wider, so judging it against the default SLE renders a **false red**. Therefore: Default selection ⇒ `computeCycleTimePercentilesRag` byte-identical to today; named selection ⇒ `ragStatus:"none"` + a tip explaining the SLE anchors to the Default window. No named durations ever reach `computeCycleTimePercentilesRag`; no SLE line is drawn in View Data for a named selection. Per-definition SLE explicitly rejected for now (would reopen the ADR-064 config surface + a migration; no user asked to *judge* a named window).
+- **Trend follows the selection via an additive `definitionId`, and the cache key MUST segment by definition (ADR-101, D12).** `cycleTimePercentilesInfo` (Team + Portfolio) gains an optional `definitionId`: absent ⇒ byte-identical default; present ⇒ the named window's current-vs-previous comparison, reusing the shipped `GetNamedCycleTimePercentilesForTeam` called twice into the existing `BuildCycleTimePercentilesInfoDto` (no new DTO/builder). **Cache key gains `_Def_{definitionId}`** (the shipped `_Def_{id}` idiom used by `GetNamedCycleTimePercentilesForTeam` and the cumulative `scopeSuffix`, `TeamMetricsService.cs:344,404`) — without it a default and a named request for the same entity+range collide and one silently serves the other's window. Invalid definition ⇒ info over an **empty series** (sibling parity with `ComputeNamedDurations` returning `[]`), NOT a silent default fallback, so the widget's trend and percentile body agree.
+- **Selection state is lifted to `BaseMetricsView`, consumed ONLY by the percentiles widget (D13).** FORCED, not stylistic: the ViewData payload is assembled by `buildViewData()` at `BaseMetricsView` level (`BaseMetricsView.tsx:466`) and handed to `WidgetShell` as a prop, so a widget-local `useState` could never drive the View Data column (D15). Lifting resolves it. This mirrors the **shipped** `cumulativeScopeDefinitionId` + `onCumulativeScopeChange` pattern (`BaseMetricsView.tsx:1191,1462`) that already does exactly this for `CumulativeStateTimeScopeControl`, including the D5 invalid-definition self-reset and the `length===0` early return. The scatterplot's own component-local selector (`CycleTimeScatterPlotChart.tsx:169`) is **untouched** — no cross-tab coupling, no Epic 5251 regression surface.
+- **View Data follows the selection and lists the named population (D15/D16).** Default ⇒ highlight column `item.cycleTime` as today (`BaseMetricsView.tsx:471-475`). Named ⇒ column titled with the definition name, value `item.namedCycleTimes.find(v=>v.definitionId===id)?.days` (already on the item per ADR-062, no new fetch), rows filtered to items carrying a value for that definition (D9 population). So the table population equals the percentile population — the widget never contradicts itself on screen.
+
+### Widget layout (the one genuine UI fork)
+
+The `size:"small"` widget (3 cols × 2 rows at xl) already renders a `space-between` flex header row with a single child — the `${cycleTime} Percentiles` title (`CycleTimePercentiles.tsx`) — i.e. an **empty right-hand slot already exists**. The selector goes there as a **compact** `Select` (NOT the shipped `CumulativeStateTimeScopeControl`'s `minWidth:200`, which would crush the `noWrap` title). Long names truncate; the title stays; the 4-row percentile table keeps its space (no second row, no scroll). Chosen over: selection-replaces-title (loses the label, diverges from every other widget header), second-row (eats ~40px of a ~216px widget → table scrolls, which the current layout deliberately avoids), and bump-to-medium (re-flows Overview for everyone, including users with no named definitions).
+
+### New / reused ports
+
+- **Driving (inbound)**: `GET …/metrics/cycleTimePercentiles?…&definitionId` — **already exists** (ADR-062), reused unchanged for the widget's percentile body. `GET …/metrics/cycleTimePercentilesInfo?…&definitionId` — **extended** with the additive optional param (ADR-101) for the Trend. Both Team + Portfolio. No new route.
+- **Driven (outbound)**: none new. The named info reuses `GetNamedCycleTimePercentilesForTeam` → `ComputeNamedDurations` → `NamedCycleTimeDays` over the existing closed-items + transition-log reads. No new external integration ⇒ no probe contract / no contract tests owed at the platform-architect handoff.
+
+### Component decomposition (headline)
+
+- **EXTEND (backend)**: `Team/PortfolioMetricsController` (optional `definitionId` on `cycleTimePercentilesInfo`, via the existing `IsNamedRequest` idiom); `Team/PortfolioMetricsService` (`GetCycleTimePercentilesInfoFor{Team,Portfolio}` gains the named branch calling `GetNamedCycleTimePercentiles…` twice; cache key `_Def_{id}` segment). No service-layer new file.
+- **EXTEND (frontend)**: `CycleTimePercentiles.tsx` (compact selector in the existing header slot; named-vs-default percentile source; neutral RAG branch + tip); `BaseMetricsView.tsx` (lifted `percentilesScopeDefinitionId` + handler mirroring `cumulativeScopeDefinitionId`; `buildViewData()` conditional column + row filter; RAG-footer + trend-source selection by the lifted state); `MetricsService.ts` (`getCycleTimePercentilesInfo` gains the `definitionId` suffix exactly as `getCycleTimePercentiles` has it).
+- **CREATE NEW**: none of substance. The compact selector may be a thin near-copy of `CumulativeStateTimeScopeControl` OR an inline `Select` in the widget header — a DELIVER-time judgement (≤ a few dozen LOC either way); recorded as an open question, not a new architectural component.
+- **REUSE AS-IS (untouched)**: `computeCycleTimePercentilesRag` (called only on the default path); `GetNamedCycleTimePercentilesForTeam`/`ComputeNamedDurations`/`NamedCycleTimeDays`; `BuildCycleTimePercentilesInfoDto`; `WorkItemDto.namedCycleTimes` (ADR-062); `WorkItemsDialog`; the scatterplot selector; `useRbac()` + premium gating; the `_Def_{id}` cache idiom.
+
+### Reuse analysis
+
+Default EXTEND honoured everywhere; the single "CREATE NEW" (the compact selector) is a thin control, and even that may collapse to an inline `Select` or a near-copy of the shipped scope control. **No CREATE NEW of a computation, endpoint, DTO, or builder was justified or needed** — every backend capability this feature surfaces was already built by Epic 5251; 5509 wires it to one more widget and extends one Info endpoint with an additive param. Full table in the feature-delta `## Wave: DESIGN / [REF] Reuse Analysis`.
+
+### Premium gating
+
+Read-only surface; premium is inherited **for free** — `namedCycleTimeDefinitions` is `[]` when `!isPremium` (`BaseMetricsView.tsx:1143-1152`), so the selector never renders and the widget behaves exactly as today. No new authz surface, no `ILicenseService` on the read path (upholds ADR-062 §3 gate-at-write-only). All UI gating derives from `useRbac()`.
+
+### Lighthouse-Clients consistency (version-gate)
+
+**NO new gate for the Lighthouse frontend.** `definitionId` on `cycleTimePercentilesInfo` is an additive optional param on an existing endpoint (ADR-101 §5), and the clients do not wrap that endpoint at all. **But ADR-101 records a real asymmetry**: an additive *param* (unlike an additive *field*) degrades to a **silent wrong answer** on an old server (unknown param ignored ⇒ default returned under a named request, HTTP 200), not a detectable 404. So *if* the clients ever wrap `definitionId`-bearing metric reads they SHOULD gate despite the "additive" classification. A separately-tracked pre-existing instance already exists: the clients forward `definitionId` on `getTeamCycleTimePercentiles` (`packages/client/src/index.ts:1959`) with no gate — feature-delta cross-cutting note flags it as a follow-up bug, NOT fixed in 5509.
+
+### Quality attributes
+
+- **Correctness / honesty**: the widget never asserts a breach it can't substantiate (D11 neutral RAG); the trend never silently shows the wrong window (D12 cache segment + empty-series-on-invalid); percentiles, View Data and Trend all reflect the same selected window (single lifted selection).
+- **Maintainability / testability**: only new compute is the named-info branch (two calls into a shipped method) + the FE conditional wiring — both unit/mutation-testable; ≥80% Stryker.NET / Stryker FE per-feature gate. Guard: `computeCycleTimePercentilesRag` never receives named durations.
+- **Performance**: default paths byte-identical (no-regression guardrail by construction); named info is two cached percentile computations per definition+range, keyed by `_Def_{id}`.
+- **Security**: no new permission; premium inherited via the empty-definitions path; no boundary states on the wire (server resolves from the saved definition).
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Default selection ⇒ percentiles + RAG + View Data + Trend byte-identical to today | Vitest golden (FE) + integration golden-equality (BE), both scopes |
+| Named selection ⇒ RAG `"none"` + SLE-anchoring tip; `computeCycleTimePercentilesRag` NOT called with named durations | Vitest on the widget footer |
+| Named View Data column = definition name + `namedCycleTimes` value; rows = D9 population; no SLE line | Vitest on the ViewData payload |
+| `cycleTimePercentilesInfo?definitionId` present ⇒ named comparison; absent ⇒ default byte-identical | `Team/PortfolioMetricsControllerTests` / service tests |
+| Cache key segments by definition — default vs named, and two named defs, DO NOT collide | Service test: assert values differ (not merely non-null) across a default + two named requests, same range |
+| Invalid definition ⇒ empty-series info, never 500, never default fallback | Service test: removed boundary ⇒ empty-series comparison |
+| Selection lifted to `BaseMetricsView`, consumed only by the percentiles widget; scatterplot selector untouched | Vitest: switch on Overview ⇒ scatterplot selector unchanged; grep: no shared selection context |
+| No new endpoint route; no new DTO; no EF migration; no new permission | Route/DTO/migration inventory diff; grep for `ILicenseService` on read path (absent) |
+
+### C4
+
+No change to the stable System Context or Container diagrams (this is a read-path extension inside the existing metrics module — same containers, same boundaries). The relevant component topology is the `multiple-cycle-times` component diagram above; 5509 adds one consumer (the Flow Overview percentiles widget) of the already-drawn named-cycle-time read path and one additive param on `cycleTimePercentilesInfo`. Mandatory-C4 gate satisfied by reference to the existing diagrams per the brownfield-delta convention used by every prior small feature in this brief (e.g. work-item-age-percentiles, forecast-minimum-data-guard).
+
+---
+
 ## Application Architecture — work-item-age-percentiles (Story #5257)
 
 Feature: work-item-age-percentiles — Non-premium, brownfield. (1) A "Work Item Age Percentiles" overview card showing the 50/70/85/95 of the **current in-progress population's** `WorkItemAge` (snapshot of live WIP, **not** windowed). (2) A Cycle-Time↔Work-Item-Age switch on the Work Item Aging chart that **swaps** its horizontal reference lines between the two server-fetched percentile sets (mutually exclusive, CT default). Team + Portfolio.
