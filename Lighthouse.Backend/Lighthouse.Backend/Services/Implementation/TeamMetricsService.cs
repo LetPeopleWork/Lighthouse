@@ -339,6 +339,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IEnumerable<PercentileValue> GetNamedCycleTimePercentilesForTeam(Team team, DateTime startDate, DateTime endDate, int definitionId)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Getting Named Cycle Time Percentiles for Team {TeamName} definition {DefinitionId} between {StartDate} and {EndDate}", team.Name, definitionId, startDate.Date, endDate.Date);
 
             return GetFromCacheIfExists(team, $"NamedCycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}_Def_{definitionId}", () =>
@@ -686,6 +687,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForTeam(Team team, DateTime startDate, DateTime endDate, int? definitionId = null)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Getting Cycle Time Percentiles Info for Team {TeamName} from {StartDate} to {EndDate}", team.Name, startDate.Date, endDate.Date);
 
             var isNamed = definitionId is > 0;

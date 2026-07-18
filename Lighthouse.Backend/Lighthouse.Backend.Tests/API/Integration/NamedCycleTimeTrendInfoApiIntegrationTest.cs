@@ -183,13 +183,115 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var infoBody = await info.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(info.StatusCode, Is.EqualTo(siblingPercentiles.StatusCode),
-                    $"The Info endpoint invents no new error contract; an unknown definitionId gets the same status the sibling cycleTimePercentiles named read gives. Info: {info.StatusCode} Sibling: {siblingPercentiles.StatusCode}");
-                if (info.StatusCode == HttpStatusCode.OK)
+                // Asserted absolutely, not merely "same as the sibling" - two matching
+                // 500s would satisfy a relative assertion while both endpoints are broken.
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    $"An unknown definitionId is an empty result, never a server error. Body: {infoBody}");
+                Assert.That(siblingPercentiles.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    "The sibling cycleTimePercentiles named read holds the same contract.");
+                Assert.That(PercentileCount(infoBody), Is.EqualTo(0),
+                    $"An empty named series yields no percentile lines (sibling parity, not a 500). Body: {infoBody}");
+            }
+        }
+
+        // The comparison window is the equally long span ending the day before the current
+        // one starts. Nothing else in the suite pins those boundaries, so an off-by-one or a
+        // sign flip on the offsets would silently compare against the wrong - even future - period.
+        [Test]
+        public async Task Info_ComparisonPeriod_IsTheEquallyLongWindowImmediatelyBeforeTheCurrentOne()
+        {
+            var teamId = SeedTeamWithClosedItems();
+            var periodDays = (windowEnd.Date - windowStart.Date).Days + 1;
+            var expectedPreviousStart = windowStart.AddDays(-periodDays);
+            var expectedPreviousEnd = windowStart.AddDays(-1);
+
+            client.AsTeamAdmin(teamId);
+            var info = await client.GetAsync(InfoUrl(teamId, definitionId: null));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(ComparisonField(body, "currentLabel"),
+                    Is.EqualTo($"{windowStart:yyyy-MM-dd} – {windowEnd:yyyy-MM-dd}"),
+                    $"The current label spans exactly the requested range. Body: {body}");
+                Assert.That(ComparisonField(body, "previousLabel"),
+                    Is.EqualTo($"{expectedPreviousStart:yyyy-MM-dd} – {expectedPreviousEnd:yyyy-MM-dd}"),
+                    $"The previous window is {periodDays} days long and ends the day before the current one opens. Body: {body}");
+            }
+        }
+
+        // The trend's detail rows pair each percentile with ITS OWN previous value. Pairing them
+        // by position, or matching the wrong percentile, would misreport every row.
+        [Test]
+        public async Task Info_DetailRows_PairEachPercentileWithItsOwnPreviousValue()
+        {
+            var teamId = SeedTeamWithClosedItems();
+
+            client.AsTeamAdmin(teamId);
+            var info = await client.GetAsync(InfoUrl(teamId, definitionId: null));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(DetailRowLabels(body), Is.EqualTo(new[] { "50th", "70th", "85th", "95th" }),
+                    $"One row per percentile, labelled '<percentile>th'. Body: {body}");
+                Assert.That(MetricLabel(body), Is.EqualTo("Cycle Time Percentiles"),
+                    $"The populated comparison names its metric too, not only the empty one. Body: {body}");
+                Assert.That(DetailRowPreviousValue(body, "85th"), Is.EqualTo("0"),
+                    $"The previous window holds no closed items, so the default path reports a real 0 - not the em-dash reserved for 'no previous series at all'. Body: {body}");
+
+                foreach (var percentile in new[] { 50, 70, 85, 95 })
                 {
-                    Assert.That(PercentileCount(infoBody), Is.EqualTo(0),
-                        $"An empty named series yields no percentile lines (sibling parity, not a 500). Body: {infoBody}");
+                    Assert.That(DetailRowCurrentValue(body, $"{percentile}th"),
+                        Is.EqualTo(PercentileFromArray(JsonDocument.Parse(body).RootElement.GetProperty("percentiles"), percentile, body).ToString()),
+                        $"Row {percentile}th carries the {percentile}th percentile's own current value. Body: {body}");
                 }
+            }
+        }
+
+        // A named definition with data this period but none in the comparison period has no
+        // previous value to show - the row must say so rather than fabricate a zero.
+        [Test]
+        public async Task Info_NamedDefinition_NoPreviousPeriodData_ShowsAnAbsentPreviousValue()
+        {
+            var teamId = SeedTeamWithItemsClosedOnlyInTheCurrentWindow();
+
+            client.AsTeamAdmin(teamId);
+            var info = await client.GetAsync(InfoUrl(teamId, ImplementationToDoneDefinitionId));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(PercentileCount(body), Is.GreaterThan(0),
+                    $"The current period has closed items for this definition. Body: {body}");
+                Assert.That(DetailRowPreviousValue(body, "85th"), Is.EqualTo("–"),
+                    $"No previous-period data for this named definition, so the previous column is an em-dash, not a 0 that would read as an infinitely fast prior period. Body: {body}");
+            }
+        }
+
+        // An INVALID definition (it exists, but a boundary state is no longer in the workflow)
+        // is not a computable window. Guarding only on "definition == null" would compute one anyway.
+        [Test]
+        public async Task Info_InvalidDefinition_YieldsNoPercentiles()
+        {
+            var teamId = SeedTeamWithInvalidDefinition();
+
+            client.AsTeamAdmin(teamId);
+            var info = await client.GetAsync(InfoUrl(teamId, ImplementationToDoneDefinitionId));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(PercentileCount(body), Is.EqualTo(0),
+                    $"A definition whose boundary state left the workflow computes nothing. Body: {body}");
+                Assert.That(Direction(body), Is.EqualTo("none"),
+                    $"No data means no trend verdict. Body: {body}");
+                Assert.That(MetricLabel(body), Is.EqualTo("Cycle Time Percentiles"),
+                    $"The empty comparison still names the metric it belongs to. Body: {body}");
             }
         }
 
@@ -235,9 +337,154 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        // The cache key must segment by DATE RANGE as well as by definition. A key that
+        // collapsed the range would serve the first window's answer for every later window.
+        [Test]
+        public async Task Info_DifferentDateRanges_DoNotShareACacheEntry()
+        {
+            var teamId = SeedTeamWithClosedItems();
+            // conceptStart+29 closes inside the early window; conceptStart+46 only inside the late one.
+            var earlyEnd = conceptStart.AddDays(35);
+            var lateStart = conceptStart.AddDays(36);
+
+            client.AsTeamAdmin(teamId);
+            var early = await client.GetAsync(InfoUrlForRange(teamId, definitionId: null, windowStart, earlyEnd));
+            var late = await client.GetAsync(InfoUrlForRange(teamId, definitionId: null, lateStart, windowEnd));
+            var namedEarly = await client.GetAsync(InfoUrlForRange(teamId, ImplementationToDoneDefinitionId, windowStart, earlyEnd));
+            var namedLate = await client.GetAsync(InfoUrlForRange(teamId, ImplementationToDoneDefinitionId, lateStart, windowEnd));
+
+            var earlyBody = await early.Content.ReadAsStringAsync();
+            var lateBody = await late.Content.ReadAsStringAsync();
+            var namedEarlyBody = await namedEarly.Content.ReadAsStringAsync();
+            var namedLateBody = await namedLate.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(early.StatusCode, Is.EqualTo(HttpStatusCode.OK), earlyBody);
+                Assert.That(P85(earlyBody), Is.Not.EqualTo(P85(lateBody)),
+                    $"Two windows holding different closed items must not share a default cache entry. Early: {earlyBody} Late: {lateBody}");
+                Assert.That(P85(namedEarlyBody), Is.Not.EqualTo(P85(namedLateBody)),
+                    $"The same holds for the named key - the range is part of it, not just the definition. Early: {namedEarlyBody} Late: {namedLateBody}");
+            }
+        }
+
+        // The Portfolio twin carries its own copy of the window arithmetic and the named
+        // guards, so it needs its own coverage - a Team-only test leaves that copy unpinned.
+        [Test]
+        public async Task PortfolioInfo_ComparisonPeriod_IsTheEquallyLongWindowImmediatelyBeforeTheCurrentOne()
+        {
+            var portfolioId = SeedPortfolioWithClosedItems();
+            var periodDays = (windowEnd.Date - windowStart.Date).Days + 1;
+            var expectedPreviousStart = windowStart.AddDays(-periodDays);
+            var expectedPreviousEnd = windowStart.AddDays(-1);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var info = await client.GetAsync(PortfolioInfoUrl(portfolioId, definitionId: null));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(ComparisonField(body, "currentLabel"),
+                    Is.EqualTo($"{windowStart:yyyy-MM-dd} – {windowEnd:yyyy-MM-dd}"),
+                    $"The current label spans exactly the requested range. Body: {body}");
+                Assert.That(ComparisonField(body, "previousLabel"),
+                    Is.EqualTo($"{expectedPreviousStart:yyyy-MM-dd} – {expectedPreviousEnd:yyyy-MM-dd}"),
+                    $"The previous window is {periodDays} days long and ends the day before the current one opens. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task PortfolioInfo_DefinitionIdAbsentOrZero_ReturnsTheDefaultTrend()
+        {
+            var portfolioId = SeedPortfolioWithClosedItems();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var withoutParam = await client.GetAsync(PortfolioInfoUrl(portfolioId, definitionId: null));
+            var withZeroParam = await client.GetAsync(PortfolioInfoUrl(portfolioId, definitionId: 0));
+
+            var withoutBody = await withoutParam.Content.ReadAsStringAsync();
+            var withZeroBody = await withZeroParam.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(withoutParam.StatusCode, Is.EqualTo(HttpStatusCode.OK), withoutBody);
+                Assert.That(P85(withZeroBody), Is.EqualTo(P85(withoutBody)),
+                    $"definitionId 0 is not a named request (IsNamedRequest => definitionId > 0). WithZero: {withZeroBody} Without: {withoutBody}");
+            }
+        }
+
+        [Test]
+        public async Task PortfolioInfo_DifferentDateRanges_DoNotShareACacheEntry()
+        {
+            var portfolioId = SeedPortfolioWithClosedItems();
+            var earlyEnd = conceptStart.AddDays(35);
+            var lateStart = conceptStart.AddDays(36);
+
+            client.AsPortfolioAdmin(portfolioId);
+            var early = await client.GetAsync(PortfolioInfoUrlForRange(portfolioId, definitionId: null, windowStart, earlyEnd));
+            var late = await client.GetAsync(PortfolioInfoUrlForRange(portfolioId, definitionId: null, lateStart, windowEnd));
+
+            var earlyBody = await early.Content.ReadAsStringAsync();
+            var lateBody = await late.Content.ReadAsStringAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(early.StatusCode, Is.EqualTo(HttpStatusCode.OK), earlyBody);
+                Assert.That(P85(earlyBody), Is.Not.EqualTo(P85(lateBody)),
+                    $"The Portfolio cache key carries the range too. Early: {earlyBody} Late: {lateBody}");
+            }
+        }
+
+        [Test]
+        public async Task PortfolioInfo_InvalidDefinition_YieldsNoPercentiles()
+        {
+            var portfolioId = SeedPortfolioWithInvalidDefinition();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var info = await client.GetAsync(PortfolioInfoUrl(portfolioId, ImplementationToDoneDefinitionId));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(PercentileCount(body), Is.EqualTo(0),
+                    $"A definition whose boundary state left the workflow computes nothing. Body: {body}");
+                Assert.That(Direction(body), Is.EqualTo("none"),
+                    $"No data means no trend verdict. Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task PortfolioInfo_NonExistentDefinitionId_IsAnEmptyResultNotAnError()
+        {
+            var portfolioId = SeedPortfolioWithClosedItems();
+
+            client.AsPortfolioAdmin(portfolioId);
+            var info = await client.GetAsync(PortfolioInfoUrl(portfolioId, NonExistentDefinitionId));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    $"An unknown definitionId is an empty result, never a server error. Body: {body}");
+                Assert.That(PercentileCount(body), Is.EqualTo(0), body);
+            }
+        }
+
         private string InfoUrl(int teamId, int? definitionId)
         {
             var baseUrl = $"/api/latest/teams/{teamId}/metrics/cycleTimePercentilesInfo?startDate={windowStart:O}&endDate={windowEnd:O}";
+            return definitionId.HasValue ? $"{baseUrl}&definitionId={definitionId.Value}" : baseUrl;
+        }
+
+        private static string InfoUrlForRange(int teamId, int? definitionId, DateTime start, DateTime end)
+        {
+            var baseUrl = $"/api/latest/teams/{teamId}/metrics/cycleTimePercentilesInfo?startDate={start:O}&endDate={end:O}";
+            return definitionId.HasValue ? $"{baseUrl}&definitionId={definitionId.Value}" : baseUrl;
+        }
+
+        private static string PortfolioInfoUrlForRange(int portfolioId, int? definitionId, DateTime start, DateTime end)
+        {
+            var baseUrl = $"/api/latest/portfolios/{portfolioId}/metrics/cycleTimePercentilesInfo?startDate={start:O}&endDate={end:O}";
             return definitionId.HasValue ? $"{baseUrl}&definitionId={definitionId.Value}" : baseUrl;
         }
 
@@ -281,6 +528,50 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return team.Id;
         }
 
+        private int SeedTeamWithItemsClosedOnlyInTheCurrentWindow()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp, ImplementationToDoneDefinition());
+
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            // conceptStart sits 20 days into the current window, so both land inside it and
+            // the equally long preceding window holds nothing for this definition.
+            AddItem(workItemRepository, transitionRepository, team, "PHX-CUR-1", conceptStart, conceptStart.AddDays(12),
+                Transition(Backlog, Implementation, conceptStart),
+                Transition(Implementation, Done, conceptStart.AddDays(12)));
+
+            AddItem(workItemRepository, transitionRepository, team, "PHX-CUR-2", conceptStart.AddDays(3), conceptStart.AddDays(21),
+                Transition(Backlog, Implementation, conceptStart.AddDays(3)),
+                Transition(Implementation, Done, conceptStart.AddDays(21)));
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+            transitionRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        private int SeedTeamWithInvalidDefinition()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            // The definition's start boundary names a state the team's workflow does not
+            // contain, which is exactly what happens when an admin removes a state later.
+            var team = AddTeam(sp, new CycleTimeDefinition
+            {
+                Id = ImplementationToDoneDefinitionId,
+                Name = "Concept to Done",
+                StartState = "AStateThatLeftTheWorkflow",
+                EndState = Done,
+            });
+
+            SeedClosedItems(sp, team);
+            return team.Id;
+        }
+
         private int SeedTeamWithItemsClosedOnlyInThePreviousWindow()
         {
             using var scope = factory.Services.CreateScope();
@@ -312,6 +603,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using var scope = factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
             var portfolio = AddPortfolio(sp, ImplementationToDoneDefinition());
+            SeedClosedFeatures(sp, portfolio);
+            return portfolio.Id;
+        }
+
+        private int SeedPortfolioWithInvalidDefinition()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var portfolio = AddPortfolio(sp, new CycleTimeDefinition
+            {
+                Id = ImplementationToDoneDefinitionId,
+                Name = "Concept to Done",
+                StartState = "AStateThatLeftTheWorkflow",
+                EndState = Done,
+            });
+
             SeedClosedFeatures(sp, portfolio);
             return portfolio.Id;
         }
@@ -509,6 +817,50 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             using var document = JsonDocument.Parse(body);
             return PercentileFromArray(document.RootElement.GetProperty("percentiles"), 85, body);
+        }
+
+        private static string ComparisonField(string body, string field)
+        {
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.GetProperty("comparison").GetProperty(field).GetString() ?? string.Empty;
+        }
+
+        private static string MetricLabel(string body)
+        {
+            return ComparisonField(body, "metricLabel");
+        }
+
+        private static string[] DetailRowLabels(string body)
+        {
+            using var document = JsonDocument.Parse(body);
+            return [.. document.RootElement.GetProperty("comparison").GetProperty("detailRows")
+                .EnumerateArray()
+                .Select(row => row.GetProperty("label").GetString() ?? string.Empty)];
+        }
+
+        private static string DetailRowCurrentValue(string body, string label)
+        {
+            return DetailRowField(body, label, "currentValue");
+        }
+
+        private static string DetailRowPreviousValue(string body, string label)
+        {
+            return DetailRowField(body, label, "previousValue");
+        }
+
+        private static string DetailRowField(string body, string label, string field)
+        {
+            using var document = JsonDocument.Parse(body);
+            foreach (var row in document.RootElement.GetProperty("comparison").GetProperty("detailRows").EnumerateArray())
+            {
+                if (row.GetProperty("label").GetString() == label)
+                {
+                    return row.GetProperty(field).GetString() ?? string.Empty;
+                }
+            }
+
+            Assert.Fail($"Detail row '{label}' was expected in the response but was absent. Body: {body}");
+            return string.Empty;
         }
 
         private static string Direction(string body)

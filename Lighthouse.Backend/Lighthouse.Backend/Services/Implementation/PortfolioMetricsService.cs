@@ -684,6 +684,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public CycleTimePercentilesInfoDto GetCycleTimePercentilesInfoForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate, int? definitionId = null)
         {
+            // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogDebug("Getting Cycle Time Percentiles Info for Portfolio {PortfolioName} from {StartDate} to {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
             var isNamed = definitionId is > 0;
