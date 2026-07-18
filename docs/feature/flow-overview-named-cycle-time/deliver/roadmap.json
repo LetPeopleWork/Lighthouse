@@ -1,0 +1,152 @@
+{
+  "roadmap": {
+    "project_id": "flow-overview-named-cycle-time",
+    "created_at": "2026-07-17",
+    "total_steps": 5,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Add a named cycle-time selection to the Flow Overview Cycle Time Percentiles widget (Team + Portfolio). Slice 01 (FE-only) lifts the selection to BaseMetricsView mirroring cumulativeScopeDefinitionId, adds a compact selector to CycleTimePercentiles, fetches named percentiles via the EXISTING cycleTimePercentiles?definitionId endpoint, branches RAG to neutral under a named selection (D11/ADR-100), and makes View Data's highlight column + row filter follow the selection (D15/D16). Slice 02 (BE+FE) threads an additive definitionId through cycleTimePercentilesInfo (Team + Portfolio) with a _Def_{id} cache segment (D12/ADR-101) so the trend footer follows the named selection, then wires the FE. The slice-02 backend acceptance scaffold NamedCycleTimeTrendInfoApiIntegrationTest.cs already exists [Ignore]-marked and RED-ready; DELIVER un-ignores it and completes the Portfolio seed."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-07-17",
+    "notes": "5 steps across 2 slices. Slice 01 is frontend-only against shipped endpoints (selector/RAG/ViewData), slice 02 is the one contract change (trend definitionId + cache segment) whose backend AC is pre-scaffolded RED in NamedCycleTimeTrendInfoApiIntegrationTest.cs. Every DISTILL scenario (feature-delta 'Scenario list with tags' #1-19 + WS) maps to a step: #1-9 -> 01-01, #10-13 -> 01-02, WS/#8/#9 -> 01-03, #14-19 -> 02-01, US-03 FE footer -> 02-02. No orphan scenarios. Step sizing follows the shipped Epic 5251 slice-04 reference class (cumulative-chart-scope-switch). E2E kept as its own step (01-03) because it runs live Playwright locally and is slow. Portfolio parity asserted in both 01-03 (FE) and 02-01 (scaffold #19)."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/flow-overview-named-cycle-time/feature-delta.md",
+    "slices": [
+      "docs/feature/flow-overview-named-cycle-time/slices/slice-01-flow-overview-cycle-time-selector.md",
+      "docs/feature/flow-overview-named-cycle-time/slices/slice-02-named-cycle-time-trend.md"
+    ],
+    "backend_scaffold": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeTrendInfoApiIntegrationTest.cs"
+  },
+  "out_of_scope": [
+    "workItemAgePercentiles, cycleTimePbc, per-definition SLE (D14) - not named in 5509.",
+    "Scatterplot / CycleTimeScatterPlotChart change - it keeps its own local selection (D13, no cross-tab coupling).",
+    "Persisting or sharing the selection across tabs or reloads.",
+    "EF migration - read-path + FE only; D11 rejects per-definition SLE so no schema change.",
+    "The lighthouse-clients version-gate gap on definitionId forwarding - unreachable today, tracked separately (ADR-101 SS5 caveat, not fixed in 5509)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 - Flow Overview cycle-time selector (frontend only)",
+      "description": "Lift selection to BaseMetricsView, add selector to CycleTimePercentiles, neutral RAG, View Data column + filter, E2E walking skeleton. No backend change.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Lifted selection, selector, named percentiles, neutral RAG",
+          "description": "Lift percentilesScopeDefinitionId + handler to BaseMetricsView (mirror cumulativeScopeDefinitionId); add a compact controlled MUI Select to CycleTimePercentiles header slot; fetch named percentiles via existing getCycleTimePercentiles(...,definitionId); branch RAG to ragStatus:'none' + SLE-anchoring tip for named. Vitest.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimePercentiles.test.tsx",
+          "scenario_name": "US-01 AC1-9 (feature-delta scenarios #1-9): selector defaults to Default listing named definitions; select named recomputes 50/70/85/95 >= default; neutral RAG + tip; Default byte-identical; no definitions => no selector; not premium => no selector; invalid definition self-resets; scatterplot selector untouched",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimePercentiles.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/CycleTimePercentiles.test.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Selector renders in the widget header, defaults to Default, lists named definitions; early-returns null when definitions list is empty or not premium.",
+            "Selecting a named definition fetches via existing getCycleTimePercentiles(id,start,end,definitionId); Default path percentiles unchanged (byte-identical).",
+            "Named selection => RAG ragStatus 'none' + SLE-anchoring tip; Default selection => today's computeCycleTimePercentilesRag unchanged.",
+            "Selected definition going invalid/absent self-resets selection to Default via useEffect; no crash; scatterplot local selection untouched.",
+            "Full pnpm test green; pnpm build clean (zero TS/Biome errors and warnings); conventional commit feat(metrics)."
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "View Data column and row filter follow selection",
+          "description": "In buildViewData(): under a named selection the highlight column title = definition name, value = item.namedCycleTimes value (D15), rows filtered to items carrying that definition's value (D16, count == percentile population), no SLE line. Default selection unchanged (item.cycleTime, all closed items). Vitest.",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "US-02 AC1-4 (feature-delta scenarios #10-13): Default => cycle-time column over all closed items; named => definition-named column from namedCycleTimes, no new fetch; rows == named population (count matches percentiles); no SLE line for named",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "Default selection: highlight column titled with cycle-time term shows item.cycleTime over all closed items - unchanged from today.",
+            "Named selection: column titled with definition name, value from item.namedCycleTimes for that definitionId; no new fetch issued.",
+            "Named rows filtered to items carrying a value for the definition; row count equals the percentile population (D9/D16).",
+            "Named selection: no SLE line drawn in the dialog (D11 consistency).",
+            "Full pnpm test green; pnpm build clean; conventional commit feat(metrics)."
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "E2E walking skeleton - Team and Portfolio",
+          "description": "Playwright POM: on demo data, select 'Lead Time (End to End)' on Flow Overview Cycle Time Percentiles; percentiles re-plot, RAG neutral; scatterplot selector still Default after switching to Flow Metrics tab; Portfolio behaves identically. Add POM methods on MetricsPage.ts. Run live locally before commit.",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/NamedCycleTimePercentiles.spec.ts",
+          "scenario_name": "Feature-delta WS + scenarios #2/#8/#9: delivery lead selects Lead Time (End to End) => percentiles re-plot + neutral RAG (demo data); Portfolio parity; scatterplot selector still Default (no cross-tab coupling)",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/NamedCycleTimePercentiles.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "Spec drives testWithDemoData, selects 'Lead Time (End to End)' via a POM method (no inline page.locator in the spec).",
+            "Asserts percentiles re-plot and RAG footer reads neutral under the named selection.",
+            "Asserts scatterplot selector still reads Default after switching to Flow Metrics (no cross-tab coupling).",
+            "Portfolio Flow Overview asserted to behave identically to Team scope.",
+            "Playwright run green locally before commit; conventional commit test(metrics)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 - Trend follows the named selection (backend + frontend)",
+      "description": "Additive definitionId on cycleTimePercentilesInfo (Team + Portfolio) with a _Def_{id} cache segment; named service branch calls GetNamedCycleTimePercentiles twice; un-ignore the RED backend scaffold and complete the Portfolio seed; wire the FE trend footer.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["01"],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Backend trend definitionId, named branch, cache segment",
+          "description": "Add [FromQuery] int? definitionId=null to GetCycleTimePercentilesInfo (Team + Portfolio controllers) via the IsNamedRequest idiom; service named branch calls GetNamedCycleTimePercentiles twice (current+previous) feeding BuildCycleTimePercentilesInfoDto; cache key gains _Def_{id}. Un-ignore NamedCycleTimeTrendInfoApiIntegrationTest.cs and author the Portfolio seed helper.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeTrendInfoApiIntegrationTest.cs",
+          "scenario_name": "US-03 AC1-5 (feature-delta scenarios #14-19): definitionId absent => default trend unchanged; named current-period P85 == sibling named percentiles; named+default same range DO NOT collide in cache; two definitions each own comparison; invalid id mirrors sibling path; Portfolio twin no collision",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeTrendInfoApiIntegrationTest.cs"
+          ],
+          "dependencies": ["01-03"],
+          "criteria": [
+            "cycleTimePercentilesInfo (Team + Portfolio) accepts optional definitionId via IsNamedRequest; absent/0 returns the default trend unchanged.",
+            "Named branch calls GetNamedCycleTimePercentiles for current + previous period into BuildCycleTimePercentilesInfoDto; invalid id yields empty series (sibling parity, no new error contract).",
+            "Cache key gains a _Def_{id} segment so named and default trends for the same range do not collide (values differ, not merely non-null).",
+            "All 6 scaffold tests un-ignored and green including the completed Portfolio seed helper (no Assert.Fail placeholder).",
+            "dotnet build zero warnings; dotnet test green; conventional commit feat(metrics)."
+          ]
+        },
+        {
+          "id": "02-02",
+          "name": "Frontend trend footer follows named selection",
+          "description": "getCycleTimePercentilesInfo(id,start,end,definitionId?) gains the definitionId suffix mirroring getCycleTimePercentiles; the percentiles-widget trend footer source uses the lifted selection so a named selection shows that definition's current-vs-previous comparison; Default byte-identical. Vitest.",
+          "test_file": "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+          "scenario_name": "US-03 FE wiring: getCycleTimePercentilesInfo forwards definitionId when named; trend footer under a named selection reflects the named comparison; Default footer byte-identical to today",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+          ],
+          "dependencies": ["02-01"],
+          "criteria": [
+            "getCycleTimePercentilesInfo appends &definitionId only when a named definition is selected; Default call unchanged.",
+            "The percentiles widget trend source follows the lifted selection so named shows the named comparison; Default footer byte-identical.",
+            "Vitest covers the named-forwarding and Default-unchanged cases.",
+            "Full pnpm test green; pnpm build clean (zero TS/Biome errors and warnings).",
+            "Conventional commit feat(metrics)."
+          ]
+        }
+      ]
+    }
+  ]
+}

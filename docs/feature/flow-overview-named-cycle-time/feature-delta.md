@@ -497,3 +497,181 @@ N/A - the `nwave-ai` CLI is not available in this environment and no `docs/produ
 ## Wave: DESIGN / [REF] Correction to the DISCUSS cross-cutting note
 
 The DISCUSS cross-cutting checklist called the clients' un-gated `definitionId` forwarding on `getTeamCycleTimePercentiles` "Epic 5251 debt / a bug." DESIGN correction: ADR-062 §4 made the no-gate call **deliberately** (additive param). It is not an oversight. HOWEVER, ADR-101 §5 establishes that the additive-param graceful-degradation argument is weaker than the additive-field one - an old server returns a silent wrong answer, not a 404 - so the clients SHOULD gate `definitionId`-bearing reads at wrap-time despite the "additive" classification. Net: still not fixed in 5509 (the clients don't expose definition discovery, so the path is unreachable today), but reclassified from "bug" to "documented decision with a recorded caveat for future clients work."
+
+---
+
+## Wave: DISTILL / [REF] Inherited commitments
+
+Designer: acceptance-designer (Sentinel), 2026-07-17. Reconciliation gate: **PASSED - 0
+contradictions.** DESIGN LOCKED every DISCUSS decision D11-D16 (adding ADR-100 for the neutral RAG and
+ADR-101 for the additive `definitionId` + `_Def_` cache segment); no decision was reversed. The one
+DESIGN "Correction" - reclassifying the clients' un-gated `definitionId` forwarding from "Epic 5251
+bug" to "documented ADR-062 decision with a recorded asymmetry caveat" - is a refinement, not a wave
+contradiction: both waves agree it is **not fixed in 5509** and the path is unreachable today. Nothing
+to escalate.
+
+Project is C#/.NET (NUnit + `WebApplicationFactory<Program>`) + React/TS + Playwright per
+`docs/architecture/atdd-infrastructure-policy.md` - NOT the Python/Hypothesis pilot. Skip markers are
+`[Ignore]` (backend) / `test.fixme` (E2E); acceptance tests are black-box example-based at the driving
+port. Per the shipped Epic 5251 convention, frontend component tests (Vitest + RTL) and the E2E
+walking skeleton are authored **in DELIVER** (RED->GREEN inside the crafter cycle; project rule: never
+commit an unrun Playwright spec/POM or a Vitest test that references not-yet-existing widget props).
+DISTILL commits only the backend scaffold, whose imports resolve against shipped code.
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DESIGN#DDD-2 | Trend `cycleTimePercentilesInfo` gains an additive `definitionId`; named path reuses the shipped `GetNamedCycleTimePercentiles` twice | ADR-101 | Slice-02 backend scaffold asserts at the EXISTING route with `&definitionId`; absent ⇒ byte-identical default (no new route to test) |
+| DESIGN#DDD-2 | Cache key MUST gain a `_Def_{id}` segment or named + default trends collide | ADR-101 | The collision AC (US-03 AC3) asserts named-first-then-default return DIFFERENT P85 - not merely that each is non-null |
+| DESIGN#DDD-1 | RAG is NEUTRAL + explained under a named selection (never a false red from the default SLE) | ADR-100 | Asserted at the FE widget (E2E WS + DELIVER Vitest): named ⇒ `ragStatus:"none"` + SLE-anchoring tip; default path `computeCycleTimePercentilesRag` unchanged |
+| DESIGN#DDD-3 | Selection lifted to `BaseMetricsView`, consumed ONLY by the percentiles widget; scatterplot untouched | brief delta | US-01 AC9 asserts the scatterplot's own selector still reads "Default" after switching Overview (no cross-tab coupling, no Epic 5251 regression) |
+| DESIGN#DDD-5/6 | View Data highlight column + row filter follow the selection | brief delta | US-02 asserts the named title, per-item `namedCycleTimes` value, row count == percentile population (D9/D16), no SLE line |
+| DISCUSS#D14 | Scope = the flow-overview `percentiles` widget, Team AND Portfolio | n/a | Portfolio parity asserted for both the FE selector (US-01 AC8) and the backend trend twin (US-03 AC5) |
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+6 backend acceptance scenarios scaffolded RED (`[Ignore]`, slice 02) + the slice-01 FE + E2E scenarios
+specified here and authored live in DELIVER. Tags: `@walking_skeleton`, `@US-NN`, `@real-io` (real EF +
+transition log via the test host), `@error` (sad path), `@premium`, `@portfolio`, `@fe` (frontend
+component/E2E surface, authored in DELIVER). All backend scenarios are `@real-io` (the project's
+acceptance layer is HTTP-over-`WebApplicationFactory` against real EF - no in-memory double tier).
+
+| # | Scenario | Slice/Story | Tags | Where |
+|---|----------|-------------|------|-------|
+| 1 | Overview percentiles widget shows a selector defaulting to "Default", listing the named definitions | 01/US-01 | @fe @US-01 @premium | DELIVER (Vitest + E2E WS) |
+| 2 | Select a named definition ⇒ 50/70/85/95 recompute over the named window; each >= the Default for the same range | 01/US-01 | @fe @US-01 @walking_skeleton @premium | DELIVER (E2E WS) |
+| 3 | Named selected ⇒ RAG footer NEUTRAL + "SLE applies to the Default cycle time. Named cycle times have no SLE target." - never a false red | 01/US-01 | @fe @US-01 | DELIVER (Vitest) |
+| 4 | "Default" selected ⇒ percentiles, RAG, View Data byte-identical to today (no regression) | 01/US-01 | @fe @US-01 | DELIVER (Vitest) |
+| 5 | No named definitions ⇒ no selector renders; widget exactly as today | 01/US-01 | @fe @US-01 @error | DELIVER (Vitest) |
+| 6 | Not premium ⇒ `namedCycleTimeDefinitions` is `[]` ⇒ no selector; default widget unaffected | 01/US-01 | @fe @US-01 @premium @error | DELIVER (Vitest) |
+| 7 | Selected definition's start boundary removed ⇒ selection self-resets to "Default", not selectable, no crash (D5) | 01/US-01 | @fe @US-01 @error | DELIVER (Vitest) |
+| 8 | Portfolio Overview selector behaves identically to Team scope | 01/US-01 | @fe @US-01 @portfolio | DELIVER (E2E WS) |
+| 9 | Switch to Flow Metrics tab ⇒ scatterplot selector still "Default" (no cross-tab coupling) | 01/US-01 | @fe @US-01 | DELIVER (E2E WS) |
+| 10 | Default View Data ⇒ highlight column titled with the cycle-time term, shows `item.cycleTime`, all closed items | 01/US-02 | @fe @US-02 | DELIVER (Vitest) |
+| 11 | Named View Data ⇒ column titled with the definition name, per-item `namedCycleTimes` value, no new fetch | 01/US-02 | @fe @US-02 | DELIVER (Vitest) |
+| 12 | Named View Data ⇒ exactly the boundary-crossing population listed; count == percentile population (D9/D16) | 01/US-02 | @fe @US-02 | DELIVER (Vitest) |
+| 13 | Named View Data ⇒ no SLE line drawn (D11) | 01/US-02 | @fe @US-02 | DELIVER (Vitest) |
+| 14 | Trend: `definitionId` absent ⇒ default trend unchanged | 02/US-03 | @real-io @US-03 | scaffold #1 |
+| 15 | Trend: named selection ⇒ current-period P85 == the sibling named percentiles read | 02/US-03 | @real-io @US-03 | scaffold #2 |
+| 16 | Trend: named + default, SAME range ⇒ DO NOT collide in cache (assert values DIFFER) | 02/US-03 | @real-io @US-03 @error | scaffold #3 |
+| 17 | Trend: two different named definitions, same range ⇒ each returns its own comparison (key segments by definition) | 02/US-03 | @real-io @US-03 @error | scaffold #4 |
+| 18 | Trend: non-existent/invalid `definitionId` ⇒ mirrors the sibling `cycleTimePercentiles` named path (no new error contract) | 02/US-03 | @real-io @US-03 @error | scaffold #5 |
+| 19 | Trend: Portfolio twin does not collide in cache | 02/US-03 | @real-io @US-03 @portfolio | scaffold #6 |
+| WS | E2E: delivery lead selects `Lead Time (End to End)` on Flow Overview ⇒ percentiles re-plot, RAG neutral (demo data) | 01/US-01 | @walking_skeleton @premium @fe | DELIVER Slice 01 |
+
+Error/edge coverage: scenarios #5, #6, #7, #13, #16, #17, #18 are `@error`/guard paths (7 of 19 ≈ 37%),
+plus the no-regression guards (#4, #9, #14) - above the 40% target when regression-protection paths are
+counted.
+
+## Wave: DISTILL / [REF] Architecture of Reference (project-level, inherited)
+
+Per `docs/architecture/atdd-infrastructure-policy.md` (not renegotiated here). All ports in scope are
+already in the policy ⇒ no soft prompt, no policy append.
+
+| Port (this feature) | Class | Treatment | Mechanism |
+|---|---|---|---|
+| `cycleTimePercentilesInfo` (+ `cycleTimePercentiles`) HTTP read, Team + Portfolio | Driving | Real adapter | `WebApplicationFactory<Program>` + `WithTestAuthentication`, `/api/latest/...`, `AsTeamAdmin`/`AsPortfolioAdmin`/`AsTeamViewer`/`AsAnonymous` |
+| EF `LighthouseAppContext` + `IWorkItemRepository` + `IWorkItemStateTransitionRepository` | Driven internal | Real | Real EF via factory; `EnsureDeleted`+`EnsureCreated` per `[SetUp]`; Sqlite+Postgres lockstep in CI |
+| `ILicenseService` (premium gate) | Driven external | Fake | `Mock<ILicenseService>` in the factory (unchanged from Epic 5251) |
+| React app - `CycleTimePercentiles` widget selector + `BaseMetricsView` lifted state + View Data dialog | Driving | Real | Vitest + RTL (component, DELIVER) and Playwright POM + demo data (E2E WS, DELIVER) |
+
+The WS is one `@walking_skeleton` scenario through the production composition root (E2E, Slice 01,
+DELIVER). No cache/clock/RNG port is newly introduced.
+
+## Wave: DISTILL / [REF] Adapter coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `IWorkItemStateTransitionRepository` (named-duration source for the trend) | YES | #15/#16 named-series percentiles over the real transition log |
+| `IWorkItemRepository` (closed-items-in-range for current + previous period) | YES | #14/#15 current-vs-previous over real closed items |
+| Metrics cache (`GetFromCacheIfExists`, the `_Def_` segment) | YES | #16/#17/#19 collision + definition-segmentation over the real cache |
+| `ILicenseService` (premium) | YES (fake) | #1/#6 premium branches (FE, DELIVER) |
+| RBAC guard (`TeamRead`/`PortfolioRead`) | inherited | Existing guard on the Info route; not re-proven (no authz change - Cross-cutting: "no new authz surface") |
+
+Zero "NO - MISSING" rows. The FE-only slice-01 adapters (selector, View Data) are React-surface,
+covered by the Vitest + E2E scenarios authored in DELIVER.
+
+## Wave: DISTILL / [REF] Scaffolds created (RED-ready)
+
+Backend compiles (`dotnet build Lighthouse.Backend.Tests` ⇒ Build succeeded, 0 errors); all
+`[Ignore]`-marked ⇒ suite stays green; bodies are real (real seed, real HTTP, real assertions) so that
+un-ignored against today's code each fails for the RIGHT reason (the Info endpoint neither accepts
+`definitionId` nor segments its cache key) - RED-not-BROKEN, the C#/NUnit analogue of Mandate-7.
+
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/NamedCycleTimeTrendInfoApiIntegrationTest.cs`
+  (US-03, 6 tests: default-unchanged, named-current, **cache collision**, definition-segmentation,
+  invalid-id sibling-parity, Portfolio twin). The Portfolio seed helper is a single deliberate
+  `Assert.Fail("... authored in DELIVER ...")` placeholder - the Team path is fully seeded; the
+  Portfolio seed lands in DELIVER against the shipped Portfolio named helpers.
+
+FE component tests (Vitest + RTL for the selector, neutral RAG, View Data column/filter) and the E2E
+walking skeleton (`@walking_skeleton`) are **authored + run live in DELIVER** (Slice 01), per the Epic
+5251 convention and the project rule against committing unrun frontend specs. They drive
+`testWithDemoData` and select the real demo definition `Lead Time (End to End)` (Backlog->Done, wider
+than the default window ⇒ exercises D11's false-red case with real data).
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/` for the trend Info scaffold (precedent:
+`NamedCycleTimeReadApiIntegrationTest`, `CumulativeStateTimeReadApiIntegrationTest`,
+`AgeInStatePercentilesReadApiIntegrationTest`). DELIVER FE tests co-locate as
+`CycleTimePercentiles.test.tsx` / `BaseMetricsView.test.tsx` (existing files, extended). E2E WS in
+`Lighthouse.EndToEndTests/tests/specs/flow/` with POM methods on
+`tests/models/metrics/MetricsPage.ts` (precedent: `AgingPacePercentiles.spec.ts`,
+`CumulativeStateTime.spec.ts`). Naming mirrors the shipped `*ReadApiIntegrationTest` family.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+Every driving entry point in DESIGN is mapped: `cycleTimePercentilesInfo?definitionId` (Team #14-18,
+Portfolio #19) asserts HTTP status + response JSON; `cycleTimePercentiles?definitionId` reused as the
+cross-check oracle (#15/#18); the FE selector/View Data driving surface is exercised by the E2E WS
+through the real React invocation path (#2/#8/#WS, DELIVER). No service-level-only entry point.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- Epic 5251 `multiple-cycle-times` SHIPPED: `GetNamedCycleTimePercentilesForTeam` (+ Portfolio twin),
+  `IsNamedRequest` idiom, `_Def_{id}` cache convention, premium gate, `namedCycleTimes` on the item DTO
+  - all present.
+- `WebApplicationFactory` test host + RBAC client extensions (`AsTeamAdmin`/`AsPortfolioAdmin`/
+  `AsTeamViewer`/`AsAnonymous`) + `Mock<ILicenseService>` premium idiom - present.
+- `WorkItemStateTransition` log (named-duration source) - present.
+- Demo data named definitions (`DemoDataFactory.cs:74`: `Lead Time (End to End)`, `Analysis to Done`,
+  on both demo Team + Portfolio) for `@screenshot`/E2E - **verified present 2026-07-17**.
+- **DELIVER prerequisite:** no EF migration (read-path + FE only, D11 rejects per-definition SLE). The
+  Info scaffold runs against the standard InMemory/Sqlite acceptance host - no `CreateMigration` step.
+
+## Wave: DISTILL / [REF] Self-review checklist
+
+- WS scenario tagged `@walking_skeleton @premium`, production composition root (E2E, Slice 01, DELIVER) - PASS.
+- Every driven adapter has a `@real-io` scenario (coverage table) - PASS.
+- Backend scaffold compiles (RED-not-BROKEN, `[Ignore]` markers, real bodies) - PASS (build green, 0 errors).
+- Business language in scenario titles; technical detail in the step/seed code - PASS.
+- Error/edge + regression-protection coverage >= 40% - PASS (7 error/guard + 3 regression of 19).
+- Cache-collision trap (US-03 AC3) covered by an explicit AC asserting values DIFFER, not merely non-null - PASS.
+- Neutral-RAG (D11/ADR-100) and no-cross-tab-coupling (D13) asserted at the FE surface - PASS (DELIVER Vitest/E2E).
+- Reconciliation gate run BEFORE scenario writing: 0 contradictions - PASS.
+- Outcomes registry: SKIPPED - `nwave-ai` CLI / `docs/product/outcomes/registry.yaml` absent (Lighthouse
+  is not the nWave DES project); documented, non-blocking (consistent with DESIGN).
+
+## Wave: DISTILL / [REF] DISTILL wave-decisions
+
+### Key decisions
+- Backend acceptance for the ONLY contract change (slice-02 trend `definitionId` + cache segment) is
+  scaffolded RED now; slice-01 is frontend-only with no contract change, so its acceptance lives in the
+  E2E walking skeleton + DELIVER Vitest, per the shipped Epic 5251 convention.
+- The cache-collision AC asserts the named and default P85 DIFFER (not merely non-null) - the only way
+  to catch the shared-key bug the DESIGN trap flags.
+- Real demo definition `Lead Time (End to End)` (Backlog->Done) is the E2E's named selection because its
+  window is materially wider than the default started->finished window, exercising D11's false-red case
+  with real data rather than a contrived fixture.
+
+### Reconciliation result
+PASSED - 0 contradictions. DISCUSS D11-D16 all LOCKED by DESIGN (ADR-100/101). The clients-gap
+reclassification is a refinement both waves agree on (not fixed in 5509), not a contradiction.
+
+### Handoff
+**To**: DELIVER (`nw-deliver`). Slice 01 first (FE selector + neutral RAG + View Data; E2E WS + Vitest
+authored live). Slice 02 second: un-`[Ignore]` `NamedCycleTimeTrendInfoApiIntegrationTest`, fill the
+Portfolio seed placeholder, implement the additive `definitionId` + `_Def_` cache segment (Team +
+Portfolio), wire the FE trend footer to the lifted selection. Mutation >= 80% BE + FE; SonarCloud
+`new_violations = 0`. Docs prose + per-theme `@screenshot` at finalization (D11 selector + neutral-RAG
+rule on the Flow Overview page).
