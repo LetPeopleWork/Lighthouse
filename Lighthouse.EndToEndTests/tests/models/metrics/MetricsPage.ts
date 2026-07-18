@@ -126,6 +126,93 @@ export class MetricsWidget {
 	}
 }
 
+/**
+ * Drives the Cycle Time Percentiles widget on Flow Overview, including the
+ * premium named-cycle-time scope selector. Under a named selection the widget
+ * re-plots against that definition's window and the SLE-driven RAG chip is
+ * suppressed (WidgetShell renders no chip for ragStatus "none"), replaced by the
+ * "no SLE target" notice.
+ */
+export class CycleTimePercentilesWidget {
+	private readonly widget: Locator;
+
+	constructor(
+		public readonly page: Page,
+		widgetId = "percentiles",
+	) {
+		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+	}
+
+	get Widget(): Locator {
+		return this.widget;
+	}
+
+	get scopeSelector(): Locator {
+		return this.widget.getByRole("combobox", { name: /cycle time scope/i });
+	}
+
+	get ragChip(): Locator {
+		return this.widget.getByTestId("rag-status");
+	}
+
+	get namedCycleTimeNotice(): Locator {
+		return this.widget.getByText(/applies to the Default/i);
+	}
+
+	async getSelectedScope(): Promise<string> {
+		return (await this.scopeSelector.textContent())?.trim() ?? "";
+	}
+
+	async listScopeOptions(): Promise<string[]> {
+		await this.scopeSelector.click();
+		const options = this.page.getByRole("option");
+		await options.first().waitFor();
+		const labels = await options.allTextContents();
+		await this.page.keyboard.press("Escape");
+		await this.page
+			.getByRole("listbox")
+			.waitFor({ state: "detached" })
+			.catch(() => {});
+		return labels.map((label) => label.trim());
+	}
+
+	async selectScope(name: string): Promise<void> {
+		await this.scopeSelector.click();
+		await this.page.getByRole("option", { name, exact: true }).click();
+		await this.page
+			.getByRole("listbox")
+			.waitFor({ state: "detached" })
+			.catch(() => {});
+	}
+
+	/**
+	 * Reads the rendered percentile table as "{percentile}th" -> days pairs, e.g.
+	 * { "50th": 8, "85th": 14 }. Returns an empty record while the widget shows
+	 * "No data available".
+	 */
+	async getPercentileValues(): Promise<Record<string, number>> {
+		const rows = this.widget.locator("tbody tr");
+		const rowCount = await rows.count();
+		const values: Record<string, number> = {};
+
+		for (let index = 0; index < rowCount; index++) {
+			const cells = rows.nth(index).locator("td");
+			const label = ((await cells.nth(0).textContent()) ?? "").trim();
+			const valueText = ((await cells.nth(1).textContent()) ?? "").trim();
+			const match = valueText.match(/(\d+)\s+days?/i);
+			if (label && match) {
+				values[label] = Number(match[1]);
+			}
+		}
+
+		return values;
+	}
+
+	async hasRagChip(): Promise<boolean> {
+		return (await this.ragChip.count()) > 0;
+	}
+}
+
 export class WorkItemAgePercentilesCard {
 	private readonly card: Locator;
 
