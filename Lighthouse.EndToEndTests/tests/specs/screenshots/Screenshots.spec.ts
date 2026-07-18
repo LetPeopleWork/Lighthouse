@@ -17,6 +17,7 @@ import {
 } from "../../models/metrics/FlowEfficiencyWidget";
 import {
 	BlockedRuleConfigEditor,
+	CycleTimePercentilesWidget,
 	MetricsCategories,
 	MetricsWidgetNames,
 	WorkItemAgePercentilesCard,
@@ -564,6 +565,41 @@ testWithDemo(
 			"features/metrics/workitemsdialog.png",
 		);
 		await workItemsDialog.close();
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of the named cycle time selection on the Flow Overview percentiles widget",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const availableWidgets = await metricsPage.switchCategory(
+			MetricsCategories.FlowOverview,
+		);
+		const widget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.CycleTimePercentiles,
+			availableWidgets,
+		);
+		await expect(widget.Widget).toBeVisible();
+
+		// "Analysis to Done" is the definition whose window genuinely differs from
+		// the default on demo data, so the screenshot shows recomputed numbers
+		// rather than the default ones under a named heading.
+		const percentiles = new CycleTimePercentilesWidget(page, widget.Id);
+		await expect
+			.poll(async () => Object.keys(await percentiles.getPercentileValues()).length)
+			.toBeGreaterThan(0);
+		await percentiles.selectScope("Analysis to Done");
+		await expect
+			.poll(() => percentiles.getSelectedScope())
+			.toContain("Analysis to Done");
+
+		await takeElementScreenshot(
+			widget.Widget,
+			"features/metrics/percentilesNamedCycleTime.png",
+		);
 	},
 );
 

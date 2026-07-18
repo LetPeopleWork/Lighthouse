@@ -658,7 +658,32 @@ Use the **View Data** button in the widget header to see all items that were clo
 
 ![Closed Items Dialog](../assets/features/metrics/workitemsdialog.png)
 
+## Named Cycle Times
+
+{: .note}
+This is a **Premium** feature. It appears only once you have defined at least one [named Cycle Time](../teams/edit.html#cycle-times) for the Team or Portfolio.
+
+The default Cycle Time measures from the first *Doing* state to *Done*. That is rarely the whole story: your customer's clock may start when the idea lands in the backlog, and your analysts may care only about the stretch from *Analysing* onward. A named Cycle Time lets you define those windows once and read them here.
+
+The selector in the widget header switches which window the percentiles are computed over. **Default** is the regular Cycle Time and behaves exactly as before.
+
+![Named Cycle Time Percentiles](../assets/features/metrics/percentilesNamedCycleTime.png)
+
+Selecting a named Cycle Time changes three things together:
+
+- The **percentiles** recompute over that definition's window. A wider window cannot be faster than a narrower one, so expect the numbers to grow when the definition starts earlier.
+- The **status indicator goes neutral**. Your SLE targets the default Cycle Time — it is a single target defined against the default window. Judging a deliberately wider window against it would report a breach you never actually agreed to, so Lighthouse reports no verdict instead of a misleading red. Hover the ℹ️ icon in the widget header for the reminder.
+- **View Data** lists the items with a column for that named Cycle Time, showing only items that have a value for it, and draws no SLE line.
+
+The trend indicator follows the selection too, comparing the named window against the same-length preceding period.
+
+The selection is per-widget and not persisted: it does not affect the [Cycle Time Scatterplot](#cycle-time-scatterplot)'s own selector, and it resets when you change the date range or reload.
+
+If a definition later becomes invalid — for example because one of its boundary states was removed from the Team's configuration — it is greyed out in the selector, and a selection that pointed at it falls back to **Default**.
+
 ## Status Indicator
+
+The status indicator applies to the **Default** selection. Under a named Cycle Time it is neutral, as explained above.
 
 | Status | Condition |
 |---|---|
