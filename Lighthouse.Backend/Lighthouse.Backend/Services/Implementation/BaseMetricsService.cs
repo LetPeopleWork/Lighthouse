@@ -1051,7 +1051,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Select(p => new PercentileValueDto(p.Percentile, p.Value))
                 .ToArray();
 
-            if (currentPercentiles.Count == 0 && previousPercentiles.Count == 0)
+            // An empty CURRENT period has no trend to report, whatever the previous period held.
+            // The median below falls back to 0 when the list is empty, and 0 compares as "faster"
+            // than any real previous median - an absent period would render as an improvement.
+            if (currentPercentiles.Count == 0)
             {
                 var emptyComparison = new InfoWidgetComparisonDto(
                     "none", "Cycle Time Percentiles", null, null, null, null, null, null);

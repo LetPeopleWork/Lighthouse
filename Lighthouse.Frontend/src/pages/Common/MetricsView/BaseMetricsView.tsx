@@ -1220,17 +1220,46 @@ export const BaseMetricsView = <
 	const [scopedPercentilesInfo, setScopedPercentilesInfo] =
 		useState<ICycleTimePercentilesInfo | null>(null);
 
+	const namedPercentilesFetchGeneration = useRef(0);
+
 	const handlePercentilesScopeChange = useCallback(
 		(definitionId: number | null) => {
+			// Each selection supersedes the one before it. Without this guard a slow
+			// response for an earlier definition can land after a fast one for the
+			// current definition and overwrite it, leaving the selector and the table
+			// disagreeing about which window is on screen.
+			const generation = ++namedPercentilesFetchGeneration.current;
+			const isCurrent = () =>
+				generation === namedPercentilesFetchGeneration.current;
+
 			setPercentilesScopeDefinitionId(definitionId);
 			if (definitionId === null) {
 				setScopedPercentileValues(null);
 				setScopedPercentilesInfo(null);
 				return;
 			}
+
+			// A failed named fetch must never leave the Default numbers on screen under
+			// a named selection - the widget would be presenting the default window's
+			// percentiles as if they were the named one's. Snap back to Default instead,
+			// mirroring the invalid-definition self-reset the selector already does.
+			const revertToDefault = () => {
+				if (!isCurrent()) {
+					return;
+				}
+				setPercentilesScopeDefinitionId(null);
+				setScopedPercentileValues(null);
+				setScopedPercentilesInfo(null);
+			};
+
 			void metricsService
 				.getCycleTimePercentiles(entity.id, startDate, endDate, definitionId)
-				.then(setScopedPercentileValues);
+				.then((values) => {
+					if (isCurrent()) {
+						setScopedPercentileValues(values);
+					}
+				})
+				.catch(revertToDefault);
 			void metricsService
 				.getCycleTimePercentilesInfo(
 					entity.id,
@@ -1238,13 +1267,22 @@ export const BaseMetricsView = <
 					endDate,
 					definitionId,
 				)
-				.then(setScopedPercentilesInfo);
+				.then((info) => {
+					if (isCurrent()) {
+						setScopedPercentilesInfo(info);
+					}
+				})
+				.catch(revertToDefault);
 		},
 		[metricsService, entity.id, startDate, endDate],
 	);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: entity/window are reset triggers, not values read in the body — a scope chosen for one team/window must not leak into the next.
 	useEffect(() => {
+		// Bumping the generation discards any response still in flight for the
+		// previous entity or window - it would otherwise land after the reset and
+		// re-populate the scope we just cleared.
+		namedPercentilesFetchGeneration.current += 1;
 		setPercentilesScopeDefinitionId(null);
 		setScopedPercentileValues(null);
 		setScopedPercentilesInfo(null);

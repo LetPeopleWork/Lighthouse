@@ -172,13 +172,33 @@ export class CycleTimePercentilesWidget {
 		return labels.map((label) => label.trim());
 	}
 
+	/**
+	 * Selects a scope and waits for the percentile refetch it triggers to land.
+	 * The combobox label flips synchronously on click, so callers that only wait
+	 * on the label can still read the previous scope's table.
+	 */
 	async selectScope(name: string): Promise<void> {
+		// Returning to Default clears the scoped state from memory and issues NO
+		// request, so only a named selection has a response to wait for. Waiting
+		// unconditionally would just burn the timeout on every Default selection.
+		const isNamedSelection = name !== "Default";
+		const responsePromise = isNamedSelection
+			? this.page.waitForResponse(
+					(response) =>
+						response.url().includes("/metrics/cycleTimePercentiles?") &&
+						response.url().includes("definitionId="),
+					{ timeout: 15000 },
+				)
+			: null;
+
 		await this.scopeSelector.click();
 		await this.page.getByRole("option", { name, exact: true }).click();
 		await this.page
 			.getByRole("listbox")
 			.waitFor({ state: "detached" })
 			.catch(() => {});
+
+		await responsePromise;
 	}
 
 	/**

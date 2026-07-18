@@ -4847,5 +4847,70 @@ describe("BaseMetricsView component", () => {
 				).toHaveTextContent("Named Cycle Time Trend");
 			});
 		});
+
+		// Adversarial-review regressions: under a named selection the widget must never
+		// present Default data as if it were the named window's.
+		it("falls back to Default rather than showing Default numbers under a named selection when the fetch fails", async () => {
+			const { service } = renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+			(service.getCycleTimePercentiles as Mock).mockRejectedValue(
+				new Error("backend down"),
+			);
+
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			// The selector snaps back to Default, so the numbers on screen and the
+			// scope label agree. Leaving the scope named would show default-window
+			// percentiles under a named heading.
+			await waitFor(() => {
+				expect(screen.getByTestId("percentile-scope")).toHaveTextContent(
+					"default",
+				);
+			});
+			expect(
+				screen.getByTestId("widget-rag-percentiles"),
+			).not.toHaveTextContent("none");
+		});
+
+		it("ignores a stale named response that resolves after a newer selection", async () => {
+			const { service } = renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+
+			let resolveStale: ((value: IPercentileValue[]) => void) | undefined;
+			(service.getCycleTimePercentiles as Mock).mockReturnValueOnce(
+				new Promise<IPercentileValue[]>((resolve) => {
+					resolveStale = resolve;
+				}),
+			);
+
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+			await userEvent.click(screen.getByTestId("percentile-select-default"));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("percentile-scope")).toHaveTextContent(
+					"default",
+				);
+			});
+
+			// The in-flight named request now lands. It belongs to a superseded
+			// generation, so it must not repopulate the scoped values.
+			resolveStale?.([{ percentile: 85, value: 99 }]);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-rag-percentiles"),
+				).not.toHaveTextContent("none");
+			});
+			expect(screen.getByTestId("percentile-scope")).toHaveTextContent(
+				"default",
+			);
+			// The Default fetch supplies 3 percentiles; the stale named response holds
+			// exactly 1, so a leak would show up here as a count of 1.
+			expect(screen.getByTestId("percentile-values-count")).toHaveTextContent(
+				"3",
+			);
+		});
 	});
 });

@@ -193,6 +193,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        // Regression (adversarial review): an empty CURRENT named period must not read as an
+        // improvement just because the PREVIOUS period had data. The median falls back to 0 when
+        // the current percentile list is empty, and 0 < previous median compares as "faster".
+        [Test]
+        public async Task Info_NamedDefinition_CurrentPeriodEmpty_PreviousHadData_DoesNotClaimAnImprovement()
+        {
+            var teamId = SeedTeamWithItemsClosedOnlyInThePreviousWindow();
+
+            client.AsTeamAdmin(teamId);
+            var info = await client.GetAsync(InfoUrl(teamId, ImplementationToDoneDefinitionId));
+            var body = await info.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(PercentileCount(body), Is.EqualTo(0),
+                    $"Nothing closed in the current window for this definition, so there are no percentile lines. Body: {body}");
+                Assert.That(Direction(body), Is.EqualTo("none"),
+                    $"An absent current period is not an improvement - reporting 'down' (faster) from a 0 median would be a fabricated green. Body: {body}");
+            }
+        }
+
         // US-03 AC5: the Portfolio twin behaves identically to Team scope.
         [Test]
         public async Task PortfolioInfo_NamedAndDefaultTrend_SameRange_DoNotCollideInCache()
@@ -256,6 +278,32 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     EndState = Done,
                 });
             SeedClosedItems(sp, team);
+            return team.Id;
+        }
+
+        private int SeedTeamWithItemsClosedOnlyInThePreviousWindow()
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var team = AddTeam(sp, ImplementationToDoneDefinition());
+
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var transitionRepository = sp.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            // The comparison window is the equally long span immediately before windowStart, so
+            // these two land in the PREVIOUS period and nothing at all lands in the current one.
+            var previousClose = windowStart.AddDays(-30);
+            AddItem(workItemRepository, transitionRepository, team, "PHX-PREV-1", previousClose.AddDays(-15), previousClose,
+                Transition(Backlog, Implementation, previousClose.AddDays(-15)),
+                Transition(Implementation, Done, previousClose));
+
+            AddItem(workItemRepository, transitionRepository, team, "PHX-PREV-2", previousClose.AddDays(-9), previousClose.AddDays(-2),
+                Transition(Backlog, Implementation, previousClose.AddDays(-9)),
+                Transition(Implementation, Done, previousClose.AddDays(-2)));
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+            transitionRepository.Save().GetAwaiter().GetResult();
+
             return team.Id;
         }
 
@@ -461,6 +509,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             using var document = JsonDocument.Parse(body);
             return PercentileFromArray(document.RootElement.GetProperty("percentiles"), 85, body);
+        }
+
+        private static string Direction(string body)
+        {
+            using var document = JsonDocument.Parse(body);
+            return document.RootElement.GetProperty("comparison").GetProperty("direction").GetString() ?? string.Empty;
         }
 
         private static int PercentileCount(string body)
