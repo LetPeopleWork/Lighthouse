@@ -31,6 +31,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const int ImplementationToDoneDefinitionId = 1;
         private const int NonExistentDefinitionId = 987654;
 
+        // Hoisted rather than inlined into the assertion: CA1861 flags constant array
+        // arguments passed to repeatedly-called methods.
+        private static readonly string[] ExpectedDetailRowLabels = ["50th", "70th", "85th", "95th"];
+
         private static int testDateOffset;
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
@@ -189,7 +193,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     $"An unknown definitionId is an empty result, never a server error. Body: {infoBody}");
                 Assert.That(siblingPercentiles.StatusCode, Is.EqualTo(HttpStatusCode.OK),
                     "The sibling cycleTimePercentiles named read holds the same contract.");
-                Assert.That(PercentileCount(infoBody), Is.EqualTo(0),
+                Assert.That(PercentileCount(infoBody), Is.Zero,
                     $"An empty named series yields no percentile lines (sibling parity, not a 500). Body: {infoBody}");
             }
         }
@@ -235,7 +239,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(DetailRowLabels(body), Is.EqualTo(new[] { "50th", "70th", "85th", "95th" }),
+                Assert.That(DetailRowLabels(body), Is.EqualTo(ExpectedDetailRowLabels),
                     $"One row per percentile, labelled '<percentile>th'. Body: {body}");
                 Assert.That(MetricLabel(body), Is.EqualTo("Cycle Time Percentiles"),
                     $"The populated comparison names its metric too, not only the empty one. Body: {body}");
@@ -286,7 +290,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(PercentileCount(body), Is.EqualTo(0),
+                Assert.That(PercentileCount(body), Is.Zero,
                     $"A definition whose boundary state left the workflow computes nothing. Body: {body}");
                 Assert.That(Direction(body), Is.EqualTo("none"),
                     $"No data means no trend verdict. Body: {body}");
@@ -310,7 +314,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(PercentileCount(body), Is.EqualTo(0),
+                Assert.That(PercentileCount(body), Is.Zero,
                     $"Nothing closed in the current window for this definition, so there are no percentile lines. Body: {body}");
                 Assert.That(Direction(body), Is.EqualTo("none"),
                     $"An absent current period is not an improvement - reporting 'down' (faster) from a 0 median would be a fabricated green. Body: {body}");
@@ -446,7 +450,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-                Assert.That(PercentileCount(body), Is.EqualTo(0),
+                Assert.That(PercentileCount(body), Is.Zero,
                     $"A definition whose boundary state left the workflow computes nothing. Body: {body}");
                 Assert.That(Direction(body), Is.EqualTo("none"),
                     $"No data means no trend verdict. Body: {body}");
@@ -466,7 +470,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(info.StatusCode, Is.EqualTo(HttpStatusCode.OK),
                     $"An unknown definitionId is an empty result, never a server error. Body: {body}");
-                Assert.That(PercentileCount(body), Is.EqualTo(0), body);
+                Assert.That(PercentileCount(body), Is.Zero, body);
             }
         }
 

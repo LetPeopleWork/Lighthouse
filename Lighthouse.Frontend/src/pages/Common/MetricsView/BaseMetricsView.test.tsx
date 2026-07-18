@@ -4903,7 +4903,9 @@ describe("BaseMetricsView component", () => {
 					"3",
 				);
 			});
-			expect(screen.getByTestId("percentile-scope")).toHaveTextContent("default");
+			expect(screen.getByTestId("percentile-scope")).toHaveTextContent(
+				"default",
+			);
 		});
 
 		it("resolves View Data against the selected definition, not the first one", async () => {
