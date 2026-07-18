@@ -130,8 +130,8 @@ export class MetricsWidget {
  * Drives the Cycle Time Percentiles widget on Flow Overview, including the
  * premium named-cycle-time scope selector. Under a named selection the widget
  * re-plots against that definition's window and the SLE-driven RAG chip is
- * suppressed (WidgetShell renders no chip for ragStatus "none"), replaced by the
- * "no SLE target" notice.
+ * suppressed (WidgetShell renders no chip for ragStatus "none"); the "no SLE
+ * target" explanation lives in the header tip tooltip, not in the card body.
  */
 export class CycleTimePercentilesWidget {
 	private readonly widget: Locator;
@@ -153,10 +153,6 @@ export class CycleTimePercentilesWidget {
 
 	get ragChip(): Locator {
 		return this.widget.getByTestId("rag-status");
-	}
-
-	get namedCycleTimeNotice(): Locator {
-		return this.widget.getByText(/applies to the Default/i);
 	}
 
 	async getSelectedScope(): Promise<string> {

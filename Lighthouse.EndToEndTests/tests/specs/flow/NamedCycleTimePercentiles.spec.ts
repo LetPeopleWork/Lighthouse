@@ -60,7 +60,6 @@ async function assertNamedSelectionBehaviour(
 		.toBeGreaterThan(0);
 	expect(await percentiles.getSelectedScope()).toBe(DEFAULT_SCOPE);
 	expect(await percentiles.hasRagChip()).toBe(true);
-	await expect(percentiles.namedCycleTimeNotice).not.toBeVisible();
 
 	const defaultValues = await percentiles.getPercentileValues();
 
@@ -75,9 +74,9 @@ async function assertNamedSelectionBehaviour(
 		.toContain(WIDE_DEFINITION);
 
 	// The RAG goes neutral: the SLE only targets the Default cycle time, so
-	// WidgetShell renders no chip and the widget explains why instead.
+	// WidgetShell renders no chip. The explanation sits in the header tip
+	// tooltip - the card body stays free of caption text.
 	await expect.poll(() => percentiles.hasRagChip()).toBe(false);
-	await expect(percentiles.namedCycleTimeNotice).toBeVisible();
 	expectNoNarrowerThanDefault(
 		await percentiles.getPercentileValues(),
 		defaultValues,
@@ -103,7 +102,6 @@ async function assertNamedSelectionBehaviour(
 		.poll(() => percentiles.getPercentileValues())
 		.toEqual(defaultValues);
 	await expect.poll(() => percentiles.hasRagChip()).toBe(true);
-	await expect(percentiles.namedCycleTimeNotice).not.toBeVisible();
 }
 
 test("@walking_skeleton @premium delivery lead selects a named cycle time on the team Flow Overview percentiles and the values re-plot with a neutral RAG", async ({

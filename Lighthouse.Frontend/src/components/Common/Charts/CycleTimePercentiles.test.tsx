@@ -189,25 +189,14 @@ describe("CycleTimePercentiles named cycle time selection", () => {
 		expect(onScopeChange).toHaveBeenCalledWith(null);
 	});
 
-	it("shows the neutral SLE tip when a named definition is selected", () => {
+	// The neutral-SLE explanation lives in the widget header's tip tooltip, not in
+	// the card body - the Overview widget has no room for a caption line.
+	it("keeps the card body free of the neutral SLE caption under a named selection", () => {
 		render(
 			<CycleTimePercentiles
 				percentileValues={mockPercentiles}
 				namedCycleTimeDefinitions={definitions}
 				scopeDefinitionId={10}
-				onScopeChange={vi.fn()}
-			/>,
-		);
-
-		expect(screen.getByText(NEUTRAL_TIP)).toBeInTheDocument();
-	});
-
-	it("does not show the neutral tip on the Default selection", () => {
-		render(
-			<CycleTimePercentiles
-				percentileValues={mockPercentiles}
-				namedCycleTimeDefinitions={definitions}
-				scopeDefinitionId={null}
 				onScopeChange={vi.fn()}
 			/>,
 		);

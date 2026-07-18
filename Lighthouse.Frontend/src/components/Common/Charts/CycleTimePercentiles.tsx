@@ -35,10 +35,8 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
-	const sleTerm = getTerm(TERMINOLOGY_KEYS.SLE);
 
 	const hasSelector = namedCycleTimeDefinitions.length > 0;
-	const isNamedSelection = scopeDefinitionId !== null;
 
 	useEffect(() => {
 		if (scopeDefinitionId === null || onScopeChange === undefined) {
@@ -106,6 +104,12 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 					{hasSelector && (
 						<FormControl size="small" sx={{ minWidth: 140, flexShrink: 0 }}>
 							<Select
+								/* The Overview widget is only a few rows tall - a default-height
+								   small Select eats a whole percentile row, so trim its padding. */
+								sx={{
+									fontSize: "clamp(0.75rem, 1.4vw, 0.85rem)",
+									"& .MuiSelect-select": { py: 0.25 },
+								}}
 								value={
 									scopeDefinitionId === null
 										? DEFAULT_SCOPE
@@ -135,15 +139,6 @@ const CycleTimePercentiles: React.FC<CycleTimePercentilesProps> = ({
 						</FormControl>
 					)}
 				</Box>
-				{hasSelector && isNamedSelection && (
-					<Typography
-						variant="caption"
-						color="text.secondary"
-						sx={{ display: "block", mb: 0.5 }}
-					>
-						{`${sleTerm} applies to the Default ${cycleTimeTerm}. Named ${cycleTimeTerm}s have no ${sleTerm} target.`}
-					</Typography>
-				)}
 				{percentileValues.length > 0 ? (
 					/* Use a flexed box for the table so it shrinks to available space instead of causing scrolling */
 					<Box sx={{ overflow: "hidden", flex: "1 1 auto", minHeight: 0 }}>
