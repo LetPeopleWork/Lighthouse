@@ -675,3 +675,36 @@ Portfolio seed placeholder, implement the additive `definitionId` + `_Def_` cach
 Portfolio), wire the FE trend footer to the lifted selection. Mutation >= 80% BE + FE; SonarCloud
 `new_violations = 0`. Docs prose + per-theme `@screenshot` at finalization (D11 selector + neutral-RAG
 rule on the Flow Overview page).
+
+## Wave: DELIVER / [REF] DELIVER wave-decisions
+
+### Amendments to prior waves
+
+**[A1] D11's tip is the widget-header tooltip ONLY - no in-card caption.** DESIGN (ADR-100:32-34) always
+specified the neutral-RAG explanation as `tipText` on the `WidgetShell` header tip, which renders as a
+`Tooltip` on the info icon (`WidgetShell.tsx:336`). DELIVER's first pass ADDITIONALLY rendered the same
+sentence as a `Typography variant="caption"` line inside the card body. On review that caption was
+rejected and removed: the Overview widget is `size:"small"` (a few rows tall), and the caption plus a
+default-height MUI `size="small"` Select together clipped the 50th-percentile row - the widget lost data
+to explain itself. The Select's own padding is now trimmed (`& .MuiSelect-select: py 0.25`) on this
+widget only; `CumulativeStateTimeScopeControl` on full-size charts keeps standard height.
+**Net effect: ADR-100 and `brief.md:2235` are now MORE accurate than before, not less** - neither ever
+mentioned a caption. No decision is reversed: RAG is still `"none"` under a named selection, still
+explained, still never a false red. Only the explanation's placement narrowed to hover-only.
+Test consequence: the `namedCycleTimeNotice` POM getter and its three E2E assertions are gone; the two
+Vitest caption tests collapsed into one guard that the card body stays caption-free.
+
+**[A2] The E2E's named selection is `Analysis to Done`, not `Lead Time (End to End)`** - correcting the
+DISTILL decision at line 663-665 above. That decision assumed `Lead Time (End to End)` (Backlog->Done) is
+"materially wider" than the default started->finished window. Measured against real demo data during the
+walking skeleton, it is not: the synthesized demo journey enters `Backlog` and `Next` on the same day, so
+the Backlog dwell is zero and `Lead Time (End to End)` returns percentiles IDENTICAL to Default
+(`{"50th":7,"70th":8,"85th":10,"95th":15}` on Team Zenith). The plumbing is correct - `Analysis to Done`
+(Analysing->Done) does return different values - but `Lead Time (End to End)` cannot demonstrate the
+feature. The E2E therefore keeps `Lead Time (End to End)` for the no-narrower-than-Default property and
+adds `Analysis to Done` as the leg that proves the widget genuinely re-queries per definition. Docs
+screenshots use `Analysis to Done` for the same reason.
+**Known demo-data limitation (NOT fixed here):** demo data cannot show the headline "wide named window
+vs narrow default" case. Fixing it means giving demo items real Backlog dwell in `DemoDataFactory`,
+which shifts every demo number and forces a broad `@screenshot` regeneration - out of scope for 5509,
+worth a follow-up story.

@@ -28,7 +28,8 @@ Overview widget, making US-03's trend wiring a pure add.
 - A controlled selector on `CycleTimePercentiles`, shaped after `CumulativeStateTimeScopeControl.tsx`:
   `null` -> "Default"; early-return `null` when `namedCycleTimeDefinitions.length === 0`; `useEffect`
   self-reset when the selected definition disappears or goes `isValid === false` (D5).
-- Named percentiles fetched on selection; RAG branches to `ragStatus: "none"` + the D11 tip.
+- Named percentiles fetched on selection; RAG branches to `ragStatus: "none"` + the D11 tip (the
+  `WidgetShell` header tip tooltip - hover-only, no card-body caption; DELIVER amendment [A1]).
 - `buildViewData()` (`BaseMetricsView.tsx:466`) takes the selection: conditional `highlightColumn`
   (named title + `item.namedCycleTimes` lookup, D15), rows filtered to items carrying a named value
   (D16), no `sle` passed for a named selection.
@@ -57,10 +58,15 @@ E2E's named selection.
 
 - Given the premium demo Team, when Priya opens Flow Overview, then the Cycle Time Percentiles widget
   shows a selector reading "Default" and listing `Lead Time (End to End)` and `Analysis to Done`.
-- Given Priya selects `Lead Time (End to End)`, when the widget re-renders, then the 50/70/85/95
-  recompute over Backlog->Done and each is >= the Default value for the same date range (the wider
-  window cannot be faster), and the RAG footer reads neutral with "SLE applies to the Default cycle
-  time. Named cycle times have no SLE target." - NOT a red derived from the default SLE.
+- Given Priya selects a named definition, when the widget re-renders, then the 50/70/85/95 recompute
+  over that definition's window and the RAG chip is suppressed (neutral, `ragStatus: "none"`) - NOT a
+  red derived from the default SLE. The explanation ("SLE applies to the Default cycle time. Named
+  cycle times have no SLE target.") lives in the widget-header tip tooltip, NOT as a caption in the
+  card body - see DELIVER amendment [A1]; the small widget has no vertical room for a caption line.
+  DELIVERED with two definitions: `Lead Time (End to End)` for the >= Default property (each named
+  value >= the Default value for the same range - a wider window cannot be faster), and
+  `Analysis to Done` for the genuine re-plot, because on demo data `Lead Time (End to End)` returns
+  values identical to Default (zero Backlog dwell - see amendment [A2]).
 - Given `Lead Time (End to End)` is selected, when Priya opens View Data, then the highlight column is
   titled `Lead Time (End to End)`, every listed item carries a value for that definition (no blanks,
   D16), the row count equals the population the percentiles were computed over, and no SLE line is
@@ -81,9 +87,12 @@ E2E's named selection.
 - Premium seed for `@premium` E2E (`reference_premium_license_dev_seed`) - satisfied.
 - Demo data named definitions - **satisfied, verified**: `DemoDataFactory.cs:74` seeds
   `Lead Time (End to End)` (Backlog->Done) and `Analysis to Done` (Analysing->Done) onto both the demo
-  Team and Portfolio. Drive the E2E from `Lead Time (End to End)` - its Backlog->Done span is much
-  wider than the default started->finished window, so the neutral-RAG assertion (D11) tests the real
-  false-red case. Use the REAL demo names in fixtures; "Concept to Cash" is narrative shorthand only.
+  Team and Portfolio. Use the REAL demo names in fixtures; "Concept to Cash" is narrative shorthand only.
+  **Superseded by DELIVER amendment [A2]:** this planned to drive the E2E from `Lead Time (End to End)`
+  on the assumption its Backlog->Done span is much wider than the default started->finished window.
+  Measured, it is not - demo items enter `Backlog` and `Next` the same day, so it returns values
+  identical to Default and cannot exercise the false-red case. `Analysis to Done` is the definition that
+  demonstrably re-plots; the E2E drives both.
 
 ## Effort estimate / reference class
 
