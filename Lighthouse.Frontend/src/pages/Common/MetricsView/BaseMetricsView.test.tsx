@@ -131,6 +131,15 @@ vi.mock("../../../components/Common/Charts/CycleTimePercentiles", () => ({
 			</button>
 			<button
 				type="button"
+				data-testid="percentile-select-second-named"
+				onClick={() =>
+					onScopeChange?.(namedCycleTimeDefinitions?.[1]?.id ?? null)
+				}
+			>
+				select second named
+			</button>
+			<button
+				type="button"
 				data-testid="percentile-select-default"
 				onClick={() => onScopeChange?.(null)}
 			>
@@ -4846,6 +4855,116 @@ describe("BaseMetricsView component", () => {
 					screen.getByTestId("widget-trend-label-percentiles"),
 				).toHaveTextContent("Named Cycle Time Trend");
 			});
+		});
+
+		// Mutation-testing regressions: the lifted selection's plumbing was unpinned -
+		// the named values could go unapplied, survive a return to Default, or resolve
+		// against the wrong definition, all without a failing test.
+		it("shows the named percentile values once they arrive", async () => {
+			const { service } = renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+			(service.getCycleTimePercentiles as Mock).mockResolvedValue([
+				{ percentile: 85, value: 42 },
+			]);
+
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+
+			// The Default fetch supplies 3 values; the named one supplies 1. Never
+			// applying the response would leave the Default 3 on screen.
+			await waitFor(() => {
+				expect(screen.getByTestId("percentile-values-count")).toHaveTextContent(
+					"1",
+				);
+			});
+		});
+
+		it("clears the named values when the selection returns to Default", async () => {
+			const { service } = renderPercentilesWidget();
+
+			await screen.findByTestId("percentile-select-named");
+			(service.getCycleTimePercentiles as Mock).mockResolvedValue([
+				{ percentile: 85, value: 42 },
+			]);
+
+			await userEvent.click(screen.getByTestId("percentile-select-named"));
+			await waitFor(() => {
+				expect(screen.getByTestId("percentile-values-count")).toHaveTextContent(
+					"1",
+				);
+			});
+
+			await userEvent.click(screen.getByTestId("percentile-select-default"));
+
+			// Returning to Default must drop the scoped values, not merely relabel the
+			// scope - otherwise the named numbers stay on screen under "Default".
+			await waitFor(() => {
+				expect(screen.getByTestId("percentile-values-count")).toHaveTextContent(
+					"3",
+				);
+			});
+			expect(screen.getByTestId("percentile-scope")).toHaveTextContent("default");
+		});
+
+		it("resolves View Data against the selected definition, not the first one", async () => {
+			const secondDefinition = {
+				id: 20,
+				name: "Commit to Deploy",
+				startState: "Planned",
+				endState: "Done",
+				isValid: true,
+			};
+			const items: IWorkItem[] = [
+				{
+					...mockCycleTimeData[0],
+					id: 201,
+					cycleTime: 9,
+					namedCycleTimes: [
+						{ definitionId: namedDefinition.id, days: 4 },
+						{ definitionId: secondDefinition.id, days: 8 },
+					],
+				},
+			];
+			const service = {
+				...createMockMetricsService<IWorkItem>(),
+				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+				getCycleTimeData: vi.fn().mockResolvedValue(items),
+			};
+			const team = new Team();
+			team.name = "Phoenix";
+			team.id = 7;
+			team.featureWip = 3;
+			team.lastUpdated = new Date();
+			localStorage.setItem(
+				`lighthouse:metrics:team:${team.id}:category`,
+				"flow-overview",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={team}
+					metricsService={service}
+					title="Work Items"
+					doingStates={["To Do", "In Progress", "Review"]}
+					cycleTimeDefinitions={[namedDefinition, secondDefinition]}
+				/>,
+			);
+
+			await screen.findByTestId("percentile-select-second-named");
+			await userEvent.click(
+				screen.getByTestId("percentile-select-second-named"),
+			);
+
+			// Looking up the definition by anything other than the selected id would
+			// title the column "Concept to Cash" and show that definition's 4 days.
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-highlight-title-percentiles"),
+				).toHaveTextContent("Commit to Deploy");
+			});
+			expect(
+				screen.getByTestId("widget-view-data-highlight-values-percentiles"),
+			).toHaveTextContent("8");
 		});
 
 		// Adversarial-review regressions: under a named selection the widget must never
