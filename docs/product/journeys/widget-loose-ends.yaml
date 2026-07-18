@@ -1,0 +1,163 @@
+schema_version: 1
+feature_id: widget-loose-ends
+updated: 2026-07-18
+
+journeys:
+
+  - name: scan-the-overview-and-act-on-what-is-red
+    goal: >
+      Flow coach opens the Flow Overview before a standup, scans the row of widgets for status
+      chips, drills into the one number that surprises them, and — when reviewing a past period —
+      trusts that the Work-Item-Age readouts describe that period rather than today.
+    persona: flow-coach (secondary: delivery-lead-rte, who reads the same board to judge whether the period got better or worse)
+    job: job-flow-coach-read-every-widget-the-same-way
+    supporting_jobs:
+      - job-flow-coach-drill-into-throughput-and-arrivals
+      - job-flow-coach-see-age-as-of-selected-date
+      - job-delivery-lead-tell-blocked-trend-vs-last-period
+
+    emotional_arc:
+      start: >
+        Wary — "nothing looks red, but two of these widgets never show a colour at all, so I
+        don't actually know that nothing is red."
+      middle: >
+        Oriented — "every widget carries a chip and a trend now. Flow Efficiency is amber,
+        Work Item Age Percentiles is red and trending up, and Blocked is up two since last
+        period. That's my agenda."
+      end: >
+        Decisive — "I clicked into Total Throughput and saw the 23 were real work, and when I
+        pulled the range back to last month the ages described last month. I can take these
+        numbers into the retro without a caveat."
+
+    mental_model:
+      - A widget with no status chip is indistinguishable from a healthy one at a glance —
+        so an incomplete widget is worse than an absent one.
+      - Every number backed by a set of items should be able to show me that set.
+      - A date-range selector filters everything on the page. If a metric ignores it, the
+        product is lying quietly.
+      - "Work Item Age" means "how old was this work on the day I am looking at" — of which
+        "right now" is the today case, not a separate concept.
+
+    happy_path:
+      - step: open-flow-overview
+        output: >
+          Every Flow Overview widget renders with an Act/Observe/Sustain status chip, including
+          Flow Efficiency and Work Item Age Percentiles, which previously had none.
+      - step: scan-for-red
+        output: >
+          The coach identifies the widgets demanding attention from colour and label alone,
+          with no widget silently exempt from the convention.
+      - step: read-trends
+        output: >
+          Widgets with a meaningful previous-period comparison show a direction and delta —
+          including Blocked Items on a young instance (absent baseline counts as zero) and
+          Work Item Age Percentiles (compared at the previous-period boundary).
+      - step: drill-into-a-number
+        output: >
+          Clicking View Data on Total Throughput or Total Arrivals opens the familiar
+          WorkItemsDialog listing exactly the items behind the number for the selected range.
+      - step: pull-the-range-back-to-a-past-period
+        output: >
+          The Work Item Age Percentiles card, the Total Work Item Age widget and the Work Item
+          Aging chart all report ages as they stood on the last day of that range, including
+          items that have closed since; the three surfaces agree with each other.
+      - step: read-the-aging-chart
+        output: >
+          Switching the aging chart's percentile source to Work Item Age draws reference lines
+          labelled 95% / 85% / 70% / 50% — the source is already stated by the toggle, so the
+          per-line term prefix is gone.
+
+    shared_artifacts:
+      - artifact: widget-rag-status
+        source: >
+          buildWidgetFooters in BaseMetricsView, computed by the pure rules in ragRules.ts.
+          Single source of truth for every widget's status chip. Flow Efficiency joins it by
+          moving its fetch onto the shared data path; Work Item Age Percentiles joins it via a
+          new SLE-benchmarked rule.
+      - artifact: widget-view-data
+        source: >
+          buildViewData in BaseMetricsView. Total Throughput and Total Arrivals reuse the item
+          sets the sibling throughput/arrivals chart entries already build — no new query.
+      - artifact: widget-trend
+        source: >
+          The trendPolicies map in categoryMetadata.ts plus per-widget TrendPayload producers.
+          Rendered exclusively through the existing WidgetShell trend chrome; no new UI.
+      - artifact: work-item-age-on-a-day
+        source: >
+          The as-of-date age computation, generalised from the arithmetic already used by
+          GenerateTotalWorkItemAgeByDay (population = WasItemProgressOnDay, age = day − started
+          + 1). Single source of truth for the percentiles card, the Total Work Item Age widget,
+          the aging chart's dot heights, and the previous-period trend. Explicitly NOT the
+          WorkItemAge property, which stays today-anchored because write-back consumes it.
+
+    error_paths:
+      - condition: wait states not configured (Flow Efficiency)
+        recovery: >
+          Widget keeps its "Not configured — define wait states in settings" body and renders no
+          status colour. An absent chip here means "cannot be assessed", never "healthy".
+      - condition: no data in scope (Flow Efficiency)
+        recovery: >
+          Widget keeps its "No data in scope" body and renders no status colour.
+      - condition: no SLE configured, or zero in-progress items (Work Item Age Percentiles RAG)
+        recovery: >
+          Red status carrying the "define an SLE in settings" tip — the same handling the shipped
+          cycle-time percentiles rule already gives both cases, rather than a bespoke neutral
+          state. No divide-by-zero on an empty population.
+      - condition: no blocked-count snapshot before the previous-period boundary
+        recovery: >
+          Baseline counts as zero, so the trend renders a real direction on a day-one instance
+          rather than a neutral placeholder. Both-zero renders flat, never a false arrow, and the
+          percentage delta is omitted rather than dividing by zero.
+      - condition: zero in-progress items on the selected day
+        recovery: >
+          Percentile card renders its empty state, RAG red with the "define an SLE" tip (per the
+          shipped rule's zero-population handling), trend flat. No crash.
+      - condition: empty item set behind a View Data icon
+        recovery: >
+          Icon still renders and the dialog opens empty — consistent with the sibling widgets.
+
+    design_decisions_resolved:
+      - id: D2
+        question: What baseline does the Blocked Items trend compare against?
+        decision: >
+          The boundary stays at startDate − 1 day. The only change is that an absent snapshot at
+          or before that boundary counts as zero instead of returning the no-baseline marker, so
+          a young instance reads "+N since we started recording" rather than a neutral dash.
+      - id: D3
+        question: Is Work Item Age measured as of now, or as of the selected range?
+        decision: >
+          As of the LAST DAY of the selected range, across the percentiles card, the Total Work
+          Item Age widget and the aging chart. Population = items in progress on that day. When
+          the range ends today the numbers are unchanged, so the live view is a regression-pinned
+          special case rather than a redefinition. Supersedes the "never windowed by date range"
+          assumption locked in work-item-age-percentiles.yaml D4 (see feature-delta Changed
+          Assumptions).
+      - id: D4
+        question: How is D3 implemented without disturbing write-back?
+        decision: >
+          Not by changing the WorkItemAge property, which WriteBackValueSource consumes. DESIGN
+          picks the mechanism under a hard constraint that write-back output is unchanged, with a
+          regression test pinning it.
+      - id: D6
+        question: What does the Work Item Age Percentiles RAG benchmark against?
+        decision: >
+          SLE attainment over the in-progress population, reusing calculateSLEStats and the
+          shipped cycle-time bands verbatim: the share of in-progress items whose as-of-endDate
+          age falls within sle.value, compared against the sle.percentile target. Green when the
+          target is met, red when more than 20pp short, amber otherwise. No new band, threshold,
+          or setting — only the population differs from the cycle-time rule.
+          Known bias, accepted: the measure is optimistic, because a young item counts as within
+          the SLE though it may still breach. Validated in slice 04 against a period the coach
+          considers to have deteriorated; if the chip reads green throughout, the framing is wrong
+          for live WIP and the decision re-opens.
+      - id: D7
+        question: How does Flow Efficiency get a status chip?
+        decision: >
+          By moving its self-contained fetch into the BaseMetricsView data layer so
+          buildWidgetFooters can emit its status like every sibling. The existing
+          computeFlowEfficiencyRag rule is reused verbatim; no new thresholds.
+      - id: D10
+        question: Is any of this premium or RBAC-affecting?
+        decision: >
+          No. Every read rides existing metrics paths already guarded by
+          RbacGuard(TeamRead/PortfolioRead). No new authorization surface, no license gate.
