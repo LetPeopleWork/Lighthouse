@@ -25,6 +25,7 @@ feature_context:
   - epic-5306-k8s-productization
   - epic-5306-productization-platform
   - epic-5074-blocked-items
+  - widget-loose-ends
   - flow-overview-named-cycle-time
 
 jobs:
@@ -1794,6 +1795,12 @@ jobs:
     title: Gauge how old my current work-in-progress is, at a glance
     persona: flow-coach
     feature_context: work-item-age-percentiles
+    amended_by: >
+      widget-loose-ends (Story #5508, 2026-07-18) — this job's "RIGHT NOW" framing is narrowed to
+      the today case. Work Item Age is now measured as of the LAST DAY of the selected range
+      (decision D3), so the percentile readout describes the day being looked at; when that day is
+      today the behaviour is unchanged. The emotional and social dimensions are unaffected. See
+      job-flow-coach-see-age-as-of-selected-date.
     job_story: >
       When I review my team's current in-progress work during a standup or flow review,
       I want a percentile readout of how old my WIP is RIGHT NOW — not how long finished
@@ -3134,3 +3141,147 @@ jobs:
         state; write-back has no docs page either (verified: zero grep hits under docs/). Gap: 3 — real
         but bounded: one probe against an endpoint that already exists, plus one status line on a
         surface that already renders connection state.
+
+  - id: job-flow-coach-read-every-widget-the-same-way
+    title: Read every overview widget by the same convention
+    persona: flow-coach
+    job_story: >
+      When I scan the Flow Overview dashboard before a standup or flow review,
+      I want every widget to answer the same three questions — what is the status, how does it
+      compare to last period, and which items is it about,
+      so I can read the whole board at one glance instead of remembering which widgets are
+      complete and which quietly leave a question unanswered.
+    dimensions:
+      functional: >
+        Every Flow Overview widget carries the same chrome: an Act/Observe/Sustain RAG chip, a
+        previous-period trend where one is meaningful, and a View Data drill-through where the
+        number is backed by an item set. WidgetShell already renders all three slots; the gap is
+        widgets that never registered a footer, trend policy, or viewData payload in
+        BaseMetricsView. Closes the gaps on Flow Efficiency (no RAG) and Work Item Age
+        Percentiles (no RAG, no trend).
+      emotional: >
+        Move from "I think that widget is fine but it never shows a colour, so I'm not sure" to
+        trusting that an absent red chip means green, not missing wiring.
+      social: >
+        Be able to say "nothing is red this week" in a review and have it mean something,
+        rather than hedging because two widgets never turn any colour at all.
+    forces:
+      push: >
+        An inconsistent board trains people to distrust it. A widget with no status is
+        indistinguishable from a healthy one at a glance, so the coach either checks every
+        widget manually — defeating the point of an overview — or silently develops a blind spot.
+      pull: >
+        The chrome already exists and is already understood; each gap is a registration in
+        BaseMetricsView, so parity is cheap and immediate.
+      anxiety: >
+        Will a new status chip turn permanently red and get ignored? (Mitigated: the Flow
+        Efficiency rule already exists and is reused verbatim; the Work Item Age rule is
+        validated against real teams before it ships — see slice 04's learning hypothesis.)
+      habit: >
+        Coaches already scan for red chips across the widgets that have them; the incomplete
+        widgets get checked by opening them, or not at all.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 — the dashboard's whole promise is scan-in-one-glance, and a widget with
+        no status silently breaks that promise for the widgets that matter most in a review.
+        Current satisfaction: 2 — most widgets are complete, so the board mostly works; the two
+        gaps are localised rather than pervasive. Gap: 2 — real but bounded, and cheap to close
+        because the chrome and the RAG rules already exist.
+
+  - id: job-flow-coach-drill-into-throughput-and-arrivals
+    title: See which items make up a throughput or arrivals number
+    persona: flow-coach
+    job_story: >
+      When the Total Throughput or Total Arrivals number surprises me — good or bad,
+      I want to open the list of items behind it without leaving the dashboard,
+      so I can tell whether the number reflects real work or a batch of trivial items before I
+      quote it in a review.
+    dimensions:
+      functional: >
+        A View Data table icon on the Total Throughput and Total Arrivals widgets opens the
+        existing WorkItemsDialog with the completed (or arrived) items for the selected range —
+        the same drill-through the neighbouring chart widgets already offer, reusing the same
+        item sources already built in BaseMetricsView's buildViewData.
+      emotional: >
+        Move from "23 items, I suppose that's good" to "23 items, and I can see four of them
+        were one-line config changes" — turning a headline into something defensible.
+      social: >
+        Avoid quoting a throughput number in a review and being unable to answer the first
+        question anyone asks about it.
+    forces:
+      push: >
+        The number provokes "which ones?" every single time, and these two widgets are the only
+        ones that answer it with nothing — the coach has to go to the throughput chart and
+        reconstruct the same set from a different surface.
+      pull: >
+        One click on an icon the coach already uses elsewhere, reusing a dialog they already
+        know, over an item set the page has already loaded.
+      anxiety: >
+        None material — no new data, no new query, no new permission surface; the items are the
+        ones the sibling chart widget already exposes.
+      habit: >
+        Coaches already click the View Data icon on the throughput chart and the WIP widgets;
+        the two summary widgets simply lack the affordance they reach for.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — a genuine friction on a question that comes up constantly, but there is
+        a workaround (the neighbouring chart widget's drill-through covers the same items).
+        Current satisfaction: 1 — the widgets offer no path at all. Gap: 2 — real, and the
+        cheapest fix in the feature: two registrations over item sources that already exist.
+
+  - id: job-flow-coach-see-age-as-of-selected-date
+    title: See how old work was on the date I selected
+    persona: flow-coach
+    job_story: >
+      When I review a past period in a retro and select that date range,
+      I want every Work-Item-Age readout to describe how old the work was on the last day of
+      that range,
+      so I can talk honestly about what was happening then instead of unknowingly reading
+      today's numbers under last month's heading.
+    dimensions:
+      functional: >
+        Work Item Age becomes a function of the selected date: the population is the items in
+        progress on the last day of the range (WasItemProgressOnDay) and each age is measured to
+        that day, not to now. Applies to the Work Item Age Percentiles card, the Total Work Item
+        Age widget, and the dot heights on the Work Item Aging chart. When the range ends today
+        the numbers are unchanged — this is a correctness fix for historical ranges. Computed
+        from existing started/closed dates via the same arithmetic that already backs the
+        total-age-over-time chart; no new persistence. Also the enabling fix for a meaningful
+        previous-period trend on the percentiles widget.
+      emotional: >
+        Move from "these numbers are under a date heading but I'm not sure they're about that
+        date" to being able to quote a past period's WIP age without a caveat.
+      social: >
+        Be the coach whose retro numbers hold up when someone checks them, rather than the one
+        who has to explain that the tool was showing today's ages all along.
+    forces:
+      push: >
+        Selecting a historical range silently produces wrong answers: survivors are aged to
+        today and anything that has since closed disappears from the population entirely. The
+        error is invisible — nothing warns the reader — which makes it worse than a blank.
+      pull: >
+        The arithmetic already exists and is already trusted (GenerateTotalWorkItemAgeByDay), so
+        date-honest age is a generalisation of code the product already ships, not new machinery.
+      anxiety: >
+        Will this change what Lighthouse writes back into Jira/ADO, or move today's numbers?
+        (Mitigated by hard constraints: the WorkItemAge property that feeds write-back is not
+        repointed, and an endDate-is-today regression assertion pins the live view byte-for-byte.)
+      habit: >
+        Practitioners already assume a date-range selector filters everything on the page; the
+        product has been quietly violating that assumption for one metric family.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — this is a correctness defect, not a polish item: a silently wrong number
+        under a date heading is worse than a missing one, and it blocks any honest
+        previous-period comparison for the whole Work-Item-Age family. Current satisfaction: 1 —
+        historical ranges are wrong today with no indication. Gap: 3 — the largest in this
+        feature, and the one the other Work-Item-Age improvements depend on.
