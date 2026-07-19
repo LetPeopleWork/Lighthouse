@@ -754,9 +754,11 @@ describe("useMetricsData", () => {
 			const baselineDay = new Date(startDate);
 			baselineDay.setDate(baselineDay.getDate() - 1);
 
-			expect(new Date(requestedStart).getTime()).toBeLessThanOrEqual(
-				baselineDay.getTime(),
-			);
+			// Exactly one day earlier, not merely "earlier": the widening exists so the
+			// baseline day lands INSIDE the fetched window, and any wider reach would be a
+			// different (unasserted) request. `toBeLessThanOrEqual` passed for an epoch-zero
+			// start too, which is how a broken date arithmetic survived mutation testing.
+			expect(new Date(requestedStart).getTime()).toBe(baselineDay.getTime());
 			expect(new Date(requestedEnd).getTime()).toBe(endDate.getTime());
 		});
 

@@ -99,6 +99,27 @@ describe("computeBlockedTrend — absent baseline counts as zero (Story 5508 sli
 		expect(trend?.percentageDelta).toBe("+66.7%");
 	});
 
+	it("labels each side with the day it was actually measured on, not the range edges (AC5)", () => {
+		// The labels ARE the assumed-vs-measured signal since the tooltip was dropped
+		// (US-03 AC5b): a measured current must name its own recordedAt, and an assumed
+		// baseline must name the boundary day the zero stands for — never a fabricated date.
+		const measured = computeBlockedTrend(
+			[snap("2026-06-30", 3), snap("2026-07-10", 5)],
+			start,
+			end,
+		);
+		expect(measured?.currentLabel).toBe("2026-07-10");
+		expect(measured?.previousLabel).toBe("2026-06-30");
+
+		const assumedBaseline = computeBlockedTrend(
+			[snap("2026-07-10", 5)],
+			start,
+			end,
+		);
+		expect(assumedBaseline?.currentLabel).toBe("2026-07-10");
+		expect(assumedBaseline?.previousLabel).toBe("2026-06-30");
+	});
+
 	it("still picks the LATEST snapshot at or before the boundary (AC1, unchanged)", () => {
 		const history = [
 			snap("2026-06-20", 9),
@@ -210,7 +231,13 @@ describe("computeBlockedTrend — absent baseline counts as zero (Story 5508 sli
 
 		const trend = computeBlockedTrend(history, start, end);
 
-		expect(trend?.direction).not.toBe("up");
-		expect(trend?.direction).not.toBe("down");
+		// Pin the marker, not just the absence of an arrow: a zero-vs-zero comparison also
+		// reads "none", so asserting only the direction let the whole AC2b branch be deleted
+		// without a test noticing (found by mutation testing).
+		expect(trend?.noBaseline).toBe(true);
+		expect(trend?.hintText).toBeTruthy();
+		expect(trend?.currentValue).toBeUndefined();
+		expect(trend?.previousValue).toBeUndefined();
+		expect(trend?.direction).toBe("none");
 	});
 });

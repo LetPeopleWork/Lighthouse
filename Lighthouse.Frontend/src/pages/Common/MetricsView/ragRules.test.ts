@@ -1377,6 +1377,29 @@ describe("computeWorkItemAgePercentilesRag — count-based SLE bands over in-pro
 		).toBe("amber");
 	});
 
+	it("agrees with itself about how many items it is talking about", () => {
+		// The tip is the whole of what the chip says once you hover it; a count that reads
+		// "1 Work Items" or "2 Work Item sits" is the kind of thing nobody reports and
+		// everybody notices. Mutation testing found both singular branches unguarded.
+		const oneAtLimit = computeWorkItemAgePercentilesRag(sle, [14, 2], terms);
+		expect(oneAtLimit.tipText).toContain("1 in-progress Work Item sits");
+
+		const twoAtLimit = computeWorkItemAgePercentilesRag(sle, [14, 14], terms);
+		expect(twoAtLimit.tipText).toContain("2 in-progress Work Items sit");
+
+		const oneBelow = computeWorkItemAgePercentilesRag(sle, [2], terms);
+		expect(oneBelow.tipText).toContain("The in-progress Work Item is younger");
+
+		const severalBelow = computeWorkItemAgePercentilesRag(
+			sle,
+			[2, 3, 4],
+			terms,
+		);
+		expect(severalBelow.tipText).toContain(
+			"All 3 in-progress Work Items are younger",
+		);
+	});
+
 	it("renders green when every in-progress age is below the SLE value (AC2 — Sustain)", () => {
 		const result = computeWorkItemAgePercentilesRag(sle, [1, 5, 13], terms);
 
