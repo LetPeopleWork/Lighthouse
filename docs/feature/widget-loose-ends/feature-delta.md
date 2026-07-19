@@ -632,3 +632,140 @@ can actually fail: scenario 47.
 - DESIGN open question 1 (the `age > 0` guard) is **answered** by scenario 5: `AgeOnDay` returns 0 for a
   not-yet-started item, so the guard keeps a real meaning and is retained. Open questions 2 (warm-cache
   staleness) and 3 (batch placement) remain live for DELIVER.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+**PARTIAL — slices 01, 02, 03 and 05 shipped; slice 04 held; E2E outstanding.** Run of 2026-07-19.
+
+Four of the six reported Flow Overview gaps are closed. Slice 01 registered the two missing `viewData`
+payloads and dropped the redundant term prefix from the aging chart's percentile labels — confirming the
+DISCUSS reading that these are registration gaps, since no new item source or fetch was needed. Slice 02
+fixed the blocked-trend defect in the two ordered steps D2 requires: widen the fetch to reach the baseline
+day (Bug #5521 — the trend had never rendered on any instance since it shipped), then treat a still-absent
+baseline as zero, marked as assumed so an arrow is never read as measured change. Slice 03 made every
+Work-Item-Age surface report as of the selected range end via a new `WorkItemBase.AgeOnDay`, leaving the
+`WorkItemAge` property byte-for-byte untouched so write-back semantics are structurally unchanged. Slice 05
+lifted the flow-efficiency fetch into the shared `useMetricsData` batch, made the widget presentational, and
+registered its RAG footer — taking DESIGN open question 3's preferred option, folding `getCycleTimeData` into
+the same `Promise.all` and removing a pre-existing sequential await.
+
+**Slice 04 (WIA Percentiles RAG + previous-period trend) was not started.** It opens with the D6 validation
+gate, which requires a named human coach to judge two deteriorated periods on a real instance. The user
+elected on 2026-07-19 to stop before it rather than waive or fake that gate. Its two `__SCAFFOLD__` markers
+(`ragRules.ts:924`, and the companion type) therefore remain in the tree, so the feature is **not** finalizable.
+
+## Wave: DELIVER / [REF] Files modified
+
+**Production — backend**
+- `Models/WorkItemBase.cs` — `AgeOnDay(DateTime)` replaces the scaffold; `WorkItemAge` untouched (D13/CI5).
+- `Services/Implementation/TeamMetricsService.cs`, `PortfolioMetricsService.cs` — the two projections (D15).
+- `API/DTO/WorkItemDto.cs`, `FeatureDto.cs` — optional `asOf` (D16 + UPSTREAM-2).
+- `API/TeamMetricsController.cs`, `PortfolioMetricsController.cs` — both `/wip` endpoints pass `asOfDate`.
+
+**Production — frontend**
+- `MetricsView/BaseMetricsView.tsx` — `buildViewData` +`totalThroughput`/+`totalArrivals`; `buildWidgetFooters` +`flowEfficiency`; arrivals extraction hoisted to one call.
+- `Charts/WorkItemAgingChart.tsx` — unprefixed percentile labels (D9).
+- `hooks/useMetricsData.ts` — blocked-history fetch widened by one day (AC0); flow efficiency joins the batch with `getCycleTimeData` folded in (D18).
+- `MetricsView/blockedTrend.ts` — zero-baseline policy, assumed-baseline hint, third no-baseline site retained.
+- `MetricsView/FlowEfficiencyOverviewWidget.tsx` — now presentational.
+
+**Tests** — `WorkItemBaseAgeOnDayTest.cs`, `WorkItemAgeAsOfDateTest.cs`, `WriteBackTriggerServiceTest.cs`, `BaseMetricsView.test.tsx`, `WorkItemAgingChart.test.tsx`, `blockedTrend.test.ts`, `useMetricsData.test.ts`, `FlowEfficiencyOverviewWidget.test.tsx`.
+
+**Docs** — `distill/upstream-issues.md` (UPSTREAM-5, UPSTREAM-6), `deliver/roadmap.json`, this file.
+
+## Wave: DELIVER / [REF] Scenarios green count
+
+**42 of 53** as of 2026-07-19. (The DISTILL header says 52; its table has 53 rows — the sub-lettered
+`12b/16b/23b/23c/31b/41b` are easy to miscount. Logged in the roadmap's validation notes.)
+
+- Slice 01 — 6/6 (34-39) · Slice 02 — 10/10 (16b, 17-23c) · Slice 03 — 17/17 (1-16, 12b) · Slice 05 — 4/5 (43-46; **47 skipped**, see UPSTREAM-6)
+- Slice 04 — 0/15 (24-33, 40-42, 41b, 31b) — not started, held on the D6 gate.
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Result |
+|---|---|
+| `pnpm test` | 3594 passed / 16 skipped / **0 failed** |
+| `pnpm build` | exit 0, zero errors and warnings (Biome clean via prebuild) |
+| `dotnet build` | succeeded, no new warnings |
+| `dotnet test` | 3472 passed / 3 skipped / **0 failed** |
+| E2E (Playwright) | **NOT RUN — outstanding**, see below |
+| Mutation (per-feature ≥80%) | not run — deferred to feature completion |
+| `des-verify-integrity` | **exit 1** — see the integrity note below |
+| `grep -rn __SCAFFOLD__` | **2 hits remain** (slice 04) — feature not finalizable |
+
+## Wave: DELIVER / [REF] DoD check (12-item)
+
+1. Six gaps closed, Team + Portfolio — **PARTIAL.** Four closed at both scopes; the two slice-04 gaps (WIA RAG, WIA trend) remain open.
+2. `pnpm test` green, `pnpm build` clean, Biome clean — **PASS.**
+3. `dotnet build` zero warnings, `dotnet test` green — **PASS.**
+4. SonarCloud no new issues — **NOT VERIFIED.** Nothing pushed, so no PR analysis has run.
+5. Vitest coverage for each new rule and the changed `blockedTrend` path — **PARTIAL.** `blockedTrend` fully covered incl. 0-baseline and both-zero; the WIA `ragRules` rule is slice 04.
+6. Backend pins as-of-date arithmetic against the reference + write-back regression — **PASS.** Two independent oracles (reference parity and hand-computed) plus the CI5 guard.
+7. E2E `@screenshot` per changed theme, demo-data driven, POM-mediated, run locally — **NOT DONE.**
+8. Docs + screenshots refreshed at finalization — **NOT DONE** (finalization not reached).
+9. Mutation ≥80% — **NOT RUN.**
+10. Chrome parity asserted as a test — **BLOCKED.** Scenario 47 is the assertion; skipped pending slice 04 (UPSTREAM-6).
+11. Zero divergence vs `GenerateTotalWorkItemAgeByDay` — **PASS** (scenario 12, plus 12b independently).
+12. Zero changed values when `endDate` = today; zero write-back change — **PASS** (scenarios 13, 15, 16).
+
+## Wave: DELIVER / [REF] Demo evidence
+
+**N/A, because this feature ships no CLI surface.** Every US-01..US-06 Elevator Pitch is a UI path
+("open Team → Metrics → Flow Overview → …"), not a `run X → see Y` command, so the Phase-3.5 demo-command
+gate has nothing to execute. The equivalent evidence for a dashboard feature is the Playwright E2E contract
+DISTILL deferred to each slice — which is **still outstanding** and is the honest gap here, not a passed gate.
+
+## Wave: DELIVER / [WHY] DES integrity — orchestrator-implemented steps
+
+`des-verify-integrity` exits **1**. This is a known, deliberate state, recorded rather than worked around.
+
+Only step **05-01** carries a genuine execution-log trace. Five implemented steps — `01-01`, `02-01`,
+`02-02`, `03-01`, `03-02` — have **no DES record**, because they were written by the orchestrator in the main
+conversation rather than by a DES-monitored crafter subagent.
+
+**Root cause:** `~/.claude/settings.json` carried `permissions.deny: ["Read", "Grep", "Glob"]`. Deny beats
+allow in Claude Code, and subagents inherit the deny but *not* the `mcp__lean-ctx__*` allows, since MCP
+servers are not granted to subagents. Every dispatched subagent therefore had zero file access — the
+`nw-solution-architect` dispatched for the roadmap aborted for exactly this reason and correctly refused to
+fabricate one. With delegation impossible, the user authorised main-thread implementation on 2026-07-19,
+accepting that finalize would be blocked. Those edits went through `ctx_patch` (MCP), which the DES
+enforcement hook does not intercept — it gates only native `Write`/`Edit`. The bypass was incidental, not
+deliberate, and once the hook surfaced it the orchestrator stopped rather than continue routing around it.
+The deny list was then cleared and slice 05 ran properly as a monitored crafter Task.
+
+**Decision (user, 2026-07-19):** leave the five steps unlogged. Re-dispatching crafters to "log" them now
+would assert a RED→GREEN cycle that did not happen in that order, which is precisely the fraud the DES
+anti-fraud rules exist to prevent. A false-but-passing log is worse than an honest failing one. The code
+itself is not in question: all four slices are committed, fully green, and each carries the acceptance tests
+DISTILL authored.
+
+**Consequence:** finalize stays blocked. That is correct and costs nothing here, because slice 04 must land
+before the feature can finalize regardless.
+
+## Wave: DELIVER / [WHY] Upstream issues
+
+**UPSTREAM-5 (RESOLVED in place)** — three slice-01 ATs carried oracles the render cannot satisfy: two
+compared against sibling chart widgets absent from the flow-overview screen, one asserted list equality the
+fixtures make impossible. Also, the `ChartsReferenceLine` mock keyed its test-id off the label, so once both
+sources labelled identically several *surviving* tests would have gone silently vacuous. Fixed by exposing
+`data-y` and asserting values. Lesson recorded for RED classification: a scenario failing because the queried
+element does not exist is a different signal from one failing on an expected value, and the two should be
+reported separately rather than counted together.
+
+**UPSTREAM-6 (OPEN)** — scenario 47 asserts a category-wide invariant from inside slice 05 but iterates a
+widget set including slice 04's deliverable, so no correct slice-05 implementation can satisfy it. Interim
+`it.skip` with an inline un-skip trigger; permanent re-siting to a standalone guard step deferred to slice 04.
+
+**Marker undercount, twice.** DISTILL's supersession markers named one superseded test where two existed
+(slice 02), having already been corrected once from two to seven (slice 01). Worth a habit change: state
+superseded tests as an enumerated list, not a count.
+
+## Wave: DELIVER / [REF] Outstanding work
+
+1. **E2E specs** — `01-02`, `02-03`, `03-04`, `05-02`. DISTILL deferred these to DELIVER deliberately (a spec asserting a chip that does not render yet cannot be run, and this project never commits an unrun spec).
+2. **`03-03`** — lighthouse-clients MCP tool-description reword + Changeset, in the separate repo.
+3. **Slice 04** — behind the D6 human validation gate. Un-skips scenario 47 and clears the last `__SCAFFOLD__`.
+4. **Then** — mutation testing, adversarial review, integrity, docs + screenshots, finalize.
