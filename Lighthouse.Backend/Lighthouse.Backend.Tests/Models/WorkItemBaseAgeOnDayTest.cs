@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.Models
         private static readonly DateTime Jul10 = new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER.")]
         public void AgeOnDay_ItemStartedBeforeTheDayAndStillOpen_ReturnsInclusiveDayCount()
         {
             var item = new WorkItemBase { StartedDate = Jul01, StateCategory = StateCategories.Doing };
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER.")]
         public void AgeOnDay_ItemHasSinceClosed_StillAgesToTheRequestedDay_NotToItsClosedDate()
         {
             // The defect this fixes: WorkItemAge returns 0 for anything not Doing *right now*, so a
@@ -49,7 +47,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER.")]
         public void AgeOnDay_NoStartedDate_FallsBackToCreatedDate()
         {
             var item = new WorkItemBase { CreatedDate = Jul01, StateCategory = StateCategories.Doing };
@@ -58,7 +55,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER.")]
         public void AgeOnDay_StartedDatePreferredOverCreatedDate()
         {
             var item = new WorkItemBase
@@ -72,7 +68,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER.")]
         public void AgeOnDay_StartedOnTheDayItself_ReturnsOne()
         {
             var item = new WorkItemBase { StartedDate = Jul04, StateCategory = StateCategories.Doing };
@@ -81,7 +76,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. PINS DESIGN open question 1.")]
         public void AgeOnDay_StartedAfterTheRequestedDay_ReturnsZero()
         {
             // DESIGN open question 1 (the `age > 0` guard disposition) is resolved HERE: AgeOnDay
@@ -95,7 +89,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER.")]
         public void AgeOnDay_NeitherStartedNorCreatedDate_ReturnsZero()
         {
             var undated = new WorkItemBase { StateCategory = StateCategories.Doing };
@@ -104,7 +97,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI5 / US-04 AC4 guard.")]
         public void AgeOnDay_DoesNotAlterTheWorkItemAgeProperty()
         {
             // CI5: write-back consumes the WorkItemAge property (WriteBackTriggerService.cs:188-205).

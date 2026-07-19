@@ -88,16 +88,22 @@ namespace Lighthouse.Backend.Models
             }
         }
 
-        // __SCAFFOLD__ — DISTILL widget-loose-ends (Story 5508) slice 03. DELIVER replaces this body.
-        //
-        // How old was this item on the given day? Deliberately NOT the same function as the
-        // WorkItemAge property above (DESIGN D13): WorkItemAge is today-anchored and guarded on
-        // StateCategory == Doing because work-tracking write-back consumes it. AgeOnDay carries no
-        // state guard — its callers establish the population via WasItemProgressOnDay before
-        // projecting. Do not refactor one into the other; they encode different questions.
-        //
-        // Contract pinned by WorkItemBaseAgeOnDayTest:
-        //   age = (asOf - (StartedDate ?? CreatedDate)) + 1, and 0 when the item had not started.
+        /// <summary>
+        /// How old was this item on the given day?
+        /// </summary>
+        /// <remarks>
+        /// Deliberately NOT the same function as the <see cref="WorkItemAge"/> property above
+        /// (DESIGN D13): <see cref="WorkItemAge"/> is today-anchored and guarded on
+        /// <see cref="StateCategories.Doing"/> because work-tracking write-back consumes it.
+        /// AgeOnDay carries no state guard — its callers establish the population via
+        /// WasItemProgressOnDay before projecting. Do not refactor one into the other; they encode
+        /// different questions, and repointing the property would change what Lighthouse writes
+        /// back into Jira/ADO.
+        ///
+        /// The arithmetic mirrors BaseMetricsService.GenerateTotalWorkItemAgeByDay, which is the
+        /// already-trusted definition of "age on a day" and drives the over-time chart. Slice 03
+        /// asserts parity against it so a second definition cannot drift into existence.
+        /// </remarks>
         public int AgeOnDay(DateTime asOf)
         {
             var startingReferenceDate = StartedDate ?? CreatedDate;
@@ -106,8 +112,7 @@ namespace Lighthouse.Backend.Models
                 return 0;
             }
 
-            // SCAFFOLD: the day arithmetic is DELIVER's job.
-            return 0;
+            return GetDateDifference(startingReferenceDate.Value, asOf);
         }
 
         private static int GetDateDifference(DateTime start, DateTime end)

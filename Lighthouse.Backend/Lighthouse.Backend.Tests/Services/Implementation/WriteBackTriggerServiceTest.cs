@@ -114,7 +114,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI5 / US-04 AC4.")]
         public async Task TriggerWriteBackForTeam_WorkItemAgeCycleTime_StaysTodayAnchoredAfterTheAsOfDateFix()
         {
             // Story 5508 CI5: slice 03 makes every Work-Item-Age *dashboard* surface a function of the

@@ -100,7 +100,9 @@ namespace Lighthouse.Backend.API
                 var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate).ToList();
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
-                return features.Select(f => new FeatureDto(f, blackoutPeriods));
+                // D16 / UPSTREAM-2: portfolio half of the same fix — without asOf here the portfolio
+                // aging chart and percentile card would disagree for the same range (CI2, US-04 AC3).
+                return features.Select(f => new FeatureDto(f, blackoutPeriods, null, null, asOfDate));
             });
         }
 

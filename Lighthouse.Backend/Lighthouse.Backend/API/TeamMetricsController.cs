@@ -124,7 +124,9 @@ namespace Lighthouse.Backend.API
                 {
                     var isBlocked = blockedItemService.IsBlocked(w, team);
                     var blockedSince = isBlocked ? w.CurrentStateEnteredAt : null;
-                    return new WorkItemDto(w, isBlocked, [], blockedSince);
+                    // D16: the endpoint already receives asOfDate and used to discard it, leaving the
+                    // aging chart's dot heights today-anchored. Pass it so they honour the range.
+                    return new WorkItemDto(w, isBlocked, [], blockedSince, asOfDate);
                 });
             });
         }

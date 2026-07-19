@@ -281,7 +281,11 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(portfolio, $"WorkItemAgePercentiles_{endDate:yyyy-MM-dd}", () =>
             {
-                var ages = GetInProgressFeaturesForPortfolio(portfolio, endDate).Select(f => f.WorkItemAge).Where(age => age > 0).ToList();
+                // D15, portfolio half of CI2 — see the matching comment in TeamMetricsService.
+                // GetInProgressFeaturesForPortfolio is already date-correct (D14); only the
+                // projection was today-anchored. The age > 0 guard is retained and now means
+                // "had not started on that day".
+                var ages = GetInProgressFeaturesForPortfolio(portfolio, endDate).Select(f => f.AgeOnDay(endDate)).Where(age => age > 0).ToList();
 
                 return BuildPercentiles(ages);
             }, logger);

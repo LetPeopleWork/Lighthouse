@@ -98,7 +98,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. US-04 AC1.")]
         public void GetWorkItemAgePercentiles_ItemClosedAfterTheSelectedDay_IsIncludedAndAgedToThatDay()
         {
             // Slice 03 domain example 1: started 01 Jul, closed 06 Jul, range ends 04 Jul -> age 4.
@@ -110,7 +109,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. US-04 AC1.")]
         public void GetWorkItemAgePercentiles_ItemClosedBeforeTheSelectedDay_IsExcluded()
         {
             // Slice 03 domain example 3: closed 06 Jul, range ends 10 Jul -> not in the population.
@@ -124,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. UPSTREAM-1 — see distill/upstream-issues.md.")]
         public void GetWorkItemAgePercentiles_ItemClosedOnTheSelectedDayItself_IsExcluded()
         {
             // WasItemProgressOnDay treats an item as in progress only while ClosedDate > day, so an item
@@ -141,7 +138,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. US-04 AC1 / slice-03 example 5.")]
         public void GetWorkItemAgePercentiles_ItemStartedAfterTheSelectedDay_IsExcluded()
         {
             AddItem("ITEM-FUTURE", started: Jul10, closed: null);
@@ -152,7 +148,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI6 anti-drift.")]
         public void GetWorkItemAgePercentiles_AgreesWithTheTotalWorkItemAgeReferenceAtTheSameDate()
         {
             // CI6: the percentile projection and GetTotalWorkItemAge both claim to describe "the ages of
@@ -173,7 +168,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI6 independent oracle.")]
         public void GetWorkItemAgePercentiles_MatchHandComputedAgesOnTheSelectedDay()
         {
             // CI6, second oracle. Added 2026-07-19 by the DISTILL review gate.
@@ -206,7 +200,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI4 live-view regression.")]
         public void GetWorkItemAgePercentiles_WhenTheRangeEndsToday_MatchesTheTodayAnchoredProperty()
         {
             // CI4 / US-04 AC2: this is a correctness fix for HISTORICAL ranges only. With endDate = today
@@ -288,7 +281,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI2 portfolio parity.")]
         public void GetWorkItemAgePercentiles_FeatureClosedAfterTheSelectedDay_IsIncludedAndAgedToThatDay()
         {
             AddFeature("F-1", started: Jul01, closed: Jul06);
@@ -299,7 +291,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI4 live-view regression, portfolio scope.")]
         public void GetWorkItemAgePercentiles_WhenTheRangeEndsToday_MatchesTheTodayAnchoredProperty()
         {
             var today = DateTime.UtcNow.Date;

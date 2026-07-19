@@ -323,7 +323,15 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(team, $"WorkItemAgePercentiles_{endDate:yyyy-MM-dd}", () =>
             {
-                var ages = GetWipSnapshotForTeam(team, endDate).Select(i => i.WorkItemAge).Where(age => age > 0).ToList();
+                // D15: age as of the LAST DAY of the selected range, not as of today. The population
+                // is already date-correct (GetWipSnapshotForTeam filters through WasItemProgressOnDay,
+                // D14) — only this projection was today-anchored, which zeroed every item that has
+                // closed since and then dropped it via the age > 0 guard.
+                //
+                // The guard is RETAINED (DESIGN open question 1, answered by the AgeOnDay tests): it
+                // now means "the item had not started on that day", which is a real exclusion, rather
+                // than the accidental "not Doing right now" filter it used to be.
+                var ages = GetWipSnapshotForTeam(team, endDate).Select(i => i.AgeOnDay(endDate)).Where(age => age > 0).ToList();
 
                 return BuildPercentiles(ages);
             }, logger);

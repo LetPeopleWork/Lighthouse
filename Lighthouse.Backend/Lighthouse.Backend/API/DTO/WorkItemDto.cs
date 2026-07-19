@@ -15,7 +15,14 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince)
+        /// <param name="asOf">
+        /// D16: when supplied, <see cref="WorkItemAge"/> reports the age the item had on that day
+        /// instead of today. Only the /wip endpoints pass it — they already receive an asOfDate from
+        /// the caller and simply discarded it, which is why the aging chart's dot heights stayed
+        /// today-anchored while the percentile card moved. Every other construction site is unchanged
+        /// by omission, which bounds the blast radius to that one call path.
+        /// </param>
+        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null)
         {
             Name = workItem.Name;
             Id = workItem.Id;
@@ -29,7 +36,7 @@ namespace Lighthouse.Backend.API.DTO
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime;
             NamedCycleTimes = namedCycleTimes;
-            WorkItemAge = workItem.WorkItemAge;
+            WorkItemAge = asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge;
             IsBlocked = isBlocked;
             CurrentStateEnteredAt = workItem.CurrentStateEnteredAt;
             BlockedSince = blockedSince;
