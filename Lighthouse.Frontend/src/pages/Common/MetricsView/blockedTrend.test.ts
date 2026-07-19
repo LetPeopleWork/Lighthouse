@@ -241,3 +241,58 @@ describe("computeBlockedTrend — absent baseline counts as zero (Story 5508 sli
 		expect(trend?.direction).toBe("none");
 	});
 });
+
+/**
+ * Bug 5522 CHARACTERIZATION — interpolated-history contract. The backend now serves a CONTINUOUS
+ * daily series: days with no recorded snapshot carry the last known count forward, so the boundary
+ * day itself is present in the fetched history whenever recording has begun. These cases pin the
+ * selector against that interpolated shape (weekend gap Fri→Mon carried through Sat/Sun). They pass
+ * before and after the backend fix because the selector itself is unchanged — what changes is that
+ * the fetched history now guarantees the boundary-day entry these cases construct by hand.
+ */
+describe("computeBlockedTrend — Bug 5522 interpolated-history contract (characterization)", () => {
+	const snap = (
+		recordedAt: string,
+		blockedCount: number,
+	): BlockedCountSnapshot =>
+		({ recordedAt, blockedCount }) as BlockedCountSnapshot;
+
+	// Selected range starts Saturday (a carried-forward day); boundary = Friday 2026-06-26.
+	const start = new Date("2026-06-27");
+	const end = new Date("2026-06-29");
+
+	it("uses the carried-forward snapshot on the boundary day as the baseline, not a zero", () => {
+		// Interpolated series as the fixed backend serves it: Fri 3 (real), Sat/Sun 3 (carried), Mon 5 (real).
+		const history = [
+			snap("2026-06-26", 3),
+			snap("2026-06-27", 3),
+			snap("2026-06-28", 3),
+			snap("2026-06-29", 5),
+		];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.previousLabel).toBe("2026-06-26");
+		expect(trend?.previousValue).toBe("3");
+		expect(trend?.currentValue).toBe("5");
+		expect(trend?.direction).toBe("up");
+		expect(trend?.noBaseline).toBeFalsy();
+	});
+
+	it("renders flat against a carried-forward plateau instead of a zero baseline", () => {
+		// Constant count 3 carried across the whole gap: trend must read flat-vs-3, never up-vs-0.
+		const history = [
+			snap("2026-06-26", 3),
+			snap("2026-06-27", 3),
+			snap("2026-06-28", 3),
+			snap("2026-06-29", 3),
+		];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.direction).toBe("flat");
+		expect(trend?.previousValue).toBe("3");
+		expect(trend?.currentValue).toBe("3");
+		expect(trend?.noBaseline).toBeFalsy();
+	});
+});

@@ -41,6 +41,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheTrendShowsTheForwardOnlyEmptyState(response);
         }
 
+        // @regression @us-03 (Bug 5522 — days with no recorded snapshot carry the last known count
+        // forward; the seed is the latest snapshot BEFORE the window, and nothing is fabricated ahead
+        // of the first-ever record)
+        [Test]
+        public async Task The_blocked_trend_interpolates_missing_days_from_the_last_known_count()
+        {
+            var team = GivenATeam();
+            GivenBlockedCountSnapshots(team, new List<(DateOnly Date, int Count)>
+            {
+                (DateOnly.FromDateTime(SyncDay.AddDays(-22)), 2),
+                (DateOnly.FromDateTime(SyncDay.AddDays(-14)), 6),
+            });
+
+            var response = await WhenTheDeliveryLeadOpensTheBlockedTrend(team);
+
+            ThenTheTrendInterpolatesMissingDaysFromTheLastKnownCount(response);
+        }
+
         // @deferred @us-03 (UC-2: per-work-item-TYPE historical filtering is an additive follow-up;
         // the total-count forward-only snapshot cannot reconstruct a per-type split after the fact.
         // Recorded in distill/upstream-issues.md — NOT delivered in this DISTILL scope.)
