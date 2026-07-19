@@ -66,9 +66,6 @@ const noBaselineTrend = (): TrendPayload => ({
 const dayLabelOf = (time: number): string =>
 	new Date(time).toISOString().slice(0, 10);
 
-const ASSUMED_BASELINE_HINT =
-	"No blocked-count snapshot exists on or before the day before this range, so the previous period is counted as zero. This is the change since recording began, not a measured comparison.";
-
 /**
  * B3 (slice-06): previous-period trend for the Blocked overview widget.
  *
@@ -83,9 +80,10 @@ const ASSUMED_BASELINE_HINT =
  * that fix the baseline day sat one day outside the fetched history on every instance, so this path
  * would have fired everywhere and permanently hidden the true comparison.
  *
- * Because the zero is ASSUMED rather than measured, that case carries `hintText` which the measured
- * case does not (AC5b) — an arrow must never be read as four items having become blocked when the
- * truth is "we have no record before this".
+ * Because the zero is ASSUMED rather than measured, that case originally carried an explanatory
+ * `hintText` the measured case did not (AC5b). The tooltip was removed on 2026-07-19 by user
+ * decision after manual verification — bare numbers only. `previousLabel` now carries the
+ * assumed/measured distinction alone: it states the boundary DAY, never a fabricated `recordedAt`.
  *
  * The one remaining no-baseline case is a history that holds nothing at or before `endDate` (AC2b):
  * records exist but the selected range predates all of them, so there is no measurement at EITHER
@@ -122,6 +120,5 @@ export function computeBlockedTrend(
 		previousLabel: baseline?.recordedAt ?? dayLabelOf(boundary),
 		previousValue: String(baselineCount),
 		...(percentageDelta ? { percentageDelta } : {}),
-		...(baseline ? {} : { hintText: ASSUMED_BASELINE_HINT }),
 	};
 }

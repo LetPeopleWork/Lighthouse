@@ -160,26 +160,42 @@ describe("computeBlockedTrend — absent baseline counts as zero (Story 5508 sli
 	});
 
 	/**
-	 * AC5b — added 2026-07-19 by the second-pass review gate.
+	 * AC5b — added 2026-07-19 by the second-pass review gate, SUPERSEDED the same day by user
+	 * decision during manual verification on a running instance. AC5b originally required the
+	 * assumed baseline to announce itself through an explanatory `hintText` tooltip; the product
+	 * owner reviewed it live and removed the tooltip as UI bloat ("no need to bloat this, just show
+	 * bare numbers"). The trend now renders bare numbers in both cases.
 	 *
-	 * D2 substitutes an assumed zero for an absent measurement. That is defensible only for a
-	 * genuinely young instance, and only if the user can tell the two apart: a coach who reads "+4"
-	 * must not believe four items became blocked when the truth is "we have no record before this".
-	 * The prose in D2 and the US-03 pitch both promise this ("+N since we started recording"), but
-	 * until now nothing pinned it, so DELIVER could ship a bare arrow and still be green.
+	 * What survives is `previousLabel` (AC5), which is now the SOLE signal separating an assumed
+	 * baseline from a measured one — hence this test, rewritten to pin that distinction rather than
+	 * deleted. Measured: the label is a real `recordedAt` drawn from the history. Assumed: the label
+	 * is the previous-period boundary DAY, which appears nowhere in the history and is never a
+	 * fabricated `recordedAt`.
+	 *
+	 * Known residual: when a measured baseline's `recordedAt` happens to fall exactly ON the boundary
+	 * day, the two labels are byte-identical and the distinction is invisible. The tooltip used to
+	 * cover that overlap; nothing does now. Recorded here rather than silently dropped.
 	 */
-	it("marks the synthetic baseline as assumed, so an arrow is never read as a measured change (AC5b)", () => {
-		const assumed = computeBlockedTrend([snap("2026-07-14", 4)], start, end);
-		const measured = computeBlockedTrend(
-			[snap("2026-06-30", 3), snap("2026-07-14", 4)],
-			start,
-			end,
+	it("distinguishes an assumed baseline from a measured one through previousLabel alone (AC5, ex-AC5b)", () => {
+		const assumedHistory = [snap("2026-07-14", 4)];
+		const measuredHistory = [snap("2026-06-28", 3), snap("2026-07-14", 4)];
+
+		const assumed = computeBlockedTrend(assumedHistory, start, end);
+		const measured = computeBlockedTrend(measuredHistory, start, end);
+
+		// Measured: the label IS one of the history's own recordedAt values.
+		expect(measuredHistory.map((s) => s.recordedAt)).toContain(
+			measured?.previousLabel,
+		);
+		// Assumed: the label is the boundary day, present nowhere in the history.
+		expect(assumed?.previousLabel).toBe("2026-06-30");
+		expect(assumedHistory.map((s) => s.recordedAt)).not.toContain(
+			assumed?.previousLabel,
 		);
 
-		// The assumed case carries a signal the measured case does not.
-		expect(assumed?.hintText).toBeDefined();
-		expect(assumed?.hintText).not.toBe(measured?.hintText);
-		expect(assumed?.hintText?.length).toBeGreaterThan(0);
+		// Neither case carries a tooltip any more — bare numbers only (user decision, 2026-07-19).
+		expect(assumed?.hintText).toBeUndefined();
+		expect(measured?.hintText).toBeUndefined();
 	});
 
 	/**
