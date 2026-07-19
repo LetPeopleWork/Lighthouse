@@ -15,7 +15,7 @@ Following a brief overview over the various metric widgets that are available in
 # Details
 Widgets that are backed by a concrete set of work items include a **View Data** button (table icon) in their header. Clicking it opens a dialog showing the full set of work items that feed the widget. This gives you quick access to the underlying data without navigating away.
 
-Summary widgets such as **Total Throughput**, **Total Arrivals**, **Feature Size Percentiles**, and **Predictability Score** focus on rollup values and trend comparisons instead of item-level drill-ins.
+**Total Throughput** and **Total Arrivals** carry a **View Data** button too: it lists the items closed (respectively started) in the selected date range, so the rollup number can always be traced back to the items behind it. **Feature Size Percentiles** and **Predictability Score** remain rollup-only — they summarize a distribution rather than a concrete item set.
 
 Some charts also support **chart-specific drill-ins**: clicking a bar, bubble, data point, or pie segment opens a dialog scoped to that particular subset (e.g. items for a single day or a specific parent feature). These context-specific interactions remain unchanged.
 
@@ -52,9 +52,9 @@ Flow Overview widgets display trend indicators comparing the current date range 
 | Method | Widgets | How it works |
 |---|---|---|
 | **Snapshot compare** | WIP Overview, Features Worked On (Teams), Total Work Item Age | Compares the snapshot value at the end date against the snapshot value at the start date. |
-| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Feature Size Percentiles, Blocked Overview | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
+| **Previous period** | Total Throughput, Total Arrivals, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Feature Size Percentiles, Blocked Overview | Compares the aggregate for the selected date range against the same-length window immediately preceding the start date. |
 
-Blocked Overview compares the current blocked count against the blocked-count snapshot on the last day of the previous period. Because blocked-count history is recorded going forward, a freshly-recording instance may not have a snapshot before the previous-period boundary yet — in that case the trend shows a neutral `—` with a hint, not a fabricated zero.
+Blocked Overview compares the current blocked count against the blocked-count snapshot on the day before the selected range starts. Because blocked-count history is recorded going forward, a freshly-recording instance may have no snapshot on that boundary day yet; the trend then treats the baseline as **zero**, so a day-one instance reads "+N since we started recording" rather than a dash that looks like breakage. The comparison always names the boundary day it stands for, so an assumed baseline is never dressed up as a measured one. The neutral `—` is reserved for the one case where nothing can honestly be compared: the history holds no record at or before the selected end date at all, meaning recording began after the range you are looking at.
 
 For percentile widgets (Cycle Time Percentiles and Feature Size Percentiles), the trend tooltip shows a per-percentile breakdown in `previous → **current**` format with the current-period values emphasized.
 
@@ -90,16 +90,16 @@ Use the **View Data** button to open the full list of in-progress items that cur
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Work Item Age |
-| **Affected by Filtering** | No |
+| **Affected by Filtering** | Yes — snapshot as of selected end date |
 
-This widget shows how many items are currently blocked. The status is driven by the **count** of blocked items — the target is always zero, so even a single blocked item raises a warning. It also shows a previous-period trend (see [Trend Indicators](#trend-indicators)).
+This widget shows how many items were blocked on the last day of the selected range. The status is driven by the **count** of blocked items — the target is always zero, so even a single blocked item raises a warning. It also shows a previous-period trend (see [Trend Indicators](#trend-indicators)).
 
 ![Blocked Overview](../assets/features/metrics/blockedOverview.png)
 
 The target is always zero blocked items. Use the **View Data** button to see all currently blocked items.
 
 {: .important}
-The blocked **count** is **not affected** by date filtering — it always shows the **current** blocked state. The trend indicator, however, compares against the previous period of the selected date range (see [Trend Indicators](#trend-indicators)).
+The blocked **count** is a snapshot as of the **last day of the selected date range**. On a range ending today that is the current blocked state; on a historical range Lighthouse answers "was this item blocked *then*" from its blocked-transition history rather than from today's tags and state, so an item unblocked since is not retroactively reported as blocked. Items that predate blocked-history capture fall back to the live rule, which is the only answer available for them. The trend indicator compares against the previous period of the selected date range (see [Trend Indicators](#trend-indicators)).
 
 ## Status Indicator
 
@@ -138,16 +138,16 @@ The status reflects how long the oldest currently-blocked item has been blocked,
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Work Item Age |
-| **Affected by Filtering** | No |
+| **Affected by Filtering** | Yes — snapshot as of selected end date |
 
-This widget shows how many in-progress items have been sitting in their current state longer than the configured **staleness threshold** — items that may be silently stuck even though no one flagged them.
+This widget shows how many in-progress items had been sitting in their current state longer than the configured **staleness threshold** — items that may be silently stuck even though no one flagged them.
 
 ![Stale Items Overview](../assets/features/metrics/staleOverview.png)
 
 The staleness threshold (in days) is configured in your Team or Portfolio settings. Blocked items are **not** counted here — they are reported by the [Blocked Overview](#blocked-overview) instead, so a single item is never counted as both blocked and stale. The target is always zero stale items. Use the **View Data** button to see all currently stale items.
 
 {: .important}
-This widget is **not affected** by date filtering. It always reflects the **current** stale state.
+Staleness is measured against the **last day of the selected date range**, not against today. On a historical range an item that sat still is judged by how long it had been still *on that end date*, so closing a range in the past no longer makes everything in it read as stale.
 
 ## Status Indicator
 
@@ -206,6 +206,7 @@ Unlike most widgets, a **higher** value is better here, so the thresholds are in
 
 | Status | Condition |
 |---|---|
+| 🔴 Act | No wait states are configured — the status reads Act with a *define wait states in settings* prompt, the same pattern used when an SLE is missing elsewhere. |
 | 🔴 Act | Flow efficiency is below 40% — waiting dominates; investigate the wait states draining your value-adding time. |
 | 🟡 Observe | Flow efficiency is between 40% and 60% — watch which wait states hold work the longest. |
 | 🟢 Sustain | Flow efficiency is at or above 60% — a healthy balance between active and waiting time. |
@@ -456,8 +457,7 @@ This overview widget shows the total number of items closed in the selected date
 
 The trend indicator compares the selected date range against the immediately preceding period of the same length.
 
-{: .note}
-This widget is a summary view. For item-level detail and daily drill-ins, use the [Throughput Run Chart](#throughput-run-chart).
+Use the **View Data** button to list the items closed in the selected range. For a day-by-day breakdown, use the [Throughput Run Chart](#throughput-run-chart).
 
 ## Status Indicator
 
@@ -482,8 +482,7 @@ This overview widget shows the total number of items started in the selected dat
 
 The trend indicator compares the selected date range against the immediately preceding period of the same length.
 
-{: .note}
-This widget is a summary view. For day-level detail and batching patterns, use the [Arrivals Run Chart](#arrivals-run-chart).
+Use the **View Data** button to list the items started in the selected range. For day-level detail and batching patterns, use the [Arrivals Run Chart](#arrivals-run-chart).
 
 ## Status Indicator
 
@@ -706,6 +705,24 @@ The same percentiles can be overlaid as reference lines on the [Work Item Aging 
 
 When no work is in progress, the widget shows an empty state instead of percentile values.
 
+{: .note}
+On a historical date range the widget reports the ages the items had **on the last day of that range**, not their age today — so a range that ends three weeks ago answers "how old was the work back then", which is the only reading that makes the number comparable to the rest of the range.
+
+The trend footer compares the **highest configured percentile** against the same-length window immediately preceding the selected range, and is labelled *Highest Work Item Age Percentile* to distinguish it from the widget's own percentile list.
+
+## Status Indicator
+
+The status bands on how many in-progress items have already outlived your [Service Level Expectation](../teams/edit.html), using the SLE's **day value** only. Counts, not percentages: at the sizes this widget usually sees, a percentage over three or four items is noise rather than signal.
+
+| Status | Condition |
+|---|---|
+| 🔴 Act | No SLE is configured, *or* more than one in-progress item is older than the SLE day value. Act on the oldest ones first. |
+| 🟡 Observe | Exactly one item is older than the SLE day value, *or* one or more items sit exactly on it. |
+| 🟢 Sustain | Every in-progress item is younger than the SLE day value — or nothing is in progress in this range, which is not a bad state (an empty board is already reported by the [WIP Overview](#wip-overview)). |
+
+{: .note}
+The bands deliberately do **not** scale with WIP: two breaching items read Act whether you are running three items or forty.
+
 # Feature Size Percentiles
 
 |--------------|-------------------------|
@@ -870,7 +887,7 @@ For example, if you have:
 Your Total Work Item Age would be 10 days.
 
 {: .important}
-This widget is **not affected** by date filtering. It always shows the **current** total age of all items in progress.
+The widget reports the total age as of the **last day of the selected date range**. On a range ending today that is the current total; on a historical range it is the total the items carried on that end date, so the number lines up with the rest of the range instead of silently jumping to today.
 
 ## Status Indicator
 
