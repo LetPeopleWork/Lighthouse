@@ -43,25 +43,13 @@ describe("computeBlockedTrend — previous-period trend (B3)", () => {
 		expect(trend?.direction).toBe("flat");
 	});
 
-	it("marks no-baseline (not a direction) when no snapshot exists at or before the prior-period boundary", () => {
-		const history = [snap("2026-06-14", 9)];
-
-		const trend = computeBlockedTrend(history, start, end);
-
-		expect(trend?.direction).toBe("none");
-		expect(trend?.noBaseline).toBe(true);
-		expect(trend?.hintText).toContain("No previous-period baseline yet");
-	});
-
-	it("marks no-baseline for empty or null history", () => {
-		for (const empty of [
-			computeBlockedTrend([], start, end),
-			computeBlockedTrend(null, start, end),
-		]) {
-			expect(empty?.direction).toBe("none");
-			expect(empty?.noBaseline).toBe(true);
-		}
-	});
+	// Two cases were DELETED here by Story 5508 slice 02, superseded by design (D2), not regressed:
+	//   - "marks no-baseline (not a direction) when no snapshot exists at or before the prior-period
+	//     boundary" — that path now yields a zero baseline and a real direction (AC2).
+	//   - "marks no-baseline for empty or null history" — now flat (AC3).
+	// The block below replaces both. Note the inline marker in the slice-02 docstring named only the
+	// second; the first was superseded too. The `noBaseline` field stays on TrendPayload for other
+	// widgets, and the marker path itself survives for AC2b.
 });
 
 /**
@@ -91,7 +79,7 @@ describe("computeBlockedTrend — previous-period trend (B3)", () => {
  *
  * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
  */
-describe.skip("computeBlockedTrend — absent baseline counts as zero (Story 5508 slice 02)", () => {
+describe("computeBlockedTrend — absent baseline counts as zero (Story 5508 slice 02)", () => {
 	const snap = (
 		recordedAt: string,
 		blockedCount: number,

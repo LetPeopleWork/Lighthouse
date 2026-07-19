@@ -63,14 +63,33 @@ const noBaselineTrend = (): TrendPayload => ({
 	hintText: NO_BASELINE_HINT,
 });
 
+const dayLabelOf = (time: number): string =>
+	new Date(time).toISOString().slice(0, 10);
+
+const ASSUMED_BASELINE_HINT =
+	"No blocked-count snapshot exists on or before the day before this range, so the previous period is counted as zero. This is the change since recording began, not a measured comparison.";
+
 /**
  * B3 (slice-06): previous-period trend for the Blocked overview widget.
  *
  * Compares the current blocked count against the BlockedCountSnapshot on the LAST DAY of the previous
  * period — where "period" is the dashboard's selected [startDate, endDate] range — and returns a
- * TrendPayload for the EXISTING WidgetShell trend chrome (no new UI). When no snapshot exists at or
- * before the previous-period boundary, returns a no-baseline marker so the chrome shows a neutral "—"
- * hint instead of nothing (and never a fabricated zero-delta).
+ * TrendPayload for the EXISTING WidgetShell trend chrome (no new UI).
+ *
+ * Story 5508 slice 02 (D2, re-decided after UPSTREAM-4): an ABSENT baseline now counts as a blocked
+ * count of ZERO rather than returning the neutral no-baseline marker, so a day-one instance reads
+ * "+N since we started recording" instead of a dash that looks like breakage. That substitution is
+ * only defensible because the fetch window was widened first (US-03 AC0, `useMetricsData`) — before
+ * that fix the baseline day sat one day outside the fetched history on every instance, so this path
+ * would have fired everywhere and permanently hidden the true comparison.
+ *
+ * Because the zero is ASSUMED rather than measured, that case carries `hintText` which the measured
+ * case does not (AC5b) — an arrow must never be read as four items having become blocked when the
+ * truth is "we have no record before this".
+ *
+ * The one remaining no-baseline case is a history that holds nothing at or before `endDate` (AC2b):
+ * records exist but the selected range predates all of them, so there is no measurement at EITHER
+ * end. Assuming zero there would be fabrication rather than a day-one assumption.
  *
  * Pure selector: read-only over the already-loaded BlockedCountSnapshot history. No side effects.
  */
@@ -79,33 +98,30 @@ export function computeBlockedTrend(
 	startDate: Date,
 	endDate: Date,
 ): TrendPayload | undefined {
-	if (!history || history.length === 0) {
-		return noBaselineTrend();
-	}
-
+	const snapshots = history ?? [];
 	const boundary = startDate.getTime() - ONE_DAY_MS;
-	const baseline = latestAtOrBefore(history, boundary);
-	if (!baseline) {
+
+	const current = latestAtOrBefore(snapshots, endDate.getTime());
+	if (!current && snapshots.length > 0) {
+		// AC2b: recording demonstrably began after the selected range ended.
 		return noBaselineTrend();
 	}
 
-	const current = latestAtOrBefore(history, endDate.getTime());
-	if (!current) {
-		return noBaselineTrend();
-	}
+	const baseline = latestAtOrBefore(snapshots, boundary);
 
-	const percentageDelta = formatDelta(
-		current.blockedCount,
-		baseline.blockedCount,
-	);
+	const currentCount = current?.blockedCount ?? 0;
+	const baselineCount = baseline?.blockedCount ?? 0;
+	const percentageDelta = formatDelta(currentCount, baselineCount);
 
 	return {
-		direction: directionOf(current.blockedCount, baseline.blockedCount),
+		direction: directionOf(currentCount, baselineCount),
 		metricLabel: METRIC_LABEL,
-		currentLabel: current.recordedAt,
-		currentValue: String(current.blockedCount),
-		previousLabel: baseline.recordedAt,
-		previousValue: String(baseline.blockedCount),
+		currentLabel: current?.recordedAt ?? dayLabelOf(endDate.getTime()),
+		currentValue: String(currentCount),
+		// Never a fabricated recordedAt: state the boundary DAY the zero stands for (AC5).
+		previousLabel: baseline?.recordedAt ?? dayLabelOf(boundary),
+		previousValue: String(baselineCount),
 		...(percentageDelta ? { percentageDelta } : {}),
+		...(baseline ? {} : { hintText: ASSUMED_BASELINE_HINT }),
 	};
 }
