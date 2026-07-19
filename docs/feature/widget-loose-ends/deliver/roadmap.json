@@ -1,0 +1,401 @@
+{
+  "roadmap": {
+    "project_id": "widget-loose-ends",
+    "created_at": "2026-07-19T07:37:03Z",
+    "total_steps": 14,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Story #5508 'Cleanup Widget lose Ends'. Close six Flow Overview widget gaps across five slices. Four are registration gaps — a widget that never fed WidgetShell its RAG footer, viewData payload or trend policy. Two are correctness defects: the Blocked trend's baseline day sits one day outside its own fetch window so the trend has never rendered on any instance (Bug #5521), and every Work-Item-Age surface ages to today regardless of the selected range. All acceptance scenarios were authored by DISTILL in commit 6b3f61f7 as skipped RED scaffolds (NUnit [Ignore], Vitest describe.skip); DELIVER un-skips them, replaces two __SCAFFOLD__ production stubs, and deletes the expectations DISTILL flagged as superseded by design."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 - View Data on Throughput/Arrivals + aging label",
+      "description": "Register two missing viewData payloads and drop the redundant term prefix from the Work Item Age percentile line labels. Frontend only, no backend.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "buildViewData keys and unprefixed percentile labels",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "Scenarios 34-39: Total Throughput exposes completed items with the cycle-time highlight; Total Arrivals exposes arrival items; empty range still offers the drill-through; aging chart labels WIA lines with the percentage alone; cycle-time labels unchanged; both sources label identically",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx"
+          ],
+          "deps": [],
+          "criteria": [
+            "Un-skip the slice-01 describes in BaseMetricsView.test.tsx and WorkItemAgingChart.test.tsx; scenarios 34-39 green.",
+            "buildViewData gains totalThroughput and totalArrivals reusing the sibling widgets' existing item sources; no new endpoint, query or fetch.",
+            "All SEVEN superseded reference-line-Work Item Age expectations updated to unprefixed test-ids per the inline marker.",
+            "Holds at Portfolio scope as well as Team scope (CI2).",
+            "pnpm test green; pnpm build zero errors and warnings; conventional commit feat(metrics)."
+          ],
+          "implementation_notes": "The item sources already exist at the sibling throughput/arrivals entries around BaseMetricsView.tsx:630-650 — thread the existing prop, never fetch. The seven superseded tests are named individually in the marker at WorkItemAgingChart.test.tsx:1413-1419; updating only some leaves the rest asserting a label that no longer renders, which reads as a regression rather than the designed supersession. Slice 01's learning hypothesis FIRES if wiring buildViewData needs a NEW item source or fetch — if that happens, STOP and report, because it means the five 'just wiring' gaps are not uniform and slices 03-05 need re-estimating."
+        },
+        {
+          "id": "01-02",
+          "name": "E2E for the View Data drill-through",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/",
+          "scenario_name": "Slice 01 AC7: the View Data icon on Total Throughput opens a populated WorkItemsDialog for a demo team",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/",
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemsDialog.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "deps": ["01-01"],
+          "criteria": [
+            "Spec drives seeded demo data through a Page Object; no inline page.locator() in the spec body.",
+            "Spec and any new POM locator are RUN locally against a running Lighthouse before commit.",
+            "Test passes locally; conventional commit test(metrics)."
+          ],
+          "implementation_notes": "Standing project rules: E2E goes through POMs, is driven by seeded demo data, and a spec or POM locator is NEVER committed unrun (ci-learnings 2026-05-17). Prefer extending an existing Flow Overview POM over adding a new one. Watch ci-learnings 2026-07-05: reusing a shared fixed-test-id component on a page that already hosts it breaks the pre-existing page-global POM with a strict-mode two-element violation."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 - Blocked trend fetch window then zero baseline",
+      "description": "Two ordered changes. Widen the blocked-count history fetch so the baseline day is inside it, THEN treat a still-absent baseline as zero. The order is mandatory.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Widen blocked-count history fetch by one day",
+          "test_file": "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+          "scenario_name": "Scenario 16b / US-03 AC0: blocked-count history is fetched from startDate minus one day, so a baseline recorded on that day is found",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts"
+          ],
+          "deps": [],
+          "criteria": [
+            "Un-skip the it.skip at useMetricsData.test.ts:676 asserting the fetch starts one day before the range start; green.",
+            "getBlockedCountHistory is called with startDate minus one day; no new endpoint and no contract change.",
+            "Holds for both Team and Portfolio entities (CI2).",
+            "pnpm test green; pnpm build zero errors and warnings; conventional commit fix(metrics)."
+          ],
+          "implementation_notes": "THIS STEP MUST LAND BEFORE 02-02. Root cause (UPSTREAM-4, Bug #5521): useMetricsData.ts:381-388 fetches with the dashboard's own [startDate, endDate]; TeamMetricsController.cs:459-461 and PortfolioMetricsController.cs:449 filter RecordedAt >= start; blockedTrend.ts then looks for its baseline at startDate - 1 day, exactly one day outside the fetched window. latestAtOrBefore is undefined BY CONSTRUCTION, so the trend has never rendered on any instance for any range. Every existing selector test hand-builds a history that already contains a pre-boundary snapshot, which is why a fully green selector suite sat over a broken widget — that is precisely why this assertion belongs at the useMetricsData seam and nowhere else."
+        },
+        {
+          "id": "02-02",
+          "name": "Absent baseline counts as zero",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.test.ts",
+          "scenario_name": "Scenarios 17-23c / US-03 AC1-AC5b: a real boundary snapshot still wins; latest at-or-before still wins; missing baseline gives zero with a direction; both zero gives flat; empty history gives flat; zero baseline omits the percentage; the synthetic baseline is labelled without a fabricated recordedAt and marked assumed; nothing at or before endDate renders no direction",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.test.ts"
+          ],
+          "deps": ["02-01"],
+          "criteria": [
+            "Un-skip the slice-02 describe; all nine scenarios green; the boundary stays at startDate minus ONE_DAY_MS.",
+            "DELETE the superseded empty-or-null-history no-baseline case per the inline marker; the noBaseline field itself stays on TrendPayload.",
+            "The synthetic zero baseline is identifiable as assumed and never carries a fabricated recordedAt (AC5b).",
+            "Third noBaselineTrend site retained: nothing at or before endDate renders NO direction, not a zero-baseline arrow (AC2b).",
+            "pnpm test green; pnpm build zero errors and warnings; conventional commit fix(metrics)."
+          ],
+          "implementation_notes": "@sizing-review-needed (9 scenarios) — judged correctly sized: all nine are variations on one selector's baseline policy and none goes green independently of the others. Shipping this step WITHOUT 02-01 would make every instance read '+N since we started recording' forever and hide the real comparison — a visibly broken widget traded for an invisibly wrong one, which is the exact failure mode this feature exists to remove. UPSTREAM-3: blockedTrend.ts has THREE noBaselineTrend() return sites, not two; the third (nothing at or before endDate) is deliberately KEPT — with no measurement at either end there is nothing to compare and an arrow would be fabrication."
+        },
+        {
+          "id": "02-03",
+          "name": "E2E for the Blocked directional arrow",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/BlockedItems.spec.ts",
+          "scenario_name": "Slice 02 AC7: a demo team with blocked items shows a directional arrow on the Blocked widget, not the neutral placeholder",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/BlockedItems.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "deps": ["02-02"],
+          "criteria": [
+            "Spec drives seeded demo data through a Page Object; asserts the rendered direction, never a pixel.",
+            "Spec and any new POM locator are RUN locally before commit.",
+            "Test passes locally; conventional commit test(metrics)."
+          ],
+          "implementation_notes": "This is the first end-to-end proof that Bug #5521 is actually fixed. The selector suite was green throughout the defect's entire life, so a selector-level pass proves nothing here — assert against a real seeded instance."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 - Work Item Age as of the selected endDate",
+      "description": "Every Work-Item-Age surface reports the age of the population in progress on the last day of the selected range, aged to that day. Backend-weighted.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "WorkItemBase.AgeOnDay replaces the scaffold",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs",
+          "scenario_name": "Scenarios 1-7: inclusive day count for an open item; an item closed since still ages to the requested day; StartedDate falls back to CreatedDate and is preferred when both exist; started on the day reads 1; started after the day reads 0; neither date reads 0; the WorkItemAge property is undisturbed",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs"
+          ],
+          "deps": [],
+          "criteria": [
+            "Replace the __SCAFFOLD__ body at WorkItemBase.cs:91 and remove the marker; un-skip scenarios 1-7; all green.",
+            "AgeOnDay carries NO StateCategory Doing guard, and WorkItemAge is NOT refactored to delegate to it (D13).",
+            "The WorkItemAge property is byte-for-byte unchanged, verified by scenario 7 (CI5).",
+            "dotnet build zero warnings; dotnet test green; conventional commit feat(metrics)."
+          ],
+          "implementation_notes": "D13: the two methods are NOT the same function with a different date. WorkItemAge carries a StateCategory == Doing guard because it answers 'how old is this item right now'; AgeOnDay must not, because callers establish the population via WasItemProgressOnDay BEFORE projecting. The constraint is structural rather than disciplinary: WriteBackTriggerService.cs:188-205 reads the WorkItemAge property, so an unmodified property IS an unmodified write-back. Reuse the GenerateTotalWorkItemAgeByDay arithmetic (BaseMetricsService.cs:808): age = (asOf - (StartedDate ?? CreatedDate)) + 1. Sonar watch from ci-learnings: NUnit4002 (Is.EqualTo(0) must be Is.Zero on new code), NUnit2046 (Assert.That(collection.Count, ...) must use Has.Count.EqualTo), NUnit2056 (prefer Assert.EnterMultipleScope over Assert.Multiple)."
+        },
+        {
+          "id": "03-02",
+          "name": "Date-correct projections and asOf DTO threading",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItemAgeAsOfDateTest.cs",
+          "scenario_name": "Scenarios 8-16: percentiles include an item closed after the selected day aged to it, exclude items closed before or ON that day, exclude items started after it, agree with the GenerateTotalWorkItemAgeByDay reference, match hand-computed ages 1/4/4, match the today-anchored property when endDate is today, hold for Portfolio features, and leave write-back emitting today-anchored age",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkItemDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItemAgeAsOfDateTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs"
+          ],
+          "deps": ["03-01"],
+          "criteria": [
+            "Change exactly two projections — TeamMetricsService.cs:326 and PortfolioMetricsService.cs:284 — to select AgeOnDay(endDate) (D15).",
+            "Optional asOf threads through WorkItemDto AND FeatureDto to both /wip endpoints; other construction sites stay today-anchored by omission (D16, UPSTREAM-2).",
+            "Do NOT touch GetWipSnapshotForTeam, GetInProgressFeaturesForPortfolio or WasItemProgressOnDay — the population is already date-correct (D14).",
+            "The age > 0 guard is RETAINED and its disposition commented, since its present meaning is an accident of the StateCategory check D13 removes.",
+            "dotnet build zero warnings; dotnet test green; conventional commit fix(metrics)."
+          ],
+          "implementation_notes": "@sizing-review-needed (10 scenarios) — judged correctly sized: one projection change applied symmetrically across Team and Portfolio, whose scenarios are the same assertion at both scopes plus the two oracles. TWO ORACLES, deliberately: scenario 12 pins against GenerateTotalWorkItemAgeByDay so a second definition cannot drift into existence, and 12b pins hand-computed ages {1,4,4} totalling 9 INDEPENDENTLY of that reference — a reference-only oracle lets two definitions that are wrong in the same way still agree. Scenario 10 (item closed ON the selected day is EXCLUDED) encodes UPSTREAM-1: WasItemProgressOnDay tests ClosedDate > day strictly, and an item that finished that day was not ageing through it. Scenarios 10 and 11 assert the four 50/70/85/95 entries with ZERO VALUES, not an empty list — BuildPercentiles always emits four entries. OPEN QUESTION D17 BELONGS TO THIS STEP: confirm whether the metrics cache survives a process restart. Cache keys are already date-stamped so no key change is needed, but a warm cache would serve stale pre-fix values until turnover — if it survives, that is a RELEASE NOTE, not a code change. Sonar watch: CA1859 applies to a private helper's PARAMETER type as well as its return type."
+        },
+        {
+          "id": "03-03",
+          "name": "Lighthouse-Clients MCP reword and Changeset",
+          "test_file": "",
+          "scenario_name": "DISCUSS cross-cutting row re-answered 2026-07-19: no shape change so no breaking bump, but the emitted workItemAge VALUES change for historical ranges",
+          "files_to_modify": [
+            "packages/mcp-core/src/index.ts",
+            ".changeset/"
+          ],
+          "deps": ["03-02"],
+          "criteria": [
+            "MCP tool descriptions for the age-percentile and total-age tools read 'ages reported as of the last day of the selected range'.",
+            "A Changeset records the value-semantics change as patch or minor — NOT a breaking bump, since the response types are untouched.",
+            "Conventional commit in the lighthouse-clients repo."
+          ],
+          "implementation_notes": "This lands in the SEPARATE lighthouse-clients repo, not Lighthouse — confirm the working-copy location before editing. The DISCUSS cross-cutting table originally answered this row 'N/A, no endpoint contract changes; re-opens if DESIGN adds one'. DESIGN then added D16, the re-open trigger fired, and the row was re-answered on 2026-07-19. Surfaces: packages/client/src/index.ts exposes getTeam/PortfolioWorkItemAgePercentiles and getTeam/PortfolioTotalWorkItemAge; packages/mcp-core/src/index.ts:701,715 registers the matching MCP tools. The current wording 'optionally filtered by start and end dates' understates the new semantics and would let an LLM consumer read a historical result as current. Per-feature client-versioning rule: this ships WITH slice 03, not deferred to /release. Standing gotcha: clients releases need a manual pnpm release:version bump committed and pushed BEFORE the Release gate."
+        },
+        {
+          "id": "03-04",
+          "name": "E2E for a historical range",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/",
+          "scenario_name": "Slice 03 AC8: a historical range shows non-zero WIA percentiles including at least one item that has since closed",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/",
+            "Lighthouse.EndToEndTests/tests/models/metrics/WorkItemAgingChart.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "deps": ["03-02"],
+          "criteria": [
+            "Spec selects a deterministic historical range and asserts non-zero percentiles, POM-mediated.",
+            "Spec and any new POM locator are RUN locally before commit.",
+            "Test passes locally; conventional commit test(metrics)."
+          ],
+          "implementation_notes": "Demo-data adequacy is already confirmed (DISCUSS cross-cutting table, verified 2026-07-18): DemoDataFactory.ReplaceDatePlaceholders resolves {w-N} placeholders to N business days before today AT SEED TIME, and Team Zenith alone carries 201 closed items spanning ~{w-145} to recent plus 4 open. Because seeding is relative to today, a historical range can be selected deterministically with no demo-data extension. This is the E2E that proves the slice's learning hypothesis — that as-of-date age is derivable from existing dates with no new persistence."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 - Flow Efficiency RAG via the shared data path",
+      "description": "Move the flow-efficiency fetch out of the widget into the BaseMetricsView data layer so buildWidgetFooters can emit its status chip like every sibling.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Lift the fetch and register the footer",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "Scenarios 43-47: Flow Efficiency renders the unchanged rule's status; wait states unconfigured keeps its body with no misleading colour; no data in scope keeps its body with no misleading colour; flow efficiency is fetched exactly once via the shared data layer; EVERY Flow Overview widget has a registered RAG footer",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/components/Common/Widgets/FlowEfficiencyOverviewWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "deps": [],
+          "criteria": [
+            "Un-skip the slice-05 describe; scenarios 43-47 green.",
+            "FlowEfficiencyOverviewWidget renders from props with no useEffect and no service call — asserted with a service mock that must not be called.",
+            "computeFlowEfficiencyRag is reused VERBATIM; no threshold or tip-text change (D7).",
+            "Both degraded bodies preserved — Not configured and No data in scope — and neither renders a misleading status colour.",
+            "pnpm test green; pnpm build zero errors and warnings; conventional commit refactor(metrics) then feat(metrics)."
+          ],
+          "implementation_notes": "OPEN QUESTION D18 BELONGS TO THIS STEP. useMetricsData.ts:230-260 already runs a Promise.all batch keyed on the same dependency signature, so flow efficiency becomes a fifth parallel call with NO extra round trip — but that effect awaits getCycleTimeData SEQUENTIALLY before reaching the batch, so joining naively would gate flow efficiency behind cycle-time data it does not need and regress paint time. PREFERRED: fold getCycleTimeData into the Promise.all, which removes an existing sequential await and speeds up the whole view. FALLBACK if that feels like scope creep at implementation time: give flow efficiency its own concurrent effect and leave the sequential await alone. Record which was chosen and why. Scenario 47 is the structural stand-in that matters most in this whole feature — it fails the moment a future Flow Overview widget ships without a status. Watch ci-learnings 2026-05-25: an inline new Date() (or []/{}) default feeding a useEffect dep is a React #185 render loop — useMemo-stabilise."
+        },
+        {
+          "id": "05-02",
+          "name": "E2E for the Flow Efficiency status chip",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts",
+          "scenario_name": "Slice 05 AC8: the Flow Efficiency widget on a demo team shows a status chip, asserted by attribute",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/FlowEfficiency.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/FlowEfficiencyWidget.ts"
+          ],
+          "deps": ["05-01"],
+          "criteria": [
+            "POM asserts the status attribute, never a pixel.",
+            "Spec and any new POM locator are RUN locally before commit.",
+            "Test passes locally; conventional commit test(metrics)."
+          ],
+          "implementation_notes": "Per the standing one-@screenshot-per-theme rule, prefer a focused per-theme shot over a broad one, destructure testData, and call goToOverview() to refresh. Screenshot regen trap: an @screenshot test KEEPS the old PNG when the diff is under 0.5% — rm the file first when regenerating."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 - WIA Percentiles RAG and previous-period trend",
+      "description": "BLOCKED, see preconditions. Give the Work Item Age Percentiles widget an SLE-attainment status chip and a previous-period trend, both through existing WidgetShell chrome.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["03"],
+      "preconditions": [
+        "HARD DEPENDENCY on phase 03 (D5). Slice 04's ATs must NOT be un-skipped before slice 03 lands: pre-fix, both periods age to today, the trend reads flat, and scenario 42 would pass for the wrong reason.",
+        "D6 VALIDATION GATE — human-executed, NOT an agent step, and NOT a checkbox. Before any slice-04 code: name the reviewing coach and pick TWO historical periods on a real instance that the coach INDEPENDENTLY judges to have deteriorated. Run the WIP-SLE-attainment rule over both. ABORT CRITERION: if the chip reads GREEN on either period, STOP and re-open D6 — a status that reassures during a decline is worse than the absent chip it replaces. Record coach, periods and results in the slice brief before proceeding.",
+        "USER DECISION 2026-07-19: DELIVER stops before this phase. Slices 01, 02, 03 and 05 ship; phase 04 waits until the D6 gate can be run with a named coach. The feature is NOT finalized until this phase lands."
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Shared band helper and the WIA RAG rule",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts",
+          "scenario_name": "Scenarios 24-33: amber at 20pp or less short of target; red at more than 20pp short; green at or above target; exactly-met is green not amber; exactly-20pp short is amber not red; an age equal to the SLE value counts as within it; no SLE gives red with the define-an-SLE tip; empty population gives NO Act status and never that tip; no-SLE and empty-population stay distinct answers; the tip always carries the signal; bands identical to the cycle-time rule",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts"
+          ],
+          "deps": [],
+          "criteria": [
+            "Replace the __SCAFFOLD__ body at ragRules.ts:924 and its companion type, removing both markers; un-skip scenarios 24-33; all green.",
+            "Band logic is EXTRACTED into a shared helper called by BOTH rules — not copy-pasted (D19).",
+            "No SLE gives red with the define-an-SLE tip; empty population gives the none status and a no-work-in-progress body — the two never collapse (AC3 vs AC3b).",
+            "No new band, no new threshold, no new setting; no divide-by-zero on an empty population.",
+            "pnpm test green; pnpm build zero errors and warnings; conventional commit feat(metrics)."
+          ],
+          "implementation_notes": "@sizing-review-needed (11 scenarios) — judged correctly sized: they are the band table of ONE rule plus its two degenerate cases, and no subset goes green independently. D19 is a deliberate DRY call worth stating precisely: per CLAUDE.md, DRY applies to KNOWLEDGE not shape. The 20pp red boundary and the meet-the-target-is-green rule are ONE piece of knowledge — an SLE-attainment band — so a future change to the boundary must land once. The POPULATIONS differ; the BANDING does not. This is the opposite of the validatePaymentAmount/validateTransferAmount case, which looks identical but evolves independently. AC3b exists because collapsing 'no SLE configured' into 'zero items in population' tells a team that HAS configured an SLE to go and configure one — a user-visible falsehood — and reads a team with zero WIP as needing to act. Sonar watch: typescript:S4144 fires on two functions with byte-identical bodies, which the shared helper avoids by construction."
+        },
+        {
+          "id": "04-02",
+          "name": "Register the footer and previous-period trend",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "scenario_name": "Scenarios 40-42: the WIA Percentiles widget renders a RAG chip; the chip carries a non-empty tip; nothing in progress renders no Act chip and never the define-an-SLE tip; the widget renders a previous-period trend through existing chrome",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "deps": ["04-01"],
+          "criteria": [
+            "Un-skip the slice-04 BaseMetricsView describe; scenarios 40-42 green.",
+            "trendPolicies.workItemAgePercentiles flips from none to previous-period in categoryMetadata.ts.",
+            "The trend compares the as-of-endDate value against the same computation at startDate minus one day (D5), through existing WidgetShell chrome — NO new UI component.",
+            "Colour is never the only signal: the Act/Observe/Sustain label and tip carry the same information (CI3).",
+            "pnpm test green; pnpm build zero errors and warnings; conventional commit feat(metrics)."
+          ],
+          "implementation_notes": "The widget has no trend today purely because trendPolicies.workItemAgePercentiles reads 'none' in categoryMetadata.ts:113 — the same registration gap as the other chrome stories. It is worth being precise about WHY slice 03 had to come first, because the feature docs once overclaimed it: the age defect is not the CAUSE of the missing trend, but it would have made any trend DISHONEST — with both periods anchored to today, a previous-period comparison reads flat regardless of what actually happened. The dependency is real; the causal claim was not."
+        },
+        {
+          "id": "04-03",
+          "name": "E2E for the WIA Percentiles status chip",
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/",
+          "scenario_name": "Slice 04 AC8: a demo team short of its WIP-age SLE shows a RED chip on the Work Item Age Percentiles widget",
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/flow/",
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts"
+          ],
+          "deps": ["04-02"],
+          "criteria": [
+            "POM asserts the status attribute, never a pixel.",
+            "Spec and any new POM locator are RUN locally before commit.",
+            "Test passes locally; conventional commit test(metrics)."
+          ],
+          "implementation_notes": "If the demo team's attainment does not naturally fall short, do NOT contrive the data to force a red chip — that would fake the very signal the D6 gate exists to falsify. Assert whatever status the rule genuinely returns for the seeded team, and report the mismatch instead."
+        }
+      ]
+    }
+  ],
+  "hard_constraints": [
+    "CI5 / D4 / D13 — WorkItemBase.WorkItemAge stays byte-for-byte untouched; write-back output unchanged. AgeOnDay must NOT carry the StateCategory Doing guard, and WorkItemAge must NOT be refactored to delegate to it. They encode different questions.",
+    "CI4 — with endDate = today, every Work-Item-Age number is byte-identical to pre-change behaviour.",
+    "CI2 — every story holds at Portfolio scope as well as Team scope.",
+    "D14 — do not touch GetWipSnapshotForTeam, GetInProgressFeaturesForPortfolio or WasItemProgressOnDay. The population is already date-correct.",
+    "Slice 04 must not un-skip its ATs before slice 03 lands: pre-fix both periods age to today, the trend reads flat, and scenario 42 passes for the wrong reason.",
+    "grep -rn '__SCAFFOLD__' must return zero once slices 03 and 04 land."
+  ],
+  "open_questions": [
+    "D17 warm-cache staleness — confirm whether the metrics cache survives a process restart. If it does, corrected values are stale until turnover: a release note, not a code change. Assigned to 03-02.",
+    "D18 batch placement — fold getCycleTimeData into the Promise.all (preferred; removes an existing sequential await and speeds the whole view) or give flow efficiency its own concurrent effect. Assigned to 05-01.",
+    "D15 age > 0 guard — ANSWERED by scenario 5: AgeOnDay returns 0 for a not-yet-started item, so the guard keeps a real meaning and is retained. Whichever disposition ships must be commented."
+  ],
+  "out_of_scope": [
+    "Any new persisted snapshot table for Work Item Age, or any EF migration — D3 computes from existing started/closed dates.",
+    "New user-configurable thresholds or new RAG bands of any kind. D6 reuses the shipped calculateSLEStats bands verbatim.",
+    "A WIP-specific SLE distinct from the cycle-time SLE — that re-opens D6, it is not a scope extension.",
+    "Widgets outside Flow Overview and the Work Item Aging chart. The Predictability and Portfolio widget CATEGORIES are not audited; portfolio SCOPE is in scope for every story per CI2.",
+    "Retro-filling BlockedCountSnapshot history. D2 assumes zero, it does not backfill.",
+    "Removing the noBaseline field from TrendPayload — other widgets still use it.",
+    "Changing computeFlowEfficiencyRag's thresholds or tip text (D7 reuses the rule as-is)."
+  ],
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/widget-loose-ends/feature-delta.md",
+    "slices": [
+      "docs/feature/widget-loose-ends/slices/slice-01-throughput-arrivals-view-data.md",
+      "docs/feature/widget-loose-ends/slices/slice-02-blocked-trend-zero-baseline.md",
+      "docs/feature/widget-loose-ends/slices/slice-03-work-item-age-as-of-selected-date.md",
+      "docs/feature/widget-loose-ends/slices/slice-04-wia-percentiles-rag-and-trend.md",
+      "docs/feature/widget-loose-ends/slices/slice-05-flow-efficiency-rag.md"
+    ],
+    "upstream_issues": "docs/feature/widget-loose-ends/distill/upstream-issues.md",
+    "distill_commit": "6b3f61f7",
+    "scaffolds": [
+      "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs:91 (AgeOnDay)",
+      "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:924 (computeWorkItemAgePercentilesRag)"
+    ],
+    "ado": "Story #5508, Bug #5521"
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/Models/",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/",
+      "Lighthouse.Backend/Lighthouse.Backend/API/",
+      "Lighthouse.Frontend/src/pages/Common/MetricsView/",
+      "Lighthouse.Frontend/src/components/Common/Charts/",
+      "Lighthouse.Frontend/src/components/Common/Widgets/",
+      "Lighthouse.Frontend/src/hooks/"
+    ],
+    "test_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/",
+      "Lighthouse.Frontend/src/pages/Common/MetricsView/",
+      "Lighthouse.Frontend/src/components/Common/Charts/",
+      "Lighthouse.Frontend/src/hooks/",
+      "Lighthouse.EndToEndTests/tests/specs/",
+      "Lighthouse.EndToEndTests/tests/models/"
+    ],
+    "excluded_patterns": [
+      "**/bin/**",
+      "**/obj/**",
+      "**/node_modules/**",
+      "tools/codesign/actions-runner/**"
+    ]
+  },
+  "validation": {
+    "status": "pending",
+    "reviewer": "orchestrator-self-review",
+    "approved_at": "2026-07-19",
+    "notes": "AUTHORSHIP: nw-solution-architect was dispatched first and returned without writing anything — its native Read/Glob/Grep were permission-denied by the lean-ctx hook, and subagents are not granted the ctx_* MCP tools, so it had no file access at all. It correctly refused to fabricate a roadmap from the brief alone rather than guess at the seven superseded label expectations, the scenario table and the precedent schema. Authored by the orchestrator instead, which had already read every SSOT in full; this matches the shipped precedent flow-overview-named-cycle-time/deliver/roadmap.json, also recorded as orchestrator-self-review. SCENARIO MAPPING (zero orphans): 1-7 to 03-01; 8,9,10,11,12,12b,13,14,15,16 to 03-02; 16b to 02-01; 17,18,19,20,21,22,23,23b,23c to 02-02; 24-31,31b,32,33 to 04-01; 34-39 to 01-01; 40,41,41b,42 to 04-02; 43-47 to 05-01. The E2E steps (01-02, 02-03, 03-04, 04-03, 05-02) carry each slice's AC8, which DISTILL deliberately deferred to DELIVER because a spec asserting a chip that does not render yet cannot be run, and this project never commits an unrun spec or POM locator. COUNT DISCREPANCY (flagged, not blocking): the DISTILL section header reads '52 scenarios' but its own table has 53 rows — the sub-lettered 12b, 16b, 23b, 23c, 31b and 41b are easy to miss when counting. Every row is mapped either way; the header count is off by one and should be corrected when that section is next touched. SIZING: three steps cover 8+ scenarios and are tagged @sizing-review-needed — 04-01 (11), 03-02 (10), 02-02 (9). All three are judged correctly sized rather than split: each is one cohesive unit (one rule's band table; one projection change across Team and Portfolio; one selector's baseline policy) whose scenarios are variations on a single behaviour, and splitting them would produce steps that cannot independently go green. DEVIATION FROM THE SUGGESTED DECOMPOSITION: the proposed D6-validation-gate step was removed. The schema's valid_agents has no human entry, and modelling a human judgement call as an agent step is exactly the degradation-into-a-checkbox the gate warns against. It is recorded instead as a hard precondition on phase 04 and in .nwave/des/deliver-session.json. EXECUTION ORDER: 01, 02, 03, 05, then HOLD. The user elected on 2026-07-19 to stop before slice 04 because the D6 gate needs a named human coach. Phase 05 is independent of 01-04 and moves ahead of 04; phase 04 stays blocked on both phase 03 (D5 hard dependency) and the D6 gate."
+  }
+}

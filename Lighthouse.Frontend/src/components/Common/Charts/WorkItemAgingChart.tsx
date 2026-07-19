@@ -649,10 +649,10 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 						>
 							{referenceLinePercentiles.map((p) => {
 								const forecastLevel = new ForecastLevel(p.percentile);
-								const label =
-									percentileSource === "workItemAge"
-										? `${workItemAgeTerm} ${p.percentile}%`
-										: `${p.percentile}%`;
+								// D9: no term prefix — the percentile-source toggle above the chart
+								// already states which population is active, so repeating it on every
+								// line made the two sources read differently for no reason.
+								const label = `${p.percentile}%`;
 								return (
 									<ChartsReferenceLine
 										key={`percentile-${percentileSource}-${p.percentile}`}

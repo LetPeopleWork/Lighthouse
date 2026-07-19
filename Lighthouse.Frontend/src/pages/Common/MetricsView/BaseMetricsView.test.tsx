@@ -5047,7 +5047,7 @@ describe("BaseMetricsView component", () => {
 	 *
 	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 	 */
-	describe.skip("View Data on Total Throughput and Total Arrivals (Story 5508 slice 01)", () => {
+	describe("View Data on Total Throughput and Total Arrivals (Story 5508 slice 01)", () => {
 		beforeEach(() => {
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
@@ -5075,13 +5075,15 @@ describe("BaseMetricsView component", () => {
 				).toBeInTheDocument();
 			});
 
-			// Same payload shape the sibling `throughput` chart widget already supplies.
+			// Amended during DELIVER: this originally compared against
+			// `widget-view-data-count-throughput`, but the sibling `throughput` CHART widget
+			// is not rendered in the flow-overview category, so the oracle referenced markup
+			// this screen never produces. Asserted against the fixture instead — the
+			// throughput run chart carries [3, 5], i.e. 8 completed items.
+			// See distill/upstream-issues.md UPSTREAM-5.
 			expect(
 				screen.getByTestId("widget-view-data-count-totalThroughput"),
-			).toHaveTextContent(
-				screen.getByTestId("widget-view-data-count-throughput").textContent ??
-					"",
-			);
+			).toHaveTextContent("8");
 			expect(
 				screen.getByTestId("widget-view-data-highlight-title-totalThroughput"),
 			).toHaveTextContent("Cycle Time");
@@ -5096,11 +5098,12 @@ describe("BaseMetricsView component", () => {
 				).toBeInTheDocument();
 			});
 
+			// Amended during DELIVER for the same reason as AC1 above — the sibling
+			// `arrivals` chart widget is not on the flow-overview screen. The arrivals run
+			// chart fixture carries [4, 6], i.e. 10 started items.
 			expect(
 				screen.getByTestId("widget-view-data-count-totalArrivals"),
-			).toHaveTextContent(
-				screen.getByTestId("widget-view-data-count-arrivals").textContent ?? "",
-			);
+			).toHaveTextContent("10");
 		});
 
 		it("still offers the drill-through on an empty range, with an empty item set (AC3)", async () => {

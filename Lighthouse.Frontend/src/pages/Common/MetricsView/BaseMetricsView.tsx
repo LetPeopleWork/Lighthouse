@@ -501,6 +501,9 @@ function buildViewData(
 	const wipOverTimeItems = extractWorkItems(
 		inputs.wipOverTimeData?.workItemsPerUnitOfTime,
 	);
+	const arrivalsItems = extractWorkItems(
+		inputs.arrivalsData?.workItemsPerUnitOfTime,
+	);
 
 	const startedVsFinishedItems = (() => {
 		const items: IWorkItem[] = [];
@@ -683,12 +686,22 @@ function buildViewData(
 		},
 		arrivals: {
 			title: `${inputs.title} Started`,
-			items: extractWorkItems(inputs.arrivalsData?.workItemsPerUnitOfTime),
+			items: arrivalsItems,
 			highlightColumn: ageCycleHighlight,
 		},
 		arrivalsPbc: {
 			title: `${inputs.title} Started`,
-			items: extractWorkItems(inputs.arrivalsData?.workItemsPerUnitOfTime),
+			items: arrivalsItems,
+			highlightColumn: ageCycleHighlight,
+		},
+		totalThroughput: {
+			title: `${inputs.title} Completed`,
+			items: throughputItems,
+			highlightColumn: cycleTimeHighlight,
+		},
+		totalArrivals: {
+			title: `${inputs.title} Started`,
+			items: arrivalsItems,
 			highlightColumn: ageCycleHighlight,
 		},
 	};

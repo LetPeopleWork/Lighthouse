@@ -159,6 +159,70 @@ findable independently of this feature's workspace.
 
 ---
 
+## UPSTREAM-5 — RESOLVED IN PLACE 2026-07-19 (DELIVER slice 01) — three slice-01 ATs carried oracles the render cannot satisfy
+
+**Raised:** during DELIVER of slice 01, when the DISTILL scenarios were un-skipped. Scenarios 34, 35 and 39
+failed against a correct implementation. All three were **test defects, not code defects** — the production
+change (D9 label, two `buildViewData` keys) was right on the first pass, and scenario 36 (AC3, empty range)
+passed unmodified throughout, which is what isolated the fault to the oracles rather than the behaviour.
+
+**Defect A — scenarios 34 and 35 compare against widgets that are not on the screen.**
+
+Both ATs set the category to `flow-overview` in `beforeEach`, then assert:
+
+```ts
+expect(screen.getByTestId("widget-view-data-count-totalThroughput")).toHaveTextContent(
+    screen.getByTestId("widget-view-data-count-throughput").textContent ?? "",
+);
+```
+
+`totalThroughput` / `totalArrivals` are Flow **Overview** widgets; `throughput` / `arrivals` are **chart**
+widgets in a different category and are never rendered on that screen. `getByTestId` therefore throws before
+the comparison is reached. The intent — "the same payload the sibling chart widget already supplies" — reads
+naturally in prose but is not observable from a single rendered category.
+
+*Fix:* assert against the fixture directly. The throughput run chart carries `[3, 5]` (8 completed items) and
+the arrivals run chart `[4, 6]` (10 started items). This is a stronger oracle than the original: it is
+independent of a second widget's rendering, in the same spirit as scenario 12b's hand-computed ages, which
+DISTILL added for exactly this reason on the backend side.
+
+**Defect B — scenario 39 asserts list equality where the fixtures guarantee inequality.**
+
+```ts
+expect(ageLabels).toEqual(cycleTimeLabels);
+```
+
+The cycle-time fixture carries 50/85/95; the work-item-age fixture carries 50/70/85/95. The two label lists
+differ by the 70th entry **whether or not a term prefix is rendered**, so the assertion could never pass and
+never depended on the behaviour under test. AC1+AC2 are about label **format** ("exactly `{percentile}%`, no
+term prefix", identical across sources), not about the two sources holding the same percentile set.
+
+*Fix:* assert every rendered reference-line label matches `/^\d+%$/` under both sources, with a non-empty
+guard on each list so the check cannot pass vacuously on an empty render.
+
+**Collateral, worth recording:** the `ChartsReferenceLine` mock keyed its `data-testid` off the label alone.
+Once both sources label identically that mock can no longer tell them apart, which would have quietly turned
+several *surviving* tests into vacuous passes — `queryByTestId("reference-line-Work Item Age 50%")` is
+trivially absent once no such id is ever emitted. The mock now also exposes `data-y`, and the two
+source-discriminating tests assert the rendered **values** (cycle time 50→3/85→7/95→12 versus work item age
+50→4/70→6/85→9/95→14) rather than id presence. This is the same `WRONG_ASSERTION` class DISTILL's own RED
+classification caught in scenario 23 — a check that passes without the behaviour existing.
+
+**Why this was not caught by the RED gate.** DISTILL ran the frontend suite with markers stripped and
+recorded "14 failed of the 24 un-skipped, all `AssertionError` on the expected value". These three were
+inside that 14 and their failure was read as MISSING_FUNCTIONALITY. Two of them in fact failed with a
+`getElementError` (element not found) rather than a value mismatch, and one failed on a list-shape
+difference — distinguishable from a genuine red only by reading the failure text, not the count. **Lesson for
+future RED classification: a scenario that fails because the queried element does not exist is not the same
+signal as one that fails on an expected value, and the two should be reported separately.**
+
+No decision required — the ACs are unchanged and every fix strengthens the oracle. Recorded here because the
+scenario table in `feature-delta.md` describes assertions that no longer match the shipped tests.
+
+**Status: RESOLVED (in place, DELIVER slice 01).**
+
+---
+
 ## Note — shipped tests superseded, by design
 
 `blockedTrend.test.ts` currently asserts `noBaseline === true` for empty/null history. Slice 02 deliberately

@@ -135,8 +135,13 @@ vi.mock("@mui/x-charts", async () => {
 		ChartsXAxis: vi.fn(() => <div>X Axis</div>),
 		ChartsYAxis: vi.fn(() => <div>Y Axis</div>),
 		ChartsTooltip: vi.fn(() => <div>Tooltip</div>),
-		ChartsReferenceLine: vi.fn(({ label }) => (
-			<div data-testid={`reference-line-${label}`}>{label}</div>
+		// `y` is exposed because after Story 5508 slice 01 (D9) both percentile sources
+		// label identically, so the label alone can no longer tell them apart — the
+		// rendered VALUE is what distinguishes cycle time from work item age.
+		ChartsReferenceLine: vi.fn(({ label, y }) => (
+			<div data-testid={`reference-line-${label}`} data-y={y}>
+				{label}
+			</div>
 		)),
 	};
 });
@@ -1420,7 +1425,7 @@ describe("WorkItemAgingChart component", () => {
 		 *
 		 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 		 */
-		describe.skip("percentile line labels drop the term prefix (Story 5508 slice 01)", () => {
+		describe("percentile line labels drop the term prefix (Story 5508 slice 01)", () => {
 			it("labels work item age reference lines with the percentage alone (AC1)", () => {
 				renderWithSelector();
 
@@ -1447,31 +1452,50 @@ describe("WorkItemAgingChart component", () => {
 			});
 
 			it("labels both sources identically, so switching changes only the values (AC1 + AC2)", () => {
-				renderWithSelector();
+				// Amended during DELIVER: this originally asserted the two label LISTS were
+				// equal, which the fixtures make impossible — cycle time carries 50/85/95 and
+				// work item age carries 50/70/85/95, so the lists differ by the 70th whether
+				// or not a prefix is rendered. The AC is about label FORMAT ("exactly
+				// {percentile}%, no term prefix", identical across sources), so that is what
+				// is asserted. See distill/upstream-issues.md UPSTREAM-5.
+				const percentileLabelsFor = (): string[] =>
+					screen
+						.getAllByTestId(/^reference-line-/)
+						.map((node) => node.textContent ?? "")
+						.filter((label) => label !== "");
 
-				const cycleTimeLabels = screen
-					.getAllByTestId(/^reference-line-/)
-					.map((node) => node.textContent);
+				renderWithSelector();
+				const cycleTimeLabels = percentileLabelsFor();
 
 				selectSource("Work Item Age");
+				const ageLabels = percentileLabelsFor();
 
-				const ageLabels = screen
-					.getAllByTestId(/^reference-line-/)
-					.map((node) => node.textContent);
-
-				expect(ageLabels).toEqual(cycleTimeLabels);
+				expect(cycleTimeLabels.length).toBeGreaterThan(0);
+				expect(ageLabels.length).toBeGreaterThan(0);
+				for (const label of [...cycleTimeLabels, ...ageLabels]) {
+					expect(label).toMatch(/^\d+%$/);
+				}
 			});
 		});
 
 		it("draws the cycle time reference lines by default and no work item age lines", () => {
 			renderWithSelector();
 
-			expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
-			expect(screen.getByTestId("reference-line-85%")).toBeInTheDocument();
-			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
-
+			// Cycle time fixture: 50 -> 3, 85 -> 7, 95 -> 12, and no 70th at all.
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-y",
+				"3",
+			);
+			expect(screen.getByTestId("reference-line-85%")).toHaveAttribute(
+				"data-y",
+				"7",
+			);
+			expect(screen.getByTestId("reference-line-95%")).toHaveAttribute(
+				"data-y",
+				"12",
+			);
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 50%"),
+				screen.queryByTestId("reference-line-70%"),
 			).not.toBeInTheDocument();
 		});
 
@@ -1480,25 +1504,32 @@ describe("WorkItemAgingChart component", () => {
 
 			selectSource("Work Item Age");
 
-			expect(
-				screen.getByTestId("reference-line-Work Item Age 50%"),
-			).toBeInTheDocument();
-			expect(
-				screen.getByTestId("reference-line-Work Item Age 95%"),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByTestId("reference-line-50%"),
-			).not.toBeInTheDocument();
-			expect(
-				screen.queryByTestId("reference-line-95%"),
-			).not.toBeInTheDocument();
+			// Work item age fixture: 50 -> 4, 70 -> 6, 85 -> 9, 95 -> 14.
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-y",
+				"4",
+			);
+			expect(screen.getByTestId("reference-line-95%")).toHaveAttribute(
+				"data-y",
+				"14",
+			);
+			expect(screen.getByTestId("reference-line-70%")).toHaveAttribute(
+				"data-y",
+				"6",
+			);
 
 			selectSource("Cycle Time");
 
-			expect(screen.getByTestId("reference-line-50%")).toBeInTheDocument();
-			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-50%")).toHaveAttribute(
+				"data-y",
+				"3",
+			);
+			expect(screen.getByTestId("reference-line-95%")).toHaveAttribute(
+				"data-y",
+				"12",
+			);
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 50%"),
+				screen.queryByTestId("reference-line-70%"),
 			).not.toBeInTheDocument();
 		});
 
@@ -1526,10 +1557,10 @@ describe("WorkItemAgingChart component", () => {
 			selectSource("Work Item Age");
 
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 50%"),
+				screen.queryByTestId("reference-line-50%"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 95%"),
+				screen.queryByTestId("reference-line-95%"),
 			).not.toBeInTheDocument();
 			expect(screen.getByTestId("mock-scatter-plot")).toBeInTheDocument();
 		});
@@ -1597,17 +1628,15 @@ describe("WorkItemAgingChart component", () => {
 
 			selectSource("Work Item Age");
 
+			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
 			expect(
-				screen.getByTestId("reference-line-Work Item Age 95%"),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByTestId("reference-line-Work Item Age 50%"),
+				screen.queryByTestId("reference-line-50%"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 70%"),
+				screen.queryByTestId("reference-line-70%"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 85%"),
+				screen.queryByTestId("reference-line-85%"),
 			).not.toBeInTheDocument();
 		});
 
@@ -1623,17 +1652,13 @@ describe("WorkItemAgingChart component", () => {
 
 			selectSource("Work Item Age");
 
+			expect(screen.getByTestId("reference-line-70%")).toBeInTheDocument();
+			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
 			expect(
-				screen.getByTestId("reference-line-Work Item Age 70%"),
-			).toBeInTheDocument();
-			expect(
-				screen.getByTestId("reference-line-Work Item Age 95%"),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByTestId("reference-line-Work Item Age 50%"),
+				screen.queryByTestId("reference-line-50%"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByTestId("reference-line-Work Item Age 85%"),
+				screen.queryByTestId("reference-line-85%"),
 			).not.toBeInTheDocument();
 		});
 
@@ -1647,11 +1672,9 @@ describe("WorkItemAgingChart component", () => {
 
 			selectSource("Work Item Age");
 
+			expect(screen.getByTestId("reference-line-95%")).toBeInTheDocument();
 			expect(
-				screen.getByTestId("reference-line-Work Item Age 95%"),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByTestId("reference-line-Work Item Age 85%"),
+				screen.queryByTestId("reference-line-85%"),
 			).not.toBeInTheDocument();
 
 			const chips = screen.getAllByRole("button");
@@ -1660,11 +1683,9 @@ describe("WorkItemAgingChart component", () => {
 				fireEvent.click(percentile95Chip);
 			}
 
+			expect(screen.getByTestId("reference-line-85%")).toBeInTheDocument();
 			expect(
-				screen.getByTestId("reference-line-Work Item Age 85%"),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByTestId("reference-line-Work Item Age 95%"),
+				screen.queryByTestId("reference-line-95%"),
 			).not.toBeInTheDocument();
 		});
 	});
