@@ -223,6 +223,50 @@ scenario table in `feature-delta.md` describes assertions that no longer match t
 
 ---
 
+## UPSTREAM-6 — OPEN 2026-07-19 (DELIVER slice 05) — scenario 47 (AC7) is a category-wide invariant attached to a single slice
+
+**Raised:** during DELIVER of slice 05, by the crafter, and independently verified by the orchestrator.
+
+**The problem.** Scenario 47 iterates `getWidgetsForCategory("flow-overview", "portfolio")` and asserts every
+widget key renders a `widget-header-*`. That set includes `workItemAgePercentiles`, whose RAG rule
+(`computeWorkItemAgePercentilesRag`) and `buildWidgetFooters` registration are **slice 04's** deliverables.
+**No correct implementation of slice 05 can make scenario 47 pass.** It is not a missing-functionality red
+against slice 05; it is a red against work that is out of slice 05's scope by design.
+
+This bit twice. The first crafter was cornered: it could not implement the missing footer without shipping a
+defect, could not skip the AT (source writes were blocked for its session), and could not decline to commit
+(the stop hook demanded one). It committed a red tree and — correctly — logged `GREEN` as `EXECUTED / FAIL`
+rather than record a pass that had not happened. That refusal is the system working; the trap it was in is
+what needs fixing.
+
+**Why forcing it green was refused.** `computeWorkItemAgePercentilesRag` is a `__SCAFFOLD__` stub returning
+hardcoded `{ragStatus: "red", tipText: ""}`. Wiring it to satisfy scenario 47 would ship a widget that
+permanently displays a red chip with no explanatory text — precisely the misleading-status harm US-06 AC2/AC3
+exist to prevent, and a user-visible defect strictly worse than the missing chip slice 05 set out to fix. It
+would also have destroyed slice 04's RED signal by pre-empting step 04-01's scope.
+
+**Resolution applied (interim).** Scenario 47 is `it.skip` with an inline comment naming the blocker, the
+un-skip trigger (**slice 04 step 04-02**), and the reasoning. This follows the project's standing practice —
+skip a not-yet-passing AT to keep the bar green, un-skip to resume — and the comment is what keeps it honest
+rather than a silent deletion. Commit `410c1285`, on top of the correct and untouched slice-05 commit
+`93eafd3a`.
+
+**Recurrence risk — the part worth acting on.** This is not a one-off. Scenario 47 asserts a **category-wide
+structural invariant**, so it will fail again inside whichever slice next adds a Flow Overview widget before
+that widget's RAG rule lands. The same diagnosis would then be run a third time, by whoever happens to own
+that slice. The KPI itself is sound and worth keeping — it is exactly the guard that fails the moment a Flow
+Overview widget ships without a status, which is the one genuinely new system-wide claim this feature makes.
+Only its **slice attachment** is wrong.
+
+**Recommendation (needs a decision, hence OPEN):** when slice 04 un-skips this, move scenario 47 out of the
+slice-05 describe and into a standalone structural-guard step that runs after the last widget-contributing
+slice — the DISTILL "Outcomes registry" section already identifies this assertion as the place the
+system-wide claim is registered, so it should not live inside any one slice's block.
+
+**Status: OPEN — interim skip applied; permanent re-siting deferred to slice 04.**
+
+---
+
 ## Note — shipped tests superseded, by design
 
 `blockedTrend.test.ts` currently asserts `noBaseline === true` for empty/null history. Slice 02 deliberately
