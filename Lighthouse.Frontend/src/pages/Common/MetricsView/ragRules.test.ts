@@ -22,6 +22,7 @@ import {
 	computeWipOverviewRag,
 	computeWorkDistributionRag,
 	computeWorkItemAgeChartRag,
+	computeWorkItemAgePercentilesRag,
 	type RagTerms,
 } from "./ragRules";
 
@@ -1303,5 +1304,147 @@ describe("ragRules", () => {
 			expect(result.tipText).toContain("72");
 			expect(result.tipText).toContain("60");
 		});
+	});
+});
+
+/**
+ * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 04, US-05.
+ *
+ * The Work Item Age Percentiles widget is the only Flow Overview widget with neither a status nor a
+ * trend. D6 gives it the SHIPPED SLE-attainment bands over the in-progress population: share of
+ * in-progress items whose as-of-endDate age is within `sle.value`, compared against `sle.percentile`.
+ *
+ * Every expectation below is deliberately phrased to match `computeCycleTimePercentilesRag`'s
+ * behaviour on the same numbers — that equivalence IS the specification (AC6: one shared band
+ * helper, so a future change to the 20pp boundary lands once).
+ *
+ * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+ */
+describe.skip("computeWorkItemAgePercentilesRag — SLE attainment over in-progress ages (Story 5508 slice 04)", () => {
+	const sle = { percentile: 85, value: 14 };
+
+	// 40 items, `within` of them at or under the SLE value and the rest well past it.
+	const agesWithinSleCount = (within: number, total = 40): number[] => [
+		...Array.from({ length: within }, () => 7),
+		...Array.from({ length: total - within }, () => 30),
+	];
+
+	it("renders amber when attainment is short of the target by 20pp or less (AC2)", () => {
+		// 30/40 = 75% vs an 85% target — 10pp short.
+		const result = computeWorkItemAgePercentilesRag(
+			sle,
+			agesWithinSleCount(30),
+			terms,
+		);
+
+		expect(result.ragStatus).toBe("amber");
+		expect(result.tipText).toContain("75.0%");
+	});
+
+	it("renders red when attainment is more than 20pp short of the target (AC1)", () => {
+		// 20/40 = 50% vs 85% — 35pp short.
+		const result = computeWorkItemAgePercentilesRag(
+			sle,
+			agesWithinSleCount(20),
+			terms,
+		);
+
+		expect(result.ragStatus).toBe("red");
+		expect(result.tipText).toContain("50.0%");
+		expect(result.tipText).toContain("85%");
+	});
+
+	it("renders green when attainment meets or exceeds the target (AC2)", () => {
+		// 36/40 = 90% vs 85%.
+		const result = computeWorkItemAgePercentilesRag(
+			sle,
+			agesWithinSleCount(36),
+			terms,
+		);
+
+		expect(result.ragStatus).toBe("green");
+	});
+
+	it("treats an exactly-met target as green, not amber (boundary)", () => {
+		// 34/40 = 85.0% vs 85%.
+		expect(
+			computeWorkItemAgePercentilesRag(sle, agesWithinSleCount(34), terms)
+				.ragStatus,
+		).toBe("green");
+	});
+
+	it("treats an exactly-20pp shortfall as amber, not red (boundary)", () => {
+		// 26/40 = 65.0% vs 85% — exactly 20pp short; the shipped rule reds only ABOVE 20.
+		expect(
+			computeWorkItemAgePercentilesRag(sle, agesWithinSleCount(26), terms)
+				.ragStatus,
+		).toBe("amber");
+	});
+
+	it("counts an item whose age equals the SLE value as within it (boundary)", () => {
+		const result = computeWorkItemAgePercentilesRag(
+			sle,
+			[14, 14, 14, 14],
+			terms,
+		);
+
+		expect(result.ragStatus).toBe("green");
+	});
+
+	it("renders red with the define-an-SLE tip when no SLE is configured (AC3)", () => {
+		const result = computeWorkItemAgePercentilesRag(null, [3, 5, 9], terms);
+
+		expect(result.ragStatus).toBe("red");
+		expect(result.tipText).toContain(terms.sle);
+	});
+
+	/**
+	 * AC3b — split out from AC3 on 2026-07-19 by the DISTILL review gate.
+	 *
+	 * This test previously asserted RED + the define-an-SLE tip for an empty population, matching the
+	 * unconfigured-SLE case. That collapsed two different situations into one wrong answer: it tells a
+	 * team that HAS configured an SLE to go and configure one, and it reads a team with zero WIP as
+	 * needing to act. `"none"` is the existing WidgetShell/blockedMaxAgeRag status — no new band.
+	 */
+	it("renders no Act status on an empty population, and never mentions defining an SLE (AC3b)", () => {
+		const result = computeWorkItemAgePercentilesRag(sle, [], terms);
+
+		expect(result.ragStatus).toBe("none");
+		expect(result.tipText).not.toContain(terms.sle);
+		expect(result.tipText).not.toContain("NaN");
+		expect(result.tipText.length).toBeGreaterThan(0);
+	});
+
+	it("keeps the two empty-ish cases distinct: no SLE reds, empty population does not (AC3 vs AC3b)", () => {
+		const noSle = computeWorkItemAgePercentilesRag(null, [3, 5, 9], terms);
+		const noItems = computeWorkItemAgePercentilesRag(sle, [], terms);
+
+		expect(noSle.ragStatus).toBe("red");
+		expect(noItems.ragStatus).toBe("none");
+		expect(noSle.tipText).not.toBe(noItems.tipText);
+	});
+
+	it("carries the status in the tip text, so colour is never the only signal (AC5, CI3)", () => {
+		for (const ages of [
+			agesWithinSleCount(20),
+			agesWithinSleCount(30),
+			agesWithinSleCount(36),
+		]) {
+			expect(
+				computeWorkItemAgePercentilesRag(sle, ages, terms).tipText.length,
+			).toBeGreaterThan(0);
+		}
+	});
+
+	it("bands identically to the shipped cycle-time rule on the same numbers (AC6 — shared knowledge)", () => {
+		// This is the anti-duplication assertion: the two rules differ ONLY in population, so on the
+		// same input array they must return the same status. A divergence means the band logic was
+		// copy-pasted and has drifted.
+		for (const within of [0, 10, 20, 26, 30, 34, 36, 40]) {
+			const ages = agesWithinSleCount(within);
+			expect(computeWorkItemAgePercentilesRag(sle, ages, terms).ragStatus).toBe(
+				computeCycleTimePercentilesRag(sle, ages, terms).ragStatus,
+			);
+		}
 	});
 });

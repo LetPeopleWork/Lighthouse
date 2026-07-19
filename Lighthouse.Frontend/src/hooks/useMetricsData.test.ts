@@ -658,6 +658,45 @@ describe("useMetricsData", () => {
 			expect(result.current.blockedCountHistory).toEqual(mockSnapshots);
 		});
 
+		/**
+		 * DISTILL RED-pending spec — Story 5508 (widget-loose-ends) slice 02, US-03 AC0.
+		 *
+		 * UPSTREAM-4: this is the seam the defect actually lives at, and the reason a fully green
+		 * `blockedTrend.test.ts` never caught it. The hook fetched the history with the dashboard's own
+		 * [startDate, endDate]; the controller filters `RecordedAt >= startDate`; `computeBlockedTrend`
+		 * then looks for its baseline at `startDate − 1 day` — one day outside the window that was just
+		 * fetched. The baseline was therefore unfindable on every instance and every range, and the
+		 * widget has never rendered a comparison.
+		 *
+		 * The selector tests all build histories that contain a pre-boundary snapshot by hand, so they
+		 * pass over a widget that cannot work. Only an assertion on the requested RANGE catches this.
+		 *
+		 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+		 */
+		it.skip("requests blocked-count history from the day BEFORE the range start, so the trend baseline is inside the window (AC0)", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() => useMetricsData(entity, service, startDate, endDate));
+
+			await waitFor(() => {
+				expect(service.getBlockedCountHistory).toHaveBeenCalled();
+			});
+
+			const [, requestedStart, requestedEnd] = vi.mocked(
+				service.getBlockedCountHistory,
+			).mock.calls[0];
+
+			// startDate is 2024-01-01, so the baseline day is 2023-12-31.
+			const baselineDay = new Date(startDate);
+			baselineDay.setDate(baselineDay.getDate() - 1);
+
+			expect(new Date(requestedStart).getTime()).toBeLessThanOrEqual(
+				baselineDay.getTime(),
+			);
+			expect(new Date(requestedEnd).getTime()).toBe(endDate.getTime());
+		});
+
 		it("sets blockedCountHistory to null on fetch error", async () => {
 			const entity = createMockEntity();
 			const service = createMockTeamMetricsService();

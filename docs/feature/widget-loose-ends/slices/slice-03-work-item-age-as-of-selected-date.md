@@ -17,7 +17,10 @@ The arithmetic already exists and is already trusted: `BaseMetricsService.Genera
 
 ### Domain examples (item started 01 July, closed 06 July; today = 18 July)
 1. Range ends 04 July → item included, age 4.
-2. Range ends 06 July → item included, age 6.
+2. Range ends 06 July → item **excluded** — it closed that day, so it was not ageing through it.
+   (Corrected 2026-07-18 during DISTILL: this example previously read "included, age 6", which
+   contradicts the shipped `WasItemProgressOnDay` predicate — `ClosedDate > day` — that DESIGN D14
+   forbids changing and that CI6 pins the new projection against.)
 3. Range ends 10 July → item excluded (closed before the day).
 4. Range ends today → identical to current behaviour for still-open items (regression guard).
 5. Item started after the range end → excluded, not aged to 1.

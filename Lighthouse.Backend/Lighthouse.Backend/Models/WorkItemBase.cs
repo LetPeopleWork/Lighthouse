@@ -88,6 +88,28 @@ namespace Lighthouse.Backend.Models
             }
         }
 
+        // __SCAFFOLD__ — DISTILL widget-loose-ends (Story 5508) slice 03. DELIVER replaces this body.
+        //
+        // How old was this item on the given day? Deliberately NOT the same function as the
+        // WorkItemAge property above (DESIGN D13): WorkItemAge is today-anchored and guarded on
+        // StateCategory == Doing because work-tracking write-back consumes it. AgeOnDay carries no
+        // state guard — its callers establish the population via WasItemProgressOnDay before
+        // projecting. Do not refactor one into the other; they encode different questions.
+        //
+        // Contract pinned by WorkItemBaseAgeOnDayTest:
+        //   age = (asOf - (StartedDate ?? CreatedDate)) + 1, and 0 when the item had not started.
+        public int AgeOnDay(DateTime asOf)
+        {
+            var startingReferenceDate = StartedDate ?? CreatedDate;
+            if (!startingReferenceDate.HasValue || startingReferenceDate.Value.Date > asOf.Date)
+            {
+                return 0;
+            }
+
+            // SCAFFOLD: the day arithmetic is DELIVER's job.
+            return 0;
+        }
+
         private static int GetDateDifference(DateTime start, DateTime end)
         {
             return ((int)(end.Date - start.Date).TotalDays) + 1;

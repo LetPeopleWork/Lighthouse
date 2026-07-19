@@ -919,3 +919,42 @@ export function computeCumulativeStateTimeRag(
 		tipText: `Time is balanced across states; no state holds 40% or more of the total.`,
 	};
 }
+
+/**
+ * __SCAFFOLD__ — DISTILL widget-loose-ends (Story 5508) slice 04. DELIVER replaces this body.
+ *
+ * SLE attainment over the IN-PROGRESS population, as of the last day of the selected range (D3).
+ * DISCUSS D6 (LOCKED): reuse `calculateSLEStats` and the shipped `computeCycleTimePercentilesRag`
+ * bands VERBATIM — green when the target is met, red when more than 20pp short, amber otherwise,
+ * red with the "define an SLE" tip when no SLE is configured. Only the population differs from the
+ * cycle-time rule; no new band, threshold, or setting.
+ *
+ * AMENDED 2026-07-19 (DISTILL review gate), US-05 AC3b: an EMPTY population is NOT the same case as
+ * an unconfigured SLE and must not share its answer. Telling a team that has configured an SLE to go
+ * and define one is false, and a team with zero WIP is not in an Act state. Empty population returns
+ * `ragStatus: "none"` with a "no work in progress in this range" tip. This reuses the existing
+ * `"none"` status that `WidgetShell` and `blockedMaxAgeRag` already carry — still no new band.
+ *
+ * DESIGN D19: DELIVER extracts the shared band logic out of `computeCycleTimePercentilesRag` into a
+ * private helper that both rules call. The 20pp boundary is ONE piece of knowledge and must land in
+ * one place — this is a deliberate DRY-on-knowledge case, not shape-matching.
+ *
+ * Known and accepted bias (D6): the measure is optimistic, because a 2-day-old item counts as
+ * "within 14" though it may still breach. Slice 04's learning hypothesis validates it.
+ */
+export function computeWorkItemAgePercentilesRag(
+	_sle: { percentile: number; value: number } | null,
+	_workItemAges: ReadonlyArray<number>,
+	_terms: RagTerms,
+): WorkItemAgePercentilesRagResult {
+	return { ragStatus: "red", tipText: "" };
+}
+
+/**
+ * __SCAFFOLD__ companion type. Widens `RagResult`'s status by the existing `"none"` case so the
+ * empty-population answer (AC3b) is expressible without inventing a band. DELIVER keeps this type.
+ */
+export type WorkItemAgePercentilesRagResult = {
+	readonly ragStatus: "red" | "amber" | "green" | "none";
+	readonly tipText: string;
+};

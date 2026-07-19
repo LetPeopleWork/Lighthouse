@@ -28,6 +28,7 @@ import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import { BaseMetricsView } from "./BaseMetricsView";
+import { getWidgetsForCategory } from "./categoryMetadata";
 
 // Mock the components used in BaseMetricsView
 vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
@@ -5032,6 +5033,364 @@ describe("BaseMetricsView component", () => {
 			expect(screen.getByTestId("percentile-values-count")).toHaveTextContent(
 				"3",
 			);
+		});
+	});
+
+	/**
+	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 01, US-01.
+	 *
+	 * D8: Total Throughput and Total Arrivals are the only Flow Overview widgets backed by an item
+	 * set that cannot show it. Both item sources already exist at the buildViewData call site —
+	 * `throughputItems` and the arrivals extraction the sibling `arrivals` entry already uses — so
+	 * this is registration, not a new query. If it turns out to need a new fetch, slice 01's
+	 * learning hypothesis has fired and slices 03-05 need re-estimating.
+	 *
+	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+	 */
+	describe.skip("View Data on Total Throughput and Total Arrivals (Story 5508 slice 01)", () => {
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"flow-overview",
+			);
+		});
+
+		const renderOverview = (svc = mockMetricsService) =>
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={svc}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+		it("exposes the completed items behind Total Throughput, with the cycle time highlight (AC1)", async () => {
+			renderOverview();
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-totalThroughput"),
+				).toBeInTheDocument();
+			});
+
+			// Same payload shape the sibling `throughput` chart widget already supplies.
+			expect(
+				screen.getByTestId("widget-view-data-count-totalThroughput"),
+			).toHaveTextContent(
+				screen.getByTestId("widget-view-data-count-throughput").textContent ??
+					"",
+			);
+			expect(
+				screen.getByTestId("widget-view-data-highlight-title-totalThroughput"),
+			).toHaveTextContent("Cycle Time");
+		});
+
+		it("exposes the arrival items behind Total Arrivals (AC2)", async () => {
+			renderOverview();
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-totalArrivals"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-view-data-count-totalArrivals"),
+			).toHaveTextContent(
+				screen.getByTestId("widget-view-data-count-arrivals").textContent ?? "",
+			);
+		});
+
+		it("still offers the drill-through on an empty range, with an empty item set (AC3)", async () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getThroughput = vi
+				.fn()
+				.mockResolvedValue(
+					new RunChartData(generateWorkItemMapForRunChart([]), 0, 0),
+				);
+			svc.getArrivals = vi
+				.fn()
+				.mockResolvedValue(
+					new RunChartData(generateWorkItemMapForRunChart([]), 0, 0),
+				);
+
+			renderOverview(svc);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-totalThroughput"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-view-data-count-totalThroughput"),
+			).toHaveTextContent("0");
+			expect(
+				screen.getByTestId("widget-view-data-count-totalArrivals"),
+			).toHaveTextContent("0");
+		});
+	});
+
+	/**
+	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 04, US-05.
+	 *
+	 * The widget-level half of slice 04: the rule itself is pinned in ragRules.test.ts; here we pin
+	 * that it is REGISTERED, that the trend policy flipped from "none" to "previous-period", and
+	 * that both render through the EXISTING WidgetShell chrome rather than a new component.
+	 *
+	 * HARD DEPENDENCY on slice 03 — the previous-period value is the as-of-date computation
+	 * evaluated at `startDate − 1 day`. Before slice 03 lands, both periods age to today and every
+	 * trend reads flat, so enabling this block earlier would pass for the wrong reason.
+	 *
+	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+	 */
+	describe.skip("Work Item Age Percentiles status and trend (Story 5508 slice 04)", () => {
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"flow-overview",
+			);
+		});
+
+		it("renders a RAG status chip on the widget (AC1-AC3)", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-header-workItemAgePercentiles"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-rag-workItemAgePercentiles"),
+			).toHaveTextContent(/red|amber|green/);
+		});
+
+		it("carries a non-empty tip so colour is never the only signal (AC5, CI3)", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-tip-workItemAgePercentiles").textContent,
+				).not.toBe("");
+			});
+		});
+
+		it("renders a previous-period trend through the existing WidgetShell chrome (AC4)", async () => {
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={mockMetricsService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-trend-workItemAgePercentiles"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-trend-direction-workItemAgePercentiles"),
+			).toHaveTextContent(/up|down|flat/);
+		});
+
+		/**
+		 * AC3b at the RENDERED widget — added 2026-07-19 by the second-pass review gate.
+		 *
+		 * The AC3/AC3b split is pinned at the rule level in ragRules.test.ts, but nothing pinned it
+		 * at the surface the user actually reads. A rule can return "none" correctly while the widget
+		 * still paints an Act chip, because the mapping from rule result to chip lives here, not in
+		 * the rule. Without this, the false "define an SLE" instruction could reappear at the only
+		 * layer that matters and both the rule tests and the widget tests would stay green.
+		 */
+		it("shows no Act status and never the define-an-SLE tip when nothing is in progress (AC3b)", async () => {
+			const emptyWipService = {
+				...mockMetricsService,
+				getWorkItemAgePercentiles: vi.fn().mockResolvedValue([]),
+			};
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={emptyWipService}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-header-workItemAgePercentiles"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-rag-workItemAgePercentiles"),
+			).not.toHaveTextContent(/red|amber|green/);
+			expect(
+				screen.getByTestId("widget-tip-workItemAgePercentiles").textContent,
+			).not.toMatch(/service level expectation|SLE/i);
+		});
+	});
+
+	/**
+	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 05, US-06.
+	 *
+	 * D7: Flow Efficiency is the only Flow Overview widget off the shared data path — it self-fetches
+	 * in its own effect and colours its own number, which is exactly why buildWidgetFooters has no
+	 * `flowEfficiency` key to emit. Moving the fetch into the BaseMetricsView data layer is what
+	 * earns it the chip; the computeFlowEfficiencyRag rule itself is reused verbatim.
+	 *
+	 * The last test here is the KPI assertion — "100% of Flow Overview widgets expose a RAG status" —
+	 * expressed as a structural test over getWidgetsForCategory so a future widget cannot silently
+	 * ship without a status (AC7).
+	 *
+	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+	 */
+	describe.skip("Flow Efficiency status via the shared data path (Story 5508 slice 05)", () => {
+		beforeEach(() => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"flow-overview",
+			);
+		});
+
+		const configuredFlowEfficiencyService = () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getFlowEfficiencyInfoForPortfolio = vi.fn().mockResolvedValue({
+				isConfigured: true,
+				hasDataInScope: true,
+				efficiencyPercent: 72,
+			});
+			return svc;
+		};
+
+		const renderOverview = (svc: IMetricsService<IWorkItem>) =>
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={svc}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+		it("renders the status returned by the unchanged rule (AC1)", async () => {
+			renderOverview(configuredFlowEfficiencyService());
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-header-flowEfficiency"),
+				).toBeInTheDocument();
+			});
+
+			expect(screen.getByTestId("widget-rag-flowEfficiency")).toHaveTextContent(
+				/red|amber|green/,
+			);
+		});
+
+		it("renders no status colour when wait states are not configured (AC2)", async () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getFlowEfficiencyInfoForPortfolio = vi.fn().mockResolvedValue({
+				isConfigured: false,
+				hasDataInScope: false,
+				efficiencyPercent: 0,
+			});
+
+			renderOverview(svc);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("flow-efficiency-not-configured"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.queryByTestId("widget-header-flowEfficiency"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders no status colour when there is no data in scope (AC3)", async () => {
+			const svc = createMockMetricsService<IWorkItem>();
+			svc.getFlowEfficiencyInfoForPortfolio = vi.fn().mockResolvedValue({
+				isConfigured: true,
+				hasDataInScope: false,
+				efficiencyPercent: 0,
+			});
+
+			renderOverview(svc);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("flow-efficiency-no-data"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.queryByTestId("widget-header-flowEfficiency"),
+			).not.toBeInTheDocument();
+		});
+
+		it("fetches flow efficiency exactly once, through the shared data layer (AC4)", async () => {
+			// The lift is the point: one shared data path, not one more round trip (D18). If the
+			// widget still self-fetches, this count goes up as the view re-renders.
+			const svc = configuredFlowEfficiencyService();
+
+			renderOverview(svc);
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-header-flowEfficiency"),
+				).toBeInTheDocument();
+			});
+
+			expect(svc.getFlowEfficiencyInfoForPortfolio).toHaveBeenCalledTimes(1);
+		});
+
+		it("gives every Flow Overview widget a status, so none can ship silently (AC7 — KPI)", async () => {
+			renderOverview(configuredFlowEfficiencyService());
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-header-flowEfficiency"),
+				).toBeInTheDocument();
+			});
+
+			const portfolioWidgetKeys = getWidgetsForCategory(
+				"flow-overview",
+				"portfolio",
+			).map((placement) => placement.widgetKey);
+
+			for (const widgetKey of portfolioWidgetKeys) {
+				expect(
+					screen.queryByTestId(`widget-header-${widgetKey}`),
+					`Flow Overview widget "${widgetKey}" has no RAG footer registered in buildWidgetFooters`,
+				).toBeInTheDocument();
+			}
 		});
 	});
 });

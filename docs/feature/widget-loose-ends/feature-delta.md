@@ -18,16 +18,20 @@ When I scan the Flow Overview dashboard, I want every widget to answer the same 
 Primary job: `job-flow-coach-read-every-widget-the-same-way` (importance 4 / satisfaction 2 / gap 2).
 Supporting jobs: `job-flow-coach-drill-into-throughput-and-arrivals`, `job-flow-coach-see-age-as-of-selected-date`, and the existing `job-delivery-lead-tell-blocked-trend-vs-last-period`.
 
-## Wave: DISCUSS / [REF] The finding that changes this from polish to a bug fix
+## Wave: DISCUSS / [REF] Two of the six gaps are correctness defects, not chrome
 
-Five of the six reported gaps are missing chrome — a widget that never registered its RAG footer, `viewData` payload, or trend policy in `BaseMetricsView`. The chrome itself (`WidgetShell`) already supports all three; the widgets simply do not feed it. Those are wiring.
+Four of the six reported gaps are missing chrome — a widget that never registered its RAG footer, `viewData` payload, or trend policy in `BaseMetricsView`. The chrome itself (`WidgetShell`) already supports all three; the widgets simply do not feed it. Those are wiring.
 
-The sixth is different. `WorkItemBase.WorkItemAge` (`Models/WorkItemBase.cs:71`) computes `GetDateDifference(referencedDate, DateTime.UtcNow)` **and** returns `0` unless `StateCategory == Doing` *right now*. Every Work-Item-Age surface therefore reports age **as of today**, no matter which date range is selected:
+Two are not. One is the Work-Item-Age today-anchoring defect below. The other was found on 2026-07-19 by the DISTILL review gate and is written up as UPSTREAM-4: the Blocked trend's baseline lookup sits one day outside the window its own history fetch requests, so the trend has never rendered a comparison on any instance. That one re-opens D2 and is not yet resolved.
+
+Taking the age defect first. `WorkItemBase.WorkItemAge` (`Models/WorkItemBase.cs:71`) computes `GetDateDifference(referencedDate, DateTime.UtcNow)` **and** returns `0` unless `StateCategory == Doing` *right now*. Every Work-Item-Age surface therefore reports age **as of today**, no matter which date range is selected:
 
 - `GetWorkItemAgePercentilesForTeam(team, endDate)` (`TeamMetricsService.cs:319`) correctly takes the WIP snapshot as of `endDate` — then ages every item to today, and drops any item that has closed since (`age > 0` filter removes it).
 - The Work Item Aging chart plots `item.workItemAge` (`WorkItemAgingChart.tsx:212`) — same today-anchored value.
 
-Select last month and the ages are wrong and the population is incomplete. This is the root cause behind "Work Item Percentiles has no trend with the previous period": there is no honest previous-period value to compare against until age becomes a function of a date.
+Select last month and the ages are wrong and the population is incomplete.
+
+**Correction 2026-07-19 (review gate).** An earlier draft claimed this defect was "the root cause behind 'Work Item Percentiles has no trend with the previous period'". That overclaims. The widget has no trend because `trendPolicies.workItemAgePercentiles` is set to `"none"` in `categoryMetadata.ts:113` — the same registration gap as the other chrome stories. What the age defect actually does is make a trend **impossible to register honestly**: with both periods anchored to today, any previous-period comparison would read flat regardless of what happened. So US-04 is a genuine correctness fix, and US-05's trend is absent by registration and would have been *wrong* without US-04. The dependency is real; the causal claim was not, and it should not be used to relabel the feature.
 
 The primitive to fix it already exists and is already trusted: `BaseMetricsService.GenerateTotalWorkItemAgeByDay` (`BaseMetricsService.cs:808`) computes, for any given day, `items.Where(i => WasItemProgressOnDay(currentDate, i))` and `age = (currentDate - (StartedDate ?? CreatedDate)) + 1`. No new persistence, no new snapshot table.
 
@@ -36,11 +40,11 @@ The primitive to fix it already exists and is already trusted: `BaseMetricsServi
 | ID | Decision | Verdict |
 |----|----------|---------|
 | **D1** | Feature type | **User-facing.** Six visible dashboard gaps. No infrastructure-only escape valve. |
-| **D2** | Blocked-Items trend baseline | **LOCKED (user, 2026-07-18): keep the boundary, treat a missing baseline as 0.** Baseline stays "the latest `BlockedCountSnapshot` at or before `startDate − 1 day`". The only change: when no such snapshot exists, assume `blockedCount = 0` rather than returning the `noBaseline` marker. A fresh instance therefore reads "+N since we started recording" instead of a neutral "—". The `noBaseline` field on `TrendPayload` stays for other widgets. |
+| **D2** | Blocked-Items trend baseline | **RE-DECIDED (user, 2026-07-19) after UPSTREAM-4 — two changes, in order.** The diagnostic slice 02 promised was run and disproved the original premise: the missing baseline is not a young-instance condition. `useMetricsData` fetched the history with the dashboard's own `[startDate, endDate]`, the controller filters `RecordedAt >= startDate`, and the trend looks for its baseline at `startDate − 1 day` — one day outside the fetched window, always — so `noBaselineTrend()` fired on **every instance, every range** and the widget has never rendered a comparison. **(1) Widen the fetch** to start at `startDate − 1 day`, so a real baseline is reachable. One extra day per request; no new endpoint, no contract change. **(2) Keep the original locked intent** — treat a still-absent baseline as `blockedCount = 0` — but now it applies only to the residual genuinely-young-instance case, where it means what `noBaselineTrend`'s docstring always claimed. A fresh instance still reads "+N since we started recording"; an established one now reads the truth. Shipping (2) without (1) would have made every instance read "+N" forever and hidden the real comparison — a visibly broken widget traded for an invisibly wrong one. The `noBaseline` field on `TrendPayload` stays for other widgets. |
 | **D3** | Work Item Age is a function of the selected date | **LOCKED (user, 2026-07-18): every Work-Item-Age surface reports age as of the LAST DAY of the selected range (`endDate`), not as of now.** Population = items in progress *on that day* (`WasItemProgressOnDay`), age = `(endDate − started) + 1`. Applies to the Work Item Age Percentiles card, the Total Work Item Age overview widget, and the dot heights on the Work Item Aging chart. When `endDate` is today the rendered numbers are unchanged — this is a correctness fix for historical ranges, not a redefinition of the live view. |
 | **D4** | Where D3 is implemented | **Backend, and NOT by changing the `WorkItemAge` property.** `WorkItemAge` is also consumed by write-back (`WriteBackValueSource.cs`); repointing it at an arbitrary date would change what Lighthouse writes into Jira/ADO. DESIGN picks the mechanism (an `AgeOnDay(date)` helper on `WorkItemBase` reusing the `GenerateTotalWorkItemAgeByDay` arithmetic is the obvious candidate) under the hard constraint: **write-back semantics unchanged**. |
 | **D5** | Work Item Age Percentiles trend | **Previous-period, derived from D3** — the same as-of-date computation evaluated at `startDate − 1 day`, compared against the `endDate` value. This is why D3 must land first; it is the enabling correctness fix, not a separate feature. Trend policy for `workItemAgePercentiles` moves `"none"` → `"previous-period"`. |
-| **D6** | Work Item Age Percentiles RAG | **CLARIFIED 2026-07-18.** New rule in `ragRules.ts` reusing the existing `calculateSLEStats` shape **verbatim**: compute the share of in-progress items whose age (as-of-`endDate`, per D3) falls within `sle.value`, compare that share against the `sle.percentile` target, and apply the shipped bands from `computeCycleTimePercentilesRag` — green when the target is met, red when more than 20pp short, amber otherwise, and red with the "define an SLE" tip when no SLE is configured. Only the population changes (in-progress ages instead of completed cycle times). **No invented amber band, no new threshold, no new setting.** Known bias, accepted: WIP-within-SLE flatters a young WIP profile, because an item at 2 days counts as "within 14" though it may still breach. Directionally sound — an in-progress item already past the SLE *will* breach — and validated in slice 04 rather than blocked on. |
+| **D6** | Work Item Age Percentiles RAG | **CLARIFIED 2026-07-18.** New rule in `ragRules.ts` reusing the existing `calculateSLEStats` shape **verbatim**: compute the share of in-progress items whose age (as-of-`endDate`, per D3) falls within `sle.value`, compare that share against the `sle.percentile` target, and apply the shipped bands from `computeCycleTimePercentilesRag` — green when the target is met, red when more than 20pp short, amber otherwise, and red with the "define an SLE" tip when no SLE is configured. Only the population changes (in-progress ages instead of completed cycle times). **No invented amber band, no new threshold, no new setting.** Known bias, accepted: WIP-within-SLE flatters a young WIP profile, because an item at 2 days counts as "within 14" though it may still breach. Directionally sound — an in-progress item already past the SLE *will* breach — and validated in slice 04 rather than blocked on. **Validation made falsifiable 2026-07-19 (review gate):** "validated in slice 04" was unowned and had no abort criterion, which under delivery pressure means skipped. It is now a gate at the *start* of slice 04, not a check inside it. Before any slice-04 code: name the reviewing coach and pick **two** historical periods on a real instance that the coach independently judges to have deteriorated. Run the rule over both. **Abort criterion: if the chip reads GREEN on either period, stop and re-open D6** — a status that reassures during a decline is worse than the absent chip it replaces. Record coach, periods and results in the slice brief before proceeding. |
 | **D7** | Flow Efficiency RAG | **LOCKED (user, 2026-07-18): lift the data into `BaseMetricsView`.** `FlowEfficiencyOverviewWidget` currently self-fetches via `metricsService.getFlowEfficiencyInfoFor*` and colours its own number; it is the only overview widget off the shared data path, which is exactly why it has no RAG chip. Move the fetch into the `BaseMetricsView` data layer so `buildWidgetFooters` can emit `flowEfficiency: computeFlowEfficiencyRag(...)` like every sibling. The existing `computeFlowEfficiencyRag` rule is reused as-is — no new thresholds. |
 | **D8** | Throughput / Arrivals "View Data" | Add `totalThroughput` and `totalArrivals` keys to `buildViewData`, reusing the item sources the neighbouring chart widgets already extract (`throughputItems`, and `extractWorkItems(arrivalsData.workItemsPerUnitOfTime)` — the `arrivals` widget's existing payload at `BaseMetricsView.tsx:643`). No new endpoint, no new query. |
 | **D9** | Aging-chart percentile line label | Drop the term prefix. `WorkItemAgingChart.tsx:653-654` renders `` `${workItemAgeTerm} ${p.percentile}%` `` when the source is `workItemAge`; render `` `${p.percentile}%` `` so both percentile sources label identically. The Cycle Time / Work Item Age toggle already states which population is active — the per-line prefix is redundant. |
@@ -71,7 +75,7 @@ As a flow coach, I want the Work Item Age percentile reference lines labelled wi
 #### Elevator Pitch
 Before: switching the aging chart to Work Item Age relabels every reference line "Work Item Age 85%", repeating on four lines what the toggle above already says.
 After: open **Team → Metrics → Flow Metrics → Work Item Aging** → switch the percentile source to **Work Item Age** → the lines read `95%`, `85%`, `70%`, `50%`.
-Decision enabled: I read the band a dot has crossed at a glance, without parsing a label that repeats the mode I just selected.
+Readability tidy-up traceable to the user report. (Amended 2026-07-19: this previously claimed a decision — "I read the band a dot has crossed at a glance" — which asserts a comprehension gain from removing eleven characters with no evidence behind it. The change is defensible on taste and consistency; it does not enable a decision and carries no KPI of its own.)
 
 **Acceptance criteria**
 - AC1: Given the aging chart with percentile source `workItemAge`, each reference line's label is exactly `{percentile}%` with no term prefix.
@@ -82,15 +86,23 @@ As a delivery lead, I want the Blocked Items trend to show a real comparison eve
 `job_id: job-delivery-lead-tell-blocked-trend-vs-last-period`
 
 #### Elevator Pitch
-Before: on a young instance the Blocked widget's trend shows a neutral "—" with a hint about waiting for a baseline, so it reads as broken rather than as informative.
+Before: the Blocked widget's trend shows a neutral "—" with a hint about waiting for a baseline, so it reads as broken rather than as informative. (Corrected 2026-07-19: this was written as a *young-instance* symptom. Per UPSTREAM-4 it happens on every instance and every range — the hint about waiting for a baseline is simply never true.)
 After: open **Team → Metrics → Flow Overview** → the **Blocked Items** widget shows an arrow and delta against the blocked count at `startDate − 1 day`, counting an absent snapshot as 0.
 Decision enabled: I decide whether blocking is growing or shrinking in this period, on day one, without waiting a period for the record to fill.
 
-**Acceptance criteria**
+**Acceptance criteria** — settled 2026-07-19 (UPSTREAM-4 resolved; D2 re-decided). AC0 must land before
+AC1-AC4 are meaningful: until the fetch window includes the boundary day, AC1 describes behaviour that has
+never been reachable in the shipped app.
+
+- AC0 (**new, from UPSTREAM-4**): The blocked-count history available to the trend includes the day
+  `startDate − 1`, so a baseline recorded on that day is found. Asserted at the `useMetricsData` seam —
+  the selector alone cannot catch this, which is why the defect survived a green selector suite.
 - AC1: Given a `BlockedCountSnapshot` exists at or before `startDate − 1 day`, the trend compares the current count against it — unchanged from today (`blockedTrend.ts` boundary logic preserved).
 - AC2: Given **no** snapshot exists at or before `startDate − 1 day`, the baseline is `0`; a current count of N renders direction `up` rather than the `noBaseline` placeholder.
 - AC3: Given no snapshot exists and the current count is also 0, the trend renders `flat` — not an arrow implying change.
+- AC2b (**added 2026-07-19, second-pass gate**): Given the history holds no snapshot at or before `endDate` — a range selected entirely before recording began — no direction is rendered. The zero-baseline assumption of AC2 is defensible for a day-one instance; with no measurement at *either* end there is nothing to compare and an arrow would be fabrication. This is the third `noBaselineTrend()` return site, which UPSTREAM-3 counted but no scenario covered.
 - AC4: The percentage delta is omitted when the baseline is 0 (division by zero), matching the existing `formatDelta` guard; the arrow and the absolute current/previous values still render.
+- AC5b (**added 2026-07-19, second-pass gate**): The synthetic zero baseline is identifiable as assumed — the payload carries a signal the measured case does not, so "+4" is never read as four items having become blocked when the truth is "no record before this". D2 and the pitch above both promise this in prose; without an AC, DELIVER could ship a bare arrow and stay green.
 
 ### US-04 — Work Item Age that respects the selected date range
 As a flow coach, I want every Work-Item-Age readout to describe the last day of the range I selected, so looking at a past period tells me what was true then rather than what is true now.
@@ -119,7 +131,8 @@ Decision enabled: I decide whether ageing WIP is a problem *and* whether it is g
 **Acceptance criteria**
 - AC1: Given an SLE of `{percentile: P, value: V}` and a share of in-progress items within V that is more than 20pp below P, the widget header renders RED ("Act") with a tip stating the achieved share against the target — same wording shape as the cycle-time rule.
 - AC2: Given the share within V meets or exceeds P, the header renders GREEN ("Sustain"); given it is short by 20pp or less, AMBER ("Observe").
-- AC3: Given no SLE is configured, or zero items are in the population, the widget renders RED with the "define an SLE in settings" tip — matching `computeCycleTimePercentilesRag`'s existing handling, not a bespoke neutral state.
+- AC3: Given **no SLE is configured**, the widget renders RED with the "define an SLE in settings" tip — matching `computeCycleTimePercentilesRag`'s existing handling, not a bespoke neutral state.
+- AC3b (**split out 2026-07-19, review gate**): Given an SLE **is** configured but **zero items are in the population**, the widget renders no Act status and a body reading "no work in progress in this range". Previously AC3 collapsed the two cases into one RED + "define an SLE" answer, which tells a team that has already configured an SLE to go and configure one — a user-visible falsehood — and reads a team with zero WIP as needing to act. Consistency with the sibling cycle-time rule was being used to license it: there, an empty population means no completions and therefore no signal at all, which is not the same situation. This introduces no new band and no new threshold, so it stays inside the out-of-scope line.
 - AC4: The trend compares the as-of-`endDate` percentile against the same percentile computed at `startDate − 1 day` (D5), rendered through the existing `WidgetShell` trend chrome — no new UI component.
 
 ### US-06 — Status on Flow Efficiency
@@ -135,7 +148,7 @@ Decision enabled: I scan the row of widgets for red chips and act on what I find
 - AC1: Given a configured flow efficiency of X%, the widget header renders the RAG status returned by the existing `computeFlowEfficiencyRag(X, terms)` — the rule itself is unchanged.
 - AC2: Given wait states are not configured, the widget keeps its current "Not configured" body and renders no misleading status colour.
 - AC3: Given no data in scope, the widget keeps its current "No data in scope" body and renders no misleading status colour.
-- AC4: Flow efficiency data is fetched once through the `BaseMetricsView` data layer, not by the widget — asserted by the widget rendering from props with no service call of its own.
+**Design constraint (not an AC — relabelled 2026-07-19):** flow efficiency data is fetched once through the `BaseMetricsView` data layer, not by the widget. This is an architecture rule, not an observable user outcome; it stays enforced by scenario 46 but no longer occupies an AC slot.
 
 ## Wave: DISCUSS / [REF] Acceptance criteria (cross-story invariants)
 
@@ -149,12 +162,11 @@ Decision enabled: I scan the row of widgets for red chips and act on what I find
 
 - Any new persisted snapshot table for Work Item Age. D3 is computed from existing transition/started/closed dates via the `WasItemProgressOnDay` primitive.
 - New user-configurable thresholds, and new RAG bands of any kind. D6 reuses the shipped `calculateSLEStats` bands verbatim; a WIP-specific SLE distinct from the cycle-time SLE is explicitly not in this story (it would re-open D6 — see slice 04's learning hypothesis).
-- Changing `computeFlowEfficiencyRag`'s thresholds (D7 reuses the rule as-is).
-- Widgets outside Flow Overview and the Work Item Aging chart. The Predictability and Portfolio categories are not audited here.
+- Widgets outside Flow Overview and the Work Item Aging chart. The Predictability and Portfolio **widget categories** are not audited here — note this is a widget grouping in `categoryMetadata.ts`; portfolio *scope* is in scope for every story per CI2. (Disambiguated 2026-07-19; the `computeFlowEfficiencyRag`-thresholds bullet that sat here was deleted as a restatement of D7.)
 - Retro-filling `BlockedCountSnapshot` history. D2 assumes 0, it does not backfill.
-- Lighthouse-Clients (CLI/MCP) changes — no new or changed endpoint contract is expected; if DESIGN introduces one, the client-versioning checklist re-opens.
+- ~~Lighthouse-Clients (CLI/MCP) changes~~ — **no longer out of scope, 2026-07-19.** No endpoint *contract* changes, but D16 changes the age *values* the client's percentile and total-age methods return for historical ranges. Slice 03 now owes an MCP tool-description reword plus a Changeset. See the cross-cutting table row.
 
-## Wave: DISCUSS / [REF] Definition of Done (9-item)
+## Wave: DISCUSS / [REF] Definition of Done (12-item)
 
 1. All six reported gaps closed, Team and Portfolio scope (CI2).
 2. `pnpm test` green; `pnpm build` zero errors/warnings; Biome clean.
@@ -165,6 +177,9 @@ Decision enabled: I scan the row of widgets for red chips and act on what I find
 7. E2E: one `@screenshot` spec per changed theme, driven by demo data, POM-mediated; run locally before commit.
 8. Docs + screenshots refreshed at feature finalization (per-feature, not batched).
 9. Mutation testing ≥80% kill rate on the changed FE and BE units.
+10. Chrome parity asserted as a test, not a manual audit: widget keys registered in `buildWidgetFooters` / `buildViewData` cover every key from `getWidgetsForCategory("flow-overview")` (was an "outcome KPI"; moved here 2026-07-19).
+11. Zero divergence between the WIA percentile card and `GenerateTotalWorkItemAgeByDay` at the same date (CI6) (was an "outcome KPI").
+12. Zero changed values on any Work-Item-Age surface when `endDate` = today (CI4), and zero change in emitted write-back age values (CI5) (were "outcome KPIs").
 
 ## Wave: DISCUSS / [REF] WS strategy
 
@@ -191,7 +206,7 @@ Decision enabled: I scan the row of widgets for red chips and act on what I find
 | Premium licensing | None | N/A, because no story is gated; these are parity fixes to already-free widgets |
 | EF migrations | None | N/A, because D3 computes from existing dates; no new persisted column or table |
 | Work-tracking write-back | **Must stay unchanged** | Explicit constraint D4 + CI5 + US-04 AC4 — `WriteBackValueSource` keeps today-anchored age |
-| Lighthouse-Clients (CLI/MCP) | None expected | N/A, because no endpoint contract changes; re-opens if DESIGN adds one |
+| Lighthouse-Clients (CLI/MCP) | **Yes — re-opened and re-answered 2026-07-19** | The row's own re-open trigger fired: D16 (as amended by UPSTREAM-2) threads `asOf` through `WorkItemDto` + `FeatureDto`, changing the `workItemAge` **values** the team and portfolio metrics endpoints emit for historical ranges. Verified against `lighthouse-clients`: `packages/client/src/index.ts` exposes `getTeam/PortfolioWorkItemAgePercentiles` and `getTeam/PortfolioTotalWorkItemAge`, and `packages/mcp-core/src/index.ts:701,715` registers the matching MCP tools. **No shape change, so no breaking bump** — the response types are untouched. Two things are still owed: (a) the MCP tool descriptions read "optionally filtered by start and end dates", which after D3 understates the semantics and would let an LLM consumer read a historical result as current — reword to "ages reported as of the last day of the selected range"; (b) a Changeset + patch/minor release recording the value-semantics change. Both land with slice 03, per the per-feature client-versioning rule. |
 | Website marketing surface | None | N/A, because these are dashboard parity fixes, not a new capability to market |
 | Docs + screenshots | **Yes** | Flow Overview and Work Item Aging screenshots change; refresh at finalization (DoD 8) |
 | Demo data | **None — verified 2026-07-18** | N/A, because `DemoDataFactory.ReplaceDatePlaceholders` (`DemoDataFactory.cs:102-116`) resolves `{w-N}` placeholders to N business days before today at seed time. Team Zenith alone carries 201 closed items spanning ~`{w-145}` to recent plus 4 open, so items closed well before today are abundant and slice 03's historical assertion is satisfiable as-is. Because seeding is relative to "today", an E2E can select a historical range deterministically. No extension needed. |
@@ -203,12 +218,12 @@ Decision enabled: I scan the row of widgets for red chips and act on what I find
 | # | Slice | Group | Stories | Est. | Learning hypothesis |
 |---|-------|-------|---------|------|---------------------|
 | 01 | Throughput/Arrivals View Data + aging label | A (chrome) | US-01, US-02 | ~0.5d | Disproves that the missing chrome is pure registration if wiring `buildViewData` needs a new item source |
-| 02 | Blocked trend zero-baseline | B (trend fix) | US-03 | ~0.5d | Disproves that "trend doesn't work" is the `noBaseline` path if the trend stays blank after the change — then the history is not loading at all |
+| 02 | Blocked trend zero-baseline | B (trend fix) | US-03 | ~0.5d | **HYPOTHESIS FIRED 2026-07-19 — see UPSTREAM-4.** The `noBaseline` path is what renders, but the cause is upstream: the baseline day is outside the fetched window. Slice is **BLOCKED** pending the user's choice of correction; scope becomes fetch-window fix + selector change (still ~0.5d) |
 | 03 | Work Item Age as of selected date | C (data) | US-04 | ~1d | Disproves that as-of-date age is derivable from existing dates if `WasItemProgressOnDay` cannot reconstruct the population without a persisted snapshot |
 | 04 | WIA Percentiles RAG + previous-period trend | C (data) | US-05 | ~0.5–1d | Disproves that the SLE is the right benchmark for *in-progress* age if the resulting RAG sits red permanently for healthy teams |
 | 05 | Flow Efficiency RAG | C (data) | US-06 | ~0.5–1d | Disproves that lifting the fetch is mechanical if `BaseMetricsView`'s data layer cannot absorb the call without a render-loop or an extra round trip |
 
-**Execution order: 01 → 02 → 03 → 04 → 05.** Rationale: 01 and 02 are same-day wins that put something dogfoodable on the dashboard immediately and cost nothing if wrong. 03 is pulled ahead of 04 and 05 despite being the largest because it carries the most uncertainty *and* 04 hard-depends on it (D5) — failing it late would strand 04. 05 is last only because it is independent of everything else and can absorb schedule slack.
+**Execution order: 01 → 03 → 04 → 05, with 02 re-inserted once UPSTREAM-4 is decided.** Rationale, rewritten 2026-07-19: 03 precedes 04 because 04 hard-depends on it (D5) — that is the one real ordering constraint, and it is sufficient on its own. The earlier rationale ("03 is pulled ahead despite being the largest because it carries the most uncertainty") is retired: DESIGN's revision cut 03 to ~0.5d on the finding that the population was already date-correct at both call sites and `GetTotalWorkItemAge` was already correct, so 03 is neither the largest nor the most uncertain. 01 stays first as a same-day win that costs nothing if wrong. 05 is last because it is independent of everything else and can absorb slack. 02 was second; it is now blocked on UPSTREAM-4 and slots back in wherever the correction lands.
 
 **Carpaccio taste tests**
 - *4+ new components?* No — zero new components across all five slices; every change registers into existing chrome.
@@ -220,23 +235,33 @@ Decision enabled: I scan the row of widgets for red chips and act on what I find
 
 ## Wave: DISCUSS / [REF] Outcome KPIs
 
+**Rewritten 2026-07-19 (review gate).** The previous table listed five "KPIs" that were all test assertions
+— "count widget keys registered…", "backend test comparing…", "Vitest on `computeBlockedTrend`". Every one
+measures that the code was written, and every one is trivially 100% the moment the slices merge. They are
+Definition-of-Done items wearing a KPI hat. They have been **moved to the DoD** (items 10-12 below); the two
+entries here are the only outcome measures obtainable in this product.
+
+Lighthouse has no cross-instance telemetry phone-home, so fleet-wide behavioural measurement is genuinely
+impossible. Saying so and choosing a local proxy is the honest response; relabelling the test suite is not.
+
 | KPI | Target | Measurement |
 |-----|--------|-------------|
-| Overview widget chrome parity | 100% of Flow Overview widgets expose a RAG status, and every widget backed by an item set exposes View Data | Count widget keys registered in `buildWidgetFooters` / `buildViewData` vs `getWidgetsForCategory("flow-overview")` — assert as a test, not a manual audit |
-| Work Item Age historical accuracy | 0 divergence between the WIA percentile card and the as-of-date reference computation for any selected range | Backend test comparing the percentile population/ages against `GenerateTotalWorkItemAgeByDay` at the same date |
-| Blocked trend availability | Trend renders a direction on 100% of instances with ≥1 blocked count, including day-one instances with no snapshot history | Vitest on `computeBlockedTrend` covering the empty-history and both-zero paths |
-| Live-view regression | 0 changed values on any Work-Item-Age surface when `endDate` = today | Regression assertion, CI4 |
-| Write-back stability | 0 change in emitted write-back age values | Backend regression test, CI5 |
+| A past period reads true to someone who lived it | A named design partner reviews a period on their own instance and confirms the Work-Item-Age numbers match what they remember being true then — the retro use case US-04 exists for | Qualitative, one partner, recorded in the slice-03 brief. Same coach as the D6 gate, so it is one conversation, not two. |
+| Questions the dashboard can now answer without leaving it | Count the Flow Overview questions that previously required a manual query or a DB look-up and no longer do — baseline the list before slice 01, re-count after slice 05 | Manual count against a written list. Small n, honestly reported; the point is the direction, not the number. |
 
-## Wave: DISCUSS / [REF] DoR validation (9/9)
+## Wave: DISCUSS / [REF] DoR validation (9/9 — re-audited and repaired 2026-07-19)
+
+**Two items failed the re-audit and both are now closed.** The original 9/9 was recorded before the DISTILL
+review gate; items 3 and 7 did not survive it. Each failure is kept visible below with what was wrong and
+what fixed it, rather than being quietly overwritten — the audit trail is the point.
 
 1. **Business value articulated** — PASS. Six named gaps degrade the dashboard's scan-in-one-glance promise; one is a correctness bug on historical ranges.
 2. **Job traceability** — PASS. Every story carries a `job_id`; three new jobs added to `docs/product/jobs.yaml`, one existing job reused.
-3. **Acceptance criteria testable** — PASS. Every AC names an observable surface or a computed value; none reference internal state alone.
+3. **Acceptance criteria testable** — **FAIL on 2026-07-19, now PASS (closed same day).** Four defects were found and all four are fixed. (a) US-03's ACs described behaviour that had never been reachable (UPSTREAM-4) — testable in isolation, false against the shipped wiring, which is the worst combination; resolved by D2's re-decision plus AC0 and scenario 16b. (b) CI6 was a tautological oracle: it asserted the new projection against `GenerateTotalWorkItemAgeByDay`, so two definitions wrong in the same way would still agree; a second, hand-computed fixture (`GetWorkItemAgePercentiles_MatchHandComputedAgesOnTheSelectedDay`, expected ages `{1,4,4}`, total 9) now pins the arithmetic independently of the reference. (c) US-06 AC4 and slice-04 AC6 were architecture rules in AC slots and are relabelled as design constraints — still enforced by scenarios 46 and 33, no longer counted as acceptance criteria. (d) US-04 AC2 / CI4 was queried for naming no baseline-capture mechanism; on inspection it needs none — it compares the new as-of-date age against the shipped `WorkItemAge` property *in the same run*, and D4/CI5 keep that property untouched, so it is a live oracle rather than a remembered one. No golden file required.
 4. **Dependencies identified** — PASS. Only 04 → 03. Documented in the slice table and slice briefs.
 5. **Scope bounded** — PASS. Explicit out-of-scope list; six gaps, no adjacent-widget drift.
-6. **Sized** — PASS. Five slices, each ≤1 day, with the group-C split documented.
-7. **Cross-cutting impact assessed** — PASS. Table above; every row answered, including five explicit N/A-because entries.
+6. **Sized** — PASS, at the boundary. Five slices, each ≤1 day, with the group-C split documented. Noted 2026-07-19: slices 04 and 05 are estimated "~0.5–1d", so the gate is met only at the optimistic end of both. Slice 01 also bundles US-01 and US-02, which share no code path, no job and no risk — they are paired only because both are small. US-02 rides along as a rider with no dependency; it does not muddy slice 01's learning hypothesis, which covers View Data only.
+7. **Cross-cutting impact assessed** — **FAIL (2026-07-19).** The Lighthouse-Clients row read "N/A, because no endpoint contract changes; re-opens if DESIGN adds one". DESIGN then added one (D16, as amended by UPSTREAM-2). The row named its own re-open trigger, the trigger fired, and the row was never revisited — so the "every row answered" claim rested on a stale answer. Now re-answered (see the table). The other five N/A-because rows were re-audited at the same time and stand.
 8. **Elevator pitch per story** — PASS. All six stories carry Before/After/Decision-enabled; none is `@infrastructure`; every slice contains at least one user-visible value story.
 9. **Handoff target identified** — PASS. `nw-solution-architect` (DESIGN). Two open forks remain after the 2026-07-18 clarification round: **(a)** the D4 mechanism for as-of-date age that leaves write-back untouched, and **(b)** whether `BaseMetricsView`'s data layer can absorb the flow-efficiency fetch without adding a sequential round trip. D6's band design and the demo-data question are both closed — see D6 and the cross-cutting table.
 
@@ -287,7 +312,7 @@ Caveat: that effect `await`s `getCycleTimeData` *sequentially* before reaching t
 | **D13** | Add `int AgeOnDay(DateTime asOf)` to `WorkItemBase`. Leave the `WorkItemAge` property **byte-for-byte untouched**. | Satisfies D4's hard constraint structurally rather than by discipline: `WriteBackTriggerService.cs:188-205` reads the `WorkItemAge` property, so an unmodified property is an unmodified write-back. Note the two are *not* the same function with a different date — `WorkItemAge` carries a `StateCategory == Doing` guard that `AgeOnDay` must **not** have, because callers establish the population via `WasItemProgressOnDay` before projecting. Do not refactor `WorkItemAge` to delegate to `AgeOnDay`; they encode different questions. |
 | **D14** | No changes to `GetWipSnapshotForTeam` or `GetInProgressFeaturesForPortfolio`. | Both already select the historically-correct population via `GenerateWorkInProgressByDay`. Changing them would be churn without behaviour change, and would risk the one thing that currently works. |
 | **D15** | Change exactly two projections: `TeamMetricsService.cs:326` and `PortfolioMetricsService.cs:284`, from `.Select(i => i.WorkItemAge)` to `.Select(i => i.AgeOnDay(endDate))`. Drop the `.Where(age => age > 0)` guard in favour of an explicit `> 0` inside `AgeOnDay`'s contract, or retain it — but document which, because it currently doubles as the "not Doing" filter that D13 removes. | The guard's present meaning is accidental. Once ages are date-correct, a `0` can only mean "started on the day itself" (which `+1` arithmetic makes impossible) or bad data. Retaining it unexamined would silently drop legitimate items. |
-| **D16** | `WorkItemDto` gains an optional `DateTime? asOf = null` constructor parameter; `WorkItemAge` becomes `asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge`. Only the `/wip` endpoint (`TeamMetricsController.cs:117-130`) passes it — the other five construction sites are unchanged by omission. | The aging chart consumes `/wip?asOfDate=`, which *already* carries the date; the DTO simply discards it. Defaulting to the existing property keeps all other callers (FeaturesController, blocked/stale item lists) on today-anchored age with no edit, bounding the blast radius to one call site. |
+| **D16** | `WorkItemDto` gains an optional `DateTime? asOf = null` constructor parameter; `WorkItemAge` becomes `asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge`. Only the `/wip` endpoints pass it — the other construction sites are unchanged by omission. **Extended 2026-07-18 (DISTILL, user-confirmed):** the same optional `asOf` threads through `FeatureDto`'s constructor to the `WorkItemDto` base, and `PortfolioMetricsController` `/wip` (`PortfolioMetricsController.cs:95-105`) passes it too. Without that half, the portfolio aging chart would stay today-anchored while the portfolio percentiles card moved — the two surfaces disagreeing for the same range, which US-04 AC3 and CI2 forbid. | The aging chart consumes `/wip?asOfDate=`, which *already* carries the date; the DTO simply discards it. Defaulting to the existing property keeps all other callers (FeaturesController, blocked/stale item lists) on today-anchored age with no edit, bounding the blast radius to one call site. |
 | **D17** | No cache-key changes. | Every affected cache entry is already date-stamped: `WorkItemAgePercentiles_{endDate:yyyy-MM-dd}`, `WipSnapshot_{endDate:yyyy-MM-dd}`, `TotalWorkItemAge_{endDate:yyyy-MM-dd}`. Correcting the value behind an already-correct key needs no key change. **Watch-item:** deployments carrying a warm cache will serve stale pre-fix values until the date rolls or the cache is invalidated — confirm the cache does not survive a restart, and if it does, note it in the release. |
 | **D18** | Flow efficiency joins the existing `Promise.all` in `useMetricsData.ts`, but **hoist it above the sequential `getCycleTimeData` await** — either by moving `getCycleTimeData` into the same `Promise.all` (it shares the dependency signature) or by placing flow efficiency in its own concurrent effect. | Answers Fork B as "yes, no extra round trip" without regressing paint time. Joining the batch naively would make Flow Efficiency wait on cycle-time data it does not need. Prefer folding `getCycleTimeData` into the batch: it removes an existing sequential await and speeds up the whole view. |
 | **D19** | Extract the shared band logic from `computeCycleTimePercentilesRag` (`ragRules.ts:174-218`) into a private helper taking `(sle, values, terms, copy)`; both the cycle-time rule and the new WIA rule call it. | Per CLAUDE.md, DRY applies to *knowledge*, not shape. The 20pp red boundary and the "meet the target = green" rule are one piece of knowledge — an SLE-attainment band — deliberately shared, so a future change to the boundary lands once. The populations differ; the banding does not. Contrast with the deliberately-unshared `validatePaymentAmount`/`validateTransferAmount` case: those evolve independently, this must not. |
@@ -375,3 +400,235 @@ Execution order stands: 01 → 02 → 03 → 04 → 05. Slice 03 was ordered ear
 2. **Warm-cache staleness on deploy** (D17) — confirm whether the metrics cache survives a process restart. If it does, the corrected values will not appear until the cache turns over, which is a release note, not a code change.
 3. **Flow-efficiency batch placement** (D18) — folding `getCycleTimeData` into the `Promise.all` is the preferred option and speeds up the existing view, but it touches a load path outside this feature's stated scope. If that feels like scope creep at implementation time, fall back to a separate concurrent effect for flow efficiency and leave the existing sequential await alone.
 4. **Optimistic bias of WIP-SLE attainment** (D6, unchanged) — slice 04's learning hypothesis. Not a design question; a validation step during that slice.
+
+---
+
+## Wave: DISTILL / [REF] Reconciliation + degradation log
+
+**Wave-decision reconciliation: PASSED — 0 contradictions.** DISCUSS D1-D12, DESIGN D13-D20 and
+`docs/product/journeys/widget-loose-ends.yaml` were cross-checked decision by decision. DESIGN corrects
+DISCUSS's *mechanism* reading in two places (the population is already date-correct; `GetTotalWorkItemAge`
+is already correct) but both are documented supersessions with rationale, not contradictions.
+
+**Graceful degradation:** no `devops/` artifacts for this feature — **WARN, not block**. The default
+environment matrix applies; no infrastructure constraint affects these tests (no new endpoint, no new
+persistence, no migration). DEVOPS takes outcome-KPIs only, exactly as the wave-status line said.
+
+**Three upstream issues raised, all three now resolved** — see `distill/upstream-issues.md`.
+**UPSTREAM-1** (a slice-03 domain example contradicted `WasItemProgressOnDay`): resolved 2026-07-18 — the
+example was wrong and has been corrected in the slice brief; an item closing on the selected day is
+excluded. **UPSTREAM-2** (D16 omitted the portfolio half): resolved 2026-07-18 — D16 is extended to
+`FeatureDto` + `PortfolioMetricsController./wip`, so slice 03's file list grows by those two.
+**UPSTREAM-3** was a count error already absorbed by the ATs.
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Project convention wins over the skill's Gherkin default: this repo has no `.feature` files. Acceptance
+tests are NUnit (backend) and Vitest (frontend), per `docs/architecture/atdd-infrastructure-policy.md`,
+which records that the Python/Hypothesis pilot artifacts do not apply here. Skip markers are NUnit
+`[Ignore]` and Vitest `describe.skip`, as the polyglot matrix prescribes for C#/TS.
+
+| # | Scenario | Slice / AC | Layer | Tags |
+|---|---|---|---|---|
+| 1 | Age on a day for an open item is the inclusive day count | 03 / US-04 AC1 | unit | `@in-memory` `@US-04` |
+| 2 | An item that has closed since still ages to the requested day | 03 / US-04 AC1 | unit | `@in-memory` `@US-04` |
+| 3 | `StartedDate` falls back to `CreatedDate`, and is preferred when both exist | 03 | unit | `@in-memory` `@edge` |
+| 4 | Started on the day itself reads 1 | 03 | unit | `@in-memory` `@boundary` |
+| 5 | Started after the requested day reads 0 | 03 | unit | `@in-memory` `@boundary` `@error` |
+| 6 | Neither started nor created date reads 0 | 03 | unit | `@in-memory` `@error` |
+| 7 | `AgeOnDay` does not disturb the `WorkItemAge` property | 03 / CI5 | unit | `@in-memory` `@regression` |
+| 8 | Percentiles include an item closed after the selected day, aged to it | 03 / US-04 AC1 | service | `@real-io` `@US-04` |
+| 9 | Percentiles exclude an item closed before the selected day | 03 / US-04 AC1 | service | `@real-io` `@US-04` |
+| 10 | Percentiles exclude an item closed **on** the selected day | 03 / UPSTREAM-1 | service | `@real-io` `@boundary` |
+| 11 | Percentiles exclude an item started after the selected day | 03 | service | `@real-io` `@error` |
+| 12 | Percentile ages agree with the `GenerateTotalWorkItemAgeByDay` reference | 03 / CI6 | service | `@real-io` `@anti-drift` |
+| 12b | Percentile ages match hand-computed values `{1,4,4}` on the selected day | 03 / CI6 | service | `@real-io` `@independent-oracle` |
+| 13 | With `endDate` = today, every age matches the today-anchored property | 03 / CI4 | service | `@real-io` `@regression` |
+| 14 | Portfolio: feature closed after the selected day is included and aged to it | 03 / CI2 | service | `@real-io` `@portfolio` |
+| 15 | Portfolio: with `endDate` = today, ages match the today-anchored property | 03 / CI2 CI4 | service | `@real-io` `@portfolio` `@regression` |
+| 16 | Write-back keeps emitting today-anchored age (literal, not property-derived) | 03 / CI5 | service | `@real-io` `@regression` |
+| 16b | **Blocked-count history is fetched from `startDate − 1 day`, so the baseline is inside the window** | 02 / US-03 AC0 | hook | `@in-memory` `@US-03` `@wiring` |
+| 17 | Blocked trend still compares against a real boundary snapshot | 02 / US-03 AC1 | unit | `@in-memory` `@regression` |
+| 18 | Blocked trend still picks the latest snapshot at or before the boundary | 02 / US-03 AC1 | unit | `@in-memory` `@regression` |
+| 19 | Missing boundary snapshot → baseline 0, direction rendered | 02 / US-03 AC2 | unit | `@in-memory` `@US-03` |
+| 20 | Baseline 0 and current 0 → flat, never a false arrow | 02 / US-03 AC3 | unit | `@in-memory` `@boundary` |
+| 21 | Entirely empty history → flat, not a no-baseline placeholder | 02 / US-03 AC3 | unit | `@in-memory` `@error` |
+| 22 | Baseline 0 → percentage delta omitted, absolute values kept | 02 / US-03 AC4 | unit | `@in-memory` `@error` |
+| 23 | The synthetic baseline label is present but never a fabricated `recordedAt` | 02 / US-03 AC5 | unit | `@in-memory` `@US-03` |
+| 23b | Synthetic baseline is marked assumed, so an arrow is never read as measured change | 02 / US-03 AC5b | unit | `@in-memory` `@error` `@honesty` |
+| 23c | Nothing at or before `endDate` → no fabricated direction (3rd `noBaselineTrend` site) | 02 / US-03 AC2b | unit | `@in-memory` `@error` `@boundary` |
+| 24 | WIA RAG: amber at ≤20pp short of the SLE target | 04 / US-05 AC2 | unit | `@in-memory` `@US-05` |
+| 25 | WIA RAG: red at >20pp short | 04 / US-05 AC1 | unit | `@in-memory` `@US-05` |
+| 26 | WIA RAG: green at or above target | 04 / US-05 AC2 | unit | `@in-memory` `@US-05` |
+| 27 | WIA RAG: exactly-met target is green, not amber | 04 | unit | `@in-memory` `@boundary` |
+| 28 | WIA RAG: exactly-20pp shortfall is amber, not red | 04 | unit | `@in-memory` `@boundary` |
+| 29 | WIA RAG: an age equal to the SLE value counts as within it | 04 | unit | `@in-memory` `@boundary` |
+| 30 | WIA RAG: no SLE → red with the define-an-SLE tip | 04 / US-05 AC3 | unit | `@in-memory` `@error` |
+| 31 | WIA RAG: empty population → **no Act status**, never the define-an-SLE tip, no divide-by-zero | 04 / US-05 AC3b | unit | `@in-memory` `@error` |
+| 31b | WIA RAG: no-SLE and empty-population stay distinct answers | 04 / US-05 AC3 vs AC3b | unit | `@in-memory` `@error` `@regression` |
+| 32 | WIA RAG: the tip always carries the signal, colour is never alone | 04 / US-05 AC5, CI3 | unit | `@in-memory` `@a11y` |
+| 33 | WIA RAG bands identically to the cycle-time rule on the same numbers | 04 / US-05 AC6 | unit | `@in-memory` `@anti-duplication` |
+| 34 | Total Throughput exposes its completed items with the cycle-time highlight | 01 / US-01 AC1 | component | `@in-memory` `@US-01` |
+| 35 | Total Arrivals exposes its arrival items | 01 / US-01 AC2 | component | `@in-memory` `@US-01` |
+| 36 | Empty range still offers the drill-through, with an empty set | 01 / US-01 AC3 | component | `@in-memory` `@error` |
+| 37 | Aging chart labels WIA reference lines with the percentage alone | 01 / US-02 AC1 | component | `@in-memory` `@US-02` |
+| 38 | Aging chart leaves the cycle-time labels unchanged | 01 / US-02 AC2 | component | `@in-memory` `@regression` |
+| 39 | Both percentile sources label identically | 01 / US-02 AC1+AC2 | component | `@in-memory` `@US-02` |
+| 40 | WIA Percentiles widget renders a RAG chip | 04 / US-05 AC1-3 | component | `@in-memory` `@US-05` |
+| 41 | WIA Percentiles chip carries a non-empty tip | 04 / US-05 AC5, CI3 | component | `@in-memory` `@a11y` |
+| 41b | WIA Percentiles: nothing in progress → no Act chip, never the define-an-SLE tip | 04 / US-05 AC3b | component | `@in-memory` `@error` |
+| 42 | WIA Percentiles renders a previous-period trend via existing chrome | 04 / US-05 AC4 | component | `@in-memory` `@US-05` |
+| 43 | Flow Efficiency renders the unchanged rule's status | 05 / US-06 AC1 | component | `@in-memory` `@US-06` |
+| 44 | Wait states unconfigured → body kept, no misleading colour | 05 / US-06 AC2 | component | `@in-memory` `@error` |
+| 45 | No data in scope → body kept, no misleading colour | 05 / US-06 AC3 | component | `@in-memory` `@error` |
+| 46 | Flow efficiency is fetched exactly once, via the shared data layer | 05 / US-06 AC4 | component | `@in-memory` `@US-06` |
+| 47 | **Every** Flow Overview widget has a registered RAG footer | 05 / US-06 AC7 | component | `@in-memory` `@kpi` `@structural` |
+
+**52 scenarios. Error/edge/boundary-tagged: 21 (40%)** — the target is met.
+
+The count history is worth keeping, because it is the more useful artifact. The first pass claimed
+19/47 = 40%; the review gate measured the tags and found 17/47 = **36%**. That was corrected to 36% and
+left there rather than re-tagged, and the shortfall then did its job: it prompted a hunt for *genuinely*
+uncovered error paths, which found four real ones — the third `noBaselineTrend()` return site that
+UPSTREAM-3 had counted but no scenario covered (23c), the honest-labelling guard on the synthetic
+baseline (23b), the AC3/AC3b split at rule level (31b), and AC3b at the rendered widget where the
+rule-to-chip mapping actually lives (41b). Padding with contrived cases would have hit 40% faster and
+been worth nothing.
+
+## Wave: DISTILL / [REF] Architecture-of-reference treatment (replaces per-feature WS strategy)
+
+DISCUSS D11 recorded "WS strategy C, no walking skeleton" — kept as historical record. Under the current
+model the choice is structural, not per-feature, and is already fixed by
+`docs/architecture/atdd-infrastructure-policy.md`. No new port is introduced by this feature, so **no new
+policy row is needed and the file is unchanged** (`--policy=inherit`).
+
+Applied treatments:
+
+| Port in scope | Class | Treatment (from the policy) |
+|---|---|---|
+| `GET /metrics/workItemAgePercentiles` (team + portfolio) | driving | exercised at the service seam with real EF-shaped repositories via Moq-backed `GetAllByPredicate` — the shipped precedent for every `*MetricsServiceTests` class |
+| `GET /metrics/wip` (team + portfolio) | driving | same |
+| `GET /metrics/flowEfficiency` | driving | driven from the React data layer with a mocked `IMetricsService`, matching every other widget test |
+| Flow Overview / Work Item Aging UI | driving | React Testing Library against the real `BaseMetricsView` with the shipped `WidgetShell` mock |
+| `IWorkItemRepository`, `IRepository<Feature>` | driven internal | real query semantics via predicate compilation, per policy |
+| `IWriteBackService` | driven external | `Mock<IWriteBackService>` with output capture, per policy |
+
+**No walking-skeleton scenario is added.** This is a brownfield feature that introduces zero new files,
+zero new components and zero new endpoints (DESIGN component-decomposition table); every path it touches is
+already covered end to end by shipped E2E specs. Adding a skeleton would prove wiring that is not in
+question. Scenario 47 is the structural stand-in that actually matters here: it fails the moment a Flow
+Overview widget ships without a status.
+
+## Wave: DISTILL / [REF] Adapter coverage (Mandate 6)
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `IWorkItemRepository` (team WIP + percentiles) | YES | 8-13, 16 |
+| `IRepository<Feature>` (portfolio WIP + percentiles) | YES | 14, 15 |
+| `IWriteBackService` (write-back emission) | YES | 16 |
+| `IMetricsService` frontend adapter (flow efficiency) | YES | 43-46 |
+| `IBlockedItemService` | N/A | not touched — slice 02 changes a pure selector over already-loaded history, no adapter involved |
+
+Zero `NO — MISSING` rows.
+
+## Wave: DISTILL / [REF] Scaffolds (Mandate 7)
+
+Two production symbols do not exist yet, so the ATs would not compile. Both are scaffolded to keep the
+suite **RED, not BROKEN**, and both carry a `__SCAFFOLD__` marker for machine detection:
+
+| Scaffold | File | Shape |
+|---|---|---|
+| `WorkItemBase.AgeOnDay(DateTime)` | `Lighthouse.Backend/Models/WorkItemBase.cs` | real not-started guard (settled behaviour), arithmetic returns 0 |
+| `computeWorkItemAgePercentilesRag(sle, ages, terms)` | `Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts` | returns `{ ragStatus: "red", tipText: "" }` |
+
+Neither throws. `TreatWarningsAsErrors` plus Sonar's S3717 make a `NotImplementedException` scaffold a
+build failure here, and a throwing scaffold is a live hazard if anything reaches it before DELIVER. A
+returning stub is the safer C#/TS equivalent of the "assertion failure, not infrastructure error"
+principle — the skipped ATs fail on the assertion the moment they are un-skipped, which is exactly the
+signal Mandate 7 asks for. `grep -rn "__SCAFFOLD__"` must return zero once slices 03 and 04 land.
+
+## Wave: DISTILL / [REF] Test placement
+
+| Tests | File | Precedent |
+|---|---|---|
+| 1-7 | `Lighthouse.Backend.Tests/Models/WorkItemBaseAgeOnDayTest.cs` (new) | `FeatureTest.cs`, `BlockedCountSnapshotTests.cs` in the same folder |
+| 8-15 | `Lighthouse.Backend.Tests/Services/Implementation/WorkItemAgeAsOfDateTest.cs` (new) | `TeamMetricsServiceSnapshotTests.cs` — feature-suffixed fixture, same folder |
+| 16 | `WriteBackTriggerServiceTest.cs` (appended) | sits beside the shipped `WorkItemAgeCycleTime` cases |
+| 16b | `useMetricsData.test.ts` (appended to the blocked-count describe) | the file's own `getBlockedCountHistory` cases — the only layer that can catch the UPSTREAM-4 window defect |
+| 17-23 | `blockedTrend.test.ts` (appended describe) | the file's own existing B3 describe |
+| 24-33 | `ragRules.test.ts` (appended describe) | one describe per rule, as throughout |
+| 34-36, 40-47 | `BaseMetricsView.test.tsx` (appended describes) | the shipped `M3`–`M6 RAG Footers` describes |
+| 37-39 | `WorkItemAgingChart.test.tsx` (nested describe) | inside the existing percentile-source-selector describe |
+
+## Wave: DISTILL / [REF] RED classification (pre-DELIVER fail-for-the-right-reason gate)
+
+Both suites were run with the skip markers stripped, then restored.
+
+**Backend** — 12 failed, 4 passed of 16. Every failure is an NUnit assertion failure
+(`MISSING_FUNCTIONALITY`). Zero compile, fixture, or setup errors. The 4 passes are scenarios 5, 6, 10 and
+11, which assert behaviour that is *already* correct — they are regression guards, and passing green from
+the start is the right outcome for them.
+
+**Frontend** — 14 failed of the 24 un-skipped, all `AssertionError` on the expected value
+(`expected 'none' to be 'up'`, `expected 'red' to be 'amber'`, `expected '' to contain 'SLE'`). Zero import
+or fixture failures. The other 10 are the unchanged-behaviour regression guards.
+
+**One test was rejected by this gate and rewritten.** Scenario 23 originally asserted only
+`expect(recordedAts).not.toContain(previousLabel)`, which passes **vacuously** against today's `undefined`
+label — a `WRONG_ASSERTION` that would have gone green in DELIVER without the behaviour existing. It now
+asserts the label is defined first. Two backend scenarios (10, 11) were also corrected: they asserted an
+empty percentile list, but `BuildPercentiles` always emits the four 50/70/85/95 entries and represents an
+empty population as zero *values*.
+
+Full suites green with markers restored: backend **3454 passed / 20 skipped**, frontend **3576 passed /
+31 skipped**, `tsc -b` clean, Biome clean.
+
+## Wave: DISTILL / [REF] E2E — deliberately deferred to each slice's DELIVER step
+
+**Not an N/A.** DoD item 7 and every slice's AC8 require Playwright coverage, and it is still required.
+It is not authored here, for two compounding reasons:
+
+1. A `@screenshot` spec asserting a status chip that does not render yet cannot be run, and the standing
+   rule in this project is that a spec or POM locator is never committed unrun.
+2. The POM additions the specs need (status-chip accessors on the Flow Overview page object, a View Data
+   opener for the two new widgets) are only writable against real rendered markup.
+
+**Contract for DELIVER:** each slice adds its own E2E before that slice is called done — slice 01 the View
+Data drill-through, slice 02 the directional arrow on Blocked, slice 03 a historical range showing non-zero
+WIA percentiles, slices 04 and 05 the status chips (asserting the status attribute, never a pixel). All
+POM-mediated, driven by seeded demo data, run locally before commit. Demo-data adequacy is already
+confirmed (DISCUSS cross-cutting table).
+
+## Wave: DISTILL / [REF] Outcomes registry
+
+**Skipped, with reason.** The registry tracks new typed contract surfaces. This feature introduces no new
+rule module, CLI subcommand, endpoint, or system-wide invariant — DESIGN's component table records zero new
+files, components and endpoints across all five slices. `AgeOnDay` and `computeWorkItemAgePercentilesRag`
+are internal helpers behind existing contracts, not new promises about what the system does. The one
+genuinely new system-wide claim — *every Flow Overview widget exposes a status* — is registered where it
+can actually fail: scenario 47.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+- **No blockers.** UPSTREAM-4 was raised and resolved on 2026-07-19: the final-wave review gate ran the
+  diagnostic slice 02 had promised, found the blocked-trend baseline lookup sits one day outside its own
+  fetch window, and the user re-decided D2 the same day. Slice 02 now carries **two** changes in order —
+  widen the fetch (AC0, scenario 16b at the `useMetricsData` seam), then the zero-baseline fallback
+  (AC2-AC4, scenarios 17-23) — and DELIVER must do them in that order. Still ~0.5d.
+- UPSTREAM-1 and UPSTREAM-2 were both answered on 2026-07-18 and folded back into the slice brief and D16
+  respectively. Slice 03's file list now includes `FeatureDto` and `PortfolioMetricsController`, and — new
+  on 2026-07-19 — an MCP tool-description reword plus a Changeset in `lighthouse-clients` (the cross-cutting
+  row that was answered "N/A" had a re-open trigger that had already fired).
+- Slice 04 now opens with the D6 validation gate (named coach, two deteriorating periods, GREEN on either →
+  stop and re-open D6) before any code, and its AC3 is split into AC3/AC3b so an empty population no longer
+  borrows the unconfigured-SLE answer.
+- Execution order: 01 → 02 → 03 → 04 → 05, restored now that UPSTREAM-4 is resolved. Slice 04's ATs must not be un-skipped before slice
+  03 lands — pre-fix, both periods age to today, so the trend reads flat and scenario 42 would pass for the
+  wrong reason.
+- Three shipped expectations are superseded by design and must be **deleted**, not repaired: the
+  `noBaseline` case in `blockedTrend.test.ts` (slice 02) and the prefixed-label expectations in
+  `WorkItemAgingChart.test.tsx` (slice 01) — **seven tests there, not two**; the corrected count and
+  the full list are in that file's inline marker. Each is flagged inline at the point of change.
+- DESIGN open question 1 (the `age > 0` guard) is **answered** by scenario 5: `AgeOnDay` returns 0 for a
+  not-yet-started item, so the guard keeps a real meaning and is retained. Open questions 2 (warm-cache
+  staleness) and 3 (batch placement) remain live for DELIVER.

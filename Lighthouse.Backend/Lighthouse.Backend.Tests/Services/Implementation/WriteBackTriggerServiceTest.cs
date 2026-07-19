@@ -114,6 +114,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        [Ignore("RED scaffold — DISTILL widget-loose-ends slice 03. Un-skip in DELIVER. CI5 / US-04 AC4.")]
+        public async Task TriggerWriteBackForTeam_WorkItemAgeCycleTime_StaysTodayAnchoredAfterTheAsOfDateFix()
+        {
+            // Story 5508 CI5: slice 03 makes every Work-Item-Age *dashboard* surface a function of the
+            // selected date. Write-back must NOT follow — it keeps emitting the age as of today.
+            // Deliberately NOT expressed as `doingItem.WorkItemAge.ToString()`: that expectation would
+            // move with the property and therefore pin nothing. The literal is the point.
+            var team = CreateTeamWithWorkItems();
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
+
+            var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-5));
+
+            SetupWorkItemsForTeam(team.Id, [doingItem]);
+
+            var subject = CreateSubject();
+
+            await subject.TriggerWriteBackForTeam(team);
+
+            writeBackServiceMock.Verify(
+                w => w.WriteFieldsToWorkItems(
+                    team.WorkTrackingSystemConnection,
+                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+                        updates.Count == 1 &&
+                        updates[0].Value == "6")),
+                Times.Once);
+        }
+
+        [Test]
         public async Task TriggerWriteBackForTeam_WorKItemAgeCycleTime_WritesCycleTimeForDoneItems()
         {
             var team = CreateTeamWithWorkItems();
