@@ -6,6 +6,7 @@ import {
 import {
 	CumulativeChartFlowEfficiency,
 	FlowEfficiencyOverviewTile,
+	type RagStatus,
 } from "../../models/metrics/FlowEfficiencyWidget";
 import {
 	MetricsCategories,
@@ -85,4 +86,58 @@ test("@walking_skeleton @US-01 admin marks a wait state and the delivery lead se
 	await expect(completedToggle).toHaveAttribute("aria-pressed", "true");
 	await completedToggle.click();
 	await expect(completedToggle).toHaveAttribute("aria-pressed", "false");
+});
+
+test("@US-01 the delivery lead sees a RAG status chip on the Flow Efficiency widget only once wait states are configured", async ({
+	page,
+	request,
+	overviewPage,
+}) => {
+	await loadDemoScenario(request, DEMO_SCENARIO_ID);
+	await waitForBackgroundUpdates(request);
+	await page.goto("/");
+
+	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
+	const tile = new FlowEfficiencyOverviewTile(page);
+
+	// Negative case first: no wait states configured yet, so the widget must
+	// explain itself rather than render a misleading status.
+	const metricsBefore = await teamDetail.goToMetrics();
+	await metricsBefore.switchCategory(MetricsCategories.FlowOverview);
+	await expect(tile.notConfiguredMessage).toBeVisible();
+	await expect(tile.ragChip).toHaveCount(0);
+
+	await page.goto("/");
+	const detailAgain = await overviewPage.goToTeam(DEMO_TEAM_NAME);
+	const teamEdit = await detailAgain.editTeam();
+	const waitStates = new WaitStatesEditor(page);
+	await waitStates.enable();
+	await waitStates.addWaitState(DEMO_WAIT_STATE);
+	const detailAfterSave = await teamEdit.save();
+
+	const metrics = await detailAfterSave.goToMetrics();
+	const overviewWidgets = await metrics.switchCategory(
+		MetricsCategories.FlowOverview,
+	);
+	const tileWidget = await metrics.getWidgetByName(
+		MetricsWidgetNames.FlowEfficiencyOverview,
+		overviewWidgets,
+	);
+	await expect(tileWidget.Widget).toBeVisible();
+
+	// The chip is now present and carries a real status, not a fallback.
+	await expect(tile.ragChip).toBeVisible();
+	const status = await tile.readRagStatus();
+	expect(["red", "amber", "green"]).toContain(status);
+
+	// Colour is never the only signal: the chip also carries a text label...
+	expect(await tile.readRagLabel()).toBe(
+		FlowEfficiencyOverviewTile.labelFor(status as RagStatus),
+	);
+
+	// ...and an accessible label that spells out the reading and the action.
+	const efficiencyText = await tile.readEfficiencyText();
+	const ragTip = await tile.readRagTipText();
+	expect(ragTip).toContain("Flow efficiency is");
+	expect(ragTip).toContain(efficiencyText);
 });

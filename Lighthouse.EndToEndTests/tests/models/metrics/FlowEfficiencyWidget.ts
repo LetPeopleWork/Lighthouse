@@ -7,6 +7,26 @@ const CHART_EFFICIENCY_TEST_ID = "cumulative-state-time-flow-efficiency";
 const TITLE_BLOCK_TEST_ID = "cumulative-state-time-title-block";
 const BAR_TOOLTIP_TEST_ID = "cumulative-state-bar-tooltip";
 
+export type RagStatus = "red" | "amber" | "green";
+export type ObservedRagStatus = RagStatus | "unknown";
+
+const RAG_STATUS_LABELS: Record<RagStatus, string> = {
+	red: "Act",
+	amber: "Observe",
+	green: "Sustain",
+};
+
+function toRagStatus(raw: string | null): ObservedRagStatus {
+	if (raw === "red" || raw === "amber" || raw === "green") {
+		return raw;
+	}
+
+	// Deliberately distinct: an absent or unrecognised attribute must NOT
+	// collapse into a legitimate status, otherwise locator drift would read
+	// as a product regression (or pass vacuously).
+	return "unknown";
+}
+
 export class FlowEfficiencyOverviewTile {
 	private readonly widget: Locator;
 
@@ -27,6 +47,45 @@ export class FlowEfficiencyOverviewTile {
 
 	async readEfficiencyText(): Promise<string> {
 		return (await this.efficiencyValue.innerText()) ?? "";
+	}
+
+	get notConfiguredMessage(): Locator {
+		return this.widget.getByTestId("flow-efficiency-not-configured");
+	}
+
+	/** The RAG chip rendered by the shared WidgetShell header. */
+	get ragChip(): Locator {
+		return this.widget.getByTestId("widget-rag-flowEfficiency");
+	}
+
+	/**
+	 * `rag-status` is a shared test id across every widget, so it is scoped
+	 * inside this widget's chip to avoid a strict-mode violation.
+	 */
+	get ragStatusValue(): Locator {
+		return this.ragChip.getByTestId("rag-status");
+	}
+
+	async readRagStatus(): Promise<ObservedRagStatus> {
+		return toRagStatus(await this.ragStatusValue.getAttribute("data-rag"));
+	}
+
+	async readRagLabel(): Promise<string> {
+		return (await this.ragStatusValue.innerText()).trim();
+	}
+
+	static labelFor(status: RagStatus): string {
+		return RAG_STATUS_LABELS[status];
+	}
+
+	/**
+	 * The chip's accessible name, which MUI derives from the RAG tip text.
+	 * Read from the chip itself rather than a hovered popper: a bare
+	 * `getByRole("tooltip")` also matches the widget's info popover and trips
+	 * strict mode intermittently.
+	 */
+	async readRagTipText(): Promise<string> {
+		return (await this.ragChip.getAttribute("aria-label")) ?? "";
 	}
 }
 
