@@ -316,7 +316,91 @@ the fix, **it needs a regression test at a range beyond the current E2E's**, or 
 keys are date-stamped (D17). This also closes DESIGN open question 2: **no release note is needed for warm-cache
 staleness.**
 
-**Status: OPEN — deferred to slice 04 by user decision. Do not close slice 03 as verified until this is resolved.**
+### RESOLVED 2026-07-19 — root cause was none of the four candidates
+
+Diagnosed against the user's live environment (team "Lighthouse Dev Team", range ending 30.06.2026),
+then fixed in commits `586a7416`, `80c242ff`, `abff6639`, `f52f18f0`.
+
+**The backend was returning the right items all along.** The raw endpoint read proved it:
+
+```
+GET /api/latest/teams/34/metrics/wip?asOfDate=2026-06-30
+5205 state=Closed cat=Done age=1 started=2026-06-30 closed=2026-07-01
+5320 state=Closed cat=Done age=2 started=2026-06-29 closed=2026-07-03
+```
+
+Two items, the same two WIP-over-time showed, with correct as-of ages. So candidates 1 (the `age > 0`
+guard), 2 (a different `endDate`) and 4 (demo-data shape) are all excluded, and the reasoning above —
+that the population cannot legitimately differ — was right.
+
+**The fault was `state`.** `WorkItemDto.State` is the item's *current* state. Both items had closed
+since, so both reported `Closed`. `WorkItemAgingChart.groupWorkItems` buckets by state and skips
+anything outside the team's `DoingStates`:
+
+```ts
+const stateIndex = stateIndexMap[item.state.toLowerCase()];
+if (stateIndex === undefined) continue;
+```
+
+Both were dropped, leaving zero groups and the "No work items in progress" placeholder. D16 fixed the
+dot *height*; the dot *column* was still today-anchored. Candidate 3 was closest — the fault is in the
+frontend's handling — but it is not the empty-state placeholder reacting to zero values; it is items
+being filtered out before they ever reach a group.
+
+**The user's own hypothesis was that we might not have historic state at all. We do.**
+`WorkItemStateTransitions` is populated with full history by the ADO and Jira connectors and
+interpolated by the CSV one. For these two items:
+
+```
+5205  New→Active 06-30 09:15 | Active→Resolved 06-30 13:03 | Resolved→Active 06-30 13:20 | …→Closed 07-01
+5320  New→Active 06-29 13:15 | Active→Resolved 07-03 | Resolved→Closed 07-03
+```
+
+As of 30.06 both were `Active`. Verified live after the fix, including 5205's 13:20 re-entry:
+
+```
+5205 state=Active cat=Doing age=1 enteredAt=2026-06-30T13:20:01.413Z
+5320 state=Active cat=Doing age=2 enteredAt=2026-06-29T13:15:45.9Z
+```
+
+**Two follow-ons folded in**, both the same class of today-anchoring on the same payload: blocked
+(rule evaluated against today's tags/state) and staleness (`currentStateEnteredAt` compared against
+today rather than the range end).
+
+**Regression cover.** New tests sit at the service, controller and DTO boundaries for both teams and
+portfolios. The range-distance threshold noted above is now moot — the projection is driven by
+transition timestamps rather than range width, so distance from today is no longer a variable. The
+suggested "regression test at a range beyond the current E2E's" is therefore not the guard that
+matters; the state-projection unit tests are.
+
+**Status: RESOLVED.** Slice 03 can be closed as verified.
+
+---
+
+## UPSTREAM-8 — OPEN, HAZARD — feature blocked history shares an id space with work items
+
+Raised 2026-07-19 while folding the blocked follow-on into UPSTREAM-7. **Not acted on; flagged only.**
+
+`WorkItemBlockedTransition.WorkItemId` has an FK to `WorkItems` with cascade delete, but
+`DemoBlockedHistoryBackfillHandler` writes **feature** ids into that same column
+(`BackfillAsync(portfolio.Id, OwnerType.Portfolio, blockedFeatures)` where the tuples carry
+`feature.Id`). Work-item ids and feature ids are independent identity sequences, so they collide.
+
+Consequences, in order of severity:
+
+1. Any read of blocked history keyed by id alone can attribute a feature's blocked spell to an
+   unrelated work item, or the reverse. The slice-08 drill-through already reads this way.
+2. Deleting a work item cascades away rows that may belong to a feature.
+
+**This is why the blocked-as-of projection was mirrored to teams but NOT to portfolios.** The team
+side is safe because it only ever reads spells for work-item ids; wiring the portfolio aging chart to
+the same table would start reading feature ids out of it and turn a latent collision into a visible
+wrong answer on screen. The portfolio chart therefore keeps its live rule-based blocked evaluation,
+which is unchanged and no worse than before.
+
+Fixing this properly needs either a discriminator column (`OwnerType`, as `BlockedCountSnapshot`
+already carries) or a separate `FeatureBlockedTransition` table, plus a migration. Out of scope for
+this feature.
 
 ---
 
