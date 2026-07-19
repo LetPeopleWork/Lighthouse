@@ -301,6 +301,84 @@ export class WorkItemAgePercentilesCard {
 	async countPercentileValues(): Promise<number> {
 		return this.percentileValues.count();
 	}
+
+	/**
+	 * The placeholder the card paints instead of the table when every percentile
+	 * came back as zero. This is the shape the card took for any past range before
+	 * the age-as-of fix: the population was selected correctly, but every item that
+	 * had since closed projected to age 0 and was dropped, leaving nothing to plot.
+	 */
+	get noWorkInProgressPlaceholder(): Locator {
+		return this.card.getByText("No work in progress", { exact: true });
+	}
+
+	/**
+	 * Reads the rendered table as "{percentile}th" -> days, e.g. { "85th": 6 }.
+	 * Returns an empty record while the card shows its placeholder instead of a
+	 * table, so callers can tell "no rows" apart from "rows reading zero".
+	 */
+	async getPercentileValues(): Promise<Record<string, number>> {
+		const rows = this.card.locator("tbody tr");
+		const rowCount = await rows.count();
+		const values: Record<string, number> = {};
+
+		for (let index = 0; index < rowCount; index++) {
+			const cells = rows.nth(index).locator("td");
+			const label = ((await cells.nth(0).textContent()) ?? "").trim();
+			const valueText = ((await cells.nth(1).textContent()) ?? "").trim();
+			const match = valueText.match(/(\d+)\s+days?/i);
+			if (label && match) {
+				values[label] = Number(match[1]);
+			}
+		}
+
+		return values;
+	}
+}
+
+/**
+ * Drives the dashboard's reporting window. The window lives in the `startDate` /
+ * `endDate` query params (BaseMetricsView seeds its state from them and writes
+ * them back on every picker change), so a range is applied by deep-linking and
+ * reloading rather than by typing into the MUI date fields — the fields are
+ * locale-formatted section inputs, which would make the spec depend on the
+ * runner's locale.
+ */
+export class MetricsDateRange {
+	constructor(public readonly page: Page) {}
+
+	get toggle(): Locator {
+		return this.page.getByTestId("dashboard-date-range-toggle");
+	}
+
+	private static toParam(date: Date): string {
+		return date.toISOString().split("T")[0];
+	}
+
+	/**
+	 * Applies the range and waits for the Work Item Age percentile fetch that the
+	 * new window triggers, matching on the endDate actually sent. Waiting on the
+	 * request rather than on the rendered card is what makes the assertion that
+	 * follows meaningful: it proves the app asked the backend to anchor at the
+	 * selected day, so a card that then renders values cannot be showing a
+	 * left-over response for the default (today-anchored) window.
+	 */
+	async apply(startDate: Date, endDate: Date): Promise<void> {
+		const endParam = MetricsDateRange.toParam(endDate);
+		const url = new URL(this.page.url());
+		url.searchParams.set("startDate", MetricsDateRange.toParam(startDate));
+		url.searchParams.set("endDate", endParam);
+
+		const percentilesRequested = this.page.waitForResponse(
+			(response) =>
+				response.url().includes("/metrics/workItemAgePercentiles?") &&
+				response.url().includes(`endDate=${endParam}`),
+			{ timeout: 30_000 },
+		);
+
+		await this.page.goto(url.toString());
+		await percentilesRequested;
+	}
 }
 
 export class WorkItemAgingReferenceLineSelector {
