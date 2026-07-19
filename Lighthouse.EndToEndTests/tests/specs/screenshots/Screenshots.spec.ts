@@ -518,16 +518,20 @@ testWithDemo(
 
 		const agingSelector = new WorkItemAgingReferenceLineSelector(page, "aging");
 		await expect
-			.poll(() => agingSelector.countCycleTimeReferenceLines())
+			.poll(() => agingSelector.countReferenceLines())
 			.toBeGreaterThan(0);
+		expect(await agingSelector.isCycleTimeSelected()).toBe(true);
 
+		// Story 5508 D9: both sources label their lines `<n>%`, so the active source is read
+		// from the toggle. The previous assertions matched a "Work Item Age <n>%" label that no
+		// longer exists and a cycle-time count that can no longer go to zero.
 		await agingSelector.selectWorkItemAge();
 		await expect
-			.poll(() => agingSelector.countWorkItemAgeReferenceLines())
-			.toBeGreaterThan(0);
+			.poll(() => agingSelector.isWorkItemAgeSelected())
+			.toBe(true);
 		await expect
-			.poll(() => agingSelector.countCycleTimeReferenceLines())
-			.toBe(0);
+			.poll(() => agingSelector.countReferenceLines())
+			.toBeGreaterThan(0);
 
 		await takeElementScreenshot(
 			agingWidget.Widget,
@@ -535,12 +539,10 @@ testWithDemo(
 		);
 
 		await agingSelector.selectCycleTime();
+		await expect.poll(() => agingSelector.isCycleTimeSelected()).toBe(true);
 		await expect
-			.poll(() => agingSelector.countCycleTimeReferenceLines())
+			.poll(() => agingSelector.countReferenceLines())
 			.toBeGreaterThan(0);
-		await expect
-			.poll(() => agingSelector.countWorkItemAgeReferenceLines())
-			.toBe(0);
 	},
 );
 

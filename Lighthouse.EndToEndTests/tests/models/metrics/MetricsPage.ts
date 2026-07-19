@@ -407,16 +407,26 @@ export class WorkItemAgingReferenceLineSelector {
 		return this.toggle("Work Item Age");
 	}
 
-	private referenceLineLabels(pattern: RegExp): Locator {
-		return this.widget.locator("text").filter({ hasText: pattern });
+	/**
+	 * Both percentile sources label their lines `<n>%` since Story 5508 D9 dropped the term
+	 * prefix — the toggle above the chart already says which population is active, so the DOM
+	 * deliberately no longer distinguishes them by label. Which source is showing is read from
+	 * the toggle, not from the line text; the values themselves are pinned by the unit tests.
+	 */
+	get referenceLines(): Locator {
+		return this.widget.locator("text").filter({ hasText: /^\d+%$/ });
 	}
 
-	get cycleTimeReferenceLines(): Locator {
-		return this.referenceLineLabels(/^\d+%$/);
+	private async isSelected(toggle: Locator): Promise<boolean> {
+		return (await toggle.getAttribute("aria-pressed")) === "true";
 	}
 
-	get workItemAgeReferenceLines(): Locator {
-		return this.referenceLineLabels(/^Work Item Age \d+%$/);
+	async isCycleTimeSelected(): Promise<boolean> {
+		return this.isSelected(this.cycleTimeToggle);
+	}
+
+	async isWorkItemAgeSelected(): Promise<boolean> {
+		return this.isSelected(this.workItemAgeToggle);
 	}
 
 	async selectCycleTime(): Promise<void> {
@@ -427,12 +437,8 @@ export class WorkItemAgingReferenceLineSelector {
 		await this.workItemAgeToggle.click();
 	}
 
-	async countCycleTimeReferenceLines(): Promise<number> {
-		return this.cycleTimeReferenceLines.count();
-	}
-
-	async countWorkItemAgeReferenceLines(): Promise<number> {
-		return this.workItemAgeReferenceLines.count();
+	async countReferenceLines(): Promise<number> {
+		return this.referenceLines.count();
 	}
 }
 
