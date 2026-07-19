@@ -70,6 +70,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(blockedWorkItemIds, Is.EquivalentTo(new[] { workItem.Id }));
         }
 
+        [Test]
+        public async Task GetWorkItemIdsWithBlockedHistory_ReturnsOnlyRequestedItemsThatHaveTransitions_Deduplicated()
+        {
+            var itemWithOneSpell = await GivenPersistedWorkItem();
+            var itemWithTwoSpells = await GivenPersistedWorkItem();
+            var itemWithoutHistory = await GivenPersistedWorkItem();
+            var itemOutsideTheRequest = await GivenPersistedWorkItem();
+
+            var subject = CreateSubject();
+
+            subject.Add(BlockedTransition(itemWithOneSpell.Id, Utc(2026, 6, 10, 9), Utc(2026, 6, 11, 9)));
+            subject.Add(BlockedTransition(itemWithTwoSpells.Id, Utc(2026, 6, 10, 9), Utc(2026, 6, 11, 9)));
+            subject.Add(BlockedTransition(itemWithTwoSpells.Id, Utc(2026, 6, 13, 9), null));
+            subject.Add(BlockedTransition(itemOutsideTheRequest.Id, Utc(2026, 6, 10, 9), null));
+            await subject.Save();
+
+            // The historic blocked read uses this to tell "no blocked spell on that day" from "this item
+            // predates blocked capture entirely" — the latter is the only case allowed to fall back to
+            // the live rule, so an item wrongly reported as having history would be silently mis-answered.
+            var idsWithHistory = subject.GetWorkItemIdsWithBlockedHistory(
+                [itemWithOneSpell.Id, itemWithTwoSpells.Id, itemWithoutHistory.Id]);
+
+            var expected = new[] { itemWithOneSpell.Id, itemWithTwoSpells.Id };
+            Assert.That(idsWithHistory, Is.EquivalentTo(expected));
+        }
+
         private static WorkItemBlockedTransition BlockedTransition(int workItemId, DateTime enteredAt, DateTime? leftAt)
         {
             return new WorkItemBlockedTransition
