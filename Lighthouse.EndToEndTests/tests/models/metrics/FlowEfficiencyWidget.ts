@@ -1,4 +1,10 @@
 import type { Locator, Page } from "@playwright/test";
+import {
+	type ObservedRagStatus,
+	RagChip,
+	type RagStatus,
+	ragLabelFor,
+} from "./RagChip";
 
 const WAIT_COLOUR_KEY_TEST_ID = "cumulative-state-time-wait-legend";
 const WAIT_COLOUR_KEY_SWATCH_TEST_ID =
@@ -7,34 +13,18 @@ const CHART_EFFICIENCY_TEST_ID = "cumulative-state-time-flow-efficiency";
 const TITLE_BLOCK_TEST_ID = "cumulative-state-time-title-block";
 const BAR_TOOLTIP_TEST_ID = "cumulative-state-bar-tooltip";
 
-export type RagStatus = "red" | "amber" | "green";
-export type ObservedRagStatus = RagStatus | "unknown";
-
-const RAG_STATUS_LABELS: Record<RagStatus, string> = {
-	red: "Act",
-	amber: "Observe",
-	green: "Sustain",
-};
-
-function toRagStatus(raw: string | null): ObservedRagStatus {
-	if (raw === "red" || raw === "amber" || raw === "green") {
-		return raw;
-	}
-
-	// Deliberately distinct: an absent or unrecognised attribute must NOT
-	// collapse into a legitimate status, otherwise locator drift would read
-	// as a product regression (or pass vacuously).
-	return "unknown";
-}
+export type { ObservedRagStatus, RagStatus } from "./RagChip";
 
 export class FlowEfficiencyOverviewTile {
 	private readonly widget: Locator;
+	private readonly rag: RagChip;
 
 	constructor(
 		public readonly page: Page,
 		widgetId = "flowEfficiency",
 	) {
 		this.widget = page.locator(`[data-testid="dashboard-item-${widgetId}"]`);
+		this.rag = new RagChip(this.widget, widgetId);
 	}
 
 	get tile(): Locator {
@@ -55,37 +45,27 @@ export class FlowEfficiencyOverviewTile {
 
 	/** The RAG chip rendered by the shared WidgetShell header. */
 	get ragChip(): Locator {
-		return this.widget.getByTestId("widget-rag-flowEfficiency");
+		return this.rag.chip;
 	}
 
-	/**
-	 * `rag-status` is a shared test id across every widget, so it is scoped
-	 * inside this widget's chip to avoid a strict-mode violation.
-	 */
 	get ragStatusValue(): Locator {
-		return this.ragChip.getByTestId("rag-status");
+		return this.rag.statusValue;
 	}
 
 	async readRagStatus(): Promise<ObservedRagStatus> {
-		return toRagStatus(await this.ragStatusValue.getAttribute("data-rag"));
+		return this.rag.readStatus();
 	}
 
 	async readRagLabel(): Promise<string> {
-		return (await this.ragStatusValue.innerText()).trim();
+		return this.rag.readLabel();
 	}
 
 	static labelFor(status: RagStatus): string {
-		return RAG_STATUS_LABELS[status];
+		return ragLabelFor(status);
 	}
 
-	/**
-	 * The chip's accessible name, which MUI derives from the RAG tip text.
-	 * Read from the chip itself rather than a hovered popper: a bare
-	 * `getByRole("tooltip")` also matches the widget's info popover and trips
-	 * strict mode intermittently.
-	 */
 	async readRagTipText(): Promise<string> {
-		return (await this.ragChip.getAttribute("aria-label")) ?? "";
+		return this.rag.readTipText();
 	}
 }
 
