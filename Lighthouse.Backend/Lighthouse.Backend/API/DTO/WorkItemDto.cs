@@ -22,7 +22,14 @@ namespace Lighthouse.Backend.API.DTO
         /// today-anchored while the percentile card moved. Every other construction site is unchanged
         /// by omission, which bounds the blast radius to that one call path.
         /// </param>
-        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null)
+        /// <param name="stateAsOf">
+        /// UPSTREAM-7: the state the item held on <paramref name="asOf"/>, for callers that cannot
+        /// hand over an already-projected entity. Teams project onto a WorkItem copy instead; a
+        /// Feature cannot be copied without losing the forecast/work/portfolio data this DTO reads,
+        /// and the entity is EF-tracked, so the portfolio path passes the projection in here.
+        /// Omitted means "no history for that day" — the item's current state stands.
+        /// </param>
+        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null, StateAsOf? stateAsOf = null)
         {
             Name = workItem.Name;
             Id = workItem.Id;
@@ -30,15 +37,15 @@ namespace Lighthouse.Backend.API.DTO
             ParentWorkItemReference = workItem.ParentReferenceId;
             Url = workItem.Url;
             Type = workItem.Type;
-            State = workItem.State;
-            StateCategory = workItem.StateCategory;
+            State = stateAsOf?.State ?? workItem.State;
+            StateCategory = stateAsOf?.StateCategory ?? workItem.StateCategory;
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime;
             NamedCycleTimes = namedCycleTimes;
             WorkItemAge = asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge;
             IsBlocked = isBlocked;
-            CurrentStateEnteredAt = workItem.CurrentStateEnteredAt;
+            CurrentStateEnteredAt = stateAsOf?.EnteredAt ?? workItem.CurrentStateEnteredAt;
             BlockedSince = blockedSince;
             Approximate = false;
         }

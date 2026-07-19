@@ -1614,5 +1614,87 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             features.ForEach(f => f.Portfolios.Add(portfolio));
         }
+
+        // ── GetFeatureStatesAsOf (UPSTREAM-7) ────────────────────────────────
+
+        private void SetupFeatureTransitions(params FeatureStateTransition[] transitions)
+        {
+            var stored = transitions.ToList();
+            featureStateTransitionRepository
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) =>
+                    stored.Where(predicate.Compile()).AsQueryable());
+        }
+
+        [Test]
+        public void GetFeatureStatesAsOf_FeatureMovedOnSince_ReportsStateItHadOnThatDay()
+        {
+            var asOfDate = new DateTime(2023, 1, 6, 0, 0, 0, DateTimeKind.Utc);
+            SetupFeatureTransitions(
+                new FeatureStateTransition { FeatureId = 3, ToState = "Active", TransitionedAt = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc) },
+                new FeatureStateTransition { FeatureId = 3, ToState = "Closed", TransitionedAt = new DateTime(2023, 1, 9, 0, 0, 0, DateTimeKind.Utc) });
+
+            var result = subject.GetFeatureStatesAsOf(portfolio, features, asOfDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[3].State, Is.EqualTo("Active"));
+                Assert.That(result[3].StateCategory, Is.EqualTo(StateCategories.Doing));
+            }
+        }
+
+        [Test]
+        public void GetFeatureStatesAsOf_SeveralTransitionsBefore_ReportsTheLastOne()
+        {
+            var asOfDate = new DateTime(2023, 1, 8, 0, 0, 0, DateTimeKind.Utc);
+            var reEnteredAt = new DateTime(2023, 1, 7, 0, 0, 0, DateTimeKind.Utc);
+            SetupFeatureTransitions(
+                new FeatureStateTransition { FeatureId = 3, ToState = "Active", TransitionedAt = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc) },
+                new FeatureStateTransition { FeatureId = 3, ToState = "Resolved", TransitionedAt = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc) },
+                new FeatureStateTransition { FeatureId = 3, ToState = "Active", TransitionedAt = reEnteredAt });
+
+            var result = subject.GetFeatureStatesAsOf(portfolio, features, asOfDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result[3].State, Is.EqualTo("Active"));
+                Assert.That(result[3].EnteredAt, Is.EqualTo(reEnteredAt));
+            }
+        }
+
+        [Test]
+        public void GetFeatureStatesAsOf_TransitionLaterOnTheDay_StillCounts()
+        {
+            var asOfDate = new DateTime(2023, 1, 6, 0, 0, 0, DateTimeKind.Utc);
+            SetupFeatureTransitions(
+                new FeatureStateTransition { FeatureId = 3, ToState = "Active", TransitionedAt = new DateTime(2023, 1, 2, 0, 0, 0, DateTimeKind.Utc) },
+                new FeatureStateTransition { FeatureId = 3, ToState = "Resolved", TransitionedAt = asOfDate.AddHours(13) });
+
+            var result = subject.GetFeatureStatesAsOf(portfolio, features, asOfDate);
+
+            Assert.That(result[3].State, Is.EqualTo("Resolved"));
+        }
+
+        [Test]
+        public void GetFeatureStatesAsOf_NoHistoryForThatDay_FeatureIsAbsentSoCurrentStateStands()
+        {
+            var asOfDate = new DateTime(2023, 1, 6, 0, 0, 0, DateTimeKind.Utc);
+            SetupFeatureTransitions(
+                new FeatureStateTransition { FeatureId = 3, ToState = "Resolved", TransitionedAt = new DateTime(2023, 1, 9, 0, 0, 0, DateTimeKind.Utc) });
+
+            var result = subject.GetFeatureStatesAsOf(portfolio, features, asOfDate);
+
+            Assert.That(result, Does.Not.ContainKey(3));
+        }
+
+        [Test]
+        public void GetFeatureStatesAsOf_NoTransitionsAtAll_ReturnsNothing()
+        {
+            SetupFeatureTransitions();
+
+            var result = subject.GetFeatureStatesAsOf(portfolio, features, new DateTime(2023, 1, 6, 0, 0, 0, DateTimeKind.Utc));
+
+            Assert.That(result, Is.Empty);
+        }
     }
 }

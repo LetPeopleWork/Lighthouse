@@ -237,6 +237,36 @@ namespace Lighthouse.Backend.Services.Implementation
             , logger);
         }
 
+        /// <summary>
+        /// The state each of <paramref name="features"/> held on <paramref name="asOfDate"/>, keyed by
+        /// feature id. Features absent from the result have no history covering that day and keep
+        /// their current state (UPSTREAM-7).
+        /// </summary>
+        /// <remarks>
+        /// The team side applies the same rule by projecting onto WorkItem copies; a Feature cannot be
+        /// copied without dropping the forecast/work/portfolio data FeatureDto reads, and these
+        /// entities are EF-tracked, so the projection is handed to the DTO instead of written onto
+        /// the entity. See BaseMetricsService.ResolveStateAsOf.
+        /// </remarks>
+        public IReadOnlyDictionary<int, StateAsOf> GetFeatureStatesAsOf(Portfolio portfolio, IReadOnlyCollection<Feature> features, DateTime asOfDate)
+        {
+            var featureIds = features.Select(feature => feature.Id).ToHashSet();
+            var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
+                .GetAllByPredicate(transition => featureIds.Contains(transition.FeatureId))
+                .AsEnumerable()
+                .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
+
+            return transitionsByFeature
+                .Select(entry => (FeatureId: entry.Key, StateOnDay: ResolveStateAsOf(entry.Value, asOfDate)))
+                .Where(entry => entry.StateOnDay != null)
+                .ToDictionary(
+                    entry => entry.FeatureId,
+                    entry => new StateAsOf(
+                        entry.StateOnDay!.ToState,
+                        portfolio.MapStateToStateCategory(entry.StateOnDay.ToState),
+                        entry.StateOnDay.TransitionedAt));
+        }
+
         public IEnumerable<Feature> GetBlockedEligibleFeaturesForPortfolio(Portfolio portfolio)
         {
             // Stryker disable once all: diagnostic log text is not behaviour

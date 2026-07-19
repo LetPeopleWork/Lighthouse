@@ -100,9 +100,16 @@ namespace Lighthouse.Backend.API
                 var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate).ToList();
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
+
+                // UPSTREAM-7: the population is date-correct and D16 made the age as-of, but the state
+                // stayed today-anchored — and the aging chart buckets by state, so features that have
+                // moved on to a Done state since fell out of the chart entirely.
+                var statesAsOf = portfolioMetricsService.GetFeatureStatesAsOf(portfolio, features, asOfDate);
+
                 // D16 / UPSTREAM-2: portfolio half of the same fix — without asOf here the portfolio
                 // aging chart and percentile card would disagree for the same range (CI2, US-04 AC3).
-                return features.Select(f => new FeatureDto(f, blackoutPeriods, null, null, asOfDate));
+                return features.Select(f => new FeatureDto(
+                    f, blackoutPeriods, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)));
             });
         }
 

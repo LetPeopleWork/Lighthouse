@@ -33,6 +33,9 @@ namespace Lighthouse.Backend.Tests.API
         {
             portfolioRepository = new Mock<IRepository<Portfolio>>();
             projectMetricsService = new Mock<IPortfolioMetricsService>();
+            projectMetricsService
+                .Setup(x => x.GetFeatureStatesAsOf(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<Feature>>(), It.IsAny<DateTime>()))
+                .Returns(new Dictionary<int, StateAsOf>());
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
@@ -307,6 +310,58 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(featureDtos?.Count(), Is.EqualTo(1));
                 Assert.That(featureDtos?.First().Id, Is.EqualTo(1));
             }
+        }
+
+        [Test]
+        public void GetInProgressFeatures_HistoricRange_ReportsStateTheFeatureHadThen()
+        {
+            // UPSTREAM-7: the feature has since closed, so its current state would drop it out of the
+            // aging chart's state buckets entirely while WIP-over-time still counts it.
+            var enteredAt = new DateTime(2025, 6, 12, 9, 0, 0, DateTimeKind.Utc);
+            var features = new List<Feature>
+            {
+                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", State = "Closed", StateCategory = StateCategories.Done }
+            };
+
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            projectMetricsService.Setup(x => x.GetInProgressFeaturesForPortfolio(project, asOfDate))
+                .Returns(features);
+            projectMetricsService
+                .Setup(x => x.GetFeatureStatesAsOf(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<Feature>>(), asOfDate))
+                .Returns(new Dictionary<int, StateAsOf>
+                {
+                    [1] = new StateAsOf("Active", StateCategories.Doing, enteredAt),
+                });
+
+            var result = subject.GetInProgressFeatures(1, asOfDate);
+
+            var featureDto = ((IEnumerable<FeatureDto>)((OkObjectResult)result.Result!).Value!).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featureDto.State, Is.EqualTo("Active"));
+                Assert.That(featureDto.StateCategory, Is.EqualTo(StateCategories.Doing));
+                Assert.That(featureDto.CurrentStateEnteredAt, Is.EqualTo(enteredAt));
+            }
+        }
+
+        [Test]
+        public void GetInProgressFeatures_NoStateHistory_KeepsCurrentState()
+        {
+            var features = new List<Feature>
+            {
+                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", State = "In Progress", StateCategory = StateCategories.Doing }
+            };
+
+            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            projectMetricsService.Setup(x => x.GetInProgressFeaturesForPortfolio(project, asOfDate))
+                .Returns(features);
+
+            var result = subject.GetInProgressFeatures(1, asOfDate);
+
+            var featureDto = ((IEnumerable<FeatureDto>)((OkObjectResult)result.Result!).Value!).Single();
+
+            Assert.That(featureDto.State, Is.EqualTo("In Progress"));
         }
 
         [Test]

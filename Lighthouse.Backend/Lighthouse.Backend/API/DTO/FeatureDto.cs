@@ -14,8 +14,8 @@ namespace Lighthouse.Backend.API.DTO
         /// Percentiles card moved to as-of-endDate — the two surfaces disagreeing for the same range,
         /// which US-04 AC3 and CI2 both forbid.
         /// </param>
-        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null, DateTime? asOf = null)
-            : base(feature, FeatureIsBlocked(feature), namedCycleTimes ?? [], null, asOf)
+        public FeatureDto(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null, DateTime? asOf = null, StateAsOf? stateAsOf = null)
+            : base(feature, FeatureIsBlocked(feature), namedCycleTimes ?? [], null, asOf, stateAsOf)
         {
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;

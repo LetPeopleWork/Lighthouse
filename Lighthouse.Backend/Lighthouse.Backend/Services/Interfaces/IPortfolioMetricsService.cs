@@ -34,6 +34,12 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetBlockedEligibleFeaturesForPortfolio(Portfolio portfolio);
 
+        /// <summary>
+        /// The state each feature held on <paramref name="asOfDate"/>, keyed by feature id; features
+        /// with no history for that day are absent and keep their current state (UPSTREAM-7).
+        /// </summary>
+        IReadOnlyDictionary<int, StateAsOf> GetFeatureStatesAsOf(Portfolio portfolio, IReadOnlyCollection<Feature> features, DateTime asOfDate);
+
         IEnumerable<PercentileValue> GetCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetWorkItemAgePercentilesForPortfolio(Portfolio portfolio, DateTime endDate);
