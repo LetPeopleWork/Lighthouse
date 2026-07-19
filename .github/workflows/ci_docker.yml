@@ -6,6 +6,9 @@ on:
       fileversion:
         required: true
         type: string
+      version:
+        required: true
+        type: string
 
 jobs:
   docker:
@@ -23,6 +26,18 @@ jobs:
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: 24
+
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: Lighthouse-SBOM-${{ inputs.version }}
+          path: ./sbom-download
+
+      - name: Copy SBOM files to frontend public directory
+        run: |
+          mkdir -p ./Lighthouse.Frontend/public/sbom
+          cp ./sbom-download/lighthouse-backend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/backend.cdx.json
+          cp ./sbom-download/lighthouse-frontend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/frontend.cdx.json
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0
