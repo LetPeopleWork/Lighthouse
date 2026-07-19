@@ -350,6 +350,69 @@ describe("useMetricsData", () => {
 		});
 	});
 
+	describe("Work Item Age Percentiles previous-period fetch", () => {
+		/**
+		 * The trend's whole credibility rests on the SECOND window, and a wrong window is invisible
+		 * from the widget: it still renders an arrow, just a meaningless one. This is exactly how the
+		 * blocked-trend fetch-window defect (US-03 AC0) escaped every rendering test and was caught
+		 * only at this seam, so the window is pinned here rather than at the view.
+		 *
+		 * D5: the comparison window ends the day BEFORE the selected range starts, and spans the same
+		 * length. The backend snapshots on the window's endDate, so that boundary day is the part
+		 * that actually selects the comparison point.
+		 */
+		it("reads the same endpoint over a same-length window ending the day before the range", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() => useMetricsData(entity, service, startDate, endDate));
+
+			await waitFor(() => {
+				expect(service.getWorkItemAgePercentiles).toHaveBeenCalledTimes(2);
+			});
+
+			const oneDayMs = 24 * 60 * 60 * 1000;
+			const expectedPreviousEnd = new Date(startDate.getTime() - oneDayMs);
+			const expectedPreviousStart = new Date(
+				expectedPreviousEnd.getTime() -
+					(endDate.getTime() - startDate.getTime()),
+			);
+
+			expect(service.getWorkItemAgePercentiles).toHaveBeenCalledWith(
+				entity.id,
+				startDate,
+				endDate,
+			);
+			expect(service.getWorkItemAgePercentiles).toHaveBeenCalledWith(
+				entity.id,
+				expectedPreviousStart,
+				expectedPreviousEnd,
+			);
+		});
+
+		it("exposes current and previous snapshots as separate readings", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+			const current: IPercentileValue[] = [{ percentile: 85, value: 9 }];
+			const previous: IPercentileValue[] = [{ percentile: 85, value: 4 }];
+			vi.mocked(service.getWorkItemAgePercentiles)
+				.mockResolvedValueOnce(current)
+				.mockResolvedValueOnce(previous);
+
+			const { result } = renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate),
+			);
+
+			await waitFor(() => {
+				expect(result.current.workItemAgePercentilesValues).toEqual(current);
+			});
+
+			expect(result.current.previousWorkItemAgePercentilesValues).toEqual(
+				previous,
+			);
+		});
+	});
+
 	describe("Systemic cumulative state time fetch", () => {
 		it("should populate cumulativeStateTime without disturbing cycle time percentiles", async () => {
 			const entity = createMockEntity();

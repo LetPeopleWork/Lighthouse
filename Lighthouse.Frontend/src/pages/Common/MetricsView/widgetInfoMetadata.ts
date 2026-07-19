@@ -105,6 +105,13 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 		description:
 			"The 50th, 70th, 85th, and 95th percentiles of Work Item Age for the items that are currently in progress — a live snapshot of how long your in-progress work has been ageing right now.",
 		learnMoreUrl: `${DOCS_BASE}#work-item-age-percentiles`,
+		statusGuidance: {
+			sustain:
+				"Every in-progress item is younger than the SLE's day value, or nothing is in progress at all.",
+			observe:
+				"Exactly one item has passed the SLE's day value, or one or more sit exactly on it.",
+			act: "No SLE is configured, or more than one in-progress item is older than the SLE's day value.",
+		},
 	},
 	totalWorkItemAge: {
 		description:

@@ -3929,9 +3929,14 @@ describe("BaseMetricsView component", () => {
 	describe("Work Item Age Percentiles widget chrome", () => {
 		// Regression: the workItemAgePercentiles widget shipped without any
 		// chrome wiring, so WidgetShell rendered no header bar (no info button,
-		// no view-data button). Per the docs this widget has info + view-data
-		// but intentionally no status indicator and no trend.
-		it("wires info and view-data chrome but no status badge or trend", async () => {
+		// no view-data button). The info + view-data half of that guard is unchanged.
+		//
+		// RETARGETED by Story 5508 slice 04 (step 04-02), not weakened: the trailing pair of
+		// assertions used to pin "intentionally no status indicator and no trend", which was an
+		// accurate description of the gap this story exists to close (US-05 AC1-AC4). Leaving them
+		// would have made the suite defend the defect. They now assert the presence of the same two
+		// pieces of chrome — same surface, opposite expected answer.
+		it("wires info and view-data chrome, plus the status badge and trend added in slice 04", async () => {
 			renderWithRouter(
 				<BaseMetricsView
 					entity={mockProject}
@@ -3958,13 +3963,14 @@ describe("BaseMetricsView component", () => {
 				).toBeInTheDocument();
 			});
 
-			// Documented behaviour: no RAG status indicator and no trend arrow
+			// Slice 04: the widget now carries a status and a previous-period trend like every
+			// other Flow Overview widget.
 			expect(
-				screen.queryByTestId("widget-rag-workItemAgePercentiles"),
-			).not.toBeInTheDocument();
+				screen.getByTestId("widget-rag-workItemAgePercentiles"),
+			).toHaveTextContent(/red|amber|green/);
 			expect(
-				screen.queryByTestId("widget-trend-workItemAgePercentiles"),
-			).not.toBeInTheDocument();
+				screen.getByTestId("widget-trend-workItemAgePercentiles"),
+			).toBeInTheDocument();
 		});
 	});
 
@@ -5149,7 +5155,7 @@ describe("BaseMetricsView component", () => {
 	 *
 	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 	 */
-	describe.skip("Work Item Age Percentiles status and trend (Story 5508 slice 04)", () => {
+	describe("Work Item Age Percentiles status and trend (Story 5508 slice 04)", () => {
 		beforeEach(() => {
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
@@ -5220,18 +5226,25 @@ describe("BaseMetricsView component", () => {
 		});
 
 		/**
-		 * AC3b at the RENDERED widget — added 2026-07-19 by the second-pass review gate.
+		 * The empty-population case at the RENDERED widget.
 		 *
-		 * The AC3/AC3b split is pinned at the rule level in ragRules.test.ts, but nothing pinned it
-		 * at the surface the user actually reads. A rule can return "none" correctly while the widget
-		 * still paints an Act chip, because the mapping from rule result to chip lives here, not in
-		 * the rule. Without this, the false "define an SLE" instruction could reappear at the only
-		 * layer that matters and both the rule tests and the widget tests would stay green.
+		 * RE-AUTHORED 2026-07-19 (step 04-02), not freelanced: the product owner replaced D6's whole
+		 * band structure after the D6 validation gate fired on real data. See "D6 gate RESULT and
+		 * D6-REVISED" in docs/feature/widget-loose-ends/feature-delta.md — consequence 3 supersedes
+		 * US-05 AC3b and makes an empty population GREEN, on the grounds that nothing in progress is
+		 * not a bad state and the WIP RAG already says it. The original assertion here ("no Act chip
+		 * at all") encodes the withdrawn AC3b and would now pin the wrong behaviour.
+		 *
+		 * What still needs pinning is why this test exists at all: the mapping from rule result to
+		 * chip lives in this view, not in the rule, so the false "define an SLE" instruction could
+		 * reappear at the only layer the user reads while ragRules.test.ts stayed green. Empty and
+		 * unconfigured remain distinguishable — they are just distinguished by COLOUR now (green vs
+		 * red) rather than by presence, and the define-an-SLE tip stays exclusive to unconfigured.
 		 */
-		it("shows no Act status and never the define-an-SLE tip when nothing is in progress (AC3b)", async () => {
+		it("reads green, and never the define-an-SLE tip, when nothing is in progress (D6-REVISED)", async () => {
 			const emptyWipService = {
 				...mockMetricsService,
-				getWorkItemAgePercentiles: vi.fn().mockResolvedValue([]),
+				getInProgressItems: vi.fn().mockResolvedValue([]),
 			};
 
 			renderWithRouter(
@@ -5252,7 +5265,7 @@ describe("BaseMetricsView component", () => {
 
 			expect(
 				screen.getByTestId("widget-rag-workItemAgePercentiles"),
-			).not.toHaveTextContent(/red|amber|green/);
+			).toHaveTextContent("green");
 			expect(
 				screen.getByTestId("widget-tip-workItemAgePercentiles").textContent,
 			).not.toMatch(/service level expectation|SLE/i);
@@ -5389,27 +5402,14 @@ describe("BaseMetricsView component", () => {
 			expect(svc.getFlowEfficiencyInfoForPortfolio).toHaveBeenCalledTimes(1);
 		});
 
-		// BLOCKED ON SLICE 04 — this test is not broken and not abandoned.
-		//
-		// Blocker: `computeWorkItemAgePercentilesRag` in ragRules.ts is still a
-		// `__SCAFFOLD__` stub returning a hardcoded `{ragStatus: "red", tipText: ""}`,
-		// and `workItemAgePercentiles` has no `buildWidgetFooters` registration. Both are
-		// slice 04's work, so no correct slice-05 implementation can turn this green.
-		// Forcing it green from here would ship a widget permanently showing a red chip
-		// with empty tip text — a real user-visible defect, worse than a missing chip.
-		//
-		// Un-skip trigger: slice 04, step 04-02. After that step lands, this should pass
-		// against the already-committed slice-05 code with no further edits here.
-		//
-		// The KPI itself is sound and worth keeping: it is the structural guard that
-		// fails the moment a Flow Overview widget ships without a status. Only its slice
-		// ATTACHMENT is wrong.
+		// Unblocked by slice 04 step 04-02, which registered the workItemAgePercentiles
+		// footer — the single missing registration this KPI was waiting on.
 		//
 		// Recurrence risk: any future slice that adds a flow-overview widget breaks this
 		// assertion inside whichever slice happens to own it. It therefore belongs in a
 		// standalone guard step placed after the last widget-contributing slice, not
 		// bolted onto one of them.
-		it.skip("gives every Flow Overview widget a status, so none can ship silently (AC7 — KPI)", async () => {
+		it("gives every Flow Overview widget a status, so none can ship silently (AC7 — KPI)", async () => {
 			renderOverview(configuredFlowEfficiencyService());
 
 			await waitFor(() => {

@@ -33,6 +33,8 @@ import type {
 } from "../services/Api/MetricsService";
 import { useTerminology } from "../services/TerminologyContext";
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 export interface MetricsData<T> {
 	blackoutPeriods: IBlackoutPeriod[];
 	throughputData: RunChartData | null;
@@ -42,6 +44,11 @@ export interface MetricsData<T> {
 	cycleTimeData: T[];
 	percentileValues: IPercentileValue[];
 	workItemAgePercentilesValues: IPercentileValue[];
+	/**
+	 * The same snapshot read one period earlier (window ends the day before `startDate`), which is
+	 * what the widget's previous-period trend compares against (D5).
+	 */
+	previousWorkItemAgePercentilesValues: IPercentileValue[];
 	perStatePercentileValues: IPerStatePercentileValues[];
 	cumulativeStateTime: ICumulativeStateTimeResponse | null;
 	sizePercentileValues: IPercentileValue[];
@@ -125,6 +132,10 @@ export function useMetricsData<
 	);
 	const [workItemAgePercentilesValues, setWorkItemAgePercentilesValues] =
 		useState<IPercentileValue[]>([]);
+	const [
+		previousWorkItemAgePercentilesValues,
+		setPreviousWorkItemAgePercentilesValues,
+	] = useState<IPercentileValue[]>([]);
 	const [perStatePercentileValues, setPerStatePercentileValues] = useState<
 		IPerStatePercentileValues[]
 	>([]);
@@ -257,11 +268,25 @@ export function useMetricsData<
 						endDate,
 					);
 
+		// Previous-period window for the Work Item Age Percentiles trend (D5): the same window
+		// length, ending the day BEFORE the selected range starts. The backend snapshots on the
+		// window's endDate, so that boundary day is what actually selects the comparison point.
+		//
+		// Derived INSIDE the effect on purpose. As a component-scope `new Date(...)` it would be a
+		// fresh identity on every render and, once in this effect's dependency list, an endless
+		// re-render loop (React #185 — see docs/ci-learnings.md, 2026-05-25). Here it depends on
+		// nothing the effect does not already depend on.
+		const previousPeriodEnd = new Date(startDate.getTime() - ONE_DAY_MS);
+		const previousPeriodStart = new Date(
+			previousPeriodEnd.getTime() - (endDate.getTime() - startDate.getTime()),
+		);
+
 		const fetch = async () => {
 			const [
 				data,
 				percentiles,
 				workItemAgePercentiles,
+				previousWorkItemAgePercentiles,
 				perStatePercentiles,
 				cumulative,
 				flowEfficiency,
@@ -269,6 +294,11 @@ export function useMetricsData<
 				metricsService.getCycleTimeData(entity.id, startDate, endDate),
 				metricsService.getCycleTimePercentiles(entity.id, startDate, endDate),
 				metricsService.getWorkItemAgePercentiles(entity.id, startDate, endDate),
+				metricsService.getWorkItemAgePercentiles(
+					entity.id,
+					previousPeriodStart,
+					previousPeriodEnd,
+				),
 				metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate),
 				metricsService.getCumulativeStateTimeForTeam(
 					entity.id,
@@ -280,6 +310,7 @@ export function useMetricsData<
 			setCycleTimeData(data);
 			setPercentileValues(percentiles);
 			setWorkItemAgePercentilesValues(workItemAgePercentiles);
+			setPreviousWorkItemAgePercentilesValues(previousWorkItemAgePercentiles);
 			setPerStatePercentileValues(perStatePercentiles);
 			setCumulativeStateTime(cumulative);
 			setFlowEfficiencyInfo(flowEfficiency ?? null);
@@ -486,6 +517,7 @@ export function useMetricsData<
 		cycleTimeData,
 		percentileValues,
 		workItemAgePercentilesValues,
+		previousWorkItemAgePercentilesValues,
 		perStatePercentileValues,
 		cumulativeStateTime,
 		sizePercentileValues,
