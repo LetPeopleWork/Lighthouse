@@ -36,6 +36,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private static readonly DateTime Jul06 = new DateTime(2026, 7, 6, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime Jul10 = new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc);
 
+        private static readonly int[] ExpectedWipAgesOnJul04 = [1, 4, 4];
+
         [SetUp]
         public void Setup()
         {
@@ -190,13 +192,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .OrderBy(age => age)
                 .ToList();
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                Assert.That(ages, Is.EqualTo(new[] { 1, 4, 4 }));
+                Assert.That(ages, Is.EqualTo(ExpectedWipAgesOnJul04));
                 // Pins the total the agreement test compares against, so a drift in BOTH definitions
                 // cannot pass unnoticed.
                 Assert.That(ages.Sum(), Is.EqualTo(9));
-            });
+            }
         }
 
         [Test]

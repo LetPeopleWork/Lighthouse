@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Models
             // it used to be. Because valid ages are always >= 1, no legitimate item is dropped.
             var notYetStarted = new WorkItemBase { StartedDate = Jul10, StateCategory = StateCategories.Doing };
 
-            Assert.That(notYetStarted.AgeOnDay(Jul04), Is.EqualTo(0));
+            Assert.That(notYetStarted.AgeOnDay(Jul04), Is.Zero);
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var undated = new WorkItemBase { StateCategory = StateCategories.Doing };
 
-            Assert.That(undated.AgeOnDay(Jul04), Is.EqualTo(0));
+            Assert.That(undated.AgeOnDay(Jul04), Is.Zero);
         }
 
         [Test]
@@ -108,11 +108,11 @@ namespace Lighthouse.Backend.Tests.Models
                 StateCategory = StateCategories.Done,
             };
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
-                Assert.That(closedItem.WorkItemAge, Is.EqualTo(0), "WorkItemAge must stay today-anchored and Doing-guarded");
+                Assert.That(closedItem.WorkItemAge, Is.Zero, "WorkItemAge must stay today-anchored and Doing-guarded");
                 Assert.That(closedItem.AgeOnDay(Jul04), Is.EqualTo(4), "AgeOnDay answers the as-of-day question");
-            });
+            }
         }
     }
 }

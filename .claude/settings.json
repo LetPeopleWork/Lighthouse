@@ -7,7 +7,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|mcp__lean-ctx__ctx_shell|mcp__lean-ctx__ctx_execute",
         "hooks": [
           {
             "type": "command",
