@@ -5273,7 +5273,7 @@ describe("BaseMetricsView component", () => {
 	 *
 	 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 	 */
-	describe.skip("Flow Efficiency status via the shared data path (Story 5508 slice 05)", () => {
+	describe("Flow Efficiency status via the shared data path (Story 5508 slice 05)", () => {
 		beforeEach(() => {
 			localStorage.setItem(
 				`lighthouse:metrics:portfolio:${mockProject.id}:category`,

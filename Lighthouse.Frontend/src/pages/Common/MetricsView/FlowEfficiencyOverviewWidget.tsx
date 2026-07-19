@@ -1,18 +1,10 @@
 import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
-import type { IFeature } from "../../../models/Feature";
 import type { IFlowEfficiencyInfo } from "../../../models/Metrics/FlowEfficiencyInfo";
-import type { IWorkItem } from "../../../models/WorkItem";
-import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { computeFlowEfficiencyRag, type RagTerms } from "./ragRules";
 
 interface FlowEfficiencyOverviewWidgetProps {
-	readonly entityId: number;
-	readonly metricsService: IMetricsService<IWorkItem | IFeature>;
-	readonly ownerType: "team" | "portfolio";
-	readonly startDate: Date;
-	readonly endDate: Date;
+	readonly info: IFlowEfficiencyInfo | null;
 }
 
 const ragColorMap: Record<"red" | "amber" | "green", string> = {
@@ -36,34 +28,7 @@ const efficiencyRagTerms: RagTerms = {
 
 const FlowEfficiencyOverviewWidget: React.FC<
 	FlowEfficiencyOverviewWidgetProps
-> = ({ entityId, metricsService, ownerType, startDate, endDate }) => {
-	const [info, setInfo] = useState<IFlowEfficiencyInfo | null>(null);
-
-	useEffect(() => {
-		const fetchInfo = async () => {
-			try {
-				const result =
-					ownerType === "team"
-						? await metricsService.getFlowEfficiencyInfoForTeam(
-								entityId,
-								startDate,
-								endDate,
-							)
-						: await metricsService.getFlowEfficiencyInfoForPortfolio(
-								entityId,
-								startDate,
-								endDate,
-							);
-				setInfo(result ?? null);
-			} catch (error_) {
-				console.error("Error fetching flow efficiency info:", error_);
-				setInfo(null);
-			}
-		};
-
-		fetchInfo();
-	}, [entityId, metricsService, ownerType, startDate, endDate]);
-
+> = ({ info }) => {
 	return (
 		<Card sx={{ borderRadius: 2, height: "100%", width: "100%" }}>
 			<CardContent

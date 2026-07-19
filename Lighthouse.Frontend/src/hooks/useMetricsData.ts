@@ -7,6 +7,7 @@ import type { IFeatureOwner } from "../models/IFeatureOwner";
 import type { ICumulativeStateTimeResponse } from "../models/Metrics/CumulativeStateTime";
 import type { IEstimationVsCycleTimeResponse } from "../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../models/Metrics/FeatureSizeEstimationData";
+import type { IFlowEfficiencyInfo } from "../models/Metrics/FlowEfficiencyInfo";
 import type {
 	IArrivalsInfo,
 	ICycleTimePercentilesInfo,
@@ -66,6 +67,7 @@ export interface MetricsData<T> {
 	totalWorkItemAgeInfo: ITotalWorkItemAgeInfo | null;
 	predictabilityScoreInfo: IPredictabilityScoreInfo | null;
 	cycleTimePercentilesInfo: ICycleTimePercentilesInfo | null;
+	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	blockedCountHistory: BlockedCountSnapshot[] | null;
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 }
@@ -84,6 +86,14 @@ function isProjectMetricsService(
 
 function isTeamMetricsService(service: object): service is ITeamMetricsService {
 	return "getFeaturesWorkedOnInfo" in service;
+}
+
+// Owner type is discriminated exactly as BaseMetricsView does it, on `getFeaturesInProgress`.
+// Deliberately NOT isTeamMetricsService: that predicate keys off getFeaturesWorkedOnInfo, which
+// portfolio-shaped services also expose, so it answers "does this service report features worked
+// on", not "is this a team".
+function isTeamOwnedMetricsService(service: object): boolean {
+	return "getFeaturesInProgress" in service;
 }
 
 export function useMetricsData<
@@ -166,6 +176,8 @@ export function useMetricsData<
 		useState<IPredictabilityScoreInfo | null>(null);
 	const [cycleTimePercentilesInfo, setCycleTimePercentilesInfo] =
 		useState<ICycleTimePercentilesInfo | null>(null);
+	const [flowEfficiencyInfo, setFlowEfficiencyInfo] =
+		useState<IFlowEfficiencyInfo | null>(null);
 	const [blockedCountHistory, setBlockedCountHistory] = useState<
 		BlockedCountSnapshot[] | null
 	>(null);
@@ -228,19 +240,33 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate, workItemsTerm]);
 
 	useEffect(() => {
+		// Every call below shares the same dependency signature, so they all belong in one
+		// parallel batch: getCycleTimeData used to be awaited sequentially ahead of the batch,
+		// which needlessly gated the rest of the view — including flow efficiency, which does
+		// not depend on cycle-time data at all (D18).
+		const fetchFlowEfficiency = () =>
+			isTeamOwnedMetricsService(metricsService)
+				? metricsService.getFlowEfficiencyInfoForTeam(
+						entity.id,
+						startDate,
+						endDate,
+					)
+				: metricsService.getFlowEfficiencyInfoForPortfolio(
+						entity.id,
+						startDate,
+						endDate,
+					);
+
 		const fetch = async () => {
-			const data = await metricsService.getCycleTimeData(
-				entity.id,
-				startDate,
-				endDate,
-			);
-			setCycleTimeData(data);
 			const [
+				data,
 				percentiles,
 				workItemAgePercentiles,
 				perStatePercentiles,
 				cumulative,
+				flowEfficiency,
 			] = await Promise.all([
+				metricsService.getCycleTimeData(entity.id, startDate, endDate),
 				metricsService.getCycleTimePercentiles(entity.id, startDate, endDate),
 				metricsService.getWorkItemAgePercentiles(entity.id, startDate, endDate),
 				metricsService.getAgeInStatePercentiles(entity.id, startDate, endDate),
@@ -249,11 +275,14 @@ export function useMetricsData<
 					startDate,
 					endDate,
 				),
+				fetchFlowEfficiency(),
 			]);
+			setCycleTimeData(data);
 			setPercentileValues(percentiles);
 			setWorkItemAgePercentilesValues(workItemAgePercentiles);
 			setPerStatePercentileValues(perStatePercentiles);
 			setCumulativeStateTime(cumulative);
+			setFlowEfficiencyInfo(flowEfficiency ?? null);
 		};
 		fetch().catch((error) =>
 			console.error(`Error fetching ${cycleTimeTerm} data:`, error),
@@ -482,6 +511,7 @@ export function useMetricsData<
 		totalWorkItemAgeInfo,
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
+		flowEfficiencyInfo,
 		blockedCountHistory,
 		refetchThroughputPbc,
 	};

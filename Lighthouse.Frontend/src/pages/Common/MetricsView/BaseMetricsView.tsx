@@ -44,6 +44,7 @@ import type { ICumulativeStateTimeCandidateRow } from "../../../models/Metrics/C
 import type { ICumulativeStateTimeItemRow } from "../../../models/Metrics/CumulativeStateTimeItems";
 import type { IEstimationVsCycleTimeResponse } from "../../../models/Metrics/EstimationVsCycleTimeData";
 import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/FeatureSizeEstimationData";
+import type { IFlowEfficiencyInfo } from "../../../models/Metrics/FlowEfficiencyInfo";
 import type {
 	IArrivalsInfo,
 	ICycleTimePercentilesInfo,
@@ -89,6 +90,7 @@ import {
 	computeEstimationVsCycleTimeRag,
 	computeFeatureSizeRag,
 	computeFeaturesWorkedOnRag,
+	computeFlowEfficiencyRag,
 	computeLoadBalanceMatrixRag,
 	computePbcRag,
 	computePredictabilityScoreRag,
@@ -277,9 +279,24 @@ type RagInputs = {
 	readonly loadBalanceAverageWip: number | null;
 	readonly loadBalanceAverageTotalWorkItemAge: number | null;
 	readonly cumulativeStateTime: ICumulativeStateTimeResponse | null;
+	readonly flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 	readonly percentilesScopeDefinitionId: number | null;
 	readonly terms: RagTerms;
 };
+
+// A status is only honest once wait states are configured AND there is work in scope; in the two
+// degraded states the widget shows an explanatory body instead, and emitting a footer here would
+// paint a misleading colour on top of it (AC2/AC3).
+function computeFlowEfficiencyFooter(
+	info: IFlowEfficiencyInfo | null,
+	terms: RagTerms,
+): RagFooter | undefined {
+	if (info === null || !info.isConfigured || !info.hasDataInScope) {
+		return undefined;
+	}
+
+	return computeFlowEfficiencyRag(info.efficiencyPercent, terms);
+}
 
 function buildWidgetFooters(
 	inputs: RagInputs,
@@ -441,6 +458,10 @@ function buildWidgetFooters(
 		),
 		stateTimeCumulative: computeCumulativeStateTimeRag(
 			inputs.cumulativeStateTime?.states ?? [],
+			inputs.terms,
+		),
+		flowEfficiency: computeFlowEfficiencyFooter(
+			inputs.flowEfficiencyInfo,
 			inputs.terms,
 		),
 	};
@@ -886,6 +907,7 @@ function buildWidgetNodes(ctx: {
 	stateMappings: IStateMapping[];
 	refetchThroughputPbc: (view?: "raw" | "filtered") => Promise<void>;
 	blockedCountHistory: BlockedCountSnapshot[] | null;
+	flowEfficiencyInfo: IFlowEfficiencyInfo | null;
 }): Record<string, ReactNode | null> {
 	const nodes: Record<string, ReactNode | null> = {
 		wipOverview: (
@@ -905,13 +927,7 @@ function buildWidgetNodes(ctx: {
 		),
 		staleOverview: <StaleOverviewWidget staleCount={ctx.staleItems.length} />,
 		flowEfficiency: (
-			<FlowEfficiencyOverviewWidget
-				entityId={ctx.entity.id}
-				metricsService={ctx.metricsService}
-				ownerType={ctx.ownerType}
-				startDate={ctx.startDate}
-				endDate={ctx.endDate}
-			/>
+			<FlowEfficiencyOverviewWidget info={ctx.flowEfficiencyInfo} />
 		),
 		featuresWorkedOnOverview: ctx.featuresInProgress ? (
 			<FeaturesWorkedOnWidget
@@ -1198,6 +1214,7 @@ export const BaseMetricsView = <
 		predictabilityScoreInfo,
 		cycleTimePercentilesInfo,
 		cumulativeStateTime,
+		flowEfficiencyInfo,
 		blockedCountHistory,
 		refetchThroughputPbc,
 	} = useMetricsData(entity, metricsService, startDate, endDate);
@@ -1616,6 +1633,7 @@ export const BaseMetricsView = <
 		stateMappings,
 		refetchThroughputPbc,
 		blockedCountHistory,
+		flowEfficiencyInfo,
 	});
 
 	const widgetFooters = buildWidgetFooters({
@@ -1713,6 +1731,7 @@ export const BaseMetricsView = <
 		loadBalanceAverageWip: loadBalanceData.averageWip,
 		loadBalanceAverageTotalWorkItemAge: loadBalanceData.averageTotalWorkItemAge,
 		cumulativeStateTime,
+		flowEfficiencyInfo,
 	});
 
 	const widgetViewData = buildViewData({
