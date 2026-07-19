@@ -9,14 +9,28 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     {
         public IReadOnlyList<int> GetBlockedWorkItemIdsAt(DateOnly date)
         {
+            return GetBlockedTransitionsAt(date)
+                .Select(transition => transition.WorkItemId)
+                .Distinct()
+                .ToList();
+        }
+
+        public IReadOnlyList<int> GetWorkItemIdsWithBlockedHistory(IReadOnlyCollection<int> workItemIds)
+        {
+            return GetAllByPredicate(transition => workItemIds.Contains(transition.WorkItemId))
+                .Select(transition => transition.WorkItemId)
+                .Distinct()
+                .ToList();
+        }
+
+        public IReadOnlyList<WorkItemBlockedTransition> GetBlockedTransitionsAt(DateOnly date)
+        {
             var startOfDate = date.ToDateTime(TimeOnly.MinValue);
             var startOfNextDate = startOfDate.AddDays(1);
 
             return GetAllByPredicate(transition =>
                     transition.EnteredAt < startOfNextDate &&
                     (transition.LeftAt == null || transition.LeftAt >= startOfDate))
-                .Select(transition => transition.WorkItemId)
-                .Distinct()
                 .ToList();
         }
     }

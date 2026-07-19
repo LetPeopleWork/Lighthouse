@@ -38,6 +38,12 @@ namespace Lighthouse.Backend.Tests.API
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             workItemBlockedTransitionRepositoryMock = new Mock<IWorkItemBlockedTransitionRepository>();
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetBlockedTransitionsAt(It.IsAny<DateOnly>()))
+                .Returns([]);
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetWorkItemIdsWithBlockedHistory(It.IsAny<IReadOnlyCollection<int>>()))
+                .Returns([]);
             loggerMock = new Mock<ILogger<TeamMetricsController>>();
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -378,13 +384,16 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetWipForTeam_BlockedItem_IncludesBlockedSince()
+        public void GetWipForTeam_BlockedItem_CurrentRange_IncludesBlockedSince()
         {
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var blockedAt = new DateTime(2025, 6, 10, 8, 0, 0, DateTimeKind.Utc);
-            var asOfDate = new DateTime(2025, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+            // UPSTREAM-7: asOfDate is today, so the live blocked evaluation still applies. The
+            // date was previously in the past, which now routes through the blocked-transition
+            // history instead — covered by the two historic-range tests below.
+            var blockedAt = DateTime.UtcNow.Date.AddDays(-5).AddHours(8);
+            var asOfDate = DateTime.UtcNow.Date;
 
             var item1 = new WorkItem
             {
@@ -435,6 +444,115 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(activeDto.BlockedSince, Is.Null,
                     "blockedSince must be null for non-blocked items");
             }
+        }
+
+        [Test]
+        public void GetWipForTeam_HistoricRange_ResolvesBlockedFromTransitionHistory()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var asOfDate = DateTime.UtcNow.Date.AddDays(-30);
+            var blockedAt = asOfDate.AddDays(-3);
+
+            var blockedThen = new WorkItem { Id = 7, Name = "Blocked Back Then", Team = team };
+            var notBlockedThen = new WorkItem { Id = 8, Name = "Flowing Back Then", Team = team };
+
+            teamMetricsServiceMock
+                .Setup(service => service.GetWipSnapshotForTeam(team, asOfDate))
+                .Returns([blockedThen, notBlockedThen]);
+
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetBlockedTransitionsAt(DateOnly.FromDateTime(asOfDate)))
+                .Returns([new WorkItemBlockedTransition { WorkItemId = 7, EnteredAt = blockedAt }]);
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetWorkItemIdsWithBlockedHistory(It.IsAny<IReadOnlyCollection<int>>()))
+                .Returns([7, 8]);
+
+            // Today's blocked rule says the opposite for both items — the point of the test is that a
+            // historic range must not consult it, because it matches on tags/state that have moved on.
+            blockedItemServiceMock.Setup(s => s.IsBlocked(blockedThen, team)).Returns(false);
+            blockedItemServiceMock.Setup(s => s.IsBlocked(notBlockedThen, team)).Returns(true);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCurrentWipForTeam(team.Id, asOfDate);
+
+            var actualItems = ((IEnumerable<WorkItemDto>)((OkObjectResult)response.Result!).Value!).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                var blockedDto = actualItems.Single(dto => dto.Id == 7);
+                Assert.That(blockedDto.IsBlocked, Is.True);
+                Assert.That(blockedDto.BlockedSince, Is.EqualTo(blockedAt),
+                    "blockedSince must come from the blocked spell that was open on that day");
+
+                var flowingDto = actualItems.Single(dto => dto.Id == 8);
+                Assert.That(flowingDto.IsBlocked, Is.False);
+                Assert.That(flowingDto.BlockedSince, Is.Null);
+            }
+        }
+
+        [Test]
+        public void GetWipForTeam_HistoricRange_ItemWithoutBlockedHistory_FallsBackToLiveRule()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var asOfDate = DateTime.UtcNow.Date.AddDays(-30);
+            var item = new WorkItem { Id = 9, Name = "No History", Team = team };
+
+            teamMetricsServiceMock
+                .Setup(service => service.GetWipSnapshotForTeam(team, asOfDate))
+                .Returns([item]);
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetBlockedTransitionsAt(It.IsAny<DateOnly>()))
+                .Returns([]);
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetWorkItemIdsWithBlockedHistory(It.IsAny<IReadOnlyCollection<int>>()))
+                .Returns([]);
+            blockedItemServiceMock.Setup(s => s.IsBlocked(item, team)).Returns(true);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCurrentWipForTeam(team.Id, asOfDate);
+
+            var actualItems = ((IEnumerable<WorkItemDto>)((OkObjectResult)response.Result!).Value!).ToList();
+
+            // No history at all means blocked capture predates the item; the live rule is the only
+            // answer there is, and it is the same one the current-range read gives.
+            Assert.That(actualItems.Single().IsBlocked, Is.True);
+        }
+
+        [Test]
+        public void GetWipForTeam_HistoricRange_ItemWithHistoryButUnblockedThen_ReadsUnblocked()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
+
+            var asOfDate = DateTime.UtcNow.Date.AddDays(-30);
+            var item = new WorkItem { Id = 10, Name = "Blocked Only Later", Team = team };
+
+            teamMetricsServiceMock
+                .Setup(service => service.GetWipSnapshotForTeam(team, asOfDate))
+                .Returns([item]);
+            // History exists for the item, but no spell was open on the requested day.
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetBlockedTransitionsAt(It.IsAny<DateOnly>()))
+                .Returns([]);
+            workItemBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetWorkItemIdsWithBlockedHistory(It.IsAny<IReadOnlyCollection<int>>()))
+                .Returns([10]);
+            blockedItemServiceMock.Setup(s => s.IsBlocked(item, team)).Returns(true);
+
+            var subject = CreateSubject();
+
+            var response = subject.GetCurrentWipForTeam(team.Id, asOfDate);
+
+            var actualItems = ((IEnumerable<WorkItemDto>)((OkObjectResult)response.Result!).Value!).ToList();
+
+            // Blocked today, not blocked then — history wins over the live rule where it exists.
+            Assert.That(actualItems.Single().IsBlocked, Is.False);
         }
 
         [Test]

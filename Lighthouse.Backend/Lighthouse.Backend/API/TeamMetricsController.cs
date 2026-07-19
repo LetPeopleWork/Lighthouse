@@ -119,11 +119,33 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
-                var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate);
+                var workItems = teamMetricsService.GetWipSnapshotForTeam(team, asOfDate).ToList();
+
+                // UPSTREAM-7: for a past range, "is it blocked" cannot be answered by evaluating the
+                // blocked rule against today's item — the tags/state it matches on have moved on since.
+                // The blocked-transition history is the record of what was true back then, so a historic
+                // read prefers it. An item with no history at all predates blocked capture, and there the
+                // live rule is still the only answer available — the same one today's read gives, so the
+                // fallback cannot regress an item that was already reading correctly.
+                var isHistoricRange = asOfDate.Date < DateTime.UtcNow.Date;
+                var workItemIds = workItems.Select(w => w.Id).ToList();
+
+                IReadOnlyList<WorkItemBlockedTransition> blockedSpells = isHistoricRange
+                    ? workItemBlockedTransitionRepository.GetBlockedTransitionsAt(DateOnly.FromDateTime(asOfDate))
+                    : [];
+                IReadOnlyList<int> idsWithBlockedHistory = isHistoricRange
+                    ? workItemBlockedTransitionRepository.GetWorkItemIdsWithBlockedHistory(workItemIds)
+                    : [];
+
                 return workItems.Select(w =>
                 {
-                    var isBlocked = blockedItemService.IsBlocked(w, team);
-                    var blockedSince = isBlocked ? w.CurrentStateEnteredAt : null;
+                    var answerFromHistory = isHistoricRange && idsWithBlockedHistory.Contains(w.Id);
+                    var blockedSpell = blockedSpells.FirstOrDefault(transition => transition.WorkItemId == w.Id);
+
+                    var isBlocked = answerFromHistory ? blockedSpell != null : blockedItemService.IsBlocked(w, team);
+                    var liveBlockedSince = isBlocked ? w.CurrentStateEnteredAt : null;
+                    var blockedSince = answerFromHistory ? blockedSpell?.EnteredAt : liveBlockedSince;
+
                     // D16: the endpoint already receives asOfDate and used to discard it, leaving the
                     // aging chart's dot heights today-anchored. Pass it so they honour the range.
                     return new WorkItemDto(w, isBlocked, [], blockedSince, asOfDate);
