@@ -130,17 +130,22 @@ namespace Lighthouse.Backend.API
                 var isHistoricRange = asOfDate.Date < DateTime.UtcNow.Date;
                 var workItemIds = workItems.Select(w => w.Id).ToList();
 
-                IReadOnlyList<WorkItemBlockedTransition> blockedSpells = isHistoricRange
-                    ? workItemBlockedTransitionRepository.GetBlockedTransitionsAt(DateOnly.FromDateTime(asOfDate))
-                    : [];
-                IReadOnlyList<int> idsWithBlockedHistory = isHistoricRange
-                    ? workItemBlockedTransitionRepository.GetWorkItemIdsWithBlockedHistory(workItemIds)
-                    : [];
+                // Indexed once rather than scanned per item: both lookups sit inside the projection
+                // below, so a linear Contains/FirstOrDefault makes a board of n items cost O(n²).
+                var openSpellByItem = (isHistoricRange
+                        ? workItemBlockedTransitionRepository.GetBlockedTransitionsAt(DateOnly.FromDateTime(asOfDate))
+                        : [])
+                    .GroupBy(transition => transition.WorkItemId)
+                    .ToDictionary(group => group.Key, group => group.First());
+                var idsWithBlockedHistory = (isHistoricRange
+                        ? workItemBlockedTransitionRepository.GetWorkItemIdsWithBlockedHistory(workItemIds)
+                        : [])
+                    .ToHashSet();
 
                 return workItems.Select(w =>
                 {
                     var answerFromHistory = isHistoricRange && idsWithBlockedHistory.Contains(w.Id);
-                    var blockedSpell = blockedSpells.FirstOrDefault(transition => transition.WorkItemId == w.Id);
+                    var blockedSpell = openSpellByItem.GetValueOrDefault(w.Id);
 
                     var isBlocked = answerFromHistory ? blockedSpell != null : blockedItemService.IsBlocked(w, team);
                     var liveBlockedSince = isBlocked ? w.CurrentStateEnteredAt : null;

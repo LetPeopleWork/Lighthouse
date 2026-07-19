@@ -99,7 +99,13 @@ This widget shows how many items were blocked on the last day of the selected ra
 The target is always zero blocked items. Use the **View Data** button to see all currently blocked items.
 
 {: .important}
-The blocked **count** is a snapshot as of the **last day of the selected date range**. On a range ending today that is the current blocked state; on a historical range Lighthouse answers "was this item blocked *then*" from its blocked-transition history rather than from today's tags and state, so an item unblocked since is not retroactively reported as blocked. Items that predate blocked-history capture fall back to the live rule, which is the only answer available for them. The trend indicator compares against the previous period of the selected date range (see [Trend Indicators](#trend-indicators)).
+The blocked **count** is a snapshot as of the **last day of the selected date range**. On a range ending today that is the current blocked state.
+
+For **Teams**, a historical range is answered from blocked-transition history — "was this item blocked *then*" — rather than from today's tags and state, so an item unblocked since is not retroactively reported as blocked. Items that predate blocked-history capture fall back to the live rule, which is the only answer available for them.
+
+For **Portfolios**, blocked history is not recorded for features, so a historical range still evaluates today's blocked rules against the feature's current tags and state. A feature that was blocked during the range but is not blocked now reads as not blocked.
+
+The trend indicator compares against the previous period of the selected date range (see [Trend Indicators](#trend-indicators)).
 
 ## Status Indicator
 
