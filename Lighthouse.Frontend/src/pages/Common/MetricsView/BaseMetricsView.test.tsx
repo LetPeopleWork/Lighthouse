@@ -5316,7 +5316,19 @@ describe("BaseMetricsView component", () => {
 			);
 		});
 
-		it("renders no status colour when wait states are not configured (AC2)", async () => {
+		// SUPERSEDED — US-06 AC2 originally required NO status colour when wait states are
+		// unconfigured, and this test asserted exactly that. Overridden by the product owner on
+		// 2026-07-19 during manual verification of the shipped widget, on pattern-consistency
+		// grounds: every sibling widget already treats "you have not configured the thing I
+		// measure" as RED plus a tip pointing at settings (see the no-SLE branch of
+		// computeCycleTimePercentilesRag). Flow Efficiency staying silent made it the odd one out,
+		// and a silent widget reads as "nothing to see here" rather than "you owe me a setting".
+		//
+		// Retargeted, not deleted: the scenario still guards the unconfigured case, it just now
+		// asserts the opposite answer. Note this is NOT the no-data case (AC3 below), which stays
+		// colourless — no-data means "nothing to measure", unconfigured means "you have not told
+		// us what to measure". Different problems, different answers.
+		it("renders a red status pointing at settings when wait states are not configured (AC2)", async () => {
 			const svc = createMockMetricsService<IWorkItem>();
 			svc.getFlowEfficiencyInfoForPortfolio = vi.fn().mockResolvedValue({
 				isConfigured: false,
@@ -5332,9 +5344,12 @@ describe("BaseMetricsView component", () => {
 				).toBeInTheDocument();
 			});
 
-			expect(
-				screen.queryByTestId("widget-header-flowEfficiency"),
-			).not.toBeInTheDocument();
+			expect(screen.getByTestId("widget-rag-flowEfficiency")).toHaveTextContent(
+				/red/i,
+			);
+			expect(screen.getByTestId("widget-tip-flowEfficiency")).toHaveTextContent(
+				/wait states in settings/i,
+			);
 		});
 
 		it("renders no status colour when there is no data in scope (AC3)", async () => {

@@ -88,7 +88,7 @@ test("@walking_skeleton @US-01 admin marks a wait state and the delivery lead se
 	await expect(completedToggle).toHaveAttribute("aria-pressed", "false");
 });
 
-test("@US-01 the delivery lead sees a RAG status chip on the Flow Efficiency widget only once wait states are configured", async ({
+test("@US-01 the delivery lead is prompted in red to configure wait states, then sees a measured RAG status once they are", async ({
 	page,
 	request,
 	overviewPage,
@@ -100,12 +100,15 @@ test("@US-01 the delivery lead sees a RAG status chip on the Flow Efficiency wid
 	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
 	const tile = new FlowEfficiencyOverviewTile(page);
 
-	// Negative case first: no wait states configured yet, so the widget must
-	// explain itself rather than render a misleading status.
+	// Unconfigured case first: no wait states yet, so the widget explains itself in the body AND
+	// flags red, pointing at the setting it needs. Red here is not a measurement — it is a prompt,
+	// matching how sibling widgets treat a missing SLE.
 	const metricsBefore = await teamDetail.goToMetrics();
 	await metricsBefore.switchCategory(MetricsCategories.FlowOverview);
 	await expect(tile.notConfiguredMessage).toBeVisible();
-	await expect(tile.ragChip).toHaveCount(0);
+	await expect(tile.ragChip).toBeVisible();
+	expect(await tile.readRagStatus()).toBe("red");
+	expect(await tile.readRagTipText()).toContain("wait states in settings");
 
 	await page.goto("/");
 	const detailAgain = await overviewPage.goToTeam(DEMO_TEAM_NAME);

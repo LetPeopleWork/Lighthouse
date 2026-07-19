@@ -291,7 +291,23 @@ function computeFlowEfficiencyFooter(
 	info: IFlowEfficiencyInfo | null,
 	terms: RagTerms,
 ): RagFooter | undefined {
-	if (info === null || !info.isConfigured || !info.hasDataInScope) {
+	if (info === null) {
+		return undefined;
+	}
+
+	// Unconfigured is a red state, mirroring the no-SLE branch of computeCycleTimePercentilesRag:
+	// the user has not told us what to measure, so we ask for the setting rather than going quiet.
+	// Kept here rather than inside computeFlowEfficiencyRag so that rule's bands stay untouched.
+	if (!info.isConfigured) {
+		return {
+			ragStatus: "red",
+			tipText: "Define wait states in settings to measure flow efficiency.",
+		};
+	}
+
+	// No data in scope is a different problem — nothing to measure, as opposed to nothing
+	// configured — so it stays colourless rather than borrowing a status it has not earned.
+	if (!info.hasDataInScope) {
 		return undefined;
 	}
 

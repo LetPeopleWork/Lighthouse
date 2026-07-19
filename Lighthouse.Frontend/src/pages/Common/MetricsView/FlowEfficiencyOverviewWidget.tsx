@@ -1,30 +1,10 @@
 import { Card, CardContent, CircularProgress, Typography } from "@mui/material";
 import type React from "react";
 import type { IFlowEfficiencyInfo } from "../../../models/Metrics/FlowEfficiencyInfo";
-import { computeFlowEfficiencyRag, type RagTerms } from "./ragRules";
 
 interface FlowEfficiencyOverviewWidgetProps {
 	readonly info: IFlowEfficiencyInfo | null;
 }
-
-const ragColorMap: Record<"red" | "amber" | "green", string> = {
-	red: "#d32f2f",
-	amber: "#ed6c02",
-	green: "#2e7d32",
-};
-
-const efficiencyRagTerms: RagTerms = {
-	workItem: "work item",
-	workItems: "work items",
-	feature: "feature",
-	features: "features",
-	cycleTime: "cycle time",
-	throughput: "throughput",
-	wip: "WIP",
-	workItemAge: "work item age",
-	blocked: "blocked",
-	sle: "SLE",
-};
 
 const FlowEfficiencyOverviewWidget: React.FC<
 	FlowEfficiencyOverviewWidgetProps
@@ -86,16 +66,13 @@ const FlowEfficiencyBody: React.FC<{
 		);
 	}
 
-	const rag = computeFlowEfficiencyRag(
-		info.efficiencyPercent,
-		efficiencyRagTerms,
-	);
-
+	// The RAG chip rendered by WidgetShell is the single carrier of status. Colouring the number
+	// too would state the same thing twice, in two conventions.
 	return (
 		<Typography
 			variant="h3"
 			data-testid="flow-efficiency-percent"
-			sx={{ color: ragColorMap[rag.ragStatus], fontWeight: "bold" }}
+			sx={{ fontWeight: "bold" }}
 		>
 			{info.efficiencyPercent.toFixed(0)}%
 		</Typography>

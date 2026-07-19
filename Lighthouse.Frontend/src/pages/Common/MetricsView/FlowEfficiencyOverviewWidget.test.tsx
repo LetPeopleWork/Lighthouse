@@ -34,20 +34,24 @@ function renderWidget(info: IFlowEfficiencyInfo | null) {
 }
 
 describe("FlowEfficiencyOverviewWidget", () => {
-	it("renders the aggregate efficiency percentage with the green inverted-RAG colour", () => {
+	// Superseded by user decision on 2026-07-19 during manual verification: the number used to
+	// carry the RAG colour itself. Now that the widget renders a RAG chip through WidgetShell, a
+	// coloured number states the same status a second time in a second convention. The chip is the
+	// single status carrier; the number is plain text.
+	it("renders a high efficiency percentage without tinting it green", () => {
 		renderWidget(getMockFlowEfficiencyInfo({ efficiencyPercent: 72 }));
 
 		const value = screen.getByTestId("flow-efficiency-percent");
 		expect(value).toHaveTextContent("72%");
-		expect(value).toHaveStyle({ color: "#2e7d32" });
+		expect(value).not.toHaveStyle({ color: "#2e7d32" });
 	});
 
-	it("colours a low efficiency percentage red because higher efficiency is better", () => {
+	it("renders a low efficiency percentage without tinting it red", () => {
 		renderWidget(getMockFlowEfficiencyInfo({ efficiencyPercent: 25 }));
 
 		const value = screen.getByTestId("flow-efficiency-percent");
 		expect(value).toHaveTextContent("25%");
-		expect(value).toHaveStyle({ color: "#d32f2f" });
+		expect(value).not.toHaveStyle({ color: "#d32f2f" });
 	});
 
 	it("shows a distinct not-configured read that never reports 100%", () => {
