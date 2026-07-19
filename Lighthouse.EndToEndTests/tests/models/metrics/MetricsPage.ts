@@ -72,6 +72,52 @@ export class MetricsWidget {
 		return Number(text.replace(/\D/g, ""));
 	}
 
+	get trendChrome(): Locator {
+		return this.Widget.getByTestId(`widget-trend-${this.widgetId}`);
+	}
+
+	get trendArrow(): Locator {
+		return this.Widget.getByTestId(`widget-trend-arrow-${this.widgetId}`);
+	}
+
+	/**
+	 * The rendered trend direction, read off the arrow glyph the shell paints.
+	 *
+	 * "none" means the neutral no-baseline placeholder ("—") is showing: the
+	 * widget found no comparison point and rendered nothing directional. That is
+	 * the authoritative signal, carried by the shell's own data-nobaseline
+	 * attribute.
+	 *
+	 * The direction itself is only distinguishable by the MUI arrow glyph, and
+	 * MUI strips its icon data-testid from production builds, so the glyph is
+	 * identified by its (stable, per-icon) SVG path. An unrecognised glyph
+	 * returns "unknown" rather than silently reading as "none".
+	 */
+	async getTrendDirection(): Promise<
+		"up" | "down" | "flat" | "none" | "unknown"
+	> {
+		if ((await this.trendArrow.getAttribute("data-nobaseline")) === "true") {
+			return "none";
+		}
+
+		const directionByGlyphPath = new Map<string, "up" | "down" | "flat">([
+			["M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5z", "up"], // NorthEast
+			["M19 9h-2v6.59L5.41 4 4 5.41 15.59 17H9v2h10z", "down"], // SouthEast
+			["m15 5-1.41 1.41L18.17 11H2v2h16.17l-4.59 4.59L15 19l7-7z", "flat"], // East
+		]);
+
+		const glyphPath = await this.trendArrow
+			.locator("svg path")
+			.first()
+			.getAttribute("d");
+
+		if (glyphPath === null) {
+			return "unknown";
+		}
+
+		return directionByGlyphPath.get(glyphPath) ?? "unknown";
+	}
+
 	get ragStatusIndicator(): Locator {
 		return this.Widget.getByTestId("rag-status");
 	}

@@ -116,3 +116,51 @@ test("@walking_skeleton clicking the latest bar on the Blocked Items Over Time c
 		.poll(() => blockedOverTime.countBlockedItemsDialogRows())
 		.toBeGreaterThan(0);
 });
+
+test("@walking_skeleton the Blocked Items overview widget renders a directional trend, not the neutral no-baseline placeholder", async ({
+	page,
+	request,
+	overviewPage,
+}) => {
+	await loadDemoScenario(request, DEMO_SCENARIO_ID);
+	await waitForBackgroundUpdates(request);
+	await page.goto("/");
+
+	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
+	const teamEdit = await teamDetail.editTeam();
+
+	// Same single Type=User Story rule as the other skeletons, so the WIP
+	// population reads blocked and the widget has a non-zero current value to
+	// compare against its baseline.
+	const blockedEditor = new BlockedRuleConfigEditor(page);
+	await blockedEditor.enable();
+	await blockedEditor.clearExistingRules();
+	await blockedEditor.addFieldEqualsRule(
+		DEMO_BLOCKED_FIELD,
+		DEMO_BLOCKED_VALUE,
+	);
+	const detailAfterSave = await teamEdit.save();
+
+	const metrics = await detailAfterSave.goToMetrics();
+	const overviewWidgets = await metrics.switchCategory(
+		MetricsCategories.FlowOverview,
+	);
+	const blockedWidget = await metrics.getWidgetByName(
+		MetricsWidgetNames.BlockedItemsOverview,
+		overviewWidgets,
+	);
+
+	await expect(blockedWidget.Widget).toBeVisible();
+	await expect(blockedWidget.trendChrome).toBeVisible();
+
+	// Bug #5521: the snapshot history was fetched with the dashboard's own
+	// [startDate, endDate] while the baseline was looked for at startDate - 1 day,
+	// so the baseline was undefined by construction and this widget rendered the
+	// neutral "—" on every real instance. Selector unit tests never caught it
+	// because they hand-build a history that already spans the boundary — only a
+	// seeded instance can prove the fetch window is right. On a fresh demo
+	// instance the baseline is the assumed zero, so the direction reads "up".
+	await expect
+		.poll(() => blockedWidget.getTrendDirection())
+		.toMatch(/^(up|down|flat)$/);
+});
