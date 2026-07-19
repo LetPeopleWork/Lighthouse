@@ -1116,6 +1116,9 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		aging: (
+			// UPSTREAM-7: the items are an as-of-endDate snapshot, and so is the
+			// currentStateEnteredAt they carry, so `now` must be endDate too. Measuring
+			// time-in-state against today would add every day since the range ended.
 			<WorkItemAgingChart
 				inProgressItems={ctx.inProgressItems}
 				percentileValues={ctx.percentileValues}
@@ -1125,6 +1128,7 @@ function buildWidgetNodes(ctx: {
 				blockedStalenessThresholdDays={ctx.blockedStalenessThresholdDays}
 				perStatePercentileValues={ctx.perStatePercentileValues}
 				workItemAgePercentileValues={ctx.workItemAgePercentilesValues}
+				now={ctx.endDate}
 			/>
 		),
 		loadBalanceMatrix: <LoadBalanceMatrixChart data={ctx.loadBalanceData} />,
@@ -1641,12 +1645,16 @@ export const BaseMetricsView = <
 
 	// blockedItems spans To Do + In Progress (from useMetricsData's blocked-eligible fetch), so the
 	// overview count/RAG include items blocked while still in To Do — not just the WIP (in-progress) set.
+	// UPSTREAM-7: inProgressItems is an as-of-endDate snapshot, so staleness is measured against
+	// endDate rather than today — otherwise a past range reports every item as having sat in its
+	// state for all the days since the range closed.
 	const staleItems = inProgressItems.filter(
 		(item) =>
 			deriveStaleness(
 				item,
 				stalenessThresholdDays,
 				blockedStalenessThresholdDays,
+				endDate,
 			).isStale,
 	);
 	const hasStaleConfig =
