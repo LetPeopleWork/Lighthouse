@@ -12,6 +12,24 @@ export class WorkItemsDialog {
 		await closeButton.click();
 	}
 
+	get dialog(): Locator {
+		return this.page.getByRole("dialog");
+	}
+
+	get title(): Locator {
+		// The DialogTitle renders the "{context} Completed" / "{context} Started"
+		// heading that identifies which widget's data set is on screen.
+		return this.dialog.locator(".MuiDialogTitle-root");
+	}
+
+	get rows(): Locator {
+		return this.dialog.locator(".MuiDataGrid-row");
+	}
+
+	async countRows(): Promise<number> {
+		return this.rows.count();
+	}
+
 	get timeInStateColumnHeader(): Locator {
 		return this.page.getByRole("columnheader", { name: "Time in State" });
 	}

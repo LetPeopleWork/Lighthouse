@@ -589,7 +589,9 @@ testWithDemo(
 		// rather than the default ones under a named heading.
 		const percentiles = new CycleTimePercentilesWidget(page, widget.Id);
 		await expect
-			.poll(async () => Object.keys(await percentiles.getPercentileValues()).length)
+			.poll(
+				async () => Object.keys(await percentiles.getPercentileValues()).length,
+			)
 			.toBeGreaterThan(0);
 		await percentiles.selectScope("Analysis to Done");
 		await expect

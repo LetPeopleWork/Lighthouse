@@ -13,7 +13,9 @@ export class MetricsWidget {
 
 	async openDialog(): Promise<WorkItemsDialog> {
 		await this.ViewDataButton.click();
-		return new WorkItemsDialog(this.page);
+		const dialog = new WorkItemsDialog(this.page);
+		await dialog.dialog.waitFor({ state: "visible" });
+		return dialog;
 	}
 
 	get Id(): string {
@@ -327,6 +329,8 @@ export const MetricsWidgetNames = {
 	PredictabilityScoreOverview: "Predictability Score Overview",
 	CycleTimePercentiles: "Cycle Time Percentiles",
 	WorkItemAgePercentiles: "Work Item Age Percentiles",
+	TotalThroughput: "Total Throughput",
+	TotalArrivals: "Total Arrivals",
 	CycleTimeScatterplot: "Cycle Time Scatterplot",
 	WorkItemAgingChart: "Work Item Aging Chart",
 	CumulativeStateTime: "Cumulative Time per State",
