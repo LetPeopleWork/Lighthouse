@@ -673,7 +673,7 @@ describe("useMetricsData", () => {
 		 *
 		 * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
 		 */
-		it.skip("requests blocked-count history from the day BEFORE the range start, so the trend baseline is inside the window (AC0)", async () => {
+		it("requests blocked-count history from the day BEFORE the range start, so the trend baseline is inside the window (AC0)", async () => {
 			const entity = createMockEntity();
 			const service = createMockTeamMetricsService();
 

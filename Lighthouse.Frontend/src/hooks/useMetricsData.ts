@@ -379,8 +379,16 @@ export function useMetricsData<
 	}, [entity, metricsService, startDate, endDate]);
 
 	useEffect(() => {
+		// US-03 AC0 / Bug #5521: computeBlockedTrend looks for its baseline at
+		// startDate − 1 day, but the controller filters `RecordedAt >= start`. Fetching
+		// with the dashboard's own startDate therefore put the baseline day exactly one
+		// day outside the returned window, so the trend never found one and rendered the
+		// neutral placeholder on every instance for every range. Fetch one day earlier.
+		const baselineStart = new Date(startDate);
+		baselineStart.setDate(baselineStart.getDate() - 1);
+
 		metricsService
-			.getBlockedCountHistory(entity.id, startDate, endDate)
+			.getBlockedCountHistory(entity.id, baselineStart, endDate)
 			.then(setBlockedCountHistory)
 			.catch((error) =>
 				console.error("Error fetching blocked count history:", error),
