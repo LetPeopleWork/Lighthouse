@@ -28,6 +28,28 @@ namespace Lighthouse.Backend.Services.Implementation
                         .ToList());
         }
 
+        /// <summary>
+        /// The state an item was in on <paramref name="asOf"/>, or null when the history says nothing
+        /// about that day and the caller should keep the item's current state (UPSTREAM-7).
+        /// </summary>
+        /// <remarks>
+        /// Day granularity, deliberately: a transition part-way through the end date belongs to that
+        /// day, matching how GenerateWorkInProgressByDay picks the population the caller is projecting.
+        ///
+        /// Teams and portfolios share this rule but apply it differently — a WorkItem can be copied
+        /// wholesale, whereas a Feature cannot (its copy constructor drops Forecasts / FeatureWork /
+        /// Portfolios that FeatureDto needs, and the entities are EF-tracked so mutating them would
+        /// write the projection back to the database). Hence one rule, two applications.
+        /// </remarks>
+        protected static WorkItemStateTransition? ResolveStateAsOf(
+            IReadOnlyList<WorkItemStateTransition> transitions, DateTime asOf)
+        {
+            return transitions
+                .Where(transition => transition.TransitionedAt.Date <= asOf.Date)
+                .OrderBy(transition => transition.TransitionedAt)
+                .LastOrDefault();
+        }
+
         protected static IEnumerable<AgeInStatePercentilesDto> ComputeAgeInStatePercentiles(
             IEnumerable<WorkItem> completedItemsInWindow,
             IReadOnlyList<string> doingStatesInOrder,

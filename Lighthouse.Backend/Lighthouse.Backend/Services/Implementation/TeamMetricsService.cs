@@ -465,7 +465,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private List<WorkItem> ResolveCumulativeStateTimeCandidates(Team team, DateTime startDate, DateTime endDate)
         {
             var teamItems = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
-            var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(teamItems);
+            var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(team, teamItems);
 
             return itemsWithTransitions
                 .Where(item => item.StateCategory != StateCategories.ToDo)
@@ -473,7 +473,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
-        private List<WorkItem> AssociateSyncedTransitionsPreservingCurrentState(IReadOnlyCollection<WorkItem> items)
+        private List<WorkItem> AssociateSyncedTransitionsPreservingCurrentState(Team team, IReadOnlyCollection<WorkItem> items)
         {
             var itemIds = items.Select(item => item.Id).ToHashSet();
             var transitionsByItem = GroupTransitionsByItem(workItemStateTransitionRepository
@@ -481,8 +481,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 .AsEnumerable()
                 .Select(transition => (transition.WorkItemId, transition)));
 
+            // Team can be unpopulated on items that were not loaded through the navigation property;
+            // the owning team is known by the caller either way, so fall back to it.
             return items
-                .Select(item => new WorkItem(item, item.Team)
+                .Select(item => new WorkItem(item, item.Team ?? team)
                 {
                     Id = item.Id,
                     CurrentStateEnteredAt = item.CurrentStateEnteredAt,
@@ -591,9 +593,47 @@ namespace Lighthouse.Backend.Services.Implementation
                     i => i.TeamId == team.Id &&
                          (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done));
 
-                return GenerateWorkInProgressByDay(endDate, endDate, items)[0].OfType<WorkItem>();
+                var snapshot = GenerateWorkInProgressByDay(endDate, endDate, items)[0].OfType<WorkItem>().ToList();
+
+                return ProjectStateAsOf(team, snapshot, endDate);
             }
             , logger);
+        }
+
+        /// <summary>
+        /// Rewrites each item's State / StateCategory / CurrentStateEnteredAt to what they were on
+        /// <paramref name="asOf"/>, resolved from the synced state-transition history.
+        /// </summary>
+        /// <remarks>
+        /// UPSTREAM-7: the population returned by GenerateWorkInProgressByDay is already date-correct
+        /// (D14), and D16 made the age as-of, but the State stayed today-anchored. For any past range
+        /// the selected items have usually moved on to a Done state since, so the aging chart — which
+        /// buckets by state and drops anything outside the team's DoingStates — rendered them into no
+        /// column at all and reported "no work items in progress" while WIP-over-time showed them.
+        ///
+        /// Items with no transition at or before <paramref name="asOf"/> (synced before state history
+        /// was captured, or a connector that supplies none) keep their current values — the exact
+        /// behaviour that predates this projection, so the fallback cannot regress anything.
+        /// </remarks>
+        private List<WorkItem> ProjectStateAsOf(Team team, IReadOnlyCollection<WorkItem> items, DateTime asOf)
+        {
+            var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(team, items);
+
+            foreach (var item in itemsWithTransitions)
+            {
+                var stateOnDay = ResolveStateAsOf(item.SyncedTransitions, asOf);
+
+                if (stateOnDay == null)
+                {
+                    continue;
+                }
+
+                item.State = stateOnDay.ToState;
+                item.StateCategory = team.MapStateToStateCategory(stateOnDay.ToState);
+                item.CurrentStateEnteredAt = stateOnDay.TransitionedAt;
+            }
+
+            return itemsWithTransitions;
         }
 
         public IEnumerable<WorkItem> GetBlockedEligibleItemsForTeam(Team team)

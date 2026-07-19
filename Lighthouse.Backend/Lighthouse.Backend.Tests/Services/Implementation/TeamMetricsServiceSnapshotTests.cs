@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
+        private Mock<IWorkItemStateTransitionRepository> stateTransitionRepositoryMock;
+        private List<WorkItemStateTransition> stateTransitions;
 
         private Team testTeam;
         private TeamMetricsService subject;
@@ -55,6 +57,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
+
+            stateTransitions = new List<WorkItemStateTransition>();
+            stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
+            stateTransitionRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItemStateTransition, bool>>>()))
+                .Returns((Expression<Func<WorkItemStateTransition, bool>> pred) =>
+                    stateTransitions.Where(pred.Compile()).AsQueryable());
+
             subject = new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
                 workItemRepositoryMock.Object,
@@ -63,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
-                Mock.Of<IWorkItemStateTransitionRepository>());
+                stateTransitionRepositoryMock.Object);
 
             workItems = new List<WorkItem>();
             features = new List<Feature>();
@@ -157,6 +167,119 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var result = subject.GetWipSnapshotForTeam(testTeam, Day19);
 
             Assert.That(result, Is.Empty);
+        }
+
+        // ── GetWipSnapshotForTeam: as-of state projection (UPSTREAM-7) ────────
+
+        [Test]
+        public void GetWipSnapshotForTeam_ItemMovedOnSinceEndDate_ReportsStateItHadOnEndDate()
+        {
+            // The failing case from the field: in progress on Apr 19, Closed by the time we look.
+            // The aging chart buckets by state, so reporting "Closed" drops it out of the chart
+            // entirely while WIP-over-time still counts it.
+            AddDoneItem(startedDate: Day1, closedDate: DateTime.UtcNow.Date);
+            workItems[0].State = "Closed";
+            AddTransition(workItemId: 1, toState: "Active", at: Day1);
+            AddTransition(workItemId: 1, toState: "Closed", at: DateTime.UtcNow.Date);
+
+            var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(item.State, Is.EqualTo("Active"));
+                Assert.That(item.StateCategory, Is.EqualTo(StateCategories.Doing));
+            }
+        }
+
+        [Test]
+        public void GetWipSnapshotForTeam_SeveralTransitionsBeforeEndDate_ReportsTheLastOne()
+        {
+            AddDoingItem(startedDate: Day1);
+            AddTransition(workItemId: 1, toState: "Active", at: Day1);
+            AddTransition(workItemId: 1, toState: "Resolved", at: Day10);
+            AddTransition(workItemId: 1, toState: "Active", at: Day14);
+
+            var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(item.State, Is.EqualTo("Active"));
+                Assert.That(item.CurrentStateEnteredAt, Is.EqualTo(Day14),
+                    "time-in-state must be measured from the entry that was current on the end date");
+            }
+        }
+
+        [Test]
+        public void GetWipSnapshotForTeam_TransitionAfterEndDate_IsIgnored()
+        {
+            AddDoingItem(startedDate: Day1);
+            AddTransition(workItemId: 1, toState: "Active", at: Day5);
+            AddTransition(workItemId: 1, toState: "Resolved", at: Day19.AddDays(1));
+
+            var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
+
+            Assert.That(item.State, Is.EqualTo("Active"));
+        }
+
+        [Test]
+        public void GetWipSnapshotForTeam_TransitionLaterOnEndDate_StillCounts()
+        {
+            // Day granularity, matching WIP-over-time: a transition at 13:20 on the end date is part
+            // of that day, so the item's state on that day is the one it ended the day in.
+            AddDoingItem(startedDate: Day1);
+            AddTransition(workItemId: 1, toState: "Active", at: Day5);
+            AddTransition(workItemId: 1, toState: "Resolved", at: Day19.AddHours(13));
+
+            var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
+
+            Assert.That(item.State, Is.EqualTo("Resolved"));
+        }
+
+        [Test]
+        public void GetWipSnapshotForTeam_NoTransitionHistory_KeepsCurrentState()
+        {
+            // Items synced before state history was captured. Falling back to the current state is
+            // exactly what happened before this projection existed, so nothing can regress.
+            AddDoingItem(startedDate: Day1);
+            workItems[0].State = "In Progress";
+            workItems[0].CurrentStateEnteredAt = Day10;
+
+            var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(item.State, Is.EqualTo("In Progress"));
+                Assert.That(item.CurrentStateEnteredAt, Is.EqualTo(Day10));
+            }
+        }
+
+        [Test]
+        public void GetWipSnapshotForTeam_AllTransitionsAfterEndDate_KeepsCurrentState()
+        {
+            AddDoingItem(startedDate: Day1);
+            workItems[0].State = "In Progress";
+            AddTransition(workItemId: 1, toState: "Resolved", at: Day19.AddDays(1));
+
+            var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
+
+            Assert.That(item.State, Is.EqualTo("In Progress"));
+        }
+
+        [Test]
+        public void GetWipSnapshotForTeam_OtherItemsTransitions_DoNotLeakAcross()
+        {
+            AddDoingItem(startedDate: Day1);
+            AddDoingItem(startedDate: Day1);
+            workItems[1].State = "In Progress";
+            AddTransition(workItemId: 1, toState: "Resolved", at: Day10);
+
+            var items = subject.GetWipSnapshotForTeam(testTeam, Day19).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(items.Single(i => i.Id == 1).State, Is.EqualTo("Resolved"));
+                Assert.That(items.Single(i => i.Id == 2).State, Is.EqualTo("In Progress"));
+            }
         }
 
         // ── GetTotalWorkItemAge (date-aware overload) ─────────────────────────
@@ -398,6 +521,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ClosedDate = closedDate ?? DateTime.UtcNow,
             };
             workItems.Add(item);
+        }
+
+        private void AddTransition(int workItemId, string toState, DateTime at)
+        {
+            stateTransitions.Add(new WorkItemStateTransition
+            {
+                Id = stateTransitions.Count + 1,
+                WorkItemId = workItemId,
+                ToState = toState,
+                TransitionedAt = at,
+            });
         }
 
         private void AddFeature(string referenceId)
