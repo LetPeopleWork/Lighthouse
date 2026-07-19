@@ -11,5 +11,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         : RepositoryBase<BlockedCountSnapshot>(context, (lighthouseAppContext) => lighthouseAppContext.BlockedCountSnapshots, logger),
             IBlockedCountSnapshotRepository
     {
+        public BlockedCountSnapshot? GetLatestAtOrBefore(int ownerId, OwnerType ownerType, DateOnly date)
+        {
+            return GetAllByPredicate(s => s.OwnerId == ownerId && s.OwnerType == ownerType && s.RecordedAt <= date)
+                .OrderByDescending(s => s.RecordedAt)
+                .FirstOrDefault();
+        }
     }
 }

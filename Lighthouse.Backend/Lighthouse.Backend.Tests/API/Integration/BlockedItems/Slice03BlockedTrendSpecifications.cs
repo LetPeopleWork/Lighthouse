@@ -74,6 +74,36 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             }
         }
 
+        private void ThenTheTrendInterpolatesMissingDaysFromTheLastKnownCount((HttpStatusCode Status, string Body) response)
+        {
+            Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
+                $"The blocked-over-time endpoint must serve the interpolated daily series. Body: {response.Body}");
+            var points = ParseSeries(response.Body)
+                .EnumerateArray()
+                .Select(e => (Date: e.GetProperty("recordedAt").GetString(), Count: e.GetProperty("blockedCount").GetInt32()))
+                .ToList();
+            var countByDate = points.ToDictionary(p => p.Date!, p => p.Count);
+
+            var windowStart = DateOnly.FromDateTime(SyncDay.AddDays(-21)).ToString("yyyy-MM-dd");
+            var gapDayBeforeSnapshot = DateOnly.FromDateTime(SyncDay.AddDays(-15)).ToString("yyyy-MM-dd");
+            var realSnapshotDay = DateOnly.FromDateTime(SyncDay.AddDays(-14)).ToString("yyyy-MM-dd");
+            var windowEnd = DateOnly.FromDateTime(SyncDay).ToString("yyyy-MM-dd");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(points, Has.Count.EqualTo(22),
+                    $"The window spans 22 days; every day must appear exactly once. Body: {response.Body}");
+                Assert.That(countByDate[windowStart], Is.EqualTo(2),
+                    "The first window day carries the pre-window snapshot (count 2) forward — never a fabricated zero.");
+                Assert.That(countByDate[gapDayBeforeSnapshot], Is.EqualTo(2),
+                    "Days before the next real snapshot keep the last known count.");
+                Assert.That(countByDate[realSnapshotDay], Is.EqualTo(6),
+                    "The day with a real snapshot reports the recorded count.");
+                Assert.That(countByDate[windowEnd], Is.EqualTo(6),
+                    "The final day carries the latest recorded count forward through the window end.");
+            }
+        }
+
         /// <summary>
         /// Parse the trend body as JSON, failing with a clean RED assertion (not a raw parse exception)
         /// when the endpoint is missing and the request falls through to the SPA HTML fallback.

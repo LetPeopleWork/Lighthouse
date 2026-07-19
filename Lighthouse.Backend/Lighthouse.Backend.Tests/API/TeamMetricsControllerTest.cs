@@ -1695,15 +1695,18 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
             var result = (response.Result as OkObjectResult)!;
-            var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
+            // Bug 5522: the endpoint now serves the continuous daily series — the two recorded rows
+            // plus the unrecorded days carrying the last known count forward (7/3–7/5 = 7).
+            var dtos = (result.Value as IEnumerable<BlockedCountSnapshotDto>)!.ToList();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(dtos, Is.Not.Null);
-                Assert.That(dtos!.Count(), Is.EqualTo(2));
-                Assert.That(dtos!.First().RecordedAt, Is.EqualTo("2026-07-01"));
-                Assert.That(dtos!.First().BlockedCount, Is.EqualTo(3));
-                Assert.That(dtos!.Last().RecordedAt, Is.EqualTo("2026-07-02"));
-                Assert.That(dtos!.Last().BlockedCount, Is.EqualTo(7));
+                Assert.That(dtos, Has.Count.EqualTo(5));
+                Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-01"));
+                Assert.That(dtos[0].BlockedCount, Is.EqualTo(3));
+                Assert.That(dtos[1].RecordedAt, Is.EqualTo("2026-07-02"));
+                Assert.That(dtos[1].BlockedCount, Is.EqualTo(7));
+                Assert.That(dtos[4].RecordedAt, Is.EqualTo("2026-07-05"));
+                Assert.That(dtos[4].BlockedCount, Is.EqualTo(7));
             }
         }
 
@@ -1760,6 +1763,170 @@ namespace Lighthouse.Backend.Tests.API
             var dtos = result.Value as IEnumerable<BlockedCountSnapshotDto>;
             Assert.That(dtos, Is.Not.Null);
             Assert.That(dtos!, Is.Empty);
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_MissingDaysBetweenSnapshots_CarriesForwardLastKnownCount()
+        {
+            // Bug 5522: Fri=3, Mon=5 recorded; Sat/Sun (Lighthouse offline) must carry Friday's count.
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 3), BlockedCount = 3 },
+                new() { Id = 2, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 6), BlockedCount = 5 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(snapshots.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 3), new DateTime(2026, 7, 6));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = (result.Value as IEnumerable<BlockedCountSnapshotDto>)!.ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dtos, Has.Count.EqualTo(4));
+                Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-03"));
+                Assert.That(dtos[0].BlockedCount, Is.EqualTo(3));
+                Assert.That(dtos[1].RecordedAt, Is.EqualTo("2026-07-04"));
+                Assert.That(dtos[1].BlockedCount, Is.EqualTo(3));
+                Assert.That(dtos[2].RecordedAt, Is.EqualTo("2026-07-05"));
+                Assert.That(dtos[2].BlockedCount, Is.EqualTo(3));
+                Assert.That(dtos[3].RecordedAt, Is.EqualTo("2026-07-06"));
+                Assert.That(dtos[3].BlockedCount, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_NoSnapshotOnRangeStart_SeedsFromLatestSnapshotBeforeStart()
+        {
+            // Bug 5522: the day before the window is the seed boundary — the last snapshot at or before
+            // start-1 (here 2026-07-01) carries forward into the gap at the start of the range.
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var inRangeSnapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 2, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 6), BlockedCount = 5 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(inRangeSnapshots.AsQueryable());
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetLatestAtOrBefore(1, OwnerType.Team, new DateOnly(2026, 7, 2)))
+                .Returns(new BlockedCountSnapshot { Id = 1, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 1), BlockedCount = 2 });
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 3), new DateTime(2026, 7, 6));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = (result.Value as IEnumerable<BlockedCountSnapshotDto>)!.ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dtos, Has.Count.EqualTo(4));
+                Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-03"));
+                Assert.That(dtos[0].BlockedCount, Is.EqualTo(2));
+                Assert.That(dtos[1].RecordedAt, Is.EqualTo("2026-07-04"));
+                Assert.That(dtos[1].BlockedCount, Is.EqualTo(2));
+                Assert.That(dtos[2].RecordedAt, Is.EqualTo("2026-07-05"));
+                Assert.That(dtos[2].BlockedCount, Is.EqualTo(2));
+                Assert.That(dtos[3].RecordedAt, Is.EqualTo("2026-07-06"));
+                Assert.That(dtos[3].BlockedCount, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_NoSnapshotBeforeStart_BeginsAtFirstInRangeSnapshot()
+        {
+            // Bug 5522: never fabricate values ahead of the first-ever snapshot — days preceding all
+            // records emit nothing (honest forward-only empty-state semantics preserved).
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 5), BlockedCount = 4 },
+                new() { Id = 2, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 6), BlockedCount = 5 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(snapshots.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 3), new DateTime(2026, 7, 6));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = (result.Value as IEnumerable<BlockedCountSnapshotDto>)!.ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dtos, Has.Count.EqualTo(2));
+                Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-05"));
+                Assert.That(dtos[0].BlockedCount, Is.EqualTo(4));
+                Assert.That(dtos[1].RecordedAt, Is.EqualTo("2026-07-06"));
+                Assert.That(dtos[1].BlockedCount, Is.EqualTo(5));
+            }
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_SnapshotOnStartDay_CarriesForwardThroughEndDayInclusive()
+        {
+            // Bug 5522 off-by-one pin: a snapshot exactly on start carries forward THROUGH end inclusive.
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 3), BlockedCount = 3 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(snapshots.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 3), new DateTime(2026, 7, 6));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = (result.Value as IEnumerable<BlockedCountSnapshotDto>)!.ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dtos, Has.Count.EqualTo(4));
+                Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-03"));
+                Assert.That(dtos[0].BlockedCount, Is.EqualTo(3));
+                Assert.That(dtos[3].RecordedAt, Is.EqualTo("2026-07-06"));
+                Assert.That(dtos[3].BlockedCount, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void GetBlockedCountHistory_SnapshotOnlyOnEndDay_ReturnsSingleRow()
+        {
+            // Bug 5522 off-by-one pin: a snapshot exactly on end is included; without a pre-start seed
+            // nothing is fabricated backwards, so the series holds that single day.
+            var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            var snapshots = new List<BlockedCountSnapshot>
+            {
+                new() { Id = 1, OwnerId = 1, OwnerType = OwnerType.Team, RecordedAt = new DateOnly(2026, 7, 6), BlockedCount = 5 },
+            };
+            blockedCountSnapshotRepositoryMock
+                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<BlockedCountSnapshot, bool>>>()))
+                .Returns(snapshots.AsQueryable());
+
+            var subject = CreateSubject();
+            var response = subject.GetBlockedCountHistory(1, new DateTime(2026, 7, 3), new DateTime(2026, 7, 6));
+
+            Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+            var result = (response.Result as OkObjectResult)!;
+            var dtos = (result.Value as IEnumerable<BlockedCountSnapshotDto>)!.ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dtos, Has.Count.EqualTo(1));
+                Assert.That(dtos[0].RecordedAt, Is.EqualTo("2026-07-06"));
+                Assert.That(dtos[0].BlockedCount, Is.EqualTo(5));
+            }
         }
 
         [Test]

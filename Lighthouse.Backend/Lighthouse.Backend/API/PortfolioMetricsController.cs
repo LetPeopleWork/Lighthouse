@@ -466,11 +466,8 @@ namespace Lighthouse.Backend.API
             {
                 var start = DateOnly.FromDateTime(startDate.Date);
                 var end = DateOnly.FromDateTime(endDate.Date);
-                return blockedCountSnapshotRepository
-                    .GetAllByPredicate(s => s.OwnerId == portfolioId && s.OwnerType == OwnerType.Portfolio
-                                            && s.RecordedAt >= start && s.RecordedAt <= end)
-                    .OrderBy(s => s.RecordedAt)
-                    .AsEnumerable()
+                return BlockedCountSeriesBuilder
+                    .BuildDailySeries(blockedCountSnapshotRepository, portfolioId, OwnerType.Portfolio, start, end)
                     .Select(s => new BlockedCountSnapshotDto
                     {
                         RecordedAt = s.RecordedAt.ToString("yyyy-MM-dd"),
