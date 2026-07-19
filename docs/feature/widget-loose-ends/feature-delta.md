@@ -637,7 +637,11 @@ can actually fail: scenario 47.
 
 ## Wave: DELIVER / [REF] Implementation summary
 
-**PARTIAL — slices 01, 02, 03 and 05 shipped; slice 04 held; E2E outstanding.** Run of 2026-07-19.
+**COMPLETE — all five slices shipped, E2E green, feature finalized.** Runs of 2026-07-19.
+
+The paragraphs immediately below describe the first (partial) run and are kept for provenance; the
+closing state of the feature is in "Close-out state" at the end of this wave section, which
+supersedes them wherever the two disagree.
 
 Four of the six reported Flow Overview gaps are closed. Slice 01 registered the two missing `viewData`
 payloads and dropped the redundant term prefix from the aging chart's percentile labels — confirming the
@@ -837,9 +841,67 @@ DELIVER does not normally re-author ATs (that is DISTILL's job), but the accepta
 changed by the product owner, so re-authoring is the correct response rather than a boundary violation. It
 must be recorded as such — which is what this section is.
 
-## Wave: DELIVER / [REF] Outstanding work
+## Wave: DELIVER / [REF] Outstanding work — ALL CLOSED
 
-1. **E2E specs** — `01-02`, `02-03`, `03-04`, `05-02`. DISTILL deferred these to DELIVER deliberately (a spec asserting a chip that does not render yet cannot be run, and this project never commits an unrun spec).
-2. **`03-03`** — lighthouse-clients MCP tool-description reword + Changeset, in the separate repo.
-3. **Slice 04** — behind the D6 human validation gate. Un-skips scenario 47 and clears the last `__SCAFFOLD__`.
-4. **Then** — mutation testing, adversarial review, integrity, docs + screenshots, finalize.
+Recorded during the partial run, all resolved since:
+
+1. ~~**E2E specs** `01-02`, `02-03`, `03-04`, `05-02`~~ — written and green.
+2. ~~**`03-03`**~~ — lighthouse-clients MCP tool-description reword + Changeset, committed in that repo.
+3. ~~**Slice 04**~~ — shipped after the D6 gate fired and the rule was replaced (see D6-REVISED). Scenario 47 un-skipped; no `__SCAFFOLD__` markers remain.
+4. ~~**Then**~~ — mutation testing, review, integrity, docs, finalize: see Close-out state.
+
+## Wave: DELIVER / [REF] Close-out state (2026-07-19, supersedes the partial-run sections above)
+
+**Quality gates**
+
+| Gate | Result |
+|---|---|
+| `pnpm test` | 3624 passed / 0 skipped / **0 failed** |
+| `pnpm build` | exit 0, zero errors and warnings (Biome clean via prebuild) |
+| `dotnet build` | succeeded, no new warnings |
+| `dotnet test` | 3490 passed / 3 skipped / **0 failed** |
+| E2E (Playwright) | `tests/specs/flow/` — 21 passed, 1 flaky-then-passed (`CumulativeStateTime`, pre-existing), run locally against a Demo backend |
+| Mutation — backend, feature-scoped | **83.3%** (25 killed / 2 survived / 3 no-coverage over the changed regions) |
+| Mutation — frontend, feature-scoped | **88.2%** (210 killed / 28 survived) — `ragRules` 100%, `workItemAgePercentilesTrend` 98.5%, `blockedTrend` 82.6%, `useMetricsData` 50% (its mutated range covers sibling fetch effects whose tests live in `BaseMetricsView.test.tsx`, excluded from this run for runtime) |
+| `des-verify-integrity` | **exit 1** — 4 steps (`01-01`, `02-01`, `03-01`, `03-02`) carry no execution-log entry, by the accepted decision recorded above. Every other step has a genuine trace. |
+| `grep -rn __SCAFFOLD__` | **0 hits** |
+| SonarCloud | clean on the last pushed run after `f1836b70` |
+
+**What mutation testing changed.** The first frontend run scored 60.8% over a scope that included wide
+ranges of `BaseMetricsView.tsx`; those survivors were dominated by view-level presentation and by
+pre-existing code inside the range, so the number did not describe this feature. Narrowing to the
+logic the feature owns exposed four real holes, all of them tests that passed for a weaker reason
+than they claimed:
+
+- the blocked-history fetch asserted its start was `<=` the baseline day, so an epoch-zero date also passed;
+- the AC2b no-baseline case asserted only "not an arrow", and a zero-vs-zero comparison also reads `none`, so the whole branch could be deleted unnoticed;
+- nothing asserted the trend labels, which became the *only* assumed-vs-measured signal once the tooltip was dropped (US-03 AC5b);
+- both singular branches of the Work Item Age Percentiles tip were unguarded ("1 Work Items sit").
+
+It also found `computeWorkItemAgePercentilesTrend` reachable only by rendering `BaseMetricsView`,
+where the trend chrome comes from a mock `WidgetShell` — every branch in it survived. The selector was
+extracted to `workItemAgePercentilesTrend.ts` beside `blockedTrend.ts` and is now tested directly.
+On the backend, `GetWorkItemIdsWithBlockedHistory` was mocked at every call site and had no test of
+its own; it decides which items may fall back to the live blocked rule, so it now has one.
+
+**Review findings closed.** `FlowEfficiencyWidget.ts` still carried its own copy of the RAG status
+union, the Act/Observe/Sustain label map, `toRagStatus`, and the chip locators that slice 04 had
+extracted into `RagChip.ts` — it was read-denied at the time. It now composes `RagChip`.
+
+**Two survivors accepted as equivalent mutants**, both in `TeamMetricsService`: the `age > 0` guard on
+the percentile projection (`WasItemProgressOnDay` already excludes anything that had not started by
+the range end, so no item in that population can have age 0), and `item.Team ?? team` (every caller
+passes the owning team, so the left operand is never observably different). Neither can be killed
+without inventing a caller that does not exist.
+
+**Docs.** `docs/metrics/widgets.md` described the pre-5508 behaviour in six places, three of which
+said the opposite of what ships: Total Throughput / Total Arrivals as rollup-only widgets with no
+drill-in; Blocked Overview, Stale Items and Total Work Item Age as unaffected by date filtering; and
+the Blocked trend showing a dash where an absent baseline now counts as zero. All corrected, and the
+Work Item Age Percentiles status bands, its trend, and the Flow Efficiency unconfigured-is-Act state
+documented for the first time. Screenshots regenerated for the three images the feature changed.
+
+**Known gap carried forward, not introduced here.** Trend chrome has no real unit coverage for ANY
+widget: `widget-trend-direction-*` exists only on the mock `WidgetShell` in `BaseMetricsView.test.tsx`,
+while the real shell emits `widget-trend-${key}` / `widget-trend-arrow-${key}`. Worth an
+acceptance-designer look as its own item.
