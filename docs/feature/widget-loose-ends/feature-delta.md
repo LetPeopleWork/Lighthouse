@@ -763,6 +763,80 @@ widget set including slice 04's deliverable, so no correct slice-05 implementati
 (slice 02), having already been corrected once from two to seven (slice 01). Worth a habit change: state
 superseded tests as an enumerated list, not a count.
 
+## Wave: DELIVER / [REF] D6 gate RESULT and D6-REVISED — the rule changed
+
+**The gate fired. D6 as designed is withdrawn and replaced.** Run 2026-07-19, coach: the user (Benjamin),
+on their own instance with real data. Periods nominated BEFORE any output was computed, per the gate's
+falsifiability requirement.
+
+**Result — team 34 "Lighthouse Dev Team", SLE = 90% within 2 days:**
+
+| Period | In progress on end date | Ages | Share within SLE | Old rule verdict |
+|---|---|---|---|---|
+| A — 2026-07-11 … 07-17 | 1 item | `[1]` | 100% | **GREEN** |
+| B — 2026-06-21 … 06-28 | 0 items | — | undefined | empty |
+
+Period A read GREEN on a period the coach had nominated as deteriorated. That is the abort criterion, so
+D6 was re-opened rather than shipped.
+
+**What the gate actually revealed, which is more interesting than a failed threshold.** The coach noted the
+period had many days with **0 throughput AND 0 WIP**. The deterioration was *throughput-shaped* — no work
+flowing — not *age-shaped*. A widget answering "how old is my in-progress work" genuinely cannot detect
+"there is almost no in-progress work", and reporting green there is arguably correct: WIP was not ageing
+because there was barely any. So D6's original fear (optimistic bias flattering young WIP during a decline)
+was **neither confirmed nor refuted** by this data — these periods are not the test case for it. What the run
+*did* prove is that a **percentage over a population of 1 is noise**: "100% attainment" from a single item
+carries no signal at all. That is what killed the share-based design.
+
+**Period B's empty population is legitimate, not UPSTREAM-7.** 0 WIP means the empty read is correct.
+UPSTREAM-7 remains open on the demo-data evidence (where the WIP-over-time chart *did* show items); this run
+is not further evidence for it.
+
+### D6-REVISED (user decision, 2026-07-19) — absolute-count bands, not share bands
+
+Evaluated over in-progress items as of `endDate` (per D3), where `V` = the SLE's **day value** only:
+
+| Condition | Status |
+|---|---|
+| No SLE configured | **RED** (with the define-an-SLE tip) |
+| More than one item with age **> V** | **RED** (Act) |
+| Exactly one item with age **> V**, or one or more items with age **== V** | **AMBER** (Observe) |
+| All in-progress ages **< V** | **GREEN** (Sustain) |
+| **Empty population** (nothing in progress) | **GREEN** |
+
+Three consequences the user explicitly confirmed:
+
+1. **The SLE percentile is discarded.** Only the day value is used. The chip is deliberately independent of
+   the configured probability, because a percentage is meaningless at the WIP sizes this widget sees.
+2. **Absolute counts do not scale, and that is accepted.** Two breaching items reads RED whether the WIP is
+   3 or 40. Noted risk: on a portfolio view carrying many in-progress features, RED could become permanent
+   and stop carrying information. Accepted as-is for now.
+3. **Empty population is GREEN, not "no status".** This **supersedes US-05 AC3b**, which required no Act
+   status plus a "no work in progress in this range" body. Rationale: nothing in progress is not a bad state,
+   and the **WIP RAG already signals it** — no need to say the same thing twice on the same dashboard.
+
+### Consequences for the shipped acceptance tests — DISTILL scenarios 24-33 are now largely invalid
+
+This is not a tweak; it replaces the rule's entire band structure, so the ATs authored against the old design
+no longer describe intended behaviour:
+
+- **Scenarios 24, 25, 26, 27, 28** (amber at ≤20pp short, red at >20pp, green at/above target, exactly-met is
+  green, exactly-20pp is amber) — all encode share-based banding. **Invalid; must be re-authored.**
+- **Scenario 29** (an age equal to the SLE value counts as within it) — **inverted**. Under D6-REVISED an age
+  exactly at `V` is now an AMBER trigger, not a pass.
+- **Scenario 31 / 31b** (empty population → no Act status, distinct from no-SLE) — **superseded** by the
+  GREEN decision above.
+- **Scenario 33** (WIA RAG bands identically to the cycle-time rule) — **invalid**, and with it **D19**.
+  The two rules no longer share band logic, so there is no longer one piece of knowledge to extract. The
+  planned shared-helper refactor is **withdrawn**: extracting a helper now would couple two rules that have
+  deliberately diverged, which is the opposite of what DRY asks for.
+- **Scenario 30** (no SLE → red with the define-an-SLE tip) — **still valid, unchanged.**
+- **Scenario 32** (the tip always carries the signal, colour never alone, CI3) — **still valid.**
+
+DELIVER does not normally re-author ATs (that is DISTILL's job), but the acceptance criteria themselves were
+changed by the product owner, so re-authoring is the correct response rather than a boundary violation. It
+must be recorded as such — which is what this section is.
+
 ## Wave: DELIVER / [REF] Outstanding work
 
 1. **E2E specs** — `01-02`, `02-03`, `03-04`, `05-02`. DISTILL deferred these to DELIVER deliberately (a spec asserting a chip that does not render yet cannot be run, and this project never commits an unrun spec).
