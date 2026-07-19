@@ -1308,87 +1308,86 @@ describe("ragRules", () => {
 });
 
 /**
- * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 04, US-05.
+ * Story 5508 (widget-loose-ends) slice 04, US-05 — RE-AUTHORED against D6-REVISED.
  *
- * The Work Item Age Percentiles widget is the only Flow Overview widget with neither a status nor a
- * trend. D6 gives it the SHIPPED SLE-attainment bands over the in-progress population: share of
- * in-progress items whose as-of-endDate age is within `sle.value`, compared against `sle.percentile`.
+ * These specs were originally authored in DISTILL against the share-based D6 design (bands on the
+ * PERCENTAGE of in-progress items within the SLE, reusing `computeCycleTimePercentilesRag`'s 20pp
+ * bands). That design was WITHDRAWN by the product owner on 2026-07-19 after its human validation
+ * gate fired: it read GREEN on a period the coach had nominated as deteriorated, because a
+ * percentage over a population of 1-4 items is noise. See
+ * `docs/feature/widget-loose-ends/feature-delta.md` → "D6 gate RESULT and D6-REVISED" (commit
+ * b1a92b70) for the full record. DELIVER does not normally re-author ATs — the acceptance criteria
+ * themselves changed, which is why this is recorded rather than silently edited.
  *
- * Every expectation below is deliberately phrased to match `computeCycleTimePercentilesRag`'s
- * behaviour on the same numbers — that equivalence IS the specification (AC6: one shared band
- * helper, so a future change to the 20pp boundary lands once).
+ * D6-REVISED — absolute counts over in-progress ages as of `endDate`, `V` = `sle.value` only:
+ *   no SLE                                          → RED (define-an-SLE tip)
+ *   count(age > V) > 1                              → RED (Act)
+ *   count(age > V) === 1 || count(age === V) >= 1   → AMBER (Observe)
+ *   otherwise (all ages < V, or empty population)   → GREEN (Sustain)
  *
- * describe.skip = RED scaffold; DELIVER enables it (ADR-025).
+ * The SLE percentile is deliberately discarded; absolute counts deliberately do not scale with WIP
+ * size; an empty population is deliberately GREEN (the WIP RAG already signals an empty board).
+ *
+ * WITHDRAWN with the old design: scenario 33 ("bands identically to the cycle-time rule") and DESIGN
+ * D19 (extract a shared band helper). The two rules no longer share band knowledge — one is
+ * share-based, one is count-based — so there is no single piece of knowledge to extract, and a
+ * shared helper would couple two rules that deliberately diverged.
  */
-describe.skip("computeWorkItemAgePercentilesRag — SLE attainment over in-progress ages (Story 5508 slice 04)", () => {
+describe("computeWorkItemAgePercentilesRag — count-based SLE bands over in-progress ages (Story 5508 slice 04)", () => {
 	const sle = { percentile: 85, value: 14 };
 
-	// 40 items, `within` of them at or under the SLE value and the rest well past it.
-	const agesWithinSleCount = (within: number, total = 40): number[] => [
-		...Array.from({ length: within }, () => 7),
-		...Array.from({ length: total - within }, () => 30),
-	];
-
-	it("renders amber when attainment is short of the target by 20pp or less (AC2)", () => {
-		// 30/40 = 75% vs an 85% target — 10pp short.
-		const result = computeWorkItemAgePercentilesRag(
-			sle,
-			agesWithinSleCount(30),
-			terms,
-		);
-
-		expect(result.ragStatus).toBe("amber");
-		expect(result.tipText).toContain("75.0%");
-	});
-
-	it("renders red when attainment is more than 20pp short of the target (AC1)", () => {
-		// 20/40 = 50% vs 85% — 35pp short.
-		const result = computeWorkItemAgePercentilesRag(
-			sle,
-			agesWithinSleCount(20),
-			terms,
-		);
+	it("renders red when more than one item is older than the SLE value (AC1 — Act)", () => {
+		const result = computeWorkItemAgePercentilesRag(sle, [3, 15, 21], terms);
 
 		expect(result.ragStatus).toBe("red");
-		expect(result.tipText).toContain("50.0%");
-		expect(result.tipText).toContain("85%");
+		expect(result.tipText).toContain("2");
+		expect(result.tipText).toContain("14");
 	});
 
-	it("renders green when attainment meets or exceeds the target (AC2)", () => {
-		// 36/40 = 90% vs 85%.
-		const result = computeWorkItemAgePercentilesRag(
-			sle,
-			agesWithinSleCount(36),
-			terms,
-		);
+	it("renders amber when exactly one item is older than the SLE value (AC2 — Observe)", () => {
+		const result = computeWorkItemAgePercentilesRag(sle, [3, 7, 21], terms);
 
-		expect(result.ragStatus).toBe("green");
+		expect(result.ragStatus).toBe("amber");
+		expect(result.tipText).toContain("14");
 	});
 
-	it("treats an exactly-met target as green, not amber (boundary)", () => {
-		// 34/40 = 85.0% vs 85%.
+	it("moves from amber to red at the second breaching item (boundary: one above vs two above)", () => {
 		expect(
-			computeWorkItemAgePercentilesRag(sle, agesWithinSleCount(34), terms)
-				.ragStatus,
-		).toBe("green");
+			computeWorkItemAgePercentilesRag(sle, [1, 2, 99], terms).ragStatus,
+		).toBe("amber");
+		expect(
+			computeWorkItemAgePercentilesRag(sle, [1, 99, 99], terms).ragStatus,
+		).toBe("red");
 	});
 
-	it("treats an exactly-20pp shortfall as amber, not red (boundary)", () => {
-		// 26/40 = 65.0% vs 85% — exactly 20pp short; the shipped rule reds only ABOVE 20.
+	/**
+	 * INVERTED relative to the withdrawn design, which counted an age of exactly `V` as within the
+	 * SLE and therefore green. Under D6-REVISED an item sitting exactly ON the SLE value has used up
+	 * its whole allowance and is the thing to look at next — it triggers AMBER.
+	 */
+	it("treats an age exactly equal to the SLE value as an amber trigger, not a pass (boundary)", () => {
+		const result = computeWorkItemAgePercentilesRag(sle, [2, 5, 14], terms);
+
+		expect(result.ragStatus).toBe("amber");
+	});
+
+	it("stays amber when several items sit exactly on the SLE value and none exceed it", () => {
 		expect(
-			computeWorkItemAgePercentilesRag(sle, agesWithinSleCount(26), terms)
-				.ragStatus,
+			computeWorkItemAgePercentilesRag(sle, [14, 14, 1], terms).ragStatus,
 		).toBe("amber");
 	});
 
-	it("counts an item whose age equals the SLE value as within it (boundary)", () => {
-		const result = computeWorkItemAgePercentilesRag(
-			sle,
-			[14, 14, 14, 14],
-			terms,
-		);
+	it("renders green when every in-progress age is below the SLE value (AC2 — Sustain)", () => {
+		const result = computeWorkItemAgePercentilesRag(sle, [1, 5, 13], terms);
 
 		expect(result.ragStatus).toBe("green");
+		expect(result.tipText).toContain("14");
+	});
+
+	it("lets red win over amber when items both exceed and sit on the SLE value (evaluation order)", () => {
+		expect(
+			computeWorkItemAgePercentilesRag(sle, [14, 15, 20], terms).ragStatus,
+		).toBe("red");
 	});
 
 	it("renders red with the define-an-SLE tip when no SLE is configured (AC3)", () => {
@@ -1399,52 +1398,69 @@ describe.skip("computeWorkItemAgePercentilesRag — SLE attainment over in-progr
 	});
 
 	/**
-	 * AC3b — split out from AC3 on 2026-07-19 by the DISTILL review gate.
-	 *
-	 * This test previously asserted RED + the define-an-SLE tip for an empty population, matching the
-	 * unconfigured-SLE case. That collapsed two different situations into one wrong answer: it tells a
-	 * team that HAS configured an SLE to go and configure one, and it reads a team with zero WIP as
-	 * needing to act. `"none"` is the existing WidgetShell/blockedMaxAgeRag status — no new band.
+	 * SUPERSEDES the earlier AC3b `"none"` expectation. D6-REVISED: nothing in progress is not a bad
+	 * state, and the WIP RAG already signals an empty board — this widget must not say it twice.
+	 * The no-SLE case stays RED, so the two remain distinguishable, for a different reason than before.
 	 */
-	it("renders no Act status on an empty population, and never mentions defining an SLE (AC3b)", () => {
+	it("renders green on an empty population, and never mentions defining an SLE (AC3b, revised)", () => {
 		const result = computeWorkItemAgePercentilesRag(sle, [], terms);
 
-		expect(result.ragStatus).toBe("none");
+		expect(result.ragStatus).toBe("green");
 		expect(result.tipText).not.toContain(terms.sle);
 		expect(result.tipText).not.toContain("NaN");
 		expect(result.tipText.length).toBeGreaterThan(0);
 	});
 
-	it("keeps the two empty-ish cases distinct: no SLE reds, empty population does not (AC3 vs AC3b)", () => {
+	it("keeps the two empty-ish cases distinct: no SLE reds, an empty population does not (AC3 vs AC3b)", () => {
 		const noSle = computeWorkItemAgePercentilesRag(null, [3, 5, 9], terms);
 		const noItems = computeWorkItemAgePercentilesRag(sle, [], terms);
 
 		expect(noSle.ragStatus).toBe("red");
-		expect(noItems.ragStatus).toBe("none");
+		expect(noItems.ragStatus).toBe("green");
 		expect(noSle.tipText).not.toBe(noItems.tipText);
 	});
 
-	it("carries the status in the tip text, so colour is never the only signal (AC5, CI3)", () => {
-		for (const ages of [
-			agesWithinSleCount(20),
-			agesWithinSleCount(30),
-			agesWithinSleCount(36),
-		]) {
+	it("ignores the configured percentile entirely, banding on the day value alone (D6-REVISED)", () => {
+		const ages = [3, 7, 21];
+
+		for (const percentile of [50, 70, 85, 99]) {
 			expect(
-				computeWorkItemAgePercentilesRag(sle, ages, terms).tipText.length,
-			).toBeGreaterThan(0);
+				computeWorkItemAgePercentilesRag({ percentile, value: 14 }, ages, terms)
+					.ragStatus,
+			).toBe("amber");
 		}
 	});
 
-	it("bands identically to the shipped cycle-time rule on the same numbers (AC6 — shared knowledge)", () => {
-		// This is the anti-duplication assertion: the two rules differ ONLY in population, so on the
-		// same input array they must return the same status. A divergence means the band logic was
-		// copy-pasted and has drifted.
-		for (const within of [0, 10, 20, 26, 30, 34, 36, 40]) {
-			const ages = agesWithinSleCount(within);
-			expect(computeWorkItemAgePercentilesRag(sle, ages, terms).ragStatus).toBe(
-				computeCycleTimePercentilesRag(sle, ages, terms).ragStatus,
-			);
-		}
+	it("does not scale the bands with WIP size: two breaching items read red at any WIP (D6-REVISED)", () => {
+		const smallWip = [1, 20, 20];
+		const largeWip = [...Array.from({ length: 38 }, () => 1), 20, 20];
+
+		expect(
+			computeWorkItemAgePercentilesRag(sle, smallWip, terms).ragStatus,
+		).toBe("red");
+		expect(
+			computeWorkItemAgePercentilesRag(sle, largeWip, terms).ragStatus,
+		).toBe("red");
 	});
+
+	it("carries the status in the tip text for every band, so colour is never the only signal (AC5, CI3)", () => {
+		const populations = [[], [1, 5, 13], [3, 7, 21], [3, 15, 21], [2, 5, 14]];
+
+		for (const ages of populations) {
+			const result = computeWorkItemAgePercentilesRag(sle, ages, terms);
+			expect(result.tipText.length).toBeGreaterThan(0);
+			expect(result.tipText).not.toContain("NaN");
+		}
+
+		expect(
+			computeWorkItemAgePercentilesRag(null, [1], terms).tipText.length,
+		).toBeGreaterThan(0);
+	});
+
+	/**
+	 * Scenario 33 ("bands identically to the shipped cycle-time rule") is DELETED, not re-authored.
+	 * It asserted the equivalence that DESIGN D19's shared-band-helper refactor was built on. Both
+	 * are withdrawn: the cycle-time rule bands on a share against the percentile, this one bands on
+	 * absolute counts against the day value. There is no longer a shared band to assert or extract.
+	 */
 });

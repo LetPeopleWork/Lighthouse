@@ -921,40 +921,88 @@ export function computeCumulativeStateTimeRag(
 }
 
 /**
- * __SCAFFOLD__ — DISTILL widget-loose-ends (Story 5508) slice 04. DELIVER replaces this body.
+ * Age of the IN-PROGRESS population against the SLE, as of the last day of the selected range (D3).
  *
- * SLE attainment over the IN-PROGRESS population, as of the last day of the selected range (D3).
- * DISCUSS D6 (LOCKED): reuse `calculateSLEStats` and the shipped `computeCycleTimePercentilesRag`
- * bands VERBATIM — green when the target is met, red when more than 20pp short, amber otherwise,
- * red with the "define an SLE" tip when no SLE is configured. Only the population differs from the
- * cycle-time rule; no new band, threshold, or setting.
+ * D6-REVISED (product-owner decision, 2026-07-19) — bands on ABSOLUTE COUNTS against the SLE's day
+ * value, evaluated in this order:
  *
- * AMENDED 2026-07-19 (DISTILL review gate), US-05 AC3b: an EMPTY population is NOT the same case as
- * an unconfigured SLE and must not share its answer. Telling a team that has configured an SLE to go
- * and define one is false, and a team with zero WIP is not in an Act state. Empty population returns
- * `ragStatus: "none"` with a "no work in progress in this range" tip. This reuses the existing
- * `"none"` status that `WidgetShell` and `blockedMaxAgeRag` already carry — still no new band.
+ *   no SLE configured                               → red (define-an-SLE tip)
+ *   count(age > value) > 1                          → red   (Act)
+ *   count(age > value) === 1 || count(age === value) → amber (Observe)
+ *   otherwise — all ages below, or nothing in progress → green (Sustain)
  *
- * DESIGN D19: DELIVER extracts the shared band logic out of `computeCycleTimePercentilesRag` into a
- * private helper that both rules call. The 20pp boundary is ONE piece of knowledge and must land in
- * one place — this is a deliberate DRY-on-knowledge case, not shape-matching.
+ * The original share-based design (band on the PERCENTAGE within the SLE, reusing
+ * `computeCycleTimePercentilesRag`'s 20pp bands) was withdrawn when its human validation gate fired:
+ * it read green on a period the coach had nominated as deteriorated, because a percentage over a
+ * population of 1-4 items is noise. See `docs/feature/widget-loose-ends/feature-delta.md` →
+ * "D6 gate RESULT and D6-REVISED".
  *
- * Known and accepted bias (D6): the measure is optimistic, because a 2-day-old item counts as
- * "within 14" though it may still breach. Slice 04's learning hypothesis validates it.
+ * Three deliberate properties, confirmed by the product owner — do not "fix" them:
+ *  1. The SLE percentile is discarded; only the day value is used. A probability is meaningless at
+ *     the WIP sizes this widget sees.
+ *  2. The counts do not scale with WIP. Two breaching items read red whether WIP is 3 or 40.
+ *  3. An empty population is green, not a neutral state. Nothing in progress is not a bad state, and
+ *     the WIP RAG already signals an empty board — this widget must not say it twice.
+ *
+ * DESIGN D19 (extract a band helper shared with `computeCycleTimePercentilesRag`) is WITHDRAWN with
+ * the old design: that rule bands on a share against the percentile, this one on counts against the
+ * day value. There is no longer one piece of knowledge to place in one location.
  */
 export function computeWorkItemAgePercentilesRag(
-	_sle: { percentile: number; value: number } | null,
-	_workItemAges: ReadonlyArray<number>,
-	_terms: RagTerms,
-): WorkItemAgePercentilesRagResult {
-	return { ragStatus: "red", tipText: "" };
-}
+	sle: { percentile: number; value: number } | null,
+	workItemAges: ReadonlyArray<number>,
+	terms: RagTerms,
+): RagResult {
+	if (!sle) {
+		return {
+			ragStatus: "red",
+			tipText: `Define a ${terms.sle} in settings based on historical ${terms.cycleTime} data.`,
+		};
+	}
 
-/**
- * __SCAFFOLD__ companion type. Widens `RagResult`'s status by the existing `"none"` case so the
- * empty-population answer (AC3b) is expressible without inventing a band. DELIVER keeps this type.
- */
-export type WorkItemAgePercentilesRagResult = {
-	readonly ragStatus: "red" | "amber" | "green" | "none";
-	readonly tipText: string;
-};
+	const limit = sle.value;
+	const olderThanLimit = workItemAges.filter((age) => age > limit).length;
+	const atLimit = workItemAges.filter((age) => age === limit).length;
+
+	if (olderThanLimit > 1) {
+		return {
+			ragStatus: "red",
+			tipText: `${olderThanLimit} in-progress ${terms.workItems} are older than the ${terms.sle} of ${limit} days. Act on the oldest ones first.`,
+		};
+	}
+
+	if (olderThanLimit === 1) {
+		return {
+			ragStatus: "amber",
+			tipText: `1 in-progress ${terms.workItem} is older than the ${terms.sle} of ${limit} days. Observe it before a second one joins it.`,
+		};
+	}
+
+	if (atLimit > 0) {
+		return {
+			ragStatus: "amber",
+			tipText:
+				atLimit === 1
+					? `1 in-progress ${terms.workItem} sits exactly on the ${terms.sle} of ${limit} days. Observe it before the limit is passed.`
+					: `${atLimit} in-progress ${terms.workItems} sit exactly on the ${terms.sle} of ${limit} days. Observe them before the limit is passed.`,
+		};
+	}
+
+	if (workItemAges.length === 0) {
+		return {
+			ragStatus: "green",
+			tipText:
+				"Nothing is in progress in this range, so no work is ageing. Sustain the flow.",
+		};
+	}
+
+	const inProgressCount = workItemAges.length;
+
+	return {
+		ragStatus: "green",
+		tipText:
+			inProgressCount === 1
+				? `The in-progress ${terms.workItem} is younger than the ${terms.sle} of ${limit} days. Sustain the pace.`
+				: `All ${inProgressCount} in-progress ${terms.workItems} are younger than the ${terms.sle} of ${limit} days. Sustain the pace.`,
+	};
+}
