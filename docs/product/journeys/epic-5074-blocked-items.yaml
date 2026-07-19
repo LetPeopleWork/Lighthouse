@@ -335,6 +335,140 @@ journeys:
       - Quietly-blocked items stop rotting unnoticed: the per-item duration surfaces them in the next flow
         review, and the over-time trend tells the team whether their clear-rate is improving.
 
+  # --- Portfolio parity (2026-07-19, ADO Story #5524, feature portfolio-blocked-history) ---
+  # Every blocked signal above was delivered for TEAMS. Portfolios received the config surface and the
+  # count trend but never the underlying capture, so five of the nine blocked surfaces answer from
+  # today's state at portfolio scope. This journey closes that column. It is deliberately thin: the
+  # personas, jobs and emotional arc are those of read-blocked-signals — only the scope differs.
+
+  - name: read-portfolio-blocked-signals
+    goal: >
+      A flow coach and a delivery lead read the SAME blocked signals on a Portfolio that they already
+      read on a Team — how long each feature has been blocked, whether any blocker is urgent, what was
+      blocked on a past date, and which features were blocked then — and get answers that are true of
+      the date they selected rather than of today.
+    persona: "flow-coach (Priya Nair) — with delivery-lead-rte as the historic-range reader"
+    emotional_arc:
+      start: Distrustful — "the portfolio blocked number moves when I change the date range, but I know
+        it is just re-evaluating today's rules; I quote it with a mental asterisk."
+      middle: Reassured — "the same range gives the same kind of answer on the portfolio as on the team,
+        and a feature blocked last month shows up in last month."
+      end: Comparable — "I can put this period's portfolio blocked level next to last period's and say
+        which way we are going."
+
+    design_decisions_resolved:
+      - id: D10
+        question: Where do Feature blocked spells live, given WorkItemBlockedTransition is keyed by a bare int?
+        decision: >
+          NOT in the existing WorkItemBlockedTransition keyspace as currently shaped. Feature and WorkItem
+          are separate tables with independent identity sequences, WorkItemBlockedTransition.WorkItemId
+          carries no owner discriminator, and the repository's at-date query applies no owner scoping — so
+          a Feature id and a WorkItem id that collide produce a phantom blocked spell on the TEAM historic
+          read delivered by #5508. This is not hypothetical: DemoBlockedHistoryBackfillHandler already
+          writes Feature.Id rows into that table on every demo portfolio refresh. FeatureStateTransition
+          (separate entity, keyed FeatureId) is the established precedent for exactly this problem.
+          Whether the fix is a separate FeatureBlockedTransition entity or an OwnerType discriminator on
+          the existing table is a DESIGN call; both satisfy the decision that features get their own
+          keyspace.
+      - id: D11
+        question: Does the portfolio need new read/render surfaces?
+        decision: >
+          No. PortfolioMetricsView renders the same BaseMetricsView as TeamMetricsView, and
+          BlockedOverviewWidget, blockedMaxAgeRag, deriveStaleness, TimeInStateBadge and WorkItemsDialog
+          are all scope-agnostic shared components. They render neutral or absent for portfolios purely
+          because FeatureDto passes null for blockedSince. Populating that one backend field lights up the
+          duration badge, the max-blocked-age RAG chip and blocked->stale simultaneously. A portfolio-
+          specific widget or branch would mean two definitions of one signal and is forbidden.
+      - id: D12
+        question: OPEN — is a feature "blocked" per-portfolio or across any portfolio?
+        decision: >
+          UNRESOLVED at DISCUSS; escalated to DESIGN with an ADR required. The codebase already
+          contradicts itself: FeatureDto.FeatureIsBlocked uses Any-portfolio semantics
+          (feature.Portfolios.Any(...)), while BlockedCountSnapshotRecordingHandler evaluates
+          IsBlocked(feature, portfolio) per-portfolio. A feature in Portfolio A (rule matches) and
+          Portfolio B (rule does not) is therefore blocked on B's feature list but absent from B's blocked
+          count. The divergence pre-dates this feature, but capture cannot be built without resolving it,
+          because a spell must be keyed either per-feature or per-(feature, portfolio).
+
+    steps:
+
+      - id: step-see-feature-blocked-duration
+        action: >
+          Priya opens /portfolios/{portfolioId} and reads the blocked features, each now showing how long
+          it has been blocked. (Job: job-flow-coach-see-how-long-blocked, at portfolio scope.)
+        expected_output: >
+          Each blocked feature shows "blocked <N>d" from its captured spell, the Blocked overview widget's
+          RAG chip colours off the oldest blocker, and features past blockedStalenessThresholdDays carry
+          the "stale: blocked N days" reason — all three rendered by the existing shared components with
+          no portfolio-specific branch. A feature blocked on first observation shows "—" until the next
+          refresh.
+        emotional_state: Alerted — "this feature has been blocked three weeks — that is the escalation"
+        shared_artifacts:
+          - featureBlockedSince (new — enter-blocked timestamp for Features, own keyspace per D10)
+          - settings.blockedStalenessThresholdDays (existing — already present on Portfolio, previously inert)
+        failure_modes:
+          - No capture history yet (first refresh after release): all blocked features show "—", the same
+            first-observation behaviour as the team badge.
+          - blockedStalenessThresholdDays = 0: RAG neutral and blocked->stale disabled — the opt-out.
+
+      - id: step-read-honest-historic-portfolio-blocked-count
+        action: >
+          A delivery lead selects a past date range on a Portfolio and reads the Blocked Overview count.
+          (Job: job-delivery-lead-trust-portfolio-blocked-history.)
+        expected_output: >
+          The count reports what was blocked during that window, read from captured spells under the same
+          isHistoricRange guard TeamMetricsController uses. A feature blocked during the range but clear
+          today reads blocked; a feature blocked only today reads NOT blocked on ranges that closed before
+          its spell began. Features with no capture history at all fall back to the live rule; a feature
+          WITH history and no spell covering the date reads not-blocked, because absence of a spell is
+          evidence rather than a gap.
+        emotional_state: Comparable — "last period was 4, this period is 9 — we are accumulating blockers"
+        shared_artifacts:
+          - featureBlockedSince (new — the spells the historic read consults)
+          - currentFilter (existing — the selected date range)
+        failure_modes:
+          - Range precedes capture start: falls back to the live rule with the same forward-only honesty
+            caveat teams already carry. Not fabricated retroactively.
+
+      - id: step-drill-into-portfolio-blocked-trend-point
+        action: >
+          Priya clicks a past bar on the portfolio Blocked-Items-over-time chart to see which features
+          were blocked that day. (Job: job-flow-coach-drill-into-blocked-trend-point, at portfolio scope.)
+        expected_output: >
+          The existing WorkItemsDialog lists the features whose blocked spell covers that date,
+          reconstructed from spell intervals — read-only, never persisted, mirroring ADR-099. The latest
+          bar reconstructs from live IsBlocked. A pre-capture date shows the reconstructable set plus the
+          completeness note. The ADR-099 reconciliation guard (already present and already owner-
+          parameterised at PortfolioMetricsController, merely never called) logs when reconstruction
+          disagrees with the captured BlockedCountSnapshot.
+        emotional_state: Investigative — "these three features were the blockers that week"
+        shared_artifacts:
+          - blockedMembershipAtDate (existing — extended to Features)
+          - blockedCountSnapshot (existing — the reconciliation cross-check)
+        failure_modes:
+          - Reconstruction diverges from the snapshot: the guard logs it rather than silently reconciling.
+            Divergence is the only cross-check the design has on capture correctness — surfacing it is the
+            point, not a defect in the guard.
+
+    error_paths_summary:
+      - Id collision between a Feature and a WorkItem (D10): before the fix, a demo instance can report a
+        team work item as blocked on a past range it was never blocked in. This corrupts Story #5508's
+        shipped behaviour and is fixed first.
+      - Pre-capture portfolio ranges: forward-only fallback to the live rule, never retroactive fabrication.
+      - Demo instances between the collision fix and the demo re-backfill: the portfolio trend renders but
+        bars drill into an empty dialog. Honest and time-boxed — an empty dialog beats a phantom item.
+
+    integration_validation:
+      - The SAME blockedRuleSet drives blocked at both scopes. Portfolio capture must consume
+        IBlockedItemService, never re-derive the rule match — a second evaluation path would mean two
+        definitions of blocked, which the blockedRuleSet integration_risk forbids.
+      - Team and Portfolio must agree: the same blocked-spell shape asserted through both controllers over
+        the same past range must produce the same answer. Divergence is a failing test, not a nuance.
+
+    success_signal:
+      - A delivery lead quotes a portfolio blocked figure for a past period without qualifying it, and the
+        parity matrix shows Team and Portfolio answering all nine blocked surfaces identically.
+
 shared_artifacts_registry:
   blockedRuleSet:
     source_of_truth: "WorkTrackingSystemOptionsOwner.BlockedRuleSet (WorkItemRuleSet — replaces BlockedStates + BlockedTags) on Team/Portfolio settings"
@@ -369,6 +503,18 @@ shared_artifacts_registry:
     integration_risk: "MEDIUM — reconstruction is only valid back to when WorkItemBlockedTransition capture started (slice-02); for earlier dates the dialog must state the record is complete only from the capture-start date. The count returned for date T SHOULD reconcile with the BlockedCountSnapshot.blockedCount for that date where both exist (differences reveal capture gaps — surface, do not silently diverge)."
     validation: "Clicking a bar at date T opens WorkItemsDialog with the items whose blocked interval covers T; the latest bar reconstructs from live IsBlocked; a pre-capture date shows the partial set plus the completeness note."
 
+  featureBlockedSince:
+    source_of_truth: "Enter-blocked timestamp for FEATURES, captured on the portfolio refresh path off a feature blocked/unblocked event pair. Lives in its OWN keyspace (D10) — NOT the WorkItemBlockedTransition table as currently keyed, whose bare-int WorkItemId collides with Feature ids. Precedent: FeatureStateTransition."
+    consumers:
+      - "Portfolio per-feature 'blocked <N>d' badge (shared TimeInStateBadge — no portfolio branch)"
+      - "Portfolio Blocked overview max-blocked-age RAG chip (shared blockedMaxAgeRag)"
+      - "Portfolio blocked->stale trigger (shared deriveStaleness, against the already-existing Portfolio.BlockedStalenessThresholdDays)"
+      - "Historic as-of Blocked Overview count on PortfolioMetricsController.GetInProgressFeatures"
+      - "Portfolio blocked drill-through membership reconstruction"
+    owner: portfolio-blocked-history
+    integration_risk: "HIGH — the keyspace decision is the whole risk. Sharing WorkItemBlockedTransition as currently shaped is DISPROVEN, not merely inadvisable: DemoBlockedHistoryBackfillHandler already writes Feature.Id rows there, and the unscoped at-date query hands them to team work items with matching ids, corrupting the historic team read shipped by #5508. Secondary risk: D12 is unresolved — a feature in several portfolios with different rule sets has no agreed blocked semantics, and the codebase currently answers it two different ways in two places."
+    validation: "A feature that starts matching its portfolio blocked rule set opens exactly one spell; ceasing to match closes it; re-blocking opens a NEW spell. No row in the team keyspace lacks a corresponding WorkItem. Team and Portfolio return the same answer for the same spell shape over the same past range."
+
 changelog:
   - date: "2026-06-11"
     feature: epic-5074-blocked-items
@@ -387,3 +533,19 @@ changelog:
       blocked-over-time bar to a WorkItemsDialog of items blocked at that date (membership reconstructed
       from WorkItemBlockedTransition intervals, new read endpoint, no persisted membership). Added
       shared artifacts blockedMembershipAtDate; extended blockedCountSnapshot consumers. Slices 06-08.
+  - date: "2026-07-19"
+    feature: portfolio-blocked-history
+    change: >
+      Portfolio parity (ADO Story #5524), found during the adversarial review at finalization of Story
+      #5508 — a gap #5508 exposed, not a regression from it. Added the read-portfolio-blocked-signals
+      journey: feature blocked-duration badge + RAG + blocked->stale, honest historic as-of Blocked
+      count, and past-date drill-through, all at portfolio scope. Added D10 (Features get their own
+      blocked keyspace — sharing WorkItemBlockedTransition is disproven, not merely inadvisable, because
+      the demo backfill already writes Feature.Id rows there and the unscoped at-date query corrupts the
+      team historic read), D11 (zero frontend work — the whole MetricsView tree is shared and inert only
+      because FeatureDto passes null for blockedSince), and D12 (OPEN, escalated to DESIGN: FeatureDto
+      uses Any-portfolio blocked semantics while BlockedCountSnapshotRecordingHandler uses per-portfolio,
+      and capture cannot be keyed until that is resolved). Added the featureBlockedSince shared artifact;
+      extended blockedMembershipAtDate to Features. Corrections to the original report recorded in the
+      feature-delta: the portfolio blocked-count TREND already worked, so the gap is capture and the two
+      read paths, not the chart. Slices 01-05.

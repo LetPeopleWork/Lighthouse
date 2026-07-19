@@ -3285,3 +3285,74 @@ jobs:
         previous-period comparison for the whole Work-Item-Age family. Current satisfaction: 1 —
         historical ranges are wrong today with no indication. Gap: 3 — the largest in this
         feature, and the one the other Work-Item-Age improvements depend on.
+
+  - id: job-delivery-lead-trust-portfolio-blocked-history
+    title: Trust a portfolio blocked number for a past range enough to compare periods
+    persona: delivery-lead-rte
+    feature_context: portfolio-blocked-history
+    created: 2026-07-19
+    note: >
+      NEW in portfolio-blocked-history (ADO Story #5524). Found during the adversarial review at
+      finalization of Story #5508 — not a regression from it, a gap it exposed. #5508 made the Blocked
+      Overview honest on historical ranges for TEAMS by answering a past range from
+      WorkItemBlockedTransition history instead of replaying today's blocked rules against today's item.
+      Portfolios did not get this and cannot: no blocked/unblocked domain event is ever raised for
+      Features, so there is no history for a portfolio read to consult, and FeatureDto still calls
+      FeatureIsBlocked(feature) against the feature as it stands right now. Verified corrections to the
+      original report: the portfolio blocked-COUNT trend already works (BlockedCountSnapshot has carried
+      OwnerType/OwnerId since introduction and BlockedCountSnapshotRecordingHandler already handles
+      PortfolioFeaturesRefreshed); the frontend is fully shared (PortfolioMetricsView renders the same
+      BaseMetricsView as TeamMetricsView, and blockedMaxAgeRag/deriveStaleness are scope-agnostic), so
+      the whole gap is backend data capture. Non-premium, consistent with all of epic-5074.
+    job_story: >
+      When I select a past date range on a Portfolio and read the Blocked Overview to tell leadership
+      whether we are clearing blockers faster than they arrive,
+      I want the number to report what was actually blocked in that window rather than today's state
+      wearing last month's date,
+      so I can compare this period against the last one and make a claim about direction that survives
+      being questioned.
+    dimensions:
+      functional: >
+        A historic range on a Portfolio is answered from captured Feature blocked spells, gated by the
+        same isHistoricRange guard TeamMetricsController already uses (asOfDate.Date < UtcNow.Date), with
+        the live rule retained as fallback for features that predate capture. Fixes the error in BOTH
+        directions: a feature blocked during the range but clear today currently reads not-blocked
+        (understating the count), and a feature blocked only today currently reads blocked on every
+        historical range including ranges that closed before it was ever blocked (overstating it).
+      emotional: >
+        Move from "I know this number is probably wrong but I have nothing better" to quoting a portfolio
+        blocked figure without a mental asterisk.
+      social: >
+        Be the lead whose blocked trend claim holds up when someone checks it — rather than the one whose
+        numbers turn out to have been today's state all along.
+    forces:
+      push: >
+        The same date range answers correctly on a Team and incorrectly on a Portfolio, with nothing
+        indicating the difference. A silently wrong number under a date heading is worse than a blank,
+        and it makes every period-over-period portfolio comparison meaningless — both figures are just
+        "today".
+      pull: >
+        The mechanism is already built, shipped and proven one level down: the capture/close handler
+        pair, the transition repository, the historic-read guard and the ADR-099 reconciliation guard all
+        exist for teams, and FeatureStateTransition already proves the feature-keyspace variant of the
+        pattern works.
+      anxiety: >
+        Will this move numbers people already reported on? (It will, and it should — the current numbers
+        are wrong. Capture is forward-only, so pre-capture ranges fall back to the live rule with the
+        same honesty caveat teams already carry; nothing is retroactively fabricated.)
+      habit: >
+        Practitioners already assume the date-range selector governs everything on the page, and already
+        read blocked signals this way on Teams. The portfolio has been quietly violating an expectation
+        the product itself established.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — a correctness defect that is wrong in both directions and invisible to the
+        reader, on the surface leadership reads. It also gates the entire portfolio parity column: the
+        blocked-Nd badge, the max-blocked-age RAG chip and blocked->stale are all downstream of the same
+        missing capture, so one mechanism closes five parity gaps. Current satisfaction: 1 — portfolios
+        answer historic ranges from today's state with no indication. Gap: 4 — the largest open gap in
+        the blocked family, and the only one where Team and Portfolio give different answers to the same
+        question.
