@@ -267,6 +267,59 @@ system-wide claim is registered, so it should not live inside any one slice's bl
 
 ---
 
+## UPSTREAM-7 — OPEN, DEFECT — WIA percentiles go empty on far-back ranges while the WIP-over-time chart shows items in progress
+
+**Raised:** 2026-07-19 by the user, during manual verification of the shipped slice-03 build. Deferred by the
+user to be tackled alongside slice 04. **Not yet diagnosed — this is a lead, not a root cause.**
+
+**Observed.** Stepping the range back **one day** behaved correctly: the same item that was in progress today
+appeared, one day younger — exactly the intended as-of-date behaviour. Stepping back **further** produced an
+empty Work Item Age Percentiles read, while the **Work Item In Progress Over Time** chart, for the same
+period, showed work in progress. Two surfaces on the same page disagreeing about whether anything was in
+progress.
+
+**Why this is sharper than it looks.** The two surfaces do not merely agree by convention — they are the
+*same code path*:
+
+- `GetWorkInProgressOverTimeForTeam` (`TeamMetricsService.cs:257`) — predicate
+  `TeamId == team.Id && (StateCategory == Doing || Done)`, then `GenerateWorkInProgressByDay(startDate, endDate, items)`.
+- `GetWipSnapshotForTeam` (`TeamMetricsService.cs:584`) — the **identical** predicate, then
+  `GenerateWorkInProgressByDay(endDate, endDate, items)[0]`.
+
+Both therefore filter through the same `WasItemProgressOnDay`. **The population cannot legitimately differ.**
+If the chart reports N > 0 in progress on day X, the snapshot at `endDate = X` must return the same N. So the
+divergence is not in population selection, and DESIGN D14's finding ("the population is already date-correct")
+is not what is at fault.
+
+**Candidates, in rough order of likelihood.** These are unverified:
+
+1. **The `age > 0` guard, retained per D15.** It should be inert now — `WasItemProgressOnDay` already
+   guarantees `startedDate <= day`, and `AgeOnDay` uses the same `StartedDate ?? CreatedDate` fallback, so a
+   selected item should never age to 0. If it somehow does for older items, the guard silently empties the
+   list. This is the first thing to instrument, because it is the one line whose meaning slice 03 deliberately
+   changed.
+2. **The frontend sending a different `endDate`** to `workItemAgePercentiles` than to the WIP-over-time read.
+   Note the percentiles endpoint takes `startDate` AND `endDate` but only `endDate` is used for the snapshot.
+3. **Empty-population rendering.** `BuildPercentiles` always emits four 50/70/85/95 entries and represents an
+   empty population as zero *values*, not an empty list (a fact DISTILL had to correct scenarios 10/11 for).
+   "Showed nothing" may therefore be the card's empty-state placeholder reacting to all-zero values rather
+   than a genuinely empty fetch — which would move the fault to the frontend, not the projection.
+4. **Demo-data shape.** Possible but unlikely to explain it alone, since the chart contradicts it on the very
+   same data.
+
+**Why the existing tests did not catch it.** The slice-03 E2E (`WorkItemAgeAsOfRangeEnd.spec.ts`) exercises a
+window `today-72 … today-42` and passes with four items, all of which have since closed. The user's failing
+case is *further back* than that. So there is a range-distance threshold the suite does not cross. Whatever
+the fix, **it needs a regression test at a range beyond the current E2E's**, or the same gap remains.
+
+**Cache is ruled out.** The user confirmed the metrics cache does not survive a process restart, and cache
+keys are date-stamped (D17). This also closes DESIGN open question 2: **no release note is needed for warm-cache
+staleness.**
+
+**Status: OPEN — deferred to slice 04 by user decision. Do not close slice 03 as verified until this is resolved.**
+
+---
+
 ## Note — shipped tests superseded, by design
 
 `blockedTrend.test.ts` currently asserts `noBaseline === true` for empty/null history. Slice 02 deliberately
