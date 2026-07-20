@@ -1,9 +1,9 @@
 # ADR-104: Feature Blocked Capture Seam — Pre-Update Verdict in `RefreshFeatures`, New `FeatureBlocked`/`FeatureUnblocked` Events, Departure Sweep Closes Abandoned Spells
 
-**Status**: **PROPOSED** (2026-07-19 — Morgan, interaction mode PROPOSE). **Awaiting user confirmation.** Depends on ADR-103 being Accepted; the event payloads and the sweep key both carry `PortfolioId` from that decision.
+**Status**: **Accepted** (2026-07-19 — Morgan, interaction mode PROPOSE; confirmed by user 2026-07-20). Depends on ADR-103 (Accepted); the event payloads and the sweep key both carry `PortfolioId` from that decision.
 **Date**: 2026-07-19
 **Feature**: portfolio-blocked-history (Story #5524, slice 02)
-**Decider**: Morgan (Solution Architect), pending user confirmation
+**Decider**: Morgan (Solution Architect), confirmed by user 2026-07-20
 **Relationship to prior ADRs**: applies ADR-068's enter/leave-on-the-bus pattern to the `Feature` aggregate and ADR-017's capture-dispatch idiom to the portfolio refresh path. Consumes ADR-102's entity and ADR-103's keying. Governed by ADR-027 / Epic 5121 (domain-event bus). Resolves DESIGN DDD-3, DDD-4 and DDD-5.
 
 ---

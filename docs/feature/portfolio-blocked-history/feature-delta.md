@@ -426,7 +426,7 @@ The ADO description should be amended to match, subject to the confirm-before-wr
 
 ## Wave: DESIGN / [REF] Decisions
 
-Interaction mode PROPOSE. **DDD-2, DDD-3, DDD-4, DDD-5 and DDD-7 carry recommendations awaiting user confirmation.** ADR-103 and ADR-104 are written as **Status: PROPOSED** for that reason; ADR-102 is Accepted because DDD-1 was pre-settled.
+Interaction mode PROPOSE. **DDD-2, DDD-3, DDD-4, DDD-5 and DDD-7 were confirmed as recommended by the user on 2026-07-20.** ADR-103 and ADR-104 are **Accepted** accordingly; ADR-102 is Accepted because DDD-1 was pre-settled.
 
 ### DDD-1 — Feature spells get their own entity (settled, recorded)
 
@@ -434,7 +434,7 @@ Interaction mode PROPOSE. **DDD-2, DDD-3, DDD-4, DDD-5 and DDD-7 carry recommend
 
 The `OwnerType`-discriminator alternative is rejected on schema grounds, not preference: a row with `OwnerType = Portfolio` and `WorkItemId = <Feature.Id>` violates `FK_WorkItemBlockedTransitions_WorkItems_WorkItemId` (`LighthouseAppContext.cs:228-232`; `20260705130040_AddWorkItemBlockedTransition.cs:27-32`), so adopting it requires **dropping** that FK — surrendering referential integrity and cascade delete on a team path that works correctly today, to save one table. Strict regression. **ADR-102, Accepted.**
 
-### DDD-2 — D12: per-portfolio vs Any-portfolio semantics · **RECOMMENDATION, needs confirmation**
+### DDD-2 — D12: per-portfolio vs Any-portfolio semantics · **CONFIRMED 2026-07-20 (Option B)**
 
 The key decision. It fixes whether a spell is keyed `FeatureId` or `(FeatureId, PortfolioId)`.
 
@@ -448,9 +448,9 @@ Evidence: `IBlockedItemService.IsBlocked(Feature item, Portfolio owner)` — ADR
 
 **Observable behaviour change under B, needs a release-notes line**: a feature blocked only by Portfolio A's rules stops rendering as blocked on Portfolio B's page. That is the correction — today B's feature list and B's blocked count disagree, and B's admin configures a rule set the list ignores.
 
-Scope-free surfaces (`TeamMetricsController:113`, `FeaturesController:97`, `DeliveryRulesController:58`) keep today's behaviour via an Any-projection: `isBlocked` = any open spell, `blockedSince` = `MIN(EnteredAt)` (the longest-standing blocker, which is what the max-age RAG chip wants). **ADR-103, PROPOSED.**
+Scope-free surfaces (`TeamMetricsController:113`, `FeaturesController:97`, `DeliveryRulesController:58`) keep today's behaviour via an Any-projection: `isBlocked` = any open spell, `blockedSince` = `MIN(EnteredAt)` (the longest-standing blocker, which is what the max-age RAG chip wants). **ADR-103, Accepted 2026-07-20.**
 
-### DDD-3 — The capture seam · **RECOMMENDATION, needs confirmation**
+### DDD-3 — The capture seam · **CONFIRMED 2026-07-20 (Option A)**
 
 **The slice-02 learning hypothesis is very likely confirmed, and cheaply.** The team path captures `wasBlocked` at `WorkItemService.cs:75`, before `SyncWorkItem` mutates at `:76`/`:236`. The feature path's blocker is that `AddOrUpdateFeature` does the lookup *inside itself* (`:530`) and mutates immediately (`:540`). Hoisting that lookup into `RefreshFeatures:485` is a ~10-line change, well inside the one-day disproof budget. The seam is not the risk DISCUSS feared — relay this before slice 02 starts.
 
@@ -461,15 +461,15 @@ Scope-free surfaces (`TeamMetricsController:113`, `FeaturesController:97`, `Deli
 | **C** — derive spells from `FeatureStateTransition` history | Moot (hypothesis holds) and wrong anyway: rule sets match tags and additional fields, not just state. Blocked ⊥ state. |
 | **D** — persist `WasBlockedAtLastRefresh`, mirroring `WorkItem.WasStaleAtLastSync` (`:139-149`) | Reject. Under DDD-2 the flag belongs to the *(feature, portfolio)* relationship, needing a payload on the many-to-many join — a bigger migration than the rest of the slice. |
 
-Edge detection runs in the **existing second pass** after `featureRepository.Save()` (`:494-501`), because `feature.Id` is 0 until saved — the same reason `SyncFeatureStateTransitions` already runs there. Events publish before `PortfolioUpdater:73` raises `PortfolioFeaturesRefreshed`, so spells land before today's snapshot is recorded and the two agree. **ADR-104, PROPOSED.**
+Edge detection runs in the **existing second pass** after `featureRepository.Save()` (`:494-501`), because `feature.Id` is 0 until saved — the same reason `SyncFeatureStateTransitions` already runs there. Events publish before `PortfolioUpdater:73` raises `PortfolioFeaturesRefreshed`, so spells land before today's snapshot is recorded and the two agree. **ADR-104, Accepted 2026-07-20.**
 
-### DDD-4 — Event shape · **RECOMMENDATION**
+### DDD-4 — Event shape · **CONFIRMED 2026-07-20**
 
 New `FeatureBlocked(int FeatureId, int PortfolioId, string Reason)` and `FeatureUnblocked(int FeatureId, int PortfolioId)`. `PortfolioId` is present because of DDD-2; under DDD-2 Option A it would not be.
 
 Generalising `WorkItemBlocked`/`WorkItemUnblocked` is rejected decisively: `WorkItemBlockedTransitionCaptureHandler:26-31` writes `WorkItemId` unconditionally, so a generalised event would deliver feature ids to it and reproduce the identity-collision defect **at runtime, for every real customer** — the very thing slice 01 removes from the demo path. Two record types is a small price for making that unrepresentable. **ADR-104 §2.**
 
-### DDD-5 — Spell lifecycle · **RECOMMENDATION**
+### DDD-5 — Spell lifecycle · **CONFIRMED 2026-07-20**
 
 | Event | Closer |
 |---|---|
@@ -492,7 +492,7 @@ Mirror `TeamMetricsController:130-156` exactly, including its **indexed-lookup**
 
 Drill-through: `GetBlockedFeatureIdsAt(portfolioId, date)` → intersect with the portfolio's features → `WorkItemDto`; latest/today bar keeps the live branch (`:490-496`, US-04 AC2); call the existing `ReconcileReconstructedCountWithSnapshot` (`:513`, US-04 AC4); delete the obsolete comment at `:498-500` (US-04 AC5). No ADR — a straight mirror.
 
-### DDD-7 — `FeatureDto` routing through `IBlockedItemService` · **RECOMMENDATION**
+### DDD-7 — `FeatureDto` routing through `IBlockedItemService` · **CONFIRMED 2026-07-20**
 
 Delete `FeatureIsBlocked`, `IsBlockedByPortfolioRuleSet`, the private static `RuleEvaluator<Feature>` and `FeatureFieldProvider` (`FeatureDto.cs:65-98`). `isBlocked` and `blockedSince` become constructor arguments. Closes the ADR-067 slice-01 follow-up its own comment records.
 
@@ -682,3 +682,205 @@ C4Component
 2. **Slice-02 risk downgraded.** DISCUSS framed the refresh-path seam as "the one real unknown" with a one-day disproof budget. DESIGN read the code: the obstacle is a single lookup at `WorkItemService.cs:530` called from `:485`, and hoisting it is ~10 lines. The hypothesis stands, but slice 02's risk profile is materially lower than DISCUSS assumed. The remaining risk in slice 02 is not the seam — it is OQ-1 (eligible population) and the departure sweep's empty-result guard.
 3. **DDD-7 pulled into scope.** DISCUSS listed the `FeatureDto` → `IBlockedItemService` routing as an ADR-067 follow-up, unscoped here. DESIGN moves it in, as a precursor refactor commit in slice 02: under DDD-2 Option B a surviving Any-computation in the DTO would silently override the injected per-portfolio verdict on the surfaces this story fixes.
 4. **A user-visible behaviour change exists.** DISCUSS's out-of-scope list says "changing what blocked means" is excluded, and it is — `IBlockedItemService` and `BlockedRuleSet` are untouched. But resolving D12 toward per-portfolio does change what a *portfolio page* displays for a multi-portfolio feature. That is a rendering change downstream of a semantics correction, not a redefinition of blocked. It still needs a release-notes line (OQ-4).
+
+---
+
+## Wave: DISTILL / [REF] Scenario inventory
+
+Produced 2026-07-20. 28 scenarios across 5 slices, all scaffolded RED (NUnit `[Ignore]` commented-out, ready for DELIVER unskip). No `.feature` files — C# scenario/specification split convention (DST-2).
+
+| Scenario | Tags | Driving port | Slice |
+|---|---|---|---|
+| A team work item sharing an id with a blocked demo feature reads not blocked on a past range | `@walking_skeleton @driving_port @us-01 @contract-shape:bounded-change` | `PortfolioFeaturesRefreshed` dispatch → team `/wip?asOfDate=` | 01 |
+| The team drill through at a past date excludes the colliding id | `@driving_port @us-01 @contract-shape:bounded-change` | `GET /teams/{id}/metrics/blockedItemsAtDate?date=` | 01 |
+| The demo portfolio refresh writes no blocked spells into the team keyspace | `@us-01 @invariant @contract-shape:unbounded-preservation` | `PortfolioFeaturesRefreshed` dispatch | 01 |
+| Backdated portfolio snapshots land even when a demo feature id collides with no work item | `@us-01 @error @real-io @contract-shape:bounded-change` | `PortfolioFeaturesRefreshed` dispatch | 01 |
+| The demo portfolio blocked trend still renders its backdated history | `@us-01 @regression @contract-shape:bounded-change` | `GET /portfolios/{id}/metrics/blockedCountHistory` | 01 |
+| A feature that becomes blocked shows how long it has been blocked | `@walking_skeleton @driving_port @us-02 @contract-shape:bounded-change` | `IWorkItemService.UpdateFeaturesForPortfolio` → `GET /portfolios/{id}/metrics/wip` | 02 |
+| A feature that stops matching the blocked rules no longer shows a duration | `@driving_port @us-02 @contract-shape:bounded-change` | `IWorkItemService.UpdateFeaturesForPortfolio` → `GET /portfolios/{id}/metrics/wip` | 02 |
+| A feature blocked on its first observation shows no duration until a baseline exists | `@edge @us-02 @contract-shape:bounded-change` | `IWorkItemService.UpdateFeaturesForPortfolio` → `GET /portfolios/{id}/metrics/wip` | 02 |
+| A feature blocked only by one portfolio's rules does not render blocked on the other portfolio | `@driving_port @us-02 @adr-103 @contract-shape:bounded-change` | `IWorkItemService.UpdateFeaturesForPortfolio` ×2 → `GET /portfolios/{id}/metrics/wip` | 02 |
+| The scope-free team feature list still reports the shared feature blocked | `@regression @us-02 @adr-103 @contract-shape:pure-function` | `GET /teams/{id}/metrics/featuresInProgress` | 02 |
+| A feature blocked during a past window but clear today reads blocked for that window | `@walking_skeleton @driving_port @us-03 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/wip?asOfDate=<past>` | 03 |
+| A feature blocked only today reads not blocked on a range that closed before its spell began | `@driving_port @us-03 @error @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/wip?asOfDate=<past>` | 03 |
+| Today's read still answers from the live rule set | `@driving_port @us-03 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/wip` (no asOfDate) | 03 |
+| A feature with no capture history falls back to the live rule | `@edge @us-03 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/wip?asOfDate=<past>` | 03 |
+| A feature with history but no spell covering the date reads not blocked | `@edge @us-03 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/wip?asOfDate=<past>` | 03 |
+| The same spell shape answers identically on team and portfolio over the same past range | `@property @us-03 @contract-shape:pure-function` | Both `/teams/{id}/metrics/wip` and `/portfolios/{id}/metrics/wip` | 03 |
+| Clicking a past bar lists the features whose spell covered that date | `@walking_skeleton @driving_port @us-04 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/blockedItemsAtDate?date=<past>` | 04 |
+| The latest bar reconstructs from the live blocked set | `@driving_port @us-04 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/blockedItemsAtDate?date=<today>` | 04 |
+| A date before capture started returns the reconstructable set | `@edge @us-04 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/blockedItemsAtDate?date=<pre-capture>` | 04 |
+| The reconstructed membership count reconciles with the captured snapshot | `@invariant @us-04 @adr-099 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/blockedItemsAtDate` + `BlockedCountSnapshot` | 04 |
+| A feature that left the portfolio does not appear even on dates inside its spell | `@edge @us-04 @adr-104 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/blockedItemsAtDate?date=<past>` | 04 |
+| A freshly refreshed demo portfolio gains backdated feature blocked spells in the feature keyspace | `@walking_skeleton @driving_port @us-05 @contract-shape:bounded-change` | `PortfolioFeaturesRefreshed` dispatch | 05 |
+| The demo backfill writes nothing into the team keyspace | `@invariant @us-05 @us-01 @contract-shape:unbounded-preservation` | `PortfolioFeaturesRefreshed` dispatch | 05 |
+| Backfilling twice leaves the feature keyspace unchanged | `@us-05 @contract-shape:bounded-change` | `PortfolioFeaturesRefreshed` dispatch ×2 | 05 |
+| A demo portfolio backfilled before the feature keyspace existed still gains feature spells | `@error @us-05 @contract-shape:bounded-change` | `PortfolioFeaturesRefreshed` dispatch | 05 |
+| No backdated spell predates the feature's start | `@edge @us-05 @contract-shape:bounded-change` | `PortfolioFeaturesRefreshed` dispatch | 05 |
+| A backdated bar on the demo portfolio chart drills into real features | `@driving_port @us-05 @contract-shape:pure-function` | `GET /portfolios/{id}/metrics/blockedItemsAtDate?date=<past>` | 05 |
+| A non-demo portfolio gains no backdated spells | `@edge @us-05 @contract-shape:unbounded-preservation` | `PortfolioFeaturesRefreshed` dispatch | 05 |
+
+---
+
+## Wave: DISTILL / [REF] Walking Skeleton strategy
+
+**DST-2 (scenario/specification split)** — No new walk-skeleton. DESIGN confirmed every architectural seam pre-exists and is production-proven by the team-side twin (epic-5074). The existing `PortfolioBlockedHistoryAcceptanceTest` base class already exercises the real ASP.NET host on real SQLite — no mechanism is unproven.
+
+Each slice carries one `@walking_skeleton` scenario that exercises the slice's headline user outcome end-to-end through the driving port:
+
+| Slice | Walking skeleton scenario | Driving port |
+|---|---|---|
+| 01 | A team work item sharing an id with a blocked demo feature reads not blocked on a past range | `PortfolioFeaturesRefreshed` → team `/wip?asOfDate=` |
+| 02 | A feature that becomes blocked shows how long it has been blocked | `IWorkItemService.UpdateFeaturesForPortfolio` → `/wip` |
+| 03 | A feature blocked during a past window but clear today reads blocked for that window | `/wip?asOfDate=<past>` |
+| 04 | Clicking a past bar lists the features whose spell covered that date | `/blockedItemsAtDate?date=<past>` |
+| 05 | A freshly refreshed demo portfolio gains backdated feature blocked spells in the feature keyspace | `PortfolioFeaturesRefreshed` dispatch |
+
+Litmus test (per Mandate 5): every walking-skeleton title describes a user goal ("A feature ... shows how long it has been blocked"), not a technical flow. A non-technical flow-coach stakeholder can confirm each one.
+
+---
+
+## Wave: DISTILL / [REF] Adapter coverage table
+
+Per Mandate 6: every driven adapter exercised by at least one `@real-io` scenario.
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `LighthouseAppContext` (SQLite) | ALL (base class enforces SQLite) | `PortfolioBlockedHistoryAcceptanceTest` — `EnsureDeleted()` + `EnsureCreated()` per `[SetUp]` |
+| `IFeatureBlockedTransitionRepository` | Slice 02 WS (spell open/close), Slice 03 parity test | `ReadFeatureSpells()` helper + `/wip?asOfDate=` assertions |
+| `IWorkItemBlockedTransitionRepository` | Slice 01 invariant (keyspace purity) | `ReadAllWorkItemSpells()` helper |
+| `IBlockedCountSnapshotRepository` | Slice 01 AC4 (trend still renders), Slice 04 invariant (reconciliation) | `SeedBlockedCountSnapshot()` + `/blockedItemsAtDate` |
+| `IRepository<Feature>` | Slice 02 (feature seed + spell read), Slice 03 (historic wip) | `SeedFeature()` + `SeedStandaloneFeature()` helpers |
+| `IRepository<Portfolio>` | ALL | `SeedPortfolio()` in every slice |
+| `IWorkItemService` (real, via DI) | Slice 02 WS, Slice 04 live bar | `DrivePortfolioRefresh()` — real service, real EF |
+| `IDomainEventDispatcher` (real, via DI) | Slice 01 (handlers fire), Slice 05 (backfill) | `DispatchPortfolioFeaturesRefreshed()` |
+| `ILicenseService` (fake) | ALL | `Mock<ILicenseService>` — external, per policy |
+| `IWorkTrackingConnector` (fake) | ALL | `Mock<IWorkTrackingConnector>` — external, per policy |
+| `HttpClient` (real, via `WebApplicationFactory`) | ALL | `GetPortfolioWip()`, `GetPortfolioBlockedItemsAtDate()`, `GetTeamWip()` — real HTTP |
+
+**Coverage**: 11/11 adapters in scope exercised. Zero uncovered driven ports.
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/`
+
+Precedent: the existing epic-5074 blocked-items tests (28 files) live here. Grouped by business capability (`BlockedItems`), not by feature. The 10 new files (5× Scenarios + 5× Specifications for slices 01-05) extend the existing directory per test-organization-conventions Mandate 1.0.
+
+---
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+Per Mandate 1.0: every DESIGN driving port mapped to at least one scenario.
+
+| Driving port | Scenario count | Entry scenario |
+|---|---|---|
+| `GET /api/latest/portfolios/{id}/metrics/wip?asOfDate=` | 8 (slices 02, 03) | Slice 03 WS — historic blocked count |
+| `GET /api/latest/portfolios/{id}/metrics/blockedItemsAtDate?date=` | 4 (slice 04, 05) | Slice 04 WS — drill-through reconstruction |
+| `GET /api/latest/portfolios/{id}/metrics/blockedCountHistory` | 1 (slice 01) | Slice 01 AC4 — demo trend |
+| `GET /api/latest/teams/{id}/metrics/wip?asOfDate=` | 1 (slice 01) | Slice 01 WS — collision absent from team read |
+| `GET /api/latest/teams/{id}/metrics/blockedItemsAtDate?date=` | 1 (slice 01) | Slice 01 AC2 |
+| `GET /api/latest/teams/{id}/metrics/featuresInProgress` | 1 (slice 02) | Slice 02 regression — scope-free projection |
+| `IWorkItemService.UpdateFeaturesForPortfolio` (internal service port) | 5 (slices 02, 03, 04) | Slice 02 WS — capture seam |
+| `IDomainEventDispatcher.PublishAsync(PortfolioFeaturesRefreshed)` | 7 (slices 01, 05) | Slice 01 WS — demo backfill dispatch |
+
+**Coverage**: 8/8 driving ports exercised. Zero uncovered entry points.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+| Prerequisite | Status | Notes |
+|---|---|---|
+| `FeatureBlockedTransition` entity + migration | Required for slices 02+ | Precursor commit inside slice 02 per DDD-1 / ADR-102 |
+| `IFeatureBlockedTransitionRepository` | Required for slices 02+ | Owner-scoped signatures per ADR-102 |
+| `IBlockedItemService.IsBlocked(Feature, Portfolio)` | Already exists | epic-5074, ADR-067 |
+| `BlockedCountSnapshot` + repository | Already exists | ADR-069, C1 |
+| `PortfolioMetricsController` (existing endpoints) | Already exists | `wip`, `blockedCountHistory` present |
+| `PortfolioBlockedHistoryAcceptanceTest` base class | Already exists | Created during epic-5074 slice-08, extended here |
+| SQLite DB provider | Required for ALL tests | `EnsureDeleted()` + `EnsureCreated()` per `[SetUp]` |
+| `IWorkTrackingConnector` mock | Required | Fake per infrastructure policy — connector is external |
+| `ILicenseService` mock | Required | Fake — premium features always enabled |
+
+---
+
+## Wave: DISTILL / [REF] DISTILL decisions summary
+
+See `distill/wave-decisions.md` for full detail. Key decisions:
+
+| ID | Decision | Status |
+|---|---|---|
+| DST-1 | SQLite mandatory, InMemory forbidden for FK-dependent tests | Applied |
+| DST-2 | C# scenario/specification split, no .feature files | Applied |
+| DST-3 | No PBT framework (FsCheck not in repo) | Applied |
+| DST-4 | No E2E (Playwright unchanged, frontend shared per C4) | Applied |
+| DST-5 | Frontend N/A (confirmed zero work) | Applied |
+| DST-6 | Outcomes registry skipped (absent) | Skip recorded |
+| DST-7 | Tier A only — Tier B not justified (binary state machine) | Applied |
+| DST-8 | OQ-1 resolved — parent features NOT in eligible set | Resolved |
+| DST-9 | OQ-3 resolved — drill-through `blockedSince = null` parity-as-is | Resolved |
+| DST-10 | Mandate-12: 4 criteria met (C# adaptation) | PASS |
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+All 10 acceptance test files (5 Scenarios + 5 Specifications) under `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/`:
+
+| File | Scenarios | Status |
+|---|---|---|
+| `Slice01DemoBackfillTeamHistoryScenarios.cs` | 5 | `[Ignore]` commented-out (RED-ready) |
+| `Slice01DemoBackfillTeamHistorySpecifications.cs` | 12 step methods | — |
+| `Slice02FeatureBlockedCaptureScenarios.cs` | 5 | `[Ignore]` commented-out |
+| `Slice02FeatureBlockedCaptureSpecifications.cs` | 13 step methods | — |
+| `Slice03HistoricPortfolioBlockedCountScenarios.cs` | 6 | `[Ignore]` commented-out |
+| `Slice03HistoricPortfolioBlockedCountSpecifications.cs` | 14 step methods | — |
+| `Slice04PortfolioBlockedDrillThroughScenarios.cs` | 5 | `[Ignore]` commented-out |
+| `Slice04PortfolioBlockedDrillThroughSpecifications.cs` | 11 step methods | — |
+| `Slice05DemoPortfolioBlockedHistoryScenarios.cs` | 7 | `[Ignore]` commented-out |
+| `Slice05DemoPortfolioBlockedHistorySpecifications.cs` | 15 step methods | — |
+| `PortfolioBlockedHistoryAcceptanceTest.cs` | base class | — |
+
+---
+
+## Wave: DISTILL / [REF] Error path coverage
+
+| Slice | Total | Error/Edge/Invariant | Ratio |
+|---|---|---|---|
+| 01 | 5 | 2 (`@error` FK-bite, `@invariant` keyspace purity) | 40% |
+| 02 | 5 | 1 (`@edge` first-observation) + 1 (`@regression` scope-free projection guard) | 40% |
+| 03 | 6 | 3 (`@error` inverse-read, `@edge` no-history fallback, `@edge` history-no-spell) | 50% |
+| 04 | 5 | 2 (`@edge` pre-capture, `@edge` departed feature) + 1 (`@invariant` reconciliation) | 60% |
+| 05 | 7 | 3 (`@error` pre-keyspace backfill, `@edge` started-date cap, `@edge` non-demo guard) + 1 (`@invariant` team-keyspace purity) | 57% |
+| **Total** | **28** | **14** (error + edge + invariant) | **50%** |
+
+Exceeds the 40% minimum per Mandate 1.0.
+
+---
+
+## Wave: DISTILL / [REF] OQ-1 and OQ-3 resolutions
+
+| Open Question | Resolution | Test pin |
+|---|---|---|
+| **OQ-1** — parent features in eligible set? | **No.** `GetBlockedEligibleFeaturesForPortfolio` uses `Portfolios.Any(p => p.Id == portfolioId)` — parent features are not added to `portfolio.Features`. | Parity-matrix test (slice 03) — if parents leaked, reconstruction/snapshot would diverge. |
+| **OQ-3** — `blockedSince` null in drill-through? | **Parity-as-is.** Team drill-through passes `null` intentionally — membership list, not duration read. Portfolio mirrors. | Slice 04 WS — asserts items at date, not `blockedSince`. |
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To**: `nw-software-crafter` (DELIVER) — 28 scaffolded RED scenarios across 5 slices.
+
+**Pre-DELIVER checks** (crafter executes at RED phase entry):
+1. `dotnet build` — all 10 test files + base class compile
+2. `dotnet test --filter "Category=acceptance&Category=portfolio-blocked-history"` — classify failures per `distill/red-classification.md`
+3. Fix any `INFRA_BROKEN` failures before starting RED→GREEN
+4. Unskip scenarios one at a time, starting with the `@walking_skeleton` in each slice
+
+**DISTILL artifacts produced**:
+- `distill/wave-decisions.md` — 13 DISTILL decisions
+- `distill/upstream-issues.md` — 1 ci-learnings candidate (UI-1)
+- `distill/red-classification.md` — classification protocol (pending `dotnet test` run)
+- `feature-delta.md` — updated with `## Wave: DISTILL / [REF]` sections (scenario inventory, WS strategy, adapter coverage, test placement, driving adapter coverage, pre-requisites, error path coverage, OQ resolutions, scaffolds)
+- 10 test files — scaffolded RED per ADR-025

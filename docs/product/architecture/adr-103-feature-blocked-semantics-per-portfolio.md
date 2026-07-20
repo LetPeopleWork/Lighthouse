@@ -1,9 +1,9 @@
 # ADR-103: A Feature Is Blocked **Per Portfolio**, Not Across Any Portfolio — Spells Keyed `(FeatureId, PortfolioId)`, Any-Portfolio Retained as a Read Projection
 
-**Status**: **PROPOSED** (2026-07-19 — Morgan, interaction mode PROPOSE). **Awaiting user confirmation.** This ADR resolves DISCUSS D8 / journey D12, which DISCUSS deliberately left open as a domain-semantics fork. Slice 02 must not start until this is Accepted — the keying cannot be changed after capture begins without a data migration.
+**Status**: **Accepted** (2026-07-19 — Morgan, interaction mode PROPOSE; confirmed by user 2026-07-20). This ADR resolves DISCUSS D8 / journey D12, which DISCUSS deliberately left open as a domain-semantics fork. Slice 02 must not start until this is Accepted — the keying cannot be changed after capture begins without a data migration.
 **Date**: 2026-07-19
 **Feature**: portfolio-blocked-history (Story #5524, slice 02)
-**Decider**: Morgan (Solution Architect), pending user confirmation
+**Decider**: Morgan (Solution Architect), confirmed by user 2026-07-20
 **Relationship to prior ADRs**: upholds ADR-067 (`IBlockedItemService` is the single blocked authority) by removing its only surviving competitor. Determines the key of the entity created in ADR-102 and the event shape in ADR-104. Keeps ADR-069's `BlockedCountSnapshot` grain and ADR-099's reconciliation guard consistent. Resolves DESIGN DDD-2, DDD-4 and DDD-7.
 
 ---

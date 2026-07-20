@@ -65,6 +65,11 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<WorkItemBlockedTransition> WorkItemBlockedTransitions { get; set; } = null!;
 
+        // SCAFFOLD: true — DISTILL (ADR-025), feature portfolio-blocked-history. DbSet + mapping per
+        // ADR-102 so the acceptance suite compiles RED; DELIVER (slice 02) generates the real migration
+        // via CreateMigration across all providers (expand-only).
+        public DbSet<FeatureBlockedTransition> FeatureBlockedTransitions { get; set; } = null!;
+
         public DbSet<BlockedCountSnapshot> BlockedCountSnapshots { get; set; } = null!;
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -250,6 +255,26 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<FeatureStateTransition>()
                 .HasIndex(t => new { t.FeatureId, t.TransitionedAt });
+
+            // SCAFFOLD: true — DISTILL (ADR-025), portfolio-blocked-history. ADR-102 mapping:
+            // FK -> Features cascade, FK -> Portfolios cascade, hot-read + open-spell indexes.
+            modelBuilder.Entity<FeatureBlockedTransition>()
+                .HasOne<Feature>()
+                .WithMany()
+                .HasForeignKey(t => t.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeatureBlockedTransition>()
+                .HasOne<Portfolio>()
+                .WithMany()
+                .HasForeignKey(t => t.PortfolioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<FeatureBlockedTransition>()
+                .HasIndex(t => new { t.PortfolioId, t.EnteredAt });
+
+            modelBuilder.Entity<FeatureBlockedTransition>()
+                .HasIndex(t => new { t.FeatureId, t.PortfolioId });
 
             modelBuilder.Entity<Portfolio>()
                 .HasOne(p => p.OwningTeam)
