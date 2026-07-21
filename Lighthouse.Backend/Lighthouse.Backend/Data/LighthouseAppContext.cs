@@ -72,6 +72,15 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<BlockedCountSnapshot> BlockedCountSnapshots { get; set; } = null!;
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Restore SQLite's legacy double-quoted-string tolerance on every EF-opened connection.
+            // No-op for non-SQLite providers. See SqliteLegacyDoubleQuotedStringInterceptor for rationale
+            // (SQLitePCLRaw 2.1.12 / CVE-2025-6965 security pin exposed a latent migration-SQL reliance).
+            optionsBuilder.AddInterceptors(SqliteLegacyDoubleQuotedStringInterceptor.Instance);
+            base.OnConfiguring(optionsBuilder);
+        }
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             // Apply UTC converter to ALL DateTime properties in the database

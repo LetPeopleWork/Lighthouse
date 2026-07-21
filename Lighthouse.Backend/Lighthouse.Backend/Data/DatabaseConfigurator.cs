@@ -60,6 +60,10 @@ namespace Lighthouse.Backend.Data
                         var connection = new SqliteConnection(dbConfig.ConnectionString);
                         connection.Open();
 
+                        // This connection is opened outside EF's interception pipeline, so enable legacy
+                        // double-quoted-string handling directly (SQLitePCLRaw 2.1.12 / CVE-2025-6965).
+                        SqliteLegacyDoubleQuotedStringInterceptor.EnableLegacyDoubleQuotedStrings(connection);
+
                         // Enable WAL mode and other optimizations
                         using (var command = connection.CreateCommand())
                         {
