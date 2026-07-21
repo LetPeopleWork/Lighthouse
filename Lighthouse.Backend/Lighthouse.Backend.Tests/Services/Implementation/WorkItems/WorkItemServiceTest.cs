@@ -1363,7 +1363,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
 
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object, featureStateTransitionRepositoryMock.Object, domainEventDispatcherMock.Object, new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()));
+            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object, featureStateTransitionRepositoryMock.Object, domainEventDispatcherMock.Object, new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()), Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()));
         }
     }
 }

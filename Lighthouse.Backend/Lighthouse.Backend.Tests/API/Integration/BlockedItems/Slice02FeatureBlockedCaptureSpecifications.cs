@@ -36,6 +36,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             if (team.HasValue)
             {
                 SeedFeatureWork(featureId, team.Value.TeamId);
+
+                // The scope-free team feature list is driven by the team's active work items (their
+                // ParentReferenceId), not by the forecast FeatureWork link — seed a parented WIP item so
+                // the shared feature actually surfaces on that list (the precondition the guard asserts on).
+                SeedWorkItem(team.Value.TeamId, $"WI-{referenceId}", "In Progress", parentReferenceId: referenceId);
             }
 
             return featureId;

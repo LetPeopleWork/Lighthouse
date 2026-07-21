@@ -263,7 +263,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             string referenceId,
             string state,
             StateCategories stateCategory = StateCategories.Doing,
-            DateTime? startedDate = null)
+            DateTime? startedDate = null,
+            string? parentReferenceId = null)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -277,6 +278,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 Team = team,
                 TeamId = team.Id,
                 ReferenceId = referenceId,
+                ParentReferenceId = parentReferenceId ?? string.Empty,
                 Name = $"Story {referenceId}",
                 Type = "Story",
                 State = state,
@@ -384,12 +386,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
 
-            // Load the portfolio (with its connection) in the SAME scope as the service, mirroring how
-            // PortfolioUpdater hands a tracked portfolio to UpdateFeaturesForPortfolio in production.
-            var context = sp.GetRequiredService<LighthouseAppContext>();
-            var portfolio = await context.Portfolios
-                .Include(p => p.WorkTrackingSystemConnection)
-                .SingleAsync(p => p.Id == portfolioId);
+            // Load the portfolio through the SAME repository path production uses (PortfolioUpdater ->
+            // IRepository<Portfolio>.GetById), so EF tracks the full graph — including the PortfolioTeam
+            // join rows via that repository's .Include(p => p.Teams). Loading only the connection diverged
+            // from production and left the join untracked, re-inserting PortfolioTeam on the second refresh
+            // (UNIQUE constraint failed: PortfolioTeam.PortfoliosId, PortfolioTeam.TeamsId).
+            var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
+            var portfolio = portfolioRepository.GetById(portfolioId)
+                ?? throw new InvalidOperationException($"Portfolio {portfolioId} not found");
 
             var workItemService = sp.GetRequiredService<IWorkItemService>();
             await workItemService.UpdateFeaturesForPortfolio(portfolio);

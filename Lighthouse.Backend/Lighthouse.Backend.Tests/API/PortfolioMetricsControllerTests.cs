@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
             blockedItemServiceMock = new Mock<IBlockedItemService>();
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, loggerMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()), loggerMock.Object);
 
             project = new Portfolio
             {

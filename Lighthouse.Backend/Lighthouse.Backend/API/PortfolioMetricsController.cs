@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API
         IBlackoutPeriodService blackoutPeriodService,
         IBlockedCountSnapshotRepository blockedCountSnapshotRepository,
         IBlockedItemService blockedItemService,
+        IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
     {
@@ -106,10 +107,16 @@ namespace Lighthouse.Backend.API
                 // moved on to a Done state since fell out of the chart entirely.
                 var statesAsOf = portfolioMetricsService.GetFeatureStatesAsOf(portfolio, features, asOfDate);
 
+                // US-02 / ADR-103: the open per-portfolio blocked spell supplies blockedSince (its enter
+                // timestamp) for each currently-blocked feature — null when the feature has no open spell.
+                var openSpells = featureBlockedTransitionRepository.GetOpenSpellsForPortfolio(portfolio.Id);
+
                 // D16 / UPSTREAM-2: portfolio half of the same fix — without asOf here the portfolio
                 // aging chart and percentile card would disagree for the same range (CI2, US-04 AC3).
                 return features.Select(f => new FeatureDto(
-                    f, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio), null, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)));
+                    f, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio),
+                    openSpells.TryGetValue(f.Id, out var openSpell) ? openSpell.EnteredAt : null,
+                    null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)));
             });
         }
 

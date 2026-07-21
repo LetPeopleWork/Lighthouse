@@ -22,7 +22,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IWorkItemStateTransitionRepository stateTransitionRepository,
         IFeatureStateTransitionRepository featureStateTransitionRepository,
         IDomainEventDispatcher domainEventDispatcher,
-        IBlockedItemService blockedItemService)
+        IBlockedItemService blockedItemService,
+        IFeatureBlockedTransitionRepository featureBlockedTransitionRepository)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -190,6 +191,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                     break;
                 case WorkItemBecameStale becameStale:
                     await domainEventDispatcher.PublishAsync(becameStale);
+                    break;
+                case FeatureBlocked featureBlocked:
+                    await domainEventDispatcher.PublishAsync(featureBlocked);
+                    break;
+                case FeatureUnblocked featureUnblocked:
+                    await domainEventDispatcher.PublishAsync(featureUnblocked);
                     break;
             }
         }
@@ -479,28 +486,104 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var features = new List<Feature>();
             var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
+            var syncedFeatures = new List<SyncedFeature>();
 
             foreach (var feature in await workItemService.GetFeaturesForProject(portfolio))
             {
-                var featureFromDatabase = AddOrUpdateFeature(feature);
+                // Read the PRE-UPDATE per-portfolio blocked verdict BEFORE AddOrUpdateFeature mutates the
+                // persisted feature in place (ADR-104 seam hoist) — otherwise the prior state is destroyed
+                // before the rising/falling edge can be observed.
+                var existingFeature = featureRepository.GetByPredicate(f => f.ReferenceId == feature.ReferenceId);
+                var wasObservedBeforeSync = existingFeature != null;
+                var wasBlockedBeforeSync = existingFeature != null && blockedItemService.IsBlocked(existingFeature, portfolio);
+
+                var featureFromDatabase = AddOrUpdateFeature(feature, existingFeature);
 
                 AddProjectToFeature(featureFromDatabase, portfolio);
                 features.Add(featureFromDatabase);
                 featuresWithTransitions.Add((featureFromDatabase, feature.SyncedTransitions));
+
+                // Parent features are captured through RefreshParentFeatures and never emit blocked spells
+                // (OQ-1 / DST-8) — exclude them from the eligible edge-detection set.
+                if (!featureFromDatabase.IsParentFeature)
+                {
+                    syncedFeatures.Add(new SyncedFeature(featureFromDatabase, wasObservedBeforeSync, wasBlockedBeforeSync));
+                }
             }
 
             portfolio.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
 
             await featureRepository.Save();
 
+            // Edge detection runs in the SAME second pass as SyncFeatureStateTransitions because feature.Id
+            // is 0 until the Save above — the FeatureBlocked/Unblocked events must carry the persisted id.
+            var events = new List<IDomainEvent>();
             foreach (var (persistedFeature, syncedTransitions) in featuresWithTransitions)
             {
                 SyncFeatureStateTransitions(persistedFeature, syncedTransitions);
             }
 
+            foreach (var syncedFeature in syncedFeatures)
+            {
+                events.AddRange(CollectFeatureBlockedEvents(portfolio, syncedFeature));
+            }
+
             await featureStateTransitionRepository.Save();
             await featureRepository.Save();
+
+            await PublishDomainEvents(events);
+
+            await SweepDepartedFeatureSpells(portfolio, features);
         }
+
+        private List<IDomainEvent> CollectFeatureBlockedEvents(Portfolio portfolio, SyncedFeature syncedFeature)
+        {
+            var feature = syncedFeature.PersistedFeature;
+            var events = new List<IDomainEvent>();
+
+            // A feature already blocked when capture FIRST sees it opens no spell (US-02 AC4 — "—" preserved):
+            // without a prior not-blocked baseline there is no rising edge to record.
+            if (!syncedFeature.WasObservedBeforeSync)
+            {
+                return events;
+            }
+
+            var isBlockedNow = blockedItemService.IsBlocked(feature, portfolio);
+
+            if (!syncedFeature.WasBlockedBeforeSync && isBlockedNow)
+            {
+                events.Add(new FeatureBlocked(feature.Id, portfolio.Id, feature.State));
+            }
+            else if (syncedFeature.WasBlockedBeforeSync && !isBlockedNow)
+            {
+                events.Add(new FeatureUnblocked(feature.Id, portfolio.Id));
+            }
+
+            return events;
+        }
+
+        private async Task SweepDepartedFeatureSpells(Portfolio portfolio, List<Feature> refreshedFeatures)
+        {
+            // Empty-refresh guard (DDD-5): a transient connector failure returning zero features must not
+            // silently close every open spell. A portfolio genuinely holding zero features has no open
+            // spells, so skipping the sweep is free.
+            if (refreshedFeatures.Count == 0)
+            {
+                return;
+            }
+
+            var refreshedFeatureIds = refreshedFeatures.Select(f => f.Id).ToHashSet();
+            var openSpells = featureBlockedTransitionRepository.GetOpenSpellsForPortfolio(portfolio.Id);
+
+            var departedEvents = openSpells
+                .Where(spell => !refreshedFeatureIds.Contains(spell.Key))
+                .Select(spell => (IDomainEvent)new FeatureUnblocked(spell.Key, portfolio.Id))
+                .ToList();
+
+            await PublishDomainEvents(departedEvents);
+        }
+
+        private sealed record SyncedFeature(Feature PersistedFeature, bool WasObservedBeforeSync, bool WasBlockedBeforeSync);
 
         private void SyncFeatureStateTransitions(Feature feature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)
         {
@@ -525,22 +608,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             feature.CurrentStateEnteredAt = DeriveCurrentStateEnteredAt(feature, existingTransitions.Concat(newTransitions));
         }
 
-        private Feature AddOrUpdateFeature(Feature feature)
+        private Feature AddOrUpdateFeature(Feature feature, Feature? featureFromDatabase)
         {
-            var featureFromDatabase = featureRepository.GetByPredicate(f => f.ReferenceId == feature.ReferenceId);
-
             if (featureFromDatabase == null)
             {
                 featureRepository.Add(feature);
                 logger.LogDebug("Found New Feature {FeatureName}", feature.Name);
-                featureFromDatabase = feature;
-            }
-            else
-            {
-                featureFromDatabase.Update(feature);
-                logger.LogDebug("Updated Existing Feature {FeatureName}", feature.Name);
+                return feature;
             }
 
+            featureFromDatabase.Update(feature);
+            logger.LogDebug("Updated Existing Feature {FeatureName}", feature.Name);
             return featureFromDatabase;
         }
 
@@ -561,7 +639,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             {
                 parentFeature.IsParentFeature = true;
 
-                AddOrUpdateFeature(parentFeature);
+                var existingParentFeature = featureRepository.GetByPredicate(f => f.ReferenceId == parentFeature.ReferenceId);
+                AddOrUpdateFeature(parentFeature, existingParentFeature);
             }
 
             await featureRepository.Save();

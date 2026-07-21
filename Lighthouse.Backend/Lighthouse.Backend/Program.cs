@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Configuration;
+﻿using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
@@ -1063,6 +1063,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDomainEventHandler<TeamDeleted>, TeamDeletedForecastRetriggerHandler>();
             builder.Services.AddScoped<IDomainEventHandler<WorkItemBlocked>, WorkItemBlockedTransitionCaptureHandler>();
             builder.Services.AddScoped<IDomainEventHandler<WorkItemUnblocked>, WorkItemBlockedTransitionCloseHandler>();
+            builder.Services.AddScoped<IDomainEventHandler<FeatureBlocked>, FeatureBlockedTransitionCaptureHandler>();
+            builder.Services.AddScoped<IDomainEventHandler<FeatureUnblocked>, FeatureBlockedTransitionCloseHandler>();
 
             // Authentication
             builder.Services.Configure<AuthenticationConfiguration>(builder.Configuration.GetSection("Authentication"));

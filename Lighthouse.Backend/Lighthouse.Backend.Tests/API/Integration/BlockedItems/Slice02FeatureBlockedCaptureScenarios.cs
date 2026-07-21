@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @walking_skeleton @driving_port @us-02 @contract-shape:bounded-change (US-02 AC1+AC3)
         [Test]
         [Category("walking_skeleton")]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_feature_that_becomes_blocked_shows_how_long_it_has_been_blocked()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -34,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-02 @contract-shape:bounded-change (US-02 AC2 — leave clears the duration)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_feature_that_stops_matching_the_blocked_rules_no_longer_shows_a_duration()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -48,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @edge @us-02 @contract-shape:bounded-change (US-02 AC4 — first-observation "—": a feature
         // already blocked when capture first sees it opens NO spell and exposes no duration)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_feature_blocked_on_its_first_observation_shows_no_duration_until_a_baseline_exists()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -62,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // the divergent-rule-set probe ADR-103 requires as an integration test: a feature blocked only
         // by Portfolio A's rules must NOT render blocked on Portfolio B's page.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_feature_blocked_only_by_one_portfolios_rules_does_not_render_blocked_on_the_other_portfolio()
         {
             var portfolioA = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -81,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // (two refreshes) to open a spell, staying green BOTH ways: the invariant the refactor must not
         // break is "a feature blocked somewhere renders blocked on the scope-free team feature list".)
         [Test]
-        [Ignore("DISTILL scaffold — REGRESSION GUARD (green at authoring, properly skipped). Enable with slice 02.")]
         public async Task The_scope_free_team_feature_list_still_reports_the_shared_feature_blocked()
         {
             var portfolioA = GivenAPortfolioWhoseRulesBlockAFeatureState();
