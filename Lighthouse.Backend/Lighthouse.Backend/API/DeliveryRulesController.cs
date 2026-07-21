@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API
@@ -16,7 +17,8 @@ namespace Lighthouse.Backend.API
     public class DeliveryRulesController(
         IRepository<Portfolio> portfolioRepository,
         IDeliveryRuleService deliveryRuleService,
-        IBlackoutPeriodService blackoutPeriodService)
+        IBlackoutPeriodService blackoutPeriodService,
+        IBlockedItemService blockedItemService)
         : ControllerBase
     {
         [HttpGet("schema")]
@@ -55,7 +57,7 @@ namespace Lighthouse.Backend.API
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(result));
 
-            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, blackoutPeriods)));
+            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
 
             if (matchingFeatures.Count == 0)
             {

@@ -30,7 +30,8 @@ namespace Lighthouse.Backend.Tests.API
             subject = new DeliveryRulesController(
                 portfolioRepositoryMock.Object,
                 deliveryRuleServiceMock.Object,
-                blackoutPeriodServiceMock.Object);
+                blackoutPeriodServiceMock.Object,
+                Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>());
         }
 
         [Test]

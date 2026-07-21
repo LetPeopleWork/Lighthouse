@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 },
             };
 
-            var subject = new FeatureDto(feature, blackoutPeriods);
+            var subject = new FeatureDto(feature, blackoutPeriods, false, null);
 
             var expectedDate = subject.Forecasts.Single(f => f.Probability == 85).ExpectedDate;
             Assert.That(expectedDate, Is.EqualTo(Today.AddDays(12)));
@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var feature = ForecastedFeature();
 
-            var subject = new FeatureDto(feature, Array.Empty<BlackoutPeriod>());
+            var subject = new FeatureDto(feature, Array.Empty<BlackoutPeriod>(), false, null);
 
             var expectedDate = subject.Forecasts.Single(f => f.Probability == 85).ExpectedDate;
             Assert.That(expectedDate, Is.EqualTo(Today.AddDays(WorkingDaysToCompletion)));
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         private FeatureDto CreateSubject(Feature feature)
         {
-            return new FeatureDto(feature, Array.Empty<BlackoutPeriod>());
+            return new FeatureDto(feature, Array.Empty<BlackoutPeriod>(), false, null);
         }
     }
 }

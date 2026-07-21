@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.API
                 // D16 / UPSTREAM-2: portfolio half of the same fix — without asOf here the portfolio
                 // aging chart and percentile card would disagree for the same range (CI2, US-04 AC3).
                 return features.Select(f => new FeatureDto(
-                    f, blackoutPeriods, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)));
+                    f, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio), null, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)));
             });
         }
 
@@ -213,7 +213,7 @@ namespace Lighthouse.Backend.API
                 var features = data.Select(entry => entry.Feature).ToList();
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
-                return data.Select(entry => new FeatureDto(entry.Feature, blackoutPeriods, namedCycleTimes: entry.NamedCycleTimes));
+                return data.Select(entry => new FeatureDto(entry.Feature, blackoutPeriods, blockedItemService.IsBlocked(entry.Feature, portfolio), null, namedCycleTimes: entry.NamedCycleTimes));
             });
         }
 
@@ -230,7 +230,7 @@ namespace Lighthouse.Backend.API
                 var features = portfolioMetricsService.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
-                return features.Select(f => new FeatureDto(f, blackoutPeriods));
+                return features.Select(f => new FeatureDto(f, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio), null));
             });
         }
 

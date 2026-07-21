@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.API
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
-                .Select(f => new FeatureDto(f, blackoutPeriods, readablePortfolioIdSet))
+                .Select(f => new FeatureDto(f, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet))
                 .ToList();
         }
 
