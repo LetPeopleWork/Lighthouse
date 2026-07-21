@@ -908,6 +908,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IWorkItemStateTransitionRepository, WorkItemStateTransitionRepository>();
             builder.Services.AddScoped<IFeatureStateTransitionRepository, FeatureStateTransitionRepository>();
             builder.Services.AddScoped<IWorkItemBlockedTransitionRepository, WorkItemBlockedTransitionRepository>();
+            builder.Services.AddScoped<IFeatureBlockedTransitionRepository, FeatureBlockedTransitionRepository>();
             builder.Services.AddScoped<IBlockedCountSnapshotRepository, BlockedCountSnapshotRepository>();
             builder.Services.AddScoped<IRepository<WorkTrackingSystemConnection>, WorkTrackingSystemConnectionRepository>();
             builder.Services.AddScoped<IRepository<AppSetting>, AppSettingRepository>();
