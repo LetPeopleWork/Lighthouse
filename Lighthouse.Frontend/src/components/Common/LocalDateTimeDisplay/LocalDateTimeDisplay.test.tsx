@@ -49,15 +49,14 @@ describe("LocalDateTimeDisplay", () => {
 		Date.prototype.toLocaleDateString = originalToLocaleDateString;
 	});
 
-	test.each(testCases)("renders the correct local date and time string", ({
-		utcDate,
-		showTime,
-		expected,
-	}) => {
-		render(<LocalDateTimeDisplay utcDate={utcDate} showTime={showTime} />);
-		const dateTimeElement = screen.getByText(expected);
-		expect(dateTimeElement).toBeInTheDocument();
-	});
+	test.each(testCases)(
+		"renders the correct local date and time string",
+		({ utcDate, showTime, expected }) => {
+			render(<LocalDateTimeDisplay utcDate={utcDate} showTime={showTime} />);
+			const dateTimeElement = screen.getByText(expected);
+			expect(dateTimeElement).toBeInTheDocument();
+		},
+	);
 
 	test("handles invalid date string gracefully", () => {
 		render(<LocalDateTimeDisplay utcDate="invalid-date-string" />);

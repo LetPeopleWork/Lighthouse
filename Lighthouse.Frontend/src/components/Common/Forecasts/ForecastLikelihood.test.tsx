@@ -60,21 +60,21 @@ describe("ForecastLikelihood component", () => {
 		it.each([
 			{ likelihood: 95, expected: "95.00%" },
 			{ likelihood: 94.8, expected: "94.80%" },
-		])("keeps the precise $expected for a likelihood of $likelihood with work left", ({
-			likelihood: computedLikelihood,
-			expected,
-		}) => {
-			render(
-				<ForecastLikelihood
-					remainingItems={5}
-					targetDate={when}
-					likelihood={computedLikelihood}
-				/>,
-			);
+		])(
+			"keeps the precise $expected for a likelihood of $likelihood with work left",
+			({ likelihood: computedLikelihood, expected }) => {
+				render(
+					<ForecastLikelihood
+						remainingItems={5}
+						targetDate={when}
+						likelihood={computedLikelihood}
+					/>,
+				);
 
-			expect(screen.getByText(`${expected}`)).toBeInTheDocument();
-			expect(screen.queryByText(">95%")).not.toBeInTheDocument();
-		});
+				expect(screen.getByText(`${expected}`)).toBeInTheDocument();
+				expect(screen.queryByText(">95%")).not.toBeInTheDocument();
+			},
+		);
 
 		it("still reads 100.00% for a completed forecast with no work left", () => {
 			render(

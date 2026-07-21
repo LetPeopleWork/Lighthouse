@@ -26,13 +26,16 @@ describe("Delivery.getFormattedDate", () => {
 		"2026-08-15T00:00:00.000Z",
 		"2026-12-31T23:30:00.000Z",
 		"2026-01-01T00:30:00.000Z",
-	])("renders %s as the UTC calendar date regardless of viewer timezone (bug 4975)", (date) => {
-		const delivery = Delivery.fromBackend(buildBackendDelivery({ date }));
+	])(
+		"renders %s as the UTC calendar date regardless of viewer timezone (bug 4975)",
+		(date) => {
+			const delivery = Delivery.fromBackend(buildBackendDelivery({ date }));
 
-		const expectedUtc = new Date(date).toLocaleDateString(undefined, {
-			timeZone: "UTC",
-		});
+			const expectedUtc = new Date(date).toLocaleDateString(undefined, {
+				timeZone: "UTC",
+			});
 
-		expect(delivery.getFormattedDate()).toBe(expectedUtc);
-	});
+			expect(delivery.getFormattedDate()).toBe(expectedUtc);
+		},
+	);
 });

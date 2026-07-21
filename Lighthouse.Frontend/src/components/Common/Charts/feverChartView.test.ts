@@ -71,9 +71,12 @@ describe("runButtonLabel", () => {
 		[true, null, "Running…"],
 		[false, null, "Run"],
 		[false, 2, "Rerun"],
-	])("labels the run control for running=%s frame=%s", (isRunning, frame, label) => {
-		expect(runButtonLabel(isRunning, frame)).toBe(label);
-	});
+	])(
+		"labels the run control for running=%s frame=%s",
+		(isRunning, frame, label) => {
+			expect(runButtonLabel(isRunning, frame)).toBe(label);
+		},
+	);
 });
 
 describe("featureColor", () => {

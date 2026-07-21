@@ -85,20 +85,23 @@ describe("ReconnectBanner", () => {
 		["false", false],
 		["undefined", undefined],
 		["null", null],
-	])("renders nothing when requiresReconnect is %s", (_label, requiresReconnectValue) => {
-		renderBanner({
-			connection: getMockConnection({
-				requiresReconnect: requiresReconnectValue as unknown as
-					| boolean
-					| undefined,
-			}),
-		});
+	])(
+		"renders nothing when requiresReconnect is %s",
+		(_label, requiresReconnectValue) => {
+			renderBanner({
+				connection: getMockConnection({
+					requiresReconnect: requiresReconnectValue as unknown as
+						| boolean
+						| undefined,
+				}),
+			});
 
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("button", { name: /Reconnect/i }),
-		).not.toBeInTheDocument();
-	});
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /Reconnect/i }),
+			).not.toBeInTheDocument();
+		},
+	);
 
 	it("on Reconnect click, calls disconnect THEN initiateConnect with the provider key + connection id, then opens the OAuth popup with the authorization URL", async () => {
 		const user = userEvent.setup();

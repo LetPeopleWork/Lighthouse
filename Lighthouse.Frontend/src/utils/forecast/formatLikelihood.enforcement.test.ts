@@ -26,13 +26,14 @@ const inlineRoundedLikelihood =
 const inlineFixedLikelihood = /likelihood\w*\.toFixed\(\s*2\s*\)/i;
 
 describe("forecast-likelihood render sites route through formatLikelihood", () => {
-	it.each(
-		Object.entries(renderSites),
-	)("%s calls formatLikelihood and holds no inline likelihood format", (_name, path) => {
-		const source = readFileSync(path, "utf8");
+	it.each(Object.entries(renderSites))(
+		"%s calls formatLikelihood and holds no inline likelihood format",
+		(_name, path) => {
+			const source = readFileSync(path, "utf8");
 
-		expect(formatLikelihoodCall.test(source)).toBe(true);
-		expect(inlineRoundedLikelihood.test(source)).toBe(false);
-		expect(inlineFixedLikelihood.test(source)).toBe(false);
-	});
+			expect(formatLikelihoodCall.test(source)).toBe(true);
+			expect(inlineRoundedLikelihood.test(source)).toBe(false);
+			expect(inlineFixedLikelihood.test(source)).toBe(false);
+		},
+	);
 });

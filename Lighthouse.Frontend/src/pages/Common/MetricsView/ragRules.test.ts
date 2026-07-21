@@ -1260,14 +1260,14 @@ describe("ragRules", () => {
 				efficiencyPercent: 72,
 				expected: "green",
 			},
-		])("returns $expected when $scenario", ({
-			efficiencyPercent,
-			expected,
-		}) => {
-			const result = computeFlowEfficiencyRag(efficiencyPercent, terms);
+		])(
+			"returns $expected when $scenario",
+			({ efficiencyPercent, expected }) => {
+				const result = computeFlowEfficiencyRag(efficiencyPercent, terms);
 
-			expect(result.ragStatus).toBe(expected);
-		});
+				expect(result.ragStatus).toBe(expected);
+			},
+		);
 
 		it("treats exactly 40% as the amber lower boundary", () => {
 			const result = computeFlowEfficiencyRag(40, terms);

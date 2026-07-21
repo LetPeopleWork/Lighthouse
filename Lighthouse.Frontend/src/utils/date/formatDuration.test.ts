@@ -11,12 +11,12 @@ describe("chooseDurationUnit", () => {
 		{ maxDays: 13, expected: "days" },
 		{ maxDays: 14, expected: "days" },
 		{ maxDays: 120, expected: "days" },
-	])("picks $expected when the largest bar magnitude is $maxDays days", ({
-		maxDays,
-		expected,
-	}) => {
-		expect(chooseDurationUnit(maxDays)).toBe(expected);
-	});
+	])(
+		"picks $expected when the largest bar magnitude is $maxDays days",
+		({ maxDays, expected }) => {
+			expect(chooseDurationUnit(maxDays)).toBe(expected);
+		},
+	);
 });
 
 describe("formatDuration", () => {
@@ -28,13 +28,12 @@ describe("formatDuration", () => {
 		{ valueDays: 0.01, unit: "minutes" as const, expected: "14 m" },
 		{ valueDays: 21, unit: "days" as const, expected: "21 d" },
 		{ valueDays: 120, unit: "days" as const, expected: "120 d" },
-	])("formats $valueDays days as $expected in $unit", ({
-		valueDays,
-		unit,
-		expected,
-	}) => {
-		expect(formatDuration(valueDays, unit)).toBe(expected);
-	});
+	])(
+		"formats $valueDays days as $expected in $unit",
+		({ valueDays, unit, expected }) => {
+			expect(formatDuration(valueDays, unit)).toBe(expected);
+		},
+	);
 
 	it("renders a sub-day magnitude in hours, never as a fractional day", () => {
 		const subDayMagnitude = 0.3;

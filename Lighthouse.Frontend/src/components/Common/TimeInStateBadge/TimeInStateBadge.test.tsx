@@ -10,17 +10,20 @@ describe("TimeInStateBadge", () => {
 		["2026-05-24T00:00:00Z", "2d in In Progress"],
 		["2026-05-23T23:00:00Z", "3d in In Progress"],
 		["2026-05-15T12:00:00Z", "11d in In Progress"],
-	])("renders days in current state for entered date %s", (enteredAt, expectedText) => {
-		render(
-			<TimeInStateBadge
-				currentStateEnteredAt={new Date(enteredAt)}
-				currentStateName="In Progress"
-				now={now}
-			/>,
-		);
+	])(
+		"renders days in current state for entered date %s",
+		(enteredAt, expectedText) => {
+			render(
+				<TimeInStateBadge
+					currentStateEnteredAt={new Date(enteredAt)}
+					currentStateName="In Progress"
+					now={now}
+				/>,
+			);
 
-		expect(screen.getByText(expectedText)).toBeInTheDocument();
-	});
+			expect(screen.getByText(expectedText)).toBeInTheDocument();
+		},
+	);
 
 	test("counts an item that entered its state today as 1d, not 0d", () => {
 		render(
@@ -54,45 +57,53 @@ describe("TimeInStateBadge", () => {
 		["2026-05-23T23:00:00Z", 4, 0, false],
 		["2026-05-23T23:00:00Z", 2, 0, true],
 		["2026-05-23T23:00:00Z", 1, 0, true],
-	])("applies the stale treatment only when days strictly exceed the threshold for %s with threshold %d", (enteredAt, stalenessThresholdDays, blockedThresholdDays, expectsStale) => {
-		render(
-			<TimeInStateBadge
-				currentStateEnteredAt={new Date(enteredAt)}
-				currentStateName="In Progress"
-				stalenessThresholdDays={stalenessThresholdDays}
-				blockedStalenessThresholdDays={blockedThresholdDays}
-				now={now}
-			/>,
-		);
+	])(
+		"applies the stale treatment only when days strictly exceed the threshold for %s with threshold %d",
+		(enteredAt, stalenessThresholdDays, blockedThresholdDays, expectsStale) => {
+			render(
+				<TimeInStateBadge
+					currentStateEnteredAt={new Date(enteredAt)}
+					currentStateName="In Progress"
+					stalenessThresholdDays={stalenessThresholdDays}
+					blockedStalenessThresholdDays={blockedThresholdDays}
+					now={now}
+				/>,
+			);
 
-		const stale = screen.queryByTestId("time-in-state-stale");
-		if (expectsStale) {
-			expect(stale).toBeInTheDocument();
-			expect(stale).toHaveTextContent("3d in In Progress");
-			expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
-		} else {
-			expect(stale).not.toBeInTheDocument();
-			expect(screen.getByText("3d in In Progress")).toBeInTheDocument();
-		}
-	});
+			const stale = screen.queryByTestId("time-in-state-stale");
+			if (expectsStale) {
+				expect(stale).toBeInTheDocument();
+				expect(stale).toHaveTextContent("3d in In Progress");
+				expect(stale).toHaveStyle({ color: "rgb(211, 47, 47)" });
+			} else {
+				expect(stale).not.toBeInTheDocument();
+				expect(screen.getByText("3d in In Progress")).toBeInTheDocument();
+			}
+		},
+	);
 
 	test.each([
 		[0, 0],
 		[undefined, undefined],
-	])("never applies the stale treatment when the threshold is %s (highlighting disabled)", (stalenessThresholdDays, blockedStalenessThresholdDays) => {
-		render(
-			<TimeInStateBadge
-				currentStateEnteredAt={new Date("2026-05-15T12:00:00Z")}
-				currentStateName="In Progress"
-				stalenessThresholdDays={stalenessThresholdDays}
-				blockedStalenessThresholdDays={blockedStalenessThresholdDays}
-				now={now}
-			/>,
-		);
+	])(
+		"never applies the stale treatment when the threshold is %s (highlighting disabled)",
+		(stalenessThresholdDays, blockedStalenessThresholdDays) => {
+			render(
+				<TimeInStateBadge
+					currentStateEnteredAt={new Date("2026-05-15T12:00:00Z")}
+					currentStateName="In Progress"
+					stalenessThresholdDays={stalenessThresholdDays}
+					blockedStalenessThresholdDays={blockedStalenessThresholdDays}
+					now={now}
+				/>,
+			);
 
-		expect(screen.queryByTestId("time-in-state-stale")).not.toBeInTheDocument();
-		expect(screen.getByText("11d in In Progress")).toBeInTheDocument();
-	});
+			expect(
+				screen.queryByTestId("time-in-state-stale"),
+			).not.toBeInTheDocument();
+			expect(screen.getByText("11d in In Progress")).toBeInTheDocument();
+		},
+	);
 
 	test("renders an em dash and no stale treatment when there is no entered date even past a threshold", () => {
 		render(

@@ -237,9 +237,12 @@ describe("parseDeliveryMetricsHistory", () => {
 			getValidResponse({ firstSnapshotDate: 12345 }),
 			"firstSnapshotDate",
 		],
-	])("names the offending field %s in the boundary error", (_field, response, contextFragment) => {
-		expectBoundaryError(response, contextFragment);
-	});
+	])(
+		"names the offending field %s in the boundary error",
+		(_field, response, contextFragment) => {
+			expectBoundaryError(response, contextFragment);
+		},
+	);
 
 	it("rejects a NaN number even though it is typeof number", () => {
 		expectBoundaryError(

@@ -75,22 +75,23 @@ const renderNudge = (options?: {
 };
 
 describe("SurveyNudge cadence and three choices", () => {
-	it.each([
-		0, 14, 100, 3650,
-	])("never renders for a premium instance at install age %i days", async (installAgeInDays) => {
-		renderNudge({
-			licenseStatus: getMockLicenseStatus({ canUsePremiumFeatures: true }),
-			systemInfo: getMockSystemInfo({
-				installTimestamp: daysBefore(installAgeInDays),
-			}),
-		});
+	it.each([0, 14, 100, 3650])(
+		"never renders for a premium instance at install age %i days",
+		async (installAgeInDays) => {
+			renderNudge({
+				licenseStatus: getMockLicenseStatus({ canUsePremiumFeatures: true }),
+				systemInfo: getMockSystemInfo({
+					installTimestamp: daysBefore(installAgeInDays),
+				}),
+			});
 
-		await waitFor(() => {
-			expect(
-				screen.queryByRole("heading", { name: /help shape lighthouse/i }),
-			).not.toBeInTheDocument();
-		});
-	});
+			await waitFor(() => {
+				expect(
+					screen.queryByRole("heading", { name: /help shape lighthouse/i }),
+				).not.toBeInTheDocument();
+			});
+		},
+	);
 
 	it("stays quiet while the server-computed next-eligible instant is still in the future", async () => {
 		renderNudge({
@@ -137,21 +138,24 @@ describe("SurveyNudge cadence and three choices", () => {
 		[/remind me later/i, "RemindLater"],
 		[/not interested/i, "NoInterest"],
 		[/dismiss/i, "RemindLater"],
-	])("records the %s choice and hides the card", async (label, expectedAction) => {
-		const { recordAction } = renderNudge();
+	])(
+		"records the %s choice and hides the card",
+		async (label, expectedAction) => {
+			const { recordAction } = renderNudge();
 
-		const heading = await screen.findByRole("heading", {
-			name: /help shape lighthouse/i,
-		});
+			const heading = await screen.findByRole("heading", {
+				name: /help shape lighthouse/i,
+			});
 
-		const control =
-			screen.queryByRole("button", { name: label }) ??
-			screen.getByRole("link", { name: label });
-		await userEvent.click(control);
+			const control =
+				screen.queryByRole("button", { name: label }) ??
+				screen.getByRole("link", { name: label });
+			await userEvent.click(control);
 
-		expect(recordAction).toHaveBeenCalledWith(expectedAction);
-		await waitFor(() => {
-			expect(heading).not.toBeInTheDocument();
-		});
-	});
+			expect(recordAction).toHaveBeenCalledWith(expectedAction);
+			await waitFor(() => {
+				expect(heading).not.toBeInTheDocument();
+			});
+		},
+	);
 });

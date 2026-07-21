@@ -42,21 +42,24 @@ describe("deriveStaleness", () => {
 		["2026-05-23T23:00:00Z", 0, false],
 		["2026-05-23T23:00:00Z", 3, false],
 		["2026-05-23T23:00:00Z", 2, true],
-	])("daysInState=3 for %s with stalenessThreshold=%d → isStale=%s (off / at-threshold / one-over)", (enteredAt, stalenessThresholdDays, expectedIsStale) => {
-		const result = deriveStaleness(
-			itemEnteredAt(enteredAt),
-			stalenessThresholdDays as number,
-			undefined,
-			now,
-		);
-		expect(result.isStale).toBe(expectedIsStale);
-		if (expectedIsStale) {
-			expect(result.reasons).toHaveLength(1);
-			expect(result.reasons[0].kind).toBe("time-in-state");
-		} else {
-			expect(result.reasons).toHaveLength(0);
-		}
-	});
+	])(
+		"daysInState=3 for %s with stalenessThreshold=%d → isStale=%s (off / at-threshold / one-over)",
+		(enteredAt, stalenessThresholdDays, expectedIsStale) => {
+			const result = deriveStaleness(
+				itemEnteredAt(enteredAt),
+				stalenessThresholdDays as number,
+				undefined,
+				now,
+			);
+			expect(result.isStale).toBe(expectedIsStale);
+			if (expectedIsStale) {
+				expect(result.reasons).toHaveLength(1);
+				expect(result.reasons[0].kind).toBe("time-in-state");
+			} else {
+				expect(result.reasons).toHaveLength(0);
+			}
+		},
+	);
 
 	test("a blocked item over the time-in-state threshold is not stale from time-in-state (ADR-026 preserved)", () => {
 		const blockedOverThreshold = itemEnteredAt("2026-05-23T23:00:00Z", {

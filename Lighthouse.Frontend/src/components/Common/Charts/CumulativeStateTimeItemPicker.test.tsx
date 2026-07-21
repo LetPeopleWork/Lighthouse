@@ -72,27 +72,27 @@ describe("CumulativeStateTimeItemPicker", () => {
 			query: "indexing",
 			expectedTitle: "Search indexing rework",
 		},
-	])("filters candidates by $name match only", async ({
-		query,
-		expectedTitle,
-	}) => {
-		const user = userEvent.setup();
-		render(
-			<CumulativeStateTimeItemPicker
-				candidates={threeCandidates}
-				selectedItemIds={[]}
-				onSelectionChange={vi.fn()}
-				onOpen={vi.fn()}
-			/>,
-		);
+	])(
+		"filters candidates by $name match only",
+		async ({ query, expectedTitle }) => {
+			const user = userEvent.setup();
+			render(
+				<CumulativeStateTimeItemPicker
+					candidates={threeCandidates}
+					selectedItemIds={[]}
+					onSelectionChange={vi.fn()}
+					onOpen={vi.fn()}
+				/>,
+			);
 
-		const combobox = await openPicker(user);
-		await user.type(combobox, query);
+			const combobox = await openPicker(user);
+			await user.type(combobox, query);
 
-		const options = screen.getAllByRole("option");
-		expect(options).toHaveLength(1);
-		expect(within(options[0]).getByText(expectedTitle)).toBeInTheDocument();
-	});
+			const options = screen.getAllByRole("option");
+			expect(options).toHaveLength(1);
+			expect(within(options[0]).getByText(expectedTitle)).toBeInTheDocument();
+		},
+	);
 
 	it.each([
 		{
@@ -101,24 +101,25 @@ describe("CumulativeStateTimeItemPicker", () => {
 		},
 		{ name: "uppercase query against a lowercase title", query: "INDEXING" },
 		{ name: "query padded with surrounding whitespace", query: "  indexing  " },
-	])("matches case-insensitively and trims the query ($name)", async ({
-		query,
-	}) => {
-		const user = userEvent.setup();
-		render(
-			<CumulativeStateTimeItemPicker
-				candidates={threeCandidates}
-				selectedItemIds={[]}
-				onSelectionChange={vi.fn()}
-				onOpen={vi.fn()}
-			/>,
-		);
+	])(
+		"matches case-insensitively and trims the query ($name)",
+		async ({ query }) => {
+			const user = userEvent.setup();
+			render(
+				<CumulativeStateTimeItemPicker
+					candidates={threeCandidates}
+					selectedItemIds={[]}
+					onSelectionChange={vi.fn()}
+					onOpen={vi.fn()}
+				/>,
+			);
 
-		const combobox = await openPicker(user);
-		await user.type(combobox, query);
+			const combobox = await openPicker(user);
+			await user.type(combobox, query);
 
-		expect(screen.getAllByRole("option")).toHaveLength(1);
-	});
+			expect(screen.getAllByRole("option")).toHaveLength(1);
+		},
+	);
 
 	it("does not match candidates by non-reference, non-title attributes", async () => {
 		const user = userEvent.setup();

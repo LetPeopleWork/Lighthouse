@@ -79,38 +79,38 @@ describe("useRbacGate", () => {
 	it.each([
 		{ adminTeamIds: [42], expected: true },
 		{ adminTeamIds: [1, 2, 3], expected: false },
-	])("team admin gate follows rbac.isTeamAdmin(42) — adminTeamIds=$adminTeamIds expects allowed=$expected", async ({
-		adminTeamIds,
-		expected,
-	}) => {
-		mockGetAuthorizationSummary.mockResolvedValue(
-			makeSummary({ isSystemAdmin: false, adminTeamIds }),
-		);
-		const { result } = renderHook(() =>
-			useRbacGate({ kind: "teamAdmin", teamId: 42 }),
-		);
-		await waitFor(() => expect(result.current.isLoading).toBe(false));
+	])(
+		"team admin gate follows rbac.isTeamAdmin(42) — adminTeamIds=$adminTeamIds expects allowed=$expected",
+		async ({ adminTeamIds, expected }) => {
+			mockGetAuthorizationSummary.mockResolvedValue(
+				makeSummary({ isSystemAdmin: false, adminTeamIds }),
+			);
+			const { result } = renderHook(() =>
+				useRbacGate({ kind: "teamAdmin", teamId: 42 }),
+			);
+			await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-		expect(result.current.allowed).toBe(expected);
-	});
+			expect(result.current.allowed).toBe(expected);
+		},
+	);
 
 	it.each([
 		{ adminPortfolioIds: [7], expected: true },
 		{ adminPortfolioIds: [1, 2, 3], expected: false },
-	])("portfolio admin gate follows rbac.isPortfolioAdmin(7) — adminPortfolioIds=$adminPortfolioIds expects allowed=$expected", async ({
-		adminPortfolioIds,
-		expected,
-	}) => {
-		mockGetAuthorizationSummary.mockResolvedValue(
-			makeSummary({ isSystemAdmin: false, adminPortfolioIds }),
-		);
-		const { result } = renderHook(() =>
-			useRbacGate({ kind: "portfolioAdmin", portfolioId: 7 }),
-		);
-		await waitFor(() => expect(result.current.isLoading).toBe(false));
+	])(
+		"portfolio admin gate follows rbac.isPortfolioAdmin(7) — adminPortfolioIds=$adminPortfolioIds expects allowed=$expected",
+		async ({ adminPortfolioIds, expected }) => {
+			mockGetAuthorizationSummary.mockResolvedValue(
+				makeSummary({ isSystemAdmin: false, adminPortfolioIds }),
+			);
+			const { result } = renderHook(() =>
+				useRbacGate({ kind: "portfolioAdmin", portfolioId: 7 }),
+			);
+			await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-		expect(result.current.allowed).toBe(expected);
-	});
+			expect(result.current.allowed).toBe(expected);
+		},
+	);
 
 	it("returns isLoading true while rbac is loading", () => {
 		mockGetAuthorizationSummary.mockReturnValue(new Promise(() => {}));
