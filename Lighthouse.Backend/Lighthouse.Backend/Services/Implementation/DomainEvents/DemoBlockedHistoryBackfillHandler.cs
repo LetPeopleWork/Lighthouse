@@ -135,12 +135,21 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
             var entered = SpreadEnteredDates(blockedItems, today);
 
-            foreach (var (workItemId, enteredAt) in entered)
+            // Blocked spells live in the team keyspace only. The portfolio path's item ids are
+            // Feature.Ids, which collide with real WorkItem ids and corrupt the team historic blocked
+            // read (a WorkItemBlockedTransition keyed by a Feature.Id makes a never-blocked work item
+            // read blocked). So only the team path writes WorkItemBlockedTransition rows; the portfolio
+            // path keeps its snapshot backfill and its feature spells are (re)introduced into the
+            // dedicated FeatureBlockedTransition keyspace by a later slice (ADR-102, US-01).
+            if (ownerType == OwnerType.Team)
             {
-                UpsertBackdatedTransition(workItemId, enteredAt);
-            }
+                foreach (var (workItemId, enteredAt) in entered)
+                {
+                    UpsertBackdatedTransition(workItemId, enteredAt);
+                }
 
-            await transitionRepository.Save();
+                await transitionRepository.Save();
+            }
 
             var earliest = entered.Min(e => e.EnteredAt).Date;
             for (var day = earliest; day <= today; day = day.AddDays(1))

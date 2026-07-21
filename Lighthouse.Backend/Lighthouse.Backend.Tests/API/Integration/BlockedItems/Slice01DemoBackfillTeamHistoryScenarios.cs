@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // REGRESSION CLASS: RED today — the phantom spell corrupts the historic team read.
         [Test]
         [Category("walking_skeleton")]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_team_work_item_sharing_an_id_with_a_blocked_demo_feature_reads_not_blocked_on_a_past_range()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -51,7 +50,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // owner assertion is the meaningful form: a portfolio refresh writes ZERO rows into the team
         // keyspace. ADR-102 enforcement row; cross-checked again by slice 05 AC1.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task The_demo_portfolio_refresh_writes_no_blocked_spells_into_the_team_keyspace()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -68,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // enforcing database. RED only on SQLite; passes for broken AND fixed code on EF InMemory.)
         [Test]
         [Category("real-io")]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task Backdated_portfolio_snapshots_land_even_when_a_demo_feature_id_collides_with_no_work_item()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -82,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @us-01 @regression @contract-shape:bounded-change (US-01 AC4 — snapshot backfill is retained;
         // passes today and must keep passing: colliding-id branch where the insert succeeds.)
         [Test]
-        [Ignore("DISTILL scaffold — REGRESSION GUARD (green at authoring, properly skipped). Enable with slice 01.")]
         public async Task The_demo_portfolio_blocked_trend_still_renders_its_backdated_history()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
