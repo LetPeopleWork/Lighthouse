@@ -103,8 +103,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         {
             using var document = JsonDocument.Parse(body);
             var clone = document.RootElement.Clone();
-            Assert.That(clone.ValueKind, Is.EqualTo(JsonValueKind.Array), $"Expected an item array. Body: {body}");
-            Assert.That(clone.GetArrayLength(), Is.EqualTo(1), $"Expected exactly one item in the read surface. Body: {body}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(clone.ValueKind, Is.EqualTo(JsonValueKind.Array), $"Expected an item array. Body: {body}");
+                Assert.That(clone.GetArrayLength(), Is.EqualTo(1), $"Expected exactly one item in the read surface. Body: {body}");
+            }
+
             return clone[0];
         }
     }
