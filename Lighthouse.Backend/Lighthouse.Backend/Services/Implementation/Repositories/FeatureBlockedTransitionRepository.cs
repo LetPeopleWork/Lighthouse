@@ -23,5 +23,27 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     transition.LeftAt == null)
                 .ToDictionary(transition => transition.FeatureId);
         }
+
+        public IReadOnlyList<FeatureBlockedTransition> GetBlockedTransitionsAt(int portfolioId, DateOnly date)
+        {
+            var startOfDate = date.ToDateTime(TimeOnly.MinValue);
+            var startOfNextDate = startOfDate.AddDays(1);
+
+            return GetAllByPredicate(transition =>
+                    transition.PortfolioId == portfolioId &&
+                    transition.EnteredAt < startOfNextDate &&
+                    (transition.LeftAt == null || transition.LeftAt >= startOfDate))
+                .ToList();
+        }
+
+        public IReadOnlyList<int> GetFeatureIdsWithBlockedHistory(int portfolioId, IReadOnlyCollection<int> featureIds)
+        {
+            return GetAllByPredicate(transition =>
+                    transition.PortfolioId == portfolioId &&
+                    featureIds.Contains(transition.FeatureId))
+                .Select(transition => transition.FeatureId)
+                .Distinct()
+                .ToList();
+        }
     }
 }

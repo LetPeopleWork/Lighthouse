@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
+        private Mock<IFeatureBlockedTransitionRepository> featureBlockedTransitionRepositoryMock;
         private Mock<ILogger<PortfolioMetricsController>> loggerMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
@@ -40,8 +41,18 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
             blockedItemServiceMock = new Mock<IBlockedItemService>();
+            featureBlockedTransitionRepositoryMock = new Mock<IFeatureBlockedTransitionRepository>();
+            featureBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetOpenSpellsForPortfolio(It.IsAny<int>()))
+                .Returns(new Dictionary<int, FeatureBlockedTransition>());
+            featureBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetBlockedTransitionsAt(It.IsAny<int>(), It.IsAny<DateOnly>()))
+                .Returns([]);
+            featureBlockedTransitionRepositoryMock
+                .Setup(repo => repo.GetFeatureIdsWithBlockedHistory(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>()))
+                .Returns([]);
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()), loggerMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, loggerMock.Object);
 
             project = new Portfolio
             {

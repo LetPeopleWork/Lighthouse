@@ -107,16 +107,44 @@ namespace Lighthouse.Backend.API
                 // moved on to a Done state since fell out of the chart entirely.
                 var statesAsOf = portfolioMetricsService.GetFeatureStatesAsOf(portfolio, features, asOfDate);
 
-                // US-02 / ADR-103: the open per-portfolio blocked spell supplies blockedSince (its enter
+                // US-03 / ADR-102/103: for a past range, "is it blocked" cannot be answered by evaluating the
+                // blocked rule against today's feature — the state it matches on has moved on since. The
+                // captured per-portfolio spells are the record of what was true back then, so a historic read
+                // prefers them. A feature with no capture history at all predates capture, and there the live
+                // rule is the only answer available; a feature WITH history but no covering spell reads not
+                // blocked — absence of a spell is evidence, not a gap (US-03 AC4). This mirrors the team read.
+                var isHistoricRange = asOfDate.Date < DateTime.UtcNow.Date;
+                var featureIds = features.Select(f => f.Id).ToList();
+
+                // Indexed once rather than scanned per feature: both lookups sit inside the projection below,
+                // so a linear Contains/FirstOrDefault makes a portfolio of n features cost O(n²).
+                var openSpellByFeature = (isHistoricRange
+                        ? featureBlockedTransitionRepository.GetBlockedTransitionsAt(portfolio.Id, DateOnly.FromDateTime(asOfDate))
+                        : [])
+                    .GroupBy(transition => transition.FeatureId)
+                    .ToDictionary(group => group.Key, group => group.First());
+                var idsWithBlockedHistory = (isHistoricRange
+                        ? featureBlockedTransitionRepository.GetFeatureIdsWithBlockedHistory(portfolio.Id, featureIds)
+                        : [])
+                    .ToHashSet();
+
+                // US-02 / ADR-103: the open per-portfolio blocked spell supplies live blockedSince (its enter
                 // timestamp) for each currently-blocked feature — null when the feature has no open spell.
                 var openSpells = featureBlockedTransitionRepository.GetOpenSpellsForPortfolio(portfolio.Id);
 
                 // D16 / UPSTREAM-2: portfolio half of the same fix — without asOf here the portfolio
                 // aging chart and percentile card would disagree for the same range (CI2, US-04 AC3).
-                return features.Select(f => new FeatureDto(
-                    f, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio),
-                    openSpells.TryGetValue(f.Id, out var openSpell) ? openSpell.EnteredAt : null,
-                    null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id)));
+                return features.Select(f =>
+                {
+                    var answerFromHistory = isHistoricRange && idsWithBlockedHistory.Contains(f.Id);
+                    var blockedSpell = openSpellByFeature.GetValueOrDefault(f.Id);
+
+                    var isBlocked = answerFromHistory ? blockedSpell != null : blockedItemService.IsBlocked(f, portfolio);
+                    var liveBlockedSince = openSpells.TryGetValue(f.Id, out var openSpell) ? openSpell.EnteredAt : (DateTime?)null;
+                    var blockedSince = answerFromHistory ? blockedSpell?.EnteredAt : liveBlockedSince;
+
+                    return new FeatureDto(f, blackoutPeriods, isBlocked, blockedSince, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id));
+                });
             });
         }
 
