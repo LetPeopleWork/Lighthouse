@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         // @driving_port @us-01 @contract-shape:bounded-change (US-01 AC2)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task The_team_drill_through_at_a_past_date_excludes_the_colliding_id()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
