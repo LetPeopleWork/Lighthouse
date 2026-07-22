@@ -116,6 +116,63 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(openSpells[blockedFeature.Id].EnteredAt, Is.EqualTo(Utc(2026, 6, 10, 9)));
         }
 
+        [Test]
+        public async Task GetBlockedTransitionsAt_ExcludesASpellThatOnlyEnteredAtTheStartOfTheFollowingDay()
+        {
+            var portfolio = await GivenPersistedPortfolio();
+            var coveringFeature = await GivenPersistedFeature();
+            var nextDayFeature = await GivenPersistedFeature();
+            var subject = CreateSubject();
+
+            // Covering: blocked before and still open on the query date -> included.
+            subject.Add(BlockedSpell(coveringFeature.Id, portfolio.Id, Utc(2026, 6, 9, 9), null));
+            // Half-open upper boundary: enters exactly at 2026-06-11 00:00, the start of the day AFTER
+            // the query date -> must be EXCLUDED (EnteredAt < startOfNextDate is strict).
+            subject.Add(BlockedSpell(nextDayFeature.Id, portfolio.Id, new DateTime(2026, 6, 11, 0, 0, 0, DateTimeKind.Utc), null));
+            await subject.Save();
+
+            var onDate = subject.GetBlockedTransitionsAt(portfolio.Id, new DateOnly(2026, 6, 10));
+
+            Assert.That(onDate.Select(spell => spell.FeatureId), Is.EquivalentTo(new[] { coveringFeature.Id }));
+        }
+
+        [Test]
+        public async Task GetBlockedTransitionsAt_IncludesASpellThatLeftExactlyAtTheStartOfTheQueryDate()
+        {
+            var portfolio = await GivenPersistedPortfolio();
+            var leftAtBoundaryFeature = await GivenPersistedFeature();
+            var leftBeforeFeature = await GivenPersistedFeature();
+            var subject = CreateSubject();
+
+            // Half-open lower boundary: leaves exactly at 2026-06-10 00:00, the start of the query date
+            // -> must be INCLUDED (LeftAt >= startOfDate is inclusive).
+            subject.Add(BlockedSpell(leftAtBoundaryFeature.Id, portfolio.Id, Utc(2026, 6, 8, 9), new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc)));
+            // Left the day before -> must be EXCLUDED.
+            subject.Add(BlockedSpell(leftBeforeFeature.Id, portfolio.Id, Utc(2026, 6, 8, 9), Utc(2026, 6, 9, 23)));
+            await subject.Save();
+
+            var onDate = subject.GetBlockedTransitionsAt(portfolio.Id, new DateOnly(2026, 6, 10));
+
+            Assert.That(onDate.Select(spell => spell.FeatureId), Is.EquivalentTo(new[] { leftAtBoundaryFeature.Id }));
+        }
+
+        [Test]
+        public async Task GetFeatureIdsWithBlockedHistory_IsPortfolioScoped_AndInvisibleToAnotherPortfolio()
+        {
+            var blockedPortfolio = await GivenPersistedPortfolio();
+            var otherPortfolio = await GivenPersistedPortfolio();
+            var feature = await GivenPersistedFeature();
+            var subject = CreateSubject();
+
+            subject.Add(BlockedSpell(feature.Id, blockedPortfolio.Id, Utc(2026, 6, 10, 9), null));
+            await subject.Save();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.GetFeatureIdsWithBlockedHistory(blockedPortfolio.Id, new[] { feature.Id }), Is.EquivalentTo(new[] { feature.Id }));
+                Assert.That(subject.GetFeatureIdsWithBlockedHistory(otherPortfolio.Id, new[] { feature.Id }), Is.Empty);
+            }
+        }
         private static FeatureBlockedTransition BlockedSpell(int featureId, int portfolioId, DateTime enteredAt, DateTime? leftAt)
         {
             return new FeatureBlockedTransition
