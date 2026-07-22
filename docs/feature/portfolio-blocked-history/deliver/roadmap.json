@@ -1,0 +1,228 @@
+{
+  "roadmap": {
+    "project_id": "portfolio-blocked-history",
+    "created_at": "2026-07-21",
+    "total_steps": 10,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Bring Portfolio blocked surfaces to parity with Team (Epic 5074). One capture mechanism (new FeatureBlockedTransition entity, per-portfolio spells, ADR-102/103/104) plus two historic read paths closes nine parity rows. Slice 01 subtracts a live identity-collision defect; slice 02 adds capture + duration; slices 03/04 add historic count + drill-through; slice 05 re-adds demo backfill into the correct keyspace."
+  },
+  "validation": { "status": "approved", "reviewer": "orchestrator-inline", "note": "Design settled: ADR-102/103/104 Accepted 2026-07-20; DISTILL 28 scenarios mapped 1:1 to slices. Roadmap authored inline from settled feature-delta; no open design decisions remain." },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 — Stop demo backfill corrupting team blocked reads",
+      "description": "Withdraw the portfolio WorkItemBlockedTransition writes that write Feature.Id into the team keyspace; keep snapshot backfill. A live-correctness subtraction.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Withdraw portfolio transition writes; keep snapshot backfill",
+          "criteria": [
+            "Demo portfolio refresh writes no WorkItemBlockedTransition rows keyed by Feature.Id",
+            "No WorkItemBlockedTransition row references a non-existent WorkItem (repository invariant)",
+            "Portfolio blockedCountHistory trend still renders backdated snapshots",
+            "Team wip and drill-through at a past date exclude the colliding id"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice01DemoBackfillTeamHistoryScenarios.cs",
+          "scenario_name": "A_team_work_item_sharing_an_id_with_a_blocked_demo_feature_reads_not_blocked_on_a_past_range; The_demo_portfolio_refresh_writes_no_blocked_spells_into_the_team_keyspace; Backdated_portfolio_snapshots_land_even_when_a_demo_feature_id_collides_with_no_work_item; The_demo_portfolio_blocked_trend_still_renders_its_backdated_history",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs"
+          ],
+          "implementation_notes": "Remove only the portfolio-path transition writes (:79-94, :180-197 region); retain snapshotRepository writes so the trend survives (US-01 AC4). Snapshot backfill order must still land backdated snapshots even when the FK branch previously bit. Unskip the 5 Slice01 scenarios; regression-guard scenarios (trend renders) may already be green."
+        },
+        {
+          "id": "01-02",
+          "name": "Add FK-InMemory ci-learnings entry",
+          "criteria": [
+            "docs/ci-learnings.md contains the EF-InMemory-does-not-enforce-FK rule (OQ-5 / UI-1)"
+          ],
+          "test_file": "",
+          "scenario_name": "",
+          "files_to_modify": [ "docs/ci-learnings.md" ],
+          "implementation_notes": "Insert the ready entry from distill/upstream-issues.md UI-1 verbatim (adapt heading date). Docs-only; DES-exempt step — no TDD phases, append after 01-01 is green."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 — Capture feature blocked spells and surface duration",
+      "description": "New repository, FeatureDto per-portfolio routing refactor, events+handlers, capture seam and departure sweep on RefreshFeatures; blockedSince populated on wip. Highest-uncertainty slice.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["01"],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Portfolio-scoped FeatureBlockedTransition repository",
+          "criteria": [
+            "IFeatureBlockedTransitionRepository defined with portfolio-scoped signatures",
+            "FeatureBlockedTransitionRepository over RepositoryBase<T> registered in DI",
+            "Repository open/close/query round-trips against real SQLite"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02FeatureBlockedCaptureScenarios.cs",
+          "scenario_name": "precursor — enables all Slice02 scenarios",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureBlockedTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureBlockedTransitionRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "implementation_notes": "Precursor commit (1). Entity + EF mapping + migration ALREADY exist (commit 4aa326d7). Every signature takes portfolioId — the unscoped WorkItemBlockedTransitionRepository:10/18/26 shape is the defect, not the pattern. Methods needed downstream: GetOpenSpell(portfolioId,featureId), GetBlockedTransitionsAt(portfolioId,date), GetFeatureIdsWithBlockedHistory(portfolioId,featureIds), GetBlockedFeatureIdsAt(portfolioId,date). Base class PortfolioBlockedHistoryAcceptanceTest already references the entity."
+        },
+        {
+          "id": "02-02",
+          "name": "Route FeatureDto blocked through IBlockedItemService",
+          "criteria": [
+            "FeatureDto.cs:65-98 duplicate evaluator deleted; isBlocked/blockedSince are ctor args",
+            "5 build sites in 4 controllers supply the injected verdict",
+            "Scope-free sites use Any-projection: isBlocked=any open spell, blockedSince=MIN(EnteredAt)",
+            "Full backend suite green after refactor"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02FeatureBlockedCaptureScenarios.cs",
+          "scenario_name": "The_scope_free_team_feature_list_still_reports_the_shared_feature_blocked",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs"
+          ],
+          "implementation_notes": "Precursor commit (2) — SEPARATE refactor commit BEFORE behavioural commit (DDD-7 / repo rule). Delete FeatureIsBlocked, IsBlockedByPortfolioRuleSet, private RuleEvaluator<Feature>, FeatureFieldProvider. Build sites: PortfolioMetricsController:111/216/233 (already injects IBlockedItemService:24), TeamMetricsController:113, FeaturesController:97, DeliveryRulesController:58. Fallback if larger than expected: optional ctor params taking precedence, static fallback, deletion as follow-up — record explicitly if taken (ADR-103 §4). This is a pure refactor: behaviour identical until spells exist."
+        },
+        {
+          "id": "02-03",
+          "name": "FeatureBlocked events and capture/close handlers",
+          "criteria": [
+            "FeatureBlocked(FeatureId,PortfolioId,Reason) and FeatureUnblocked(FeatureId,PortfolioId) records added",
+            "Capture handler opens one (feature,portfolio) spell; close handler closes it; idempotent",
+            "Handlers registered; a re-block opens a NEW spell not a reopen"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02FeatureBlockedCaptureScenarios.cs",
+          "scenario_name": "A_feature_that_stops_matching_the_blocked_rules_no_longer_shows_a_duration",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Events/FeatureBlocked.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Events/FeatureUnblocked.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCloseHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "implementation_notes": "Precursor commit (3a). Two distinct record types — NOT a generalised WorkItemBlocked (that would deliver feature ids to WorkItemBlockedTransitionCaptureHandler:26-31 and reproduce the collision at runtime, ADR-104 §2). Dispatcher swallows handler errors — assert on rows, never on absence-of-throw."
+        },
+        {
+          "id": "02-04",
+          "name": "Capture seam and departure sweep in RefreshFeatures",
+          "criteria": [
+            "RefreshFeatures reads pre-update blocked verdict before Update() mutates (SyncedFeature record)",
+            "Edge detection in the post-Save second pass publishes FeatureBlocked/Unblocked; departure sweep closes absent-feature spells, skipped on empty refresh",
+            "wip live read returns non-null blockedSince from the open spell EnteredAt (per-portfolio), no frontend/portfolio branch",
+            "First-observation feature raises no edge (— preserved, US-02 AC4)",
+            "All 5 Slice02 scenarios green through the wip driving port"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02FeatureBlockedCaptureScenarios.cs",
+          "scenario_name": "A_feature_that_becomes_blocked_shows_how_long_it_has_been_blocked; A_feature_that_stops_matching_the_blocked_rules_no_longer_shows_a_duration; A_feature_blocked_on_its_first_observation_shows_no_duration_until_a_baseline_exists; A_feature_blocked_only_by_one_portfolios_rules_does_not_render_blocked_on_the_other_portfolio; The_scope_free_team_feature_list_still_reports_the_shared_feature_blocked",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs"
+          ],
+          "implementation_notes": "MERGED 02-04+02-05 (seam + wip read) so scenarios green end-to-end through the wip driving port (outside-in/port-to-port). Hoist the ReferenceId lookup out of AddOrUpdateFeature (:530) into RefreshFeatures (:485); SyncedFeature twins SyncedItem (:197). Edge detection in the second pass after featureRepository.Save() (:496-501) because feature.Id is 0 until saved. Events publish before PortfolioUpdater:73 raises PortfolioFeaturesRefreshed so spells land before the snapshot. Sweep mirrors RefreshWorkItems:83-87. Per-portfolio keying (ADR-103). OQ-1: parent features NOT in eligible set. wip live branch reads blockedSince from GetOpenSpellsForPortfolio; no frontend change (BaseMetricsView consumes blockedSince, C4/D11). ALSO root-cause the PortfolioTeam double-link the 02-02 crafter flagged (GivenASharedFeature multi-portfolio+team → UNIQUE constraint): decide fixture-seed bug vs real production double-link in RefreshFeatures/Portfolio.GetTeams and fix; then un-Ignore the scope-free guard 02-02 deferred."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 — Honest blocked count on a historic portfolio range",
+      "description": "Add the historic branch to wip gated by asOfDate<today, mirroring TeamMetricsController:130-156 with indexed-lookup discipline. Retire the docs caveat.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["02"],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Historic branch on portfolio wip read",
+          "criteria": [
+            "asOfDate.Date<UtcNow.Date routes to reconstruction; today/future answer live",
+            "openSpellByFeature Dictionary + idsWithBlockedHistory HashSet (no per-item scan, O(n))",
+            "Feature blocked in a past window but clear today reads blocked for that window",
+            "Feature blocked only today reads not blocked on a range closing before its spell",
+            "No-history feature falls back to live rule; history-no-covering-spell reads not blocked"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03HistoricPortfolioBlockedCountScenarios.cs",
+          "scenario_name": "A_feature_blocked_during_a_past_window_but_clear_today_reads_blocked_for_that_window; A_feature_blocked_only_today_reads_not_blocked_on_a_range_that_closed_before_its_spell_began; A_feature_with_no_capture_history_falls_back_to_the_live_rule; A_feature_with_history_but_no_spell_covering_the_date_reads_not_blocked; The_same_spell_shape_answers_identically_on_team_and_portfolio_over_the_same_past_range",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureBlockedTransitionRepository.cs"
+          ],
+          "implementation_notes": "Mirror TeamMetricsController:130-156 exactly incl. indexed-lookup (commit 1d4dcb5a — dictionary/hashset, never linear Contains/FirstOrDefault → O(n²)). Repository signatures all take portfolioId. US-03 AC4: absence of a spell is evidence, not a gap. Parity property test asserts team≡portfolio over same range."
+        },
+        {
+          "id": "03-02",
+          "name": "Remove obsolete portfolio blocked-history docs caveat",
+          "criteria": [
+            "docs/metrics/widgets.md no longer contains the portfolio blocked-history-not-recorded caveat (line ~106)",
+            "Blocked Overview section describes Team and Portfolio identically"
+          ],
+          "test_file": "",
+          "scenario_name": "",
+          "files_to_modify": [ "docs/metrics/widgets.md" ],
+          "implementation_notes": "D6 — removed in the slice that makes it untrue, not deferred to /release. Docs-only DES-exempt step. Per feedback_docs_wait_for_confirmation: ship code first, confirm with user before doc prose update."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 — Drill into a past portfolio blocked bar",
+      "description": "Replace the live-only blockedItemsAtDate stub with portfolio-scoped reconstruction; call the existing reconciliation guard.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["02", "03"],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Reconstruct portfolio blockedItemsAtDate from capture",
+          "criteria": [
+            "Past date returns features whose blocked interval covers that date (reconstructed)",
+            "Latest/today bar keeps the live IsBlocked branch",
+            "Pre-capture date returns the reconstructable set plus completeness note",
+            "ReconcileReconstructedCountWithSnapshot is called and logs divergence",
+            "A departed feature does not appear even on dates inside its spell"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice04PortfolioBlockedDrillThroughScenarios.cs",
+          "scenario_name": "Clicking_a_past_bar_lists_the_features_whose_spell_covered_that_date; The_latest_bar_reconstructs_from_the_live_blocked_set; A_date_before_capture_started_returns_the_reconstructable_set; The_reconstructed_membership_count_reconciles_with_the_captured_snapshot; A_feature_that_left_the_portfolio_does_not_appear_even_on_dates_inside_its_spell",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureBlockedTransitionRepository.cs"
+          ],
+          "implementation_notes": "GetBlockedFeatureIdsAt(portfolioId,date) → intersect with the portfolio's features → WorkItemDto. Live branch untouched (:490-496, US-04 AC2). Call ReconcileReconstructedCountWithSnapshot (:513, already portfolio-parameterised). Delete the obsolete 'reconstruction is impossible for portfolios' comment (:498-500, US-04 AC5). blockedSince=null in drill-through (OQ-3 parity-as-is). Straight mirror of TeamMetricsController:512."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 — Demo portfolio blocked history",
+      "description": "Re-add (correctly) what slice 01 withdrew: backdated feature blocked spells into the feature keyspace via the new repository. Demo-gated, idempotent, StartedDate-capped.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["01", "02", "04"],
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Backfill feature-keyspace spells for demo portfolios",
+          "criteria": [
+            "Backdated spells synthesized into the feature keyspace, never the team keyspace (US-01 invariant holds)",
+            "Demo-gated via SynthesizeStateJourneyForDemo and idempotent across repeats",
+            "No backdated spell predates the feature StartedDate",
+            "A non-demo portfolio gains no backdated spells",
+            "Freshly loaded demo: a past bar drills into a non-empty dialog, a feature shows blocked Nd>0"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05DemoPortfolioBlockedHistoryScenarios.cs",
+          "scenario_name": "A_freshly_refreshed_demo_portfolio_gains_backdated_feature_blocked_spells_in_the_feature_keyspace; The_demo_backfill_writes_nothing_into_the_team_keyspace; Backfilling_twice_leaves_the_feature_keyspace_unchanged; A_demo_portfolio_backfilled_before_the_feature_keyspace_existed_still_gains_feature_spells; No_backdated_spell_predates_the_features_start; A_backdated_bar_on_the_demo_portfolio_chart_drills_into_real_features; A_non_demo_portfolio_gains_no_backdated_spells",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs"
+          ],
+          "implementation_notes": "Write into IFeatureBlockedTransitionRepository (feature keyspace), NOT WorkItemBlockedTransition. Preserve SpreadEnteredDates + StartedDate cap. Snapshot backfill unchanged. Idempotent (skip if spells exist). Keyed (FeatureId,PortfolioId) per ADR-103."
+        }
+      ]
+    }
+  ]
+}
