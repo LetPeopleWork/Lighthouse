@@ -60,6 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var snapshotRepo = new BlockedCountSnapshotRepository(context, Mock.Of<ILogger<BlockedCountSnapshotRepository>>());
             var transitionRepo = new WorkItemBlockedTransitionRepository(context, Mock.Of<ILogger<WorkItemBlockedTransitionRepository>>());
+            var featureTransitionRepo = new FeatureBlockedTransitionRepository(context, Mock.Of<ILogger<FeatureBlockedTransitionRepository>>());
 
             return new DemoBlockedHistoryBackfillHandler(
                 teamMetricsServiceMock.Object,
@@ -69,6 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 connectionRepositoryMock.Object,
                 blockedItemServiceMock.Object,
                 transitionRepo,
+                featureTransitionRepo,
                 snapshotRepo,
                 Mock.Of<ILogger<DemoBlockedHistoryBackfillHandler>>());
         }

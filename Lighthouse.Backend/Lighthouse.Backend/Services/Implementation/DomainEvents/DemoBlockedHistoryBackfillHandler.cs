@@ -32,10 +32,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IRepository<WorkTrackingSystemConnection> connectionRepository;
         private readonly IBlockedItemService blockedItemService;
         private readonly IWorkItemBlockedTransitionRepository transitionRepository;
+        private readonly IFeatureBlockedTransitionRepository featureTransitionRepository;
         private readonly IBlockedCountSnapshotRepository snapshotRepository;
         private readonly ILogger<DemoBlockedHistoryBackfillHandler> logger;
 
-#pragma warning disable S107 // This demo backfill genuinely needs both metrics services, both owner repos, the connection repo (demo gate), the blocked-item service and both the transition + snapshot repos; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as BlockedCountSnapshotRecordingHandler + TeamMetricsController).
+#pragma warning disable S107 // This demo backfill genuinely needs both metrics services, both owner repos, the connection repo (demo gate), the blocked-item service and all three keyspace repos (team transitions, feature transitions and snapshots); grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as BlockedCountSnapshotRecordingHandler + TeamMetricsController).
         public DemoBlockedHistoryBackfillHandler(
             ITeamMetricsService teamMetricsService,
             IPortfolioMetricsService portfolioMetricsService,
@@ -44,6 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<WorkTrackingSystemConnection> connectionRepository,
             IBlockedItemService blockedItemService,
             IWorkItemBlockedTransitionRepository transitionRepository,
+            IFeatureBlockedTransitionRepository featureTransitionRepository,
             IBlockedCountSnapshotRepository snapshotRepository,
             ILogger<DemoBlockedHistoryBackfillHandler> logger)
 #pragma warning restore S107
@@ -55,6 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.connectionRepository = connectionRepository;
             this.blockedItemService = blockedItemService;
             this.transitionRepository = transitionRepository;
+            this.featureTransitionRepository = featureTransitionRepository;
             this.snapshotRepository = snapshotRepository;
             this.logger = logger;
         }
@@ -113,9 +116,27 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             var today = DateTime.Today;
             var todayDate = DateOnly.FromDateTime(today);
 
-            // Idempotency: a backdated snapshot means this demo owner was already backfilled.
-            // GetAllByPredicate (not GetByPredicate/Exists, which both use SingleOrDefault) because
-            // the guard predicate matches the whole history window, not a single row.
+            var entered = SpreadEnteredDates(blockedItems, today);
+
+            // Blocked spells for the portfolio path live in the dedicated FeatureBlockedTransition
+            // keyspace (ADR-102/103, US-05). Its idempotency keys off feature-spell presence, NOT the
+            // snapshot guard below: after slice 01 a demo portfolio already has backdated snapshots but
+            // no feature spells, so a snapshot-gated write would short-circuit and synthesize nothing on
+            // exactly the instances this backfill targets. UpsertBackdatedFeatureSpell is idempotent per
+            // (portfolio, feature), so a second refresh adds no spell.
+            if (ownerType == OwnerType.Portfolio)
+            {
+                foreach (var (featureId, enteredAt) in entered)
+                {
+                    UpsertBackdatedFeatureSpell(ownerId, featureId, enteredAt);
+                }
+
+                await featureTransitionRepository.Save();
+            }
+
+            // Idempotency: a backdated snapshot means this demo owner's snapshot history was already
+            // backfilled. GetAllByPredicate (not GetByPredicate/Exists, which both use SingleOrDefault)
+            // because the guard predicate matches the whole history window, not a single row.
             var alreadyBackfilled = snapshotRepository
                 .GetAllByPredicate(snapshot =>
                     snapshot.OwnerId == ownerId
@@ -133,14 +154,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 "Backfilling demo blocked history for {OwnerType} {OwnerId} ({Count} blocked items)",
                 ownerType, ownerId, blockedItems.Count);
 
-            var entered = SpreadEnteredDates(blockedItems, today);
-
-            // Blocked spells live in the team keyspace only. The portfolio path's item ids are
-            // Feature.Ids, which collide with real WorkItem ids and corrupt the team historic blocked
-            // read (a WorkItemBlockedTransition keyed by a Feature.Id makes a never-blocked work item
-            // read blocked). So only the team path writes WorkItemBlockedTransition rows; the portfolio
-            // path keeps its snapshot backfill and its feature spells are (re)introduced into the
-            // dedicated FeatureBlockedTransition keyspace by a later slice (ADR-102, US-01).
+            // Team blocked spells live in the team keyspace only. The portfolio path's item ids are
+            // Feature.Ids, which collide with real WorkItem ids and would corrupt the team historic
+            // blocked read (a WorkItemBlockedTransition keyed by a Feature.Id makes a never-blocked work
+            // item read blocked). So only the team path writes WorkItemBlockedTransition rows; the
+            // portfolio path's feature spells were written above into FeatureBlockedTransition.
             if (ownerType == OwnerType.Team)
             {
                 foreach (var (workItemId, enteredAt) in entered)
@@ -200,6 +218,25 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             transitionRepository.Add(new WorkItemBlockedTransition
             {
                 WorkItemId = workItemId,
+                EnteredAt = enteredAt,
+                LeftAt = null,
+            });
+        }
+
+        private void UpsertBackdatedFeatureSpell(int portfolioId, int featureId, DateTime enteredAt)
+        {
+            var existingOpen = featureTransitionRepository.GetOpenSpell(portfolioId, featureId);
+
+            if (existingOpen != null)
+            {
+                existingOpen.EnteredAt = enteredAt;
+                return;
+            }
+
+            featureTransitionRepository.Add(new FeatureBlockedTransition
+            {
+                FeatureId = featureId,
+                PortfolioId = portfolioId,
                 EnteredAt = enteredAt,
                 LeftAt = null,
             });

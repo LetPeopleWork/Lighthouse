@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @walking_skeleton @driving_port @us-05 @contract-shape:bounded-change (US-05 AC1)
         [Test]
         [Category("walking_skeleton")]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_freshly_refreshed_demo_portfolio_gains_backdated_feature_blocked_spells_in_the_feature_keyspace()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -35,7 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // with colliding ids so that TODAY's broken handler actually lands rows in the team table —
         // without the collision the enforced FK aborts the write and the scenario would be vacuously green.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task The_demo_backfill_writes_nothing_into_the_team_keyspace()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -51,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @us-05 @contract-shape:bounded-change (US-05 AC2 — idempotent: a second refresh adds nothing.
         // Asserted non-vacuously: spells exist after the first refresh AND the second adds none.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task Backfilling_twice_leaves_the_feature_keyspace_unchanged()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -68,7 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // demo portfolios ALREADY have backdated snapshots but no feature spells — the legacy snapshot-based
         // idempotency guard would short-circuit and synthesize nothing on exactly the instances targeted)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_demo_portfolio_backfilled_before_the_feature_keyspace_existed_still_gains_feature_spells()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -84,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // before it was started; the StartedDate cap survives the retarget. Asserted non-vacuously:
         // at least one spell must exist for the cap check to mean anything.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task No_backdated_spell_predates_the_features_start()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -99,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // bar drills into the demo features blocked that day. Depends on slice 04's port; scaffolded here
         // because the claim belongs to this slice's elevator pitch.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable with slice 05, after slice 04.")]
         public async Task A_backdated_bar_on_the_demo_portfolio_chart_drills_into_real_features()
         {
             var portfolio = GivenADemoPortfolioWhoseRulesBlockAFeatureState();
@@ -114,7 +108,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // safety argument: non-demo portfolios are untouched. Green today; pins the gate against the
         // retarget.)
         [Test]
-        [Ignore("DISTILL scaffold — REGRESSION GUARD (green at authoring, properly skipped). Enable with slice 05.")]
         public async Task A_non_demo_portfolio_gains_no_backdated_spells()
         {
             var portfolio = GivenANonDemoPortfolioWhoseRulesBlockAFeatureState();
