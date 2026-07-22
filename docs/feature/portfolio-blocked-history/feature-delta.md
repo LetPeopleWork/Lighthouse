@@ -884,3 +884,51 @@ Exceeds the 40% minimum per Mandate 1.0.
 - `distill/red-classification.md` — classification protocol (pending `dotnet test` run)
 - `feature-delta.md` — updated with `## Wave: DISTILL / [REF]` sections (scenario inventory, WS strategy, adapter coverage, test placement, driving adapter coverage, pre-requisites, error path coverage, OQ resolutions, scaffolds)
 - 10 test files — scaffolded RED per ADR-025
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Portfolio blocked metrics reached full parity with Teams. Past-range Blocked counts and the Blocked-Over-Time drill-through are now answered from a dedicated portfolio-scoped `FeatureBlockedTransition` keyspace (ADR-102/103) instead of re-evaluating today's rules. Five slices delivered: stop demo backfill corrupting team history (01), capture feature blocked spells (02), honest historic blocked count (03), drill into a past portfolio bar (04), demo portfolio blocked history (05). No frontend production change — the drill-through dialog and chart were already shared and portfolio-wired.
+
+## Wave: DELIVER / [REF] Files modified
+
+Production:
+- `API/PortfolioMetricsController.cs` — past-date `GetBlockedItemsAtDate` reconstruction (04-01) + historic wip read branch (03-01); ADR-104 departed-feature intersection; ADR-099 guard call.
+- `Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs` — portfolio feature-keyspace demo backfill + idempotency reconciliation (05-01).
+- `Services/Implementation/Repositories/FeatureBlockedTransitionRepository.cs` + `IFeatureBlockedTransitionRepository.cs` — portfolio-scoped spell repo (02-01).
+- `Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs` + `FeatureBlockedTransitionCloseHandler.cs`, `Models/Events/FeatureBlocked.cs` + `FeatureUnblocked.cs` — capture/close on domain events (02-03).
+- `API/DTO/FeatureDto.cs`, `Services/Implementation/WorkItems/WorkItemService.cs`, `Program.cs` — blocked routed through `IBlockedItemService`; capture seam wiring.
+- EF migrations `AddFeatureBlockedTransition` (Sqlite + Postgres), expand-only.
+
+Docs: `docs/metrics/widgets.md` (caveat removed, 03-02), `docs/ci-learnings.md` (FK-InMemory entry, 01-02).
+
+Tests: `Slice02…`–`Slice05…` acceptance scenarios enabled; `FeatureBlockedTransitionRepositoryTests`, `FeatureBlockedTransitionHandlerTests`, `PortfolioMetricsControllerTests`, `DemoBlockedHistoryBackfillHandlerTests`.
+
+## Wave: DELIVER / [REF] Scenarios green
+
+Slice 04: 5 of 5. Slice 05: 7 of 7. Earlier slices (02, 03) green. Full backend suite green as of 2026-07-22 (`JiraWriteBackTest` live-Jira flaky excluded, ADO Bug 5542).
+
+## Wave: DELIVER / [REF] DoD check
+
+1. All 5 slices shipped, ACs green — **PASS**.
+2. Parity matrix — Portfolio now reconstructs historic membership like Teams — **PASS**.
+3. `dotnet build` zero-warning; `dotnet test` green — **PASS**.
+4. `pnpm`/Biome — **N/A**, zero FE production files in the feature diff (verified, not skipped).
+5. Stryker.NET ≥80% on changed surface — **PASS**: 100% on dedicated new components (33/33), zero survivors in changed shared-file logic. Frontend mutation N/A (no FE change).
+6. EF migrations via `CreateMigration`, expand-only, both providers — **PASS**.
+7. `widgets.md` caveat removed — **PASS** (03-02).
+8. Per-feature screenshots — **DEFERRED to user**: portfolio surfaces now populate; live `@screenshot` regen not auto-run.
+9. SonarCloud no new issues — pending CI on push.
+10. ADO #5524 transition + Release Notes tag — **DEFERRED to user**.
+
+## Wave: DELIVER / [REF] Quality gates
+
+- Refactor L1-L6: none warranted (mirrors sanctioned team shapes).
+- Adversarial review: no confirmed defects; tests verified honest.
+- Mutation: 100% dedicated new components; changed shared-file logic survivor-free.
+- DES integrity: all 10 steps complete traces.
+
+## Wave: DELIVER / [REF] Pre-requisites
+
+Epic 5074 + Story 5508 (team-side blocked history), the domain-event dispatcher, and the DISTILL acceptance scaffolds (`Slice02…`–`Slice05…`) this implementation greened.
