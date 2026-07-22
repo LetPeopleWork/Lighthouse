@@ -112,8 +112,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var openSpells = subject.GetOpenSpellsForPortfolio(portfolio.Id);
 
             var expectedOpenFeatureIds = new[] { blockedFeature.Id };
-            Assert.That(openSpells.Keys, Is.EquivalentTo(expectedOpenFeatureIds));
-            Assert.That(openSpells[blockedFeature.Id].EnteredAt, Is.EqualTo(Utc(2026, 6, 10, 9)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(openSpells.Keys, Is.EquivalentTo(expectedOpenFeatureIds));
+                Assert.That(openSpells[blockedFeature.Id].EnteredAt, Is.EqualTo(Utc(2026, 6, 10, 9)));
+            }
         }
 
         [Test]
