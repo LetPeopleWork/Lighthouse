@@ -527,12 +527,22 @@ namespace Lighthouse.Backend.API
                         .Select(f => new WorkItemDto(f, isBlocked: true, [], f.CurrentStateEnteredAt));
                 }
 
-                // Historical membership cannot be reconstructed for a Portfolio: WorkItemBlockedTransition
-                // captures team WorkItems only (features never emit WorkItemBlocked), and Feature.Id lives in
-                // a different id space than WorkItem.Id — joining them would return the wrong features. So the
-                // past-date set is empty; the reconciliation guard logs the gap and the client surfaces a
-                // capture-gap note against the bar's recorded count.
-                var reconstructed = new List<WorkItemDto>();
+                // Reconstruct past membership READ-ONLY from feature-keyspace spell intervals (never
+                // persisted; upholds the blockedMembershipAtDate source_of_truth). GetBlockedTransitionsAt
+                // encodes the half-open overlap EnteredAt < startOfNextDate && (LeftAt == null || LeftAt >= startOfDate).
+                var blockedFeatureIds = featureBlockedTransitionRepository
+                    .GetBlockedTransitionsAt(portfolio.Id, targetDate)
+                    .Select(transition => transition.FeatureId)
+                    .ToHashSet();
+
+                // Read-side defensive intersection (ADR-104): a feature that has left the portfolio is
+                // excluded even on dates inside its spell, mirroring the team drill-through shape.
+                var reconstructed = portfolioMetricsService
+                    .GetBlockedEligibleFeaturesForPortfolio(portfolio)
+                    .Where(feature => blockedFeatureIds.Contains(feature.Id))
+                    .Select(feature => new WorkItemDto(feature, isBlocked: true, [], feature.CurrentStateEnteredAt))
+                    .ToList();
+
                 ReconcileReconstructedCountWithSnapshot(portfolioId, OwnerType.Portfolio, targetDate, reconstructed.Count);
 
                 return reconstructed;

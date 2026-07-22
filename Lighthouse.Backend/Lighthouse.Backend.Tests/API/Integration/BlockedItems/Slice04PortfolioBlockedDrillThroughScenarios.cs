@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @walking_skeleton @driving_port @us-04 @contract-shape:pure-function (US-04 AC1)
         [Test]
         [Category("walking_skeleton")]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task Clicking_a_past_bar_lists_the_features_whose_spell_covered_that_date()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @driving_port @us-04 @contract-shape:pure-function (US-04 AC2 — latest/today bar reconstructs
         // from the live rule set; covers the slice-08 carried finding: drive a TODAY-dated request)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task The_latest_bar_reconstructs_from_the_live_blocked_set()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -51,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // @edge @us-04 @contract-shape:pure-function (US-04 AC3 — pre-capture date: honest partial set,
         // never a fabricated full history; the completeness note copy is a FE concern)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_date_before_capture_started_returns_the_reconstructable_set()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -66,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // reconstructed membership count equals the captured snapshot for the same date, so the guard
         // has nothing to log. A divergence here means capture is genuinely broken.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task The_reconstructed_membership_count_reconciles_with_the_captured_snapshot()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
@@ -84,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         // the drill-through even for dates inside its spell. The sweep that closes its spell row is a
         // DELIVER inner-loop pin; see distill/wave-decisions.md.)
         [Test]
-        [Ignore("DISTILL scaffold — RED pending DELIVER (ADR-025). Enable one at a time.")]
         public async Task A_feature_that_left_the_portfolio_does_not_appear_even_on_dates_inside_its_spell()
         {
             var portfolio = GivenAPortfolioWhoseRulesBlockAFeatureState();
