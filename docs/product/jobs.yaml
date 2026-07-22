@@ -27,6 +27,7 @@ feature_context:
   - epic-5074-blocked-items
   - widget-loose-ends
   - flow-overview-named-cycle-time
+  - epic-5427-percentiles-over-time
 
 jobs:
   - id: job-rbac-bootstrap
@@ -3356,3 +3357,117 @@ jobs:
         answer historic ranges from today's state with no indication. Gap: 4 — the largest open gap in
         the blocked family, and the only one where Team and Portfolio give different answers to the same
         question.
+
+  - id: job-flow-coach-see-predictability-trend
+    title: See whether flow-metric predictability is firming up or drifting over time
+    persona: flow-coach
+    feature_context: epic-5427-percentiles-over-time
+    created: 2026-07-22
+    note: >
+      Epic 5427 "Show Percentiles over Time Charts" (Community/Productboard). Cycle-time percentiles
+      (`percentiles` widget), work-item-age percentiles (`workItemAgePercentiles`) and the PBC widgets are
+      point-in-time today; their only "trend" is `previous-period` (a single up/down arrow in
+      categoryMetadata.ts). No daily percentile/PBC persistence exists (verified: only DeliveryMetricSnapshot
+      and BlockedCountSnapshot DbSets). This is the flow-metric sibling of job-forecast-delivery-trend-over-time:
+      a forward-only daily snapshot (latest-write-wins per day, recorded on a metrics-refresh domain event)
+      feeding dedicated over-time charts. Widget decision (D1): one combined "Percentiles Over Time" widget
+      with a toggle row [WIA | CT-30 | CT-60 | CT-90]; PBC-over-time is a separate widget (see the
+      delivery-lead job). Free-tier, ungated (D3).
+    job_story: >
+      When I run a periodic flow or ops review for my team,
+      I want to see how our cycle-time and work-item-age percentiles (50/70/85/95) have moved day by day over
+      the last N days — not just today's four numbers,
+      so I can tell whether our predictability is firming up or drifting, and show that trend rather than
+      assert it from memory.
+    dimensions:
+      functional: >
+        A combined "Percentiles Over Time" widget in the Predictability category (team and portfolio) plots
+        50/70/85/95 as dated lines using the existing red->green percentile ramp. A toggle switches between
+        Work Item Age and Cycle Time at 30/60/90-day lookback horizons; each day's value is read from a
+        persisted daily snapshot (as-of-that-day), not recomputed live for history. Forward-only: on a fresh
+        team the chart reads "builds forward from today — no snapshots recorded yet" rather than a broken axis.
+      emotional: >
+        Move from eyeballing four numbers and trusting a hunch that "things feel tighter lately" to reading
+        the shape of the trend — confidence that a process change actually moved the percentiles, grounded in
+        the line rather than in memory.
+      social: >
+        Be the coach who opens the review with "here's how our cycle-time spread has tightened over six weeks"
+        instead of "I think we've improved" — a trend leadership and the team can see and act on.
+    forces:
+      push: >
+        Today the widgets show only the current window; to answer "are we getting more predictable?" the coach
+        screenshots the numbers week over week or rebuilds a spreadsheet, losing the in-tool advantage.
+      pull: >
+        Open the widget, toggle WIA or a CT horizon, read the trend off dated lines that are already coloured
+        the way the point-in-time percentiles are — no export, no spreadsheet.
+      anxiety: >
+        Will the chart look broken when it's empty just because recording just started? (Mitigated: forward-only
+        empty state is explicit and honest, same contract as the delivery-metrics forecast trend.)
+        Will switching horizons trigger a slow recompute of history? (No: each horizon is a pre-persisted
+        series; the toggle just re-plots.)
+      habit: >
+        Coaches read today's percentiles and judge trend from memory or a side spreadsheet; the widget asks
+        them to read trend in-tool. Eased because the chart reuses the percentile colours and lookback horizons
+        they already know from the Aging chart's WIA<->CT toggle.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — "are we getting more predictable?" is a recurring, high-value flow-review question and
+        the spine of this epic. Current satisfaction: 1 — the metrics are snapshot-only; trend means manual
+        screenshotting or a spreadsheet. Gap: 3 — a genuine missing capability, kept tractable because the
+        per-day computation already exists and only a forward-only snapshot + chart is new (reuses the proven
+        DeliveryMetricSnapshot pattern).
+
+  - id: job-delivery-lead-see-process-stability-trend
+    title: See whether a metric's process behaviour limits are shifting over time
+    persona: delivery-lead-rte
+    feature_context: epic-5427-percentiles-over-time
+    created: 2026-07-22
+    note: >
+      Epic 5427, PBC branch. The Predictability category already has point-in-time PBC widgets
+      (throughputPbc, arrivalsPbc, wipPbc, totalWorkItemAgePbc, cycleTimePbc, featureSizePbc) each showing one
+      current set of natural process limits (UNPL/Average/LNPL) via ProcessBehaviourChart. This job is the
+      over-time view of those limits: a separate "PBC Over Time" widget (D1) with a metric-type toggle, fed by
+      the same forward-only daily-snapshot pipeline as the percentile job. Shipped after the percentile slices
+      (Throughput first, then the remaining types). Feature Size stays portfolio-only (D8). Free-tier (D3).
+    job_story: >
+      When I review a team's or portfolio's process health,
+      I want to see how a metric's PBC natural process limits (UNPL, Average, LNPL) have moved day by day,
+      so I can tell a genuine process shift over time from a single out-of-limit point, and pick which
+      behaviour's limits are actually drifting.
+    dimensions:
+      functional: >
+        A separate "PBC Over Time" widget in the Predictability category plots UNPL/Average/LNPL as three dated
+        lines from a persisted daily NPL snapshot, with a metric-type toggle across Throughput, WIA, WIP,
+        Cycle Time, Arrivals and (portfolio-only) Feature Size. Styling matches the point-in-time PBC widgets;
+        forward-only empty state per D6.
+      emotional: >
+        Move from reacting to whichever PBC happens to show a special-cause point today toward reading whether
+        the limits themselves have shifted — calmer, systemic judgement instead of point-in-time alarm.
+      social: >
+        Be the delivery lead who says "the throughput limits have genuinely widened since the reorg" with the
+        limit-history line to back it, rather than debating whether last week's point was noise.
+    forces:
+      push: >
+        The point-in-time PBC shows one set of limits; to see when the limits moved, the lead compares
+        screenshots across reviews or trusts recollection.
+      pull: >
+        Open "PBC Over Time", toggle the metric, read limit movement off three dated lines — the shift is
+        visible, not remembered.
+      anxiety: >
+        Will flat limit lines look like a bug? (No — stable limits SHOULD be flat; that is the honest reading
+        of a stable process.)
+      habit: >
+        Leads read a single PBC and infer stability from the current chart; the over-time widget asks them to
+        read limit movement directly. Eased by reusing the existing PBC visual language.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — process-limit drift is a real systemic-review question but lower-frequency and more
+        specialist than the coach's percentile-trend spine. Current satisfaction: 1 — no over-time NPL view
+        exists. Gap: 2 — valuable and served entirely by reusing the percentile job's snapshot pipeline on a
+        second widget, hence a smaller build than the lead job.

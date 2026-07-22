@@ -1,0 +1,124 @@
+schema_version: 1
+feature_id: epic-5427-percentiles-over-time
+updated: 2026-07-22
+note: >
+  Epic 5427 "Show Percentiles over Time Charts" (Community/Productboard). The flow-metric sibling of
+  delivery-metrics' over-time trend: cycle-time percentiles, work-item-age percentiles and PBC natural
+  process limits are point-in-time today (their only "trend" is the previous-period arrow in
+  categoryMetadata.ts; no daily percentile/PBC persistence exists — verified: only DeliveryMetricSnapshot
+  and BlockedCountSnapshot DbSets). This feature adds a forward-only daily snapshot (latest-write-wins per
+  calendar day, recorded on a metrics-refresh domain event, reusing the DeliveryMetricSnapshot pattern)
+  feeding two dedicated over-time widgets in the Predictability category. D1: ONE combined "Percentiles
+  Over Time" widget with a toggle row [WIA | CT-30 | CT-60 | CT-90]; PBC-over-time is a SEPARATE widget
+  with a metric-type toggle. Free-tier, ungated (D3). Walking skeleton is Cycle Time percentiles (D2) —
+  proves the pipeline, the 30/60/90 horizon dimension and the combined-widget shell together. Charts are
+  forward-only and say so honestly when empty (D6). See feature-delta.md for the full DISCUSS record.
+
+journeys:
+
+  - name: read-the-percentile-predictability-trend
+    goal: >
+      A flow coach opens the "Percentiles Over Time" widget in a team's Predictability tab during a flow
+      review, toggles between Work Item Age and a 30/60/90-day Cycle Time horizon, reads how the
+      50/70/85/95 percentiles have moved day by day, and judges whether predictability is firming up or
+      drifting — showing the trend rather than asserting it from memory.
+    persona: "flow-coach (also: product-owner secondary — consumes the same charts in reviews, no bespoke view)"
+
+    emotional_arc:
+      start: Searching — "today's four percentile numbers look fine, but are we actually getting more
+        predictable, or does it just feel that way?"
+      middle: Focused — "the 85th-percentile cycle-time line has come down steadily since we split the
+        big stories; the spread between 50th and 95th is narrowing."
+      end: Confident — "I can show the team our cycle-time spread has tightened over six weeks — the line
+        is the evidence, no spreadsheet."
+
+    steps:
+      - id: step-open-percentiles-over-time
+        action: >
+          Flow coach opens Team → Metrics → Predictability and the "Percentiles Over Time" widget, with
+          the default CT-30 toggle selected
+        expected_output: >
+          The widget renders 50/70/85/95 cycle-time percentile lines (red→green ramp), one point per
+          calendar day over the selected range, read from the persisted daily snapshot (as-of-that-day),
+          not recomputed live. On a team with no snapshots yet it shows the forward-only empty state
+          "builds forward from today — no snapshots recorded yet", never a broken axis.
+        emotional_state: Curious — "let's see how the percentiles have moved"
+        shared_artifacts:
+          - percentile-over-time snapshot store (new; forward-recorded on a metrics-refresh domain event,
+            latest-write-wins per (team, metric, horizon, day); CT horizons 30/60/90 in Slice 1, WIA in Slice 2)
+          - percentilesOverTime series (new; from the team/portfolio metrics series endpoint)
+
+      - id: step-toggle-horizon-and-metric
+        action: >
+          Coach switches between CT-30/60/90 and the WIA tab to compare age vs cycle-time trends
+        expected_output: >
+          Each toggle re-plots from an already-persisted series (no backend recompute of history). WIA has
+          no horizon dimension (age is as-of-today); CT exposes 30/60/90. Colouring and empty-state behave
+          identically across tabs.
+        emotional_state: Comparing — "age is climbing even though finished-item cycle time looks stable"
+        shared_artifacts:
+          - rendered percentile geometry (50/70/85/95 lines per selected tab/horizon)
+
+      - id: step-tell-the-trend
+        action: >
+          Coach frames the flow-review narrative from the trend
+        expected_output: >
+          "Our cycle-time spread has tightened over six weeks" — grounded in the line rather than memory or
+          a side spreadsheet.
+        emotional_state: Confident — "the trend tells the story"
+        shared_artifacts: []
+
+  - name: read-the-process-limit-stability-trend
+    goal: >
+      A delivery lead opens the separate "PBC Over Time" widget, toggles across metric types
+      (Throughput first; then WIA/WIP/CT/Arrivals/Feature-Size), reads how each PBC's UNPL/Average/LNPL
+      have moved day by day, and tells a genuine process shift from a single out-of-limit point.
+    persona: "delivery-lead-rte"
+
+    emotional_arc:
+      start: Alert — "a throughput point popped above the limit last week — is the process changing or is
+        that just noise?"
+      middle: Assessing — "the limit lines themselves have widened since the reorg, not just one point."
+      end: Grounded — "I can say the throughput limits genuinely shifted, with the limit history to back it."
+
+    steps:
+      - id: step-open-pbc-over-time
+        action: >
+          Delivery lead opens Predictability → "PBC Over Time" (Throughput selected)
+        expected_output: >
+          UNPL, Average and LNPL render as three dated lines from a persisted daily NPL snapshot, styled
+          like the existing point-in-time PBC widgets; forward-only empty state when no snapshots exist.
+        emotional_state: Investigating — "have the limits actually moved?"
+        shared_artifacts:
+          - pbc-npl-over-time snapshot store (new; same forward-recording pipeline as the percentile store)
+          - pbcOverTime series (new; NPL-by-type from the metrics series endpoint)
+
+      - id: step-toggle-pbc-type
+        action: >
+          Lead toggles across Throughput, WIA, WIP, Cycle Time, Arrivals and (portfolio-only) Feature Size
+        expected_output: >
+          Each type reads its own persisted NPL series; Feature Size only appears at portfolio scope.
+          Toggling a type never alters the Throughput behaviour (regression-guarded).
+        emotional_state: Scanning — "which behaviour's limits are actually drifting?"
+        shared_artifacts:
+          - rendered NPL geometry (UNPL/Average/LNPL per selected type)
+
+    error_paths_summary:
+      - Fresh team / no snapshots: every over-time chart renders the forward-only empty state
+        "builds forward from today — no snapshots recorded yet" (D6); no crash, no broken axis.
+      - Same-day double refresh: the recording handler is idempotent per (team, metric, horizon, day) —
+        latest-write-wins — so at most one row per day; no duplicate points.
+      - Handler failure on the refresh path: recording is resilient and does not break the refresh (recall
+        the domain-event dispatcher swallows handler errors — do not rely on it surfacing; make recording
+        observable).
+      - Stable process: flat UNPL/Average/LNPL lines are the honest reading of a stable process, not a bug.
+      - Demo/screenshot environments: a demo backfill handler backdates snapshots so charts show populated
+        trends (precedent: DemoBlockedHistoryBackfillHandler); never applied to real tenants.
+
+    success_signal:
+      - Flow coaches read the percentile trend in-tool during reviews instead of screenshotting numbers
+        week over week or rebuilding a spreadsheet.
+      - Exactly one snapshot row per (team, metric, horizon, calendar day) under repeated same-day refresh
+        (backend integration assertion — measurable today).
+      - Forward-only timing caveat: charts are empty at launch and become useful only as snapshots accrue
+        (order of weeks); qualitative KPIs measured via dogfood + interviews until Epic 5015 telemetry.
