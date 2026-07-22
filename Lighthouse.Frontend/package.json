@@ -66,10 +66,5 @@
 		"vite": "^8.1.5",
 		"vitest": "^4.1.0",
 		"vitest-sonar-reporter": "^3.0.0"
-	},
-	"pnpm": {
-		"overrides": {
-			"immutable@>=5.0.0-beta.1 <5.1.8": "^5.1.8"
-		}
 	}
 }
