@@ -42,6 +42,49 @@ dotnet-nunit:NUnit2056 ::: cs ::: Assert\.Multiple\( ::: Use `using (Assert.Ente
 dotnet-nunit:NUnit2010 ::: cs ::: Assert\.That\(.*\.Equals\( ::: Use `Is.Not.EqualTo` constraint, not direct `.Equals()` inside `Assert.That` (NUnit2010).
 <!-- LEDGER-CHECKS:END -->
 
+## Preflight rules — apply by habit before every edit (non-greppable dedup)
+
+These are the recurring rules the pre-commit grep **cannot** catch (types, structure, test
+patterns). The dated entries below are the evidence; this list is the deduplicated checklist to
+pre-apply. `/clean-ci` should fold each new *non-greppable* recurrence up into here, not only
+append a dated entry — the 50+ recurrence markers below prove the append-only log alone does not
+get re-applied.
+
+**Backend / Sonar (silent in the local `dotnet build` — only the Sonar `new_violations=0` gate fails):**
+- **CA1859** — a NEW non-public method/parameter that only builds or consumes `List<T>` / `.ToList()` must be typed as the CONCRETE `List<T>`/`T[]`, never `IReadOnlyList<T>`, an interface, or an abstract base. Applies to **parameters** as well as return types. (6x recurrence — see 2026-06-09.)
+- **CA1869** — cache `JsonSerializerOptions` in a `static readonly` field; never `new` one per call.
+- **CA1861** — never pass an inline `new[] {...}` to a repeatedly-called method (NUnit assertions); hoist to a `static readonly` field. *Editing* a line that already has one pulls it into new-code — hoist opportunistically. (Greppable, but re-check every test file touched during mutation-hardening.)
+- **S6964** — value-type properties on `[FromBody]` DTOs must be nullable / opt-in, or binding silently defaults them. (3x recurrence.)
+- **S107** — keep ctor/method params <= 7; a new field that pushes a 6-param signature to 7 trips it — group related params into a record/DTO. A `#pragma warning disable S107` only works wrapping the declaration that triggers it.
+- **S2139** — don't log-and-rethrow when a higher layer (or the event dispatcher, which already logs-and-swallows) logs.
+- **S3776 / S2004** — keep useEffect/resume flows and ternary-heavy functions under cognitive-complexity 15; extract helpers before adding a third branch / axis-mode.
+- **SYSLIB1045** — no `new Regex(...)`; use `[GeneratedRegex]` or avoid regex.
+
+**Frontend / Sonar:**
+- Prefer `globalThis` over `window` in component code (S7764).
+- Pass a single-arg pure function directly — `.map(Fn)`, not `.map((x) => Fn(x))` (S7770).
+- Zod: use `.nullable()` (not `.optional()`) for backend `T?` fields that serialise to JSON `null`; `z.coerce.date()` turns `null` into epoch 1970 — guard nullable date fields.
+
+**EF migrations:**
+- A new property on a **persisted** model needs a migration — InMemory tests never catch the gap. Generate it with the `CreateMigration` script (all providers), never `dotnet ef migrations add`.
+- No non-default sentinel (`= true`) on a bool column — it makes the model-differ non-idempotent.
+
+**Playwright / E2E POM (recurring strict-mode + locator traps):**
+- Reusing a shared `data-testid` — or `getByRole("tooltip")` — on a page that already hosts that component matches 2 elements and breaks the PRE-EXISTING page-global POM. Scope the locator to its container.
+- MUI strips `data-testid` from **icons** in production builds — icon-based locators silently match nothing.
+- Dropping/altering a user-visible label prefix silently kills a sibling spec's POM locator — grep specs for the label before changing it.
+- `getByRole({ name })` / `getByText` are case-insensitive substring matches by default.
+- POMs that navigate via a redirecting route must wait for the SETTLED URL.
+- Never commit a Playwright spec/POM you have not run against a live Lighthouse.
+
+**Integration tests:**
+- Live external-API tests (GitHub = 60 req/hr/IP, connectors) must be path-scoped or they flake the gate.
+- `IntegrationTestBase` is `[NonParallelizable]`; EF InMemory does not enforce FKs — FK-dependent tests must run on SQLite.
+
+**Process / when violations surface:**
+- Sonar only re-scans **PRs + the Nightly**, NOT pushes to `main`. A green `main` push can carry new-code violations that only fire on the next PR's diff — including unpushed feature commits that entered "new code".
+- Mutation-driven test-strengthening is exactly when inline expected-arrays (CA1861) and assert-pairs (NUnit2045/2046) sneak in — re-grep every touched test file before committing.
+
 ## Formatting & linting
 
 ### 2026-06-18 — MUI bump fails Vitest with `ERR_UNSUPPORTED_DIR_IMPORT` even though `pnpm build` is green
