@@ -612,3 +612,67 @@ outcomes:
     alerting:
       - condition: "Chart.yaml version already present in index, OR appVersion != values.image.tag"
         action: "release/publish step fails (red); no overwrite"
+
+  # --- epic-5427-percentiles-over-time (DEVOPS wave, appended 2026-07-23) ---
+
+  - id: OUT-5427-recording-idempotency
+    feature: epic-5427-percentiles-over-time
+    title: Exactly one snapshot row per (owner, metric, horizon, calendar day)
+    target: "Under repeated same-day refresh, row count per natural key == 1 (no duplicates, latest-write-wins)"
+    measurement_scope: vendor_demo_only   # backend integration test in CI is the observable population
+    measured_by: >
+      Backend integration test (NUnit + EF InMemory) asserting that N same-day refreshes leave exactly one
+      PercentilesOverTimeSnapshot / ProcessBehaviorSnapshot row per (OwnerId, OwnerType, MetricType, Horizon?, RecordedAt).
+    measurement_window: every CI run (ci_verifysqlite + ci_verifypostgres)
+    rationale: "US-02 AC2 / DDD-5. Idempotency is structural (upsert on the unique natural-key index) — the test guards the invariant, incl. the Postgres provider's real unique constraint."
+    alerting:
+      - condition: "same-day double-refresh test asserts row count != 1"
+        action: "CI fails (red)"
+
+  - id: OUT-5427-recording-failure-isolation
+    feature: epic-5427-percentiles-over-time
+    title: Recording failure never breaks the metrics refresh path and is observable
+    target: "A forced recording-handler exception leaves refresh green AND emits a structured recording-failed log event"
+    measurement_scope: per_instance   # structured Serilog event in the operator's own logs
+    measured_by: >
+      Backend AT forcing a handler exception, asserting: (a) the refresh completes green, (b) a structured
+      Serilog recording-failed event is emitted. Per_instance: operators see the event in their own logs.
+    measurement_window: every CI run + per_instance (operator logs)
+    rationale: "US-02 AC4 / DDD-6. The Epic 5121 dispatcher SWALLOWS handler errors, so the handler owns its own observability — it must not rely on the dispatcher surfacing the failure."
+    alerting:
+      - condition: "recording-failure AT shows refresh broken OR no structured event emitted"
+        action: "CI fails (red)"
+
+  - id: OUT-5427-empty-state-honesty
+    feature: epic-5427-percentiles-over-time
+    title: Zero-snapshot owner renders the honest empty-state, never a broken axis
+    target: "0 over-time charts render a broken/empty axis on a fresh (zero-snapshot) team or portfolio"
+    measurement_scope: vendor_demo_only   # E2E on a zero-snapshot owner is the observable population
+    measured_by: >
+      Playwright E2E on a zero-snapshot owner asserting the D6 empty-state copy ("builds forward from
+      today — no snapshots recorded yet") for both widgets, never a broken chart.
+    measurement_window: every ci_e2e run
+    rationale: "US-01 AC4 / D6. Forward-only recording means fresh owners have no history; the empty-state must be honest, not broken."
+    alerting:
+      - condition: "zero-snapshot E2E finds a rendered-but-empty/broken axis instead of the empty-state copy"
+        action: "CI fails (red)"
+
+  - id: OUT-5427-pipeline-reuse
+    feature: epic-5427-percentiles-over-time
+    title: One shared recording pipeline drives CT + WIA + PBC series (no per-metric bespoke recorder)
+    target: ">= 2 percentile families (CT, WIA) + PBC share one recording pipeline / snapshot-table family; 0 bespoke per-metric recorders"
+    measurement_scope: vendor_demo_only   # code review + AT
+    measured_by: "Code review + AT: the two recording handlers on the shared refresh events drive all series; no third bespoke recorder is introduced per metric type."
+    measurement_window: per-feature (review) + every CI run (AT)
+    rationale: "DISCUSS KPI 'pipeline reuse'. Guards the ADR-106/107 reuse decision against per-metric sprawl."
+    alerting: []
+
+  - id: OUT-5427-mutation-kill-rate
+    feature: epic-5427-percentiles-over-time
+    title: Mutation kill rate >= 80% on new snapshot/recording/series/widget code
+    target: ">= 80% backend (Stryker.NET) + >= 80% frontend (Stryker) on the new code"
+    measurement_scope: vendor_demo_only
+    measured_by: "Stryker.NET (backend) + Stryker (frontend) per-feature reports scoped to the new files."
+    measurement_window: per-feature (CLAUDE.md gate)
+    rationale: "DISCUSS KPI 'mutation kill rate' + project per-feature mutation mandate. Recording idempotency, failure isolation, empty-series, and horizon-toggle logic are the high-value mutation targets."
+    alerting: []

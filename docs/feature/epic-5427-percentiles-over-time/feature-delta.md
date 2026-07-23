@@ -2,7 +2,7 @@
 
 **Epic**: ADO 5427 — "Show Percentiles over Time Charts" (Community / Productboard)
 **Feature id**: `epic-5427-percentiles-over-time`
-**Wave**: DISCUSS (complete) → DESIGN next
+**Wave**: DEVOPS (complete) → DISTILL next
 **Density**: lean (Tier-1 [REF] only; expansions on demand via `--expand <id>`)
 
 ---
@@ -234,3 +234,207 @@ Decision enabled: decide which behaviour's process limits are actually drifting,
 KPIs only). Key DESIGN questions: snapshot table shape (one wide table with a metric+horizon+type
 discriminator vs per-family tables), the recording handler's placement on the refresh path, and the
 series HTTP contract shared by both widgets.
+
+---
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision | Verdict | ADR |
+|---|---|---|---|
+| DDD-1 | Snapshot table shape | **Hybrid 2-table**: `PercentilesOverTimeSnapshot` (CT+WIA, `MetricType` + nullable `Horizon`, `P50/70/85/95`) + `ProcessBehaviorSnapshot` (`MetricType`, `Unpl/Average/Lnpl`). Not one wide discriminator, not per-family 3-table. | [ADR-106](../../product/architecture/adr-106-percentiles-over-time-snapshot-table-shape.md) |
+| DDD-2 | Recording placement | **New handlers on the existing refresh events** (`TeamDataRefreshed` + `PortfolioFeaturesRefreshed`), mirroring `BlockedCountSnapshotRecordingHandler`. Idempotent-per-day upsert; self-try/catch + failure log (dispatcher swallows errors). Not inline, not scheduled. | [ADR-107](../../product/architecture/adr-107-percentiles-recording-handler-on-refresh-events.md) |
+| DDD-3 | Series HTTP contract | **Two typed read endpoints** on `MetricsController` (percentiles-over-time?horizon; process-behavior-over-time?type). Not one polymorphic envelope. | [ADR-108](../../product/architecture/adr-108-percentiles-over-time-series-http-contract.md) |
+| DDD-4 | Demo data | **`DemoPercentilesBackfillHandler`** backdates snapshots for demo connections only; real tenants stay forward-only. Mirrors `DemoBlockedHistoryBackfillHandler`. | [ADR-109](../../product/architecture/adr-109-demo-percentiles-backfill-handler.md) |
+| DDD-5 | Idempotency mechanism | Upsert on the natural-key predicate `(OwnerId, OwnerType, MetricType, Horizon?, RecordedAt=today)`; update-in-place on same-day re-run → exactly one row per key per day (US-02 AC2). | ADR-106/107 |
+| DDD-6 | Failure isolation | Each recording handler wraps its own work in try/catch + emits a structured recording-failed signal; refresh path structurally protected by the dispatcher's error-swallowing (do not rely on it surfacing). | ADR-107 |
+| DDD-7 | Paradigm | OOP, modular monolith + ports-and-adapters — unchanged (project CLAUDE.md). No paradigm write needed. | ADR-027 |
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Path (new/extend) | Change |
+|---|---|---|
+| `PercentilesOverTimeSnapshot` (entity) | `Lighthouse.Backend/.../Models/` | CREATE NEW — `OwnerId/OwnerType/RecordedAt/MetricType/Horizon?/P50..P95` |
+| `ProcessBehaviorSnapshot` (entity) | `Lighthouse.Backend/.../Models/` | CREATE NEW — `OwnerId/OwnerType/RecordedAt/MetricType/Unpl/Average/Lnpl` |
+| `IPercentilesOverTimeSnapshotRepository` + impl | `.../Services/{Interfaces,Implementation}/Repositories/` | CREATE NEW — thin `RepositoryBase<T>` (BlockedCount idiom) |
+| `IProcessBehaviorSnapshotRepository` + impl | same | CREATE NEW — thin `RepositoryBase<T>` |
+| `PercentilesOverTimeRecordingHandler` | `.../Services/Implementation/DomainEvents/` | CREATE NEW — `IDomainEventHandler<TeamDataRefreshed>,<PortfolioFeaturesRefreshed>` |
+| `ProcessBehaviorRecordingHandler` | same | CREATE NEW — same two interfaces |
+| `DemoPercentilesBackfillHandler` | same | CREATE NEW — demo-gated backdater |
+| `IPercentilesOverTimeSeriesQuery` / `IProcessBehaviorSeriesQuery` (read ports) | `.../Services/{Interfaces,Implementation}/` | CREATE NEW — read-only query ports |
+| `MetricsController` (team + portfolio) | `.../Controllers/` | EXTEND — +2 GET actions each |
+| `ITeamMetricsService` / `IPortfolioMetricsService` | `.../Services/Interfaces/` | EXTEND — expose CT/WIA percentile + PBC as-of-today reads for the handlers |
+| EF migration | via `CreateMigration` script (all providers) | EXTEND process — additive, 2 new tables |
+| Percentiles-Over-Time widget (combined CT/WIA toggle) | `Lighthouse.Frontend/src/pages/Common/MetricsView/` | CREATE NEW — reuses `IPercentileValue[]`, D7 ramp, empty-state pattern |
+| PBC-Over-Time widget (metric-type toggle) | same | CREATE NEW — reuses UNPL/Avg/LNPL styling |
+| `categoryMetadata.ts` (Predictability) | `.../MetricsView/` | EXTEND — register 2 widgets, team+portfolio (D8) |
+
+## Wave: DESIGN / [REF] Driving Ports (inbound)
+
+- **HTTP (read)**: `GET .../metrics/percentiles-over-time?horizon={30|60|90}` → `{recordedAt, metricType, p50, p70, p85, p95}[]`; `GET .../metrics/process-behavior-over-time?type={Throughput|WorkItemAge|Wip|CycleTime|Arrivals|FeatureSize}` → `{recordedAt, unpl, average, lnpl}[]`. On `MetricsController` (team + portfolio); Feature-Size portfolio-only. Read-gate inherited (D3 ungated).
+- **Domain event (inbound)**: `TeamDataRefreshed` / `PortfolioFeaturesRefreshed` → the two recording handlers (+ demo backfill handler, demo-gated).
+- **UI actions**: Percentiles-Over-Time toggle `[WIA|CT-30|CT-60|CT-90]`; PBC-Over-Time metric-type toggle — via existing `MetricsView` widget/hook plumbing.
+
+## Wave: DESIGN / [REF] Driven Ports + Adapters
+
+- `IPercentilesOverTimeSnapshotRepository` / `IProcessBehaviorSnapshotRepository` → EF `RepositoryBase<T>` → `LighthouseAppContext` DbSets (write: upsert; read: query ports). Adapter = EF Core across all providers.
+- Metrics services (`ITeamMetricsService` / `IPortfolioMetricsService`) → in-process read of today's percentile/PBC numbers (no new external adapter).
+- No external integration (no connector call for recording — values are Lighthouse-computed). Pact/contract-testing **N/A**.
+
+## Wave: DESIGN / [REF] Technology Choices
+
+- Backend: C# .NET 10, EF Core (all supported providers), NUnit 4.6 + Moq + EF InMemory — unchanged.
+- Persistence: 2 additive tables via `CreateMigration` (expand-only, never `dotnet ef migrations add`).
+- Frontend: React 18 + TS, existing MUI-X charting (reuse point-in-time percentile/PBC chart components + D7 ramp).
+- No new library, no new runtime, no new bounded context.
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File / symbol | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| Refresh events | `TeamDataRefreshed`, `PortfolioFeaturesRefreshed` | recording trigger | **EXTEND** | new subscribers, same events (verified: `BlockedCountSnapshotRecordingHandler` subscribes both) |
+| `BlockedCountSnapshotRecordingHandler` | `.../DomainEvents/` | snapshot-on-refresh idiom | **CREATE NEW handler** | genuinely different computation (percentile/PBC math), same events; not a reimplementation |
+| `DeliveryMetricSnapshot` / `BlockedCountSnapshot` | `Models/` | forward-only 1-row/day snapshot shape | **CREATE NEW entities** | reuse the pattern (`RecordedAt:DateOnly`, `(Owner,RecordedAt)` upsert), not the columns |
+| `RepositoryBase<T>` + `BlockedCountSnapshotRepository` | `.../Repositories/` | repo plumbing | **EXTEND pattern → CREATE NEW repos** | thin `RepositoryBase<T>` subclasses, identical idiom |
+| `MetricsController` (team + portfolio) | `.../Controllers/` | series endpoints | **EXTEND** | +2 GET actions; constraint = extend, no bespoke route |
+| `ITeamMetricsService` / `IPortfolioMetricsService` | `.../Services/Interfaces/` | metric compute | **EXTEND** | `GetThroughputProcessBehaviourChart(...)` + percentile reads already here (verified) |
+| Point-in-time percentile / PBC widgets, `IPercentileValue[]` | `Charts/WorkItemAgePercentiles.tsx` | charting + D7 ramp | **EXTEND/parallel** | reuse chart + ramp + empty-state; new over-time wrappers |
+| `categoryMetadata.ts` Predictability | `.../MetricsView/` | widget registration | **EXTEND** | register 2 widgets team+portfolio (D8); ungated (D3) |
+| `DemoBlockedHistoryBackfillHandler` | `.../DomainEvents/` | demo backdating + idempotency + demo-gate | **CREATE NEW handler** | different snapshot tables, same demo idiom |
+| EF migration | `CreateMigration` script | schema add | **EXTEND process** | additive, all providers |
+
+Every row defaults EXTEND; the four CREATE-NEW (2 entities, 2 handler families, repos, demo handler) are new computation/shape/table — **zero unjustified CREATE NEW**.
+
+## Wave: DESIGN / [REF] C4
+
+**System Context**: no delta — percentiles/PBC stay Lighthouse-computed; the work-tracking connector is never asked for trend data.
+
+```mermaid
+C4Container
+  title Container — Epic 5427 Percentiles Over Time
+  Person(viewer, "Team / Portfolio viewer")
+  Container(fe, "Frontend", "React/TS", "MetricsView + 2 over-time widgets (Predictability)")
+  Container(api, "Backend API", "ASP.NET Core", "MetricsController +2 series endpoints")
+  Container(refresh, "Metrics refresh + dispatcher", "C# / Epic 5121", "Raises TeamDataRefreshed / PortfolioFeaturesRefreshed; dispatches (swallows handler errors)")
+  ContainerDb(db, "Database", "EF Core / all providers", "PercentilesOverTimeSnapshot + ProcessBehaviorSnapshot")
+  Rel(viewer, fe, "Toggles metric/horizon in")
+  Rel(fe, api, "GET series from")
+  Rel(api, db, "Queries snapshots from")
+  Rel(refresh, db, "Upserts daily snapshots into (via recording handlers)")
+```
+
+```mermaid
+C4Component
+  title Component — Recording + Series subsystem
+  Container_Boundary(be, "Backend") {
+    Component(evt, "TeamDataRefreshed / PortfolioFeaturesRefreshed", "Epic 5121", "Raised per team/portfolio refresh")
+    Component(disp, "Domain-event dispatcher", "swallows handler errors")
+    Component(recP, "PercentilesOverTimeRecordingHandler", "upsert CT+WIA, idempotent/day, self try/catch + failed-log")
+    Component(recB, "ProcessBehaviorRecordingHandler", "upsert NPL, idempotent/day, self try/catch + failed-log")
+    Component(demo, "DemoPercentilesBackfillHandler", "demo-gated backdater")
+    Component(ctrl, "MetricsController (+2 actions)", "read endpoints")
+    Component(qP, "IPercentilesOverTimeSeriesQuery", "read-only port")
+    Component(qB, "IProcessBehaviorSeriesQuery", "read-only port")
+  }
+  ContainerDb(db, "Snapshot tables", "PercentilesOverTimeSnapshot + ProcessBehaviorSnapshot")
+  Rel(evt, disp, "handled by")
+  Rel(disp, recP, "dispatches to")
+  Rel(disp, recB, "dispatches to")
+  Rel(recP, db, "upserts")
+  Rel(recB, db, "upserts")
+  Rel(demo, db, "backdates (demo only)")
+  Rel(ctrl, qP, "reads via")
+  Rel(ctrl, qB, "reads via")
+  Rel(qP, db, "queries")
+  Rel(qB, db, "queries")
+```
+
+## Wave: DESIGN / [REF] Open Questions (deferred to DISTILL/DELIVER)
+
+- **CT percentile source per horizon**: confirm during DELIVER that `ITeamMetricsService` can compute CT percentiles for a 30/60/90 window as-of-today without a bespoke recompute path (the point-in-time percentile widget uses the team's configured window). If not, a thin per-horizon read is added to the service (EXTEND).
+- **Demo backfill window length**: number of backdated days for demo/screenshot charts — pick in DELIVER to match the sibling `DemoBlockedHistoryBackfillHandler` window.
+- **PBC-over-time day grain**: the point-in-time PBC recomputes limits over a window; the daily snapshot records that day's computed UNPL/Avg/LNPL — confirm the recompute is cheap enough to run per refresh (spike-free; measured in DELIVER, fall back to caching if hot).
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+Skipped — `docs/product/outcomes/registry.yaml` does not exist (no outcomes registry in this repo). No SSOT to collide against; recorded explicitly rather than silently.
+
+## Next Wave
+
+**Handoff → DEVOPS** (`nw-platform-architect`, KPIs only — no infra change, single monolith, no new deploy surface) **and DISTILL** (`nw-acceptance-designer`) with the full artifact set. Key AT targets: same-day double-refresh → exactly 1 row per key (US-02 AC2); recording-failure leaves refresh green + emits signal (US-02 AC4/DDD-6); zero-snapshot owner → honest empty-state, never broken axis (US-01 AC4/D6); horizon toggle re-plots from persisted series, no recompute (US-01 AC5); demo backfill demo-gated, real tenants forward-only (DDD-4).
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+DESIGN constraints the platform must satisfy (all met by the existing Lighthouse platform — **zero new infra**):
+- Two additive EF tables + unique natural-key indexes, applied on **both** providers (SQLite + PostgreSQL) via the existing `CreateMigration` script (expand-only).
+- Recording handlers subscribe the existing `TeamDataRefreshed` / `PortfolioFeaturesRefreshed` events; failure must be isolated from the refresh path (dispatcher swallows handler errors) and observable via structured logging.
+- Free-tier/ungated: no new secrets, config keys, RBAC, or license gate.
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+| Environment | Platform | Preconditions |
+|---|---|---|
+| local-dev | linux/macos/windows/wsl | dotnet 10 + pnpm; migration applies 2 tables on startup |
+| ci-sqlite | linux (GH Actions) | existing `ci_verifysqlite.yml`; additive migration clean on SQLite |
+| ci-postgres | linux (GH Actions) | existing `ci_verifypostgres.yml`; 2 tables + unique indexes clean on Postgres |
+| e2e-demo-screenshot | linux | existing Playwright; DEMO connection → `DemoPercentilesBackfillHandler` backdates → populated charts; `rm` stale PNG first |
+| customer-self-hosted | linux/windows/macos/docker | migration on startup; forward-only → empty-state until days accrue; no telemetry |
+
+Full inventory + coexistence + deployment assumptions: `environments.yaml`.
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**No new workflow** — the feature rides the existing "Build And Deploy Lighthouse" pipeline:
+- `dotnet build` (TreatWarningsAsErrors) + `dotnet test` (NUnit) — new snapshot/recording/query tests.
+- `ci_verifysqlite.yml` + `ci_verifypostgres.yml` — the additive migration + idempotency integration tests run on both providers.
+- `pnpm build` (tsc + vite, zero warnings) + `pnpm test` (Vitest) + Biome — new widgets/hooks.
+- `ci_e2e.yml` — empty-state E2E + one `@screenshot` per theme for the two widgets.
+- SonarCloud Cloud analysis — no new issues.
+- Stryker.NET + Stryker (frontend) per-feature, `>= 80%` on new code.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+| KPI (OUT-id) | Instrument | Scope | Gate |
+|---|---|---|---|
+| OUT-5427-recording-idempotency | BE integration test: N same-day refreshes → 1 row/key | vendor_demo_only (CI) | hard (CI red) |
+| OUT-5427-recording-failure-isolation | BE AT: forced handler exception → refresh green + structured Serilog recording-failed event | per_instance (operator logs) + CI | hard (CI red) |
+| OUT-5427-empty-state-honesty | E2E on zero-snapshot owner → D6 empty-state copy, never broken axis | vendor_demo_only (CI E2E) | hard (CI red) |
+| OUT-5427-pipeline-reuse | Code review + AT: one recording pipeline drives CT+WIA+PBC | vendor_demo_only | soft (review) + AT |
+| OUT-5427-mutation-kill-rate | Stryker.NET + Stryker per-feature on new code | vendor_demo_only | hard (>= 80%) |
+
+Instrumentation deltas recorded in SSOT `docs/product/kpi-contracts.yaml` (5 appended outcomes). Self-hosted product, no central telemetry — trend-readability (DISCUSS KPI 3) is a **vendor-demo dogfood qualitative** check, not an automated gate.
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+- **Logs**: existing Serilog structured logging (`ILogger<T>`). New signal: a **recording-failed** structured event per handler (fields: owner id/type, metric family, exception) — the handler's own observability, since the dispatcher swallows errors.
+- **Metrics/traces**: no new instrument. In-app admin-visible aggregation only (self-hosted; no phone-home).
+- No new observability tool, no dashboard change.
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+Rides the existing Lighthouse deploy (server + standalone). Rollback contract: the two tables are additive/expand-only, so a rollback of the app code leaves orphan-but-inert tables (no destructive change, no data migration to reverse) — consistent with the expand-only migration mandate. No blue-green/canary change; the feature is behind no flag (free-tier, additive).
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**per-feature** (inherited — already declared in project `CLAUDE.md` `## Mutation Testing Strategy`; no write needed). Stryker.NET (backend) + Stryker (frontend), `>= 80%` kill on new snapshot/recording/query/widget code. High-value targets: upsert idempotency, failure isolation, empty-series read, horizon-toggle re-plot.
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based on `main`** (inherited project convention). CI gates on every push to `main`; feature ships in focused commits per slice, push at slice end, wait for CI green, then ADO Active→Resolved. No feature-branch/PR flow.
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Must-not-break alongside this deployment (full list in `environments.yaml`):
+- existing BlockedCount / DeliveryMetric recording handlers (share the same refresh events)
+- existing point-in-time percentile/PBC widgets + `categoryMetadata.ts` registration
+- existing metrics-refresh path (US-02 AC4 — recording failure must not break it)
+- existing Stryker, SonarCloud gate, and `@screenshot` E2E suite
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+None. DEVOPS introduces no infra, CI, deploy, or observability change; every DESIGN assumption stands. No upstream-changes.md.
+
+## Next Wave
+
+**Handoff → DISTILL** (`nw-acceptance-designer`) with `environments.yaml` (Mandate 4) + the 5 KPI contracts. AT priorities: same-day double-refresh idempotency (OUT-5427-recording-idempotency), forced-failure refresh-green + signal (OUT-5427-recording-failure-isolation), zero-snapshot empty-state (OUT-5427-empty-state-honesty), horizon-toggle re-plot without recompute (US-01 AC5), demo-gated backfill (DDD-4). Parametrize over `ci-sqlite` + `ci-postgres` (migration + unique-index behaviour differs by provider).

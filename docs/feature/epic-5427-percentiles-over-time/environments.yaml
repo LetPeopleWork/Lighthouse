@@ -1,0 +1,85 @@
+# Environment inventory — epic-5427-percentiles-over-time
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+# Pure in-app feature (new snapshot tables + recording handlers + read endpoints + React widgets)
+# in the existing Lighthouse monolith. No new infra, deploy target, CI/CD, or observability stack.
+
+target_environments:
+  - name: local-dev
+    description: "Developer workstation — SQLite, demo data seedable. Widgets + recording exercised locally."
+    platform: [linux, macos, windows, wsl]
+    preconditions:
+      - "dotnet 10 SDK installed"
+      - "pnpm + Node.js 20+ installed"
+      - "EF migration applied on startup (existing pattern) — two additive tables created"
+
+  - name: ci-sqlite
+    description: "GitHub Actions ubuntu-latest, ephemeral SQLite. Existing ci_verifysqlite.yml — no new workflow."
+    platform: [linux]
+    preconditions:
+      - "GitHub Actions ubuntu-latest runner"
+      - "SQLite ephemeral DB per job"
+      - "Additive migration (PercentilesOverTimeSnapshot + ProcessBehaviorSnapshot) applies clean on SQLite"
+
+  - name: ci-postgres
+    description: "GitHub Actions ubuntu-latest, PostgreSQL service container. Existing ci_verifypostgres.yml."
+    platform: [linux]
+    preconditions:
+      - "PostgreSQL 16 service container (existing pattern)"
+      - "The two additive tables + their unique natural-key indexes apply clean on the Postgres provider"
+      - "All other ci-sqlite preconditions"
+
+  - name: e2e-demo-screenshot
+    description: "Existing @screenshot E2E against a clean backend with a DEMO connection. DemoPercentilesBackfillHandler backdates snapshots so the over-time charts render populated (docs assets)."
+    platform: [linux]
+    preconditions:
+      - "Existing Playwright E2E stack (no new spec infra)"
+      - "Demo work-tracking connection (IsDemo=true) — the only trigger for DemoPercentilesBackfillHandler"
+      - "rm stale PNG before @screenshot regen (screenshot pixel-threshold trap)"
+
+  - name: customer-self-hosted
+    description: "End-user deployment. Recording is forward-only; over-time charts start empty and build day by day. NOT in any vendor telemetry — KPI observation is admin-visible/log-only."
+    platform: [linux, windows, macos, docker]
+    preconditions:
+      - "EF migration applied on startup (additive, idempotent)"
+      - "Metrics refresh runs (existing schedule/trigger) — recording handlers fire on TeamDataRefreshed / PortfolioFeaturesRefreshed"
+    observability_note: "Fresh instances read the honest D6 empty-state until days accrue. No phone-home; recording-failed events land only in the customer's own logs."
+
+coexistence_matrix:
+  - tool: existing-BlockedCount-and-DeliveryMetric-recording-handlers
+    must_not_break: true
+    rationale: "The two new recording handlers subscribe the SAME TeamDataRefreshed / PortfolioFeaturesRefreshed events. Adding subscribers must not perturb the existing snapshot recorders (independent handlers, dispatcher isolates failures)."
+  - tool: existing-point-in-time-percentile-and-PBC-widgets
+    must_not_break: true
+    rationale: "Over-time widgets are additive to the Predictability category; the existing point-in-time percentile/PBC widgets and their categoryMetadata.ts registration must remain intact (D8 additive)."
+  - tool: existing-metrics-refresh-path
+    must_not_break: true
+    rationale: "US-02 AC4 — a recording-handler failure MUST NOT break refresh. The Epic 5121 dispatcher swallows handler errors; verified by an AT asserting refresh stays green on a forced recording failure."
+  - tool: existing-Stryker-mutation-tests
+    must_not_break: true
+    rationale: "New backend + frontend files enter the existing per-feature Stryker scope (>= 80% gate) without manual config edits."
+  - tool: existing-SonarCloud-quality-gate
+    must_not_break: true
+    rationale: "No new Sonar issues permitted on the PR (docs/ci-learnings.md conventions pre-applied)."
+  - tool: existing-@screenshot-E2E-suite
+    must_not_break: true
+    rationale: "One @screenshot per theme added for the two new widgets; the existing screenshot suite and its demo-data seeding must remain green."
+
+platform_coverage:
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  Windows: [Windows Server 2022, Windows 11]
+  macOS: [13.x, 14.x, "arm64 standalone"]
+  Docker: ["mcr.microsoft.com/dotnet/aspnet:10.0 base image (existing)"]
+  WSL: [WSL2]
+  CI: ["GitHub Actions ubuntu-latest (existing ci_*.yml — no new workflow)"]
+  Database:
+    SQLite: ["3.40+ (existing)"]
+    PostgreSQL: ["15.x", "16.x"]
+
+deployment_assumptions:
+  - "Two-table EF migration is additive/expand-only and idempotent on both providers (SQLite + PostgreSQL); generated via the existing CreateMigration PowerShell script per CLAUDE.md — never `dotnet ef migrations add` directly."
+  - "Recording is forward-only (D5). Fresh and self-hosted instances show the honest D6 empty-state until days accrue — never a broken axis. No historical backfill of real data."
+  - "DemoPercentilesBackfillHandler backdates snapshots for DEMO connections only (IsDemo gate). Real tenants are never backfilled."
+  - "Recording-handler failures are isolated: each handler wraps its own work in try/catch and emits a structured Serilog recording-failed event; the metrics-refresh path is unaffected (dispatcher swallows handler errors, so the handler owns its own observability)."
+  - "Free-tier / ungated (D3): no new config keys, no new secrets, no RBAC change, no license gate. Reads inherit the existing MetricsController read gate."
+  - "Additive API contract (two new GET actions + two DTOs): no CLI/MCP client version gate."
+  - "Standalone Tauri: the widgets render and recording runs on refresh identically to server mode (free-tier, no server-only code path)."
