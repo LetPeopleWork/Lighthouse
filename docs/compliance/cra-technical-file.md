@@ -65,7 +65,7 @@ Lighthouse is a self-hosted application that provides:
 |----------|---------------------|
 | Windows x64 | ZIP archive (signed executable) |
 | Linux x64 | ZIP archive |
-| macOS (Universal) | DMG / APP.ZIP (signed and notarized) |
+| macOS (Apple Silicon / arm64, macOS 11+) | DMG / APP.ZIP (signed and notarized) |
 | Docker | Container image (linux/amd64, linux/arm64) |
 
 ### 1.4 Editions

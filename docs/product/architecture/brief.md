@@ -3095,3 +3095,20 @@ Feature: portfolio-blocked-history — bring the **Portfolio** blocked surfaces 
 ### C4
 
 System Context: **no delta** (blocked stays Lighthouse-computed; the connector is never asked). Container delta: new `FeatureBlockedTransition` + `IFeatureBlockedTransitionRepository` + `FeatureBlocked`/`FeatureUnblocked` events + capture/close handler pair on the existing Backend container; historic branch on two existing portfolio endpoints; **Frontend unchanged**. An L3 component diagram for the capture-and-read subsystem is in `docs/feature/portfolio-blocked-history/feature-delta.md` → "Wave: DESIGN / [REF] C4".
+
+## System Architecture — macos-arm64-only-standalone
+
+Feature: macos-arm64-only-standalone (ADO US 5543 — macOS Standalone drops Intel, ships Apple-Silicon-only).
+
+This section is **additive** and infrastructure-only — no change to the application ports-and-adapters architecture, domain model, persistence, endpoints, or paradigm. It records a **distribution/packaging** decision for the macOS Tauri Standalone.
+
+**Decision (ADR-105)**: the macOS Standalone ships as `aarch64-apple-darwin` **only**, replacing the prior universal (`x86_64` + `arm64` lipo-fused) build. Apple has ended Intel support; the universal path is dead weight.
+
+- **Build**: `.NET osx-x64` publish dropped; `lipo` universal fusion removed; Rust target reduced to `aarch64-apple-darwin`; Tauri `--target aarch64-apple-darwin`. (`.github/actions/build-backend/action.yml`, `.github/workflows/ci_package-macos-standalone.yml`)
+- **Intel cutoff = feed-key deletion**: the `darwin-x86_64` platform key is removed from the generated `tauri-update.json`. The Tauri updater treats a missing key as "no update", so existing Intel installs silently freeze on their last version — **hard cutoff, no notice, no frozen Intel download** retained. (`.github/workflows/ci_generate-update-feed.yml`)
+- **Floor**: `minimumSystemVersion` `10.15` → `11.0` (`Lighthouse.Frontend/src-tauri/tauri.conf.json`) — honest arm64 floor.
+- **Verify unchanged**: `ci_verifymacos.yml` is arch-agnostic (sign/notarize/staple/Gatekeeper/mount).
+- **Docs**: `docs/Installation/standalone.md`, `docs/compliance/{cra-technical-file,distribution-and-versioning}.md`, `docs/releasenotes/releasenotes.md` corrected from "Universal"/"Intel" to Apple Silicon (arm64).
+- **Scope**: Windows/Linux standalone unaffected (remain x64). No RBAC, no clients CLI/MCP, no domain surface.
+
+Full delta + reuse analysis: `docs/feature/macos-arm64-only-standalone/feature-delta.md` → "Wave: DESIGN". Decision record: [ADR-105](./adr-105-macos-standalone-arm64-only.md).

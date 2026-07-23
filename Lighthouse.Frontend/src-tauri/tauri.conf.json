@@ -38,7 +38,7 @@
 		"externalBin": ["binaries/Lighthouse.Backend"],
 		"macOS": {
 			"entitlements": "entitlements.plist",
-			"minimumSystemVersion": "10.15",
+			"minimumSystemVersion": "11.0",
 			"hardenedRuntime": true
 		}
 	},

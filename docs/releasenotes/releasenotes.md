@@ -761,7 +761,7 @@ The Standalone edition is ideal for individual users who want a self-contained L
 | Platform | Package | Notes |
 |---|---|---|
 | **Windows** | NSIS Installer (`.exe`) and MSI Installer (`.msi`) | Recommended — installs to Program Files with auto-updater and uninstaller |
-| **macOS** | App Image (`.dmg`) and App Bundle (`.zip`) | Runs natively on both Apple Silicon and Intel; signed, notarized, and auto-updates |
+| **macOS** | App Image (`.dmg`) and App Bundle (`.zip`) | Runs natively on Apple Silicon (arm64, macOS 11+); signed, notarized, and auto-updates. Intel Macs are no longer supported |
 | **Linux** | AppImage (`.AppImage`) | Single-file, runs on most distributions without installation |
 
 For full installation instructions and guidance on choosing between Standalone and Server editions, see the [Installation docs](https://docs.lighthouse.letpeople.work/Installation/installation.html).

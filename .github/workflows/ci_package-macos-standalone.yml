@@ -47,10 +47,10 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: './Lighthouse.Frontend/pnpm-lock.yaml'
 
-      - name: Install Rust stable with universal targets
+      - name: Install Rust stable with Apple Silicon target
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          targets: aarch64-apple-darwin
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
@@ -68,59 +68,35 @@ jobs:
           cp ./sbom-download/lighthouse-backend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/backend.cdx.json
           cp ./sbom-download/lighthouse-frontend-sbom.cdx.json ./Lighthouse.Frontend/public/sbom/frontend.cdx.json
 
-      - name: Build Backend (composite, publish osx targets)
+      - name: Build Backend (composite, publish osx-arm64 target)
         uses: ./.github/actions/build-backend
         with:
           publish: 'true'
           fileversion: ${{ inputs.fileversion }}
 
-      - name: Create universal binary
-        run: |
-          UNIVERSAL_DIR="./publish/osx-universal"
-          mkdir -p "$UNIVERSAL_DIR"
-
-          # Copy x64 publish output as base (gets all supporting files)
-          cp -R ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/. "$UNIVERSAL_DIR/"
-
-          # Overwrite with universal binary
-          lipo -create \
-            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse \
-            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse \
-            -output "$UNIVERSAL_DIR/Lighthouse"
-
-          # Overwrite with universal dylib
-          lipo -create \
-            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/libe_sqlite3.dylib \
-            ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/libe_sqlite3.dylib \
-            -output "$UNIVERSAL_DIR/libe_sqlite3.dylib"
-
-          chmod +x "$UNIVERSAL_DIR/Lighthouse"
-
-      - name: Remove development settings
-        run: rm -f ./publish/osx-universal/appsettings.Development.json
-
       - name: Place sidecar binary and resources for Tauri
         run: |
-          TARGET_TRIPLE="universal-apple-darwin"
+          TARGET_TRIPLE="aarch64-apple-darwin"
           SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
           RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
-          UNIVERSAL_DIR="./publish/osx-universal"
+          ARM64_DIR="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64"
 
           mkdir -p "${SIDECAR_DIR}"
           mkdir -p "${RESOURCES_DIR}"
 
-          cp ./publish/osx-universal/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
-          
+          cp "${ARM64_DIR}/Lighthouse" "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
           chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}"
 
-          cp ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
-          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
-
-          cp ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/Lighthouse "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
-          chmod +x "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"
-
-          cp -r ./publish/osx-universal/. "${RESOURCES_DIR}/"
+          # Resources (dylib + supporting files); the sidecar binary itself lives under binaries/, not resources/
+          cp -r "${ARM64_DIR}/." "${RESOURCES_DIR}/"
           rm "${RESOURCES_DIR}/Lighthouse"
+
+      - name: Assert arm64-only sidecar (Guard A1, ADR-105)
+        run: |
+          SIDE="./Lighthouse.Frontend/src-tauri/binaries/Lighthouse.Backend-aarch64-apple-darwin"
+          ARCHS=$(lipo -archs "$SIDE")
+          echo "sidecar archs: $ARCHS"
+          [ "$ARCHS" = "arm64" ] || { echo "FAIL: expected arm64-only sidecar, got '$ARCHS'"; exit 1; }
 
       - name: Update Tauri Version
         shell: bash
@@ -136,33 +112,35 @@ jobs:
             exit 1
             fi
 
-      - name: Patch rpath on sidecar binaries
+      - name: Assert minimumSystemVersion floor (Guard A2, ADR-105)
+        run: |
+          MIN=$(jq -r '.bundle.macOS.minimumSystemVersion' Lighthouse.Frontend/src-tauri/tauri.conf.json)
+          echo "minimumSystemVersion: $MIN"
+          [ "$MIN" = "11.0" ] || { echo "FAIL: minimumSystemVersion=$MIN, expected 11.0"; exit 1; }
+
+      - name: Patch rpath on sidecar binary
         run: |
           SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
-          
+
           # The dylib lives in Contents/Resources/resources/ at runtime.
           # @executable_path is Contents/MacOS/, so we go up one and into Resources/resources/
           RPATH="@executable_path/../Resources/resources"
 
-          for binary in \
-            "${SIDECAR_DIR}/Lighthouse.Backend-universal-apple-darwin" \
-            "${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin" \
-            "${SIDECAR_DIR}/Lighthouse.Backend-x86_64-apple-darwin"; do
-            
-            echo "Patching rpath on: $binary"
-            # Remove any stale rpath entries pointing to the old publish dir
-            existing_rpaths=$(otool -l "$binary" | grep -A2 LC_RPATH | grep path | awk '{print $2}' || true)
-            while IFS= read -r rp; do
-              [ -n "$rp" ] && install_name_tool -delete_rpath "$rp" "$binary" 2>/dev/null || true
-            done <<< "$existing_rpaths"
-            
-            # Add the correct runtime rpath
-            install_name_tool -add_rpath "$RPATH" "$binary"
-            
-            # Verify
-            echo "RPaths for $binary:"
-            otool -l "$binary" | grep -A2 LC_RPATH | grep path
-          done
+          binary="${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
+
+          echo "Patching rpath on: $binary"
+          # Remove any stale rpath entries pointing to the old publish dir
+          existing_rpaths=$(otool -l "$binary" | grep -A2 LC_RPATH | grep path | awk '{print $2}' || true)
+          while IFS= read -r rp; do
+            [ -n "$rp" ] && install_name_tool -delete_rpath "$rp" "$binary" 2>/dev/null || true
+          done <<< "$existing_rpaths"
+
+          # Add the correct runtime rpath
+          install_name_tool -add_rpath "$RPATH" "$binary"
+
+          # Verify
+          echo "RPaths for $binary:"
+          otool -l "$binary" | grep -A2 LC_RPATH | grep path
 
 
       - name: Import Apple Certificate
@@ -196,11 +174,11 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: ./Lighthouse.Frontend
-          args: --target universal-apple-darwin
+          args: --target aarch64-apple-darwin
 
       - name: Notarize and staple DMG
         run: |
-          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/universal-apple-darwin/release/bundle"
+          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/aarch64-apple-darwin/release/bundle"
           DMG=$(find "$BUNDLE_DIR/dmg" -name "*.dmg" | head -1)
           if [ -z "$DMG" ]; then
             echo "ERROR: No DMG found"
@@ -221,7 +199,7 @@ jobs:
 
       - name: Find and rename artifacts
         run: |
-          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/universal-apple-darwin/release/bundle"
+          BUNDLE_DIR="./Lighthouse.Frontend/src-tauri/target/aarch64-apple-darwin/release/bundle"
 
           # Find DMG
           DMG=$(find "$BUNDLE_DIR/dmg" -name "*.dmg" | head -1)
