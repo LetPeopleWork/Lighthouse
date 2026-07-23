@@ -1,4 +1,8 @@
 using System.Globalization;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WriteBack;
@@ -21,8 +25,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string AgeField = "customfield_10206";
         private const string AgeFieldName = "Age";
         
-        private const string EpicId = "LGHTHSDMO-1";
-        private const string StoryId = "LGHTHSDMO-16";
+        private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
+        private const string ProjectKey = "LGHTHSDMO";
+        private const string IntegrationTokenEnvironmentVariable = "JiraLighthouseIntegrationTestToken";
+        private const string IntegrationUsernameEnvironmentVariable = "JiraLighthouseIntegrationTestUsername";
+        private const string DefaultUsername = "atlassian.pushchair@huser-berta.com";
+
+        // Write-back integration tests mutate real Jira issues. Reusing the fixed demo items
+        // (LGHTHSDMO-1 / LGHTHSDMO-16) lets this fixture collide with other integration fixtures that read
+        // those same items in the full suite (passes in isolation, flaky together). Instead we create a
+        // fresh Epic and Story per fixture run and hard-delete them in teardown -- the integration user has
+        // delete permission on this team-managed project -- keeping runs isolated. Mirrors the Azure DevOps
+        // fix in commit 2964383c.
+        private string EpicId = string.Empty;
+        private string StoryId = string.Empty;
+        private readonly List<string> createdIssueKeys = [];
+
+        [OneTimeSetUp]
+        public async Task CreateScratchIssues()
+        {
+            var apiToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable);
+            if (string.IsNullOrEmpty(apiToken))
+            {
+                // No integration token (e.g. fork PRs): the [Category("Integration")] tests are excluded by
+                // the category filter, and the remaining non-integration test does not touch Jira, so there
+                // is nothing to create.
+                return;
+            }
+
+            using var client = CreateScratchClient(apiToken);
+
+            EpicId = await CreateScratchIssue(client, "Epic");
+            StoryId = await CreateScratchIssue(client, "Story");
+        }
+
+        [OneTimeTearDown]
+        public async Task DeleteScratchIssues()
+        {
+            if (createdIssueKeys.Count == 0)
+            {
+                return;
+            }
+
+            var apiToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable);
+            if (string.IsNullOrEmpty(apiToken))
+            {
+                return;
+            }
+
+            using var client = CreateScratchClient(apiToken);
+
+            foreach (var issueKey in createdIssueKeys)
+            {
+                try
+                {
+                    // Best-effort cleanup: a leftover scratch item is harmless, a failed teardown is not
+                    // worth failing the run over. Surface it for diagnosis without throwing.
+                    using var response = await client.DeleteAsync($"rest/api/2/issue/{issueKey}?deleteSubtasks=true");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        TestContext.Progress.WriteLine(
+                            $"Failed to delete scratch issue {issueKey}: HTTP {(int)response.StatusCode}");
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    TestContext.Progress.WriteLine($"Failed to delete scratch issue {issueKey}: {ex.Message}");
+                }
+            }
+
+            createdIssueKeys.Clear();
+        }
 
         [Test]
         [Category("Integration")]
@@ -345,6 +418,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        private async Task<string> CreateScratchIssue(HttpClient client, string issueType)
+        {
+            var summary = $"Lighthouse WriteBack scratch {issueType} {DateTime.UtcNow:O}";
+            var payload = JsonSerializer.Serialize(new
+            {
+                fields = new
+                {
+                    project = new { key = ProjectKey },
+                    issuetype = new { name = issueType },
+                    summary,
+                },
+            });
+
+            using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync("rest/api/2/issue", content);
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var json = JsonDocument.Parse(body);
+            var key = json.RootElement.GetProperty("key").GetString()
+                ?? throw new InvalidOperationException($"Jira did not return a key for the created {issueType}.");
+
+            createdIssueKeys.Add(key);
+            return key;
+        }
+
+        private static HttpClient CreateScratchClient(string apiToken)
+        {
+            var username = Environment.GetEnvironmentVariable(IntegrationUsernameEnvironmentVariable) ?? DefaultUsername;
+            var basicAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{apiToken}"));
+
+            var client = new HttpClient { BaseAddress = new Uri($"{OrganizationUrl}/") };
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuth);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return client;
+        }
+
         private static async Task<string?> ReadBackEpicAdditionalField(
             JiraWorkTrackingConnector subject,
             WorkTrackingSystemConnection connection,
@@ -442,9 +552,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static WorkTrackingSystemConnection CreateWorkTrackingSystemConnection()
         {
-            var organizationUrl = "https://letpeoplework.atlassian.net";
-            var username = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestUsername") ?? "atlassian.pushchair@huser-berta.com";
-            var apiToken = Environment.GetEnvironmentVariable("JiraLighthouseIntegrationTestToken") ?? "fake-token-for-non-integration-tests";
+            var username = Environment.GetEnvironmentVariable(IntegrationUsernameEnvironmentVariable) ?? DefaultUsername;
+            var apiToken = Environment.GetEnvironmentVariable(IntegrationTokenEnvironmentVariable) ?? "fake-token-for-non-integration-tests";
 
             var connectionSetting = new WorkTrackingSystemConnection
             {
@@ -453,7 +562,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 AuthenticationMethodKey = AuthenticationMethodKeys.JiraCloud
             };
             connectionSetting.Options.AddRange([
-                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = organizationUrl, IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Url, Value = OrganizationUrl, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.Username, Value = username, IsSecret = false },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.ApiToken, Value = apiToken, IsSecret = true },
                 new WorkTrackingSystemConnectionOption { Key = JiraWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "100", IsSecret = false },
