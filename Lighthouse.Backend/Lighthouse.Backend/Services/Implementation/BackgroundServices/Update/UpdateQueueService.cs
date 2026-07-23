@@ -143,11 +143,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 registration.Dispose();
                 if (t.IsFaulted)
                 {
-                    observer.TrySetException(t.Exception!.InnerExceptions);
+                    observer.TrySetException(t.Exception.InnerExceptions);
                 }
                 else if (t.IsCanceled)
                 {
-                    observer.TrySetCanceled();
+                    observer.TrySetCanceled(cancellationToken);
                 }
                 else
                 {
