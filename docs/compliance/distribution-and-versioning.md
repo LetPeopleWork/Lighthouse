@@ -85,8 +85,8 @@ Each release includes the following artifacts:
 |----------|------------------|-----------|
 | Windows (zip) | `Lighthouse-win-x64.zip` | Windows x64 |
 | Linux (zip) | `Lighthouse-linux-x64.zip` | Linux x64 |
-| macOS (dmg) | `Lighthouse-osx.dmg` | macOS (Universal) |
-| macOS (app zip) | `Lighthouse-osx.app.zip` | macOS (Universal) |
+| macOS (dmg) | `Lighthouse-osx.dmg` | macOS (Apple Silicon / arm64) |
+| macOS (app zip) | `Lighthouse-osx.app.zip` | macOS (Apple Silicon / arm64) |
 | Docker | `ghcr.io/letpeoplework/lighthouse:<version>` | linux/amd64, linux/arm64 |
 
 ### Code Signing

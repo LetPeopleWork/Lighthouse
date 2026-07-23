@@ -24,6 +24,8 @@ Download the latest version from the [Releases](https://github.com/LetPeopleWork
 {: .note}
 **macOS only:** Lighthouse for macOS is exclusively available as the Standalone edition. A Server edition for macOS is not provided.
 
+**Apple Silicon only:** The macOS build is native Apple Silicon (arm64) and requires macOS 11 (Big Sur) or later. Intel Macs are no longer supported — existing Intel installs remain on their last installed version and do not receive further updates.
+
 ---
 
 ## Windows

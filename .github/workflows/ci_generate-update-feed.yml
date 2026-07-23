@@ -154,13 +154,16 @@ jobs:
               platforms: {
                 "linux-x86_64":   { url: $linux_url,   signature: $linux_sig   },
                 "darwin-aarch64": { url: $darwin_url,  signature: $darwin_sig  },
-                "darwin-x86_64":  { url: $darwin_url,  signature: $darwin_sig  },
                 "windows-x86_64": { url: $windows_url, signature: $windows_sig }
               }
             }' > /tmp/tauri-update.json
 
           echo "=== Generated tauri-update.json ==="
           cat /tmp/tauri-update.json
+
+          # Guard A4: macOS is Apple-Silicon-only — darwin-aarch64 present, darwin-x86_64 absent (ADR-105)
+          jq -e '.platforms | has("darwin-aarch64") and (has("darwin-x86_64") | not)' /tmp/tauri-update.json \
+            || { echo "FAIL: feed platform map wrong (darwin-x86_64 must be absent, darwin-aarch64 present)"; exit 1; }
 
       - name: Upload feed to release
         run: |

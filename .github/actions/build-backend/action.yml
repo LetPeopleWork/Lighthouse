@@ -47,11 +47,6 @@ runs:
       run: |
         dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64 ./Lighthouse.Backend/Lighthouse.Backend
         dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ inputs.fileversion }} -o ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64 ./Lighthouse.Backend/Lighthouse.Backend
-        dotnet publish -c Release -r osx-x64 --self-contained \
-          -p:Version=${{ inputs.fileversion }} \
-          -o ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64 \
-          ./Lighthouse.Backend/Lighthouse.Backend
-
         dotnet publish -c Release -r osx-arm64 --self-contained \
           -p:Version=${{ inputs.fileversion }} \
           -o ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64 \
@@ -63,5 +58,4 @@ runs:
       run: |
         rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json || true
         rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json || true
-        rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-x64/appsettings.Development.json || true
         rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/appsettings.Development.json || true
