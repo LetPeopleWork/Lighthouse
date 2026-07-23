@@ -37,6 +37,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // fresh Epic and Story per fixture run and hard-delete them in teardown -- the integration user has
         // delete permission on this team-managed project -- keeping runs isolated. Mirrors the Azure DevOps
         // fix in commit 2964383c.
+        // Jira JQL search is eventually consistent; bound the read-back poll so a lagging index does not
+        // fail the write-then-read assertions (worst case ~5s, returns early on the first non-null read).
+        private const int ReadBackMaxAttempts = 10;
+        private static readonly TimeSpan ReadBackPollDelay = TimeSpan.FromMilliseconds(500);
+
         private string EpicId = string.Empty;
         private string StoryId = string.Empty;
         private readonly List<string> createdIssueKeys = [];
@@ -487,10 +492,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var connectionWithField = CloneConnectionWithAdditionalField(connection, additionalFieldDef);
             portfolio.WorkTrackingSystemConnection = connectionWithField;
 
-            var features = await subject.GetFeaturesForProject(portfolio);
-            var feature = features.SingleOrDefault(f => f.ReferenceId == issueKey);
+            // Jira Cloud's JQL search index is eventually consistent and lags a field write by up to
+            // seconds. Poll the read-back until the just-written value appears rather than asserting on a
+            // single immediate read (see docs/ci-learnings.md 2026-07-23 read-after-write race).
+            for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
+            {
+                var features = await subject.GetFeaturesForProject(portfolio);
+                var value = features.SingleOrDefault(f => f.ReferenceId == issueKey)
+                    ?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
 
-            return feature?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
+                await Task.Delay(ReadBackPollDelay);
+            }
+
+            return null;
         }
 
         private static async Task<string?> ReadBackStoryAdditionalField(
@@ -527,10 +545,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var connectionWithField = CloneConnectionWithAdditionalField(connection, additionalFieldDef);
             team.WorkTrackingSystemConnection = connectionWithField;
 
-            var workItems = await subject.GetWorkItemsForTeam(team);
-            var workItem = workItems.SingleOrDefault(wi => wi.ReferenceId == issueKey);
+            // JQL index lag: poll the read-back rather than asserting on a single immediate read
+            // (see docs/ci-learnings.md 2026-07-23 read-after-write race).
+            for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
+            {
+                var workItems = await subject.GetWorkItemsForTeam(team);
+                var value = workItems.SingleOrDefault(wi => wi.ReferenceId == issueKey)
+                    ?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
 
-            return workItem?.AdditionalFieldValues.GetValueOrDefault(fieldDefId);
+                await Task.Delay(ReadBackPollDelay);
+            }
+
+            return null;
         }
 
         private static WorkTrackingSystemConnection CloneConnectionWithAdditionalField(
