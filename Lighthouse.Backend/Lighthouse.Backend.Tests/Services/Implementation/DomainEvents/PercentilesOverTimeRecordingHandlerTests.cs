@@ -441,6 +441,72 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             }
         }
 
+        // -----------------------------------------------------------------
+        // Reading the point-in-time percentiles warms the shared metrics cache
+        // under the same (owner, window) keys the Flow Overview widgets read.
+        // The recorder MUST invalidate that cache afterwards so the UI recomputes
+        // on settled data instead of serving the recorder's mid-refresh snapshot
+        // (regression: NamedCycleTimePercentiles E2E — the Default percentile was
+        // served the recorder's stale, partially-seeded value).
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_AfterRecording_InvalidatesTeamMetricsCache()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamPercentiles(team, h30: Percentiles(1, 1, 1, 1), h60: Percentiles(2, 2, 2, 2), h90: Percentiles(3, 3, 3, 3));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            teamMetricsServiceMock.Verify(
+                x => x.InvalidateTeamMetrics(team),
+                Times.Once,
+                "reading percentiles warms the UI metrics cache — the recorder must invalidate it so the UI recomputes on settled data");
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_MetricsReadThrows_StillInvalidatesTeamMetricsCache()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            teamMetricsServiceMock
+                .Setup(x => x.GetCycleTimePercentilesForTeam(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Throws(new InvalidOperationException("metrics boom"));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            teamMetricsServiceMock.Verify(
+                x => x.InvalidateTeamMetrics(team),
+                Times.Once,
+                "cache cleanup runs in a finally — a mid-loop failure must still leave the warmed cache invalidated");
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_AfterRecording_InvalidatesPortfolioMetricsCache()
+        {
+            var portfolio = CreatePortfolio(7);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            portfolioMetricsServiceMock
+                .Setup(x => x.GetCycleTimePercentilesForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(Percentiles(1, 2, 3, 4));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            portfolioMetricsServiceMock.Verify(
+                x => x.InvalidatePortfolioMetrics(portfolio),
+                Times.Once,
+                "the portfolio recorder must invalidate the portfolio metrics cache it warmed");
+        }
+
         private void SetupTeamPercentiles(
             Team team, List<PercentileValue> h30, List<PercentileValue> h60, List<PercentileValue> h90)
         {

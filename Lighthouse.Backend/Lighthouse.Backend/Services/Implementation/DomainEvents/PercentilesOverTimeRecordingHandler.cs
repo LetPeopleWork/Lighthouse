@@ -48,7 +48,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             await RecordAsync(
                 domainEvent.TeamId,
                 OwnerType.Team,
-                (startDate, endDate) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate));
+                (startDate, endDate) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate),
+                () => teamMetricsService.InvalidateTeamMetrics(team));
         }
 
         public async Task HandleAsync(PortfolioFeaturesRefreshed domainEvent, CancellationToken cancellationToken)
@@ -62,13 +63,15 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             await RecordAsync(
                 domainEvent.PortfolioId,
                 OwnerType.Portfolio,
-                (startDate, endDate) => portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate));
+                (startDate, endDate) => portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate),
+                () => portfolioMetricsService.InvalidatePortfolioMetrics(portfolio));
         }
 
         private async Task RecordAsync(
             int ownerId,
             OwnerType ownerType,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
+            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles,
+            Action invalidateReadCache)
         {
             try
             {
@@ -91,6 +94,16 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     ownerType,
                     ownerId,
                     "Percentiles");
+            }
+            finally
+            {
+                // Reading the point-in-time percentiles above warms the shared metrics cache under the
+                // same (owner, window) keys the Flow Overview widgets read. Recording runs on the refresh
+                // event, which can fire on partially-seeded data (e.g. demo load), so leaving those entries
+                // behind would serve the UI a stale snapshot instead of a value computed on the settled data.
+                // Invalidate what we warmed so the UI recomputes lazily — restoring the post-refresh
+                // "cache empty, compute on first read" behaviour that predates this handler.
+                invalidateReadCache();
             }
         }
 
