@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -751,6 +751,49 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("OptionalFeatures");
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.PercentilesOverTimeSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Horizon")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MetricType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OwnerType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("P50")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("P70")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("P85")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("P95")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("RecordedAt")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "OwnerType", "MetricType", "Horizon", "RecordedAt")
+                        .IsUnique();
+
+                    b.ToTable("PercentilesOverTimeSnapshots");
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Portfolio", b =>
