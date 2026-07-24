@@ -83,6 +83,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	],
 	predictability: [
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
+		{ widgetKey: "percentilesOverTime", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
 		{ widgetKey: "arrivalsPbc", size: "large" },
 		{ widgetKey: "wipPbc", size: "large" },
@@ -107,6 +108,7 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	totalWorkItemAge: "snapshot-compare",
 	predictabilityScore: "previous-period",
 	predictabilityScoreDetails: "none",
+	percentilesOverTime: "none",
 	totalThroughput: "previous-period",
 	totalArrivals: "previous-period",
 	percentiles: "previous-period",

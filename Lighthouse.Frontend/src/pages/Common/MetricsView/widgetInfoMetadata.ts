@@ -369,6 +369,11 @@ export const widgetInfoMetadata: Record<string, WidgetInfoEntry> = {
 			"Daily blocked item count over the selected date range. Shows how the number of blocked items trends over time.",
 		learnMoreUrl: `${DOCS_BASE}#blocked-items-over-time`,
 	},
+	percentilesOverTime: {
+		description:
+			"The 50th, 70th, 85th, and 95th percentiles plotted as one point per day, so you can see how each percentile trends over time for the selected horizon.",
+		learnMoreUrl: `${DOCS_BASE}#percentiles-over-time`,
+	},
 };
 
 export function getWidgetInfo(widgetKey: string): WidgetInfoEntry | undefined {

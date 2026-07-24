@@ -25,6 +25,10 @@ import {
 	type INamedCycleTimeValue,
 	NamedCycleTimeValueSchema,
 } from "../../models/Metrics/NamedCycleTime";
+import type {
+	PercentilesHorizon,
+	PercentilesOverTimeSnapshot,
+} from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import {
@@ -202,6 +206,11 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<BlockedCountSnapshot[]>;
+
+	getPercentilesOverTime(
+		id: number,
+		horizon: PercentilesHorizon,
+	): Promise<PercentilesOverTimeSnapshot[]>;
 
 	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]>;
 
@@ -733,6 +742,18 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<BlockedCountSnapshot[]>(
 				`/${this.api}/${id}/metrics/blockedCountHistory?${this.getDateFormatString(startDate, endDate)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getPercentilesOverTime(
+		id: number,
+		horizon: PercentilesHorizon,
+	): Promise<PercentilesOverTimeSnapshot[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<PercentilesOverTimeSnapshot[]>(
+				`/${this.api}/${id}/metrics/percentiles-over-time?horizon=${horizon}`,
 			);
 			return response.data;
 		});

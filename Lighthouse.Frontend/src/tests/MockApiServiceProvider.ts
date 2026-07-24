@@ -208,6 +208,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getFlowEfficiencyInfoForPortfolio: vi.fn(),
 		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
+		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
 	};
 };
 
@@ -259,6 +260,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getFlowEfficiencyInfoForPortfolio: vi.fn(),
 		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
+		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
 	};
 };
 

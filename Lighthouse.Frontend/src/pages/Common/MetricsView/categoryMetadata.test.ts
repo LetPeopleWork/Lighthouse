@@ -237,6 +237,7 @@ describe("categoryMetadata", () => {
 			const widgets = getWidgetsForCategory("predictability", "team");
 			expect(widgets.map((w) => w.widgetKey)).toEqual([
 				"predictabilityScoreDetails",
+				"percentilesOverTime",
 				"throughputPbc",
 				"arrivalsPbc",
 				"wipPbc",

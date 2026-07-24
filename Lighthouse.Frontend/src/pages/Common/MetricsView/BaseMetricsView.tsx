@@ -79,6 +79,7 @@ import {
 	deriveLoadBalanceMatrixData,
 	type LoadBalanceMatrixData,
 } from "./loadBalanceMatrix";
+import PercentilesOverTimeWidget from "./PercentilesOverTimeWidget";
 import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget";
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
 import {
@@ -1116,6 +1117,12 @@ function buildWidgetNodes(ctx: {
 				metricsService={ctx.metricsService}
 				ownerId={ctx.entity.id}
 				title={`${ctx.blockedTerm} Over Time`}
+			/>
+		),
+		percentilesOverTime: (
+			<PercentilesOverTimeWidget
+				ownerId={ctx.entity.id}
+				metricsService={ctx.metricsService}
 			/>
 		),
 		totalThroughput: ctx.throughputInfo ? (
