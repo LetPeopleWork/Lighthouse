@@ -27,10 +27,11 @@ namespace Lighthouse.Backend.API
         private readonly IBlockedCountSnapshotRepository blockedCountSnapshotRepository;
         private readonly IWorkItemRepository workItemRepository;
         private readonly IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository;
+        private readonly IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery;
         private readonly ILogger<TeamMetricsController> logger;
 
 #pragma warning disable S107 // The blocked-drill-through endpoint (slice-08) genuinely needs the snapshot repo, work-item repo and blocked-transition repo alongside the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as OAuthService).
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, ILogger<TeamMetricsController> logger)
 #pragma warning restore S107
         {
             this.teamRepository = teamRepository;
@@ -40,6 +41,7 @@ namespace Lighthouse.Backend.API
             this.blockedCountSnapshotRepository = blockedCountSnapshotRepository;
             this.workItemRepository = workItemRepository;
             this.workItemBlockedTransitionRepository = workItemBlockedTransitionRepository;
+            this.percentilesOverTimeSeriesQuery = percentilesOverTimeSeriesQuery;
             this.logger = logger;
         }
 
@@ -493,6 +495,15 @@ namespace Lighthouse.Backend.API
                         BlockedCount = s.BlockedCount,
                     });
             });
+        }
+
+        [HttpGet("percentiles-over-time")]
+        public ActionResult<IEnumerable<PercentilesOverTimeSnapshotDto>> GetPercentilesOverTime(int teamId, [FromQuery] int? horizon)
+        {
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                percentilesOverTimeSeriesQuery
+                    .GetSeries(teamId, OwnerType.Team, MetricType.CycleTime, horizon)
+                    .Select(snapshot => new PercentilesOverTimeSnapshotDto(snapshot)));
         }
 
         [HttpGet("blockedItemsAtDate")]

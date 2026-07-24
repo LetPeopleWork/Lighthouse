@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
         private Mock<IFeatureBlockedTransitionRepository> featureBlockedTransitionRepositoryMock;
+        private Mock<IPercentilesOverTimeSeriesQuery> percentilesOverTimeSeriesQueryMock;
         private Mock<ILogger<PortfolioMetricsController>> loggerMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
@@ -51,8 +52,12 @@ namespace Lighthouse.Backend.Tests.API
             featureBlockedTransitionRepositoryMock
                 .Setup(repo => repo.GetFeatureIdsWithBlockedHistory(It.IsAny<int>(), It.IsAny<IReadOnlyCollection<int>>()))
                 .Returns([]);
+            percentilesOverTimeSeriesQueryMock = new Mock<IPercentilesOverTimeSeriesQuery>();
+            percentilesOverTimeSeriesQueryMock
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<int?>()))
+                .Returns([]);
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, loggerMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, loggerMock.Object);
 
             project = new Portfolio
             {

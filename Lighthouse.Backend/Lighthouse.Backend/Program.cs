@@ -940,6 +940,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<Lighthouse.Backend.Cache.Cache<string, object>>();
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
+            builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, PercentilesOverTimeSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();

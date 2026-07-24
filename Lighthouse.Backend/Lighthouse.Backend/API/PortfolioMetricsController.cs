@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/portfolios/{portfolioId:int}/metrics")]
     [ApiController]
     [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
+#pragma warning disable S107 // The percentiles-over-time read port (epic-5427) joins the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (mirrors TeamMetricsController).
     public class PortfolioMetricsController(
         IRepository<Portfolio> portfolioRepository,
         IPortfolioMetricsService portfolioMetricsService,
@@ -23,8 +24,10 @@ namespace Lighthouse.Backend.API
         IBlockedCountSnapshotRepository blockedCountSnapshotRepository,
         IBlockedItemService blockedItemService,
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
+        IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
+#pragma warning restore S107
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
@@ -509,6 +512,15 @@ namespace Lighthouse.Backend.API
                         BlockedCount = s.BlockedCount,
                     });
             });
+        }
+
+        [HttpGet("percentiles-over-time")]
+        public ActionResult<IEnumerable<PercentilesOverTimeSnapshotDto>> GetPercentilesOverTime(int portfolioId, [FromQuery] int? horizon)
+        {
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                percentilesOverTimeSeriesQuery
+                    .GetSeries(portfolioId, OwnerType.Portfolio, MetricType.CycleTime, horizon)
+                    .Select(snapshot => new PercentilesOverTimeSnapshotDto(snapshot)));
         }
 
         [HttpGet("blockedItemsAtDate")]

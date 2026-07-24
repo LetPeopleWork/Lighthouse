@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlockedCountSnapshotRepository> blockedCountSnapshotRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkItemBlockedTransitionRepository> workItemBlockedTransitionRepositoryMock;
+        private Mock<IPercentilesOverTimeSeriesQuery> percentilesOverTimeSeriesQueryMock;
         private Mock<ILogger<TeamMetricsController>> loggerMock;
 
         [SetUp]
@@ -38,6 +39,10 @@ namespace Lighthouse.Backend.Tests.API
             blockedCountSnapshotRepositoryMock = new Mock<IBlockedCountSnapshotRepository>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             workItemBlockedTransitionRepositoryMock = new Mock<IWorkItemBlockedTransitionRepository>();
+            percentilesOverTimeSeriesQueryMock = new Mock<IPercentilesOverTimeSeriesQuery>();
+            percentilesOverTimeSeriesQueryMock
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<int?>()))
+                .Returns([]);
             workItemBlockedTransitionRepositoryMock
                 .Setup(repo => repo.GetBlockedTransitionsAt(It.IsAny<DateOnly>()))
                 .Returns([]);
@@ -2065,7 +2070,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, loggerMock.Object)
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, loggerMock.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
             };
