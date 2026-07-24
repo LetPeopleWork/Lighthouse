@@ -625,6 +625,11 @@ outcomes:
       PercentilesOverTimeSnapshot / ProcessBehaviorSnapshot row per (OwnerId, OwnerType, MetricType, Horizon?, RecordedAt).
     measurement_window: every CI run (ci_verifysqlite + ci_verifypostgres)
     rationale: "US-02 AC2 / DDD-5. Idempotency is structural (upsert on the unique natural-key index) — the test guards the invariant, incl. the Postgres provider's real unique constraint."
+    instrumentation_status: >
+      Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green. The Slice01 integration + recording-handler unit
+      tests assert exactly one PercentilesOverTimeSnapshot row per (OwnerId, OwnerType, MetricType=CycleTime,
+      Horizon, RecordedAt) under same-day double-refresh (EF InMemory) + the real Postgres-container migration
+      test exercises the unique constraint. WIA (Horizon=NULL) idempotency joins this invariant in slice-02.
     alerting:
       - condition: "same-day double-refresh test asserts row count != 1"
         action: "CI fails (red)"
@@ -639,6 +644,11 @@ outcomes:
       Serilog recording-failed event is emitted. Per_instance: operators see the event in their own logs.
     measurement_window: every CI run + per_instance (operator logs)
     rationale: "US-02 AC4 / DDD-6. The Epic 5121 dispatcher SWALLOWS handler errors, so the handler owns its own observability — it must not rely on the dispatcher surfacing the failure."
+    instrumentation_status: >
+      Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green. PercentilesOverTimeRecordingHandler unit test forces
+      a handler exception and asserts (a) the refresh path completes green, (b) a structured Serilog
+      recording-failed Error event (OwnerId, OwnerType, MetricFamily=Percentiles, Exception) is emitted from
+      the handler's own try/catch. Same failure discipline carries to the ProcessBehavior handler in slice-03.
     alerting:
       - condition: "recording-failure AT shows refresh broken OR no structured event emitted"
         action: "CI fails (red)"
@@ -653,6 +663,11 @@ outcomes:
       today — no snapshots recorded yet") for both widgets, never a broken chart.
     measurement_window: every ci_e2e run
     rationale: "US-01 AC4 / D6. Forward-only recording means fresh owners have no history; the empty-state must be honest, not broken."
+    instrumentation_status: >
+      Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green for the "Percentiles Over Time" widget. A zero-snapshot
+      owner's percentiles-over-time GET returns an empty array and the widget renders the D6 honest empty-state
+      copy, never a broken axis (walking-skeleton E2E + FE widget test). The "PBC Over Time" widget's empty-state
+      is DEFERRED to slice-03 (that widget is not yet shipped).
     alerting:
       - condition: "zero-snapshot E2E finds a rendered-but-empty/broken axis instead of the empty-state copy"
         action: "CI fails (red)"
@@ -665,6 +680,12 @@ outcomes:
     measured_by: "Code review + AT: the two recording handlers on the shared refresh events drive all series; no third bespoke recorder is introduced per metric type."
     measurement_window: per-feature (review) + every CI run (AT)
     rationale: "DISCUSS KPI 'pipeline reuse'. Guards the ADR-106/107 reuse decision against per-metric sprawl."
+    instrumentation_status: >
+      Slice-01 (CT) MEASURED 2026-07-24: baseline = ONE shared recording handler
+      (PercentilesOverTimeRecordingHandler) + ONE shared snapshot table (PercentilesOverTimeSnapshot) driving
+      the single CT metric family today; zero bespoke per-metric recorders. Target of ">= 2 families sharing
+      one pipeline" is MET-IN-PROGRESS: slice-02 WIA must join THIS handler/table (MetricType=WorkItemAge,
+      Horizon=NULL), not fork a second recorder — the invariant that closes the KPI is verified when WIA lands.
     alerting: []
 
   - id: OUT-5427-mutation-kill-rate
@@ -675,4 +696,7 @@ outcomes:
     measured_by: "Stryker.NET (backend) + Stryker (frontend) per-feature reports scoped to the new files."
     measurement_window: per-feature (CLAUDE.md gate)
     rationale: "DISCUSS KPI 'mutation kill rate' + project per-feature mutation mandate. Recording idempotency, failure isolation, empty-series, and horizon-toggle logic are the high-value mutation targets."
+    instrumentation_status: >
+      Slice-01 MEASURED 2026-07-24: BE 85.71% (Stryker.NET) + FE 90.91% (Stryker), both >= 80% gate, scoped to
+      the new snapshot/recording/query/widget code. PASSED. Re-measured per-feature on each subsequent slice.
     alerting: []

@@ -3140,3 +3140,25 @@ Feature: epic-5427-percentiles-over-time — record flow-metric percentiles and 
 ### C4
 
 System Context: **no delta** (percentiles/PBC stay Lighthouse-computed; the connector is never asked for trend data). Container delta: two new snapshot tables + repositories, two recording handlers + one demo-backfill handler on the existing refresh events, two read query ports + two `MetricsController` GET actions, two new Predictability frontend widgets. Full Container/Component diagrams + reuse analysis: `docs/feature/epic-5427-percentiles-over-time/feature-delta.md` → "Wave: DESIGN / [REF] C4".
+
+### Component Inventory — slice-01 (DELIVER, SHIPPED 2026-07-24)
+
+The DESIGN prose above spans the whole epic (4 slices). **Slice 01** (walking skeleton) shipped the Cycle-Time backbone + the shared forward-only recording pipeline; the `ProcessBehaviorSnapshot` family, the WIA tab, and the "PBC Over Time" widget are **DEFERRED to slices 02-04** (not started). Mutation BE 85.71% / FE 90.91%; adversarial review APPROVED. Evolution record: `docs/evolution/epic-5427-percentiles-over-time-evolution.md`.
+
+| Component | Path / symbol | Status |
+|---|---|---|
+| `PercentilesOverTimeSnapshot` entity + `MetricType` enum (`CycleTime` only; nullable `Horizon`) | `Models/PercentilesOverTimeSnapshot.cs`, `Models/MetricType.cs` | **SHIPPED slice-01** |
+| `IPercentilesOverTimeSnapshotRepository` + thin `RepositoryBase<T>` impl | `Services/{Interfaces,Implementation}/Repositories/…SnapshotRepository.cs` | **SHIPPED slice-01** |
+| DbSet + unique natural-key index `(OwnerId, OwnerType, MetricType, Horizon, RecordedAt)` | `Data/LighthouseAppContext.cs` | **SHIPPED slice-01** |
+| EF migration `AddPercentilesOverTimeSnapshot`, additive/expand-only, both providers | Sqlite `20260724065010_…`, Postgres `20260724065020_…` | **SHIPPED slice-01** |
+| `PercentilesOverTimeRecordingHandler` (CT, idempotent-per-day, self-isolated failure log) | `Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs` | **SHIPPED slice-01** |
+| `IPercentilesOverTimeSeriesQuery` + impl (read port) + `PercentilesOverTimeSnapshotDto` | `Services/…/PercentilesOverTimeSeriesQuery.cs`, `API/DTO/PercentilesOverTimeSnapshotDto.cs` | **SHIPPED slice-01** |
+| `percentiles-over-time?horizon=` GET on Team + Portfolio `MetricsController` | `API/TeamMetricsController.cs`, `API/PortfolioMetricsController.cs` | **SHIPPED slice-01** |
+| `DemoPercentilesBackfillHandler` (CT-only, demo-gated, 14d × 3 horizons) | `Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs` | **SHIPPED slice-01** |
+| "Percentiles Over Time" widget (CT-30/60/90 toggle) + hook + service method + registration | `Frontend/.../MetricsView/PercentilesOverTimeWidget.tsx`, `usePercentilesOverTime.ts`, `categoryMetadata.ts`; `MetricsService.getPercentilesOverTime` | **SHIPPED slice-01** |
+| E2E walking skeleton (POM, demo Team Zenith) | `Lighthouse.EndToEndTests/tests/specs/flow/PercentilesOverTime.spec.ts` | **SHIPPED slice-01** |
+| WIA tab + WIA rows (`MetricType=WorkItemAge`, `Horizon=NULL`) on the SAME table/pipeline | (US-03) | **DEFERRED slice-02** |
+| `ProcessBehaviorSnapshot` entity + repo + `ProcessBehaviorRecordingHandler` + `IProcessBehaviorSeriesQuery` + `process-behavior-over-time?type=` endpoint | (US-04) | **DEFERRED slice-03** |
+| "PBC Over Time" widget + metric-type toggle (Throughput → WIA/WIP/CT/Arrivals/Feature-Size portfolio-only) | (US-04/US-05) | **DEFERRED slices 03-04** |
+
+Provider note (slice-02): the unique index includes `Horizon`; WIA rows write `Horizon = NULL`, and NULLs are distinct under a plain unique index on most providers — the WIA same-day idempotency guard must key on `MetricType = WorkItemAge` with `Horizon IS NULL` explicitly rather than relying on the composite index alone. Verify on both Sqlite + Postgres.
