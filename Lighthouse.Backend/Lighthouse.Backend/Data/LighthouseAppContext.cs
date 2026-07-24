@@ -72,6 +72,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<BlockedCountSnapshot> BlockedCountSnapshots { get; set; } = null!;
 
+        public DbSet<PercentilesOverTimeSnapshot> PercentilesOverTimeSnapshots { get; set; } = null!;
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // Restore SQLite's legacy double-quoted-string tolerance on every EF-opened connection.
@@ -253,6 +255,14 @@ namespace Lighthouse.Backend.Data
                 entity.HasKey(s => s.Id);
 
                 entity.HasIndex(s => new { s.OwnerId, s.OwnerType, s.RecordedAt })
+                      .IsUnique();
+            });
+
+            modelBuilder.Entity<PercentilesOverTimeSnapshot>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+
+                entity.HasIndex(s => new { s.OwnerId, s.OwnerType, s.MetricType, s.Horizon, s.RecordedAt })
                       .IsUnique();
             });
 
