@@ -551,3 +551,53 @@ describe("MetricsService getCycleTimeData named cycle times", () => {
 		expect(result[0].namedCycleTimes).toEqual([]);
 	});
 });
+
+describe("MetricsService getPercentilesOverTime", () => {
+	let metricsService: TeamMetricsService;
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+		metricsService = new TeamMetricsService();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("fetches the persisted percentiles series for the requested owner and horizon", async () => {
+		const series = [
+			{
+				recordedAt: "2026-05-23",
+				metricType: "CycleTime",
+				p50: 3,
+				p70: 4,
+				p85: 6,
+				p95: 8,
+			},
+			{
+				recordedAt: "2026-05-24",
+				metricType: "CycleTime",
+				p50: 3,
+				p70: 5,
+				p85: 7,
+				p95: 9,
+			},
+		];
+		mockedAxios.get.mockResolvedValueOnce({ data: series });
+
+		const result = await metricsService.getPercentilesOverTime(7, 60);
+
+		expect(result).toEqual(series);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/percentiles-over-time?horizon=60",
+		);
+	});
+
+	it("propagates errors when fetching the percentiles series fails", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
+
+		await expect(metricsService.getPercentilesOverTime(1, 30)).rejects.toThrow(
+			"Network Error",
+		);
+	});
+});

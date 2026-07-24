@@ -167,6 +167,129 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandlePortfolioRefreshed_NonDemoOwner_DoesNothing()
+        {
+            const int portfolioId = 12;
+            const int connectionId = 55;
+            ArrangeConnection(connectionId, isDemo: false);
+            ArrangePortfolio(portfolioId, connectionId);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolioId), CancellationToken.None);
+
+            Assert.That(context.PercentilesOverTimeSnapshots.ToList(), Is.Empty, "real portfolios stay forward-only and are never backdated");
+        }
+
+        [Test]
+        public async Task HandlePortfolioRefreshed_NullPortfolio_DoesNothing()
+        {
+            portfolioRepositoryMock.Setup(x => x.GetById(404)).Returns((Portfolio?)null);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(404), CancellationToken.None);
+
+            Assert.That(context.PercentilesOverTimeSnapshots.ToList(), Is.Empty, "a missing portfolio must not trigger a backfill or throw");
+        }
+
+        // Idempotency keys off a *backdated* row (RecordedAt < today). A pre-existing
+        // row for *today* only (the forward-only recorder's output) must NOT be read
+        // as "already backfilled" — the backfill still runs and the today row is left
+        // untouched by the backdated upserts.
+        [Test]
+        public async Task HandleTeamRefreshed_OnlyTodayRowExists_StillBackfillsBackdatedHistory_AndLeavesTodayRowUntouched()
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            using (var seedContext = CreateContext())
+            {
+                // The forward-only recorder already wrote today's horizon-30 row.
+                seedContext.PercentilesOverTimeSnapshots.Add(new PercentilesOverTimeSnapshot
+                {
+                    OwnerId = teamId,
+                    OwnerType = OwnerType.Team,
+                    MetricType = MetricType.CycleTime,
+                    Horizon = 30,
+                    RecordedAt = todayDate,
+                    P50 = 999,
+                    P70 = 999,
+                    P85 = 999,
+                    P95 = 999,
+                });
+                await seedContext.SaveChangesAsync();
+            }
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var ownerRows = context.PercentilesOverTimeSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .ToList();
+            var backdated = ownerRows.Where(s => s.RecordedAt < todayDate).ToList();
+            var todayRow = ownerRows.Single(s => s.RecordedAt == todayDate && s.Horizon == 30);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(backdated, Has.Count.EqualTo(42), "a today-only row must not be mistaken for an already-run backfill");
+                Assert.That(todayRow.P50, Is.EqualTo(999), "the backdated upserts must never touch the pre-existing today row");
+                Assert.That(backdated.All(s => s.RecordedAt < todayDate), Is.True);
+            }
+        }
+
+        // The synthesized demo wave is deterministic: p50 = 4 + (dayIndex % 5) + horizon/30,
+        // where dayIndex = HistoryWindowDays - daysAgo, and each higher percentile steps
+        // by a fixed offset. Pinning exact values guards the arithmetic.
+        [Test]
+        public async Task HandleTeamRefreshed_SynthesizesDeterministicPercentileValuesPerDayAndHorizon()
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            PercentilesOverTimeSnapshot Row(int daysAgo, int horizon) =>
+                context.PercentilesOverTimeSnapshots.Single(s =>
+                    s.OwnerId == teamId
+                    && s.OwnerType == OwnerType.Team
+                    && s.Horizon == horizon
+                    && s.RecordedAt == todayDate.AddDays(-daysAgo));
+
+            // Oldest day: daysAgo=14 -> dayIndex=0 -> (0 % 5)=0.
+            var oldestH30 = Row(14, 30); // 4 + 0 + 30/30 = 5
+            var oldestH90 = Row(14, 90); // 4 + 0 + 90/30 = 7
+            // Newest backdated day: daysAgo=1 -> dayIndex=13 -> (13 % 5)=3.
+            var newestH30 = Row(1, 30);  // 4 + 3 + 1 = 8
+            var newestH90 = Row(1, 90);  // 4 + 3 + 3 = 10
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(oldestH30.P50, Is.EqualTo(5));
+                Assert.That(oldestH30.P70, Is.EqualTo(8), "p70 = p50 + 3");
+                Assert.That(oldestH30.P85, Is.EqualTo(12), "p85 = p70 + 4");
+                Assert.That(oldestH30.P95, Is.EqualTo(17), "p95 = p85 + 5");
+                Assert.That(oldestH90.P50, Is.EqualTo(7), "horizon offset = horizon / 30");
+                Assert.That(newestH30.P50, Is.EqualTo(8), "dayIndex modulo drives the wave; 13 % 5 = 3");
+                Assert.That(newestH90.P50, Is.EqualTo(10));
+            }
+        }
+
+        [Test]
         public async Task HandleTeamRefreshed_AlreadyBackfilled_IsIdempotent()
         {
             const int teamId = 7;

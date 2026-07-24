@@ -24,6 +24,7 @@ vi.mock("@mui/x-charts", () => ({
 				color?: string;
 				data?: number[];
 				shape?: string;
+				showMark?: boolean;
 			}[];
 			hideLegend?: boolean;
 		}) => (
@@ -40,7 +41,9 @@ vi.mock("@mui/x-charts", () => ({
 							label: s.label,
 							color: s.color,
 							points: s.data?.length ?? 0,
+							data: s.data ?? [],
 							shape: s.shape,
+							showMark: s.showMark,
 						})) ?? [],
 					)}
 				</div>
@@ -210,7 +213,13 @@ describe("PercentilesOverTimeWidget", () => {
 
 		const seriesInfo = JSON.parse(
 			screen.getByTestId("chart-series").textContent ?? "[]",
-		) as { label: string; color: string; points: number }[];
+		) as {
+			label: string;
+			color: string;
+			points: number;
+			data: number[];
+			showMark: boolean;
+		}[];
 
 		// 50/70/85/95, one series each, three points each.
 		expect(seriesInfo).toHaveLength(4);
@@ -222,10 +231,84 @@ describe("PercentilesOverTimeWidget", () => {
 		]);
 		for (const s of seriesInfo) {
 			expect(s.points).toBe(3);
+			// Every percentile line opts into markers (uniform circles).
+			expect(s.showMark).toBe(true);
 		}
+		// Each series plots ITS OWN percentile accessor, in recordedAt order.
+		expect(seriesInfo[0].data).toEqual([3, 3, 4]); // p50 across the three days
+		expect(seriesInfo[1].data).toEqual([4, 5, 5]); // p70
+		expect(seriesInfo[2].data).toEqual([6, 7, 7]); // p85
+		expect(seriesInfo[3].data).toEqual([8, 9, 10]); // p95
 		// Red at the 50th end, green at the 95th end (D7 ramp).
 		expect(seriesInfo[0].color).toBe(riskyColor);
 		expect(seriesInfo[3].color).toBe(certainColor);
+	});
+
+	it("renders the default title and one swatch per percentile line", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		// Default title (no title prop supplied).
+		expect(screen.getByText("Percentiles Over Time")).toBeInTheDocument();
+		// One legend swatch per percentile, keyed by its own test id.
+		for (const percentile of [50, 70, 85, 95]) {
+			expect(
+				screen.getByTestId(`percentile-line-${percentile}`),
+			).toBeInTheDocument();
+		}
+	});
+
+	it("shows neither the chart nor the empty state while the series is still loading", async () => {
+		// A promise that never resolves keeps the hook's series === null (loading).
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockReturnValue(new Promise<PercentilesOverTimeSnapshot[]>(() => {}));
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+		);
+
+		// While loading we must render neither the chart nor the honest empty copy —
+		// the empty state is reserved for a loaded-but-empty series (series === []).
+		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("percentiles-over-time-empty"),
+		).not.toBeInTheDocument();
+	});
+
+	it("logs and recovers when the series fetch rejects, showing no chart", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const getPercentilesOverTime = vi.fn().mockRejectedValue(new Error("boom"));
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() => expect(consoleError).toHaveBeenCalled());
+		expect(consoleError).toHaveBeenCalledWith(
+			"Error fetching percentiles over time:",
+			expect.any(Error),
+		);
+		// A failed fetch leaves the series null → no chart, no crash.
+		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+		consoleError.mockRestore();
 	});
 
 	it("shows the honest empty-state copy and no chart when no snapshots exist", async () => {

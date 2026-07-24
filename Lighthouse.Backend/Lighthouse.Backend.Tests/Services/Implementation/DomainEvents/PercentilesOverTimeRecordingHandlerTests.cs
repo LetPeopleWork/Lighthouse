@@ -354,6 +354,93 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(count, Is.Zero);
         }
 
+        // -----------------------------------------------------------------
+        // ValueFor must tolerate a percentile that the metrics reader omits —
+        // the missing percentile is recorded as 0, never throwing. (Guards the
+        // FirstOrDefault-vs-First distinction in the percentile lookup.)
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_ReadingOmitsAPercentile_RecordsZeroForIt_WithoutThrowing()
+        {
+            var team = CreateTeam(3);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+
+            // The reader returns only P50/P70/P85 for every horizon — P95 is absent.
+            List<PercentileValue> PartialReading() =>
+            [
+                new PercentileValue(50, 8),
+                new PercentileValue(70, 9),
+                new PercentileValue(85, 10),
+            ];
+            teamMetricsServiceMock
+                .Setup(x => x.GetCycleTimePercentilesForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(PartialReading());
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var total = await context.PercentilesOverTimeSnapshots.CountAsync();
+            var h30 = await FindSnapshot(context, team.Id, OwnerType.Team, 30, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(total, Is.EqualTo(3), "recording must complete for all horizons even when a percentile is missing");
+                Assert.That(h30, Is.Not.Null);
+                Assert.That(h30!.P50, Is.EqualTo(8));
+                Assert.That(h30.P85, Is.EqualTo(10));
+                Assert.That(h30.P95, Is.Zero, "an omitted percentile is stored as 0, not an error");
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // The same-day upsert key is the FULL (owner, type, metric, horizon, day)
+        // tuple: a foreign owner's row for the same day/horizon must NOT be picked
+        // up as "the existing row". Guards the conjunction in the upsert predicate.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_ForeignOwnerRowSameDayAndHorizon_AddsOwnRow_LeavesForeignRowUntouched()
+        {
+            var team = CreateTeam(42);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+
+            const int foreignOwnerId = 999;
+            using (var seedContext = CreateContext())
+            {
+                // A different team already has a today/horizon-30 cycle-time row.
+                seedContext.PercentilesOverTimeSnapshots.Add(new PercentilesOverTimeSnapshot
+                {
+                    OwnerId = foreignOwnerId,
+                    OwnerType = OwnerType.Team,
+                    MetricType = MetricType.CycleTime,
+                    Horizon = 30,
+                    RecordedAt = Today,
+                    P50 = 500,
+                    P70 = 500,
+                    P85 = 500,
+                    P95 = 500,
+                });
+                await seedContext.SaveChangesAsync();
+            }
+
+            SetupTeamPercentiles(team, h30: Percentiles(1, 1, 1, 1), h60: Percentiles(2, 2, 2, 2), h90: Percentiles(3, 3, 3, 3));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var ownRow = await FindSnapshot(context, team.Id, OwnerType.Team, 30, Today);
+            var foreignRow = await FindSnapshot(context, foreignOwnerId, OwnerType.Team, 30, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ownRow, Is.Not.Null, "the recorder must add its own row, not reuse a foreign owner's row");
+                Assert.That(ownRow!.P50, Is.EqualTo(1));
+                Assert.That(foreignRow, Is.Not.Null);
+                Assert.That(foreignRow!.P50, Is.EqualTo(500), "the foreign owner's row must be left untouched");
+            }
+        }
+
         private void SetupTeamPercentiles(
             Team team, List<PercentileValue> h30, List<PercentileValue> h60, List<PercentileValue> h90)
         {
