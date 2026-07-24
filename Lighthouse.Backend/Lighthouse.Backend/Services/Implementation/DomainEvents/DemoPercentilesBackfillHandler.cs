@@ -109,8 +109,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
                 foreach (var horizon in Horizons)
                 {
-                    var (p50, p70, p85, p95) = SynthesizePercentiles(dayIndex, horizon);
-                    UpsertSnapshot(ownerId, ownerType, horizon, recordedAt, p50, p70, p85, p95);
+                    var percentiles = SynthesizePercentiles(dayIndex, horizon);
+                    UpsertSnapshot(ownerId, ownerType, horizon, recordedAt, percentiles);
                 }
             }
 
@@ -129,7 +129,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         }
 
         private void UpsertSnapshot(
-            int ownerId, OwnerType ownerType, int horizon, DateOnly recordedAt, int p50, int p70, int p85, int p95)
+            int ownerId, OwnerType ownerType, int horizon, DateOnly recordedAt,
+            (int P50, int P70, int P85, int P95) percentiles)
         {
             var existing = snapshotRepository.GetByPredicate(snapshot =>
                 snapshot.OwnerId == ownerId
@@ -140,10 +141,10 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
             if (existing != null)
             {
-                existing.P50 = p50;
-                existing.P70 = p70;
-                existing.P85 = p85;
-                existing.P95 = p95;
+                existing.P50 = percentiles.P50;
+                existing.P70 = percentiles.P70;
+                existing.P85 = percentiles.P85;
+                existing.P95 = percentiles.P95;
                 return;
             }
 
@@ -154,10 +155,10 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 MetricType = MetricType.CycleTime,
                 Horizon = horizon,
                 RecordedAt = recordedAt,
-                P50 = p50,
-                P70 = p70,
-                P85 = p85,
-                P95 = p95,
+                P50 = percentiles.P50,
+                P70 = percentiles.P70,
+                P85 = percentiles.P85,
+                P95 = percentiles.P95,
             });
         }
     }

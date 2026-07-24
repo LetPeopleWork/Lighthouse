@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             // The migration must be additive: pre-existing sibling snapshot tables remain intact and queryable.
             var existingBlockedCount = await context.BlockedCountSnapshots.CountAsync();
-            Assert.That(existingBlockedCount, Is.EqualTo(0),
+            Assert.That(existingBlockedCount, Is.Zero,
                 "the AddPercentilesOverTimeSnapshot migration must not drop or alter the existing BlockedCountSnapshots table");
         }
 
