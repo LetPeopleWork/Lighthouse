@@ -5,16 +5,14 @@ import {
 	Stack,
 	ToggleButton,
 	ToggleButtonGroup,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts";
 import type React from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { IFeature } from "../../../models/Feature";
-import type {
-	PercentilesHorizon,
-	PercentilesOverTimeSnapshot,
-} from "../../../models/Metrics/PercentilesOverTimeSnapshot";
+import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import { PERCENTILES_HORIZONS } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
@@ -45,10 +43,11 @@ const PERCENTILE_LINES: readonly {
 
 /**
  * Percentiles Over Time widget (Predictability category, team + portfolio).
- * Wraps the red→green percentile line ramp with a CT-30/60/90 horizon toggle
- * (CT-30 default). The persisted daily series is fetched per horizon through
- * the existing metrics-service abstraction via usePercentilesOverTime; toggling
- * re-plots already-fetched horizons without a backend recompute (US-01).
+ * Wraps the red→green percentile line ramp with a 30/60/90-day cycle-time
+ * horizon toggle (30 days default). The persisted daily series is fetched per
+ * horizon through the existing metrics-service abstraction via
+ * usePercentilesOverTime; toggling re-plots already-fetched horizons without a
+ * backend recompute (US-01).
  */
 const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 	ownerId,
@@ -60,19 +59,14 @@ const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 		metricsService,
 	);
 
-	const handleHorizonChange = (
-		_event: React.MouseEvent<HTMLElement>,
-		next: PercentilesHorizon | null,
-	): void => {
-		if (next !== null) {
-			setHorizon(next);
-		}
-	};
-
+	// All four percentile lines share one plain-circle marker — the red→green
+	// colour is the only thing that distinguishes them (uniform marks, not the
+	// per-series shape cycle MUI-X applies by default).
 	const lineSeries = PERCENTILE_LINES.map((line) => ({
 		label: line.label,
 		color: new ForecastLevel(line.percentile).color,
 		showMark: true,
+		shape: "circle" as const,
 		data: (series ?? []).map(line.accessor),
 	}));
 
@@ -101,17 +95,30 @@ const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 						size="small"
 						exclusive
 						value={horizon}
-						onChange={handleHorizonChange}
 						aria-label="Percentiles horizon"
 					>
 						{PERCENTILES_HORIZONS.map((option) => (
-							<ToggleButton
+							// Tooltip wraps the button, so it — not the ToggleButton — is the
+							// group's direct child and the group's selected/onChange injection
+							// no longer reaches the button. We set selected + onClick
+							// explicitly per button so pressed styling and aria-pressed hold
+							// regardless of group injection (future WIA "Age" toggle slots in
+							// the same way).
+							<Tooltip
 								key={option}
-								value={option}
-								data-testid={`percentiles-horizon-${option}`}
+								title={`Cycle Time over the last ${option} days`}
+								arrow
 							>
-								{`CT-${option}`}
-							</ToggleButton>
+								<ToggleButton
+									size="small"
+									value={option}
+									selected={horizon === option}
+									onClick={() => setHorizon(option)}
+									data-testid={`percentiles-horizon-${option}`}
+								>
+									{`${option} days`}
+								</ToggleButton>
+							</Tooltip>
 						))}
 					</ToggleButtonGroup>
 				</Box>
@@ -147,6 +154,7 @@ const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 								style={{ height: "100%", width: "100%" }}
 								xAxis={[{ data: dates, scaleType: "point" }]}
 								series={lineSeries}
+								hideLegend
 							/>
 						</Box>
 					</>

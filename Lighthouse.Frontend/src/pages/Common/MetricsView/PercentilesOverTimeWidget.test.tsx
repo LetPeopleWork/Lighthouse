@@ -16,11 +16,21 @@ vi.mock("@mui/x-charts", () => ({
 		({
 			xAxis,
 			series,
+			hideLegend,
 		}: {
 			xAxis?: { data?: string[] }[];
-			series?: { label?: string; color?: string; data?: number[] }[];
+			series?: {
+				label?: string;
+				color?: string;
+				data?: number[];
+				shape?: string;
+			}[];
+			hideLegend?: boolean;
 		}) => (
 			<div data-testid="mock-line-chart">
+				{/* The built-in MUI-X legend is suppressed (hideLegend) so only the
+				    custom top-left legend renders — expose the prop to assert it. */}
+				<div data-testid="chart-hide-legend">{String(hideLegend)}</div>
 				<div data-testid="chart-xaxis">
 					{JSON.stringify(xAxis?.[0]?.data ?? [])}
 				</div>
@@ -30,6 +40,7 @@ vi.mock("@mui/x-charts", () => ({
 							label: s.label,
 							color: s.color,
 							points: s.data?.length ?? 0,
+							shape: s.shape,
 						})) ?? [],
 					)}
 				</div>
@@ -80,7 +91,7 @@ describe("PercentilesOverTimeWidget", () => {
 		vi.clearAllMocks();
 	});
 
-	it("fetches and plots the CT-30 horizon by default", async () => {
+	it("fetches and plots the 30-day horizon by default", async () => {
 		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
 		render(
 			<PercentilesOverTimeWidget
@@ -93,7 +104,9 @@ describe("PercentilesOverTimeWidget", () => {
 			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
 		);
 
-		// CT-30 is the pressed toggle on first paint (AC1).
+		// The 30-day chip is the pressed toggle on first paint (AC1). Selection is
+		// set explicitly per button (not via ToggleButtonGroup injection), so the
+		// Tooltip wrapper does not cost the pressed state.
 		expect(screen.getByTestId("percentiles-horizon-30")).toHaveAttribute(
 			"aria-pressed",
 			"true",
@@ -106,6 +119,76 @@ describe("PercentilesOverTimeWidget", () => {
 			"aria-pressed",
 			"false",
 		);
+	});
+
+	it("labels the horizon chips in days with an explanatory cycle-time tooltip", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+		);
+
+		// Visible labels read "{30|60|90} days", not the old "CT-{n}" codes.
+		const chip30 = screen.getByTestId("percentiles-horizon-30");
+		expect(chip30).toHaveTextContent("30 days");
+		expect(screen.getByTestId("percentiles-horizon-60")).toHaveTextContent(
+			"60 days",
+		);
+		expect(screen.getByTestId("percentiles-horizon-90")).toHaveTextContent(
+			"90 days",
+		);
+
+		// Hovering a chip surfaces the cycle-time explanation.
+		fireEvent.mouseOver(chip30);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Cycle Time over the last 30 days",
+		);
+	});
+
+	it("renders a single legend by suppressing the chart's built-in legend", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		// Only the custom top-left legend renders; the chart's built-in one is off.
+		expect(
+			screen.getByTestId("percentiles-over-time-legend"),
+		).toBeInTheDocument();
+		expect(screen.getByTestId("chart-hide-legend")).toHaveTextContent("true");
+	});
+
+	it("gives every percentile line the same default circle marker", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		const seriesInfo = JSON.parse(
+			screen.getByTestId("chart-series").textContent ?? "[]",
+		) as { shape: string }[];
+
+		// Uniform marker: colour is the only differentiator, no per-series shape cycle.
+		expect(seriesInfo).toHaveLength(4);
+		for (const s of seriesInfo) {
+			expect(s.shape).toBe("circle");
+		}
 	});
 
 	it("renders four dated percentile lines with the red-to-green ramp", async () => {
