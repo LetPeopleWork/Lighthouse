@@ -102,11 +102,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private static void ThenTheSeriesIsEmpty((HttpStatusCode Status, string Body) response)
         {
-            Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
-                $"An owner with no age snapshots must still get an honest empty response, not an error. Body: {response.Body}");
+            var actual = ReadSeries(response.Body);
 
-            Assert.That(ReadSeries(response.Body), Is.Empty,
-                $"With no age snapshots the series must be an empty array (honest empty-state), never zero-padded or broken. Body: {response.Body}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
+                    $"An owner with no age snapshots must still get an honest empty response, not an error. Body: {response.Body}");
+
+                Assert.That(actual, Is.Empty,
+                    $"With no age snapshots the series must be an empty array (honest empty-state), never zero-padded or broken. Body: {response.Body}");
+            }
         }
 
         /// <summary>
