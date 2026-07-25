@@ -35,3 +35,57 @@ Both:
 - **Accepted cost**: the dispatcher swallows errors, so each handler must carry explicit try/catch + a failure log — verified by an AT asserting recording failure leaves the refresh green and emits the signal.
 - **Reuse verdict**: refresh events `TeamDataRefreshed` / `PortfolioFeaturesRefreshed` → **EXTEND** (new subscribers); metrics services → **EXTEND** (read percentile/PBC as-of-today); handlers → **CREATE NEW** (new computation, same events — justified, not a reimplementation of blocked-count).
 - Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (tables upserted), [ADR-027](./adr-027-target-architecture-modular-monolith-domain-events-cqrs-lite.md) (domain-event bus + swallow semantics), [ADR-068](./adr-068-blocked-transition-capture-and-unblocked-event.md) / [ADR-069](./adr-069-blocked-count-snapshot-and-over-time-endpoint.md) (the snapshot-on-refresh pattern this mirrors).
+
+
+## Amendment (slice-02, 2026-07-25) — one handler records both percentile families; failure containment is per-family; recording-failed template reconciled
+
+**Status**: Accepted. Refines Decision item 1 and the failure-isolation consequence; the
+two-handlers-on-the-existing-refresh-events decision and the rejected alternatives are unchanged.
+
+### 1. One pass, two families, contained per family
+
+`PercentilesOverTimeRecordingHandler` now records **both** percentile families in the single
+`RecordAsync` pass the ADR describes — cycle time over horizons `[30, 60, 90]`, and work item age in
+one pass under the horizon-less sentinel (`[PercentilesOverTimeSnapshot.NoHorizon]`, see the ADR-106
+amendment). No second recorder was introduced; the `OUT-5427-pipeline-reuse` KPI is what this
+protects.
+
+Failure isolation gained an inner boundary the original ADR did not specify. Each family's loop runs
+inside its own `try/catch` (`RecordFamily`), *inside* the outer per-owner `try/catch`:
+
+- **Why**: `Save()` is called once for the owner. Without the inner boundary, a throwing WIA read
+  would unwind past the CT rows already staged on the change tracker, and one family's failure would
+  silently discard the other family's work for that refresh.
+- **Consequence**: a failing family logs and is skipped; the surviving family's staged rows still
+  persist through the shared `Save()`.
+
+The `finally { invalidateReadCache(); }` guard added late in slice-01 (recording writes must not
+leave a stale read cache serving the pre-recording series) is preserved unchanged, and is now
+test-pinned on **both** the success and the exception paths.
+
+### 2. Recording-failed message template — ADR text reconciled to the shipped code
+
+The DESIGN-wave observability note carried the template
+`"Percentile/PBC snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})"`
+(see `docs/feature/epic-5427-percentiles-over-time/feature-delta.md` → "Wave: DEVOPS / [REF]
+Observability Stack", and the slice-01 roadmap step note). Slice-01 shipped, and slice-02 keeps:
+
+```
+Level:    Error
+Template: "Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})"
+Props:    OwnerType, OwnerId, MetricFamily, Exception
+```
+
+**The shipped template is canonical.** The `/PBC` half of the DESIGN-wave string was drafted on the
+assumption of one shared message across both recorders; the decision above splits recording into two
+handlers, so the PBC recorder (slices 03/04) will emit its **own** message and does not need to share
+this one's text. Recording it here rather than editing the DESIGN-wave prose keeps the drift visible.
+
+`MetricFamily` is a **family**, not a metric type: both CT and WIA failures report
+`MetricFamily = "Percentiles"` (a `private const string` on the handler). Operator alerting keys on
+the family, so a per-metric-type value would fragment one alert into several. The
+`OUT-5427-recording-failure-isolation` KPI asserts exactly this property.
+
+Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (the horizon sentinel
+the WIA pass writes), [ADR-109](./adr-109-demo-percentiles-backfill-handler.md) (the demo backfill,
+whose idempotency guard had to become per-family for the same reason).

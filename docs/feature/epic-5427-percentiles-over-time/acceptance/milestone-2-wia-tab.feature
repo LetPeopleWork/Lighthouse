@@ -3,15 +3,18 @@ Feature: Work-item-age percentiles over time (Epic 5427, Slice 02 — US-03)
   I want a Work Item Age tab on the same widget showing age percentiles day by day
   So that I read age and cycle-time predictability trends from one surface
 
-  # Driving adapter = the same "Percentiles Over Time" widget (WIA toggle). Reuses the US-02 recording
-  # pipeline — no second bespoke recorder. WIA has no horizon dimension (age is as-of-today).
+  # Driving adapter = the same "Percentiles Over Time" widget. Reuses the US-02 recording pipeline — no
+  # second bespoke recorder. WIA has no horizon dimension (age is as-of-today).
+  # Toggle copy below quotes the SHIPPED labels: "Age" for work item age, "30 days"/"60 days"/"90 days"
+  # for the cycle-time horizons (slice-01 shipped the day-labelled chips; the earlier "WIA"/"CT-30"
+  # shorthand in this spec never matched the UI).
 
   @real-io @driving_adapter @us-03 @slice-02
   Scenario: Flow coach reads a dated work-item-age percentile trend from the WIA tab
     Given Lighthouse is running with the demo data loaded and daily age percentiles recorded
     When the flow coach opens the "Percentiles Over Time" widget
-    Then the toggle row now offers "WIA" alongside "CT-30", "CT-60" and "CT-90"
-    When the flow coach selects the "WIA" toggle
+    Then the toggle row now offers "Age" alongside "30 days", "60 days" and "90 days"
+    When the flow coach selects the "Age" toggle
     Then four dated age-percentile lines (50th, 70th, 85th, 95th) are plotted, with no horizon choice
     And the empty-state and red-to-green colouring behave exactly as the cycle-time tabs do
 
@@ -24,5 +27,5 @@ Feature: Work-item-age percentiles over time (Epic 5427, Slice 02 — US-03)
   @edge @us-03 @slice-02
   Scenario: A fresh team's WIA tab shows the honest forward-only empty state
     Given a team that has no recorded age percentiles yet
-    When the flow coach opens the "Percentiles Over Time" widget and selects "WIA"
+    When the flow coach opens the "Percentiles Over Time" widget and selects "Age"
     Then the tab shows "builds forward from today — no snapshots recorded yet", never a broken chart

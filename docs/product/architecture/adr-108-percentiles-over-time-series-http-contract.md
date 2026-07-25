@@ -29,3 +29,44 @@ Both are **read-only driving ports** — query methods only, no write surface; r
 - **Accepted cost**: two endpoints instead of one — deliberate; the shapes are genuinely different and DRY here would couple distinct business concepts.
 - **Contract change is additive** — two new GET actions + two new response DTOs; no existing endpoint or DTO changes shape. Free-tier/ungated (D3): reads inherit the existing `MetricsController` read gate; no RBAC change, no CLI/MCP client version gate.
 - Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (tables read), [ADR-107](./adr-107-percentiles-recording-handler-on-refresh-events.md) (write side), [ADR-069](./adr-069-blocked-count-snapshot-and-over-time-endpoint.md) (over-time endpoint precedent), [ADR-001](./adr-001-rbac-ui-gating-strategy.md) (read-gate inheritance).
+
+
+## Amendment (slice-02, 2026-07-25) — metric-family selection is explicit via `metricType`, not implicit via an omitted horizon
+
+**Status**: Accepted. Clarifies Decision item 1; the endpoint count, shapes and rejected alternatives
+are unchanged.
+
+Decision item 1 above says the percentiles endpoint serves WIA when it is "requested without a
+horizon". Slice-02 made the selection **explicit** instead:
+
+```
+GET .../metrics/percentiles-over-time?horizon={30|60|90}          -> CycleTime  (unchanged)
+GET .../metrics/percentiles-over-time?metricType=WorkItemAge      -> WorkItemAge
+```
+
+The controller signature is additive with a default:
+
+```csharp
+GetPercentilesOverTime(int teamId, [FromQuery] int? horizon, [FromQuery] MetricType metricType = MetricType.CycleTime)
+```
+
+**Why implicit selection could not work.** Slice-01 had already shipped `[FromQuery] int? horizon`.
+An omitted horizon is therefore a **legal cycle-time request** on the shipped contract (it means "all
+CT horizons"), so "no horizon ⇒ WIA" would have re-interpreted an existing, already-valid request
+shape — a silent breaking change dressed as a default. With an explicit `metricType`, the two
+meanings stay separable and the pre-existing shape keeps its pre-existing meaning.
+
+**Horizon is ignored, not matched, for WIA.** A caller switching tabs may carry `?horizon=30` over
+from a cycle-time tab. `PercentilesOverTimeSeriesQuery.ResolveHorizon` discards it and substitutes
+the horizon-less sentinel (ADR-106 amendment), because matching it literally would return an empty
+series — the honest-empty-state path — for data that exists. Being lenient here is deliberate: the
+horizon is meaningless for a family measured as-of-today, so rejecting the request with a 400 would
+punish a caller for sending an irrelevant parameter.
+
+**Compatibility.** Purely additive: one optional query parameter with a default equal to the previous
+hard-coded behaviour. No existing request changes on the wire, no response DTO changes shape (the
+`metricType` field was already in `PercentilesOverTimeSnapshotDto` from slice-01). Therefore:
+**no CLI/MCP client version gate**, no RBAC change — same conclusion as the original Consequences.
+
+Frontend counterpart: `PercentilesSelection = "age" | 30 | 60 | 90`, with the service building
+`metricType=WorkItemAge` for `"age"` and `horizon={n}` otherwise.

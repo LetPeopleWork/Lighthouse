@@ -569,3 +569,144 @@ Consolidated review over DISCUSS+DESIGN+DEVOPS+DISTILL. **0 blockers.**
 **Gate outcome**: all four verdicts approved or conditionally_approved with action items in DELIVER scope → **DELIVER handoff unblocked**.
 
 > Tooling note: this gate initially returned 4× "BLOCKED — Read unavailable" because `permissions.deny` in `~/.claude/settings.json` listed `Read/Grep/Glob` (denied for all subagents; deny beats allow). Fixed by emptying `permissions.deny`; re-run produced the real verdicts above. See memory `project_nwave_subagent_tooling_wall`.
+
+---
+
+## Wave: DELIVER / [REF] Pre-requisites (slice-02, US-03, ADO #5547)
+
+- **Upstream**: DISCUSS + DESIGN + DEVOPS + DISTILL sections above (whole epic) + slice-01 SHIPPED on `main` (`c01d4171a`). Slice brief: `slices/slice-02-wia-percentiles-over-time.md`. Acceptance: `acceptance/milestone-2-wia-tab.feature`.
+- **Roadmap / execution log**: `deliver/roadmap.json` + `deliver/execution-log.json` (slice-02). Slice-01's are archived beside them as `deliver/roadmap-slice-01.json` / `deliver/execution-log-slice-01.json`.
+- **Entry invariant carried from slice-01**: the `OUT-5427-pipeline-reuse` KPI — WIA must **join** the existing handler / table / endpoint / widget, not fork a parallel set.
+- **Blocking risk cleared at entry**: none. Both open questions from DISTILL ("CT-per-horizon read source", "demo-gated CI config") were resolved in slice-01.
+
+## Wave: DELIVER / [REF] Implementation summary (slice-02)
+
+Adds the **Work Item Age** percentile family to the pipeline slice-01 built. **No new table, no new
+repository, no new handler, no new endpoint, no EF migration** — the whole slice is an extension of
+existing components plus one enum member and one constant.
+
+| # | Change | Where |
+|---|---|---|
+| 1 | `MetricType.WorkItemAge` **appended** after `CycleTime` (persisted as ordinal ⇒ append-only, warned in XML doc) | `Models/MetricType.cs` |
+| 2 | `PercentilesOverTimeSnapshot.NoHorizon = 0` sentinel; WIA rows persist at that horizon. `Horizon` stays `int?` ⇒ no schema change | `Models/PercentilesOverTimeSnapshot.cs` |
+| 3 | `RecordFamily(...)` — one handler records CT `[30,60,90]` **and** WIA `[NoHorizon]` in one pass on the existing refresh events; per-family inner `try/catch` so one family's failure never discards the other's staged rows; slice-01 `finally { invalidateReadCache(); }` guard preserved and now pinned on success **and** exception paths; `MetricFamily` hoisted to `private const string "Percentiles"` | `DomainEvents/PercentilesOverTimeRecordingHandler.cs` |
+| 4 | Demo backfill covers WIA over the same 14-day window; idempotency guard narrowed to **per metric family** | `DomainEvents/DemoPercentilesBackfillHandler.cs` |
+| 5 | Additive `[FromQuery] MetricType metricType = MetricType.CycleTime` on both controllers; `ResolveHorizon` maps `WorkItemAge` → `NoHorizon` so the sentinel never leaks past the query port | `API/TeamMetricsController.cs`, `API/PortfolioMetricsController.cs`, `Services/Implementation/PercentilesOverTimeSeriesQuery.cs` |
+| 6 | `PercentilesSelection = "age" \| 30 \| 60 \| 90`; per-selection cache in the hook; `describeSelection` module-level chip helper; "Age" chip first, default stays 30 days; Tooltip-wrapped explicit-`selected` ToggleButton pattern preserved | `models/Metrics/PercentilesOverTimeSnapshot.ts`, `pages/Common/MetricsView/{PercentilesOverTimeWidget.tsx,usePercentilesOverTime.ts}`, `services/Api/MetricsService.ts` |
+| 7 | POM `ageToggle` / `isAgeSelected` / `selectAge` + exported `PERCENTILES_OVER_TIME_EMPTY_COPY`; 2 new scenarios | `tests/models/metrics/PercentilesOverTimeWidget.ts`, `tests/specs/flow/PercentilesOverTime.spec.ts` |
+
+Commits on `main` (all CI-green):
+`51ec12870` 02-01 recorder · `e3c583b98` 02-02 series endpoint · `0dbe4d031` 02-03 demo backfill ·
+`93e8027f6` 02-04 FE Age tab · `57f043dc4` 02-05 E2E · `724099f32` review fix (metric-family log
+contract) · `0c074c456` Sonar fix (NUnit2045).
+
+## Wave: DELIVER / [REF] Files modified (slice-02)
+
+**Production (10)**
+
+- `Lighthouse.Backend/Lighthouse.Backend/Models/MetricType.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/Models/PercentilesOverTimeSnapshot.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentilesOverTimeSeriesQuery.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs`
+- `Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs`
+- `Lighthouse.Frontend/src/models/Metrics/PercentilesOverTimeSnapshot.ts`
+- `Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx`
+- `Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts`
+- `Lighthouse.Frontend/src/services/Api/MetricsService.ts`
+
+**Tests (9)**
+
+- `Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice02WorkItemAgePercentilesScenarios.cs` *(new)*
+- `Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice02WorkItemAgePercentilesSpecifications.cs` *(new)*
+- `Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs`
+- `Lighthouse.Backend.Tests/Models/PercentilesOverTimeSnapshotTests.cs`
+- `Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandlerTests.cs`
+- `Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs`
+- `Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx`
+- `Lighthouse.Frontend/src/services/Api/MetricsService.test.ts`
+- `Lighthouse.EndToEndTests/tests/models/metrics/PercentilesOverTimeWidget.ts` (POM) + `tests/specs/flow/PercentilesOverTime.spec.ts` + `tests/helpers/api/teams.ts` (added the missing `blockedStalenessThresholdDays: 0` — the helper 400s without it and scenario 9 is its first consumer)
+
+**Docs / SSOT (finalization, this pass)**
+
+- `docs/product/architecture/adr-106-…md` — Amendment (slice-02): `Horizon = NoHorizon (0)`, not `NULL`; enum-ordinal hazard
+- `docs/product/architecture/adr-107-…md` — Amendment (slice-02): one handler / per-family containment; recording-failed template reconciled to the shipped string
+- `docs/product/architecture/adr-108-…md` — Amendment (slice-02): explicit `?metricType=`, not implicit "no horizon ⇒ WIA"
+- `docs/product/architecture/adr-109-…md` — Amendment (slice-02): idempotency guard scoped per metric family
+- `docs/evolution/2026-07-24-epic-5427-percentiles-over-time.md` — Slice 02 section; slice-01's NULL-`Horizon` note marked SUPERSEDED
+- `docs/product/architecture/brief.md` — Component Inventory extended for slice-02
+- `docs/product/kpi-contracts.yaml` — measured baselines on the OUT-5427 rows this slice touched
+- `docs/ci-learnings.md` — 2 new entries (SQLite `disk I/O error` runner flake; NUnit2045 INFO gate failure)
+- `docs/feature/epic-5427-percentiles-over-time/acceptance/milestone-2-wia-tab.feature` — toggle wording aligned to the shipped labels ("Age" / "30 days"…), semantics unchanged
+- this file
+
+**Not touched (explicitly)**: no EF migration (no schema change — the sentinel is a value in an existing
+nullable column); no `Program.cs` DI registration (no new type to register); no `categoryMetadata.ts`
+(the widget was already registered in slice-01).
+
+## Wave: DELIVER / [REF] Scenarios green (slice-02)
+
+**Milestone-2 (`acceptance/milestone-2-wia-tab.feature`): 3 of 3 green — 2026-07-25.**
+
+| Scenario | Tags | Realised as | Status |
+|---|---|---|---|
+| Flow coach reads a dated WIA percentile trend from the Age tab | `@real-io @driving_adapter @us-03` | `PercentilesOverTime.spec.ts` → "@real-io @driving_adapter @US-03 flow coach reads a dated work item age percentile trend from the WIA tab" (Playwright, demo data) | ✅ |
+| Age percentiles are recorded by the same daily pipeline, not a second one | `@real-io @driving_port @us-03` | `Slice02WorkItemAgePercentilesScenarios.cs` + `PercentilesOverTimeRecordingHandlerTests` (one handler, both families, one `Save()`) | ✅ |
+| A fresh team's Age tab shows the honest forward-only empty state | `@edge @us-03` | `PercentilesOverTime.spec.ts` → "@edge @US-03 a fresh team's work item age tab shows the honest forward only empty state" (non-demo team via the API helper) + `Slice02WorkItemAgePercentilesSpecifications.ThenTheSeriesIsEmpty` | ✅ |
+
+Playwright `PercentilesOverTime.spec.ts` runs **3/3** (the slice-01 walking skeleton + the two above),
+executed locally against a locally-built instance before each commit, and green in `ci_e2e`.
+
+## Wave: DELIVER / [REF] DoD check (slice-02) — itemised against the DISCUSS Definition of Done
+
+| # | DoD item | Verdict | Evidence |
+|---|---|---|---|
+| 1 | All 5 user stories' ACs pass (US-02 within slice 01) | **PASS (in scope)** | US-03 ACs all green (3/3 milestone-2 scenarios). US-01/US-02 remain green from slice-01. **US-04 / US-05 are out of slice-02 scope** — slices 03/04, explicitly not claimed here. |
+| 2 | `dotnet build` 0 warnings; `dotnet test` green; `pnpm test`/`pnpm build`/Biome clean | **PASS** | build 0 warnings (`TreatWarningsAsErrors`); backend 3601 pass / 0 fail / 3 pre-existing skips; `pnpm test` 3644 pass; `pnpm build` clean (⇒ Biome `prebuild` clean). |
+| 3 | New EF migration additive/expand-only via `CreateMigration` across all providers | **N/A — because there is no schema change.** `Horizon` was already `int?`; slice-02 only changes the *value* written into it (`0` instead of `NULL`). `CreateMigration` deliberately not run. Expand-only holds trivially. |
+| 4 | Mutation ≥80% BE + FE on new code (per-feature) | **PASS** | Stryker.NET **87.13%**, Stryker FE **93.42%**. |
+| 5 | Forward-only recording idempotent-per-day and resilient to handler failure | **PASS** | Sentinel horizon makes the unique index enforce one-row-per-day for WIA identically to CT; per-family inner `try/catch` pinned by tests on both success and exception paths, incl. the `invalidateReadCache()` `finally` guard. |
+| 6 | Empty-state honesty verified by E2E on a zero-snapshot team | **PASS** | New `@edge @US-03` Playwright scenario on a **non-demo** team asserts `PERCENTILES_OVER_TIME_EMPTY_COPY` verbatim. |
+| 7 | Demo data: backfill handler backdates snapshots so demo/screenshot E2Es show populated charts; not shipped to real tenants | **PASS** | `DemoPercentilesBackfillHandler` covers WIA over the same 14-day window; guard now per-family so already-CT-backfilled demo owners still gain WIA rows; demo-gate unchanged ⇒ real tenants stay forward-only. |
+| 8 | Docs + per-feature screenshots at feature finalization | **PARTIAL — docs PASS, screenshots N/A (deferred, with reason).** Docs: 4 ADR amendments + evolution Slice-02 section + `brief.md` inventory + `kpi-contracts.yaml` baselines + 2 `ci-learnings.md` entries + `.feature` wording fix (this pass). **Screenshots deliberately deferred to epic completion** — slices 03/04 change this same widget's toggle row, so a slice-02 PNG would be regenerated and discarded twice. Recorded as an explicit N/A, not a silent skip. Deferral note: `rm` the old PNG before regenerating (the comparator keeps the old file when the diff is < 0.5%). |
+| 9 | SonarCloud gate: no new issues. ADO 5427 children mirrored + state-transitioned | **PASS** | `sonar-gates` green on `main` after `0c074c456` (one INFO `NUnit2045` cleared). ADO **#5547 Closed** prior to this finalization pass — no transition performed here. |
+
+**Cross-cutting N/As (explicit, per the no-silent-N/A rule)**
+
+| Item | Verdict |
+|---|---|
+| RBAC impact | **N/A** — free-tier (D3); the GETs inherit the existing class-level `MetricsController` read guard. No `useRbac()` or license-path change. |
+| Lighthouse-Clients (CLI + MCP) versioning | **N/A** — the contract change is one optional query param defaulting to the previous behaviour; no existing request or DTO changes shape ⇒ no client version gate. |
+| Website marketing surface | **N/A** — free metric surface; no pricing/positioning change. |
+| Contract testing (Pact) | **N/A** — no external integration. |
+| Outcomes registry collision check | **N/A** — no `docs/product/outcomes/registry.yaml` in this repo; testable outcomes live in `kpi-contracts.yaml`. |
+| `Program.cs` DI registration | **N/A** — no new type; both handlers were registered in slice-01. |
+| User-facing docs page | **N/A** — the user-visible delta is one additional chip on an existing toggle; no docs page describes the toggle contents. |
+
+## Wave: DELIVER / [REF] Quality gates per phase (slice-02)
+
+| Phase / step | Gate | Result |
+|---|---|---|
+| 02-01 recorder | RED → GREEN; `dotnet build` 0 warnings; backend suite green | ✅ `51ec12870` |
+| 02-02 series endpoint | Additive contract verified (existing CT calls unchanged on the wire); backend suite green | ✅ `e3c583b98` |
+| 02-03 demo backfill | Per-family idempotency regression test (owner already CT-backfilled still gains WIA); backend suite green | ✅ `0dbe4d031` |
+| 02-04 FE Age tab | `pnpm test` 3644 pass; `pnpm build` clean (Biome clean via `prebuild`) | ✅ `93e8027f6` |
+| 02-05 E2E | Playwright `PercentilesOverTime.spec.ts` 3/3 run locally against a locally-built instance **before** commit | ✅ `57f043dc4` |
+| Mutation (per-feature mandate) | Stryker.NET **87.13%** BE / Stryker **93.42%** FE, both ≥80% | ✅ |
+| Adversarial review | **REJECTED** → 1 BLOCKER (`MetricFamily` logged the metric *type*, fragmenting the failure-isolation alert) → fixed → clean | ✅ `724099f32` |
+| CI on `main` | backend · frontend · E2E · SQLite · Postgres · auth · sonar-gates — all success | ✅ (after `0c074c456`) |
+| `des-verify-integrity` | exit 0 — 5/5 steps, complete traces | ✅ |
+
+Two CI cycles were consumed and both are ledgered in `docs/ci-learnings.md` (2026-07-25 entries): a
+SQLite `disk I/O error` in `IntegrationTestBase.Init` (runner IO flake — re-run, change nothing) and a
+`sonar-gates` failure on a single INFO-severity `NUnit2045` that a warning-clean local `dotnet build`
+cannot see.
+
+## Wave: DELIVER / [REF] Deferred / carry-forward after slice-02
+
+- **Slices 03-04** — the entire `ProcessBehaviorSnapshot` family (table + repo + a **real** EF migration, `ProcessBehaviorRecordingHandler`, `IProcessBehaviorSeriesQuery`, `process-behavior-over-time?type=`, the "PBC Over Time" widget). Slice 03 = Throughput; slice 04 = the remaining types, Feature-Size portfolio-only.
+- **Per-feature screenshots** — one `@screenshot` pass for the whole widget at epic completion.
+- **`OUT-5427-empty-state-honesty`** — closes only when the PBC widget's empty state ships (slice 03).
+- **Slice-03 traps inherited from here**: extend the per-family idempotency-guard idiom to `ProcessBehaviorSnapshot`'s per-`MetricType` rows; `ProcessBehaviorMetricType` is ordinal-persisted ⇒ append-only; the PBC recorder emits its own recording-failed message (`MetricFamily = "ProcessBehavior"`), it does not share the percentiles template.
+- **[Forge med, still open from the DISTILL gate] Operator monitoring procedure** — the log-scan + alert-rule guidance for the recording-failed event is still not written into an ops/runbook doc. The schema is canonical in the ADR-107 amendment; the runbook page is deferred to epic completion.

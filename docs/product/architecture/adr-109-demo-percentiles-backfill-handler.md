@@ -31,3 +31,41 @@ A new `DemoPercentilesBackfillHandler` mirroring `DemoBlockedHistoryBackfillHand
 - **Accepted cost**: a demo-only handler that must be kept in step with the two recording handlers' snapshot shapes — bounded, and covered by the same AT discipline as `DemoBlockedHistoryBackfillHandler`.
 - **Reuse verdict**: `DemoBlockedHistoryBackfillHandler` → pattern-reuse → **CREATE NEW handler** (different snapshot tables, same demo-gate + idempotency + backdating idiom).
 - Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (tables backfilled), [ADR-107](./adr-107-percentiles-recording-handler-on-refresh-events.md) (forward-only recording this complements), [ADR-069](./adr-069-blocked-count-snapshot-and-over-time-endpoint.md) (blocked-history demo-backfill precedent).
+
+
+## Amendment (slice-02, 2026-07-25) — the idempotency guard is scoped PER METRIC FAMILY
+
+**Status**: Accepted. Refines the "Idempotent" bullet of the Decision; the demo gate, the
+real-tenants-forward-only rule and the rejected alternatives are unchanged.
+
+The Decision says: *"an existing backdated snapshot means the owner was already backfilled — skip"*.
+Slice-01 implemented that literally — one guard, keyed on "any `PercentilesOverTimeSnapshot` for this
+owner with `RecordedAt < today`". Slice-02 had to narrow it to **per metric family**:
+
+```csharp
+BackfillFamily(ownerId, ownerType, MetricType.CycleTime,   CycleTimeHorizons,   today);
+BackfillFamily(ownerId, ownerType, MetricType.WorkItemAge, WorkItemAgeHorizons, today);
+// guard inside BackfillFamily now also filters `snapshot.MetricType == metricType`
+```
+
+**Why the whole-owner guard is a trap.** Every environment that had ever run slice-01 already carried
+backdated *cycle-time* rows. Under the un-scoped guard the handler would see "already backfilled" and
+return before writing a single work-item-age row — permanently, on every future refresh. The failure
+mode is silent and asymmetric:
+
+- unit and integration tests seed a **fresh** owner, so they exercise the first-run path and stay
+  green;
+- only a *pre-existing* demo owner (i.e. every real demo instance, every screenshot environment)
+  takes the skip path, where the new tab renders the honest empty state and looks like a UI bug.
+
+**Rule for slices 03/04 and any future family.** A "has this already run?" guard on a backfill that
+grows new families over time must be keyed on the **unit that can independently be missing** — here
+the metric family — not on the owner. Whenever a backfill handler gains a family, check whether its
+idempotency predicate distinguishes that family, and add a regression test that seeds an owner
+already backfilled with the *older* family and asserts the *new* family still lands.
+`ProcessBehaviorSnapshot` (slices 03/04) is a separate table, so its guard is naturally scoped — but
+its own per-`MetricType` rows are not, and will need the same treatment.
+
+Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (the `MetricType`
+discriminator the guard now filters on), [ADR-107](./adr-107-percentiles-recording-handler-on-refresh-events.md)
+(the forward-only recorder whose "`RecordedAt < today` ⇒ backfill ran" signal this relies on).

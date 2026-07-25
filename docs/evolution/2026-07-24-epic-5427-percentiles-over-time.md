@@ -1,8 +1,9 @@
-# Evolution: epic-5427-percentiles-over-time (Slice 01 of 4)
+# Evolution: epic-5427-percentiles-over-time (Slices 01-02 of 4)
 
-- **Date finalized (slice-01)**: 2026-07-24
-- **ADO**: Epic #5427 ("Show Percentiles over Time Charts", Community / Productboard). Non-premium, free-tier, brownfield.
-- **Status**: **Slice 01 delivered on `main`** (walking skeleton). Epic is **in progress** — slices 02-04 not started. DISCUSS → DESIGN → DEVOPS → DISTILL complete for the whole epic; DELIVER complete for slice-01 only. Backend suite green; mutation ≥80% on the new surface (**BE 85.71% / FE 90.91%**); adversarial review APPROVED (0 blockers); integrity verify exit 0.
+- **Date finalized (slice-01)**: 2026-07-24 · **(slice-02)**: 2026-07-25
+- **ADO**: Epic #5427 ("Show Percentiles over Time Charts", Community / Productboard). Non-premium, free-tier, brownfield. Slice-02 story **#5547 — Closed**.
+- **Status**: **Slices 01-02 delivered on `main`**. Epic is **in progress** — slices 03-04 (the `ProcessBehaviorSnapshot` / "PBC Over Time" family) not started. DISCUSS → DESIGN → DEVOPS → DISTILL complete for the whole epic; DELIVER complete for slices 01 and 02. Both slices: backend suite green, mutation ≥80% on the new surface, adversarial review clean, integrity verify exit 0.
+- **One archive per epic** — this file grows a section per slice. Slice-01 prose below is preserved as written; where slice-02 diverged from a slice-01 prediction it is marked **SUPERSEDED** in place and the correction lives in the Slice 02 section.
 - **Workspace (history)**: `docs/feature/epic-5427-percentiles-over-time/`
 - **Builds on**: the forward-only one-row-per-day snapshot precedent (`DeliveryMetricSnapshot` Epic 3993, `BlockedCountSnapshot` Epic 5074), the Epic 5121 domain-event bus (`TeamDataRefreshed` / `PortfolioFeaturesRefreshed`), and the existing point-in-time CT percentile widget + D7 red→green ramp it wraps.
 
@@ -34,7 +35,8 @@ Eight steps, every commit CI-green: `2e4b4576b` recorder · `021c19317` series e
 
 - **Demo backfill was pulled INTO slice-01.** The slice-01 brief originally listed "demo backfill" as OUT-of-scope, but walking-skeleton Scenario 1 requires a **populated** chart and the DISTILL adapter-coverage matrix lists `DemoPercentilesBackfillHandler` as covered by Scenario 1. A **minimal CT-only** demo backfill is therefore an in-slice-01 dependency of the WS litmus; broader multi-metric demo polish stays deferred.
 - **CT-per-horizon read source — open question resolved without a new port.** DESIGN flagged whether `ITeamMetricsService` could yield CT percentiles per 30/60/90 window as-of-today. It can: the recorder calls the existing `GetCycleTimePercentilesFor{Team,Portfolio}(owner, today.AddDays(-H), today)` once per horizon. No new service method / port required (EXTEND held).
-- **NULL-`Horizon` reserved for slice-02 WIA.** The unique index includes `Horizon`; WIA rows (no horizon dimension, age is as-of-today) will write `Horizon = NULL`. Provider note for slice-02: NULLs are distinct under a plain unique index, so the WIA idempotency guard must key on `MetricType = WorkItemAge` with `Horizon IS NULL` explicitly — do not rely on the composite unique index alone to collapse same-day WIA re-writes on every provider. Verify this on both Sqlite and Postgres when WIA lands.
+- **~~NULL-`Horizon` reserved for slice-02 WIA.~~ — SUPERSEDED by slice-02 (2026-07-25).** *Original prediction (kept for the record):* "The unique index includes `Horizon`; WIA rows (no horizon dimension, age is as-of-today) will write `Horizon = NULL`. Provider note for slice-02: NULLs are distinct under a plain unique index, so the WIA idempotency guard must key on `MetricType = WorkItemAge` with `Horizon IS NULL` explicitly — do not rely on the composite unique index alone to collapse same-day WIA re-writes on every provider."
+  **What actually shipped**: slice-02 did **not** write `Horizon = NULL`. It introduced the sentinel `PercentilesOverTimeSnapshot.NoHorizon = 0` and persists WIA rows at horizon `0`. The slice-01 note diagnosed the NULL problem correctly but proposed working *around* it (an explicit `Horizon IS NULL` branch in the guard); the sentinel removes the problem instead — the unique index enforces one-row-per-day for WIA exactly as it does for CT, and the single `Horizon == horizon` upsert predicate serves both families with no branch. See the **Amendment (slice-02)** section of [ADR-106](../product/architecture/adr-106-percentiles-over-time-snapshot-table-shape.md) and "Slice 02 → Key decisions" below.
 
 ## Quality outcomes
 
@@ -54,19 +56,194 @@ Eight steps, every commit CI-green: `2e4b4576b` recorder · `021c19317` series e
 - **Walking-skeleton "populated chart" litmus can pull a nominally-deferred enabler into the first slice.** The demo-backfill handler was marked OUT in the slice brief but was a hard dependency of the WS E2E; the DISTILL adapter-coverage matrix is the tell — if a driven adapter is "covered by Scenario 1", it is in slice-01 whatever the brief's scope list says. Reconcile the brief's scope list against the adapter-coverage matrix before starting.
 - **A nullable discriminator column reserved for a later slice needs an explicit provider-behaviour note now.** `Horizon = NULL` for slice-02 WIA interacts with the unique index's NULL semantics (NULLs distinct on most providers) — capturing the idempotency-guard implication at slice-01 finalization saves a same-day-double-write bug when WIA lands.
 
-## Forward pointer — slices 02-04 (NOT started)
+## Forward pointer — slices 02-04 (as scoped at slice-01 finalization; 02 has since shipped)
 
 | Slice | Story | Ships | Deferred components |
 |---|---|---|---|
-| 02 | US-03 WIA percentiles over time | WIA tab on the combined widget; WIA rows in the **same** `PercentilesOverTimeSnapshot` table (`MetricType=WorkItemAge`, `Horizon=NULL`) via the **same** recording pipeline (no second recorder) | WIA `MetricType` value, WIA tab, WIA demo backfill |
+| 02 | US-03 WIA percentiles over time | ~~planned~~ **DELIVERED 2026-07-25** — see "Slice 02" below. Shipped as predicted except `Horizon = NoHorizon (0)` rather than `NULL` | — |
 | 03 | US-04 Throughput PBC NPLs over time | `ProcessBehaviorSnapshot` table + repo + `ProcessBehaviorRecordingHandler` + `IProcessBehaviorSeriesQuery` + `process-behavior-over-time?type=` endpoint + "PBC Over Time" widget (Throughput) | entire ProcessBehaviorSnapshot family |
 | 04 | US-05 PBC remaining type toggles | WIA/WIP/CT/Arrivals/Feature-Size(portfolio-only) toggle options on the PBC widget | remaining `MetricType` values, Feature-Size portfolio-gating |
 
 The **pipeline-reuse** KPI (one shared recording pipeline / snapshot-table family for CT+WIA, no per-metric bespoke recorder) is the load-bearing invariant across slices 01→02 — slice-02 WIA must join the existing handler/table, not fork a new one.
+
+## Slice 02 — Work Item Age percentiles over time (US-03, ADO #5547) — SHIPPED 2026-07-25
+
+Slice 02 adds the **Work Item Age** family to the pipeline slice-01 built. The load-bearing constraint
+was the epic's `OUT-5427-pipeline-reuse` KPI: WIA had to **join** the existing handler, table, endpoint
+and widget — not fork a parallel set. It did. No new table, no new repository, no new handler, no new
+endpoint, **no EF migration**.
+
+A flow coach opens **Team → Metrics → Predictability → "Percentiles Over Time"**, clicks the **"Age"**
+chip (first in the toggle row; the default stays "30 days"), and reads four dated 50/70/85/95
+age-percentile lines on the same red→green ramp — with no horizon choice, because age is measured
+as-of-today.
+
+### What shipped
+
+1. **`MetricType.WorkItemAge`** — *appended* after `CycleTime` (`Models/MetricType.cs`). The enum
+   persists as its integer ordinal, so appending is the only safe edit; the type now carries that as an
+   XML-doc warning.
+2. **`PercentilesOverTimeSnapshot.NoHorizon = 0`** — the horizon sentinel WIA rows persist at. The
+   `Horizon` column stays `int?`; only the written value changed ⇒ **no schema change, no migration**,
+   expand-only trivially satisfied.
+3. **`PercentilesOverTimeRecordingHandler.RecordFamily(...)`** — one handler, one pass, both families:
+   CT over `[30, 60, 90]`, WIA once under `[NoHorizon]`, on the same `TeamDataRefreshed` /
+   `PortfolioFeaturesRefreshed` events. Each family runs in its **own inner `try/catch`** so a failing
+   family never unwinds the rows the other one already staged for the shared `Save()`. The slice-01
+   `finally { invalidateReadCache(); }` regression guard is preserved and now **test-pinned on both the
+   success and the exception paths**. Failure logging is factored into `LogRecordingFailure(...)` with
+   `MetricFamily` as a `private const string "Percentiles"` — a family, not a metric type, so operator
+   alerting stays one alert rather than several.
+4. **`DemoPercentilesBackfillHandler`** — backdates WIA across the same 14-day demo window; the
+   idempotency guard is now evaluated **per metric family** (see Durable lessons).
+5. **Read contract** — both `TeamMetricsController` and `PortfolioMetricsController` gain an additive
+   `[FromQuery] MetricType metricType = MetricType.CycleTime`; `PercentilesOverTimeSeriesQuery.ResolveHorizon`
+   maps `WorkItemAge` → `NoHorizon` so the sentinel never leaks past the query port. Existing CT calls
+   are byte-identical on the wire.
+6. **Frontend** — `PercentilesSelection = "age" | 30 | 60 | 90` replaces the horizon-only type;
+   `usePercentilesOverTime` caches **per selection** (so Age↔30↔60↔90 re-plots without a refetch);
+   `describeSelection` (module-level helper) supplies each chip's label/tooltip/test-id; the
+   Tooltip-wrapped explicit-`selected` `ToggleButton` pattern from slice-01 is preserved. `MetricsService`
+   builds `metricType=WorkItemAge` for the age tab and `horizon={n}` otherwise.
+7. **E2E** — POM gains `ageToggle` / `isAgeSelected` / `selectAge` plus an exported
+   `PERCENTILES_OVER_TIME_EMPTY_COPY` constant (verbatim, so a copy change fails loudly). Two new
+   scenarios: a populated demo WIA tab, and a fresh **non-demo** team rendering the honest empty state.
+
+Seven commits, all CI-green on `main`:
+`51ec12870` recorder · `e3c583b98` series endpoint · `0dbe4d031` demo backfill · `93e8027f6` FE Age tab ·
+`57f043dc4` E2E · `724099f32` review fix (metric-family log contract) · `0c074c456` Sonar fix (NUnit2045).
+
+### Key decisions (slice-02)
+
+- **`Horizon = 0` sentinel, not `NULL`** — reverses the slice-01 prediction. Two mechanical drivers:
+  (a) SQL NULLs are distinct, so a NULL horizon defeats the unique index
+  `(OwnerId, OwnerType, MetricType, Horizon, RecordedAt)` and WIA would accrue a duplicate row per
+  refresh; (b) EF Core translates `s.Horizon == horizonParam` to `Horizon = @p`, which is never `TRUE`
+  against NULL, so the upsert's find-existing predicate would miss and silently INSERT instead of
+  UPDATE. The column stays nullable ⇒ expand-only, no migration.
+  → **[ADR-106 Amendment (slice-02)]**.
+- **Metric-family selection is explicit (`?metricType=`), not implicit ("no horizon ⇒ WIA")** — slice-01
+  had already shipped `int? horizon`, so an *omitted* horizon is a legal cycle-time request. Re-reading
+  it as "WIA" would have been a silent breaking change wearing a default's clothes. The new parameter
+  defaults to `CycleTime`, so the contract is additive ⇒ **no CLI/MCP client version gate**.
+  → **[ADR-108 Amendment (slice-02)]**.
+- **One handler, per-family failure containment** — a second recorder would have doubled the refresh
+  cost and drifted from the rows it is meant to sit beside; the inner `try/catch` is what makes sharing
+  one `Save()` safe. → **[ADR-107 Amendment (slice-02)]**.
+- **`MetricFamily` log property is a family, not a metric type** — reverted a first-pass implementation
+  that logged `metricType.ToString()`. Caught by adversarial review as the slice's single **BLOCKER**
+  (`724099f32`): per-type values would fragment the `OUT-5427-recording-failure-isolation` alert.
+- **ADR-107's recording-failed template reconciled to the shipped code.** The DESIGN-wave observability
+  note specified `"Percentile/PBC snapshot recording failed for …"`; slice-01 shipped
+  `"Percentile snapshot recording failed for …"` and slice-02 keeps it. The shipped string is canonical —
+  the two-handler decision means the PBC recorder (slices 03/04) emits its own message and never needed
+  to share this one. Recorded in the ADR-107 amendment rather than silently edited into the DESIGN prose.
+
+### Quality outcomes
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings (`TreatWarningsAsErrors`) |
+| Backend suite | **3601 pass / 0 fail / 3 skipped** (the 3 skips pre-date this slice) |
+| `pnpm test` | **3644 pass** |
+| `pnpm build` | clean (implies a clean Biome `prebuild`) |
+| Playwright `PercentilesOverTime.spec.ts` | **3/3** live against a locally-built instance |
+| Mutation — Stryker.NET (BE) | **87.13%** (≥80% per-feature mandate) |
+| Mutation — Stryker (FE) | **93.42%** (≥80%) |
+| Adversarial review | **REJECTED → 1 BLOCKER fixed → clean** |
+| `des-verify-integrity` | exit 0 — 5/5 steps, complete traces |
+| CI on `main` | all jobs green: backend, frontend, E2E, SQLite + Postgres, auth, sonar-gates |
+
+Two CI cycles were spent and both are now ledgered in `docs/ci-learnings.md`: a SQLite
+`disk I/O error` runner flake in `IntegrationTestBase.Init`, and a `sonar-gates` failure on a single
+INFO-severity `NUnit2045` that is invisible to a warning-clean local build.
+
+### Slice-boundary decisions worth remembering
+
+- **The E2E team-creation helper was already broken before this slice consumed it.**
+  `helpers/api/teams.ts` omitted `blockedStalenessThresholdDays`, so `POST /api/latest/Teams` 400s. Every
+  prior E2E drove demo data, so nothing had ever called it — the slice-02 "fresh non-demo team" empty-state
+  scenario is its **first consumer**, and inherited the bug. A helper with no callers is not tested code;
+  budget for fixing it when a scenario finally needs it.
+- **The empty-state scenario needs a NON-demo team.** The demo backfill (item 4) deliberately populates
+  every demo owner, so an honest-empty-state assertion on demo data would be structurally impossible.
+  Empty-state scenarios and demo-data scenarios need opposite fixtures.
+- **Screenshots deliberately deferred to epic completion.** Slices 03/04 add further tabs/toggles to this
+  same widget, so per-slice PNGs would be regenerated twice and thrown away. Recorded as an explicit
+  N/A-with-reason against DoD item 8, **not** a silent skip. Deferral note for whoever closes the epic:
+  `rm` the old PNG before regenerating — the `@screenshot` comparator keeps the old file when the diff
+  is under 0.5%.
+
+### Durable lessons
+
+- **The demo-backfill idempotency trap — a guard scoped to the owner makes every *new* family a
+  permanent no-op.** Slice-01's guard read "any CT snapshot for this owner with `RecordedAt < today` ⇒
+  skip the whole backfill". Left alone, every environment that slice-01 had already CT-backfilled — i.e.
+  every demo instance and every screenshot environment — would have hit the skip and **never gained a
+  single WIA row**. The failure mode is worse than a crash: unit tests seed *fresh* owners, so they take
+  the first-run path and stay green, while the demo chart quietly renders the empty state and reads as a
+  UI bug. The guard is now keyed per metric family. **Rule**: an "already ran?" guard on a backfill that
+  grows new families over time must be keyed on the unit that can independently be missing (the family),
+  never on the owner — and the regression test must seed an owner already backfilled with the *older*
+  family and assert the new one still lands.
+- **A persisted enum is an ordinal, so its member order is production data.** `MetricType` is stored as
+  its integer value. `WorkItemAge` was appended after `CycleTime`; inserting or reordering a member
+  silently re-maps every already-shipped snapshot row to a different metric family — corruption with no
+  compiler error, no test failure and no migration to review. **Rule**: append only, and say so at the
+  declaration site (the enum now carries the warning in its XML doc).
+- **A nullable column reserved for "later" should be re-derived when later arrives, not honoured.**
+  Slice-01 reserved `Horizon = NULL` and even predicted the NULL-distinctness problem — then proposed a
+  workaround (an explicit `IS NULL` branch). Re-deriving the choice at implementation time produced a
+  strictly better answer (a sentinel) that needed no branch and no migration. A DESIGN-time placeholder
+  is a hypothesis, not a commitment.
+- **`INFO`-severity Sonar rules fail a `new_violations = 0` gate while being invisible locally.**
+  `NUnit2045` never reaches `dotnet build`, warning-clean or not — it only exists in SonarCloud's Roslyn
+  pass. Wrap adjacent independent `Assert.That` calls in `using (Assert.EnterMultipleScope())` *before*
+  pushing. Nesting caveat found here: if one assert's value comes from a helper that itself asserts and
+  then parses, evaluate the helper **before** entering the scope, or a raw exception escapes mid-scope.
+
+### Cross-cutting (slice-02)
+
+- **RBAC** — **N/A**: free-tier (D3), reads inherit the existing class-level `MetricsController` read
+  guard. No `useRbac()` change, no license path touched.
+- **Lighthouse-Clients (CLI + MCP)** — **N/A**: the contract change is one optional query parameter with
+  a default equal to the previous behaviour. No existing request or DTO changes shape ⇒ no client version
+  gate.
+- **Website / marketing surface** — **N/A**: free metric surface, no pricing or positioning change.
+- **EF migration** — **N/A**: no schema change (the sentinel is a value written into an existing nullable
+  column). `CreateMigration` not run, deliberately.
+- **Docs prose** — the ADR amendments (106/107/108/109), this archive section, the `brief.md` component
+  inventory and the `kpi-contracts.yaml` baselines **are** the slice-02 docs pass. No user-facing docs
+  page changed because the widget's user-visible behaviour is "one more chip on an existing toggle".
+- **Per-feature screenshots** — **N/A for slice-02, deferred to epic completion**: slices 03/04 change
+  the same widget's toggle row, so a slice-02 PNG would be regenerated and discarded twice.
+- **Demo data** — **covered**: `DemoPercentilesBackfillHandler` backdates WIA over the 14-day window, so
+  demo/`@screenshot` environments render a populated Age tab.
+- **ADO** — story **#5547 Closed** before finalization (no transition performed by this pass).
+- **Outcomes registry** — no `docs/product/outcomes/registry.yaml` in this repo; collision check **N/A**
+  (recorded, not silently skipped). Testable outcomes live in `kpi-contracts.yaml`.
+
+## Remaining — slices 03-04 (NOT started)
+
+The whole `ProcessBehaviorSnapshot` family is still deferred: the table + repository + EF migration (this
+one **is** a real schema change), `ProcessBehaviorRecordingHandler`, `IProcessBehaviorSeriesQuery`, the
+`process-behavior-over-time?type=` endpoint, and the "PBC Over Time" widget (slice 03, Throughput only;
+slice 04 adds WIA/WIP/CT/Arrivals/Feature-Size, the last portfolio-only).
+
+Carry-forward for slice 03:
+
+- Its demo backfill must extend `DemoPercentilesBackfillHandler`'s **per-family** guard idiom to the new
+  table's per-`MetricType` rows — same trap, different table.
+- `ProcessBehaviorMetricType` will also persist as an ordinal ⇒ append-only from day one.
+- The PBC recorder emits its **own** recording-failed message (`MetricFamily = "ProcessBehavior"`), per
+  the ADR-107 amendment — it does not share the percentiles template.
+- The "PBC Over Time" widget's empty-state honesty is the last open leg of `OUT-5427-empty-state-honesty`.
 
 ## Links
 
 - ADRs: `docs/product/architecture/adr-106-percentiles-over-time-snapshot-table-shape.md` · `adr-107-percentiles-recording-handler-on-refresh-events.md` · `adr-108-percentiles-over-time-series-http-contract.md` · `adr-109-demo-percentiles-backfill-handler.md`
 - Architecture: `docs/product/architecture/brief.md` → "Application Architecture — epic-5427-percentiles-over-time (Epic 5427)"
 - KPI contracts: `docs/product/kpi-contracts.yaml` → 5 `OUT-5427-*` rows
-- Feature workspace (full wave history): `docs/feature/epic-5427-percentiles-over-time/feature-delta.md` + `deliver/roadmap.json`
+- ADR amendments (slice-02): the **Amendment (slice-02, 2026-07-25)** section of each of ADR-106 / ADR-107 / ADR-108 / ADR-109
+- CI learnings from slice-02: `docs/ci-learnings.md` → the two 2026-07-25 entries (SQLite `disk I/O error` runner flake; NUnit2045 INFO-severity gate failure)
+- Feature workspace (full wave history): `docs/feature/epic-5427-percentiles-over-time/feature-delta.md` + `deliver/roadmap.json` (slice-02) + `deliver/roadmap-slice-01.json` / `deliver/execution-log-slice-01.json` (slice-01, archived)

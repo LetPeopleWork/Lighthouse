@@ -1,26 +1,25 @@
 {
   "roadmap": {
     "project_id": "epic-5427-percentiles-over-time",
-    "slice_id": "slice-01-ct-percentiles-over-time",
-    "created_at": "2026-07-24",
-    "total_steps": 7,
+    "slice_id": "slice-02-wia-percentiles-over-time",
+    "created_at": "2026-07-25",
+    "total_steps": 5,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "goal": "Slice 01 (walking skeleton): Cycle-Time percentiles over time. Walk the full backbone — record daily CT-percentile snapshot on refresh (horizons 30/60/90, latest-write-wins per day) -> serve the over-time series via a typed MetricsController GET -> render the 'Percentiles Over Time' widget (CT-30/60/90 toggle, 50/70/85/95 red->green lines, honest empty-state) -> read the trend. Ships the shared forward-only recording pipeline inside this slice (US-02, @infrastructure).",
-    "overview": "Single phase (01), 7 steps in dependency order, mirroring the direct sibling epic-5074 Slice-03 blocked-count-over-time idiom (entity + repo + recorder + endpoint + FE chart + demo backfill). Backbone: 01-01 substrate (entity+repo+DbSet) -> 01-02 migration (both providers) -> 01-03 recording handler (Scenarios 2/3/4/5) -> 01-04 series query + endpoint (Scenario 1 read path) -> 01-05 CT demo backfill (populates the WS chart) -> 01-06 FE widget + registration -> 01-07 E2E walking skeleton (Scenario 1 incl horizon re-plot). RED = RED-by-skip (project convention): executable NUnit/Playwright scenarios authored alongside minimal type skeletons so main always compiles + stays green, each [Ignore(\"pending — DELIVER (epic-5427)\")]; each step un-ignores its scenario and implements to GREEN."
+    "goal": "Slice 02 (value): Work-Item-Age percentiles over time. Prove the slice-01 recording pipeline generalizes to a horizon-less metric family — record today's WIA percentiles inside the SAME PercentilesOverTimeRecordingHandler (no second recorder, US-03 AC2) -> serve them from the SAME percentiles-over-time endpoint via an additive `metricType` query param -> add an 'Age' chip to the existing toggle row so it becomes [ Age | 30 days | 60 days | 90 days ] (US-03 AC1) -> keep the D6 empty-state and D7 red->green ramp byte-identical to the CT tabs (US-03 AC3). Closes milestone-2 Scenarios 7, 8 and 9.",
+    "overview": "Single phase (02), 5 steps in dependency order, pure EXTENSION of shipped slice-01 code — no new entity, no new repository, no new handler, no new route, no EF migration. Backbone: 02-01 domain + recording (MetricType.WorkItemAge, NoHorizon sentinel, WIA upsert inside the existing handler, cache-invalidation preserved) -> 02-02 read path (additive `metricType` query param on both controllers + series query/DTO wiring + acceptance Scenario 8) -> 02-03 demo WIA backfill (populates the tab for demo/screenshot E2Es) -> 02-04 frontend selection union + 'Age' toggle + Vitest (Scenarios 7 + 9 at unit level) -> 02-05 E2E POM/spec extension + full local quality-gate sweep. RED = RED-by-skip (project convention, DISTILL [REF] RED Mechanism): NUnit ATs / Playwright specs authored with [Ignore(\"pending — DELIVER (epic-5427 slice-02)\")] / test.skip alongside minimal type changes so main always compiles + stays green; each step un-ignores its own scenarios and implements to GREEN. Effort caveat: the slice brief reference-classes this at <=0.5 day; this decomposition totals ~11h (~1.5 days) because the FE selection model widens from PercentilesHorizon to a heterogeneous union and the demo-backfill idempotency signal has to become per-metric-family. Treat the brief's estimate as optimistic, not as a scope cut."
   },
   "validation": {
     "status": "approved",
     "reviewer": "nw-acceptance-designer-reviewer",
-    "reviewed_at": "2026-07-24",
-    "notes": "Slice-01-only roadmap. OUT of this roadmap (do NOT implement here): WIA tab (slice 02), ProcessBehaviorSnapshot / PBC widget (slices 03/04), PBC type toggle, Feature-Size, export."
+    "reviewed_at": "2026-07-25",
+    "notes": "APPROVED by nw-acceptance-designer-reviewer 2026-07-25 (0 blockers, 7/7 checks). Two deliberate source overrides, both since amended at slice finalization: (1) ADR-106 specified `Horizon : int?` = null for WorkItemAge; this slice persists the sentinel `PercentilesOverTimeSnapshot.NoHorizon = 0` instead, because SQL NULLs are distinct (a plain unique natural-key index would NOT dedupe null-horizon rows -> duplicate WIA rows per day) and because EF Core translates `s.Horizon == horizonParam` to `Horizon = @p`, which never matches NULL (a null-horizon upsert predicate silently inserts instead of updating). Column stays nullable -> no schema change, no migration. Amended in ADR-106. (2) milestone-2-wia-tab.feature and US-03 AC1 spelled the chip label \"WIA\" and the CT chips \"CT-30/CT-60/CT-90\"; shipped slice-01 renders \"30 days / 60 days / 90 days\". This slice uses \"Age\" + the shipped CT labels and asserts BEHAVIOUR (four dated lines, no horizon choice, D6 copy); the .feature wording was corrected at finalization. OUT of this roadmap (slices 03/04): ProcessBehaviorSnapshot / PBC widget, PBC type toggle, Feature-Size, export, any horizon concept for WIA (none exists)."
   },
   "ssot_inputs": {
     "feature_delta": "docs/feature/epic-5427-percentiles-over-time/feature-delta.md",
-    "slice_brief": "docs/feature/epic-5427-percentiles-over-time/slices/slice-01-ct-percentiles-over-time.md",
+    "slice_brief": "docs/feature/epic-5427-percentiles-over-time/slices/slice-02-wia-percentiles-over-time.md",
     "gherkin": [
-      "docs/feature/epic-5427-percentiles-over-time/acceptance/walking-skeleton.feature",
-      "docs/feature/epic-5427-percentiles-over-time/acceptance/milestone-1-forward-only-recording.feature"
+      "docs/feature/epic-5427-percentiles-over-time/acceptance/milestone-2-wia-tab.feature"
     ],
     "architecture": [
       "docs/product/architecture/brief.md",
@@ -29,221 +28,238 @@
       "docs/product/architecture/adr-108-percentiles-over-time-series-http-contract.md",
       "docs/product/architecture/adr-109-demo-percentiles-backfill-handler.md"
     ],
-    "siblings_to_mirror": {
-      "entity": "Lighthouse.Backend/Lighthouse.Backend/Models/BlockedCountSnapshot.cs",
-      "repo_interface": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IBlockedCountSnapshotRepository.cs",
-      "repo_impl": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/BlockedCountSnapshotRepository.cs",
-      "recording_handler": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs",
-      "demo_backfill_handler": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs",
-      "dto": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/BlockedCountSnapshotDto.cs",
-      "read_endpoint": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs (GetBlockedCountHistory @ L476) + PortfolioMetricsController.cs",
-      "integration_scenarios": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice03BlockedTrendScenarios.cs (+ Slice03BlockedTrendSpecifications.cs)",
-      "migration_test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/BlockedCountSnapshotMigrationTests.cs",
-      "di_registration": "Lighthouse.Backend/Lighthouse.Backend/Program.cs (L912 repo, L1058-1061 handlers)",
-      "e2e": "Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts",
-      "fe_registration": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts (predictability category, L84)"
+    "ci_learnings": "docs/ci-learnings.md (pre-apply every rule BEFORE writing code — see per-step implementation_notes for the rules each step is most likely to trip)",
+    "predecessor_roadmap": "docs/feature/epic-5427-percentiles-over-time/deliver/roadmap-slice-01.json",
+    "shipped_slice_01_code_to_extend": {
+      "entity": "Lighthouse.Backend/Lighthouse.Backend/Models/PercentilesOverTimeSnapshot.cs (Id, OwnerId, OwnerType, RecordedAt:DateOnly, MetricType, Horizon:int?, P50/P70/P85/P95 — no const fields yet)",
+      "metric_type_enum": "Lighthouse.Backend/Lighthouse.Backend/Models/MetricType.cs (currently ONLY `CycleTime`)",
+      "recording_handler": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs (Horizons = [30,60,90]; RecordAsync(ownerId, ownerType, Func<DateTime,DateTime,IEnumerable<PercentileValue>> readPercentiles, Action invalidateReadCache); UpsertSnapshot(ownerId, ownerType, horizon, recordedAt, percentiles); ValueFor(...); try/catch + Error log 'Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})' arg 'Percentiles'; finally { invalidateReadCache(); })",
+      "demo_backfill_handler": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs (HistoryWindowDays = 14; Horizons = [30,60,90]; IsDemoOwner via CsvWorkTrackingOptionNames.SynthesizeStateJourneyForDemo; idempotency = any snapshot with MetricType == CycleTime && RecordedAt < today)",
+      "series_query": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentilesOverTimeSeriesQuery.cs + Services/Interfaces/IPercentilesOverTimeSeriesQuery.cs — GetSeries(ownerId, ownerType, metricType, horizon)",
+      "repository": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepository.cs (+ IPercentilesOverTimeSnapshotRepository)",
+      "endpoints": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs + API/PortfolioMetricsController.cs — [HttpGet(\"percentiles-over-time\")] GetPercentilesOverTime(int {team|portfolio}Id, [FromQuery] int? horizon), currently hardcoding MetricType.CycleTime",
+      "dto": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PercentilesOverTimeSnapshotDto.cs (recordedAt, metricType, p50..p95 — no horizon)",
+      "db_context": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs ~L261 (DbSet + HasIndex(OwnerId, OwnerType, MetricType, Horizon, RecordedAt).IsUnique())",
+      "wia_reads_already_exist": "ITeamMetricsService.GetWorkItemAgePercentilesForTeam(Team team, DateTime endDate) + IPortfolioMetricsService.GetWorkItemAgePercentilesForPortfolio(Portfolio portfolio, DateTime endDate) — NO service extension needed this slice",
+      "acceptance_harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs (abstract base; [SetUp]/[TearDown]; real host + real SQLite via TestWebApplicationFactory; only ILicenseService faked; static testDateOffset shifts SyncDay back 90 days per fixture; SyncDay anchored at 2026-06-15)",
+      "acceptance_split_precedent": "Slice01PercentilesOverTimeScenarios.cs + Slice01PercentilesOverTimeSpecifications.cs = ONE partial class `Slice01PercentilesOverTimeTest`; class-level attrs live on the Scenarios half ([TestFixture][Category(\"acceptance\")][Category(\"epic-5427-percentiles-over-time\")][Category(\"slice-01\")]); the `: PercentilesOverTimeAcceptanceTest` base declaration lives on the Specifications half",
+      "fe_model": "Lighthouse.Frontend/src/models/Metrics/PercentilesOverTimeSnapshot.ts (PercentilesHorizon = 30|60|90, PERCENTILES_HORIZONS)",
+      "fe_service": "Lighthouse.Frontend/src/services/Api/MetricsService.ts — getPercentilesOverTime(id, horizon): Promise<PercentilesOverTimeSnapshot[]>, URL `/${api}/${id}/metrics/percentiles-over-time?horizon=${horizon}` (interface decl ~L210, impl ~L750)",
+      "fe_hook": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts (PercentilesOverTimeState {horizon, setHorizon, series}; local HorizonCache = Partial<Record<PercentilesHorizon, ...>>; series null = loading, [] = loaded-empty)",
+      "fe_widget": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx (+ PercentilesOverTimeWidget.test.tsx)",
+      "e2e": "Lighthouse.EndToEndTests/tests/models/metrics/PercentilesOverTimeWidget.ts (POM) + tests/specs/flow/PercentilesOverTime.spec.ts",
+      "stryker_config": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5427-percentiles-over-time.json (reuse; extend `mutate` ranges rather than creating a second config)"
     }
   },
   "open_questions_resolved": {
-    "ct_per_horizon_read": "RESOLVED at design-read verification: ITeamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate) and IPortfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate) already exist and return IEnumerable<PercentileValue>. The recorder computes each horizon as-of-today by calling once per horizon with startDate = today.AddDays(-H), endDate = today (H in {30,60,90}). No new service method required; if a genuine gap surfaces during 01-03 RED, add a thin per-horizon read (still EXTEND, no new port). Verify this call path in 01-03 before writing the upsert.",
-    "demo_backfill_window": "Match the sibling DemoBlockedHistoryBackfillHandler window (HistoryWindowDays = 14). Backdate CT snapshots across a 14-day window for demo connections only; picked in 01-05."
+    "wia_horizon_representation": "RESOLVED (DELIVER decision, OVERRIDES ADR-106's literal `null` for WorkItemAge): WIA rows persist `Horizon = PercentilesOverTimeSnapshot.NoHorizon` (a named `public const int NoHorizon = 0;` on the entity), never NULL. Two hard reasons: (a) the unique index (OwnerId, OwnerType, MetricType, Horizon, RecordedAt) does NOT deduplicate rows whose Horizon is NULL — SQL treats NULLs as distinct — so WIA would silently accrue one duplicate row per refresh per day, breaking US-02 AC2 / DDD-5 'exactly one row per key per day'; (b) EF Core translates `s.Horizon == horizonParam` into `Horizon = @p`, which never matches NULL, so a null-horizon upsert predicate would always miss and INSERT instead of UPDATE. The column stays `int?` -> NO schema change and NO new migration. ADR-106 must gain an amendment note recording this at slice finalization (docs are a finalization activity, not a mid-slice one).",
+    "wia_http_contract": "RESOLVED (refines ADR-108, which says only 'WIA requested without a horizon'): relying on an omitted `horizon` to implicitly mean WIA is ambiguous against the already-shipped `[FromQuery] int? horizon` (an omitted horizon today is a legal CT call). Instead the change is ADDITIVE and EXPLICIT: add `[FromQuery] MetricType metricType = MetricType.CycleTime` to the existing `percentiles-over-time` action on BOTH controllers. Every existing CT caller stays wire-compatible byte-for-byte; WIA callers send `metricType=WorkItemAge` and no horizon, and the controller resolves the NoHorizon sentinel. No new route, no new DTO, no client/CLI/MCP version gate (ADR-108: 'reads inherit the existing MetricsController read gate; no RBAC change, no CLI/MCP client version gate').",
+    "single_pipeline_no_second_recorder": "RESOLVED (US-03 AC2 / Scenario 8 / KPI 'Pipeline reuse'): WIA recording is added INSIDE PercentilesOverTimeRecordingHandler. The existing `RecordAsync(..., Func<DateTime,DateTime,IEnumerable<PercentileValue>> readPercentiles, Action invalidateReadCache)` shape already accommodates the horizon-less WIA read — WIA is adapted as `(_, endDate) => metricsService.GetWorkItemAgePercentilesForTeam(team, endDate)`, ignoring the start date. What must be parameterized is the horizon set: CT loops [30,60,90], WIA runs exactly once with NoHorizon. Do NOT introduce a second handler, a second table, or a second endpoint — that outcome is precisely the slice's disproof condition in the learning hypothesis.",
+    "cache_invalidation_must_survive": "RESOLVED (non-negotiable regression guard): the handler's `finally { invalidateReadCache(); }` MUST remain and MUST cover the WIA read too. A slice-01 CI regression was caused by the recording handler warming the shared metrics cache mid-refresh; dropping/narrowing the invalidation breaks an unrelated @premium E2E. This is a standing ci-learnings rule: 'snapshot handlers reading caching metrics services must invalidate the cache'.",
+    "demo_backfill_idempotency_signal": "RESOLVED (subtle, catches a silent no-op): DemoPercentilesBackfillHandler's current idempotency guard is 'any snapshot with MetricType == CycleTime && RecordedAt < today -> skip'. If WIA rows are added under that same guard, every demo instance that already ran the slice-01 backfill will skip forever and NEVER gain WIA rows — the WIA tab would render empty in demo and screenshot E2Es while every unit test passes. The guard must become per-metric-family (evaluate the CT backdate and the WIA backdate against their own presence signals) so an already-CT-backfilled demo owner still gains WIA history on its next refresh.",
+    "acceptance_harness_today_vs_syncday": "RESOLVED (test-design constraint): PercentilesOverTimeAcceptanceTest anchors SyncDay to a fixed PAST date (2026-06-15 minus 90 days per fixture) for parallel isolation, while the recording handler writes `RecordedAt = DateOnly.FromDateTime(DateTime.Today)`. Recording-path assertions must therefore be expressed against real `DateTime.Today`, not against SyncDay; read-path seeding stays SyncDay-relative like slice-01. This is the same live/today blind spot already recorded for epic-5074 slice-08 — do not 'fix' the harness in this slice.",
+    "effort_vs_slice_brief": "RESOLVED: the slice brief reference-classes slice-02 at <=0.5 day ('pure reuse'). The decomposition below totals ~11h. The delta is real work, not scope creep: the FE selection model widens from a homogeneous numeric union to a heterogeneous one (threaded through model, service, hook cache key and widget), and the demo idempotency signal has to change shape. Track the variance as a reference-class learning at slice close-out rather than compressing the steps."
   },
   "out_of_scope": [
-    "WIA tab / WIA snapshot recording (slice 02, US-03)",
     "ProcessBehaviorSnapshot entity + repo + ProcessBehaviorRecordingHandler + IProcessBehaviorSeriesQuery + process-behavior-over-time endpoint (slices 03/04)",
     "PBC 'Over Time' widget + metric-type toggle + Feature-Size portfolio-only (slices 03/04, US-04/US-05)",
-    "Backfilling REAL historical percentiles (forward-only by design; only demo data is backdated)",
+    "Any horizon concept for WIA — none exists (age is as-of-today, US-03 AC1)",
+    "A second recording handler, a second snapshot table, or a bespoke WIA route (all three are the slice's disproof condition)",
+    "Extending ITeamMetricsService / IPortfolioMetricsService — the WIA percentile reads already exist",
+    "EF migration / schema change — the Horizon column is already nullable and the sentinel needs no DDL",
+    "Backfilling REAL historical WIA percentiles (forward-only by design, D5; only demo data is backdated)",
     "Export / CSV of the series",
-    "Premium gating / RBAC changes (free-tier, ungated — D3)"
+    "Premium gating / RBAC changes (free-tier, ungated — D3)",
+    "Amending ADR-106 and milestone-2-wia-tab.feature in-place — both amendments are queued for slice FINALIZATION, not mid-slice"
   ],
   "phases": [
     {
-      "id": "01",
-      "name": "Cycle-Time percentiles over time (walking skeleton + shared recording pipeline)",
-      "description": "Forward-only PercentilesOverTimeSnapshot + repo + expand-only migration + CT recording handler + typed series endpoint + CT demo backfill + FE widget + walking-skeleton E2E.",
+      "id": "02",
+      "name": "Work-Item-Age percentiles over time (second metric family through the shared pipeline)",
+      "description": "MetricType.WorkItemAge + NoHorizon sentinel + WIA recording inside the existing handler + additive metricType query param on both read endpoints + demo WIA backfill + 'Age' toggle on the existing widget + E2E. No new entity, handler, route or migration.",
       "steps": [
         {
-          "id": "01-01",
-          "name": "PercentilesOverTimeSnapshot entity + repository + DbSet + EF config + DI",
+          "id": "02-01",
+          "name": "MetricType.WorkItemAge + NoHorizon sentinel + WIA recording inside the existing handler",
           "criteria": [
-            "PercentilesOverTimeSnapshot persists Id, OwnerId (int), OwnerType (Team|Portfolio), RecordedAt (DateOnly), MetricType (enum, CycleTime this slice), Horizon (nullable int, 30/60/90 for CT), P50, P70, P85, P95",
-            "IPercentilesOverTimeSnapshotRepository : IRepository<PercentilesOverTimeSnapshot> with a read helper for latest-per-(owner,horizon) series retrieval by owner + horizon",
-            "EF impl is a thin RepositoryBase<PercentilesOverTimeSnapshot> subclass; DbSet registered on LighthouseAppContext with a unique index on the natural key (OwnerId, OwnerType, MetricType, Horizon, RecordedAt)",
-            "Repository registered in Program.cs (AddScoped)",
-            "Entity unit test and repository unit test pass; dotnet build zero warnings; dotnet test green"
+            "MetricType gains `WorkItemAge` APPENDED AFTER `CycleTime` — never reordered and never given an explicit renumbering, because the enum persists as its integer ordinal and reordering would silently re-map every shipped CycleTime row to WorkItemAge",
+            "PercentilesOverTimeSnapshot exposes `public const int NoHorizon = 0;` and every WIA write/read goes through that named constant — no bare `0` literals anywhere in production or test code",
+            "PercentilesOverTimeRecordingHandler records today's WIA percentiles for teams AND portfolios on the SAME refresh events it already handles, upserting exactly one row per (OwnerId, OwnerType, MetricType=WorkItemAge, Horizon=NoHorizon, RecordedAt=today) — closes milestone-2 Scenario 8 at the unit level (US-03 AC2)",
+            "WIA percentiles are read via the already-existing ITeamMetricsService.GetWorkItemAgePercentilesForTeam(team, DateTime.Today) / IPortfolioMetricsService.GetWorkItemAgePercentilesForPortfolio(portfolio, DateTime.Today) — the service interfaces are NOT extended",
+            "NO second handler, NO second table, NO second event subscription is introduced; the CT horizon loop [30,60,90] and the single WIA write share one code path parameterized by horizon set",
+            "Same-day re-refresh overwrites the WIA row in place — exactly one WIA row per owner per day (DDD-5); a unit test drives two consecutive refreshes and asserts a single row",
+            "The handler's existing try/catch + structured Error log ('Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})') covers the WIA path; a throwing WIA read does not break the refresh and does not prevent the CT rows already written from persisting",
+            "The existing `finally { invalidateReadCache(); }` is PRESERVED and covers the WIA read — a unit test asserts the invalidation still fires on both the success and the exception path (regression guard for the slice-01 CI failure and the @premium E2E it broke)",
+            "No EF migration is produced; `dotnet build` still emits zero warnings and `dotnet test` is green after the enum member is added",
+            "Un-ignore this step's handler unit tests only; all other slice-02 scenarios stay [Ignore(\"pending — DELIVER (epic-5427 slice-02)\")]"
           ],
           "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/MetricType.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Models/PercentilesOverTimeSnapshot.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPercentilesOverTimeSnapshotRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepositoryTests.cs",
-          "scenario_name": "PercentilesOverTimeSnapshot persists and reads back per owner+horizon (substrate for Scenarios 2/3)",
-          "dependencies": [],
-          "implementation_notes": "Mirror BlockedCountSnapshot.cs (entity), IBlockedCountSnapshotRepository.cs (interface), BlockedCountSnapshotRepository.cs (thin RepositoryBase<T> subclass with primary-constructor + DbSet selector). Add PercentilesOverTimeSnapshotTests.cs (entity) mirroring BlockedCountSnapshotTests.cs. Register the DbSet + unique index in LighthouseAppContext (BlockedCountSnapshots idiom). Register the repo in Program.cs near L912. RED-by-skip: type skeletons land minimal so main compiles + stays green; un-ignore the repo/entity unit tests one at a time to GREEN. Entity extends WIA later via the nullable Horizon (do NOT model WIA columns this slice).",
-          "estimated_hours": 2
-        },
-        {
-          "id": "01-02",
-          "name": "Expand-only EF migration (SQLite + Postgres) + Postgres-container migration test",
-          "criteria": [
-            "One new PercentilesOverTimeSnapshot table added additively (no destructive change to existing schema)",
-            "Migration generated via the existing CreateMigration PowerShell script (NOT `dotnet ef migrations add`) for all supported providers (SQLite + Postgres)",
-            "Unique natural-key index (OwnerId, OwnerType, MetricType, Horizon, RecordedAt) created on both providers; Postgres actually enforces the constraint",
-            "Real Postgres-container migration test passes; SQLite migration applies clean on startup; dotnet build zero warnings; dotnet test green",
-            "Closes milestone-1 Scenario 6: the new snapshot store is added additively on both SQLite and PostgreSQL"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Migrations/**/*PercentilesOverTimeSnapshot* (generated via CreateMigration script, both providers)",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/PercentilesOverTimeSnapshotMigrationTests.cs"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/PercentilesOverTimeSnapshotMigrationTests.cs",
-          "scenario_name": "The new snapshot storage is created additively on both database providers",
-          "dependencies": ["01-01"],
-          "implementation_notes": "Mirror BlockedCountSnapshotMigrationTests.cs. Use the CreateMigration script (memory: EF migrations expand-only, additive-only, generated via CreateMigration across all providers — NEVER `dotnet ef migrations add`, NEVER Recreate). Only ONE new table this slice (ProcessBehaviorSnapshot is deferred to slices 03/04). Un-ignore Scenario 6.",
-          "estimated_hours": 1.5
-        },
-        {
-          "id": "01-03",
-          "name": "PercentilesOverTimeRecordingHandler — forward-only CT recorder on refresh events",
-          "criteria": [
-            "Handler implements IDomainEventHandler<TeamDataRefreshed> and IDomainEventHandler<PortfolioFeaturesRefreshed>",
-            "On refresh, records today's CT percentiles for horizons 30/60/90: for each horizon H it reads the as-of-today CT percentiles and upserts one row per (OwnerId, OwnerType, MetricType=CycleTime, Horizon=H, RecordedAt=today) (milestone-1 Scenario 2)",
-            "Same-day re-refresh overwrites in place — exactly one row per (owner, metric, horizon, day), carrying the latest values (Scenario 3)",
-            "Forward-only: only today is recorded; no earlier days are fabricated (Scenario 4)",
-            "Recording is wrapped in the handler's own try/catch; a failure does not break the refresh path and emits a structured recording-failed Error event with OwnerId, OwnerType, MetricFamily=Percentiles, Exception (Scenario 5; dispatcher swallows errors, so the handler owns its own observability)",
-            "Handler registered in Program.cs for both event interfaces; dotnet build zero warnings; dotnet test green; Stryker >= 80% on the handler",
-            "VERIFY FIRST (design open question): confirm ITeamMetricsService.GetCycleTimePercentilesForTeam(team, today.AddDays(-H), today) / GetCycleTimePercentilesForPortfolio(...) return the horizon's CT percentiles as-of-today without a bespoke recompute; if a genuine gap, add a thin per-horizon read on the service (still EXTEND, no new port) and note it"
-          ],
-          "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs (EXTEND only if per-horizon read gap surfaces)",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPortfolioMetricsService.cs (EXTEND only if per-horizon read gap surfaces)",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/PercentilesOverTimeSnapshotTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandlerTests.cs"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandlerTests.cs",
-          "scenario_name": "A metrics refresh records today's cycle-time percentiles for every horizon (+ same-day overwrite, forward-only, failure-isolation)",
-          "dependencies": ["01-01"],
-          "implementation_notes": "Mirror BlockedCountSnapshotRecordingHandler.cs closely: same two HandleAsync overloads, GetById null-guard, per-owner UpsertSnapshotAsync keyed on (owner, type, today) — here extend the key with MetricType + Horizon and loop over {30,60,90}. Mirror the failure-log discipline from DDD-6/ADR-107 (message template 'Percentile/PBC snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})', level Error, MetricFamily=Percentiles). Handler unit tests mirror BlockedCountSnapshotRecordingHandlerTests.cs. Register near Program.cs L1058-1059 (the two BlockedCount handler lines). RED-by-skip: author Scenarios 2-5 in the handler unit + Slice01 integration, un-ignore one at a time to GREEN.",
-          "estimated_hours": 3
-        },
-        {
-          "id": "01-04",
-          "name": "Series query port + percentiles-over-time read endpoint (team + portfolio) + DTO",
-          "criteria": [
-            "IPercentilesOverTimeSeriesQuery read port (read-only) + impl returns the persisted CT series for a given owner + horizon, ordered by RecordedAt",
-            "TeamMetricsController and PortfolioMetricsController each gain +1 GET action `percentiles-over-time?horizon={30|60|90}` returning {recordedAt, metricType, p50, p70, p85, p95}[] (PercentilesOverTimeSnapshotDto)",
-            "The GET is side-effect-free (no writes) and reads only from the persisted snapshot table — no live recompute of historical days (US-01 AC3/AC5)",
-            "Empty owner (no snapshots) returns an empty array (honest empty-state contract; the FE renders the D6 copy) — never a zero-padded/broken series (US-01 AC4)",
-            "WebApplicationFactory integration test seeds snapshot rows then reads the series back (walking-skeleton Scenario 1 read path); dotnet build zero warnings; dotnet test green",
-            "Un-ignore the Slice01 integration read scenario"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPercentilesOverTimeSeriesQuery.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentilesOverTimeSeriesQuery.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PercentilesOverTimeSnapshotDto.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice01PercentilesOverTimeScenarios.cs",
-          "scenario_name": "Flow coach opens the Percentiles Over Time widget and reads a dated CT-30 trend (read path)",
-          "dependencies": ["01-01", "01-03"],
-          "implementation_notes": "EXTEND the controllers (constraint: extend, no bespoke route) mirroring TeamMetricsController.GetBlockedCountHistory (L476) + the portfolio twin; inherit the existing class-level read guard (ungated, D3). DTO mirrors BlockedCountSnapshotDto.cs (RecordedAt as ISO string + the numeric fields). Integration test file is a partial class `[TestFixture][Category(\"acceptance\")]` with Given/When/Then helpers split into Slice01PercentilesOverTimeScenarios.cs + Slice01PercentilesOverTimeSpecifications.cs, mirroring Slice03BlockedTrendScenarios.cs / Slice03BlockedTrendSpecifications.cs. Register the query port in Program.cs. RED-by-skip: un-ignore the read scenario to GREEN.",
+          "scenario_name": "Age percentiles are recorded by the same daily pipeline, not a second one (milestone-2 Scenario 8, driving-port half)",
+          "dependencies": [],
+          "implementation_notes": "The existing `RecordAsync(int ownerId, OwnerType ownerType, Func<DateTime,DateTime,IEnumerable<PercentileValue>> readPercentiles, Action invalidateReadCache)` already fits WIA: adapt the horizon-less read as a lambda that ignores the start date, `(_, endDate) => metricsService.GetWorkItemAgePercentilesForTeam(team, endDate)`. What needs parameterizing is the horizon set — CT iterates the existing `Horizons` field, WIA runs once with `PercentilesOverTimeSnapshot.NoHorizon`. Reuse `UpsertSnapshot(ownerId, ownerType, horizon, recordedAt, percentiles)` and `ValueFor(...)` untouched; the upsert predicate must include MetricType so CT and WIA rows for the same day never collide. WATCH the RecordAsync parameter count — it is currently 4; adding a metric-type and a horizon-set parameter takes it to 6, still under the S107 limit of 7, so do NOT add a pragma. ci-learnings to pre-apply: constant arrays as `private static readonly` fields (CA1861 — a new WIA horizon array literal inside the loop is the classic trip); test helpers and private members declare CONCRETE return types (CA1859 — do not return IEnumerable<T> from a helper that builds a List<T>); use `Assert.EnterMultipleScope()` for consecutive asserts, never `Assert.Multiple`; `Has.Count.EqualTo(N)` for collection counts; `Is.Zero` not `Is.EqualTo(0)` (relevant for the NoHorizon assertions); `HandleAsync` must `await` `Save()` and never be `async void`; do not add a log-and-rethrow wrapper (S2139) — the dispatcher already swallows and the handler already owns its Error log. HARNESS CAVEAT: the handler writes RecordedAt from DateTime.Today, while the acceptance harness anchors SyncDay in the past — express recording assertions against real today. RED-by-skip: land the enum member + sentinel first so main compiles and stays green, then un-ignore the WIA handler tests one at a time.",
           "estimated_hours": 2.5
         },
         {
-          "id": "01-05",
-          "name": "DemoPercentilesBackfillHandler — CT-only, demo-gated backdater",
+          "id": "02-02",
+          "name": "Additive metricType query param on both read endpoints + WIA series wiring + acceptance scenarios",
           "criteria": [
-            "On a demo owner's refresh, backdates CT PercentilesOverTimeSnapshot rows across the demo window (14 days, matching the sibling) for horizons 30/60/90 so the walking-skeleton chart renders populated",
-            "Gated to demo connections only (SynthesizeStateJourneyForDemo = true); real tenants stay forward-only and are never touched (DDD-4)",
-            "Idempotent: once a backdated snapshot exists for the demo owner, a second refresh adds no further backdated rows",
-            "Handler registered in Program.cs for both refresh events; dotnet build zero warnings; dotnet test green; Stryker >= 80% on the handler",
-            "Enables the populated-chart precondition for the walking-skeleton E2E (Scenario 1)"
+            "Both `[HttpGet(\"percentiles-over-time\")]` actions gain `[FromQuery] MetricType metricType = MetricType.CycleTime` — the ONLY signature change; no new route, no new DTO, no new controller",
+            "Existing CT requests (`?horizon=30`, no metricType) remain wire-compatible byte-for-byte — an acceptance test asserts a slice-01-shaped request still returns the identical CT payload",
+            "A WIA request (`?metricType=WorkItemAge`, no horizon) resolves PercentilesOverTimeSnapshot.NoHorizon and returns the persisted WIA series ordered by RecordedAt, side-effect-free (reads only the snapshot table, never a live recompute of historical days)",
+            "A WIA request that ALSO carries a horizon is not silently mis-served — WIA has no horizon dimension, so the horizon is ignored in favour of the sentinel and the response is still the single WIA series (documented in the action, asserted by a test)",
+            "An owner with no WIA snapshots returns an empty array — the honest empty-state contract the FE renders as D6 copy, never a zero-padded or broken series (US-03 AC3)",
+            "IPercentilesOverTimeSeriesQuery.GetSeries(ownerId, ownerType, metricType, horizon) is used as-is — the read port already carries metricType; only the controller's hardcoded MetricType.CycleTime goes away",
+            "Read-after-record acceptance scenario: a refresh is raised, then the WIA series is read back through the real HTTP surface and contains today's row — closes milestone-2 Scenario 8 end-to-end (US-03 AC2)",
+            "Acceptance fixture is `Slice02WorkItemAgePercentilesTest`, a partial class split across Slice02WorkItemAgePercentilesScenarios.cs (class-level [TestFixture][Category(\"acceptance\")][Category(\"epic-5427-percentiles-over-time\")][Category(\"slice-02\")] + the [Test] methods) and Slice02WorkItemAgePercentilesSpecifications.cs (the `: PercentilesOverTimeAcceptanceTest` base declaration + Given/When/Then step helpers) — mirroring the slice-01 split exactly",
+            "`dotnet build` zero warnings; `dotnet test` green; un-ignore only this step's acceptance scenarios"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentilesOverTimeSeriesQuery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice02WorkItemAgePercentilesScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice02WorkItemAgePercentilesSpecifications.cs"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs",
-          "scenario_name": "The demo team's daily cycle-time percentiles have been recorded over the demo window (populates the walking-skeleton chart)",
-          "dependencies": ["01-01", "01-03"],
-          "implementation_notes": "Mirror DemoBlockedHistoryBackfillHandler.cs: same demo-gate (IsDemoOwner via connection SynthesizeStateJourneyForDemo), same idempotency guard (GetAllByPredicate on RecordedAt < today -> Any), same HistoryWindowDays = 14, same per-day backdate loop — but CT-only, writing PercentilesOverTimeSnapshot rows per horizon (no transition/feature-spell keyspaces; those are blocked-items-specific). Register near Program.cs L1060-1061 (the two Demo handler lines). RECONCILIATION: slice-01 brief lists 'demo backfill' as OUT, but Scenario 1 requires a POPULATED chart and DISTILL Adapter-Coverage lists DemoPercentilesBackfillHandler as covered by Scenario 1 — so a MINIMAL CT-only demo backfill IS in slice-01 (WS litmus depends on it); broader multi-metric demo polish stays deferred to later slices.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice02WorkItemAgePercentilesScenarios.cs",
+          "scenario_name": "Age percentiles recorded by the shared pipeline are served from the same endpoint family (milestone-2 Scenario 8, read-after-record) + honest empty series (Scenario 9, backend half)",
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "The harness base class already exposes `SeedCycleTimePercentilesSnapshot(ownerId, ownerType, recordedAt, horizon, p50, p70, p85, p95)` and `GetTeamPercentilesOverTime(id, horizon)` / `GetPortfolioPercentilesOverTime(id, horizon)`. Per the project rule 'before editing a shared contract, extend the relevant test factory/builder first to bound the blast radius': ADD overloads (e.g. a metric-type-aware seed and a metric-type-aware GET) rather than changing the existing signatures — slice-01's Specifications half calls them and must not be touched. ci-learnings to pre-apply: nullable `[FromQuery]` only where absence is genuinely handled (here the new param has a DEFAULT, so it stays non-nullable — an enum with a default binds cleanly from an absent query string); do not gate a shared endpoint on the strictest consumer; both controller classes already carry a file-level `#pragma warning disable S107` justified by epic-5427, so do not add another; `[RbacGuard(...Read, ScopeIdRouteKey=...)]` is inherited unchanged (ungated read, D3). ADR-108 says only 'WIA requested without a horizon' — this step deliberately makes selection EXPLICIT via metricType instead of implicit-by-omission; record it as an ADR-108 clarification for finalization. RED-by-skip: author both acceptance files with every [Test] carrying [Ignore(\"pending — DELIVER (epic-5427 slice-02)\")] alongside the controller change, then un-ignore one scenario at a time to GREEN.",
           "estimated_hours": 2
         },
         {
-          "id": "01-06",
-          "name": "Frontend 'Percentiles Over Time' widget + series hook + Predictability registration",
+          "id": "02-03",
+          "name": "DemoPercentilesBackfillHandler backdates WIA rows (per-metric-family idempotency)",
           "criteria": [
-            "New 'Percentiles Over Time' widget in MetricsView, Predictability category, with a `[ CT-30 | CT-60 | CT-90 ]` toggle row, CT-30 selected by default (US-01 AC1)",
-            "Selecting a horizon renders 50/70/85/95 percentile lines, one point per calendar day in range, using the existing red->green percentile colour ramp (D7 / US-01 AC2)",
-            "Switching 30<->60<->90 re-plots from already-fetched persisted horizon series without triggering a backend recompute of history (US-01 AC5)",
-            "On an owner with no snapshots, the widget shows the honest empty-state copy 'builds forward from today — no snapshots recorded yet' (D6 / US-01 AC4), never a broken axis",
-            "Series fetched via the existing MetricsView hook plumbing (NOT a bespoke fetch inside the component); widget registered in categoryMetadata.ts for BOTH team and portfolio scope, ungated (D8/D3)",
-            "Vitest suite green; pnpm build zero TS/Biome/Vite warnings"
+            "On a demo owner's refresh, the handler backdates WIA PercentilesOverTimeSnapshot rows across the SAME 14-day window (HistoryWindowDays) it already uses for CT, one row per day at Horizon = NoHorizon",
+            "The demo gate is unchanged: only connections with SynthesizeStateJourneyForDemo = true are touched; real tenants stay strictly forward-only (DDD-4 / ADR-109)",
+            "The idempotency signal becomes PER-METRIC-FAMILY: a demo owner that was already CT-backfilled by slice-01 STILL gains its WIA history on the next refresh, and a second refresh after that adds no further rows — asserted by a test that seeds CT-only history first, then refreshes twice",
+            "Backdated WIA values are synthesized with the same shape/monotonicity discipline as the CT synthesizer so the demo chart reads plausibly (p50 <= p70 <= p85 <= p95 on every day)",
+            "No new handler and no new event registration — the existing DemoPercentilesBackfillHandler registration in Program.cs is untouched",
+            "`dotnet build` zero warnings; `dotnet test` green; this step is the precondition that makes the 02-05 demo E2E render a POPULATED WIA tab rather than the empty state"
           ],
           "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Common/MetricsView/ (new PercentilesOverTime widget component + series hook)",
-            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs",
+          "scenario_name": "The demo team's daily work-item-age percentiles have been backdated over the demo window (populates the WIA tab for Scenario 7)",
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "This step's whole risk is the idempotency guard. It currently reads 'any snapshot with MetricType == CycleTime && RecordedAt < today -> skip the entire backfill'. Leaving it as-is makes the WIA backfill a permanent silent no-op on every environment that already ran slice-01 — every unit test would still pass while the demo/screenshot E2E renders the empty state. Split the presence check so each family is evaluated against its own rows. Reuse SynthesizePercentiles(dayIndex, horizon) if it generalizes, or add a sibling synthesizer; keep the `// Stryker disable once all` marker on the informational log line and mirror its message for the WIA branch. ci-learnings to pre-apply: constant arrays as `private static readonly` fields (CA1861); private helpers declare concrete return types (CA1859); capture and use LINQ terminator results; `Assert.EnterMultipleScope()` for consecutive asserts; keep the handler's own try/catch discipline rather than adding a rethrow wrapper (S2139). Also relevant: the deferred DEVOPS item 'the e2e-demo-screenshot env must set the connection IsDemo=true and the @screenshot E2E must assert populated (non-empty) charts before PNG capture' — this step is what makes that assertion satisfiable for WIA.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "02-04",
+          "name": "Frontend selection union + 'Age' toggle on the existing widget + Vitest",
+          "criteria": [
+            "The selection model widens from PercentilesHorizon to a union covering the age tab (e.g. `PercentilesSelection = \"age\" | 30 | 60 | 90`) with an exported ordered list driving the toggle row, threaded through models/Metrics/PercentilesOverTimeSnapshot.ts, MetricsService.getPercentilesOverTime and usePercentilesOverTime",
+            "MetricsService builds `?metricType=WorkItemAge` (no horizon) for the age selection and keeps the existing `?horizon={30|60|90}` request untouched for CT selections — no CT call changes shape",
+            "usePercentilesOverTime caches per SELECTION (not per horizon) and preserves the slice-01 loading contract exactly: `series === null` while loading, `[]` when loaded-empty",
+            "The toggle row renders `[ Age | 30 days | 60 days | 90 days ]` with Age FIRST; the default selection REMAINS 30 days so no slice-01 Vitest or E2E assertion regresses (US-03 AC1)",
+            "The 'Age' chip carries its own tooltip (e.g. 'Work Item Age of items in progress today'); the CT chips keep their existing 'Cycle Time over the last xx days' copy verbatim",
+            "The Tooltip-wrapped ToggleButton pattern is PRESERVED: every ToggleButton keeps its EXPLICIT `selected` and `onClick` props because wrapping in Tooltip breaks ToggleButtonGroup's child-prop injection — the Age chip must follow the same pattern, and `data-testid` follows the established scheme with a distinct age id",
+            "Selecting Age renders four dated percentile lines (50/70/85/95) with NO horizon choice offered for that tab, using the identical red->green ramp, uniform `shape:\"circle\"`, hideLegend + custom legend as the CT tabs — closes milestone-2 Scenario 7 at unit level (US-03 AC3, D7)",
+            "On an owner with no WIA snapshots the Age tab shows the exact D6 copy 'builds forward from today — no snapshots recorded yet', never a broken axis — closes milestone-2 Scenario 9 at unit level",
+            "Switching Age <-> 30 <-> 60 <-> 90 re-plots from the per-selection cache without refetching an already-loaded selection",
+            "`pnpm test` green; `pnpm build` zero TypeScript / Biome / Vite warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Metrics/PercentilesOverTimeSnapshot.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx"
           ],
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx",
-          "scenario_name": "The widget shows a CT-30 toggle with four dated red-to-green percentile lines and honest empty-state",
-          "dependencies": ["01-04"],
-          "implementation_notes": "Reuse the point-in-time percentile chart + D7 colour ramp (WorkItemAgePercentiles.tsx / the existing `percentiles` widget) as the line renderer; wrap it with the CT-30/60/90 toggle. Register the new widgetKey (e.g. 'percentilesOverTime', size 'large') in the `predictability` array of categoryMetadata.ts (L84) for team + portfolio (no ownerFilter = both) and add a 'none' trendPolicy. Fetch through the existing MetricsView hook plumbing that already backs blockedCountHistory — do NOT add a bespoke route call in a component. FE mirror-of-idiom precedent: the blocked-over-time chart wiring shipped in epic-5074 Slice-03.",
+          "scenario_name": "Flow coach reads a dated work-item-age percentile trend from the Age tab, with honest empty state (milestone-2 Scenarios 7 + 9, unit level)",
+          "dependencies": [
+            "02-02"
+          ],
+          "implementation_notes": "usePercentilesOverTime has no test file of its own — it is covered through PercentilesOverTimeWidget.test.tsx, which is why the hook and the widget move in ONE step rather than two. Keep `PercentilesHorizon`/`PERCENTILES_HORIZONS` exported for the CT chips and add the selection union alongside; a `Partial<Record<PercentilesSelection, ...>>` cache key works because the union mixes a string literal and numeric literals. NAMING CONTRADICTION (deliberate): milestone-2-wia-tab.feature and US-03 AC1 spell the chip 'WIA' and the CT chips 'CT-30/CT-60/CT-90', but shipped slice-01 renders '30 days / 60 days / 90 days' — the .feature literals already drifted from production. Use 'Age' + the shipped CT labels, assert BEHAVIOUR (four dated lines, no horizon choice, D6 copy) rather than chip literals, and queue the .feature wording fix for finalization. ci-learnings to pre-apply: this is exactly the flagged '2-mode -> 3-mode component' shape — extract a module-level helper instead of growing in-JSX branching, and avoid nested-ternary template interpolation (S3358) and `!==` ternaries (flip to `===`); `.map(Fn)` point-free; `globalThis` over `window`; never key locators or tests on MUI icon test-ids; do not add a second render of an existing shared test-id without scoping; never put a freshly-allocated value (array/object/date literal) in a dep array — the epic-5074 React #185 infinite-loop trap; delete orphaned props and cascade if any control is removed. Backend `int?` maps to a nullish TS field, never a bare `.optional()`, if any Zod schema touches the DTO.",
           "estimated_hours": 3
         },
         {
-          "id": "01-07",
-          "name": "E2E walking skeleton — PercentilesOverTime.spec.ts (Scenario 1, POM)",
+          "id": "02-05",
+          "name": "E2E POM + spec extension (Scenario 7 driving adapter) + full local quality-gate sweep",
           "criteria": [
-            "Playwright spec (Page Object Model) drives demo data (Team Zenith) through the real UI: open team Metrics -> Predictability category -> 'Percentiles Over Time' widget",
-            "Asserts CT-30 selected by default and four dated percentile lines (50/70/85/95) plotted with red->green colouring over the demo window",
-            "Switching CT-30 -> CT-60 -> CT-90 re-plots each horizon's dated lines from already-recorded history, with no new day-by-day recompute triggered by the toggle",
-            "Runs green locally against seeded demo data before commit; closes walking-skeleton Scenario 1"
+            "PercentilesOverTimeWidget POM gains an Age-toggle getter and a select-Age action, scoped to the widget container (no bare page-level locators, no reuse of a shared test-id, no locator keyed on a MUI icon test-id)",
+            "PercentilesOverTime.spec.ts gains a WIA scenario driving demo data (Team Zenith) through the real UI: open team Metrics -> Predictability -> 'Percentiles Over Time' -> assert the toggle row now offers Age alongside the three CT chips -> select Age -> assert four dated age-percentile lines are plotted and NO horizon choice is offered for that tab — closes milestone-2 Scenario 7 (@real-io @driving_adapter @us-03)",
+            "A second E2E assertion covers the honest forward-only empty state on an owner with no recorded age percentiles — closes milestone-2 Scenario 9 (@edge @us-03) — asserting the exact D6 copy",
+            "The slice-01 CT walking-skeleton spec still passes unchanged (default selection is still 30 days) — run the whole spec file, not just the new tests",
+            "Playwright is run LOCALLY and green before the commit — never commit an unrun spec or POM locator",
+            "Full local gate sweep green: `dotnet build` zero warnings (TreatWarningsAsErrors), `dotnet test` all NUnit suites green, `pnpm test` green, `pnpm build` zero TS/Biome/Vite warnings (prebuild runs Biome on ./src)",
+            "Stryker.NET >= 80% on the slice-02 backend deltas (recording handler WIA path, demo backfill WIA path, controller metricType resolution) and Stryker frontend >= 80% on the widget/hook/service deltas, reusing the existing stryker-config.epic-5427-percentiles-over-time.json",
+            "No new SonarCloud issues of any severity on the new code",
+            "Every [Ignore(\"pending — DELIVER (epic-5427 slice-02)\")] and test.skip introduced by this slice has been removed — a grep for the slice-02 pending marker returns nothing"
           ],
           "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/metrics/PercentilesOverTimeWidget.ts",
             "Lighthouse.EndToEndTests/tests/specs/flow/PercentilesOverTime.spec.ts",
-            "Lighthouse.EndToEndTests/tests/ (new/extended Page Object for the Percentiles Over Time widget)"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5427-percentiles-over-time.json"
           ],
           "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/PercentilesOverTime.spec.ts",
-          "scenario_name": "Flow coach opens the Percentiles Over Time widget and reads a dated CT-30 trend",
-          "dependencies": ["01-05", "01-06"],
-          "implementation_notes": "Mirror AgingPacePercentiles.spec.ts (POM, demo scenario). Depends on 01-05 (demo backfill populates the chart) and 01-06 (widget). Per project convention run Playwright locally before commit; author the spec [Ignore]/skip-tagged alongside the widget and un-skip to GREEN. This is the walking-skeleton litmus: a flow coach confirms 'yes, that's the trend I need.'",
+          "scenario_name": "Flow coach reads a dated work-item-age percentile trend from the WIA tab (milestone-2 Scenario 7, driving adapter) + fresh-team honest empty state (Scenario 9)",
+          "dependencies": [
+            "02-03",
+            "02-04"
+          ],
+          "implementation_notes": "Extend the existing POM and spec — do not create a second spec file. Depends on 02-03 (demo WIA backfill populates the chart; without it the Age tab renders the empty state and Scenario 7 cannot pass) and 02-04 (the toggle exists). ci-learnings to pre-apply: run every new spec/POM live before commit; `exact: true` on common-verb button locators; POMs must waitForURL after a redirect; poll for async data before asserting or capturing; row/card POMs scope to their own container; no bare `getByRole(\"tooltip\")` — the new Age tooltip must be located by its own scoped test-id, not by role; grep the whole E2E suite for old copy whenever a displayed string changes; MUI strips icon test-ids. If Stryker reports an implausible mutant count, drop the line-range from `mutate` rather than trusting it. Known transient CI signatures that are NOT this slice's bug: Testcontainers failures that differ each run, sonar-gates 403/401/429 with a green analysis, off-by-one Monte-Carlo/forecast assertions, MCR/quay.io registry 403/429/5xx. Commit convention: conventional commits scoped to the feature with Step-Id / Task-Id trailers, refactor commits separate from feature commits, trunk-based straight to origin main, never push red.",
           "estimated_hours": 2
         }
       ]
     }
   ],
   "walking_skeleton": {
-    "scenario": "Flow coach opens the Percentiles Over Time widget and reads a dated CT-30/60/90 trend, with the horizon toggle re-plotting from already-recorded history (walking-skeleton.feature Scenario 1)",
-    "covered_by_step": "01-07",
-    "backend_read_closed_by_step": "01-04",
-    "coverage_estimate": "Full backbone end-to-end through the production composition root: demo backfill (01-05) -> recorded snapshots (01-03) -> series query + GET endpoint (01-04) -> FE widget (01-06) -> Playwright UI E2E (01-07)."
+    "scenario": "Not a walking skeleton — slice 01 carried the backbone. Slice-02's end-to-end litmus is milestone-2 Scenario 7: a flow coach opens the 'Percentiles Over Time' widget on demo data, sees the Age chip alongside the three CT chips, selects it, and reads four dated age-percentile lines with no horizon choice (milestone-2-wia-tab.feature).",
+    "covered_by_step": "02-05",
+    "backend_read_closed_by_step": "02-02",
+    "coverage_estimate": "Full second-family path through the production composition root, reusing every slice-01 component: demo WIA backfill (02-03) -> WIA rows recorded by the SHARED handler (02-01) -> existing series query + existing endpoint with an additive metricType param (02-02) -> Age tab on the existing widget (02-04) -> Playwright UI E2E (02-05). The learning hypothesis is confirmed if and only if no second recorder, table, endpoint or migration is created."
   },
   "quality_gates": {
     "backend": [
-      "dotnet build zero warnings (TreatWarningsAsErrors)",
-      "dotnet test all NUnit suites green (NUnit 4.6 + Moq + EF InMemory + WebApplicationFactory; Postgres container for migration)",
-      "Stryker.NET kill rate >= 80% on new snapshot/recording/query code (per-feature strategy)"
+      "dotnet build zero warnings (TreatWarningsAsErrors makes any warning a failure)",
+      "dotnet test all NUnit suites green (NUnit 4.6 + Moq + EF InMemory + WebApplicationFactory on real SQLite)",
+      "Stryker.NET kill rate >= 80% on the slice-02 backend deltas (per-feature strategy), reusing stryker-config.epic-5427-percentiles-over-time.json",
+      "The recording handler's finally { invalidateReadCache(); } still fires on both success and exception paths — standing ci-learnings rule, guards an unrelated @premium E2E"
     ],
     "frontend": [
       "pnpm test all Vitest suites green",
-      "pnpm build zero TypeScript, Biome, Vite warnings"
+      "pnpm build zero TypeScript, Biome and Vite warnings (prebuild runs `pnpm biome check ./src`)",
+      "Stryker frontend kill rate >= 80% on the widget/hook/service deltas"
     ],
     "e2e": [
-      "Playwright PercentilesOverTime.spec.ts green locally against seeded demo data before commit"
+      "Playwright PercentilesOverTime.spec.ts (CT + new WIA scenarios) run LOCALLY and green against seeded demo data BEFORE commit — never commit an unrun spec or POM locator"
     ],
     "migration": [
-      "EF migration additive/expand-only, generated via CreateMigration script, clean on SQLite + Postgres; unique natural-key index enforced on Postgres"
+      "No EF migration expected — the Horizon column is already nullable and the NoHorizon sentinel needs no DDL. If any persisted-model change does appear it MUST be generated via the existing CreateMigration PowerShell script (never `dotnet ef migrations add`), additive/expand-only, across all supported providers"
     ],
     "sonarqube": [
-      "No new SonarCloud issues introduced"
+      "No new SonarCloud issues of any severity (bugs, vulnerabilities, code smells, security hotspots) — the gate fails on new violations even where existing debt remains",
+      "Pre-apply docs/ci-learnings.md before writing code; a rule already in the ledger costs a CI cycle if reintroduced",
+      "Any deliberate conflict with a Sonar rule is suppressed NARROWLY at the call site with a justification, never project-wide"
+    ],
+    "contract_compatibility": [
+      "The metricType query param is additive with a CycleTime default — every existing CT caller stays wire-compatible; asserted by an acceptance test, not by inspection",
+      "MetricType.WorkItemAge is APPENDED to the enum, never reordered — the ordinal is what is persisted"
+    ],
+    "process": [
+      "Conventional commits with feature scopes and Step-Id / Task-Id trailers; refactor commits separate from feature commits",
+      "Trunk-based: push directly to origin main; never push red",
+      "Docs, ADR-106/ADR-108 amendments, screenshots and demo-data checks happen at slice FINALIZATION, not mid-slice"
     ],
     "red_mechanism": [
-      "RED-by-skip (project convention): scenarios authored alongside minimal type skeletons so main always compiles + stays green; each tagged [Ignore(\"pending — DELIVER (epic-5427)\")] and un-ignored one scenario at a time (skip-to-push / un-skip-to-resume). Never push red."
+      "RED-by-skip (project convention, DISTILL [REF] RED Mechanism — deviates from Mandate 7 because a C# AT referencing a missing type fails to COMPILE, which is Broken, not Red): scenarios authored alongside minimal type changes so main always compiles and stays green, each tagged [Ignore(\"pending — DELIVER (epic-5427 slice-02)\")] or test.skip, un-ignored one scenario at a time (skip-to-push / un-skip-to-resume). Slice is not done until a grep for the slice-02 pending marker returns nothing."
     ]
   }
 }

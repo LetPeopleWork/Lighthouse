@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-06-09
+updated: 2026-07-25
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -629,7 +629,16 @@ outcomes:
       Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green. The Slice01 integration + recording-handler unit
       tests assert exactly one PercentilesOverTimeSnapshot row per (OwnerId, OwnerType, MetricType=CycleTime,
       Horizon, RecordedAt) under same-day double-refresh (EF InMemory) + the real Postgres-container migration
-      test exercises the unique constraint. WIA (Horizon=NULL) idempotency joins this invariant in slice-02.
+      test exercises the unique constraint.
+      Slice-02 (WIA) MEASURED 2026-07-25: VERIFIED green - the invariant now holds for BOTH families.
+      Correction to the slice-01 forward note: WIA does NOT persist Horizon=NULL. It persists the sentinel
+      PercentilesOverTimeSnapshot.NoHorizon = 0, because SQL NULLs are distinct (a NULL horizon defeats the
+      unique index, so WIA would accrue a duplicate row per refresh) and EF translates `Horizon == param` to
+      `Horizon = @p`, which never matches NULL (the upsert would silently INSERT instead of UPDATE). With the
+      sentinel the same unique index and the same single upsert predicate serve CT and WIA identically - no
+      IS NULL branch, no schema change, no migration. Pinned by Slice02WorkItemAgePercentiles* specs +
+      PercentilesOverTimeRecordingHandlerTests (same-day double-refresh leaves exactly one WIA row).
+      ProcessBehaviorSnapshot idempotency joins this invariant in slice-03.
     alerting:
       - condition: "same-day double-refresh test asserts row count != 1"
         action: "CI fails (red)"
@@ -648,7 +657,18 @@ outcomes:
       Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green. PercentilesOverTimeRecordingHandler unit test forces
       a handler exception and asserts (a) the refresh path completes green, (b) a structured Serilog
       recording-failed Error event (OwnerId, OwnerType, MetricFamily=Percentiles, Exception) is emitted from
-      the handler's own try/catch. Same failure discipline carries to the ProcessBehavior handler in slice-03.
+      the handler's own try/catch.
+      Slice-02 (WIA) MEASURED 2026-07-25: VERIFIED green and STRENGTHENED. Failure containment is now
+      per metric family - each family's loop runs in its own inner try/catch inside the outer per-owner one,
+      so a throwing WIA read no longer unwinds the CT rows already staged for the shared Save(). Both the
+      success and the exception path are now test-pinned to still run the `finally { invalidateReadCache() }`
+      guard. MetricFamily stays the FAMILY literal "Percentiles" for both CT and WIA (a first pass logged
+      metricType.ToString(); adversarial review raised it as the slice's single BLOCKER because per-type
+      values fragment one operator alert into several - fixed in 724099f32). Canonical shipped template:
+      "Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})" - the DESIGN-wave
+      draft said "Percentile/PBC ..."; the two-handler decision means the PBC recorder emits its own message,
+      so the shipped string is canonical (ADR-107 Amendment slice-02). ProcessBehavior handler, slice-03,
+      will report MetricFamily=ProcessBehavior.
     alerting:
       - condition: "recording-failure AT shows refresh broken OR no structured event emitted"
         action: "CI fails (red)"
@@ -666,8 +686,14 @@ outcomes:
     instrumentation_status: >
       Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green for the "Percentiles Over Time" widget. A zero-snapshot
       owner's percentiles-over-time GET returns an empty array and the widget renders the D6 honest empty-state
-      copy, never a broken axis (walking-skeleton E2E + FE widget test). The "PBC Over Time" widget's empty-state
-      is DEFERRED to slice-03 (that widget is not yet shipped).
+      copy, never a broken axis (walking-skeleton E2E + FE widget test).
+      Slice-02 (WIA) MEASURED 2026-07-25: VERIFIED green for the Age tab too. New @edge Playwright scenario
+      drives a fresh NON-demo team (the demo backfill deliberately populates every demo owner, so an honest-
+      empty assertion on demo data would be structurally impossible) and asserts the copy verbatim via the
+      exported PERCENTILES_OVER_TIME_EMPTY_COPY constant, so a copy change fails loudly. Backend counterpart:
+      Slice02WorkItemAgePercentilesSpecifications.ThenTheSeriesIsEmpty asserts 200 + empty array, never an
+      error or a zero-padded series. The "PBC Over Time" widget's empty-state remains DEFERRED to slice-03
+      (that widget is not yet shipped) - this KPI closes then.
     alerting:
       - condition: "zero-snapshot E2E finds a rendered-but-empty/broken axis instead of the empty-state copy"
         action: "CI fails (red)"
@@ -683,9 +709,15 @@ outcomes:
     instrumentation_status: >
       Slice-01 (CT) MEASURED 2026-07-24: baseline = ONE shared recording handler
       (PercentilesOverTimeRecordingHandler) + ONE shared snapshot table (PercentilesOverTimeSnapshot) driving
-      the single CT metric family today; zero bespoke per-metric recorders. Target of ">= 2 families sharing
-      one pipeline" is MET-IN-PROGRESS: slice-02 WIA must join THIS handler/table (MetricType=WorkItemAge,
-      Horizon=NULL), not fork a second recorder — the invariant that closes the KPI is verified when WIA lands.
+      the single CT metric family today; zero bespoke per-metric recorders.
+      Slice-02 (WIA) MEASURED 2026-07-25: the percentile half of the target is MET. Two families (CycleTime,
+      WorkItemAge) now share ONE handler (RecordFamily(...) called twice in one RecordAsync pass), ONE table,
+      ONE repository, ONE read query port and ONE endpoint (additive metricType query param), and ONE frontend
+      widget/hook (per-selection cache). Zero bespoke per-metric recorders; zero new tables; zero EF migrations.
+      Slice-02 shipped Horizon=NoHorizon(0) rather than the NULL predicted at slice-01 (see
+      OUT-5427-recording-idempotency); the reuse property is unaffected. Full target ">= 2 percentile families
+      + PBC share one pipeline" closes in slice-03, when ProcessBehaviorRecordingHandler joins the SAME refresh
+      events (a second handler on the same seam, per ADR-107) rather than introducing a third trigger.
     alerting: []
 
   - id: OUT-5427-mutation-kill-rate
@@ -698,5 +730,11 @@ outcomes:
     rationale: "DISCUSS KPI 'mutation kill rate' + project per-feature mutation mandate. Recording idempotency, failure isolation, empty-series, and horizon-toggle logic are the high-value mutation targets."
     instrumentation_status: >
       Slice-01 MEASURED 2026-07-24: BE 85.71% (Stryker.NET) + FE 90.91% (Stryker), both >= 80% gate, scoped to
-      the new snapshot/recording/query/widget code. PASSED. Re-measured per-feature on each subsequent slice.
+      the new snapshot/recording/query/widget code. PASSED.
+      Slice-02 MEASURED 2026-07-25: BE 87.13% (Stryker.NET) + FE 93.42% (Stryker), both >= 80% gate, scoped to
+      the WIA recording/backfill/query/selection code. PASSED - and both up on slice-01 (+1.42pp BE,
+      +2.51pp FE). Highest-value surviving-mutant targets closed this slice: the per-family idempotency guard
+      in DemoPercentilesBackfillHandler, the per-family inner try/catch and the invalidateReadCache() finally
+      guard in PercentilesOverTimeRecordingHandler, and ResolveHorizon's WorkItemAge branch.
+      Re-measured per-feature on each subsequent slice.
     alerting: []
