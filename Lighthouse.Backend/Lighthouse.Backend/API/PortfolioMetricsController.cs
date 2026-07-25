@@ -514,12 +514,18 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        /// <summary>
+        /// Serves the persisted percentiles trend for one metric family. <paramref name="metricType"/> is
+        /// additive and defaults to cycle time, so requests written against the original contract are
+        /// unchanged on the wire. Work Item Age has no horizon dimension — a horizon sent alongside it is
+        /// ignored in favour of the horizon-less series (see PercentilesOverTimeSeriesQuery).
+        /// </summary>
         [HttpGet("percentiles-over-time")]
-        public ActionResult<IEnumerable<PercentilesOverTimeSnapshotDto>> GetPercentilesOverTime(int portfolioId, [FromQuery] int? horizon)
+        public ActionResult<IEnumerable<PercentilesOverTimeSnapshotDto>> GetPercentilesOverTime(int portfolioId, [FromQuery] int? horizon, [FromQuery] MetricType metricType = MetricType.CycleTime)
         {
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
                 percentilesOverTimeSeriesQuery
-                    .GetSeries(portfolioId, OwnerType.Portfolio, MetricType.CycleTime, horizon)
+                    .GetSeries(portfolioId, OwnerType.Portfolio, metricType, horizon)
                     .Select(snapshot => new PercentilesOverTimeSnapshotDto(snapshot)));
         }
 

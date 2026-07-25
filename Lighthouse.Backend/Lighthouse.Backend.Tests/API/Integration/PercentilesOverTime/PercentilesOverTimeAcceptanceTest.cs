@@ -1,7 +1,9 @@
 using System.Net;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -142,9 +144,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         protected void SeedCycleTimePercentilesSnapshot(int ownerId, OwnerType ownerType, DateOnly recordedAt, int horizon, int p50, int p70, int p85, int p95)
         {
-            using var scope = Factory.Services.CreateScope();
-            var repo = scope.ServiceProvider.GetRequiredService<IPercentilesOverTimeSnapshotRepository>();
-            repo.Add(new PercentilesOverTimeSnapshot
+            SeedPercentilesSnapshot(new PercentilesOverTimeSnapshot
             {
                 OwnerId = ownerId,
                 OwnerType = ownerType,
@@ -156,7 +156,57 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 P85 = p85,
                 P95 = p95,
             });
+        }
+
+        /// <summary>
+        /// Metric-family-agnostic seeding: the snapshot table holds every family, so a slice that adds
+        /// one (Work Item Age, epic-5427 slice-02) seeds through here rather than growing the CT helper
+        /// another argument.
+        /// </summary>
+        protected void SeedPercentilesSnapshot(PercentilesOverTimeSnapshot snapshot)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IPercentilesOverTimeSnapshotRepository>();
+            repo.Add(snapshot);
             repo.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Seeds one item that is still in progress today, aged <paramref name="ageInDays"/> days
+        /// (inclusive of its start day — the definition <see cref="Lighthouse.Backend.Models.WorkItemBase.AgeOnDay"/> uses).
+        /// </summary>
+        protected void SeedInProgressWorkItem(int teamId, string referenceId, int ageInDays)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+
+            // Anchored in UTC: every persisted DateTime goes through UtcDateTimeConverter, which converts a
+            // Local-kind value with ToUniversalTime() — a local midnight would land on the previous UTC day
+            // and inflate the age by one, exactly as real synced (UTC) work-item dates never would.
+            var startedDate = DateTime.UtcNow.Date.AddDays(-(ageInDays - 1));
+            workItemRepository.Add(new WorkItem
+            {
+                TeamId = teamId,
+                ReferenceId = referenceId,
+                Name = $"Item {referenceId}",
+                Type = "Story",
+                State = "In Progress",
+                StateCategory = StateCategories.Doing,
+                CreatedDate = startedDate,
+                StartedDate = startedDate,
+                ClosedDate = null,
+                Order = referenceId,
+            });
+            workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        // --- Write-side driving-port interaction (the recording pipeline runs off the refresh event) ---
+
+        protected async Task TheTeamMetricsRefreshCompletes(int teamId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var dispatcher = scope.ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
+            await dispatcher.PublishAsync(new TeamDataRefreshed(teamId));
         }
 
         // --- Read-side driving-port interactions ---
@@ -173,6 +223,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             Client.AsPortfolioAdmin(portfolioId);
             var response = await Client.GetAsync($"/api/latest/portfolios/{portfolioId}/metrics/percentiles-over-time?horizon={horizon}");
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        protected async Task<(HttpStatusCode Status, string Body)> GetTeamPercentilesOverTime(int teamId, MetricType metricType, int? horizon)
+        {
+            Client.AsTeamAdmin(teamId);
+            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/percentiles-over-time{BuildQuery(metricType, horizon)}");
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        protected async Task<(HttpStatusCode Status, string Body)> GetPortfolioPercentilesOverTime(int portfolioId, MetricType metricType, int? horizon)
+        {
+            Client.AsPortfolioAdmin(portfolioId);
+            var response = await Client.GetAsync($"/api/latest/portfolios/{portfolioId}/metrics/percentiles-over-time{BuildQuery(metricType, horizon)}");
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        private static string BuildQuery(MetricType metricType, int? horizon)
+        {
+            var query = $"?metricType={metricType}";
+            return horizon.HasValue ? $"{query}&horizon={horizon.Value}" : query;
         }
     }
 }
