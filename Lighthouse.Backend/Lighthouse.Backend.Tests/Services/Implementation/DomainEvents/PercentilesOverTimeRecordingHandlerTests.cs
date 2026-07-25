@@ -20,6 +20,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     {
         private static readonly int[] Horizons = [30, 60, 90];
 
+        // ADR-107 observability contract: operator alerting filters on the metric FAMILY, so every
+        // failure this handler reports — cycle time or work item age — must carry "Percentiles".
+        // Metric TYPES (CycleTime / WorkItemAge) leaking into {MetricFamily} silently break those rules.
+        private const string PercentilesFamily = "Percentiles";
+
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> cryptoServiceMock = null!;
         private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
@@ -134,6 +139,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private static Task<int> CountSnapshots(LighthouseAppContext context, MetricType metricType)
         {
             return context.PercentilesOverTimeSnapshots.CountAsync(s => s.MetricType == metricType);
+        }
+
+        private static string? MetricFamilyOf(object state)
+        {
+            if (state is not IEnumerable<KeyValuePair<string, object?>> properties)
+            {
+                return null;
+            }
+
+            return properties.FirstOrDefault(p => p.Key == "MetricFamily").Value as string;
+        }
+
+        private void VerifyRecordingFailureLoggedWithPercentilesFamily(string because)
+        {
+            handlerLoggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => MetricFamilyOf(state) == PercentilesFamily),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce,
+                because);
+        }
+
+        private void VerifyNoRecordingFailureLoggedUnderAnyOtherFamily()
+        {
+            handlerLoggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => MetricFamilyOf(state) != PercentilesFamily),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Never,
+                "the metric TYPE (CycleTime / WorkItemAge) must never leak into {MetricFamily} — operator alert rules filter on the family");
         }
 
         // -----------------------------------------------------------------
@@ -293,15 +334,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
                 "a recording failure must not break the refresh path — the dispatcher swallows nothing for us");
 
-            handlerLoggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce,
-                "a structured recording-failed Error must be logged when recording throws");
+            VerifyRecordingFailureLoggedWithPercentilesFamily(
+                "a structured recording-failed Error must be logged, carrying the Percentiles family per ADR-107");
+            VerifyNoRecordingFailureLoggedUnderAnyOtherFamily();
         }
 
         [Test]
@@ -324,14 +359,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.DoesNotThrowAsync(
                 async () => await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None));
 
-            handlerLoggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce);
+            VerifyRecordingFailureLoggedWithPercentilesFamily(
+                "a repository failure is reported under the Percentiles family too");
+            VerifyNoRecordingFailureLoggedUnderAnyOtherFamily();
         }
 
         // -----------------------------------------------------------------
@@ -636,18 +666,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var cycleTimeRows = await CountSnapshots(context, MetricType.CycleTime);
             var ageRows = await CountSnapshots(context, MetricType.WorkItemAge);
-            Assert.That(cycleTimeRows, Is.EqualTo(3), "cycle-time rows written before the age failure must still be persisted");
-            Assert.That(ageRows, Is.Zero);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cycleTimeRows, Is.EqualTo(3), "cycle-time rows written before the age failure must still be persisted");
+                Assert.That(ageRows, Is.Zero);
+            }
 
-            handlerLoggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce,
-                "the age failure is reported through the handler's structured recording-failed Error log");
+            // The age read is a WorkItemAge metric TYPE, but it belongs to the Percentiles metric
+            // FAMILY — the property operators alert on. Logging "WorkItemAge" here silently stops an
+            // alert rule filtering MetricFamily == "Percentiles" from matching.
+            VerifyRecordingFailureLoggedWithPercentilesFamily(
+                "the age failure is reported under the Percentiles family, not the WorkItemAge metric type");
+            VerifyNoRecordingFailureLoggedUnderAnyOtherFamily();
 
             teamMetricsServiceMock.Verify(
                 x => x.InvalidateTeamMetrics(team),

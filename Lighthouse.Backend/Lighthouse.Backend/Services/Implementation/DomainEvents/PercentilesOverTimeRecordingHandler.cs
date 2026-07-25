@@ -12,6 +12,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         : IDomainEventHandler<TeamDataRefreshed>,
           IDomainEventHandler<PortfolioFeaturesRefreshed>
     {
+        // The observability contract (ADR-107) keys operator alerting on the metric FAMILY, not the
+        // metric type: cycle time and work item age are both percentile readings, so every failure this
+        // handler reports carries "Percentiles". The ProcessBehavior family ships its own recorder.
+        private const string MetricFamily = "Percentiles";
+
         private static readonly int[] CycleTimeHorizons = [30, 60, 90];
 
         // Work item age is measured as-of-today: it has no horizon dimension, so it runs the same
@@ -93,7 +98,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
             catch (Exception exception)
             {
-                LogRecordingFailure(exception, ownerType, ownerId, "Percentiles");
+                LogRecordingFailure(exception, ownerType, ownerId);
             }
             finally
             {
@@ -129,18 +134,18 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             {
                 // Contained per family so a failing family never discards the rows the other one
                 // already staged — the caller's single Save() still persists them.
-                LogRecordingFailure(exception, ownerType, ownerId, metricType.ToString());
+                LogRecordingFailure(exception, ownerType, ownerId);
             }
         }
 
-        private void LogRecordingFailure(Exception exception, OwnerType ownerType, int ownerId, string metricFamily)
+        private void LogRecordingFailure(Exception exception, OwnerType ownerType, int ownerId)
         {
             logger.LogError(
                 exception,
                 "Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})",
                 ownerType,
                 ownerId,
-                metricFamily);
+                MetricFamily);
         }
 
         private void UpsertSnapshot(
