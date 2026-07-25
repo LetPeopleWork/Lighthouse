@@ -74,6 +74,38 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(snapshot.Horizon, Is.Null);
         }
 
+        [Test]
+        public void NoHorizon_IsTheHorizonlessSentinel_StoredInsteadOfNull()
+        {
+            var snapshot = new PercentilesOverTimeSnapshot
+            {
+                OwnerId = 1,
+                OwnerType = OwnerType.Team,
+                MetricType = MetricType.WorkItemAge,
+                Horizon = PercentilesOverTimeSnapshot.NoHorizon,
+            };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.Horizon, Is.Not.Null,
+                    "a horizon-less family must store the sentinel, never NULL — SQL treats NULLs as distinct, which defeats the unique index");
+                Assert.That(snapshot.Horizon, Is.Zero);
+                Assert.That(snapshot.MetricType, Is.EqualTo(MetricType.WorkItemAge));
+            }
+        }
+
+        [Test]
+        public void MetricType_OrdinalsAreStable_WorkItemAgeIsAppendedAfterCycleTime()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((int)MetricType.CycleTime, Is.Zero,
+                    "MetricType persists as its ordinal — CycleTime must stay 0 or every shipped row re-maps");
+                Assert.That((int)MetricType.WorkItemAge, Is.EqualTo(1),
+                    "WorkItemAge is appended AFTER CycleTime; reordering silently re-labels shipped snapshots");
+            }
+        }
+
         [TestCase(OwnerType.Team)]
         [TestCase(OwnerType.Portfolio)]
         public void OwnerType_DiscriminatesBetweenTeamAndPortfolio(OwnerType ownerType)

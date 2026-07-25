@@ -12,7 +12,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         : IDomainEventHandler<TeamDataRefreshed>,
           IDomainEventHandler<PortfolioFeaturesRefreshed>
     {
-        private static readonly int[] Horizons = [30, 60, 90];
+        private static readonly int[] CycleTimeHorizons = [30, 60, 90];
+
+        // Work item age is measured as-of-today: it has no horizon dimension, so it runs the same
+        // recording pass exactly once under the horizon-less sentinel.
+        private static readonly int[] WorkItemAgeHorizons = [PercentilesOverTimeSnapshot.NoHorizon];
 
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IPortfolioMetricsService portfolioMetricsService;
@@ -49,6 +53,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 domainEvent.TeamId,
                 OwnerType.Team,
                 (startDate, endDate) => teamMetricsService.GetCycleTimePercentilesForTeam(team, startDate, endDate),
+                (_, endDate) => teamMetricsService.GetWorkItemAgePercentilesForTeam(team, endDate),
                 () => teamMetricsService.InvalidateTeamMetrics(team));
         }
 
@@ -64,36 +69,31 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 domainEvent.PortfolioId,
                 OwnerType.Portfolio,
                 (startDate, endDate) => portfolioMetricsService.GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate),
+                (_, endDate) => portfolioMetricsService.GetWorkItemAgePercentilesForPortfolio(portfolio, endDate),
                 () => portfolioMetricsService.InvalidatePortfolioMetrics(portfolio));
         }
 
         private async Task RecordAsync(
             int ownerId,
             OwnerType ownerType,
-            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles,
+            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readCycleTimePercentiles,
+            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readWorkItemAgePercentiles,
             Action invalidateReadCache)
         {
             try
             {
                 var endDate = DateTime.Today;
-                var recordedAt = DateOnly.FromDateTime(endDate);
 
-                foreach (var horizon in Horizons)
-                {
-                    var percentiles = readPercentiles(endDate.AddDays(-horizon), endDate).ToList();
-                    UpsertSnapshot(ownerId, ownerType, horizon, recordedAt, percentiles);
-                }
+                // Both families share this one pass — a second recorder would double the refresh cost
+                // and drift from the cycle-time rows it is meant to sit beside.
+                RecordFamily(ownerId, ownerType, MetricType.CycleTime, CycleTimeHorizons, endDate, readCycleTimePercentiles);
+                RecordFamily(ownerId, ownerType, MetricType.WorkItemAge, WorkItemAgeHorizons, endDate, readWorkItemAgePercentiles);
 
                 await snapshotRepository.Save();
             }
             catch (Exception exception)
             {
-                logger.LogError(
-                    exception,
-                    "Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})",
-                    ownerType,
-                    ownerId,
-                    "Percentiles");
+                LogRecordingFailure(exception, ownerType, ownerId, "Percentiles");
             }
             finally
             {
@@ -107,17 +107,54 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
         }
 
+        private void RecordFamily(
+            int ownerId,
+            OwnerType ownerType,
+            MetricType metricType,
+            int[] horizons,
+            DateTime endDate,
+            Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
+        {
+            var recordedAt = DateOnly.FromDateTime(endDate);
+
+            try
+            {
+                foreach (var horizon in horizons)
+                {
+                    var percentiles = readPercentiles(endDate.AddDays(-horizon), endDate).ToList();
+                    UpsertSnapshot(ownerId, ownerType, metricType, horizon, recordedAt, percentiles);
+                }
+            }
+            catch (Exception exception)
+            {
+                // Contained per family so a failing family never discards the rows the other one
+                // already staged — the caller's single Save() still persists them.
+                LogRecordingFailure(exception, ownerType, ownerId, metricType.ToString());
+            }
+        }
+
+        private void LogRecordingFailure(Exception exception, OwnerType ownerType, int ownerId, string metricFamily)
+        {
+            logger.LogError(
+                exception,
+                "Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})",
+                ownerType,
+                ownerId,
+                metricFamily);
+        }
+
         private void UpsertSnapshot(
             int ownerId,
             OwnerType ownerType,
+            MetricType metricType,
             int horizon,
             DateOnly recordedAt,
-            IReadOnlyList<PercentileValue> percentiles)
+            List<PercentileValue> percentiles)
         {
             var existing = snapshotRepository.GetByPredicate(
                 s => s.OwnerId == ownerId &&
                      s.OwnerType == ownerType &&
-                     s.MetricType == MetricType.CycleTime &&
+                     s.MetricType == metricType &&
                      s.Horizon == horizon &&
                      s.RecordedAt == recordedAt);
 
@@ -139,7 +176,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 {
                     OwnerId = ownerId,
                     OwnerType = ownerType,
-                    MetricType = MetricType.CycleTime,
+                    MetricType = metricType,
                     Horizon = horizon,
                     RecordedAt = recordedAt,
                     P50 = p50,
@@ -150,7 +187,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
         }
 
-        private static int ValueFor(IReadOnlyList<PercentileValue> percentiles, int percentile)
+        private static int ValueFor(List<PercentileValue> percentiles, int percentile)
         {
             return percentiles.FirstOrDefault(p => p.Percentile == percentile)?.Value ?? 0;
         }

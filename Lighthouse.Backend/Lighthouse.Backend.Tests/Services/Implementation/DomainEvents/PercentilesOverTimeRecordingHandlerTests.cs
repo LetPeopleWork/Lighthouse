@@ -116,13 +116,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private async Task<PercentilesOverTimeSnapshot?> FindSnapshot(
             LighthouseAppContext context, int ownerId, OwnerType ownerType, int horizon, DateOnly recordedAt)
         {
+            return await FindSnapshot(context, ownerId, ownerType, MetricType.CycleTime, horizon, recordedAt);
+        }
+
+        private async Task<PercentilesOverTimeSnapshot?> FindSnapshot(
+            LighthouseAppContext context, int ownerId, OwnerType ownerType, MetricType metricType, int horizon, DateOnly recordedAt)
+        {
             return await context.PercentilesOverTimeSnapshots
                 .SingleOrDefaultAsync(s =>
                     s.OwnerId == ownerId &&
                     s.OwnerType == ownerType &&
-                    s.MetricType == MetricType.CycleTime &&
+                    s.MetricType == metricType &&
                     s.Horizon == horizon &&
                     s.RecordedAt == recordedAt);
+        }
+
+        private static Task<int> CountSnapshots(LighthouseAppContext context, MetricType metricType)
+        {
+            return context.PercentilesOverTimeSnapshots.CountAsync(s => s.MetricType == metricType);
         }
 
         // -----------------------------------------------------------------
@@ -151,7 +162,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var total = await context.PercentilesOverTimeSnapshots.CountAsync();
+            var total = await CountSnapshots(context, MetricType.CycleTime);
             Assert.That(total, Is.EqualTo(3), "one row per horizon {30,60,90} must be recorded");
 
             var h30 = await FindSnapshot(context, team.Id, OwnerType.Team, 30, Today);
@@ -198,7 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
 
-            var total = await context.PercentilesOverTimeSnapshots.CountAsync();
+            var total = await CountSnapshots(context, MetricType.CycleTime);
             Assert.That(total, Is.EqualTo(3));
 
             var h60 = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, 60, Today);
@@ -232,7 +243,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             SetupTeamPercentiles(team, h30: Percentiles(10, 10, 10, 10), h60: Percentiles(20, 20, 20, 20), h90: Percentiles(30, 30, 30, 30));
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var total = await context.PercentilesOverTimeSnapshots.CountAsync();
+            var total = await CountSnapshots(context, MetricType.CycleTime);
             Assert.That(total, Is.EqualTo(3), "exactly one row per (owner, metric, horizon, day) after re-refresh");
 
             var h30 = await FindSnapshot(context, team.Id, OwnerType.Team, 30, Today);
@@ -381,7 +392,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var total = await context.PercentilesOverTimeSnapshots.CountAsync();
+            var total = await CountSnapshots(context, MetricType.CycleTime);
             var h30 = await FindSnapshot(context, team.Id, OwnerType.Team, 30, Today);
             using (Assert.EnterMultipleScope())
             {
@@ -505,6 +516,164 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 x => x.InvalidatePortfolioMetrics(portfolio),
                 Times.Once,
                 "the portfolio recorder must invalidate the portfolio metrics cache it warmed");
+        }
+
+        // -----------------------------------------------------------------
+        // Milestone-2 Scenario 8 — age percentiles ride the SAME daily pipeline.
+        // One WIA row per owner per day, horizon-less (NoHorizon sentinel), written
+        // by the very handler that writes the cycle-time rows — no second recorder.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_RecordsTodaysWorkItemAgePercentiles_AsASingleHorizonlessRow()
+        {
+            var team = CreateTeam(42);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamPercentiles(team, h30: Percentiles(1, 1, 1, 1), h60: Percentiles(2, 2, 2, 2), h90: Percentiles(3, 3, 3, 3));
+            teamMetricsServiceMock
+                .Setup(x => x.GetWorkItemAgePercentilesForTeam(team, TodayDate))
+                .Returns(Percentiles(4, 6, 9, 13));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var cycleTimeRows = await CountSnapshots(context, MetricType.CycleTime);
+            var ageRows = await CountSnapshots(context, MetricType.WorkItemAge);
+            var wia = await FindSnapshot(
+                context, team.Id, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cycleTimeRows, Is.EqualTo(3), "the cycle-time horizons keep being recorded by the same pass");
+                Assert.That(ageRows, Is.EqualTo(1), "work item age has no horizon dimension — exactly one row per owner per day");
+                Assert.That(wia, Is.Not.Null);
+                Assert.That(wia!.Horizon, Is.Zero, "the horizon-less row carries the NoHorizon sentinel, never NULL");
+                Assert.That(wia.RecordedAt, Is.EqualTo(Today));
+                Assert.That(wia.P50, Is.EqualTo(4));
+                Assert.That(wia.P70, Is.EqualTo(6));
+                Assert.That(wia.P85, Is.EqualTo(9));
+                Assert.That(wia.P95, Is.EqualTo(13));
+            }
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_RecordsTodaysWorkItemAgePercentiles_AsASingleHorizonlessRow()
+        {
+            var portfolio = CreatePortfolio(7);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            portfolioMetricsServiceMock
+                .Setup(x => x.GetCycleTimePercentilesForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(Percentiles(1, 2, 3, 4));
+            portfolioMetricsServiceMock
+                .Setup(x => x.GetWorkItemAgePercentilesForPortfolio(portfolio, TodayDate))
+                .Returns(Percentiles(2, 3, 5, 8));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            var ageRows = await CountSnapshots(context, MetricType.WorkItemAge);
+            var wia = await FindSnapshot(
+                context, portfolio.Id, OwnerType.Portfolio, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ageRows, Is.EqualTo(1));
+                Assert.That(wia, Is.Not.Null);
+                Assert.That(wia!.OwnerType, Is.EqualTo(OwnerType.Portfolio));
+                Assert.That(wia.Horizon, Is.Zero);
+                Assert.That(wia.P50, Is.EqualTo(2));
+                Assert.That(wia.P95, Is.EqualTo(8));
+            }
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_SameDayReRefresh_OverwritesTheWorkItemAgeRowInPlace()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamPercentiles(team, h30: Percentiles(1, 1, 1, 1), h60: Percentiles(2, 2, 2, 2), h90: Percentiles(3, 3, 3, 3));
+            teamMetricsServiceMock
+                .Setup(x => x.GetWorkItemAgePercentilesForTeam(team, TodayDate))
+                .Returns(Percentiles(4, 4, 4, 4));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            teamMetricsServiceMock
+                .Setup(x => x.GetWorkItemAgePercentilesForTeam(team, TodayDate))
+                .Returns(Percentiles(40, 40, 40, 40));
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var ageRows = await CountSnapshots(context, MetricType.WorkItemAge);
+            var wia = await FindSnapshot(
+                context, team.Id, OwnerType.Team, MetricType.WorkItemAge, PercentilesOverTimeSnapshot.NoHorizon, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ageRows, Is.EqualTo(1), "a same-day re-refresh must upsert the age row, never accrue a duplicate");
+                Assert.That(wia!.P50, Is.EqualTo(40), "the surviving row carries the latest reading");
+            }
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_WorkItemAgeReadThrows_KeepsCycleTimeRows_LogsError_AndStillInvalidatesCache()
+        {
+            var team = CreateTeam(5);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamPercentiles(team, h30: Percentiles(1, 1, 1, 1), h60: Percentiles(2, 2, 2, 2), h90: Percentiles(3, 3, 3, 3));
+            teamMetricsServiceMock
+                .Setup(x => x.GetWorkItemAgePercentilesForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Throws(new InvalidOperationException("age boom"));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            Assert.DoesNotThrowAsync(
+                async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
+                "a failing age read must not break the refresh path");
+
+            var cycleTimeRows = await CountSnapshots(context, MetricType.CycleTime);
+            var ageRows = await CountSnapshots(context, MetricType.WorkItemAge);
+            Assert.That(cycleTimeRows, Is.EqualTo(3), "cycle-time rows written before the age failure must still be persisted");
+            Assert.That(ageRows, Is.Zero);
+
+            handlerLoggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce,
+                "the age failure is reported through the handler's structured recording-failed Error log");
+
+            teamMetricsServiceMock.Verify(
+                x => x.InvalidateTeamMetrics(team),
+                Times.Once,
+                "the age read warms the same shared metrics cache — cleanup must still run on the failure path");
+        }
+
+        [Test]
+        public async Task TeamDataRefreshed_AfterRecordingAgePercentiles_StillInvalidatesTeamMetricsCacheExactlyOnce()
+        {
+            var team = CreateTeam(9);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamPercentiles(team, h30: Percentiles(1, 1, 1, 1), h60: Percentiles(2, 2, 2, 2), h90: Percentiles(3, 3, 3, 3));
+            teamMetricsServiceMock
+                .Setup(x => x.GetWorkItemAgePercentilesForTeam(team, TodayDate))
+                .Returns(Percentiles(4, 4, 4, 4));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            teamMetricsServiceMock.Verify(
+                x => x.InvalidateTeamMetrics(team),
+                Times.Once,
+                "reading age percentiles warms the shared cache too — one cleanup covers both families in a single pass");
         }
 
         private void SetupTeamPercentiles(
