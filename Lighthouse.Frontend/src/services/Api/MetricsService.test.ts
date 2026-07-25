@@ -4,6 +4,8 @@ import type { ICumulativeStateTimeResponse } from "../../models/Metrics/Cumulati
 import type { ICumulativeStateTimeCandidatesResponse } from "../../models/Metrics/CumulativeStateTimeCandidates";
 import type { ICumulativeStateTimeItemsResponse } from "../../models/Metrics/CumulativeStateTimeItems";
 import type { IFlowEfficiencyInfo } from "../../models/Metrics/FlowEfficiencyInfo";
+import type { PercentilesSelection } from "../../models/Metrics/PercentilesOverTimeSnapshot";
+import { PERCENTILES_AGE_SELECTION } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
 import { TeamMetricsService } from "./TeamMetricsService";
 
@@ -591,6 +593,25 @@ describe("MetricsService getPercentilesOverTime", () => {
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/teams/7/metrics/percentiles-over-time?horizon=60",
 		);
+	});
+
+	it("asks for the horizon-less age series by metric type and the cycle time series by horizon", async () => {
+		const queryPerSelection: [PercentilesSelection, string][] = [
+			[PERCENTILES_AGE_SELECTION, "metricType=WorkItemAge"],
+			[30, "horizon=30"],
+			[60, "horizon=60"],
+			[90, "horizon=90"],
+		];
+
+		for (const [selection, expectedQuery] of queryPerSelection) {
+			mockedAxios.get.mockResolvedValueOnce({ data: [] });
+
+			await metricsService.getPercentilesOverTime(7, selection);
+
+			expect(mockedAxios.get).toHaveBeenLastCalledWith(
+				`/teams/7/metrics/percentiles-over-time?${expectedQuery}`,
+			);
+		}
 	});
 
 	it("propagates errors when fetching the percentiles series fails", async () => {
