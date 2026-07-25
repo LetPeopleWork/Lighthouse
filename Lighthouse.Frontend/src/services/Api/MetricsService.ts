@@ -25,9 +25,10 @@ import {
 	type INamedCycleTimeValue,
 	NamedCycleTimeValueSchema,
 } from "../../models/Metrics/NamedCycleTime";
-import type {
-	PercentilesHorizon,
-	PercentilesOverTimeSnapshot,
+import {
+	PERCENTILES_AGE_SELECTION,
+	type PercentilesOverTimeSnapshot,
+	type PercentilesSelection,
 } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
@@ -209,7 +210,7 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 
 	getPercentilesOverTime(
 		id: number,
-		horizon: PercentilesHorizon,
+		selection: PercentilesSelection,
 	): Promise<PercentilesOverTimeSnapshot[]>;
 
 	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]>;
@@ -225,6 +226,22 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		startDate: Date,
 		endDate: Date,
 	): Promise<IFlowEfficiencyInfo>;
+}
+
+/**
+ * Query suffix for the percentiles-over-time read endpoint. Work Item Age is
+ * as-of-today and therefore horizon-less — it asks for the metric type and lets
+ * the backend resolve the horizon-less sentinel. Cycle time keeps the horizon
+ * request shape unchanged.
+ */
+function buildPercentilesOverTimeQuery(
+	selection: PercentilesSelection,
+): string {
+	if (selection === PERCENTILES_AGE_SELECTION) {
+		return "metricType=WorkItemAge";
+	}
+
+	return `horizon=${selection}`;
 }
 
 export interface ITeamMetricsService extends IMetricsService<IWorkItem> {
@@ -749,11 +766,11 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 
 	async getPercentilesOverTime(
 		id: number,
-		horizon: PercentilesHorizon,
+		selection: PercentilesSelection,
 	): Promise<PercentilesOverTimeSnapshot[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<PercentilesOverTimeSnapshot[]>(
-				`/${this.api}/${id}/metrics/percentiles-over-time?horizon=${horizon}`,
+				`/${this.api}/${id}/metrics/percentiles-over-time?${buildPercentilesOverTimeQuery(selection)}`,
 			);
 			return response.data;
 		});

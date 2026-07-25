@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
@@ -78,6 +84,26 @@ const DATED_SERIES: PercentilesOverTimeSnapshot[] = [
 		p70: 5,
 		p85: 7,
 		p95: 10,
+	},
+];
+
+// Work Item Age is as-of-today, so its series carries no horizon dimension.
+const AGE_SERIES: PercentilesOverTimeSnapshot[] = [
+	{
+		recordedAt: "2026-06-01",
+		metricType: "WorkItemAge",
+		p50: 2,
+		p70: 5,
+		p85: 9,
+		p95: 14,
+	},
+	{
+		recordedAt: "2026-06-02",
+		metricType: "WorkItemAge",
+		p50: 3,
+		p70: 6,
+		p85: 10,
+		p95: 15,
 	},
 ];
 
@@ -362,5 +388,210 @@ describe("PercentilesOverTimeWidget", () => {
 			),
 		);
 		expect(getPercentilesOverTime).toHaveBeenCalledTimes(2);
+	});
+
+	it("offers the Age tab first while keeping 30 days as the default selection", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+		);
+
+		// [ Age | 30 days | 60 days | 90 days ] — Age leads the row (US-03 AC1).
+		const chips = within(screen.getByRole("group")).getAllByRole("button");
+		expect(chips.map((chip) => chip.getAttribute("data-testid"))).toEqual([
+			"percentiles-selection-age",
+			"percentiles-horizon-30",
+			"percentiles-horizon-60",
+			"percentiles-horizon-90",
+		]);
+		expect(chips[0]).toHaveTextContent("Age");
+
+		// Age leads visually but 30 days stays the default selection — no slice-01
+		// assertion (Vitest or E2E) regresses.
+		expect(screen.getByTestId("percentiles-selection-age")).toHaveAttribute(
+			"aria-pressed",
+			"false",
+		);
+		expect(screen.getByTestId("percentiles-horizon-30")).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+	});
+
+	it("explains the Age tab with its own work-item-age tooltip", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue(DATED_SERIES);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+		);
+
+		fireEvent.mouseOver(screen.getByTestId("percentiles-selection-age"));
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Work Item Age of items in progress today",
+		);
+	});
+
+	it("requests the age series with no horizon and plots four dated ramp lines", async () => {
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockImplementation((_ownerId: number, selection: string | number) =>
+				Promise.resolve(selection === "age" ? AGE_SERIES : DATED_SERIES),
+			);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+		);
+
+		fireEvent.click(screen.getByTestId("percentiles-selection-age"));
+
+		// Age carries no horizon dimension — the request is the bare age selection.
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, "age"),
+		);
+		expect(screen.getByTestId("percentiles-selection-age")).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+
+		// The Age tab offers no horizon sub-choice — the row keeps exactly the four
+		// tabs, no extra horizon control appears for age.
+		expect(
+			within(screen.getByRole("group")).getAllByRole("button"),
+		).toHaveLength(4);
+
+		await waitFor(() =>
+			expect(screen.getByTestId("chart-xaxis")).toHaveTextContent("2026-06-01"),
+		);
+		expect(
+			JSON.parse(screen.getByTestId("chart-xaxis").textContent ?? "[]"),
+		).toEqual(["2026-06-01", "2026-06-02"]);
+
+		const seriesInfo = JSON.parse(
+			screen.getByTestId("chart-series").textContent ?? "[]",
+		) as {
+			label: string;
+			color: string;
+			data: number[];
+			shape: string;
+			showMark: boolean;
+		}[];
+
+		// Identical shape to the CT tabs: four percentile lines, uniform circles,
+		// red→green ramp, custom legend with the built-in one suppressed (D7).
+		expect(seriesInfo.map((s) => s.label)).toEqual([
+			"50th",
+			"70th",
+			"85th",
+			"95th",
+		]);
+		expect(seriesInfo[0].data).toEqual([2, 3]);
+		expect(seriesInfo[3].data).toEqual([14, 15]);
+		expect(seriesInfo[0].color).toBe(riskyColor);
+		expect(seriesInfo[3].color).toBe(certainColor);
+		for (const s of seriesInfo) {
+			expect(s.shape).toBe("circle");
+			expect(s.showMark).toBe(true);
+		}
+		expect(screen.getByTestId("chart-hide-legend")).toHaveTextContent("true");
+		expect(
+			screen.getByTestId("percentiles-over-time-legend"),
+		).toBeInTheDocument();
+	});
+
+	it("shows the honest forward-only empty state on the Age tab when no age snapshots exist", async () => {
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockImplementation((_ownerId: number, selection: string | number) =>
+				Promise.resolve(selection === "age" ? [] : DATED_SERIES),
+			);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		fireEvent.click(screen.getByTestId("percentiles-selection-age"));
+
+		// Never a broken axis — the same verbatim D6 copy as the cycle-time tabs.
+		await screen.findByTestId("percentiles-over-time-empty");
+		expect(screen.getByTestId("percentiles-over-time-empty")).toHaveTextContent(
+			"builds forward from today — no snapshots recorded yet",
+		);
+		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+	});
+
+	it("re-plots Age and the horizons from the per-selection cache without refetching", async () => {
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockImplementation((_ownerId: number, selection: string | number) =>
+				Promise.resolve(
+					DATED_SERIES.map((s) => ({ ...s, metricType: String(selection) })),
+				),
+			);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+		);
+
+		// Age → 60 → 90: one fetch each, cached per SELECTION not per horizon.
+		for (const testId of [
+			"percentiles-selection-age",
+			"percentiles-horizon-60",
+			"percentiles-horizon-90",
+		]) {
+			fireEvent.click(screen.getByTestId(testId));
+			await waitFor(() =>
+				expect(screen.getByTestId(testId)).toHaveAttribute(
+					"aria-pressed",
+					"true",
+				),
+			);
+		}
+		expect(getPercentilesOverTime).toHaveBeenCalledTimes(4);
+
+		// Back to Age and back to 30: both already cached, so no further fetches.
+		fireEvent.click(screen.getByTestId("percentiles-selection-age"));
+		await waitFor(() =>
+			expect(screen.getByTestId("percentiles-selection-age")).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			),
+		);
+		fireEvent.click(screen.getByTestId("percentiles-horizon-30"));
+		await waitFor(() =>
+			expect(screen.getByTestId("percentiles-horizon-30")).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			),
+		);
+		expect(getPercentilesOverTime).toHaveBeenCalledTimes(4);
 	});
 });

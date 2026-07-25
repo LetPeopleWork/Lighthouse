@@ -12,8 +12,14 @@ import { LineChart } from "@mui/x-charts";
 import type React from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
 import type { IFeature } from "../../../models/Feature";
-import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
-import { PERCENTILES_HORIZONS } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
+import type {
+	PercentilesOverTimeSnapshot,
+	PercentilesSelection,
+} from "../../../models/Metrics/PercentilesOverTimeSnapshot";
+import {
+	PERCENTILES_AGE_SELECTION,
+	PERCENTILES_SELECTIONS,
+} from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { usePercentilesOverTime } from "./usePercentilesOverTime";
@@ -41,23 +47,55 @@ const PERCENTILE_LINES: readonly {
 	{ percentile: 95, label: "95th", accessor: (s) => s.p95 },
 ];
 
+interface SelectionChip {
+	selection: PercentilesSelection;
+	label: string;
+	tooltip: string;
+	testId: string;
+}
+
+/**
+ * Chip copy for one tab of the toggle row. Work Item Age is as-of-today, so it
+ * reads as its own tab with no horizon in the label; the cycle-time chips keep
+ * their shipped "{n} days" wording.
+ */
+function describeSelection(selection: PercentilesSelection): SelectionChip {
+	if (selection === PERCENTILES_AGE_SELECTION) {
+		return {
+			selection,
+			label: "Age",
+			tooltip: "Work Item Age of items in progress today",
+			testId: "percentiles-selection-age",
+		};
+	}
+
+	return {
+		selection,
+		label: `${selection} days`,
+		tooltip: `Cycle Time over the last ${selection} days`,
+		testId: `percentiles-horizon-${selection}`,
+	};
+}
+
 /**
  * Percentiles Over Time widget (Predictability category, team + portfolio).
- * Wraps the red→green percentile line ramp with a 30/60/90-day cycle-time
- * horizon toggle (30 days default). The persisted daily series is fetched per
- * horizon through the existing metrics-service abstraction via
- * usePercentilesOverTime; toggling re-plots already-fetched horizons without a
- * backend recompute (US-01).
+ * Wraps the red→green percentile line ramp with an Age / 30 / 60 / 90-day
+ * toggle row (30 days default). The persisted daily series is fetched per
+ * selection through the existing metrics-service abstraction via
+ * usePercentilesOverTime; toggling re-plots already-fetched selections without
+ * a backend recompute (US-01, US-03).
  */
 const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 	ownerId,
 	metricsService,
 	title = "Percentiles Over Time",
 }) => {
-	const { horizon, setHorizon, series } = usePercentilesOverTime(
+	const { selection, setSelection, series } = usePercentilesOverTime(
 		ownerId,
 		metricsService,
 	);
+
+	const chips = PERCENTILES_SELECTIONS.map(describeSelection);
 
 	// All four percentile lines share one plain-circle marker — the red→green
 	// colour is the only thing that distinguishes them (uniform marks, not the
@@ -94,29 +132,24 @@ const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 					<ToggleButtonGroup
 						size="small"
 						exclusive
-						value={horizon}
-						aria-label="Percentiles horizon"
+						value={selection}
+						aria-label="Percentiles selection"
 					>
-						{PERCENTILES_HORIZONS.map((option) => (
+						{chips.map((chip) => (
 							// Tooltip wraps the button, so it — not the ToggleButton — is the
 							// group's direct child and the group's selected/onChange injection
 							// no longer reaches the button. We set selected + onClick
 							// explicitly per button so pressed styling and aria-pressed hold
-							// regardless of group injection (future WIA "Age" toggle slots in
-							// the same way).
-							<Tooltip
-								key={option}
-								title={`Cycle Time over the last ${option} days`}
-								arrow
-							>
+							// regardless of group injection — the Age chip included.
+							<Tooltip key={chip.testId} title={chip.tooltip} arrow>
 								<ToggleButton
 									size="small"
-									value={option}
-									selected={horizon === option}
-									onClick={() => setHorizon(option)}
-									data-testid={`percentiles-horizon-${option}`}
+									value={chip.selection}
+									selected={selection === chip.selection}
+									onClick={() => setSelection(chip.selection)}
+									data-testid={chip.testId}
 								>
-									{`${option} days`}
+									{chip.label}
 								</ToggleButton>
 							</Tooltip>
 						))}
