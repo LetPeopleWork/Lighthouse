@@ -8,14 +8,17 @@ using Microsoft.Extensions.Logging;
 namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 {
     /// <summary>
-    /// Demo-only: after a demo owner refreshes, synthesizes a backdated cycle-time percentile history
-    /// so the Percentiles Over Time chart renders a populated trend on a freshly-loaded demo. The
-    /// per-sync <see cref="PercentilesOverTimeRecordingHandler"/> is strictly forward-only (records
-    /// "today" only), so a fresh demo has no past days to plot. This handler backfills the window once.
+    /// Demo-only: after a demo owner refreshes, synthesizes a backdated percentile history so the
+    /// Percentiles Over Time chart renders a populated trend on a freshly-loaded demo. The per-sync
+    /// <see cref="PercentilesOverTimeRecordingHandler"/> is strictly forward-only (records "today"
+    /// only), so a fresh demo has no past days to plot. This handler backfills the window once.
     ///
-    /// Cycle-time only (the sole metric in slice 01). Gated to demo connections
-    /// (SynthesizeStateJourneyForDemo = true) and idempotent (skips once a backdated snapshot exists),
-    /// so it never touches a real customer's data — real tenants stay forward-only (DDD-4).
+    /// Covers both metric families: cycle-time across the 30/60/90 horizons, and work item age at
+    /// the <see cref="PercentilesOverTimeSnapshot.NoHorizon"/> sentinel (age is always "as of today",
+    /// so it has no horizon dimension). Idempotency is evaluated PER FAMILY, so a demo owner that an
+    /// earlier release backfilled with cycle-time only still gains its age history on the next
+    /// refresh. Gated to demo connections (SynthesizeStateJourneyForDemo = true), so it never touches
+    /// a real customer's data — real tenants stay forward-only (DDD-4).
     /// </summary>
     public class DemoPercentilesBackfillHandler
         : IDomainEventHandler<TeamDataRefreshed>,
@@ -23,7 +26,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
     {
         private const int HistoryWindowDays = 14;
 
-        private static readonly int[] Horizons = [30, 60, 90];
+        private static readonly int[] CycleTimeHorizons = [30, 60, 90];
+
+        private static readonly int[] WorkItemAgeHorizons = [PercentilesOverTimeSnapshot.NoHorizon];
 
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
@@ -81,14 +86,26 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         {
             var todayDate = DateOnly.FromDateTime(DateTime.Today);
 
-            // Idempotency: a backdated snapshot means this demo owner's history was already backfilled.
-            // The forward-only recording handler only writes RecordedAt == today, so RecordedAt < today
-            // is a clean "backfill already ran" signal that never collides with the live sync.
+            BackfillFamily(ownerId, ownerType, MetricType.CycleTime, CycleTimeHorizons, todayDate);
+            BackfillFamily(ownerId, ownerType, MetricType.WorkItemAge, WorkItemAgeHorizons, todayDate);
+
+            await snapshotRepository.Save();
+        }
+
+        private void BackfillFamily(
+            int ownerId, OwnerType ownerType, MetricType metricType, int[] horizons, DateOnly todayDate)
+        {
+            // Idempotency is scoped to THIS metric family: a backdated snapshot of this family means
+            // its history was already backfilled. Scoping matters — a shared "any family backdated"
+            // check would make a newly-added family a permanent no-op wherever an older release
+            // already backfilled a different one. The forward-only recording handler only writes
+            // RecordedAt == today, so RecordedAt < today is a clean "backfill already ran" signal
+            // that never collides with the live sync.
             var alreadyBackfilled = snapshotRepository
                 .GetAllByPredicate(snapshot =>
                     snapshot.OwnerId == ownerId
                     && snapshot.OwnerType == ownerType
-                    && snapshot.MetricType == MetricType.CycleTime
+                    && snapshot.MetricType == metricType
                     && snapshot.RecordedAt < todayDate)
                 .Any();
 
@@ -99,28 +116,27 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
             // Stryker disable once all: diagnostic log text is not behaviour
             logger.LogInformation(
-                "Backfilling demo cycle-time percentile history for {OwnerType} {OwnerId}",
-                ownerType, ownerId);
+                "Backfilling demo {MetricType} percentile history for {OwnerType} {OwnerId}",
+                metricType, ownerType, ownerId);
 
             for (var daysAgo = HistoryWindowDays; daysAgo >= 1; daysAgo--)
             {
                 var recordedAt = todayDate.AddDays(-daysAgo);
                 var dayIndex = HistoryWindowDays - daysAgo;
 
-                foreach (var horizon in Horizons)
+                foreach (var horizon in horizons)
                 {
                     var percentiles = SynthesizePercentiles(dayIndex, horizon);
-                    UpsertSnapshot(ownerId, ownerType, horizon, recordedAt, percentiles);
+                    UpsertSnapshot(ownerId, ownerType, metricType, horizon, recordedAt, percentiles);
                 }
             }
-
-            await snapshotRepository.Save();
         }
 
         private static (int P50, int P70, int P85, int P95) SynthesizePercentiles(int dayIndex, int horizon)
         {
             // Deterministic gentle wave so the demo chart shows a trend, not a flat line. The horizon
-            // offset keeps the three lines visually distinct. Percentiles are monotone non-decreasing.
+            // offset keeps the three cycle-time lines visually distinct; work item age passes the
+            // NoHorizon sentinel and so takes a zero offset. Percentiles are monotone non-decreasing.
             var p50 = 4 + (dayIndex % 5) + horizon / 30;
             var p70 = p50 + 3;
             var p85 = p70 + 4;
@@ -129,13 +145,13 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         }
 
         private void UpsertSnapshot(
-            int ownerId, OwnerType ownerType, int horizon, DateOnly recordedAt,
+            int ownerId, OwnerType ownerType, MetricType metricType, int horizon, DateOnly recordedAt,
             (int P50, int P70, int P85, int P95) percentiles)
         {
             var existing = snapshotRepository.GetByPredicate(snapshot =>
                 snapshot.OwnerId == ownerId
                 && snapshot.OwnerType == ownerType
-                && snapshot.MetricType == MetricType.CycleTime
+                && snapshot.MetricType == metricType
                 && snapshot.Horizon == horizon
                 && snapshot.RecordedAt == recordedAt);
 
@@ -152,7 +168,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             {
                 OwnerId = ownerId,
                 OwnerType = ownerType,
-                MetricType = MetricType.CycleTime,
+                MetricType = metricType,
                 Horizon = horizon,
                 RecordedAt = recordedAt,
                 P50 = percentiles.P50,

@@ -110,13 +110,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var todayDate = DateOnly.FromDateTime(DateTime.Today);
             var snapshots = context.PercentilesOverTimeSnapshots
-                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team && s.MetricType == MetricType.CycleTime)
                 .ToList();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshots, Has.Count.EqualTo(42), "14-day window x 3 horizons");
-                Assert.That(snapshots.All(s => s.MetricType == MetricType.CycleTime), Is.True, "demo backfill is cycle-time only");
                 Assert.That(snapshots.All(s => s.RecordedAt < todayDate), Is.True, "backdated rows only; today stays forward-only");
                 Assert.That(snapshots.Select(s => s.Horizon).Distinct().OrderBy(h => h), Is.EqualTo(ExpectedHorizons));
                 Assert.That(snapshots.Select(s => s.RecordedAt).Distinct().Count(), Is.EqualTo(14), "one row per horizon per day across the window");
@@ -138,15 +137,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolioId), CancellationToken.None);
 
-            var snapshots = context.PercentilesOverTimeSnapshots
+            var ownerRows = context.PercentilesOverTimeSnapshots
                 .Where(s => s.OwnerId == portfolioId && s.OwnerType == OwnerType.Portfolio)
                 .ToList();
+            var cycleTimeRows = ownerRows.Where(s => s.MetricType == MetricType.CycleTime).ToList();
+            var ageRows = ownerRows.Where(s => s.MetricType == MetricType.WorkItemAge).ToList();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(snapshots, Has.Count.EqualTo(42), "14-day window x 3 horizons");
-                Assert.That(snapshots.All(s => s.MetricType == MetricType.CycleTime), Is.True);
-                Assert.That(snapshots.Select(s => s.Horizon).Distinct().OrderBy(h => h), Is.EqualTo(ExpectedHorizons));
+                Assert.That(cycleTimeRows, Has.Count.EqualTo(42), "14-day window x 3 horizons");
+                Assert.That(cycleTimeRows.Select(s => s.Horizon).Distinct().OrderBy(h => h), Is.EqualTo(ExpectedHorizons));
+                Assert.That(ageRows, Has.Count.EqualTo(14), "portfolios get the same 14-day age history as teams");
             }
         }
 
@@ -234,7 +235,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var ownerRows = context.PercentilesOverTimeSnapshots
                 .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
                 .ToList();
-            var backdated = ownerRows.Where(s => s.RecordedAt < todayDate).ToList();
+            var backdated = ownerRows
+                .Where(s => s.RecordedAt < todayDate && s.MetricType == MetricType.CycleTime)
+                .ToList();
             var todayRow = ownerRows.Single(s => s.RecordedAt == todayDate && s.Horizon == 30);
 
             using (Assert.EnterMultipleScope())
@@ -289,8 +292,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             }
         }
 
+        // Work item age has no horizon dimension (age is always "as of today"), so its backdated
+        // rows carry the NoHorizon sentinel rather than the 30/60/90 fan the cycle-time family uses.
         [Test]
-        public async Task HandleTeamRefreshed_AlreadyBackfilled_IsIdempotent()
+        public async Task HandleTeamRefreshed_DemoOwner_BackdatesWorkItemAgePercentileHistoryAtNoHorizon()
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var ageRows = context.PercentilesOverTimeSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team && s.MetricType == MetricType.WorkItemAge)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ageRows, Has.Count.EqualTo(14), "the same 14-day window as cycle-time, one row per day");
+                Assert.That(ageRows.All(s => s.Horizon == PercentilesOverTimeSnapshot.NoHorizon), Is.True, "age rows carry the NoHorizon sentinel");
+                Assert.That(ageRows.All(s => s.RecordedAt < todayDate), Is.True, "backdated rows only; today stays forward-only");
+                Assert.That(ageRows.Select(s => s.RecordedAt).Distinct().Count(), Is.EqualTo(14), "exactly one row per day");
+                Assert.That(ageRows.All(s => s.P50 <= s.P70 && s.P70 <= s.P85 && s.P85 <= s.P95), Is.True, "percentiles are monotone non-decreasing");
+                Assert.That(ageRows.All(s => s.P50 > 0), Is.True, "demo ages are plausible, non-zero day counts");
+            }
+        }
+
+        // Idempotency is evaluated PER METRIC FAMILY. A demo owner backfilled by an earlier release
+        // (cycle-time only) must STILL gain its work-item-age history on the next refresh — a shared
+        // "any backdated row exists" guard would make the age backfill a permanent silent no-op on
+        // every environment that already ran the cycle-time one. A further refresh adds nothing.
+        [Test]
+        public async Task HandleTeamRefreshed_CycleTimeHistoryAlreadyPresent_BackfillsWorkItemAgeOnceAndLeavesCycleTimeUntouched()
         {
             const int teamId = 7;
             const int connectionId = 1886;
@@ -298,7 +336,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             ArrangeTeam(teamId, connectionId);
 
             using var seedContext = CreateContext();
-            // A prior backdated row means this demo owner's percentile history was already backfilled.
             seedContext.PercentilesOverTimeSnapshots.Add(new PercentilesOverTimeSnapshot
             {
                 OwnerId = teamId,
@@ -317,12 +354,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var subject = CreateSubject(context);
 
             await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
-            var backdated = context.PercentilesOverTimeSnapshots
+            var ownerRows = context.PercentilesOverTimeSnapshots
                 .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
                 .ToList();
+            var cycleTimeRows = ownerRows.Where(s => s.MetricType == MetricType.CycleTime).ToList();
+            var ageRows = ownerRows.Where(s => s.MetricType == MetricType.WorkItemAge).ToList();
 
-            Assert.That(backdated, Has.Count.EqualTo(1), "second run must not add further backdated rows");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cycleTimeRows, Has.Count.EqualTo(1), "the already-backfilled cycle-time family must not be re-run");
+                Assert.That(ageRows, Has.Count.EqualTo(14), "the missing age family is backfilled, and the second refresh adds nothing on top");
+            }
         }
     }
 }
