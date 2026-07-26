@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlockedItemService> blockedItemServiceMock;
         private Mock<IFeatureBlockedTransitionRepository> featureBlockedTransitionRepositoryMock;
         private Mock<IPercentilesOverTimeSeriesQuery> percentilesOverTimeSeriesQueryMock;
+        private Mock<IProcessBehaviorSeriesQuery> processBehaviorSeriesQueryMock;
         private Mock<ILogger<PortfolioMetricsController>> loggerMock;
         private PortfolioMetricsController subject;
         private Portfolio project;
@@ -56,8 +57,12 @@ namespace Lighthouse.Backend.Tests.API
             percentilesOverTimeSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<int?>()))
                 .Returns([]);
+            processBehaviorSeriesQueryMock = new Mock<IProcessBehaviorSeriesQuery>();
+            processBehaviorSeriesQueryMock
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>()))
+                .Returns([]);
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, loggerMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, loggerMock.Object);
 
             project = new Portfolio
             {

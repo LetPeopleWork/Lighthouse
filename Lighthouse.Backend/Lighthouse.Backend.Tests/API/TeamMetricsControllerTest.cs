@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IWorkItemBlockedTransitionRepository> workItemBlockedTransitionRepositoryMock;
         private Mock<IPercentilesOverTimeSeriesQuery> percentilesOverTimeSeriesQueryMock;
+        private Mock<IProcessBehaviorSeriesQuery> processBehaviorSeriesQueryMock;
         private Mock<ILogger<TeamMetricsController>> loggerMock;
 
         [SetUp]
@@ -40,6 +41,10 @@ namespace Lighthouse.Backend.Tests.API
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             workItemBlockedTransitionRepositoryMock = new Mock<IWorkItemBlockedTransitionRepository>();
             percentilesOverTimeSeriesQueryMock = new Mock<IPercentilesOverTimeSeriesQuery>();
+            processBehaviorSeriesQueryMock = new Mock<IProcessBehaviorSeriesQuery>();
+            processBehaviorSeriesQueryMock
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>()))
+                .Returns([]);
             percentilesOverTimeSeriesQueryMock
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<int?>()))
                 .Returns([]);
@@ -2070,7 +2075,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, loggerMock.Object)
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, loggerMock.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
             };

@@ -942,6 +942,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ITeamMetricsService, TeamMetricsService>();
             builder.Services.AddScoped<IPortfolioMetricsService, PortfolioMetricsService>();
             builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, PercentilesOverTimeSeriesQuery>();
+            builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();

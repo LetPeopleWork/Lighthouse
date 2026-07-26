@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.API
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
+        private const string UnsupportedProcessBehaviorMetricTypeErrorMessage = "Unsupported process behavior metric type.";
         private readonly IRepository<Team> teamRepository;
         private readonly ITeamMetricsService teamMetricsService;
         private readonly IBlackoutPeriodService blackoutPeriodService;
@@ -28,10 +29,11 @@ namespace Lighthouse.Backend.API
         private readonly IWorkItemRepository workItemRepository;
         private readonly IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository;
         private readonly IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery;
+        private readonly IProcessBehaviorSeriesQuery processBehaviorSeriesQuery;
         private readonly ILogger<TeamMetricsController> logger;
 
 #pragma warning disable S107 // The blocked-drill-through endpoint (slice-08) genuinely needs the snapshot repo, work-item repo and blocked-transition repo alongside the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as OAuthService).
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, ILogger<TeamMetricsController> logger)
 #pragma warning restore S107
         {
             this.teamRepository = teamRepository;
@@ -42,6 +44,7 @@ namespace Lighthouse.Backend.API
             this.workItemRepository = workItemRepository;
             this.workItemBlockedTransitionRepository = workItemBlockedTransitionRepository;
             this.percentilesOverTimeSeriesQuery = percentilesOverTimeSeriesQuery;
+            this.processBehaviorSeriesQuery = processBehaviorSeriesQuery;
             this.logger = logger;
         }
 
@@ -510,6 +513,27 @@ namespace Lighthouse.Backend.API
                 percentilesOverTimeSeriesQuery
                     .GetSeries(teamId, OwnerType.Team, metricType, horizon)
                     .Select(snapshot => new PercentilesOverTimeSnapshotDto(snapshot)));
+        }
+
+        /// <summary>
+        /// Serves the persisted process-behaviour (natural process limits) trend for one metric family.
+        /// Read-only: the widget re-plots the days the recording pipeline judged honest, it never triggers
+        /// a recompute. An unknown <paramref name="type"/> is rejected with 400 rather than answered with
+        /// an empty 200 — an empty array is indistinguishable from "nothing recorded yet" and would make
+        /// the widget lie about why it is empty.
+        /// </summary>
+        [HttpGet("process-behavior-over-time")]
+        public ActionResult<IEnumerable<ProcessBehaviorSnapshotDto>> GetProcessBehaviorOverTime(int teamId, [FromQuery] ProcessBehaviorMetricType type = ProcessBehaviorMetricType.Throughput)
+        {
+            if (!Enum.IsDefined(type))
+            {
+                return BadRequest(UnsupportedProcessBehaviorMetricTypeErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
+                processBehaviorSeriesQuery
+                    .GetSeries(teamId, OwnerType.Team, type)
+                    .Select(snapshot => new ProcessBehaviorSnapshotDto(snapshot)));
         }
 
         [HttpGet("blockedItemsAtDate")]

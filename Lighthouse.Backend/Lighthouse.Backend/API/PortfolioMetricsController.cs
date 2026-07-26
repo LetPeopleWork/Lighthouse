@@ -25,12 +25,14 @@ namespace Lighthouse.Backend.API
         IBlockedItemService blockedItemService,
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
         IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery,
+        IProcessBehaviorSeriesQuery processBehaviorSeriesQuery,
         ILogger<PortfolioMetricsController> logger)
         : ControllerBase
 #pragma warning restore S107
     {
         private const string StartDateMustBeBeforeEndDateErrorMessage = "Start date must be before end date.";
         private const string StateMustNotBeEmptyErrorMessage = "State must not be empty.";
+        private const string UnsupportedProcessBehaviorMetricTypeErrorMessage = "Unsupported process behavior metric type.";
 
         [HttpGet("throughput")]
         public ActionResult<RunChartData> GetThroughput(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
@@ -527,6 +529,27 @@ namespace Lighthouse.Backend.API
                 percentilesOverTimeSeriesQuery
                     .GetSeries(portfolioId, OwnerType.Portfolio, metricType, horizon)
                     .Select(snapshot => new PercentilesOverTimeSnapshotDto(snapshot)));
+        }
+
+        /// <summary>
+        /// Serves the persisted process-behaviour (natural process limits) trend for one metric family.
+        /// Read-only: the widget re-plots the days the recording pipeline judged honest, it never triggers
+        /// a recompute. An unknown <paramref name="type"/> is rejected with 400 rather than answered with
+        /// an empty 200 — an empty array is indistinguishable from "nothing recorded yet" and would make
+        /// the widget lie about why it is empty.
+        /// </summary>
+        [HttpGet("process-behavior-over-time")]
+        public ActionResult<IEnumerable<ProcessBehaviorSnapshotDto>> GetProcessBehaviorOverTime(int portfolioId, [FromQuery] ProcessBehaviorMetricType type = ProcessBehaviorMetricType.Throughput)
+        {
+            if (!Enum.IsDefined(type))
+            {
+                return BadRequest(UnsupportedProcessBehaviorMetricTypeErrorMessage);
+            }
+
+            return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
+                processBehaviorSeriesQuery
+                    .GetSeries(portfolioId, OwnerType.Portfolio, type)
+                    .Select(snapshot => new ProcessBehaviorSnapshotDto(snapshot)));
         }
 
         [HttpGet("blockedItemsAtDate")]
