@@ -4,6 +4,57 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Are Your Percentiles Getting Better or Worse? — Percentiles Over Time
+Every percentile widget in Lighthouse answers *where do we stand today*. None of them answered the question that actually matters in a retrospective: **are we improving?** This release adds a **Percentiles Over Time** chart in the *Predictability* category that records the 50th, 70th, 85th, and 95th percentile once per day and plots each as its own line, at both Team and Portfolio level.
+
+The lines keep the familiar red→green ramp, so you can read at a glance whether your percentiles are tightening, drifting apart, or holding steady. A toggle in the widget header picks what's plotted:
+
+- **Cycle Time**, over a trailing **30 / 60 / 90 day** horizon. Each horizon is recorded separately, so you're looking at the same days through a shorter or longer lens — if the 30-day line moves and the 90-day line doesn't, whatever happened is recent.
+- **Work Item Age**, measured as of the day it was recorded — a history of how long your in-progress work has been ageing, day by day.
+
+![Percentiles Over Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/percentilesOverTime.png)
+
+## When "Normal" Itself Moves — PBC Over Time
+A Process Behaviour Chart tells you whether a data point is normal *for your system*. The new **PBC Over Time** chart tells you whether your system's idea of normal is itself drifting: Lighthouse records the **UNPL**, **Average**, and **LNPL** once per day and plots all three, with a toggle to switch between metric families — Throughput, Work Item Age, Work in Progress, Cycle Time, Arrivals, and Feature Size.
+
+![PBC Over Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/pbcOverTime.png)
+
+Reading the shape is the point: a **widening** band means variability is growing and forecasts built on it are getting less useful; a **narrowing** band means the process is becoming more predictable; the whole band **shifting** means the average level moved. Together with the special-cause signals on the point-in-time chart, that's how you tell whether a change you made actually stuck.
+
+One caveat worth knowing: limits are only as meaningful as the baseline they're computed from. Without a fixed [PBC baseline](https://docs.lighthouse.letpeople.work/teams/edit.html#process-behaviour-chart-baseline) configured, Lighthouse falls back to a rolling window ending today — so the recorded limits move for reasons that have nothing to do with your process.
+
+Both charts build **forward** from the day your instance starts recording; they are not reconstructed from history. A fresh instance says so plainly instead of drawing a fabricated line. Demo data ships with a backdated history, so it's populated immediately. See [Percentiles Over Time](https://docs.lighthouse.letpeople.work/metrics/predictability.html#percentiles-over-time) and [PBC Over Time](https://docs.lighthouse.letpeople.work/metrics/predictability.html#pbc-over-time).
+
+## Blocked History for Portfolios
+Last release taught the Blocked Overview to answer historical ranges honestly for **Teams** — a past range is read from what was actually recorded on that day rather than re-judged against today's rules. Portfolios couldn't do this: no blocked history was ever recorded for Features, so a feature blocked last month read as *not blocked*, and one blocked today read as blocked on every range in the past.
+
+Lighthouse now records blocked spells for Features on the portfolio refresh path, so portfolio blocked counts, the **Blocked Over Time** chart, and its drill-through are as accurate as their team-level counterparts. Demo data is backfilled too, so the portfolio chart is populated on demo instances.
+
+## Named Cycle Times on the Flow Overview
+Named cycle times arrived on the Cycle Time Scatterplot. They now reach the **Flow Overview** as well: when you have more than the default cycle time defined, the **Cycle Time Percentiles** widget gets a selector, and the percentiles, the RAG status, the previous-period trend, and *View Data* all follow your selection. So you can watch *Concept to Cash* on the overview, not just the default span.
+
+![Named Cycle Time Percentiles](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/percentilesNamedCycleTime.png)
+
+## Bugfixes and Improvements
+- **macOS standalone is now Apple Silicon only** — Apple is ending support for Intel-based apps, so the macOS standalone build ships as `arm64` and the Intel (`x86_64`) download is discontinued. Existing Intel Mac users stay on their current version; Apple Silicon Macs are unaffected. Reported by Gabor Bittera.
+- **Switching a team or portfolio to a different work tracking system now sticks** — with two connections configured, moving an existing team or portfolio from one to the other silently failed to save. The change now auto-saves like every other setting, with no need to nudge the query to trigger it. Reported by Chris Graves.
+- **Blocked status indicator respects your blocked rules** — the Blocked Overview kept telling you to *set up a rule* even after you had defined one that was matching items. It now derives its status from your actual rule set, so it goes green when nothing is blocked and red when something is.
+- **Blocked trend no longer drops days the instance was offline** — days with no recorded data (a standalone instance switched off over the weekend, say) were being read as zero blocked items, leaving gaps in the Blocked Over Time chart and a misleading previous-period trend. Missing days now carry forward the last known count.
+- **Third-party package list correct in the container image** — the Docker build was missing its SBOM artifacts, so the third-party packages page rendered incorrectly. The standalone builds were unaffected.
+- **Flow Overview and Flow Metrics widget polish** — *Flow Efficiency* and *Work Item Age Percentiles* now carry a RAG status, Work Item Age Percentiles gained a previous-period trend, *Total Throughput* and *Total Arrivals* gained **View Data**, and the Work Item Aging chart's percentile reference lines lost their redundant labels. Work Item Age and item state are also now reported as of the end of the selected range rather than as of today.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
+- [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.7.11.4...HEAD)
+
 # Lighthouse v26.7.11.4
 
 ## See What's Blocked — and for How Long
