@@ -43,10 +43,10 @@ namespace Lighthouse.Backend.Tests.API
             percentilesOverTimeSeriesQueryMock = new Mock<IPercentilesOverTimeSeriesQuery>();
             processBehaviorSeriesQueryMock = new Mock<IProcessBehaviorSeriesQuery>();
             processBehaviorSeriesQueryMock
-                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>()))
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .Returns([]);
             percentilesOverTimeSeriesQueryMock
-                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<int?>()))
+                .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<MetricType>(), It.IsAny<int?>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .Returns([]);
             workItemBlockedTransitionRepositoryMock
                 .Setup(repo => repo.GetBlockedTransitionsAt(It.IsAny<DateOnly>()))

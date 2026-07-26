@@ -505,13 +505,22 @@ namespace Lighthouse.Backend.API
         /// additive and defaults to cycle time, so requests written against the original contract are
         /// unchanged on the wire. Work Item Age has no horizon dimension — a horizon sent alongside it is
         /// ignored in favour of the horizon-less series (see PercentilesOverTimeSeriesQuery).
+        /// <paramref name="startDate"/> and <paramref name="endDate"/> are an optional window on the
+        /// recorded day, inclusive at both ends; either may be omitted on its own and omitting both
+        /// returns the full history, so the shipped request shape keeps its shipped meaning. They are
+        /// nullable because a non-nullable [FromQuery] parameter is required by the model binder.
         /// </summary>
         [HttpGet("percentiles-over-time")]
-        public ActionResult<IEnumerable<PercentilesOverTimeSnapshotDto>> GetPercentilesOverTime(int teamId, [FromQuery] int? horizon, [FromQuery] MetricType metricType = MetricType.CycleTime)
+        public ActionResult<IEnumerable<PercentilesOverTimeSnapshotDto>> GetPercentilesOverTime(int teamId, [FromQuery] int? horizon, [FromQuery] MetricType metricType = MetricType.CycleTime, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
+            if (IsInvertedWindow(startDate, endDate))
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 percentilesOverTimeSeriesQuery
-                    .GetSeries(teamId, OwnerType.Team, metricType, horizon)
+                    .GetSeries(teamId, OwnerType.Team, metricType, horizon, AsRecordedDay(startDate), AsRecordedDay(endDate))
                     .Select(snapshot => new PercentilesOverTimeSnapshotDto(snapshot)));
         }
 
@@ -520,21 +529,38 @@ namespace Lighthouse.Backend.API
         /// Read-only: the widget re-plots the days the recording pipeline judged honest, it never triggers
         /// a recompute. An unknown <paramref name="type"/> is rejected with 400 rather than answered with
         /// an empty 200 — an empty array is indistinguishable from "nothing recorded yet" and would make
-        /// the widget lie about why it is empty.
+        /// the widget lie about why it is empty. An inverted <paramref name="startDate"/>/
+        /// <paramref name="endDate"/> window is rejected for the same reason: it would come back empty and
+        /// the widget would report it as an honest "nothing in the selected range".
         /// </summary>
         [HttpGet("process-behavior-over-time")]
-        public ActionResult<IEnumerable<ProcessBehaviorSnapshotDto>> GetProcessBehaviorOverTime(int teamId, [FromQuery] ProcessBehaviorMetricType type = ProcessBehaviorMetricType.Throughput)
+        public ActionResult<IEnumerable<ProcessBehaviorSnapshotDto>> GetProcessBehaviorOverTime(int teamId, [FromQuery] ProcessBehaviorMetricType type = ProcessBehaviorMetricType.Throughput, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             if (!Enum.IsDefined(type))
             {
                 return BadRequest(UnsupportedProcessBehaviorMetricTypeErrorMessage);
             }
 
+            if (IsInvertedWindow(startDate, endDate))
+            {
+                return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);
+            }
+
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 processBehaviorSeriesQuery
-                    .GetSeries(teamId, OwnerType.Team, type)
+                    .GetSeries(teamId, OwnerType.Team, type, AsRecordedDay(startDate), AsRecordedDay(endDate))
                     .Select(snapshot => new ProcessBehaviorSnapshotDto(snapshot)));
         }
+
+        /// <summary>
+        /// A window is only invertible when BOTH bounds are supplied — a lone bound has nothing to be
+        /// inverted against and stays a legal open-ended request.
+        /// </summary>
+        private static bool IsInvertedWindow(DateTime? startDate, DateTime? endDate)
+            => startDate.HasValue && endDate.HasValue && startDate.Value.Date > endDate.Value.Date;
+
+        private static DateOnly? AsRecordedDay(DateTime? bound)
+            => bound.HasValue ? DateOnly.FromDateTime(bound.Value.Date) : null;
 
         [HttpGet("blockedItemsAtDate")]
         public ActionResult<IEnumerable<WorkItemDto>> GetBlockedItemsAtDate(int teamId, [FromQuery] DateTime date)

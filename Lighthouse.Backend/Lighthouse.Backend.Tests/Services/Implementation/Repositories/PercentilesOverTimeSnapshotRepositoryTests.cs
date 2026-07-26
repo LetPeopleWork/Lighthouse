@@ -13,6 +13,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     [Category("epic-5427-percentiles-over-time")]
     public class PercentilesOverTimeSnapshotRepositoryTests
     {
+        private static readonly DateOnly[] July1To2 = [new(2026, 7, 1), new(2026, 7, 2)];
+        private static readonly DateOnly[] July2To4 = [new(2026, 7, 2), new(2026, 7, 3), new(2026, 7, 4)];
+        private static readonly DateOnly[] July4To5 = [new(2026, 7, 4), new(2026, 7, 5)];
+
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> cryptoServiceMock = null!;
         private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
@@ -37,7 +41,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await GivenSnapshot(context, 1, OwnerType.Team, new DateOnly(2026, 7, 2), MetricType.CycleTime, 30, 2, 4, 7, 12);
 
             var subject = CreateSubject(context);
-            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, from: null, to: null);
 
             using (Assert.EnterMultipleScope())
             {
@@ -68,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await GivenSnapshot(context, 1, OwnerType.Team, new DateOnly(2026, 7, 1), MetricType.CycleTime, 60, 11, 12, 13, 14);
 
             var subject = CreateSubject(context);
-            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, from: null, to: null);
 
             using (Assert.EnterMultipleScope())
             {
@@ -88,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await GivenSnapshot(context, 1, OwnerType.Team, new DateOnly(2026, 7, 2), MetricType.CycleTime, 30, 4, 6, 9, 14);
 
             var subject = CreateSubject(context);
-            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, null);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, null, from: null, to: null);
 
             using (Assert.EnterMultipleScope())
             {
@@ -105,9 +109,82 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await GivenSnapshot(context, 2, OwnerType.Team, new DateOnly(2026, 7, 1), MetricType.CycleTime, 30, 3, 5, 8, 13);
 
             var subject = CreateSubject(context);
-            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, from: null, to: null);
 
             Assert.That(series, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetSeries_WindowIsInclusiveAtBothEnds()
+        {
+            using var context = CreateContext();
+            await GivenFiveConsecutiveDaysFromJuly1(context);
+
+            var subject = CreateSubject(context);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, new DateOnly(2026, 7, 2), new DateOnly(2026, 7, 4));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(July2To4).AsCollection,
+                    "a snapshot recorded exactly on the lower or upper bound is inside the window");
+                Assert.That(series, Has.Count.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public async Task GetSeries_LowerBoundOnly_ReturnsEveryDayOnOrAfterIt()
+        {
+            using var context = CreateContext();
+            await GivenFiveConsecutiveDaysFromJuly1(context);
+
+            var subject = CreateSubject(context);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, new DateOnly(2026, 7, 4), to: null);
+
+            Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(July4To5).AsCollection);
+        }
+
+        [Test]
+        public async Task GetSeries_UpperBoundOnly_ReturnsEveryDayOnOrBeforeIt()
+        {
+            using var context = CreateContext();
+            await GivenFiveConsecutiveDaysFromJuly1(context);
+
+            var subject = CreateSubject(context);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, from: null, to: new DateOnly(2026, 7, 2));
+
+            Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(July1To2).AsCollection);
+        }
+
+        [Test]
+        public async Task GetSeries_NoBounds_ReturnsTheFullHistory()
+        {
+            using var context = CreateContext();
+            await GivenFiveConsecutiveDaysFromJuly1(context);
+
+            var subject = CreateSubject(context);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, from: null, to: null);
+
+            Assert.That(series, Has.Count.EqualTo(5), "omitting both bounds must not filter anything out");
+        }
+
+        [Test]
+        public async Task GetSeries_WindowWithNothingRecordedInside_ReturnsEmptyWithoutTouchingNeighbouringDays()
+        {
+            using var context = CreateContext();
+            await GivenFiveConsecutiveDaysFromJuly1(context);
+
+            var subject = CreateSubject(context);
+            var series = subject.GetSeries(1, OwnerType.Team, MetricType.CycleTime, 30, new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 30));
+
+            Assert.That(series, Is.Empty);
+        }
+
+        private static async Task GivenFiveConsecutiveDaysFromJuly1(LighthouseAppContext context)
+        {
+            for (var dayOffset = 0; dayOffset < 5; dayOffset++)
+            {
+                await GivenSnapshot(context, 1, OwnerType.Team, new DateOnly(2026, 7, 1).AddDays(dayOffset), MetricType.CycleTime, 30, 3, 5, 8, 13);
+            }
         }
 
         private PercentilesOverTimeSnapshotRepository CreateSubject(LighthouseAppContext context)

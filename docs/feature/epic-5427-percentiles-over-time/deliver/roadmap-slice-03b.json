@@ -1,0 +1,300 @@
+{
+  "roadmap": {
+    "project_id": "epic-5427-percentiles-over-time",
+    "slice_id": "slice-03b-over-time-date-range",
+    "created_at": "2026-07-26",
+    "total_steps": 7,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Slice 03b (value, US-06, ADO #5564): make the metrics dashboard's date pickers actually apply to the two shipped over-time widgets. Optional additive startDate/endDate on `percentiles-over-time` and `process-behavior-over-time` (both team and portfolio scope), filtered on RecordedAt inclusive at both ends and composed server-side onto the existing IQueryable -> threaded through both series query ports and both snapshot repositories -> required startDate/endDate on the two IMetricsService methods -> both hook caches re-keyed from selection-alone to selection-plus-range -> both widgets take the range as props and pick their empty-state copy from it -> BaseMetricsView passes ctx.startDate/ctx.endDate into both widget nodes. Closes milestone-3b Scenarios 16-25. READ-PATH ONLY: recording, the two snapshot tables, the forward-only contract and the demo backfill are all untouched.",
+    "overview": "Single phase (03b), 7 steps in dependency order, pure EXTENSION of shipped slice-01/02/03 code — no new component, no new port, no new route, no new table, NO EF migration. Backbone: 03b-01 repository bounds (both repos; ProcessBehaviorSnapshotRepository gains the GetSeries member it never had, DDD-8) -> 03b-02 both series query ports pass the bounds through -> 03b-03 both controllers x both actions gain the optional params + the inverted-range 400 guard + acceptance scenarios -> 03b-04 IMetricsService/MetricsService + the four FE test doubles the interface change breaks -> 03b-05 both hooks' cache re-key (the slice's named highest-risk item) -> 03b-06 both widgets' props + the DDD-13 empty-state branch + BaseMetricsView wiring -> 03b-07 E2E POM/spec extension + docs row flip + full local gate sweep. RED = RED-by-skip (project convention, DISTILL [REF] RED Mechanism): NUnit ATs / Playwright specs authored with [Ignore(\"pending — DELIVER (epic-5427 slice-03b)\")] / test.skip alongside the minimal signature changes so main always compiles and stays green; each step un-ignores only its own scenarios. Step order is the dependency chain with the riskiest cheap-to-disprove item (the cache re-key) reached as early as its dependencies allow.",
+    "estimated_hours_total": 9.5
+  },
+  "validation": {
+    "status": "self-validated",
+    "reviewer": "none — per-wave review deferred to the consolidated gate; user reviews the slice before mutation/review/finalize close-out",
+    "reviewed_at": "2026-07-26",
+    "notes": "Two DESIGN-time reversals of slice-brief text are already reconciled upstream and MUST NOT be re-litigated here. (1) DDD-13: the empty-state discriminator is the selected range's END (>= today keeps the shipped forward-only copy, < today reads the in-range copy), NOT 'narrowed vs default range' — the dashboard has no unfiltered state, its default IS getDefaultStartDate(defaultDateRange)..today, 30 days for teams (the team's own dateRange setting) and 90 for portfolios. The D10 row and US-06 AC5/AC6 were rewritten before the scenarios were authored, so no scenario encodes the dead predicate. (2) DDD-12: an inverted window (both params present, startDate > endDate) returns 400 with the controllers' existing StartDateMustBeBeforeEndDateErrorMessage — user-confirmed 2026-07-26, reversing the brief's 'stay lenient' out-of-scope line; US-06 AC7 exists as a result."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5427-percentiles-over-time/feature-delta.md (DISCUSS D9/D10 + US-06 AC1-AC7; DESIGN DDD-8..DDD-15; DEVOPS delta; DISTILL scenarios 16-25)",
+    "slice_brief": "docs/feature/epic-5427-percentiles-over-time/slices/slice-03b-over-time-date-range.md",
+    "gherkin": [
+      "docs/feature/epic-5427-percentiles-over-time/acceptance/milestone-3b-over-time-date-range.feature"
+    ],
+    "architecture": [
+      "docs/product/architecture/adr-108-percentiles-over-time-series-http-contract.md (slice-03b amendment is the contract of record for this slice)",
+      "docs/product/architecture/adr-106-percentiles-over-time-snapshot-table-shape.md",
+      "docs/product/architecture/adr-069-blocked-count-snapshot-and-over-time-endpoint.md (the date-ranged over-time sibling this slice copies its idiom from)"
+    ],
+    "ci_learnings": "docs/ci-learnings.md — pre-apply the Preflight checklist (L45-86) before writing code; the rules this slice is most likely to trip are listed per step",
+    "predecessor_roadmaps": [
+      "docs/feature/epic-5427-percentiles-over-time/deliver/roadmap-slice-02.json",
+      "docs/feature/epic-5427-percentiles-over-time/deliver/roadmap.json"
+    ],
+    "shipped_code_to_extend": {
+      "percentiles_repo": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepository.cs — GetSeries(ownerId, ownerType, metricType, int? horizon) already exists: GetAllByPredicate(...).OrderBy(s => s.RecordedAt).ToList()",
+      "pbc_repo": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepository.cs — EMPTY subclass today; IProcessBehaviorSnapshotRepository declares NO members. The series predicate currently lives in the query class (ProcessBehaviorSeriesQuery.cs) — DDD-8 moves it down here.",
+      "percentiles_query": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentilesOverTimeSeriesQuery.cs — delegates to the repo; ResolveHorizon(metricType, horizon) substitutes PercentilesOverTimeSnapshot.NoHorizon for WorkItemAge and MUST stay untouched",
+      "pbc_query": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSeriesQuery.cs — holds the predicate + OrderBy inline today",
+      "repository_base": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/RepositoryBase.cs:61 — GetAllByPredicate returns IQueryable<T>, which is WHY the date bounds stay server-side",
+      "controllers": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:509-537 + API/PortfolioMetricsController.cs:525-553 — the two over-time actions. BOTH files already carry a file-level `#pragma warning disable S107` justified by epic-5427, so the new params do NOT need a new pragma.",
+      "date_range_precedent": "TeamMetricsController.GetBlockedCountHistory (:481) and GetEstimationVsCycleTimeData (:470) — `[FromQuery] DateTime startDate, [FromQuery] DateTime endDate`, `if (startDate.Date > endDate.Date) return BadRequest(StartDateMustBeBeforeEndDateErrorMessage);`, then `DateOnly.FromDateTime(startDate.Date)`. This slice copies all three of those exactly, only with nullable params.",
+      "acceptance_harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs — GetTeamPercentilesOverTime/GetPortfolioPercentilesOverTime (2 overloads each, :214-238) and Slice03ThroughputProcessBehaviorSpecifications.GetTeam/PortfolioProcessBehaviorOverTime (:91-101) build URLs WITHOUT date params. Add overloads, never change the existing signatures — slice-01/02/03 Specifications call them.",
+      "fe_service": "Lighthouse.Frontend/src/services/Api/MetricsService.ts — interface decls :215-223, impls :776-798. `getDateFormatString(startDate, endDate)` is the existing serialisation helper (used by getBlockedCountHistory :770).",
+      "fe_hooks": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts (SelectionCache = Partial<Record<PercentilesSelection, ...>>, key = selection alone, :36 / :43) + usePbcOverTime.ts (MetricTypeCache keyed by metric type alone, :37 / :45)",
+      "fe_widgets": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx (private `const EMPTY_MESSAGE` :35 — NOT exported) + PbcOverTimeWidget.tsx (`export const PBC_OVER_TIME_EMPTY_COPY` :36-37). The asymmetry is real and step 03b-06 fixes it.",
+      "fe_widget_nodes": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1123-1134 — percentilesOverTime + pbcOverTime nodes pass only ownerId + metricsService. ctx.startDate/ctx.endDate are declared at :873-874 and seeded from useState<Date> at :1202-1211 (default = getDefaultStartDate(defaultDateRange)..new Date(); defaultDateRange = 30 at :1185, PortfolioMetricsView passes 90, TeamMetricsView passes the team's dateRange setting).",
+      "fe_test_doubles": "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts:211-212 and :264-265 (two provider objects, both need the signature), plus BaseMetricsView.test.tsx, useMetricsData.test.ts, TotalWorkItemAgeWidget.test.tsx — the same four the IMetricsService change hit in slice-03",
+      "e2e": "Lighthouse.EndToEndTests/tests/models/metrics/PercentilesOverTimeWidget.ts (exports PERCENTILES_OVER_TIME_EMPTY_COPY :15) + PbcOverTimeWidget.ts (exports PBC_OVER_TIME_EMPTY_COPY :22) + tests/specs/flow/PercentilesOverTime.spec.ts (:208 asserts the copy) + PbcOverTime.spec.ts (:110)",
+      "stryker_config": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5427-percentiles-over-time.json — reuse, extend `mutate` ranges rather than adding a config"
+    }
+  },
+  "open_questions_resolved": {
+    "pbc_read_path_symmetry": "RESOLVED (DDD-8): add `GetSeries(int ownerId, OwnerType ownerType, ProcessBehaviorMetricType metricType, DateOnly? from, DateOnly? to)` to IProcessBehaviorSnapshotRepository and move the predicate + OrderBy down out of ProcessBehaviorSeriesQuery, mirroring the percentiles family. The alternative — growing the predicate inside the query class — is 3 lines cheaper but leaves the two families structurally different for no reason, and slice 04 puts five more metric types through this exact read path. After this step each query class holds only family-specific policy: ResolveHorizon for percentiles, nothing for PBC.",
+    "optionality_split": "RESOLVED (DDD-11): the WIRE params are optional (`DateTime?`), the FRONTEND service params are required (`Date`). Optional on the wire is what keeps US-06 AC1 true and every shipped acceptance test compiling untouched. Required on the FE is right because ctx.startDate/ctx.endDate are non-nullable `Date` and every sibling service method (getBlockedCountHistory, getFlowEfficiencyInfoForTeam, the percentile reads) is shaped that way — FE optionality would add a branch nothing can reach.",
+    "nullable_fromquery": "RESOLVED (ci-learnings 2026-05-16): under project-wide `<Nullable>enable</Nullable>` a non-nullable `[FromQuery]` param is REQUIRED by the model binder and a missing value 400s BEFORE the action body runs. The params must therefore be declared `DateTime?` — `DateTime` with a default would still be required-by-default and would break every shipped caller. This is the single most likely way to accidentally violate AC1.",
+    "two_independent_bounds": "RESOLVED (DDD-10): two independent nullable bounds, not one range object and not an all-or-nothing pair. A lone startDate is a legal 'everything since' request (Scenario 19) and a lone endDate a legal 'everything until'. Consequence for the 400 guard: it fires ONLY when both are present — a single bound has nothing to invert against.",
+    "inclusive_boundaries": "RESOLVED (US-06 AC2, Scenario 18): `>=` and `<=`, never `>` / `<`. RecordedAt is a DateOnly and the bounds are converted with DateOnly.FromDateTime(x.Date), so there is no time-of-day component to make an exclusive upper bound accidentally correct. This is a prime mutation target (Stryker will flip >= to >) — the boundary test must assert the exact-match day is PRESENT, not merely that the count is plausible.",
+    "server_side_composition": "RESOLVED (DDD-10, Scenario 25): compose conditionally onto the IQueryable that GetAllByPredicate returns, BEFORE .OrderBy().ToList(). `var q = GetAllByPredicate(base predicate); if (from is not null) q = q.Where(s => s.RecordedAt >= from); if (to is not null) q = q.Where(s => s.RecordedAt <= to); return q.OrderBy(s => s.RecordedAt).ToList();`. Do NOT materialise first and filter in memory, and do NOT put the nullable comparison inside the single base predicate expression — `s.RecordedAt >= (from ?? DateOnly.MinValue)` translates but reads as if the bound were mandatory and defeats the Scenario-25 intent.",
+    "cache_key_shape": "RESOLVED (DDD-14): both caches become `Record<string, T[]>` keyed on `${selection}|${startISO}|${endISO}`. Keep the existing already-fetched early-return and the existing dep array shape verbatim — it is proven and does not loop (setCache changes cache -> effect re-runs -> early return). Put the Date OBJECTS in the dep array, not derived values: they come from useState<Date> and are referentially stable, so there is no React #185 exposure UNLESS a new inline `new Date()` default is introduced anywhere in the chain. Do not add one.",
+    "empty_state_predicate": "RESOLVED (DDD-13, US-06 AC5/AC6): `endDate >= today` (compare by calendar day, not by instant) + empty series => the UNCHANGED forward-only copy; `endDate < today` + empty => the new in-range copy. Both shipped E2Es run on the default range, whose end is today, so they keep passing verbatim — that is the regression this predicate is shaped around. Accepted edge, documented not fixed: an owner whose snapshots all predate a window that still ends today reads the forward-only copy.",
+    "no_migration": "RESOLVED: zero schema delta. No new property on any persisted model, no index change. The CreateMigration script is NOT run this slice."
+  },
+  "out_of_scope": [
+    "Remaining PBC metric types + the type toggle's other options (slice 04, US-05)",
+    "Any change to the recording path, the two recording handlers, the demo backfill handler, or the two snapshot tables",
+    "Any change to the forward-only semantics or to the D6 copy string itself",
+    "A response envelope / discriminator field for the empty state (ADR-108 rejects envelopes; D10 keeps the decision in the widget)",
+    "A second unfiltered request to disambiguate the empty state",
+    "Persisting the picked range, or a per-widget range control independent of the dashboard pickers",
+    "Day-padding / gap-filling the series (the over-time widgets plot recorded days only — that is BlockedCountSeriesBuilder's job, not this one)",
+    "EF migration / schema change — read-path only",
+    "Premium gating / RBAC changes (free-tier, ungated — D3)",
+    "Docs prose beyond the two predictability.md Affected-by-Filtering rows; screenshots, evolution archive and ADO transitions are FINALIZATION activities"
+  ],
+  "phases": [
+    {
+      "id": "03b",
+      "name": "Over-time widgets respect the dashboard date range",
+      "description": "Optional additive date window on both series endpoints, threaded to both snapshot stores, then through the frontend service, both hooks and both widgets. No new component, port, route, table or migration.",
+      "steps": [
+        {
+          "id": "03b-01",
+          "name": "Date bounds on both snapshot repositories + the new PBC GetSeries member",
+          "criteria": [
+            "IProcessBehaviorSnapshotRepository gains `GetSeries(int ownerId, OwnerType ownerType, ProcessBehaviorMetricType metricType, DateOnly? from, DateOnly? to)`; ProcessBehaviorSnapshotRepository implements it with the owner/type predicate + conditional bounds + OrderBy(RecordedAt) — the predicate MOVES DOWN from ProcessBehaviorSeriesQuery rather than being duplicated (DDD-8)",
+            "IPercentilesOverTimeSnapshotRepository.GetSeries gains `DateOnly? from, DateOnly? to`; the existing owner/type/metricType/horizon predicate is unchanged",
+            "Bounds are composed CONDITIONALLY onto the IQueryable returned by GetAllByPredicate, before .OrderBy().ToList() — never materialise-then-filter, and never fold a nullable coalesce into the base predicate",
+            "Filtering is inclusive at BOTH ends (`>=` / `<=`): a snapshot recorded exactly on `from` or exactly on `to` is in the series (US-06 AC2, Scenario 18)",
+            "Both bounds are independently optional: from-only returns every day on-or-after, to-only every day on-or-before, neither returns the full ordered history (Scenario 19)",
+            "Repository tests assert the exact-boundary day is PRESENT (not merely that the count looks right) — this is the >=/> mutation target",
+            "A test asserts only in-window rows come back when rows exist on both sides of the window (Scenario 25 at the repository seam)",
+            "`dotnet build` zero warnings; `dotnet test` green. All slice-03b acceptance scenarios stay [Ignore(\"pending — DELIVER (epic-5427 slice-03b)\")]"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IProcessBehaviorSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPercentilesOverTimeSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepositoryTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepositoryTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepositoryTests.cs",
+          "scenario_name": "Window inclusive at both ends + either bound omitted alone + bounds applied by the database (Scenarios 18, 19, 25 at the repository seam)",
+          "dependencies": [],
+          "implementation_notes": "ci-learnings to pre-apply: CA1859 — GetSeries already returns IReadOnlyList<T> on the percentiles side and that is the SHIPPED public interface signature, so keep it; but any NEW private helper that builds a List<T> must be typed List<T>. NUnit2045 — use Assert.EnterMultipleScope() for consecutive asserts, never Assert.Multiple. NUnit2046 — Has.Count.EqualTo(N) for collection counts, never Assert.That(x.Count, Is.EqualTo(N)). CA1861 — hoist any inline expected array to a static readonly field. Is.Zero not Is.EqualTo(0). Keep the param count at 5 (well under S107). EF InMemory is fine here — no FK dependency; the Postgres-container leg already exercises the tables' real constraints and needs no new test (no schema delta).",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "03b-02",
+          "name": "Both series query ports pass the bounds through",
+          "criteria": [
+            "IPercentilesOverTimeSeriesQuery.GetSeries and IProcessBehaviorSeriesQuery.GetSeries each gain `DateOnly? from, DateOnly? to`, forwarded verbatim to their repository",
+            "ProcessBehaviorSeriesQuery becomes a pure delegation — the predicate and OrderBy no longer live here (DDD-8)",
+            "PercentilesOverTimeSeriesQuery.ResolveHorizon is UNTOUCHED: a WorkItemAge request still discards a carried-over horizon in favour of PercentilesOverTimeSnapshot.NoHorizon, and a test proves horizon resolution and date filtering compose (an Age request with a stale ?horizon=30 AND a window still returns the windowed Age series)",
+            "Both query ports remain read-only and side-effect-free — no recompute is triggered by any bound combination (ADR-108, unchanged property)",
+            "Query unit tests assert the bounds reach the repository unchanged (Moq verification), including the both-null case",
+            "`dotnet build` zero warnings; `dotnet test` green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IPercentilesOverTimeSeriesQuery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PercentilesOverTimeSeriesQuery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IProcessBehaviorSeriesQuery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSeriesQuery.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/ProcessBehaviorSeriesQueryTests.cs",
+          "scenario_name": "Bounds pass through both read ports without disturbing horizon resolution (Scenarios 16, 17, 20 at the port seam)",
+          "dependencies": ["03b-01"],
+          "implementation_notes": "Update the XML doc comments on both interfaces — they currently promise 'the persisted series for an owner and horizon/family, ordered by RecordedAt' and should say the window is an optional filter on RecordedAt, still never a recompute. Both interfaces' docs already carry the read-only/side-effect-free promise; do not weaken it. If a series-query test file does not exist yet for either port, create it next to the shipped Implementation test folder rather than folding assertions into the repository tests — the seams are different. S2139: do not add try/catch wrappers here; these are pure reads.",
+          "estimated_hours": 1
+        },
+        {
+          "id": "03b-03",
+          "name": "Optional startDate/endDate on all four controller actions + the inverted-range 400 + acceptance scenarios",
+          "criteria": [
+            "All FOUR actions (percentiles-over-time and process-behavior-over-time, on TeamMetricsController and PortfolioMetricsController) gain `[FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null` — NULLABLE, because under nullable-enabled C# a non-nullable [FromQuery] param is required-by-default and would 400 every shipped caller before the action body runs (ci-learnings 2026-05-16)",
+            "Bounds are converted at the boundary with `DateOnly.FromDateTime(x.Value.Date)`, matching GetBlockedCountHistory exactly",
+            "Omitting BOTH params returns the full history, byte-identical to the pre-slice response — asserted by an acceptance test that reuses a shipped slice-01/02/03-shaped request, not by inspection (US-06 AC1, Scenario 20)",
+            "Every shipped acceptance test and specification helper compiles and passes with NO URL change — verified, not assumed (this is the DESIGN open question)",
+            "An inverted window with BOTH params present returns 400 with the existing StartDateMustBeBeforeEndDateErrorMessage; a single bound never 400s (US-06 AC7, DDD-12, Scenario 21)",
+            "The PBC actions keep their existing unknown-`type` 400 guard, and the two guards do not shadow each other (a request that is both unknown-type and inverted still 400s)",
+            "New acceptance fixture `Slice03bDateRangeTest` as a partial class split Slice03bDateRangeScenarios.cs (class-level [TestFixture][Category(\"acceptance\")][Category(\"epic-5427-percentiles-over-time\")][Category(\"slice-03b\")] + the [Test] methods) / Slice03bDateRangeSpecifications.cs (the `: PercentilesOverTimeAcceptanceTest` base declaration + Given/When/Then helpers) — mirroring the slice-01/02/03 split exactly",
+            "Harness GET helpers are ADDED as overloads; the existing signatures that slice-01/02/03 Specifications call are not changed",
+            "Scenarios 18-21 covered at the HTTP surface on BOTH scopes; un-ignore only this step's scenarios",
+            "`dotnet build` zero warnings; `dotnet test` green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03bDateRangeScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03bDateRangeSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03bDateRangeScenarios.cs",
+          "scenario_name": "Inclusive boundaries, lone bounds, omitted-both compatibility and the inverted-range 400 across both scopes (Scenarios 18, 19, 20, 21)",
+          "dependencies": ["03b-02"],
+          "implementation_notes": "Both controller files ALREADY carry a file-level `#pragma warning disable S107` justified by epic-5427 — do NOT add another. Param counts after the change: percentiles action 5, PBC action 4 — both under the limit anyway. Update each action's XML doc: the percentiles doc currently explains metricType additivity and the PBC doc explains the 400-on-unknown-type rationale; extend both with the window's semantics and the reason the 400 guard needs both params. Do not extract a shared guard helper across the two controllers — they are separate classes with separate route prefixes and the existing duplication of this exact guard is the established idiom (S4144 applies to identical BODIES in the same file, which this is not). Harness caveat, unchanged from slice-02: PercentilesOverTimeAcceptanceTest anchors SyncDay in the PAST while the recording handler writes RecordedAt = today; this slice's assertions are read-path only and seed snapshots explicitly, so express windows relative to the SEEDED RecordedAt values, not to SyncDay and not to today. RED-by-skip: author both acceptance files fully ignored alongside the controller change, then un-ignore one scenario at a time.",
+          "estimated_hours": 2
+        },
+        {
+          "id": "03b-04",
+          "name": "IMetricsService + MetricsService take the range; fix the four test doubles",
+          "criteria": [
+            "`getPercentilesOverTime(id, selection, startDate: Date, endDate: Date)` and `getProcessBehaviorOverTime(id, metricType, startDate: Date, endDate: Date)` — REQUIRED Date params (DDD-11), on both the interface and the implementation",
+            "Both URLs are built with the existing `getDateFormatString(startDate, endDate)` helper, appended to the existing query string — no second formatting path, no hand-rolled ISO slicing",
+            "The four known consumers compile and pass: MockApiServiceProvider.ts (BOTH provider objects, :211-212 and :264-265), BaseMetricsView.test.tsx, useMetricsData.test.ts, TotalWorkItemAgeWidget.test.tsx",
+            "A MetricsService unit test asserts the emitted URL for each method — selection/type param first, then the date pair, so a regression in ordering or encoding fails at this seam rather than in an E2E",
+            "`pnpm test` green; `pnpm build` zero errors and zero warnings (prebuild runs Biome)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts"
+          ],
+          "test_file": "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts",
+          "scenario_name": "The range reaches the wire in the shipped query-string shape (Scenarios 16, 17, 20 at the service seam)",
+          "dependencies": ["03b-03"],
+          "implementation_notes": "Project rule: before editing a shared contract, extend the test factory first to bound the blast radius — do MockApiServiceProvider.ts before the interface so the compile error surface is one file, and remember it defines the mock TWICE (two provider objects). ci-learnings: two mock factories with byte-identical bodies trip typescript:S4144 — if the two provider objects end up identical after this edit, that is pre-existing shape, do not 'fix' it by extracting in this slice. Biome will want the params in the declared order on every call site; run `pnpm biome check ./src` before committing rather than discovering it in prebuild.",
+          "estimated_hours": 1
+        },
+        {
+          "id": "03b-05",
+          "name": "Re-key both hook caches to selection-plus-range",
+          "criteria": [
+            "usePercentilesOverTime(ownerId, metricsService, startDate, endDate) and usePbcOverTime(ownerId, metricsService, startDate, endDate) accept the range and forward it to the service",
+            "Both caches become `Record<string, T[]>` keyed on `${selection}|${startISO}|${endISO}` (DDD-14) — a range change is a cache MISS and refetches; a range change back to a previously-fetched range is a HIT and re-plots without a request",
+            "A stale series is NEVER served after a range change — a test drives range A, then range B, and asserts the rendered/returned series is B's, not A's (US-06 AC4, Scenario 22 — the slice's named highest-risk item)",
+            "Toggling selection within one range still re-plots from cache without a second request (US-01 AC5 regression — the property slice-01 shipped)",
+            "The existing already-fetched early-return and the existing dependency-array shape are PRESERVED verbatim; the Date objects go in the deps, and no inline `new Date()` default is introduced anywhere in the chain (React #185 — ci-learnings 2026-05-25)",
+            "`series: null` still means loading and `[]` still means loaded-but-empty — the widget's empty-state branch depends on the distinction",
+            "`pnpm test` green; `pnpm build` clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts",
+          "scenario_name": "Range change refetches instead of replaying the cached series (Scenario 22)",
+          "dependencies": ["03b-04"],
+          "implementation_notes": "This is where the slice's most likely bug lives, so write the A-then-B stale-cache test BEFORE the key change and watch it fail for the right reason. Derive the key in ONE place per hook (a small module-scope function taking selection + the two dates) so the effect and the read-back cannot disagree — a key computed twice with different formatting is the same stale-series bug wearing a different hat. Use a stable date serialisation (toISOString or a yyyy-MM-dd formatter) rather than String(date), whose output is locale/timezone-shaped. S3776: if the effect's cognitive complexity rises, extract the key builder rather than nesting another branch. If the hooks have no existing test files, create them — do not fold hook assertions into the widget tests, since Scenario 22's seam is the hook.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "03b-06",
+          "name": "Widget props + the DDD-13 empty-state branch + BaseMetricsView wiring",
+          "criteria": [
+            "Both widgets take `startDate: Date` and `endDate: Date` props and forward them to their hook",
+            "BaseMetricsView's percentilesOverTime and pbcOverTime nodes pass ctx.startDate / ctx.endDate (:1123-1134) — the range now reaches both widgets exactly as it already reaches a dozen siblings",
+            "Empty-state branch per DDD-13: series is `[]` AND endDate is on-or-after today (compared by calendar day) => the UNCHANGED forward-only copy; series is `[]` AND endDate is before today => `no data recorded in the selected range` (US-06 AC5/AC6, Scenarios 23 + 24)",
+            "The forward-only string is unchanged byte-for-byte — the two shipped E2E constants keep matching",
+            "PercentilesOverTimeWidget now EXPORTS its empty-copy constant (it is private today while PbcOverTimeWidget already exports its own), and both widgets export the new in-range constant, so a copy change fails loudly on both widgets rather than silently on one",
+            "Widget tests cover: both empty-state variants per widget, series-null loading state unchanged, and a populated range rendering the expected number of points",
+            "`pnpm test` green; `pnpm build` zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.test.tsx",
+          "scenario_name": "Both empty-state variants on both widgets (Scenarios 23 + 24)",
+          "dependencies": ["03b-05"],
+          "implementation_notes": "Compare endDate to today by CALENDAR DAY, not by instant: ctx.endDate is seeded from `new Date()` and therefore carries a time-of-day, so `endDate >= new Date()` is false a millisecond later and the default range would flip to the in-range copy — that single mistake breaks both shipped E2Es. Normalise both sides to midnight (or compare yyyy-MM-dd strings) and unit-test the same-day case explicitly. Do NOT introduce a `new Date()` prop default on either widget (React #185, and BaseMetricsView always passes the props). The empty-copy comparison helper belongs in the widget, not the hook — the hook has no opinion about copy. ci-learnings: dropping/altering a user-visible label prefix silently kills sibling POM locators, so grep the E2E specs for both copy strings before touching either. The two widgets' empty-state blocks will now look similar but they are NOT identical (different constants, different series types) — resist extracting a shared component in this slice; that is a refactor commit if it is worth doing at all.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "03b-07",
+          "name": "E2E narrowing scenarios + docs rows + full local gate sweep",
+          "criteria": [
+            "Both POMs gain a way to read the plotted point count and the new in-range copy constant; both specs gain a narrowing scenario that asserts strictly fewer plotted days after narrowing (Scenarios 16 + 17)",
+            "One spec covers the in-range empty copy by narrowing to a window that ENDS BEFORE the demo backfill's earliest recorded day (Scenario 23 at the UI)",
+            "The two shipped empty-state assertions (PERCENTILES_OVER_TIME_EMPTY_COPY / PBC_OVER_TIME_EMPTY_COPY) still pass UNCHANGED (Scenario 24)",
+            "Every Playwright spec touched is RUN LOCALLY against a live Lighthouse with seeded demo data before the commit — never commit an unrun spec or POM locator",
+            "docs/metrics/predictability.md:57 and :91 — both **Affected by Filtering** rows flip from `No — the date pickers do not apply…` to `Yes`, and say what the default window is (30 days team / 90 portfolio), because this changes the DEFAULT view and not only adds a capability. The forward-only notes at :81 and :117 stay as they are.",
+            "A grep for the slice-03b pending marker ([Ignore(\"pending — DELIVER (epic-5427 slice-03b)\")] and test.skip) returns NOTHING",
+            "Full local gate sweep green: `dotnet build` zero warnings, `dotnet test`, `pnpm test`, `pnpm build`, `pnpm biome check ./src`, and the touched Playwright specs"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/metrics/PercentilesOverTimeWidget.ts",
+            "Lighthouse.EndToEndTests/tests/models/metrics/PbcOverTimeWidget.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/PercentilesOverTime.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/PbcOverTime.spec.ts",
+            "docs/metrics/predictability.md"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/PercentilesOverTime.spec.ts",
+          "scenario_name": "Narrowing the range re-plots fewer days on both widgets, and the in-range copy appears in a past window (Scenarios 16, 17, 23, 24 through the real UI)",
+          "dependencies": ["03b-06"],
+          "implementation_notes": "Window arithmetic: the demo backfill covers [today-14, today-1] and the team default window is 30 days, so the default view contains the whole backfill and narrowing to ~7 days reliably reduces the point count. For the in-range-copy scenario pick a window entirely before today-14 (e.g. [today-60, today-45]) — that guarantees empty AND ends before today. Set the range through the dashboard's own pickers via the existing sibling-widget POM path, or via the startDate/endDate URL search params that BaseMetricsView already parses (:1203/:1208) — the URL route is more deterministic and avoids a date-picker interaction flake; prefer it and say so in the spec. ci-learnings: MUI-X dashed/solid selectors and shared test-ids are strict-mode traps — scope every new locator to its widget container, and remember MUI strips data-testid from ICONS in production builds. Do not regenerate screenshots here (finalization activity). Docs rows: grep the two strings first — other pages may repeat them.",
+          "estimated_hours": 1.5
+        }
+      ]
+    }
+  ],
+  "quality_gates": {
+    "backend": [
+      "dotnet build zero warnings (TreatWarningsAsErrors makes any warning a failure)",
+      "dotnet test all NUnit suites green (NUnit 4.6 + Moq + EF InMemory + WebApplicationFactory on real SQLite)",
+      "Stryker.NET kill rate >= 80% on the slice-03b backend deltas, reusing stryker-config.epic-5427-percentiles-over-time.json. Mutation-dense spots: the inclusive-bound comparators (>= flipped to >), the two `is not null` guards, and the inverted-range comparison.",
+      "Every shipped slice-01/02/03 acceptance test still passes with NO URL change — the omitted-both compatibility guarantee (US-06 AC1)"
+    ],
+    "frontend": [
+      "pnpm test all Vitest suites green",
+      "pnpm build zero TypeScript, Biome and Vite warnings (prebuild runs `pnpm biome check ./src`)",
+      "Stryker frontend kill rate >= 80% on the hook/widget/service deltas. Mutation-dense spot: the endDate-vs-today comparison in the empty-state branch.",
+      "No inline `new Date()` (or `[]`/`{}`) default anywhere in the new prop/dep chain — React #185"
+    ],
+    "e2e": [
+      "PercentilesOverTime.spec.ts and PbcOverTime.spec.ts run LOCALLY and green against seeded demo data BEFORE commit — never commit an unrun spec or POM locator",
+      "The two shipped empty-state assertions pass unchanged"
+    ],
+    "migration": [
+      "NO EF migration expected — read-path only, zero schema delta. If any persisted-model change appears, stop: it means the slice has drifted out of scope."
+    ],
+    "sonarqube": [
+      "No new SonarCloud issues of any severity; the gate fails on new violations even where existing debt remains",
+      "Pre-apply docs/ci-learnings.md Preflight checklist before writing code",
+      "Any deliberate conflict with a Sonar rule is suppressed NARROWLY at the call site with a justification"
+    ],
+    "contract_compatibility": [
+      "startDate/endDate are OPTIONAL on the wire and omitting both reproduces the pre-slice response exactly — asserted by an acceptance test, not by inspection",
+      "No response DTO changes shape; no client version gate (no CLI/MCP client consumes these two endpoints)",
+      "The forward-only empty-state string is unchanged byte-for-byte"
+    ],
+    "process": [
+      "Conventional commits with feature scopes and Step-Id / Task-Id trailers; refactor commits separate from feature commits",
+      "Trunk-based: push directly to origin main; never push red. CI on 093a31bce was still QUEUED at slice start — check it before pushing.",
+      "Docs beyond the two predictability.md rows, screenshots, the evolution archive and ADO transitions are FINALIZATION activities. Stop for user review before mutation/review/finalize close-out."
+    ],
+    "red_mechanism": [
+      "RED-by-skip (project convention, DISTILL [REF] RED Mechanism): scenarios authored alongside the minimal signature changes so main always compiles and stays green, each tagged [Ignore(\"pending — DELIVER (epic-5427 slice-03b)\")] or test.skip, un-ignored one scenario at a time. The slice is not done until a grep for the slice-03b pending marker returns nothing."
+    ]
+  }
+}

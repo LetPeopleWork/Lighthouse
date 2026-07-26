@@ -14,6 +14,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     public class ProcessBehaviorSnapshotRepositoryTests
     {
         private static readonly DateOnly TargetDay = new(2026, 7, 1);
+        private static readonly DateOnly[] ThreeDaysFromTargetDay = [TargetDay, TargetDay.AddDays(1), TargetDay.AddDays(2)];
+        private static readonly DateOnly[] TargetDayTo1 = [TargetDay, TargetDay.AddDays(1)];
+        private static readonly DateOnly[] TargetDayPlus1To3 = [TargetDay.AddDays(1), TargetDay.AddDays(2), TargetDay.AddDays(3)];
+        private static readonly DateOnly[] TargetDayPlus3To4 = [TargetDay.AddDays(3), TargetDay.AddDays(4)];
 
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> cryptoServiceMock = null!;
@@ -135,6 +139,117 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             await subject.Save();
 
             Assert.That(subject.GetAll(), Is.Empty);
+        }
+
+        [Test]
+        public async Task GetSeries_ReturnsTheOwnersFamilyOrderedByRecordedAt()
+        {
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            subject.Add(Snapshot(1, OwnerType.Team, TargetDay.AddDays(2), 15, 9, 3));
+            subject.Add(Snapshot(1, OwnerType.Team, TargetDay, 13, 8, 3));
+            subject.Add(Snapshot(1, OwnerType.Team, TargetDay.AddDays(1), 14, 8, 2));
+            await subject.Save();
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, from: null, to: null);
+
+            Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(ThreeDaysFromTargetDay).AsCollection);
+        }
+
+        [Test]
+        public async Task GetSeries_NeverReturnsAnotherOwnerOrScope()
+        {
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            // Metric-family discrimination is not assertable yet — ProcessBehaviorMetricType has a single
+            // member until slice 04 adds the remaining families. The predicate carries MetricType already.
+            subject.Add(Snapshot(1, OwnerType.Team, TargetDay, 13, 8, 3));
+            subject.Add(Snapshot(2, OwnerType.Team, TargetDay, 99, 98, 97));
+            subject.Add(Snapshot(1, OwnerType.Portfolio, TargetDay, 88, 87, 86));
+            await subject.Save();
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, from: null, to: null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(series, Has.Count.EqualTo(1));
+                Assert.That(series[0].Unpl, Is.EqualTo(13));
+            }
+        }
+
+        [Test]
+        public async Task GetSeries_WindowIsInclusiveAtBothEnds()
+        {
+            using var context = CreateContext();
+            var subject = await GivenFiveConsecutiveDays(context);
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, TargetDay.AddDays(1), TargetDay.AddDays(3));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(TargetDayPlus1To3).AsCollection,
+                    "a snapshot recorded exactly on the lower or upper bound is inside the window");
+                Assert.That(series, Has.Count.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public async Task GetSeries_LowerBoundOnly_ReturnsEveryDayOnOrAfterIt()
+        {
+            using var context = CreateContext();
+            var subject = await GivenFiveConsecutiveDays(context);
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, TargetDay.AddDays(3), to: null);
+
+            Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(TargetDayPlus3To4).AsCollection);
+        }
+
+        [Test]
+        public async Task GetSeries_UpperBoundOnly_ReturnsEveryDayOnOrBeforeIt()
+        {
+            using var context = CreateContext();
+            var subject = await GivenFiveConsecutiveDays(context);
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, from: null, to: TargetDay.AddDays(1));
+
+            Assert.That(series.Select(s => s.RecordedAt), Is.EqualTo(TargetDayTo1).AsCollection);
+        }
+
+        [Test]
+        public async Task GetSeries_NoBounds_ReturnsTheFullHistory()
+        {
+            using var context = CreateContext();
+            var subject = await GivenFiveConsecutiveDays(context);
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, from: null, to: null);
+
+            Assert.That(series, Has.Count.EqualTo(5), "omitting both bounds must not filter anything out");
+        }
+
+        [Test]
+        public async Task GetSeries_WindowWithNothingRecordedInside_ReturnsEmpty()
+        {
+            using var context = CreateContext();
+            var subject = await GivenFiveConsecutiveDays(context);
+
+            var series = subject.GetSeries(1, OwnerType.Team, ProcessBehaviorMetricType.Throughput, TargetDay.AddDays(-40), TargetDay.AddDays(-30));
+
+            Assert.That(series, Is.Empty);
+        }
+
+        private async Task<ProcessBehaviorSnapshotRepository> GivenFiveConsecutiveDays(LighthouseAppContext context)
+        {
+            var subject = CreateSubject(context);
+
+            for (var dayOffset = 0; dayOffset < 5; dayOffset++)
+            {
+                subject.Add(Snapshot(1, OwnerType.Team, TargetDay.AddDays(dayOffset), 13, 8, 3));
+            }
+
+            await subject.Save();
+            return subject;
         }
 
         private static List<ProcessBehaviorSnapshot> QueryNaturalKey(

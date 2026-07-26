@@ -6,8 +6,8 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class PercentilesOverTimeSeriesQuery(IPercentilesOverTimeSnapshotRepository repository) : IPercentilesOverTimeSeriesQuery
     {
-        public IReadOnlyList<PercentilesOverTimeSnapshot> GetSeries(int ownerId, OwnerType ownerType, MetricType metricType, int? horizon)
-            => repository.GetSeries(ownerId, ownerType, metricType, ResolveHorizon(metricType, horizon));
+        public IReadOnlyList<PercentilesOverTimeSnapshot> GetSeries(int ownerId, OwnerType ownerType, MetricType metricType, int? horizon, DateOnly? from, DateOnly? to)
+            => repository.GetSeries(ownerId, ownerType, metricType, ResolveHorizon(metricType, horizon), from, to);
 
         /// <summary>
         /// Work Item Age is measured as-of-today, so it has no horizon dimension: the recording pipeline
