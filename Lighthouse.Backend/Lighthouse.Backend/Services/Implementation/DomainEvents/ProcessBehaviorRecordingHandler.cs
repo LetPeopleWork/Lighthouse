@@ -152,6 +152,17 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     return;
                 }
 
+                // A Ready chart can still carry a fully collapsed band: XmRCalculator.Calculate returns
+                // Average = UNPL = LNPL = 0 for an empty or all-zero baseline, and every chart builder
+                // still stamps Status = Ready for it. Persisting that triple has the same effect as
+                // persisting NotReady, so it is refused here too. LowerNaturalProcessLimit is
+                // deliberately NOT part of the predicate — the calculator clamps a negative lower limit
+                // to zero for zero-bounded data, so a real, busy process routinely reports Lnpl == 0.
+                if (chart.Average == 0 && chart.UpperNaturalProcessLimit == 0)
+                {
+                    return;
+                }
+
                 UpsertSnapshot(ownerId, ownerType, metricType, DateOnly.FromDateTime(endDate), chart);
             }
             catch (Exception exception)

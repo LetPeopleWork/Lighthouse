@@ -282,6 +282,102 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         // -----------------------------------------------------------------
+        // HONESTY GATE, part 2 (US-05 AC4 / D6) — Ready is not the same as "has a
+        // process". A valid baseline window that happens to contain no closed items
+        // yields all-zero values, so XmRCalculator.Calculate returns
+        // Average = UNPL = LNPL = 0 while the builder still stamps Status = Ready.
+        // Persisting that triple would draw three flat lines pinned at zero, a process
+        // the owner never had. An absent row is the honest empty state the widget
+        // renders as "builds forward from today — no snapshots recorded yet".
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_ReadyChartWithFullyCollapsedBand_WritesNoRow()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamThroughputChart(team, ReadyChart(unpl: 0, average: 0, lnpl: 0));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await context.ProcessBehaviorSnapshots.CountAsync();
+            Assert.That(rows, Is.Zero, "a Ready chart whose whole band collapsed to zero describes no process — recording it would fabricate one");
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_ReadyChartWithFullyCollapsedBand_WritesNoRow()
+        {
+            var portfolio = CreatePortfolio(7);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            SetupPortfolioThroughputChart(portfolio, ReadyChart(unpl: 0, average: 0, lnpl: 0));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            var rows = await context.ProcessBehaviorSnapshots.CountAsync();
+            Assert.That(rows, Is.Zero, "the gate lives in the shared per-metric-type recording step, so both owner types inherit it");
+        }
+
+        // The gate stays as narrow as the honesty claim: it fires only when the WHOLE band collapsed.
+        // XmRCalculator clamps a negative lower limit to zero for zero-bounded data, so a real, busy
+        // process routinely reports Lnpl == 0 — folding Lnpl into the predicate would stop recording
+        // real data. A live upper limit with a zero centre line is likewise still a band.
+        [TestCase(6, 3, 0, TestName = "TeamDataRefreshed_ReadyChartWithClampedLowerLimit_StillRecords")]
+        [TestCase(5, 0, 0, TestName = "TeamDataRefreshed_ReadyChartWithZeroCentreLineButLiveUpperLimit_StillRecords")]
+        public async Task TeamDataRefreshed_ReadyChartWithPartiallyZeroedBand_StillRecords(int unpl, int average, int lnpl)
+        {
+            var team = CreateTeam(5);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamThroughputChart(team, ReadyChart(unpl, average, lnpl));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot, Is.Not.Null, "only a fully collapsed band is the empty state — a partially zeroed band is real data");
+                Assert.That(snapshot!.Unpl, Is.EqualTo(unpl));
+                Assert.That(snapshot.Average, Is.EqualTo(average));
+                Assert.That(snapshot.Lnpl, Is.EqualTo(lnpl));
+            }
+        }
+
+        // Same-day re-run: a refresh that reads back a collapsed band must not overwrite a real
+        // reading with zeros. The gate returns before the upsert, so today's row keeps its values.
+        [Test]
+        public async Task TeamDataRefreshed_SameDayReRefreshReadsBackACollapsedBand_KeepsTheRecordedReading()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamThroughputChart(team, ReadyChart(unpl: 12, average: 8, lnpl: 4));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            SetupTeamThroughputChart(team, ReadyChart(unpl: 0, average: 0, lnpl: 0));
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await context.ProcessBehaviorSnapshots.CountAsync();
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rows, Is.EqualTo(1), "a collapsed re-read adds no row either");
+                Assert.That(snapshot!.Unpl, Is.EqualTo(12), "a zeroed re-read must not overwrite a real reading");
+                Assert.That(snapshot.Average, Is.EqualTo(8));
+                Assert.That(snapshot.Lnpl, Is.EqualTo(4));
+            }
+        }
+
+        // -----------------------------------------------------------------
         // Idempotency (DDD-5) — one row per (owner, type, metric, day).
         // -----------------------------------------------------------------
         [Test]
