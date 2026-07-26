@@ -2,7 +2,7 @@
 
 **Epic**: ADO 5427 — "Show Percentiles over Time Charts" (Community / Productboard)
 **Feature id**: `epic-5427-percentiles-over-time`
-**Wave**: slices 01-03 DELIVERed · slice-03b DISCUSS + DESIGN (2026-07-26, ADO #5564) → DEVOPS/DISTILL next
+**Wave**: slices 01-03 DELIVERed · slice-03b DISCUSS→DISTILL complete (2026-07-26, ADO #5564) → DELIVER next
 **Density**: lean (Tier-1 [REF] only; expansions on demand via `--expand <id>`)
 
 ---
@@ -954,3 +954,102 @@ Skipped — no `docs/product/outcomes/registry.yaml` in this repo (recorded, not
 DISTILL** (scenarios for: inclusive boundaries at both ends, lone-bound requests, omitted-params
 regression against the shipped contract, inverted-range 400, cache re-key on range change, and the two
 empty-state variants).
+
+---
+
+## Wave: DEVOPS / [REF] Delta (slice-03b)
+
+Nothing to build. Recorded item by item rather than skipped, per the no-silent-N/A rule.
+
+| Concern | Verdict |
+|---|---|
+| Environment matrix | **Unchanged** (`environments.yaml`). No new env, no new secret, no new config key. The date bounds are query params on shipped endpoints. |
+| CI/CD pipeline | **Unchanged**. The existing `ci_verifysqlite` / `ci_verifypostgres` / `ci_e2e` legs cover the delta; nothing new to wire. |
+| Migration / deploy strategy | **N/A** — read-path only, zero schema delta, so no expand-only migration and no deploy ordering constraint. Rolling deploy as usual. |
+| Provider parametrisation | **Still both**, and it matters here: the two date bounds compose into provider-generated SQL, and `DateOnly` comparison is one of the places SQLite and Postgres diverge. The repository-level tests run on the existing InMemory path and the boundary case is additionally exercised on the Postgres container leg. |
+| Observability | **No new instrument.** This slice adds no failure mode with an operator-visible signal — a bad range is a 400 to the caller (DDD-12), not a background failure. The recording-failed signal is untouched. |
+| Monitoring contract delta | `OUT-5427-empty-state-honesty` widens to two clauses (see `kpi-contracts.yaml`): the shipped forward-only assertion plus a new narrowed-past-window assertion, with a second alerting condition. No new KPI row invented — the honesty property is the same property, now with two ways to be dishonest. |
+| Other KPI rows | `OUT-5427-recording-idempotency`, `-recording-failure-isolation`, `-pipeline-reuse` — **unaffected**, this slice does not touch recording. `-mutation-kill-rate` applies as normal (≥80% BE + FE on the new code). |
+| Mutation testing strategy | **Unchanged** — per-feature Stryker.NET + Stryker, ≥80% both stacks, scoped to the changed read path and the two hooks/widgets. The predicate-composition booleans and the `endDate >= today` branch are the mutation-dense spots to watch. |
+| Branching | **Unchanged** — trunk-based on `main`, per-step commits, green before push. |
+| Coexistence | Old and new clients coexist trivially: the params are optional, so a caller that never sends them is served exactly as before (US-06 AC1). No client version gate. |
+
+## Wave: DISTILL / [REF] Pre-requisites (slice-03b)
+
+- **Reconciliation gate**: read DISCUSS (D1-D10), DESIGN (DDD-8..DDD-15) and the DEVOPS delta above.
+  **One contradiction found and resolved upstream, not papered over**: D10's original predicate was
+  unimplementable, and DDD-13 replaced it — both the D10 row and US-06 AC5/AC6 were rewritten to the
+  refined predicate before scenarios were authored, so no scenario encodes the dead version. The brief's
+  "stay lenient on inverted ranges" out-of-scope line was reversed by DDD-12 with user confirmation
+  (2026-07-26), and US-06 AC7 exists as a result. Otherwise 0 contradictions.
+- **RED mechanism**: unchanged from the epic's DISTILL — **RED-by-skip**
+  (`[Ignore("pending — DELIVER (epic-5427)")]` NUnit ATs + Playwright specs authored per-slice), because
+  this is a statically-typed trunk-green repo where a test referencing a not-yet-existent signature is
+  *broken*, not red.
+- **Two-tier composition**: Tier A only — the observables are bounded (rows served, points plotted,
+  status code, empty-state copy). No state-machine PBT.
+
+## Wave: DISTILL / [REF] Scenario List (slice-03b)
+
+Specs: `acceptance/milestone-3b-over-time-date-range.feature`.
+
+| # | Scenario | Tags |
+|---|---|---|
+| 16 | Narrowing the range re-plots the percentile trend to fewer days | `@real-io @driving_adapter @us-06 @slice-03b` |
+| 17 | Narrowing the range re-plots the PBC limit lines to fewer days | `@real-io @driving_adapter @us-06 @slice-03b` |
+| 18 | Window inclusive at both ends (outline: `startDate`, `endDate`) | `@real-io @driving_port @us-06 @slice-03b` |
+| 19 | Either bound omitted on its own (outline: since-only, until-only) | `@real-io @driving_port @us-06 @slice-03b` |
+| 20 | Both params omitted reproduces the shipped contract; no shipped AT needed a URL change | `@regression @us-06 @slice-03b` |
+| 21 | Inverted window → 400 + the existing start-before-end message, not an empty 200 | `@error @us-06 @slice-03b` |
+| 22 | Range change refetches; the cached series is never replayed against a new range | `@real-io @driving_adapter @us-06 @slice-03b` |
+| 23 | Empty series in a past window → in-range copy, never the forward-only copy | `@edge @us-06 @slice-03b` |
+| 24 | Empty series in a window that includes today → forward-only copy, verbatim | `@edge @us-06 @slice-03b` |
+| 25 | Bounds applied by the database, not in memory (only in-window rows materialised) | `@real-io @adapter-integration @us-06 @slice-03b` |
+
+Non-happy-path coverage for this slice = 5/10 (scenarios 20, 21, 23, 24 + the outline's boundary cases)
+— above the ≥40% target. Scenario 22 is the slice's named highest-risk item (the stale-cache bug) and
+scenario 20 is the compatibility guard that keeps D9's "additive" claim honest.
+
+## Wave: DISTILL / [REF] Adapter + Driving Coverage (slice-03b)
+
+| Adapter / entry point | Covered by |
+|---|---|
+| `PercentilesOverTimeSnapshotRepository.GetSeries` (EF, date-bounded) | 18, 19, 25 |
+| `ProcessBehaviorSnapshotRepository.GetSeries` (EF, new member — DDD-8) | 17, 18, 25 |
+| Both series query ports (bounds pass-through) | 16, 17, 20 |
+| `TeamMetricsController` × 2 actions | 18-21 (WebApplicationFactory) |
+| `PortfolioMetricsController` × 2 actions | 18-21, parametrised over scope |
+| "Percentiles Over Time" widget (UI) | 16, 22, 23, 24 — Playwright through the POM |
+| "PBC Over Time" widget (UI) | 17, 23, 24 — Playwright through the POM |
+| Both hooks' cache | 22 (Vitest, at the hook seam where the bug lives) |
+
+Zero "NO — MISSING" rows. No new driven-external port, so no new adapter row.
+
+## Wave: DISTILL / [REF] Test Placement (slice-03b)
+
+| Artifact | Path |
+|---|---|
+| Scenario specs (this wave) | `acceptance/milestone-3b-over-time-date-range.feature` |
+| Acceptance/integration | `Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03bDateRangeScenarios.cs` + `…Specifications.cs` (partial class, Given/When/Then helpers — same idiom as Slice01/02/03) |
+| Repository unit | extend `{PercentilesOverTime,ProcessBehavior}SnapshotRepositoryTests.cs` — boundary + omitted-bound + in-memory-vs-SQL cases |
+| Query unit | extend the two series-query tests — bounds pass through, `ResolveHorizon` still applies |
+| Controller unit | extend the two controllers' tests — 400 on inverted, bounds forwarded, defaults preserved |
+| Hook unit | extend `usePercentilesOverTime` / `usePbcOverTime` tests — cache key includes the range; range change refetches |
+| Widget unit | extend `PercentilesOverTimeWidget.test.tsx` / `PbcOverTimeWidget.test.tsx` — new props, both empty-state variants |
+| E2E | extend `tests/specs/flow/PercentilesOverTime.spec.ts` and `PbcOverTime.spec.ts` + their POMs (narrow the range, assert fewer points; in-range copy constant) |
+| Migration tests | **N/A** — no schema delta |
+
+## Wave: DISTILL / [REF] Deferred / Open (slice-03b)
+
+- Scenario 25's "not materialised in memory" is asserted at the repository seam, since the HTTP response
+  is byte-identical either way. It is a design-intent guard, not a perf measurement — no benchmark.
+- Trend-readability (DISCUSS KPI 3) stays a qualitative dogfood check; no `@kpi` gate, unchanged.
+
+## Next Wave
+
+**Handoff → DELIVER**: roadmap `deliver/roadmap-slice-03b.json`. Suggested step order follows the
+dependency chain and puts the riskiest item early — (1) repository bounds + the new PBC `GetSeries`,
+(2) query ports, (3) controllers + the 400 guard, (4) `IMetricsService` + the four test doubles,
+(5) both hooks' cache re-key, (6) widgets' props + empty-state branch + `BaseMetricsView` wiring,
+(7) E2E + docs. Playwright runs locally before any commit; per-step commits; stop before
+mutation/review/finalize close-out.

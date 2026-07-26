@@ -675,14 +675,19 @@ outcomes:
 
   - id: OUT-5427-empty-state-honesty
     feature: epic-5427-percentiles-over-time
-    title: Zero-snapshot owner renders the honest empty-state, never a broken axis
-    target: "0 over-time charts render a broken/empty axis on a fresh (zero-snapshot) team or portfolio"
+    title: An empty over-time series always says WHY it is empty, and never renders a broken axis
+    target: >
+      0 over-time charts render a broken/empty axis on a fresh (zero-snapshot) team or portfolio, AND
+      0 charts claim "no snapshots recorded yet" when the only reason the series is empty is that the
+      selected date range ends before recording began (slice-03b, D10/DDD-13)
     measurement_scope: vendor_demo_only   # E2E on a zero-snapshot owner is the observable population
     measured_by: >
       Playwright E2E on a zero-snapshot owner asserting the D6 empty-state copy ("builds forward from
-      today — no snapshots recorded yet") for both widgets, never a broken chart.
+      today — no snapshots recorded yet") for both widgets, never a broken chart; plus, from slice-03b,
+      a Playwright E2E on a POPULATED owner narrowed to a window that ends before today asserting the
+      in-range copy ("no data recorded in the selected range") instead.
     measurement_window: every ci_e2e run
-    rationale: "US-01 AC4 / D6. Forward-only recording means fresh owners have no history; the empty-state must be honest, not broken."
+    rationale: "US-01 AC4 / D6, extended by US-06 AC5/AC6 / DDD-13. Forward-only recording means fresh owners have no history; a range-scoped chart means an empty series has two different honest explanations and must give the right one."
     instrumentation_status: >
       Slice-01 (CT) MEASURED 2026-07-24: VERIFIED green for the "Percentiles Over Time" widget. A zero-snapshot
       owner's percentiles-over-time GET returns an empty array and the widget renders the D6 honest empty-state
@@ -694,8 +699,20 @@ outcomes:
       Slice02WorkItemAgePercentilesSpecifications.ThenTheSeriesIsEmpty asserts 200 + empty array, never an
       error or a zero-padded series. The "PBC Over Time" widget's empty-state remains DEFERRED to slice-03
       (that widget is not yet shipped) - this KPI closes then.
+      Slice-03b (date range) PENDING as of 2026-07-26 (DESIGN complete, code not written): the KPI's second
+      clause is new. The discriminator is the selected range's END, not "narrowed vs default" - the dashboard
+      has no unfiltered state, its default IS a 30-day (team, per the team's dateRange setting) / 90-day
+      (portfolio) window, so every request the UI makes is a narrowed one. Range ends today-or-later + empty
+      => the unchanged forward-only copy (this is the path the two shipped E2Es drive, so they must keep
+      passing verbatim); range ends before today + empty => the in-range copy. Deliberately NOT solved with a
+      response envelope or a second unfiltered request - ADR-108 rejects envelopes (see its slice-03b
+      amendment). Accepted edge, documented not fixed: an owner whose snapshots all predate a window that
+      still ends today reads the forward-only copy; reaching that needs recording to have stopped more than
+      defaultDateRange days ago, which a refreshing instance cannot do.
     alerting:
       - condition: "zero-snapshot E2E finds a rendered-but-empty/broken axis instead of the empty-state copy"
+        action: "CI fails (red)"
+      - condition: "narrowed-past-window E2E finds the forward-only copy instead of the in-range copy (or vice versa on the default window)"
         action: "CI fails (red)"
 
   - id: OUT-5427-pipeline-reuse
