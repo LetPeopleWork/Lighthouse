@@ -79,6 +79,7 @@ import {
 	deriveLoadBalanceMatrixData,
 	type LoadBalanceMatrixData,
 } from "./loadBalanceMatrix";
+import PbcOverTimeWidget from "./PbcOverTimeWidget";
 import PercentilesOverTimeWidget from "./PercentilesOverTimeWidget";
 import PredictabilityScoreDetailsWidget from "./PredictabilityScoreDetailsWidget";
 import PredictabilityScoreOverviewWidget from "./PredictabilityScoreOverviewWidget";
@@ -1121,6 +1122,12 @@ function buildWidgetNodes(ctx: {
 		),
 		percentilesOverTime: (
 			<PercentilesOverTimeWidget
+				ownerId={ctx.entity.id}
+				metricsService={ctx.metricsService}
+			/>
+		),
+		pbcOverTime: (
+			<PbcOverTimeWidget
 				ownerId={ctx.entity.id}
 				metricsService={ctx.metricsService}
 			/>

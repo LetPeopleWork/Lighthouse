@@ -64,6 +64,7 @@ describe("TotalWorkItemAgeWidget", () => {
 		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
 		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
+		getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
 	});
 
 	it("renders loading state initially", () => {

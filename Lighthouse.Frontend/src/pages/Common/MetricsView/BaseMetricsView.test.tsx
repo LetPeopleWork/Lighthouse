@@ -839,6 +839,7 @@ describe("BaseMetricsView component", () => {
 			getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 			getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
 			getPercentilesOverTime: vi.fn().mockResolvedValue([]),
+			getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
 		} as IMetricsService<T> & {
 			getSizePercentiles?: (
 				id: number,
@@ -1428,6 +1429,7 @@ describe("BaseMetricsView component", () => {
 			getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 			getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
 			getPercentilesOverTime: vi.fn().mockResolvedValue([]),
+			getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
 		};
 
 		const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -2256,6 +2258,9 @@ describe("BaseMetricsView component", () => {
 					.fn()
 					.mockRejectedValue(new Error("API error")),
 				getPercentilesOverTime: vi
+					.fn()
+					.mockRejectedValue(new Error("API error")),
+				getProcessBehaviorOverTime: vi
 					.fn()
 					.mockRejectedValue(new Error("API error")),
 			};

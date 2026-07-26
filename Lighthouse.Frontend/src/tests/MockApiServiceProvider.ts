@@ -209,6 +209,7 @@ export const createMockTeamMetricsService = (): ITeamMetricsService => {
 		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
 		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
+		getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
 	};
 };
 
@@ -261,6 +262,7 @@ export const createMockProjectMetricsService = (): IProjectMetricsService => {
 		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
 		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
+		getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
 	};
 };
 

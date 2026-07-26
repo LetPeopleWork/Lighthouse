@@ -125,6 +125,7 @@ function createMockTeamMetricsService(): ITeamMetricsService {
 		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
 		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
 		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
+		getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
 	};
 }
 

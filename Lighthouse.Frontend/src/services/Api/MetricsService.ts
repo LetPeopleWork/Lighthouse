@@ -30,6 +30,10 @@ import {
 	type PercentilesOverTimeSnapshot,
 	type PercentilesSelection,
 } from "../../models/Metrics/PercentilesOverTimeSnapshot";
+import type {
+	ProcessBehaviorMetricType,
+	ProcessBehaviorSnapshot,
+} from "../../models/Metrics/ProcessBehaviorSnapshot";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../models/Metrics/RunChartData";
 import {
@@ -212,6 +216,11 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 		id: number,
 		selection: PercentilesSelection,
 	): Promise<PercentilesOverTimeSnapshot[]>;
+
+	getProcessBehaviorOverTime(
+		id: number,
+		metricType: ProcessBehaviorMetricType,
+	): Promise<ProcessBehaviorSnapshot[]>;
 
 	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]>;
 
@@ -771,6 +780,18 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<PercentilesOverTimeSnapshot[]>(
 				`/${this.api}/${id}/metrics/percentiles-over-time?${buildPercentilesOverTimeQuery(selection)}`,
+			);
+			return response.data;
+		});
+	}
+
+	async getProcessBehaviorOverTime(
+		id: number,
+		metricType: ProcessBehaviorMetricType,
+	): Promise<ProcessBehaviorSnapshot[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<ProcessBehaviorSnapshot[]>(
+				`/${this.api}/${id}/metrics/process-behavior-over-time?type=${metricType}`,
 			);
 			return response.data;
 		});

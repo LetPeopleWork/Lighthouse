@@ -84,6 +84,7 @@ const categoryWidgets: Record<CategoryKey, readonly WidgetPlacement[]> = {
 	predictability: [
 		{ widgetKey: "predictabilityScoreDetails", size: "large" },
 		{ widgetKey: "percentilesOverTime", size: "large" },
+		{ widgetKey: "pbcOverTime", size: "large" },
 		{ widgetKey: "throughputPbc", size: "large" },
 		{ widgetKey: "arrivalsPbc", size: "large" },
 		{ widgetKey: "wipPbc", size: "large" },
@@ -109,6 +110,8 @@ const trendPolicies: Record<string, TrendPolicy> = {
 	predictabilityScore: "previous-period",
 	predictabilityScoreDetails: "none",
 	percentilesOverTime: "none",
+	// Already a trend — a previous-period arrow on top of it would be nonsense.
+	pbcOverTime: "none",
 	totalThroughput: "previous-period",
 	totalArrivals: "previous-period",
 	percentiles: "previous-period",

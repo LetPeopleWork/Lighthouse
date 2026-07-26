@@ -1,0 +1,219 @@
+import {
+	Box,
+	Card,
+	CardContent,
+	Stack,
+	ToggleButton,
+	ToggleButtonGroup,
+	Tooltip,
+	Typography,
+	useTheme,
+} from "@mui/material";
+import { LineChart } from "@mui/x-charts";
+import type React from "react";
+import type { IFeature } from "../../../models/Feature";
+import type {
+	ProcessBehaviorMetricType,
+	ProcessBehaviorSnapshot,
+} from "../../../models/Metrics/ProcessBehaviorSnapshot";
+import { PROCESS_BEHAVIOR_METRIC_TYPES } from "../../../models/Metrics/ProcessBehaviorSnapshot";
+import type { IWorkItem } from "../../../models/WorkItem";
+import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { usePbcOverTime } from "./usePbcOverTime";
+
+interface PbcOverTimeWidgetProps {
+	ownerId: number;
+	metricsService: IMetricsService<IWorkItem | IFeature>;
+	title?: string;
+}
+
+/**
+ * Forward-only over-time charts read this on a fresh owner instead of a broken
+ * axis (D6). Exported so the E2E asserts the shipped string rather than a
+ * duplicated copy of the prose.
+ */
+export const PBC_OVER_TIME_EMPTY_COPY =
+	"builds forward from today — no snapshots recorded yet";
+
+/**
+ * The three limit lines, in the point-in-time chart's vocabulary
+ * (average / upperNaturalProcessLimit / lowerNaturalProcessLimit) rather than
+ * new names for the same concepts (D7). The dash patterns are the ones the
+ * point-in-time chart draws its reference lines with: "3 3" for the limits,
+ * "5 5" for the average.
+ */
+const LIMIT_LINES: readonly {
+	id: string;
+	label: string;
+	dash: string;
+	accessor: (snapshot: ProcessBehaviorSnapshot) => number;
+}[] = [
+	{ id: "unpl", label: "UNPL", dash: "3 3", accessor: (s) => s.unpl },
+	{ id: "average", label: "Average", dash: "5 5", accessor: (s) => s.average },
+	{ id: "lnpl", label: "LNPL", dash: "3 3", accessor: (s) => s.lnpl },
+];
+
+/**
+ * Stable per-metric test locator, exported so the E2E POM targets the shipped
+ * id rather than re-deriving the convention.
+ */
+export function processBehaviorMetricTestId(
+	metricType: ProcessBehaviorMetricType,
+): string {
+	return `pbc-metric-${metricType.toLowerCase()}`;
+}
+
+/** Toggle-row copy for one metric family. Later slices append to the list. */
+function describeMetricType(metricType: ProcessBehaviorMetricType): {
+	metricType: ProcessBehaviorMetricType;
+	label: string;
+	tooltip: string;
+	testId: string;
+} {
+	return {
+		metricType,
+		label: metricType,
+		tooltip: `${metricType} natural process limits per recorded day`,
+		testId: processBehaviorMetricTestId(metricType),
+	};
+}
+
+/**
+ * PBC Over Time widget (Predictability category, team + portfolio). Plots the
+ * dated UNPL / Average / LNPL triple the recorder persisted, one point per
+ * recorded day, in the point-in-time process-behaviour chart's visual language.
+ * A fresh owner legitimately has no history — it gets the honest forward-only
+ * copy, never a fabricated or broken axis (D6).
+ */
+const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
+	ownerId,
+	metricsService,
+	title = "PBC Over Time",
+}) => {
+	const theme = useTheme();
+	const { metricType, setMetricType, series } = usePbcOverTime(
+		ownerId,
+		metricsService,
+	);
+
+	// The point-in-time chart draws its limits in the neutral secondary text
+	// colour — the over-time limits read as the same concept (D7).
+	const limitColor = theme.palette.text.secondary;
+
+	const tabs = PROCESS_BEHAVIOR_METRIC_TYPES.map(describeMetricType);
+
+	const lineSeries = LIMIT_LINES.map((line) => ({
+		id: line.id,
+		label: line.label,
+		color: limitColor,
+		// Limits are a band, not a measured series — no per-day markers.
+		showMark: false,
+		data: (series ?? []).map(line.accessor),
+	}));
+
+	const dashSx = Object.fromEntries(
+		LIMIT_LINES.map((line) => [
+			`& .MuiLineElement-series-${line.id}`,
+			{ strokeDasharray: line.dash },
+		]),
+	);
+
+	const dates = (series ?? []).map((snapshot) => snapshot.recordedAt);
+	const hasData = series !== null && series.length > 0;
+
+	return (
+		<Card
+			data-testid="pbc-over-time-widget"
+			sx={{ p: 2, borderRadius: 2, height: "100%" }}
+		>
+			<CardContent
+				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+			>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						gap: 1,
+						flexWrap: "wrap",
+					}}
+				>
+					<Typography variant="h6">{title}</Typography>
+					<ToggleButtonGroup
+						size="small"
+						exclusive
+						value={metricType}
+						aria-label="Process behaviour metric type"
+					>
+						{tabs.map((tab) => (
+							// Tooltip wraps the button, so it — not the ToggleButton — is the
+							// group's direct child and the group's selected/onChange injection
+							// no longer reaches the button. We set selected + onClick
+							// explicitly per button so pressed styling and aria-pressed hold.
+							<Tooltip key={tab.testId} title={tab.tooltip} arrow>
+								<ToggleButton
+									size="small"
+									value={tab.metricType}
+									selected={metricType === tab.metricType}
+									onClick={() => setMetricType(tab.metricType)}
+									data-testid={tab.testId}
+								>
+									{tab.label}
+								</ToggleButton>
+							</Tooltip>
+						))}
+					</ToggleButtonGroup>
+				</Box>
+
+				{hasData ? (
+					<>
+						<Stack
+							direction="row"
+							spacing={2}
+							sx={{ mt: 1, flexWrap: "wrap" }}
+							data-testid="pbc-over-time-legend"
+						>
+							{LIMIT_LINES.map((line) => (
+								<Box
+									key={line.id}
+									data-testid={`pbc-line-${line.id}`}
+									sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+								>
+									<Box
+										sx={{
+											width: 12,
+											borderTop: `2px dashed ${limitColor}`,
+										}}
+									/>
+									<Typography variant="caption">{line.label}</Typography>
+								</Box>
+							))}
+						</Stack>
+						<Box sx={{ flex: 1, minHeight: 0 }}>
+							<LineChart
+								style={{ height: "100%", width: "100%" }}
+								xAxis={[{ data: dates, scaleType: "point" }]}
+								series={lineSeries}
+								sx={dashSx}
+								hideLegend
+							/>
+						</Box>
+					</>
+				) : (
+					series !== null && (
+						<Typography
+							data-testid="pbc-over-time-empty"
+							variant="body2"
+							color="text.secondary"
+							sx={{ py: 4, textAlign: "center" }}
+						>
+							{PBC_OVER_TIME_EMPTY_COPY}
+						</Typography>
+					)
+				)}
+			</CardContent>
+		</Card>
+	);
+};
+
+export default PbcOverTimeWidget;

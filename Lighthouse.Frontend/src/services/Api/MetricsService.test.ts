@@ -7,6 +7,7 @@ import type { IFlowEfficiencyInfo } from "../../models/Metrics/FlowEfficiencyInf
 import type { PercentilesSelection } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import { PERCENTILES_AGE_SELECTION } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
+import { ProjectMetricsService } from "./ProjectMetricsService";
 import { TeamMetricsService } from "./TeamMetricsService";
 
 vi.mock("axios");
@@ -620,5 +621,56 @@ describe("MetricsService getPercentilesOverTime", () => {
 		await expect(metricsService.getPercentilesOverTime(1, 30)).rejects.toThrow(
 			"Network Error",
 		);
+	});
+});
+
+describe("MetricsService getProcessBehaviorOverTime", () => {
+	const LIMIT_SERIES = [
+		{ recordedAt: "2026-07-20", unpl: 14, average: 8, lnpl: 2 },
+		{ recordedAt: "2026-07-21", unpl: 15, average: 9, lnpl: 3 },
+	];
+
+	beforeEach(() => {
+		mockedAxios.create.mockReturnThis();
+	});
+
+	afterEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it("asks the team endpoint for the Throughput limits series", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: LIMIT_SERIES });
+
+		const result = await new TeamMetricsService().getProcessBehaviorOverTime(
+			7,
+			"Throughput",
+		);
+
+		expect(result).toEqual(LIMIT_SERIES);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/teams/7/metrics/process-behavior-over-time?type=Throughput",
+		);
+	});
+
+	it("asks the portfolio endpoint for the Throughput limits series", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: LIMIT_SERIES });
+
+		const result = await new ProjectMetricsService().getProcessBehaviorOverTime(
+			12,
+			"Throughput",
+		);
+
+		expect(result).toEqual(LIMIT_SERIES);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/portfolios/12/metrics/process-behavior-over-time?type=Throughput",
+		);
+	});
+
+	it("propagates errors when fetching the limits series fails", async () => {
+		mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
+
+		await expect(
+			new TeamMetricsService().getProcessBehaviorOverTime(1, "Throughput"),
+		).rejects.toThrow("Network Error");
 	});
 });
