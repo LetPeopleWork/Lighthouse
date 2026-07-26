@@ -927,6 +927,43 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("Portfolios");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.ProcessBehaviorSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Average")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Lnpl")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MetricType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OwnerType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("RecordedAt")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Unpl")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "OwnerType", "MetricType", "RecordedAt")
+                        .IsUnique();
+
+                    b.ToTable("ProcessBehaviorSnapshots");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.RecurringBlackoutRule", b =>
                 {
                     b.Property<int>("Id")
