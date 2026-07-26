@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.7.26.8
 
 ## Are Your Percentiles Getting Better or Worse? — Percentiles Over Time
 Every percentile widget in Lighthouse answers *where do we stand today*. None of them answered the question that actually matters in a retrospective: **are we improving?** This release adds a **Percentiles Over Time** chart in the *Predictability* category that records the 50th, 70th, 85th, and 95th percentile once per day and plots each as its own line, at both Team and Portfolio level.
@@ -26,6 +26,8 @@ Reading the shape is the point: a **widening** band means variability is growing
 One caveat worth knowing: limits are only as meaningful as the baseline they're computed from. Without a fixed [PBC baseline](https://docs.lighthouse.letpeople.work/teams/edit.html#process-behaviour-chart-baseline) configured, Lighthouse falls back to a rolling window ending today — so the recorded limits move for reasons that have nothing to do with your process.
 
 Both charts build **forward** from the day your instance starts recording; they are not reconstructed from history. A fresh instance says so plainly instead of drawing a fabricated line. Demo data ships with a backdated history, so it's populated immediately. See [Percentiles Over Time](https://docs.lighthouse.letpeople.work/metrics/predictability.html#percentiles-over-time) and [PBC Over Time](https://docs.lighthouse.letpeople.work/metrics/predictability.html#pbc-over-time).
+
+Both also follow the date range you pick on the dashboard, so you can zoom into the window you're actually discussing instead of always seeing the full recorded history.
 
 ## Blocked History for Portfolios
 Last release taught the Blocked Overview to answer historical ranges honestly for **Teams** — a past range is read from what was actually recorded on that day rather than re-judged against today's rules. Portfolios couldn't do this: no blocked history was ever recorded for Features, so a feature blocked last month read as *not blocked*, and one blocked today read as blocked on every range in the past.
@@ -53,7 +55,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Gabor Bittera](https://www.linkedin.com/in/gaborbittera/)
 - [Hendra Gunawan](https://www.linkedin.com/in/hendragunawan823/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.7.11.4...HEAD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.7.11.4...v26.7.26.8)
 
 # Lighthouse v26.7.11.4
 

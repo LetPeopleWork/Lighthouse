@@ -4,8 +4,8 @@ Flow metrics and probabilistic forecasting for Kubernetes. Postgres-only (ADR-08
 brings the whole stack up — API (SPA served in-process), bundled or external Postgres, optional MCP
 workload and OIDC — with one command.
 
-- **Chart version:** `0.1.6`
-- **App image (appVersion):** `26.7.11.4`
+- **Chart version:** `0.1.7`
+- **App image (appVersion):** `26.7.26.8`
 
 > This README's **Values** section is generated from `values.yaml` by [`helm-docs`](https://github.com/norwoodj/helm-docs).
 > Edit the `# --` comments in `values.yaml`, then regenerate (`helm-docs --chart-search-root chart --skip-version-footer -s file --ignore-non-descriptions`).
