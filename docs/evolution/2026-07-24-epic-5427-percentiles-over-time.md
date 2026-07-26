@@ -1,4 +1,4 @@
-# Evolution: epic-5427-percentiles-over-time (Slices 01-02 of 4)
+# Evolution: epic-5427-percentiles-over-time (Slices 01, 02, 03, 03b of 4+)
 
 - **Date finalized (slice-01)**: 2026-07-24 · **(slice-02)**: 2026-07-25
 - **ADO**: Epic #5427 ("Show Percentiles over Time Charts", Community / Productboard). Non-premium, free-tier, brownfield. Slice-02 story **#5547 — Closed**.
@@ -223,14 +223,74 @@ INFO-severity `NUnit2045` that is invisible to a warning-clean local build.
 - **Outcomes registry** — no `docs/product/outcomes/registry.yaml` in this repo; collision check **N/A**
   (recorded, not silently skipped). Testable outcomes live in `kpi-contracts.yaml`.
 
-## Remaining — slices 03-04 (NOT started)
+## Slice 03 — Throughput PBC limits over time (US-04, ADO #5548) — SHIPPED 2026-07-26
 
-The whole `ProcessBehaviorSnapshot` family is still deferred: the table + repository + EF migration (this
-one **is** a real schema change), `ProcessBehaviorRecordingHandler`, `IProcessBehaviorSeriesQuery`, the
-`process-behavior-over-time?type=` endpoint, and the "PBC Over Time" widget (slice 03, Throughput only;
-slice 04 adds WIA/WIP/CT/Arrivals/Feature-Size, the last portfolio-only).
+Recorded retroactively on 2026-07-26 during slice-03b's close-out: slice-03's own finalize never ran, so
+this section is reconstructed from the shipped code, `roadmap-slice-03.json` and the commit history
+(`2d6c73690..3377c038b`, 6 steps). The full reconstruction, including what could NOT be recovered, is in
+`feature-delta.md` → "Wave: DELIVER / [REF] Implementation summary (slice-03…)".
 
-Carry-forward for slice 03:
+The whole `ProcessBehaviorSnapshot` family landed: the table + repository + a **real** additive EF
+migration on both providers (the only DDL in the epic since slice-01), `ProcessBehaviorRecordingHandler`
+on the same two refresh events the percentiles recorder already subscribes,
+`IProcessBehaviorSeriesQuery` + `ProcessBehaviorSnapshotDto`, the `process-behavior-over-time?type=` GET
+on both controllers, the demo backfill extension, and the "PBC Over Time" widget (Throughput only).
+
+Unlike slice-02 this was not a pure extension — second table, second handler, second read port, second
+DTO, new widget. The pipeline *shape* was reused; the code is new because the `Unpl/Average/Lnpl` triple
+is a different row shape from the four-percentile row (ADR-106). One deliberate deviation from D7: the
+three limits **are** the series in an over-time chart, so they render solid in distinct colours instead
+of the point-in-time chart's neutral dashes, which would collapse into three near-identical greys in
+dark mode.
+
+**Two gaps that cannot be closed after the fact and are recorded rather than glossed:** no mutation
+score was ever published for slice-03 (step 03-06 ran a mutant-killing pass; the nearest hard evidence
+is the slice-03b run, which mutates the whole epic surface and covers every slice-03 file above the
+gate), and slice-03's diff never received an adversarial review.
+
+## Slice 03b — Over-time widgets respect the dashboard date range (US-06, ADO #5564) — SHIPPED 2026-07-26
+
+An unplanned slice, inserted between 03 and 04 after user review of the shipped widget found the
+dashboard date pickers had no effect on either over-time chart — they took no date parameters anywhere
+in the read path, so every recorded day was always plotted while every sibling widget on the same
+dashboard respected the range.
+
+Read-path only. Optional additive `startDate`/`endDate` on both series endpoints across both scopes,
+filtered on `RecordedAt` inclusive at both ends and composed onto the existing `IQueryable` so the
+database applies them; `IProcessBehaviorSnapshotRepository.GetSeries` created so both families place the
+series query in the repository rather than one there and one in its query class (ahead of slice-04
+adding five more metric types to that path); both hook caches re-keyed from selection-alone to
+selection-plus-range; the empty state disambiguated **in the widget** by the range's end rather than via
+a response envelope, which ADR-108 rejects. Mutation BE 89.86% / FE 92.76%.
+
+Three durable lessons, all of them mistakes made and caught inside this slice:
+
+1. **The brief's empty-state predicate was unimplementable.** It assumed a "default = unfiltered" state;
+   the dashboard's default IS a bounded window (30 days team, 90 portfolio), so every request it makes is
+   narrowed. The discriminator became the range's *end* instead. Worth checking that a "default" state
+   actually exists before writing a decision that branches on it.
+2. **The headline acceptance test could not fail.** A POM getter returning `0` for "chart not painted
+   yet" satisfied `toBeLessThan`, so the assertion held with the date filter deleted from the backend.
+   Found by adversarial review, not by the test suite, and fixed by polling for the render then bounding
+   both sides. The general rule now in `ci-learnings.md`: after writing an assertion whose failure you
+   have not observed, sabotage the production code and watch it go red.
+3. **Two of our own artifacts asserted things that were false** — a coverage table claimed a scenario was
+   tested when nothing tested it, and an ADR called a reachable defect an unreachable accepted edge. Both
+   were written in good faith during DESIGN and only checked when someone went looking.
+
+Carried forward, not fixed: the `startDate`/`endDate` URL params round-trip through UTC while requests
+are built from local date parts, so a reloaded or shared link loses one day and can flip the empty-state
+sentence outside UTC (pre-existing, affects every date-ranged widget, filed separately); a typed inverted
+range now 400s and the hooks have no error state, so both cards render blank until corrected; and the
+widget screenshots are stale for both slices.
+
+## Remaining — slice 04 (NOT started)
+
+Slice 04 adds the remaining PBC metric types to the existing widget's toggle — WIA/WIP/CT/Arrivals and
+Feature-Size (portfolio-only) — on the read path slice-03b just made symmetric.
+
+Carry-forward that was written for slice 03 at slice-02 finalization, kept for the record — all three
+were honoured by what slice 03 shipped:
 
 - Its demo backfill must extend `DemoPercentilesBackfillHandler`'s **per-family** guard idiom to the new
   table's per-`MetricType` rows — same trap, different table.

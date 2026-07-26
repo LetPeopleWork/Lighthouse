@@ -1064,6 +1064,58 @@ mutation/review/finalize close-out.
 
 ---
 
+## Wave: DELIVER / [REF] Implementation summary (slice-03, US-04, ADO #5548)
+
+**Reconstructed 2026-07-26 during slice-03b's close-out, because slice-03's own finalize never ran.** It
+is written from the shipped code, `roadmap-slice-03.json` and the commit history — not from a live
+record of the run — and every gap that leaves is named below rather than filled in with a guess.
+
+Shipped 2026-07-26 in `2d6c73690..3377c038b` (6 steps, `03-01`..`03-06`), closing milestone-3
+Scenarios 10, 11 and 12 plus the `ProcessBehaviorSnapshot` half of milestone-1 Scenario 6.
+
+| Step | Commit | Landed |
+|---|---|---|
+| 03-01 | `2d6c73690` | `ProcessBehaviorSnapshot` entity + repository + a **real** additive EF migration on both providers (the only step in the epic since slice-01 with DDL). Natural key drops the horizon dimension: `(OwnerId, OwnerType, MetricType, RecordedAt)` |
+| 03-02 | `108145751` | `ProcessBehaviorRecordingHandler` on the SAME `TeamDataRefreshed`/`PortfolioFeaturesRefreshed` events the percentiles recorder already subscribes — a second handler on the same seam (ADR-107), with its own `MetricFamily = "ProcessBehavior"` observability contract |
+| 03-03 | `09777c505` | `IProcessBehaviorSeriesQuery` + `ProcessBehaviorSnapshotDto` + `process-behavior-over-time?type=` GET on both controllers, 400 on an unknown type rather than an empty 200 |
+| 03-04 | `d542eb895` | Demo backfill extended to Throughput NPL rows, per-family idempotency guard |
+| 03-05 | `c16940f43`, `8295e8143` | The "PBC Over Time" widget + metric-type toggle. `8295e8143` is a deliberate, user-approved deviation from D7: the three limits **are** the series here, so they render solid in distinct colours rather than the point-in-time chart's neutral dashes, which would collapse into three near-identical greys in dark mode |
+| 03-06 | `657b01490`, `3377c038b` | Playwright POM + spec, then a mutant-killing pass |
+
+Unlike slice-02 this was **not** a pure extension: second table, second repository, second recording
+handler, second read port, second DTO, two new controller actions and a new widget. The pipeline
+*shape* is reused; the code is new because the `Unpl/Average/Lnpl` triple is a different row shape from
+the four-percentile row (ADR-106) — reuse of the pipeline, not of the columns.
+
+### What is NOT on record for slice-03
+
+- **No mutation score was published.** Step `03-06` ran a mutant-killing pass, but no figure was written
+  down and no finalize captured one. The nearest hard evidence is the slice-03b Stryker run, which
+  mutates the whole epic-5427 surface and therefore covered every slice-03 file: backend 89.86% overall
+  with a single survivor across the slice-03 files (the DTO's `ToString`), frontend
+  `PbcOverTimeWidget.tsx` 94.87% and `usePbcOverTime.ts` 86.96%. Above the gate, but measured *after*
+  the fact and not scoped to slice-03 alone.
+- **No adversarial review.** The slice-03b review covered `093a31bce..HEAD`, which contains only
+  slice-03b commits. Slice-03's diff was never reviewed. This is the one gap that cannot be closed
+  retroactively by inspection of artifacts, and it is left open deliberately rather than implied away.
+- **No per-step DoD/quality-gate record**, no `Files modified` inventory, and no `Scenarios green` table
+  of the kind slices 01/02 carry. The commits are green on `main` and the suites pass today, but the
+  per-step evidence trail does not exist.
+- **Screenshots** for the PBC widget were never regenerated and are now doubly stale (slice-03 shipped
+  the widget; slice-03b changed its default window).
+- **ADO #5548** was not transitioned.
+
+### Slice-03 items that slice-03b closed on its behalf
+
+`brief.md`'s inventory rows (they still read `DEFERRED slice-03` for shipped code), the
+`kpi-contracts.yaml` forward-looking language in `-recording-idempotency`,
+`-recording-failure-isolation`, `-empty-state-honesty` (the PBC widget's empty state was gating that
+KPI's first clause) and `-pipeline-reuse` (the full "≥2 percentile families + PBC share one pipeline"
+target, now MET), and the workspace commit that archived `roadmap-slice-03.json` before the next slice
+overwrote `roadmap.json`.
+
+---
+
 ## Wave: DELIVER / [REF] Implementation summary (slice-03b, US-06, ADO #5564)
 
 Shipped in 4 commits on `main` (`51cd1bf63` backend read path, `8c0cfdf09` frontend read path,

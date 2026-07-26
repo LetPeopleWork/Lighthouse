@@ -638,7 +638,19 @@ outcomes:
       sentinel the same unique index and the same single upsert predicate serve CT and WIA identically - no
       IS NULL branch, no schema change, no migration. Pinned by Slice02WorkItemAgePercentiles* specs +
       PercentilesOverTimeRecordingHandlerTests (same-day double-refresh leaves exactly one WIA row).
-      ProcessBehaviorSnapshot idempotency joins this invariant in slice-03.
+      Slice-03 (Throughput PBC) SHIPPED 2026-07-26 (ADO #5548, 2d6c73690..3377c038b): ProcessBehaviorSnapshot
+      joins this invariant. Second table, second repository, second recording handler, and a REAL additive
+      EF migration on both providers - the pipeline SHAPE is reused (same two refresh events, same
+      upsert-per-day natural key, same per-family failure containment) but the code is new because the
+      Unpl/Average/Lnpl triple is a different row shape from the four-percentile row (ADR-106). Its
+      natural key drops the Horizon dimension: (OwnerId, OwnerType, MetricType, RecordedAt).
+      NOTE ON EVIDENCE (recorded 2026-07-26 during slice-03b close-out, because slice-03's own finalize
+      never ran): slice-03 step 03-06 included a mutant-killing pass, but no score was written down at
+      the time. What IS on record: the slice-03b Stryker run (2026-07-26) mutates the whole epic-5427
+      surface, so it covered ProcessBehaviorSnapshot, its repository, ProcessBehaviorSeriesQuery,
+      ProcessBehaviorRecordingHandler and ProcessBehaviorSnapshotDto at 89.86% overall with a single
+      survivor across those files (the DTO's ToString string mutation). Slice-03 did NOT receive an
+      adversarial review - the slice-03b review covered only 093a31bce..HEAD.
     alerting:
       - condition: "same-day double-refresh test asserts row count != 1"
         action: "CI fails (red)"
@@ -667,8 +679,15 @@ outcomes:
       values fragment one operator alert into several - fixed in 724099f32). Canonical shipped template:
       "Percentile snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})" - the DESIGN-wave
       draft said "Percentile/PBC ..."; the two-handler decision means the PBC recorder emits its own message,
-      so the shipped string is canonical (ADR-107 Amendment slice-02). ProcessBehavior handler, slice-03,
-      will report MetricFamily=ProcessBehavior.
+      so the shipped string is canonical (ADR-107 Amendment slice-02).
+      Slice-03 (Throughput PBC) SHIPPED 2026-07-26: ProcessBehaviorRecordingHandler carries its OWN
+      failure-isolation contract rather than sharing the percentiles one - it emits its own message with
+      MetricFamily=ProcessBehavior, so an operator alert on the percentile family and one on the
+      process-behaviour family stay separable (the same reasoning that made MetricFamily a family literal
+      rather than a per-metric-type value in slice-02). Two handlers on the same two refresh events means
+      one family throwing cannot discard the other's staged rows.
+      Slice-03b (2026-07-26) added NO failure mode here: it is read-path only, and a bad date window is a
+      400 to the caller, not a swallowed background failure. Recording is untouched.
     alerting:
       - condition: "recording-failure AT shows refresh broken OR no structured event emitted"
         action: "CI fails (red)"
@@ -697,8 +716,12 @@ outcomes:
       empty assertion on demo data would be structurally impossible) and asserts the copy verbatim via the
       exported PERCENTILES_OVER_TIME_EMPTY_COPY constant, so a copy change fails loudly. Backend counterpart:
       Slice02WorkItemAgePercentilesSpecifications.ThenTheSeriesIsEmpty asserts 200 + empty array, never an
-      error or a zero-padded series. The "PBC Over Time" widget's empty-state remains DEFERRED to slice-03
-      (that widget is not yet shipped) - this KPI closes then.
+      error or a zero-padded series.
+      Slice-03 (Throughput PBC) MEASURED 2026-07-26: the first clause now CLOSES for both widgets. The
+      "PBC Over Time" widget shipped with the same honest-empty contract, driven by an @edge Playwright
+      scenario on a fresh NON-demo team (the demo backfill populates every demo owner, so an honest-empty
+      assertion on demo data is structurally impossible) asserting the copy verbatim via the exported
+      PBC_OVER_TIME_EMPTY_COPY constant, plus zero chart lines and no legend - never a broken axis.
       Slice-03b (date range) MEASURED 2026-07-26: VERIFIED green for the second clause, with ONE stated
       exception (below). The discriminator is the selected range's END, not "narrowed vs default" - the
       dashboard has no unfiltered state, its default IS a 30-day (team, per the team's dateRange setting)
@@ -750,9 +773,19 @@ outcomes:
       ONE repository, ONE read query port and ONE endpoint (additive metricType query param), and ONE frontend
       widget/hook (per-selection cache). Zero bespoke per-metric recorders; zero new tables; zero EF migrations.
       Slice-02 shipped Horizon=NoHorizon(0) rather than the NULL predicted at slice-01 (see
-      OUT-5427-recording-idempotency); the reuse property is unaffected. Full target ">= 2 percentile families
-      + PBC share one pipeline" closes in slice-03, when ProcessBehaviorRecordingHandler joins the SAME refresh
-      events (a second handler on the same seam, per ADR-107) rather than introducing a third trigger.
+      OUT-5427-recording-idempotency); the reuse property is unaffected.
+      Slice-03 (Throughput PBC) MEASURED 2026-07-26: target MET in full. ProcessBehaviorRecordingHandler
+      subscribes the SAME TeamDataRefreshed / PortfolioFeaturesRefreshed events the percentiles recorder
+      already handles - a second handler on the same seam (ADR-107), not a third trigger, not a scheduler,
+      not an inline call on the refresh path. So ">= 2 percentile families + PBC share one pipeline" holds:
+      two families through one percentiles handler, plus the PBC family through its own handler on the same
+      events, with the same upsert-per-day idempotency and the same per-family failure containment. What is
+      deliberately NOT shared is the row shape and the recorder body, because the NPL triple is a different
+      business concept from a four-percentile row (ADR-106) - reuse of the PIPELINE, not of the columns.
+      Slice-03b (2026-07-26) touched neither: read-path only. It did, however, make the READ side symmetric
+      the way the write side already was - IProcessBehaviorSnapshotRepository.GetSeries was added so both
+      families place the series query in the repository rather than one in the repo and one in its query
+      class (DDD-8), which is where slice-04's five further metric types will land.
     alerting: []
 
   - id: OUT-5427-mutation-kill-rate
@@ -771,5 +804,25 @@ outcomes:
       +2.51pp FE). Highest-value surviving-mutant targets closed this slice: the per-family idempotency guard
       in DemoPercentilesBackfillHandler, the per-family inner try/catch and the invalidateReadCache() finally
       guard in PercentilesOverTimeRecordingHandler, and ResolveHorizon's WorkItemAge branch.
+      Slice-03 (Throughput PBC): step 03-06 ran a mutant-killing pass but NO SCORE was recorded at the time
+      and slice-03's finalize never ran, so there is no slice-03 figure. Retro-evidence, recorded 2026-07-26
+      during slice-03b close-out: the Stryker configs mutate the whole epic-5427 surface, so the slice-03b
+      runs also covered every slice-03 file (ProcessBehaviorSnapshot, its repository,
+      ProcessBehaviorSeriesQuery, ProcessBehaviorRecordingHandler, ProcessBehaviorSnapshotDto backend;
+      PbcOverTimeWidget.tsx 94.87% and usePbcOverTime.ts 86.96% frontend). One survivor across the slice-03
+      backend files: the DTO's ToString string mutation. So slice-03 code is measured above the gate even
+      though slice-03 itself never published a number.
+      Slice-03b MEASURED 2026-07-26: BE 89.86% (Stryker.NET) + FE 92.76% (Stryker), both >= 80%. PASSED.
+      First pass was BE 88.41%; three survivors were real gaps in the inverted-window guard (an EQUAL bound
+      pair is a legal single-day window, and a LONE bound must not trip the guard - the latter unpinned on
+      the portfolio controller because the lone-bound scenarios were team-only), closed by six scenarios.
+      Frontend gap closed: blanking OVER_TIME_RANGE_EMPTY_COPY survived because the tests compared the
+      resolver's output to the constant, which is self-satisfying; the literal is now pinned.
+      10 frontend survivors judged EQUIVALENT rather than killed - 6 are the cancelled in-flight flag in
+      both hooks (a late write lands under a cache key nothing reads, so no observable difference) and 4 are
+      `series ?? []` in render paths that only run when the chart is not rendered.
+      CAVEAT for every figure above: the per-feature Stryker configs are gitignored and target code by byte
+      offset (backend controllers) / line range (frontend widgets), so they must be re-anchored each slice or
+      the score describes the wrong code. All three were stale at the start of slice-03b close-out.
       Re-measured per-feature on each subsequent slice.
     alerting: []
