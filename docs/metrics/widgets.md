@@ -39,7 +39,7 @@ Widgets are organized into four dashboard categories. Each category groups relat
 |---|---|---|
 | **Flow Overview** | How is my system doing at a glance? | WIP Overview, Blocked Overview, Stale Items Overview, Features Worked On Overview (Teams only), Total Work Item Age, Flow Efficiency, Predictability Score, Cycle Time Percentiles, Work Item Age Percentiles, Started vs. Closed (Total Throughput & Total Arrivals), Feature Size Percentiles (Portfolios only) |
 | **Flow Metrics** | What do detailed flow trends look like? | Cycle Time Scatterplot, Work Item Aging Chart, Cumulative Time per State, Load Balance Matrix, Throughput Run Chart, Simplified CFD, WIP Over Time, Total Work Item Age Over Time |
-| **Predictability** | Can we trust our forecasts? | Predictability Score Details, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
+| **Predictability** | Can we trust our forecasts? | Predictability Score Details, Percentiles Over Time, PBC Over Time, Arrivals Run Chart, Throughput PBC, Arrivals PBC, WIP PBC, Total Work Item Age PBC, Cycle Time PBC, Feature Size PBC (Portfolios only) |
 | **Portfolio & Features** | How do features flow through the system? | Work Distribution, Feature Size (Portfolios only), Estimation vs. Cycle Time |
 
 {: .note}
@@ -644,6 +644,42 @@ The Feature Size PBC only exists for Portfolios.
 - [Deming Alliance](https://demingalliance.org/resources/articles/process-behaviour-charts-an-introduction)
 - [Actionable Agile Metrics for Predictability Volume II](https://leanpub.com/actionableagilemetricsii)
 
+# PBC Over Time
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Throughput |
+| **Affected by Filtering** | No — the chart always shows the full recorded history |
+
+A [Process Behaviour Chart](#process-behaviour-charts) tells you whether a given data point is normal *for your system*. This chart tells you whether your system's idea of "normal" is itself moving: Lighthouse records the average and both natural process limits once per day and plots all three over time.
+
+![PBC Over Time](../assets/features/metrics/pbcOverTime.png)
+
+| Line | Meaning |
+|---|---|
+| **UNPL** | The Upper Natural Process Limit on that day. |
+| **Average** | The average the limits were derived from. |
+| **LNPL** | The Lower Natural Process Limit on that day. |
+
+On the point-in-time Process Behaviour Charts the limits are neutral, dashed reference lines drawn over your measured data. Here the limits *are* the data, so each one is drawn solid and in its own colour.
+
+What the shape tells you:
+
+- **The band widens** — variability is growing. The same process is producing an ever-wider range of outcomes, and forecasts built on it get less useful.
+- **The band narrows** — variability is shrinking and the process is becoming more predictable.
+- **The whole band shifts up or down** — the average level moved. Together with the special-cause signals on the point-in-time chart, this is how you tell whether a change you made actually stuck.
+
+Use the toggle in the widget header to pick the metric family. Lighthouse records natural process limits for **Throughput** today.
+
+{: .important}
+The limits are only as meaningful as the *baseline* they are computed from. Configure it in your Team ([Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)) or Portfolio ([Create/Edit Portfolios](../portfolios/edit.html#process-behaviour-chart-baseline)) settings. Without one, Lighthouse falls back to a rolling window ending today — so the recorded limits move as that window slides, for reasons that have nothing to do with your process. On a fixed baseline, movement in this chart is a real signal.
+
+{: .note}
+Like the other over-time charts, this one builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded. The demo data ships with a backdated history, so it is populated immediately.
+
+## Status Indicator
+This widget has no status indicator. The point-in-time [Process Behaviour Charts](#process-behaviour-charts) carry the special-cause status; this chart shows how the limits behind it have moved.
+
 # Cycle Time Percentiles
 
 |--------------|-------------------------|
@@ -756,6 +792,40 @@ The displayed percentiles summarize historical feature sizes, but the status ind
 
 {: .note}
 If no active features exist, the status defaults to **Sustain**.
+
+# Percentiles Over Time
+
+|--------------|-------------------------|
+| **Applies to** | Teams and Portfolios |
+| **Flow Metric** | Cycle Time, Work Item Age |
+| **Affected by Filtering** | No — the chart always shows the full recorded history |
+
+The percentile widgets tell you where you stand *today*. This chart tells you which way you are moving: Lighthouse records the 50th, 70th, 85th, and 95th percentile once per day and plots each as its own line, so you can see whether your percentiles are tightening, drifting apart, or holding steady.
+
+The lines keep the same red→green ramp as the point-in-time percentile widgets: the 50th percentile is red (least certain), the 95th is green (most certain).
+
+![Percentiles Over Time](../assets/features/metrics/percentilesOverTime.png)
+
+Use the toggle in the widget header to pick what is plotted:
+
+| Selection | What it shows |
+|---|---|
+| **Age** | The Work Item Age percentiles of the items that were in progress on each recorded day. |
+| **30 days** | The Cycle Time percentiles over the trailing 30 days. This is the default. |
+| **60 days** | The Cycle Time percentiles over the trailing 60 days. |
+| **90 days** | The Cycle Time percentiles over the trailing 90 days. |
+
+The three Cycle Time horizons are recorded separately, so switching between them looks at the same days through a shorter or longer lens. The 30-day line reacts quickly to a change, the 90-day line smooths it out — if the short horizon moves and the long one does not, you are looking at something recent.
+
+![Work Item Age Percentiles Over Time](../assets/features/metrics/percentilesOverTimeWorkItemAge.png)
+
+Work Item Age is measured as of the day it was recorded, so it carries no horizon and gets its own tab rather than a set of day options.
+
+{: .note}
+This chart builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance therefore shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded, rather than a fabricated line. The demo data ships with a backdated history, so it is populated immediately.
+
+## Status Indicator
+This widget has no status indicator. It shows a direction of travel rather than a value that is healthy or unhealthy on its own — read it alongside [Cycle Time Percentiles](#cycle-time-percentiles) and [Work Item Age Percentiles](#work-item-age-percentiles), which do carry one.
 
 # Cycle Time Scatterplot
 

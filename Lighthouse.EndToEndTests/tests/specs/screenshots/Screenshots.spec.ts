@@ -23,6 +23,14 @@ import {
 	WorkItemAgePercentilesCard,
 	WorkItemAgingReferenceLineSelector,
 } from "../../models/metrics/MetricsPage";
+import {
+	PBC_LIMIT_LINES,
+	PbcOverTimeWidget,
+} from "../../models/metrics/PbcOverTimeWidget";
+import {
+	PERCENTILE_LINES,
+	PercentilesOverTimeWidget,
+} from "../../models/metrics/PercentilesOverTimeWidget";
 import { WaitStatesEditor } from "../../models/metrics/WaitStatesEditor";
 import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
 import { DeliveryMetricsTab } from "../../models/portfolios/Deliveries/DeliveryMetricsTab";
@@ -526,9 +534,7 @@ testWithDemo(
 		// from the toggle. The previous assertions matched a "Work Item Age <n>%" label that no
 		// longer exists and a cycle-time count that can no longer go to zero.
 		await agingSelector.selectWorkItemAge();
-		await expect
-			.poll(() => agingSelector.isWorkItemAgeSelected())
-			.toBe(true);
+		await expect.poll(() => agingSelector.isWorkItemAgeSelected()).toBe(true);
 		await expect
 			.poll(() => agingSelector.countReferenceLines())
 			.toBeGreaterThan(0);
@@ -543,6 +549,75 @@ testWithDemo(
 		await expect
 			.poll(() => agingSelector.countReferenceLines())
 			.toBeGreaterThan(0);
+	},
+);
+
+// The two over-time Predictability widgets share one theme — "how has this
+// metric been trending, day by day". Demo owners carry a backdated two-week
+// history, so both render a populated chart rather than the forward-only
+// placeholder a fresh instance would show.
+testWithDemo(
+	"@screenshot a flow coach reads the Percentiles Over Time trend for cycle time and work item age, then the dated Throughput process behaviour limits",
+	async ({ page, testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		const predictabilityWidgets = await metricsPage.switchCategory(
+			MetricsCategories.Predictability,
+		);
+
+		const percentilesOverTimeWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.PercentilesOverTime,
+			predictabilityWidgets,
+		);
+		await expect(percentilesOverTimeWidget.Widget).toBeVisible();
+
+		const percentilesOverTime = new PercentilesOverTimeWidget(page);
+		await expect
+			.poll(() => percentilesOverTime.isHorizonSelected(30))
+			.toBe(true);
+		await expect
+			.poll(() => percentilesOverTime.countChartLines())
+			.toBe(PERCENTILE_LINES.length);
+
+		await takeElementScreenshot(
+			percentilesOverTimeWidget.Widget,
+			"features/metrics/percentilesOverTime.png",
+		);
+
+		// The Age tab drops the horizon — work item age is measured as of today —
+		// so it needs its own image rather than reusing the cycle-time one.
+		await percentilesOverTime.selectAge();
+		await expect.poll(() => percentilesOverTime.isAgeSelected()).toBe(true);
+		await expect
+			.poll(() => percentilesOverTime.countChartLines())
+			.toBe(PERCENTILE_LINES.length);
+
+		await takeElementScreenshot(
+			percentilesOverTimeWidget.Widget,
+			"features/metrics/percentilesOverTimeWorkItemAge.png",
+		);
+
+		const pbcOverTimeWidget = await metricsPage.getWidgetByName(
+			MetricsWidgetNames.PbcOverTime,
+			predictabilityWidgets,
+		);
+		await pbcOverTimeWidget.Widget.scrollIntoViewIfNeeded();
+		await expect(pbcOverTimeWidget.Widget).toBeVisible();
+
+		const pbcOverTime = new PbcOverTimeWidget(page);
+		await expect
+			.poll(() => pbcOverTime.isMetricSelected("Throughput"))
+			.toBe(true);
+		await expect
+			.poll(() => pbcOverTime.countChartLines())
+			.toBe(PBC_LIMIT_LINES.length);
+
+		await takeElementScreenshot(
+			pbcOverTimeWidget.Widget,
+			"features/metrics/pbcOverTime.png",
+		);
 	},
 );
 

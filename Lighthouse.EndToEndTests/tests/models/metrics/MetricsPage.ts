@@ -477,6 +477,8 @@ export const MetricsWidgetNames = {
 	TotalWorkItemAgeProcessBehaviourChart:
 		"Total Work Item Age Process Behaviour Chart",
 	PredictabilityScoreDetails: "Predictability Score Details",
+	PercentilesOverTime: "Percentiles Over Time",
+	PbcOverTime: "PBC Over Time",
 	WorkDistributionByFeature: "Work Distribution by Feature",
 	FeatureSize: "Feature Size",
 	EstimationVsCycleTime: "Estimation vs. Cycle Time",
@@ -670,6 +672,8 @@ export class MetricsPage {
 		],
 		[MetricsCategories.Predictability]: [
 			["Predictability Score Details", "predictabilityScoreDetails"],
+			["Percentiles Over Time", "percentilesOverTime"],
+			["PBC Over Time", "pbcOverTime"],
 			["Throughput Process Behaviour Chart", "throughputPbc"],
 			["Arrivals Process Behaviour Chart", "arrivalsPbc"],
 			["Work In Progress Process Behaviour Chart", "wipPbc"],
