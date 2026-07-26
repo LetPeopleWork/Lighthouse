@@ -841,6 +841,17 @@ get re-applied.
 
 ## Helm chart
 
+### 2026-07-26 — `chart/README.md` is helm-docs-GENERATED; hand-editing the version pins drifts the `config-ref` gate
+- **Symptom**: `Helm Chart / validate` failed at "config-ref drift gate" with `config-ref drift: chart/README.md is stale — run helm-docs and commit`, and `publish` was skipped — so the release-cycle chart bump (0.1.6 → 0.1.7) never published. The diff the gate printed was only the two `helm search` / `helm install` lines still reading the OLD chart + app version.
+- **Root cause**: `chart/README.md` is rendered from `chart/README.md.gotmpl`, which templates `{{ .Version }}` / `{{ .AppVersion }}` in **four** places — the two header bullets (lines 7-8) *and* the `helm search` / `helm install --version` lines in the "Install from the published Helm repo" block (lines 19-20). A release-time version bump was applied by hand to the header bullets only, so the CI regeneration (which reads the freshly-bumped `Chart.yaml`) produced a file that differed from the committed one. Grepping the old version string finds all four sites, but only if you grep `chart/` — bumping `Chart.yaml` alone does not update the README.
+- **Fix**: bring the remaining two lines in line with `Chart.yaml`, i.e. produce exactly what helm-docs would render.
+- **Rule going forward**: never hand-edit `chart/README.md` — after bumping `Chart.yaml`'s `version`/`appVersion`, regenerate and commit:
+  ```sh
+  helm-docs --chart-search-root chart --skip-version-footer -s file --ignore-non-descriptions
+  git diff --exit-code -- chart/README.md   # this IS the CI gate; must be clean once committed
+  ```
+  If `helm-docs` isn't installed, `curl -fsSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz helm-docs` gets the exact CI version (`HELM_DOCS_VERSION` in `ci_chart.yml`). The release checklist's chart step is *bump `Chart.yaml` + `values-enterprise.yaml` → regenerate README → grep `docs/` for the old chart/app pair*, in that order.
+
 ### 2026-06-21 — helm-unittest v1.1.x plugin.yaml needs helm v4 (`platformHooks`); fails on helm v3
 - **Symptom**: `Helm Chart / validate` failed at "Install helm-unittest plugin" — `Error: plugin is installed but unusable: ... error unmarshaling JSON: ... json: unknown field "platformHooks"`. `helm lint` (the prior step) had passed, so the chart itself was fine.
 - **Root cause**: the workflow pinned `azure/setup-helm` to install helm **v3.16.3**, but `helm-unittest` **v1.1.x**'s `plugin.yaml` uses the **`platformHooks`** manifest field, which only exists in the helm **v4** plugin schema. helm v3 rejects the unknown field and refuses to load the plugin. The chart was validated locally on helm v4.2.1 (which understands `platformHooks`), so the skew was invisible locally.

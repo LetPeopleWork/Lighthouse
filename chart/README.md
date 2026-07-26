@@ -16,8 +16,8 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.6 / APP 26.7.11.4
-helm install l8e letpeoplework/lighthouse --version 0.1.6 -f values-enterprise.yaml
+helm search repo lighthouse          # shows CHART 0.1.7 / APP 26.7.26.8
+helm install l8e letpeoplework/lighthouse --version 0.1.7 -f values-enterprise.yaml
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,
