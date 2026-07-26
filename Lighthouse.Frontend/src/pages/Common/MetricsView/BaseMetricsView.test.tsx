@@ -3931,7 +3931,10 @@ describe("BaseMetricsView component", () => {
 				).toHaveTextContent(/WIP/i);
 				expect(
 					screen.getByTestId("widget-info-link-wipOverview"),
-				).toHaveAttribute("href", expect.stringContaining("widgets.html#"));
+				).toHaveAttribute(
+					"href",
+					expect.stringContaining("flow-overview.html#"),
+				);
 			});
 		});
 	});
@@ -3966,7 +3969,9 @@ describe("BaseMetricsView component", () => {
 					screen.getByTestId("widget-info-link-workItemAgePercentiles"),
 				).toHaveAttribute(
 					"href",
-					expect.stringContaining("widgets.html#work-item-age-percentiles"),
+					expect.stringContaining(
+						"flow-overview.html#work-item-age-percentiles",
+					),
 				);
 				expect(
 					screen.getByTestId("widget-view-data-workItemAgePercentiles"),

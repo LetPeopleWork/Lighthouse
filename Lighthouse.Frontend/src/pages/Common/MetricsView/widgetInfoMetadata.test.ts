@@ -5,7 +5,7 @@ import {
 	widgetInfoMetadata,
 } from "./widgetInfoMetadata";
 
-const DOCS_BASE = "https://docs.lighthouse.letpeople.work/metrics/widgets.html";
+const DOCS_BASE = "https://docs.lighthouse.letpeople.work/metrics";
 
 describe("widgetInfoMetadata", () => {
 	it("provides an entry for every widget that buildWidgetNodes produces", () => {
@@ -79,7 +79,9 @@ describe("widgetInfoMetadata", () => {
 		const info = getWidgetInfo("stateTimeCumulative");
 		expect(info).toBeDefined();
 		expect(info?.description.length).toBeGreaterThan(0);
-		expect(info?.learnMoreUrl).toBe(`${DOCS_BASE}#cumulative-time-per-state`);
+		expect(info?.learnMoreUrl).toBe(
+			`${DOCS_BASE}/flow-metrics.html#cumulative-time-per-state`,
+		);
 		expect(info?.statusGuidance?.sustain).toBe(
 			"No single state holds 40% or more of the total time.",
 		);

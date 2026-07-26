@@ -205,7 +205,7 @@ Enable **Configure Blocked Items** to define what "blocked" means for your proce
 We do not recommend identifying blocked work by *state* alone. Tags/labels work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
 
 ### Blocked Staleness Threshold
-Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/widgets.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one.
+Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/flow-metrics.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one.
 
 ## Process Behaviour Chart Baseline
 Lighthouse can show **Process Behaviour Charts (PBC)** in the Metrics view. To enable them, configure a **baseline start** and **baseline end** date.
@@ -215,7 +215,7 @@ If no baseline is set, Lighthouse will **not** show Process Behaviour Charts.
 
 The baseline is used as the reference period to calculate the average and natural process limits and to highlight special-cause signals.
 
-See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts) for examples and screenshots.
+See [Process Behaviour Charts](../metrics/predictability.html#process-behaviour-charts) for examples and screenshots.
 
 ## Wait States
 As with teams, you can mark which *Doing* states represent waiting rather than active work to drive the **Flow Efficiency** metric at portfolio level. The setup is identical — see [Wait States](../teams/edit.html#wait-states) on the team configuration page for details.

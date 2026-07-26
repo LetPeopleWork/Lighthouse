@@ -20,7 +20,7 @@ On top of that definition you get:
 
 The Lighthouse **CLI and MCP clients** now expose the blocked-over-time trend as well, so scripts and AI agents can query how blockage is evolving (and read each in-progress item's `blockedSince`).
 
-Configure it under [Blocked Overview](https://docs.lighthouse.letpeople.work/metrics/widgets.html#blocked-overview) and read about the [Blocked Over Time](https://docs.lighthouse.letpeople.work/metrics/widgets.html#blocked-over-time) chart.
+Configure it under [Blocked Overview](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#blocked-overview) and read about the [Blocked Over Time](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#blocked-over-time) chart.
 
 ## Bugfixes and Improvements
 - **Delivery forecasts for large deliveries now show correct dates** — a large delivery could show wrong forecast dates while smaller ones were fine; the forecast now derives its dates from the latest-completing feature. Reported by Chris Graves.
@@ -78,7 +78,7 @@ The same named window also re-scopes the **Cumulative Time per State** chart, so
 
 ![Named Cycle Time on the Scatterplot](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleScatterNamedCycleTime.png)
 
-Define them under [Named Cycle Times](https://docs.lighthouse.letpeople.work/metrics/widgets.html#named-cycle-times-premium) and read how scoping works in [Scope to a Named Cycle Time](https://docs.lighthouse.letpeople.work/metrics/widgets.html#scope-to-a-named-cycle-time-premium).
+Define them under [Named Cycle Times](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#named-cycle-times-premium) and read how scoping works in [Scope to a Named Cycle Time](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#scope-to-a-named-cycle-time-premium).
 
 ## How Long Has In-Progress Work Been Ageing? — Work Item Age Percentiles
 Cycle Time percentiles tell you how long *finished* work took. They say nothing about the items still on your board today. This release adds a **Work Item Age Percentiles** overview widget that shows the 50th, 70th, 85th, and 95th percentiles of **Work Item Age** across the items **currently in progress** — a live snapshot of how long your work has been ageing right now, at both Team and Portfolio scope.
@@ -87,7 +87,7 @@ A matching selector on the **Work Item Aging** chart lets you draw either *Cycle
 
 ![Work Item Age Percentiles](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/workItemAgePercentilesCard.png)
 
-See the [Work Item Age Percentiles widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#work-item-age-percentiles).
+See the [Work Item Age Percentiles widget](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#work-item-age-percentiles).
 
 ## Bugfixes and Improvements
 - **Cumulative Time per State now reads in days** — the chart no longer blows up into unwieldy hour or minute figures; its display unit is capped at days so the bars stay readable at a glance. Reported by Gonzalo Mendez.
@@ -126,7 +126,7 @@ It surfaces as a dedicated *Flow Overview* tile and as a headline figure on the 
 
 ![Flow Efficiency on the Cumulative Time per State chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/stateTimeCumulativeWaitStates.png)
 
-Configure it under [Wait States](https://docs.lighthouse.letpeople.work/teams/edit.html#wait-states) and read the metric details on the [Flow Efficiency widget](https://docs.lighthouse.letpeople.work/metrics/widgets.html#flow-efficiency).
+Configure it under [Wait States](https://docs.lighthouse.letpeople.work/teams/edit.html#wait-states) and read the metric details on the [Flow Efficiency widget](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#flow-efficiency).
 
 ## Forecasts That Respect Your Non-Working Days
 Blackout periods already kept non-working days out of your throughput. Now they also shape the **dates forecasts land on**: a forecast of *N working days* steps its predicted calendar date over any known upcoming blackout days — weekends, holidays, planned shutdowns — instead of pretending work happens on days nobody is working. This applies across the *When* forecast, feature and delivery dates, and the value written back to your work tracker.
@@ -943,7 +943,7 @@ Special thanks to everyone who contributed feedback for this release:
 ## Process Behaviour Charts
 Process Behaviour Charts (PBCs) help you understand whether changes in your system are likely just normal variability, or whether you are seeing a special cause (something worth investigating). Lighthouse now supports PBCs for both Teams and Portfolios, for Throughput, Cycle Time, Work In Progress, and Work Item Age.
 
-In order to get the chart, you must configure a *baseline* for your PBC. You do this in the [Team Settings](https://docs.lighthouse.letpeople.work/teams/edit.html#process-behaviour-chart-baseline) or [Portfolio Settings](https://docs.lighthouse.letpeople.work/portfolios/edit.html#process-behaviour-chart-baseline). Once you did this, the charts will appear in your [Metrics tab](https://docs.lighthouse.letpeople.work/metrics/widgets.html#process-behaviour-charts):
+In order to get the chart, you must configure a *baseline* for your PBC. You do this in the [Team Settings](https://docs.lighthouse.letpeople.work/teams/edit.html#process-behaviour-chart-baseline) or [Portfolio Settings](https://docs.lighthouse.letpeople.work/portfolios/edit.html#process-behaviour-chart-baseline). Once you did this, the charts will appear in your [Metrics tab](https://docs.lighthouse.letpeople.work/metrics/predictability.html#process-behaviour-charts):
 
 ![Cycle Time Process Behaviour Chart](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/cycleTimePbc.png)
 

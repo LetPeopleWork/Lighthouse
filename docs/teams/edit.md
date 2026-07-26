@@ -244,7 +244,7 @@ Enable **Configure Blocked Items** to define what "blocked" means for your proce
 We do not recommend identifying blocked work by *state* alone. Tags/labels work better from a Flow perspective. [More Details here](https://www.prokanban.org/blog/whats-wrong-with-having-a-blocked-column).
 
 ### Blocked Staleness Threshold
-Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/widgets.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one.
+Optionally enable **Set Blocked Items Staleness Threshold** and set a number of days. This calibrates the [Blocked Over Time](../metrics/flow-metrics.html#blocked-over-time) status indicator: it turns amber once the oldest blocked item ages past 75% of the threshold and red once it reaches the threshold. Without a threshold configured, that widget prompts you to set one.
 
 ## Process Behaviour Chart Baseline
 Lighthouse can show **Process Behaviour Charts (PBC)** in the Metrics view. To enable them, configure a **baseline start** and **baseline end** date.
@@ -254,14 +254,14 @@ If no baseline is set, Lighthouse will **not** show Process Behaviour Charts.
 
 The baseline is used as the reference period to calculate the average and natural process limits and to highlight special-cause signals.
 
-See [Process Behaviour Charts](../metrics/widgets.html#process-behaviour-charts) for examples and screenshots.
+See [Process Behaviour Charts](../metrics/predictability.html#process-behaviour-charts) for examples and screenshots.
 
 ## Wait States
 Not all *Doing* time is active work. Some states represent waiting — an item queued behind a person, sitting in a review column, or parked pending a hand-off. The **Wait States** setting lets you mark which of your states count as waiting rather than working.
 
 ![Wait States Editor](../assets/features/metrics/waitStatesEditor.png)
 
-Tick *Configure Wait States* and add the states (or [state mappings](#state-mappings)) that represent idle time. Lighthouse uses this to calculate **Flow Efficiency** — the share of total time work spends actively progressing versus waiting — which surfaces as a dedicated overview tile and as a figure with highlighted wait bars on the [Cumulative Time per State](../metrics/widgets.html#cumulative-time-per-state) chart.
+Tick *Configure Wait States* and add the states (or [state mappings](#state-mappings)) that represent idle time. Lighthouse uses this to calculate **Flow Efficiency** — the share of total time work spends actively progressing versus waiting — which surfaces as a dedicated overview tile and as a figure with highlighted wait bars on the [Cumulative Time per State](../metrics/flow-metrics.html#cumulative-time-per-state) chart.
 
 {: .note}
 Wait states are purely a *metrics* concept — they describe how to interpret time already spent in your existing states. They do not change forecasting, throughput, or which items are considered in progress.
@@ -274,7 +274,7 @@ Alongside the built-in Cycle Time, you can define **named cycle times** — addi
 
 ![Cycle Times Editor](../assets/features/metrics/cycleTimesEditor.png)
 
-Add a definition with a name, a **start** state and an **end** state (both pick from your configured states or [state mappings](#state-mappings), in workflow order). The end state must come after the start state. Each named cycle time then appears as a choice on the [Cycle Time Scatterplot](../metrics/widgets.html#named-cycle-times-premium) and the [Cumulative Time per State](../metrics/widgets.html#scope-to-a-named-cycle-time-premium) chart.
+Add a definition with a name, a **start** state and an **end** state (both pick from your configured states or [state mappings](#state-mappings), in workflow order). The end state must come after the start state. Each named cycle time then appears as a choice on the [Cycle Time Scatterplot](../metrics/flow-metrics.html#named-cycle-times-premium) and the [Cumulative Time per State](../metrics/flow-metrics.html#scope-to-a-named-cycle-time-premium) chart.
 
 {: .note}
 If you later remove or reorder a state that a definition references, the definition is kept but marked invalid (shown disabled with a hint) until you fix its boundaries — your other definitions and charts are unaffected.
