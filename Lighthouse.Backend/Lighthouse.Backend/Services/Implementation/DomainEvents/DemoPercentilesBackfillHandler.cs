@@ -13,12 +13,15 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
     /// <see cref="PercentilesOverTimeRecordingHandler"/> is strictly forward-only (records "today"
     /// only), so a fresh demo has no past days to plot. This handler backfills the window once.
     ///
-    /// Covers both metric families: cycle-time across the 30/60/90 horizons, and work item age at
-    /// the <see cref="PercentilesOverTimeSnapshot.NoHorizon"/> sentinel (age is always "as of today",
-    /// so it has no horizon dimension). Idempotency is evaluated PER FAMILY, so a demo owner that an
-    /// earlier release backfilled with cycle-time only still gains its age history on the next
-    /// refresh. Gated to demo connections (SynthesizeStateJourneyForDemo = true), so it never touches
-    /// a real customer's data — real tenants stay forward-only (DDD-4).
+    /// Backdates BOTH over-time families, over one shared window so the widgets never disagree
+    /// about their date range on a demo screenshot. Percentiles: cycle-time across the 30/60/90
+    /// horizons, and work item age at the <see cref="PercentilesOverTimeSnapshot.NoHorizon"/>
+    /// sentinel (age is always "as of today", so it has no horizon dimension). Process behaviour:
+    /// the natural process limits of <see cref="ProcessBehaviorMetricType.Throughput"/>, which have
+    /// no horizon dimension at all. Idempotency is evaluated PER FAMILY, so a demo owner that an
+    /// earlier release backfilled with percentiles only still gains its throughput limits on the
+    /// next refresh. Gated to demo connections (SynthesizeStateJourneyForDemo = true), so it never
+    /// touches a real customer's data — real tenants stay forward-only (DDD-4).
     /// </summary>
     public class DemoPercentilesBackfillHandler
         : IDomainEventHandler<TeamDataRefreshed>,
@@ -34,6 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IRepository<WorkTrackingSystemConnection> connectionRepository;
         private readonly IPercentilesOverTimeSnapshotRepository snapshotRepository;
+        private readonly IProcessBehaviorSnapshotRepository processBehaviorSnapshotRepository;
         private readonly ILogger<DemoPercentilesBackfillHandler> logger;
 
         public DemoPercentilesBackfillHandler(
@@ -41,12 +45,14 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<Portfolio> portfolioRepository,
             IRepository<WorkTrackingSystemConnection> connectionRepository,
             IPercentilesOverTimeSnapshotRepository snapshotRepository,
+            IProcessBehaviorSnapshotRepository processBehaviorSnapshotRepository,
             ILogger<DemoPercentilesBackfillHandler> logger)
         {
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
             this.connectionRepository = connectionRepository;
             this.snapshotRepository = snapshotRepository;
+            this.processBehaviorSnapshotRepository = processBehaviorSnapshotRepository;
             this.logger = logger;
         }
 
@@ -88,8 +94,87 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
             BackfillFamily(ownerId, ownerType, MetricType.CycleTime, CycleTimeHorizons, todayDate);
             BackfillFamily(ownerId, ownerType, MetricType.WorkItemAge, WorkItemAgeHorizons, todayDate);
+            BackfillProcessBehaviorFamily(ownerId, ownerType, ProcessBehaviorMetricType.Throughput, todayDate);
 
             await snapshotRepository.Save();
+            await processBehaviorSnapshotRepository.Save();
+        }
+
+        private void BackfillProcessBehaviorFamily(
+            int ownerId, OwnerType ownerType, ProcessBehaviorMetricType metricType, DateOnly todayDate)
+        {
+            // Same per-family idempotency rule as the percentile families, evaluated against the
+            // process-behaviour store: an owner an earlier release backfilled for percentiles only
+            // must STILL gain its natural-process-limit history. An owner-scoped guard would make
+            // every newly added family a permanent no-op wherever an older one already ran.
+            var alreadyBackfilled = processBehaviorSnapshotRepository
+                .GetAllByPredicate(snapshot =>
+                    snapshot.OwnerId == ownerId
+                    && snapshot.OwnerType == ownerType
+                    && snapshot.MetricType == metricType
+                    && snapshot.RecordedAt < todayDate)
+                .Any();
+
+            if (alreadyBackfilled)
+            {
+                return;
+            }
+
+            // Stryker disable once all: diagnostic log text is not behaviour
+            logger.LogInformation(
+                "Backfilling demo {MetricType} process behaviour history for {OwnerType} {OwnerId}",
+                metricType, ownerType, ownerId);
+
+            for (var daysAgo = HistoryWindowDays; daysAgo >= 1; daysAgo--)
+            {
+                var recordedAt = todayDate.AddDays(-daysAgo);
+                var dayIndex = HistoryWindowDays - daysAgo;
+
+                var limits = SynthesizeNaturalProcessLimits(dayIndex);
+                UpsertProcessBehaviorSnapshot(ownerId, ownerType, metricType, recordedAt, limits);
+            }
+        }
+
+        private static (int Lnpl, int Average, int Unpl) SynthesizeNaturalProcessLimits(int dayIndex)
+        {
+            // Same deterministic gentle wave as the percentile synthesis, so the two over-time
+            // widgets on a demo screenshot move together. The limits are derived from the average by
+            // a fixed spread, which makes LNPL < Average < UNPL structurally true for every day —
+            // an inverted or degenerate (flat) triple would render a visibly broken chart.
+            const int LimitSpread = 7;
+
+            var average = 12 + (dayIndex % 5);
+            return (average - LimitSpread, average, average + LimitSpread);
+        }
+
+        private void UpsertProcessBehaviorSnapshot(
+            int ownerId, OwnerType ownerType, ProcessBehaviorMetricType metricType, DateOnly recordedAt,
+            (int Lnpl, int Average, int Unpl) limits)
+        {
+            var existing = processBehaviorSnapshotRepository.GetByPredicate(snapshot =>
+                snapshot.OwnerId == ownerId
+                && snapshot.OwnerType == ownerType
+                && snapshot.MetricType == metricType
+                && snapshot.RecordedAt == recordedAt);
+
+            if (existing != null)
+            {
+                existing.Lnpl = limits.Lnpl;
+                existing.Average = limits.Average;
+                existing.Unpl = limits.Unpl;
+                return;
+            }
+
+            processBehaviorSnapshotRepository.Add(new ProcessBehaviorSnapshot
+            {
+                OwnerId = ownerId,
+                OwnerType = ownerType,
+                MetricType = metricType,
+                RecordedAt = recordedAt,
+                Lnpl = limits.Lnpl,
+                Average = limits.Average,
+                Unpl = limits.Unpl,
+            });
         }
 
         private void BackfillFamily(

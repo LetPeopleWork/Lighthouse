@@ -52,11 +52,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var snapshotRepo = new PercentilesOverTimeSnapshotRepository(
                 context, Mock.Of<ILogger<PercentilesOverTimeSnapshotRepository>>());
 
+            var processBehaviorRepo = new ProcessBehaviorSnapshotRepository(
+                context, Mock.Of<ILogger<ProcessBehaviorSnapshotRepository>>());
+
             return new DemoPercentilesBackfillHandler(
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 connectionRepositoryMock.Object,
                 snapshotRepo,
+                processBehaviorRepo,
                 Mock.Of<ILogger<DemoPercentilesBackfillHandler>>());
         }
 
@@ -367,6 +371,186 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Assert.That(cycleTimeRows, Has.Count.EqualTo(1), "the already-backfilled cycle-time family must not be re-run");
                 Assert.That(ageRows, Has.Count.EqualTo(14), "the missing age family is backfilled, and the second refresh adds nothing on top");
             }
+        }
+
+        // Slice 03: the demo backfill covers BOTH over-time families. Throughput natural process
+        // limits are backdated across the SAME 14-day window the percentile families use, so the two
+        // widgets captured on one demo screenshot never disagree about their date range.
+        [Test]
+        public async Task HandleTeamRefreshed_DemoOwner_BackdatesThroughputProcessBehaviorLimitsOverTheSameWindow()
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var throughputRows = context.ProcessBehaviorSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .ToList();
+            var throughputDates = throughputRows.Select(s => s.RecordedAt).Distinct().OrderBy(d => d).ToList();
+            var percentileDates = context.PercentilesOverTimeSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .Select(s => s.RecordedAt)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(throughputRows, Has.Count.EqualTo(14), "one NPL row per day of the window; limits have no horizon dimension");
+                Assert.That(throughputRows.All(s => s.MetricType == ProcessBehaviorMetricType.Throughput), Is.True, "Throughput is the only process-behaviour family so far");
+                Assert.That(throughputRows.All(s => s.RecordedAt < todayDate), Is.True, "backdated rows only; today stays forward-only");
+                Assert.That(throughputDates, Is.EqualTo(percentileDates), "both over-time families span an identically dated window");
+            }
+        }
+
+        [Test]
+        public async Task HandlePortfolioRefreshed_DemoOwner_BackdatesThroughputProcessBehaviorLimits()
+        {
+            const int portfolioId = 12;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangePortfolio(portfolioId, connectionId);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolioId), CancellationToken.None);
+
+            var throughputRows = context.ProcessBehaviorSnapshots
+                .Where(s => s.OwnerId == portfolioId && s.OwnerType == OwnerType.Portfolio)
+                .ToList();
+
+            Assert.That(throughputRows, Has.Count.EqualTo(14), "portfolios get the same 14-day throughput NPL history as teams");
+        }
+
+        // A degenerate (flat) or inverted triple would render a visibly broken chart in the docs
+        // screenshots, so EVERY backdated day must satisfy LNPL <= Average <= UNPL.
+        [Test]
+        public async Task HandleTeamRefreshed_BackdatedThroughputLimits_AreInternallyConsistentOnEveryDay([Range(1, 14)] int daysAgo)
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var recordedAt = DateOnly.FromDateTime(DateTime.Today).AddDays(-daysAgo);
+            var row = context.ProcessBehaviorSnapshots.Single(s =>
+                s.OwnerId == teamId
+                && s.OwnerType == OwnerType.Team
+                && s.MetricType == ProcessBehaviorMetricType.Throughput
+                && s.RecordedAt == recordedAt);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(row.Lnpl, Is.LessThanOrEqualTo(row.Average), "LNPL <= Average");
+                Assert.That(row.Average, Is.LessThanOrEqualTo(row.Unpl), "Average <= UNPL");
+                Assert.That(row.Lnpl, Is.LessThan(row.Unpl), "a degenerate triple would draw the three lines on top of each other");
+                Assert.That(row.Average, Is.Positive, "a zero average is the NotReady sentinel, never a plausible demo throughput");
+            }
+        }
+
+        public enum DemoBackfillSeed
+        {
+            Nothing,
+            PercentilesOnly,
+            PercentilesAndThroughput,
+        }
+
+        // The idempotency guard is PER METRIC FAMILY, never per owner. An owner-scoped guard would
+        // make every newly added family a permanent no-op on every environment an earlier release
+        // already backfilled for the percentile families — exactly the bug slice-02 fixed. The
+        // handler is invoked twice in each case, so a passing row count also proves idempotency.
+        [TestCase(DemoBackfillSeed.Nothing, true, 14)]
+        [TestCase(DemoBackfillSeed.PercentilesOnly, true, 14)]
+        [TestCase(DemoBackfillSeed.PercentilesAndThroughput, true, 1)]
+        [TestCase(DemoBackfillSeed.Nothing, false, 0)]
+        public async Task HandleTeamRefreshed_ThroughputBackfillGuardIsScopedToItsOwnFamily(
+            DemoBackfillSeed seed, bool isDemo, int expectedThroughputRows)
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            ArrangeConnection(connectionId, isDemo);
+            ArrangeTeam(teamId, connectionId);
+
+            await SeedBackdatedHistoryAsync(teamId, seed);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var throughputRows = context.ProcessBehaviorSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .ToList();
+
+            Assert.That(throughputRows, Has.Count.EqualTo(expectedThroughputRows));
+        }
+
+        private async Task SeedBackdatedHistoryAsync(int teamId, DemoBackfillSeed seed)
+        {
+            if (seed == DemoBackfillSeed.Nothing)
+            {
+                return;
+            }
+
+            var backdated = DateOnly.FromDateTime(DateTime.Today.AddDays(-3));
+
+            using var seedContext = CreateContext();
+
+            seedContext.PercentilesOverTimeSnapshots.Add(new PercentilesOverTimeSnapshot
+            {
+                OwnerId = teamId,
+                OwnerType = OwnerType.Team,
+                MetricType = MetricType.CycleTime,
+                Horizon = 30,
+                RecordedAt = backdated,
+                P50 = 5,
+                P70 = 7,
+                P85 = 9,
+                P95 = 11,
+            });
+
+            seedContext.PercentilesOverTimeSnapshots.Add(new PercentilesOverTimeSnapshot
+            {
+                OwnerId = teamId,
+                OwnerType = OwnerType.Team,
+                MetricType = MetricType.WorkItemAge,
+                Horizon = PercentilesOverTimeSnapshot.NoHorizon,
+                RecordedAt = backdated,
+                P50 = 5,
+                P70 = 7,
+                P85 = 9,
+                P95 = 11,
+            });
+
+            if (seed == DemoBackfillSeed.PercentilesAndThroughput)
+            {
+                seedContext.ProcessBehaviorSnapshots.Add(new ProcessBehaviorSnapshot
+                {
+                    OwnerId = teamId,
+                    OwnerType = OwnerType.Team,
+                    MetricType = ProcessBehaviorMetricType.Throughput,
+                    RecordedAt = backdated,
+                    Unpl = 20,
+                    Average = 12,
+                    Lnpl = 4,
+                });
+            }
+
+            await seedContext.SaveChangesAsync();
         }
     }
 }
