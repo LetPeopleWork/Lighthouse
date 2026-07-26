@@ -267,9 +267,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             foreach (var row in rows)
             {
                 var expected = DistinctChartFor(row.MetricType);
-                Assert.That(row.Unpl, Is.EqualTo(expected.UpperNaturalProcessLimit), $"{row.MetricType} must carry its own upper limit, not a sibling family's");
-                Assert.That(row.Average, Is.EqualTo(expected.Average), $"{row.MetricType} must carry its own centre line");
-                Assert.That(row.Lnpl, Is.EqualTo(expected.LowerNaturalProcessLimit), $"{row.MetricType} must carry its own lower limit");
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(row.Unpl, Is.EqualTo(expected.UpperNaturalProcessLimit), $"{row.MetricType} must carry its own upper limit, not a sibling family's");
+                    Assert.That(row.Average, Is.EqualTo(expected.Average), $"{row.MetricType} must carry its own centre line");
+                    Assert.That(row.Lnpl, Is.EqualTo(expected.LowerNaturalProcessLimit), $"{row.MetricType} must carry its own lower limit");
+                }
             }
         }
 
