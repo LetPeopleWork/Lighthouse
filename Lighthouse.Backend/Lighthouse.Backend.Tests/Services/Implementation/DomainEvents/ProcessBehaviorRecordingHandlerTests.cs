@@ -432,6 +432,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(rows, Is.Zero, $"a {status} chart carries zeroed limits — recording them would fabricate a process");
         }
 
+        // The Status guard and the collapsed-band gate below are INDEPENDENT, and this pins that they
+        // stay so. Every not-ready path in production zeroes the triple — BaseMetricsService stamps
+        // Average = UNPL = LNPL = 0 alongside BaselineInvalid — so on reachable data the band gate
+        // would catch a not-ready chart even if the Status guard stopped returning. That overlap is
+        // what makes the Status check look redundant, and it is why a mutation removing its `return`
+        // survives against production-shaped inputs. Status is authoritative regardless of the
+        // numbers: a chart reporting "not ready" while carrying a live band must still write nothing,
+        // or a future builder that stamps a not-ready status beside computed values would silently
+        // start recording limits the owner was told were not ready.
+        [TestCase(BaselineStatus.BaselineMissing)]
+        [TestCase(BaselineStatus.BaselineInvalid)]
+        [TestCase(BaselineStatus.InsufficientData)]
+        public async Task TeamDataRefreshed_NotReadyChartCarryingALiveBand_WritesNoRow(BaselineStatus status)
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamThroughputChart(team, ReadyChart(unpl: 14, average: 9, lnpl: 4) with { Status = status });
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await context.ProcessBehaviorSnapshots.CountAsync();
+            Assert.That(rows, Is.Zero, $"Status is authoritative: a {status} chart writes nothing even when its band is live");
+        }
+
         // -----------------------------------------------------------------
         // HONESTY GATE, part 2 (US-05 AC4 / D6) — Ready is not the same as "has a
         // process". A valid baseline window that happens to contain no closed items
