@@ -1,0 +1,111 @@
+{
+  "schema_version": "3.0",
+  "feature_id": "epic-5427-percentiles-over-time",
+  "events": [
+    {
+      "sid": "02-01",
+      "p": "RED",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:17:54Z"
+    },
+    {
+      "sid": "02-01",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:21:57Z"
+    },
+    {
+      "sid": "02-01",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:25:07Z"
+    },
+    {
+      "sid": "02-02",
+      "p": "RED",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:34:06Z"
+    },
+    {
+      "sid": "02-02",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:36:44Z"
+    },
+    {
+      "sid": "02-02",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:39:46Z"
+    },
+    {
+      "sid": "02-03",
+      "p": "RED",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:44:54Z"
+    },
+    {
+      "sid": "02-03",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:48:46Z"
+    },
+    {
+      "sid": "02-03",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:49:03Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "RED",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:53:02Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:56:46Z"
+    },
+    {
+      "sid": "02-04",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T06:57:00Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "RED",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T07:03:08Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "GREEN",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T07:09:22Z"
+    },
+    {
+      "sid": "02-05",
+      "p": "COMMIT",
+      "s": "EXECUTED",
+      "d": "PASS",
+      "t": "2026-07-25T07:14:16Z"
+    }
+  ]
+}

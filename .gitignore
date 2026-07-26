@@ -462,6 +462,8 @@ test-results/
 # - .develop-progress.json: resume token, session-only
 # - deliver/execution-log.json: DES audit log, harness-protected
 **/.develop-progress.json
+# Per-slice copies of the same resume token (e.g. .develop-progress-slice-02.json) — same rationale
+**/.develop-progress-slice-*.json
 **/deliver/execution-log.json
 social-posts/.slack-cache.json
 
