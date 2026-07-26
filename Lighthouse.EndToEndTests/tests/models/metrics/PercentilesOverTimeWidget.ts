@@ -16,6 +16,14 @@ export const PERCENTILES_OVER_TIME_EMPTY_COPY =
 	"builds forward from today — no snapshots recorded yet";
 
 /**
+ * The other honest empty state (slice-03b, D10/DDD-13): the owner may well have
+ * history, just not inside the selected window. Shown when the range ends before
+ * today — verbatim, so a copy change here fails loudly.
+ */
+export const PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY =
+	"no data recorded in the selected range";
+
+/**
  * Drives the Percentiles Over Time widget (Predictability category, team +
  * portfolio). The widget renders an Age / CT-30 / CT-60 / CT-90 toggle row
  * (CT-30 pressed by default) above a MUI-X LineChart of four dated percentile
@@ -100,6 +108,22 @@ export class PercentilesOverTimeWidget {
 
 	async countAxisTickLabels(): Promise<number> {
 		return this.axisTickLabels.count();
+	}
+
+	/**
+	 * How many days the chart actually plots, read off the rendered geometry of the
+	 * first percentile line. MUI-X thins axis TICK LABELS to fit, so counting ticks
+	 * would hide a narrowing that genuinely dropped days; the path's vertex count
+	 * cannot. One command per plotted point: an `M` for the first, then an `L` per
+	 * subsequent point when the curve is linear or a `C` when it is interpolated
+	 * (MUI-X defaults to a monotone curve, so in practice these are `C`s).
+	 */
+	async countPlottedDays(): Promise<number> {
+		if ((await this.chartLines.count()) === 0) {
+			return 0;
+		}
+		const path = await this.chartLines.first().getAttribute("d");
+		return path === null ? 0 : (path.match(/[MLC]/g) ?? []).length;
 	}
 
 	/**

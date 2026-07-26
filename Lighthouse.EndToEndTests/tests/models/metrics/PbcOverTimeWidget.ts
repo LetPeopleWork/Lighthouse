@@ -23,6 +23,14 @@ export const PBC_OVER_TIME_EMPTY_COPY =
 	"builds forward from today — no snapshots recorded yet";
 
 /**
+ * The other honest empty state (slice-03b, D10/DDD-13): the owner may well have
+ * history, just not inside the selected window. Shown when the range ends before
+ * today — verbatim, so a copy change here fails loudly.
+ */
+export const PBC_OVER_TIME_RANGE_EMPTY_COPY =
+	"no data recorded in the selected range";
+
+/**
  * Drives the PBC Over Time widget (Predictability category, team + portfolio).
  * The widget renders a metric-family toggle row (Throughput pressed by default)
  * above a MUI-X LineChart of the dated UNPL / Average / LNPL triple the
@@ -89,6 +97,26 @@ export class PbcOverTimeWidget {
 
 	async countAxisTickLabels(): Promise<number> {
 		return this.axisTickLabels.count();
+	}
+
+	/**
+	 * How many days the chart actually plots, read off the rendered geometry of one
+	 * limit line. These lines draw no marks (showMark: false), and MUI-X thins axis
+	 * tick labels to fit, so neither marks nor ticks can be counted — the vertex
+	 * count of the SVG path is the honest signal. One command per plotted point: an
+	 * `M` for the first, then an `L` per subsequent point when the curve is linear or
+	 * a `C` when it is interpolated (MUI-X defaults to a monotone curve, so in
+	 * practice these are `C`s).
+	 */
+	async countPlottedDays(line: PbcLimitLine = "average"): Promise<number> {
+		if ((await this.limitLinePath(line).count()) === 0) {
+			return 0;
+		}
+		const path = await this.limitLinePath(line).getAttribute("d");
+		if (path === null) {
+			return 0;
+		}
+		return (path.match(/[MLC]/g) ?? []).length;
 	}
 
 	/**

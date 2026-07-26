@@ -6,12 +6,24 @@ import {
 import { createTeam } from "../../helpers/api/teams";
 import { createAzureDevOpsConnection } from "../../helpers/api/workTrackingSystemConnections";
 import { generateRandomName } from "../../helpers/names";
-import { MetricsCategories } from "../../models/metrics/MetricsPage";
+import {
+	MetricsCategories,
+	MetricsDateRange,
+} from "../../models/metrics/MetricsPage";
 import {
 	PBC_LIMIT_LINES,
 	PBC_OVER_TIME_EMPTY_COPY,
+	PBC_OVER_TIME_RANGE_EMPTY_COPY,
 	PbcOverTimeWidget,
 } from "../../models/metrics/PbcOverTimeWidget";
+
+const PBC_OVER_TIME_ENDPOINT = "/metrics/process-behavior-over-time?";
+
+function daysBeforeToday(days: number): Date {
+	const date = new Date();
+	date.setDate(date.getDate() - days);
+	return date;
+}
 
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith + portfolio Project Apollo deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
@@ -110,4 +122,77 @@ test("@edge @US-04 a fresh team's PBC Over Time widget shows the honest empty st
 	await expect(widget.emptyState).toHaveText(PBC_OVER_TIME_EMPTY_COPY);
 	await expect.poll(() => widget.countChartLines()).toBe(0);
 	await expect(widget.legend).toHaveCount(0);
+});
+
+// Slice 03b (US-06): the dashboard date pickers now apply to this widget. The demo
+// backfill covers [today-14, today-1], so a ~7-day window inside it plots strictly
+// fewer days than the default 30-day window, and a window that ends before the
+// backfill begins is honestly empty rather than "nothing recorded yet".
+test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fewer recorded days", async ({
+	page,
+	request,
+	overviewPage,
+}) => {
+	await loadDemoScenario(request, DEMO_SCENARIO_ID);
+	await waitForBackgroundUpdates(request);
+
+	await page.goto("/");
+
+	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
+	const metrics = await teamDetail.goToMetrics();
+	await metrics.switchCategory(MetricsCategories.Predictability);
+
+	const widget = new PbcOverTimeWidget(page);
+	await expect(widget.Widget).toBeVisible();
+	await expect(widget.emptyState).toHaveCount(0);
+	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
+
+	const daysOnDefaultRange = await widget.countPlottedDays();
+	expect(daysOnDefaultRange).toBeGreaterThan(1);
+
+	const dateRange = new MetricsDateRange(page);
+	await dateRange.applyAndWaitFor(
+		daysBeforeToday(7),
+		daysBeforeToday(1),
+		PBC_OVER_TIME_ENDPOINT,
+	);
+	await metrics.switchCategory(MetricsCategories.Predictability);
+	await expect(widget.Widget).toBeVisible();
+
+	// Fewer recorded days inside the narrower window — the pickers actually apply.
+	await expect
+		.poll(() => widget.countPlottedDays())
+		.toBeLessThan(daysOnDefaultRange);
+	await expect(widget.emptyState).toHaveCount(0);
+});
+
+test("@edge @US-06 a range that ends before recording began says so, instead of blaming forward-only recording", async ({
+	page,
+	request,
+	overviewPage,
+}) => {
+	await loadDemoScenario(request, DEMO_SCENARIO_ID);
+	await waitForBackgroundUpdates(request);
+
+	await page.goto("/");
+
+	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
+	const metrics = await teamDetail.goToMetrics();
+	await metrics.switchCategory(MetricsCategories.Predictability);
+
+	const widget = new PbcOverTimeWidget(page);
+	await expect(widget.Widget).toBeVisible();
+
+	// Entirely before the demo backfill's earliest day AND ending in the past, so
+	// the honest reading is "nothing in this range" — this owner does have history.
+	const dateRange = new MetricsDateRange(page);
+	await dateRange.applyAndWaitFor(
+		daysBeforeToday(60),
+		daysBeforeToday(45),
+		PBC_OVER_TIME_ENDPOINT,
+	);
+	await metrics.switchCategory(MetricsCategories.Predictability);
+
+	await expect(widget.emptyState).toHaveText(PBC_OVER_TIME_RANGE_EMPTY_COPY);
+	await expect.poll(() => widget.countChartLines()).toBe(0);
 });

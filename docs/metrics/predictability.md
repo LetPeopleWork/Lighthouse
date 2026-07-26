@@ -54,7 +54,7 @@ The goal is not to be at 100%. In fact, that's far from realistic. We believe an
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Cycle Time, Work Item Age |
-| **Affected by Filtering** | No — the date pickers do not apply to this chart; it always plots every recorded day |
+| **Affected by Filtering** | Yes — the chart plots the recorded days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. |
 
 The percentile widgets tell you where you stand *today*. This chart tells you which way you are moving: Lighthouse records the 50th, 70th, 85th, and 95th percentile once per day and plots each as its own line, so you can see whether your percentiles are tightening, drifting apart, or holding steady.
 
@@ -88,7 +88,7 @@ This widget has no status indicator. It shows a direction of travel rather than 
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
 | **Flow Metric** | Throughput |
-| **Affected by Filtering** | No — the date pickers do not apply to this chart; it always plots every recorded day |
+| **Affected by Filtering** | Yes — the chart plots the recorded days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. |
 
 A [Process Behaviour Chart](#process-behaviour-charts) tells you whether a given data point is normal *for your system*. This chart tells you whether your system's idea of "normal" is itself moving: Lighthouse records the average and both natural process limits once per day and plots all three over time.
 

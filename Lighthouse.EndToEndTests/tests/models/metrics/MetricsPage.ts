@@ -364,20 +364,38 @@ export class MetricsDateRange {
 	 * left-over response for the default (today-anchored) window.
 	 */
 	async apply(startDate: Date, endDate: Date): Promise<void> {
+		await this.applyAndWaitFor(
+			startDate,
+			endDate,
+			"/metrics/workItemAgePercentiles?",
+		);
+	}
+
+	/**
+	 * Same as {@link apply}, but waits on a caller-chosen endpoint. `apply` keys off
+	 * the Work Item Age percentile fetch, which only fires on the Flow Overview
+	 * category — a widget on another category needs its own request to wait for, or
+	 * the wait would time out on a range that was in fact applied correctly.
+	 */
+	async applyAndWaitFor(
+		startDate: Date,
+		endDate: Date,
+		endpointFragment: string,
+	): Promise<void> {
 		const endParam = MetricsDateRange.toParam(endDate);
 		const url = new URL(this.page.url());
 		url.searchParams.set("startDate", MetricsDateRange.toParam(startDate));
 		url.searchParams.set("endDate", endParam);
 
-		const percentilesRequested = this.page.waitForResponse(
+		const requested = this.page.waitForResponse(
 			(response) =>
-				response.url().includes("/metrics/workItemAgePercentiles?") &&
+				response.url().includes(endpointFragment) &&
 				response.url().includes(`endDate=${endParam}`),
 			{ timeout: 30_000 },
 		);
 
 		await this.page.goto(url.toString());
-		await percentilesRequested;
+		await requested;
 	}
 }
 
