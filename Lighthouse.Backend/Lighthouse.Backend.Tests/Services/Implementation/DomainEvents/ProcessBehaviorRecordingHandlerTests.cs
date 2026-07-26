@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
@@ -33,6 +34,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         // falls back to a plain 30-day window ending today.
         private const int FixedDatesTeamLookbackDays = 30;
 
+        // The families each scope records. Feature Size is portfolio-only (D8) — there is no
+        // team-side Feature Size read method to call, so the asymmetry is structural, not a filter.
+        private static readonly ProcessBehaviorMetricType[] TeamFamilies =
+        [
+            ProcessBehaviorMetricType.Throughput,
+            ProcessBehaviorMetricType.WorkItemAge,
+            ProcessBehaviorMetricType.Wip,
+            ProcessBehaviorMetricType.CycleTime,
+            ProcessBehaviorMetricType.Arrivals,
+        ];
+
+        private static readonly ProcessBehaviorMetricType[] PortfolioFamilies =
+        [
+            ProcessBehaviorMetricType.Throughput,
+            ProcessBehaviorMetricType.WorkItemAge,
+            ProcessBehaviorMetricType.Wip,
+            ProcessBehaviorMetricType.CycleTime,
+            ProcessBehaviorMetricType.Arrivals,
+            ProcessBehaviorMetricType.FeatureSize,
+        ];
+
+        private static readonly ProcessBehaviorMetricType[] AllFamilies = PortfolioFamilies;
+
+        // Family 2 of 5 — deliberately neither first nor last, so isolation is proven for a family
+        // with staged siblings both before and after it.
+        private const ProcessBehaviorMetricType ThrowingFamily = ProcessBehaviorMetricType.WorkItemAge;
+
+        private const ProcessBehaviorMetricType CollapsedFamily = ProcessBehaviorMetricType.Wip;
+
+        private static ProcessBehaviourChart NoBaselineChart()
+        {
+            return ProcessBehaviourChart.NotReady(BaselineStatus.BaselineMissing, "no baseline stubbed for this family");
+        }
+
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> cryptoServiceMock = null!;
         private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
@@ -58,6 +93,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             handlerLoggerMock = new Mock<ILogger<ProcessBehaviorRecordingHandler>>();
+
+            // An unstubbed family reads as "no baseline" rather than null: a test that stubs one
+            // family is making a claim about that family, not provoking a NullReferenceException in
+            // the families it deliberately left alone.
+            teamMetricsServiceMock.SetReturnsDefault(NoBaselineChart());
+            portfolioMetricsServiceMock.SetReturnsDefault(NoBaselineChart());
         }
 
         private static DateTime TodayDate => DateTime.Today;
@@ -124,31 +165,139 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             };
         }
 
+        private static DateTime TeamWindowStart => TodayDate.AddDays(-DefaultTeamLookbackDays);
+
+        private static DateTime PortfolioWindowStart => TodayDate.AddDays(-PortfolioLookbackDays);
+
+        // Chart setup is parameterised by family rather than duplicated eleven times: the family ->
+        // read-method mapping is the only knowledge that varies, so it lives in exactly one place.
+        // The Feature Size arm exists only on the portfolio side — that asymmetry IS the D8 rule.
+        private static Expression<Func<ITeamMetricsService, ProcessBehaviourChart>> TeamChartCall(
+            Team team, ProcessBehaviorMetricType family, DateTime startDate, DateTime endDate)
+        {
+            return family switch
+            {
+                ProcessBehaviorMetricType.Throughput => x => x.GetThroughputProcessBehaviourChart(team, startDate, endDate),
+                ProcessBehaviorMetricType.WorkItemAge => x => x.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate),
+                ProcessBehaviorMetricType.Wip => x => x.GetWipProcessBehaviourChart(team, startDate, endDate),
+                ProcessBehaviorMetricType.CycleTime => x => x.GetCycleTimeProcessBehaviourChart(team, startDate, endDate),
+                ProcessBehaviorMetricType.Arrivals => x => x.GetArrivalsProcessBehaviourChart(team, startDate, endDate),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(family), family, "no team-side read method exists for this family — Feature Size is portfolio-only (D8)"),
+            };
+        }
+
+        private static Expression<Func<IPortfolioMetricsService, ProcessBehaviourChart>> PortfolioChartCall(
+            Portfolio portfolio, ProcessBehaviorMetricType family, DateTime startDate, DateTime endDate)
+        {
+            return family switch
+            {
+                ProcessBehaviorMetricType.Throughput => x => x.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate),
+                ProcessBehaviorMetricType.WorkItemAge => x => x.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate),
+                ProcessBehaviorMetricType.Wip => x => x.GetWipProcessBehaviourChart(portfolio, startDate, endDate),
+                ProcessBehaviorMetricType.CycleTime => x => x.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate),
+                ProcessBehaviorMetricType.Arrivals => x => x.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate),
+                ProcessBehaviorMetricType.FeatureSize => x => x.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate),
+                _ => throw new ArgumentOutOfRangeException(nameof(family), family, "unmapped process-behaviour family"),
+            };
+        }
+
+        // Every family gets a visibly different triple keyed off its own persisted ordinal, so a row
+        // that copied a sibling family's numbers is detectable rather than merely counted.
+        private static ProcessBehaviourChart DistinctChartFor(ProcessBehaviorMetricType family)
+        {
+            var band = ((int)family + 1) * 10;
+            return ReadyChart(unpl: band + 3, average: band + 2, lnpl: band + 1);
+        }
+
+        private static ProcessBehaviourChart RerunChartFor(ProcessBehaviorMetricType family)
+        {
+            var band = ((int)family + 1) * 100;
+            return ReadyChart(unpl: band + 3, average: band + 2, lnpl: band + 1);
+        }
+
+        private void SetupTeamChart(Team team, ProcessBehaviorMetricType family, ProcessBehaviourChart chart)
+        {
+            teamMetricsServiceMock.Setup(TeamChartCall(team, family, TeamWindowStart, TodayDate)).Returns(chart);
+        }
+
+        private void SetupTeamChartThrows(Team team, ProcessBehaviorMetricType family, Exception exception)
+        {
+            teamMetricsServiceMock.Setup(TeamChartCall(team, family, TeamWindowStart, TodayDate)).Throws(exception);
+        }
+
+        private void SetupPortfolioChart(Portfolio portfolio, ProcessBehaviorMetricType family, ProcessBehaviourChart chart)
+        {
+            portfolioMetricsServiceMock.Setup(PortfolioChartCall(portfolio, family, PortfolioWindowStart, TodayDate)).Returns(chart);
+        }
+
+        private void SetupTeamChartsForAllFamilies(Team team)
+        {
+            foreach (var family in TeamFamilies)
+            {
+                SetupTeamChart(team, family, DistinctChartFor(family));
+            }
+        }
+
+        private void SetupPortfolioChartsForAllFamilies(Portfolio portfolio)
+        {
+            foreach (var family in PortfolioFamilies)
+            {
+                SetupPortfolioChart(portfolio, family, DistinctChartFor(family));
+            }
+        }
+
         private void SetupTeamThroughputChart(Team team, ProcessBehaviourChart chart)
         {
-            teamMetricsServiceMock
-                .Setup(x => x.GetThroughputProcessBehaviourChart(
-                    team, TodayDate.AddDays(-DefaultTeamLookbackDays), TodayDate))
-                .Returns(chart);
+            SetupTeamChart(team, ProcessBehaviorMetricType.Throughput, chart);
         }
 
         private void SetupPortfolioThroughputChart(Portfolio portfolio, ProcessBehaviourChart chart)
         {
-            portfolioMetricsServiceMock
-                .Setup(x => x.GetThroughputProcessBehaviourChart(
-                    portfolio, TodayDate.AddDays(-PortfolioLookbackDays), TodayDate))
-                .Returns(chart);
+            SetupPortfolioChart(portfolio, ProcessBehaviorMetricType.Throughput, chart);
         }
 
+        private static ProcessBehaviorMetricType[] TeamFamiliesExcept(ProcessBehaviorMetricType excluded)
+        {
+            return TeamFamilies.Where(family => family != excluded).ToArray();
+        }
+
+        private static void AssertEachRowCarriesItsOwnFamilysTriple(List<ProcessBehaviorSnapshot> rows)
+        {
+            foreach (var row in rows)
+            {
+                var expected = DistinctChartFor(row.MetricType);
+                Assert.That(row.Unpl, Is.EqualTo(expected.UpperNaturalProcessLimit), $"{row.MetricType} must carry its own upper limit, not a sibling family's");
+                Assert.That(row.Average, Is.EqualTo(expected.Average), $"{row.MetricType} must carry its own centre line");
+                Assert.That(row.Lnpl, Is.EqualTo(expected.LowerNaturalProcessLimit), $"{row.MetricType} must carry its own lower limit");
+            }
+        }
+
+        // MetricType is passed explicitly at every call site: a family-blind lookup could otherwise
+        // satisfy a per-family assertion by accident.
         private static Task<ProcessBehaviorSnapshot?> FindSnapshot(
-            LighthouseAppContext context, int ownerId, OwnerType ownerType, DateOnly recordedAt)
+            LighthouseAppContext context,
+            int ownerId,
+            OwnerType ownerType,
+            ProcessBehaviorMetricType metricType,
+            DateOnly recordedAt)
         {
             return context.ProcessBehaviorSnapshots
                 .SingleOrDefaultAsync(s =>
                     s.OwnerId == ownerId &&
                     s.OwnerType == ownerType &&
-                    s.MetricType == ProcessBehaviorMetricType.Throughput &&
+                    s.MetricType == metricType &&
                     s.RecordedAt == recordedAt);
+        }
+
+        private static async Task<List<ProcessBehaviorSnapshot>> RowsFor(
+            LighthouseAppContext context, int ownerId, OwnerType ownerType)
+        {
+            var recordedAt = Today;
+
+            return await context.ProcessBehaviorSnapshots
+                .Where(s => s.OwnerId == ownerId && s.OwnerType == ownerType && s.RecordedAt == recordedAt)
+                .ToListAsync();
         }
 
         private static string? MetricFamilyOf(object state)
@@ -161,8 +310,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             return properties.FirstOrDefault(p => p.Key == "MetricFamily").Value as string;
         }
 
-        private void VerifyRecordingFailureLoggedWithProcessBehaviorFamily(string because)
+        private void VerifyRecordingFailureLoggedWithProcessBehaviorFamily(string because, Func<Times>? times = null)
         {
+            Func<Times> expectedTimes = times ?? Times.AtLeastOnce;
+
             handlerLoggerMock.Verify(
                 x => x.Log(
                     LogLevel.Error,
@@ -170,7 +321,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                     It.Is<It.IsAnyType>((state, _) => MetricFamilyOf(state) == ProcessBehaviorFamily),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce,
+                expectedTimes,
                 because);
         }
 
@@ -204,7 +355,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshot, Is.Not.Null, "the same pipeline that records percentiles must record the NPL triple");
@@ -229,7 +380,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
 
-            var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, Today);
+            var snapshot = await FindSnapshot(context, portfolio.Id, OwnerType.Portfolio, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshot, Is.Not.Null);
@@ -339,7 +490,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshot, Is.Not.Null, "only a fully collapsed band is the empty state — a partially zeroed band is real data");
@@ -367,7 +518,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
             var rows = await context.ProcessBehaviorSnapshots.CountAsync();
-            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(rows, Is.EqualTo(1), "a collapsed re-read adds no row either");
@@ -396,7 +547,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
             var rows = await context.ProcessBehaviorSnapshots.CountAsync();
-            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(rows, Is.EqualTo(1), "exactly one row per (owner, metric, day) after a same-day re-refresh");
@@ -435,8 +586,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var ownRow = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
-            var foreignRow = await FindSnapshot(context, foreignOwnerId, OwnerType.Team, Today);
+            var ownRow = await FindSnapshot(context, team.Id, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
+            var foreignRow = await FindSnapshot(context, foreignOwnerId, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(ownRow, Is.Not.Null, "the recorder must add its own row, not reuse a foreign owner's row");
@@ -702,7 +853,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
 
-            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, ProcessBehaviorMetricType.Throughput, Today);
             using (Assert.EnterMultipleScope())
             {
                 teamMetricsServiceMock.Verify(
@@ -710,8 +861,190 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                         team, TodayDate.AddDays(-FixedDatesTeamLookbackDays), TodayDate),
                     Times.Once,
                     "a fixed past window is not an as-of-today window — the recorder uses the 30-day fallback range");
+                teamMetricsServiceMock.Verify(
+                    x => x.GetWipProcessBehaviourChart(
+                        team, TodayDate.AddDays(-FixedDatesTeamLookbackDays), TodayDate),
+                    Times.Once,
+                    "every family shares the one window LookbackDaysFor computed — a family reading its own range would drift off the recorded day");
                 Assert.That(snapshot, Is.Not.Null, "the fallback window still yields a recorded day");
                 Assert.That(snapshot!.Average, Is.EqualTo(5));
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Persistence contract (ADR-106 / DDD-1) — MetricType is stored as the integer
+        // ordinal, so the enum is APPEND-ONLY. Pinning every ordinal makes a future
+        // alphabetisation or mid-list insertion fail loudly here instead of silently
+        // re-mapping every already-shipped snapshot row to a different family.
+        // -----------------------------------------------------------------
+        [TestCase(ProcessBehaviorMetricType.Throughput, 0)]
+        [TestCase(ProcessBehaviorMetricType.WorkItemAge, 1)]
+        [TestCase(ProcessBehaviorMetricType.Wip, 2)]
+        [TestCase(ProcessBehaviorMetricType.CycleTime, 3)]
+        [TestCase(ProcessBehaviorMetricType.Arrivals, 4)]
+        [TestCase(ProcessBehaviorMetricType.FeatureSize, 5)]
+        public void ProcessBehaviorMetricType_PersistedOrdinal_IsPinned(ProcessBehaviorMetricType family, int persistedOrdinal)
+        {
+            Assert.That(
+                (int)family,
+                Is.EqualTo(persistedOrdinal),
+                $"{family} is persisted as {persistedOrdinal} — renumbering it re-labels every shipped snapshot row as a different family");
+        }
+
+        [Test]
+        public void ProcessBehaviorMetricType_EveryDeclaredMember_HasAPinnedOrdinal()
+        {
+            Assert.That(
+                Enum.GetValues<ProcessBehaviorMetricType>(),
+                Is.EquivalentTo(AllFamilies),
+                "a newly appended family must also be added to the ordinal-pinning cases above, or its persisted ordinal ships unguarded");
+        }
+
+        // -----------------------------------------------------------------
+        // Scenario 13 (US-05 AC1) — one shared pipeline, one row per family, each row
+        // carrying its OWN triple. The assertion compares the exact family SET and each
+        // family's own numbers, so five copies of Throughput's reading would satisfy a
+        // row count but fail here.
+        // Scenario 14 (D8 / US-05 AC2) — Feature Size is portfolio-only, enforced
+        // structurally: there is no team-side Feature Size read method to call, so the
+        // team SET can never contain it.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_ReadyBaselines_RecordsOneDistinguishableRowPerTeamFamily()
+        {
+            var team = CreateTeam(42);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamChartsForAllFamilies(team);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await RowsFor(context, team.Id, OwnerType.Team);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    rows.Select(r => r.MetricType),
+                    Is.EquivalentTo(TeamFamilies),
+                    "the team recorder reads all five team families — Feature Size has no team-side read method, so it is structurally absent");
+                AssertEachRowCarriesItsOwnFamilysTriple(rows);
+            }
+        }
+
+        [Test]
+        public async Task PortfolioFeaturesRefreshed_ReadyBaselines_RecordsOneDistinguishableRowPerPortfolioFamily()
+        {
+            var portfolio = CreatePortfolio(7);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            SetupPortfolioChartsForAllFamilies(portfolio);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new PortfolioFeaturesRefreshed(portfolio.Id), CancellationToken.None);
+
+            var rows = await RowsFor(context, portfolio.Id, OwnerType.Portfolio);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    rows.Select(r => r.MetricType),
+                    Is.EquivalentTo(PortfolioFamilies),
+                    "the portfolio recorder reads the five shared families PLUS portfolio-only Feature Size");
+                AssertEachRowCarriesItsOwnFamilysTriple(rows);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Scenario 13 (DDD-6) — per-family failure isolation, observable for the first
+        // time now that more than one family is recorded: the inner per-family try exists
+        // precisely so a failing family cannot discard the rows its siblings staged.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_OneFamilyThrows_StillRecordsTheOtherFamilies_AndLogsExactlyOneFailure()
+        {
+            var team = CreateTeam(42);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamChartsForAllFamilies(team);
+            SetupTeamChartThrows(team, ThrowingFamily, new InvalidOperationException("work item age boom"));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await RowsFor(context, team.Id, OwnerType.Team);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    rows.Select(r => r.MetricType),
+                    Is.EquivalentTo(TeamFamiliesExcept(ThrowingFamily)),
+                    "one failing family must not discard the four rows the healthy families staged");
+                VerifyRecordingFailureLoggedWithProcessBehaviorFamily(
+                    "exactly one family failed, so exactly one failure is reported under the ProcessBehavior family",
+                    Times.Once);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Honesty gate, per family (D6) — a collapsed band in one family says nothing
+        // about the others, so the gate suppresses that family's row alone.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_OneFamilyReadyButFullyCollapsed_RecordsOnlyTheFamiliesWithAProcess()
+        {
+            var team = CreateTeam(42);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamChartsForAllFamilies(team);
+            SetupTeamChart(team, CollapsedFamily, ReadyChart(unpl: 0, average: 0, lnpl: 0));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await RowsFor(context, team.Id, OwnerType.Team);
+            Assert.That(
+                rows.Select(r => r.MetricType),
+                Is.EquivalentTo(TeamFamiliesExcept(CollapsedFamily)),
+                "the ready-but-zero gate is per family — a collapsed band must not suppress the families that do have a process");
+        }
+
+        // -----------------------------------------------------------------
+        // Idempotency across families (DDD-5) — one row per
+        // (OwnerId, OwnerType, MetricType, RecordedAt), so a second same-day run updates
+        // each family's own row instead of adding six duplicates.
+        // -----------------------------------------------------------------
+        [Test]
+        public async Task TeamDataRefreshed_SameDayReRefresh_UpsertsEveryFamilyInPlace()
+        {
+            var team = CreateTeam(42);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamChartsForAllFamilies(team);
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            foreach (var family in TeamFamilies)
+            {
+                SetupTeamChart(team, family, RerunChartFor(family));
+            }
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var rows = await RowsFor(context, team.Id, OwnerType.Team);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rows, Has.Count.EqualTo(TeamFamilies.Length), "a same-day re-refresh upserts in place — no family gains a duplicate row");
+                foreach (var row in rows)
+                {
+                    Assert.That(
+                        row.Unpl,
+                        Is.EqualTo(RerunChartFor(row.MetricType).UpperNaturalProcessLimit),
+                        $"{row.MetricType}'s surviving row carries the latest reading");
+                }
             }
         }
     }

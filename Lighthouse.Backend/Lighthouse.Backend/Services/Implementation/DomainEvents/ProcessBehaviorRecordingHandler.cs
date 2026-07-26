@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 domainEvent.TeamId,
                 OwnerType.Team,
                 LookbackDaysFor(team),
-                (startDate, endDate) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate),
+                TeamReaders(team),
                 () => teamMetricsService.InvalidateTeamMetrics(team));
         }
 
@@ -72,8 +72,37 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 domainEvent.PortfolioId,
                 OwnerType.Portfolio,
                 PortfolioLookbackDays,
-                (startDate, endDate) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate),
+                PortfolioReaders(portfolio),
                 () => portfolioMetricsService.InvalidatePortfolioMetrics(portfolio));
+        }
+
+        // Five families for a team, six for a portfolio. The asymmetry is structural, not a filter:
+        // Feature Size is a portfolio concept (D8) and there is no team-side read method to call.
+        // Dropping a line here is a silent capability loss, so the recorder tests assert the exact
+        // family SET each scope produces.
+        private (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[] TeamReaders(Team team)
+        {
+            return
+            [
+                (ProcessBehaviorMetricType.Throughput, (startDate, endDate) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)),
+                (ProcessBehaviorMetricType.WorkItemAge, (startDate, endDate) => teamMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(team, startDate, endDate)),
+                (ProcessBehaviorMetricType.Wip, (startDate, endDate) => teamMetricsService.GetWipProcessBehaviourChart(team, startDate, endDate)),
+                (ProcessBehaviorMetricType.CycleTime, (startDate, endDate) => teamMetricsService.GetCycleTimeProcessBehaviourChart(team, startDate, endDate)),
+                (ProcessBehaviorMetricType.Arrivals, (startDate, endDate) => teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate)),
+            ];
+        }
+
+        private (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[] PortfolioReaders(Portfolio portfolio)
+        {
+            return
+            [
+                (ProcessBehaviorMetricType.Throughput, (startDate, endDate) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate)),
+                (ProcessBehaviorMetricType.WorkItemAge, (startDate, endDate) => portfolioMetricsService.GetTotalWorkItemAgeProcessBehaviourChart(portfolio, startDate, endDate)),
+                (ProcessBehaviorMetricType.Wip, (startDate, endDate) => portfolioMetricsService.GetWipProcessBehaviourChart(portfolio, startDate, endDate)),
+                (ProcessBehaviorMetricType.CycleTime, (startDate, endDate) => portfolioMetricsService.GetCycleTimeProcessBehaviourChart(portfolio, startDate, endDate)),
+                (ProcessBehaviorMetricType.Arrivals, (startDate, endDate) => portfolioMetricsService.GetArrivalsProcessBehaviourChart(portfolio, startDate, endDate)),
+                (ProcessBehaviorMetricType.FeatureSize, (startDate, endDate) => portfolioMetricsService.GetFeatureSizeProcessBehaviourChart(portfolio, startDate, endDate)),
+            ];
         }
 
         // The day grain is an as-of-today window that mirrors the point-in-time throughputPbc widget,
@@ -95,21 +124,13 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             int ownerId,
             OwnerType ownerType,
             int lookbackDays,
-            Func<DateTime, DateTime, ProcessBehaviourChart> readThroughputChart,
+            (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[] readers,
             Action invalidateReadCache)
         {
             try
             {
                 var endDate = DateTime.Today;
                 var startDate = endDate.AddDays(-lookbackDays);
-
-                // One entry per metric type today; slice 04 appends the remaining five. The loop and its
-                // per-type inner try exist now so that a later type failing cannot discard the rows an
-                // earlier type already staged — retrofitting the seam means re-touching a shipped handler.
-                var readers = new (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[]
-                {
-                    (ProcessBehaviorMetricType.Throughput, readThroughputChart),
-                };
 
                 foreach (var reader in readers)
                 {
