@@ -1,0 +1,207 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
+
+namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+{
+    public class ProcessBehaviorRecordingHandler
+        : IDomainEventHandler<TeamDataRefreshed>,
+          IDomainEventHandler<PortfolioFeaturesRefreshed>
+    {
+        private const string MetricFamily = "ProcessBehavior";
+
+        // PortfolioMetricsView hard-codes defaultDateRange={90}.
+        private const int PortfolioLookbackDays = 90;
+
+        // TeamMetricsView falls back to a 30-day range when the team pins fixed throughput dates,
+        // because a fixed past window is not an as-of-today window.
+        private const int FixedDatesTeamLookbackDays = 30;
+
+        private readonly ITeamMetricsService teamMetricsService;
+        private readonly IPortfolioMetricsService portfolioMetricsService;
+        private readonly IRepository<Team> teamRepository;
+        private readonly IRepository<Portfolio> portfolioRepository;
+        private readonly IProcessBehaviorSnapshotRepository snapshotRepository;
+        private readonly ILogger<ProcessBehaviorRecordingHandler> logger;
+
+        public ProcessBehaviorRecordingHandler(
+            ITeamMetricsService teamMetricsService,
+            IPortfolioMetricsService portfolioMetricsService,
+            IRepository<Team> teamRepository,
+            IRepository<Portfolio> portfolioRepository,
+            IProcessBehaviorSnapshotRepository snapshotRepository,
+            ILogger<ProcessBehaviorRecordingHandler> logger)
+        {
+            this.teamMetricsService = teamMetricsService;
+            this.portfolioMetricsService = portfolioMetricsService;
+            this.teamRepository = teamRepository;
+            this.portfolioRepository = portfolioRepository;
+            this.snapshotRepository = snapshotRepository;
+            this.logger = logger;
+        }
+
+        public async Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)
+        {
+            var team = teamRepository.GetById(domainEvent.TeamId);
+            if (team == null)
+            {
+                return;
+            }
+
+            await RecordAsync(
+                domainEvent.TeamId,
+                OwnerType.Team,
+                LookbackDaysFor(team),
+                (startDate, endDate) => teamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate),
+                () => teamMetricsService.InvalidateTeamMetrics(team));
+        }
+
+        public async Task HandleAsync(PortfolioFeaturesRefreshed domainEvent, CancellationToken cancellationToken)
+        {
+            var portfolio = portfolioRepository.GetById(domainEvent.PortfolioId);
+            if (portfolio == null)
+            {
+                return;
+            }
+
+            await RecordAsync(
+                domainEvent.PortfolioId,
+                OwnerType.Portfolio,
+                PortfolioLookbackDays,
+                (startDate, endDate) => portfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate),
+                () => portfolioMetricsService.InvalidatePortfolioMetrics(portfolio));
+        }
+
+        // The day grain is an as-of-today window that mirrors the point-in-time throughputPbc widget,
+        // so the recorded triple equals what the user sees today: BaseMetricsView asks for
+        // [today - defaultDateRange, today], and TeamMetricsView derives that range from the span of
+        // the team's own throughput history window (its fixed-dates branch falls back to 30 days).
+        private static int LookbackDaysFor(Team team)
+        {
+            if (team.UseFixedDatesForThroughput)
+            {
+                return FixedDatesTeamLookbackDays;
+            }
+
+            var throughputSettings = team.GetThroughputSettings();
+            return (int)(throughputSettings.EndDate - throughputSettings.StartDate).TotalDays;
+        }
+
+        private async Task RecordAsync(
+            int ownerId,
+            OwnerType ownerType,
+            int lookbackDays,
+            Func<DateTime, DateTime, ProcessBehaviourChart> readThroughputChart,
+            Action invalidateReadCache)
+        {
+            try
+            {
+                var endDate = DateTime.Today;
+                var startDate = endDate.AddDays(-lookbackDays);
+
+                // One entry per metric type today; slice 04 appends the remaining five. The loop and its
+                // per-type inner try exist now so that a later type failing cannot discard the rows an
+                // earlier type already staged — retrofitting the seam means re-touching a shipped handler.
+                var readers = new (ProcessBehaviorMetricType MetricType, Func<DateTime, DateTime, ProcessBehaviourChart> ReadChart)[]
+                {
+                    (ProcessBehaviorMetricType.Throughput, readThroughputChart),
+                };
+
+                foreach (var reader in readers)
+                {
+                    RecordMetricType(ownerId, ownerType, reader.MetricType, startDate, endDate, reader.ReadChart);
+                }
+
+                await snapshotRepository.Save();
+            }
+            catch (Exception exception)
+            {
+                LogRecordingFailure(exception, ownerType, ownerId);
+            }
+            finally
+            {
+                // Reading the point-in-time chart above warms the shared metrics cache under the same
+                // (owner, window) key the widget reads. Recording runs on the refresh event, which can
+                // fire on partially-seeded data, so leaving that entry behind would serve the UI a stale
+                // snapshot instead of a value computed on the settled data.
+                invalidateReadCache();
+            }
+        }
+
+        private void RecordMetricType(
+            int ownerId,
+            OwnerType ownerType,
+            ProcessBehaviorMetricType metricType,
+            DateTime startDate,
+            DateTime endDate,
+            Func<DateTime, DateTime, ProcessBehaviourChart> readChart)
+        {
+            try
+            {
+                var chart = readChart(startDate, endDate);
+
+                // Honesty gate: ProcessBehaviourChart.NotReady returns Average = UNPL = LNPL = 0.
+                // Persisting that triple would draw three flat lines pinned at zero — a process the
+                // owner never had. An absent row is the honest empty state.
+                if (chart.Status != BaselineStatus.Ready)
+                {
+                    return;
+                }
+
+                UpsertSnapshot(ownerId, ownerType, metricType, DateOnly.FromDateTime(endDate), chart);
+            }
+            catch (Exception exception)
+            {
+                LogRecordingFailure(exception, ownerType, ownerId);
+            }
+        }
+
+        private void UpsertSnapshot(
+            int ownerId,
+            OwnerType ownerType,
+            ProcessBehaviorMetricType metricType,
+            DateOnly recordedAt,
+            ProcessBehaviourChart chart)
+        {
+            var existing = snapshotRepository.GetByPredicate(
+                s => s.OwnerId == ownerId &&
+                     s.OwnerType == ownerType &&
+                     s.MetricType == metricType &&
+                     s.RecordedAt == recordedAt);
+
+            if (existing != null)
+            {
+                existing.Unpl = chart.UpperNaturalProcessLimit;
+                existing.Average = chart.Average;
+                existing.Lnpl = chart.LowerNaturalProcessLimit;
+            }
+            else
+            {
+                snapshotRepository.Add(new ProcessBehaviorSnapshot
+                {
+                    OwnerId = ownerId,
+                    OwnerType = ownerType,
+                    MetricType = metricType,
+                    RecordedAt = recordedAt,
+                    Unpl = chart.UpperNaturalProcessLimit,
+                    Average = chart.Average,
+                    Lnpl = chart.LowerNaturalProcessLimit,
+                });
+            }
+        }
+
+        private void LogRecordingFailure(Exception exception, OwnerType ownerType, int ownerId)
+        {
+            logger.LogError(
+                exception,
+                "Process behaviour snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})",
+                ownerType,
+                ownerId,
+                MetricFamily);
+        }
+    }
+}

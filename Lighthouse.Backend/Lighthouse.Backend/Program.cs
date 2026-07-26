@@ -1062,6 +1062,8 @@ namespace Lighthouse.Backend
              builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, PercentilesOverTimeRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PercentilesOverTimeRecordingHandler>();
+             builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, ProcessBehaviorRecordingHandler>();
+             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, ProcessBehaviorRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoBlockedHistoryBackfillHandler>();
              builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, DemoBlockedHistoryBackfillHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, DemoPercentilesBackfillHandler>();
