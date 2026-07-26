@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	ApiServiceContext,
@@ -9,8 +9,8 @@ import EditTeamPage from "./EditTeam";
 
 const mockNavigate = vi.fn();
 let mockParams: { id?: string } = { id: undefined };
-vi.mock("react-router-dom", async () => {
-	const actual = await vi.importActual("react-router-dom");
+vi.mock("react-router", async () => {
+	const actual = await vi.importActual("react-router");
 	return {
 		...actual,
 		useNavigate: () => mockNavigate,

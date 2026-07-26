@@ -5,7 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useRbac } from "../../../hooks/useRbac";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IOAuthHealthDto } from "../../../services/Api/OAuthService";

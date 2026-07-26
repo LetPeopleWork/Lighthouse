@@ -1,7 +1,7 @@
 import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router";
 import CreateConnectionWizard from "../../../components/Common/Connection/CreateConnectionWizard";
 import ModifyConnectionSettings from "../../../components/Common/Connection/ModifyConnectionSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";

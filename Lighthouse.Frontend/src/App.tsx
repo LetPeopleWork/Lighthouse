@@ -11,7 +11,7 @@ import {
 	BrowserRouter as Router,
 	Routes,
 	useParams,
-} from "react-router-dom";
+} from "react-router";
 import BlockedPage from "./components/App/Auth/BlockedPage";
 import LoginPage from "./components/App/Auth/LoginPage";
 import MisconfiguredPage from "./components/App/Auth/MisconfiguredPage";

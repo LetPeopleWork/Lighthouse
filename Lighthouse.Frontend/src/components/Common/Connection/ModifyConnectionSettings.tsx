@@ -13,7 +13,7 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";

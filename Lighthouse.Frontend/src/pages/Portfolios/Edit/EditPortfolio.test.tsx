@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import type { MockedFunction } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
@@ -12,8 +12,8 @@ import EditPortfolio from "./EditPortfolio";
 // Mock the router navigation
 const mockNavigate = vi.fn();
 let mockParams: { id?: string } = { id: undefined };
-vi.mock("react-router-dom", async () => {
-	const actual = await vi.importActual("react-router-dom");
+vi.mock("react-router", async () => {
+	const actual = await vi.importActual("react-router");
 	return {
 		...actual,
 		useNavigate: () => mockNavigate,

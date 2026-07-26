@@ -7,7 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import BlockedItemsOverTimeChart from "../../../components/Common/Charts/BlockedItemsOverTimeChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";

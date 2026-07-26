@@ -1,7 +1,7 @@
 import { Box, Chip, Typography } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { Delivery } from "../../../models/Delivery";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";

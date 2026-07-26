@@ -1,6 +1,6 @@
 import { Typography, useTheme } from "@mui/material";
 import type React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 interface StyledLinkProps {
 	to: string;

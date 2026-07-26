@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";

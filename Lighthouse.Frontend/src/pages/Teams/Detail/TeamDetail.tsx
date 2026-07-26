@@ -12,7 +12,7 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import ScopedGroupMappingManager from "../../../components/Common/Authorization/ScopedGroupMappingManager";
 import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";

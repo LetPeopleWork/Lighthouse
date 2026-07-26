@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useOAuthPopup } from "../../../hooks/useOAuthPopup";

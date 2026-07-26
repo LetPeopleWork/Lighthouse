@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -73,12 +73,12 @@ const mockTeam = {
 	useFixedDatesForThroughput: false,
 };
 
-// Mock react-router-dom params
+// Mock react-router params
 let mockParams: { id: string; tab?: string } = { id: "1", tab: "features" };
 const mockNavigate = vi.fn();
 
-vi.mock("react-router-dom", async () => {
-	const actual = await vi.importActual("react-router-dom");
+vi.mock("react-router", async () => {
+	const actual = await vi.importActual("react-router");
 	return {
 		...actual,
 		useParams: () => mockParams,

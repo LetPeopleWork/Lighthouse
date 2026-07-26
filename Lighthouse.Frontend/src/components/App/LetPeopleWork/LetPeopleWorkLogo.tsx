@@ -1,6 +1,6 @@
 import { Button, useTheme } from "@mui/material";
 import type React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import lightLogo from "../../../assets/LetPeopleWorkLogo.png";
 import darkLogo from "../../../assets/logo_black.png";
 

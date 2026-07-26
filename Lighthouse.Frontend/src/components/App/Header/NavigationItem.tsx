@@ -1,6 +1,6 @@
 import { useTheme } from "@mui/material";
 import type React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 
 interface NavigationItemProps {
 	path: string;

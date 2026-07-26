@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 interface OnboardingStepperProps {
 	hasConnections: boolean;

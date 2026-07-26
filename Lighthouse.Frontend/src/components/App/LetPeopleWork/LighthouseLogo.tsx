@@ -1,6 +1,6 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import type React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 const LighthouseLogo: React.FC = () => {
 	const theme = useTheme();

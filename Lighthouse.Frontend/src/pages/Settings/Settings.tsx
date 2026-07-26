@@ -16,7 +16,7 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { useRbac } from "../../hooks/useRbac";
 import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";

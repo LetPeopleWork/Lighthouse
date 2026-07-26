@@ -1,7 +1,7 @@
 import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
-import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router";
 import CreateTeamWizard from "../../../components/Common/CreateWizards/CreateTeamWizard";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";

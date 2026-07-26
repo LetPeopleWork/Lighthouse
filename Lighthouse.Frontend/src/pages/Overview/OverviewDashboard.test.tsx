@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { WorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -23,10 +23,10 @@ import {
 } from "../../tests/MockApiServiceProvider";
 import OverviewDashboard from "./OverviewDashboard";
 
-// Mock the react-router-dom's useNavigate function
+// Mock the react-router's useNavigate function
 const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-	const actual = await vi.importActual("react-router-dom");
+vi.mock("react-router", async () => {
+	const actual = await vi.importActual("react-router");
 	return {
 		...actual,
 		useNavigate: () => mockNavigate,
