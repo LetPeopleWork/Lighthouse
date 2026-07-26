@@ -1,325 +1,278 @@
 {
   "roadmap": {
     "project_id": "epic-5427-percentiles-over-time",
-    "created_at": "2026-07-26T05:43:19Z",
-    "total_steps": 6,
-    "slice_id": "slice-03-throughput-pbc-over-time",
+    "slice_id": "slice-04-pbc-over-time-remaining-types",
+    "created_at": "2026-07-26",
+    "total_steps": 5,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "ado_story": 5548,
-    "goal": "Slice 03 (US-04): Throughput PBC natural process limits over time. Ship the second snapshot family end to end — ProcessBehaviorSnapshot entity + repository + a REAL additive EF migration on all providers (03-01) -> ProcessBehaviorRecordingHandler on the SAME TeamDataRefreshed / PortfolioFeaturesRefreshed events the percentiles recorder already subscribes, with its own MetricFamily=\"ProcessBehavior\" observability contract (03-02) -> IProcessBehaviorSeriesQuery + ProcessBehaviorSnapshotDto + process-behavior-over-time?type= GET on both MetricsControllers (03-03) -> demo backfill extended so demo/screenshot E2Es render populated NPL charts (03-04) -> a NEW \"PBC Over Time\" widget in Predictability with a metric-type toggle (Throughput active) rendering UNPL/Average/LNPL and the D6 honest empty state (03-05) -> Playwright POM + spec + full local quality-gate sweep (03-06). Closes milestone-3 Scenarios 10, 11 and 12 plus the ProcessBehaviorSnapshot half of milestone-1 Scenario 6.",
-    "overview": "Single phase (03), 6 steps in dependency order. Unlike slice-02 this slice is NOT a pure extension: it adds a second table, a second repository, a second recording handler, a second read port, a second DTO, two new controller actions and a whole new frontend widget. The pipeline SHAPE is reused (events, upsert-per-day idempotency, per-family failure containment, demo backfill idiom, empty-state contract); the code is new because the NPL triple Unpl/Average/Lnpl is a different shape from the four-percentile row (ADR-106). Backbone: schema first (03-01, the only step with DDL), then write path (03-02), then read path (03-03), then demo data (03-04), then UI (03-05), then E2E + gates (03-06). RED = RED-by-skip (project convention, DISTILL [REF] RED Mechanism): NUnit ATs / Playwright specs are authored with [Ignore(\"pending — DELIVER (epic-5427 slice-03)\")] / test.skip alongside minimal type skeletons so main always compiles and stays green; each step un-ignores only its own scenarios and implements them to GREEN. EFFORT CAVEAT: the slice brief reference-classes this at <=1 day. This decomposition totals ~15h (~2 days) and the estimate is deliberately NOT cut to fit — slice-02 was briefed at <=0.5 day and actually took ~1.5 days, and slice-03 carries strictly more surface than slice-02 did (a real migration + a new widget from scratch, neither of which slice-02 had). Treat the brief's number as optimistic, not as a scope reduction.",
-    "verified_against_shipped_code": [
-      "ITeamMetricsService.GetThroughputProcessBehaviourChart(Team, DateTime startDate, DateTime endDate) exists, plus an overload taking ThroughputFilterMode; IPortfolioMetricsService.GetThroughputProcessBehaviourChart(Portfolio, DateTime, DateTime) exists. The recorder READS limits from these services and never re-implements PBC math.",
-      "ProcessBehaviourChart (Models/Metrics/ProcessBehaviourChart.cs) is a record with BaselineStatus Status, string StatusReason, XAxisKind XAxisKind, int Average, int UpperNaturalProcessLimit, int LowerNaturalProcessLimit, bool BaselineConfigured, ProcessBehaviourChartDataPoint[] DataPoints, and a static NotReady(status, reason) factory that returns Average = UNPL = LNPL = 0.",
-      "PercentilesOverTimeRecordingHandler already implements IDomainEventHandler<TeamDataRefreshed> + <PortfolioFeaturesRefreshed>, holds private const string MetricFamily = \"Percentiles\", records both families in one pass via RecordFamily(...), contains failures per family, and invalidates the read cache in a finally block.",
-      "PercentilesOverTimeSnapshot is an IEntity with OwnerId, OwnerType, RecordedAt (DateOnly), MetricType, int? Horizon, P50/P70/P85/P95 and the public const int NoHorizon = 0 sentinel.",
-      "categoryMetadata.ts already registers percentilesOverTime and throughputPbc adjacently in the Predictability category (both size: \"large\", both trend policy \"none\") — the new pbcOverTime widget slots in beside them.",
-      "Frontend reuse targets confirmed: components/Common/Charts/ProcessBehaviourChart (default export + ProcessBehaviourChartType) and models/Metrics/ProcessBehaviourChartData (status, statusReason, xAxisKind, average, upperNaturalProcessLimit, lowerNaturalProcessLimit, baselineConfigured, dataPoints).",
-      "CLAUDE.md:57 and the comment at Data/LighthouseAppContext.cs:70 both bind migrations to the existing CreateMigration PowerShell script, expand-only, all providers — never `dotnet ef migrations add`."
-    ]
+    "ado_story": 5549,
+    "goal": "Slice 04 (value, US-05, ADO #5549): the \"PBC Over Time\" widget toggles across ALL SIX process-behaviour metric families instead of Throughput alone, each reading its own persisted NPL daily series. Five members are APPENDED to `ProcessBehaviorMetricType` -> the recorder's per-scope `readers` array records every family the scope can read (5 for a team, 6 for a portfolio — Feature Size is portfolio-only because there is no team-side read method, D8) -> a new ready-but-zero honesty gate stops a flat zero band the owner never had from being persisted (US-05 AC4 / D6) -> the frontend's metric-type list becomes scope-aware and the toggle grows human-readable labels while keeping the shipped `pbc-metric-<lowercased>` locator convention. Closes milestone-4 Scenarios 13, 14 and 15. NO new endpoint, NO controller change, NO new table, NO EF migration, NO demo-backfill extension.",
+    "overview": "Single phase (04), 5 steps in dependency order. Backbone: 04-01 the ready-but-zero honesty gate FIRST, as a self-contained fix on the shipped single-family recorder, so the five new families inherit a correct gate instead of shipping five ways to persist a zero band and fixing it after -> 04-02 append the five enum members and lift the `readers` array into the two per-scope `HandleAsync` methods -> 04-03 the slice-04 acceptance fixture pair at the read port (where the per-family dated triple IS drivable) plus the `CycleTime`-sentinel repair in the shipped slice-03 fixture -> 04-04 the frontend scope-aware metric list, the `ownerType` prop and the labelled toggle -> 04-05 E2E POM/spec + the docs claims that go stale, then the full local gate sweep. RED = RED-by-skip (project convention, DISTILL [REF] RED Mechanism): NUnit ATs and Playwright specs are authored with `[Ignore(\"pending — DELIVER (epic-5427 slice-04)\")]` / `test.skip` alongside the minimal type changes so `main` always compiles and stays green; each step un-ignores only its own scenarios. Mostly data + configuration over the shell slice 03 built — the two genuine changes are the honesty gate (backend behaviour, app-wide for the recorder) and the scope-aware toggle (frontend structure).",
+    "estimated_hours_total": 8.5
   },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer — APPROVED, 0 BLOCKERs. Scenarios 13/14/15 all mapped; US-05 AC1-AC4 all covered; RED-by-skip honoured; test placement matches the Slice03 precedent; no new walking skeleton (the epic's WS shipped in slice 01); step 04-02 borderline on size but justified (multi-family recording in one handler), no @sizing-review-needed. 2 MAJORs, both the same trade-off: because DemoPercentilesBackfillHandler stays Throughput-only (maintainer decision), the outline's 'three dated lines are plotted' is asserted at the read port for the five new families instead of through the UI, so E2E charting-regression cover for non-Throughput families is asymmetric — accepted as intentional and transparent (the chart component is shared, so family-specific rendering risk is low). Reviewer's required mitigation, folded into step 04-05: an explicit comment in PbcOverTime.spec.ts at the point the three-lines assertion is deliberately NOT made, citing the demo-backfill constraint and the read-port coverage that compensates. All 11 open_questions_resolved deviations assessed: 10 SOUND, #5 (per_family_dated_triple_seam) defensible-but-lossy as above.",
+    "reviewed_at": "2026-07-26",
+    "notes": "Six facts were established by reading the shipped code before this roadmap was written and MUST NOT be re-litigated: (1) `ProcessBehaviorMetricType` holds exactly one member, `Throughput`, and its own XML doc states the persistence contract — persisted as the integer ordinal, APPEND ONLY. (2) All five team-side and all six portfolio-side `Get*ProcessBehaviourChart(owner, DateTime, DateTime)` read methods already exist — nothing new is computed this slice. (3) `ProcessBehaviorRecordingHandler` already carries the per-type seam slice-03 built for this slice: a `readers` array plus a per-type inner try/catch in `RecordMetricType`. (4) Both controllers' `GetProcessBehaviorOverTime` are already generic over the enum and guarded by `Enum.IsDefined(type)` -> 400 (`TeamMetricsController.cs:537` and the `PortfolioMetricsController` twin) — NO controller change is needed, and step 04-03 verifies that empirically rather than assuming it. (5) `IProcessBehaviorSeriesQuery` / `ProcessBehaviorSnapshotRepository.GetSeries` already filter on `MetricType`, so per-family isolation is already implemented. (6) No EF migration: appending enum members changes no schema — `ProcessBehaviorSnapshot.MetricType` is already an int column. Two maintainer decisions of 2026-07-26 are binding: the ready-but-zero gate goes in `RecordMetricType`, NOT in the chart builders; and `DemoPercentilesBackfillHandler` is NOT extended, which is why the per-family dated-triple assertion lives at the read port and not in the E2E."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5427-percentiles-over-time/feature-delta.md (US-05 AC1-AC4 at L154-169; DESIGN DDD-1..DDD-7 + Component Decomposition + Reuse Analysis at L267-333; driving-ports wire vocabulary at L300; DISTILL Scenario List 13/14/15 at L501-503, Test Placement at L537-549, RED Mechanism at L551-556; slice-03 implementation summary at L1067-1116)",
+    "slice_brief": "docs/feature/epic-5427-percentiles-over-time/slices/slice-04-pbc-over-time-remaining-types.md",
+    "gherkin": [
+      "docs/feature/epic-5427-percentiles-over-time/acceptance/milestone-4-pbc-remaining-types.feature — the authoritative spec (Scenario Outline 13, Scenario 14, Scenario 15)"
+    ],
+    "architecture": [
+      "docs/product/architecture/brief.md — component inventory + ports-and-adapters boundaries",
+      "docs/product/architecture/adr-108-percentiles-over-time-series-http-contract.md — two typed read endpoints, never one polymorphic envelope; `?type=` is the family discriminator and the read is side-effect-free",
+      "docs/product/architecture/adr-106-percentiles-over-time-snapshot-table-shape.md — `ProcessBehaviorSnapshot` natural key `(OwnerId, OwnerType, MetricType, RecordedAt)`; the MetricType dimension is what makes six families one table",
+      "docs/product/architecture/adr-107-percentiles-recording-handler-on-refresh-events.md — recording on `TeamDataRefreshed` / `PortfolioFeaturesRefreshed`, self-try/catch, idempotent per-day upsert",
+      "docs/product/architecture/adr-109-demo-percentiles-backfill-handler.md — demo-gated backdating; NOT extended this slice"
+    ],
+    "ci_learnings": "docs/ci-learnings.md — pre-apply the Preflight checklist (L45-101) BEFORE writing code. Rules bearing on this slice are named per step; the likeliest to bite are CA1859 (new private helpers typed concretely), NUnit2045/2046/4002/2056, CA1861, S107 on the recorder's `RecordAsync`, S3776 on the recorder's two HandleAsync bodies and the widget's toggle build, the Playwright shared-testid strict-mode trap, the vacuous-one-sided-assertion trap, and the mutation rule that a test comparing a value to the constant it came from is self-satisfying.",
+    "predecessor_roadmaps": [
+      "docs/feature/epic-5427-percentiles-over-time/deliver/roadmap-slice-03.json — the shell this slice configures over",
+      "docs/feature/epic-5427-percentiles-over-time/deliver/roadmap-slice-03b.json — the read-path date window, and the acceptance-fixture split this slice mirrors"
+    ],
+    "shipped_code_to_extend": {
+      "enum": "Lighthouse.Backend/Lighthouse.Backend/Models/ProcessBehaviorMetricType.cs — one member, `Throughput`. Its own doc comment carries the persistence contract: persisted as the integer ordinal, APPEND ONLY, reordering silently re-maps every shipped snapshot row.",
+      "recorder": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs — `RecordAsync(ownerId, ownerType, lookbackDays, readThroughputChart, invalidateReadCache)` builds a ONE-ENTRY `readers` array INSIDE itself (the comment there names slice 04 as the reason the seam exists); `RecordMetricType` holds the per-type inner try/catch and the `chart.Status != BaselineStatus.Ready` gate; `UpsertSnapshot` already keys on `(OwnerId, OwnerType, MetricType, RecordedAt)`; `LookbackDaysFor(team)` derives the as-of-today window and is family-agnostic; the `finally` block invalidates the shared metrics cache.",
+      "team_read_methods": "Lighthouse.Backend/.../Services/Interfaces/ITeamMetricsService.cs:21,25,27,29,39 — GetThroughput / GetWip / GetTotalWorkItemAge / GetCycleTime / GetArrivals ProcessBehaviourChart(Team, DateTime, DateTime). NO team-side Feature Size method exists — that absence is what makes Feature Size portfolio-only structurally rather than by a conditional.",
+      "portfolio_read_methods": "Lighthouse.Backend/.../Services/Interfaces/IPortfolioMetricsService.cs:11,13,15,17,19,29 — the same five plus GetFeatureSizeProcessBehaviourChart(Portfolio, DateTime, DateTime).",
+      "chart_builders": "Lighthouse.Backend/.../Services/Implementation/BaseMetricsService.cs — THREE builders feed the six families: BuildDailyRunChartProcessBehaviourChart (:570, Throughput/Wip/Arrivals), BuildTotalWorkItemAgeProcessBehaviourChart (:624), BuildCycleTimeProcessBehaviourChart (:686). All three set `Status = BaselineStatus.Ready` unconditionally once BaselineValidationService passes (:614, :676, :750). NONE of them may be changed this slice.",
+      "xmr": "Lighthouse.Backend/.../Services/Implementation/XmRCalculator.cs:15-21 — `Calculate` returns `XmRResult(0, 0, 0, ...)` for an empty baseline, and an all-zero baseline yields average 0 / mrBar 0 -> unpl 0 / lnpl 0. THIS is why `Ready` + 0/0/0 is reachable. Line 46 clamps a NEGATIVE lnpl to 0 for zero-bounded data, which is why the honesty gate must never test `Lnpl == 0`.",
+      "controllers": "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs:527-563 and API/PortfolioMetricsController.cs (twin, ~:552) — `GetProcessBehaviorOverTime(ownerId, [FromQuery] ProcessBehaviorMetricType type = Throughput, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)`, `Enum.IsDefined(type)` -> 400, then the query port. Already generic over the enum: NOTHING to change.",
+      "read_port": "Lighthouse.Backend/.../Services/Implementation/ProcessBehaviorSeriesQuery.cs (a one-line delegation since slice-03b) + Repositories/ProcessBehaviorSnapshotRepository.GetSeries(ownerId, ownerType, metricType, DateOnly? from, DateOnly? to) — already filters on MetricType. Per-family isolation is already implemented.",
+      "acceptance_harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs — SeedTeam/SeedPortfolio/SeedPercentilesSnapshot and the four percentiles GET helpers live here. `SeedProcessBehaviorSnapshot` and the two `Get{Team,Portfolio}ProcessBehaviorOverTime(ownerId, string? type)` helpers are PRIVATE to Slice03ThroughputProcessBehaviorSpecifications.cs:78-105 — a third fixture now needs them, so 04-03 promotes them to the base unchanged.",
+      "sentinel_breakage": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03ThroughputProcessBehaviorScenarios.cs:78-79 and :90-91 — `[TestCase(\"CycleTime\")]` is used as an UNKNOWN-family sentinel for the 400 path. Today \"CycleTime\" 400s at the MODEL BINDER (it is not a member, so enum binding fails). After this slice it is a valid member and the request returns 200 -> both tests FAIL. `ThenTheRequestIsRejectedAsUnsupported` asserts the 400 STATUS only, so a member-name string that will never be valid is a faithful replacement.",
+      "recorder_tests": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs — 622 lines, 17 test methods. Helpers to extend: `ReadyChart(unpl, average, lnpl)`, `SetupTeamThroughputChart` / `SetupPortfolioThroughputChart`, and `FindSnapshot(context, ownerId, ownerType, recordedAt)`, which has NO metricType parameter and cannot distinguish families as written.",
+      "fe_model": "Lighthouse.Frontend/src/models/Metrics/ProcessBehaviorSnapshot.ts — `ProcessBehaviorMetricType = \"Throughput\"`, a flat readonly `PROCESS_BEHAVIOR_METRIC_TYPES`, and `DEFAULT_PROCESS_BEHAVIOR_METRIC_TYPE = \"Throughput\"`. The union members are WIRE VALUES: MetricsService.ts:802 interpolates them straight into `?type=${metricType}`.",
+      "fe_widget": "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx — `describeMetricType` uses the enum name AS the button label; `processBehaviorMetricTestId` emits `pbc-metric-<lowercased>`; `LIMIT_LINES` carries the user-approved D7 styling deviation (solid, per-limit colour); the empty state routes through `resolveOverTimeEmptyCopy(endDate)` from overTimeEmptyState.ts.",
+      "fe_hook": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts — the cache key is already `${metricType}|${startISO}|${endISO}`, so six families need NO hook change. Verify, do not assume.",
+      "fe_wiring": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1131-1138 — the `pbcOverTime` node (ownerId + metricsService + startDate + endDate). `const ownerType: \"team\" | \"portfolio\"` is ALREADY derived at :1383-1384 from `\"getFeaturesInProgress\" in metricsService`. Thread that value; never re-derive scope inside the widget.",
+      "fe_sibling_labels": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:811-854 — the six point-in-time PBC widgets label themselves from terminology (`throughputTerm`, `workInProgressTerm`, `Total ${workItemAgeTerm}`, `getTerm(CYCLE_TIME)`, `${featureTerm} Size`, literal \"Arrivals\"). Lighthouse.Frontend/src/services/TerminologyContext.tsx:99-112 — `useTerminology()` falls back to a provider-independent default map, so calling it in a widget needs no new test provider.",
+      "fe_category": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts:87 — `{ widgetKey: \"pbcOverTime\", size: \"large\" }` with NO ownerFilter (correct: the widget itself is team+portfolio). The `ownerFilter: \"portfolio-only\"` mechanism at :93-97 gates whole WIDGETS, not toggle options, so D8 cannot be expressed there.",
+      "demo_backfill": "Lighthouse.Backend/.../Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs:97 — `BackfillProcessBehaviorFamily(..., ProcessBehaviorMetricType.Throughput, ...)`. NOT extended this slice (maintainer decision 2026-07-26). This single fact shapes the whole test split.",
+      "e2e": "Lighthouse.EndToEndTests/tests/models/metrics/PbcOverTimeWidget.ts (`PbcMetricType = \"Throughput\"`, `metricToggle` derives `pbc-metric-${lowercase}`, `countPlottedDays` counts SVG path commands) + tests/specs/flow/PbcOverTime.spec.ts (4 shipped tests: the demo Throughput trend, the fresh-team empty state, and two slice-03b date-range tests)",
+      "docs": "docs/metrics/predictability.md:86-117 — the PBC Over Time section. Line 90 `**Flow Metric** | Throughput` and line 111 \"Lighthouse records natural process limits for **Throughput** today\" both go stale this slice; line 117's demo-data note becomes misleading unless it says the backdated history is Throughput-only.",
+      "stryker_config": "Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic-5427-percentiles-over-time.json — gitignored and offset-based; re-anchor before trusting any score (ci-learnings mutation section)."
+    }
+  },
+  "open_questions_resolved": {
+    "enum_growth_direction": "RESOLVED by the enum's own contract: APPEND `WorkItemAge, Wip, CycleTime, Arrivals, FeatureSize` after `Throughput`, giving ordinals Throughput=0, WorkItemAge=1, Wip=2, CycleTime=3, Arrivals=4, FeatureSize=5. Member NAMES follow the DESIGN driving-ports vocabulary (feature-delta L300: `{Throughput|WorkItemAge|Wip|CycleTime|Arrivals|FeatureSize}`), not the read-method names — the WorkItemAge family reads `GetTotalWorkItemAgeProcessBehaviourChart`, and that asymmetry is deliberate and pre-decided. Alphabetising or grouping members is FORBIDDEN: the ordinal is the persisted value and Throughput=0 is already on disk in every shipped instance.",
+    "readers_array_lift": "RESOLVED — and this is the one place the \"extend the array, do not restructure the handler\" instruction needs a precise reading. The array is currently built INSIDE `RecordAsync`, which receives a single `Func<DateTime,DateTime,ProcessBehaviourChart>`. A team can read five families and a portfolio six, so the array cannot stay inside a scope-agnostic method. The minimal change is to move the array construction UP into each `HandleAsync` (each scope already holds its own strongly-typed service and owner entity) and have `RecordAsync` take `(ProcessBehaviorMetricType, Func<DateTime,DateTime,ProcessBehaviourChart>)[] readers` in place of the single Func. `RecordAsync`'s param count stays 5; `RecordMetricType`, its inner try/catch, `UpsertSnapshot`, `LookbackDaysFor` and the `finally`-block invalidation are untouched. That is an extension of the seam, not a restructure — but it IS more than adding rows to a literal, so it is called out rather than smuggled in.",
+    "zero_gate_placement": "RESOLVED (maintainer decision 2026-07-26): the gate goes in `ProcessBehaviorRecordingHandler.RecordMetricType`, as `if (chart.Average == 0 && chart.UpperNaturalProcessLimit == 0) { return; }` alongside the existing `Status != Ready` guard. It must NOT go in the three chart builders: making them report `InsufficientData` would change the six SHIPPED point-in-time PBC widgets app-wide, far outside this slice. The gate deliberately does NOT test `Lnpl == 0` — XmRCalculator.cs:46 clamps a negative LNPL to zero for zero-bounded data, so a legitimate, well-populated process routinely has `Lnpl == 0`, and including it in the predicate would silently stop recording real data.",
+    "zero_gate_reachability": "RESOLVED by reading the code, not by argument: all three builders set `Status = BaselineStatus.Ready` unconditionally after `BaselineValidationService.Validate` passes (BaseMetricsService.cs:614, :676, :750), and `XmRCalculator.Calculate` returns `(0, 0, 0)` for an empty baseline (XmRCalculator.cs:17-21) and for an all-zero baseline (average 0, mrBar 0). So `Ready` + 0/0/0 is reachable today, the shipped `Status != Ready` gate does not catch it, and a flat zero band the owner never had is currently persistable. An absent row is the honest empty state (US-05 AC4 / D6).",
+    "per_family_dated_triple_seam": "RESOLVED (maintainer decision 2026-07-26 — demo backfill stays Throughput-only): milestone-4's Scenario Outline says \"three dated lines are plotted for <metric_type>\", which CANNOT be driven through the UI for the five new families, because on demo data they have at most the single row today's refresh recorded. That assertion is therefore routed to the read port: a NUnit `WebApplicationFactory` acceptance fixture seeds `ProcessBehaviorSnapshot` rows per family and asserts the dated triple comes back per family, plus cross-family isolation. The Playwright E2E keeps what it can honestly observe: the toggle offers the right families per scope, Feature Size is portfolio-only, Throughput still plots its dated triple, and a family with nothing recorded shows the honest D6 copy. The crafter must NOT try to force the E2E to plot a new family.",
+    "e2e_empty_copy_owner": "RESOLVED against the handoff's wording, deliberately. The honest-empty-copy assertion for a new family belongs on the FRESH, never-refreshed team on a non-demo connection (the shipped `@edge @US-04` spec's setup), NOT on the demo team. On the demo team, the refresh that `waitForBackgroundUpdates` waits for now runs the EXTENDED recorder, so each new family gets TODAY's row and the widget is not empty — the copy assertion would fail, and would fail intermittently depending on whether the family's baseline came back non-zero. The fresh team has nothing recorded for ANY family, which makes the assertion deterministic while still testing exactly the AC4 behaviour.",
+    "feature_size_enforcement_layer": "RESOLVED: D8's portfolio-only constraint is enforced at the TOGGLE (the frontend never offers Feature Size at team scope), not at the wire. `?type=FeatureSize` on the team endpoint therefore answers 200 with an empty series — `Enum.IsDefined` passes and no team row is ever recorded. Step 04-03 asserts that SHIPPED behaviour explicitly rather than leaving it unstated. Adding a scope-aware 400 guard to the team controller was considered and rejected: new code for a case no client can reach, on an endpoint whose 400s currently mean exactly one thing (\"that is not a metric family\"). Recorded as a decision, not skipped.",
+    "no_controller_change": "RESOLVED by reading TeamMetricsController.cs:536-553: the action's parameter is already `ProcessBehaviorMetricType`, defaulted to Throughput, guarded by `Enum.IsDefined`, and forwarded verbatim to the query port. Appending enum members makes the new families valid with zero controller edits. Step 04-03 VERIFIES this empirically by exercising every family through the untouched controllers; if any family needs a controller edit, the crafter stops and reports rather than editing silently.",
+    "no_hook_change": "RESOLVED by reading usePbcOverTime.ts: `cacheKey(metricType, startDate, endDate)` already includes the family, so six families cache and re-plot independently with no hook edit. Verify by test, do not assume. If a scope-aware reset of the selected family turns out to be needed, it belongs in the widget (which knows `ownerType`), never in the hook (which has no opinion about scope).",
+    "toggle_label_source": "RESOLVED: labels come from `useTerminology()` inside the widget, matching the vocabulary the six SIBLING point-in-time PBC widgets already use (BaseMetricsView.tsx:811-854) — Throughput / Work Item Age / Work In Progress / Cycle Time / Arrivals / Feature Size. `useTerminology()` falls back to a provider-independent default map (TerminologyContext.tsx:99-112) whose values are exactly the `.feature` file's wording, so no new test provider is needed and the `.feature` stays satisfied. Hard-coding English labels in the model file was the alternative; rejected because every other metric label in this view is terminology-driven and a hard-coded label would silently ignore a tenant's renamed terms.",
+    "no_migration": "RESOLVED: zero schema delta. Appending enum members does not change the `ProcessBehaviorSnapshot.MetricType` int column, no new property appears on any persisted model, and no index changes. The `CreateMigration` script is NOT run this slice. If the crafter's model diff shows ANY DDL, that is a signal the slice drifted out of scope — stop and report."
+  },
+  "out_of_scope": [
+    "Extending `DemoPercentilesBackfillHandler` to the five new families — explicit maintainer decision 2026-07-26. The consequence (a new family renders the honest empty copy on demo data) is designed around, not worked around.",
+    "Any change to the three chart builders in `BaseMetricsService` or to `BaselineStatus` semantics — that would alter the six shipped point-in-time PBC widgets app-wide",
+    "Any controller, route, DTO, query-port or repository change — the read path is already generic over the enum and already filters on MetricType",
+    "Any EF migration or schema change",
+    "Combining several families into one chart (one family shown at a time — slice brief OUT scope), and alerting",
+    "Percentile widgets, and any change to the forward-only contract or the D6 / D10 copy strings",
+    "Any change to `LIMIT_LINES`, the D7 styling deviation, or the `pbc-metric-<lowercased>` locator convention",
+    "Any change to the dashboard date-range plumbing shipped in slice-03b",
+    "Premium gating / RBAC (free-tier, ungated — D3)",
+    "Screenshot regeneration, the evolution archive, ADO #5549's transition, and prose beyond the three stale predictability.md claims — FINALIZATION activities. Screenshots regenerate once AFTER this slice, per the slice-03 carry-forward.",
+    "The ready-but-zero PBC triple left as-is by slice-03's carry-forward is DECIDED here (absent row = honest empty), so it leaves the backlog"
+  ],
   "phases": [
     {
-      "id": "03",
-      "name": "Throughput process-behaviour limits over time (second snapshot family: NPL triple end to end)",
-      "goal": "A delivery lead opens the new \"PBC Over Time\" widget in Predictability with Throughput selected and reads UNPL / Average / LNPL as three dated lines, fed by a forward-only daily snapshot recorded on the existing refresh events.",
+      "id": "04",
+      "name": "PBC over time across all six process-behaviour metric families",
+      "description": "Append five enum members, record every family the scope can read, refuse to persist a zero band nobody had, and make the toggle scope-aware and human-readable. No new component, port, route, table or migration.",
       "steps": [
         {
-          "id": "03-01",
-          "name": "ProcessBehaviorSnapshot entity + ProcessBehaviorMetricType enum + repository + DbSet/unique index + REAL additive EF migration on all providers",
+          "id": "04-01",
+          "name": "Ready-but-zero honesty gate on the process-behaviour recorder",
           "criteria": [
-            "New entity `ProcessBehaviorSnapshot : IEntity` with `Id`, `OwnerId`, `OwnerType`, `RecordedAt` (DateOnly), `MetricType` (of the NEW enum type), `Unpl`, `Average`, `Lnpl`. Value types match the source: `ProcessBehaviourChart.Average / UpperNaturalProcessLimit / LowerNaturalProcessLimit` are all `int`, so the columns are `int` — do NOT widen to double and invent precision the compute path does not have.",
-            "New enum `ProcessBehaviorMetricType` with `Throughput` FIRST and, this slice, ONLY `Throughput`. Carry the same XML-doc warning as `MetricType`: persisted as the integer ordinal, APPEND-only, never reorder or renumber. Slice 04 appends WorkItemAge / Wip / CycleTime / Arrivals / FeatureSize.",
-            "Do NOT reuse the existing `MetricType` enum for this table. `MetricType` means percentile family (CycleTime, WorkItemAge); the PBC set is a different, larger domain (six types incl. FeatureSize) and sharing the enum would couple two independently-growing ordinals to one another.",
-            "`IProcessBehaviorSnapshotRepository` + a thin `RepositoryBase<T>` implementation, byte-for-byte the same idiom as `IPercentilesOverTimeSnapshotRepository` / `PercentilesOverTimeSnapshotRepository` — no bespoke query methods beyond what the base gives.",
-            "`LighthouseAppContext` gains the `DbSet<ProcessBehaviorSnapshot>` plus a UNIQUE index on the natural key `(OwnerId, OwnerType, MetricType, RecordedAt)`. Note the key has FOUR parts, not five: there is no horizon dimension for NPLs, so no sentinel column and no NoHorizon constant is needed here.",
-            "`Program.cs` registers the repository in DI. The handler registration lands in 03-02, not here.",
-            "A REAL EF migration named `AddProcessBehaviorSnapshot` is generated for EVERY supported provider via the existing `CreateMigration` PowerShell script — never `dotnet ef migrations add` (CLAUDE.md). Verify both a Sqlite and a Postgres migration pair (.cs + .Designer.cs) appear, mirroring the slice-01 pair 20260724065010_AddPercentilesOverTimeSnapshot (Sqlite) / 20260724065020_AddPercentilesOverTimeSnapshot (Postgres).",
-            "The migration is ADDITIVE / EXPAND-ONLY: one CreateTable plus one CreateIndex, zero DropColumn / DropTable / AlterColumn on any existing table. A rollback of app code leaves an inert orphan table and loses no data.",
-            "Entity unit tests mirroring `PercentilesOverTimeSnapshotTests.cs`, and repository tests mirroring `PercentilesOverTimeSnapshotRepositoryTests.cs` (EF InMemory).",
-            "A Postgres-container migration test `ProcessBehaviorSnapshotMigrationTests.cs` mirroring `PercentilesOverTimeSnapshotMigrationTests.cs` asserts the table AND the unique index exist after migrating, and that inserting a duplicate natural key is rejected. Postgres is the provider that actually enforces the constraint — EF InMemory cannot see this, which is exactly why the container test is mandatory.",
-            "`dotnet build` zero warnings and `dotnet test` green at step end; only this step's entity/repository/migration tests are un-ignored."
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Models/ProcessBehaviorSnapshot.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/ProcessBehaviorMetricType.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IProcessBehaviorSnapshotRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepository.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
-            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/<timestamp>_AddProcessBehaviorSnapshot.cs",
-            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/<timestamp>_AddProcessBehaviorSnapshot.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ProcessBehaviorSnapshotTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepositoryTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ProcessBehaviorSnapshotMigrationTests.cs"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ProcessBehaviorSnapshotMigrationTests.cs",
-          "scenario_name": "Two snapshot stores added additively on SQLite + Postgres — the ProcessBehaviorSnapshot half (milestone-1 Scenario 6, deferred from slice-01 by design)",
-          "dependencies": [],
-          "estimated_hours": 3,
-          "implementation_notes": "EXEMPT FROM PARADIGM: host stack is C#/NUnit (no Hypothesis / assert_state_delta port exists in this repo); DISTILL ruled Tier A only for this epic. Compensate with parametrized NUnit TestCase coverage over the natural-key universe (same owner different type, same type different day, same key twice) plus the Scenarios+Specifications partial-class AT idiom shipped in slices 01-02.\n\nThis is the ONLY step in the slice that touches DDL — keep it that way so a migration problem never blocks unrelated work. Generate the migration with the CreateMigration script only; if the script needs a running provider or a specific working directory, read it before invoking rather than guessing. Do NOT hand-edit the generated migration except to delete a stray no-op.\n\nci-learnings to pre-apply: constant arrays as `private static readonly` fields (CA1861); concrete return types on test helpers and private members (CA1859 — do not return IEnumerable<T> from a helper that builds a List<T>); `Assert.EnterMultipleScope()` for consecutive asserts, never `Assert.Multiple` and never independent bare asserts (NUnit2045 cost a CI cycle in slice-02 at INFO severity, which a warning-clean local build cannot see); `Has.Count.EqualTo(N)` for collection counts; `Is.Zero` over `Is.EqualTo(0)`.\n\nExpand-only is a standing project mandate (feedback_expand_only_migrations): additive this release, destructive cleanup much later, and never Recreate."
-        },
-        {
-          "id": "03-02",
-          "name": "ProcessBehaviorRecordingHandler — daily Throughput NPL upsert on the existing refresh events, own observability family",
-          "criteria": [
-            "New `ProcessBehaviorRecordingHandler : IDomainEventHandler<TeamDataRefreshed>, IDomainEventHandler<PortfolioFeaturesRefreshed>` — the SAME two events `PercentilesOverTimeRecordingHandler` and `BlockedCountSnapshotRecordingHandler` already subscribe. No new event, no new trigger, no scheduler.",
-            "A SECOND handler is correct here and does not violate the OUT-5427-pipeline-reuse KPI: that KPI requires one pipeline per metric FAMILY shape, and ADR-106 already split the NPL triple from the percentile row into two tables. What must be reused is the shape — events, upsert-per-day, failure containment, cache invalidation — not the class.",
-            "`private const string MetricFamily = \"ProcessBehavior\";` and its OWN message template, e.g. \"Process behaviour snapshot recording failed for {OwnerType} {OwnerId} ({MetricFamily})\". It does NOT share or reuse the percentiles handler's template. Logging the metric TYPE instead of the FAMILY was the adversarial-review BLOCKER in slice-02 (fixed in 724099f32) — do not reintroduce it.",
-            "Reads today's limits via `ITeamMetricsService.GetThroughputProcessBehaviourChart(team, startDate, endDate)` / `IPortfolioMetricsService.GetThroughputProcessBehaviourChart(portfolio, startDate, endDate)`. Zero PBC math is reimplemented.",
-            "HONESTY GATE (this is the sharpest correctness risk in the slice): `ProcessBehaviourChart.NotReady(...)` returns Average = UNPL = LNPL = 0. When `Status != BaselineStatus.Ready` the handler MUST NOT write a row. Recording zeros would render three flat lines pinned at zero — a fabricated process, and a direct violation of D6 empty-state honesty. A unit test drives each non-Ready BaselineStatus (BaselineMissing, BaselineInvalid, InsufficientData) and asserts zero rows written.",
-            "Idempotent per day: upsert on the natural-key predicate `(OwnerId, OwnerType, MetricType, RecordedAt = today)`; a same-day re-refresh updates in place. A test drives two consecutive refreshes and asserts exactly one row (US-02 AC2 semantics, now for the NPL family).",
-            "Per-metric-type failure containment mirroring `RecordFamily`: the Throughput read is wrapped so that when slice 04 appends five more types, one failing type cannot discard rows another type already staged. Build the loop-with-inner-try seam NOW even though only one type is active — retrofitting it later means re-touching a shipped handler.",
-            "Own `try/catch` at the top level plus the structured Error log; the caller's single `Save()` persists whatever was staged. Do NOT add a log-and-rethrow wrapper (Sonar S2139) — the Epic 5121 dispatcher swallows handler errors by design and the handler owns its own observability.",
-            "Read-cache invalidation in a `finally`, exactly as the percentiles handler does, and test-pinned on BOTH the success and the exception path. The slice-01 omission of this guard broke an unrelated @premium E2E; it is a standing regression rule.",
-            "A forced-exception test asserts the refresh path stays green (US-02 AC4 / DDD-6) and that the recording-failed event carries MetricFamily = \"ProcessBehavior\".",
-            "`Program.cs` registers the handler for both event types alongside the existing recording handlers.",
-            "OPEN QUESTION TO RESOLVE AND RECORD IN THIS STEP (DESIGN \"PBC-over-time day grain\"): decide and justify the lookback window passed to GetThroughputProcessBehaviourChart for an as-of-today snapshot, and confirm the per-refresh recompute is cheap enough. Match whatever window the point-in-time throughputPbc widget uses so the recorded limits equal what the user sees today — read that call site before choosing. If the recompute turns out to be hot, cache rather than changing the grain. Write the decision into the step's commit message and carry it to the ADR-106/107 amendment at finalization.",
-            "`dotnet build` zero warnings, `dotnet test` green; only this step's handler tests are un-ignored."
+            "`ProcessBehaviorRecordingHandler.RecordMetricType` returns WITHOUT upserting when `chart.Average == 0 && chart.UpperNaturalProcessLimit == 0`, in addition to the existing `chart.Status != BaselineStatus.Ready` guard — an absent row is the honest empty state (US-05 AC4 / D6)",
+            "A test proves the case is REACHABLE rather than hypothetical: a chart with `Status = Ready` and `Average = UNPL = LNPL = 0` (what `XmRCalculator.Calculate` returns for an empty or all-zero baseline while all three builders still report `Ready`) writes NO row",
+            "A test proves a legitimate non-zero `Ready` chart still records — the shipped happy path is unchanged (regression)",
+            "A test pins the boundary the gate must NOT cross: a chart with a non-zero Average/UNPL but `Lnpl == 0` DOES record. XmRCalculator clamps a negative LNPL to zero for zero-bounded data, so a real process routinely has `Lnpl == 0`, and folding it into the predicate would stop recording real data",
+            "A test covers the same-day re-run case: when a non-zero row already exists for today and the fresh read comes back Ready-but-zero, the existing row keeps its non-zero values rather than being overwritten with zeros",
+            "The three chart builders (`BuildDailyRunChartProcessBehaviourChart`, `BuildTotalWorkItemAgeProcessBehaviourChart`, `BuildCycleTimeProcessBehaviourChart`) and `BaselineStatus` are UNTOUCHED — the six shipped point-in-time PBC widgets keep reporting `Ready` exactly as today, verified by their existing suites staying green with no edits",
+            "The gate lives in `RecordMetricType`, so every family added in 04-02 inherits it without a second gate site",
+            "`dotnet build` zero warnings; `dotnet test` green. Any slice-04 acceptance scenario authored ahead of time stays `[Ignore(\"pending — DELIVER (epic-5427 slice-04)\")]`"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs",
-          "scenario_name": "Throughput limits are recorded by the shared daily pipeline (milestone-3 Scenario 11, @real-io @driving_port @us-04)",
-          "dependencies": [
-            "03-01"
-          ],
-          "estimated_hours": 2.5,
-          "implementation_notes": "EXEMPT FROM PARADIGM: host stack is C#/NUnit (no Hypothesis / state-delta port); DISTILL ruled Tier A only. Compensate with parametrized NUnit TestCase coverage over the BaselineStatus universe and the same-day-re-refresh / forced-failure pairs, plus the Scenarios+Specifications AT idiom.\n\nRead PercentilesOverTimeRecordingHandler in full before writing this one and mirror its structure: constructor injection of both metrics services + both owner repositories + the snapshot repository + ILogger; HandleAsync resolves the owner, returns early on null, and delegates to a private RecordAsync; RecordAsync wraps try/catch/finally and awaits a single Save(). Keep the constructor parameter count in mind (the percentiles handler has six) — Sonar S107 trips above seven.\n\nHARNESS CAVEAT carried from slice-02: the handler writes RecordedAt from DateTime.Today while the acceptance harness anchors SyncDay in the past — express recording assertions against real today, not against the harness's sync day. HandleAsync must await Save() and must never be async void.\n\nci-learnings: CA1861 static readonly arrays, CA1859 concrete return types, Assert.EnterMultipleScope() for grouped asserts, Has.Count.EqualTo(N), Is.Zero.\n\nREVIEW ADDENDUM (nw-acceptance-designer-reviewer, MEDIUM): the coverage universe MUST explicitly include a parametrized TestCase asserting invalidateReadCache() fires on BOTH the HandleAsync success path and the forced-exception path — this is the standing slice-01 regression guard (its omission broke an unrelated @premium E2E), not an optional extra."
+          "scenario_name": "Scenario 13 precondition (US-05 AC4 / D6) — a Ready-but-zero natural-process band is not persisted, so an absent row stays the honest empty state",
+          "dependencies": [],
+          "implementation_notes": "This is the slice's one genuine behaviour change and it gets its own commit so it is independently reviewable and revertible — it changes recording semantics for the SHIPPED Throughput family too, not only for the new ones. It goes FIRST so the five families added in 04-02 inherit a correct gate, instead of shipping five ways to persist a zero band and fixing it afterwards. Extend the existing `ReadyChart(unpl, average, lnpl)` helper rather than adding a parallel factory. ci-learnings to pre-apply: NUnit4002 — `Is.Zero`, never `Is.EqualTo(0)`; `Is.Default`, never `Is.EqualTo(default(X))`; NUnit2056 — `using (Assert.EnterMultipleScope())`, never `Assert.Multiple(...)`; NUnit2046 — `Has.Count.EqualTo(N)`, never `Assert.That(x.Count, ...)`; CA1861 — hoist any inline `new[] {...}` in an assertion to a `static readonly` field; CA1859 — a NEW private helper that only builds/consumes `List<T>` must be typed `List<T>`, never `IReadOnlyList<T>`; S2139 — do not log-and-rethrow, the existing catch already logs and the dispatcher swallows. Mutation-dense spot: the `&&` and both `== 0` comparisons — Stryker flips `&&` to `||` and `== 0` to `!= 0`, and the four tests above are shaped so each flip is killed by a different one. After writing the gate, sabotage it (widen the predicate to `chart.Average >= 0`) and confirm red before restoring — `if (false)` does NOT work for this in C#, `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error.",
+          "estimated_hours": 1.5
         },
         {
-          "id": "03-03",
-          "name": "Read path — IProcessBehaviorSeriesQuery + ProcessBehaviorSnapshotDto + process-behavior-over-time?type= GET on both MetricsControllers",
+          "id": "04-02",
+          "name": "Append the five metric families and record every family the scope can read",
           "criteria": [
-            "New read port `IProcessBehaviorSeriesQuery` + implementation returning the dated series for `(owner, ProcessBehaviorMetricType)`, ordered by RecordedAt ascending. Read-only: it never writes and never triggers a recompute (US-01 AC5 semantics — the chart re-plots from persisted rows).",
-            "New `ProcessBehaviorSnapshotDto` shaped `{ recordedAt, unpl, average, lnpl }` per ADR-108. Honestly typed to this widget's toggle — do NOT fold it into the percentiles DTO or introduce a polymorphic envelope (both explicitly rejected in ADR-108).",
-            "`GET .../metrics/process-behavior-over-time?type=Throughput` added to BOTH `TeamMetricsController` and `PortfolioMetricsController` — extend the existing controllers, never a bespoke route (DISCUSS driving-ports constraint).",
-            "`type` binds as `[FromQuery] ProcessBehaviorMetricType type = ProcessBehaviorMetricType.Throughput`. This is a brand-new action so the default is a convenience, not a compatibility contract; still, keep the parameter shape identical in both controllers so slice 04 appends types in one place.",
-            "An unknown or unsupported `type` value returns a 400 rather than an empty 200 — an empty 200 is indistinguishable from \"no snapshots yet\" and would make the widget lie about the reason it is empty.",
-            "A zero-snapshot owner returns an EMPTY series with 200, which the frontend renders as the D6 honest empty state (never a broken axis). Asserted at the API level in this step and at the UI level in 03-05/03-06.",
-            "Reads inherit the existing class-level MetricsController read gate — free-tier, ungated (D3). No RBAC change, no license check, no useRbac() involvement.",
-            "`Program.cs` registers the query port in DI.",
-            "Acceptance coverage as the partial-class pair `Slice03ThroughputProcessBehaviorScenarios.cs` + `Slice03ThroughputProcessBehaviorSpecifications.cs` under API/Integration/PercentilesOverTime/, following the Slice01/Slice02 naming and Given/When/Then helper convention, `[TestFixture] [Category(\"acceptance\")]`, exercised through WebApplicationFactory against real SQLite.",
-            "The additive contract is asserted, not assumed: an existing percentiles-over-time request is replayed unchanged and still returns its slice-01/02 payload — the new endpoint must not perturb the shipped one.",
-            "`dotnet build` zero warnings, `dotnet test` green; un-ignore only this step's read-path scenarios."
+            "`ProcessBehaviorMetricType` APPENDS `WorkItemAge, Wip, CycleTime, Arrivals, FeatureSize` after `Throughput`; no member is reordered or renumbered, so ordinals are Throughput=0, WorkItemAge=1, Wip=2, CycleTime=3, Arrivals=4, FeatureSize=5 and every already-persisted row keeps its meaning",
+            "A test pins each member's integer ordinal explicitly, so a future alphabetisation or insertion fails loudly at test time instead of silently re-mapping shipped snapshot rows",
+            "`HandleAsync(TeamDataRefreshed)` records FIVE families (Throughput, WorkItemAge, Wip, CycleTime, Arrivals) from `ITeamMetricsService`; `HandleAsync(PortfolioFeaturesRefreshed)` records SIX (those five plus FeatureSize) from `IPortfolioMetricsService`. The asymmetry is structural — there is no team-side Feature Size read method to call (D8, US-05 AC2)",
+            "The `readers` array construction moves from inside `RecordAsync` up into the two `HandleAsync` methods, and `RecordAsync` takes `(ProcessBehaviorMetricType, Func<DateTime,DateTime,ProcessBehaviourChart>)[] readers` in place of its single `Func`. `RecordMetricType`, its per-type inner try/catch, `UpsertSnapshot`, `LookbackDaysFor` and the `finally`-block cache invalidation are UNCHANGED",
+            "Each family's row carries its OWN `MetricType` and its OWN triple: a test asserts the recorded rows are five (team) / six (portfolio) DISTINGUISHABLE rows for the same owner and day, comparing the exact family SET, not just a row count, and not five copies of Throughput's numbers",
+            "Per-family failure isolation holds with more than one family: a test makes family 2 of 5 throw and asserts the other four rows are still saved and exactly one failure is logged under `MetricFamily = \"ProcessBehavior\"` — the property slice-03's seam existed to guarantee",
+            "The ready-but-zero gate from 04-01 applies per family: a test with one family Ready-but-zero and the rest non-zero asserts only the non-zero families produce rows",
+            "The as-of-today window is shared by every family: `LookbackDaysFor(team)` (including its `UseFixedDatesForThroughput` fallback) still determines it, and every family is read with the SAME `(startDate, endDate)` pair — the existing window tests stay green and one new assertion covers a new family reading that same window",
+            "Same-day re-refresh still upserts in place per `(OwnerId, OwnerType, MetricType, RecordedAt)` — a test proves a second run updates each family's row rather than adding a duplicate",
+            "Scenario 15 regression: every shipped Throughput assertion in the recorder tests passes with NO edit to its expectations",
+            "NO EF migration: the model diff shows zero DDL. If any appears, STOP and report — the slice has drifted",
+            "`dotnet build` zero warnings; `dotnet test` green"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IProcessBehaviorSeriesQuery.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ProcessBehaviorSeriesQuery.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/ProcessBehaviorSnapshotDto.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/ProcessBehaviorMetricType.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs",
+          "scenario_name": "Scenario 13 recording half + Scenario 14 (Feature Size is portfolio-only, structurally) + Scenario 15 (Throughput unregressed) — each family's own NPL daily series is recorded by the one shared pipeline",
+          "dependencies": ["04-01"],
+          "implementation_notes": "Member NAMES are the wire contract (feature-delta L300) and must match the frontend union character-for-character; the `WorkItemAge` member reads `GetTotalWorkItemAgeProcessBehaviourChart`, and that name asymmetry is pre-decided — do not rename either side. Update the enum's XML doc to say six families are recorded and keep the APPEND-ONLY warning verbatim. The recorder test helpers need work: `FindSnapshot(context, ownerId, ownerType, recordedAt)` has no `metricType` parameter and cannot tell families apart — add one, and pass it explicitly at every call site rather than defaulting it, so a family-blind assertion cannot survive by accident. `SetupTeamThroughputChart` / `SetupPortfolioThroughputChart` become per-family setups; prefer ONE parameterised helper over ten near-identical ones (DRY = don't repeat knowledge). ci-learnings to pre-apply: S107 — `RecordAsync` keeps 5 params after the swap, do not let it grow; S3776 — if either `HandleAsync` body passes cognitive-complexity 15 while building its array, extract a private `TeamReaders(team)` / `PortfolioReaders(portfolio)` builder rather than nesting; CA1859 — type those builders' return as the concrete array, never an interface; CA1861/NUnit2045/2046/4002/2056 as in 04-01, and re-grep every touched test file, because parameterising 17 existing tests is exactly when inline expected-arrays and assert-pairs sneak in. EF InMemory is fine here (no FK dependency, no schema delta), so no Postgres-container test is needed. Mutation-dense spot: the two array literals — a dropped family is a silent capability loss, which is why the distinguishable-rows test asserts the exact family SET per scope.",
+          "estimated_hours": 2
+        },
+        {
+          "id": "04-03",
+          "name": "Read-port acceptance fixture for all six families, plus the CycleTime-sentinel repair",
+          "criteria": [
+            "New `Slice04ProcessBehaviorMetricTypesTest` as a partial-class pair mirroring the shipped Slice03 / Slice03b split exactly: `Slice04ProcessBehaviorMetricTypesScenarios.cs` carries `[TestFixture][Category(\"acceptance\")][Category(\"epic-5427-percentiles-over-time\")][Category(\"slice-04\")]` plus the `[Test]`/`[TestCase]` methods, and `Slice04ProcessBehaviorMetricTypesSpecifications.cs` carries the `: PercentilesOverTimeAcceptanceTest` declaration plus the Given/When/Then helpers",
+            "One `[TestCase]` per family seeds `ProcessBehaviorSnapshot` rows for THAT family across several days and asserts the dated `{recordedAt, unpl, average, lnpl}` triple comes back in ascending date order for `?type=<family>` — the read-port stand-in for milestone-4's Scenario Outline, which cannot be driven through the UI because the demo backfill stays Throughput-only",
+            "Cross-family isolation: with rows seeded for TWO families on the same owner and the same days with DIFFERENT triples, `?type=A` returns only A's rows and A's numbers — this is what proves each family reads its OWN series (US-05 AC2)",
+            "Cross-OWNER isolation still holds per family: a neighbour owner's rows for the same family never leak into the response",
+            "Feature Size scope: `?type=FeatureSize` on the PORTFOLIO endpoint returns the seeded series; on the TEAM endpoint it returns 200 with an empty series, because `Enum.IsDefined` passes and nothing is ever recorded for a team. The test asserts that SHIPPED behaviour and the fixture documents that D8 is enforced at the toggle, not at the wire — recorded as a decision, not left unstated",
+            "NO controller change is needed, and the step VERIFIES it: every family passes through the untouched `GetProcessBehaviorOverTime` on both controllers. If any family requires a controller edit, STOP and report rather than editing silently",
+            "The `CycleTime` sentinel is repaired in BOTH shipped test methods (`Slice03ThroughputProcessBehaviorScenarios.cs` ~:78-79 team and ~:90-91 portfolio): `[TestCase(\"CycleTime\")]` is replaced with a family name that will never be a member. `[TestCase(\"99\")]` STAYS — it is the in-range-integer-but-undefined case that reaches the `Enum.IsDefined` guard, whereas the name case is rejected at the model binder, exactly as `\"CycleTime\"` was before this slice",
+            "The trap is made self-detecting: a test asserts `Enum.TryParse<ProcessBehaviorMetricType>(<the sentinel>, out _)` is false, so a future slice that appends a member matching the sentinel fails loudly instead of turning the 400 tests green-for-the-wrong-reason",
+            "ADDED BY THE ORCHESTRATOR MID-SLICE (2026-07-26), after 04-02 surfaced it: `ProcessBehaviorSnapshotTests.ProcessBehaviorMetricType_ThroughputIsOrdinalZero_AndIsTheOnlyMemberThisSlice` asserts `Has.Length.EqualTo(1)` on the enum and its own failure message says slice 04 is the slice that retires it. Retire the one-member clause; DELETE the ordinal-zero half rather than keeping it, because 04-02's `ProcessBehaviorMetricType_PersistedOrdinal_IsPinned` in `ProcessBehaviorRecordingHandlerTests.cs` now pins all six ordinals including Throughput=0, and two guards on one invariant is the duplication that lets one drift unnoticed. This is the same class of repair as the CycleTime sentinel — a slice-03 test-expectation that slice 04 invalidates BY DESIGN — which is why it lands in this step rather than in 04-02, where it was correctly refused as out-of-boundary",
+            "`SeedProcessBehaviorSnapshot` and the two `Get{Team,Portfolio}ProcessBehaviorOverTime(ownerId, string? type)` helpers are PROMOTED from Slice03's Specifications to `PercentilesOverTimeAcceptanceTest` with their signatures UNCHANGED, and Slice03's Specifications keeps calling them — a move, never a rename, so every slice-01/02/03/03b caller compiles untouched",
+            "All new scenarios are authored `[Ignore(\"pending — DELIVER (epic-5427 slice-04)\")]` and un-ignored one at a time as this step lands; `main` compiles and stays green throughout",
+            "`dotnet build` zero warnings; `dotnet test` green — including every shipped slice-01/02/03/03b acceptance test with no URL and no expectation change. This step is what restores a FULLY green suite: 04-02 deliberately landed with exactly three known-red tests (the two CycleTime sentinels and the one-member enum guard), so `main` must not be pushed until this step is done"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice04ProcessBehaviorMetricTypesScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice04ProcessBehaviorMetricTypesSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03ThroughputProcessBehaviorScenarios.cs",
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03ThroughputProcessBehaviorSpecifications.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/ProcessBehaviorSnapshotDtoTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/ProcessBehaviorSnapshotTests.cs"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice03ThroughputProcessBehaviorScenarios.cs",
-          "scenario_name": "Delivery lead reads dated Throughput process-behaviour limits — read-path half (milestone-3 Scenario 10) and A fresh team's PBC Over Time widget shows the honest empty state — API half (milestone-3 Scenario 12)",
-          "dependencies": [
-            "03-02"
-          ],
-          "estimated_hours": 2.5,
-          "implementation_notes": "EXEMPT FROM PARADIGM: host stack is C#/NUnit; DISTILL ruled Tier A only. Compensate with parametrized NUnit TestCase coverage over the series universe (empty / single day / many days / other owner's rows excluded / other metric type excluded) plus the Scenarios+Specifications AT idiom.\n\nMirror PercentilesOverTimeSeriesQuery and the shipped percentiles-over-time actions rather than inventing a new controller style; read both controllers first. Note the slice-02 precedent that the query port must never receive a leaked sentinel — there is no sentinel here (no horizon dimension), so the mapping is direct and simpler; do not copy ResolveHorizon.\n\nci-learnings: when deserializing frontend JSON outside controller binding set PropertyNameCaseInsensitive = true (feedback_systemtextjson_case_insensitive) — relevant only if a test deserializes the DTO by hand. Standard NUnit2045 / CA1859 / CA1861 rules apply as in 03-01.\n\nREVIEW ADDENDUM (nw-acceptance-designer-reviewer, HIGH): the coverage universe MUST explicitly include the additive-contract proof — replay the shipped GET .../metrics/percentiles-over-time request with its existing parameters and assert the slice-01/02 payload comes back unperturbed. The criterion requires it; name it here so it is actually written."
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice04ProcessBehaviorMetricTypesScenarios.cs",
+          "scenario_name": "Scenario 13 (three dated lines per metric family, at the read port) + Scenario 14 (Feature Size scope) + cross-family isolation",
+          "dependencies": ["04-02"],
+          "implementation_notes": "The sentinel repair is the one thing in this slice that breaks a GREEN shipped test if it is forgotten, so it is pinned to a specific step rather than left to be discovered in CI. `ThenTheRequestIsRejectedAsUnsupported` asserts the 400 STATUS only (Slice03…Specifications.cs), which is what makes a binder-level 400 a faithful replacement for the guard-level one — do NOT tighten it to assert the guard's message, or the `\"99\"` and name cases stop sharing a Then. Harness caveat, unchanged since slice-02: `PercentilesOverTimeAcceptanceTest` anchors `SyncDay` in the PAST while the recorder writes `RecordedAt = today`; this fixture is read-path only and seeds rows explicitly, so express every expectation relative to the SEEDED `RecordedAt` values, never to `SyncDay` and never to today. Reuse the shipped `ARunOfRecordedDays` shape (seeded in REVERSE so the ordering guarantee is proven rather than inherited from insertion order) and vary the triples per family so a family-blind implementation cannot pass. ci-learnings to pre-apply: CA1859 on the new private helpers; CA1861 on any inline expected array; NUnit2045/2046/2056/4002 as before; `IntegrationTestBase` is `[NonParallelizable]` and these fixtures run on real SQLite via `WebApplicationFactory`, so no EF-InMemory FK caveat applies. Run a full `dotnet test` after the helper promotion but BEFORE the sentinel edit, so a promotion break and a sentinel break cannot be mistaken for each other.",
+          "estimated_hours": 2
         },
         {
-          "id": "03-04",
-          "name": "Demo backfill — backdate Throughput NPL rows for demo owners, per-family idempotency guard extended",
+          "id": "04-04",
+          "name": "Scope-aware metric-type list, labelled toggle, and the ownerType wiring",
           "criteria": [
-            "DECISION: EXTEND the existing `DemoPercentilesBackfillHandler` rather than adding a second demo handler. Justification: identical trigger, identical IsDemo gate, identical 14-day window and identical idempotency mechanism; a second handler would duplicate the demo-gate and window logic and risk the two charts on one screenshot disagreeing about their date range. This is also the reuse-analysis default (EXTEND unless the computation genuinely differs) and stays inside ADR-109's decision — the ADR names the handler as the epic's demo-backdating seam, not as a percentiles-only class. Update its XML doc to say it backdates BOTH over-time families; do not rename the class (churn across a shipped registration for no behavioural gain).",
-            "Injects `IProcessBehaviorSnapshotRepository` alongside the percentiles repository and backdates Throughput NPL rows over the SAME 14-day window the percentile backfill uses, so both widgets show an identically-dated range in demo screenshots.",
-            "The idempotency guard is extended to cover the ProcessBehavior family per the slice-02 rule: the guard is PER METRIC FAMILY, never per owner. An owner-scoped guard would make every newly-added family a permanent no-op on environments already backfilled for percentiles — exactly the bug slice-02 fixed. A regression test asserts an owner already CT+WIA-backfilled still gains Throughput NPL rows.",
-            "Demo-gated only (IsDemo=true connections). Real tenants stay forward-only and see the honest empty state until days accrue — backfilling real tenants would fabricate never-measured history (D5, ADR-109).",
-            "Backdated NPL values must be plausible and internally consistent: LNPL <= Average <= UNPL for every generated day. A degenerate or inverted triple would render a visibly broken chart in the docs screenshots.",
-            "The handler's failure isolation and demo gate remain intact; adding a family must not change behaviour for owners that have no PBC data.",
-            "`dotnet build` zero warnings, `dotnet test` green; un-ignore only this step's demo-backfill tests."
+            "`ProcessBehaviorMetricType` becomes the six enum MEMBER names verbatim — `\"Throughput\" | \"WorkItemAge\" | \"Wip\" | \"CycleTime\" | \"Arrivals\" | \"FeatureSize\"` — because `MetricsService.ts:802` interpolates the value straight into `?type=${metricType}`; the human labels never reach the wire",
+            "The metric-type list becomes SCOPE-AWARE: the team scope yields the five non-Feature-Size families, the portfolio scope yields all six. A test asserts `FeatureSize` is present for `\"portfolio\"` and ABSENT for `\"team\"` (D8, US-05 AC1/AC2, Scenario 14)",
+            "`DEFAULT_PROCESS_BEHAVIOR_METRIC_TYPE` stays `\"Throughput\"`, and a test asserts it is a member of BOTH scope lists — so the default selection can never become unreachable at one scope",
+            "`PbcOverTimeWidget` takes an `ownerType: \"team\" | \"portfolio\"` prop, and `BaseMetricsView` passes the value it ALREADY derives at :1383-1384 into the `pbcOverTime` node at :1131-1138. The widget never re-derives scope by sniffing the metrics service",
+            "Each toggle button renders a human-readable label from `useTerminology()` — Throughput / Work Item Age / Work In Progress / Cycle Time / Arrivals / Feature Size, the same vocabulary the six sibling point-in-time PBC widgets use — while `processBehaviorMetricTestId` keeps emitting `pbc-metric-<lowercased member name>`, so the shipped POM locator convention is unchanged. A test pins at least one label against the LITERAL string, never against the constant it came from (self-satisfying under mutation)",
+            "The per-family tooltip stays derived from the label, not hand-written six times",
+            "Selecting a family calls `getProcessBehaviorOverTime` with THAT family's wire value; switching back to a previously-selected family re-plots from the hook cache WITHOUT a second request (the shipped US-01 AC5 property, now across six keys). `usePbcOverTime` needs no change because its cache key already includes the family — verified by test, not assumed",
+            "A family with an empty series renders the honest D6 copy through the existing `resolveOverTimeEmptyCopy(endDate)` — never a broken chart or an empty axis (US-05 AC4)",
+            "`LIMIT_LINES`, the user-approved D7 styling deviation, the `pbc-over-time-widget` / `-empty` / `-legend` / `pbc-line-*` / `pbc-swatch-*` test ids, and the two exported empty-copy constants are all UNTOUCHED (Scenario 15)",
+            "`pnpm test` green; `pnpm build` zero errors AND zero warnings; `pnpm biome check ./src` clean"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs",
-          "scenario_name": "Delivery lead reads dated Throughput process-behaviour limits — demo-data precondition for the populated-chart half (milestone-3 Scenario 10, \"Given Lighthouse is running with the demo data loaded and daily Throughput limits recorded\")",
-          "dependencies": [
-            "03-02"
-          ],
-          "estimated_hours": 1.5,
-          "implementation_notes": "EXEMPT FROM PARADIGM: host stack is C#/NUnit; DISTILL ruled Tier A only. Compensate with parametrized NUnit TestCase coverage over the guard universe (never backfilled / percentiles-only backfilled / fully backfilled / non-demo owner) plus the shipped Scenarios+Specifications idiom.\n\nRead DemoPercentilesBackfillHandler and DemoBlockedHistoryBackfillHandler before editing; the per-family guard shape already exists from slice-02, so this is an extension of a known seam. The E2E in 03-06 depends on this step: the @screenshot / demo specs must assert a POPULATED (non-empty) chart before any PNG capture (the deferred Forge-med action item from the DISTILL gate).\n\nWatch the constructor parameter count as a second repository goes in (Sonar S107, limit seven).\n\nREVIEW ADDENDUM (nw-acceptance-designer-reviewer, MEDIUM): the guard universe MUST explicitly include a parametrized TestCase asserting the generated NPL triple satisfies LNPL <= Average <= UNPL for every backdated day (plausibility invariant — an inverted triple renders a visibly broken docs screenshot)."
-        },
-        {
-          "id": "03-05",
-          "name": "Frontend — \"PBC Over Time\" widget with metric-type toggle, UNPL/Average/LNPL lines, D6 empty state, Predictability registration",
-          "criteria": [
-            "NEW widget `PbcOverTimeWidget.tsx` + hook `usePbcOverTime.ts` + `MetricsService` method + a `models/Metrics/ProcessBehaviorSnapshot.ts` type for the `{ recordedAt, unpl, average, lnpl }` series. This is a SEPARATE widget from percentilesOverTime (D1) — do not add a tab to the existing one.",
-            "Registered in `categoryMetadata.ts` under Predictability for BOTH team and portfolio scope (D8), beside the existing `percentilesOverTime` and `throughputPbc` entries, `size: \"large\"`, trend policy `\"none\"` (it is already a trend — a previous-period arrow on top of it would be nonsense). Ungated, free-tier (D3).",
-            "Metric-type toggle renders with Throughput SELECTED. Only Throughput is active this slice; structure the options so slice 04 appends entries to one list rather than restructuring the component. Reuse the Tooltip-wrapped explicit-`selected` ToggleButton pattern already shipped in PercentilesOverTimeWidget — the same accessibility and test-locator surface.",
-            "Three dated lines — upper limit, average, lower limit — with styling matching the existing point-in-time PBC chart (D7). Reuse `components/Common/Charts/ProcessBehaviourChart`'s visual language and `ProcessBehaviourChartData`'s vocabulary (average / upperNaturalProcessLimit / lowerNaturalProcessLimit) rather than inventing new colours or new field names for the same concepts.",
-            "Honest empty state on a zero-snapshot owner — the D6 copy \"builds forward from today — no snapshots recorded yet\", exported as a named constant so the E2E asserts the shipped string verbatim (the `PERCENTILES_OVER_TIME_EMPTY_COPY` precedent) instead of duplicating prose in the spec.",
-            "Never a broken axis: no chart is rendered at all when the series is empty, and a single-point series does not produce a degenerate axis.",
-            "Vitest coverage for the widget (populated render, empty state, toggle state) and for the new `MetricsService` method (URL/query construction for `type=Throughput`, both team and portfolio scope).",
-            "`pnpm test` green and `pnpm build` clean with ZERO warnings (`tsc -b` then `vite build`; Biome runs as the `prebuild` hook so a clean build implies a clean Biome check).",
-            "No change to the existing PercentilesOverTimeWidget, its hook, or its tests — the two widgets are independent (D8 additive). A diff touching them is a signal the wrong seam was chosen."
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx",
-            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts",
-            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
             "Lighthouse.Frontend/src/models/Metrics/ProcessBehaviorSnapshot.ts",
-            "Lighthouse.Frontend/src/services/Api/MetricsService.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx",
             "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.test.tsx",
-            "Lighthouse.Frontend/src/services/Api/MetricsService.test.ts"
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
           ],
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.test.tsx",
-          "scenario_name": "Delivery lead reads dated Throughput process-behaviour limits — driving-adapter half at unit level (milestone-3 Scenario 10) and A fresh team's PBC Over Time widget shows the honest empty state (milestone-3 Scenario 12)",
-          "dependencies": [
-            "03-03"
-          ],
-          "estimated_hours": 3.5,
-          "implementation_notes": "EXEMPT FROM PARADIGM: the frontend stack is Vitest + React Testing Library (no Hypothesis / state-delta port); DISTILL ruled Tier A only. Compensate with table-driven Vitest cases over the render universe (empty / one day / many days / toggle selected) and the E2E in 03-06.\n\nRead PercentilesOverTimeWidget.tsx + usePercentilesOverTime.ts before writing — copy their data-loading, caching and empty-state structure, then simplify: there is no horizon/selection union here, only a metric type, so do NOT port PercentilesSelection or describeSelection.\n\nBeware the React #185 trap (project memory): an inline `new Date()` default as a useEffect dependency causes an infinite re-render loop — stabilize any date default with useMemo.\n\nBiome hazard: remove any stray `*/docs` symlink under src before building, or Biome reformats the whole docs tree (project memory: Biome --write docs-symlink hazard)."
+          "scenario_name": "Scenario 13 (the toggle exposes every family and each fetches its own series) + Scenario 14 (Feature Size offered on portfolio, absent on team) at the widget seam",
+          "dependencies": ["04-03"],
+          "implementation_notes": "`useTerminology()` falls back to a provider-independent default map (TerminologyContext.tsx:99-112) whose values are exactly the `.feature` file's wording, so the widget can call it with no new test provider and no `.feature` drift. Label asymmetry to accept deliberately: the WorkItemAge family reads `GetTotalWorkItemAgeProcessBehaviourChart`, which the sibling point-in-time widget titles \"Total Work Item Age\"; the toggle uses the shorter \"Work Item Age\" from the `.feature`, because this is a compact button row. Do NOT add an inline `new Date()`, `[]` or `{}` default to the new `ownerType` prop or to anything new in this chain (React #185 — ci-learnings 2026-05-25); `BaseMetricsView` always passes it. ci-learnings to pre-apply: typescript:S7735 — no `!==`/`!=` in a ternary CONDITION, flip to `===`; S7770 — pass a single-arg pure function directly, `.map(describeMetricType)` not `.map((t) => describeMetricType(t))`; S7764 — `globalThis` over `window`; S3776 — if the toggle build gains a third branch, extract a helper rather than nesting; S4144 — if the two scope lists end up as byte-identical bodies, express them as one base list plus the portfolio-only addition rather than duplicating. `IMetricsService` is NOT changed here (only the union's members widen), so no test-double sweep is needed — but re-run the four known consumers (`MockApiServiceProvider.ts`, `BaseMetricsView.test.tsx`, `useMetricsData.test.ts`, `TotalWorkItemAgeWidget.test.tsx`) before committing, since a widened union can surface an exhaustiveness error in a mock. Mutation-dense spots: the scope predicate (a flipped comparison offers Feature Size to teams) and the label map (blanking a label survives unless one label is pinned against a literal).",
+          "estimated_hours": 1.5
         },
         {
-          "id": "03-06",
-          "name": "E2E POM + spec for the PBC Over Time widget, and the full local quality-gate sweep",
+          "id": "04-05",
+          "name": "E2E toggle + scope coverage, the stale docs claims, and the full local gate sweep",
           "criteria": [
-            "New POM `tests/models/metrics/PbcOverTimeWidget.ts` exposing the toggle, the three limit lines and the empty-state copy, plus a spec `tests/specs/flow/PbcOverTime.spec.ts` — or the scenarios added to the existing PercentilesOverTime spec if and only if the POM boundary genuinely warrants sharing. Specs drive the UI through the POM only; never an inline page.locator() in a spec (project convention).",
-            "Scenario 10 (populated): a demo owner (demo scenario 0 = Team Zenith precedent) with backfilled Throughput NPL rows shows the toggle with Throughput selected and three dated lines plotted. Assert the chart is POPULATED (non-empty) — this is the deferred Forge-med action item and it must hold before any PNG capture.",
-            "Scenario 12 (empty): a fresh NON-demo team created via the API helper shows the exported D6 empty-state copy verbatim and no chart. Note the slice-02 trap — `tests/helpers/api/teams.ts` requires `blockedStalenessThresholdDays` or the create call 400s.",
-            "Playwright is RUN LOCALLY against a locally-built instance and green BEFORE the commit. Never commit an unrun spec or POM locator (standing project rule).",
-            "Full local CI-parity sweep at slice end: `dotnet build` zero warnings, `dotnet test` all green, `pnpm test` green, `pnpm build` zero errors and zero warnings, Biome clean via prebuild.",
-            "Per-feature mutation gate: Stryker.NET (backend) and Stryker (frontend) >= 80% kill rate on the slice-03 deltas, reusing the existing stryker-config.epic-5427-percentiles-over-time.json scope. High-value targets: the not-Ready skip, the same-day upsert, the per-type containment, the empty-series read, and the widget empty state.",
-            "SonarCloud: no new issues of any severity. Remember INFO-severity findings (e.g. NUnit2045) fail the gate and are invisible to a warning-clean local build — grep the new test files for independent consecutive asserts before pushing.",
-            "Push to main only when everything above is green; then wait for CI green and transition ADO #5548 Active -> Resolved (slice-boundary ritual). Never push red.",
-            "Screenshots are NOT regenerated in this step — they stay deferred to epic completion per the slice-02 decision, because slice 04 changes this same widget's toggle row. When they are finally regenerated, `rm` the old PNG first (the comparator keeps the old file when the diff is < 0.5%)."
+            "POM `PbcMetricType` extended to the six member names; `metricToggle` keeps deriving `pbc-metric-<lowercase>`; a new POM accessor reports which families the toggle currently OFFERS, so ABSENCE is assertable directly instead of inferred from a click timeout",
+            "Spec: on the demo PORTFOLIO all six families are offered, including `Feature Size`; on the demo TEAM five are offered and `Feature Size` is NOT (Scenario 14)",
+            "Spec: Throughput still plots three dated lines with more than one recorded day, and every shipped D7-deviation assertion (solid strokes, three distinct colours, matching legend swatches) passes UNCHANGED (Scenario 15 — the shipped test is kept verbatim, not rewritten)",
+            "Spec: selecting a family other than Throughput on the demo owner moves the pressed state to that family and the widget renders without a broken chart. It must NOT assert three dated lines there — the demo backfill stays Throughput-only, so a new family has at most the single row today's refresh recorded. The per-family dated-triple assertion lives at the read port in 04-03",
+            "Spec: the honest D6 empty copy for a new family is asserted on the FRESH, never-refreshed team on a non-demo connection (the shipped `@edge @US-04` setup), where nothing is recorded for ANY family — deterministic. Asserting it on the demo team would be wrong, because the extended recorder writes today's row there",
+            "Every POM getter used in a one-sided assertion is guarded against the loading sample: poll for the thing to actually render (`countChartLines()` reaching 3, or the toggle button being attached) BEFORE measuring, and bound any count on both sides",
+            "Every touched Playwright spec is RUN LOCALLY and green against a live Lighthouse with seeded demo data BEFORE the commit — never commit an unrun spec or POM locator",
+            "`docs/metrics/predictability.md` — line ~90's `**Flow Metric** | Throughput` row lists all six families and marks Feature Size portfolio-only; line ~111's \"Lighthouse records natural process limits for **Throughput** today\" is replaced with the full set plus the portfolio-only note; line ~117's demo-data note gains the honest caveat that the backdated demo history covers Throughput only, so the other families start empty even on demo data. No other prose",
+            "A grep for `pending — DELIVER (epic-5427 slice-04)` and for `test.skip` in the touched specs returns NOTHING",
+            "Full local gate sweep green: `dotnet build` zero warnings, `dotnet test`, `pnpm test`, `pnpm build`, `pnpm biome check ./src`, and the touched Playwright specs"
           ],
           "files_to_modify": [
             "Lighthouse.EndToEndTests/tests/models/metrics/PbcOverTimeWidget.ts",
             "Lighthouse.EndToEndTests/tests/specs/flow/PbcOverTime.spec.ts",
-            "Lighthouse.EndToEndTests/tests/helpers/api/teams.ts"
+            "docs/metrics/predictability.md"
           ],
           "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/PbcOverTime.spec.ts",
-          "scenario_name": "Delivery lead reads dated Throughput process-behaviour limits (milestone-3 Scenario 10, @real-io @driving_adapter) and A fresh team's PBC Over Time widget shows the honest empty state (milestone-3 Scenario 12, @edge)",
-          "dependencies": [
-            "03-04",
-            "03-05"
-          ],
-          "estimated_hours": 2,
-          "implementation_notes": "EXEMPT FROM PARADIGM: E2E verifies wiring, not invariants — single-example by design in every nWave profile. No PBT applies at this level.\n\nDrive the walking skeleton from seeded demo data (feedback_e2e_use_demo_data) and use goToOverview() to refresh between assertions where the widget caches. Claude runs Playwright locally itself — do not punt the run to the user (feedback_e2e_run_locally_by_user).\n\nWatch the debounced-autosave navigation race if any settings are touched: navigating on a stale \"saved\" indicator drops the last edit; waitForResponse on the PUT instead (project memory).\n\nMutation runs at the END of the slice, once, not per step."
+          "scenario_name": "Scenarios 13, 14 and 15 through the real UI — the toggle offers every family per scope, Feature Size is portfolio-only, Throughput is unregressed, and a family with nothing recorded says so honestly",
+          "dependencies": ["04-04"],
+          "implementation_notes": "The docs edits are in scope because two claims go factually stale the moment 04-02 lands and a third becomes misleading — they are not the batched prose pass (that is finalization). The demo caveat matters most: without it a user toggles to Work In Progress on demo data, sees the forward-only copy, and concludes the feature is broken. ci-learnings to pre-apply: the Predictability category ALSO hosts six point-in-time PBC widgets, so scope every new locator to the `pbc-over-time-widget` container or strict mode matches two elements and breaks a pre-existing page-global POM; MUI strips `data-testid` from ICONS in production builds; `getByRole({name})` / `getByText` are case-insensitive SUBSTRING matches, so a \"Work Item Age\" assertion can accidentally match \"Total Work Item Age\" elsewhere on the page — assert on the scoped toggle, not the page; a POM getter returning 0 for \"not rendered yet\" makes any `toBeLessThan` vacuous; count MUI-X points by SVG path commands (`/[MLC]/`), never marks or axis ticks; select a MUI-X series with `.MuiLineChart-line[data-series=\"{id}\"]`, never `.MuiLineElement-series-{id}`; assert per-series styles DIFFER rather than match, since \"all identical\" passes when every stroke is `none`. No `timezoneId` is pinned in `playwright.config.ts`, but this slice touches no date-range round-trip, so that trap does not apply — do not introduce one. After writing any assertion whose failure you have not seen, sabotage the production code (e.g. hard-code the team scope list to include FeatureSize) and re-run to confirm red, then restore. Do NOT regenerate screenshots — the PBC widget's shots are already doubly stale and regenerate once AFTER this slice, per the slice-03 carry-forward. Stop for user review before mutation / adversarial-review / finalize close-out.",
+          "estimated_hours": 1.5
         }
       ]
     }
   ],
-  "walking_skeleton": {
-    "applies": false,
-    "rationale": "The epic's walking skeleton was Scenario 1, shipped in slice-01 (CT percentiles end to end through the production composition root). Slice-03 walks the same backbone for a second table, so it is a value slice, not a new skeleton. Its end-to-end proof is milestone-3 Scenario 10 through the real UI."
-  },
   "quality_gates": {
     "backend": [
       "dotnet build zero warnings (TreatWarningsAsErrors makes any warning a failure)",
       "dotnet test all NUnit suites green (NUnit 4.6 + Moq + EF InMemory + WebApplicationFactory on real SQLite)",
-      "Stryker.NET kill rate >= 80% on the slice-03 backend deltas (per-feature strategy), reusing stryker-config.epic-5427-percentiles-over-time.json",
-      "The recording handler's finally { invalidateReadCache(); } fires on both the success and the exception path — standing ci-learnings rule, guards an unrelated @premium E2E",
-      "A non-Ready BaselineStatus writes NO row — zeros from ProcessBehaviourChart.NotReady must never reach the database"
+      "Stryker.NET kill rate >= 80% on the slice-04 backend deltas, re-anchoring stryker-config.epic-5427-percentiles-over-time.json FIRST — it is gitignored and offset-based, so a stale config silently mutates the wrong code and reports a meaningless score. Mutation-dense spots: the ready-but-zero gate's `&&` and its two `== 0` comparisons, the two per-scope readers arrays (a dropped family), and the enum ordinals.",
+      "Every shipped slice-01/02/03/03b acceptance test still passes with NO URL and NO expectation change — including the two repaired sentinel tests, which must still assert a 400"
     ],
     "frontend": [
       "pnpm test all Vitest suites green",
       "pnpm build zero TypeScript, Biome and Vite warnings (prebuild runs `pnpm biome check ./src`)",
-      "Stryker frontend kill rate >= 80% on the widget/hook/service deltas"
+      "Stryker frontend kill rate >= 80% on the model/widget deltas, and every new or changed test file MUST be in the `include:` list of vitest.stryker.*.config.ts — a missing entry makes every mutant survive for want of a test RUN, indistinguishable from a real gap. Mutation-dense spots: the scope predicate and the label map.",
+      "At least one user-visible toggle label pinned against the LITERAL string, not against the constant it came from"
     ],
     "e2e": [
-      "Playwright PbcOverTime scenarios run LOCALLY and green against seeded demo data BEFORE commit — never commit an unrun spec or POM locator",
-      "The populated-chart assertion holds before any PNG capture (deferred Forge-med action item from the DISTILL gate)"
+      "PbcOverTime.spec.ts runs LOCALLY and green against seeded demo data BEFORE commit — never commit an unrun spec or POM locator",
+      "The four shipped tests in that spec pass unchanged",
+      "No one-sided assertion measured off a POM getter that returns 0 while loading"
     ],
     "migration": [
-      "A REAL additive EF migration AddProcessBehaviorSnapshot is generated via the existing CreateMigration PowerShell script across ALL supported providers — never `dotnet ef migrations add`",
-      "Expand-only: one CreateTable + one CreateIndex, zero destructive operations on existing tables",
-      "The Postgres container migration test asserts both the table and the unique natural-key index, and that a duplicate key is rejected — EF InMemory cannot see constraint enforcement"
+      "NO EF migration expected — appending enum members changes no schema, and `ProcessBehaviorSnapshot.MetricType` is already an int column. If the model diff shows ANY DDL, stop: the slice has drifted out of scope."
     ],
     "sonarqube": [
-      "No new SonarCloud issues of any severity — the gate fails on new violations even where existing debt remains",
-      "Pre-apply docs/ci-learnings.md before writing code; reintroducing a ledgered rule costs a CI cycle",
-      "INFO-severity findings (NUnit2045 and friends) fail the gate and are invisible to a warning-clean local build",
-      "Any deliberate conflict with a Sonar rule is suppressed NARROWLY at the call site with a justification, never project-wide"
+      "No new SonarCloud issues of any severity; the gate fails on new violations even where existing debt remains",
+      "Pre-apply the docs/ci-learnings.md Preflight checklist (L45-101) before writing code",
+      "Any deliberate conflict with a Sonar rule is suppressed NARROWLY at the call site with a justification — never project-wide",
+      "Sonar only re-scans PRs + the Nightly, NOT pushes to main: a green main push can carry new-code violations that fire on the next PR's diff"
     ],
     "contract_compatibility": [
-      "The two new GET actions are purely additive; the shipped percentiles-over-time requests are replayed unchanged in an acceptance test and must return their slice-01/02 payloads",
-      "ProcessBehaviorMetricType is ordinal-persisted — Throughput stays first and new members are APPENDED only",
-      "Additive API surface with no shape change to existing DTOs so no Lighthouse-Clients (CLI/MCP) version gate"
+      "`ProcessBehaviorMetricType` members are APPENDED only; Throughput stays ordinal 0 and every already-persisted snapshot row keeps its family. A test pins the ordinals.",
+      "No response DTO changes shape; no new endpoint, route or query parameter; no client version gate (no CLI/MCP client consumes this endpoint)",
+      "The D6 and D10 empty-state strings are unchanged byte-for-byte, so the shipped E2E constants keep matching",
+      "The frontend union's members equal the C# enum member names character-for-character — they ARE the `?type=` wire values"
     ],
     "process": [
-      "Conventional commits with feature scopes and Step-Id / Task-Id trailers; refactor commits separate from feature commits",
-      "Trunk-based: push directly to origin main; never push red",
-      "Docs, ADR-106/107/108/109 amendments and the evolution-archive entry happen at slice FINALIZATION, not mid-slice",
-      "ADO #5548 Active -> Resolved at slice end, after CI goes green"
+      "Conventional commits with feature scopes and Step-Id / Task-Id trailers; one focused commit per step; refactor commits separate from feature commits",
+      "Trunk-based: push directly to origin main; never push red. Check CI is green on the current HEAD before pushing.",
+      "No silent N/A — every checklist item gets an explicit answer, including \"N/A, because …\"",
+      "Screenshots, the evolution archive, ADO #5549's transition and any prose beyond the three predictability.md claims are FINALIZATION activities. Stop for user review before mutation / adversarial-review / finalize close-out."
     ],
     "red_mechanism": [
-      "RED-by-skip (project convention, DISTILL [REF] RED Mechanism — deviates from Mandate 7 because a C# AT referencing a missing type fails to COMPILE, which is Broken, not Red): scenarios are authored with [Ignore(\"pending — DELIVER (epic-5427 slice-03)\")] / test.skip alongside minimal type skeletons so main always compiles and stays green",
-      "Each step un-ignores ONLY its own scenarios and implements them to GREEN before committing"
+      "RED-by-skip (project convention, DISTILL [REF] RED Mechanism): a NUnit test referencing a not-yet-existent type fails to COMPILE, which is BROKEN, not RED. Scenarios are authored alongside the minimal type changes so main always compiles and stays green, each tagged `[Ignore(\"pending — DELIVER (epic-5427 slice-04)\")]` or `test.skip`, and un-ignored one at a time per step.",
+      "The slice is not done until a grep for the slice-04 pending marker returns nothing.",
+      "For every assertion whose failure has not been observed, sabotage the production code and confirm red before restoring. `if (false)` does NOT work in C# — TreatWarningsAsErrors turns CS0162 unreachable-code into a build error."
     ]
-  },
-  "ssot_inputs": [
-    "docs/feature/epic-5427-percentiles-over-time/feature-delta.md — DISCUSS D1-D8, DESIGN DDD-1..7, DEVOPS, DISTILL, and the slice-02 DELIVER carry-forward trap list",
-    "docs/feature/epic-5427-percentiles-over-time/slices/slice-03-throughput-pbc-over-time.md",
-    "docs/feature/epic-5427-percentiles-over-time/acceptance/milestone-3-throughput-pbc.feature — the three authoritative scenarios",
-    "docs/feature/epic-5427-percentiles-over-time/environments.yaml",
-    "docs/product/architecture/brief.md — Application Architecture, epic-5427-percentiles-over-time (incl. the slices 01-02 Component Inventory and the enum-ordinal note)",
-    "docs/product/architecture/adr-106..109 (each with its Amendment (slice-02) section)",
-    "docs/ci-learnings.md",
-    "CLAUDE.md — paradigm, mutation strategy, quality gates, CreateMigration mandate"
-  ],
-  "open_questions_resolved": [
-    "PBC-over-time day grain (DESIGN open question, lands in 03-02): the lookback window passed to GetThroughputProcessBehaviourChart for an as-of-today snapshot must match the window the point-in-time throughputPbc widget uses, so the recorded limits equal what the user sees today. Confirm the per-refresh recompute cost at the same time; if hot, cache rather than change the grain. To be decided against the real call site during 03-02 and carried into the ADR amendment at finalization.",
-    "Demo backfill EXTEND vs NEW (03-04): resolved as EXTEND DemoPercentilesBackfillHandler — same trigger, gate, window and idempotency mechanism; a second handler would duplicate the demo gate and risk divergent date ranges between the two charts on one screenshot.",
-    "Natural key arity: the NPL table keys on FOUR parts (OwnerId, OwnerType, MetricType, RecordedAt). There is no horizon dimension for NPLs, so the slice-02 NoHorizon sentinel does NOT apply here and must not be copied.",
-    "Enum reuse: ProcessBehaviorMetricType is a NEW enum, not a reuse of MetricType — the two ordinals grow independently (percentile families vs six PBC types)."
-  ],
-  "out_of_scope": [
-    "The remaining PBC metric types (WorkItemAge, Wip, CycleTime, Arrivals, FeatureSize portfolio-only) — slice 04 / US-05",
-    "Special-cause overlays on the over-time chart",
-    "Any change to the shipped Percentiles Over Time widget or its CT/WIA tabs",
-    "Screenshot regeneration (deferred to epic completion — slice 04 changes this widget's toggle row)",
-    "The operator monitoring runbook page for the recording-failed event (still-open Forge-med item, deferred to epic completion; the schema is canonical in the ADR-107 amendment)",
-    "Backfilling real tenants — forward-only by design (D5); only demo connections are backdated",
-    "RBAC, licensing or premium gating (free-tier, D3)"
-  ],
-  "implementation_scope": {
-    "source_directories": [
-      "Lighthouse.Backend/Lighthouse.Backend/Models/",
-      "Lighthouse.Backend/Lighthouse.Backend/Data/",
-      "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/",
-      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/",
-      "Lighthouse.Backend/Lighthouse.Backend/API/",
-      "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/",
-      "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/",
-      "Lighthouse.Frontend/src/pages/Common/MetricsView/",
-      "Lighthouse.Frontend/src/models/Metrics/",
-      "Lighthouse.Frontend/src/services/Api/"
-    ],
-    "test_directories": [
-      "Lighthouse.Backend/Lighthouse.Backend.Tests/",
-      "Lighthouse.Frontend/src/",
-      "Lighthouse.EndToEndTests/tests/"
-    ],
-    "excluded_patterns": [
-      "**/bin/**",
-      "**/obj/**",
-      "**/node_modules/**",
-      "**/*.Designer.cs"
-    ]
-  },
-  "validation": {
-    "status": "approved",
-    "reviewer": "nw-acceptance-designer-reviewer",
-    "approved_at": "2026-07-26",
-    "verdict": "conditionally_approved",
-    "findings_applied": [
-      "HIGH 03-03 additive-contract proof named in notes",
-      "MEDIUM 03-02 cache-invalidation both paths named in notes",
-      "MEDIUM 03-04 LNPL<=Average<=UNPL plausibility guard named in notes"
-    ],
-    "informational_carried": "03-02 PBC day-grain window still to be decided against the throughputPbc call site during implementation"
   }
 }
