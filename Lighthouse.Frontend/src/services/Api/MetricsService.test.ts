@@ -555,6 +555,12 @@ describe("MetricsService getCycleTimeData named cycle times", () => {
 	});
 });
 
+// The dashboard always holds a range, so both over-time methods take it as required
+// arguments and append it through the shared getDateFormatString helper (DDD-11).
+const OVER_TIME_RANGE_START = new Date(2026, 4, 24);
+const OVER_TIME_RANGE_END = new Date(2026, 6, 26);
+const OVER_TIME_RANGE_QUERY = "startDate=2026-05-24&endDate=2026-07-26";
+
 describe("MetricsService getPercentilesOverTime", () => {
 	let metricsService: TeamMetricsService;
 
@@ -588,11 +594,16 @@ describe("MetricsService getPercentilesOverTime", () => {
 		];
 		mockedAxios.get.mockResolvedValueOnce({ data: series });
 
-		const result = await metricsService.getPercentilesOverTime(7, 60);
+		const result = await metricsService.getPercentilesOverTime(
+			7,
+			60,
+			OVER_TIME_RANGE_START,
+			OVER_TIME_RANGE_END,
+		);
 
 		expect(result).toEqual(series);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/teams/7/metrics/percentiles-over-time?horizon=60",
+			`/teams/7/metrics/percentiles-over-time?horizon=60&${OVER_TIME_RANGE_QUERY}`,
 		);
 	});
 
@@ -607,10 +618,15 @@ describe("MetricsService getPercentilesOverTime", () => {
 		for (const [selection, expectedQuery] of queryPerSelection) {
 			mockedAxios.get.mockResolvedValueOnce({ data: [] });
 
-			await metricsService.getPercentilesOverTime(7, selection);
+			await metricsService.getPercentilesOverTime(
+				7,
+				selection,
+				OVER_TIME_RANGE_START,
+				OVER_TIME_RANGE_END,
+			);
 
 			expect(mockedAxios.get).toHaveBeenLastCalledWith(
-				`/teams/7/metrics/percentiles-over-time?${expectedQuery}`,
+				`/teams/7/metrics/percentiles-over-time?${expectedQuery}&${OVER_TIME_RANGE_QUERY}`,
 			);
 		}
 	});
@@ -618,9 +634,14 @@ describe("MetricsService getPercentilesOverTime", () => {
 	it("propagates errors when fetching the percentiles series fails", async () => {
 		mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
 
-		await expect(metricsService.getPercentilesOverTime(1, 30)).rejects.toThrow(
-			"Network Error",
-		);
+		await expect(
+			metricsService.getPercentilesOverTime(
+				1,
+				30,
+				OVER_TIME_RANGE_START,
+				OVER_TIME_RANGE_END,
+			),
+		).rejects.toThrow("Network Error");
 	});
 });
 
@@ -644,11 +665,13 @@ describe("MetricsService getProcessBehaviorOverTime", () => {
 		const result = await new TeamMetricsService().getProcessBehaviorOverTime(
 			7,
 			"Throughput",
+			OVER_TIME_RANGE_START,
+			OVER_TIME_RANGE_END,
 		);
 
 		expect(result).toEqual(LIMIT_SERIES);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/teams/7/metrics/process-behavior-over-time?type=Throughput",
+			`/teams/7/metrics/process-behavior-over-time?type=Throughput&${OVER_TIME_RANGE_QUERY}`,
 		);
 	});
 
@@ -658,11 +681,13 @@ describe("MetricsService getProcessBehaviorOverTime", () => {
 		const result = await new ProjectMetricsService().getProcessBehaviorOverTime(
 			12,
 			"Throughput",
+			OVER_TIME_RANGE_START,
+			OVER_TIME_RANGE_END,
 		);
 
 		expect(result).toEqual(LIMIT_SERIES);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
-			"/portfolios/12/metrics/process-behavior-over-time?type=Throughput",
+			`/portfolios/12/metrics/process-behavior-over-time?type=Throughput&${OVER_TIME_RANGE_QUERY}`,
 		);
 	});
 
@@ -670,7 +695,12 @@ describe("MetricsService getProcessBehaviorOverTime", () => {
 		mockedAxios.get.mockRejectedValueOnce(new Error("Network Error"));
 
 		await expect(
-			new TeamMetricsService().getProcessBehaviorOverTime(1, "Throughput"),
+			new TeamMetricsService().getProcessBehaviorOverTime(
+				1,
+				"Throughput",
+				OVER_TIME_RANGE_START,
+				OVER_TIME_RANGE_END,
+			),
 		).rejects.toThrow("Network Error");
 	});
 });

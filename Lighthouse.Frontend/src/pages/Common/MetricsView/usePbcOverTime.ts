@@ -8,9 +8,21 @@ import {
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 
-type MetricTypeCache = Partial<
-	Record<ProcessBehaviorMetricType, ProcessBehaviorSnapshot[]>
->;
+/**
+ * Keyed by metric family AND date range, not by family alone: the series a request
+ * answers with depends on both, so a family-only key would serve the previous
+ * range's series after the dashboard pickers move (US-06 AC4).
+ */
+type MetricTypeCache = Record<string, ProcessBehaviorSnapshot[]>;
+
+/** Single source of the cache key, so the write and the read-back cannot disagree. */
+function cacheKey(
+	metricType: ProcessBehaviorMetricType,
+	startDate: Date,
+	endDate: Date,
+): string {
+	return `${metricType}|${startDate.toISOString()}|${endDate.toISOString()}`;
+}
 
 export interface PbcOverTimeState {
 	metricType: ProcessBehaviorMetricType;
@@ -29,23 +41,28 @@ export interface PbcOverTimeState {
 export function usePbcOverTime(
 	ownerId: number,
 	metricsService: IMetricsService<IWorkItem | IFeature>,
+	startDate: Date,
+	endDate: Date,
 ): PbcOverTimeState {
 	const [metricType, setMetricType] = useState<ProcessBehaviorMetricType>(
 		DEFAULT_PROCESS_BEHAVIOR_METRIC_TYPE,
 	);
 	const [cache, setCache] = useState<MetricTypeCache>({});
+	const key = cacheKey(metricType, startDate, endDate);
 
 	useEffect(() => {
-		// Already fetched — re-plot from the persisted series, no recompute.
-		if (cache[metricType] !== undefined) {
+		// Already fetched for this family AND range — re-plot from the persisted
+		// series, no recompute. A range change is a different key, so it refetches
+		// instead of replaying a stale series (US-06 AC4).
+		if (cache[key] !== undefined) {
 			return;
 		}
 		let cancelled = false;
 		metricsService
-			.getProcessBehaviorOverTime(ownerId, metricType)
+			.getProcessBehaviorOverTime(ownerId, metricType, startDate, endDate)
 			.then((data) => {
 				if (!cancelled) {
-					setCache((previous) => ({ ...previous, [metricType]: data }));
+					setCache((previous) => ({ ...previous, [key]: data }));
 				}
 			})
 			.catch((error) =>
@@ -54,7 +71,7 @@ export function usePbcOverTime(
 		return () => {
 			cancelled = true;
 		};
-	}, [ownerId, metricsService, metricType, cache]);
+	}, [ownerId, metricsService, metricType, startDate, endDate, key, cache]);
 
-	return { metricType, setMetricType, series: cache[metricType] ?? null };
+	return { metricType, setMetricType, series: cache[key] ?? null };
 }

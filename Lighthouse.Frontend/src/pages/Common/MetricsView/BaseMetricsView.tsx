@@ -1124,12 +1124,16 @@ function buildWidgetNodes(ctx: {
 			<PercentilesOverTimeWidget
 				ownerId={ctx.entity.id}
 				metricsService={ctx.metricsService}
+				startDate={ctx.startDate}
+				endDate={ctx.endDate}
 			/>
 		),
 		pbcOverTime: (
 			<PbcOverTimeWidget
 				ownerId={ctx.entity.id}
 				metricsService={ctx.metricsService}
+				startDate={ctx.startDate}
+				endDate={ctx.endDate}
 			/>
 		),
 		totalThroughput: ctx.throughputInfo ? (

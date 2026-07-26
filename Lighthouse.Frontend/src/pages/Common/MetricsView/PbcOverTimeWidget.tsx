@@ -20,21 +20,26 @@ import type {
 import { PROCESS_BEHAVIOR_METRIC_TYPES } from "../../../models/Metrics/ProcessBehaviorSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { resolveOverTimeEmptyCopy } from "./overTimeEmptyState";
 import { usePbcOverTime } from "./usePbcOverTime";
 
 interface PbcOverTimeWidgetProps {
 	ownerId: number;
 	metricsService: IMetricsService<IWorkItem | IFeature>;
+	startDate: Date;
+	endDate: Date;
 	title?: string;
 }
 
 /**
- * Forward-only over-time charts read this on a fresh owner instead of a broken
- * axis (D6). Exported so the E2E asserts the shipped string rather than a
- * duplicated copy of the prose.
+ * Re-exported so the E2E asserts the shipped string rather than a duplicated copy
+ * of the prose. Which of the two sentences an empty chart shows is decided by
+ * resolveOverTimeEmptyCopy (D10 / DDD-13).
  */
-export const PBC_OVER_TIME_EMPTY_COPY =
-	"builds forward from today — no snapshots recorded yet";
+export {
+	OVER_TIME_FORWARD_ONLY_EMPTY_COPY as PBC_OVER_TIME_EMPTY_COPY,
+	OVER_TIME_RANGE_EMPTY_COPY as PBC_OVER_TIME_RANGE_EMPTY_COPY,
+} from "./overTimeEmptyState";
 
 /**
  * The three limit lines, in the point-in-time chart's vocabulary
@@ -110,12 +115,16 @@ function describeMetricType(metricType: ProcessBehaviorMetricType): {
 const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 	ownerId,
 	metricsService,
+	startDate,
+	endDate,
 	title = "PBC Over Time",
 }) => {
 	const theme = useTheme();
 	const { metricType, setMetricType, series } = usePbcOverTime(
 		ownerId,
 		metricsService,
+		startDate,
+		endDate,
 	);
 
 	const tabs = PROCESS_BEHAVIOR_METRIC_TYPES.map(describeMetricType);
@@ -221,7 +230,7 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 							color="text.secondary"
 							sx={{ py: 4, textAlign: "center" }}
 						>
-							{PBC_OVER_TIME_EMPTY_COPY}
+							{resolveOverTimeEmptyCopy(endDate)}
 						</Typography>
 					)
 				)}

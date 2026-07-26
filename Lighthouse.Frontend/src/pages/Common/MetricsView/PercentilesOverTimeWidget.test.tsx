@@ -11,7 +11,10 @@ import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/Percen
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { certainColor, riskyColor } from "../../../utils/theme/colors";
-import PercentilesOverTimeWidget from "./PercentilesOverTimeWidget";
+import PercentilesOverTimeWidget, {
+	PERCENTILES_OVER_TIME_EMPTY_COPY,
+	PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
+} from "./PercentilesOverTimeWidget";
 
 // Mock MUI-X LineChart (same pattern as LineRunChart.test.tsx). Expose the
 // series (colours + per-series point counts) and the x-axis dates so the test
@@ -59,6 +62,20 @@ vi.mock("@mui/x-charts", () => ({
 }));
 
 const OWNER_ID = 42;
+
+// The dashboard's default range always ends today (BaseMetricsView seeds endDate from
+// `new Date()`), which is the state the shipped forward-only empty-state assertions run in.
+const RANGE_START = new Date(2026, 6, 1);
+const RANGE_END = todayAtNoon();
+
+/** A past window: ends before today, so an empty series is an in-range emptiness (DDD-13). */
+const PAST_RANGE_START = new Date(2026, 4, 1);
+const PAST_RANGE_END = new Date(2026, 4, 15);
+
+function todayAtNoon(): Date {
+	const today = new Date();
+	return new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+}
 
 const DATED_SERIES: PercentilesOverTimeSnapshot[] = [
 	{
@@ -125,12 +142,19 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		// The 30-day chip is the pressed toggle on first paint (AC1). Selection is
@@ -155,12 +179,19 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		// Visible labels read "{30|60|90} days", not the old "CT-{n}" codes.
@@ -185,6 +216,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -203,6 +236,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -225,6 +260,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -275,6 +312,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -299,12 +338,19 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		// While loading we must render neither the chart nor the honest empty copy —
@@ -323,6 +369,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -342,6 +390,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -351,6 +401,104 @@ describe("PercentilesOverTimeWidget", () => {
 			"builds forward from today — no snapshots recorded yet",
 		);
 		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+	});
+
+	it("says the range is empty, not that nothing was ever recorded, for a window that ended before today", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				startDate={PAST_RANGE_START}
+				endDate={PAST_RANGE_END}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		const empty = await screen.findByTestId("percentiles-over-time-empty");
+		expect(empty).toHaveTextContent(PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY);
+		// The forward-only sentence would be a lie about a past window on an owner
+		// that may well have history outside it (D10 / DDD-13).
+		expect(empty).not.toHaveTextContent(PERCENTILES_OVER_TIME_EMPTY_COPY);
+		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+	});
+
+	it("keeps the forward-only copy verbatim when the window still includes today", async () => {
+		const getPercentilesOverTime = vi.fn().mockResolvedValue([]);
+		render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		const empty = await screen.findByTestId("percentiles-over-time-empty");
+		expect(empty).toHaveTextContent(PERCENTILES_OVER_TIME_EMPTY_COPY);
+		expect(PERCENTILES_OVER_TIME_EMPTY_COPY).toBe(
+			"builds forward from today — no snapshots recorded yet",
+		);
+	});
+
+	it("refetches instead of replaying the cached series when the range changes", async () => {
+		const IN_RANGE_SERIES: PercentilesOverTimeSnapshot[] = [
+			{
+				recordedAt: "2026-05-01",
+				metricType: "CycleTime",
+				p50: 1,
+				p70: 2,
+				p85: 3,
+				p95: 4,
+			},
+		];
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockResolvedValueOnce(DATED_SERIES)
+			.mockResolvedValueOnce(IN_RANGE_SERIES);
+
+		const { rerender } = render(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
+		);
+
+		rerender(
+			<PercentilesOverTimeWidget
+				ownerId={OWNER_ID}
+				startDate={PAST_RANGE_START}
+				endDate={PAST_RANGE_END}
+				metricsService={createMetricsService(getPercentilesOverTime)}
+			/>,
+		);
+
+		// A range change is a cache MISS: the previous range's series must never be
+		// replayed against the new range (US-06 AC4 — the slice's likeliest bug).
+		await waitFor(() =>
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				PAST_RANGE_START,
+				PAST_RANGE_END,
+			),
+		);
+		await waitFor(() => {
+			const seriesInfo = JSON.parse(
+				screen.getByTestId("chart-series").textContent ?? "[]",
+			);
+			expect(seriesInfo[0].points).toBe(IN_RANGE_SERIES.length);
+		});
 	});
 
 	it("re-plots a persisted horizon on toggle without a second recompute fetch", async () => {
@@ -364,18 +512,30 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		// Switch to CT-60 → one fetch for that horizon (AC5: read-only, per horizon).
 		fireEvent.click(screen.getByTestId("percentiles-horizon-60"));
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 60),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				60,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 		expect(getPercentilesOverTime).toHaveBeenCalledTimes(2);
 
@@ -395,12 +555,19 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		// [ Age | 30 days | 60 days | 90 days ] — Age leads the row (US-03 AC1).
@@ -430,12 +597,19 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		fireEvent.mouseOver(screen.getByTestId("percentiles-selection-age"));
@@ -453,19 +627,31 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		fireEvent.click(screen.getByTestId("percentiles-selection-age"));
 
 		// Age carries no horizon dimension — the request is the bare age selection.
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, "age"),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				"age",
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 		expect(screen.getByTestId("percentiles-selection-age")).toHaveAttribute(
 			"aria-pressed",
@@ -526,6 +712,8 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
@@ -553,12 +741,19 @@ describe("PercentilesOverTimeWidget", () => {
 		render(
 			<PercentilesOverTimeWidget
 				ownerId={OWNER_ID}
+				startDate={RANGE_START}
+				endDate={RANGE_END}
 				metricsService={createMetricsService(getPercentilesOverTime)}
 			/>,
 		);
 
 		await waitFor(() =>
-			expect(getPercentilesOverTime).toHaveBeenCalledWith(OWNER_ID, 30),
+			expect(getPercentilesOverTime).toHaveBeenCalledWith(
+				OWNER_ID,
+				30,
+				RANGE_START,
+				RANGE_END,
+			),
 		);
 
 		// Age → 60 → 90: one fetch each, cached per SELECTION not per horizon.

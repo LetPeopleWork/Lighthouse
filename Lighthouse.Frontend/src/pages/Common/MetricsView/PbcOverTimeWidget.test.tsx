@@ -7,6 +7,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import PbcOverTimeWidget, {
 	PBC_OVER_TIME_EMPTY_COPY,
+	PBC_OVER_TIME_RANGE_EMPTY_COPY,
 } from "./PbcOverTimeWidget";
 
 // Mock MUI-X LineChart (same pattern as PercentilesOverTimeWidget.test.tsx).
@@ -53,6 +54,20 @@ vi.mock("@mui/x-charts", () => ({
 
 const OWNER_ID = 42;
 
+// The dashboard's default range always ends today (BaseMetricsView seeds endDate from
+// `new Date()`), which is the state the shipped forward-only empty-state assertions run in.
+const RANGE_START = new Date(2026, 6, 1);
+const RANGE_END = todayAtNoon();
+
+/** A past window: ends before today, so an empty series is an in-range emptiness (DDD-13). */
+const PAST_RANGE_START = new Date(2026, 4, 1);
+const PAST_RANGE_END = new Date(2026, 4, 15);
+
+function todayAtNoon(): Date {
+	const today = new Date();
+	return new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+}
+
 const THREE_DAY_SERIES: ProcessBehaviorSnapshot[] = [
 	{ recordedAt: "2026-07-20", unpl: 14, average: 8, lnpl: 2 },
 	{ recordedAt: "2026-07-21", unpl: 15, average: 9, lnpl: 3 },
@@ -90,12 +105,18 @@ const EXPECTED_LIMIT_COLORS = {
 	lnpl: theme.palette.warning.main,
 } as const;
 
-function renderWidget(getProcessBehaviorOverTime: ReturnType<typeof vi.fn>) {
+function renderWidget(
+	getProcessBehaviorOverTime: ReturnType<typeof vi.fn>,
+	startDate: Date = RANGE_START,
+	endDate: Date = RANGE_END,
+) {
 	return render(
 		<ThemeProvider theme={theme}>
 			<PbcOverTimeWidget
 				ownerId={OWNER_ID}
 				metricsService={createMetricsService(getProcessBehaviorOverTime)}
+				startDate={startDate}
+				endDate={endDate}
 			/>
 		</ThemeProvider>,
 	);
@@ -122,6 +143,8 @@ describe("PbcOverTimeWidget", () => {
 			expect(getProcessBehaviorOverTime).toHaveBeenCalledWith(
 				OWNER_ID,
 				"Throughput",
+				RANGE_START,
+				RANGE_END,
 			),
 		);
 
@@ -240,6 +263,26 @@ describe("PbcOverTimeWidget", () => {
 		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
 	});
 
+	it("says the range is empty, not that nothing was ever recorded, for a window that ended before today", async () => {
+		const getProcessBehaviorOverTime = vi.fn().mockResolvedValue([]);
+		renderWidget(getProcessBehaviorOverTime, PAST_RANGE_START, PAST_RANGE_END);
+
+		const empty = await screen.findByTestId("pbc-over-time-empty");
+		expect(empty).toHaveTextContent(PBC_OVER_TIME_RANGE_EMPTY_COPY);
+		// The forward-only sentence would be a lie about a past window on an owner
+		// that may well have history outside it (D10 / DDD-13).
+		expect(empty).not.toHaveTextContent(PBC_OVER_TIME_EMPTY_COPY);
+		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
+	});
+
+	it("keeps the forward-only copy when the window still includes today", async () => {
+		const getProcessBehaviorOverTime = vi.fn().mockResolvedValue([]);
+		renderWidget(getProcessBehaviorOverTime, RANGE_START, RANGE_END);
+
+		const empty = await screen.findByTestId("pbc-over-time-empty");
+		expect(empty).toHaveTextContent(PBC_OVER_TIME_EMPTY_COPY);
+	});
+
 	it("exports the D6 empty copy verbatim so the E2E asserts the shipped string", () => {
 		expect(PBC_OVER_TIME_EMPTY_COPY).toBe(
 			"builds forward from today — no snapshots recorded yet",
@@ -256,6 +299,8 @@ describe("PbcOverTimeWidget", () => {
 			expect(getProcessBehaviorOverTime).toHaveBeenCalledWith(
 				OWNER_ID,
 				"Throughput",
+				RANGE_START,
+				RANGE_END,
 			),
 		);
 

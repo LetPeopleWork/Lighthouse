@@ -22,17 +22,26 @@ import {
 } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { resolveOverTimeEmptyCopy } from "./overTimeEmptyState";
 import { usePercentilesOverTime } from "./usePercentilesOverTime";
 
 interface PercentilesOverTimeWidgetProps {
 	ownerId: number;
 	metricsService: IMetricsService<IWorkItem | IFeature>;
+	startDate: Date;
+	endDate: Date;
 	title?: string;
 }
 
-// Forward-only over-time charts read this on a fresh owner instead of a broken
-// axis (D6 — verbatim copy, shared with the delivery-metrics forecast trend).
-const EMPTY_MESSAGE = "builds forward from today — no snapshots recorded yet";
+/**
+ * Re-exported so tests and POMs assert the shipped string rather than a duplicated
+ * copy of the prose. Which of the two sentences an empty chart shows is decided by
+ * resolveOverTimeEmptyCopy (D10 / DDD-13).
+ */
+export {
+	OVER_TIME_FORWARD_ONLY_EMPTY_COPY as PERCENTILES_OVER_TIME_EMPTY_COPY,
+	OVER_TIME_RANGE_EMPTY_COPY as PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
+} from "./overTimeEmptyState";
 
 // The 50/70/85/95 lines keep the point-in-time percentile red→green ramp (D7):
 // ForecastLevel maps 50→red (risky) … 95→green (certain).
@@ -88,11 +97,15 @@ function describeSelection(selection: PercentilesSelection): SelectionChip {
 const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 	ownerId,
 	metricsService,
+	startDate,
+	endDate,
 	title = "Percentiles Over Time",
 }) => {
 	const { selection, setSelection, series } = usePercentilesOverTime(
 		ownerId,
 		metricsService,
+		startDate,
+		endDate,
 	);
 
 	const chips = PERCENTILES_SELECTIONS.map(describeSelection);
@@ -199,7 +212,7 @@ const PercentilesOverTimeWidget: React.FC<PercentilesOverTimeWidgetProps> = ({
 							color="text.secondary"
 							sx={{ py: 4, textAlign: "center" }}
 						>
-							{EMPTY_MESSAGE}
+							{resolveOverTimeEmptyCopy(endDate)}
 						</Typography>
 					)
 				)}

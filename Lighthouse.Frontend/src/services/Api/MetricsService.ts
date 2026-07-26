@@ -215,11 +215,15 @@ export interface IMetricsService<T extends IWorkItem | IFeature> {
 	getPercentilesOverTime(
 		id: number,
 		selection: PercentilesSelection,
+		startDate: Date,
+		endDate: Date,
 	): Promise<PercentilesOverTimeSnapshot[]>;
 
 	getProcessBehaviorOverTime(
 		id: number,
 		metricType: ProcessBehaviorMetricType,
+		startDate: Date,
+		endDate: Date,
 	): Promise<ProcessBehaviorSnapshot[]>;
 
 	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]>;
@@ -776,10 +780,12 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	async getPercentilesOverTime(
 		id: number,
 		selection: PercentilesSelection,
+		startDate: Date,
+		endDate: Date,
 	): Promise<PercentilesOverTimeSnapshot[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<PercentilesOverTimeSnapshot[]>(
-				`/${this.api}/${id}/metrics/percentiles-over-time?${buildPercentilesOverTimeQuery(selection)}`,
+				`/${this.api}/${id}/metrics/percentiles-over-time?${buildPercentilesOverTimeQuery(selection)}&${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
 		});
@@ -788,10 +794,12 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	async getProcessBehaviorOverTime(
 		id: number,
 		metricType: ProcessBehaviorMetricType,
+		startDate: Date,
+		endDate: Date,
 	): Promise<ProcessBehaviorSnapshot[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ProcessBehaviorSnapshot[]>(
-				`/${this.api}/${id}/metrics/process-behavior-over-time?type=${metricType}`,
+				`/${this.api}/${id}/metrics/process-behavior-over-time?type=${metricType}&${this.getDateFormatString(startDate, endDate)}`,
 			);
 			return response.data;
 		});
