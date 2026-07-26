@@ -140,10 +140,25 @@ pickers default to `getDefaultStartDate(defaultDateRange)`..today — a bounded 
 dashboard makes is a narrowed one. The range-end predicate is equivalent for the two states that
 matter, and unlike the original it is decidable from what the widget holds.
 
-**Accepted edge**: an owner whose only snapshots predate the selected window, where the window still
-ends today, reads the forward-only copy. Reaching that state requires recording to have stopped more
-than `defaultDateRange` days ago, which for a refreshing instance cannot happen (recording runs on
-every refresh). The message is imprecise there but not false.
+**Known defect, not an accepted edge** (corrected 2026-07-26 after adversarial review; the first
+version of this paragraph claimed the state was unreachable and the message merely imprecise — both
+claims were wrong). An owner whose snapshots ALL predate the selected window, where the window still
+ends today, reads the forward-only copy. That reads as "no snapshots recorded yet" for an owner that
+may have months of history, which is **false**, not imprecise — and it is exactly the second clause of
+`OUT-5427-empty-state-honesty` ("0 charts claim 'no snapshots recorded yet' when the only reason the
+series is empty is a narrowed range").
+
+It is also an ordinary state, not an unreachable one: a team whose work-tracking connection broke more
+than `defaultDateRange` days ago (revoked token, deleted project, team dropped from the refresh) stops
+recording while keeping every snapshot it already has. The original reasoning — "recording runs on
+every refresh, so this cannot happen for a refreshing instance" — only covers instances that are still
+refreshing *that owner*.
+
+The predicate stays as DDD-13 locked it, because the alternative needs something the widget does not
+have: knowledge of whether the owner has any snapshots at all outside the window. Closing it honestly
+means either a cheap "has any history" signal on the response (which reopens the envelope question
+ADR-108 rejected) or a second unfiltered request (which D10 rejected). Tracked as a follow-up rather
+than solved here, and no longer described as acceptable.
 
 **User-visible consequence**: the two over-time widgets now show at most the dashboard's default window
 (30 days team / 90 portfolio) instead of all recorded history, until the user widens the pickers. That

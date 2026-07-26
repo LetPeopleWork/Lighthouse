@@ -148,6 +148,78 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheSeriesIsEmpty(response);
         }
 
+        // A window whose bounds are EQUAL is a legal single-day request, not an inverted one.
+        // Without these the guard could be `>=` and nothing would notice — a caller asking for
+        // one specific day would get a 400 instead of that day's row.
+        [Test]
+        public async Task TeamPercentiles_SingleDayWindow_ReturnsThatDayAndIsNotRejected()
+        {
+            var teamId = GivenATeam();
+            var recordedDays = GivenFiveConsecutiveRecordedDays(teamId, OwnerType.Team);
+
+            var response = await WhenTheTeamPercentilesSeriesIsRequested(teamId, recordedDays[2], recordedDays[2]);
+
+            ThenTheSeriesCoversExactlyTheseDays(response, [recordedDays[2]]);
+        }
+
+        [Test]
+        public async Task TeamProcessBehavior_SingleDayWindow_ReturnsThatDayAndIsNotRejected()
+        {
+            var teamId = GivenATeam();
+            var recordedDays = GivenFiveConsecutiveRecordedDays(teamId, OwnerType.Team);
+
+            var response = await WhenTheTeamProcessBehaviorSeriesIsRequested(teamId, recordedDays[2], recordedDays[2]);
+
+            ThenTheSeriesCoversExactlyTheseDays(response, [recordedDays[2]]);
+        }
+
+        [Test]
+        public async Task PortfolioPercentiles_SingleDayWindow_ReturnsThatDayAndIsNotRejected()
+        {
+            var portfolioId = GivenAPortfolio();
+            var recordedDays = GivenFiveConsecutiveRecordedDays(portfolioId, OwnerType.Portfolio);
+
+            var response = await WhenThePortfolioPercentilesSeriesIsRequested(portfolioId, recordedDays[2], recordedDays[2]);
+
+            ThenTheSeriesCoversExactlyTheseDays(response, [recordedDays[2]]);
+        }
+
+        [Test]
+        public async Task PortfolioProcessBehavior_SingleDayWindow_ReturnsThatDayAndIsNotRejected()
+        {
+            var portfolioId = GivenAPortfolio();
+            var recordedDays = GivenFiveConsecutiveRecordedDays(portfolioId, OwnerType.Portfolio);
+
+            var response = await WhenThePortfolioProcessBehaviorSeriesIsRequested(portfolioId, recordedDays[2], recordedDays[2]);
+
+            ThenTheSeriesCoversExactlyTheseDays(response, [recordedDays[2]]);
+        }
+
+        // A LONE bound has nothing to be inverted against, so it must never trip the guard.
+        // Asserted on portfolio scope too: the two controllers carry the guard separately and
+        // could drift, and the team-only versions above leave the portfolio copy unpinned.
+        [Test]
+        public async Task PortfolioPercentiles_StartDateOnly_ReturnsEveryRecordedDayOnOrAfterIt()
+        {
+            var portfolioId = GivenAPortfolio();
+            var recordedDays = GivenFiveConsecutiveRecordedDays(portfolioId, OwnerType.Portfolio);
+
+            var response = await WhenThePortfolioPercentilesSeriesIsRequested(portfolioId, recordedDays[3], to: null);
+
+            ThenTheSeriesCoversExactlyTheseDays(response, [recordedDays[3], recordedDays[4]]);
+        }
+
+        [Test]
+        public async Task PortfolioProcessBehavior_EndDateOnly_ReturnsEveryRecordedDayOnOrBeforeIt()
+        {
+            var portfolioId = GivenAPortfolio();
+            var recordedDays = GivenFiveConsecutiveRecordedDays(portfolioId, OwnerType.Portfolio);
+
+            var response = await WhenThePortfolioProcessBehaviorSeriesIsRequested(portfolioId, from: null, to: recordedDays[1]);
+
+            ThenTheSeriesCoversExactlyTheseDays(response, [recordedDays[0], recordedDays[1]]);
+        }
+
         [Test]
         public async Task TeamPercentiles_InvertedWindow_IsRejected()
         {

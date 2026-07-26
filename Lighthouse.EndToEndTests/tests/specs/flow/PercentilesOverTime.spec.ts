@@ -254,10 +254,17 @@ test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fe
 	await metrics.switchCategory(MetricsCategories.Predictability);
 	await expect(widget.Widget).toBeVisible();
 
+	// Wait for the chart to actually PAINT before measuring. countPlottedDays()
+	// returns 0 while the series is still loading, and 0 satisfies toBeLessThan —
+	// polling the day count directly would pass on the loading sample and the
+	// assertion below would hold even with the date filter deleted from the backend.
+	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
+
 	// Fewer recorded days inside the narrower window — the pickers actually apply.
-	await expect
-		.poll(() => widget.countPlottedDays())
-		.toBeLessThan(daysOnDefaultRange);
+	// Bounded on BOTH sides: > 0 proves we measured a painted chart, not an empty one.
+	const daysOnNarrowedRange = await widget.countPlottedDays();
+	expect(daysOnNarrowedRange).toBeGreaterThan(0);
+	expect(daysOnNarrowedRange).toBeLessThan(daysOnDefaultRange);
 	await expect(widget.emptyState).toHaveCount(0);
 });
 

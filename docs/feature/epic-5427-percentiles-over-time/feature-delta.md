@@ -1014,8 +1014,8 @@ scenario 20 is the compatibility guard that keeps D9's "additive" claim honest.
 
 | Adapter / entry point | Covered by |
 |---|---|
-| `PercentilesOverTimeSnapshotRepository.GetSeries` (EF, date-bounded) | 18, 19, 25 |
-| `ProcessBehaviorSnapshotRepository.GetSeries` (EF, new member — DDD-8) | 17, 18, 25 |
+| `PercentilesOverTimeSnapshotRepository.GetSeries` (EF, date-bounded) | 18, 19 — **not** 25, see Deferred/Open |
+| `ProcessBehaviorSnapshotRepository.GetSeries` (EF, new member — DDD-8) | 17, 18 — **not** 25, see Deferred/Open |
 | Both series query ports (bounds pass-through) | 16, 17, 20 |
 | `TeamMetricsController` × 2 actions | 18-21 (WebApplicationFactory) |
 | `PortfolioMetricsController` × 2 actions | 18-21, parametrised over scope |
@@ -1041,8 +1041,16 @@ Zero "NO — MISSING" rows. No new driven-external port, so no new adapter row.
 
 ## Wave: DISTILL / [REF] Deferred / Open (slice-03b)
 
-- Scenario 25's "not materialised in memory" is asserted at the repository seam, since the HTTP response
-  is byte-identical either way. It is a design-intent guard, not a perf measurement — no benchmark.
+- **Scenario 25 is NOT test-covered — corrected after adversarial review (2026-07-26).** The Adapter
+  Coverage table above claims it against both repository rows; that claim was wrong and the rows are
+  amended to say so. The property ("the date bounds are applied by the database, not in memory") holds
+  *by typing*: `RepositoryBase.GetAllByPredicate` returns `IQueryable<T>`, `var series` in both
+  `GetSeries` bodies is therefore `IQueryable<T>`, and the two conditional `.Where` calls bind to
+  `Queryable.Where` and compose into the same SQL. Verified by reading, not by a test. The residual
+  risk is real and worth naming: moving `.ToList()` one line earlier would break US-06 AC2 with a
+  fully green suite. No test was written because the HTTP response and the returned rows are identical
+  either way, so any assertion would have to reach for the expression tree or a SQL log — deferred
+  rather than faked.
 - Trend-readability (DISCUSS KPI 3) stays a qualitative dogfood check; no `@kpi` gate, unchanged.
 
 ## Next Wave
@@ -1053,3 +1061,100 @@ dependency chain and puts the riskiest item early — (1) repository bounds + th
 (5) both hooks' cache re-key, (6) widgets' props + empty-state branch + `BaseMetricsView` wiring,
 (7) E2E + docs. Playwright runs locally before any commit; per-step commits; stop before
 mutation/review/finalize close-out.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary (slice-03b, US-06, ADO #5564)
+
+Shipped in 4 commits on `main` (`51cd1bf63` backend read path, `8c0cfdf09` frontend read path,
+`447bad68a` E2E + docs, plus the mutation/review-hardening commit that carries these sections).
+
+| Step | Landed |
+|---|---|
+| 03b-01 | `IProcessBehaviorSnapshotRepository.GetSeries` created (DDD-8 — the predicate moved down out of `ProcessBehaviorSeriesQuery`, which is now a one-line delegation); both repositories compose optional `DateOnly?` bounds conditionally onto the `IQueryable` before `.OrderBy().ToList()` |
+| 03b-02 | Both series query ports thread the bounds; `ResolveHorizon`'s `NoHorizon` substitution untouched |
+| 03b-03 | All four controller actions gain `[FromQuery] DateTime? startDate/endDate` + the DDD-12 inverted-window 400; new `Slice03bDateRangeTest` acceptance fixture |
+| 03b-04 | `IMetricsService`'s two over-time methods take **required** `Date`s, serialised via the existing `getDateFormatString` |
+| 03b-05 | Both hook caches re-keyed to `${selection}\|${startISO}\|${endISO}`, key derived in one place per hook |
+| 03b-06 | Both widgets take the range as props; `overTimeEmptyState.ts` resolves which of the two honest sentences to show; `BaseMetricsView` passes `ctx.startDate`/`ctx.endDate` |
+| 03b-07 | E2E narrowing + in-range-copy scenarios on both widgets; both `predictability.md` **Affected by Filtering** rows flipped to Yes with the default window stated |
+
+**No** new component beyond `overTimeEmptyState.ts`, no new port, no new route, no schema delta, no
+migration, no RBAC change, no client version gate.
+
+## Wave: DELIVER / [REF] Quality gates (slice-03b)
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | zero warnings |
+| `dotnet test` | 3708 → **3714** passed (24 slice-03b acceptance scenarios) |
+| `pnpm test` | **3675** passed, 275 files |
+| `pnpm build` + Biome | clean |
+| Playwright (touched specs) | **9/9** green, run locally against a live instance with demo data before each commit |
+| Stryker.NET (backend) | **89.86%** — 186 killed / 16 survived (first pass 88.41%) |
+| Stryker (frontend) | **92.76%** — 141 killed / 11 survived |
+| AC1 compatibility | every shipped slice-01/02/03 acceptance test passes with **no URL change** |
+
+**Mutation survivors, accounted for rather than tolerated.** Backend: zero slice-03b survivors. The
+first pass surfaced three real gaps in the DDD-12 guard — `>` → `>=` on both controllers (an **equal**
+bound pair is a legal single-day window, not an inverted one) and `&&` → `||` on the portfolio copy (a
+**lone** bound must never trip the guard, and the lone-bound scenarios were team-only, leaving the
+portfolio copy of the duplicated guard unpinned). Six scenarios were added and all three died. The
+16 remaining are slice-01/02 code (`DemoPercentilesBackfillHandler`, `PercentilesOverTimeRecordingHandler`,
+two DTO `ToString`s) plus slice-03's uncovered unknown-`type` guard block — pre-existing, out of scope.
+
+Frontend: one real gap, closed — blanking `OVER_TIME_RANGE_EMPTY_COPY` to `""` survived because the
+tests compared the resolver's output *to the constant*, which is self-satisfying; the literal is now
+pinned like its forward-only sibling. The other 10 are **equivalent mutants** and are recorded as such:
+6 are the `cancelled` in-flight flag in both hooks (removing it writes a late response under the *old*
+cache key, which no current read touches — unobservable, so any test would be theatre) and 4 are
+`series ?? []` in render paths that only execute when the chart is not rendered.
+
+## Wave: DELIVER / [REF] Adversarial review outcome (slice-03b, 2026-07-26)
+
+Ran after mutation testing. Findings acted on:
+
+| Finding | Verdict |
+|---|---|
+| **MAJOR-1 — the headline AC3 E2Es could not fail.** `countPlottedDays()` returns 0 for "chart not painted yet", and `0 < daysOnDefaultRange` satisfies `toBeLessThan`. After `applyAndWaitFor`'s full `page.goto` plus a category switch, the hook cache is empty and `series === null`, so no chart exists and the poll passed on that first sample — the assertion held with the date filter deleted. | **FIXED.** Both specs now poll for the chart to paint, then bound the day count on *both* sides. Verified by sabotage: with the repository bounds replaced by always-true predicates all four US-06 scenarios fail (`Expected: < 15, Received: 15`), and pass again once restored. |
+| **MINOR-6 — false coverage claim in this document.** The Adapter Coverage table claimed Scenario 25 against both repository rows; it has no test at all. | **FIXED** — rows corrected, and Deferred/Open now states the property holds by typing only, names the failure mode (`.ToList()` moved one line up breaks AC2 with a green suite) and says it was deferred rather than faked. |
+| **MINOR-4 — the ADR-108 amendment's "accepted edge" was false.** It claimed the state was unreachable for a refreshing instance and the message merely imprecise. A team whose connection broke >`defaultDateRange` days ago keeps every snapshot and reads "no snapshots recorded yet" — false, and precisely the KPI clause the slice claims to satisfy. | **FIXED** — rewritten as a known defect with the real trigger, and no longer described as acceptable. |
+| **MINOR-10 — the second empty-state sentence was undocumented.** | **FIXED** — both notes in `predictability.md` now cover it. |
+| **MINOR-7/8 — asymmetric guard coverage.** | **PARTLY FIXED** by the mutation work (portfolio lone-bound and single-day now pinned). Still open: portfolio-percentiles-`endDate`-only, portfolio-PBC-`startDate`-only, `metricType=WorkItemAge` combined with a window, and AC1's omit-both guard on portfolio scope. All coverage gaps, no constructible defect. |
+
+### Accepted, NOT fixed — carried forward deliberately
+
+- **MAJOR-2 / MAJOR-3 — UTC/local mismatch on the URL round-trip. AC6 is therefore NOT verified on
+  reloaded, bookmarked or shared links outside UTC.** `BaseMetricsView.formatDate` writes the
+  `startDate`/`endDate` params via `toISOString()` (UTC) and `parseDate` reads them via
+  `new Date("YYYY-MM-DD")` (also UTC), while `MetricsService.formatLocalDate` builds the request from
+  local parts. A round-trip loses exactly one day in either direction — positive offsets on the write,
+  negative offsets on the read; only offset 0 survives. Consequences for this slice: today's snapshot
+  is dropped from both charts, and `endsBeforeToday` then flips an empty series to the in-range copy
+  where AC6 requires the verbatim forward-only string. The in-session path is correct, and the root
+  cause predates this slice and already shifts the window for every date-ranged widget — but these two
+  widgets now inherit it *and* it now decides which sentence a user reads. Fixing it touches every
+  widget's shared-link semantics, so it was left out of this slice by maintainer decision
+  (2026-07-26) and will be filed as its own bug. Same root cause makes the three new E2Es time out on
+  a runner west of UTC; GitHub runners are UTC, so CI is unaffected, and no `timezoneId` is pinned.
+- **MINOR-5 — a typed inverted range renders two blank cards.** MUI's `minDate`/`maxDate` disable
+  calendar days but do not block typed field input, so an inverted window reaches the endpoints, both
+  400, and the hooks — which have no error state — leave `series` at `null` forever, so each widget
+  renders header + toggle row and nothing else. Introduced by DDD-12: before this slice these two
+  widgets ignored the range and kept rendering. Recovers when the range is corrected. Needs either an
+  error state on the hooks or FE-side range validation; neither is in this slice.
+- **Screenshots are stale.** `percentilesOverTime.png`, `percentilesOverTimeWorkItemAge.png` and
+  `pbcOverTime.png` were captured before a default window existed and show more history than the
+  widgets now render by default. Regeneration is a finalization activity (`rm` the old PNG first).
+
+## Wave: DELIVER / [REF] DoD check (slice-03b) — itemised, no silent N/A
+
+1. US-06 AC1-AC7 pass — **AC1-AC5, AC7 verified**; **AC6 verified in-session and in CI, NOT verified on a reloaded link outside UTC** (see MAJOR-2 above).
+2. `dotnet build` zero warnings, `dotnet test` green, `pnpm test`/`pnpm build`/Biome clean — **yes**.
+3. EF migration additive/expand-only — **N/A**, read-path only, zero schema delta.
+4. Mutation ≥80% BE + FE — **yes**, 89.86% / 92.76%.
+5. Forward-only recording idempotent and resilient — **N/A**, recording untouched by this slice.
+6. Empty-state honesty verified by E2E — **yes**, both variants, on both widgets.
+7. Demo data — **N/A**, the existing backfill `[today-14, today-1]` sits inside the 30-day default window, which is what makes the narrowing scenarios deterministic.
+8. Docs + screenshots — docs **done** (both filtering rows + both empty-state notes); **screenshots stale, deferred to finalization**.
+9. SonarCloud no new issues — **pending**, first PR/Nightly scan after push. ADO #5564 to move Active → Resolved once CI is green.

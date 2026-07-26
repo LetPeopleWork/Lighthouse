@@ -33,9 +33,18 @@ function daysFromToday(offset: number): Date {
 }
 
 describe("resolveOverTimeEmptyCopy", () => {
+	// Both strings are pinned as LITERALS, not compared to themselves: the assertions
+	// below check resolveOverTimeEmptyCopy against the constants, which stays green if a
+	// constant is blanked. Only these two tie the constants to the shipped prose.
 	it("keeps the shipped forward-only copy byte-for-byte", () => {
 		expect(OVER_TIME_FORWARD_ONLY_EMPTY_COPY).toBe(
 			"builds forward from today — no snapshots recorded yet",
+		);
+	});
+
+	it("states the in-range copy verbatim", () => {
+		expect(OVER_TIME_RANGE_EMPTY_COPY).toBe(
+			"no data recorded in the selected range",
 		);
 	});
 

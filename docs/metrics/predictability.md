@@ -78,7 +78,7 @@ The three Cycle Time horizons are recorded separately, so switching between them
 Work Item Age is measured as of the day it was recorded, so it carries no horizon and gets its own tab rather than a set of day options.
 
 {: .note}
-This chart builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance therefore shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded, rather than a fabricated line. The demo data ships with a backdated history, so it is populated immediately.
+This chart builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance therefore shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded, rather than a fabricated line. The demo data ships with a backdated history, so it is populated immediately. If you select a date range that ended before recording began, the chart says *"no data recorded in the selected range"* instead — that one is about the range you picked, not about your instance.
 
 ## Status Indicator
 This widget has no status indicator. It shows a direction of travel rather than a value that is healthy or unhealthy on its own — read it alongside [Cycle Time Percentiles](flow-overview.html#cycle-time-percentiles) and [Work Item Age Percentiles](flow-overview.html#work-item-age-percentiles), which do carry one.
@@ -114,7 +114,7 @@ Use the toggle in the widget header to pick the metric family. Lighthouse record
 The limits are only as meaningful as the *baseline* they are computed from. Configure it in your Team ([Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)) or Portfolio ([Create/Edit Portfolios](../portfolios/edit.html#process-behaviour-chart-baseline)) settings. Without one, Lighthouse falls back to a rolling window ending today — so the recorded limits move as that window slides, for reasons that have nothing to do with your process. On a fixed baseline, movement in this chart is a real signal.
 
 {: .note}
-Like the other over-time charts, this one builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded. The demo data ships with a backdated history, so it is populated immediately.
+Like the other over-time charts, this one builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded. The demo data ships with a backdated history, so it is populated immediately. If you select a date range that ended before recording began, the chart says *"no data recorded in the selected range"* instead — that one is about the range you picked, not about your instance.
 
 ## Status Indicator
 This widget has no status indicator. The point-in-time [Process Behaviour Charts](#process-behaviour-charts) carry the special-cause status; this chart shows how the limits behind it have moved.
