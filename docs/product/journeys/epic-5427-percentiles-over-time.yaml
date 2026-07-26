@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-5427-percentiles-over-time
-updated: 2026-07-22
+updated: 2026-07-26
 note: >
   Epic 5427 "Show Percentiles over Time Charts" (Community/Productboard). The flow-metric sibling of
   delivery-metrics' over-time trend: cycle-time percentiles, work-item-age percentiles and PBC natural
@@ -12,7 +12,11 @@ note: >
   Over Time" widget with a toggle row [WIA | CT-30 | CT-60 | CT-90]; PBC-over-time is a SEPARATE widget
   with a metric-type toggle. Free-tier, ungated (D3). Walking skeleton is Cycle Time percentiles (D2) —
   proves the pipeline, the 30/60/90 horizon dimension and the combined-widget shell together. Charts are
-  forward-only and say so honestly when empty (D6). See feature-delta.md for the full DISCUSS record.
+  forward-only and say so honestly when empty (D6). Slice-03b (2026-07-26, ADO #5564) makes the dashboard
+  date pickers apply to BOTH over-time widgets — optional additive startDate/endDate on the two series
+  endpoints, filtered on RecordedAt inclusive at both ends (D9) — and disambiguates the empty state in
+  the widget: narrowed-and-empty reads "no data recorded in the selected range", default-and-empty keeps
+  the forward-only copy (D10). See feature-delta.md for the full DISCUSS record.
 
 journeys:
 
@@ -59,6 +63,22 @@ journeys:
         shared_artifacts:
           - rendered percentile geometry (50/70/85/95 lines per selected tab/horizon)
 
+      - id: step-narrow-the-date-range
+        action: >
+          Coach narrows the dashboard date pickers to the period under review (last sprint, since the
+          process change) so the percentile lines cover that period rather than all recorded history
+          (slice-03b)
+        expected_output: >
+          Both over-time widgets re-plot to only the days recorded inside the selected range, inclusive
+          at both ends, and the plotted point count drops accordingly. Changing the range refetches
+          rather than replaying a cached series. A range with no recorded days inside it reads "no data
+          recorded in the selected range"; the default range on a snapshot-less team still reads the
+          forward-only "builds forward from today — no snapshots recorded yet".
+        emotional_state: Purposeful — "I want the trend for the period we changed something, not forever"
+        shared_artifacts:
+          - selected dashboard date range (existing MetricsView ctx.startDate/ctx.endDate; newly applied
+            to the over-time widgets, as the sibling widgets already do)
+
       - id: step-tell-the-trend
         action: >
           Coach frames the flow-review narrative from the trend
@@ -103,9 +123,25 @@ journeys:
         shared_artifacts:
           - rendered NPL geometry (UNPL/Average/LNPL per selected type)
 
+      - id: step-scope-pbc-limits-to-the-review-period
+        action: >
+          Lead sets the dashboard date range to the period under review (e.g. since the reorg) so the
+          limit history is scoped to it rather than to all of recorded history (slice-03b)
+        expected_output: >
+          UNPL/Average/LNPL re-plot to only the days recorded inside the range, inclusive at both ends.
+          A range with no recorded days inside it reads "no data recorded in the selected range".
+        emotional_state: Deliberate — "show me the limits for the period I am actually arguing about"
+        shared_artifacts:
+          - selected dashboard date range (existing MetricsView ctx.startDate/ctx.endDate; newly applied
+            to this widget)
+
     error_paths_summary:
       - Fresh team / no snapshots: every over-time chart renders the forward-only empty state
         "builds forward from today — no snapshots recorded yet" (D6); no crash, no broken axis.
+      - Narrowed range with nothing recorded inside it (slice-03b, D10): the widget reads "no data
+        recorded in the selected range" — NOT the forward-only copy, which would be a lie on an owner
+        that does have snapshots. Distinguished in the widget from the range it asked for, not from a
+        response envelope (ADR-108 rejects envelopes) and not from a second unfiltered request.
       - Same-day double refresh: the recording handler is idempotent per (team, metric, horizon, day) —
         latest-write-wins — so at most one row per day; no duplicate points.
       - Handler failure on the refresh path: recording is resilient and does not break the refresh (recall

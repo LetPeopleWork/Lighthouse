@@ -2,7 +2,7 @@
 
 **Epic**: ADO 5427 — "Show Percentiles over Time Charts" (Community / Productboard)
 **Feature id**: `epic-5427-percentiles-over-time`
-**Wave**: DISTILL (complete) → DELIVER next
+**Wave**: slices 01-03 DELIVERed · slice-03b DISCUSS (2026-07-26, ADO #5564) → DESIGN next
 **Density**: lean (Tier-1 [REF] only; expansions on demand via `--expand <id>`)
 
 ---
@@ -54,6 +54,8 @@ Both are the flow-metric siblings of `job-forecast-delivery-trend-over-time` (de
 | D6 | Empty-state honesty | Over-time charts are forward-only; on a fresh team they read *"builds forward from today — no snapshots recorded yet"*, never a broken/empty chart. Same contract as delivery-metrics forecast trend. | Precedent (job-forecast-delivery-trend) |
 | D7 | Colouring | CT/WIA percentile lines keep the existing **red→green** percentile colour ramp (50/70/85/95). PBC keeps UNPL/Average/LNPL styling. Consistency, no new visual language. | Epic body |
 | D8 | Placement | Combined percentiles-over-time widget and PBC-over-time widget both live in the **Predictability** category (`categoryMetadata.ts`), team **and** portfolio scope. Feature-Size variants stay `portfolio-only`. | Epic body |
+| D9 | Date-range filtering (slice-03b) | Both over-time series endpoints take **optional, additive** `startDate`/`endDate`, filtered on `RecordedAt` inclusive at both ends and applied server-side; omitted ⇒ full history. ADR-108 gets an **amendment, not a supersession** — the endpoints stay read-only and the shipped request shape keeps its shipped meaning. | User (slice brief, 2026-07-26) |
+| D10 | Empty-state disambiguation (slice-03b) | Decided **in the widget**, not via a response envelope: narrowed range + empty series ⇒ *"no data recorded in the selected range"*; default range + empty series ⇒ the existing forward-only D6 copy. No discriminator field, no second unfiltered request — ADR-108 explicitly rejected envelopes, and two shipped E2Es assert the forward-only copy verbatim. | User (slice brief, 2026-07-26) |
 
 ## Wave: DISCUSS / [REF] Scope Assessment: SPLIT (user-approved)
 
@@ -77,9 +79,10 @@ backbone with the least incidental complexity beyond the horizon dimension.
 | 01 | US-02 forward-only daily snapshot recording | `@infrastructure` (lands within slice 01) | event handler, latest-per-day write, migration |
 | 02 | US-03 WIA percentiles over time (WIA tab) | value | WIA snapshot + WIA tab on the combined widget |
 | 03 | US-04 Throughput PBC NPLs over time | value | PBC-over-time widget shell (Throughput active) |
+| 03b | US-06 over-time widgets respect the dashboard date range | value | optional `startDate`/`endDate` on both series endpoints threaded to the snapshot stores; both hooks re-keyed to selection-plus-range; range-aware empty state |
 | 04 | US-05 PBC over time — remaining type toggles | value | WIA/WIP/CT/Arrivals/Feature-Size(portfolio) toggle options |
 
-Slice briefs: `docs/feature/epic-5427-percentiles-over-time/slices/slice-0{1..4}-*.md`.
+Slice briefs: `docs/feature/epic-5427-percentiles-over-time/slices/slice-0{1..4}-*.md` (incl. `slice-03b-*`).
 
 ## Wave: DISCUSS / [REF] User Stories
 
@@ -165,6 +168,26 @@ Decision enabled: decide which behaviour's process limits are actually drifting,
 - AC3: Adding a type does not alter the US-04 Throughput behaviour (regression-guarded).
 - AC4: Each metric type's empty state shows the honest D6 copy *"builds forward from today — no snapshots recorded yet"* when no snapshots exist for that type, never a broken chart.
 
+### US-06 — Over-time widgets respect the dashboard date range
+`job_id: job-flow-coach-see-predictability-trend` **and** `job-delivery-lead-see-process-stability-trend` · slice 03b · **value**
+
+As a flow coach (and as a delivery lead on the PBC widget), I want the metrics dashboard's date pickers
+to apply to "Percentiles Over Time" and "PBC Over Time" like they do to every sibling widget, so I can
+read the trend for the period I am actually reviewing instead of all of recorded history.
+
+#### Elevator Pitch
+Before: the date pickers sit above both over-time charts and do nothing to them — the charts always plot every recorded day, so I cannot ask "what did the trend look like during the last sprint?".
+After: set the dashboard range on **Team → Metrics → Predictability** → both "Percentiles Over Time" and "PBC Over Time" re-plot to just the recorded days inside that range, with the point count dropping accordingly.
+Decision enabled: attribute a change in the percentiles or the process limits to the period a change was made in, instead of reading it out of a full-history line that averages the change away.
+
+#### Acceptance Criteria
+- AC1: `GET .../metrics/percentiles-over-time` and `GET .../metrics/process-behavior-over-time` accept **optional** `startDate` and `endDate` on **both** team and portfolio scope; both params omitted returns the full history byte-identically to the shipped behaviour.
+- AC2: Filtering is on `RecordedAt` and **inclusive at both ends** — a snapshot recorded exactly on `startDate` or exactly on `endDate` is in the series. Filtering happens server-side (the repository/query composes onto `IQueryable`, it does not materialise then filter).
+- AC3: Setting the dashboard range re-plots both widgets to only the recorded days inside it; narrowing the range strictly reduces the plotted point count when snapshots exist outside it.
+- AC4: Changing the range **refetches** rather than replaying a cached series — both hook caches are keyed on selection-plus-range, so no stale series is ever served after a range change.
+- AC5: A range that contains no recorded days on a widget whose owner **does** have snapshots renders *"no data recorded in the selected range"* — not the forward-only copy (D10).
+- AC6: With the default/unnarrowed range and a zero-snapshot owner, both widgets still render the **verbatim** forward-only copy *"builds forward from today — no snapshots recorded yet"* — the two shipped E2E constants `PERCENTILES_OVER_TIME_EMPTY_COPY` and `PBC_OVER_TIME_EMPTY_COPY` keep passing unchanged.
+
 ## Wave: DISCUSS / [REF] Outcome KPIs
 
 | KPI | Target | Measurement |
@@ -172,12 +195,12 @@ Decision enabled: decide which behaviour's process limits are actually drifting,
 | Recording correctness | Exactly 1 snapshot row per (team, metric, horizon, calendar day) under repeated same-day refresh | Backend integration test asserting row count after N refreshes = 1 |
 | Pipeline reuse | ≥2 metric families (CT, WIA) + PBC share **one** recording pipeline (no per-metric bespoke recorder) | Code review + AT: single handler/table family drives all series |
 | Trend readability | Flow coach identifies "firming vs drifting" from the chart in a 5-min review without export | Dogfood on a real Lighthouse team; qualitative confirm |
-| Empty-state honesty | 0 charts render a broken/empty axis on a fresh team | E2E on a zero-snapshot team asserts the honest empty-state copy |
+| Empty-state honesty | 0 charts render a broken/empty axis on a fresh team **and** 0 charts claim "no snapshots recorded yet" when the only reason the series is empty is a narrowed range (slice-03b, D10) | E2E on a zero-snapshot team asserts the honest forward-only copy; E2E on a populated team with a pre-recording range asserts the in-range copy |
 | Mutation kill rate | ≥80% backend + frontend on new snapshot/recording/series code | Stryker.NET + Stryker per feature (per-feature mandate) |
 
 ## Wave: DISCUSS / [REF] Definition of Done
 
-1. All 5 user stories' ACs pass (US-02 within slice 01).
+1. All 6 user stories' ACs pass (US-02 within slice 01; US-06 in slice 03b).
 2. `dotnet build` zero warnings; `dotnet test` green; `pnpm test`/`pnpm build`/Biome clean.
 3. New EF migration additive/expand-only, generated via `CreateMigration` across all providers.
 4. Mutation testing ≥80% BE + FE on new code (per-feature).
@@ -201,6 +224,8 @@ Decision enabled: decide which behaviour's process limits are actually drifting,
 
 - **HTTP**: `GET` team & portfolio metrics endpoints returning the over-time series (CT-by-horizon,
   WIA, PBC-NPL-by-type) — extend the existing MetricsController surface, do not fetch a new bespoke route from a component.
+  Both series endpoints additionally accept **optional** `startDate` / `endDate` (slice-03b, D9);
+  omitted means full history, so the shipped request shape keeps its shipped meaning.
 - **Domain event (inbound)**: metrics-refresh event → snapshot-recording handler (US-02).
 - **UI actions**: "Percentiles Over Time" widget toggle (`WIA | CT-30 | CT-60 | CT-90`); "PBC Over Time"
   widget metric-type toggle — both via the existing MetricsView widget/hook plumbing.
@@ -710,3 +735,110 @@ cannot see.
 - **`OUT-5427-empty-state-honesty`** — closes only when the PBC widget's empty state ships (slice 03).
 - **Slice-03 traps inherited from here**: extend the per-family idempotency-guard idiom to `ProcessBehaviorSnapshot`'s per-`MetricType` rows; `ProcessBehaviorMetricType` is ordinal-persisted ⇒ append-only; the PBC recorder emits its own recording-failed message (`MetricFamily = "ProcessBehavior"`), it does not share the percentiles template.
 - **[Forge med, still open from the DISTILL gate] Operator monitoring procedure** — the log-scan + alert-rule guidance for the recording-failed event is still not written into an ops/runbook doc. The schema is canonical in the ADR-107 amendment; the runbook page is deferred to epic completion.
+
+---
+
+## Wave: DISCUSS / [REF] Slice-03b Delta (2026-07-26, ADO #5564)
+
+Mid-epic DISCUSS increment. Origin: user review of the shipped slice-03 widget on 2026-07-26 found
+that the dashboard date pickers have no effect on either over-time widget. Adds **US-06** (above),
+**D9**/**D10** (Locked Decisions) and slice **03b** to the story map. Runs **after slice 03, before
+slice 04** — slice 04 touches the same widget surface, so this lands first rather than re-touching it.
+
+**Feature type**: user-facing (chart honours the range) + backend (optional filter on two read paths).
+Read-path only — nothing about recording, forward-only semantics or the two snapshot tables changes.
+
+**Walking skeleton**: N/A — slices 01-03 already walk the full backbone end-to-end on `main`. This is
+an increment on a shipped surface, not a new one.
+
+**UX research depth**: lightweight. The journey
+(`docs/product/journeys/epic-5427-percentiles-over-time.yaml`) already exists and is extended with one
+step + one error path; both personas and both jobs are already validated in `jobs.yaml`.
+
+**JTBD**: US-06 traces to **both** existing jobs (`job-flow-coach-see-predictability-trend`,
+`job-delivery-lead-see-process-stability-trend`) — no new job. It closes the same "show it, don't
+assert it" job at review granularity: a flow review looks at *a period*, and until now the widget
+could only answer for all of recorded history.
+
+### Scope Assessment: PASS
+
+One story, one bounded context (metrics), no new persistence, no new widget. None of the oversized
+signals fire (1 story; 1 context; 0 new integration points; <1 day; single user outcome). No split.
+
+### Pre-requisites (verified 2026-07-26 — established facts, not re-derived)
+
+- **No date params anywhere in the read path** — `TeamMetricsController.cs:509,525`,
+  `PortfolioMetricsController.cs:525,541`, both query ports, `IPercentilesOverTimeSnapshotRepository.GetSeries`.
+- **The two read paths are asymmetric**: percentiles go controller → query → a bespoke repository
+  `GetSeries(...)`; PBC (`ProcessBehaviorSeriesQuery.cs:11`) has **no** repo-level `GetSeries` and
+  filters via `GetAllByPredicate(...)`, ordering in the query class. Which way to close the gap is a
+  consistency call for DESIGN, not a correctness one.
+- **No perf trap either way** — `RepositoryBase.GetAllByPredicate` returns `IQueryable<T>`
+  (`RepositoryBase.cs:61`), so a date filter added to the predicate stays server-side.
+- **Both hook caches are keyed by selection alone** (`usePercentilesOverTime.ts:36`,
+  `usePbcOverTime.ts:37`). Adding a range without re-keying serves a stale series — the single most
+  likely bug in this slice.
+- **Widget nodes pass only `ownerId` + `metricsService`** (`BaseMetricsView.tsx:1122-1134`);
+  `ctx.startDate`/`ctx.endDate` exist (`:873-874`) and already feed a dozen sibling widgets.
+- **React #185 risk is bounded** — `ctx.startDate`/`endDate` come from `useState<Date>`
+  (`:1202-1211`), so they are already referentially stable. The loop only appears if a new inline
+  `new Date()` default is introduced.
+- **Blast radius**: changing the two `MetricsService` methods changes `IMetricsService`, which every
+  test double implements — expect `BaseMetricsView.test.tsx`, `MockApiServiceProvider.ts`,
+  `useMetricsData.test.ts`, `TotalWorkItemAgeWidget.test.tsx` (the same four slice-03 hit).
+
+### Driving Ports delta
+
+- **HTTP (read)**: `GET .../metrics/percentiles-over-time` and `.../metrics/process-behavior-over-time`
+  gain **optional** `startDate` / `endDate` query params on both `TeamMetricsController` and
+  `PortfolioMetricsController`. Additive and omissible; omitted ⇒ full history ⇒ the shipped contract
+  is unchanged on the wire. No new route, no new endpoint, still read-only (D9).
+- **UI actions**: no new control. The existing dashboard date pickers become effective on the two
+  over-time widget nodes — `BaseMetricsView.tsx` passes `ctx.startDate`/`ctx.endDate` through.
+- **Domain event (inbound)**: unchanged. Recording is untouched.
+
+### Out of scope (slice-03b)
+
+- Remaining PBC metric types — slice 04.
+- Any change to the recording path, the snapshot tables, or forward-only semantics.
+- A response envelope or discriminator field to disambiguate the empty state (D10 — ADR-108 rejects
+  envelopes; the widget decides from what it already knows).
+- Persisting the picked range, or a per-widget range control independent of the dashboard pickers.
+- Server-side rejection (400) of an inverted or out-of-range window — omitted/odd ranges stay lenient,
+  consistent with the ADR-108-amendment precedent of ignoring an irrelevant `horizon` for WIA.
+
+### DoR Validation (slice-03b)
+
+| # | DoR item | Status |
+|---|---|---|
+| 1 | Job traceability | ✓ US-06 → both existing `job_id`s; no new job needed |
+| 2 | Elevator pitch | ✓ US-06 is a value story with a complete Before/After/Decision triplet |
+| 3 | Testable ACs | ✓ AC1-AC6, each verifiable end-to-end (inclusive boundaries, cache re-key, two empty-state variants) |
+| 4 | Personas defined | ✓ `flow-coach` (primary), `delivery-lead-rte` — both already in `jobs.yaml` |
+| 5 | Journey mapped | ✓ journey YAML extended (`step-narrow-the-date-range` + empty-in-range error path) |
+| 6 | Slice ≤1 day + learning hypothesis | ✓ `slices/slice-03b-over-time-date-range.md` |
+| 7 | Outcome KPIs numeric | ✓ `OUT-5427-empty-state-honesty` extended (2 variants); no new KPI row invented |
+| 8 | Out-of-scope explicit | ✓ above |
+| 9 | No silent N/A | ✓ premium/RBAC **N/A** — free-tier read inherits the existing `MetricsController` read gate (D3), unchanged. CLI/MCP client version gate **N/A** — the params are additive and optional, no client consumes these two endpoints. EF migration **N/A** — read-path only, no schema delta. Demo data **N/A** — the existing demo backfill already covers `[today-14, today-1]`, wide enough to narrow inside. Walking skeleton **N/A** — backbone already walked by slices 01-03. |
+
+### Wave Decisions Summary (slice-03b)
+
+- **Primary need**: a flow review looks at *a period*; the two over-time widgets answered for all of
+  recorded history regardless of the pickers, which silently contradicted every sibling widget on the
+  same dashboard.
+- **Locked**: D9 (optional additive date params, ADR-108 **amendment** not supersession) and D10
+  (empty-state disambiguation decided in the widget, no envelope). Both were pre-decided in the slice
+  brief and are confirmed here, not re-opened.
+- **Constraints**: params optional ⇒ shipped contract holds; filtering stays server-side; both hook
+  caches must be re-keyed to selection-plus-range; the default-range path must keep returning the
+  verbatim forward-only copy that `PERCENTILES_OVER_TIME_EMPTY_COPY` and `PBC_OVER_TIME_EMPTY_COPY`
+  assert.
+- **Upstream changes**: none to DISCOVER/DIVERGE (this epic has neither). ADR-108 gains a slice-03b
+  amendment; DISCUSS D1-D8 are unchanged and uncontradicted.
+- **Density**: `lean` + `ask-intelligent` (resolved from `~/.nwave/global-config.json`). Trigger
+  evaluation: AC-ambiguity **no** (single story), cross-context **no** (one context, project-standard
+  stack), multi-stakeholder **no** (2 personas), compliance **no**, WS-strategy-D **no** — zero
+  triggers fired ⇒ strict lean, no expansion menu emitted. Telemetry: the `DocumentationDensityEvent`
+  skip event (`expansion_id: "*"`) could **not** be written — `~/.nwave/` ships no
+  `scripts/shared/telemetry.py` in this install and the skill forbids writing the JSONL directly.
+  Recorded here explicitly rather than skipped silently.

@@ -3386,6 +3386,11 @@ jobs:
         Work Item Age and Cycle Time at 30/60/90-day lookback horizons; each day's value is read from a
         persisted daily snapshot (as-of-that-day), not recomputed live for history. Forward-only: on a fresh
         team the chart reads "builds forward from today — no snapshots recorded yet" rather than a broken axis.
+        The dashboard date pickers scope the chart to the period under review (slice-03b, D9): only the days
+        recorded inside the selected range are plotted, inclusive at both ends, so a flow review can ask
+        "what did the trend look like last sprint?" instead of only "over all of recorded history". A range
+        with nothing recorded inside it reads "no data recorded in the selected range" (D10), which is a
+        different and honest statement from the forward-only copy.
       emotional: >
         Move from eyeballing four numbers and trusting a hunch that "things feel tighter lately" to reading
         the shape of the trend — confidence that a process change actually moved the percentiles, grounded in
@@ -3397,6 +3402,9 @@ jobs:
       push: >
         Today the widgets show only the current window; to answer "are we getting more predictable?" the coach
         screenshots the numbers week over week or rebuilds a spreadsheet, losing the in-tool advantage.
+        Second push, found by user review of the shipped widget on 2026-07-26: the date pickers sat above the
+        over-time charts and did nothing to them, so the coach could not scope the trend to the period being
+        reviewed and the widget silently contradicted every sibling widget on the same dashboard.
       pull: >
         Open the widget, toggle WIA or a CT horizon, read the trend off dated lines that are already coloured
         the way the point-in-time percentiles are — no export, no spreadsheet.
@@ -3442,7 +3450,10 @@ jobs:
         A separate "PBC Over Time" widget in the Predictability category plots UNPL/Average/LNPL as three dated
         lines from a persisted daily NPL snapshot, with a metric-type toggle across Throughput, WIA, WIP,
         Cycle Time, Arrivals and (portfolio-only) Feature Size. Styling matches the point-in-time PBC widgets;
-        forward-only empty state per D6.
+        forward-only empty state per D6. The dashboard date pickers scope the chart to the review period
+        (slice-03b, D9): only the days recorded inside the selected range are plotted, inclusive at both
+        ends. A range with nothing recorded inside it says so ("no data recorded in the selected range",
+        D10) rather than reusing the forward-only copy.
       emotional: >
         Move from reacting to whichever PBC happens to show a special-cause point today toward reading whether
         the limits themselves have shifted — calmer, systemic judgement instead of point-in-time alarm.
