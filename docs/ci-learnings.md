@@ -76,6 +76,11 @@ get re-applied.
 - `getByRole({ name })` / `getByText` are case-insensitive substring matches by default.
 - POMs that navigate via a redirecting route must wait for the SETTLED URL.
 - Never commit a Playwright spec/POM you have not run against a live Lighthouse.
+- **A POM getter that returns `0`/`""` for "not rendered yet" makes any one-sided assertion vacuous.** `expect.poll(() => count()).toBeLessThan(N)` passes on the *loading* sample, so the test holds even with the production logic deleted. Poll for the thing to actually render first (`countChartLines()` etc.), then bound the measurement on BOTH sides (`> 0` and `< N`). A full `page.goto` + category switch remounts the widget with an empty cache, so this window is wide, not theoretical.
+- **After writing any assertion whose failure you have not seen, sabotage the production code and re-run it.** Cheapest way to prove a test can fail: replace the predicate with an always-true one (e.g. `s.RecordedAt >= DateOnly.MinValue`), confirm red, restore, confirm green. `if (false)` does NOT work for this in C# — `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error.
+- **Counting MUI-X chart points: count SVG path commands, not marks and not axis ticks.** Axis tick labels are thinned to fit, and `showMark: false` series render no marks at all. The line path is one command per point — `M` then an `L` per subsequent point when linear, a `C` when interpolated. MUI-X defaults to a monotone curve, so matching only `/[ML]/` returns 1 for a 14-point series.
+- **Widgets on a non-Flow-Overview category need their own request to wait on.** `MetricsDateRange.apply` keys its wait off the `workItemAgePercentiles` fetch, which only fires on Flow Overview; use `applyAndWaitFor(start, end, endpointFragment)` from another category or the wait times out on a range that applied correctly.
+- **No `timezoneId` is pinned in `playwright.config.ts`.** Any spec that round-trips a date through the `startDate`/`endDate` URL params is at the mercy of the runner's zone, because `BaseMetricsView` writes/reads those params in UTC while the request is built from local parts. GitHub runners are UTC so CI passes; local runs west of UTC fail on a `waitForResponse` that never matches.
 
 **Integration tests:**
 - Live external-API tests (GitHub = 60 req/hr/IP, connectors) must be path-scoped or they flake the gate.
@@ -84,6 +89,13 @@ get re-applied.
 **Process / when violations surface:**
 - Sonar only re-scans **PRs + the Nightly**, NOT pushes to `main`. A green `main` push can carry new-code violations that only fire on the next PR's diff — including unpushed feature commits that entered "new code".
 - Mutation-driven test-strengthening is exactly when inline expected-arrays (CA1861) and assert-pairs (NUnit2045/2046) sneak in — re-grep every touched test file before committing.
+
+**Mutation testing (Stryker) — re-anchor the config BEFORE trusting the score:**
+- The per-feature configs are **gitignored** (`**/stryker-config*.json`, `**/stryker.config*.mjs`, `**/vitest.stryker*.ts`), so every slice re-anchors them from scratch and nobody inherits the last slice's fix.
+- Backend config targets controllers by **byte offset** (`TeamMetricsController.cs{26059..30017}`); frontend targets widgets by **line range**. Both shift the moment you add a line, so a stale config silently mutates the wrong code and reports a meaningless score. Recompute the offsets against the edited file.
+- The frontend runner has an explicit `include:` list in `vitest.stryker.*.config.ts`. A new test file that is not in it means every mutant in the code it covers survives **for want of a test run**, not for want of a test — indistinguishable from a real gap in the report.
+- **A test that compares a value to the constant it came from is self-satisfying**: blanking the constant to `""` survives. Pin user-visible strings against the **literal** at least once. This is the single most common survivor in copy-bearing code.
+- Judge survivors, don't just count them. An **equivalent mutant** has no observable behaviour difference (e.g. dropping a `cancelled` in-flight flag when a late write lands under a cache key nothing reads) — write down *why* it is unkillable rather than inventing a test that asserts an implementation detail.
 
 ## Formatting & linting
 

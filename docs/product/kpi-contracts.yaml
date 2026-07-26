@@ -699,16 +699,34 @@ outcomes:
       Slice02WorkItemAgePercentilesSpecifications.ThenTheSeriesIsEmpty asserts 200 + empty array, never an
       error or a zero-padded series. The "PBC Over Time" widget's empty-state remains DEFERRED to slice-03
       (that widget is not yet shipped) - this KPI closes then.
-      Slice-03b (date range) PENDING as of 2026-07-26 (DESIGN complete, code not written): the KPI's second
-      clause is new. The discriminator is the selected range's END, not "narrowed vs default" - the dashboard
-      has no unfiltered state, its default IS a 30-day (team, per the team's dateRange setting) / 90-day
-      (portfolio) window, so every request the UI makes is a narrowed one. Range ends today-or-later + empty
-      => the unchanged forward-only copy (this is the path the two shipped E2Es drive, so they must keep
-      passing verbatim); range ends before today + empty => the in-range copy. Deliberately NOT solved with a
+      Slice-03b (date range) MEASURED 2026-07-26: VERIFIED green for the second clause, with ONE stated
+      exception (below). The discriminator is the selected range's END, not "narrowed vs default" - the
+      dashboard has no unfiltered state, its default IS a 30-day (team, per the team's dateRange setting)
+      / 90-day (portfolio) window, so every request the UI makes is a narrowed one. Range ends
+      today-or-later + empty => the unchanged forward-only copy (the path the two shipped E2Es drive, and
+      they still pass verbatim); range ends before today + empty => the in-range copy. Pinned by a new
+      @edge Playwright scenario per widget that narrows a POPULATED demo owner to [today-60, today-45] -
+      entirely before the backfill's [today-14, today-1] - plus widget tests for both variants and
+      overTimeEmptyState.test.ts for the ends-today boundary (00:00 and 23:59 both keep the forward-only
+      copy, so the comparison is by calendar day and not by instant). Deliberately NOT solved with a
       response envelope or a second unfiltered request - ADR-108 rejects envelopes (see its slice-03b
-      amendment). Accepted edge, documented not fixed: an owner whose snapshots all predate a window that
-      still ends today reads the forward-only copy; reaching that needs recording to have stopped more than
-      defaultDateRange days ago, which a refreshing instance cannot do.
+      amendment).
+      EXCEPTION, not verified: on a RELOADED / bookmarked / shared link outside UTC the widget can pick
+      the WRONG sentence. BaseMetricsView writes the startDate/endDate URL params via toISOString (UTC)
+      and reads them via new Date("YYYY-MM-DD") (also UTC), while the request is built from local date
+      parts - a round-trip loses one day in either direction and only offset 0 survives. An empty series
+      then reads the in-range copy where this KPI requires the forward-only one. Root cause predates
+      epic-5427 and shifts the window for every date-ranged widget; left out of slice-03b by maintainer
+      decision (2026-07-26) and to be filed as its own bug. CI runners are UTC, so the gate does not
+      catch it.
+      KNOWN DEFECT against this KPI's second clause (was previously written up here as an accepted
+      edge - that was wrong): an owner whose snapshots ALL predate a window that still ends today reads
+      the forward-only copy, i.e. claims "no snapshots recorded yet" for an owner with months of
+      history. Reachable in an ordinary way - a team whose work-tracking connection broke more than
+      defaultDateRange days ago stops recording but keeps every snapshot - so the earlier reasoning
+      ("a refreshing instance cannot do that") only covered instances still refreshing THAT owner.
+      Closing it needs a has-any-history signal on the response or a second request, both of which D10
+      and ADR-108 rejected; tracked as follow-up.
     alerting:
       - condition: "zero-snapshot E2E finds a rendered-but-empty/broken axis instead of the empty-state copy"
         action: "CI fails (red)"

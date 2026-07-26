@@ -1,5 +1,13 @@
 # Slice 03b — Over-time widgets respect the dashboard date range
 
+**STATUS: SHIPPED 2026-07-26** (ADO #5564) — `e1d22be27..ba24a3799` on `main`. Mutation BE 89.86% /
+FE 92.76%; adversarial review found 1 MAJOR (the narrowing E2Es could not fail — fixed, then verified
+by sabotaging the repository filter and watching them go red). Learning hypothesis **CONFIRMED**: the
+shipped read path absorbed the filter without a shared abstraction, and DDD-8's repository-level
+`GetSeries` on the PBC family was placement consistency, not a new seam. Three things deliberately not
+fixed — the UTC/local URL round-trip (AC6 unverified on reloaded links outside UTC), the typed
+inverted-range blank card, and the stale screenshots — see the DELIVER sections in `feature-delta.md`.
+
 **Sequencing**: runs **after slice 03, before slice 04**. Slice 04 (remaining PBC metric types)
 touches the same widget surface, so this lands first to avoid re-touching it twice.
 
