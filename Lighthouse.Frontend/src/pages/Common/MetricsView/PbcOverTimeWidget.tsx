@@ -17,9 +17,11 @@ import type {
 	ProcessBehaviorMetricType,
 	ProcessBehaviorSnapshot,
 } from "../../../models/Metrics/ProcessBehaviorSnapshot";
-import { PROCESS_BEHAVIOR_METRIC_TYPES } from "../../../models/Metrics/ProcessBehaviorSnapshot";
+import { processBehaviorMetricTypesFor } from "../../../models/Metrics/ProcessBehaviorSnapshot";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { resolveOverTimeEmptyCopy } from "./overTimeEmptyState";
 import { usePbcOverTime } from "./usePbcOverTime";
 
@@ -28,6 +30,8 @@ interface PbcOverTimeWidgetProps {
 	metricsService: IMetricsService<IWorkItem | IFeature>;
 	startDate: Date;
 	endDate: Date;
+	/** Which families the toggle offers — Feature Size is portfolio-only (D8). */
+	ownerType: "team" | "portfolio";
 	title?: string;
 }
 
@@ -89,17 +93,40 @@ export function processBehaviorMetricTestId(
 	return `pbc-metric-${metricType.toLowerCase()}`;
 }
 
-/** Toggle-row copy for one metric family. Later slices append to the list. */
-function describeMetricType(metricType: ProcessBehaviorMetricType): {
+/**
+ * The delivery lead's wording for each family, in the SAME vocabulary the six
+ * sibling point-in-time PBC widgets use (configurable terms come from
+ * terminology, so a renamed "Work Item" follows here too). Deliberately shorter
+ * than the sibling "Total Work Item Age" for the age family: this is a compact
+ * button row, not a chart title.
+ */
+const METRIC_TYPE_LABELS: Record<
+	ProcessBehaviorMetricType,
+	(getTerm: (key: string) => string) => string
+> = {
+	Throughput: (getTerm) => getTerm(TERMINOLOGY_KEYS.THROUGHPUT),
+	WorkItemAge: (getTerm) => getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE),
+	Wip: (getTerm) => getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS),
+	CycleTime: (getTerm) => getTerm(TERMINOLOGY_KEYS.CYCLE_TIME),
+	Arrivals: () => "Arrivals",
+	FeatureSize: (getTerm) => `${getTerm(TERMINOLOGY_KEYS.FEATURE)} Size`,
+};
+
+/** Toggle-row copy for one metric family — one tooltip shape, never six. */
+function describeMetricType(
+	metricType: ProcessBehaviorMetricType,
+	getTerm: (key: string) => string,
+): {
 	metricType: ProcessBehaviorMetricType;
 	label: string;
 	tooltip: string;
 	testId: string;
 } {
+	const label = METRIC_TYPE_LABELS[metricType](getTerm);
 	return {
 		metricType,
-		label: metricType,
-		tooltip: `${metricType} natural process limits per recorded day`,
+		label,
+		tooltip: `${label} natural process limits per recorded day`,
 		testId: processBehaviorMetricTestId(metricType),
 	};
 }
@@ -117,9 +144,11 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 	metricsService,
 	startDate,
 	endDate,
+	ownerType,
 	title = "PBC Over Time",
 }) => {
 	const theme = useTheme();
+	const { getTerm } = useTerminology();
 	const { metricType, setMetricType, series } = usePbcOverTime(
 		ownerId,
 		metricsService,
@@ -127,7 +156,9 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 		endDate,
 	);
 
-	const tabs = PROCESS_BEHAVIOR_METRIC_TYPES.map(describeMetricType);
+	const tabs = processBehaviorMetricTypesFor(ownerType).map((type) =>
+		describeMetricType(type, getTerm),
+	);
 
 	// Colour is the only channel separating the three limits here — they render
 	// solid, each in its own theme colour, so the band stays readable in dark

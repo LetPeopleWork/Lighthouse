@@ -310,6 +310,17 @@ vi.mock("./PredictabilityScoreDetailsWidget", () => ({
 	),
 }));
 
+// Stubbed to expose the scope the dashboard hands down: the widget — not the
+// widget's own guess at the metrics service's shape — decides which metric
+// families to offer, so the wiring is what this seam has to prove (D8).
+vi.mock("./PbcOverTimeWidget", () => ({
+	default: ({ ownerType }: { ownerType: "team" | "portfolio" }) => (
+		<div data-testid="pbc-over-time-widget">
+			<div data-testid="pbc-over-time-owner-type">{ownerType}</div>
+		</div>
+	),
+}));
+
 vi.mock("../../../components/Common/Charts/StackedAreaChart", () => ({
 	default: ({
 		title,
@@ -5444,6 +5455,54 @@ describe("BaseMetricsView component", () => {
 					`Flow Overview widget "${widgetKey}" has no RAG footer registered in buildWidgetFooters`,
 				).toBeInTheDocument();
 			}
+		});
+	});
+
+	describe("PBC Over Time scope wiring (Epic 5427 slice 04 — US-05 AC1/AC2)", () => {
+		it("tells the PBC Over Time widget it is on a team", async () => {
+			localStorage.setItem(
+				`lighthouse:metrics:team:${mockTeam.id}:category`,
+				"predictability",
+			);
+			const teamMetricsService = {
+				...createMockMetricsService<IWorkItem>(),
+				getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+			};
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockTeam}
+					metricsService={teamMetricsService}
+					title="Work Items"
+					defaultDateRange={30}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			expect(
+				await screen.findByTestId("pbc-over-time-owner-type"),
+			).toHaveTextContent("team");
+		});
+
+		it("tells the PBC Over Time widget it is on a portfolio", async () => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"predictability",
+			);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={createMockMetricsService<IFeature>()}
+					title="Features"
+					defaultDateRange={90}
+					doingStates={["To Do", "In Progress", "Review"]}
+				/>,
+			);
+
+			expect(
+				await screen.findByTestId("pbc-over-time-owner-type"),
+			).toHaveTextContent("portfolio");
 		});
 	});
 });

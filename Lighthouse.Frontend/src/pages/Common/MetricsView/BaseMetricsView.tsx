@@ -1134,6 +1134,7 @@ function buildWidgetNodes(ctx: {
 				metricsService={ctx.metricsService}
 				startDate={ctx.startDate}
 				endDate={ctx.endDate}
+				ownerType={ctx.ownerType}
 			/>
 		),
 		totalThroughput: ctx.throughputInfo ? (

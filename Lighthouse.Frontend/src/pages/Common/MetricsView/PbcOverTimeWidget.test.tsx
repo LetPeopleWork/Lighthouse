@@ -109,6 +109,8 @@ function renderWidget(
 	getProcessBehaviorOverTime: ReturnType<typeof vi.fn>,
 	startDate: Date = RANGE_START,
 	endDate: Date = RANGE_END,
+	// Portfolio is the wider scope, so the shipped specs keep seeing every family.
+	ownerType: "team" | "portfolio" = "portfolio",
 ) {
 	return render(
 		<ThemeProvider theme={theme}>
@@ -117,6 +119,7 @@ function renderWidget(
 				metricsService={createMetricsService(getProcessBehaviorOverTime)}
 				startDate={startDate}
 				endDate={endDate}
+				ownerType={ownerType}
 			/>
 		</ThemeProvider>,
 	);
@@ -345,5 +348,200 @@ describe("PbcOverTimeWidget", () => {
 			),
 		);
 		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(1);
+	});
+
+	it("offers every process-behaviour family on a portfolio", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		renderWidget(
+			getProcessBehaviorOverTime,
+			RANGE_START,
+			RANGE_END,
+			"portfolio",
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		// The shipped locator convention is pbc-metric-<lowercased wire value>.
+		for (const testId of [
+			"pbc-metric-throughput",
+			"pbc-metric-workitemage",
+			"pbc-metric-wip",
+			"pbc-metric-cycletime",
+			"pbc-metric-arrivals",
+			"pbc-metric-featuresize",
+		]) {
+			expect(screen.getByTestId(testId)).toBeInTheDocument();
+		}
+	});
+
+	it("withholds Feature Size from a team, which has no feature sizes to chart", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		renderWidget(getProcessBehaviorOverTime, RANGE_START, RANGE_END, "team");
+
+		await screen.findByTestId("mock-line-chart");
+
+		expect(screen.queryByTestId("pbc-metric-featuresize")).toBeNull();
+		// The other five stay — withholding one family must not cost the rest.
+		for (const testId of [
+			"pbc-metric-throughput",
+			"pbc-metric-workitemage",
+			"pbc-metric-wip",
+			"pbc-metric-cycletime",
+			"pbc-metric-arrivals",
+		]) {
+			expect(screen.getByTestId(testId)).toBeInTheDocument();
+		}
+	});
+
+	it("labels each family in the delivery lead's words, not in the wire's", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		renderWidget(
+			getProcessBehaviorOverTime,
+			RANGE_START,
+			RANGE_END,
+			"portfolio",
+		);
+
+		await screen.findByTestId("mock-line-chart");
+
+		// Literal strings on purpose: asserting against the label source would pass
+		// even if every label were blanked.
+		expect(screen.getByTestId("pbc-metric-workitemage")).toHaveTextContent(
+			"Work Item Age",
+		);
+		expect(screen.getByTestId("pbc-metric-wip")).toHaveTextContent(
+			"Work In Progress",
+		);
+		expect(screen.getByTestId("pbc-metric-cycletime")).toHaveTextContent(
+			"Cycle Time",
+		);
+		expect(screen.getByTestId("pbc-metric-arrivals")).toHaveTextContent(
+			"Arrivals",
+		);
+		expect(screen.getByTestId("pbc-metric-featuresize")).toHaveTextContent(
+			"Feature Size",
+		);
+	});
+
+	it("derives each family's tooltip from its human label", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		renderWidget(getProcessBehaviorOverTime, RANGE_START, RANGE_END, "team");
+
+		await screen.findByTestId("mock-line-chart");
+
+		fireEvent.mouseOver(screen.getByTestId("pbc-metric-wip"));
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Work In Progress natural process limits per recorded day",
+		);
+	});
+
+	it("starts on Throughput at both scopes, so the default is never unreachable", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		const { unmount } = renderWidget(
+			getProcessBehaviorOverTime,
+			RANGE_START,
+			RANGE_END,
+			"team",
+		);
+
+		await screen.findByTestId("mock-line-chart");
+		expect(screen.getByTestId("pbc-metric-throughput")).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		unmount();
+
+		renderWidget(
+			getProcessBehaviorOverTime,
+			RANGE_START,
+			RANGE_END,
+			"portfolio",
+		);
+		await screen.findByTestId("mock-line-chart");
+		expect(screen.getByTestId("pbc-metric-throughput")).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+	});
+
+	it("requests the selected family's own wire value", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		renderWidget(
+			getProcessBehaviorOverTime,
+			RANGE_START,
+			RANGE_END,
+			"portfolio",
+		);
+		await screen.findByTestId("mock-line-chart");
+
+		for (const [testId, wireValue] of [
+			["pbc-metric-workitemage", "WorkItemAge"],
+			["pbc-metric-wip", "Wip"],
+			["pbc-metric-cycletime", "CycleTime"],
+			["pbc-metric-arrivals", "Arrivals"],
+			["pbc-metric-featuresize", "FeatureSize"],
+		]) {
+			fireEvent.click(screen.getByTestId(testId));
+			await waitFor(() =>
+				expect(getProcessBehaviorOverTime).toHaveBeenLastCalledWith(
+					OWNER_ID,
+					wireValue,
+					RANGE_START,
+					RANGE_END,
+				),
+			);
+		}
+	});
+
+	it("re-plots a previously visited family from the cache without a second request", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(THREE_DAY_SERIES);
+		renderWidget(getProcessBehaviorOverTime, RANGE_START, RANGE_END, "team");
+		await screen.findByTestId("mock-line-chart");
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(1);
+
+		fireEvent.click(screen.getByTestId("pbc-metric-cycletime"));
+		await waitFor(() =>
+			expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2),
+		);
+
+		// Back to Throughput: already fetched for this range, so no recompute.
+		fireEvent.click(screen.getByTestId("pbc-metric-throughput"));
+		await waitFor(() =>
+			expect(screen.getByTestId("pbc-metric-throughput")).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			),
+		);
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(2);
+	});
+
+	it("shows the honest empty copy for a family with nothing recorded yet", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockImplementation((_ownerId: number, metricType: string) =>
+				Promise.resolve(metricType === "Throughput" ? THREE_DAY_SERIES : []),
+			);
+		renderWidget(getProcessBehaviorOverTime, RANGE_START, RANGE_END, "team");
+		await screen.findByTestId("mock-line-chart");
+
+		fireEvent.click(screen.getByTestId("pbc-metric-arrivals"));
+
+		const empty = await screen.findByTestId("pbc-over-time-empty");
+		expect(empty).toHaveTextContent(PBC_OVER_TIME_EMPTY_COPY);
+		expect(screen.queryByTestId("mock-line-chart")).not.toBeInTheDocument();
 	});
 });

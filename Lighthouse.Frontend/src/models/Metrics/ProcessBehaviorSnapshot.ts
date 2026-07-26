@@ -18,14 +18,39 @@ export interface ProcessBehaviorSnapshot {
 
 /**
  * The metric families the process-behaviour recorder persists a series for.
- * Only Throughput is recorded today; later slices append to this list rather
- * than restructuring the widget's toggle row.
+ * These are the backend `ProcessBehaviorMetricType` enum MEMBER names verbatim,
+ * because the value is interpolated straight into the request's `?type=` — the
+ * human wording lives in the widget's label map, never on the wire.
  */
-export type ProcessBehaviorMetricType = "Throughput";
+export type ProcessBehaviorMetricType =
+	| "Throughput"
+	| "WorkItemAge"
+	| "Wip"
+	| "CycleTime"
+	| "Arrivals"
+	| "FeatureSize";
 
-export const PROCESS_BEHAVIOR_METRIC_TYPES: readonly ProcessBehaviorMetricType[] =
-	["Throughput"] as const;
+/**
+ * A team has no feature sizes to chart, so Feature Size is not offered there —
+ * the portfolio list is this one plus that single family (D8). The wire stays
+ * permissive on purpose (a team asking for FeatureSize gets an empty series);
+ * the toggle is the one place that withholds the option.
+ */
+const TEAM_PROCESS_BEHAVIOR_METRIC_TYPES: readonly ProcessBehaviorMetricType[] =
+	["Throughput", "WorkItemAge", "Wip", "CycleTime", "Arrivals"] as const;
 
-/** The toggle's initial selection — the only family recorded so far. */
+const PORTFOLIO_PROCESS_BEHAVIOR_METRIC_TYPES: readonly ProcessBehaviorMetricType[] =
+	[...TEAM_PROCESS_BEHAVIOR_METRIC_TYPES, "FeatureSize"];
+
+/** The families a dashboard offers at the given scope (D8). */
+export function processBehaviorMetricTypesFor(
+	ownerType: "team" | "portfolio",
+): readonly ProcessBehaviorMetricType[] {
+	return ownerType === "portfolio"
+		? PORTFOLIO_PROCESS_BEHAVIOR_METRIC_TYPES
+		: TEAM_PROCESS_BEHAVIOR_METRIC_TYPES;
+}
+
+/** The toggle's initial selection — offered at every scope. */
 export const DEFAULT_PROCESS_BEHAVIOR_METRIC_TYPE: ProcessBehaviorMetricType =
 	"Throughput";
