@@ -3,7 +3,7 @@
 **Sequencing**: runs **after slice 03, before slice 04**. Slice 04 (remaining PBC metric types)
 touches the same widget surface, so this lands first to avoid re-touching it twice.
 
-**Brief length**: 129 lines, over the nominal ≤100. Deliberate — the excess is the verified
+**Brief length**: 136 lines, over the nominal ≤100. Deliberate — the excess is the verified
 starting-state survey (four traps with `file:line` anchors) that exists precisely so DESIGN and DELIVER
 do not re-derive it.
 
@@ -67,11 +67,18 @@ only. Any change to the forward-only semantics.
   renders the forward-only copy; that is misleading. The client cannot tell "never recorded" from
   "nothing in this range" without a second unfiltered request, and a discriminator field would turn the
   bare array into an envelope, which **ADR-108 explicitly rejected**. So decide it in the widget from
-  the range it asked for: narrowed + empty → *"no data recorded in the selected range"*; default +
-  empty → the existing forward-only copy. No contract change, no extra request, both messages true.
+  the range it asked for. **DESIGN refined the predicate (DDD-13)**: the discriminator is the range's
+  *end*, not "narrowed vs default", because the dashboard has no unfiltered state — its default IS a
+  30-day (team) / 90-day (portfolio) window. Empty + range ends **before today** → *"no data recorded in
+  the selected range"*; empty + range ends **today or later** → the existing forward-only copy. No
+  contract change, no extra request, both messages true.
 - Watch: closes over `OUT-5427-empty-state-honesty`, and two shipped E2Es assert the forward-only copy
-  **verbatim** (`PERCENTILES_OVER_TIME_EMPTY_COPY`, `PBC_OVER_TIME_EMPTY_COPY`) — the default-range
-  path must keep returning the old string.
+  **verbatim** (`PERCENTILES_OVER_TIME_EMPTY_COPY`, `PBC_OVER_TIME_EMPTY_COPY`) — they run on the
+  default range, which ends today, so they keep returning the old string.
+- **DESIGN also reversed one out-of-scope line (DDD-12)**: an inverted window (both params present,
+  `startDate > endDate`) now returns **400** with the controllers' existing
+  `StartDateMustBeBeforeEndDateErrorMessage`, because both controllers already do exactly that in two
+  sibling actions and a silently-swapped window would be mislabelled as honest in-range emptiness.
 
 ## Learning hypothesis
 
@@ -117,7 +124,10 @@ Highest-uncertainty item in the slice is the hook cache re-key, which is cheap t
 `docs/metrics/predictability.md:57` and `:91` — the two **Affected by Filtering** rows, currently
 *"No — the date pickers do not apply to this chart; it always plots every recorded day"*. Change to
 **Yes** with a note that the chart plots the recorded days inside the selected range. The forward-only
-notes at `:81` and `:117` stay true and need no change. That is the whole doc delta.
+notes at `:81` and `:117` stay true and need no change. The new **Yes** rows must say what the default
+window is, since after this slice the charts show the last 30 days (team, per the team's `dateRange`
+setting) / 90 days (portfolio) by default instead of all recorded history — a visible default change,
+not just a new capability.
 
 ## ADR
 

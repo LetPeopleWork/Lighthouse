@@ -70,3 +70,91 @@ hard-coded behaviour. No existing request changes on the wire, no response DTO c
 
 Frontend counterpart: `PercentilesSelection = "age" | 30 | 60 | 90`, with the service building
 `metricType=WorkItemAge` for `"age"` and `horizon={n}` otherwise.
+
+## Amendment (slice-03b, 2026-07-26) — both series endpoints take an optional `startDate`/`endDate` window
+
+**Status**: Accepted. Extends the two endpoints' request shape; the endpoint count, the response shapes,
+the read-only property and the rejected alternatives are all unchanged. This is an **amendment, not a
+supersession** (ADO #5564, DISCUSS D9).
+
+Both endpoints gain two optional query parameters, on team and portfolio scope alike:
+
+```
+GET .../metrics/percentiles-over-time?horizon=30&startDate=2026-07-01&endDate=2026-07-26
+GET .../metrics/process-behavior-over-time?type=Throughput&startDate=2026-07-01&endDate=2026-07-26
+```
+
+```csharp
+GetPercentilesOverTime(int teamId, [FromQuery] int? horizon,
+    [FromQuery] MetricType metricType = MetricType.CycleTime,
+    [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+
+GetProcessBehaviorOverTime(int teamId,
+    [FromQuery] ProcessBehaviorMetricType type = ProcessBehaviorMetricType.Throughput,
+    [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+```
+
+**Semantics.** Filtering is on `RecordedAt` and **inclusive at both ends**. Either parameter may be
+omitted independently: no `startDate` means "from the first recorded day", no `endDate` means "to the
+last recorded day", neither means the full history — so every request shape that was legal before this
+amendment keeps its previous meaning byte-for-byte on the wire. The parameter **names and types match
+the sibling date-ranged actions on the same controllers** (`blockedCountHistory`,
+`estimationVsCycleTime`, the PBC and percentile point-in-time reads) — `startDate`/`endDate` as
+`DateTime`, converted with `DateOnly.FromDateTime(x.Date)` at the controller boundary because
+`RecordedAt` is a `DateOnly`.
+
+**Still read-only.** The window is a filter on persisted rows, never a recompute trigger: a narrowed
+range plots fewer of the days the recording pipeline already judged honest. The ADR-108 property that
+"the widget re-plots the days the pipeline recorded, it never triggers a recompute" is preserved
+verbatim, which is why this is not a new endpoint and not a new port.
+
+**Filtering stays server-side.** `RepositoryBase.GetAllByPredicate` returns `IQueryable<T>`, so the
+date predicate composes into the same SQL as the owner/type predicate. No path materialises the full
+series and filters in memory.
+
+**Inverted range is rejected with 400**, using the controllers' existing
+`StartDateMustBeBeforeEndDateErrorMessage` — the same guard `estimationVsCycleTime` and
+`blockedCountHistory` already apply, and consistent with this endpoint pair's existing choice to 400 an
+unknown `type` rather than answer it with an empty 200. The reason is the empty-state contract below: a
+silently-swapped window returns an empty series, which the widget would then label "no data recorded in
+the selected range" — an honest-*looking* message for what is actually a caller error. The guard only
+fires when **both** parameters are present; a lone `startDate` or `endDate` has nothing to invert
+against. (Note: this reverses the slice brief's original "stay lenient, no 400" out-of-scope line. The
+leniency precedent in the slice-02 amendment above is about *ignoring an irrelevant* parameter, not
+about accepting a self-contradictory one.)
+
+**Empty-state disambiguation stays client-side (DISCUSS D10) — and the discriminator is the range's
+end, not "narrowed vs default".** No envelope, no discriminator field, no second unfiltered request;
+the original ADR-108 rejection of a discriminated envelope stands. The widget decides from the range it
+asked for:
+
+| Series empty and… | Copy | Why it is true |
+|---|---|---|
+| the range **ends today or later** | `builds forward from today — no snapshots recorded yet` (unchanged D6 copy) | recording is forward-only and per-day, so a window that includes today would contain a point if recording had run |
+| the range **ends before today** | `no data recorded in the selected range` | the forward-only sentence would be a lie about a past window on an owner that may well have history |
+
+The DISCUSS brief proposed "narrowed range ⇒ in-range copy, default range ⇒ forward-only copy". That
+predicate is **not implementable**: there is no unfiltered state in the UI. `BaseMetricsView`'s date
+pickers default to `getDefaultStartDate(defaultDateRange)`..today — a bounded window, 30 days for teams
+(user-configurable via the team's `dateRange` setting) and 90 for portfolios — so *every* request the
+dashboard makes is a narrowed one. The range-end predicate is equivalent for the two states that
+matter, and unlike the original it is decidable from what the widget holds.
+
+**Accepted edge**: an owner whose only snapshots predate the selected window, where the window still
+ends today, reads the forward-only copy. Reaching that state requires recording to have stopped more
+than `defaultDateRange` days ago, which for a refreshing instance cannot happen (recording runs on
+every refresh). The message is imprecise there but not false.
+
+**User-visible consequence**: the two over-time widgets now show at most the dashboard's default window
+(30 days team / 90 portfolio) instead of all recorded history, until the user widens the pickers. That
+is the requested behaviour — it makes these two widgets agree with every sibling widget on the same
+dashboard — and `docs/metrics/predictability.md`'s two **Affected by Filtering** rows change from *No*
+to *Yes* accordingly.
+
+**Compatibility.** Additive: two optional query parameters whose omission reproduces the previous
+behaviour exactly. No response DTO changes shape. Frontend counterpart: `IMetricsService`'s two methods
+take `startDate`/`endDate` as **required** `Date`s (the dashboard always has a range, and every sibling
+service method is shaped that way), serialised through the existing `getDateFormatString` helper. Both
+hooks' caches re-key from selection-alone to selection-plus-range. Therefore: **no CLI/MCP client
+version gate** (no client consumes these two endpoints), no RBAC change, no migration — same conclusion
+as the original Consequences.

@@ -2,7 +2,7 @@
 
 **Epic**: ADO 5427 — "Show Percentiles over Time Charts" (Community / Productboard)
 **Feature id**: `epic-5427-percentiles-over-time`
-**Wave**: slices 01-03 DELIVERed · slice-03b DISCUSS (2026-07-26, ADO #5564) → DESIGN next
+**Wave**: slices 01-03 DELIVERed · slice-03b DISCUSS + DESIGN (2026-07-26, ADO #5564) → DEVOPS/DISTILL next
 **Density**: lean (Tier-1 [REF] only; expansions on demand via `--expand <id>`)
 
 ---
@@ -55,7 +55,7 @@ Both are the flow-metric siblings of `job-forecast-delivery-trend-over-time` (de
 | D7 | Colouring | CT/WIA percentile lines keep the existing **red→green** percentile colour ramp (50/70/85/95). PBC keeps UNPL/Average/LNPL styling. Consistency, no new visual language. | Epic body |
 | D8 | Placement | Combined percentiles-over-time widget and PBC-over-time widget both live in the **Predictability** category (`categoryMetadata.ts`), team **and** portfolio scope. Feature-Size variants stay `portfolio-only`. | Epic body |
 | D9 | Date-range filtering (slice-03b) | Both over-time series endpoints take **optional, additive** `startDate`/`endDate`, filtered on `RecordedAt` inclusive at both ends and applied server-side; omitted ⇒ full history. ADR-108 gets an **amendment, not a supersession** — the endpoints stay read-only and the shipped request shape keeps its shipped meaning. | User (slice brief, 2026-07-26) |
-| D10 | Empty-state disambiguation (slice-03b) | Decided **in the widget**, not via a response envelope: narrowed range + empty series ⇒ *"no data recorded in the selected range"*; default range + empty series ⇒ the existing forward-only D6 copy. No discriminator field, no second unfiltered request — ADR-108 explicitly rejected envelopes, and two shipped E2Es assert the forward-only copy verbatim. | User (slice brief, 2026-07-26) |
+| D10 | Empty-state disambiguation (slice-03b) | Decided **in the widget**, not via a response envelope — no discriminator field, no second unfiltered request; ADR-108 explicitly rejected envelopes, and two shipped E2Es assert the forward-only copy verbatim. Empty series + range ending **before today** ⇒ *"no data recorded in the selected range"*; empty series + range ending **today or later** ⇒ the existing forward-only D6 copy. *(The brief said "narrowed vs default range"; DDD-13 refined the predicate to the range's end, because the dashboard has no unfiltered range — its default IS a 30-day/90-day window. The user's decision — decide it in the widget, no envelope — is unchanged.)* | User (slice brief, 2026-07-26); predicate refined in DESIGN |
 
 ## Wave: DISCUSS / [REF] Scope Assessment: SPLIT (user-approved)
 
@@ -185,8 +185,9 @@ Decision enabled: attribute a change in the percentiles or the process limits to
 - AC2: Filtering is on `RecordedAt` and **inclusive at both ends** — a snapshot recorded exactly on `startDate` or exactly on `endDate` is in the series. Filtering happens server-side (the repository/query composes onto `IQueryable`, it does not materialise then filter).
 - AC3: Setting the dashboard range re-plots both widgets to only the recorded days inside it; narrowing the range strictly reduces the plotted point count when snapshots exist outside it.
 - AC4: Changing the range **refetches** rather than replaying a cached series — both hook caches are keyed on selection-plus-range, so no stale series is ever served after a range change.
-- AC5: A range that contains no recorded days on a widget whose owner **does** have snapshots renders *"no data recorded in the selected range"* — not the forward-only copy (D10).
-- AC6: With the default/unnarrowed range and a zero-snapshot owner, both widgets still render the **verbatim** forward-only copy *"builds forward from today — no snapshots recorded yet"* — the two shipped E2E constants `PERCENTILES_OVER_TIME_EMPTY_COPY` and `PBC_OVER_TIME_EMPTY_COPY` keep passing unchanged.
+- AC5: An empty series for a range that **ends before today** renders *"no data recorded in the selected range"* — not the forward-only copy (D10, predicate refined by DDD-13: the discriminator is the range's end, because there is no unfiltered range in the UI).
+- AC6: An empty series for a range that **ends today or later** — which includes the dashboard's default window, and therefore the zero-snapshot-owner case the two shipped E2Es drive — still renders the **verbatim** forward-only copy *"builds forward from today — no snapshots recorded yet"*; the constants `PERCENTILES_OVER_TIME_EMPTY_COPY` and `PBC_OVER_TIME_EMPTY_COPY` keep passing unchanged.
+- AC7: An inverted window (both params present, `startDate > endDate`) is rejected with **400** and the controllers' existing `StartDateMustBeBeforeEndDateErrorMessage`, rather than answered with an empty 200 that AC5 would then mislabel as an honest in-range emptiness (DDD-12; deviates from the slice brief's "stay lenient" out-of-scope line — see Changed Assumptions).
 
 ## Wave: DISCUSS / [REF] Outcome KPIs
 
@@ -842,3 +843,114 @@ signals fire (1 story; 1 context; 0 new integration points; <1 day; single user 
   skip event (`expansion_id: "*"`) could **not** be written — `~/.nwave/` ships no
   `scripts/shared/telemetry.py` in this install and the skill forbids writing the JSONL directly.
   Recorded here explicitly rather than skipped silently.
+
+---
+
+## Wave: DESIGN / [REF] Decisions (slice-03b)
+
+| ID | Decision | Verdict | ADR |
+|---|---|---|---|
+| DDD-8 | PBC read-path symmetry | **Add `GetSeries(...)` to `IProcessBehaviorSnapshotRepository`** mirroring `PercentilesOverTimeSnapshotRepository.GetSeries`, and have `ProcessBehaviorSeriesQuery` delegate to it. Not "extend the predicate inside the query class". The percentiles family already places the series query in the repo; slice 04 adds five more metric types to this exact read path, so the date predicate belongs in the one place both families now share structurally, leaving each query class holding only family-specific policy (horizon-sentinel resolution for percentiles, nothing for PBC). Cost: one interface member. | [ADR-108](../../product/architecture/adr-108-percentiles-over-time-series-http-contract.md) amendment |
+| DDD-9 | Filter type at the seam | Repository + query ports take `DateOnly? from, DateOnly? to`; controllers take `[FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate` and convert with `DateOnly.FromDateTime(x.Date)`. `RecordedAt` is a `DateOnly`, and the `DateTime`-at-the-boundary/`DateOnly`-inside split is exactly what `GetBlockedCountHistory` already does on the same controllers. | ADR-108 amendment |
+| DDD-10 | Predicate composition | Both repositories compose the date bounds **conditionally onto the existing `IQueryable`** before `.OrderBy().ToList()` — `if (from is not null) q = q.Where(s => s.RecordedAt >= from)`, likewise `<= to`. `RepositoryBase.GetAllByPredicate` returns `IQueryable<T>` (`RepositoryBase.cs:61`), so this stays one SQL round-trip and never materialises the unfiltered series. Two independent optional bounds, not one range object: a lone `startDate` is a legal "everything since" request. | ADR-108 amendment |
+| DDD-11 | Frontend service signature | `IMetricsService.getPercentilesOverTime(id, selection, startDate, endDate)` / `getProcessBehaviorOverTime(id, metricType, startDate, endDate)` with **required** `Date`s, serialised through the existing `getDateFormatString(startDate, endDate)` helper (`MetricsService.ts`). Backend optional / frontend required is deliberate: the wire contract must stay omissible for the shipped ATs and any other caller, but the dashboard *always* holds a range (`ctx.startDate`/`ctx.endDate` are non-nullable `Date`), and every sibling method — `getBlockedCountHistory`, `getFlowEfficiencyInfoForTeam`, the percentile reads — is shaped that way. Optionality on the FE would add a dead branch. | ADR-108 amendment |
+| DDD-12 | Inverted-range guard | **400 + the controllers' existing `StartDateMustBeBeforeEndDateErrorMessage`** when both params are present and `startDate > endDate`. Matches `GetEstimationVsCycleTimeData` and `GetBlockedCountHistory` on the same controllers, and matches this endpoint pair's own existing choice to 400 an unknown `type` rather than answer an empty 200. **Deviates from the slice brief's out-of-scope line** — see Changed Assumptions. | ADR-108 amendment |
+| DDD-13 | Empty-state predicate | The widget's discriminator is **`endDate >= today`**, not "narrowed vs default range" — the brief's predicate is not implementable because the dashboard has no unfiltered state (its default is `getDefaultStartDate(defaultDateRange)`..today: 30 days for teams, 90 for portfolios). Range ends today-or-later + empty ⇒ forward-only D6 copy; range ends before today + empty ⇒ *"no data recorded in the selected range"*. Still decided in the widget, still no envelope, still no second request — D10's substance is intact. | ADR-108 amendment |
+| DDD-14 | Cache key shape | Both hooks' caches move from `Partial<Record<Selection, T[]>>` to a `Record<string, T[]>` keyed on `` `${selection}|${startISO}|${endISO}` ``. The existing already-fetched-early-return + `cache`-in-deps pattern is kept verbatim (it is proven and does not loop: `setCache` → effect re-runs → early return); only the key widens. Date **objects** go in the dep array, not derived values — `ctx.startDate`/`endDate` come from `useState<Date>` (`BaseMetricsView.tsx:1202-1211`) and are referentially stable, so no React #185. | — |
+| DDD-15 | Paradigm | OOP, ports-and-adapters — unchanged. No new port, no new adapter, no new bounded context, no schema delta. | ADR-027 |
+
+## Wave: DESIGN / [REF] Component Decomposition (slice-03b)
+
+| Component | Path | Change |
+|---|---|---|
+| `IProcessBehaviorSnapshotRepository` | `.../Services/Interfaces/Repositories/` | EXTEND — `+GetSeries(int ownerId, OwnerType ownerType, ProcessBehaviorMetricType metricType, DateOnly? from, DateOnly? to)` (DDD-8) |
+| `ProcessBehaviorSnapshotRepository` | `.../Services/Implementation/Repositories/` | EXTEND — implement `GetSeries`, moving the predicate + `OrderBy` down from the query class |
+| `IPercentilesOverTimeSnapshotRepository` + impl | same dirs | EXTEND — `GetSeries` gains `DateOnly? from, DateOnly? to`; conditional bounds composed onto the existing predicate |
+| `IProcessBehaviorSeriesQuery` + `ProcessBehaviorSeriesQuery` | `.../Services/{Interfaces,Implementation}/` | EXTEND — `GetSeries` gains the two bounds; body becomes a delegation to the repo |
+| `IPercentilesOverTimeSeriesQuery` + `PercentilesOverTimeSeriesQuery` | same | EXTEND — `GetSeries` gains the two bounds; `ResolveHorizon` untouched |
+| `TeamMetricsController` | `.../API/` | EXTEND — both over-time actions gain `[FromQuery] DateTime? startDate, DateTime? endDate` + the DDD-12 guard |
+| `PortfolioMetricsController` | `.../API/` | EXTEND — identical delta |
+| `IMetricsService` + `MetricsService` | `src/services/Api/` | EXTEND — two methods gain required `startDate`/`endDate`, built via `getDateFormatString` |
+| `usePercentilesOverTime` / `usePbcOverTime` | `src/pages/Common/MetricsView/` | EXTEND — accept the range, re-key the cache (DDD-14) |
+| `PercentilesOverTimeWidget` / `PbcOverTimeWidget` | same | EXTEND — accept `startDate`/`endDate` props, pass to the hook, pick the empty copy per DDD-13. Also **export** `PERCENTILES_OVER_TIME_EMPTY_COPY` from the widget (today only PBC exports its constant; the percentiles E2E POM duplicates the string) and add the new in-range constant to both. |
+| `BaseMetricsView` | same | EXTEND — the two widget nodes pass `ctx.startDate`/`ctx.endDate` (2 lines each) |
+| Test doubles | `MockApiServiceProvider.ts`, `BaseMetricsView.test.tsx`, `useMetricsData.test.ts`, `TotalWorkItemAgeWidget.test.tsx` | EXTEND — the same four the `IMetricsService` change hit in slice-03 |
+
+**No CREATE NEW.** Zero new components, zero new ports, zero new tables, zero migrations.
+
+## Wave: DESIGN / [REF] Driving / Driven Ports (slice-03b)
+
+- **Driving (inbound)**: the two existing `GET` actions on both controllers, request shape widened by two optional params. No new route, no new action, still read-only. UI: no new control — the existing dashboard pickers become effective on the two widget nodes.
+- **Driven**: the two existing snapshot repositories via EF `RepositoryBase<T>`; the date bounds compose into the same `IQueryable` (DDD-10). No new driven port, no external adapter, no connector call. Recording, the two snapshot tables and the forward-only contract are untouched.
+
+## Wave: DESIGN / [REF] Reuse Analysis (slice-03b)
+
+| Existing component | Overlap | Decision | Justification |
+|---|---|---|---|
+| `GetBlockedCountHistory` (`startDate`/`endDate` + 400 guard + `DateOnly` conversion) | date-ranged over-time read on the same controllers | **REUSE the idiom** | param names, types, boundary conversion and the shared error constant all come from here — the sibling over-time endpoint (ADR-069) |
+| `StartDateMustBeBeforeEndDateErrorMessage` | inverted-range rejection | **REUSE the constant** | already on both controllers; a new message would fragment one operator-visible string |
+| `getDateFormatString(startDate, endDate)` | query-string serialisation | **REUSE** | already used by `getBlockedCountHistory`; no new formatting path |
+| `RepositoryBase.GetAllByPredicate` → `IQueryable<T>` | server-side composition | **REUSE** | the reason no perf work is needed |
+| `PercentilesOverTimeSnapshotRepository.GetSeries` | repo-level series query | **EXTEND + mirror onto PBC** | DDD-8; consistency of placement, not a shared abstraction over two different concepts |
+| Both hooks' fetch-once-and-cache pattern | selection→series cache | **EXTEND** | only the key widens (DDD-14); the proven early-return/dep shape is kept |
+| `ctx.startDate` / `ctx.endDate` in `BaseMetricsView` | dashboard range | **REUSE** | already feeds a dozen sibling widgets; referentially stable |
+| Both widgets' empty-state block | D6 copy | **EXTEND** | one branch added, the shipped string kept verbatim |
+
+Every row is REUSE or EXTEND — zero CREATE NEW, so nothing to justify.
+
+## Wave: DESIGN / [REF] Changed Assumptions (slice-03b)
+
+Two DISCUSS/brief assumptions did not survive contact with the code. Neither reverses a user decision;
+both are recorded here rather than edited away upstream.
+
+1. **"Default/unfiltered range" does not exist.**
+   Original (slice brief, *Decision to make*): *"An unfiltered/default-range request that comes back
+   empty → keep the existing forward-only copy."*
+   Reality: `BaseMetricsView.tsx:1202-1211` seeds the pickers from
+   `getDefaultStartDate(defaultDateRange)`..`new Date()`, with `defaultDateRange = 30` for teams (the
+   team's own `dateRange` setting) and `90` for portfolios. There is no "unfiltered" state to compare
+   against — every dashboard request is narrowed.
+   New assumption: the discriminator is `endDate >= today` (DDD-13). D10's substance — decide it in the
+   widget, no envelope, no second request — is preserved exactly; only the predicate changed.
+   **Second-order consequence, user-visible**: both over-time widgets will now plot at most the last 30
+   (team) / 90 (portfolio) days by default rather than all recorded history. That is the requested
+   semantics and it makes the widgets agree with their siblings, but it *is* a default-behaviour change
+   and it lands in `docs/metrics/predictability.md`.
+
+2. **Inverted range is no longer "stay lenient".**
+   Original (slice brief, *Out of scope*): *"Server-side rejection (400) of an inverted or out-of-range
+   window — omitted/odd ranges stay lenient, consistent with the ADR-108-amendment precedent of
+   ignoring an irrelevant `horizon` for WIA."*
+   Reality: both controllers already 400 an inverted range in two other actions via a shared constant,
+   and this very endpoint pair already 400s an unknown `type` on the stated grounds that *"an empty
+   array is indistinguishable from 'nothing recorded yet' and would make the widget lie about why it is
+   empty"* — which is precisely what a swapped window would cause under D10.
+   New assumption: 400 when both params are present and inverted (DDD-12, US-06 AC7). The slice-02
+   leniency precedent is about ignoring an *irrelevant* parameter, not accepting a self-contradictory
+   one. Three lines; flag if you would rather keep the brief's leniency.
+
+## Wave: DESIGN / [REF] Open Questions (slice-03b)
+
+- **Shipped-AT breakage surface**: `PercentilesOverTimeAcceptanceTest` and the slice-01/02/03
+  specification helpers build their URLs without date params. Since both params stay optional they
+  should compile and pass untouched — confirmed in DELIVER step 1, not assumed.
+- **Demo/E2E window arithmetic**: demo backfill covers `[today-14, today-1]` and the team default
+  window is 30 days, so the default view still contains the whole backfill and the shipped point-count
+  assertions stand. The portfolio default (90) likewise. Verified in DELIVER when the E2E runs, since a
+  narrowed-window assertion depends on it.
+- **Percentiles empty-copy constant**: the E2E POM duplicates the widget's private `EMPTY_MESSAGE`
+  string instead of importing an exported constant (PBC does export its own). DELIVER exports it for
+  symmetry so a copy change fails loudly on both widgets, not just one.
+
+## Wave: DESIGN / [REF] Outcome Collision Check (slice-03b)
+
+Skipped — no `docs/product/outcomes/registry.yaml` in this repo (recorded, not silently skipped).
+`OUT-5427-empty-state-honesty` in `kpi-contracts.yaml` is the affected contract; it gains the second
+(in-range) variant in DEVOPS rather than a new KPI row.
+
+## Next Wave
+
+**Handoff → DEVOPS** (KPI→instrument delta only; no infra, no deploy surface, no migration) **and
+DISTILL** (scenarios for: inclusive boundaries at both ends, lone-bound requests, omitted-params
+regression against the shipped contract, inverted-range 400, cache re-key on range change, and the two
+empty-state variants).
