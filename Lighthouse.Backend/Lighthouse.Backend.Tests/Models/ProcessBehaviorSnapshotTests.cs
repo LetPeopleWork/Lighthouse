@@ -70,17 +70,11 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
-        [Test]
-        public void ProcessBehaviorMetricType_ThroughputIsOrdinalZero_AndIsTheOnlyMemberThisSlice()
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That((int)ProcessBehaviorMetricType.Throughput, Is.Zero,
-                    "ProcessBehaviorMetricType persists as its ordinal — Throughput must stay 0 or every shipped row re-maps");
-                Assert.That(Enum.GetValues<ProcessBehaviorMetricType>(), Has.Length.EqualTo(1),
-                    "slice 03 ships Throughput only; slice 04 APPENDS the remaining families at the end");
-            }
-        }
+        // The one-member/ordinal-zero guard that shipped with slice 03 is retired here BY DESIGN: slice 04
+        // appends the five remaining families, and ProcessBehaviorRecordingHandlerTests
+        // (ProcessBehaviorMetricType_PersistedOrdinal_IsPinned + _EveryDeclaredMember_HasAPinnedOrdinal)
+        // now pins ALL six ordinals including Throughput = 0. Two guards on one invariant is the
+        // duplication that lets one of them drift unnoticed.
 
         [Test]
         public void MetricType_IsDeclaredWithTheProcessBehaviorFamilyEnum_NotThePercentileOne()

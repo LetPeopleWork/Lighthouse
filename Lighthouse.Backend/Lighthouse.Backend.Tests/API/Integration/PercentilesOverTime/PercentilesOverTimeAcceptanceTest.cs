@@ -172,6 +172,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         /// <summary>
+        /// Family-agnostic process-behaviour seeding: the snapshot table holds every family
+        /// (<see cref="ProcessBehaviorMetricType"/>), so a slice that adds one (the five remaining
+        /// families, epic-5427 slice-04) seeds through here rather than growing a per-family helper.
+        /// </summary>
+        protected void SeedProcessBehaviorSnapshot(ProcessBehaviorSnapshot snapshot)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IProcessBehaviorSnapshotRepository>();
+            repository.Add(snapshot);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Seeds one item that is still in progress today, aged <paramref name="ageInDays"/> days
         /// (inclusive of its start day — the definition <see cref="Lighthouse.Backend.Models.WorkItemBase.AgeOnDay"/> uses).
         /// </summary>
@@ -244,5 +257,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             var query = $"?metricType={metricType}";
             return horizon.HasValue ? $"{query}&horizon={horizon.Value}" : query;
         }
+
+        /// <summary>
+        /// The process-behaviour series read port. The family travels as a RAW string so a slice can
+        /// exercise a genuinely-unknown family name (the 400 guard) as well as every declared one.
+        /// </summary>
+        protected async Task<(HttpStatusCode Status, string Body)> GetTeamProcessBehaviorOverTime(int teamId, string? type)
+        {
+            Client.AsTeamAdmin(teamId);
+            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/process-behavior-over-time{BuildTypeQuery(type)}");
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        protected async Task<(HttpStatusCode Status, string Body)> GetPortfolioProcessBehaviorOverTime(int portfolioId, string? type)
+        {
+            Client.AsPortfolioAdmin(portfolioId);
+            var response = await Client.GetAsync($"/api/latest/portfolios/{portfolioId}/metrics/process-behavior-over-time{BuildTypeQuery(type)}");
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        /// <summary>
+        /// An omitted family must be genuinely absent from the query string — sending an empty value
+        /// would exercise the model binder, not the endpoint's documented default.
+        /// </summary>
+        private static string BuildTypeQuery(string? type) => type is null ? string.Empty : $"?type={type}";
     }
 }

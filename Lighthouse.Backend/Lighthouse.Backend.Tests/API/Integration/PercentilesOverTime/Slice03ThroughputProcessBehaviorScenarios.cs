@@ -75,8 +75,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         // @edge @scenario-12 (an unknown family must be a 400 — an empty 200 would lie about the reason)
+        // "99" is the in-range-integer-but-undefined case, which reaches the controller's Enum.IsDefined
+        // guard; the NAME case is rejected one layer earlier, at the model binder. Both are 400, which is
+        // why the Then asserts the STATUS only and the two cases can share it.
         [TestCase("99")]
-        [TestCase("CycleTime")]
+        [TestCase(UnknownFamilyName)]
         public async Task An_unknown_metric_family_is_rejected_rather_than_answered_with_an_empty_series(string unknownType)
         {
             var teamId = GivenATeam();
@@ -88,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         [TestCase("99")]
-        [TestCase("CycleTime")]
+        [TestCase(UnknownFamilyName)]
         public async Task An_unknown_metric_family_is_rejected_on_the_portfolio_endpoint_too(string unknownType)
         {
             var portfolioId = GivenAPortfolio();
@@ -96,6 +99,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             var response = await WhenTheDeliveryLeadOpensThePortfolioPbcOverTimeWidget(portfolioId, unknownType);
 
             ThenTheRequestIsRejectedAsUnsupported(response);
+        }
+
+        // @edge (the sentinel guards itself — epic-5427 slice-04 turned the previous sentinel "CycleTime"
+        // into a real family, which would have made the two rejection cases above pass for the wrong
+        // reason. A future slice that appends a family matching the sentinel now fails HERE, loudly.)
+        [Test]
+        public void The_unknown_family_sentinel_is_genuinely_not_a_declared_family()
+        {
+            Assert.That(Enum.TryParse<ProcessBehaviorMetricType>(UnknownFamilyName, out _), Is.False,
+                $"'{UnknownFamilyName}' is the sentinel for an UNKNOWN metric family — once it parses, the rejection scenarios above stop testing rejection and start testing a happy path");
         }
 
         // @driving_port @scenario-10 (additive contract — the shipped endpoint is not perturbed)

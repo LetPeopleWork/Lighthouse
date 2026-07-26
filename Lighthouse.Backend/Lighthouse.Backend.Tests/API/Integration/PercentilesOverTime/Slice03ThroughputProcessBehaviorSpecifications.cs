@@ -1,9 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Tests.TestHelpers;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
@@ -20,6 +17,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     public partial class Slice03ThroughputProcessBehaviorTest : PercentilesOverTimeAcceptanceTest
     {
         private const string ThroughputType = "Throughput";
+
+        /// <summary>
+        /// A family NAME that is deliberately not — and must never become — a member of
+        /// <see cref="ProcessBehaviorMetricType"/>. It reaches the 400 at the model binder, which is what
+        /// the previous sentinel ("CycleTime") did until epic-5427 slice-04 promoted that name to a real
+        /// family and turned these rejection cases green for the wrong reason.
+        /// <see cref="Slice03ThroughputProcessBehaviorTest.The_unknown_family_sentinel_is_genuinely_not_a_declared_family"/>
+        /// makes a future repeat of that mistake fail loudly instead of silently.
+        /// </summary>
+        private const string UnknownFamilyName = "NotAProcessBehaviourFamily";
 
         protected readonly record struct ProcessBehaviorPoint(DateOnly RecordedAt, int Unpl, int Average, int Lnpl);
 
@@ -72,14 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
-        private void SeedProcessBehaviorSnapshot(ProcessBehaviorSnapshot snapshot)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var repository = scope.ServiceProvider.GetRequiredService<IProcessBehaviorSnapshotRepository>();
-            repository.Add(snapshot);
-            repository.Save().GetAwaiter().GetResult();
-        }
-
         // --- When ---
 
         private Task<(HttpStatusCode Status, string Body)> WhenTheDeliveryLeadOpensTheTeamPbcOverTimeWidget(int teamId, string? type = ThroughputType)
@@ -87,22 +86,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
         private Task<(HttpStatusCode Status, string Body)> WhenTheDeliveryLeadOpensThePortfolioPbcOverTimeWidget(int portfolioId, string? type = ThroughputType)
             => GetPortfolioProcessBehaviorOverTime(portfolioId, type);
-
-        private async Task<(HttpStatusCode Status, string Body)> GetTeamProcessBehaviorOverTime(int teamId, string? type)
-        {
-            Client.AsTeamAdmin(teamId);
-            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/process-behavior-over-time{BuildTypeQuery(type)}");
-            return (response.StatusCode, await response.Content.ReadAsStringAsync());
-        }
-
-        private async Task<(HttpStatusCode Status, string Body)> GetPortfolioProcessBehaviorOverTime(int portfolioId, string? type)
-        {
-            Client.AsPortfolioAdmin(portfolioId);
-            var response = await Client.GetAsync($"/api/latest/portfolios/{portfolioId}/metrics/process-behavior-over-time{BuildTypeQuery(type)}");
-            return (response.StatusCode, await response.Content.ReadAsStringAsync());
-        }
-
-        private static string BuildTypeQuery(string? type) => type is null ? string.Empty : $"?type={type}";
 
         // --- Then ---
 
