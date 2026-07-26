@@ -29,6 +29,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private const int DefaultTeamLookbackDays = 29;
         private const int PortfolioLookbackDays = 90;
 
+        // A team pinning fixed throughput dates has no as-of-today range of its own, so the recorder
+        // falls back to a plain 30-day window ending today.
+        private const int FixedDatesTeamLookbackDays = 30;
+
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> cryptoServiceMock = null!;
         private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
@@ -395,6 +399,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             VerifyNoRecordingFailureLoggedUnderAnyOtherFamily();
         }
 
+        // The inner per-metric-type try only wraps the compute + stage step. A failure raised while
+        // FLUSHING the staged rows happens after that scope has closed, so it can only be caught by
+        // the outer handler — and it must be reported under the same family, or a persistence outage
+        // becomes an unalerted silent data gap.
+        [Test]
+        public void TeamDataRefreshed_SnapshotFlushThrows_DoesNotRethrow_AndLogsProcessBehaviorFamily()
+        {
+            var team = CreateTeam(1);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+            SetupTeamThroughputChart(team, ReadyChart(unpl: 9, average: 6, lnpl: 3));
+
+            var throwingRepo = new Mock<IProcessBehaviorSnapshotRepository>();
+            throwingRepo
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<ProcessBehaviorSnapshot, bool>>()))
+                .Returns((ProcessBehaviorSnapshot?)null);
+            throwingRepo
+                .Setup(x => x.Save())
+                .ThrowsAsync(new InvalidOperationException("flush boom"));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context, throwingRepo.Object);
+
+            Assert.DoesNotThrowAsync(
+                async () => await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None),
+                "a flush failure must not break the refresh path either");
+
+            VerifyRecordingFailureLoggedWithProcessBehaviorFamily(
+                "a failure raised outside the per-metric-type scope is still reported under the ProcessBehavior family");
+            VerifyNoRecordingFailureLoggedUnderAnyOtherFamily();
+        }
+
         // -----------------------------------------------------------------
         // Standing slice-01 regression guard — reading the point-in-time chart warms
         // the shared metrics cache under the same (owner, window) keys the widgets
@@ -489,7 +524,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await subject.HandleAsync(new PortfolioFeaturesRefreshed(999), CancellationToken.None);
 
             var rows = await context.ProcessBehaviorSnapshots.CountAsync();
-            Assert.That(rows, Is.Zero);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rows, Is.Zero);
+                portfolioMetricsServiceMock.Verify(
+                    x => x.GetThroughputProcessBehaviourChart(
+                        It.IsAny<Portfolio>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+                    Times.Never,
+                    "a vanished portfolio must short-circuit before the recorder reads a chart for a null owner");
+                portfolioMetricsServiceMock.Verify(
+                    x => x.InvalidatePortfolioMetrics(It.IsAny<Portfolio>()),
+                    Times.Never,
+                    "nothing was read, so there is no warmed cache entry to invalidate");
+            }
         }
 
         // -----------------------------------------------------------------
@@ -533,6 +580,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                     portfolio, TodayDate.AddDays(-PortfolioLookbackDays), TodayDate),
                 Times.Once,
                 "PortfolioMetricsView hard-codes defaultDateRange={90} — the recorder must match it");
+        }
+
+        // A team that pins fixed throughput dates has an arbitrary window that may sit entirely in
+        // the past. Recording "today" against a past window would stamp today's date on limits the
+        // team does not have today, so the recorder falls back to a plain as-of-today window instead
+        // of the team's pinned span. The pinned span here is deliberately far from the fallback, so a
+        // recorder that derived the window from the settings reads a visibly different range.
+        [Test]
+        public async Task TeamDataRefreshed_TeamPinsFixedThroughputDates_FallsBackToAnAsOfTodayWindow()
+        {
+            var team = CreateTeam(11);
+            team.UseFixedDatesForThroughput = true;
+            team.ThroughputHistoryStartDate = TodayDate.AddDays(-90);
+            team.ThroughputHistoryEndDate = TodayDate.AddDays(-10);
+            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
+
+            teamMetricsServiceMock
+                .Setup(x => x.GetThroughputProcessBehaviourChart(
+                    team, TodayDate.AddDays(-FixedDatesTeamLookbackDays), TodayDate))
+                .Returns(ReadyChart(unpl: 8, average: 5, lnpl: 2));
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+
+            var snapshot = await FindSnapshot(context, team.Id, OwnerType.Team, Today);
+            using (Assert.EnterMultipleScope())
+            {
+                teamMetricsServiceMock.Verify(
+                    x => x.GetThroughputProcessBehaviourChart(
+                        team, TodayDate.AddDays(-FixedDatesTeamLookbackDays), TodayDate),
+                    Times.Once,
+                    "a fixed past window is not an as-of-today window — the recorder uses the 30-day fallback range");
+                Assert.That(snapshot, Is.Not.Null, "the fallback window still yields a recorded day");
+                Assert.That(snapshot!.Average, Is.EqualTo(5));
+            }
         }
     }
 }

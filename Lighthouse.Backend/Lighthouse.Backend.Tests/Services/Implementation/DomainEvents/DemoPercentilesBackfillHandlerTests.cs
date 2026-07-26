@@ -499,6 +499,126 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.That(throughputRows, Has.Count.EqualTo(expectedThroughputRows));
         }
 
+        public enum ForeignThroughputRow
+        {
+            /// <summary>Another owner entirely, same owner kind.</summary>
+            OtherOwnerId,
+
+            /// <summary>The same numeric id, but a portfolio rather than a team.</summary>
+            OtherOwnerType,
+        }
+
+        // Both the "have I already backfilled?" guard and the per-day upsert address a row by its
+        // full natural key. A row belonging to a NEIGHBOUR — another owner id, or the same id under
+        // the other owner kind — must neither satisfy our guard (which would suppress our history
+        // entirely) nor be picked up as "our" row for that day (which would overwrite a neighbour's
+        // limits with ours). The neighbour row is seeded INSIDE the backfill window so both seams are
+        // exercised on the same day the loop writes.
+        [TestCase(ForeignThroughputRow.OtherOwnerId)]
+        [TestCase(ForeignThroughputRow.OtherOwnerType)]
+        public async Task HandleTeamRefreshed_NeighbourThroughputRowInsideTheWindow_NeitherSuppressesNorAbsorbsOurBackfill(
+            ForeignThroughputRow neighbour)
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            const int foreignOwnerId = 999;
+            const int SentinelLimit = 500;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            var insideTheWindow = DateOnly.FromDateTime(DateTime.Today.AddDays(-5));
+            var neighbourOwnerId = neighbour == ForeignThroughputRow.OtherOwnerId ? foreignOwnerId : teamId;
+            var neighbourOwnerType = neighbour == ForeignThroughputRow.OtherOwnerType
+                ? OwnerType.Portfolio
+                : OwnerType.Team;
+
+            using (var seedContext = CreateContext())
+            {
+                seedContext.ProcessBehaviorSnapshots.Add(new ProcessBehaviorSnapshot
+                {
+                    OwnerId = neighbourOwnerId,
+                    OwnerType = neighbourOwnerType,
+                    MetricType = ProcessBehaviorMetricType.Throughput,
+                    RecordedAt = insideTheWindow,
+                    Unpl = SentinelLimit,
+                    Average = SentinelLimit,
+                    Lnpl = SentinelLimit,
+                });
+                await seedContext.SaveChangesAsync();
+            }
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var ourRows = context.ProcessBehaviorSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .ToList();
+            var neighbourRow = context.ProcessBehaviorSnapshots.Single(s =>
+                s.OwnerId == neighbourOwnerId
+                && s.OwnerType == neighbourOwnerType
+                && s.RecordedAt == insideTheWindow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ourRows, Has.Count.EqualTo(14), "a neighbour's history must not satisfy our own backfill guard");
+                Assert.That(neighbourRow.Unpl, Is.EqualTo(SentinelLimit), "the neighbour's row is not ours to overwrite");
+                Assert.That(neighbourRow.Average, Is.EqualTo(SentinelLimit));
+                Assert.That(neighbourRow.Lnpl, Is.EqualTo(SentinelLimit));
+            }
+        }
+
+        // The guard asks whether PAST days were already backfilled. A row recorded TODAY is what the
+        // forward-only recorder writes on every refresh, so treating it as evidence of a completed
+        // backfill would leave every live demo owner permanently without history. The same row must
+        // also not be mistaken for the row of any backdated day the loop writes.
+        [Test]
+        public async Task HandleTeamRefreshed_OwnThroughputRowRecordedToday_StillGetsItsBackdatedHistory()
+        {
+            const int teamId = 7;
+            const int connectionId = 1886;
+            const int SentinelLimit = 500;
+            ArrangeConnection(connectionId, isDemo: true);
+            ArrangeTeam(teamId, connectionId);
+
+            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+
+            using (var seedContext = CreateContext())
+            {
+                seedContext.ProcessBehaviorSnapshots.Add(new ProcessBehaviorSnapshot
+                {
+                    OwnerId = teamId,
+                    OwnerType = OwnerType.Team,
+                    MetricType = ProcessBehaviorMetricType.Throughput,
+                    RecordedAt = todayDate,
+                    Unpl = SentinelLimit,
+                    Average = SentinelLimit,
+                    Lnpl = SentinelLimit,
+                });
+                await seedContext.SaveChangesAsync();
+            }
+
+            using var context = CreateContext();
+            var subject = CreateSubject(context);
+
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
+
+            var ourRows = context.ProcessBehaviorSnapshots
+                .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
+                .ToList();
+            var todayRow = ourRows.Single(s => s.RecordedAt == todayDate);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    ourRows.Count(s => s.RecordedAt < todayDate),
+                    Is.EqualTo(14),
+                    "today's forward-only row is not a backfilled history — the past window is still owed");
+                Assert.That(todayRow.Average, Is.EqualTo(SentinelLimit), "the recorder's own row for today is not a backdated day and stays as recorded");
+            }
+        }
+
         private async Task SeedBackdatedHistoryAsync(int teamId, DemoBackfillSeed seed)
         {
             if (seed == DemoBackfillSeed.Nothing)
