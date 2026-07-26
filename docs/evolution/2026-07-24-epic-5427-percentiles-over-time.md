@@ -282,7 +282,8 @@ Carried forward, not fixed: the `startDate`/`endDate` URL params round-trip thro
 are built from local date parts, so a reloaded or shared link loses one day and can flip the empty-state
 sentence outside UTC (pre-existing, affects every date-ranged widget, filed separately); a typed inverted
 range now 400s and the hooks have no error state, so both cards render blank until corrected; and the
-widget screenshots are stale for both slices.
+widget screenshots are stale for both slices — deliberately, by maintainer decision 2026-07-26: the whole
+percentiles/PBC over-time set gets regenerated once after slice 04, which touches the same surface again.
 
 ## Remaining — slice 04 (NOT started)
 

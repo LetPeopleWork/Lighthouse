@@ -1197,7 +1197,10 @@ Ran after mutation testing. Findings acted on:
   error state on the hooks or FE-side range validation; neither is in this slice.
 - **Screenshots are stale.** `percentilesOverTime.png`, `percentilesOverTimeWorkItemAge.png` and
   `pbcOverTime.png` were captured before a default window existed and show more history than the
-  widgets now render by default. Regeneration is a finalization activity (`rm` the old PNG first).
+  widgets now render by default. **Maintainer decision 2026-07-26: regenerate the whole percentiles/PBC
+  over-time screenshot set once, after slice 04 ships** — slice 04 changes the same widget surface again,
+  so regenerating now would only be redone. `rm` the old PNG first (the @screenshot pass keeps the old
+  file when the pixel diff is under threshold, so a stale image survives a "successful" regeneration).
 
 ## Wave: DELIVER / [REF] DoD check (slice-03b) — itemised, no silent N/A
 
@@ -1208,5 +1211,5 @@ Ran after mutation testing. Findings acted on:
 5. Forward-only recording idempotent and resilient — **N/A**, recording untouched by this slice.
 6. Empty-state honesty verified by E2E — **yes**, both variants, on both widgets.
 7. Demo data — **N/A**, the existing backfill `[today-14, today-1]` sits inside the 30-day default window, which is what makes the narrowing scenarios deterministic.
-8. Docs + screenshots — docs **done** (both filtering rows + both empty-state notes); **screenshots stale, deferred to finalization**.
+8. Docs + screenshots — docs **done** (both filtering rows + both empty-state notes); **screenshots stale, deliberately deferred to after slice 04** (maintainer decision 2026-07-26 — slice 04 touches the same widget surface).
 9. SonarCloud no new issues — **pending**, first PR/Nightly scan after push. ADO #5564 to move Active → Resolved once CI is green.
