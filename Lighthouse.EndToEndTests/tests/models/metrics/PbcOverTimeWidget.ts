@@ -101,10 +101,10 @@ export class PbcOverTimeWidget {
 	}
 
 	/**
-	 * The rendered dash pattern of a limit line, in CSS pixels. The point-in-time
-	 * process-behaviour chart draws its average with "5 5" and its natural limits
-	 * with "3 3"; reading the computed value lets the spec assert the over-time
-	 * limits speak the same visual language without pinning emotion class names.
+	 * The rendered dash pattern of a limit line, in CSS pixels. Over time the
+	 * three limits ARE the series, so they render SOLID and this is empty —
+	 * a dash pattern here would mean the discarded neutral-band styling came
+	 * back and colour stopped being the differentiating channel.
 	 */
 	async limitLineDashPattern(line: PbcLimitLine): Promise<number[]> {
 		const dashArray = await this.limitLinePath(line).evaluate(
@@ -117,9 +117,9 @@ export class PbcOverTimeWidget {
 	}
 
 	/**
-	 * The rendered stroke of a limit line. The three limits are one band drawn in
-	 * a single neutral colour, so the spec asserts they agree rather than pinning
-	 * a theme hex.
+	 * The rendered stroke of a limit line. Each limit carries its OWN theme
+	 * colour, so the spec asserts the three disagree rather than pinning a
+	 * theme hex that the light/dark palettes would each answer differently.
 	 */
 	async limitLineStrokeColor(line: PbcLimitLine): Promise<string> {
 		return this.limitLinePath(line).evaluate(
@@ -127,7 +127,20 @@ export class PbcOverTimeWidget {
 		);
 	}
 
-	/** The dashed swatch the legend draws for a limit line. */
+	/**
+	 * The legend swatch a limit line draws, as rendered. The legend has to show
+	 * what is plotted, so the swatch is a solid rule in the line's own colour.
+	 */
+	async legendSwatchRule(
+		line: PbcLimitLine,
+	): Promise<{ color: string; style: string }> {
+		return this.widget.getByTestId(`pbc-swatch-${line}`).evaluate((node) => ({
+			color: getComputedStyle(node).borderTopColor,
+			style: getComputedStyle(node).borderTopStyle,
+		}));
+	}
+
+	/** The colour swatch the legend draws for a limit line. */
 	async isLimitLineInLegend(line: PbcLimitLine): Promise<boolean> {
 		return (await this.legendEntry(line).count()) === 1;
 	}

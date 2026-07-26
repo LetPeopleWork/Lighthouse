@@ -1,3 +1,4 @@
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
@@ -9,7 +10,7 @@ import PbcOverTimeWidget, {
 } from "./PbcOverTimeWidget";
 
 // Mock MUI-X LineChart (same pattern as PercentilesOverTimeWidget.test.tsx).
-// Exposes the series identity/colour/dash and the x-axis dates so the specs can
+// Exposes the series identity/colour and the x-axis dates so the specs can
 // assert three dated limit lines without reaching into the real SVG renderer.
 vi.mock("@mui/x-charts", () => ({
 	LineChart: vi.fn(
@@ -79,12 +80,24 @@ function createMetricsService(
 	} as unknown as IMetricsService<IWorkItem | IFeature>;
 }
 
+// Colour is now the only channel that separates the three limits, so the specs
+// resolve the expected values from a real theme rather than pinning hexes.
+const theme = createTheme();
+
+const EXPECTED_LIMIT_COLORS = {
+	unpl: theme.palette.error.main,
+	average: theme.palette.info.main,
+	lnpl: theme.palette.warning.main,
+} as const;
+
 function renderWidget(getProcessBehaviorOverTime: ReturnType<typeof vi.fn>) {
 	return render(
-		<PbcOverTimeWidget
-			ownerId={OWNER_ID}
-			metricsService={createMetricsService(getProcessBehaviorOverTime)}
-		/>,
+		<ThemeProvider theme={theme}>
+			<PbcOverTimeWidget
+				ownerId={OWNER_ID}
+				metricsService={createMetricsService(getProcessBehaviorOverTime)}
+			/>
+		</ThemeProvider>,
 	);
 }
 
@@ -148,8 +161,15 @@ describe("PbcOverTimeWidget", () => {
 
 		expect(screen.getByText("PBC Over Time")).toBeInTheDocument();
 		expect(screen.getByTestId("pbc-over-time-legend")).toBeInTheDocument();
-		for (const key of ["unpl", "average", "lnpl"]) {
+		// The legend has to show what is plotted: each swatch is a SOLID rule in
+		// its own line's colour, never a shared neutral dash.
+		for (const [key, color] of Object.entries(EXPECTED_LIMIT_COLORS)) {
 			expect(screen.getByTestId(`pbc-line-${key}`)).toBeInTheDocument();
+			expect(screen.getByTestId(`pbc-swatch-${key}`)).toHaveStyle({
+				borderTopStyle: "solid",
+				borderTopWidth: "2px",
+				borderTopColor: color,
+			});
 		}
 		// Only the custom legend renders; the chart's built-in one stays off.
 		expect(screen.getByTestId("chart-hide-legend")).toHaveTextContent("true");
@@ -178,11 +198,16 @@ describe("PbcOverTimeWidget", () => {
 			expect(s.points).toBe(3);
 			expect(s.showMark).toBe(false);
 		}
-		// D7 — the point-in-time chart draws its limits in the neutral secondary
-		// text colour, so the over-time limits read as the same concept.
-		const neutral = seriesInfo[0].color;
-		expect(neutral).toBeTruthy();
-		expect(seriesInfo.map((s) => s.color)).toEqual([neutral, neutral, neutral]);
+		// Deliberate D7 deviation: over time the three limits ARE the series, so
+		// colour — not a dash pattern — is what tells them apart.
+		expect(seriesInfo.map((s) => s.color)).toEqual([
+			EXPECTED_LIMIT_COLORS.unpl,
+			EXPECTED_LIMIT_COLORS.average,
+			EXPECTED_LIMIT_COLORS.lnpl,
+		]);
+		// Three DISTINCT colours — a shared colour is what made the band
+		// unreadable in dark mode in the first place.
+		expect(new Set(seriesInfo.map((s) => s.color)).size).toBe(3);
 	});
 
 	it("plots a single recorded day without a degenerate axis", async () => {

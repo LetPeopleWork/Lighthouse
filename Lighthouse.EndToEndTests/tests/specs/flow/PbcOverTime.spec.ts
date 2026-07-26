@@ -17,11 +17,11 @@ const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith +
 const DEMO_TEAM_NAME = "Team Zenith";
 const EXPECTED_LINES = PBC_LIMIT_LINES.length; // UNPL / Average / LNPL
 
-// The dash patterns the point-in-time process-behaviour chart draws with: the
-// average is "5 5", the natural limits are "3 3". The over-time widget must
-// speak the same visual language rather than inventing its own.
-const AVERAGE_DASH = [5, 5];
-const LIMIT_DASH = [3, 3];
+// The over-time chart plots the three limits AS the series, so it separates
+// them by COLOUR and draws every line solid — the point-in-time chart's neutral
+// dashes would leave three near-identical greys, unreadable in dark mode.
+const SOLID: number[] = [];
+const SOLID_BORDER = "solid";
 
 test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput process behaviour limits", async ({
 	page,
@@ -52,19 +52,25 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 	await expect.poll(() => widget.countLegendEntries()).toBe(EXPECTED_LINES);
 	await expect.poll(() => widget.countAxisTickLabels()).toBeGreaterThan(1);
 
+	// Each limit is drawn solid, in its own colour, and its legend swatch shows
+	// that same colour — the legend has to match what is plotted.
+	const strokes: string[] = [];
 	for (const line of PBC_LIMIT_LINES) {
 		expect(await widget.isLimitLineInLegend(line)).toBe(true);
+		expect(await widget.limitLineDashPattern(line)).toEqual(SOLID);
+
+		const stroke = await widget.limitLineStrokeColor(line);
+		expect(stroke).toBeTruthy();
+		strokes.push(stroke);
+
+		const swatch = await widget.legendSwatchRule(line);
+		expect(swatch.style).toBe(SOLID_BORDER);
+		expect(swatch.color).toBe(stroke);
 	}
 
-	// The limit styling matches the point-in-time chart: average dashed "5 5",
-	// the natural limits dashed "3 3", all three in one neutral band colour.
-	expect(await widget.limitLineDashPattern("average")).toEqual(AVERAGE_DASH);
-	expect(await widget.limitLineDashPattern("unpl")).toEqual(LIMIT_DASH);
-	expect(await widget.limitLineDashPattern("lnpl")).toEqual(LIMIT_DASH);
-
-	const averageStroke = await widget.limitLineStrokeColor("average");
-	expect(await widget.limitLineStrokeColor("unpl")).toBe(averageStroke);
-	expect(await widget.limitLineStrokeColor("lnpl")).toBe(averageStroke);
+	// Three DISTINCT colours: colour is the only channel separating the limits,
+	// so a shared stroke would make the band unreadable.
+	expect(new Set(strokes).size).toBe(EXPECTED_LINES);
 });
 
 // A team created but never refreshed has recorded no process-behaviour limits

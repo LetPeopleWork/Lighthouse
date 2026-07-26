@@ -1,3 +1,4 @@
+import type { Theme } from "@mui/material";
 import {
 	Box,
 	Card,
@@ -38,19 +39,39 @@ export const PBC_OVER_TIME_EMPTY_COPY =
 /**
  * The three limit lines, in the point-in-time chart's vocabulary
  * (average / upperNaturalProcessLimit / lowerNaturalProcessLimit) rather than
- * new names for the same concepts (D7). The dash patterns are the ones the
- * point-in-time chart draws its reference lines with: "3 3" for the limits,
- * "5 5" for the average.
+ * new names for the same concepts (D7).
+ *
+ * Deliberate, user-approved deviation from D7 on the *styling*: the
+ * point-in-time chart draws its limits neutral-and-dashed because there they
+ * are reference lines laid over a measured series. Over time there is no
+ * measured series — the three limits ARE the series — so dashes would leave
+ * three near-identical greys, unreadable in dark mode. Colour is the
+ * differentiating channel instead, and every line renders solid.
  */
 const LIMIT_LINES: readonly {
 	id: string;
 	label: string;
-	dash: string;
+	color: (theme: Theme) => string;
 	accessor: (snapshot: ProcessBehaviorSnapshot) => number;
 }[] = [
-	{ id: "unpl", label: "UNPL", dash: "3 3", accessor: (s) => s.unpl },
-	{ id: "average", label: "Average", dash: "5 5", accessor: (s) => s.average },
-	{ id: "lnpl", label: "LNPL", dash: "3 3", accessor: (s) => s.lnpl },
+	{
+		id: "unpl",
+		label: "UNPL",
+		color: (theme) => theme.palette.error.main,
+		accessor: (s) => s.unpl,
+	},
+	{
+		id: "average",
+		label: "Average",
+		color: (theme) => theme.palette.info.main,
+		accessor: (s) => s.average,
+	},
+	{
+		id: "lnpl",
+		label: "LNPL",
+		color: (theme) => theme.palette.warning.main,
+		accessor: (s) => s.lnpl,
+	},
 ];
 
 /**
@@ -81,7 +102,8 @@ function describeMetricType(metricType: ProcessBehaviorMetricType): {
 /**
  * PBC Over Time widget (Predictability category, team + portfolio). Plots the
  * dated UNPL / Average / LNPL triple the recorder persisted, one point per
- * recorded day, in the point-in-time process-behaviour chart's visual language.
+ * recorded day, in the point-in-time process-behaviour chart's vocabulary and
+ * each limit in its own theme colour (see LIMIT_LINES for the D7 deviation).
  * A fresh owner legitimately has no history — it gets the honest forward-only
  * copy, never a fabricated or broken axis (D6).
  */
@@ -96,29 +118,19 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 		metricsService,
 	);
 
-	// The point-in-time chart draws its limits in the neutral secondary text
-	// colour — the over-time limits read as the same concept (D7).
-	const limitColor = theme.palette.text.secondary;
-
 	const tabs = PROCESS_BEHAVIOR_METRIC_TYPES.map(describeMetricType);
 
+	// Colour is the only channel separating the three limits here — they render
+	// solid, each in its own theme colour, so the band stays readable in dark
+	// mode where three dashed greys collapse into one.
 	const lineSeries = LIMIT_LINES.map((line) => ({
 		id: line.id,
 		label: line.label,
-		color: limitColor,
+		color: line.color(theme),
 		// Limits are a band, not a measured series — no per-day markers.
 		showMark: false,
 		data: (series ?? []).map(line.accessor),
 	}));
-
-	// MUI-X tags each plotted line with `data-series`, not a per-series class —
-	// the same selector shape the burnup and predictability charts dash with.
-	const dashSx = Object.fromEntries(
-		LIMIT_LINES.map((line) => [
-			`& .MuiLineChart-line[data-series="${line.id}"]`,
-			{ strokeDasharray: line.dash },
-		]),
-	);
 
 	const dates = (series ?? []).map((snapshot) => snapshot.recordedAt);
 	const hasData = series !== null && series.length > 0;
@@ -182,9 +194,10 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 									sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
 								>
 									<Box
+										data-testid={`pbc-swatch-${line.id}`}
 										sx={{
 											width: 12,
-											borderTop: `2px dashed ${limitColor}`,
+											borderTop: `2px solid ${line.color(theme)}`,
 										}}
 									/>
 									<Typography variant="caption">{line.label}</Typography>
@@ -196,7 +209,6 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 								style={{ height: "100%", width: "100%" }}
 								xAxis={[{ data: dates, scaleType: "point" }]}
 								series={lineSeries}
-								sx={dashSx}
 								hideLegend
 							/>
 						</Box>
