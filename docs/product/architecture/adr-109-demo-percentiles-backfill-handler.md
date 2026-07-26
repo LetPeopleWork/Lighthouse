@@ -69,3 +69,36 @@ its own per-`MetricType` rows are not, and will need the same treatment.
 Cross-refs [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md) (the `MetricType`
 discriminator the guard now filters on), [ADR-107](./adr-107-percentiles-recording-handler-on-refresh-events.md)
 (the forward-only recorder whose "`RecordedAt < today` ⇒ backfill ran" signal this relies on).
+
+## Amendment (slice-04, 2026-07-26) — the backfill was NOT extended to the five new process-behaviour families
+
+The amendment above closes with a forward statement: "`ProcessBehaviorSnapshot` (slices 03/04) is a
+separate table, so its guard is naturally scoped — but its own per-`MetricType` rows are not, and will
+need the same treatment." **Slice 04 did not do that, by maintainer decision (2026-07-26).** Recorded
+here so the ADR does not read as a description of shipped code that does not exist.
+
+**What shipped.** Slice 04 appended five families to `ProcessBehaviorMetricType` (`WorkItemAge`, `Wip`,
+`CycleTime`, `Arrivals`, `FeatureSize`) and made the "PBC Over Time" toggle offer all six.
+`DemoPercentilesBackfillHandler` still backdates **`ProcessBehaviorMetricType.Throughput` only**
+(`BackfillProcessBehaviorFamily(..., Throughput, ...)`, one call). The per-family guard idiom is
+therefore present in the code but exercised by a single family on this table.
+
+**Consequences, accepted rather than hidden.**
+
+1. On a demo instance the PBC-over-time widget plots a dated triple for Throughput and shows the honest
+   forward-only empty copy for the other five families, until a day of real recording accrues. This is
+   correct behaviour under D6 — it is not a broken chart — but it is not the "populated trending charts"
+   this ADR's Decision section promises for demo tenants. The gap is per-family, not per-widget.
+2. Milestone-4's outline scenario ("three dated lines are plotted for \<metric_type\>") cannot be driven
+   through the browser for any non-Throughput family. Its plotting assertion was relocated to the read
+   port (`Slice04ProcessBehaviorMetricTypesScenarios.cs`), and `PbcOverTime.spec.ts` carries an explicit
+   comment at the point the UI assertion is *not* made, naming that fixture and forbidding a future "fix"
+   that either weakens it or extends the backfill without re-deciding this.
+3. Users are told: `docs/metrics/predictability.md`'s empty-state note now states that the demo data
+   ships a backdated history for **Throughput only**, so the other families start empty on demo data too.
+
+**If a future slice extends it**, the slice-02 rule still applies and applies harder here: every demo and
+screenshot environment is already Throughput-backfilled, so an owner-scoped or table-scoped guard would
+make each newly-added family a permanent no-op while unit tests — which seed fresh owners — stay green.
+Key the guard on `(owner, metricType)` and add a regression test that seeds an owner already backfilled
+with Throughput and asserts the new family still lands.

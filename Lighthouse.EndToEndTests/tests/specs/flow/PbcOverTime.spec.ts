@@ -142,13 +142,13 @@ test("@edge @US-04 a fresh team's PBC Over Time widget shows the honest empty st
 	await expect(widget.legend).toHaveCount(0);
 });
 
-// Scenario 14 (US-07 / D8): the toggle row is the one place Feature Size is
+// Scenario 14 (US-05 / D8): the toggle row is the one place Feature Size is
 // withheld — the wire deliberately answers a team's `?type=FeatureSize` with an
 // empty series (pinned at the read port in Slice04ProcessBehaviorMetricTypesScenarios.cs),
 // so the scope rule is only visible to a user here. Absence is asserted from the
 // OFFERED set, not from a click that times out: a timing-out click is
 // indistinguishable from a broken locator.
-test("@real-io @driving_adapter @US-07 the family toggle offers every recorded family, and Feature Size only on a portfolio", async ({
+test("@real-io @driving_adapter @US-05 the family toggle offers every recorded family, and Feature Size only on a portfolio", async ({
 	page,
 	request,
 	overviewPage,
@@ -185,9 +185,9 @@ test("@real-io @driving_adapter @US-07 the family toggle offers every recorded f
 	await expect(portfolioWidget.metricToggle("FeatureSize")).toBeAttached();
 });
 
-// Scenario 13 (US-07): the toggle actually switches families rather than only
+// Scenario 13 (US-05): the toggle actually switches families rather than only
 // rendering six buttons that all draw Throughput.
-test("@real-io @driving_adapter @US-07 selecting another family moves the selection and keeps the chart intact", async ({
+test("@real-io @driving_adapter @US-05 selecting another family moves the selection and keeps the chart intact", async ({
 	page,
 	request,
 	overviewPage,

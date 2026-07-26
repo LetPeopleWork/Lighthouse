@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-07-25
+updated: 2026-07-26
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -651,6 +651,22 @@ outcomes:
       ProcessBehaviorRecordingHandler and ProcessBehaviorSnapshotDto at 89.86% overall with a single
       survivor across those files (the DTO's ToString string mutation). Slice-03 did NOT receive an
       adversarial review - the slice-03b review covered only 093a31bce..HEAD.
+      Slice-04 (remaining five PBC families) MEASURED 2026-07-26 (ADO #5549, e61d0b47a..1cfe48ad0):
+      VERIFIED green, and the invariant now holds for ALL SIX process-behaviour families. The natural key
+      already carried the family dimension, so no key or index change was needed - six families upsert
+      independently and a same-day re-refresh still leaves exactly one row per (owner, family, day),
+      pinned in ProcessBehaviorRecordingHandlerTests. NO EF migration: the five new families are VALUES
+      in the existing ordinal column, not schema. What had to be handled instead is the enum-ordinal
+      hazard - members appended at the end, and every one of the six ordinals is now pinned
+      member-by-member (the slice-03 one-member guard was retired BY DESIGN, its invariant absorbed).
+      STRENGTHENED by a new precondition: the ready-but-zero honesty gate. XmRCalculator returns a fully
+      collapsed band (Average = UNPL = LNPL = 0) for an empty or all-zero baseline while every chart
+      builder still stamps Status = Ready, so without a gate the recorder would persist a fake triple
+      that a chart would plot as three flat zero lines. The recorder now refuses
+      `Average == 0 && UpperNaturalProcessLimit == 0`. LowerNaturalProcessLimit is DELIBERATELY excluded:
+      the calculator clamps a negative LNPL to zero for zero-bounded data, so a real busy process
+      routinely reports Lnpl == 0. The chart builders were NOT changed (that would alter six shipped
+      point-in-time widgets app-wide) - maintainer decision 2026-07-26.
     alerting:
       - condition: "same-day double-refresh test asserts row count != 1"
         action: "CI fails (red)"
@@ -688,6 +704,22 @@ outcomes:
       one family throwing cannot discard the other's staged rows.
       Slice-03b (2026-07-26) added NO failure mode here: it is read-path only, and a bad date window is a
       400 to the caller, not a swallowed background failure. Recording is untouched.
+      Slice-04 MEASURED 2026-07-26: VERIFIED green with FIVE more families inside the containment.
+      The per-type inner try/catch slice-03 built ahead of time ("so that a later type failing cannot
+      discard the rows an earlier type already staged") now has six families passing through it and is
+      exercised with them. MetricFamily stays the family literal "ProcessBehavior" for all six - it is
+      deliberately NOT the metric type, so an operator alert on process-behaviour recording stays ONE
+      alert rather than fragmenting into six (same reasoning as slice-02 on the percentiles side).
+      One structural note: the reader arrays differ by scope (TeamReaders = 5 families,
+      PortfolioReaders = 6; Feature Size is a portfolio concept, D8, and there is no team-side read
+      method to call). Dropping a line from either array is a silent capability loss that no exception
+      would ever surface, so the handler tests assert the exact family SET each scope produces, not
+      merely that the set contains a given family.
+      STILL OPEN - the [Forge med] OPERATOR MONITORING PROCEDURE. The structured recording-failed event
+      schema is canonical in the ADR-107 slice-02 amendment, but the log-scan guidance and alert rule
+      were never written into an ops/runbook page. Deferred at slice-02 to "epic completion"; the epic
+      completed at slice-04 and this is still open. It is now the epic's single outstanding DEVOPS
+      action item and the one gap between "the event is emitted" and "an operator will notice it".
     alerting:
       - condition: "recording-failure AT shows refresh broken OR no structured event emitted"
         action: "CI fails (red)"
@@ -750,6 +782,29 @@ outcomes:
       ("a refreshing instance cannot do that") only covered instances still refreshing THAT owner.
       Closing it needs a has-any-history signal on the response or a second request, both of which D10
       and ADR-108 rejected; tracked as follow-up.
+      Slice-04 MEASURED 2026-07-26: VERIFIED green PER FAMILY, and the KPI gained a new way to fail that
+      is now closed. The @edge fresh NON-demo team scenario selects a SECOND family (WorkItemAge) and
+      re-asserts PBC_OVER_TIME_EMPTY_COPY verbatim plus zero chart lines and no legend - that team is the
+      only deterministic fixture for this, because on the demo team today's refresh records a row for
+      every family. The new failure mode: a family whose baseline is empty or all-zero. XmRCalculator
+      returns Average = UNPL = LNPL = 0 for it and the chart builder still stamps Status = Ready, so
+      before slice-04 the recorder would have persisted that triple and the widget would have plotted
+      three flat zero lines - a chart asserting a process where there is none, which is exactly the
+      dishonesty this KPI exists to prevent, in a shape neither of the two empty-state sentences covers.
+      The recorder's ready-but-zero gate refuses it, so the widget falls through to the honest empty copy
+      instead. The toggle-switch E2E additionally rejects a THIRD state explicitly: it polls for
+      "plotted" (three lines) or "honestly empty" (the copy) and fails on anything else, so a chart
+      region with fewer than three lines AND no empty copy cannot pass unnoticed.
+      DEMO-DATA LIMITATION, deliberate (maintainer decision 2026-07-26, ADR-109 slice-04 amendment):
+      DemoPercentilesBackfillHandler still backdates Throughput ONLY, so on demo data the five newer
+      families render the honest forward-only copy until a day accrues. That is correct under D6 and not
+      a broken chart, but it does mean milestone-4's "three dated lines are plotted" cannot be asserted
+      through the browser for any non-Throughput family; that assertion lives at the read port
+      (Slice04ProcessBehaviorMetricTypesScenarios.cs) and PbcOverTime.spec.ts carries an explicit comment
+      at the point the UI assertion is NOT made. Users are told: docs/metrics/predictability.md now
+      states the demo backfill covers Throughput only.
+      The two open items above (the UTC round-trip EXCEPTION and the all-history-predates-window KNOWN
+      DEFECT) are UNCHANGED by slice-04 and remain open at epic close.
     alerting:
       - condition: "zero-snapshot E2E finds a rendered-but-empty/broken axis instead of the empty-state copy"
         action: "CI fails (red)"
@@ -786,6 +841,20 @@ outcomes:
       the way the write side already was - IProcessBehaviorSnapshotRepository.GetSeries was added so both
       families place the series query in the repository rather than one in the repo and one in its query
       class (DDD-8), which is where slice-04's five further metric types will land.
+      Slice-04 MEASURED 2026-07-26: target MET and now maximally exercised - EPIC CLOSED on this KPI.
+      Five further process-behaviour families (WorkItemAge, Wip, CycleTime, Arrivals, FeatureSize) were
+      added with ZERO new pipeline: no new table, no repository, no handler, no endpoint, no DTO, no EF
+      migration, no new frontend component. The families are appended ENUM VALUES plus two scope-specific
+      reader arrays inside the SAME RecordFamily pass, landing exactly on the seam slice-03 built one
+      slice early ("one entry per metric type today; slice 04 appends the remaining five") and the read
+      path slice-03b made symmetric. Final tally across the epic: 8 metric series (CT x 3 horizons + WIA
+      percentiles; 6 process-behaviour families) driven by TWO recording handlers on ONE pair of refresh
+      events, TWO snapshot tables, TWO read ports, TWO endpoints and TWO widgets. Zero bespoke
+      per-metric recorders, which was the property this KPI existed to protect.
+      The slice brief framed this as a falsifiable hypothesis - "DISPROVES 'adding PBC types is pure
+      configuration over the slice-03 shell' IF any type needs a bespoke recorder or breaks the
+      Throughput regression". Neither happened: no family needed a bespoke path, and the whole slice-03
+      Throughput suite passes unchanged with Throughput pinned at ordinal 0. Hypothesis CONFIRMED.
     alerting: []
 
   - id: OUT-5427-mutation-kill-rate
@@ -821,8 +890,35 @@ outcomes:
       10 frontend survivors judged EQUIVALENT rather than killed - 6 are the cancelled in-flight flag in
       both hooks (a late write lands under a cache key nothing reads, so no observable difference) and 4 are
       `series ?? []` in render paths that only run when the chart is not rendered.
+      Slice-04 MEASURED 2026-07-26: BE 90.14% (Stryker.NET - 192 killed / 16 survived / 0 timeout) +
+      FE 94.08% (Stryker - 159 killed / 10 survived). Both well above the 80% gate and both the epic's
+      HIGHEST (BE +0.28pp, FE +1.32pp on slice-03b). EPIC BASELINE, measured not projected:
+      BE 85.71 -> 87.13 -> [no slice-03 figure] -> 89.86 -> 90.14; FE 90.91 -> 93.42 -> 92.76 -> 94.08.
+      Slice-04 introduced EXACTLY ONE new survivor and it is now killed. Every other survivor is
+      byte-identical to the slice-03b baseline: the DemoPercentilesBackfillHandler cluster, two DTO
+      ToString mutants, and five NoCoverage entries - TWO of which are a Stryker INSTRUMENTATION
+      ARTIFACT rather than a test gap. They sit on blocks whose only statement is a `return`, and the
+      sibling `!Enum.IsDefined(type)` negation on the same guard is KILLED, which is only possible if
+      both branches are exercised. Recorded so a future reader does not "close" a coverage gap that is
+      not there.
+      THE ONE NEW SURVIVOR, and why it was a real contract rather than an equivalent mutant: removing the
+      `return` from the `Status != BaselineStatus.Ready` guard in RecordMetricType survived, because every
+      not-ready path in production ALSO zeroes the triple (BaseMetricsService stamps
+      Average = UNPL = LNPL = 0 alongside BaselineInvalid), so the ready-but-zero gate added in 04-01
+      catches a not-ready chart anyway - the two guards overlap on all REACHABLE data. They nonetheless
+      encode different claims: Status is authoritative regardless of the numbers, so a chart reporting
+      "not ready" while carrying a live band must still write nothing, or a future chart builder that
+      stamps a not-ready status beside computed values would silently start recording limits the owner
+      was told were not ready. Killed by TeamDataRefreshed_NotReadyChartCarryingALiveBand_WritesNoRow
+      (three statuses), which constructs the input production cannot currently produce. Verified by
+      reproducing the mutant: exactly those three cases fail with the guard removed and the other 39
+      pass, so the pre-existing suite genuinely could not detect it. BE 89.67% -> 90.14%, zero survivors
+      left in slice-04 code.
+      GENERAL RULE harvested here: when a mutant survives on a guard that a SECOND guard shadows, ask
+      what each guard claims independently before calling it equivalent. If the claims differ, the
+      surviving mutant is a missing test, not an equivalent mutant.
       CAVEAT for every figure above: the per-feature Stryker configs are gitignored and target code by byte
       offset (backend controllers) / line range (frontend widgets), so they must be re-anchored each slice or
-      the score describes the wrong code. All three were stale at the start of slice-03b close-out.
-      Re-measured per-feature on each subsequent slice.
+      the score describes the wrong code. All three were stale at the start of slice-03b close-out and were
+      re-anchored again for slice-04. Whoever runs mutation on this surface next must re-anchor first.
     alerting: []

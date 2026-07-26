@@ -1,9 +1,9 @@
-# Evolution: epic-5427-percentiles-over-time (Slices 01, 02, 03, 03b of 4+)
+# Evolution: epic-5427-percentiles-over-time (Slices 01, 02, 03, 03b, 04 — COMPLETE)
 
-- **Date finalized (slice-01)**: 2026-07-24 · **(slice-02)**: 2026-07-25
-- **ADO**: Epic #5427 ("Show Percentiles over Time Charts", Community / Productboard). Non-premium, free-tier, brownfield. Slice-02 story **#5547 — Closed**.
-- **Status**: **Slices 01-02 delivered on `main`**. Epic is **in progress** — slices 03-04 (the `ProcessBehaviorSnapshot` / "PBC Over Time" family) not started. DISCUSS → DESIGN → DEVOPS → DISTILL complete for the whole epic; DELIVER complete for slices 01 and 02. Both slices: backend suite green, mutation ≥80% on the new surface, adversarial review clean, integrity verify exit 0.
-- **One archive per epic** — this file grows a section per slice. Slice-01 prose below is preserved as written; where slice-02 diverged from a slice-01 prediction it is marked **SUPERSEDED** in place and the correction lives in the Slice 02 section.
+- **Date finalized (slice-01)**: 2026-07-24 · **(slice-02)**: 2026-07-25 · **(slices 03 / 03b / 04)**: 2026-07-26
+- **ADO**: Epic #5427 ("Show Percentiles over Time Charts", Community / Productboard). Non-premium, free-tier, brownfield. Slice-02 story **#5547 — Closed**. Slice-04 story **#5549** — to be transitioned by the orchestrator.
+- **Status**: **COMPLETE — all five slices delivered on `main`.** All six user stories (US-01..US-06) shipped; the epic's planned scope is closed. DISCUSS → DESIGN → DEVOPS → DISTILL complete for the whole epic; DELIVER complete for slices 01, 02, 03, 03b and 04. Every slice: backend suite green, mutation ≥80% on the new surface, integrity verify exit 0. Two evidence gaps are recorded rather than glossed — slice 03 published no mutation score of its own and its diff never received an adversarial review. Carried-forward defects and the one open DEVOPS action item are listed under "Epic status at slice-04 close".
+- **One archive per epic** — this file grows a section per slice. Slice-01 prose below is preserved as written; where a later slice diverged from an earlier prediction it is marked **SUPERSEDED** in place and the correction lives in that slice's section.
 - **Workspace (history)**: `docs/feature/epic-5427-percentiles-over-time/`
 - **Builds on**: the forward-only one-row-per-day snapshot precedent (`DeliveryMetricSnapshot` Epic 3993, `BlockedCountSnapshot` Epic 5074), the Epic 5121 domain-event bus (`TeamDataRefreshed` / `PortfolioFeaturesRefreshed`), and the existing point-in-time CT percentile widget + D7 red→green ramp it wraps.
 
@@ -56,13 +56,13 @@ Eight steps, every commit CI-green: `2e4b4576b` recorder · `021c19317` series e
 - **Walking-skeleton "populated chart" litmus can pull a nominally-deferred enabler into the first slice.** The demo-backfill handler was marked OUT in the slice brief but was a hard dependency of the WS E2E; the DISTILL adapter-coverage matrix is the tell — if a driven adapter is "covered by Scenario 1", it is in slice-01 whatever the brief's scope list says. Reconcile the brief's scope list against the adapter-coverage matrix before starting.
 - **A nullable discriminator column reserved for a later slice needs an explicit provider-behaviour note now.** `Horizon = NULL` for slice-02 WIA interacts with the unique index's NULL semantics (NULLs distinct on most providers) — capturing the idempotency-guard implication at slice-01 finalization saves a same-day-double-write bug when WIA lands.
 
-## Forward pointer — slices 02-04 (as scoped at slice-01 finalization; 02 has since shipped)
+## Forward pointer — slices 02-04 (as scoped at slice-01 finalization; all have since shipped)
 
 | Slice | Story | Ships | Deferred components |
 |---|---|---|---|
 | 02 | US-03 WIA percentiles over time | ~~planned~~ **DELIVERED 2026-07-25** — see "Slice 02" below. Shipped as predicted except `Horizon = NoHorizon (0)` rather than `NULL` | — |
-| 03 | US-04 Throughput PBC NPLs over time | `ProcessBehaviorSnapshot` table + repo + `ProcessBehaviorRecordingHandler` + `IProcessBehaviorSeriesQuery` + `process-behavior-over-time?type=` endpoint + "PBC Over Time" widget (Throughput) | entire ProcessBehaviorSnapshot family |
-| 04 | US-05 PBC remaining type toggles | WIA/WIP/CT/Arrivals/Feature-Size(portfolio-only) toggle options on the PBC widget | remaining `MetricType` values, Feature-Size portfolio-gating |
+| 03 | US-04 Throughput PBC NPLs over time | ~~planned~~ **DELIVERED 2026-07-26** — see "Slice 03" below. `ProcessBehaviorSnapshot` table + repo + `ProcessBehaviorRecordingHandler` + `IProcessBehaviorSeriesQuery` + `process-behavior-over-time?type=` endpoint + "PBC Over Time" widget (Throughput). An unplanned **slice 03b** (US-06, date-range) was inserted after it | — |
+| 04 | US-05 PBC remaining type toggles | ~~planned~~ **DELIVERED 2026-07-26** — see "Slice 04" below. Shipped exactly as scoped: WIA/WIP/CT/Arrivals/Feature-Size(portfolio-only) as appended enum values + a scope-aware toggle, no new component | — (the demo backfill was deliberately *not* extended — see slice-04 decision (b)) |
 
 The **pipeline-reuse** KPI (one shared recording pipeline / snapshot-table family for CT+WIA, no per-metric bespoke recorder) is the load-bearing invariant across slices 01→02 — slice-02 WIA must join the existing handler/table, not fork a new one.
 
@@ -285,20 +285,139 @@ range now 400s and the hooks have no error state, so both cards render blank unt
 widget screenshots are stale for both slices — deliberately, by maintainer decision 2026-07-26: the whole
 percentiles/PBC over-time set gets regenerated once after slice 04, which touches the same surface again.
 
-## Remaining — slice 04 (NOT started)
+## Slice 04 — PBC over time across every metric family (US-05, ADO #5549) — SHIPPED 2026-07-26
 
-Slice 04 adds the remaining PBC metric types to the existing widget's toggle — WIA/WIP/CT/Arrivals and
-Feature-Size (portfolio-only) — on the read path slice-03b just made symmetric.
+The last planned slice. The "PBC Over Time" widget stops being a Throughput chart with a one-button
+toggle: a delivery lead now switches it across **Throughput, Work Item Age, WIP, Cycle Time and
+Arrivals** on a team, plus **Feature Size on a portfolio**, each showing its own dated UNPL/Average/LNPL.
 
-Carry-forward that was written for slice 03 at slice-02 finalization, kept for the record — all three
-were honoured by what slice 03 shipped:
+The slice brief's learning hypothesis was "adding PBC types is pure configuration over the slice-03
+shell, *unless* any type needs a bespoke recorder or breaks the Throughput regression". It held. No new
+table, no repository, no handler, no endpoint, no DTO, no EF migration, no new frontend component — five
+appended enum members, two scope-specific reader arrays, a scope-aware toggle, and the read-port
+coverage to prove each family carries its own series. The single-entry `readers` array slice 03 had
+deliberately built "so that a later type failing cannot discard the rows an earlier type already
+staged" was the seam this slice slotted into, exactly as intended: a design decision made one slice
+early paid for itself.
 
-- Its demo backfill must extend `DemoPercentilesBackfillHandler`'s **per-family** guard idiom to the new
-  table's per-`MetricType` rows — same trap, different table.
-- `ProcessBehaviorMetricType` will also persist as an ordinal ⇒ append-only from day one.
-- The PBC recorder emits its **own** recording-failed message (`MetricFamily = "ProcessBehavior"`), per
-  the ADR-107 amendment — it does not share the percentiles template.
-- The "PBC Over Time" widget's empty-state honesty is the last open leg of `OUT-5427-empty-state-honesty`.
+Nine commits, `e61d0b47a..1cfe48ad0`, 15/15 CI checks green. Backend suite 3749 passing, frontend 3685,
+Playwright `PbcOverTime.spec.ts` 6/6 against a live instance. Mutation **BE 90.14% / FE 94.08%** — the
+epic's highest on both stacks. Adversarial review (`@nw-software-crafter-reviewer`): **APPROVED, zero
+findings** across 10 checks — the only clean-first-pass review in the epic.
+
+### Two maintainer decisions, both deliberate and both lossy in a stated way
+
+- **The ready-but-zero honesty gate excludes `Lnpl == 0`.** `XmRCalculator` returns a fully collapsed
+  band (`Average = UNPL = LNPL = 0`) for an empty or all-zero baseline, and every chart builder still
+  stamps `Status = Ready` for it — so without a gate the recorder would persist a fake triple and the
+  chart would plot three flat zero lines as if that were a process. The gate refuses
+  `Average == 0 && Unpl == 0`. It deliberately does **not** include the lower limit, because the
+  calculator clamps a negative LNPL to zero for zero-bounded data, so a real, busy process routinely
+  reports `Lnpl == 0`. The tidier fix — stamping `NotReady` at the chart builders — was rejected as
+  out-of-blast-radius: it would change the behaviour of six shipped point-in-time PBC widgets app-wide.
+- **`DemoPercentilesBackfillHandler` stays Throughput-only.** The five new families therefore render the
+  honest forward-only empty copy on demo data until a day of real recording accrues. The cost is named
+  rather than hidden: milestone-4's outline scenario ("three dated lines are plotted for each type")
+  cannot be asserted through the browser for any non-Throughput family, so its plotting assertion lives
+  at the read port instead. The roadmap reviewer accepted this as intentional-but-lossy on condition the
+  E2E carry an explicit comment **at the point the assertion is not made**, naming the read-port fixture
+  and forbidding a future "fix" that weakens it or extends the backfill. That comment shipped. Users are
+  told too — `docs/metrics/predictability.md` now says the demo backfill covers Throughput only.
+
+### Durable lessons
+
+- **Two guards that overlap on all *reachable* data are not one redundant guard — they encode different
+  claims, and mutation testing will tell you they are the same.** Stryker survived a mutant removing the
+  `return` from the `Status != Ready` check, because every not-ready path in production also zeroes the
+  triple, so the new ready-but-zero gate catches it anyway. The tempting readings are "delete the
+  redundant guard" or "mark it equivalent". Both are wrong: `Status` is authoritative *regardless of the
+  numbers*, so a chart reporting not-ready while carrying a live band must still write nothing —
+  otherwise a future builder that stamps a not-ready status beside computed values silently starts
+  recording limits the owner was told were not ready. The survivor was converted into a real contract by
+  constructing the input production cannot currently produce (`Ready`-shaped band + not-ready status) and
+  asserting the guard on it. **Rule**: when a mutant survives on a guard that a *second* guard shadows,
+  ask what each guard claims independently before calling it equivalent; if the claims differ, the
+  surviving mutant is a missing test, not an equivalent mutant. Verify by reproducing the mutant and
+  checking that *only* the new cases fail.
+- **A pre-scan phrased over "test methods" misses assertion helpers, and that is how a 5×-recurring rule
+  recurs again.** `NUnit2045` (adjacent `Assert.That` calls need `Assert.EnterMultipleScope()`) is an
+  INFO-severity SonarCloud-only rule that a warning-clean `dotnet build` cannot see, and it has now cost
+  five CI cycles across the codebase. This time the violation was not in a `[Test]` method at all — it
+  was three asserts inside a `foreach` in a `private static void Assert…` helper. Every existing pre-scan
+  habit ("check each new or edited test method") walks straight past that shape, and the fix wants the
+  scope *inside* the loop (one grouped report per row, not one for the whole loop). **Rule extended in
+  `ci-learnings.md`**: pre-scan every new or edited *assertion helper* too — anything whose body contains
+  ≥2 adjacent standalone `Assert.That`, wherever it lives.
+- **A "not a real value" sentinel in a test is a liability the moment the production enum can grow.**
+  Slice 03's unknown-family rejection tests used the literal string `"CycleTime"` as the family that must
+  400. Slice 04 promoted `CycleTime` into a real family — and those tests stayed **green**, now passing
+  for entirely the wrong reason and no longer testing the 400 guard at all. Caught by inspection, not by
+  the suite, because there is nothing for a suite to notice. Repaired with a name that can never become
+  real (`"NotAProcessBehaviourFamily"`) **plus a test asserting it is genuinely not a declared member**,
+  so a future repeat fails loudly. **Rule**: a negative-case sentinel drawn from the same namespace as
+  the values under test must be pinned as non-member by its own assertion, or it silently decays.
+- **`TerminologyContext` has no key for every noun a UI renders.** The toggle labels the six families
+  through `useTerminology()` so a tenant that renamed "Work Item" or "Feature" sees the rename follow —
+  but there is no `ARRIVALS` and no `FEATURE_SIZE` key. Arrivals is a hard-coded literal, and Feature
+  Size is composed as `` `${getTerm(FEATURE)} Size` ``. Worth knowing before designing a label map:
+  terminology coverage is per-noun and partial, so a "just use terminology for all of them" plan needs a
+  key-existence check first, and composing a term with a fixed suffix is the established fallback.
+- **Exposing a capability in the clients is a separate act from keeping the client contract compatible —
+  and only the second one shows up in a per-slice checklist.** Every slice from 01 through 03b correctly
+  answered "Lighthouse-Clients versioning: N/A" — each contract change genuinely was additive, so no
+  version gate was required. All four were right, and the clients had nonetheless never exposed *either*
+  over-time endpoint at all. The gap was only noticed at slice 04, and closing it took 4 client methods,
+  2 CLI metrics and 4 MCP tools spanning the whole epic (`lighthouse-clients` `5bcb2a6`, gated on server
+  `v26.7.11.4`). **Rule**: the clients checklist item needs two questions, not one — "does this break an
+  existing client?" *and* "is this surface reachable from the CLI/MCP at all?".
+- **A DTO that omits the dimension its request selected is a sharp edge for every non-browser consumer.**
+  Found while wiring the clients: `PercentilesOverTimeSnapshotDto` carries `recordedAt`, `metricType` and
+  the four percentiles — but **no `horizon`**. The widget never notices, because it always sends an
+  explicit horizon and re-plots per selection. A client that omits `horizon` on a `CycleTime` request
+  gets every recorded horizon interleaved in one array **with no field to tell them apart**. Documented
+  as a SHARP EDGE in the client rather than changed, because adding the field is a response-shape change
+  to a shipped contract. **Rule**: when a request parameter *filters* a series, the response row should
+  carry that dimension — the UI's habit of always sending it hides the omission until a scripted consumer
+  arrives.
+
+### Cross-cutting (slice-04)
+
+- **RBAC** — **N/A**: free-tier (D3), no new endpoint or gate; the six families ride an existing GET's
+  `?type=` parameter under the class-level `MetricsController` read guard. Feature-Size-portfolio-only is
+  a **scope** rule, not a permission rule: the toggle withholds the option and the wire stays permissive
+  (a team asking for `FeatureSize` gets an empty 200, pinned at the read port).
+- **Lighthouse-Clients (CLI + MCP)** — **DONE**, and it closed a gap spanning slices 01-04 (above).
+- **Website / marketing surface** — **N/A**: free metric surface, no pricing or positioning change, no
+  website asset references this widget.
+- **EF migration** — **N/A**: the five new families are *values* in the existing ordinal column. No DDL.
+  What had to be handled instead was the enum-ordinal hazard: members appended at the end, and all six
+  ordinals now pinned member-by-member (the slice-03 one-member guard was retired *by design*, its
+  invariant absorbed rather than dropped).
+- **Demo data** — **PARTIAL by decision**: Throughput backfilled, five families forward-only. See above.
+- **Docs prose** — three corrected claims in `docs/metrics/predictability.md` (the Flow-Metric row, the
+  toggle sentence, and the empty-state note now disclosing the Throughput-only demo backfill), the
+  `ci-learnings.md` recurrence-5 entry, the ADR-109 slice-04 amendment, and this section.
+- **Per-feature screenshots** — **DONE**. The deferral opened at slice-02 and re-affirmed at slice-03b
+  ("regenerate once, after slice 04") is discharged: `pbcOverTime.png` and
+  `percentilesOverTimeWorkItemAge.png` changed; `percentilesOverTime.png` came back byte-identical, which
+  is the *correct* result because slice 04 does not touch that widget — and it is a genuine re-capture,
+  not the comparator keeping a stale file, because the old PNGs were removed first.
+- **ADO** — story **#5549** to be transitioned by the orchestrator; this finalization pass does not touch
+  the board.
+- **Outcomes registry** — **N/A**: no `docs/product/outcomes/registry.yaml` in this repo. Testable
+  outcomes live in `kpi-contracts.yaml`; all five `OUT-5427-*` rows carry slice-04 measurements.
+
+### Epic status at slice-04 close
+
+All six user stories delivered. Planned scope complete. Carried forward, none of it planned work: the
+slice-03b UTC/local URL round-trip defect (affects every date-ranged widget, to be filed separately);
+the typed-inverted-range blank cards (hooks have no error state); the known defect against
+`OUT-5427-empty-state-honesty`'s second clause (an owner whose snapshots all predate a still-ending-today
+window reads the forward-only copy); slice-03's two unrecoverable evidence gaps (no mutation score of its
+own, no adversarial review of its diff); the collapsed-band `Status = Ready` question at the chart
+builders; and, still open since the DISTILL gate and now the epic's single outstanding DEVOPS action
+item, the **operator monitoring procedure** — the log-scan and alert-rule guidance for the
+recording-failed event was deferred to "epic completion" at slice-02, and this is epic completion.
 
 ## Links
 
@@ -306,5 +425,9 @@ were honoured by what slice 03 shipped:
 - Architecture: `docs/product/architecture/brief.md` → "Application Architecture — epic-5427-percentiles-over-time (Epic 5427)"
 - KPI contracts: `docs/product/kpi-contracts.yaml` → 5 `OUT-5427-*` rows
 - ADR amendments (slice-02): the **Amendment (slice-02, 2026-07-25)** section of each of ADR-106 / ADR-107 / ADR-108 / ADR-109
+- ADR amendment (slice-04): the **Amendment (slice-04, 2026-07-26)** section of ADR-109 — the demo backfill was *not* extended to the five new process-behaviour families, correcting the slice-02 amendment's forward statement
 - CI learnings from slice-02: `docs/ci-learnings.md` → the two 2026-07-25 entries (SQLite `disk I/O error` runner flake; NUnit2045 INFO-severity gate failure)
-- Feature workspace (full wave history): `docs/feature/epic-5427-percentiles-over-time/feature-delta.md` + `deliver/roadmap.json` (slice-02) + `deliver/roadmap-slice-01.json` / `deliver/execution-log-slice-01.json` (slice-01, archived)
+- CI learnings from slice-04: `docs/ci-learnings.md` → **NUnit2045 recurrence 5** (2026-07-26) — the violation lived in a private assertion helper, not a `[Test]` method, which is the shape a "check each test method" pre-scan misses
+- User-facing docs: `docs/metrics/predictability.md` → "PBC Over Time" (all six families; Feature Size portfolio-only; demo backfill covers Throughput only)
+- Clients parity: `lighthouse-clients` `5bcb2a6` — 4 client methods, 2 CLI metrics, 4 MCP tools for **both** over-time endpoints, gated on server `v26.7.11.4`; closes a gap spanning slices 01-04
+- Feature workspace (full wave history, **preserved — the wave matrix derives status from it**): `docs/feature/epic-5427-percentiles-over-time/feature-delta.md` (one narrative file, lean v3.14 — sections tagged `## Wave: <NAME> / [REF] …`, no `discuss/`/`design/`/`distill/` subdirectories), the five `slices/slice-0N-*.md` briefs, the six `acceptance/*.feature` specs, and `deliver/` — where `roadmap.json` + `execution-log.json` are slice-04's and the earlier slices are archived alongside as `roadmap-slice-01/02/03/03b.json` and `execution-log-slice-01/02/03.json`
