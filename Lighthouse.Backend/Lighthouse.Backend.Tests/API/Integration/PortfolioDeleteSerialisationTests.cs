@@ -167,37 +167,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("UpdateQueueService uses a single global channel reader; different UpdateKeys still serialise. Per-key parallelism is out of scope for this slice (boundary rule: do not modify UpdateQueueService). Track in follow-up to make queue per-key.")]
-        public async Task DeletePortfolio_DifferentPortfolioInFlight_DoesNotBlock()
-        {
-            var portfolioX = await SeedPortfolioWithFeatureAndTeam("Portfolio X");
-            var portfolioY = await SeedPortfolioWithFeatureAndTeam("Portfolio Y");
-
-            gateableWorkItemService.GateNextCallFor(portfolioY.Id);
-
-            var portfolioUpdater = hostedFactory.Services.GetRequiredService<IPortfolioUpdater>();
-            portfolioUpdater.TriggerUpdate(portfolioY.Id);
-
-            await WaitForInflightUpdate(portfolioY.Id, UpdateType.Features, TimeSpan.FromSeconds(5));
-
-            var startedAt = DateTime.UtcNow;
-            var deleteResponse = await client.DeleteAsync($"/api/latest/portfolios/{portfolioX.Id}")
-                .WaitAsync(TimeSpan.FromSeconds(5));
-            var elapsed = DateTime.UtcNow - startedAt;
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-                Assert.That(elapsed.TotalSeconds, Is.LessThan(3), "Delete on portfolio X must not be blocked by the gated update on portfolio Y");
-                Assert.That(PortfolioExists(portfolioX.Id), Is.False);
-                Assert.That(PortfolioExists(portfolioY.Id), Is.True);
-            }
-
-            gateableWorkItemService.ReleaseAll();
-            await WaitForNoActiveUpdates(TimeSpan.FromSeconds(10));
-        }
-
-        [Test]
         public async Task RefreshAfterDelete_Serialised_RefreshShortCircuitsOnMissingPortfolio()
         {
             var portfolio = await SeedPortfolioWithFeatureAndTeam();

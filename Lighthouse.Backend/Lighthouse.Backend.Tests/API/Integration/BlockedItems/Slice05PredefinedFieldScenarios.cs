@@ -13,10 +13,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// registration, FE DTO split) are pinned here as concrete tests.
     ///
     /// Driving ports: work-tracking-system-connection settings GET/PUT + team settings PUT + team metrics WIP
-    /// read (WorkItemDto.isBlocked). One scenario is the walking skeleton (@walking_skeleton, GREEN today via
-    /// the existing connection additional-field round-trip). Every other scenario is [Ignore]-pending: enable
-    /// one at a time in DELIVER, drive it RED, implement, commit. See distill/red-classification.md for the
-    /// per-scenario RED reason. The isPredefined DTO split (FE) and the synthetic-label removal (IssueFactory)
+    /// read (WorkItemDto.isBlocked). One scenario is the walking skeleton (@walking_skeleton, GREEN via
+    /// the existing connection additional-field round-trip). See distill/red-classification.md for the RED
+    /// reason each of the others was driven from during DELIVER.
+    /// The isPredefined DTO split (FE) and the synthetic-label removal (IssueFactory)
     /// are covered by the sibling Vitest spec and Slice05SyntheticLabelRemovalTests respectively.
     /// </summary>
     [TestFixture]

@@ -15,10 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// enforcement rule: <see cref="IssueFactory"/> must NOT push a synthetic <c>JiraFieldNames.FlaggedName</c>
     /// label onto an issue's Labels when the flagged custom field is set — the flag now flows only through the
     /// predefined additional field (generic id-keyed path).
-    ///
-    /// [Ignore]-pending: enable in DELIVER after deleting the IssueFactory L32–40 label injection. It fails RED
-    /// today on a clean assertion (the synthetic label IS added). It compiles against today's types (no
-    /// reference to the not-yet-existing IsPredefined member).
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

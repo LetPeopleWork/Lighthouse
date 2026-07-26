@@ -12,11 +12,9 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// DISTILL RED scaffold - feature flow-overview-named-cycle-time, Slice 02 / US-03
-    /// (Trend follows the named cycle-time selection). Every test is [Ignore]-marked so the
-    /// suite stays green until DELIVER wires D12/ADR-101. When un-ignored against today's code
-    /// each test fails for the RIGHT reason - cycleTimePercentilesInfo neither accepts
-    /// definitionId nor segments its cache key by definition - NOT for setup/compile error.
+    /// Acceptance tests - feature flow-overview-named-cycle-time, Slice 02 / US-03
+    /// (Trend follows the named cycle-time selection). They pin D12/ADR-101: cycleTimePercentilesInfo
+    /// accepts a definitionId and segments its cache key by definition.
     ///
     /// The named-vs-default seed is the shipped Epic 5251 shape: Implementation->Done (def 1)
     /// produces a named P85 that differs from the default started->finished P85 over the same

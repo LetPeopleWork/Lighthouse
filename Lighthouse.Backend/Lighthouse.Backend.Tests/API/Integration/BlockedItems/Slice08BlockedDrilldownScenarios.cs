@@ -8,8 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// trend into the items that were blocked at that date. Job: job-flow-coach-drill-into-blocked-trend-point.
     /// Persona: flow-coach. Driving port: NEW team-metrics blockedItemsAtDate read endpoint (ADR-099).
     /// Membership is RECONSTRUCTED from WorkItemBlockedTransition interval overlap — no persisted
-    /// membership, BlockedCountSnapshot unchanged. All scenarios [Ignore]-pending (RED-ready, ADR-025) —
-    /// DELIVER enables one at a time. The chart bar-click wiring + WorkItemsDialog render are FE
+    /// membership, BlockedCountSnapshot unchanged. The chart bar-click wiring + WorkItemsDialog render are FE
     /// (Vitest / Playwright) concerns; here we drive the reconstruct endpoint.
     /// </summary>
     [TestFixture]

@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// DISTILL acceptance scenarios (Epic 5074) — Slice 04: Blocked → Stale linkage (settings contract).
     /// Job: job-flow-coach-stale-when-blocked-too-long. Persona: flow-coach (Priya) + config-admin.
     /// Driving port: team settings PUT/GET (blockedStalenessThresholdDays). Stale rendering (driver +
-    /// context, stale-once — UC-1) is FE deriveStaleness (Vitest, DELIVER). All [Ignore]-pending.
+    /// context, stale-once — UC-1) is FE deriveStaleness (Vitest, DELIVER).
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

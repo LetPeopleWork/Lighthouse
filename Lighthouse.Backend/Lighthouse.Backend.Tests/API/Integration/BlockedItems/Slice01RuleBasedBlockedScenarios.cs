@@ -8,9 +8,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// Job: job-config-admin-define-blocked-rules. Persona: config-admin (Carlos). Driving ports: team
     /// settings PUT + team settings GET + team metrics WIP read (WorkItemDto.isBlocked).
     ///
-    /// One scenario is the walking skeleton (@walking_skeleton, GREEN today via the existing blocked
-    /// round-trip). Every other scenario is [Ignore]-pending: enable one at a time in DELIVER, drive it
-    /// RED, implement, commit. See distill/red-classification.md for the per-scenario RED reason.
+    /// One scenario is the walking skeleton (@walking_skeleton, GREEN via the existing blocked
+    /// round-trip). See distill/red-classification.md for the RED reason each of the others was
+    /// driven from during DELIVER.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

@@ -7,8 +7,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// honest Blocked count on a historic portfolio range. Job: job-delivery-lead-trust-portfolio-blocked-history.
     /// Persona: delivery-lead-rte. Driving port: portfolio metrics wip read with asOfDate in the past.
     /// Precondition spells are seeded into the FEATURE keyspace (scaffold entity per ADR-102) — captured
-    /// history is input state, never the expected output (Critical Rule 7). All scenarios
-    /// [Ignore]-pending (RED-ready, ADR-025).
+    /// history is input state, never the expected output (Critical Rule 7).
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

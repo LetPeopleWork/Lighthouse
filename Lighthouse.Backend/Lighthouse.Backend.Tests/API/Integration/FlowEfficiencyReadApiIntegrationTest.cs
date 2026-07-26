@@ -16,15 +16,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // DISTILL scaffold for wait-states-flow-efficiency (Story #5173).
     // Black-box example-based ATs over WebApplicationFactory<Program> — the C#/TS Architecture-of-Reference
     // rows govern (see docs/architecture/atdd-infrastructure-policy.md): no Hypothesis/PBT, no state_delta
-    // Universe (Python pilot only). The flowEfficiencyInfo endpoint + WaitStates field land in DELIVER, so
-    // every test is [Ignore("pending — DELIVER (wait-states-flow-efficiency)")] (RED-by-skip, not Broken).
-    // Assertions target the HTTP/JSON contract only — zero references to not-yet-existing production types,
-    // so the project compiles green now and the suite is Skipped until DELIVER un-ignores one slice at a time.
+    // Universe (Python pilot only). Assertions target the HTTP/JSON contract only.
     [TestFixture]
     public class FlowEfficiencyReadApiIntegrationTest
     {
-        private const string PendingReason = "pending — DELIVER (wait-states-flow-efficiency)";
-
         private const string InProgress = "In Progress";
         private const string WaitingForReview = "Waiting for Review";
         private const string ReadyForTest = "Ready for Test";
@@ -535,9 +530,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var (team, _) = AddTeamWithConfig(sp, stateMappings);
 
             // WaitStates is set on the seeded entity directly via reflection-free black-box: the computation
-            // under test reads the persisted entity. Until DELIVER adds the WaitStates property, this seed
-            // relies on the field existing — so the test is [Ignore]'d (RED-by-skip). Once the field lands,
-            // DELIVER replaces this marker with the real assignment.
+            // under test reads the persisted entity.
             ApplyWaitStates(team, waitStates);
 
             var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();

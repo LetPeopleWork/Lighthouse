@@ -322,22 +322,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             }
         }
 
-        [Test]
-        [Ignore("Slice 3 — US-03 forecast freshness (ForecastHowMany)")]
-        public async Task HandleAsync_AfterForecastUpdate_RecordsFreshPostForecastFiguresNotStaleOnes()
-        {
-            var fixture = await SeedDeliveryWhoseForecastChangesOnUpdate();
-
-            await HandlePortfolioForecastsUpdated(fixture);
-
-            var snapshot = await TodaysSnapshot(fixture);
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(snapshot.ForecastHowMany, Is.EqualTo(fixture.FreshForecastHowMany));
-                Assert.That(snapshot.ForecastHowMany, Is.Not.EqualTo(fixture.StalePreForecastHowMany));
-            }
-        }
-
         private async Task<RecorderFixture> SeedDeliveryWithKnownCounts()
         {
             var (portfolio, team) = await SeedPortfolioWithTeam();
@@ -394,9 +378,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 ExpectedDoneWork = 4,
             };
         }
-
-        private Task<RecorderFixture> SeedDeliveryWhoseForecastChangesOnUpdate()
-            => throw new AssertionException("pending — DELIVER seeds a delivery whose forecast changes when the update runs");
 
         private async Task<RecorderFixture> SeedDeliveryWithNotBrokenDownFeature()
         {
@@ -754,8 +735,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             public int? ExpectedEstimatedItemCount { get; init; }
             public double? ExpectedLikelihoodPercentage { get; init; }
             public DateTime ExpectedWhenDate { get; init; }
-            public int FreshForecastHowMany { get; init; }
-            public int StalePreForecastHowMany { get; init; }
             public string EmptyFeatureReferenceId { get; init; } = string.Empty;
             public IReadOnlyList<DeliveryFeatureMetric> ExpectedBreakdown { get; init; } = [];
         }

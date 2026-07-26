@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// connector boundary is faked, per the project infrastructure policy) and the portfolio metrics
     /// wip read port. Row-level spell semantics (open/close/re-block new spell, idempotent handlers,
     /// id-timing second pass, departure sweep + empty-refresh guard) are DELIVER inner-loop unit tests
-    /// — see distill/wave-decisions.md. All scenarios [Ignore]-pending (RED-ready, ADR-025).
+    /// — see distill/wave-decisions.md.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

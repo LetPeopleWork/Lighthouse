@@ -5,7 +5,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// <summary>
     /// DISTILL acceptance scenarios (Epic 5074) — Slice 03: blocked-items over-time trend.
     /// Job: job-delivery-lead-see-blocked-trend. Persona: delivery-lead-rte. Driving port: new team
-    /// metrics blockedCountHistory read endpoint. All scenarios [Ignore]-pending — enable one at a time.
+    /// metrics blockedCountHistory read endpoint.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -57,20 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var response = await WhenTheDeliveryLeadOpensTheBlockedTrend(team);
 
             ThenTheTrendInterpolatesMissingDaysFromTheLastKnownCount(response);
-        }
-
-        // @deferred @us-03 (UC-2: per-work-item-TYPE historical filtering is an additive follow-up;
-        // the total-count forward-only snapshot cannot reconstruct a per-type split after the fact.
-        // Recorded in distill/upstream-issues.md — NOT delivered in this DISTILL scope.)
-        [Test]
-        [Ignore("DISTILL DEFERRED (UC-2) — per-type historical blocked-count filtering is an additive follow-up; total-count snapshot is forward-only")]
-        public async Task The_blocked_trend_can_be_filtered_to_a_single_work_item_type()
-        {
-            var team = GivenATeam();
-
-            var response = await WhenTheDeliveryLeadOpensTheBlockedTrend(team);
-
-            ThenTheTrendIsAvailable(response);
         }
     }
 }

@@ -7,8 +7,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// demo portfolio blocked history worth clicking. Job: job-delivery-lead-see-blocked-trend.
     /// Persona: prospect evaluating Lighthouse from demo data. Driving port: PortfolioFeaturesRefreshed
     /// domain-event dispatch (real dispatcher, real DemoBlockedHistoryBackfillHandler, real SQLite)
-    /// plus the portfolio drill-through read port for the "bars worth clicking" claim. All scenarios
-    /// [Ignore]-pending (RED-ready, ADR-025).
+    /// plus the portfolio drill-through read port for the "bars worth clicking" claim.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

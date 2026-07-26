@@ -8,7 +8,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// Persona: flow-coach on a demo/evaluation instance. Driving ports: PortfolioFeaturesRefreshed
     /// domain-event dispatch (runs the real DemoBlockedHistoryBackfillHandler on real SQLite) and the
     /// team metrics wip / blockedItemsAtDate / portfolio blockedCountHistory read ports.
-    /// All scenarios [Ignore]-pending (RED-ready, ADR-025) — DELIVER enables one at a time.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

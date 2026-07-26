@@ -5,7 +5,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// <summary>
     /// DISTILL acceptance scenarios (Epic 5074) — Slice 02: per-item blocked duration.
     /// Job: job-flow-coach-see-how-long-blocked. Persona: flow-coach (Priya). Driving port: team metrics
-    /// WIP read (WorkItemDto.blockedSince). All scenarios [Ignore]-pending — enable one at a time in DELIVER.
+    /// WIP read (WorkItemDto.blockedSince).
     /// </summary>
     [TestFixture]
     [Category("acceptance")]

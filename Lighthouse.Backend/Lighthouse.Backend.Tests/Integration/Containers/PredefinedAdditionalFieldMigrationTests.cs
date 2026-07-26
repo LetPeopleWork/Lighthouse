@@ -17,9 +17,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// false for a newly-inserted field. InMemory misses migrations — real providers required (mirrors
     /// <see cref="BlockedStalenessThresholdMigrationTests"/>).
     ///
-    /// [Ignore]-pending: enable in DELIVER after generating the AddIsPredefinedToAdditionalFieldDefinition
-    /// migration. It reads the column via raw SQL (not via a not-yet-existing model member) so it COMPILES
-    /// against today's types; it fails RED today because the column does not exist.
+    /// The column is read via raw SQL rather than a model member, so the probe stays provider-level.
     /// </summary>
     [TestFixture]
     [Category("epic-5074-blocked-items")]

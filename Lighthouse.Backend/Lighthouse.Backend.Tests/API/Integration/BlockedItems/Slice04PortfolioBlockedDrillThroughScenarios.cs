@@ -8,8 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// Persona: flow-coach (Priya). Driving port: portfolio metrics blockedItemsAtDate read.
     /// Membership is RECONSTRUCTED from FEATURE-keyspace spell intervals — read-only, never persisted
     /// (blockedMembershipAtDate source_of_truth). The ADR-099 guard's log line itself is a DELIVER
-    /// inner-loop assertion; here we pin the observable contract the guard protects. All scenarios
-    /// [Ignore]-pending (RED-ready, ADR-025).
+    /// inner-loop assertion; here we pin the observable contract the guard protects.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
