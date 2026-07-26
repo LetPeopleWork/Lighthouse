@@ -111,9 +111,11 @@ const PbcOverTimeWidget: React.FC<PbcOverTimeWidgetProps> = ({
 		data: (series ?? []).map(line.accessor),
 	}));
 
+	// MUI-X tags each plotted line with `data-series`, not a per-series class —
+	// the same selector shape the burnup and predictability charts dash with.
 	const dashSx = Object.fromEntries(
 		LIMIT_LINES.map((line) => [
-			`& .MuiLineElement-series-${line.id}`,
+			`& .MuiLineChart-line[data-series="${line.id}"]`,
 			{ strokeDasharray: line.dash },
 		]),
 	);
