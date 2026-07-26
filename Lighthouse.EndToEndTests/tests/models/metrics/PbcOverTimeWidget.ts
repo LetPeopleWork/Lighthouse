@@ -2,10 +2,40 @@ import type { Locator, Page } from "@playwright/test";
 
 /**
  * The process-behaviour metric families the recorder persists a dated series
- * for. Only Throughput is recorded today; later slices append here rather than
- * restructuring the toggle row.
+ * for — the backend enum MEMBER names verbatim, because the value is what the
+ * widget lowercases into its locator. Ordered as the toggle row renders them,
+ * so an offered-families assertion reads in visual order.
  */
-export type PbcMetricType = "Throughput";
+export const PBC_METRIC_TYPES = [
+	"Throughput",
+	"WorkItemAge",
+	"Wip",
+	"CycleTime",
+	"Arrivals",
+	"FeatureSize",
+] as const;
+
+export type PbcMetricType = (typeof PBC_METRIC_TYPES)[number];
+
+/** The families a portfolio dashboard offers — every one of them (D8). */
+export const PBC_PORTFOLIO_METRIC_TYPES: readonly PbcMetricType[] =
+	PBC_METRIC_TYPES;
+
+/**
+ * The families a TEAM dashboard offers: a team has no feature sizes to chart,
+ * so Feature Size is withheld there (D8).
+ */
+export const PBC_TEAM_METRIC_TYPES: readonly PbcMetricType[] =
+	PBC_METRIC_TYPES.filter((type) => type !== "FeatureSize");
+
+/** The widget's locator convention: `pbc-metric-<lowercased wire value>`. */
+function metricTestId(metricType: PbcMetricType): string {
+	return `pbc-metric-${metricType.toLowerCase()}`;
+}
+
+const METRIC_TYPE_BY_TEST_ID: ReadonlyMap<string, PbcMetricType> = new Map(
+	PBC_METRIC_TYPES.map((type) => [metricTestId(type), type]),
+);
 
 /**
  * The three limit lines the widget plots per recorded day, in the point-in-time
@@ -58,7 +88,34 @@ export class PbcOverTimeWidget {
 
 	/** Mirrors the widget's exported `processBehaviorMetricTestId` convention. */
 	metricToggle(metricType: PbcMetricType): Locator {
-		return this.widget.getByTestId(`pbc-metric-${metricType.toLowerCase()}`);
+		return this.widget.getByTestId(metricTestId(metricType));
+	}
+
+	/**
+	 * Which families the toggle row currently OFFERS, in rendered order. Scoped
+	 * to the widget because the Predictability category also hosts six
+	 * point-in-time PBC widgets. Reading the offered set makes ABSENCE directly
+	 * assertable — a click on a withheld family would only ever time out, which
+	 * is indistinguishable from a broken locator.
+	 *
+	 * Returns `[]` while the widget is still mounting, so callers must poll for
+	 * the expected set rather than one-sidedly bounding the length.
+	 */
+	async offeredMetricTypes(): Promise<PbcMetricType[]> {
+		const testIds = await this.widget
+			.getByTestId(/^pbc-metric-/)
+			.evaluateAll((buttons) =>
+				buttons.map((button) => button.getAttribute("data-testid") ?? ""),
+			);
+		// An unmapped id means the widget invented a family the POM does not know;
+		// surfacing the raw id fails the assertion loudly instead of dropping it.
+		return testIds.map((testId) => {
+			const metricType = METRIC_TYPE_BY_TEST_ID.get(testId);
+			if (metricType === undefined) {
+				throw new Error(`Unknown process-behaviour metric toggle: ${testId}`);
+			}
+			return metricType;
+		});
 	}
 
 	async isMetricSelected(metricType: PbcMetricType): Promise<boolean> {

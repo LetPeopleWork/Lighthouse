@@ -87,7 +87,7 @@ This widget has no status indicator. It shows a direction of travel rather than 
 
 |--------------|-------------------------|
 | **Applies to** | Teams and Portfolios |
-| **Flow Metric** | Throughput |
+| **Flow Metric** | Throughput, Work Item Age, Work In Progress, Cycle Time, Arrivals, and Feature Size (Portfolios only) |
 | **Affected by Filtering** | Yes — the chart plots the recorded days inside the selected range, so by default you see the last 30 days for a Team (or whatever range that Team is configured with) and the last 90 for a Portfolio. Widen the pickers to see further back. |
 
 A [Process Behaviour Chart](#process-behaviour-charts) tells you whether a given data point is normal *for your system*. This chart tells you whether your system's idea of "normal" is itself moving: Lighthouse records the average and both natural process limits once per day and plots all three over time.
@@ -108,13 +108,13 @@ What the shape tells you:
 - **The band narrows** — variability is shrinking and the process is becoming more predictable.
 - **The whole band shifts up or down** — the average level moved. Together with the special-cause signals on the point-in-time chart, this is how you tell whether a change you made actually stuck.
 
-Use the toggle in the widget header to pick the metric family. Lighthouse records natural process limits for **Throughput** today.
+Use the toggle in the widget header to pick the metric family. Lighthouse records natural process limits for **Throughput**, **Work Item Age**, **Work In Progress**, **Cycle Time**, and **Arrivals**, plus **Feature Size** on a Portfolio — a Team has no feature sizes to chart, so that family is not offered there.
 
 {: .important}
 The limits are only as meaningful as the *baseline* they are computed from. Configure it in your Team ([Create/Edit Teams](../teams/edit.html#process-behaviour-chart-baseline)) or Portfolio ([Create/Edit Portfolios](../portfolios/edit.html#process-behaviour-chart-baseline)) settings. Without one, Lighthouse falls back to a rolling window ending today — so the recorded limits move as that window slides, for reasons that have nothing to do with your process. On a fixed baseline, movement in this chart is a real signal.
 
 {: .note}
-Like the other over-time charts, this one builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded. The demo data ships with a backdated history, so it is populated immediately. If you select a date range that ended before recording began, the chart says *"no data recorded in the selected range"* instead — that one is about the range you picked, not about your instance.
+Like the other over-time charts, this one builds forward from the day your instance started recording — it is not reconstructed from history. A fresh instance shows *"builds forward from today — no snapshots recorded yet"* until the first days have been recorded. The demo data ships with a backdated history, but only for **Throughput** — so on demo data the other families also start empty and fill in from today, one day at a time. If you select a date range that ended before recording began, the chart says *"no data recorded in the selected range"* instead — that one is about the range you picked, not about your instance.
 
 ## Status Indicator
 This widget has no status indicator. The point-in-time [Process Behaviour Charts](#process-behaviour-charts) carry the special-cause status; this chart shows how the limits behind it have moved.
