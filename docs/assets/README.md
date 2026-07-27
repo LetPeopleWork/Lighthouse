@@ -22,6 +22,11 @@ renaming it breaks that page as soon as the jsDelivr cache for `@main` expires.
 grep -rn "<asset-name>" /path/to/website/src
 ```
 
+Read the hits — do not just count them. `src/lighthouse-screenshot-migration.test.ts`
+carries asset paths inside **negative** assertions (`expect(source).not.toContain(...)`)
+that pin which images must stay on the website's own origin instead of moving to the
+CDN. A match there is the opposite of a usage.
+
 At the time of writing the website consumes: `concepts/azuredevops_team_wizard.png`,
 `concepts/worktrackingsystem_AzureDevOps.png`, `features/metrics/metricsoverview.png`,
 `features/metrics/portfoliometricsoverview.png`, `features/portfoliodetail.png`,
