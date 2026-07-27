@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter, useSearchParams } from "react-router";
@@ -25,10 +31,15 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import {
+	createMockApiServiceContext,
+	createMockBlackoutPeriodService,
+} from "../../../tests/MockApiServiceProvider";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import { BaseMetricsView } from "./BaseMetricsView";
-import { getWidgetsForCategory } from "./categoryMetadata";
+import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
 // Mock the components used in BaseMetricsView
 vi.mock("../../../components/Common/Charts/BarRunChart", () => ({
@@ -460,14 +471,28 @@ vi.mock("./DashboardHeader", () => ({
 		endDate,
 		onStartDateChange,
 		onEndDateChange,
+		onSelectCategory,
 	}: {
 		startDate: Date;
 		endDate: Date;
 		onStartDateChange: (d: Date | null) => void;
 		onEndDateChange: (d: Date | null) => void;
+		onSelectCategory?: (key: string) => void;
 	}) => (
 		<div>
 			<div data-testid="dashboard-header">header</div>
+			{["flow-overview", "flow-metrics", "predictability", "portfolio"].map(
+				(categoryKey) => (
+					<button
+						type="button"
+						key={categoryKey}
+						data-testid={`select-category-${categoryKey}`}
+						onClick={() => onSelectCategory?.(categoryKey)}
+					>
+						{categoryKey}
+					</button>
+				),
+			)}
 			<button type="button" data-testid="dashboard-date-range-toggle">
 				Toggle
 			</button>
@@ -959,13 +984,9 @@ describe("BaseMetricsView component", () => {
 				mockProject.id,
 				expect.any(Date),
 			);
-			expect(
-				projectMetricsService.getWorkInProgressOverTime,
-			).toHaveBeenCalledWith(
-				mockProject.id,
-				expect.any(Date),
-				expect.any(Date),
-			);
+			// getWorkInProgressOverTime is deliberately absent: it belongs to Flow Metrics, not
+			// to this default Flow Overview mount (Bug #5571). The render-surface tests assert
+			// it on its own category.
 			expect(projectMetricsService.getCycleTimeData).toHaveBeenCalledWith(
 				mockProject.id,
 				expect.any(Date),
@@ -1270,9 +1291,9 @@ describe("BaseMetricsView component", () => {
 		// Verify all metrics are fetched again with new date
 		await waitFor(() => {
 			expect(mockMetricsService.getThroughput).toHaveBeenCalledTimes(1);
-			expect(
-				mockMetricsService.getWorkInProgressOverTime,
-			).toHaveBeenCalledTimes(1);
+			// WIP-over-time moved behind the Flow Metrics gate (Bug #5571) and is no longer
+			// part of a Flow Overview date change. The remaining start-date-keyed Flow Overview
+			// fetches below still carry the assertion.
 			expect(mockMetricsService.getCycleTimeData).toHaveBeenCalledTimes(1);
 			expect(mockMetricsService.getCycleTimePercentiles).toHaveBeenCalledTimes(
 				1,
@@ -1312,9 +1333,9 @@ describe("BaseMetricsView component", () => {
 		// Verify all metrics are fetched again with new date
 		await waitFor(() => {
 			expect(mockMetricsService.getThroughput).toHaveBeenCalledTimes(1);
-			expect(
-				mockMetricsService.getWorkInProgressOverTime,
-			).toHaveBeenCalledTimes(1);
+			// WIP-over-time moved behind the Flow Metrics gate (Bug #5571); in-progress items
+			// stands in for it as a Flow Overview fetch that a new window must re-ask.
+			expect(mockMetricsService.getInProgressItems).toHaveBeenCalledTimes(1);
 			expect(mockMetricsService.getCycleTimeData).toHaveBeenCalledTimes(1);
 			expect(mockMetricsService.getCycleTimePercentiles).toHaveBeenCalledTimes(
 				1,
@@ -5608,6 +5629,539 @@ describe("BaseMetricsView component", () => {
 			await waitFor(() => {
 				expect(lastRequestedStartDay()).toBe("2026-06-15");
 			});
+		});
+	});
+
+	/**
+	 * Bug #5571 — "we load a LOT of data on first open … then, when I switch the metrics
+	 * category, it barely loads anything". Every widget's data was fetched on mount no matter
+	 * which category was actually on screen, so the default Flow Overview paid for Predictability,
+	 * Flow Metrics and Portfolio as well. The fix gates each fetch on the categories the user has
+	 * actually visited.
+	 *
+	 * The spies sit on the IMetricsService / IBlackoutPeriodService ports — the hexagonal
+	 * boundary — not on the HTTP client, so these tests describe the contract between the view
+	 * and its driven ports rather than a transport detail.
+	 */
+	describe("category-scoped fetching (Bug #5571)", () => {
+		type TeamMock = ReturnType<typeof createMockMetricsService<IWorkItem>>;
+		type PortfolioMock = ReturnType<typeof createMockMetricsService<IFeature>>;
+		type BlackoutMock = ReturnType<typeof createMockBlackoutPeriodService>;
+
+		const createBlackoutService = (): BlackoutMock => {
+			const service = createMockBlackoutPeriodService();
+			service.getAll = vi.fn().mockResolvedValue([]);
+			return service;
+		};
+
+		const createTeamService = () => ({
+			...createMockMetricsService<IWorkItem>(),
+			getFeaturesInProgress: vi.fn().mockResolvedValue([]),
+		});
+
+		const createPortfolioService = () => createMockMetricsService<IFeature>();
+
+		const presetCategory = (
+			ownerType: "team" | "portfolio",
+			ownerId: number,
+			category: CategoryKey,
+		) =>
+			localStorage.setItem(
+				`lighthouse:metrics:${ownerType}:${ownerId}:category`,
+				category,
+			);
+
+		const renderView = (
+			ownerType: "team" | "portfolio",
+			svc: TeamMock | PortfolioMock,
+			blackout: BlackoutMock,
+		) =>
+			render(
+				<MemoryRouter>
+					<ApiServiceContext.Provider
+						value={createMockApiServiceContext({
+							blackoutPeriodService: blackout,
+						})}
+					>
+						<BaseMetricsView
+							entity={ownerType === "team" ? mockTeam : mockProject}
+							metricsService={svc as IMetricsService<IWorkItem>}
+							title="Work Items"
+							defaultDateRange={30}
+							doingStates={["To Do", "In Progress", "Review"]}
+						/>
+					</ApiServiceContext.Provider>
+				</MemoryRouter>,
+			);
+
+		/** Waits for the dashboard to mount and lets every resolved fetch flush into state, so a
+		 *  "was never called" assertion cannot pass merely because it ran too early. */
+		const settle = async () => {
+			await waitFor(() => {
+				expect(screen.getByTestId("dashboard-component")).toBeInTheDocument();
+			});
+			await act(async () => {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			});
+		};
+
+		const switchTo = async (category: CategoryKey) => {
+			fireEvent.click(screen.getByTestId(`select-category-${category}`));
+			await settle();
+		};
+
+		const testIdSuffixes = (prefix: string) =>
+			screen
+				.queryAllByTestId(new RegExp(`^${prefix}`))
+				.map((element) => element.getAttribute("data-testid") ?? "")
+				.map((id) => id.slice(prefix.length))
+				.sort();
+
+		const renderedWidgetHeaders = () => testIdSuffixes("widget-header-");
+
+		const renderedWidgetViewData = () =>
+			testIdSuffixes("widget-view-data-").filter(
+				(suffix) =>
+					!/^(title|count|highlight-title|highlight-values|sle)-/.test(suffix),
+			);
+
+		/** The factory hands the mock back behind its interface type, which hides the
+		 *  owner-specific extras (`getFeaturesWorkedOnInfo`, the feature-size family). Reading the
+		 *  spies by name keeps the expectation maps below declarative. */
+		const spiesOf = (svc: TeamMock | PortfolioMock): Record<string, Mock> =>
+			svc as unknown as Record<string, Mock>;
+
+		/** What Flow Overview legitimately needs, and how often. `getWorkItemAgePercentiles` is
+		 *  twice by design: the current window plus the previous one that feeds the trend arrow. */
+
+		const flowOverviewFetches = (
+			svc: Record<string, Mock>,
+			ownerType: "team" | "portfolio",
+		): Record<string, { readonly spy: Mock; readonly times: number }> => ({
+			"in-progress items": { spy: svc.getInProgressItems, times: 1 },
+			"WIP overview info": { spy: svc.getWipOverviewInfo, times: 1 },
+			"blocked items": { spy: svc.getBlockedItemsAtDate, times: 1 },
+			"blocked count history": { spy: svc.getBlockedCountHistory, times: 1 },
+			"total work item age": { spy: svc.getTotalWorkItemAge, times: 1 },
+			"total work item age info": {
+				spy: svc.getTotalWorkItemAgeInfo,
+				times: 1,
+			},
+			"predictability score": {
+				spy: svc.getMultiItemForecastPredictabilityScore,
+				times: 1,
+			},
+			"predictability score info": {
+				spy: svc.getPredictabilityScoreInfo,
+				times: 1,
+			},
+			"cycle time data": { spy: svc.getCycleTimeData, times: 1 },
+			"cycle time percentiles": { spy: svc.getCycleTimePercentiles, times: 1 },
+			"cycle time percentiles info": {
+				spy: svc.getCycleTimePercentilesInfo,
+				times: 1,
+			},
+			"work item age percentiles": {
+				spy: svc.getWorkItemAgePercentiles,
+				times: 2,
+			},
+			throughput: { spy: svc.getThroughput, times: 1 },
+			"throughput info": { spy: svc.getThroughputInfo, times: 1 },
+			arrivals: { spy: svc.getArrivals, times: 1 },
+			"arrivals info": { spy: svc.getArrivalsInfo, times: 1 },
+			...(ownerType === "team"
+				? {
+						"flow efficiency": {
+							spy: svc.getFlowEfficiencyInfoForTeam,
+							times: 1,
+						},
+						"features worked on info": {
+							spy: svc.getFeaturesWorkedOnInfo,
+							times: 1,
+						},
+					}
+				: {
+						"flow efficiency": {
+							spy: svc.getFlowEfficiencyInfoForPortfolio,
+							times: 1,
+						},
+						"feature size percentiles info": {
+							spy: svc.getFeatureSizePercentilesInfo,
+							times: 1,
+						},
+						"feature size percentiles": {
+							spy: svc.getSizePercentiles,
+							times: 1,
+						},
+						"all features for size chart": {
+							spy: svc.getAllFeaturesForSizeChart,
+							times: 1,
+						},
+					}),
+		});
+
+		/** Nothing on this list belongs to Flow Overview — this is the payload the reporter saw. */
+		const offFlowOverviewFetches = (
+			svc: Record<string, Mock>,
+			blackout: BlackoutMock,
+		): Record<string, unknown> => ({
+			"WIP PBC": svc.getWipPbc,
+			"total work item age PBC": svc.getTotalWorkItemAgePbc,
+			"throughput PBC": svc.getThroughputPbc,
+			"cycle time PBC": svc.getCycleTimePbc,
+			"arrivals PBC": svc.getArrivalsPbc,
+			"feature size PBC": svc.getFeatureSizePbc,
+			"age-in-state percentiles": svc.getAgeInStatePercentiles,
+			"cumulative state time": svc.getCumulativeStateTimeForTeam,
+			"WIP over time": svc.getWorkInProgressOverTime,
+			"estimation vs cycle time": svc.getEstimationVsCycleTimeData,
+			"feature size estimation": svc.getFeatureSizeEstimation,
+			"blackout periods": blackout.getAll,
+		});
+
+		const predictabilityFetches = (
+			svc: Record<string, Mock>,
+		): Record<string, unknown> => ({
+			"WIP PBC": svc.getWipPbc,
+			"total work item age PBC": svc.getTotalWorkItemAgePbc,
+			"throughput PBC": svc.getThroughputPbc,
+			"cycle time PBC": svc.getCycleTimePbc,
+			"arrivals PBC": svc.getArrivalsPbc,
+			"predictability score": svc.getMultiItemForecastPredictabilityScore,
+			// the PBC drill-through names come from the shared work-item lookup
+			"WIP over time": svc.getWorkInProgressOverTime,
+			throughput: svc.getThroughput,
+			arrivals: svc.getArrivals,
+			"in-progress items": svc.getInProgressItems,
+			"cycle time data": svc.getCycleTimeData,
+		});
+
+		const mountFlowOverview = async (ownerType: "team" | "portfolio") => {
+			presetCategory(
+				ownerType,
+				ownerType === "team" ? mockTeam.id : mockProject.id,
+				"flow-overview",
+			);
+			const svc =
+				ownerType === "team" ? createTeamService() : createPortfolioService();
+			const blackout = createBlackoutService();
+			renderView(ownerType, svc, blackout);
+			await settle();
+			return { svc, blackout };
+		};
+
+		const ownerTypes = ["team", "portfolio"] as const;
+
+		it.each(ownerTypes)(
+			"fetches nothing a Flow Overview widget cannot use (%s)",
+			async (ownerType) => {
+				const { svc, blackout } = await mountFlowOverview(ownerType);
+
+				for (const [name, spy] of Object.entries(
+					offFlowOverviewFetches(spiesOf(svc), blackout),
+				)) {
+					expect(
+						spy,
+						`"${name}" belongs to another category but was fetched on Flow Overview`,
+					).not.toHaveBeenCalled();
+				}
+			},
+		);
+
+		it.each(ownerTypes)(
+			"fetches each Flow Overview dependency exactly once on mount (%s)",
+			async (ownerType) => {
+				const { svc } = await mountFlowOverview(ownerType);
+
+				for (const [name, { spy, times }] of Object.entries(
+					flowOverviewFetches(spiesOf(svc), ownerType),
+				)) {
+					expect(
+						spy,
+						`Flow Overview needs "${name}" exactly ${times}x`,
+					).toHaveBeenCalledTimes(times);
+				}
+			},
+		);
+
+		it.each(ownerTypes)(
+			"opens the Predictability gate only once the user switches to it (%s)",
+			async (ownerType) => {
+				const { svc } = await mountFlowOverview(ownerType);
+
+				await switchTo("predictability");
+
+				for (const [name, spy] of Object.entries(
+					predictabilityFetches(spiesOf(svc)),
+				)) {
+					expect(
+						spy,
+						`"${name}" should have been fetched after switching to Predictability`,
+					).toHaveBeenCalledTimes(1);
+				}
+			},
+		);
+
+		// The load-bearing one. "Switching barely loads anything" is the behaviour the reporter
+		// already had and must keep: a naive de-eagering that keys the gate off the *current*
+		// category instead of the visited ones refetches on every return trip and fails here.
+		it.each(ownerTypes)(
+			"never refetches a category the user has already visited (%s)",
+			async (ownerType) => {
+				presetCategory(
+					ownerType,
+					ownerType === "team" ? mockTeam.id : mockProject.id,
+					"predictability",
+				);
+				const svc =
+					ownerType === "team" ? createTeamService() : createPortfolioService();
+				renderView(ownerType, svc, createBlackoutService());
+				await settle();
+
+				await switchTo("flow-overview");
+				await switchTo("predictability");
+
+				for (const [name, spy] of Object.entries(
+					predictabilityFetches(spiesOf(svc)),
+				)) {
+					expect(
+						spy,
+						`returning to Predictability refetched "${name}"`,
+					).toHaveBeenCalledTimes(1);
+				}
+				for (const [name, { spy, times }] of Object.entries(
+					flowOverviewFetches(spiesOf(svc), ownerType),
+				)) {
+					expect(
+						spy,
+						`leaving and re-entering refetched "${name}"`,
+					).toHaveBeenCalledTimes(times);
+				}
+			},
+		);
+
+		/**
+		 * The render surface pinned below is the pre-gate behaviour, captured verbatim. Several
+		 * Flow Overview chips and drill-in tables are computed from data whose primary consumer
+		 * lives in another category, so a fetch key missing from the requirement map shows up
+		 * here as a vanished RAG chip (R1) or an emptied drill-in table (R2) — and nowhere else.
+		 */
+		const expectedRenderSurface: Record<
+			string,
+			{
+				readonly headers: readonly string[];
+				readonly viewData: readonly string[];
+			}
+		> = {
+			"team/flow-overview": {
+				headers: [
+					"blockedOverview",
+					"percentiles",
+					"predictabilityScore",
+					"staleOverview",
+					"totalArrivals",
+					"totalThroughput",
+					"totalWorkItemAge",
+					"wipOverview",
+					"workItemAgePercentiles",
+				],
+				viewData: [
+					"blockedOverview",
+					"percentiles",
+					"staleOverview",
+					"totalArrivals",
+					"totalThroughput",
+					"totalWorkItemAge",
+					"wipOverview",
+					"workItemAgePercentiles",
+				],
+			},
+			"team/flow-metrics": {
+				headers: [
+					"aging",
+					"arrivals",
+					"blockedCountHistory",
+					"cycleScatter",
+					"loadBalanceMatrix",
+					"stacked",
+					"stateTimeCumulative",
+					"throughput",
+					"totalWorkItemAgeOverTime",
+					"wipOverTime",
+				],
+				viewData: [
+					"aging",
+					"arrivals",
+					"cycleScatter",
+					"stacked",
+					"throughput",
+					"totalWorkItemAgeOverTime",
+					"wipOverTime",
+				],
+			},
+			"team/predictability": {
+				headers: [
+					"arrivalsPbc",
+					"cycleTimePbc",
+					"predictabilityScoreDetails",
+					"throughputPbc",
+					"totalWorkItemAgePbc",
+					"wipPbc",
+				],
+				viewData: [
+					"arrivalsPbc",
+					"cycleTimePbc",
+					"throughputPbc",
+					"totalWorkItemAgePbc",
+					"wipPbc",
+				],
+			},
+			"team/portfolio": {
+				headers: ["workDistribution"],
+				viewData: ["workDistribution"],
+			},
+			"portfolio/flow-overview": {
+				headers: [
+					"blockedOverview",
+					"featureSizePercentiles",
+					"percentiles",
+					"predictabilityScore",
+					"staleOverview",
+					"totalArrivals",
+					"totalThroughput",
+					"totalWorkItemAge",
+					"wipOverview",
+					"workItemAgePercentiles",
+				],
+				viewData: [
+					"blockedOverview",
+					"percentiles",
+					"staleOverview",
+					"totalArrivals",
+					"totalThroughput",
+					"totalWorkItemAge",
+					"wipOverview",
+					"workItemAgePercentiles",
+				],
+			},
+			"portfolio/flow-metrics": {
+				headers: [
+					"aging",
+					"arrivals",
+					"blockedCountHistory",
+					"cycleScatter",
+					"loadBalanceMatrix",
+					"stacked",
+					"stateTimeCumulative",
+					"throughput",
+					"totalWorkItemAgeOverTime",
+					"wipOverTime",
+				],
+				viewData: [
+					"aging",
+					"arrivals",
+					"cycleScatter",
+					"stacked",
+					"throughput",
+					"totalWorkItemAgeOverTime",
+					"wipOverTime",
+				],
+			},
+			"portfolio/predictability": {
+				headers: [
+					"arrivalsPbc",
+					"cycleTimePbc",
+					"featureSizePbc",
+					"predictabilityScoreDetails",
+					"throughputPbc",
+					"totalWorkItemAgePbc",
+					"wipPbc",
+				],
+				viewData: [
+					"arrivalsPbc",
+					"cycleTimePbc",
+					"featureSizePbc",
+					"throughputPbc",
+					"totalWorkItemAgePbc",
+					"wipPbc",
+				],
+			},
+			"portfolio/portfolio": {
+				headers: ["featureSize", "workDistribution"],
+				viewData: ["featureSize", "workDistribution"],
+			},
+		};
+
+		it.each(Object.keys(expectedRenderSurface))(
+			"still renders every widget header and drill-in table on %s",
+			async (surfaceKey) => {
+				const [ownerTypeKey, category] = surfaceKey.split("/");
+				const ownerType = ownerTypeKey as "team" | "portfolio";
+				presetCategory(
+					ownerType,
+					ownerType === "team" ? mockTeam.id : mockProject.id,
+					category as CategoryKey,
+				);
+				const svc =
+					ownerType === "team" ? createTeamService() : createPortfolioService();
+				renderView(ownerType, svc, createBlackoutService());
+				await settle();
+
+				expect(renderedWidgetHeaders()).toEqual(
+					expectedRenderSurface[surfaceKey].headers,
+				);
+				expect(renderedWidgetViewData()).toEqual(
+					expectedRenderSurface[surfaceKey].viewData,
+				);
+			},
+		);
+
+		// R2 in its nastiest shape: this drill-in table is populated by resolving each data point's
+		// workItemIds through the shared work-item lookup, which is fed by throughput, WIP over
+		// time, cycle-time data and in-progress items — none of them owned by this category.
+		it("resolves estimation drill-in rows through the shared work-item lookup", async () => {
+			presetCategory("portfolio", mockProject.id, "portfolio");
+			const svc = createPortfolioService();
+			svc.getEstimationVsCycleTimeData = vi.fn().mockResolvedValue({
+				status: "Ready",
+				diagnostics: {
+					totalCount: 2,
+					mappedCount: 2,
+					unmappedCount: 0,
+					invalidCount: 0,
+				},
+				estimationUnit: "points",
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				dataPoints: [
+					{
+						workItemIds: mockInProgressItems.map((item) => item.id),
+						estimationNumericValue: 5,
+						estimationDisplayValue: "5",
+						cycleTime: 4,
+					},
+				],
+			});
+
+			renderView("portfolio", svc, createBlackoutService());
+			await settle();
+
+			expect(
+				screen.getByTestId("widget-view-data-count-estimationVsCycleTime"),
+			).toHaveTextContent(String(mockInProgressItems.length));
+		});
+
+		// R5: the gate keys off visited categories, but a new date window is a new question —
+		// it must still re-ask every gate that is currently open.
+		it("refetches the open categories when the date range changes", async () => {
+			const { svc } = await mountFlowOverview("team");
+
+			fireEvent.click(screen.getByTestId("change-start-date"));
+			await settle();
+
+			expect(svc.getThroughput).toHaveBeenCalledTimes(2);
+			expect(svc.getCycleTimeData).toHaveBeenCalledTimes(2);
+			expect(svc.getWipPbc).not.toHaveBeenCalled();
 		});
 	});
 });

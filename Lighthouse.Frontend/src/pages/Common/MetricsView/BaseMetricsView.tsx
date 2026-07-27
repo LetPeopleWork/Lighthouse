@@ -69,7 +69,10 @@ import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
 import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
 import { computeBlockedTrend } from "./blockedTrend";
-import { getWidgetsForCategory } from "./categoryMetadata";
+import {
+	getFetchKeysForCategories,
+	getWidgetsForCategory,
+} from "./categoryMetadata";
 import type { DashboardItem } from "./Dashboard";
 import Dashboard from "./Dashboard";
 import DashboardHeader from "./DashboardHeader";
@@ -115,7 +118,10 @@ import ThroughputRunChartCard from "./ThroughputRunChartCard";
 import TotalArrivalsWidget from "./TotalArrivalsWidget";
 import TotalThroughputWidget from "./TotalThroughputWidget";
 import type { TrendPayload } from "./trendTypes";
-import { useCategorySelection } from "./useCategorySelection";
+import {
+	useCategorySelection,
+	useVisitedCategories,
+} from "./useCategorySelection";
 import { useShowTips } from "./useShowTips";
 import type { ViewDataPayload } from "./WidgetShell";
 import WidgetShell from "./WidgetShell";
@@ -1228,6 +1234,28 @@ export const BaseMetricsView = <
 		updateDateParams(startDate, date);
 	};
 
+	const ownerType: "team" | "portfolio" =
+		"getFeaturesInProgress" in metricsService ? "team" : "portfolio";
+
+	const { selectedCategory, setSelectedCategory } = useCategorySelection(
+		ownerType,
+		entity.id,
+	);
+
+	// Only the categories the user has actually opened get their data fetched (Bug #5571).
+	// The set grows as they explore and resets when the question changes — a different entity
+	// or a different date window. The reset token is built from local Y/M/D, never
+	// toISOString: at a negative UTC offset the UTC day flips first, which would reset the set
+	// and refetch everything for no reason — Bug #5566's failure mode, invisible on a UTC runner.
+	const visitedCategories = useVisitedCategories(
+		selectedCategory,
+		`${entity.id}:${formatLocalDate(startDate)}:${formatLocalDate(endDate)}`,
+	);
+	const activeFetchKeys = useMemo(
+		() => getFetchKeysForCategories(visitedCategories, ownerType),
+		[visitedCategories, ownerType],
+	);
+
 	const {
 		blackoutPeriods,
 		throughputData,
@@ -1265,7 +1293,13 @@ export const BaseMetricsView = <
 		flowEfficiencyInfo,
 		blockedCountHistory,
 		refetchThroughputPbc,
-	} = useMetricsData(entity, metricsService, startDate, endDate);
+	} = useMetricsData(
+		entity,
+		metricsService,
+		startDate,
+		endDate,
+		activeFetchKeys,
+	);
 
 	const namedCycleTimeDefinitions: INamedCycleTimeDefinition[] = useMemo(
 		() =>
@@ -1375,9 +1409,6 @@ export const BaseMetricsView = <
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const workInProgressTerm = getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
-
-	const ownerType: "team" | "portfolio" =
-		"getFeaturesInProgress" in metricsService ? "team" : "portfolio";
 
 	const [drillDownState, setDrillDownState] = useState<string | null>(null);
 	const [drillDownItems, setDrillDownItems] = useState<
@@ -1536,10 +1567,6 @@ export const BaseMetricsView = <
 		[drillDownItems],
 	);
 
-	const { selectedCategory, setSelectedCategory } = useCategorySelection(
-		ownerType,
-		entity.id,
-	);
 	const { showTips, toggleShowTips } = useShowTips(ownerType, entity.id);
 
 	const workItemLookup = useMemo(
