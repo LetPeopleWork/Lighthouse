@@ -404,18 +404,11 @@ vi.mock("../../../components/Common/Charts/WorkDistributionChart", () => ({
 }));
 
 vi.mock("../../../components/Common/Charts/TotalWorkItemAgeWidget", () => ({
-	default: ({
-		entityId,
-		metricsService,
-	}: {
-		entityId: number;
-		metricsService: IMetricsService<IWorkItem>;
-	}) => (
+	// Mirrors the real contract since Bug #5571: a single `totalAge` prop fed by the shared
+	// useMetricsData path, no entityId/metricsService, no fetching of its own.
+	default: ({ totalAge }: { totalAge: number | null }) => (
 		<div data-testid="total-work-item-age-widget">
-			<div data-testid="widget-entity-id">{entityId}</div>
-			<div data-testid="widget-has-service">
-				{metricsService ? "has-service" : "no-service"}
-			</div>
+			{totalAge === null ? "loading" : totalAge}
 		</div>
 	),
 }));
@@ -1029,10 +1022,19 @@ describe("BaseMetricsView component", () => {
 			expect(screen.getByTestId("wip-overview-widget")).toBeInTheDocument();
 			expect(screen.getByTestId("wip-overview-count")).toHaveTextContent("2");
 			expect(screen.getByTestId("cycle-time-percentiles")).toBeInTheDocument();
+			// The mocked widget renders whatever `totalAge` the shared data path handed it —
+			// createMockMetricsService resolves getTotalWorkItemAge with 150.
 			expect(
 				screen.getByTestId("total-work-item-age-widget"),
-			).toBeInTheDocument();
+			).toHaveTextContent("150");
 		});
+
+		// Budget guard on the shared data path, NOT proof of the Bug #5571 fix: the widget is
+		// mocked out here, so useMetricsData is the only possible caller and this assertion
+		// would have been green before the widget's self-fetch was removed too. The
+		// non-vacuous check lives in TotalWorkItemAgeWidget.test.tsx ("makes no
+		// metrics-service call of its own"), which renders the real component.
+		expect(projectMetricsService.getTotalWorkItemAge).toHaveBeenCalledTimes(1);
 	});
 
 	it("passes size percentile values to FeatureSizeScatterPlotChart when using Project entity", async () => {
@@ -5340,10 +5342,17 @@ describe("BaseMetricsView component", () => {
 	/**
 	 * DISTILL RED-pending specs — Story 5508 (widget-loose-ends) slice 05, US-06.
 	 *
-	 * D7: Flow Efficiency is the only Flow Overview widget off the shared data path — it self-fetches
-	 * in its own effect and colours its own number, which is exactly why buildWidgetFooters has no
-	 * `flowEfficiency` key to emit. Moving the fetch into the BaseMetricsView data layer is what
-	 * earns it the chip; the computeFlowEfficiencyRag rule itself is reused verbatim.
+	 * D7: Flow Efficiency used to sit off the shared data path — it self-fetched in its own effect
+	 * and coloured its own number, which is why buildWidgetFooters had no `flowEfficiency` key to
+	 * emit. Moving the fetch into the BaseMetricsView data layer is what earns it the chip; the
+	 * computeFlowEfficiencyRag rule itself is reused verbatim.
+	 *
+	 * The original wording claimed Flow Efficiency was the ONLY self-fetching Flow Overview widget.
+	 * That was never true: totalWorkItemAge self-fetched as well (Bug #5571, RCA root cause D) until
+	 * step 01-05 reduced TotalWorkItemAgeWidget to a plain `totalAge` prop. The remaining widgets
+	 * that still fetch on their own are PredictabilityScoreDetailsWidget and ThroughputRunChartCard
+	 * (BaseMetricsView.tsx, the `predictabilityScoreDetails` and `throughput` entries) — they take
+	 * entityId + metricsService + the date range and issue their own calls.
 	 *
 	 * The last test here is the KPI assertion — "100% of Flow Overview widgets expose a RAG status" —
 	 * expressed as a structural test over getWidgetsForCategory so a future widget cannot silently
