@@ -12,7 +12,6 @@ import {
 
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith + portfolio Project Apollo deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
-const DEMO_PORTFOLIO_NAME = "Project Apollo";
 const CYCLE_SCATTER_WIDGET_ID = "cycleScatter";
 const DEFAULT_SCOPE = "Default";
 
@@ -148,26 +147,9 @@ test("@walking_skeleton @premium delivery lead selects a named cycle time on the
 	expect(await scatter.getSelectedDefinition()).toBe(DEFAULT_SCOPE);
 });
 
-test("@premium the portfolio Flow Overview percentiles honour the named cycle time selection the same way the team's do", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	await loadDemoScenario(request, DEMO_SCENARIO_ID);
-	await waitForBackgroundUpdates(request);
-	await page.goto("/");
-
-	const portfolioDetail = await overviewPage.goToPortfolio(DEMO_PORTFOLIO_NAME);
-	const metrics = await portfolioDetail.goToMetrics();
-	const flowOverviewWidgets = await metrics.switchCategory(
-		MetricsCategories.FlowOverview,
-	);
-	const widget = await metrics.getWidgetByName(
-		MetricsWidgetNames.CycleTimePercentiles,
-		flowOverviewWidgets,
-	);
-	await expect(widget.Widget).toBeVisible();
-
-	const percentiles = new CycleTimePercentilesWidget(page, widget.Id);
-	await assertNamedSelectionBehaviour(percentiles);
-});
+// The portfolio twin of the spec above is gone. It ran the identical
+// assertNamedSelectionBehaviour() walk against the same CycleTimePercentilesWidget,
+// reached from a portfolio instead of a team — a per-owner permutation costing a
+// full demo re-seed. The portfolio branch of named cycle times is held by
+// NamedCycleTimePortfolioIntegrationTest.cs, which covers the recompute, the
+// cumulative scope, and the no-premium-gate read.
