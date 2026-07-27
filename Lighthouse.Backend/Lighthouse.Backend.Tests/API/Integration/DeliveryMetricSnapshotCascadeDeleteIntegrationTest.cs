@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = recordedDay,
+                RecordedDay = DateOnly.FromDateTime(recordedDay),
                 TotalWork = 10,
                 DoneWork = 4,
                 RemainingWork = 6,
@@ -41,6 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = recordedDay.AddDays(1),
+                RecordedDay = DateOnly.FromDateTime(recordedDay.AddDays(1)),
                 TotalWork = 10,
                 DoneWork = 7,
                 RemainingWork = 3,

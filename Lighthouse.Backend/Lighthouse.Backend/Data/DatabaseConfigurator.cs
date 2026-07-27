@@ -99,6 +99,12 @@ namespace Lighthouse.Backend.Data
 
             logger.LogInformation("Migrating Database");
 
+            // Pre-check for the one migration that cannot be applied to every legacy population.
+            // It throws with a diagnostic naming the offending rows rather than letting the provider
+            // fail the index creation with a message that names nothing. See the guard for why
+            // deduplication is deliberately not on the table.
+            DeliveryMetricSnapshotDayCollisionGuard.EnsureNoCollisions(context);
+
             if (context.Database.IsNpgsql())
             {
                 MigrateUnderAdvisoryLock(context);

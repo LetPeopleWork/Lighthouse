@@ -386,6 +386,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateOnly>("RecordedDay")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("RemainingWork")
                         .HasColumnType("INTEGER");
 
@@ -401,6 +404,9 @@ namespace Lighthouse.Backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DeliveryId", "RecordedAt")
+                        .IsUnique();
+
+                    b.HasIndex("DeliveryId", "RecordedDay")
                         .IsUnique();
 
                     b.ToTable("DeliveryMetricSnapshots");

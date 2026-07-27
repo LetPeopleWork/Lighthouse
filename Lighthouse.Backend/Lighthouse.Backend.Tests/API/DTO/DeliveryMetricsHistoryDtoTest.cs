@@ -11,9 +11,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var deliveryDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
             var snapshots = new[]
             {
-                new DeliveryMetricSnapshot { RecordedAt = new DateTime(2026, 2, 3, 0, 0, 0, DateTimeKind.Utc) },
-                new DeliveryMetricSnapshot { RecordedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new DeliveryMetricSnapshot { RecordedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc) },
+                new DeliveryMetricSnapshot { RecordedDay = new DateOnly(2026, 2, 3), RecordedAt = new DateTime(2026, 2, 3, 0, 0, 0, DateTimeKind.Utc) },
+                new DeliveryMetricSnapshot { RecordedDay = new DateOnly(2026, 2, 1), RecordedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new DeliveryMetricSnapshot { RecordedDay = new DateOnly(2026, 2, 2), RecordedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc) },
             };
 
             var dto = DeliveryMetricsHistoryDto.From(deliveryDate, snapshots);
@@ -36,6 +36,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 new DeliveryMetricSnapshot
                 {
                     RecordedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    RecordedDay = DateOnly.FromDateTime(new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)),
                     TotalWork = 20,
                     DoneWork = 8,
                     RemainingWork = 12,
@@ -67,8 +68,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var deliveryDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
             var snapshots = new[]
             {
-                new DeliveryMetricSnapshot { RecordedAt = new DateTime(2026, 2, 5, 0, 0, 0, DateTimeKind.Utc) },
-                new DeliveryMetricSnapshot { RecordedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc) },
+                new DeliveryMetricSnapshot { RecordedDay = new DateOnly(2026, 2, 5), RecordedAt = new DateTime(2026, 2, 5, 0, 0, 0, DateTimeKind.Utc) },
+                new DeliveryMetricSnapshot { RecordedDay = new DateOnly(2026, 2, 2), RecordedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc) },
             };
 
             var dto = DeliveryMetricsHistoryDto.From(deliveryDate, snapshots);
@@ -89,6 +90,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 new DeliveryMetricSnapshot
                 {
                     RecordedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    RecordedDay = DateOnly.FromDateTime(new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)),
                     WhenDistributionJson = "[{\"probability\":0.85,\"expectedDate\":\"2026-04-10T00:00:00Z\"}]",
                 },
             };

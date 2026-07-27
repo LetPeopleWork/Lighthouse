@@ -4,7 +4,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 {
     public interface IDeliveryMetricSnapshotRepository : IRepository<DeliveryMetricSnapshot>
     {
-        DeliveryMetricSnapshot GetOrCreateForDay(int deliveryId, DateTime recordedAt);
+        DeliveryMetricSnapshot GetOrCreateForDay(int deliveryId, DateOnly day);
 
         IEnumerable<DeliveryMetricSnapshot> GetByDelivery(int deliveryId);
 

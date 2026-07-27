@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                         .SelectMany(feature => feature.FeatureWork)
                         .Sum(work => work.TotalWorkItems);
 
-                    var snapshot = snapshotRepository.GetOrCreateForDay(delivery.Id, recordedAt);
+                    var snapshot = snapshotRepository.GetOrCreateForDay(delivery.Id, DateOnly.FromDateTime(recordedAt));
                     snapshot.TargetDateAtSnapshot = delivery.Date;
                     snapshot.TotalWork = totalWork;
                     snapshot.DoneWork = totalWork - remainingWork;

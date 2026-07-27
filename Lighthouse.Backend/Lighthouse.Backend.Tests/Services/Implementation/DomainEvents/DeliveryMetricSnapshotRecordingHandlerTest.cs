@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var persistenceFailure = new InvalidOperationException("snapshot store unavailable");
             var snapshotRepository = new Mock<IDeliveryMetricSnapshotRepository>();
             snapshotRepository
-                .Setup(repository => repository.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateTime>()))
+                .Setup(repository => repository.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateOnly>()))
                 .Returns(new DeliveryMetricSnapshot { DeliveryId = fixture.DeliveryId });
             snapshotRepository
                 .Setup(repository => repository.Save())

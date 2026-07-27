@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,34 +13,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     public class DeliveryMetricSnapshotRepositoryTest : IntegrationTestBase
     {
         [Test]
-        public async Task GetOrCreateForDay_NewDeliveryAndDate_InsertsSingleSnapshot()
+        public async Task GetOrCreateForDay_NewDeliveryAndDay_InsertsSingleSnapshot()
         {
             var deliveryId = await GivenPersistedDelivery();
             var subject = CreateSubject();
 
-            var recordedAt = new DateTime(2026, 5, 25, 9, 30, 0, DateTimeKind.Utc);
-            var snapshot = subject.GetOrCreateForDay(deliveryId, recordedAt);
+            var day = new DateOnly(2026, 5, 25);
+            var snapshot = subject.GetOrCreateForDay(deliveryId, day);
             await subject.Save();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshot.DeliveryId, Is.EqualTo(deliveryId));
+                Assert.That(snapshot.RecordedDay, Is.EqualTo(day));
                 Assert.That(subject.GetByDelivery(deliveryId).Count(), Is.EqualTo(1));
             }
         }
 
+        /// <summary>
+        /// The legacy instant column keeps being written during the expand phase so a rollback to the
+        /// previous release still reads correct data.
+        /// </summary>
         [Test]
-        public async Task GetOrCreateForDay_SameDeliveryAndDate_ReturnsExistingRowWithoutDuplicating()
+        public async Task GetOrCreateForDay_NewDeliveryAndDay_AlsoWritesTheLegacyInstantAtMidnightUtc()
         {
             var deliveryId = await GivenPersistedDelivery();
             var subject = CreateSubject();
 
-            var morning = new DateTime(2026, 5, 25, 9, 0, 0, DateTimeKind.Utc);
-            var firstSnapshot = subject.GetOrCreateForDay(deliveryId, morning);
+            var snapshot = subject.GetOrCreateForDay(deliveryId, new DateOnly(2026, 5, 25));
             await subject.Save();
 
-            var evening = new DateTime(2026, 5, 25, 21, 0, 0, DateTimeKind.Utc);
-            var secondSnapshot = subject.GetOrCreateForDay(deliveryId, evening);
+            Assert.That(snapshot.RecordedAt, Is.EqualTo(new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc)));
+        }
+
+        [Test]
+        public async Task GetOrCreateForDay_SameDeliveryAndDay_ReturnsExistingRowWithoutDuplicating()
+        {
+            var deliveryId = await GivenPersistedDelivery();
+            var subject = CreateSubject();
+
+            var day = new DateOnly(2026, 5, 25);
+            var firstSnapshot = subject.GetOrCreateForDay(deliveryId, day);
+            await subject.Save();
+
+            var secondSnapshot = subject.GetOrCreateForDay(deliveryId, day);
             await subject.Save();
 
             using (Assert.EnterMultipleScope())
@@ -50,63 +67,76 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        public async Task GetByDelivery_MultipleDays_ReturnsSnapshotsOrderedByRecordedAtAscending()
+        public async Task GetByDelivery_MultipleDays_ReturnsSnapshotsOrderedByRecordedDayAscending()
         {
             var deliveryId = await GivenPersistedDelivery();
             var subject = CreateSubject();
 
-            var dayTwo = new DateTime(2026, 5, 26, 8, 0, 0, DateTimeKind.Utc);
-            var dayOne = new DateTime(2026, 5, 25, 8, 0, 0, DateTimeKind.Utc);
-            subject.GetOrCreateForDay(deliveryId, dayTwo);
+            subject.GetOrCreateForDay(deliveryId, new DateOnly(2026, 5, 26));
             await subject.Save();
-            subject.GetOrCreateForDay(deliveryId, dayOne);
+            subject.GetOrCreateForDay(deliveryId, new DateOnly(2026, 5, 25));
             await subject.Save();
 
-            var orderedDates = subject.GetByDelivery(deliveryId).Select(s => s.RecordedAt).ToList();
+            var orderedDays = subject.GetByDelivery(deliveryId).Select(s => s.RecordedDay).ToList();
 
-            Assert.That(orderedDates, Is.Ordered.Ascending);
+            Assert.That(orderedDays, Is.Ordered.Ascending);
         }
 
         [Test]
-        public async Task GetOrCreateForDay_SnapshotAtNextMidnightBoundary_IsExcludedSoANewRowIsCreated()
+        public async Task GetOrCreateForDay_SnapshotOnTheAdjacentDay_IsNotMatchedSoANewRowIsCreated()
         {
             var deliveryId = await GivenPersistedDelivery();
 
-            var nextMidnight = new DateTime(2026, 5, 26, 0, 0, 0, DateTimeKind.Utc);
+            var nextDay = new DateOnly(2026, 5, 26);
             DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = deliveryId,
-                RecordedAt = nextMidnight,
+                RecordedDay = nextDay,
+                RecordedAt = nextDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
             });
             await DatabaseContext.SaveChangesAsync();
 
             var subject = CreateSubject();
-            var sameDayMorning = new DateTime(2026, 5, 25, 9, 0, 0, DateTimeKind.Utc);
-            var snapshot = subject.GetOrCreateForDay(deliveryId, sameDayMorning);
+            var day = new DateOnly(2026, 5, 25);
+            var snapshot = subject.GetOrCreateForDay(deliveryId, day);
             await subject.Save();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(snapshot.RecordedAt, Is.EqualTo(sameDayMorning.Date));
+                Assert.That(snapshot.RecordedDay, Is.EqualTo(day));
                 Assert.That(subject.GetByDelivery(deliveryId).Count(), Is.EqualTo(2));
             }
         }
 
+        /// <summary>
+        /// The pre-DateOnly repository had to tie-break between several instants inside one day. That
+        /// state is now unrepresentable: the unique (DeliveryId, RecordedDay) index rejects a second
+        /// row, which is exactly what this asserts. A colliding LEGACY population is refused outright
+        /// by DeliveryMetricSnapshotDayCollisionGuard rather than de-duplicated.
+        /// </summary>
         [Test]
-        public async Task GetOrCreateForDay_TwoSnapshotsSameDay_ReturnsTheEarliestRecorded()
+        public async Task DayKey_ASecondRowForTheSameDeliveryDay_IsRejectedByTheDatabase()
         {
             var deliveryId = await GivenPersistedDelivery();
 
-            var earlier = new DateTime(2026, 5, 25, 6, 0, 0, DateTimeKind.Utc);
-            var later = new DateTime(2026, 5, 25, 18, 0, 0, DateTimeKind.Utc);
-            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedAt = later });
-            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedAt = earlier });
+            var day = new DateOnly(2026, 5, 25);
+            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = deliveryId,
+                RecordedDay = day,
+                RecordedAt = new DateTime(2026, 5, 25, 6, 0, 0, DateTimeKind.Utc),
+            });
             await DatabaseContext.SaveChangesAsync();
 
-            var subject = CreateSubject();
-            var snapshot = subject.GetOrCreateForDay(deliveryId, new DateTime(2026, 5, 25, 12, 0, 0, DateTimeKind.Utc));
+            DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+            {
+                DeliveryId = deliveryId,
+                RecordedDay = day,
+                RecordedAt = new DateTime(2026, 5, 25, 18, 0, 0, DateTimeKind.Utc),
+            });
 
-            Assert.That(snapshot.RecordedAt, Is.EqualTo(earlier));
+            var exception = Assert.ThrowsAsync<DbUpdateException>(async () => await DatabaseContext.SaveChangesAsync());
+            Assert.That(exception!.InnerException!.Message, Does.Contain("UNIQUE").IgnoreCase);
         }
 
         [Test]
@@ -116,12 +146,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var deliveryWithoutSnapshots = await GivenPersistedDelivery();
             var subject = CreateSubject();
 
-            foreach (var day in new[] { 25, 26, 27, 28 })
+            foreach (var dayOfMonth in new[] { 25, 26, 27, 28 })
             {
+                var recordedDay = new DateOnly(2026, 5, dayOfMonth);
                 DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
                 {
                     DeliveryId = deliveryWithSnapshots,
-                    RecordedAt = new DateTime(2026, 5, day, 8, 0, 0, DateTimeKind.Utc),
+                    RecordedDay = recordedDay,
+                    RecordedAt = recordedDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
                 });
             }
             await DatabaseContext.SaveChangesAsync();

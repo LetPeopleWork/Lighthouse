@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var totalWork = BurnupTotalWorkByElapsedDay[elapsedDays];
                 var doneWork = BurnupDoneWorkByElapsedDay[elapsedDays];
 
-                var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, recordedAt);
+                var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, DateOnly.FromDateTime(recordedAt));
                 snapshot.TargetDateAtSnapshot = elapsedDays < targetReplanOnElapsedDay ? originalTarget : currentTarget;
                 snapshot.TotalWork = totalWork;
                 snapshot.DoneWork = doneWork;

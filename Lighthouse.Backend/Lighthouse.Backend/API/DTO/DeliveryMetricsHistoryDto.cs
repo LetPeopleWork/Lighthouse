@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.API.DTO
         public static DeliveryMetricsHistoryDto From(DateTime deliveryDate, IEnumerable<DeliveryMetricSnapshot> snapshots)
         {
             var points = snapshots
-                .OrderBy(snapshot => snapshot.RecordedAt)
+                .OrderBy(snapshot => snapshot.RecordedDay)
                 .Select(ToPoint)
                 .ToList();
 
@@ -40,8 +40,10 @@ namespace Lighthouse.Backend.API.DTO
 
         private static DeliveryMetricsHistoryPointDto ToPoint(DeliveryMetricSnapshot snapshot)
         {
+            // Storage-shape change only: the wire contract still carries a UTC-midnight DateTime,
+            // exactly what the legacy RecordedAt column serialised to.
             return new DeliveryMetricsHistoryPointDto(
-                snapshot.RecordedAt,
+                snapshot.RecordedDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
                 snapshot.TargetDateAtSnapshot,
                 snapshot.TotalWork,
                 snapshot.DoneWork,

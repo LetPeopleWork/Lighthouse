@@ -30,8 +30,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             teamRepoMock.Setup(x => x.GetAll()).Returns(new List<Team>());
             workTrackingSystemConnectionsRepoMock.Setup(x => x.GetAll()).Returns(new List<WorkTrackingSystemConnection>());
             deliveryMetricSnapshotRepoMock
-                .Setup(x => x.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateTime>()))
-                .Returns((int deliveryId, DateTime recordedAt) => new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedAt = recordedAt.Date });
+                .Setup(x => x.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateOnly>()))
+                .Returns((int deliveryId, DateOnly day) => new DeliveryMetricSnapshot
+                {
+                    DeliveryId = deliveryId,
+                    RecordedDay = day,
+                    RecordedAt = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                });
 
             demoDataFactoryMock.Setup(x => x.CreateDemoWorkTrackingSystemConnection()).Returns(new WorkTrackingSystemConnection { Id = 18 });
             demoDataFactoryMock.Setup(x => x.CreateDemoTeam(It.IsAny<string>())).Returns(new Team { Id = 86 });

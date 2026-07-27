@@ -316,6 +316,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay,
+                RecordedDay = DateOnly.FromDateTime(firstDay),
                 TotalWork = 10,
                 DoneWork = 2,
                 RemainingWork = 8,
@@ -324,6 +325,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay.AddDays(1),
+                RecordedDay = DateOnly.FromDateTime(firstDay.AddDays(1)),
                 TotalWork = 10,
                 DoneWork = 5,
                 RemainingWork = 5,
@@ -332,6 +334,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay.AddDays(2),
+                RecordedDay = DateOnly.FromDateTime(firstDay.AddDays(2)),
                 TotalWork = 10,
                 DoneWork = 9,
                 RemainingWork = 1,
@@ -358,6 +361,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay,
+                RecordedDay = DateOnly.FromDateTime(firstDay),
                 TargetDateAtSnapshot = earlierTarget,
                 TotalWork = 10,
                 DoneWork = 2,
@@ -367,6 +371,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay.AddDays(1),
+                RecordedDay = DateOnly.FromDateTime(firstDay.AddDays(1)),
                 TargetDateAtSnapshot = earlierTarget,
                 TotalWork = 10,
                 DoneWork = 5,
@@ -376,6 +381,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay.AddDays(2),
+                RecordedDay = DateOnly.FromDateTime(firstDay.AddDays(2)),
                 TargetDateAtSnapshot = laterTarget,
                 TotalWork = 10,
                 DoneWork = 9,
@@ -414,6 +420,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay,
+                RecordedDay = DateOnly.FromDateTime(firstDay),
                 TotalWork = 14,
                 DoneWork = 3,
                 RemainingWork = 11,
@@ -422,6 +429,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = firstDay.AddDays(1),
+                RecordedDay = DateOnly.FromDateTime(firstDay.AddDays(1)),
                 TotalWork = 14,
                 DoneWork = 6,
                 RemainingWork = 8,
@@ -453,6 +461,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = DateTime.UtcNow.Date,
+                RecordedDay = DateOnly.FromDateTime(DateTime.UtcNow.Date),
                 TotalWork = 12,
                 DoneWork = 4,
                 RemainingWork = 8,
@@ -486,6 +495,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = DateTime.UtcNow.Date,
+                RecordedDay = DateOnly.FromDateTime(DateTime.UtcNow.Date),
                 TotalWork = 20,
                 DoneWork = 11,
                 RemainingWork = 9,
@@ -510,6 +520,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = delivery.Id,
                 RecordedAt = DateTime.UtcNow.Date,
+                RecordedDay = DateOnly.FromDateTime(DateTime.UtcNow.Date),
                 TotalWork = 20,
                 DoneWork = 11,
                 RemainingWork = 9,
@@ -578,6 +589,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 DeliveryId = deliveryId,
                 RecordedAt = recordedAt,
+                RecordedDay = DateOnly.FromDateTime(recordedAt),
                 TotalWork = 20,
                 DoneWork = 5,
                 RemainingWork = 15,
