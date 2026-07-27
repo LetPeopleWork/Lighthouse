@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pins the backend test host to the same instance timezone the other two suites already use:
+  Lighthouse.Frontend/package.json (cross-env TZ=Europe/Zurich vitest run) and
+  Lighthouse.EndToEndTests/playwright.config.ts (use.timezoneId). UTC is the one offset at which a
+  UTC/local calendar-day mismatch cancels out, so a UTC test host is blind to that whole bug class -
+  see docs/ci-learnings.md and Bug #5567.
+
+  RunConfiguration/EnvironmentVariables sets TZ on the test host process BEFORE it starts. That is
+  the property that matters: .NET caches TimeZoneInfo.Local on first use, so setting TZ from inside
+  a fixture or a [SetUpFixture] is too late. docs/ci-learnings.md records the equivalent frontend
+  pin silently doing nothing when it was placed in vitest.config.ts's env block for exactly this
+  reason. ForecastControllerCalendarDayAnchorTest asserts TimeZoneInfo.Local.Id so a silently-inert
+  pin fails loudly instead of reading as covered.
+
+  Referenced from Lighthouse.Backend.Tests.csproj via <RunSettingsFilePath> so a bare local
+  `dotnet test` picks it up, not only CI.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <TZ>Europe/Zurich</TZ>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

@@ -7,6 +7,8 @@
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
+		<!-- Pins the test host timezone (see lighthouse.runsettings). Declared as a project property so a bare `dotnet test` picks it up locally, not only in CI. -->
+		<RunSettingsFilePath>$(MSBuildProjectDirectory)/lighthouse.runsettings</RunSettingsFilePath>
 	</PropertyGroup>
 
 	<ItemGroup>
