@@ -1,22 +1,38 @@
 import { TestConfig } from "../../../playwright.config";
 import { expect, test } from "../../fixutres/LighthouseFixture";
 import { generateRandomName } from "../../helpers/names";
-import { takeDialogScreenshot } from "../../helpers/screenshots";
 import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
 import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
-// This spec creates a team and a portfolio against the real `Lighthouse` ADO
-// project — the largest board in the org — and each creation blocks on that
-// board's INITIAL data fetch. On a loaded runner that fetch has been measured
-// past the 90s the waits used to allow, which failed the attempt and made
-// Playwright re-run the whole spec: one flaky run cost 231s against a 73s happy
-// path, the single largest item in the E2E wall-clock. The waits below are
-// budgeted to absorb the slow fetch instead, and the spec timeout is raised to
-// keep the test-level budget above the sum of both. Retrying is the expensive
-// path here, not waiting.
-test.setTimeout(240_000);
+// Both creations below block on the new owner's INITIAL data fetch from real
+// Azure DevOps, so the size of the board picked here IS the runtime of this spec.
+//
+// The team leg used to select `Lighthouse - Stories`, the live dev backlog. Its
+// initial fetch was measured at 101.1s on CI run 30258220986 — past the 90s the
+// wait then allowed, which would have failed the attempt and made Playwright
+// re-run the WHOLE spec (one such retry cost 231s against a 73s happy path, the
+// largest single item in the E2E wall-clock). It now selects `DummyProject -
+// Stories`: 3 work items, kept deliberately as a fixture, so the fetch is
+// near-instant. What this leg proves — the wizard enumerates real boards, binds
+// one, and the resulting team completes its first fetch — does not depend on how
+// much data comes back.
+//
+// The portfolio leg deliberately STAYS on `Lighthouse - Epics` (127 real epics,
+// ~24.5s). DummyProject has zero epics, so moving it there would still pass —
+// nothing asserts a feature count — while quietly proving only that a board can
+// be bound, never that features are fetched. A hollow skeleton is worse than a
+// slow one.
+//
+// Budgets are sized so a slow-but-working fetch is absorbed rather than retried:
+// retrying is the expensive path here, not waiting.
+test.setTimeout(180_000);
 
-const INITIAL_ADO_FETCH_TIMEOUT_MS = 150_000;
+const INITIAL_ADO_FETCH_TIMEOUT_MS = 120_000;
+
+// Kept as named constants so the intent of each board choice stays readable at
+// the call site (see the note above before changing either).
+const TEAM_BOARD = "DummyProject - Stories";
+const PORTFOLIO_BOARD = "Lighthouse - Epics";
 test("should be able to handle a team and portfolio defined in Azure DevOps", async ({
 	overviewPage,
 }) => {
@@ -64,17 +80,10 @@ test("should be able to handle a team and portfolio defined in Azure DevOps", as
 
 			expect(await wizard.confirmButton.isEnabled()).toBeFalsy();
 
-			await wizard.selectByName("Lighthouse - Stories");
+			await wizard.selectByName(TEAM_BOARD);
 
 			await expect(wizard.boardInformationPanel).toBeVisible();
 			expect(await wizard.confirmButton.isEnabled()).toBeTruthy();
-
-			await takeDialogScreenshot(
-				wizard.page.getByRole("dialog"),
-				"concepts/azuredevops_team_wizard.png",
-				5,
-				1000,
-			);
 
 			newTeamPage = await wizard.confirm();
 		});
@@ -114,17 +123,10 @@ test("should be able to handle a team and portfolio defined in Azure DevOps", as
 
 			expect(await boardWizard.confirmButton.isEnabled()).toBeFalsy();
 
-			await boardWizard.selectByName("Lighthouse - Epics");
+			await boardWizard.selectByName(PORTFOLIO_BOARD);
 
 			await expect(boardWizard.boardInformationPanel).toBeVisible();
 			expect(await boardWizard.confirmButton.isEnabled()).toBeTruthy();
-
-			await takeDialogScreenshot(
-				boardWizard.page.getByRole("dialog"),
-				"concepts/azuredevops_portfolio_wizard.png",
-				5,
-				1000,
-			);
 
 			newPortfolioPage = await boardWizard.confirm();
 		});
