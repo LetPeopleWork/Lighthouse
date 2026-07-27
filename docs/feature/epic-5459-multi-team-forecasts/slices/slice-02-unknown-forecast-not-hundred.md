@@ -1,8 +1,16 @@
 # Slice 02 — "Cannot forecast" instead of a false 100 %
 
-**Story**: US-02 · **Job**: `job-forecast-multi-team-joint-probability` · **Effort**: ≤ 1 day
+**Story**: US-02 (ADO #5570) · **Job**: `job-forecast-multi-team-joint-probability` · **Effort**: ≤ 1 day
 **Blocked by**: slice-01 (the unknown rule is only reachable once the aggregate stops selecting a
 single team).
+**Design**: [ADR-112](../../../product/architecture/adr-112-unknown-forecast-when-contributor-cannot-be-forecast.md)
+— filed as **Proposed**, not Accepted. The detection rule (`any contributor with TotalTrials == 0`),
+the explicit-state requirement and the `GetLikelihood` suppression are settled; **the DTO carrier
+shape is deliberately open** (nullable `LikelihoodPercentage` vs a companion `CanBeForecast` flag) and
+is the first thing to settle when this slice starts, because it depends on a CLI/MCP client check that
+belongs here rather than to slice-01.
+
+This slice also **replaces** slice-01's zero-trial filter (DDD-3) rather than layering on top of it.
 
 ## Goal
 

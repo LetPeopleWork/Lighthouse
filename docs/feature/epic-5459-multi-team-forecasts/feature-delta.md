@@ -1,7 +1,8 @@
 # Feature Delta — epic-5459-multi-team-forecasts
 
-**ADO**: Epic #5459 "Multi Team Forecasts" (state `Planned`, tag `Community`)
-**Waves**: DISCUSS ✅ · DESIGN ⬜ · DEVOPS ⬜ · DISTILL ⬜ · DELIVER ⬜
+**ADO**: Epic #5459 "Multi Team Forecasts" (state `Active`, tag `Community`) — stories #5568 (spike,
+Resolved), #5569 (joint probability), #5570 (unknown forecast)
+**Waves**: DISCUSS ✅ · SPIKE-00 ✅ · DESIGN ✅ · DEVOPS ⬜ · DISTILL ⬜ · DELIVER ⬜
 **Density**: lean (Tier-1 [REF] only) · `expansion_prompt = ask-intelligent`
 
 ---
@@ -299,3 +300,78 @@ crafter work. No oversized signal fires.
 2. **`Feature.Forecast` recompute cost** (D7) — measured in SPIKE-00 (K5), decided in DESIGN.
 3. **Dates move out on upgrade.** Every multi-team forecast becomes more conservative in one release.
    Release-notes framing is a deliverable, not an afterthought.
+
+---
+
+## Wave: DESIGN / [REF] DDD list
+
+Scope: **application / components** (`@nw-solution-architect` remit). Mode: **guide** — decisions
+taken with the maintainer on 2026-07-27, not proposed unilaterally.
+
+| ID | Decision | Verdict |
+|----|----------|---------|
+| **DDD-1** | Joint distribution computed as product-of-CDFs in a **dedicated pure collaborator**, `JointCompletionDistribution` (histograms in, histogram out) — not inline in the `AggregatedWhenForecast` constructor. | LOCKED. A ctor doing both distribution maths and flag aggregation is reachable in tests only by constructing the EF-mapped entity, which drags persistence into every arithmetic test and blunts mutation testing against the ≥ 80 % gate. |
+| **DDD-2** | The **largest-remainder residue rule lives in that collaborator** (answers the DESIGN handoff's open question 3). | LOCKED. Floor each scaled bucket, hand remaining units to the largest fractional parts. Deterministic, no RNG. SPIKE-00 verified 50/50 histograms sum exactly to `TotalTrials`. |
+| **DDD-3** | Story 5569 **filters zero-trial contributors out of the product**; Story 5570 replaces that filter with the explicit unknown state. | LOCKED. Behaviour-preserving — today `MaxBy` already discards a zero-trial forecast (`GetProbability` returns `-1`), so 5569 stays a pure maths change and each story is reviewable in isolation. Closes a genuine gap in the original slice boundary, which said "keep today's handling unchanged" without a mechanism to do so once `MaxBy` was gone. |
+| **DDD-4** | Aggregate provenance: `Team`/`TeamId` = **null**, `NumberOfItems` = **sum** of contributors, `CreationTime` = **oldest** contributor. | LOCKED (ADR-111). Consumer check found the first three are write-only on the aggregate; `CreationTime` is not — it surfaces as `FeatureDto.LastUpdated`, and oldest errs conservative so a fresh team cannot mask a stale one. |
+| **DDD-5** | Test seam = **`internal` constructor** on `WhenForecast` taking a histogram. | LOCKED. `InternalsVisibleTo("Lighthouse.Backend.Tests")` already exists in `Lighthouse.Backend.csproj:64`, so this costs no plumbing; production never needs it (`AggregatedWhenForecast` is a subclass and calls `protected SetSimulationResult` directly), so the seam stays test-scoped and the public API is unchanged. Replaces the `BindingFlags.NonPublic` reflection call in `AggregatedWhenForecastTest`. |
+| **DDD-6** | **No memoisation** of `Feature.Forecast`; **no bypass** of the `IndividualSimulationResult` allocation. | LOCKED. SPIKE-00 K5: 0.113 ms p95 at 5 teams × 500 day keys, 44× under budget, allocation included. Both alternatives would be speculative optimisation on the core forecasting path. |
+| **DDD-7** | `ForecastBase.GetLikelihood`'s `return 100` branch is **left alone** in this epic. | LOCKED. It is reachable from single-team paths too, so changing it here would alter behaviour outside the epic without its own tests. The aggregate must not *reach* it (Story 5570 / ADR-112). Separate ticket. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `JointCompletionDistribution` | `Models/Forecast/` | **CREATE NEW** — pure, no EF state |
+| `AggregatedWhenForecast` | `Models/Forecast/AggregatedWhenForecast.cs` | **EXTEND** — `MaxBy` deleted; flags unchanged; ADR-111 provenance applied |
+| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | **EXTEND** — `internal` histogram ctor (DDD-5) |
+| `AggregatedWhenForecastTest` | `Lighthouse.Backend.Tests/Models/Forecast/` | **EXTEND** — reflection replaced; four existing flag tests keep passing unchanged |
+| `Feature.GetLikelhoodForDate` | `Models/Feature.cs` | **EXTEND** — Story 5570 only |
+| `ForecastService`, `ForecastBase` | — | **UNCHANGED**, deliberately (DDD-6, DDD-7) |
+
+## Wave: DESIGN / [REF] Driving ports
+
+Unchanged from DISCUSS — no new endpoint, no new field in Story 5569. `GET /api/latest/portfolios/{id}`
+(`FeatureDto.Forecasts`), `GET /api/latest/deliveries/portfolio/{portfolioId}` (`FeatureLikelihoodDto`),
+`GET /api/latest/deliveries/{deliveryId}/metrics-history` (one-time step, D5), and the MCP/CLI tools
+that read those DTOs. Values move; shapes do not.
+
+## Wave: DESIGN / [REF] Driven ports + adapters
+
+None added. The change is a pure in-memory computation between the persisted per-team `Feature.Forecasts`
+(EF, `LighthouseAppContext.cs:185-189`) and the DTO assembly. `AggregatedWhenForecast` is never
+persisted — it is constructed on read by the computed `Feature.Forecast` property — so no migration,
+no repository change, no new adapter.
+
+## Wave: DESIGN / [REF] Technology choices
+
+No new dependency. C# .NET 10, existing NUnit 4.6 + Moq test stack. The property tests in Tier 2 of the
+test strategy use the repository's existing patterns; no property-testing library is introduced unless
+DISTILL finds the invariants awkward to express by hand — flagged as an open question rather than
+pre-decided.
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `AggregatedWhenForecast` | `Models/Forecast/AggregatedWhenForecast.cs` | Combines per-team forecasts into a feature forecast — exactly this feature's job | **EXTEND** | The seam already exists and already owns flag aggregation. Replacing the selection with an aggregation is ~40 LOC in place vs. a parallel type nothing would call. |
+| `ForecastBase` | `Models/Forecast/ForecastBase.cs` | Holds a histogram, derives percentiles and likelihood from it | **EXTEND (no change)** | Reads a *single* histogram. Hosting a multi-histogram combination would add a second responsibility to a persisted base class shared by every per-team forecast. The new collaborator takes that instead. |
+| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | Already the type the aggregate subclasses | **EXTEND** | Only an `internal` test ctor is added (DDD-5). No shape change. |
+| `ForecastService` | `Services/Implementation/Forecast/ForecastService.cs` | Produces the per-team histograms | **EXTEND (no change)** | Its output is already the correct input; only the combination was wrong. Touching the hot loop would be risk without benefit (ADR-110 rejected alternative). |
+| `JointCompletionDistribution` | *(new)* | — | **CREATE NEW** | No existing type combines probability distributions. Justified by DDD-1: purity is what makes the maths unit- and mutation-testable, which the ≥ 80 % gate requires. |
+
+**Outcome collision check**: skipped — `docs/product/outcomes/registry.yaml` does not exist in this
+repository, so there is no contract registry to collide against.
+
+## Wave: DESIGN / [REF] Open questions
+
+1. **ADR-112's DTO carrier shape** (Story 5570): nullable `LikelihoodPercentage` vs a companion
+   `CanBeForecast` flag. Deliberately left open — it depends on a CLI/MCP client check that belongs to
+   5570, not 5569. ADR-112 is filed as **Proposed** for this reason.
+2. **Property-test expression** (DISTILL): whether the Tier-2 invariants are clearer hand-rolled or
+   warrant a property-testing library. No library is introduced pre-emptively.
+3. **Multi-team test data for AC-01.8** (DELIVER): the live instance has one team (SPIKE-00 AC-S0.2),
+   so the end-to-end likelihood check needs seeded or demo multi-team data.
+   `BlackoutForecastShiftDeliveryIntegrationTest.SeedPortfolioWithMultiTeamForecastedFeature` already
+   builds a two-team forecasted feature and is the obvious starting point.
+4. **`ForecastBase.GetLikelihood`'s `return 100`** — out of scope here (DDD-7), wants its own ticket.

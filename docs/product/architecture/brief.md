@@ -3182,3 +3182,68 @@ Carried forward rather than fixed, all recorded in `kpi-contracts.yaml` and the 
 ~~Provider note (slice-02): … WIA rows write `Horizon = NULL` …~~ — **SUPERSEDED by what slice-02 shipped.** WIA rows persist `Horizon = PercentilesOverTimeSnapshot.NoHorizon = 0`, not `NULL`. Reason: (a) SQL NULLs are distinct, so a NULL horizon defeats the unique index `(OwnerId, OwnerType, MetricType, Horizon, RecordedAt)` and WIA would accrue a duplicate row per refresh; (b) EF Core translates `s.Horizon == horizonParam` to `Horizon = @p`, which never matches NULL, so the upsert's find-existing predicate would miss and silently INSERT instead of UPDATE. With the sentinel the index enforces one-row-per-day for WIA exactly as for CT and one predicate serves both families — no `IS NULL` branch, no migration (the column stays `int?`). See the **Amendment (slice-02)** section of [ADR-106](./adr-106-percentiles-over-time-snapshot-table-shape.md).
 
 Enum-ordinal note (all slices): `MetricType` (`CycleTime`, `WorkItemAge`) and `ProcessBehaviorMetricType` (`Throughput`, `WorkItemAge`, `Wip`, `CycleTime`, `Arrivals`, `FeatureSize` — six members after slice-04) are persisted as their **integer ordinal**. New members are **appended only**; reordering or renumbering silently re-maps every already-shipped snapshot row to a different metric family, with no compiler error, no failing test and no migration to review. All six `ProcessBehaviorMetricType` ordinals are now pinned member-by-member in `ProcessBehaviorRecordingHandlerTests`; the slice-03 one-member guard was retired **by design** at slice-04, its invariant absorbed rather than dropped. Related slice-04 trap: a test that uses a *real-looking* name as its "unknown value" sentinel decays silently when the enum grows — slice-03's rejection tests used `"CycleTime"`, which slice-04 promoted to a real family, and they stayed green for the wrong reason. The sentinel is now `"NotAProcessBehaviourFamily"` **plus** a test asserting it is not a declared member.
+
+## Application Architecture — epic-5459-multi-team-forecasts (Epic 5459)
+
+**Problem.** A feature's forecast is the *slowest team's* distribution, not the joint distribution
+across every team that must finish. `AggregatedWhenForecast` selects `MaxBy(f => f.GetProbability(85))`
+and copies that one team's entire histogram, so all four percentiles and the target-date likelihood
+are read off a single team. SPIKE-00 (#5568) measured the consequence on the real 90-day Lighthouse
+Stories throughput: a date shown as **85 % confident is worth 77.9 % at two teams, 54.4 % at five**.
+Single-team features move by **zero days at every percentile**.
+
+**Shape.** One seam changes. `ForecastService` and the Monte Carlo loop are untouched — the per-team
+histograms it produces are already the correct inputs; only their combination was wrong.
+
+```mermaid
+flowchart LR
+    subgraph unchanged["unchanged"]
+        TMS[ITeamMetricsService<br/>throughput per team] --> FS[ForecastService<br/>Monte Carlo, 10k trials<br/>one Task.Run per team]
+        FS --> WF["Feature.Forecasts<br/>WhenForecast per team<br/>(persisted)"]
+    end
+    subgraph changed["changed — Story 5569"]
+        WF --> AWF["AggregatedWhenForecast<br/>flag aggregation only"]
+        AWF --> JCD["JointCompletionDistribution<br/>NEW · pure<br/>product-of-CDFs + largest-remainder"]
+        JCD --> AWF
+    end
+    subgraph consumers["consumers — values change, shapes do not"]
+        AWF --> FD["FeatureDto.Forecasts<br/>50/70/85/95"]
+        AWF --> DWL["FeatureLikelihoodDto<br/>likelihood + 70/85/95"]
+        AWF --> DMS["DeliveryMetricSnapshot<br/>one-time step, ADR-048/049"]
+    end
+```
+
+**Decisions** — [ADR-110](./adr-110-multi-team-forecast-joint-probability.md) (product-of-CDFs, pure
+collaborator, largest-remainder residue, zero-trial filter as the interim rule, no memoisation),
+[ADR-111](./adr-111-aggregate-forecast-field-provenance.md) (null team, summed items, oldest
+`CreationTime`), [ADR-112](./adr-112-unknown-forecast-when-contributor-cannot-be-forecast.md)
+(**Proposed** — the unknown state for Story 5570, and the `GetLikelihood` 100 % trap it must not fall
+into).
+
+| Component | Path | Change |
+|---|---|---|
+| `JointCompletionDistribution` | `Models/Forecast/` | **CREATE NEW** — pure: histograms in, histogram out. No EF state, so it is unit- and mutation-testable directly |
+| `AggregatedWhenForecast` | `Models/Forecast/AggregatedWhenForecast.cs` | **EXTEND** — `MaxBy` selection deleted; keeps `FilterApplied` Any / `HasSufficientData` All / `ExcludedSummary` distinct-join unchanged; applies ADR-111 provenance |
+| `WhenForecast` | `Models/Forecast/WhenForecast.cs` | **EXTEND** — `internal` ctor taking a histogram, replacing the reflection call in `AggregatedWhenForecastTest`. `InternalsVisibleTo("Lighthouse.Backend.Tests")` already exists in the csproj, so this costs no plumbing and the public API is unchanged |
+| `Feature.GetLikelhoodForDate` | `Models/Feature.cs` | **EXTEND** — Story 5570 only; guard before the existing `GetLikelihood` call |
+| `ForecastService` | `Services/Implementation/Forecast/` | **UNCHANGED** — deliberately |
+| `ForecastBase.GetLikelihood` | `Models/Forecast/ForecastBase.cs` | **UNCHANGED** — the `return 100` branch is indefensible but reachable from single-team paths; the aggregate must not reach it. Separate ticket |
+
+**Cost, measured not assumed** (SPIKE-00 K5): product-of-CDFs **0.113 ms p95** at 5 teams × 500
+distinct day keys, vs 0.007 ms for today's dictionary copy — 44× under the 5 ms budget. `Feature.Forecast`
+stays a computed property; **no memoisation**. The transient `IndividualSimulationResult` objects that
+`SetSimulationResult` allocates per day key are included in that measurement and are never attached to
+a context.
+
+**Test data** (SPIKE-00 Finding 6, and the reason it exists): constant-throughput teams produce
+**point-mass** distributions, and the product of point masses *is* the max — which is what the buggy
+code already returns. A `TP=1` / `TP=2` pair therefore yields identical results under old and new code
+and **cannot prove the fix**. The discriminating fixture is two-value throughput: history `[1,3]` with
+3 items gives `{1:.50, 2:.25, 3:.25}` (measured within 0.44 % of closed form), and two such teams
+aggregate to `{1:2500, 2:3125, 3:4375}` where old p50 = 1 and new p50 = 2. Keep one constant-throughput
+case as a commented plumbing anchor only.
+
+**Independence is inherited, not introduced.** `∏ᵢ CDFᵢ(d)` is exact only for independent team
+completion times; `ForecastService` already simulates teams independently. This change makes the
+reported number consistent with the model — it does not make the model match reality where teams share
+people. Stated in the concept docs rather than hidden.

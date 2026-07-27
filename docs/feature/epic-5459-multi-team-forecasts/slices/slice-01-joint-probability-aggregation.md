@@ -18,32 +18,54 @@ probability that **all** teams are finished.
 - **Defect B demoted** to latent correctness (0/40 in real throughput). Keep AC-01.6, use a
   constructed fixture, keep it out of the release narrative.
 
+## What DESIGN settled (2026-07-27, guide mode — ADR-110/111)
+
+- **DDD-1: the maths lives in a new pure collaborator**, `JointCompletionDistribution` (histograms in,
+  histogram out). `AggregatedWhenForecast` keeps only its flag aggregation and calls it. Purity is what
+  makes the arithmetic unit- and mutation-testable without constructing an EF-mapped entity.
+- **DDD-2: the largest-remainder residue rule lives in that collaborator.**
+- **DDD-3: zero-trial contributors are FILTERED OUT of the product in this slice.** This closes a real
+  gap in the earlier brief, which said "keep today's handling unchanged" without saying how — once
+  `MaxBy` is gone there is no mechanism that discards them. Filtering is behaviour-preserving (today a
+  zero-trial forecast loses the selection anyway, `GetProbability` returning `-1`), so this slice stays
+  a pure maths change and slice-02 replaces the filter with the explicit unknown state.
+- **DDD-4: aggregate provenance** — `Team`/`TeamId` = `null`, `NumberOfItems` = sum of contributors,
+  `CreationTime` = **oldest** contributor. A consumer check found the first three are write-only on the
+  aggregate; `CreationTime` is not — it surfaces as `FeatureDto.LastUpdated`, so oldest is chosen to
+  stop a freshly-forecast team masking a stale one. Expect `LastUpdated` to move earlier for
+  multi-team features.
+- **DDD-5: test seam = `internal` ctor** on `WhenForecast` taking a histogram.
+  `InternalsVisibleTo("Lighthouse.Backend.Tests")` already exists at `Lighthouse.Backend.csproj:64`, so
+  this needs no plumbing and leaves the public API untouched.
+- **DDD-6/7: no memoisation, and `ForecastBase.GetLikelihood`'s `return 100` is left alone here** —
+  it is reachable from single-team paths, so it wants its own ticket.
+
 ## IN scope
 
-- `Lighthouse.Backend/Models/Forecast/AggregatedWhenForecast.cs`:
-  - remove the `MaxBy(f => f.GetProbability(85))` selection (D2),
-  - build each contributor's empirical CDF over its day keys,
+- `Lighthouse.Backend/Models/Forecast/JointCompletionDistribution.cs` (**NEW**, DDD-1/DDD-2) — pure:
+  takes the contributors' histograms, returns a histogram.
   - `CDF_f(d) = ∏ᵢ CDFᵢ(d)` over the union of day keys; `PMF_f(d) = CDF_f(d) − CDF_f(d−1)`,
-  - re-emit an integer histogram summing to the preserved `TotalTrials`, residue by
-    largest-remainder (D6),
-  - carry `Team` / `TeamId` / `NumberOfItems` / `CreationTime` per DESIGN's call — a joint forecast
-    has no single owning team, so what those fields mean now is a DESIGN question, not a free choice
-    at implementation time.
+  - integer histogram summing to the preserved `TotalTrials`, residue by largest-remainder (D6),
+  - contributors filtered to `TotalTrials > 0` (DDD-3).
+- `Lighthouse.Backend/Models/Forecast/AggregatedWhenForecast.cs`:
+  - remove the `MaxBy(f => f.GetProbability(85))` selection (D2), call the collaborator instead,
+  - apply ADR-111 provenance: `Team`/`TeamId` = `null`, `NumberOfItems` = sum of contributors,
+    `CreationTime` = oldest contributor (DDD-4).
 - `FilterApplied` / `HasSufficientData` / `ExcludedSummary` aggregation kept exactly as today
   (Any / All / distinct-join) — regression-covered by the existing `AggregatedWhenForecastTest`.
-- **Test seam**: replace the `typeof(WhenForecast).GetMethod(..., BindingFlags.NonPublic)` reflection
-  call in `AggregatedWhenForecastTest` with a real seam (`internal` constructor +
-  `InternalsVisibleTo`, or a public histogram constructor — DESIGN picks). Approved by the maintainer
-  on 2026-07-27. Lands as a precursor commit inside this slice, since Tier-1 below needs ~a dozen
-  hand-built histograms.
+- **Test seam** (DDD-5): replace the `typeof(WhenForecast).GetMethod(..., BindingFlags.NonPublic)`
+  reflection call in `AggregatedWhenForecastTest` with an `internal` constructor on `WhenForecast`
+  taking a histogram. `InternalsVisibleTo("Lighthouse.Backend.Tests")` already exists at
+  `Lighthouse.Backend.csproj:64`. Lands as a precursor commit inside this slice, since Tier-1 below
+  needs ~a dozen hand-built histograms.
 - Tests per the four-tier strategy below.
 
 ## OUT of scope
 
 - `ForecastService` and the Monte Carlo loop — untouched (D7).
-- The unknown-forecast rule for teams with no throughput — **slice-02**. In this slice, keep today's
-  handling of `TotalTrials == 0` contributors unchanged so the two behaviours land and review
-  separately.
+- The unknown-forecast rule for teams with no throughput — **slice-02** (ADR-112). In this slice
+  zero-trial contributors are filtered out of the product (DDD-3), which reproduces today's visible
+  behaviour, so the two changes land and review separately.
 - Any DTO or endpoint change. Values move; shapes do not.
 - Frontend changes. The FE renders whatever dates it is given.
 - Memoisation of `Feature.Forecast` (spike Finding 5 closed this as unnecessary).
