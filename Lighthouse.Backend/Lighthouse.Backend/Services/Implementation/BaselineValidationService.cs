@@ -6,6 +6,9 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const int MinimumBaselineDays = 14;
 
+        // Bug #5567: the baseline bounds are user-picked calendar days stored at UTC midnight, so
+        // DateOnly.FromDateTime is correct here and ToInstanceDay would be wrong - it would move a
+        // date picked west of UTC back a day.
         public static BaselineValidationResult Validate(DateTime? startDate, DateTime? endDate, int doneItemsCutoffDays, DateOnly today)
         {
             if (startDate == null && endDate == null)
