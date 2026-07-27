@@ -4,8 +4,12 @@ import {
 	type CategoryKey,
 	getCategories,
 	getDefaultCategoryKey,
+	getFetchKeysForCategories,
+	getFetchRequirementsForWidget,
+	getMetricsFetchKeys,
 	getTrendPolicy,
 	getWidgetsForCategory,
+	type MetricsFetchKey,
 } from "./categoryMetadata";
 
 describe("categoryMetadata", () => {
@@ -330,6 +334,171 @@ describe("categoryMetadata", () => {
 
 		it("returns none for unknown widget keys", () => {
 			expect(getTrendPolicy("nonexistent-widget")).toBe("none");
+		});
+	});
+
+	describe("Bug #5571 — widget fetch requirements", () => {
+		const ownerTypes = ["team", "portfolio"] as const;
+
+		// The only widgets allowed to declare nothing: they own their fetch lifecycle inside
+		// themselves (lazy, on mount, per-selection cache) and read nothing from useMetricsData.
+		const selfFetchingWidgets = ["percentilesOverTime", "pbcOverTime"];
+
+		function everyPlacement(): { widgetKey: string; where: string }[] {
+			const placements: { widgetKey: string; where: string }[] = [];
+			for (const cat of getCategories()) {
+				for (const ownerType of ownerTypes) {
+					for (const w of getWidgetsForCategory(cat.key, ownerType)) {
+						placements.push({
+							widgetKey: w.widgetKey,
+							where: `${cat.key}/${ownerType}`,
+						});
+					}
+				}
+			}
+			return placements;
+		}
+
+		it("gives every widget a declared data requirement, so none can ship eagerly", () => {
+			for (const { widgetKey, where } of everyPlacement()) {
+				expect(
+					getFetchRequirementsForWidget(widgetKey),
+					`widget "${widgetKey}" (${where}) has no widgetFetchRequirements entry — it would render without data`,
+				).toBeDefined();
+			}
+		});
+
+		it("only self-fetching widgets are allowed to require nothing", () => {
+			for (const { widgetKey, where } of everyPlacement()) {
+				if (selfFetchingWidgets.includes(widgetKey)) {
+					continue;
+				}
+				expect(
+					getFetchRequirementsForWidget(widgetKey) ?? [],
+					`widget "${widgetKey}" (${where}) declares an empty requirement set`,
+				).not.toHaveLength(0);
+			}
+		});
+
+		it("flow-overview does not pull data only other categories can render", () => {
+			const keys = getFetchKeysForCategories(["flow-overview"], "team");
+			const forbidden: MetricsFetchKey[] = [
+				"pbcCore",
+				"pbcCharts",
+				"blackoutPeriods",
+				"wipOverTime",
+				"ageInStatePercentiles",
+				"cumulativeStateTime",
+				"estimationVsCycleTime",
+				"featureSizeData",
+				"featureSizePbc",
+				"featureSizeEstimation",
+				"featureSizePercentilesInfo",
+			];
+			for (const key of forbidden) {
+				expect(
+					keys.has(key),
+					`${key} has no flow-overview consumer and must not be fetched for it`,
+				).toBe(false);
+			}
+		});
+
+		it("flow-overview pulls everything its bodies, RAG chips and trends read", () => {
+			const keys = getFetchKeysForCategories(["flow-overview"], "team");
+			const required: MetricsFetchKey[] = [
+				"inProgressItems",
+				"wipOverviewInfo",
+				"blockedItems",
+				"blockedCountHistory",
+				"featuresWorkedOnInfo",
+				"totalWorkItemAge",
+				"totalWorkItemAgeInfo",
+				"flowEfficiency",
+				"predictability",
+				"predictabilityScoreInfo",
+				"cycleTimeData",
+				"cycleTimePercentiles",
+				"cycleTimePercentilesInfo",
+				"workItemAgePercentiles",
+				"throughput",
+				"throughputInfo",
+				"arrivals",
+				"arrivalsInfo",
+			];
+			for (const key of required) {
+				expect(keys.has(key), `flow-overview needs ${key}`).toBe(true);
+			}
+		});
+
+		it("flow-overview pulls feature sizes only for a portfolio owner", () => {
+			expect(
+				getFetchKeysForCategories(["flow-overview"], "portfolio").has(
+					"featureSizeData",
+				),
+			).toBe(true);
+			expect(
+				getFetchKeysForCategories(["flow-overview"], "team").has(
+					"featureSizeData",
+				),
+			).toBe(false);
+		});
+
+		it("unions the requirements of every category it is given", () => {
+			const union = getFetchKeysForCategories(
+				["flow-overview", "flow-metrics"],
+				"team",
+			);
+			expect(union.has("wipOverviewInfo")).toBe(true);
+			expect(union.has("ageInStatePercentiles")).toBe(true);
+		});
+
+		it("keeps the PBC drill-through lookup sources on predictability (R3)", () => {
+			const teamKeys = getFetchKeysForCategories(["predictability"], "team");
+			const lookupSources: MetricsFetchKey[] = [
+				"throughput",
+				"wipOverTime",
+				"cycleTimeData",
+				"inProgressItems",
+			];
+			for (const key of lookupSources) {
+				expect(
+					teamKeys.has(key),
+					`predictability needs ${key}: every PBC node receives workItemLookup, which is built from it`,
+				).toBe(true);
+			}
+			expect(
+				getFetchKeysForCategories(["predictability"], "portfolio").has(
+					"featureSizeData",
+				),
+			).toBe(true);
+		});
+
+		it("leaves no fetch key unreachable — nothing is fetched that no widget consumes", () => {
+			const reachable = new Set<MetricsFetchKey>();
+			for (const cat of getCategories()) {
+				for (const ownerType of ownerTypes) {
+					for (const key of getFetchKeysForCategories([cat.key], ownerType)) {
+						reachable.add(key);
+					}
+				}
+			}
+			for (const key of getMetricsFetchKeys()) {
+				expect(
+					reachable.has(key),
+					`${key} is declared but no widget in any category requires it`,
+				).toBe(true);
+			}
+		});
+
+		it("returns undefined for unknown widget keys", () => {
+			expect(
+				getFetchRequirementsForWidget("nonexistent-widget"),
+			).toBeUndefined();
+		});
+
+		it("returns an empty set for no categories", () => {
+			const keys = getFetchKeysForCategories([] as CategoryKey[], "team");
+			expect(keys.size).toBe(0);
 		});
 	});
 });
