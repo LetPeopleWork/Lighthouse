@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["S1_AllowedOriginsEnvVarBindingTests"] = "sets Authentication__AllowedOrigins* process-global environment variables in setup/teardown",
             ["S1_CorsFailClosedTests"] = "sets CORS/auth process-global environment variables in setup/teardown",
             ["LighthouseReleaseServiceIntegrationTest"] = "shares a static IGitHubService as a GitHub rate-limit workaround across tests",
+            ["LighthouseClockTest"] = "sets and restores the process-global Lighthouse__TimeZone environment variable to prove the __ convention reaches ServiceConfig (Bug #5567)",
         };
 
         [Test]

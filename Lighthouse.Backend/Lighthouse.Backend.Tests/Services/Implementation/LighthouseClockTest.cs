@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     /// days are fixed literals and the assertions hold on every date a run happens to fall on.
     /// </summary>
     [TestFixture]
+    [NonParallelizable]
     public class LighthouseClockTest
     {
         private const string InstanceTimeZoneConfigKey = "Lighthouse:TimeZone";
