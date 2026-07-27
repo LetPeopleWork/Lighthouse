@@ -35,7 +35,7 @@
 		"lodash.debounce": "^4.0.8",
 		"lorem-ipsum": "^3.0.0",
 		"react": "^19.2.8",
-		"react-dom": "^19.2.7",
+		"react-dom": "^19.2.8",
 		"react-markdown": "^10.1.0",
 		"react-router": "^8.3.0",
 		"remark-gfm": "^4.0.1",
