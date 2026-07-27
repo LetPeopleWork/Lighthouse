@@ -24,7 +24,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private List<WriteBackFieldUpdate> capturedUpdates;
         private WriteBackTriggerService subject;
 
-        private static DateTime Today => DateTime.UtcNow.Date;
+        // Bug #5567 root cause D - this used to be `DateTime.UtcNow.Date`, which agreed with the
+        // subject's clock by construction and so passed for every possible value of "today".
+        // The anchor is now a fixed day the subject is handed, and every expectation below is a
+        // literal built from it.
+        private static readonly DateTimeOffset FixedInstant = new(2026, 3, 10, 9, 0, 0, TimeSpan.Zero);
+
+        private static readonly DateTime Today = new(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc);
 
         [SetUp]
         public void SetUp()
@@ -50,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
-                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant),
                 Mock.Of<ILogger<WriteBackTriggerService>>());
         }
 
@@ -70,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.TriggerForecastWriteBackForPortfolio(portfolio);
 
             var written = capturedUpdates.Single().Value;
-            Assert.That(written, Is.EqualTo(Today.AddDays(12).ToString("yyyy-MM-dd")));
+            Assert.That(written, Is.EqualTo("2026-03-22"));
         }
 
         [Test]
@@ -81,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.TriggerForecastWriteBackForPortfolio(portfolio);
 
             var written = capturedUpdates.Single().Value;
-            Assert.That(written, Is.EqualTo(Today.AddDays(WorkingDaysToCompletion).ToString("yyyy-MM-dd")));
+            Assert.That(written, Is.EqualTo("2026-03-20"));
         }
 
         [Test]
@@ -93,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await subject.TriggerForecastWriteBackForPortfolio(portfolio);
 
             var written = capturedUpdates.Single().Value;
-            Assert.That(written, Is.EqualTo(Today.ToString("yyyy-MM-dd")));
+            Assert.That(written, Is.EqualTo("2026-03-10"));
         }
 
         [Test]
@@ -109,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(WorkingDaysToCompletion));
-                Assert.That(written, Is.EqualTo(Today.AddDays(12).ToString("yyyy-MM-dd")));
+                Assert.That(written, Is.EqualTo("2026-03-22"));
             }
         }
 

@@ -19,6 +19,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     [Category("epic-5074-blocked-items")]
     public class DemoBlockedHistoryBackfillHandlerTests
     {
+        // Bug #5567 root cause D - the subject is handed a clock parked on a fixed day, and every
+        // day-dependent expectation below is a literal built from that day. Re-deriving
+        // DateTime.Today here would agree with the subject by construction.
+        private static readonly DateTimeOffset FixedInstant = new(2026, 3, 10, 9, 0, 0, TimeSpan.Zero);
+
+        private static readonly DateTime FixedToday = new(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc);
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> cryptoServiceMock = null!;
         private Mock<ILogger<LighthouseAppContext>> appContextLoggerMock = null!;
@@ -73,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 transitionRepo,
                 featureTransitionRepo,
                 snapshotRepo,
-                new FakeLighthouseClock(DateTimeOffset.UtcNow),
+                new FakeLighthouseClock(FixedInstant),
                 Mock.Of<ILogger<DemoBlockedHistoryBackfillHandler>>());
         }
 
@@ -131,9 +137,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var blockedItems = new List<WorkItem>
             {
-                CreateBlockedItem(101, DateTime.Today.AddDays(-40)),
-                CreateBlockedItem(102, DateTime.Today.AddDays(-40)),
-                CreateBlockedItem(103, DateTime.Today.AddDays(-40)),
+                CreateBlockedItem(101, FixedToday.AddDays(-40)),
+                CreateBlockedItem(102, FixedToday.AddDays(-40)),
+                CreateBlockedItem(103, FixedToday.AddDays(-40)),
             };
             ArrangeTeam(teamId, connectionId, blockedItems);
 
@@ -157,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Assert.That(snapshots, Is.Not.Empty);
                 Assert.That(snapshots[0].BlockedCount, Is.LessThan(snapshots[^1].BlockedCount), "blocked count rises across the window");
                 Assert.That(snapshots[^1].BlockedCount, Is.EqualTo(3), "all three are blocked by today");
-                Assert.That(snapshots[^1].RecordedAt, Is.EqualTo(DateOnly.FromDateTime(DateTime.Today)));
+                Assert.That(snapshots[^1].RecordedAt, Is.EqualTo(new DateOnly(2026, 3, 10)));
             }
         }
 
@@ -167,7 +173,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             const int teamId = 7;
             const int connectionId = 55;
             ArrangeConnection(connectionId, isDemo: false);
-            ArrangeTeam(teamId, connectionId, new List<WorkItem> { CreateBlockedItem(101, DateTime.Today.AddDays(-10)) });
+            ArrangeTeam(teamId, connectionId, new List<WorkItem> { CreateBlockedItem(101, FixedToday.AddDays(-10)) });
 
             using var context = CreateContext();
             var subject = CreateSubject(context);
@@ -187,7 +193,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             const int teamId = 7;
             const int connectionId = 1886;
             ArrangeConnection(connectionId, isDemo: true);
-            ArrangeTeam(teamId, connectionId, new List<WorkItem> { CreateBlockedItem(101, DateTime.Today.AddDays(-20)) });
+            ArrangeTeam(teamId, connectionId, new List<WorkItem> { CreateBlockedItem(101, FixedToday.AddDays(-20)) });
 
             using var seedContext = CreateContext();
             // Several backdated rows — the idempotency guard must treat "any history exists" as
@@ -198,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 {
                     OwnerId = teamId,
                     OwnerType = OwnerType.Team,
-                    RecordedAt = DateOnly.FromDateTime(DateTime.Today.AddDays(-daysAgo)),
+                    RecordedAt = DateOnly.FromDateTime(FixedToday.AddDays(-daysAgo)),
                     BlockedCount = 1,
                 });
             }

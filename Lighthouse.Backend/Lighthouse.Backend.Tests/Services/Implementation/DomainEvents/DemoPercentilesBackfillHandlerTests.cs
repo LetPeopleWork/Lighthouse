@@ -28,6 +28,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private static readonly int[] ExpectedHorizons = [30, 60, 90];
 
+        // Bug #5567 root cause D - the subject is handed a clock parked on a fixed day and the
+        // day-dependent expectations below are literals anchored to it. Re-deriving DateTime.Today
+        // here would agree with the subject by construction, whatever day the subject picked.
+        private static readonly DateTimeOffset FixedInstant = new(2026, 3, 10, 9, 0, 0, TimeSpan.Zero);
+
+        private static readonly DateOnly FixedToday = new(2026, 3, 10);
+
         [SetUp]
         public void SetUp()
         {
@@ -62,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 connectionRepositoryMock.Object,
                 snapshotRepo,
                 processBehaviorRepo,
-                new FakeLighthouseClock(DateTimeOffset.UtcNow),
+                new FakeLighthouseClock(FixedInstant),
                 Mock.Of<ILogger<DemoPercentilesBackfillHandler>>());
         }
 
@@ -114,7 +121,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = FixedToday;
             var snapshots = context.PercentilesOverTimeSnapshots
                 .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team && s.MetricType == MetricType.CycleTime)
                 .ToList();
@@ -214,7 +221,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             ArrangeConnection(connectionId, isDemo: true);
             ArrangeTeam(teamId, connectionId);
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = FixedToday;
             using (var seedContext = CreateContext())
             {
                 // The forward-only recorder already wrote today's horizon-30 row.
@@ -265,7 +272,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             ArrangeConnection(connectionId, isDemo: true);
             ArrangeTeam(teamId, connectionId);
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = FixedToday;
 
             using var context = CreateContext();
             var subject = CreateSubject(context);
@@ -313,7 +320,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = FixedToday;
             var ageRows = context.PercentilesOverTimeSnapshots
                 .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team && s.MetricType == MetricType.WorkItemAge)
                 .ToList();
@@ -348,7 +355,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 OwnerType = OwnerType.Team,
                 MetricType = MetricType.CycleTime,
                 Horizon = 30,
-                RecordedAt = DateOnly.FromDateTime(DateTime.Today.AddDays(-3)),
+                RecordedAt = FixedToday.AddDays(-3),
                 P50 = 5,
                 P70 = 7,
                 P85 = 9,
@@ -391,7 +398,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = FixedToday;
             var throughputRows = context.ProcessBehaviorSnapshots
                 .Where(s => s.OwnerId == teamId && s.OwnerType == OwnerType.Team)
                 .ToList();
@@ -447,7 +454,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
-            var recordedAt = DateOnly.FromDateTime(DateTime.Today).AddDays(-daysAgo);
+            var recordedAt = FixedToday.AddDays(-daysAgo);
             var row = context.ProcessBehaviorSnapshots.Single(s =>
                 s.OwnerId == teamId
                 && s.OwnerType == OwnerType.Team
@@ -528,7 +535,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             ArrangeConnection(connectionId, isDemo: true);
             ArrangeTeam(teamId, connectionId);
 
-            var insideTheWindow = DateOnly.FromDateTime(DateTime.Today.AddDays(-5));
+            var insideTheWindow = FixedToday.AddDays(-5);
             var neighbourOwnerId = neighbour == ForeignThroughputRow.OtherOwnerId ? foreignOwnerId : teamId;
             var neighbourOwnerType = neighbour == ForeignThroughputRow.OtherOwnerType
                 ? OwnerType.Portfolio
@@ -584,7 +591,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             ArrangeConnection(connectionId, isDemo: true);
             ArrangeTeam(teamId, connectionId);
 
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = FixedToday;
 
             using (var seedContext = CreateContext())
             {
@@ -628,7 +635,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 return;
             }
 
-            var backdated = DateOnly.FromDateTime(DateTime.Today.AddDays(-3));
+            var backdated = FixedToday.AddDays(-3);
 
             using var seedContext = CreateContext();
 

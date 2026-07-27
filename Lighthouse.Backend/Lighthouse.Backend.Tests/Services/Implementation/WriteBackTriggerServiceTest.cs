@@ -19,6 +19,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<ILogger<WriteBackTriggerService>> loggerMock;
 
+        // Bug #5567 root cause D - the subject's clock, the seeded work items and the expected
+        // dates all hang off one fixed instant, so an expectation can no longer agree with the
+        // subject just because both read the wall clock.
+        private static readonly DateTimeOffset FixedInstant = new(2026, 3, 10, 9, 0, 0, TimeSpan.Zero);
+
+        private static readonly DateTime FixedNowUtc = new(2026, 3, 10, 9, 0, 0, DateTimeKind.Utc);
+
         [SetUp]
         public void Setup()
         {
@@ -93,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
-            var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-5));
+            var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-5));
             var todoItem = CreateWorkItem("102", StateCategories.ToDo, team);
 
             SetupWorkItemsForTeam(team.Id, [doingItem, todoItem]);
@@ -109,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "101" &&
                         updates[0].TargetFieldReference == "Custom.Age" &&
-                        updates[0].Value == doingItem.WorkItemAge(TestToday.Zone, TestToday.Ambient).ToString())),
+                        updates[0].Value == "6")),
                 Times.Once);
         }
 
@@ -124,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
-            var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-5));
+            var doingItem = CreateWorkItem("101", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-5));
 
             SetupWorkItemsForTeam(team.Id, [doingItem]);
 
@@ -148,8 +155,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.CycleTime"));
 
-            var toDo = CreateWorkItem("201", StateCategories.ToDo, team, startedDate: DateTime.UtcNow.AddDays(-3));
-            var doneItem = CreateWorkItem("202", StateCategories.Done, team, startedDate: DateTime.UtcNow.AddDays(-7), closedDate: DateTime.UtcNow);
+            var toDo = CreateWorkItem("201", StateCategories.ToDo, team, startedDate: FixedNowUtc.AddDays(-3));
+            var doneItem = CreateWorkItem("202", StateCategories.Done, team, startedDate: FixedNowUtc.AddDays(-7), closedDate: FixedNowUtc);
 
             SetupWorkItemsForTeam(team.Id, [toDo, doneItem]);
 
@@ -194,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
-            var doingItem = CreateWorkItem("501", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-3));
+            var doingItem = CreateWorkItem("501", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-3));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
 
             writeBackServiceMock
@@ -213,7 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
-            var doingItem = CreateWorkItem("601", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-3));
+            var doingItem = CreateWorkItem("601", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-3));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
 
             writeBackServiceMock
@@ -355,7 +362,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.TriggerForecastWriteBackForPortfolio(portfolio);
 
-            var expectedDate = DateTime.UtcNow.Date.AddDays(14).ToString("yyyy-MM-dd");
+            const string expectedDate = "2026-03-24";
 
             writeBackServiceMock.Verify(
                 w => w.WriteFieldsToWorkItems(
@@ -383,7 +390,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.TriggerForecastWriteBackForPortfolio(portfolio);
 
-            var expectedDate = DateTime.UtcNow.Date.AddDays(10).ToString("MM/dd/yyyy");
+            const string expectedDate = "03/20/2026";
 
             writeBackServiceMock.Verify(
                 w => w.WriteFieldsToWorkItems(
@@ -541,7 +548,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var team = new Team { Id = 1, Name = "Team 1" };
             var doingFeature = CreateFeature("F-60", StateCategories.Doing, team, remainingItems: 3, totalItems: 5,
-                startedDate: DateTime.UtcNow.AddDays(-8));
+                startedDate: FixedNowUtc.AddDays(-8));
             var todoFeature = CreateFeature("F-61", StateCategories.ToDo, team, remainingItems: 5, totalItems: 5);
             portfolio.Features.Add(doingFeature);
             portfolio.Features.Add(todoFeature);
@@ -556,7 +563,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "F-60" &&
-                        updates[0].Value == doingFeature.WorkItemAge(TestToday.Zone, TestToday.Ambient).ToString())),
+                        updates[0].Value == "9")),
                 Times.Once);
         }
 
@@ -567,7 +574,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
-            var doingItem = CreateWorkItem("701", StateCategories.Doing, team, startedDate: DateTime.UtcNow.AddDays(-2));
+            var doingItem = CreateWorkItem("701", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-2));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
 
             var subject = CreateSubject();
@@ -588,7 +595,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
-                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant),
                 loggerMock.Object);
         }
 
@@ -642,7 +649,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 TeamId = team.Id,
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
-                CreatedDate = startedDate ?? DateTime.UtcNow.AddDays(-30),
+                CreatedDate = startedDate ?? FixedNowUtc.AddDays(-30),
             };
         }
 
@@ -656,7 +663,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 StateCategory = stateCategory,
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
-                CreatedDate = startedDate ?? DateTime.UtcNow.AddDays(-30),
+                CreatedDate = startedDate ?? FixedNowUtc.AddDays(-30),
             };
 
             if (totalItems > 0)
