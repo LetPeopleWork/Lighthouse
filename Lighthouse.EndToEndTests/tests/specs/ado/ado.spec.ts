@@ -5,6 +5,18 @@ import { takeDialogScreenshot } from "../../helpers/screenshots";
 import { PortfolioDetailPage } from "../../models/portfolios/PortfolioDetailPage";
 import { TeamDetailPage } from "../../models/teams/TeamDetailPage";
 
+// This spec creates a team and a portfolio against the real `Lighthouse` ADO
+// project — the largest board in the org — and each creation blocks on that
+// board's INITIAL data fetch. On a loaded runner that fetch has been measured
+// past the 90s the waits used to allow, which failed the attempt and made
+// Playwright re-run the whole spec: one flaky run cost 231s against a 73s happy
+// path, the single largest item in the E2E wall-clock. The waits below are
+// budgeted to absorb the slow fetch instead, and the spec timeout is raised to
+// keep the test-level budget above the sum of both. Retrying is the expensive
+// path here, not waiting.
+test.setTimeout(240_000);
+
+const INITIAL_ADO_FETCH_TIMEOUT_MS = 150_000;
 test("should be able to handle a team and portfolio defined in Azure DevOps", async ({
 	overviewPage,
 }) => {
@@ -76,7 +88,7 @@ test("should be able to handle a team and portfolio defined in Azure DevOps", as
 			);
 
 			await expect(teamInfoPage.updateTeamDataButton).toBeEnabled({
-				timeout: 90_000,
+				timeout: INITIAL_ADO_FETCH_TIMEOUT_MS,
 			});
 			newTeam.id = teamInfoPage.teamId;
 
@@ -126,7 +138,7 @@ test("should be able to handle a team and portfolio defined in Azure DevOps", as
 			);
 
 			await expect(portfolioInfoPage.refreshFeatureButton).toBeEnabled({
-				timeout: 90_000,
+				timeout: INITIAL_ADO_FETCH_TIMEOUT_MS,
 			});
 			newPortfolio.id = portfolioInfoPage.portfolioId;
 
