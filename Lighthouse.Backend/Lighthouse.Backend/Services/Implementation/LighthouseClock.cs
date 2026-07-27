@@ -1,0 +1,87 @@
+using Lighthouse.Backend.Services.Interfaces;
+
+namespace Lighthouse.Backend.Services.Implementation
+{
+    public sealed class LighthouseClock : ILighthouseClock
+    {
+        private readonly TimeProvider timeProvider;
+
+        public LighthouseClock(TimeZoneInfo zone, TimeProvider timeProvider)
+        {
+            Zone = zone;
+            this.timeProvider = timeProvider;
+        }
+
+        public TimeZoneInfo Zone { get; }
+
+        public DateTimeOffset Now => timeProvider.GetUtcNow();
+
+        public DateOnly Today => ToInstanceDay(timeProvider.GetUtcNow().UtcDateTime);
+
+        /// <summary>
+        /// Kind = Utc is load-bearing, not cosmetic. The global EF value converter applies
+        /// ToUniversalTime() to every non-Unspecified DateTime - values AND query parameters - so a
+        /// local-midnight leaving this property would be shifted back by the offset on write and
+        /// land on the previous UTC day, re-introducing Bug #5567 through the persistence layer.
+        /// </summary>
+        public DateTime TodayAsUtcMidnight => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        public DateOnly ToInstanceDay(DateTime utcInstant)
+        {
+            var instant = utcInstant.Kind == DateTimeKind.Local
+                ? utcInstant.ToUniversalTime()
+                : DateTime.SpecifyKind(utcInstant, DateTimeKind.Utc);
+
+            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(instant, Zone));
+        }
+
+        /// <summary>
+        /// Resolution order: a configured id wins, then <see cref="TimeZoneInfo.Local"/>, then UTC.
+        ///
+        /// An absent or blank key is the supported default - it is what every shipped instance uses,
+        /// because appsettings.json deliberately ships no Lighthouse section - and it resolves
+        /// silently. An unresolvable configured id is the opposite case and throws: absent means "no
+        /// opinion", wrong means "an opinion that cannot be honoured", and silently downgrading the
+        /// second to the first is how this bug class hides.
+        /// </summary>
+        public static TimeZoneInfo ResolveInstanceTimeZone(
+            string? configuredTimeZoneId,
+            Func<TimeZoneInfo?>? localTimeZoneProvider = null)
+        {
+            if (!string.IsNullOrWhiteSpace(configuredTimeZoneId))
+            {
+                return ConfiguredTimeZone(configuredTimeZoneId.Trim());
+            }
+
+            return LocalTimeZoneOrUtc(localTimeZoneProvider ?? (() => TimeZoneInfo.Local));
+        }
+
+        private static TimeZoneInfo ConfiguredTimeZone(string configuredTimeZoneId)
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(configuredTimeZoneId);
+            }
+            catch (Exception exception) when (exception is TimeZoneNotFoundException or InvalidTimeZoneException)
+            {
+                throw new InvalidOperationException(
+                    $"The configured instance time zone '{configuredTimeZoneId}' could not be resolved on this host. " +
+                    "Set Lighthouse:TimeZone (or the Lighthouse__TimeZone environment variable) to a valid IANA id " +
+                    "such as 'Europe/Zurich', or remove it to use the host time zone.",
+                    exception);
+            }
+        }
+
+        private static TimeZoneInfo LocalTimeZoneOrUtc(Func<TimeZoneInfo?> localTimeZoneProvider)
+        {
+            try
+            {
+                return localTimeZoneProvider() ?? TimeZoneInfo.Utc;
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return TimeZoneInfo.Utc;
+            }
+        }
+    }
+}

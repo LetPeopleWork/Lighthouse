@@ -5,5 +5,7 @@ namespace Lighthouse.Backend.Services.Interfaces
         string BaseUrl { get; }
 
         string OAuthStateSecret { get; }
+
+        string TimeZone { get; }
     }
 }
