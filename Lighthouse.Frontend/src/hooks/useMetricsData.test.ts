@@ -182,6 +182,23 @@ function createMockPortfolioEntity(
 const startDate = new Date("2024-01-01");
 const endDate = new Date("2024-06-30");
 
+/** The five methods the hook probes to decide a service is portfolio-shaped. */
+const portfolioProbeMethods = [
+	"getAllFeaturesForSizeChart",
+	"getSizePercentiles",
+	"getFeatureSizePbc",
+	"getFeatureSizeEstimation",
+	"getFeatureSizePercentilesInfo",
+] as const;
+
+/** Every key whose effect is reachable only through the portfolio discriminator. */
+const portfolioOnlyFetchKeys: ReadonlySet<MetricsFetchKey> = new Set([
+	"featureSizeData",
+	"featureSizePbc",
+	"featureSizeEstimation",
+	"featureSizePercentilesInfo",
+]);
+
 describe("useMetricsData", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -528,6 +545,116 @@ describe("useMetricsData", () => {
 			await waitFor(() => {
 				expect(result.current.sizePercentileValues).toEqual(sizePercentiles);
 			});
+		});
+
+		/**
+		 * The owner-type discriminator is a five-way conjunction, and a conjunction is exactly the
+		 * shape that degrades silently: loosen any one `&&` into `||` and a TEAM service that
+		 * happens to expose a single portfolio-shaped method is promoted to a portfolio, firing
+		 * four portfolio-only fetches against an endpoint set it does not have.
+		 *
+		 * Each case drops exactly one probe method and asserts the promotion does not happen; the
+		 * control render (all five present) asserts the fetches DO fire, so the case cannot be
+		 * satisfied by a discriminator that simply never returns true.
+		 */
+		it.each(portfolioProbeMethods)(
+			"does not treat a service missing %s as a portfolio service",
+			async (missingMethod) => {
+				const entity = createMockPortfolioEntity();
+				const { [missingMethod]: _dropped, ...incompleteService } =
+					createMockProjectMetricsService() as unknown as Record<
+						string,
+						unknown
+					>;
+				const completeService = createMockProjectMetricsService();
+
+				renderHook(() =>
+					useMetricsData(
+						entity,
+						incompleteService as unknown as IProjectMetricsService,
+						startDate,
+						endDate,
+						portfolioOnlyFetchKeys,
+					),
+				);
+				renderHook(() =>
+					useMetricsData(
+						entity,
+						completeService,
+						startDate,
+						endDate,
+						portfolioOnlyFetchKeys,
+					),
+				);
+
+				await waitFor(() => {
+					expect(
+						completeService.getFeatureSizePercentilesInfo,
+					).toHaveBeenCalledTimes(1);
+				});
+				expect(completeService.getSizePercentiles).toHaveBeenCalledTimes(1);
+				expect(
+					completeService.getAllFeaturesForSizeChart,
+				).toHaveBeenCalledTimes(1);
+				expect(completeService.getFeatureSizePbc).toHaveBeenCalledTimes(1);
+				expect(completeService.getFeatureSizeEstimation).toHaveBeenCalledTimes(
+					1,
+				);
+
+				for (const probe of portfolioProbeMethods) {
+					if (probe === missingMethod) continue;
+					expect(
+						incompleteService[probe],
+						`${probe} must not be fetched while ${missingMethod} is absent`,
+					).not.toHaveBeenCalled();
+				}
+			},
+		);
+
+		/**
+		 * The team-side twin of the discriminator above, and the same failure mode: the
+		 * features-worked-on fetch is reachable only through `isTeamMetricsService`, so a guard
+		 * that stopped guarding would call a method the service does not have — a TypeError raised
+		 * inside an effect, which is a blank dashboard rather than a missing widget.
+		 */
+		it("does not fetch features-worked-on info from a service that cannot report it", async () => {
+			const entity = createMockEntity();
+			const {
+				getFeaturesWorkedOnInfo: _dropped,
+				...serviceWithoutFeaturesWorkedOn
+			} = createMockTeamMetricsService();
+			const completeService = createMockTeamMetricsService();
+			const featuresWorkedOnKeys: ReadonlySet<MetricsFetchKey> = new Set([
+				"featuresWorkedOnInfo",
+			]);
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					serviceWithoutFeaturesWorkedOn as unknown as ITeamMetricsService,
+					startDate,
+					endDate,
+					featuresWorkedOnKeys,
+				),
+			);
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					completeService,
+					startDate,
+					endDate,
+					featuresWorkedOnKeys,
+				),
+			);
+
+			await waitFor(() => {
+				expect(completeService.getFeaturesWorkedOnInfo).toHaveBeenCalledTimes(
+					1,
+				);
+			});
+			expect(serviceWithoutFeaturesWorkedOn).not.toHaveProperty(
+				"getFeaturesWorkedOnInfo",
+			);
 		});
 	});
 
@@ -1166,6 +1293,52 @@ describe("useMetricsData", () => {
 				countServiceCalls(service) +
 				countServiceCalls(mockBlackoutPeriodService);
 			expect(total).toBe(19);
+		});
+
+		/**
+		 * The zero point of the gate. Every other test in this block hands over a key set that
+		 * happens to contain the keys it asserts on, so no test ever exercises a guard from the
+		 * excluded side — a guard that stopped guarding would still look green everywhere else.
+		 *
+		 * The portfolio-shaped mock is a strict superset of the team-shaped one (it spreads it and
+		 * adds the five portfolio probes), so a single empty-key render covers every gated effect
+		 * on both sides. The service methods are enumerated from the mock rather than listed by
+		 * hand, so a fetch added to the hook later is held to this budget automatically.
+		 */
+		it("performs no service call at all when the active key set is empty", async () => {
+			const entity = createMockPortfolioEntity();
+			const service = createMockProjectMetricsService();
+			// An independent render whose key IS active. Its fetch landing is what proves the
+			// effects have flushed, so the assertions below cannot pass vacuously simply because
+			// nothing has had a chance to run yet.
+			const controlService = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(entity, service, startDate, endDate, activeKeys()),
+			);
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					controlService,
+					startDate,
+					endDate,
+					activeKeys("throughput"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(controlService.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			for (const [methodName, method] of Object.entries(service)) {
+				if (!vi.isMockFunction(method)) continue;
+				expect(
+					method,
+					`${methodName} must not be called for an empty key set`,
+				).not.toHaveBeenCalled();
+			}
+			expect(mockBlackoutPeriodService.getAll).not.toHaveBeenCalled();
+			expect(countServiceCalls(service)).toBe(0);
 		});
 	});
 });
