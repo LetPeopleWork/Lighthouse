@@ -51,6 +51,7 @@ Two standing principles worth keeping visible here because they're easy to skip 
 - Conventional commits with scopes: `feat(payment): …`, `fix(user): …`, `refactor(order): …`, `test(payment): …`. Refactor commits separate from feature commits.
 - Before editing a shared contract (DTO, API payload, cross-cutting interface): grep for usages and extend the relevant test factory/builder first to bound the blast radius.
 - DRY = don't repeat *knowledge*, not code. Don't abstract structurally-similar code that represents different business concepts (e.g., `validatePaymentAmount` and `validateTransferAmount` may look identical but evolve independently).
+- **Comments are sparse by default.** Write one only when the *why* cannot be read off the code, and then keep it to a line or two that points at the source of truth — `Bug #5567`, `ADR-058` — rather than restating it. Never narrate what the code does, re-explain a decision already captured in an ADR, a work item or the commit body, or leave a running commentary of alternatives considered. Long rationale belongs in the commit message or the ADR, where it is versioned and searchable. When you touch a file that carries over-wordy comments, trim them as you go; don't open a separate cleanup pass for it.
 
 ### EF Migrations
 
