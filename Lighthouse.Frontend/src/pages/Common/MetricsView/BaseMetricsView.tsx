@@ -63,6 +63,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
@@ -141,15 +142,6 @@ export interface BaseMetricsViewProps<
 	waitStates?: string[];
 	stateMappings?: IStateMapping[];
 	cycleTimeDefinitions?: ICycleTimeDefinition[];
-}
-
-function formatDate(date: Date): string {
-	return date.toISOString().split("T")[0];
-}
-
-function parseDate(dateString: string): Date | null {
-	const date = new Date(dateString);
-	return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function getDefaultStartDate(defaultDateRange: number): Date {
@@ -1204,20 +1196,23 @@ export const BaseMetricsView = <
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
 
+	// The date params name calendar days and are read and written the way the
+	// request layer encodes them — locally. Routing either side through UTC
+	// shifts a reloaded or shared link by a day for viewers off UTC (Bug #5566).
 	const [startDate, setStartDate] = useState<Date>(() => {
-		const parsed = parseDate(searchParams.get("startDate") ?? "");
+		const parsed = parseLocalDate(searchParams.get("startDate") ?? "");
 		return parsed ?? getDefaultStartDate(defaultDateRange);
 	});
 
 	const [endDate, setEndDate] = useState<Date>(() => {
-		const parsed = parseDate(searchParams.get("endDate") ?? "");
+		const parsed = parseLocalDate(searchParams.get("endDate") ?? "");
 		return parsed ?? new Date();
 	});
 
 	const updateDateParams = (start: Date, end: Date) => {
 		const newParams = new URLSearchParams(searchParams);
-		newParams.set("startDate", formatDate(start));
-		newParams.set("endDate", formatDate(end));
+		newParams.set("startDate", formatLocalDate(start));
+		newParams.set("endDate", formatLocalDate(end));
 		setSearchParams(newParams, { replace: true });
 	};
 

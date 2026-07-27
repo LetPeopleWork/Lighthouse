@@ -42,6 +42,7 @@ import {
 } from "../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
 import type { IWorkItem } from "../../models/WorkItem";
+import { formatLocalDate } from "../../utils/date/localDate";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IMetricsService<T extends IWorkItem | IFeature> {
@@ -353,7 +354,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	async getInProgressItems(id: number, asOfDate: Date): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItem[]>(
-				`/${this.api}/${id}/metrics/wip?asOfDate=${this.formatLocalDate(asOfDate)}`,
+				`/${this.api}/${id}/metrics/wip?asOfDate=${formatLocalDate(asOfDate)}`,
 			);
 
 			const workItems = response.data.map((workItem) => {
@@ -570,7 +571,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	async getTotalWorkItemAge(id: number, asOfDate: Date): Promise<number> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<number>(
-				`/${this.api}/${id}/metrics/totalWorkItemAge?asOfDate=${this.formatLocalDate(asOfDate)}`,
+				`/${this.api}/${id}/metrics/totalWorkItemAge?asOfDate=${formatLocalDate(asOfDate)}`,
 			);
 
 			return response.data;
@@ -811,7 +812,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const formattedDate =
-				typeof date === "string" ? date : this.formatLocalDate(date);
+				typeof date === "string" ? date : formatLocalDate(date);
 			const response = await this.apiService.get<IWorkItem[]>(
 				`/${this.api}/${id}/metrics/blockedItemsAtDate?date=${formattedDate}`,
 			);
@@ -875,16 +876,11 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 	}
 
 	getDateFormatString(startDate: Date, endDate: Date): string {
-		const formattedStartDate = this.formatLocalDate(startDate);
-		const formattedEndDate = this.formatLocalDate(endDate);
+		// Shared with the dashboards' URL params on purpose: the two encodings
+		// disagreeing is what shifted shared links by a day (Bug #5566).
+		const formattedStartDate = formatLocalDate(startDate);
+		const formattedEndDate = formatLocalDate(endDate);
 
 		return `startDate=${formattedStartDate}&endDate=${formattedEndDate}`;
-	}
-
-	private formatLocalDate(date: Date): string {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, "0");
-		const day = String(date.getDate()).padStart(2, "0");
-		return `${year}-${month}-${day}`;
 	}
 }

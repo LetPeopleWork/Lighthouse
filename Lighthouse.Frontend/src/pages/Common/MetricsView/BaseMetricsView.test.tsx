@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useSearchParams } from "react-router";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 vi.mock("../../../hooks/useLicenseRestrictions", () => ({
@@ -495,6 +495,18 @@ vi.mock("./DashboardHeader", () => ({
 					}}
 				>
 					Change End Date
+				</button>
+				<button
+					type="button"
+					data-testid="pick-fixed-start-date"
+					onClick={() => {
+						// The real picker hands out local midnight dates — the exact
+						// instant a UTC encoding pushes across the date boundary.
+						// See the Bug #5566 regression tests.
+						onStartDateChange(new Date(2026, 5, 15, 0, 0, 0, 0));
+					}}
+				>
+					Pick Fixed Start Date
 				</button>
 			</div>
 		</div>
@@ -2705,12 +2717,18 @@ describe("BaseMetricsView component", () => {
 				expect(screen.getByTestId("start-date")).toBeInTheDocument();
 			});
 
-			// Verify dates are initialized from URL
-			const startDateElement = screen.getByTestId("start-date");
-			const endDateElement = screen.getByTestId("end-date");
+			// Verify dates are initialized from URL. The mock renders the instant,
+			// so the assertion has to name the calendar day the way the viewer's
+			// timezone sees it — the params name local days (Bug #5566).
+			const startDate = new Date(
+				screen.getByTestId("start-date").textContent ?? "",
+			);
+			const endDate = new Date(
+				screen.getByTestId("end-date").textContent ?? "",
+			);
 
-			expect(startDateElement.textContent).toContain("2025-01-01");
-			expect(endDateElement.textContent).toContain("2025-01-31");
+			expect(startDate).toEqual(new Date(2025, 0, 1));
+			expect(endDate).toEqual(new Date(2025, 0, 31));
 		});
 
 		it("falls back to default dates when URL parameters are missing", async () => {
@@ -5503,6 +5521,93 @@ describe("BaseMetricsView component", () => {
 			expect(
 				await screen.findByTestId("pbc-over-time-owner-type"),
 			).toHaveTextContent("portfolio");
+		});
+	});
+
+	describe("Date range URL round-trip (Bug #5566)", () => {
+		/**
+		 * The dashboards used to write the startDate/endDate params in UTC while the
+		 * request layer built them from local Y/M/D parts, so a reloaded or shared
+		 * link described a window shifted by one calendar day. These tests only bite
+		 * at a non-zero UTC offset — the suite pins one (see the `test` script).
+		 */
+		const UrlProbe = () => {
+			const [params] = useSearchParams();
+			return (
+				<>
+					<span data-testid="url-start-date">{params.get("startDate")}</span>
+					<span data-testid="url-end-date">{params.get("endDate")}</span>
+				</>
+			);
+		};
+
+		const renderDashboard = (initialRoute: string) =>
+			render(
+				<MemoryRouter initialEntries={[initialRoute]}>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+					<UrlProbe />
+				</MemoryRouter>,
+			);
+
+		const localDayOf = (date: Date) =>
+			`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+				date.getDate(),
+			).padStart(2, "0")}`;
+
+		const lastRequestedStartDay = () => {
+			const calls = (mockMetricsService.getThroughput as Mock).mock.calls;
+			return localDayOf(calls[calls.length - 1][1] as Date);
+		};
+
+		it("writes the picked calendar day to the URL, not the UTC one", async () => {
+			renderDashboard("/teams/1/metrics");
+			await screen.findByTestId("pick-fixed-start-date");
+
+			fireEvent.click(screen.getByTestId("pick-fixed-start-date"));
+
+			await waitFor(() => {
+				expect(lastRequestedStartDay()).toBe("2026-06-15");
+			});
+			expect(screen.getByTestId("url-start-date").textContent).toBe(
+				"2026-06-15",
+			);
+		});
+
+		it("requests the very calendar day the URL names", async () => {
+			renderDashboard(
+				"/teams/1/metrics?startDate=2026-06-15&endDate=2026-07-15",
+			);
+
+			await waitFor(() => {
+				expect(mockMetricsService.getThroughput).toHaveBeenCalled();
+			});
+
+			expect(lastRequestedStartDay()).toBe("2026-06-15");
+			const calls = (mockMetricsService.getThroughput as Mock).mock.calls;
+			expect(localDayOf(calls[calls.length - 1][2] as Date)).toBe("2026-07-15");
+		});
+
+		it("survives a full round-trip through the URL", async () => {
+			const { unmount } = renderDashboard("/teams/1/metrics");
+			await screen.findByTestId("pick-fixed-start-date");
+			fireEvent.click(screen.getByTestId("pick-fixed-start-date"));
+			await waitFor(() => {
+				expect(screen.getByTestId("url-start-date").textContent).toBeTruthy();
+			});
+			const sharedLink = `/teams/1/metrics?startDate=${screen.getByTestId("url-start-date").textContent}&endDate=${screen.getByTestId("url-end-date").textContent}`;
+			unmount();
+
+			renderDashboard(sharedLink);
+
+			await waitFor(() => {
+				expect(lastRequestedStartDay()).toBe("2026-06-15");
+			});
 		});
 	});
 });

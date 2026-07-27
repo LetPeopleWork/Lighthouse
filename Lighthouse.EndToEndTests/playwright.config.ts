@@ -82,6 +82,13 @@ export default defineConfig({
 
 		ignoreHTTPSErrors: true,
 
+		/* Pinned off UTC on purpose. CI runners are UTC, which is the one offset at
+		   which a UTC/local date-encoding mismatch cancels out — that is how the
+		   shared-link day shift of Bug #5566 stayed invisible in CI while every
+		   non-UTC user hit it. Keeping a positive offset here means the date-range
+		   specs exercise the encoding a real viewer sees. */
+		timezoneId: "Europe/Zurich",
+
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: "on-first-retry",
 		video: "retain-on-failure",

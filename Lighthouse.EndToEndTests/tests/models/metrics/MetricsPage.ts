@@ -351,8 +351,16 @@ export class MetricsDateRange {
 		return this.page.getByTestId("dashboard-date-range-toggle");
 	}
 
+	/**
+	 * Local Y/M/D, matching what the dashboard writes and what the request layer
+	 * sends. Encoding the param in UTC instead shifted the window by a day on any
+	 * runner off UTC, timing out every wait keyed on the endDate (Bug #5566).
+	 */
 	private static toParam(date: Date): string {
-		return date.toISOString().split("T")[0];
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+		return `${year}-${month}-${day}`;
 	}
 
 	/**
