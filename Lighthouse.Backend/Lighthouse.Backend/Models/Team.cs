@@ -29,13 +29,12 @@
         public List<WorkItem> WorkItems { get; } = [];
 
         /// <param name="today">
-        /// Bug #5567: the instance's calendar day, supplied by the caller. Entities are
-        /// EF-materialised and get no constructor injection, so the day arrives as a parameter -
-        /// the same shape the blackout periods already use.
+        /// Bug #5567: entities are EF-materialised and get no constructor injection, so the
+        /// instance's calendar day arrives as a parameter rather than from an injected clock.
         /// </param>
         public ThroughputSettings GetThroughputSettings(DateOnly today)
         {
-            var todayAtMidnightUtc = today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var todayAtMidnightUtc = InstanceCalendar.AsUtcMidnight(today);
             var startDate = todayAtMidnightUtc.AddDays(-(ThroughputHistory - 1));
             var endDate = todayAtMidnightUtc;
             var numberOfDays = ThroughputHistory;

@@ -397,12 +397,10 @@ namespace Lighthouse.Backend.Data
                       .HasForeignKey(s => s.DeliveryId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Legacy instant key. Kept for the expand phase alongside the DateOnly day key
-                // below; dropped in the contract release that drops RecordedAt.
+                // Legacy instant key, dropped in the contract release that drops RecordedAt.
                 entity.HasIndex(s => new { s.DeliveryId, s.RecordedAt })
                       .IsUnique();
 
-                // The day key. Equality on a DateOnly instead of a range scan over instants.
                 entity.HasIndex(s => new { s.DeliveryId, s.RecordedDay })
                       .IsUnique();
             });

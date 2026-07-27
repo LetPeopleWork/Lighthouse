@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 foreach (var workItem in workItems)
                 {
-                    var value = ResolveWorkItemValue(mapping.ValueSource, workItem, clock.Today);
+                    var value = ResolveWorkItemValue(mapping.ValueSource, workItem);
                     if (value != null)
                     {
                         updates.Add(new WriteBackFieldUpdate
@@ -182,14 +182,15 @@ namespace Lighthouse.Backend.Services.Implementation
             return updates;
         }
 
-        private string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem, DateOnly today)
+        private string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem)
         {
-            var workItemAge = workItem.WorkItemAge(clock.Zone, today);
+            var age = workItem.WorkItemAge(clock.Zone, clock.Today);
+            var cycleTime = workItem.CycleTime(clock.Zone);
 
             return source switch
             {
-                WriteBackValueSource.WorkItemAgeCycleTime when workItemAge > 0 => workItemAge.ToString(),
-                WriteBackValueSource.WorkItemAgeCycleTime when workItem.CycleTime(clock.Zone) > 0 => workItem.CycleTime(clock.Zone).ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when age > 0 => age.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when cycleTime > 0 => cycleTime.ToString(),
                 _ => null,
             };
         }
@@ -201,13 +202,14 @@ namespace Lighthouse.Backend.Services.Implementation
                 return ResolveForecastValue(mapping, feature);
             }
 
-            var featureAge = feature.WorkItemAge(clock.Zone, clock.Today);
+            var age = feature.WorkItemAge(clock.Zone, clock.Today);
+            var cycleTime = feature.CycleTime(clock.Zone);
 
             return mapping.ValueSource switch
             {
                 WriteBackValueSource.FeatureSize => feature.Size.ToString(),
-                WriteBackValueSource.WorkItemAgeCycleTime when featureAge > 0 => featureAge.ToString(),
-                WriteBackValueSource.WorkItemAgeCycleTime when feature.CycleTime(clock.Zone) > 0 => feature.CycleTime(clock.Zone).ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when age > 0 => age.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when cycleTime > 0 => cycleTime.ToString(),
                 _ => null,
             };
         }

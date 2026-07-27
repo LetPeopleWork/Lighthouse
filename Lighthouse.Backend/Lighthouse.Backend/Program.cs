@@ -987,11 +987,8 @@ namespace Lighthouse.Backend
 
             builder.Services.AddSingleton<ICryptoService, CryptoService>();
 
-            // Bug #5567 - the instance calendar-day seam. The zone is resolved HERE, at builder
-            // time, so an unresolvable configured id stops the boot instead of silently degrading
-            // to UTC. Absent config is the supported default, not a degraded mode: it resolves to
-            // TimeZoneInfo.Local, which is UTC in the aspnet container image, so a containerised
-            // instance sees no behaviour change on upgrade.
+            // Bug #5567: the zone resolves HERE, at builder time, so an unresolvable configured id
+            // stops the boot instead of silently degrading to UTC.
             var serviceConfig = new ServiceConfig(builder.Configuration);
             builder.Services.AddSingleton<IServiceConfig>(serviceConfig);
             builder.Services.AddSingleton(TimeProvider.System);

@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.API
                         forecastWindowStart,
                         EstimateForecastWindowEnd(whenForecast, forecastWindowStart));
 
-                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(effectiveBlackoutDays, clock.Today, 50, 70, 85, 95));
+                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(clock.Today, effectiveBlackoutDays, 50, 70, 85, 95));
                     manualForecast.FilterApplied = whenForecast.FilterApplied;
                     manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
                     manualForecast.HasSufficientData = whenForecast.HasSufficientData;

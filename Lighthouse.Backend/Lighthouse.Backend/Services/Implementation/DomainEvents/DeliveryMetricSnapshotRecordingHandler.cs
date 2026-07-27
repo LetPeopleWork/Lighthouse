@@ -27,11 +27,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             {
                 var deliveries = deliveryRepository.GetByPortfolioAsync(domainEvent.PortfolioId).ToList();
 
-                // Bug #5567: the recorded day, the forecast window start and the snapshot key are all
-                // the SAME instance calendar day, read once. Nothing on this path reduces an instant
-                // to a day any more - the day travels as a DateOnly and the DateTime the blackout
-                // service still speaks is that day's UTC midnight, so the global EF value converter
-                // has nothing left to shift.
+                // Bug #5567: the recorded day, the forecast window start and the snapshot key are
+                // all the same instance calendar day, read once.
                 var today = clock.Today;
                 var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(

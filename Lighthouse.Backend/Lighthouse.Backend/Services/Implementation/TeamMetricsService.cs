@@ -806,8 +806,23 @@ namespace Lighthouse.Backend.Services.Implementation
             var firstDay = DateOnly.FromDateTime(startDate);
             var lastDay = DateOnly.FromDateTime(endDate);
 
-            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && Clock.ToInstanceDay(i.ClosedDate.Value) >= firstDay && Clock.ToInstanceDay(i.ClosedDate.Value) <= lastDay);
-            return closedItemsInDateRange;
+            return closedItemsOfTeam.Where(item => WasClosedBetween(item, firstDay, lastDay));
+        }
+
+        /// <summary>
+        /// Bug #5567: the stored close instant is reduced once, in the instance zone, and compared
+        /// against day bounds the caller already reduced.
+        /// </summary>
+        private bool WasClosedBetween(WorkItemBase item, DateOnly firstDay, DateOnly lastDay)
+        {
+            if (!item.ClosedDate.HasValue)
+            {
+                return false;
+            }
+
+            var closedDay = Clock.ToInstanceDay(item.ClosedDate.Value);
+
+            return closedDay >= firstDay && closedDay <= lastDay;
         }
 
         private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int historyInCalendarDays)

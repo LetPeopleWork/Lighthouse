@@ -119,10 +119,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return FixedDatesTeamLookbackDays;
             }
 
-            // Bug #5567: only the SPAN of the rolling throughput window is wanted, never its
-            // position on the calendar, and that span is ThroughputHistory - 1 by construction
-            // (Team.GetThroughputSettings anchors the window at today and walks back that far).
-            // Reading it directly keeps this handler free of a calendar-day anchor it never needed.
+            // Bug #5567: only the SPAN of the rolling window is wanted, never its position on the
+            // calendar, and Team.GetThroughputSettings makes that span ThroughputHistory - 1.
             return team.ThroughputHistory - 1;
         }
 
@@ -135,7 +133,6 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         {
             try
             {
-                // Bug #5567: the range end is the instance calendar day, not the host zone's.
                 var endDate = clock.TodayAsUtcMidnight;
                 var startDate = endDate.AddDays(-lookbackDays);
 
@@ -191,7 +188,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     return;
                 }
 
-                // Bug #5567: the day key comes from the seam, never from re-reducing endDate.
+                // Bug #5567: from the seam, never by re-reducing endDate.
                 UpsertSnapshot(ownerId, ownerType, metricType, clock.Today, chart);
             }
             catch (Exception exception)

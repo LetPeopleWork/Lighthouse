@@ -8,10 +8,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         : RepositoryBase<DeliveryMetricSnapshot>(context, (lighthouseAppContext) => lighthouseAppContext.DeliveryMetricSnapshots, logger), IDeliveryMetricSnapshotRepository
     {
         /// <summary>
-        /// The day travels in as a <see cref="DateOnly"/>: the caller owns the anchor decision, and
-        /// no instant is reduced to a calendar day inside the repository any more (Bug #5567).
-        /// Matching is EQUALITY on the persisted day key, backed by the unique
-        /// (DeliveryId, RecordedDay) index, rather than a half-open range scan over instants.
+        /// The caller owns the anchor decision: the day travels in as a <see cref="DateOnly"/> and
+        /// matching is equality on the persisted day key (Bug #5567).
         /// </summary>
         public DeliveryMetricSnapshot GetOrCreateForDay(int deliveryId, DateOnly day)
         {
@@ -28,9 +26,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 DeliveryId = deliveryId,
                 RecordedDay = day,
 
-                // Expand phase: the legacy instant column keeps being written at the day's midnight
-                // so a rollback to the previous release still reads correct data.
-                RecordedAt = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                // Expand phase: the legacy column keeps being written so a rollback still reads right.
+                RecordedAt = InstanceCalendar.AsUtcMidnight(day),
             };
             Add(snapshot);
             return snapshot;

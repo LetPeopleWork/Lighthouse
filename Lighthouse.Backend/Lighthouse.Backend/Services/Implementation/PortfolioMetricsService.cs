@@ -584,11 +584,11 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
 
             // Filter to only features that were closed in the date range OR are currently in To Do/Doing state
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+
             return allFeatures.Where(f =>
-                (f.StateCategory == StateCategories.Done &&
-                 f.ClosedDate.HasValue &&
-                 Clock.ToInstanceDay(f.ClosedDate.Value) >= DateOnly.FromDateTime(startDate) &&
-                 Clock.ToInstanceDay(f.ClosedDate.Value) <= DateOnly.FromDateTime(endDate)) ||
+                (f.StateCategory == StateCategories.Done && WasClosedBetween(f, firstDay, lastDay)) ||
                 f.StateCategory == StateCategories.ToDo ||
                 f.StateCategory == StateCategories.Doing
             ).ToList();
@@ -784,10 +784,23 @@ namespace Lighthouse.Backend.Services.Implementation
             var firstDay = DateOnly.FromDateTime(startDate);
             var lastDay = DateOnly.FromDateTime(endDate);
 
-            return closedFeaturesOfPortfolio
-                .Where(f => f.ClosedDate.HasValue &&
-                           Clock.ToInstanceDay(f.ClosedDate.Value) >= firstDay &&
-                           Clock.ToInstanceDay(f.ClosedDate.Value) <= lastDay);
+            return closedFeaturesOfPortfolio.Where(f => WasClosedBetween(f, firstDay, lastDay));
+        }
+
+        /// <summary>
+        /// Bug #5567: the stored close instant is reduced once, in the instance zone, and compared
+        /// against day bounds the caller already reduced.
+        /// </summary>
+        private bool WasClosedBetween(Feature feature, DateOnly firstDay, DateOnly lastDay)
+        {
+            if (!feature.ClosedDate.HasValue)
+            {
+                return false;
+            }
+
+            var closedDay = Clock.ToInstanceDay(feature.ClosedDate.Value);
+
+            return closedDay >= firstDay && closedDay <= lastDay;
         }
     }
 }

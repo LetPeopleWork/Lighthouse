@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Services.Implementation
             for (var daysAgo = DemoBurnupDays; daysAgo >= 0; daysAgo--)
             {
                 var recordedDay = clock.Today.AddDays(-daysAgo);
-                var recordedAt = recordedDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+                var recordedAt = InstanceCalendar.AsUtcMidnight(recordedDay);
                 var elapsedDays = DemoBurnupDays - daysAgo;
                 var totalWork = BurnupTotalWorkByElapsedDay[elapsedDays];
                 var doneWork = BurnupDoneWorkByElapsedDay[elapsedDays];

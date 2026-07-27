@@ -4,21 +4,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Lighthouse.Backend.Data
 {
     /// <summary>
-    /// Pre-check for the AddDeliveryMetricSnapshotRecordedDay migration (Bug #5567, step 02-02).
+    /// Pre-check for the AddDeliveryMetricSnapshotRecordedDay migration (Bug #5567). That migration
+    /// puts a UNIQUE index over (DeliveryId, RecordedDay); colliding legacy rows would fail it at
+    /// startup with a provider error naming nothing. Reachable only from a restored backup or a
+    /// database written by an older version - which is exactly this migration's population.
     ///
-    /// That migration backfills a DateOnly day key from the legacy RecordedAt instant and then puts
-    /// a UNIQUE index over (DeliveryId, RecordedDay). If two rows of one delivery reduce to the same
-    /// calendar day, creating that index fails - and because migrations run at startup, the whole
-    /// application fails to start with a raw provider error naming nothing.
-    ///
-    /// DEDUPLICATION WAS CONSIDERED AND DELIBERATELY REJECTED (user decision 9). Do not "helpfully"
-    /// add it: an operator whose app refuses to start with a message naming the exact colliding rows
-    /// can repair them; an operator whose recorded history was quietly rewritten cannot.
-    ///
-    /// The check is unreachable through the current writer - DeliveryMetricSnapshotRepository has
-    /// always normalised to midnight and the legacy (DeliveryId, RecordedAt) unique index has always
-    /// been in place - but it IS reachable from a restored backup or a database written by an older
-    /// version, which is exactly the population that runs this migration.
+    /// DEDUPLICATION WAS CONSIDERED AND DELIBERATELY REJECTED. Do not "helpfully" add it: an
+    /// operator whose app refuses to start with the colliding rows named can repair them; an
+    /// operator whose recorded history was quietly rewritten cannot.
     /// </summary>
     public static class DeliveryMetricSnapshotDayCollisionGuard
     {
@@ -116,8 +109,8 @@ namespace Lighthouse.Backend.Data
         }
 
         /// <summary>
-        /// Postgres returns the grouped day as a date, SQLite as ISO-8601 text. Both are rendered as
-        /// yyyy-MM-dd so the operator sees one shape whichever provider they run.
+        /// Postgres groups to a date, SQLite to ISO-8601 text; both render as yyyy-MM-dd so the
+        /// operator sees one shape whichever provider they run.
         /// </summary>
         private static string DayOf(object value)
         {

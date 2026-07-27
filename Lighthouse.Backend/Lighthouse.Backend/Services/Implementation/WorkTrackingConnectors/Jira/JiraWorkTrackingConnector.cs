@@ -1248,8 +1248,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return string.Empty;
             }
 
-            // Bug #5567 decision 4: stays UTC. A tracker's history window is an instant offset,
-            // not a calendar day, and the remote system has its own zone; an off-by-one only over-fetches.
+            // Bug #5567 decision 4: stays UTC. A tracker's history window is an instant offset, not
+            // a calendar day, and the remote system has its own zone; an off-by-one only over-fetches.
             var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
             var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
 

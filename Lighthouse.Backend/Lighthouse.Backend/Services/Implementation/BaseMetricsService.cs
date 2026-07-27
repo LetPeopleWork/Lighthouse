@@ -10,8 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation
     public abstract class BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider, ILighthouseClock clock)
     {
         /// <summary>
-        /// Bug #5567: exposed so the derived services forward the clock to this base instead of
-        /// capturing it themselves (CS9107).
+        /// Derived services forward the clock here rather than capturing it themselves (CS9107).
         /// </summary>
         protected ILighthouseClock Clock { get; } = clock;
 

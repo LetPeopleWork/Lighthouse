@@ -1,7 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Lighthouse.Backend.Services.Interfaces;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing

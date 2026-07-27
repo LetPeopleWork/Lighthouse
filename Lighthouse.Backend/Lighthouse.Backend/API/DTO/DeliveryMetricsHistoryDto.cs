@@ -40,10 +40,9 @@ namespace Lighthouse.Backend.API.DTO
 
         private static DeliveryMetricsHistoryPointDto ToPoint(DeliveryMetricSnapshot snapshot)
         {
-            // Storage-shape change only: the wire contract still carries a UTC-midnight DateTime,
-            // exactly what the legacy RecordedAt column serialised to.
+            // The wire contract still carries the UTC-midnight DateTime the legacy column serialised.
             return new DeliveryMetricsHistoryPointDto(
-                snapshot.RecordedDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                InstanceCalendar.AsUtcMidnight(snapshot.RecordedDay),
                 snapshot.TargetDateAtSnapshot,
                 snapshot.TotalWork,
                 snapshot.DoneWork,

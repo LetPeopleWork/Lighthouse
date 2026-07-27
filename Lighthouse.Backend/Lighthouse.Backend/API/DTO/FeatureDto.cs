@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.API.DTO
         /// Percentiles card moved to as-of-endDate — the two surfaces disagreeing for the same range,
         /// which US-04 AC3 and CI2 both forbid.
         /// </param>
-        #pragma warning disable S107 // Bug #5567 passes the instance calendar, not a collaborator the DTO calls out to: WorkItemBase stopped reading the ambient clock, so the day and its zone have to travel with the item. Grouping these optional projection flags into a record would obscure which ones the aging surfaces depend on.
+#pragma warning disable S107 // Bug #5567: the instance calendar has to arrive with the item, taking this one past the threshold. Grouping the projection flags into a record would hide which ones the aging surfaces depend on.
         public FeatureDto(Feature feature, ILighthouseClock clock, IReadOnlyList<BlackoutPeriod> blackoutPeriods, bool isBlocked, DateTime? blockedSince, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null, DateTime? asOf = null, StateAsOf? stateAsOf = null)
 #pragma warning restore S107
             : base(feature, clock, isBlocked, namedCycleTimes ?? [], blockedSince, asOf, stateAsOf)
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API.DTO
             Size = feature.Size;
             OwningTeam = feature.OwningTeam;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(blackoutPeriods, clock.Today, 50, 70, 85, 95) ?? []);
+            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(clock.Today, blackoutPeriods, 50, 70, 85, 95) ?? []);
 
             foreach (var work in feature.FeatureWork)
             {

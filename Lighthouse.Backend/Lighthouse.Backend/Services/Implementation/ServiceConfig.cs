@@ -16,10 +16,9 @@ namespace Lighthouse.Backend.Services.Implementation
         public string OAuthStateSecret { get; }
 
         /// <summary>
-        /// Bug #5567 - the instance time zone. Deliberately NOT shipped in appsettings.json: a
-        /// concrete default there would move every containerised instance off UTC on upgrade,
-        /// unannounced. Absent means "no opinion" and resolves to <see cref="TimeZoneInfo.Local"/>,
-        /// which is UTC in the aspnet container image. Override with <c>Lighthouse__TimeZone</c>.
+        /// Bug #5567 - the instance time zone, deliberately NOT shipped in appsettings.json: a
+        /// concrete default would move every containerised instance off UTC on upgrade, unannounced.
+        /// Absent resolves to <see cref="TimeZoneInfo.Local"/>. Override with <c>Lighthouse__TimeZone</c>.
         /// </summary>
         public string TimeZone { get; }
     }

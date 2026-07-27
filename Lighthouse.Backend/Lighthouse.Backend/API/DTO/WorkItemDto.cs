@@ -31,12 +31,10 @@ namespace Lighthouse.Backend.API.DTO
         /// Omitted means "no history for that day" — the item's current state stands.
         /// </param>
         /// <param name="clock">
-        /// Bug #5567: the instance calendar - the day <see cref="WorkItemAge"/> is measured against
-        /// when no <paramref name="asOf"/> is supplied, and the zone both age and cycle time reduce
-        /// their stored instants in. The entity no longer reads an ambient clock; this adapter-layer
-        /// mapper hands it the day and the zone together so the two can never disagree.
+        /// Bug #5567: the instance calendar. The entity no longer reads an ambient clock, so this
+        /// mapper hands it the day and the zone together and the two can never disagree.
         /// </param>
-#pragma warning disable S107 // One more collaborator than the S107 threshold: WorkItemBase stopped reading the ambient clock (bug #5567) so the instance calendar has to arrive with the item. Grouping the flags into a record would hide that.
+#pragma warning disable S107 // Bug #5567: the instance calendar has to arrive with the item, taking this one past the threshold. Grouping the projection flags into a record would hide which ones the aging surfaces depend on.
         public WorkItemDto(WorkItemBase workItem, ILighthouseClock clock, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null, StateAsOf? stateAsOf = null)
 #pragma warning restore S107
         {

@@ -19,24 +19,15 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public DateOnly Today => ToInstanceDay(timeProvider.GetUtcNow().UtcDateTime);
 
-        /// <summary>
-        /// Kind = Utc is load-bearing, not cosmetic. The global EF value converter applies
-        /// ToUniversalTime() to every non-Unspecified DateTime - values AND query parameters - so a
-        /// local-midnight leaving this property would be shifted back by the offset on write and
-        /// land on the previous UTC day, re-introducing Bug #5567 through the persistence layer.
-        /// </summary>
-        public DateTime TodayAsUtcMidnight => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        public DateTime TodayAsUtcMidnight => InstanceCalendar.AsUtcMidnight(Today);
 
         public DateOnly ToInstanceDay(DateTime utcInstant) => InstanceCalendar.DayOf(utcInstant, Zone);
 
         /// <summary>
         /// Resolution order: a configured id wins, then <see cref="TimeZoneInfo.Local"/>, then UTC.
-        ///
-        /// An absent or blank key is the supported default - it is what every shipped instance uses,
-        /// because appsettings.json deliberately ships no Lighthouse section - and it resolves
-        /// silently. An unresolvable configured id is the opposite case and throws: absent means "no
-        /// opinion", wrong means "an opinion that cannot be honoured", and silently downgrading the
-        /// second to the first is how this bug class hides.
+        /// Absent means "no opinion" and resolves silently; an unresolvable configured id means "an
+        /// opinion that cannot be honoured" and throws, because silently downgrading the second to
+        /// the first is how Bug #5567's class of defect hides.
         /// </summary>
         public static TimeZoneInfo ResolveInstanceTimeZone(
             string? configuredTimeZoneId,

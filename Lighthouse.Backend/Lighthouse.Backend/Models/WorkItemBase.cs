@@ -49,8 +49,8 @@ namespace Lighthouse.Backend.Models
         public IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = [];
 
         /// <param name="zone">
-        /// Bug #5567: both ends are stored instants, so both are reduced to a calendar day in the
-        /// instance zone. Reducing only one relocates the off-by-one instead of removing it.
+        /// Bug #5567: both ends are stored instants, so both reduce to a day in the instance zone -
+        /// reducing only one relocates the off-by-one instead of removing it.
         /// </param>
         public int CycleTime(TimeZoneInfo zone)
         {
@@ -72,13 +72,9 @@ namespace Lighthouse.Backend.Models
             return 0;
         }
 
-        /// <param name="zone">
-        /// Bug #5567: reduces the stored start instant to the same calendar day
-        /// <paramref name="today"/> already speaks.
-        /// </param>
         /// <param name="today">
-        /// Bug #5567 decision 3: the instance's calendar day, supplied by the caller. The inclusive
-        /// +1 is unchanged - this is a zone shift, not an arithmetic change.
+        /// Bug #5567: the instance's calendar day, supplied by the caller; <paramref name="zone"/>
+        /// reduces the stored start instant to the same calendar. The inclusive +1 is unchanged.
         /// </param>
         public int WorkItemAge(TimeZoneInfo zone, DateOnly today)
         {

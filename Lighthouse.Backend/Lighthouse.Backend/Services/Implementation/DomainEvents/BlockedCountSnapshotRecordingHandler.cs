@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly ILighthouseClock clock;
         private readonly ILogger<BlockedCountSnapshotRecordingHandler> logger;
 
+#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?"; folding it into an aggregate with the unrelated metrics services and repositories would hide it.
         public BlockedCountSnapshotRecordingHandler(
             ITeamMetricsService teamMetricsService,
             IPortfolioMetricsService portfolioMetricsService,
@@ -30,6 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IBlockedCountSnapshotRepository snapshotRepository,
             ILighthouseClock clock,
             ILogger<BlockedCountSnapshotRecordingHandler> logger)
+#pragma warning restore S107
         {
             this.teamMetricsService = teamMetricsService;
             this.portfolioMetricsService = portfolioMetricsService;
@@ -79,7 +81,6 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
         private async Task UpsertSnapshotAsync(int ownerId, OwnerType ownerType, int blockedCount)
         {
-            // Bug #5567: the snapshot day key is the instance calendar day.
             var today = clock.Today;
             var existing = snapshotRepository.GetByPredicate(
                 s => s.OwnerId == ownerId && s.OwnerType == ownerType && s.RecordedAt == today);

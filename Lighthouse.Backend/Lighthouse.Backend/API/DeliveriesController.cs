@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?"; folding it into an aggregate with the unrelated repositories would hide it.
     public class DeliveriesController(
         IDeliveryRepository deliveryRepository,
         IRepository<Portfolio> portfolioRepository,
@@ -24,6 +25,7 @@ namespace Lighthouse.Backend.API
         IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
         IBlackoutPeriodService blackoutPeriodService,
         ILighthouseClock clock)
+#pragma warning restore S107
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]

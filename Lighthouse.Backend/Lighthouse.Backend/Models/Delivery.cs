@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Models
 
         private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
-            var expectedDate = blackoutPeriods.ProjectWorkingDays(today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), forecast.GetProbability(percentile));
+            var expectedDate = blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), forecast.GetProbability(percentile));
             return new DeliveryWhenPercentile(percentile, expectedDate, forecast.FilterApplied, forecast.ExcludedSummary);
         }
     }

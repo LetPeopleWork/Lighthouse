@@ -10,10 +10,10 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public WhenForecastDto(WhenForecast forecast, int probability, IReadOnlyList<BlackoutPeriod> blackoutPeriods, DateOnly today)
+        public WhenForecastDto(WhenForecast forecast, int probability, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             Probability = probability;
-            ExpectedDate = blackoutPeriods.ProjectWorkingDays(today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), forecast.GetProbability(probability));
+            ExpectedDate = blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), forecast.GetProbability(probability));
             FilterApplied = forecast.FilterApplied;
             ExcludedSummary = forecast.ExcludedSummary;
         }

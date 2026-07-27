@@ -9,26 +9,16 @@ namespace Lighthouse.Backend.Models
         public int DeliveryId { get; set; }
 
         /// <summary>
-        /// Legacy instant column, kept for the duration of the expand phase so a rollback to a
-        /// release older than the one introducing <see cref="RecordedDay"/> still reads correct
-        /// data. It is still written on every upsert. Expected to be dropped in the first
-        /// contract release AFTER the release that ships <see cref="RecordedDay"/> - i.e. once no
-        /// supported version reads it any more. Do not read it for day identity; use
-        /// <see cref="RecordedDay"/>.
+        /// Legacy instant column, still written on every upsert for the expand phase and dropped in
+        /// the first contract release after <see cref="RecordedDay"/> ships. Never read it for day
+        /// identity - use <see cref="RecordedDay"/>.
         /// </summary>
         public DateTime RecordedAt { get; set; }
 
         /// <summary>
-        /// The calendar day this snapshot belongs to, and the persisted day key.
-        ///
-        /// Typed <see cref="DateOnly"/> on purpose: the global convention in
-        /// <c>LighthouseAppContext.ConfigureConventions</c> attaches
-        /// <c>UtcDateTimeConverter</c> to <c>Properties&lt;DateTime&gt;()</c> only, so a
-        /// <see cref="DateOnly"/> is structurally out of the converter's reach and cannot be
-        /// shifted by a zone conversion on write or on a query parameter (Bug #5567, R1).
-        ///
-        /// Matches the shape <see cref="BlockedCountSnapshot"/> and
-        /// <see cref="PercentilesOverTimeSnapshot"/> already use.
+        /// The persisted day key. <see cref="DateOnly"/> on purpose: the global
+        /// <c>Properties&lt;DateTime&gt;()</c> converter cannot reach it, so no zone conversion can
+        /// shift it on a write or on a query parameter (Bug #5567).
         /// </summary>
         public DateOnly RecordedDay { get; set; }
 

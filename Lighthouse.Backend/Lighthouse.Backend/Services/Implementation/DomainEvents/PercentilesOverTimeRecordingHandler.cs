@@ -90,7 +90,6 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         {
             try
             {
-                // Bug #5567: the range end is the instance calendar day, not the host zone's.
                 var endDate = clock.TodayAsUtcMidnight;
 
                 // Both families share this one pass — a second recorder would double the refresh cost
@@ -124,8 +123,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             DateTime endDate,
             Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
         {
-            // Bug #5567: the day key comes from the seam rather than re-reducing the instant
-            // argument - a derived reduction is the same defect one call deeper.
+            // Bug #5567: from the seam, not by re-reducing endDate - a derived reduction is the
+            // same defect one call deeper.
             var recordedAt = clock.Today;
 
             try
