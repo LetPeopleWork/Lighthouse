@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 Assert.That(requeued!.Status, Is.EqualTo(UpdateProgress.Queued),
                     "the shared hash must accept the follow-up's reset past the monotonic Advance guard, otherwise a coalesced re-run would be invisible to every pod");
                 Assert.That(store.TryGet(removed, out _), Is.False,
-                    "When.Exists keeps a re-queue on a key another pod already removed from creating a phantom active entry nothing will ever complete");
+                    "the HEXISTS guard keeps a re-queue on a key another pod already removed from creating a phantom active entry nothing will ever complete");
             }
         }
     }

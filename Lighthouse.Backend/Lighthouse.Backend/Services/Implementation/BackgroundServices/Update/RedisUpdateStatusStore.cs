@@ -16,6 +16,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             "end\n" +
             "return tonumber(current)");
 
+        // Redis has no HSETXX and StackExchange.Redis rejects When.Exists on HashSet (only Always /
+        // NotExists are legal), so the "reset only an already-admitted key" guard needs a script.
+        private static readonly LuaScript RequeueIfAdmittedScript = LuaScript.Prepare(
+            "if redis.call('HEXISTS', @hashKey, @field) == 1 then\n" +
+            "    redis.call('HSET', @hashKey, @field, @to)\n" +
+            "    return 1\n" +
+            "end\n" +
+            "return 0");
+
         private readonly IDatabase database;
 
         public RedisUpdateStatusStore(IConnectionMultiplexer multiplexer)
@@ -44,9 +53,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         public void Requeue(UpdateKey key)
         {
-            // When.Exists: only an admitted key may be re-queued, so a concurrent Remove on another pod
-            // cannot be resurrected into a phantom active entry that never completes.
-            database.HashSet(StatusHashKey, key.ToString(), (int)UpdateProgress.Queued, When.Exists);
+            // HEXISTS-guarded: only an admitted key may be re-queued, so a key another pod already
+            // removed cannot be resurrected into a phantom active entry that never completes.
+            database.ScriptEvaluate(
+                RequeueIfAdmittedScript,
+                new { hashKey = (RedisKey)StatusHashKey, field = key.ToString(), to = (int)UpdateProgress.Queued });
         }
 
         public bool TryGet(UpdateKey key, out UpdateStatus? status)
