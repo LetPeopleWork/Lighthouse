@@ -495,4 +495,27 @@ describe("ModifyTeamSettings", () => {
 			await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
 		});
 	});
+
+	// The seed value is owner-specific wiring: ModifyTeamSettings passes 5,
+	// ModifyProjectSettings passes 14. FlowMetricsConfigurationComponent's own test
+	// only proves it seeds with whatever it is handed, so the per-owner number is
+	// only pinned here.
+	describe("staleness opt-in", () => {
+		it("seeds the revealed field with the team default of 5 on opt-in", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				stalenessThresholdDays: 0,
+			});
+
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByLabelText("Set Staleness Threshold"));
+
+			await waitFor(() =>
+				expect(screen.getByLabelText("Staleness Threshold (days)")).toHaveValue(
+					5,
+				),
+			);
+		});
+	});
 });

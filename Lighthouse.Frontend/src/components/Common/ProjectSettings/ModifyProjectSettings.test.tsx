@@ -790,5 +790,39 @@ describe("ModifyProjectSettings", () => {
 				screen.queryByLabelText("Staleness Threshold (days)"),
 			).not.toBeInTheDocument();
 		});
+
+		// The seed value is owner-specific wiring: ModifyProjectSettings passes 14,
+		// ModifyTeamSettings passes 5. FlowMetricsConfigurationComponent's own test
+		// only proves it seeds with whatever it is handed, so the per-owner number
+		// is only pinned here.
+		it("seeds the revealed field with the portfolio default of 14 on opt-in", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				stalenessThresholdDays: 0,
+			});
+
+			renderWithProvider(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByLabelText("Set Staleness Threshold"));
+
+			await waitFor(() =>
+				expect(screen.getByLabelText("Staleness Threshold (days)")).toHaveValue(
+					14,
+				),
+			);
+		});
 	});
 });
