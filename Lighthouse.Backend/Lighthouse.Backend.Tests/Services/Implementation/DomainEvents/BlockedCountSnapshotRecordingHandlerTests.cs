@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -68,6 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 portfolioRepositoryMock.Object,
                 blockedItemServiceMock.Object,
                 snapshotRepo,
+                Clock,
                 handlerLoggerMock.Object);
         }
 
@@ -134,7 +136,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             return feature;
         }
 
-        private DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+        // Bug #5567 - the day under test comes from the SAME clock the subject reads, pinned to a
+        // fixed instant. Re-deriving the production expression (DateTime.Today) here is root cause D:
+        // the assertion would then hold for every possible value of "today" and prove nothing.
+        private static readonly FakeLighthouseClock Clock =
+            new(new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
+
+        private static DateOnly Today => Clock.Today;
 
         private async Task<BlockedCountSnapshot?> FindSnapshot(
             LighthouseAppContext context, int ownerId, OwnerType ownerType, DateOnly recordedAt)
@@ -639,6 +647,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 portfolioRepositoryMock.Object,
                 blockedItemServiceMock.Object,
                 snapshotRepositoryMock.Object,
+                Clock,
                 handlerLoggerMock.Object);
 
             var handleTask = subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);

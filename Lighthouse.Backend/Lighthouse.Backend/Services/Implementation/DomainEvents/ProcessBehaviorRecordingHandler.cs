@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IProcessBehaviorSnapshotRepository snapshotRepository;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<ProcessBehaviorRecordingHandler> logger;
 
         public ProcessBehaviorRecordingHandler(
@@ -34,6 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<Team> teamRepository,
             IRepository<Portfolio> portfolioRepository,
             IProcessBehaviorSnapshotRepository snapshotRepository,
+            ILighthouseClock clock,
             ILogger<ProcessBehaviorRecordingHandler> logger)
         {
             this.teamMetricsService = teamMetricsService;
@@ -41,6 +43,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
             this.snapshotRepository = snapshotRepository;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -132,7 +135,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         {
             try
             {
-                var endDate = DateTime.Today;
+                // Bug #5567: the range end is the instance calendar day, not the host zone's.
+                var endDate = clock.TodayAsUtcMidnight;
                 var startDate = endDate.AddDays(-lookbackDays);
 
                 foreach (var reader in readers)
@@ -187,7 +191,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     return;
                 }
 
-                UpsertSnapshot(ownerId, ownerType, metricType, DateOnly.FromDateTime(endDate), chart);
+                // Bug #5567: the day key comes from the seam, never from re-reducing endDate.
+                UpsertSnapshot(ownerId, ownerType, metricType, clock.Today, chart);
             }
             catch (Exception exception)
             {

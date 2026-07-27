@@ -9,9 +9,12 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -29,14 +32,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private const double CertainSingleBucketLikelihood = 100.0;
 
+        // Bug #5567 - the recorder's calendar day is pinned here and read back from the SAME clock
+        // the subject was handed. Re-deriving DateTime.UtcNow.Date in the assertions is root cause D:
+        // it makes them hold for every possible value of "today", so they cannot see the anchor move.
+        // Delivery's constructor validates its target date against the real wall clock, so seeded
+        // delivery dates deliberately stay on DateTime.UtcNow. They are not the subject here: the
+        // recorded DAY KEY is, and that is read from the clock on both sides of every assertion.
+        private static readonly DateTimeOffset FixedInstant = new(2026, 3, 17, 9, 30, 0, TimeSpan.Zero);
+
         private TestWebApplicationFactory<Program> factory = null!;
+        private WebApplicationFactory<Program> clockedFactory = null!;
         private IServiceScope scope = null!;
+        private FakeLighthouseClock clock = null!;
 
         [SetUp]
         public void Init()
         {
+            clock = new FakeLighthouseClock(FixedInstant, TimeZoneInfo.Utc);
             factory = new TestWebApplicationFactory<Program>();
-            scope = factory.Services.CreateScope();
+            clockedFactory = factory.WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<ILighthouseClock>();
+                    services.AddSingleton<ILighthouseClock>(clock);
+                }));
+
+            scope = clockedFactory.Services.CreateScope();
 
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             dbContext.Database.EnsureDeleted();
@@ -49,6 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             dbContext.Database.EnsureDeleted();
             scope.Dispose();
+            clockedFactory.Dispose();
             factory.Dispose();
         }
 
@@ -118,6 +140,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 scope.ServiceProvider.GetRequiredService<IDeliveryRepository>(),
                 snapshotRepository.Object,
                 blackoutPeriodService.Object,
+                clock,
                 logger.Object);
 
             await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);
@@ -363,7 +386,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
-                RecordedAt = DateTime.UtcNow.Date.AddDays(-1),
+                RecordedDay = clock.Today.AddDays(-1),
+                RecordedAt = clock.TodayAsUtcMidnight.AddDays(-1),
                 TotalWork = 10,
                 DoneWork = 6,
                 RemainingWork = 4,
@@ -451,7 +475,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 ExpectedTotalWork = 12,
                 ExpectedDoneWork = 0,
                 ExpectedLikelihoodPercentage = CertainSingleBucketLikelihood,
-                ExpectedWhenDate = DateTime.UtcNow.Date.AddDays(KnownForecastDays),
+                ExpectedWhenDate = clock.TodayAsUtcMidnight.AddDays(KnownForecastDays),
             };
         }
 
@@ -608,9 +632,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private async Task<SnapshotView> TodaysSnapshot(RecorderFixture fixture)
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var today = DateTime.UtcNow.Date;
+            var today = clock.Today;
             var snapshot = await dbContext.DeliveryMetricSnapshots
-                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today && s.RecordedAt < today.AddDays(1));
+                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedDay == today);
 
             return ToView(snapshot);
         }
@@ -618,22 +642,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private async Task<int> TodaysSnapshotRowCount(RecorderFixture fixture)
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var today = DateTime.UtcNow.Date;
+            var today = clock.Today;
             return await dbContext.DeliveryMetricSnapshots
-                .CountAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today && s.RecordedAt < today.AddDays(1));
+                .CountAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedDay == today);
         }
 
         private async Task<(SnapshotView Yesterday, SnapshotView Today)> YesterdayAndTodaySnapshots(RecorderFixture fixture)
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            var today = DateTime.UtcNow.Date;
+            var today = clock.Today;
+            var yesterday = today.AddDays(-1);
 
-            var yesterday = await dbContext.DeliveryMetricSnapshots
-                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today.AddDays(-1) && s.RecordedAt < today);
+            var yesterdaySnapshot = await dbContext.DeliveryMetricSnapshots
+                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedDay == yesterday);
             var todaySnapshot = await dbContext.DeliveryMetricSnapshots
-                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedAt >= today && s.RecordedAt < today.AddDays(1));
+                .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedDay == today);
 
-            return (ToView(yesterday), ToView(todaySnapshot));
+            return (ToView(yesterdaySnapshot), ToView(todaySnapshot));
         }
 
         private static SnapshotView ToView(DeliveryMetricSnapshot snapshot)

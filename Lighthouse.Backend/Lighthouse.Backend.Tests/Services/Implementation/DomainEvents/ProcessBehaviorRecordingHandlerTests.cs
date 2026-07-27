@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -101,9 +102,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             portfolioMetricsServiceMock.SetReturnsDefault(NoBaselineChart());
         }
 
-        private static DateTime TodayDate => DateTime.Today;
+        // Bug #5567 - the day under test comes from the SAME clock the subject reads, pinned to a
+        // fixed instant. Re-deriving the production expression (DateTime.Today) here is root cause D:
+        // the assertion would then hold for every possible value of "today" and prove nothing.
+        private static readonly FakeLighthouseClock Clock =
+            new(new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
 
-        private static DateOnly Today => DateOnly.FromDateTime(TodayDate);
+        private static DateTime TodayDate => Clock.TodayAsUtcMidnight;
+
+        private static DateOnly Today => Clock.Today;
 
         private LighthouseAppContext CreateContext()
         {
@@ -122,6 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 teamRepositoryMock.Object,
                 portfolioRepositoryMock.Object,
                 snapshotRepo,
+                Clock,
                 handlerLoggerMock.Object);
         }
 

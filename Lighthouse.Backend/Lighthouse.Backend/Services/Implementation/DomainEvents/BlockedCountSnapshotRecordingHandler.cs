@@ -18,6 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IBlockedItemService blockedItemService;
         private readonly IBlockedCountSnapshotRepository snapshotRepository;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<BlockedCountSnapshotRecordingHandler> logger;
 
         public BlockedCountSnapshotRecordingHandler(
@@ -27,6 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<Portfolio> portfolioRepository,
             IBlockedItemService blockedItemService,
             IBlockedCountSnapshotRepository snapshotRepository,
+            ILighthouseClock clock,
             ILogger<BlockedCountSnapshotRecordingHandler> logger)
         {
             this.teamMetricsService = teamMetricsService;
@@ -35,6 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.portfolioRepository = portfolioRepository;
             this.blockedItemService = blockedItemService;
             this.snapshotRepository = snapshotRepository;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -76,7 +79,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
         private async Task UpsertSnapshotAsync(int ownerId, OwnerType ownerType, int blockedCount)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            // Bug #5567: the snapshot day key is the instance calendar day.
+            var today = clock.Today;
             var existing = snapshotRepository.GetByPredicate(
                 s => s.OwnerId == ownerId && s.OwnerType == ownerType && s.RecordedAt == today);
 

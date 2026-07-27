@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IRepository<Team> teamRepository;
         private readonly IRepository<Portfolio> portfolioRepository;
         private readonly IPercentilesOverTimeSnapshotRepository snapshotRepository;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<PercentilesOverTimeRecordingHandler> logger;
 
         public PercentilesOverTimeRecordingHandler(
@@ -36,6 +37,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<Team> teamRepository,
             IRepository<Portfolio> portfolioRepository,
             IPercentilesOverTimeSnapshotRepository snapshotRepository,
+            ILighthouseClock clock,
             ILogger<PercentilesOverTimeRecordingHandler> logger)
         {
             this.teamMetricsService = teamMetricsService;
@@ -43,6 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.teamRepository = teamRepository;
             this.portfolioRepository = portfolioRepository;
             this.snapshotRepository = snapshotRepository;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -87,7 +90,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         {
             try
             {
-                var endDate = DateTime.Today;
+                // Bug #5567: the range end is the instance calendar day, not the host zone's.
+                var endDate = clock.TodayAsUtcMidnight;
 
                 // Both families share this one pass — a second recorder would double the refresh cost
                 // and drift from the cycle-time rows it is meant to sit beside.
@@ -120,7 +124,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             DateTime endDate,
             Func<DateTime, DateTime, IEnumerable<PercentileValue>> readPercentiles)
         {
-            var recordedAt = DateOnly.FromDateTime(endDate);
+            // Bug #5567: the day key comes from the seam rather than re-reducing the instant
+            // argument - a derived reduction is the same defect one call deeper.
+            var recordedAt = clock.Today;
 
             try
             {

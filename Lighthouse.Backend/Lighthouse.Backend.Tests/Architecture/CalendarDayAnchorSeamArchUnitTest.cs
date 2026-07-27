@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class CalendarDayAnchorSeamArchUnitTest
     {
-        private const int BaselinedSiteCount = 44;
+        private const int BaselinedSiteCount = 38;
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 

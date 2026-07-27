@@ -15,7 +15,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     ///
     /// These were the 49 sites verified at HEAD (RCA section 5, 24 files); step 02-01 migrated the
     /// five entity anchors (Models/Team.cs x2, Models/Feature.cs, Models/Delivery.cs,
-    /// Models/WorkItemBase.cs) onto a caller-supplied DateOnly, leaving 44. The guard fails on any
+    /// Models/WorkItemBase.cs) onto a caller-supplied DateOnly, leaving 44, and step 02-03 migrated
+    /// the six snapshot-recorder lines onto ILighthouseClock, leaving 38. The guard fails on any
     /// anchor NOT listed here, so no 50th site can be added while the migration runs, and it fails
     /// on any entry listed here that no longer exists, so the list cannot rot into a permanent
     /// allowlist as each phase-02 cluster shrinks it. When the last entry goes, the baseline is
@@ -96,12 +97,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("API/TeamMetricsController.cs", DateOnlyFromUtcNowDate, "Derived DateOnly reduction of the UTC day; same defect, moves to clock.Today."),
 
             // --- Snapshot recording / day keys (RCA 5(a)) --------------------------------------
-            new("Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs", UtcNowDate, "Snapshot day key; moves to clock.TodayAsUtcMidnight, then to a DateOnly column (decision 8)."),
-            new("Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs", UtcNowDate, "Snapshot day key; moves to clock.TodayAsUtcMidnight, then to a DateOnly column (decision 8)."),
-            new("Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs", UtcNowDate, "Snapshot day key; moves to clock.TodayAsUtcMidnight, then to a DateOnly column (decision 8)."),
-            new("Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs", DateTimeToday, "Snapshot range end day; moves to clock.Today."),
-            new("Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs", DateOnlyFromToday, "Snapshot day key; moves to clock.Today."),
-            new("Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs", DateTimeToday, "Snapshot range end day; moves to clock.Today."),
+            // Step 02-03 migrated this whole cluster onto ILighthouseClock: the four snapshot
+            // recording handlers now take the clock by constructor injection and every day key is
+            // clock.Today (a DateOnly), with clock.TodayAsUtcMidnight where a DateTime range end is
+            // still required. Six baselined lines went, and with them the two derived
+            // DateOnly.FromDateTime(endDate) reductions and the bare DateTime.UtcNow day argument
+            // that the three scanned spellings never saw.
 
             // --- Validation / licensing / write-back (RCA 5(a)) --------------------------------
             new("Services/Implementation/BaselineValidationService.cs", UtcNowDate, "Baseline validity day; moves to clock.Today."),

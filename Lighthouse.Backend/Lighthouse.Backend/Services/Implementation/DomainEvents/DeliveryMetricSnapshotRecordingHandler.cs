@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         IDeliveryRepository deliveryRepository,
         IDeliveryMetricSnapshotRepository snapshotRepository,
         IBlackoutPeriodService blackoutPeriodService,
+        ILighthouseClock clock,
         ILogger<DeliveryMetricSnapshotRecordingHandler> logger) : IDomainEventHandler<PortfolioForecastsUpdated>
     {
         private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
@@ -25,10 +26,16 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             try
             {
                 var deliveries = deliveryRepository.GetByPortfolioAsync(domainEvent.PortfolioId).ToList();
-                var forecastWindowStart = DateTime.UtcNow.Date;
+
+                // Bug #5567: the recorded day, the forecast window start and the snapshot key are all
+                // the SAME instance calendar day, read once. Nothing on this path reduces an instant
+                // to a day any more - the day travels as a DateOnly and the DateTime the blackout
+                // service still speaks is that day's UTC midnight, so the global EF value converter
+                // has nothing left to shift.
+                var today = clock.Today;
+                var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                    forecastWindowStart, ForecastWindowEnd(deliveries));
-                var recordedAt = DateTime.UtcNow;
+                    forecastWindowStart, ForecastWindowEnd(deliveries, forecastWindowStart));
 
                 foreach (var delivery in deliveries)
                 {
@@ -39,14 +46,14 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                         .SelectMany(feature => feature.FeatureWork)
                         .Sum(work => work.TotalWorkItems);
 
-                    var snapshot = snapshotRepository.GetOrCreateForDay(delivery.Id, DateOnly.FromDateTime(recordedAt));
+                    var snapshot = snapshotRepository.GetOrCreateForDay(delivery.Id, today);
                     snapshot.TargetDateAtSnapshot = delivery.Date;
                     snapshot.TotalWork = totalWork;
                     snapshot.DoneWork = totalWork - remainingWork;
                     snapshot.RemainingWork = remainingWork;
                     snapshot.EstimatedItemCount = estimatedPortion > 0 ? estimatedPortion : null;
 
-                    var metrics = delivery.CalculateMetrics(DateOnly.FromDateTime(forecastWindowStart), blackoutPeriods, SnapshotPercentiles);
+                    var metrics = delivery.CalculateMetrics(today, blackoutPeriods, SnapshotPercentiles);
                     var hasForecast = metrics.WhenDistribution.Count > 0;
                     snapshot.LikelihoodPercentage = hasForecast ? metrics.LikelihoodPercentage : null;
                     snapshot.WhenDistributionJson = hasForecast
@@ -76,15 +83,15 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             }
         }
 
-        private static DateTime ForecastWindowEnd(List<Delivery> deliveries)
+        private static DateTime ForecastWindowEnd(List<Delivery> deliveries, DateTime today)
         {
             const int CalendarHeadroomDays = 14;
 
             var latestDeliveryDate = deliveries.Count == 0
-                ? DateTime.UtcNow.Date
+                ? today
                 : deliveries.Max(delivery => delivery.Date.Date);
 
-            var horizon = latestDeliveryDate > DateTime.UtcNow.Date ? latestDeliveryDate : DateTime.UtcNow.Date;
+            var horizon = latestDeliveryDate > today ? latestDeliveryDate : today;
 
             return horizon.AddDays(CalendarHeadroomDays);
         }
