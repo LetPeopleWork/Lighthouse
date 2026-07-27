@@ -13,8 +13,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// Bug #5567 - the warn-list for the anchor-seam source guard (RCA section 8-T2).
     ///
-    /// 49 sites were verified at HEAD (RCA section 5, 24 files); steps 02-01, 02-03 and 02-04 have
-    /// since migrated 39 of them, leaving 10. The guard fails on any anchor NOT listed here and on
+    /// 49 sites were verified at HEAD (RCA section 5, 24 files); steps 02-01, 02-03, 02-04 and 02-06 have
+    /// since migrated 45 of them, leaving 4. The guard fails on any anchor NOT listed here and on
     /// any entry listed here that no longer exists, so the list can only shrink. When the last entry
     /// goes, the baseline is deleted and the guard becomes a hard fail (RCA section 6, step 5).
     ///
@@ -72,13 +72,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("Services/Implementation/Licensing/LicenseService.cs", UtcNowDate, "License expiry day; moves to the instance zone per decision 1 - a licensee keeps premium through their own last day."),
             new("Services/Implementation/WriteBackTriggerService.cs", UtcNowDate, "Forecast window start day; moves to clock.Today."),
 
-            // --- Demo data (must move with the above or E2E desyncs) ---------------------------
-            new("Factories/DemoDataFactory.cs", UtcNowDate, "Demo-data anchor day; moves to clock.Today."),
-            new("Services/Implementation/DemoDataService.cs", UtcNowDate, "Demo-data anchor day; moves to clock.Today."),
-            new("Services/Implementation/DemoDataService.cs", UtcNowDate, "Demo-data anchor day; moves to clock.Today."),
-            new("Services/Implementation/DemoDataService.cs", UtcNowDate, "Demo-data anchor day; moves to clock.Today."),
-            new("Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs", DateTimeToday, "Demo backfill anchor day; moves to clock.Today."),
-            new("Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs", DateOnlyFromToday, "Demo backfill anchor day; moves to clock.Today."),
+            // --- Demo data (had to move with the read paths or the E2E date assertions desync) --
+            // Step 02-06 migrated the demo seam onto ILighthouseClock. The CSV placeholder
+            // resolution in DemoDataFactory now anchors on clock.Today, so every seeded date stays
+            // in lockstep with the windows the migrated read paths compute; the burnup seeding and
+            // both demo backfill handlers take the same day. Seven anchors across six entries went,
+            // including the DateOnly.FromDateTime(today) derivation the DemoPercentiles line carried.
         ];
     }
 }

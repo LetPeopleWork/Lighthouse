@@ -1,13 +1,17 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class DemoDataServiceTest
     {
+        private static readonly TimeZoneInfo Zurich = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
+
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionsRepoMock;
@@ -280,9 +284,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             projectRepoMock.Verify(x => x.Add(demoProject), Times.Exactly(2));
         }
 
-        private DemoDataService CreateSubject()
+        /// <summary>
+        /// Bug #5567: 23:30 UTC is already the next day in Zurich. The burnup the demo seeds must
+        /// land on the same days the migrated read paths report, otherwise the newest snapshot is
+        /// "yesterday" for the first two hours of every instance day.
+        /// </summary>
+        [Test]
+        public async Task LoadScenario_PastInstanceMidnightButBeforeUtcMidnight_SeedsBurnupOnTheInstanceDays()
         {
-            return new DemoDataService(projectRepoMock.Object, teamRepoMock.Object, workTrackingSystemConnectionsRepoMock.Object, deliveryRepoMock.Object, deliveryMetricSnapshotRepoMock.Object, demoDataFactoryMock.Object);
+            // A far-future instant: the Delivery entity rejects a target date that is not in the future,
+            // and it compares against the ambient instant rather than the injected clock.
+            var clock = new FakeLighthouseClock(new DateTimeOffset(2099, 3, 10, 23, 30, 0, TimeSpan.Zero), Zurich);
+
+            var apollo = new Portfolio { Id = 7, Name = "Project Apollo" };
+            demoDataFactoryMock.Setup(x => x.CreateDemoProject("Project Apollo")).Returns(apollo);
+
+            var recordedDays = new List<DateOnly>();
+            deliveryMetricSnapshotRepoMock
+                .Setup(x => x.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateOnly>()))
+                .Returns((int deliveryId, DateOnly day) =>
+                {
+                    recordedDays.Add(day);
+                    return new DeliveryMetricSnapshot { DeliveryId = deliveryId, RecordedDay = day };
+                });
+
+            Delivery? seededDelivery = null;
+            deliveryRepoMock.Setup(x => x.Add(It.IsAny<Delivery>())).Callback((Delivery delivery) => seededDelivery = delivery);
+
+            var subject = CreateSubject(clock);
+
+            var apolloScenario = subject.GetAllScenarios().Single(scenario => scenario.Projects.Contains("Project Apollo"));
+            await subject.LoadScenarios([apolloScenario]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(seededDelivery, Is.Not.Null);
+                Assert.That(seededDelivery.Date, Is.EqualTo(clock.Today.AddDays(14).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)));
+                Assert.That(recordedDays.Max(), Is.EqualTo(clock.Today));
+                Assert.That(recordedDays.Min(), Is.EqualTo(clock.Today.AddDays(-14)));
+            }
+        }
+
+        private DemoDataService CreateSubject(ILighthouseClock? clock = null)
+        {
+            return new DemoDataService(projectRepoMock.Object, teamRepoMock.Object, workTrackingSystemConnectionsRepoMock.Object, deliveryRepoMock.Object, deliveryMetricSnapshotRepoMock.Object, demoDataFactoryMock.Object, clock ?? new FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
     }
 }

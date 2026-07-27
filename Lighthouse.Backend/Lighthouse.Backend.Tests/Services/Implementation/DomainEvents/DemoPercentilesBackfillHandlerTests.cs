@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Data;
+﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -61,6 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 connectionRepositoryMock.Object,
                 snapshotRepo,
                 processBehaviorRepo,
+                new FakeLighthouseClock(DateTimeOffset.UtcNow),
                 Mock.Of<ILogger<DemoPercentilesBackfillHandler>>());
         }
 

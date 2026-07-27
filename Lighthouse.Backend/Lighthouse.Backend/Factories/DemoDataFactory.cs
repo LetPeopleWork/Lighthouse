@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using System.Text.RegularExpressions;
 
@@ -10,10 +11,12 @@ namespace Lighthouse.Backend.Factories
     public class DemoDataFactory : IDemoDataFactory
     {
         private readonly IWorkTrackingSystemFactory workTrackingSystemFactory;
+        private readonly ILighthouseClock clock;
 
-        public DemoDataFactory(IWorkTrackingSystemFactory workTrackingSystemFactory)
+        public DemoDataFactory(IWorkTrackingSystemFactory workTrackingSystemFactory, ILighthouseClock clock)
         {
             this.workTrackingSystemFactory = workTrackingSystemFactory;
+            this.clock = clock;
         }
 
         public Portfolio CreateDemoProject(string name)
@@ -92,17 +95,17 @@ namespace Lighthouse.Backend.Factories
             };
         }
 
-        private static string ParseCsv(string csvName)
+        private string ParseCsv(string csvName)
         {
             var csvContent = File.ReadAllText($"Factories/DemoData/{csvName}.csv");
 
             return ReplaceDatePlaceholders(csvContent);
         }
 
-        private static string ReplaceDatePlaceholders(string csvContent)
+        private string ReplaceDatePlaceholders(string csvContent)
         {
             var pattern = @"\{(w?)(-?\d+)\}";
-            var today = DateTime.UtcNow.Date;
+            var today = clock.Today;
 
             return Regex.Replace(csvContent, pattern, match =>
             {
@@ -117,7 +120,7 @@ namespace Lighthouse.Backend.Factories
             }, RegexOptions.None, TimeSpan.FromSeconds(1));
         }
 
-        private static DateTime BusinessDaysBefore(DateTime today, int businessDays)
+        private static DateOnly BusinessDaysBefore(DateOnly today, int businessDays)
         {
             var date = today;
 
@@ -138,7 +141,7 @@ namespace Lighthouse.Backend.Factories
             return date;
         }
 
-        private static bool IsWeekend(DateTime date)
+        private static bool IsWeekend(DateOnly date)
         {
             return date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
         }

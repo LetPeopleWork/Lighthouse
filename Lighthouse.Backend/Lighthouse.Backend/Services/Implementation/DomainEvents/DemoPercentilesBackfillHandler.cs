@@ -1,6 +1,7 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
@@ -38,6 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IRepository<WorkTrackingSystemConnection> connectionRepository;
         private readonly IPercentilesOverTimeSnapshotRepository snapshotRepository;
         private readonly IProcessBehaviorSnapshotRepository processBehaviorSnapshotRepository;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<DemoPercentilesBackfillHandler> logger;
 
         public DemoPercentilesBackfillHandler(
@@ -46,6 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IRepository<WorkTrackingSystemConnection> connectionRepository,
             IPercentilesOverTimeSnapshotRepository snapshotRepository,
             IProcessBehaviorSnapshotRepository processBehaviorSnapshotRepository,
+            ILighthouseClock clock,
             ILogger<DemoPercentilesBackfillHandler> logger)
         {
             this.teamRepository = teamRepository;
@@ -53,6 +56,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.connectionRepository = connectionRepository;
             this.snapshotRepository = snapshotRepository;
             this.processBehaviorSnapshotRepository = processBehaviorSnapshotRepository;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -90,7 +94,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
         private async Task BackfillAsync(int ownerId, OwnerType ownerType)
         {
-            var todayDate = DateOnly.FromDateTime(DateTime.Today);
+            var todayDate = clock.Today;
 
             BackfillFamily(ownerId, ownerType, MetricType.CycleTime, CycleTimeHorizons, todayDate);
             BackfillFamily(ownerId, ownerType, MetricType.WorkItemAge, WorkItemAgeHorizons, todayDate);

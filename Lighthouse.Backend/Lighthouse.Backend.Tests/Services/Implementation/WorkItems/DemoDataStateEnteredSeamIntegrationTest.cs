@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             await SeedDatabase();
 
-            var demoFactory = new DemoDataFactory(GetWorkTrackingSystemFactory());
+            var demoFactory = new DemoDataFactory(GetWorkTrackingSystemFactory(), new FakeLighthouseClock(DateTimeOffset.UtcNow));
             var connection = await GivenPersistedDemoConnection(demoFactory);
             var team = await GivenPersistedDemoTeam(demoFactory, connection, "Team Zenith");
             var portfolio = await GivenPersistedDemoPortfolio(demoFactory, connection, "Project Apollo");
@@ -118,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private async Task<Team> GivenPersistedDemoTeam(string teamName)
         {
-            var demoFactory = new DemoDataFactory(GetWorkTrackingSystemFactory());
+            var demoFactory = new DemoDataFactory(GetWorkTrackingSystemFactory(), new FakeLighthouseClock(DateTimeOffset.UtcNow));
             var team = demoFactory.CreateDemoTeam(teamName);
             team.WorkTrackingSystemConnection = demoFactory.CreateDemoWorkTrackingSystemConnection();
 

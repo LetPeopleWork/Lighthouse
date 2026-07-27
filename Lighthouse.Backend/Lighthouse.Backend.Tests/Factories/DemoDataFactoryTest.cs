@@ -3,6 +3,8 @@ using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -10,6 +12,10 @@ namespace Lighthouse.Backend.Tests.Factories
 {
     public class DemoDataFactoryTest
     {
+        private static readonly TimeZoneInfo Zurich = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
+
+        private static readonly DateTimeOffset LateEveningInUtc = new(2026, 3, 10, 23, 30, 0, TimeSpan.Zero);
+
         [Test]
         public void CreateDemoWorkTrackingSystemConnection_CreatesWorkTrackingSystemConnectionWithCorrectDetails()
         {
@@ -134,9 +140,65 @@ namespace Lighthouse.Backend.Tests.Factories
             Assert.That(completedDates, Has.None.Matches<DateTime>(IsWeekend));
         }
 
+        /// <summary>
+        /// Bug #5567: 23:30 UTC is already the next day in Zurich, so the UTC day and the instance
+        /// day disagree - and every migrated read path reports the instance day.
+        /// </summary>
+        [Test]
+        [TestCase("Team Zenith")]
+        [TestCase("Team Gravity")]
+        public void CreateDemoTeam_PastInstanceMidnightButBeforeUtcMidnight_AnchorsRelativeDatesOnTheInstanceDay(string teamName)
+        {
+            var clock = new FakeLighthouseClock(LateEveningInUtc, Zurich);
+
+            var demoTeam = CreateSubject(clock).CreateDemoTeam(teamName);
+
+            Assert.That(LatestDate(demoTeam.DataRetrievalValue), Is.EqualTo(clock.Today));
+        }
+
+        [Test]
+        public void CreateDemoProject_PastInstanceMidnightButBeforeUtcMidnight_AnchorsRelativeDatesOnTheInstanceDay()
+        {
+            var clock = new FakeLighthouseClock(LateEveningInUtc, Zurich);
+
+            var demoProject = CreateSubject(clock).CreateDemoProject(DemoProjectNames.NewProductInitiative);
+
+            Assert.That(LatestDate(demoProject.DataRetrievalValue), Is.EqualTo(clock.Today));
+        }
+
+        [Test]
+        public void CreateDemoTeam_InstanceZoneAheadOfUtc_AnchorsADayLaterThanAUtcInstance()
+        {
+            var zurichTeam = CreateSubject(new FakeLighthouseClock(LateEveningInUtc, Zurich)).CreateDemoTeam(DemoTeamNames.GoodThroughput);
+            var utcTeam = CreateSubject(new FakeLighthouseClock(LateEveningInUtc)).CreateDemoTeam(DemoTeamNames.GoodThroughput);
+
+            Assert.That(LatestDate(zurichTeam.DataRetrievalValue), Is.EqualTo(LatestDate(utcTeam.DataRetrievalValue).AddDays(1)));
+        }
+
         private static bool IsWeekend(DateTime date)
         {
             return date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+        }
+
+        private static DateOnly LatestDate(string csvContent)
+        {
+            var dates = csvContent
+                .Split([',', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(TryParseDate)
+                .Where(date => date.HasValue)
+                .Select(date => date!.Value)
+                .ToList();
+
+            Assert.That(dates, Is.Not.Empty);
+
+            return dates.Max();
+        }
+
+        private static DateOnly? TryParseDate(string cell)
+        {
+            return DateOnly.TryParseExact(cell, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                ? date
+                : null;
         }
 
         private static List<DateTime> ParseColumnDates(string csvContent, int columnIndex)
@@ -155,9 +217,11 @@ namespace Lighthouse.Backend.Tests.Factories
             return options.Single(o => o.Key == optionName).Value;
         }
 
-        private DemoDataFactory CreateSubject()
+        private static DemoDataFactory CreateSubject(ILighthouseClock? clock = null)
         {
-            return new DemoDataFactory(new WorkTrackingSystemFactory(Mock.Of<ILogger<WorkTrackingSystemFactory>>()));
+            return new DemoDataFactory(
+                new WorkTrackingSystemFactory(Mock.Of<ILogger<WorkTrackingSystemFactory>>()),
+                clock ?? new FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
     }
 }

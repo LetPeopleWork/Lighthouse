@@ -30,9 +30,10 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IDeliveryRepository deliveryRepository;
         private readonly IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository;
         private readonly IDemoDataFactory demoDataFactory;
+        private readonly ILighthouseClock clock;
 
         public DemoDataService(
-            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDeliveryRepository deliveryRepository, IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository, IDemoDataFactory demoDataFactory)
+            IRepository<Portfolio> projectRepository, IRepository<Team> teamRepository, IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepo, IDeliveryRepository deliveryRepository, IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository, IDemoDataFactory demoDataFactory, ILighthouseClock clock)
         {
             this.projectRepository = projectRepository;
             this.teamRepository = teamRepository;
@@ -40,6 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation
             this.deliveryRepository = deliveryRepository;
             this.deliveryMetricSnapshotRepository = deliveryMetricSnapshotRepository;
             this.demoDataFactory = demoDataFactory;
+            this.clock = clock;
 
             scenarios.AddRange(GetFreeScenarios());
             scenarios.AddRange(GetPremiumScenarios());
@@ -101,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var delivery = new Delivery(DemoDeliveryName, DateTime.UtcNow.Date.AddDays(DemoBurnupDays), portfolio.Id)
+            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleSchemaVersion = WorkItemRuleSet.SchemaVersion,
@@ -139,17 +141,18 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             const int targetReplanOnElapsedDay = 7;
 
-            var currentTarget = DateTime.UtcNow.Date.AddDays(DemoBurnupDays);
+            var currentTarget = clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays);
             var originalTarget = currentTarget.AddDays(-targetReplanOnElapsedDay);
 
             for (var daysAgo = DemoBurnupDays; daysAgo >= 0; daysAgo--)
             {
-                var recordedAt = DateTime.UtcNow.Date.AddDays(-daysAgo);
+                var recordedDay = clock.Today.AddDays(-daysAgo);
+                var recordedAt = recordedDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
                 var elapsedDays = DemoBurnupDays - daysAgo;
                 var totalWork = BurnupTotalWorkByElapsedDay[elapsedDays];
                 var doneWork = BurnupDoneWorkByElapsedDay[elapsedDays];
 
-                var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, DateOnly.FromDateTime(recordedAt));
+                var snapshot = deliveryMetricSnapshotRepository.GetOrCreateForDay(deliveryId, recordedDay);
                 snapshot.TargetDateAtSnapshot = elapsedDays < targetReplanOnElapsedDay ? originalTarget : currentTarget;
                 snapshot.TotalWork = totalWork;
                 snapshot.DoneWork = doneWork;

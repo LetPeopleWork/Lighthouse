@@ -3,6 +3,7 @@ import {
 	test,
 	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
+import { formatLocalDate } from "../../helpers/dates";
 import {
 	takeDialogScreenshot,
 	takeDialogScreenshot as takeElementScreenshot,
@@ -140,10 +141,8 @@ test("Take @screenshot of blackout periods and recurring rules", async ({
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	let systemSettings = await settingsPage.goToSystemConfiguration();
 
-	const startDate = new Date(Date.now()).toISOString().slice(0, 10);
-	const endDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
-		.toISOString()
-		.slice(0, 10);
+	const startDate = formatLocalDate(new Date());
+	const endDate = formatLocalDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
 	const blackoutPeriodDialog = await systemSettings.addBlackoutPeriod();
 	await blackoutPeriodDialog.addBlackoutPeriod(
@@ -262,9 +261,9 @@ testWithDemo(
 		const addDeliveryPage = await deliveryPage.addDelivery();
 		await addDeliveryPage.setDeliveryName("Next Release");
 
-		const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
-			.toISOString()
-			.slice(0, 10);
+		const futureDate = formatLocalDate(
+			new Date(Date.now() + 24 * 60 * 60 * 1000),
+		);
 
 		await addDeliveryPage.setDeliveryDate(futureDate);
 		await addDeliveryPage.selectFeatureByIndex(0);

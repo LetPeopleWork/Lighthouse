@@ -13,6 +13,7 @@ import {
 	createAzureDevOpsConnection,
 	createJiraConnection,
 } from "../helpers/api/workTrackingSystemConnections";
+import { formatLocalDate } from "../helpers/dates";
 import { generateRandomName } from "../helpers/names";
 import { LighthousePage } from "../models/app/LighthousePage";
 import type { LoginPage } from "../models/auth/LoginPage";
@@ -87,7 +88,7 @@ async function generateTestData(
 	};
 
 	const historicalDate = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
-	const historicalDateString = historicalDate.toISOString().slice(0, 10);
+	const historicalDateString = formatLocalDate(historicalDate);
 
 	const lighthouseDevTeam = await createTeam(
 		request,

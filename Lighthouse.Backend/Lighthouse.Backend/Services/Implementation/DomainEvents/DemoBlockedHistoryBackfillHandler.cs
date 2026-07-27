@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Models;
+﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces;
@@ -34,6 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
         private readonly IWorkItemBlockedTransitionRepository transitionRepository;
         private readonly IFeatureBlockedTransitionRepository featureTransitionRepository;
         private readonly IBlockedCountSnapshotRepository snapshotRepository;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<DemoBlockedHistoryBackfillHandler> logger;
 
 #pragma warning disable S107 // This demo backfill genuinely needs both metrics services, both owner repos, the connection repo (demo gate), the blocked-item service and all three keyspace repos (team transitions, feature transitions and snapshots); grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as BlockedCountSnapshotRecordingHandler + TeamMetricsController).
@@ -47,6 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             IWorkItemBlockedTransitionRepository transitionRepository,
             IFeatureBlockedTransitionRepository featureTransitionRepository,
             IBlockedCountSnapshotRepository snapshotRepository,
+            ILighthouseClock clock,
             ILogger<DemoBlockedHistoryBackfillHandler> logger)
 #pragma warning restore S107
         {
@@ -59,6 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             this.transitionRepository = transitionRepository;
             this.featureTransitionRepository = featureTransitionRepository;
             this.snapshotRepository = snapshotRepository;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -113,8 +116,8 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return;
             }
 
-            var today = DateTime.Today;
-            var todayDate = DateOnly.FromDateTime(today);
+            var todayDate = clock.Today;
+            var today = clock.TodayAsUtcMidnight;
 
             var entered = SpreadEnteredDates(blockedItems, today);
 

@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { formatLocalDate } from "../dates";
 
 /**
  * Helper functions to generate CSV test data with dynamic dates
@@ -22,8 +23,7 @@ export function generateTeamCsvData(baseDate: Date = new Date()): string {
 	const fiveDaysAgo = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
 	const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
 
-	// Format dates as YYYY-MM-DD
-	const formatDate = (date: Date) => date.toISOString().split("T")[0];
+	const formatDate = formatLocalDate;
 
 	return `ID,Name,State,Type,Started Date,Closed Date,Created Date,Parent Reference Id,Tags,Url
 ITEM-001,Shopping cart functionality,Done,User Story,${formatDate(thirtyDaysAgo)},${formatDate(twentyDaysAgo)},${formatDate(thirtyDaysAgo)},EPIC-001,frontend|ecommerce,https://system.com/item/1
@@ -66,8 +66,7 @@ export function generatePortfolioCsvData(baseDate: Date = new Date()): string {
 	const fiveDaysAgo = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
 	const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
 
-	// Format dates as YYYY-MM-DD
-	const formatDate = (date: Date) => date.toISOString().split("T")[0];
+	const formatDate = formatLocalDate;
 
 	return `ID,Name,State,Type,Started Date,Closed Date,Owning Team,Estimated Size,Created Date,Tags,Url
 EPIC-001,E-commerce Platform Enhancement,Done,Epic,${formatDate(thirtyDaysAgo)},${formatDate(fifteenDaysAgo)},Frontend Team,21,${formatDate(thirtyDaysAgo)},frontend|ecommerce,https://system.com/item/epic1
