@@ -182,11 +182,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(closed.CycleTime, Is.EqualTo(8),
+                Assert.That(closed.CycleTime(utcClock.Zone), Is.EqualTo(8),
                     "Decision 3: the inclusive +1 is unchanged and a UTC instance sees no arithmetic change.");
-                Assert.That(doing.WorkItemAge(utcClock.Today), Is.EqualTo(9),
+                Assert.That(doing.WorkItemAge(utcClock.Zone, utcClock.Today), Is.EqualTo(9),
                     "Decision 3: WorkItemAge under a UTC instance is byte-identical to HEAD.");
-                Assert.That(closed.AgeOnDay(new DateTime(2026, 7, 24, 0, 0, 0, DateTimeKind.Utc)), Is.EqualTo(5));
+                Assert.That(closed.AgeOnDay(utcClock.Zone, new DateOnly(2026, 7, 24)), Is.EqualTo(5));
             }
         }
 

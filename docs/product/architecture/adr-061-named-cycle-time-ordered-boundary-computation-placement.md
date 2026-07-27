@@ -109,3 +109,17 @@ The Team/Portfolio metrics service maps the in-window closed items (`GetWorkItem
 - `state-time-cumulative-view`: US-04 scoping reuses the SAME boundary resolution + transition ordering (ADR-063); no change to the unscoped cumulative endpoints/DTOs.
 - `wait-states-flow-efficiency` (ADR-054/056): unaffected — flow efficiency folds over Doing-category rows; the named window is an orthogonal overlay.
 - Default cycle-time scatter / percentiles / PBC / estimation: UNCHANGED.
+
+---
+
+## Amendment — 2026-07-27 (Bug #5567): §3 shape constraint relaxed to a calendar zone
+
+**Amends**: §3 only. The Decision, the Alternatives and every other section stand as accepted on 2026-06-08.
+
+`WorkItemBase.CycleTime` is no longer a parameterless get-only property; it is `int CycleTime(TimeZoneInfo zone)`. `WorkItemAge` and `AgeOnDay` took the same parameter in the same change.
+
+**Why**: `CycleTime` reduced two stored instants with `DateOnly.FromDateTime`, which is the UTC day. Bug #5567 moved the instance's "today" to the configured instance zone, so an item closed at 22:30Z was counted on the previous day while every other surface had already moved on — the two ends of one duration speaking two definitions of a day. Both ends now reduce through `InstanceCalendar.DayOf(instant, zone)`, the same rule `ILighthouseClock.ToInstanceDay` delegates to. The inclusive `+1` is unchanged; a UTC-configured instance produces byte-identical values.
+
+**What §3 still forbids, unchanged**: routing `CycleTime` through the owner's ordered state universe (`AllStates`) or the `GetRawStatesForCategory` mapping resolver — the model→settings dependency the original decision exists to prevent — and turning a summary-date computation into a transition-log one. A `TimeZoneInfo` is a BCL value the model may legally hold; it carries no workflow knowledge, so none of the three blast-radius arguments in §3 (a/b/c) apply to it. `NamedCycleTimeSeamArchUnitTest.WorkItemBaseCycleTime_StaysASummaryDateComputationOffTheOwner` keeps the owner-dependency scan and now pins the admitted parameter to exactly one `TimeZoneInfo`, so a richer parameter fails the build.
+
+**Still deferred**: routing the default cycle time through the named `(startDoing, firstDone)` helper.

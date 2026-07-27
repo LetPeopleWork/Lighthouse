@@ -750,7 +750,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 for (var index = 0; index < 10; index++)
                 {
-                    Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
+                    Assert.That(closedItemsInRange[index].CycleTime(TestToday.Zone), Is.EqualTo(index + 1));
                 }
             }
         }
@@ -767,7 +767,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
-                Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(2));
+                Assert.That(closedItemsInRange[0].CycleTime(TestToday.Zone), Is.EqualTo(2));
             }
         }
 
@@ -783,7 +783,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(closedItemsInRange, Has.Count.EqualTo(1));
-                Assert.That(closedItemsInRange[0].CycleTime, Is.EqualTo(1));
+                Assert.That(closedItemsInRange[0].CycleTime(TestToday.Zone), Is.EqualTo(1));
             }
         }
 
@@ -806,7 +806,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
                 for (var index = 0; index < 11; index++)
                 {
-                    Assert.That(closedItemsInRange[index].CycleTime, Is.EqualTo(index + 1));
+                    Assert.That(closedItemsInRange[index].CycleTime(TestToday.Zone), Is.EqualTo(index + 1));
                 }
             }
         }
@@ -1533,8 +1533,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.DataPoints, Has.Length.EqualTo(2));
-                Assert.That(result.DataPoints[0].YValue, Is.EqualTo(item1.CycleTime));
-                Assert.That(result.DataPoints[1].YValue, Is.EqualTo(item2.CycleTime));
+                Assert.That(result.DataPoints[0].YValue, Is.EqualTo(item1.CycleTime(TestToday.Zone)));
+                Assert.That(result.DataPoints[1].YValue, Is.EqualTo(item2.CycleTime(TestToday.Zone)));
                 Assert.That(result.DataPoints[0].WorkItemIds, Is.EqualTo(new[] { item1.Id }));
                 Assert.That(result.DataPoints[1].WorkItemIds, Is.EqualTo(new[] { item2.Id }));
             }
@@ -1871,7 +1871,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 var dataPoint = result.DataPoints[0];
                 Assert.That(dataPoint.EstimationNumericValue, Is.EqualTo(3.0));
                 Assert.That(dataPoint.EstimationDisplayValue, Is.EqualTo("3"));
-                Assert.That(dataPoint.CycleTime, Is.EqualTo(item1.CycleTime));
+                Assert.That(dataPoint.CycleTime, Is.EqualTo(item1.CycleTime(TestToday.Zone)));
                 Assert.That(dataPoint.WorkItemIds, Does.Contain(item1.Id));
             }
         }

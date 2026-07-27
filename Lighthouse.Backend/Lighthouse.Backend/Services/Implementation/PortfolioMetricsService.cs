@@ -289,7 +289,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetFromCacheIfExists(portfolio, $"CycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
                 var closedFeaturesInDateRange = GetFeaturesClosedInDateRange(portfolio, startDate, endDate);
-                var cycleTimes = closedFeaturesInDateRange.Select(f => f.CycleTime).Where(ct => ct > 0).ToList();
+                var cycleTimes = closedFeaturesInDateRange.Select(f => f.CycleTime(Clock.Zone)).Where(ct => ct > 0).ToList();
 
                 if (cycleTimes.Count == 0)
                 {
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 // GetInProgressFeaturesForPortfolio is already date-correct (D14); only the
                 // projection was today-anchored. The age > 0 guard is retained and now means
                 // "had not started on that day".
-                var ages = GetInProgressFeaturesForPortfolio(portfolio, endDate).Select(f => f.AgeOnDay(endDate)).Where(age => age > 0).ToList();
+                var ages = GetInProgressFeaturesForPortfolio(portfolio, endDate).Select(f => f.AgeOnDay(Clock.Zone, DateOnly.FromDateTime(endDate))).Where(age => age > 0).ToList();
 
                 return BuildPercentiles(ages);
             }, logger);

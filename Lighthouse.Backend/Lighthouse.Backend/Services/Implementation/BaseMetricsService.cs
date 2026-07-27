@@ -689,7 +689,7 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        protected static ProcessBehaviourChart BuildCycleTimeProcessBehaviourChart(
+        protected ProcessBehaviourChart BuildCycleTimeProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
@@ -722,19 +722,19 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var baselineItems = getClosedItems(baselineStart!.Value, baselineEnd!.Value)
-                .Where(i => i.CycleTime > 0)
+                .Where(i => i.CycleTime(Clock.Zone) > 0)
                 .OrderBy(i => i.ClosedDate)
                 .ThenBy(i => i.Id)
                 .ToList();
 
             var displayItems = getClosedItems(displayStart, displayEnd)
-                .Where(i => i.CycleTime > 0)
+                .Where(i => i.CycleTime(Clock.Zone) > 0)
                 .OrderBy(i => i.ClosedDate)
                 .ThenBy(i => i.Id)
                 .ToList();
 
-            var baselineValues = baselineItems.Select(i => i.CycleTime).ToArray();
-            var displayValues = displayItems.Select(i => i.CycleTime).ToArray();
+            var baselineValues = baselineItems.Select(i => i.CycleTime(Clock.Zone)).ToArray();
+            var displayValues = displayItems.Select(i => i.CycleTime(Clock.Zone)).ToArray();
 
             var xmrResult = XmRCalculator.Calculate(baselineValues, displayValues);
 
@@ -746,7 +746,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var xValue = item.ClosedDate!.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 dataPoints[i] = new ProcessBehaviourChartDataPoint(
                     xValue,
-                    item.CycleTime,
+                    item.CycleTime(Clock.Zone),
                     xmrResult.SpecialCauseClassifications[i],
                     [item.Id]);
             }
@@ -1187,7 +1187,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return new FeatureSizePercentilesInfoDto(percentileDtos, comparison);
         }
 
-        protected static EstimationVsCycleTimeResponse BuildEstimationVsCycleTimeResponse(
+        protected EstimationVsCycleTimeResponse BuildEstimationVsCycleTimeResponse(
             WorkTrackingSystemOptionsOwner owner,
             IEnumerable<WorkItemBase> closedItems)
         {
@@ -1244,7 +1244,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     continue;
                 }
 
-                var key = (normResult.NumericValue, items[i].CycleTime);
+                var key = (normResult.NumericValue, items[i].CycleTime(Clock.Zone));
                 if (!groupedItems.TryGetValue(key, out var group))
                 {
                     group = (normResult.DisplayValue, new List<int>());

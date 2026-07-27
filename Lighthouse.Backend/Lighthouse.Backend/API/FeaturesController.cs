@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.API
 
             var items = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId)
                 .AsEnumerable()
-                .Select(w => new WorkItemDto(w, clock.Today, w.Team != null && blockedItemService.IsBlocked(w, w.Team)))
+                .Select(w => new WorkItemDto(w, clock, w.Team != null && blockedItemService.IsBlocked(w, w.Team)))
                 .ToList();
 
             return Ok(items);
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.API
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
-                .Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet))
+                .Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet))
                 .ToList();
         }
 

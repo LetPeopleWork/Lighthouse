@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -26,14 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation
         /// </summary>
         public DateTime TodayAsUtcMidnight => Today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
-        public DateOnly ToInstanceDay(DateTime utcInstant)
-        {
-            var instant = utcInstant.Kind == DateTimeKind.Local
-                ? utcInstant.ToUniversalTime()
-                : DateTime.SpecifyKind(utcInstant, DateTimeKind.Utc);
-
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(instant, Zone));
-        }
+        public DateOnly ToInstanceDay(DateTime utcInstant) => InstanceCalendar.DayOf(utcInstant, Zone);
 
         /// <summary>
         /// Resolution order: a configured id wins, then <see cref="TimeZoneInfo.Local"/>, then UTC.

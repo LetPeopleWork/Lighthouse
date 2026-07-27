@@ -89,10 +89,10 @@ namespace Lighthouse.Backend.Tests.Models
                 StartedDate = new DateTime(2026, 7, 24, 8, 0, 0, DateTimeKind.Utc),
             };
 
-            var ageInZurich = workItem.WorkItemAge(clock.Today);
+            var ageInZurich = workItem.WorkItemAge(clock.Zone, clock.Today);
 
             clock.SetZone(TimeZoneInfo.Utc);
-            var ageInUtc = workItem.WorkItemAge(clock.Today);
+            var ageInUtc = workItem.WorkItemAge(clock.Zone, clock.Today);
 
             using (Assert.EnterMultipleScope())
             {

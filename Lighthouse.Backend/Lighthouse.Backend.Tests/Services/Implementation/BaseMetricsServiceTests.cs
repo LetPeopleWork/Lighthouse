@@ -485,7 +485,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 IReadOnlyList<int> requestedPercentiles)
             {
                 var items = completedItemsInWindow.ToList();
-                var cycleTimes = items.Select(item => item.CycleTime).Where(cycleTime => cycleTime > 0).ToList();
+                var cycleTimes = items.Select(item => item.CycleTime(TestToday.Zone)).Where(cycleTime => cycleTime > 0).ToList();
                 var cycleTimePercentiles = requestedPercentiles
                     .Select(percentile => new PercentileValue(percentile, PercentileCalculator.CalculatePercentile(cycleTimes, percentile)))
                     .ToList();

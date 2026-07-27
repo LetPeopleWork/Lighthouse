@@ -314,7 +314,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return GetFromCacheIfExists(team, $"CycleTimePercentiles_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
                 var closedItemsInDateRange = GetWorkItemsClosedInDateRange(team, startDate, endDate);
-                var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime).Where(ct => ct > 0).ToList();
+                var cycleTimes = closedItemsInDateRange.Select(i => i.CycleTime(Clock.Zone)).Where(ct => ct > 0).ToList();
 
                 return BuildPercentiles(cycleTimes);
             }, logger);
@@ -334,7 +334,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 // The guard is RETAINED (DESIGN open question 1, answered by the AgeOnDay tests): it
                 // now means "the item had not started on that day", which is a real exclusion, rather
                 // than the accidental "not Doing right now" filter it used to be.
-                var ages = GetWipSnapshotForTeam(team, endDate).Select(i => i.AgeOnDay(endDate)).Where(age => age > 0).ToList();
+                var ages = GetWipSnapshotForTeam(team, endDate).Select(i => i.AgeOnDay(Clock.Zone, DateOnly.FromDateTime(endDate))).Where(age => age > 0).ToList();
 
                 return BuildPercentiles(ages);
             }, logger);

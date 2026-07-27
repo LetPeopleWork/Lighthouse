@@ -182,14 +182,14 @@ namespace Lighthouse.Backend.Services.Implementation
             return updates;
         }
 
-        private static string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem, DateOnly today)
+        private string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem, DateOnly today)
         {
-            var workItemAge = workItem.WorkItemAge(today);
+            var workItemAge = workItem.WorkItemAge(clock.Zone, today);
 
             return source switch
             {
                 WriteBackValueSource.WorkItemAgeCycleTime when workItemAge > 0 => workItemAge.ToString(),
-                WriteBackValueSource.WorkItemAgeCycleTime when workItem.CycleTime > 0 => workItem.CycleTime.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when workItem.CycleTime(clock.Zone) > 0 => workItem.CycleTime(clock.Zone).ToString(),
                 _ => null,
             };
         }
@@ -201,13 +201,13 @@ namespace Lighthouse.Backend.Services.Implementation
                 return ResolveForecastValue(mapping, feature);
             }
 
-            var featureAge = feature.WorkItemAge(clock.Today);
+            var featureAge = feature.WorkItemAge(clock.Zone, clock.Today);
 
             return mapping.ValueSource switch
             {
                 WriteBackValueSource.FeatureSize => feature.Size.ToString(),
                 WriteBackValueSource.WorkItemAgeCycleTime when featureAge > 0 => featureAge.ToString(),
-                WriteBackValueSource.WorkItemAgeCycleTime when feature.CycleTime > 0 => feature.CycleTime.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when feature.CycleTime(clock.Zone) > 0 => feature.CycleTime(clock.Zone).ToString(),
                 _ => null,
             };
         }

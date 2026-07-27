@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.API
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, result));
 
-            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
+            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
 
             if (matchingFeatures.Count == 0)
             {

@@ -86,29 +86,39 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void WorkItemBaseCycleTime_IsNotModifiedByThisFeature()
+        public void WorkItemBaseCycleTime_StaysASummaryDateComputationOffTheOwner()
         {
-            var cycleTime = typeof(WorkItemBase).GetProperty(nameof(WorkItemBase.CycleTime), BindingFlags.Instance | BindingFlags.Public);
+            var cycleTime = typeof(WorkItemBase).GetMethod(nameof(WorkItemBase.CycleTime), BindingFlags.Instance | BindingFlags.Public);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(cycleTime, Is.Not.Null,
-                    "ADR-061 §3: WorkItemBase.CycleTime must still exist as the summary-date property.");
-                Assert.That(cycleTime!.PropertyType, Is.EqualTo(typeof(int)),
+                    "ADR-061 §3: WorkItemBase.CycleTime must still exist as the summary-date duration.");
+                Assert.That(cycleTime!.ReturnType, Is.EqualTo(typeof(int)),
                     "ADR-061 §3: WorkItemBase.CycleTime stays an int summary-date duration.");
-                Assert.That(cycleTime.GetGetMethod(), Is.Not.Null,
-                    "ADR-061 §3: WorkItemBase.CycleTime stays a computed get-only property.");
-                Assert.That(cycleTime.GetSetMethod(), Is.Null,
-                    "ADR-061 §3: WorkItemBase.CycleTime stays get-only — it is not turned into a stored/settable value.");
+                Assert.That(typeof(WorkItemBase).GetProperty(nameof(WorkItemBase.CycleTime)), Is.Null,
+                    "ADR-061 §3: WorkItemBase.CycleTime stays computed — it is not turned into a stored/settable value.");
             }
 
-            var getterDependsOnOwner = ScanCallTargets(cycleTime!.GetGetMethod()!)
+            var parameters = cycleTime!.GetParameters();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parameters, Has.Length.EqualTo(1),
+                    "ADR-061 §3 as amended 2026-07-27 (Bug #5567): the shape constraint is relaxed to admit the " +
+                    "calendar zone both ends are reduced in, and nothing else.");
+                Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(TimeZoneInfo)),
+                    "ADR-061 §3 as amended 2026-07-27 (Bug #5567): a TimeZoneInfo is a BCL value. Anything richer " +
+                    "would be the owner's state universe arriving by the back door.");
+            }
+
+            var dependsOnOwner = ScanCallTargets(cycleTime)
                 .Any(target => DeclaresOn(target, typeof(WorkTrackingSystemOptionsOwner)));
 
-            Assert.That(getterDependsOnOwner, Is.False,
-                "ADR-061 §3 blast-radius: WorkItemBase.CycleTime's getter must remain a summary-date computation with NO " +
-                "dependency on WorkTrackingSystemOptionsOwner (its ordered AllStates / GetRawStatesForCategory resolver). " +
-                "The named computation must not be routed through the model.");
+            Assert.That(dependsOnOwner, Is.False,
+                "ADR-061 §3 blast-radius (UNCHANGED by the 2026-07-27 amendment): WorkItemBase.CycleTime must remain a " +
+                "summary-date computation with NO dependency on WorkTrackingSystemOptionsOwner (its ordered AllStates / " +
+                "GetRawStatesForCategory resolver). The named computation must not be routed through the model.");
         }
 
         [Test]

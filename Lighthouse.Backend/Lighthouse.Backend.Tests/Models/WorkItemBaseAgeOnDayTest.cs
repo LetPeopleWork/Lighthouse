@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var item = new WorkItemBase { StartedDate = Jul01, StateCategory = StateCategories.Doing };
 
-            Assert.That(item.AgeOnDay(Jul04), Is.EqualTo(4));
+            Assert.That(item.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.EqualTo(4));
         }
 
         [Test]
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Models
                 StateCategory = StateCategories.Done,
             };
 
-            Assert.That(closedSince.AgeOnDay(Jul04), Is.EqualTo(4));
+            Assert.That(closedSince.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.EqualTo(4));
         }
 
         [Test]
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var item = new WorkItemBase { CreatedDate = Jul01, StateCategory = StateCategories.Doing };
 
-            Assert.That(item.AgeOnDay(Jul04), Is.EqualTo(4));
+            Assert.That(item.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.EqualTo(4));
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Models
                 StateCategory = StateCategories.Doing,
             };
 
-            Assert.That(item.AgeOnDay(Jul06), Is.EqualTo(3));
+            Assert.That(item.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul06)), Is.EqualTo(3));
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var item = new WorkItemBase { StartedDate = Jul04, StateCategory = StateCategories.Doing };
 
-            Assert.That(item.AgeOnDay(Jul04), Is.EqualTo(1));
+            Assert.That(item.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.EqualTo(1));
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Models
             // it used to be. Because valid ages are always >= 1, no legitimate item is dropped.
             var notYetStarted = new WorkItemBase { StartedDate = Jul10, StateCategory = StateCategories.Doing };
 
-            Assert.That(notYetStarted.AgeOnDay(Jul04), Is.Zero);
+            Assert.That(notYetStarted.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.Zero);
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var undated = new WorkItemBase { StateCategory = StateCategories.Doing };
 
-            Assert.That(undated.AgeOnDay(Jul04), Is.Zero);
+            Assert.That(undated.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.Zero);
         }
 
         [Test]
@@ -110,8 +110,8 @@ namespace Lighthouse.Backend.Tests.Models
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(closedItem.WorkItemAge(TestToday.Ambient), Is.Zero, "WorkItemAge must stay Doing-guarded, now anchored on the day the caller supplies");
-                Assert.That(closedItem.AgeOnDay(Jul04), Is.EqualTo(4), "AgeOnDay answers the as-of-day question");
+                Assert.That(closedItem.WorkItemAge(TestToday.Zone, TestToday.Ambient), Is.Zero, "WorkItemAge must stay Doing-guarded, now anchored on the day the caller supplies");
+                Assert.That(closedItem.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)), Is.EqualTo(4), "AgeOnDay answers the as-of-day question");
             }
         }
     }

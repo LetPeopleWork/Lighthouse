@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -11,17 +12,17 @@ namespace Lighthouse.Backend.API.DTO
         /// Percentiles card moved to as-of-endDate — the two surfaces disagreeing for the same range,
         /// which US-04 AC3 and CI2 both forbid.
         /// </param>
-        #pragma warning disable S107 // Bug #5567 adds `today` as a VALUE, not a collaborator: WorkItemBase.WorkItemAge stopped reading the ambient clock, so the calendar day has to travel with the item. Grouping these optional projection flags into a record would obscure which ones the aging surfaces depend on.
-        public FeatureDto(Feature feature, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, bool isBlocked, DateTime? blockedSince, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null, DateTime? asOf = null, StateAsOf? stateAsOf = null)
+        #pragma warning disable S107 // Bug #5567 passes the instance calendar, not a collaborator the DTO calls out to: WorkItemBase stopped reading the ambient clock, so the day and its zone have to travel with the item. Grouping these optional projection flags into a record would obscure which ones the aging surfaces depend on.
+        public FeatureDto(Feature feature, ILighthouseClock clock, IReadOnlyList<BlackoutPeriod> blackoutPeriods, bool isBlocked, DateTime? blockedSince, ISet<int>? readablePortfolioIds = null, IReadOnlyList<NamedCycleTimeValue>? namedCycleTimes = null, DateTime? asOf = null, StateAsOf? stateAsOf = null)
 #pragma warning restore S107
-            : base(feature, today, isBlocked, namedCycleTimes ?? [], blockedSince, asOf, stateAsOf)
+            : base(feature, clock, isBlocked, namedCycleTimes ?? [], blockedSince, asOf, stateAsOf)
         {
             LastUpdated = DateTime.SpecifyKind(feature.Forecast?.CreationTime ?? DateTime.MinValue, DateTimeKind.Utc);
             IsUsingDefaultFeatureSize = feature.IsUsingDefaultFeatureSize;
             Size = feature.Size;
             OwningTeam = feature.OwningTeam;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(blackoutPeriods, today, 50, 70, 85, 95) ?? []);
+            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(blackoutPeriods, clock.Today, 50, 70, 85, 95) ?? []);
 
             foreach (var work in feature.FeatureWork)
             {

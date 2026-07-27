@@ -1,17 +1,18 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.API.DTO
 {
     public class WorkItemDto
     {
-        public WorkItemDto(WorkItemBase workItem, DateOnly today, bool isBlocked)
-            : this(workItem, today, isBlocked, [], null)
+        public WorkItemDto(WorkItemBase workItem, ILighthouseClock clock, bool isBlocked)
+            : this(workItem, clock, isBlocked, [], null)
         {
         }
 
-        public WorkItemDto(WorkItemBase workItem, DateOnly today, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
-            : this(workItem, today, isBlocked, namedCycleTimes, null)
+        public WorkItemDto(WorkItemBase workItem, ILighthouseClock clock, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
+            : this(workItem, clock, isBlocked, namedCycleTimes, null)
         {
         }
 
@@ -29,12 +30,14 @@ namespace Lighthouse.Backend.API.DTO
         /// and the entity is EF-tracked, so the portfolio path passes the projection in here.
         /// Omitted means "no history for that day" — the item's current state stands.
         /// </param>
-        /// <param name="today">
-        /// Bug #5567: the calendar day <see cref="WorkItemAge"/> is measured against when no
-        /// <paramref name="asOf"/> is supplied. The entity no longer reads an ambient clock.
+        /// <param name="clock">
+        /// Bug #5567: the instance calendar - the day <see cref="WorkItemAge"/> is measured against
+        /// when no <paramref name="asOf"/> is supplied, and the zone both age and cycle time reduce
+        /// their stored instants in. The entity no longer reads an ambient clock; this adapter-layer
+        /// mapper hands it the day and the zone together so the two can never disagree.
         /// </param>
-#pragma warning disable S107 // One more collaborator than the S107 threshold, and it is a value, not a dependency: WorkItemBase.WorkItemAge stopped reading the ambient clock (bug #5567) so the day has to arrive with the item. Grouping the flags into a record would hide that.
-        public WorkItemDto(WorkItemBase workItem, DateOnly today, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null, StateAsOf? stateAsOf = null)
+#pragma warning disable S107 // One more collaborator than the S107 threshold: WorkItemBase stopped reading the ambient clock (bug #5567) so the instance calendar has to arrive with the item. Grouping the flags into a record would hide that.
+        public WorkItemDto(WorkItemBase workItem, ILighthouseClock clock, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null, StateAsOf? stateAsOf = null)
 #pragma warning restore S107
         {
             Name = workItem.Name;
@@ -47,9 +50,11 @@ namespace Lighthouse.Backend.API.DTO
             StateCategory = stateAsOf?.StateCategory ?? workItem.StateCategory;
             StartedDate = workItem.StartedDate;
             ClosedDate = workItem.ClosedDate;
-            CycleTime = workItem.CycleTime;
+            CycleTime = workItem.CycleTime(clock.Zone);
             NamedCycleTimes = namedCycleTimes;
-            WorkItemAge = asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge(today);
+            WorkItemAge = asOf.HasValue
+                ? workItem.AgeOnDay(clock.Zone, DateOnly.FromDateTime(asOf.Value))
+                : workItem.WorkItemAge(clock.Zone, clock.Today);
             IsBlocked = isBlocked;
             CurrentStateEnteredAt = stateAsOf?.EnteredAt ?? workItem.CurrentStateEnteredAt;
             BlockedSince = blockedSince;

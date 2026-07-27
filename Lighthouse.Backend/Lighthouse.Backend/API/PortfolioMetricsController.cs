@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.API
                     var liveBlockedSince = openSpells.TryGetValue(f.Id, out var openSpell) ? openSpell.EnteredAt : (DateTime?)null;
                     var blockedSince = answerFromHistory ? blockedSpell?.EnteredAt : liveBlockedSince;
 
-                    return new FeatureDto(f, clock.Today, blackoutPeriods, isBlocked, blockedSince, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id));
+                    return new FeatureDto(f, clock, blackoutPeriods, isBlocked, blockedSince, null, null, asOfDate, statesAsOf.GetValueOrDefault(f.Id));
                 });
             });
         }
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.API
                 var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
-                return data.Select(entry => new FeatureDto(entry.Feature, clock.Today, blackoutPeriods, blockedItemService.IsBlocked(entry.Feature, portfolio), null, namedCycleTimes: entry.NamedCycleTimes));
+                return data.Select(entry => new FeatureDto(entry.Feature, clock, blackoutPeriods, blockedItemService.IsBlocked(entry.Feature, portfolio), null, namedCycleTimes: entry.NamedCycleTimes));
             });
         }
 
@@ -274,7 +274,7 @@ namespace Lighthouse.Backend.API
                 var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
-                return features.Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio), null));
+                return features.Select(f => new FeatureDto(f, clock, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio), null));
             });
         }
 
@@ -595,7 +595,7 @@ namespace Lighthouse.Backend.API
                     return portfolioMetricsService
                         .GetBlockedEligibleFeaturesForPortfolio(portfolio)
                         .Where(f => blockedItemService.IsBlocked(f, portfolio))
-                        .Select(f => new WorkItemDto(f, today, isBlocked: true, [], f.CurrentStateEnteredAt));
+                        .Select(f => new WorkItemDto(f, clock, isBlocked: true, [], f.CurrentStateEnteredAt));
                 }
 
                 // Reconstruct past membership READ-ONLY from feature-keyspace spell intervals (never
@@ -611,7 +611,7 @@ namespace Lighthouse.Backend.API
                 var reconstructed = portfolioMetricsService
                     .GetBlockedEligibleFeaturesForPortfolio(portfolio)
                     .Where(feature => blockedFeatureIds.Contains(feature.Id))
-                    .Select(feature => new WorkItemDto(feature, today, isBlocked: true, [], feature.CurrentStateEnteredAt))
+                    .Select(feature => new WorkItemDto(feature, clock, isBlocked: true, [], feature.CurrentStateEnteredAt))
                     .ToList();
 
                 ReconcileReconstructedCountWithSnapshot(portfolioId, OwnerType.Portfolio, targetDate, reconstructed.Count);

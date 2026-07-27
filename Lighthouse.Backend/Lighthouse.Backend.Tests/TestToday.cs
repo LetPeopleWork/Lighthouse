@@ -20,5 +20,7 @@ namespace Lighthouse.Backend.Tests
         internal static DateOnly Ambient => Clock.Today;
 
         internal static DateTime AmbientAsUtcMidnight => Clock.TodayAsUtcMidnight;
+
+        internal static TimeZoneInfo Zone => Clock.Zone;
     }
 }

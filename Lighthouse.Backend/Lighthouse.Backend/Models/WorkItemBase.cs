@@ -48,38 +48,46 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public IReadOnlyList<WorkItemStateTransition> SyncedTransitions { get; init; } = [];
 
-        public int CycleTime
+        /// <param name="zone">
+        /// Bug #5567: both ends are stored instants, so both are reduced to a calendar day in the
+        /// instance zone. Reducing only one relocates the off-by-one instead of removing it.
+        /// </param>
+        public int CycleTime(TimeZoneInfo zone)
         {
-            get
+            if (StateCategory == StateCategories.Done)
             {
-                if (StateCategory == StateCategories.Done)
-                {
-                    var startingReferenceDate = StartedDate ?? CreatedDate;
-                    if (ClosedDate?.Date >= startingReferenceDate?.Date)
-                    {
-                        return GetDateDifference(DateOnly.FromDateTime(startingReferenceDate.Value), DateOnly.FromDateTime(ClosedDate.Value));
-                    }
+                var startingReferenceDate = StartedDate ?? CreatedDate;
+                var startDay = InstanceDayOrNull(startingReferenceDate, zone);
+                var closedDay = InstanceDayOrNull(ClosedDate, zone);
 
-                    // Item is closed, but something is wrong with the Closed Date --> Default to 1
-                    return 1;
+                if (closedDay >= startDay)
+                {
+                    return GetDateDifference(startDay.Value, closedDay.Value);
                 }
 
-                return 0;
+                // Item is closed, but something is wrong with the Closed Date --> Default to 1
+                return 1;
             }
+
+            return 0;
         }
 
+        /// <param name="zone">
+        /// Bug #5567: reduces the stored start instant to the same calendar day
+        /// <paramref name="today"/> already speaks.
+        /// </param>
         /// <param name="today">
         /// Bug #5567 decision 3: the instance's calendar day, supplied by the caller. The inclusive
         /// +1 is unchanged - this is a zone shift, not an arithmetic change.
         /// </param>
-        public int WorkItemAge(DateOnly today)
+        public int WorkItemAge(TimeZoneInfo zone, DateOnly today)
         {
             if (StateCategory == StateCategories.Doing)
             {
-                var referencedDate = StartedDate ?? CreatedDate;
-                if (referencedDate.HasValue && DateOnly.FromDateTime(referencedDate.Value) <= today)
+                var startDay = InstanceDayOrNull(StartedDate ?? CreatedDate, zone);
+                if (startDay <= today)
                 {
-                    return GetDateDifference(DateOnly.FromDateTime(referencedDate.Value), today);
+                    return GetDateDifference(startDay.Value, today);
                 }
 
                 // Item is in progress,  but started date is in the future or not set --> Default to 1
@@ -105,15 +113,20 @@ namespace Lighthouse.Backend.Models
         /// already-trusted definition of "age on a day" and drives the over-time chart. Slice 03
         /// asserts parity against it so a second definition cannot drift into existence.
         /// </remarks>
-        public int AgeOnDay(DateTime asOf)
+        public int AgeOnDay(TimeZoneInfo zone, DateOnly day)
         {
-            var startingReferenceDate = StartedDate ?? CreatedDate;
-            if (!startingReferenceDate.HasValue || startingReferenceDate.Value.Date > asOf.Date)
+            var startDay = InstanceDayOrNull(StartedDate ?? CreatedDate, zone);
+            if (startDay is null || startDay > day)
             {
                 return 0;
             }
 
-            return GetDateDifference(DateOnly.FromDateTime(startingReferenceDate.Value), DateOnly.FromDateTime(asOf));
+            return GetDateDifference(startDay.Value, day);
+        }
+
+        private static DateOnly? InstanceDayOrNull(DateTime? instant, TimeZoneInfo zone)
+        {
+            return instant.HasValue ? InstanceCalendar.DayOf(instant.Value, zone) : null;
         }
 
         private static int GetDateDifference(DateOnly start, DateOnly end)

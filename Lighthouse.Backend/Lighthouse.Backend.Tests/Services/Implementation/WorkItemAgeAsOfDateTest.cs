@@ -162,7 +162,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddItem("C", started: Jul04, closed: null);
 
             var ages = subject.GetWipSnapshotForTeam(testTeam, Jul04)
-                .Select(i => i.AgeOnDay(Jul04))
+                .Select(i => i.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)))
                 .Where(age => age > 0)
                 .ToList();
             var referenceTotal = subject.GetTotalWorkItemAge(testTeam, Jul04);
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddItem("C", started: Jul04, closed: null);
 
             var ages = subject.GetWipSnapshotForTeam(testTeam, Jul04)
-                .Select(i => i.AgeOnDay(Jul04))
+                .Select(i => i.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(Jul04)))
                 .OrderBy(age => age)
                 .ToList();
 
@@ -213,8 +213,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddItem("ALSO-OPEN-NOW", started: today.AddDays(-9), closed: null);
 
             var wip = subject.GetWipSnapshotForTeam(testTeam, today).ToList();
-            var asOfAges = wip.Select(i => i.AgeOnDay(today)).OrderBy(a => a).ToList();
-            var todayAnchoredAges = wip.Select(i => i.WorkItemAge(TestToday.Ambient)).OrderBy(a => a).ToList();
+            var asOfAges = wip.Select(i => i.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(today))).OrderBy(a => a).ToList();
+            var todayAnchoredAges = wip.Select(i => i.WorkItemAge(TestToday.Zone, TestToday.Ambient)).OrderBy(a => a).ToList();
 
             Assert.That(asOfAges, Is.EqualTo(todayAnchoredAges));
         }
@@ -303,8 +303,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var wip = subject.GetInProgressFeaturesForPortfolio(portfolio, today).ToList();
 
             Assert.That(
-                wip.Select(f => f.AgeOnDay(today)).OrderBy(a => a),
-                Is.EqualTo(wip.Select(f => f.WorkItemAge(TestToday.Ambient)).OrderBy(a => a)));
+                wip.Select(f => f.AgeOnDay(TestToday.Zone, DateOnly.FromDateTime(today))).OrderBy(a => a),
+                Is.EqualTo(wip.Select(f => f.WorkItemAge(TestToday.Zone, TestToday.Ambient)).OrderBy(a => a)));
         }
     }
 }

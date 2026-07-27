@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = state;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
 
             Assert.That(cycleTime, Is.Zero);
         }
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.CreatedDate = DateTime.UtcNow.AddDays(-2);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
             
             Assert.That(cycleTime, Is.EqualTo(2));
         }
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.ClosedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
             
             Assert.That(cycleTime, Is.EqualTo(1));
         }
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-2);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
             
             Assert.That(cycleTime, Is.EqualTo(1));
         }
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
             
             Assert.That(cycleTime, Is.EqualTo(1));
         }
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-2);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
 
             Assert.That(cycleTime, Is.EqualTo(2));
         }
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
 
             Assert.That(cycleTime, Is.EqualTo(1));
         }
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.ClosedDate = new DateTime(2024, 4, 8, 0, 0, 0, DateTimeKind.Utc);
             subject.StateCategory = StateCategories.Done;
 
-            var cycleTime = subject.CycleTime;
+            var cycleTime = subject.CycleTime(TestToday.Zone);
 
             Assert.That(cycleTime, Is.EqualTo(2));
         }
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-2);
             subject.StateCategory = state;
 
-            var workItemAge = subject.WorkItemAge(Clock.Today);
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
 
             Assert.That(workItemAge, Is.Zero);
         }
@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.CreatedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge(Clock.Today);
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
             
             Assert.That(workItemAge, Is.EqualTo(2));
         }
@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Tests.Models
             var subject = CreateSubject();
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge(Clock.Today);
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
             
             Assert.That(workItemAge, Is.EqualTo(1));
         }
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(1);
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge(Clock.Today);
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
             
             Assert.That(workItemAge, Is.EqualTo(1));
         }
@@ -181,7 +181,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge(Clock.Today);
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
 
             Assert.That(workItemAge, Is.EqualTo(2));
         }
@@ -194,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow;
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge(Clock.Today);
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
 
             Assert.That(workItemAge, Is.EqualTo(1));
         }
