@@ -42,6 +42,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return StatusFor(key, resultingOrdinal);
         }
 
+        public void Requeue(UpdateKey key)
+        {
+            // When.Exists: only an admitted key may be re-queued, so a concurrent Remove on another pod
+            // cannot be resurrected into a phantom active entry that never completes.
+            database.HashSet(StatusHashKey, key.ToString(), (int)UpdateProgress.Queued, When.Exists);
+        }
+
         public bool TryGet(UpdateKey key, out UpdateStatus? status)
         {
             var value = database.HashGet(StatusHashKey, key.ToString());

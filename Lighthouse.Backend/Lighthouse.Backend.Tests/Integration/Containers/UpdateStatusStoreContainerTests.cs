@@ -61,5 +61,32 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     "the highest advanced ordinal wins and stale Queued writes never regress the terminal state");
             }
         }
+
+        [Test]
+        public async Task Requeue_OnlyActsOnAnAdmittedKey_NeverResurrectsARemovedOne()
+        {
+            await using var redis = await RedisContainerFixture.StartFreshAsync();
+            await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
+
+            var admitted = new UpdateKey(UpdateType.Team, 12);
+            var removed = new UpdateKey(UpdateType.Team, 13);
+            var store = new RedisUpdateStatusStore(multiplexer);
+
+            store.TryAdmit(admitted, new UpdateStatus { UpdateType = UpdateType.Team, Id = 12, Status = UpdateProgress.Queued });
+            store.Advance(admitted, UpdateProgress.Completed);
+
+            store.Requeue(admitted);
+            store.Requeue(removed);
+
+            store.TryGet(admitted, out var requeued);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(requeued!.Status, Is.EqualTo(UpdateProgress.Queued),
+                    "the shared hash must accept the follow-up's reset past the monotonic Advance guard, otherwise a coalesced re-run would be invisible to every pod");
+                Assert.That(store.TryGet(removed, out _), Is.False,
+                    "When.Exists keeps a re-queue on a key another pod already removed from creating a phantom active entry nothing will ever complete");
+            }
+        }
     }
 }

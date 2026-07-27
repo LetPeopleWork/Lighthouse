@@ -32,6 +32,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return status;
         }
 
+        public void Requeue(UpdateKey key)
+        {
+            if (updateStatuses.TryGetValue(key, out var status))
+            {
+                status.Status = UpdateProgress.Queued;
+            }
+        }
+
         public bool TryGet(UpdateKey key, out UpdateStatus? status)
         {
             return updateStatuses.TryGetValue(key, out status);

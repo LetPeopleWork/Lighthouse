@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly IUpdateCompletionNotifier completionNotifier;
         private readonly IDisposable completionSubscription;
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
+        private readonly ConcurrentDictionary<UpdateKey, Func<IServiceProvider, Task>> pendingReruns = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly DatabaseMaintenanceGate maintenanceGate;
         private readonly Task processingTask;
@@ -76,7 +77,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
             if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
-                logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued or being processed.", updateType, id);
+                // The in-flight run read its state before this trigger was raised, so it cannot reflect
+                // whatever write caused it (blocked rules saved mid-refresh, for example). Dropping the
+                // trigger loses that intent until the next periodic refresh; instead remember the newest
+                // task and run it once when the in-flight run finishes. Repeated triggers collapse into
+                // a single follow-up, because that follow-up already reads the newest state.
+                pendingReruns[updateKey] = updateTask;
+                logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued or being processed - scheduling a single follow-up run.", updateType, id);
                 return;
             }
 
@@ -178,10 +185,48 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                 }
 
+                if (TryScheduleRerun(updateType, id, updateKey, updateStatus))
+                {
+                    return;
+                }
+
                 statusStore.Remove(updateKey);
+
+                // A trigger can land in the window between the check above and this removal: it saw the key
+                // still admitted, so it parked a rerun instead of admitting its own. Re-check now that the
+                // key is gone, otherwise that trigger would be lost after all.
+                if (pendingReruns.TryRemove(updateKey, out var lateRerun))
+                {
+                    EnqueueUpdate(updateType, id, lateRerun);
+                }
+
                 await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
             };
+        }
+
+        private bool TryScheduleRerun(UpdateType updateType, int id, UpdateKey updateKey, UpdateStatus updateStatus)
+        {
+            if (!pendingReruns.TryRemove(updateKey, out var rerun))
+            {
+                return false;
+            }
+
+            // Requeue before writing so the key never leaves the store: callers polling for "no active
+            // work" must not observe idle between the run that just finished and its follow-up, or they
+            // would read exactly the stale state the follow-up is about to correct.
+            statusStore.Requeue(updateKey);
+
+            if (queue.Writer.TryWrite(ExecuteUpdateAsync(updateType, id, rerun, updateKey, updateStatus)))
+            {
+                logger.LogInformation("Running the coalesced follow-up update for {UpdateType} with ID {Id}.", updateType, id);
+                return true;
+            }
+
+            // The queue is closed (shutdown drain). Give the key back its terminal status so the caller
+            // finishes it normally instead of leaving it admitted and permanently blocking re-admission.
+            statusStore.Advance(updateKey, UpdateProgress.Completed);
+            return false;
         }
 
         private Func<Task> ExecuteAwaitableUpdateAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, UpdateKey updateKey, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs)

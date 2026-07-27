@@ -102,8 +102,154 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(updateStatuses.ContainsKey(updateKey), Is.False, "Update key should be cleared after the single task completes");
-                Assert.That(executionCount, Is.EqualTo(1), "Exactly one task should have executed; concurrent dedupe must prevent double-execution");
+                Assert.That(executionCount, Is.EqualTo(2), "128 concurrent triggers must collapse to the one admitted run plus a single coalesced follow-up carrying the triggers that arrived while it ran - never a run per trigger.");
             }
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_TriggerArrivesWhileInFlight_RunsAFollowUpAfterTheInFlightRunCompletes()
+        {
+            // Bug: a trigger raised while an equivalent update is in flight was dropped outright.
+            // The in-flight run read its state before the trigger arrived, so it cannot reflect the
+            // write that caused the trigger (e.g. blocked rules saved during a team refresh) - the
+            // user's change silently never got picked up until the next periodic refresh.
+            var updateKey = new UpdateKey(UpdateType.Team, 7);
+            var inFlightStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseInFlight = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var followUpRan = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                inFlightStarted.TrySetResult();
+                await releaseInFlight.Task;
+            });
+
+            await inFlightStarted.Task;
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ =>
+            {
+                followUpRan.TrySetResult();
+                return Task.CompletedTask;
+            });
+
+            releaseInFlight.SetResult();
+
+            var completed = await Task.WhenAny(followUpRan.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            Assert.That(completed, Is.SameAs(followUpRan.Task),
+                "A trigger raised while the same key was in flight must run once the in-flight update finishes, not be discarded.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_ManyTriggersArriveWhileInFlight_CoalescesIntoASingleFollowUp()
+        {
+            var updateKey = new UpdateKey(UpdateType.Team, 8);
+            var inFlightStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseInFlight = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var executionCount = 0;
+
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                Interlocked.Increment(ref executionCount);
+                inFlightStarted.TrySetResult();
+                await releaseInFlight.Task;
+            });
+
+            await inFlightStarted.Task;
+
+            for (var trigger = 0; trigger < 5; trigger++)
+            {
+                subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ =>
+                {
+                    Interlocked.Increment(ref executionCount);
+                    return Task.CompletedTask;
+                });
+            }
+
+            releaseInFlight.SetResult();
+            await WaitUntilKeyIsIdle(updateKey);
+
+            Assert.That(executionCount, Is.EqualTo(2),
+                "Repeated triggers during one in-flight run must collapse into exactly one follow-up: the follow-up already reads the newest state, so a run per dropped trigger would be pure duplicated work.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_TriggerArrivesWhileInFlight_KeyStaysActiveAcrossTheHandover()
+        {
+            // Callers - and the E2E helper polling /update/status - treat "no active updates" as
+            // "my refresh landed". If the key went idle between the in-flight run finishing and the
+            // follow-up being admitted, they would read exactly the stale state the follow-up is
+            // about to correct, and the coalescing would buy nothing.
+            var updateKey = new UpdateKey(UpdateType.Team, 9);
+            var inFlightStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseInFlight = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var followUpStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                inFlightStarted.TrySetResult();
+                await releaseInFlight.Task;
+            });
+
+            await inFlightStarted.Task;
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ =>
+            {
+                followUpStarted.TrySetResult();
+                return Task.CompletedTask;
+            });
+
+            var store = new InProcessUpdateStatusStore(updateStatuses);
+            var observedIdle = false;
+            var watcher = Task.Run(async () =>
+            {
+                while (!followUpStarted.Task.IsCompleted)
+                {
+                    if (!store.HasActiveWork())
+                    {
+                        observedIdle = true;
+                        return;
+                    }
+
+                    await Task.Yield();
+                }
+            });
+
+            releaseInFlight.SetResult();
+            await Task.WhenAny(followUpStarted.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            await watcher;
+
+            Assert.That(observedIdle, Is.False,
+                "The status store must never report idle between the in-flight run completing and its coalesced follow-up being admitted.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_NoTriggerArrivesWhileInFlight_RunsExactlyOnce()
+        {
+            // Guards the coalescing against re-arming itself: a run that had no dropped trigger
+            // behind it must not schedule a follow-up, or every update would loop forever.
+            var updateKey = new UpdateKey(UpdateType.Team, 10);
+            var executionCount = 0;
+
+            var subject = CreateSubject();
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ =>
+            {
+                Interlocked.Increment(ref executionCount);
+                return Task.CompletedTask;
+            });
+
+            await WaitUntilKeyIsIdle(updateKey);
+            await Task.Delay(200);
+
+            Assert.That(executionCount, Is.EqualTo(1),
+                "An update with no trigger dropped behind it must run exactly once.");
         }
 
         [Test]
@@ -604,6 +750,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subscription.Verify(s => s.Dispose(), Times.Once,
                 "Disposing the queue service must release its completion subscription so the distributed pub/sub channel is unsubscribed cleanly.");
+        }
+
+        private async Task WaitUntilKeyIsIdle(UpdateKey updateKey)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < deadline && updateStatuses.ContainsKey(updateKey))
+            {
+                await Task.Delay(20);
+            }
         }
 
         private UpdateQueueService CreateSubject()
