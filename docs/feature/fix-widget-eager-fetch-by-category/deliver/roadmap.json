@@ -1,0 +1,151 @@
+{
+  "roadmap": {
+    "project_id": "fix-widget-eager-fetch-by-category",
+    "created_at": "2026-07-27T16:50:00Z",
+    "total_steps": 7,
+    "total_phases": 1,
+    "source": "docs/feature/fix-widget-eager-fetch-by-category/rca.md (ADO Bug #5571)",
+    "validation": {
+      "status": "approved",
+      "approved_by": "orchestrator (nw-bugfix Phase 3 minimal-roadmap path)",
+      "notes": "Bugfix flow — no DISTILL .feature files exist, so steps carry test_file but no scenario_name. R3 decided option (a) by maintainer 2026-07-27: predictability keeps workItemLookup's full input set."
+    }
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Category-scoped metrics fetching",
+      "description": "Gate the 17 eager useMetricsData effects on the set of categories the user has actually visited, monotonic within an (entity, startDate, endDate) window.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Declare widget fetch requirements in categoryMetadata",
+          "agent": "nw-software-crafter",
+          "deps": [],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts",
+          "criteria": [
+            "MetricsFetchKey union and getFetchKeysForCategories exported from categoryMetadata.ts",
+            "Every widgetKey in every category for both owner types has a widgetFetchRequirements entry",
+            "Requirements cover widget body AND RAG footer AND trend AND view-data sources",
+            "getFetchKeysForCategories respects ownerFilter via getWidgetsForCategory",
+            "No behaviour change yet — pure additive data plus its completeness test"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/categoryMetadata.test.ts"
+          ],
+          "implementation_notes": "RCA §5.1. This is the load-bearing step: a missing requirement blanks a RAG chip or empties a drill-in table on the default view (risks R1/R2). Derive each entry by reading the widget's node in buildWidgetNodes, its footer in buildWidgetFooters, its trend in the trend block, and its buildViewData sources in BaseMetricsView.tsx — not from the widget body alone. Non-obvious entries required by RCA §2/Q5: percentiles needs cycleTimeData; featureSizePercentiles needs featureSizeData; blockedOverview needs blockedCountHistory; totalWorkItemAge needs totalWorkItemAge; loadBalanceMatrix needs pbcCore + totalWorkItemAge; totalWorkItemAgeOverTime needs pbcCore + wipOverTime; workItemAgePercentiles needs inProgressItems; stacked needs throughput + arrivals + wipOverTime. pbcCore = {getWipPbc, getTotalWorkItemAgePbc}; pbcCharts = {getThroughputPbc, getCycleTimePbc, getArrivalsPbc}. R3 DECIDED option (a): every predictability widget also declares workItemLookup's inputs (throughput, wipOverTime, cycleTimeData, inProgressItems, and for portfolio the features source) because buildWorkItemLookup at BaseMetricsView.tsx:1545-1553 feeds every PBC node. Do NOT trim those to make the numbers look better."
+        },
+        {
+          "id": "01-02",
+          "name": "Accumulate visited categories monotonically",
+          "agent": "nw-software-crafter",
+          "deps": ["01-01"],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/useCategorySelection.test.ts",
+          "criteria": [
+            "useVisitedCategories(selectedCategory, resetToken) returns a set that only grows",
+            "Revisiting a category does not duplicate or shrink the returned set",
+            "Changing resetToken resets the set to just the current selection",
+            "Initial render includes the initially selected category"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/useCategorySelection.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/useCategorySelection.test.ts"
+          ],
+          "implementation_notes": "RCA §5.2. Monotonic-within-a-window is what keeps category switching free on re-visit; there is no cache in this codebase (RCA §2/Q3), so the gate itself must never flip true->false inside a window. resetToken is entity id plus the formatted local start/end dates."
+        },
+        {
+          "id": "01-03",
+          "name": "Gate useMetricsData effects on active fetch keys",
+          "agent": "nw-software-crafter",
+          "deps": ["01-02"],
+          "test_file": "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+          "criteria": [
+            "useMetricsData takes a 5th activeFetchKeys param defaulting to all keys",
+            "Each effect returns early unless its key is active and lists that boolean in deps",
+            "A key flipping false to true fetches exactly once; staying true never refetches",
+            "Batches split by consumer: ageInState and cumulativeStateTime separate, pbcCore separate from pbcCharts, portfolio group split",
+            "Existing useMetricsData tests pass unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts"
+          ],
+          "implementation_notes": "RCA §5.3. Effects to gate live at useMetricsData.ts:195-492. Default the new param to the full key set so all ~18 existing renderHook call sites compile untouched (risk R7) — keeps the diff honest. Batch splits: :284-321 keep {getCycleTimeData, getCycleTimePercentiles, getWorkItemAgePercentiles x2, flowEfficiency} together and move getAgeInStatePercentiles + getCumulativeStateTimeForTeam into their own gated effects; :468-492 split into pbcCore {getWipPbc, getTotalWorkItemAgePbc} and pbcCharts {getThroughputPbc, getCycleTimePbc, getArrivalsPbc}; :323-346 split into three gated groups AND convert its serial await chain to Promise.all (CF-1); :229-251 split getWorkInProgressOverTime into its own gated effect and Promise.all the remaining two (CF-1). Sibling effects still dispatch in the same commit so the D18 parallel intent at :253-257 survives. Do not introduce refs or latches — a plain boolean in the dep array is sufficient given monotonicity."
+        },
+        {
+          "id": "01-04",
+          "name": "Wire the gate into BaseMetricsView and pin the bug",
+          "agent": "nw-software-crafter",
+          "deps": ["01-03"],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "criteria": [
+            "On flow-overview mount, PBC, ageInState, cumulative, wipOverTime, estimation and blackout fetches are not called",
+            "Each flow-overview fetch is called exactly once on mount",
+            "Switching to an unvisited category opens its gate and fetches its set once",
+            "Returning to a visited category triggers no refetch — every fetch still called exactly once",
+            "Every widget in every category and owner type still renders its header and view data"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "implementation_notes": "RCA §5.4 + §8.1. This step contains the regression test for Bug #5571 — write it FIRST and confirm it goes RED against the current eager behaviour before wiring. Hoist ownerType (BaseMetricsView.tsx:1379-1380) and useCategorySelection (:1539) above the useMetricsData call (:1268); both depend only on metricsService and entity.id and neither reads hook output, so it is a pure reordering (risk R8). Compute visitedCategories via useVisitedCategories with resetToken `${entity.id}:${formatLocalDate(startDate)}:${formatLocalDate(endDate)}` (formatLocalDate already imported at :1214), then activeFetchKeys via useMemo over getFetchKeysForCategories(visitedCategories, ownerType). Spy on the IMetricsService mock (the port boundary), not the HTTP client — createMockMetricsService at BaseMetricsView.test.tsx:733 already makes every method a vi.fn(). Reuse the localStorage category-preselection pattern at :5335/:5481 to open on a chosen category. The visit-leave-return assertion is the load-bearing one: it is what fails if someone later 'fixes' eagerness naively and reintroduces refetch-on-switch (risk R4). Also assert a date change still refetches (risk R5)."
+        },
+        {
+          "id": "01-05",
+          "name": "Remove duplicate total work item age fetch",
+          "agent": "nw-software-crafter",
+          "deps": ["01-04"],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeWidget.test.tsx",
+          "criteria": [
+            "TotalWorkItemAgeWidget takes a totalAge prop instead of fetching",
+            "The widget performs no service call of its own",
+            "Null totalAge still renders the existing loading branch",
+            "getTotalWorkItemAge is called exactly once per mount across the whole view"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeWidget.tsx",
+            "Lighthouse.Frontend/src/components/Common/Charts/TotalWorkItemAgeWidget.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx"
+          ],
+          "implementation_notes": "RCA §5.5 / Root Cause D. The parent already holds totalWorkItemAge (BaseMetricsView.tsx:1253) from useMetricsData.ts:213-220, so the widget's own useEffect is a pure duplicate. Same lift already applied to Flow Efficiency in 93eafd3a8. Keep totalAge as number | null so the widget's existing null branch covers loading (risk R9). MUST be its own commit so a bisect can separate it from the gating change."
+        },
+        {
+          "id": "01-06",
+          "name": "Refresh stale widget mock and claim",
+          "agent": "nw-software-crafter",
+          "deps": ["01-05"],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "criteria": [
+            "The TotalWorkItemAgeWidget mock reflects its real totalAge prop contract",
+            "getTotalWorkItemAge is asserted called exactly once on a flow-overview mount",
+            "The stale D7 comment no longer claims Flow Efficiency is the only self-fetching widget"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "implementation_notes": "Added after 01-05 reported two staleness items it could not fix inside its own boundary. The mock at BaseMetricsView.test.tsx:406 still destructures entityId/metricsService, props 01-05 removed; nothing asserts on the widget-entity-id / widget-has-service testids, so the suite stayed green while the mock silently drifted from the real contract. The D7 comment at :5343 claims Flow Efficiency is the only Flow Overview widget off the shared data path — false when written (RCA Branch D) and now false in a second way. Test-hygiene only; no production change."
+        },
+        {
+          "id": "01-07",
+          "name": "Close mutation gaps in the gate",
+          "agent": "nw-software-crafter",
+          "deps": ["01-06"],
+          "test_file": "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+          "criteria": [
+            "An empty active-key set performs no service call at all",
+            "isProjectMetricsService rejects a service missing any one of its five probe methods",
+            "Mutation score for useMetricsData.ts reaches at least 80 percent"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts"
+          ],
+          "implementation_notes": "Stryker feature-scoped run measured useMetricsData.ts at 75.66 percent, dragging the feature total to 78.61 under the 80 gate. Two clusters of surviving mutants are genuinely meaningful: (a) ConditionalExpression mutants on the `if (!needsX) return;` guards for keys that flow-overview HAPPENS to include (predictability :277, throughput :297, and :436/:526/:623) — no existing test ever excludes them, so `if (false) return` survives; one test passing an empty key set and asserting every service method is untouched kills the whole cluster; (b) LogicalOperator/ConditionalExpression mutants on the five-way && chain in isProjectMetricsService (:99) — mutating && to || makes a team service with any single portfolio method masquerade as a portfolio service. The remaining survivors are NOT worth chasing: console.error message StringLiterals, .catch arrow bodies, and useEffect dependency-array-to-empty mutants that are equivalent for single-render tests. Test-only change; no production edit."
+        }
+      ]
+    }
+  ]
+}
