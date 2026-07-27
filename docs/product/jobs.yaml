@@ -3482,3 +3482,73 @@ jobs:
         specialist than the coach's percentile-trend spine. Current satisfaction: 1 — no over-time NPL view
         exists. Gap: 2 — valuable and served entirely by reusing the percentile job's snapshot pipeline on a
         second widget, hence a smaller build than the lead job.
+
+  - id: job-forecast-multi-team-joint-probability
+    title: Trust a multi-team feature's date to account for every team that must finish
+    persona: delivery-forecaster
+    feature_context: epic-5459-multi-team-forecasts
+    created: 2026-07-27
+    note: >
+      ADO #5459 "Multi Team Forecasts", raised from the community. Lighthouse currently reports a
+      multi-team feature's forecast as the SLOWEST single team's distribution
+      (`AggregatedWhenForecast` picks `MaxBy(f => f.GetProbability(85))` and copies that team's whole
+      histogram). A feature is done only when ALL contributing teams are done, so the honest figure
+      is the joint probability across teams, which is strictly lower. Two teams at 85% each land near
+      72% jointly; the gap widens with team count. A second, unreported defect rides along: because
+      the "worst" team is chosen at p85 only and team distributions cross, the reported p50/p70/p95
+      can be read off a team that is not the worst at that percentile.
+    job_story: >
+      When I forecast a feature that several teams must each finish before it is done,
+      I want the date and likelihood to reflect the chance that ALL of those teams are finished —
+      not the chance that the single slowest one is —
+      so the date I commit to in front of leadership is not optimistic by construction, and I find
+      out about the risk from the tool rather than from missing the date.
+    dimensions:
+      functional: >
+        For a feature with two or more contributing teams, every percentile (50/70/85/95) and the
+        target-date likelihood are computed from the joint completion distribution — the product of
+        the contributing teams' completion CDFs — instead of being copied from one selected team.
+        Single-team features are unchanged. When a contributing team cannot be forecast at all, the
+        feature reports no date and no likelihood rather than a number built on the teams that could
+        be forecast.
+      emotional: >
+        Move from suspicion ("three teams, one 85% number — that cannot be right, and I cannot show
+        my working") to trust ("the number moved out because the maths says it should, and I can
+        explain exactly why to anyone who asks").
+      social: >
+        Be the forecaster whose multi-team dates hold up — and who is never the person who presented
+        an 85% that was really a 60% because the tool ignored two of the three teams.
+    forces:
+      push: >
+        Multi-team features are the normal case in the portfolios Lighthouse is built for, and their
+        forecasts are systematically optimistic today. The bias is invisible: nothing on screen hints
+        that the other teams' probabilities were discarded, so there is no workaround a user could
+        even construct — they would have to re-run the maths by hand from per-team dates.
+      pull: >
+        One change at one seam makes every multi-team forecast surface honest at once: portfolio
+        feature columns, delivery likelihood, per-feature likelihood, MCP/CLI output. Nothing new to
+        configure, nothing new to learn.
+      anxiety: >
+        Dates will move OUT, and a recorded delivery trend will show a one-time step at the release
+        boundary — a forecaster mid-commitment may read that as the delivery getting worse rather
+        than the tool getting honest. Mitigated by documenting the step in release notes and the
+        forecasting concept page. Second anxiety: forecasting is the core of the product, so a maths
+        error here is a trust-ending bug — mitigated by a numeric spike that quantifies the change on
+        real portfolio data BEFORE any production code, and a diff review before commit.
+      habit: >
+        Forecasters are used to reading a multi-team feature's date as if it were a single team's.
+        The new number is more conservative and needs no new ritual, but the first release will
+        prompt "why did my dates move?" — the concept-page explanation is what converts that from
+        alarm to trust.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — forecasting is THE core functionality, multi-team features are the primary
+        use case for portfolio tracking, and the defect biases the answer in the dangerous direction
+        (too optimistic) on the surface leadership anchors on. Current satisfaction: 1 — the
+        behaviour is wrong today with no user-side workaround and no on-screen signal that anything
+        was discarded. Gap: 4 — the highest-value correction available in the forecasting domain,
+        and it is served by one well-isolated seam (`AggregatedWhenForecast`) with no change to the
+        Monte Carlo itself.

@@ -1,0 +1,122 @@
+schema_version: 1
+feature_id: epic-5459-multi-team-forecasts
+updated: 2026-07-27
+ado: "#5459"
+
+journeys:
+
+  - name: honest-multi-team-feature-forecast
+    goal: >
+      A delivery-forecaster opens a portfolio containing a feature that several teams must each
+      finish before the feature is done, and the forecast dates and likelihood reflect the JOINT
+      probability that ALL contributing teams are finished — not the marginal probability of the
+      single slowest team — so the date they commit to is not quietly optimistic by construction.
+    persona: delivery-forecaster
+
+    emotional_arc:
+      start: Uneasy — "Three teams have to land before this feature is done, and Lighthouse shows me
+        one date at 85%. That can't be right — surely three separate 85% bets don't stay an 85% bet."
+      middle: Reassured — "The date moved out. It moved out because the maths now says P(all three
+        done) = the product of the three, and Lighthouse tells me which teams contributed."
+      end: Confident — "The number I take into the steering meeting is the number I can defend. When
+        one of the teams can't be forecast at all, Lighthouse says so instead of inventing a date."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How is the multi-team joint distribution computed?
+        decision: >
+          PRODUCT-OF-CDFs, computed post-hoc in `AggregatedWhenForecast`. For each contributing
+          team's `WhenForecast`, derive the empirical CDF over simulated completion days; the
+          feature CDF is CDF_f(d) = PROD_i CDF_i(d); the feature PMF is
+          CDF_f(d) - CDF_f(d-1); the PMF is re-emitted as an integer histogram summing to the
+          preserved trial count. Chosen (user, 2026-07-27) over rewriting the Monte Carlo to take a
+          per-trial max across teams: identical result under the independence the simulation ALREADY
+          assumes (ForecastService runs one Task.Run per team with independent random draws), at a
+          fraction of the risk to the core forecasting hot loop. Per-trial max stays available as a
+          later epic if cross-team correlation ever needs modelling.
+      - id: D2
+        question: What replaces the current "worst team" selection?
+        decision: >
+          It is REMOVED entirely, not merely re-ranked. The current code
+          (`AggregatedWhenForecast.cs:12-20`) picks `MaxBy(f => f.GetProbability(85))` and copies
+          that ONE team's whole histogram, so p50/p70/p95 are read off a team chosen only by its p85.
+          Because team distributions cross, the reported p50 can belong to a team that is not the
+          worst at p50. The product-of-CDFs form has no selection step, so this second defect is
+          fixed by the same change.
+      - id: D3
+        question: What happens when a contributing team has NO usable throughput?
+        decision: >
+          The feature forecast is UNKNOWN — no dates, and no likelihood. Chosen (user, 2026-07-27)
+          over excluding the team from the product and showing a partial forecast: if a team that
+          must finish cannot be forecast, there is no honest completion distribution for the feature.
+          CRITICAL companion rule: `ForecastBase.GetLikelihood` (`:70-95`) returns 100 when
+          `trialCounter == 0`, so an empty aggregate would render as "100% likely to hit the date" —
+          the exact inverse of unknown. The likelihood path MUST be suppressed explicitly, not left
+          to fall through. This composes with (does not replace) the existing
+          `HasSufficientData` AND-across-teams signal from forecast-minimum-data-guard.
+      - id: D4
+        question: Is a single-contributor feature affected?
+        decision: >
+          NO — with one contributing team the product of one CDF is that CDF, so the output must be
+          identical to today's. This is an explicit regression guard, not an incidental property:
+          the overwhelming majority of features are single-team and must not move.
+      - id: D5
+        question: How are recorded forecast history / delivery trend charts handled?
+        decision: >
+          ACCEPT the one-time step and DOCUMENT it. `DeliveryMetricSnapshot` is forward-only by
+          design (ADR-048 / ADR-049) and stores percentile DATES, not per-team histograms, so the
+          history physically cannot be recomputed — re-simulating would need per-snapshot historical
+          throughput that is not retained. Past points stay as recorded; points after the release use
+          the new maths. Release notes and the forecasting concept docs must say so, so a jump in a
+          multi-team delivery's trend is not misread as a delivery problem.
+      - id: D6
+        question: Does the trial count / normalisation change?
+        decision: >
+          NO. `GetProbability` and `GetLikelihood` both divide by `TotalTrials`, so the aggregate
+          MUST re-emit an integer histogram summing to the same trial count. Fractional PMF mass is
+          resolved by largest-remainder allocation (deterministic, no RNG, no drift) — DESIGN owns
+          the exact placement of that rule.
+      - id: D7
+        question: Where does the joint computation live?
+        decision: >
+          `AggregatedWhenForecast` (Models/Forecast) — the same seam that holds the current
+          worst-case logic. `ForecastService` and the Monte Carlo loop are UNTOUCHED. Note for
+          DESIGN: `Feature.Forecast` is a COMPUTED property that rebuilds the aggregate on every get,
+          and DTO assembly reads it 2-3x per feature per request (`FeatureDto.cs:17,22`;
+          `DeliveryWithLikelihoodDto.cs:151,153,160`). Copying a dictionary was cheap; a product over
+          the union of day keys is not. DESIGN decides memoisation vs. leaving it.
+
+    surfaces:
+      - portfolio-detail: feature forecast columns (p50/p70/p85/p95) via
+        `GET /api/latest/portfolios/{id}` -> `FeatureDto.Forecasts`.
+      - portfolio-delivery: delivery + per-feature likelihood via
+        `GET /api/latest/deliveries/portfolio/{portfolioId}` -> `FeatureLikelihoodDto`.
+      - delivery-trend: recorded percentile snapshots feeding the over-time delivery chart (D5).
+      - mcp-cli: `lighthouse_delivery_list` / `lighthouse_portfolio_get` surface the same DTO fields.
+
+    out_of_scope:
+      - Rewriting the Monte Carlo to a per-trial max (D1 — deferred, not rejected).
+      - Modelling correlation BETWEEN teams (shared people, shared dependencies). The simulation does
+        not model it today and this epic does not introduce it.
+      - Team-level (non-feature) forecasts, manual When / How-Many — single-team by definition.
+      - Changing the throughput sampling, the filter modes, or the blackout day-shift translation.
+      - Backfilling or recomputing recorded delivery-metric history (D5 — impossible from stored data).
+      - Per-team weighting or a configurable aggregation strategy.
+
+    cross_cutting:
+      rbac: >
+        N/A — the change alters WHAT number a forecast surface renders, not who may read it. No new
+        operation, no `IRbacAdministrationService` interaction, no new UI gate. Every caller that can
+        see a feature forecast today continues to, now including the explicit unknown state (D3).
+      clients: >
+        Impacted, behavioural not contractual. No DTO field is added or removed by slice-01 — the
+        same `Forecasts` / `LikelihoodPercentage` fields carry different (more conservative) values,
+        so no `FEATURE_REQUIRES_SERVER_NEWER_THAN` gate applies. Slice-02 (unknown state) DOES change
+        shape-of-response semantics: `Forecasts` may be empty and the likelihood must not be read as
+        100. DESIGN to confirm whether the CLI/MCP clients render a likelihood to a human (must then
+        honour the unknown state) or emit raw JSON only (then N/A). File a follow-up clients task;
+        do not block #5459.
+      website: >
+        N/A for the marketing surface. IN SCOPE for `docs/` concepts: the forecasting concept page
+        must explain that a multi-team feature's forecast is the joint probability across teams, and
+        the release notes must call out the one-time trend step (D5).
