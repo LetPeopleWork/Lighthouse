@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var futureDate = DateTime.UtcNow.AddDays(30);
-                var delivery = new Delivery("Test Delivery", futureDate, 1);
+                var delivery = new Delivery("Test Delivery", futureDate, 1, TestToday.Ambient);
 
                 context.Deliveries.Add(delivery);
                 await context.SaveChangesAsync();
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var unspecifiedDate = new DateTime(2026, 12, 31, 10, 0, 0, DateTimeKind.Unspecified);
-                var delivery = new Delivery("Test Delivery", unspecifiedDate, 1);
+                var delivery = new Delivery("Test Delivery", unspecifiedDate, 1, TestToday.Ambient);
 
                 context.Deliveries.Add(delivery);
                 await context.SaveChangesAsync();
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests
             using (var context = new LighthouseAppContext(options, cryptoService.Object, logger.Object))
             {
                 var localDate = new DateTime(2026, 12, 31, 10, 0, 0, DateTimeKind.Local);
-                var delivery = new Delivery("Test Delivery", localDate, 1);
+                var delivery = new Delivery("Test Delivery", localDate, 1, TestToday.Ambient);
 
                 context.Deliveries.Add(delivery);
                 await context.SaveChangesAsync();

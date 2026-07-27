@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.API
             var baselineValidation = BaselineValidationService.Validate(
                 teamSetting.ProcessBehaviourChartBaselineStartDate,
                 teamSetting.ProcessBehaviourChartBaselineEndDate,
-                teamSetting.DoneItemsCutoffDays);
+                teamSetting.DoneItemsCutoffDays, clock.Today);
 
             if (!baselineValidation.IsValid)
             {

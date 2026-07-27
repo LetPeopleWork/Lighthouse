@@ -292,9 +292,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task LoadScenario_PastInstanceMidnightButBeforeUtcMidnight_SeedsBurnupOnTheInstanceDays()
         {
-            // A far-future instant: the Delivery entity rejects a target date that is not in the future,
-            // and it compares against the ambient instant rather than the injected clock.
-            var clock = new FakeLighthouseClock(new DateTimeOffset(2099, 3, 10, 23, 30, 0, TimeSpan.Zero), Zurich);
+            var clock = new FakeLighthouseClock(new DateTimeOffset(2026, 3, 10, 23, 30, 0, TimeSpan.Zero), Zurich);
 
             var apollo = new Portfolio { Id = 7, Name = "Project Apollo" };
             demoDataFactoryMock.Setup(x => x.CreateDemoProject("Project Apollo")).Returns(apollo);

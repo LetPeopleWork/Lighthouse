@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -22,7 +23,8 @@ namespace Lighthouse.Backend.API
         IPortfolioUpdater portfolioUpdater,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
-        IRbacAdministrationService rbacAdministrationService)
+        IRbacAdministrationService rbacAdministrationService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpGet]
@@ -75,7 +77,7 @@ namespace Lighthouse.Backend.API
             var baselineValidation = BaselineValidationService.Validate(
                 portfolioSetting.ProcessBehaviourChartBaselineStartDate,
                 portfolioSetting.ProcessBehaviourChartBaselineEndDate,
-                portfolioSetting.DoneItemsCutoffDays);
+                portfolioSetting.DoneItemsCutoffDays, clock.Today);
 
             if (!baselineValidation.IsValid)
             {

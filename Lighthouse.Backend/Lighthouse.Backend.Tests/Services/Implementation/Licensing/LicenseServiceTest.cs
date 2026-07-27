@@ -1,7 +1,9 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -376,11 +378,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
             }
         }
 
-        private LicenseService CreateSubject(ILicenseVerifier? licenseVerifierOverride = null)
+        /// <summary>
+        /// Bug #5567, decision 1: 02:00 UTC on the 11th is still the 10th in Los Angeles. A licence
+        /// expiring on the 10th must survive the licensee's whole 10th, not lapse mid-afternoon.
+        /// </summary>
+        [Test]
+        public void CanUsePremiumFeature_ExpiresOnTheInstanceDayWhileUtcIsAlreadyTomorrow_ReturnsTrue()
+        {
+            var licenseInfo = new LicenseInformation
+            {
+                Name = "Benjamin",
+                Organization = "Let People Work",
+                Email = "benjamin@letpeople.work",
+                ExpiryDate = new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+            };
+
+            var licenseVerifierMock = new Mock<ILicenseVerifier>();
+            licenseVerifierMock.Setup(verifier => verifier.VerifyLicense(licenseInfo)).Returns(true);
+            licenseRepoMock.Setup(repo => repo.GetAll()).Returns(new List<LicenseInformation> { licenseInfo });
+
+            var clock = new FakeLighthouseClock(
+                new DateTimeOffset(2026, 3, 11, 2, 0, 0, TimeSpan.Zero),
+                TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles"));
+
+            var licenseService = CreateSubject(licenseVerifierMock.Object, clock);
+
+            Assert.That(licenseService.CanUsePremiumFeatures(), Is.True);
+        }
+
+        private LicenseService CreateSubject(ILicenseVerifier? licenseVerifierOverride = null, ILighthouseClock? clock = null)
         {
             var licenseVerifier = licenseVerifierOverride ?? new LicenseVerifier();
 
-            return new LicenseService(Mock.Of<ILogger<LicenseService>>(), licenseRepoMock.Object, licenseVerifier);
+            return new LicenseService(Mock.Of<ILogger<LicenseService>>(), licenseRepoMock.Object, licenseVerifier, clock ?? TestToday.Clock);
         }
     }
 }

@@ -419,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             // Delivery's constructor refuses a target date in the past against the real wall clock,
             // so the target date is deliberately NOT clock-relative here. It is irrelevant to the
             // subject of this fixture, which is the recorded DAY KEY, not the delivery date.
-            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
             delivery.Features.Add(feature);
             var deliveryRepository = serviceScope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);

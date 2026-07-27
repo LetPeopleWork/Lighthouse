@@ -439,6 +439,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 logger.LogInformation("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
 
                 /* Use ProjectMetricsService to Get Values */
+                // Bug #5567 decision 4: both stay UTC. This history window is an instant offset, not a
+                // calendar day, and the tracker it is compared against has its own zone; an off-by-one
+                // here only widens the sample the percentile is taken from.
                 var endDate = DateTime.UtcNow;
 
                 var historyInDays = project.PercentileHistoryInDays ?? 90;

@@ -365,7 +365,8 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioUpdaterMock.Object,
                 workTrackingConnectorFactoryMock.Object,
                 workTrackingSystemConnectionRepoMock.Object,
-                rbacAdministrationServiceMock.Object
+                rbacAdministrationServiceMock.Object,
+                TestToday.Clock
             );
         }
 

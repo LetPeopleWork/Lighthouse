@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act
-            var delivery = new Delivery(name, date, portfolioId);
+            var delivery = new Delivery(name, date, portfolioId, TestToday.Ambient);
 
             using (Assert.EnterMultipleScope())
             {
@@ -48,8 +48,37 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => new Delivery(name, pastDate, portfolioId));
+            var exception = Assert.Throws<ArgumentException>(() => new Delivery(name, pastDate, portfolioId, TestToday.Ambient));
             Assert.That(exception.Message, Is.EqualTo("Delivery date must be in the future"));
+        }
+
+        /// <summary>
+        /// Bug #5567, decision 2: the guard compares calendar days, so a date whose only claim to
+        /// being "in the future" is a later time-of-day today is rejected.
+        /// </summary>
+        [Test]
+        public void Constructor_WithLaterTimeOnTheSameInstanceDay_ThrowsArgumentException()
+        {
+            var laterToday = Clock.TodayAsUtcMidnight.AddHours(23);
+
+            var exception = Assert.Throws<ArgumentException>(
+                () => new Delivery("Q1 Release", laterToday, 1, Clock.Today));
+
+            Assert.That(exception.Message, Is.EqualTo("Delivery date must be in the future"));
+        }
+
+        /// <summary>
+        /// The mirror case: the instance's own next day is accepted, and the entity takes that day
+        /// as a parameter rather than reading an ambient clock (it is EF-materialised).
+        /// </summary>
+        [Test]
+        public void Constructor_WithTheInstanceNextDay_CreatesDelivery()
+        {
+            var tomorrow = Clock.TodayAsUtcMidnight.AddDays(1);
+
+            var delivery = new Delivery("Q1 Release", tomorrow, 1, Clock.Today);
+
+            Assert.That(delivery.Date, Is.EqualTo(tomorrow));
         }
 
         [Test]
@@ -61,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => new Delivery(emptyName, futureDate, portfolioId));
+            var exception = Assert.Throws<ArgumentException>(() => new Delivery(emptyName, futureDate, portfolioId, TestToday.Ambient));
             Assert.That(exception.Message, Is.EqualTo("Name cannot be null or empty"));
         }
 
@@ -74,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => new Delivery(nullName, futureDate, portfolioId));
+            var exception = Assert.Throws<ArgumentException>(() => new Delivery(nullName, futureDate, portfolioId, TestToday.Ambient));
             Assert.That(exception.Message, Is.EqualTo("Name cannot be null or empty"));
         }
 
@@ -82,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void AddFeature_ValidFeature_AddsToCollection()
         {
             // Arrange
-            var delivery = new Delivery("Test Delivery", DateTime.UtcNow.AddDays(30), 1);
+            var delivery = new Delivery("Test Delivery", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
             var feature = new Feature();
 
             // Act
@@ -144,7 +173,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void SelectionMode_DefaultsToManual()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
             
             Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
         }
@@ -152,7 +181,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void SelectionMode_CanBeSetToRuleBased()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased
             };
@@ -163,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleDefinitionJson_DefaultsToNull()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
             
             Assert.That(delivery.RuleDefinitionJson, Is.Null);
         }
@@ -171,7 +200,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleDefinitionJson_CanBeSet()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 RuleDefinitionJson = "{\"conditions\":[]}"
             };
@@ -182,7 +211,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleSchemaVersion_DefaultsToNull()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
             
             Assert.That(delivery.RuleSchemaVersion, Is.Null);
         }
@@ -190,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleSchemaVersion_CanBeSet()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 RuleSchemaVersion = 1
             };

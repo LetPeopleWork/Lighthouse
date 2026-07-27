@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id)
+            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id, clock.Today)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleSchemaVersion = WorkItemRuleSet.SchemaVersion,

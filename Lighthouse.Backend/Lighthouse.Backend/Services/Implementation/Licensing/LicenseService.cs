@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.Licensing
@@ -8,7 +9,8 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
     public class LicenseService(
         ILogger<LicenseService> logger,
         IRepository<LicenseInformation> licenseRepository,
-        ILicenseVerifier licenseVerifier)
+        ILicenseVerifier licenseVerifier,
+        ILighthouseClock clock)
         : ILicenseService
     {
         public async Task<LicenseInformation?> ImportLicense(string licenseContent)
@@ -52,9 +54,9 @@ namespace Lighthouse.Backend.Services.Implementation.Licensing
                 return false;
             }
 
-            var now = DateTime.UtcNow.Date;
-            var isNotExpired = licenseInfo.ExpiryDate.Date >= now;
-            var isValidFromDate = !licenseInfo.ValidFrom.HasValue || licenseInfo.ValidFrom.Value.Date <= now;
+            var today = clock.Today;
+            var isNotExpired = DateOnly.FromDateTime(licenseInfo.ExpiryDate) >= today;
+            var isValidFromDate = !licenseInfo.ValidFrom.HasValue || DateOnly.FromDateTime(licenseInfo.ValidFrom.Value) <= today;
 
             return isNotExpired && isValidFromDate;
         }

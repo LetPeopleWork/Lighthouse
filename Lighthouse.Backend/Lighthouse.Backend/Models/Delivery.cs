@@ -6,14 +6,14 @@ namespace Lighthouse.Backend.Models
 {
     public class Delivery : IConcurrencyTokenEntity
     {
-        public Delivery(string name, DateTime date, int portfolioId)
+        public Delivery(string name, DateTime date, int portfolioId, DateOnly today)
         {
             if (string.IsNullOrEmpty(name))
             {
                 throw new ArgumentException("Name cannot be null or empty");
             }
 
-            if (date <= DateTime.UtcNow)
+            if (DateOnly.FromDateTime(date) <= today)
             {
                 throw new ArgumentException("Delivery date must be in the future");
             }

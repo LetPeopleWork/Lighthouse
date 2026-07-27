@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Name is required");
             }
 
-            if (request.Date <= DateTime.UtcNow)
+            if (DateOnly.FromDateTime(request.Date) <= clock.Today)
             {
                 return BadRequest("Delivery date must be in the future");
             }
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.API
                 ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
                 : request.Date.ToUniversalTime();
 
-            var delivery = new Delivery(request.Name, utcDate, portfolioId)
+            var delivery = new Delivery(request.Name, utcDate, portfolioId, clock.Today)
             {
                 SelectionMode = request.SelectionMode
             };
@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("Name is required");
             }
 
-            if (request.Date <= DateTime.UtcNow)
+            if (DateOnly.FromDateTime(request.Date) <= clock.Today)
             {
                 return BadRequest("Delivery date must be in the future");
             }

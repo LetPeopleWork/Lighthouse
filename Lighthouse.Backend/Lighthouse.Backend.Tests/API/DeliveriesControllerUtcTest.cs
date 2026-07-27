@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = new List<int>()
             };
 
-            var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1);
+            var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient);
             deliveryRepository.Setup(x => x.GetByIdForUpdate(deliveryId))
                 .Returns(existingDelivery);
 
@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = new List<int>()
             };
 
-            var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1);
+            var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient);
             deliveryRepository.Setup(x => x.GetByIdForUpdate(deliveryId))
                 .Returns(existingDelivery);
 
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = new List<int>()
             };
 
-            var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1);
+            var existingDelivery = new Delivery("Old Name", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient);
             deliveryRepository.Setup(x => x.GetByIdForUpdate(deliveryId))
                 .Returns(existingDelivery);
 
@@ -246,8 +246,8 @@ namespace Lighthouse.Backend.Tests.API
             var portfolioId = 1;
             var deliveries = new List<Delivery>
             {
-                new Delivery("Delivery 1", DateTime.UtcNow.AddDays(30), portfolioId),
-                new Delivery("Delivery 2", DateTime.UtcNow.AddDays(60), portfolioId)
+                new Delivery("Delivery 1", DateTime.UtcNow.AddDays(30), portfolioId, TestToday.Ambient),
+                new Delivery("Delivery 2", DateTime.UtcNow.AddDays(60), portfolioId, TestToday.Ambient)
             };
 
             deliveryRepository.Setup(x => x.GetByPortfolioAsync(portfolioId))

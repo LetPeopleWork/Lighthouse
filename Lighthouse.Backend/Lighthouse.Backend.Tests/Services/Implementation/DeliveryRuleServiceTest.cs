@@ -568,7 +568,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var portfolio = CreatePortfolio();
             portfolio.Features.Add(CreateFeature("Feature1", type: "Epic"));
 
-            var delivery = new Delivery("Manual", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Manual", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.Manual
             };
@@ -594,7 +594,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Conditions = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Epic" }]
             };
 
-            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleDefinitionJson = System.Text.Json.JsonSerializer.Serialize(ruleSet),
@@ -613,7 +613,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var portfolio = CreatePortfolio();
             portfolio.Features.Add(CreateFeature("Feature1"));
 
-            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleDefinitionJson = null
@@ -636,7 +636,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Conditions = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Epic" }]
             };
 
-            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1)
+            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleDefinitionJson = System.Text.Json.JsonSerializer.Serialize(ruleSet),
@@ -668,13 +668,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Conditions = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = "Bug" }]
             };
 
-            var delivery1 = new Delivery("Epic Delivery", DateTime.UtcNow.AddDays(30), 1)
+            var delivery1 = new Delivery("Epic Delivery", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleDefinitionJson = System.Text.Json.JsonSerializer.Serialize(epicRule),
                 RuleSchemaVersion = 1
             };
-            var delivery2 = new Delivery("Bug Delivery", DateTime.UtcNow.AddDays(30), 1)
+            var delivery2 = new Delivery("Bug Delivery", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleDefinitionJson = System.Text.Json.JsonSerializer.Serialize(bugRule),

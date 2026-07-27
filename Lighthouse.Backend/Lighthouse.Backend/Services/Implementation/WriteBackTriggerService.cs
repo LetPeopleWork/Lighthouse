@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return null;
             }
 
-            var forecastWindowStart = DateTime.UtcNow.Date;
+            var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 forecastWindowStart, forecastWindowStart.AddDays(daysToCompletion));
 

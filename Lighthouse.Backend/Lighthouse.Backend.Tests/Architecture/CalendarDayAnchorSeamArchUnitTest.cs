@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class CalendarDayAnchorSeamArchUnitTest
     {
-        private const int BaselinedSiteCount = 4;
+        private const int BaselinedSiteCount = 0;
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
@@ -67,8 +67,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// Proves the guard is scanning something rather than passing vacuously, and pins the number
-        /// the RCA verified so a shrink is always a deliberate, reviewed edit.
+        /// Pins the size of the warn-list so a change to it is always a deliberate, reviewed edit.
+        /// It is 0 since step 02-07 - every one of the RCA's sites has been migrated. That the guard
+        /// is not passing vacuously is proved by <see cref="Scanner_AnchorOutsideTheBaseline_IsReported"/>
+        /// and the other Scanner_* cases rather than by this count.
         /// </summary>
         [Test]
         public void Baseline_OnHead_ListsTheVerifiedKnownSites()
@@ -76,9 +78,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(
                 CalendarDayAnchorBaseline.KnownSites,
                 Has.Length.EqualTo(BaselinedSiteCount),
-                "The baseline must match the RCA section 5 inventory (49 sites across 24 files) minus every "
-                + "cluster phase 02 has already migrated. Lower this constant by exactly the cluster size "
-                + "in the same commit that shrinks the baseline.");
+                "The baseline is empty and stays empty: the RCA section 5 inventory (49 sites across 24 "
+                + "files) is fully migrated. A new anchor is a guard failure to fix at the source, never "
+                + "a new baseline entry.");
         }
 
         [Test]

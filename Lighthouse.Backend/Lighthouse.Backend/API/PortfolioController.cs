@@ -27,7 +27,8 @@ namespace Lighthouse.Backend.API
         IPortfolioUpdater portfolioUpdater,
         IRbacAdministrationService rbacAdministrationService,
         IBlockedItemService blockedItemService,
-        IUpdateQueueService updateQueueService)
+        IUpdateQueueService updateQueueService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpGet]
@@ -91,7 +92,7 @@ namespace Lighthouse.Backend.API
             var baselineValidation = BaselineValidationService.Validate(
                 portfolioSetting.ProcessBehaviourChartBaselineStartDate,
                 portfolioSetting.ProcessBehaviourChartBaselineEndDate,
-                portfolioSetting.DoneItemsCutoffDays);
+                portfolioSetting.DoneItemsCutoffDays, clock.Today);
 
             if (!baselineValidation.IsValid)
             {

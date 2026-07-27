@@ -564,7 +564,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return new ForecastPredictabilityScore(howManyForecast);
         }
 
-        protected static ProcessBehaviourChart BuildThroughputProcessBehaviourChart(
+        protected ProcessBehaviourChart BuildThroughputProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
@@ -573,7 +573,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return BuildDailyRunChartProcessBehaviourChart(owner, displayStart, displayEnd, getThroughput);
         }
 
-        protected static ProcessBehaviourChart BuildDailyRunChartProcessBehaviourChart(
+        protected ProcessBehaviourChart BuildDailyRunChartProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
@@ -589,7 +589,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 baselineEnd = displayEnd;
             }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, Clock.Today);
             if (!validation.IsValid)
             {
                 return new ProcessBehaviourChart
@@ -627,7 +627,7 @@ namespace Lighthouse.Backend.Services.Implementation
             };
         }
 
-        protected static ProcessBehaviourChart BuildTotalWorkItemAgeProcessBehaviourChart(
+        protected ProcessBehaviourChart BuildTotalWorkItemAgeProcessBehaviourChart(
             WorkTrackingSystemOptionsOwner owner,
             DateTime displayStart,
             DateTime displayEnd,
@@ -643,7 +643,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 baselineEnd = displayEnd;
             }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, Clock.Today);
             if (!validation.IsValid)
             {
                 return new ProcessBehaviourChart
@@ -705,7 +705,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 baselineEnd = displayEnd;
             }
 
-            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays);
+            var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, owner.DoneItemsCutoffDays, Clock.Today);
             if (!validation.IsValid)
             {
                 return new ProcessBehaviourChart

@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const int MinimumBaselineDays = 14;
 
-        public static BaselineValidationResult Validate(DateTime? startDate, DateTime? endDate, int doneItemsCutoffDays)
+        public static BaselineValidationResult Validate(DateTime? startDate, DateTime? endDate, int doneItemsCutoffDays, DateOnly today)
         {
             if (startDate == null && endDate == null)
             {
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return new BaselineValidationResult(false, $"Baseline must be at least {MinimumBaselineDays} days. Current: {baselineDays} days.");
             }
 
-            if (endDate.Value.Date > DateTime.UtcNow.Date)
+            if (DateOnly.FromDateTime(endDate.Value) > today)
             {
                 return new BaselineValidationResult(false, "Baseline end date must not be in the future.");
             }
@@ -40,8 +40,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 return new BaselineValidationResult(true);
             }
 
-            var cutoffDate = DateTime.UtcNow.Date.AddDays(-doneItemsCutoffDays);
-            if (startDate.Value.Date < cutoffDate)
+            var cutoffDate = today.AddDays(-doneItemsCutoffDays);
+            if (DateOnly.FromDateTime(startDate.Value) < cutoffDate)
             {
                 return new BaselineValidationResult(false, $"Baseline start date falls outside the data cutoff window ({doneItemsCutoffDays} days). Data may be incomplete.");
             }

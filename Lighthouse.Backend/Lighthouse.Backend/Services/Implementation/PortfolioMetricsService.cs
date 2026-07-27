@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Services.Implementation
                      baselineEnd = endDate;
                  }
 
-                 var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays);
+                 var validation = BaselineValidationService.Validate(baselineStart, baselineEnd, portfolio.DoneItemsCutoffDays, Clock.Today);
                  if (!validation.IsValid)
                  {
                      return new ProcessBehaviourChart

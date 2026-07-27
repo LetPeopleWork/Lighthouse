@@ -413,7 +413,8 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioUpdaterMock.Object,
                 rbacAdministrationServiceMock.Object,
                 blockedItemServiceMock.Object,
-                updateQueueServiceMock.Object
+                updateQueueServiceMock.Object,
+                TestToday.Clock
             );
         }
 

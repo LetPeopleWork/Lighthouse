@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private async Task<(int DeliveryId, int SnapshotCount)> SeedDeliveryWithSnapshotRows()
         {
             var portfolio = await AddPortfolio();
-            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
 
             DatabaseContext.Deliveries.Add(delivery);
             await DatabaseContext.SaveChangesAsync();
