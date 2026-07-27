@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation
         IWorkItemStateTransitionRepository workItemStateTransitionRepository,
         ILighthouseClock clock)
 #pragma warning restore S107
-        : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
+        : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider, clock),
             ITeamMetricsService
     {
         private const string ForecastStatusMetricIdentifier = "ForecastThroughputStatus";
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Forecast Input Candidates for Team {TeamName}", team.Name);
 
-            var currentWipCount = GetWipSnapshotForTeam(team, clock.TodayAsUtcMidnight).Count();
+            var currentWipCount = GetWipSnapshotForTeam(team, Clock.TodayAsUtcMidnight).Count();
 
             var backlogCount = workItemRepository
                 .GetAllByPredicate(i => i.TeamId == team.Id &&
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             if (team.UseFixedDatesForThroughput)
             {
-                var endDate = clock.TodayAsUtcMidnight;
+                var endDate = Clock.TodayAsUtcMidnight;
                 var startDate = team.ThroughputHistoryStartDate ?? endDate.AddDays(-(team.ThroughputHistory - 1));
                 var fixedEndDate = team.ThroughputHistoryEndDate ?? endDate;
 
@@ -795,7 +795,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var featureWip = GetCurrentFeaturesInProgressForTeam(team, clock.TodayAsUtcMidnight).Count();
+            var featureWip = GetCurrentFeaturesInProgressForTeam(team, Clock.TodayAsUtcMidnight).Count();
             team.FeatureWIP = featureWip;
         }
 
@@ -803,13 +803,16 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done).ToList();
 
-            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && i.ClosedDate.Value.Date >= startDate.Date && i.ClosedDate.Value.Date <= endDate.Date);
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+
+            var closedItemsInDateRange = closedItemsOfTeam.Where(i => i.ClosedDate.HasValue && Clock.ToInstanceDay(i.ClosedDate.Value) >= firstDay && Clock.ToInstanceDay(i.ClosedDate.Value) <= lastDay);
             return closedItemsInDateRange;
         }
 
         private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int historyInCalendarDays)
         {
-            var endDate = clock.TodayAsUtcMidnight;
+            var endDate = Clock.TodayAsUtcMidnight;
             var startDate = endDate.AddDays(-(historyInCalendarDays - 1));
 
             return GetBlackoutAwareThroughputForTeam(team, startDate, endDate, ThroughputFilterMode.SkipFilter);

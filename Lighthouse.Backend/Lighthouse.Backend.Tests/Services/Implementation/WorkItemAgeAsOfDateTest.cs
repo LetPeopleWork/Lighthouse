@@ -255,7 +255,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 featureRepository.Object,
                 appSettingService.Object,
                 serviceProvider.Object,
-                Mock.Of<IFeatureStateTransitionRepository>());
+                Mock.Of<IFeatureStateTransitionRepository>(),
+                TestToday.Clock);
 
             features = new List<Feature>();
             featureRepository

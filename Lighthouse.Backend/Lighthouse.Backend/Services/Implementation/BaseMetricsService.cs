@@ -7,8 +7,14 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public abstract class BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider)
+    public abstract class BaseMetricsService(int refreshRateInMinutes, IServiceProvider serviceProvider, ILighthouseClock clock)
     {
+        /// <summary>
+        /// Bug #5567: exposed so the derived services forward the clock to this base instead of
+        /// capturing it themselves (CS9107).
+        /// </summary>
+        protected ILighthouseClock Clock { get; } = clock;
+
         private Cache<string, object> MetricsCache => field ??= serviceProvider.GetRequiredService<Cache<string, object>>();
 
         private IForecastService ForecastService => field ??= serviceProvider.GetRequiredService<IForecastService>();
@@ -794,17 +800,17 @@ namespace Lighthouse.Backend.Services.Implementation
             return dataPoints;
         }
 
-        protected static Dictionary<int, List<WorkItemBase>> GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected Dictionary<int, List<WorkItemBase>> GenerateThroughputRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetClosedIndexForItem);
         }
 
-        protected static Dictionary<int, List<WorkItemBase>> GenerateCreationRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected Dictionary<int, List<WorkItemBase>> GenerateCreationRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetCreatedIndexForItem);
         }
 
-        protected static Dictionary<int, List<WorkItemBase>> GenerateStartedRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected Dictionary<int, List<WorkItemBase>> GenerateStartedRunChart(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             return GenerateRunChartByDay(startDate, endDate, items, GetStartedIndexForItem);
         }
@@ -827,7 +833,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
-        protected static (int[] Values, int[][] WorkItemIdsPerDay) GenerateTotalWorkItemAgeByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected (int[] Values, int[][] WorkItemIdsPerDay) GenerateTotalWorkItemAgeByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             var totalDays = (endDate - startDate).Days + 1;
             var values = new int[totalDays];
@@ -838,7 +844,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 var currentDate = startDate.AddDays(index);
                 var itemsInProgressOnDay = items.Where(i => WasItemProgressOnDay(currentDate, i));
 
-                var totalAge = itemsInProgressOnDay.Sum(item => (int)((currentDate.Date - (item.StartedDate ?? item.CreatedDate)?.Date)?.TotalDays ?? 0) + 1);
+                var currentDay = DateOnly.FromDateTime(currentDate);
+                var totalAge = itemsInProgressOnDay.Sum(item => AgeInDaysOn(currentDay, item.StartedDate ?? item.CreatedDate));
                 
                 values[index] = totalAge;
                 workItemIdsPerDay[index] = itemsInProgressOnDay.Select(i => i.Id).ToArray();
@@ -847,7 +854,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return (values, workItemIdsPerDay);
         }
 
-        protected static Dictionary<int, List<WorkItemBase>> GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
+        protected Dictionary<int, List<WorkItemBase>> GenerateWorkInProgressByDay(DateTime startDate, DateTime endDate, IEnumerable<WorkItemBase> items)
         {
             var totalDays = (endDate - startDate).Days + 1;
             var runChartData = InitializeRunChartDictionary(totalDays);
@@ -863,32 +870,42 @@ namespace Lighthouse.Backend.Services.Implementation
             return runChartData;
         }
 
-        private static int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)
+        private int GetClosedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.ClosedDate);
         }
 
-        private static int GetCreatedIndexForItem(DateTime startDate, WorkItemBase item)
+        private int GetCreatedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.CreatedDate);
         }
 
-        private static int GetStartedIndexForItem(DateTime startDate, WorkItemBase item)
+        private int GetStartedIndexForItem(DateTime startDate, WorkItemBase item)
         {
             return GetDateIndexBasedOnStartDate(startDate, item.StartedDate);
         }
 
-        private static int GetDateIndexBasedOnStartDate(DateTime startDate, DateTime? date)
+        private int GetDateIndexBasedOnStartDate(DateTime startDate, DateTime? date)
         {
             if (!date.HasValue)
             {
                 return -1;
             }
 
-            return (date.Value.Date - startDate.Date).Days;
+            return Clock.ToInstanceDay(date.Value).DayNumber - DateOnly.FromDateTime(startDate).DayNumber;
         }
 
-        private static bool WasItemProgressOnDay(DateTime day, WorkItemBase item)
+        private int AgeInDaysOn(DateOnly day, DateTime? startedAt)
+        {
+            if (!startedAt.HasValue)
+            {
+                return 1;
+            }
+
+            return day.DayNumber - Clock.ToInstanceDay(startedAt.Value).DayNumber + 1;
+        }
+
+        private bool WasItemProgressOnDay(DateTime day, WorkItemBase item)
         {
             var startedDate = item.StartedDate ?? item.CreatedDate;
 
@@ -903,8 +920,9 @@ namespace Lighthouse.Backend.Services.Implementation
                 return false;
             }
 
-            var wasStartedOnOrAfterDay = startedDate.Value.Date <= day.Date;
-            var wasClosedOnOrAfterDay = !item.ClosedDate.HasValue || item.ClosedDate.Value.Date > day.Date;
+            var instanceDay = DateOnly.FromDateTime(day);
+            var wasStartedOnOrAfterDay = Clock.ToInstanceDay(startedDate.Value) <= instanceDay;
+            var wasClosedOnOrAfterDay = !item.ClosedDate.HasValue || Clock.ToInstanceDay(item.ClosedDate.Value) > instanceDay;
 
             return wasStartedOnOrAfterDay && wasClosedOnOrAfterDay;
         }

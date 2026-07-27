@@ -477,7 +477,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         private sealed class TestableBaseMetricsService(IServiceProvider serviceProvider)
-            : BaseMetricsService(1, serviceProvider)
+            : BaseMetricsService(1, serviceProvider, TestToday.Clock)
         {
             public static IEnumerable<AgeInStatePercentilesDto> Compute(
                 IEnumerable<WorkItem> completedItemsInWindow,

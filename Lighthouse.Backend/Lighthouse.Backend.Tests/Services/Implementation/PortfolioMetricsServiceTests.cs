@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             featureStateTransitionRepository = new Mock<IFeatureStateTransitionRepository>();
 
-            subject = new PortfolioMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object, featureStateTransitionRepository.Object);
+            subject = new PortfolioMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object, featureStateTransitionRepository.Object, TestToday.Clock);
 
             featureRepository.Setup(x => x.GetAllByPredicate(
                     It.IsAny<Expression<Func<Feature, bool>>>()))

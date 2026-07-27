@@ -11,8 +11,9 @@ namespace Lighthouse.Backend.Services.Implementation
         IRepository<Feature> featureRepository,
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
-        IFeatureStateTransitionRepository featureStateTransitionRepository)
-        : BaseMetricsService(appSettingService.GetFeatureRefreshSettings().Interval, serviceProvider),
+        IFeatureStateTransitionRepository featureStateTransitionRepository,
+        ILighthouseClock clock)
+        : BaseMetricsService(appSettingService.GetFeatureRefreshSettings().Interval, serviceProvider, clock),
             IPortfolioMetricsService
     {
         private static readonly IReadOnlyList<int> DefaultPacePercentiles = [50, 70, 85, 95];
@@ -586,8 +587,8 @@ namespace Lighthouse.Backend.Services.Implementation
             return allFeatures.Where(f =>
                 (f.StateCategory == StateCategories.Done &&
                  f.ClosedDate.HasValue &&
-                 f.ClosedDate.Value.Date >= startDate.Date &&
-                 f.ClosedDate.Value.Date <= endDate.Date) ||
+                 Clock.ToInstanceDay(f.ClosedDate.Value) >= DateOnly.FromDateTime(startDate) &&
+                 Clock.ToInstanceDay(f.ClosedDate.Value) <= DateOnly.FromDateTime(endDate)) ||
                 f.StateCategory == StateCategories.ToDo ||
                 f.StateCategory == StateCategories.Doing
             ).ToList();
@@ -780,10 +781,13 @@ namespace Lighthouse.Backend.Services.Implementation
                     f.StateCategory == StateCategories.Done)
                 .ToList();
 
+            var firstDay = DateOnly.FromDateTime(startDate);
+            var lastDay = DateOnly.FromDateTime(endDate);
+
             return closedFeaturesOfPortfolio
                 .Where(f => f.ClosedDate.HasValue &&
-                           f.ClosedDate.Value.Date >= startDate.Date &&
-                           f.ClosedDate.Value.Date <= endDate.Date);
+                           Clock.ToInstanceDay(f.ClosedDate.Value) >= firstDay &&
+                           Clock.ToInstanceDay(f.ClosedDate.Value) <= lastDay);
         }
     }
 }

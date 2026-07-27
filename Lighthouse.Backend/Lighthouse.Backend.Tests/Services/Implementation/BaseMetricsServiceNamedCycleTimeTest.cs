@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         private sealed class TestableBaseMetricsService(IServiceProvider serviceProvider)
-            : BaseMetricsService(1, serviceProvider)
+            : BaseMetricsService(1, serviceProvider, TestToday.Clock)
         {
             public static int? NamedDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
             {

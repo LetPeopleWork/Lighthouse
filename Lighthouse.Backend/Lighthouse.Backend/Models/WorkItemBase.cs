@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Models
                     var startingReferenceDate = StartedDate ?? CreatedDate;
                     if (ClosedDate?.Date >= startingReferenceDate?.Date)
                     {
-                        return GetDateDifference(startingReferenceDate.Value, ClosedDate.Value);
+                        return GetDateDifference(DateOnly.FromDateTime(startingReferenceDate.Value), DateOnly.FromDateTime(ClosedDate.Value));
                     }
 
                     // Item is closed, but something is wrong with the Closed Date --> Default to 1
@@ -69,20 +69,17 @@ namespace Lighthouse.Backend.Models
         }
 
         /// <param name="today">
-        /// Bug #5567: the instance's calendar day, supplied by the caller. Decision 3 - BOTH ends of
-        /// the age move onto that day and the inclusive +1 is unchanged, because the age was already
-        /// calendar-day based (GetDateDifference reduces both ends with .Date). This is a zone shift,
-        /// not an arithmetic change.
+        /// Bug #5567 decision 3: the instance's calendar day, supplied by the caller. The inclusive
+        /// +1 is unchanged - this is a zone shift, not an arithmetic change.
         /// </param>
         public int WorkItemAge(DateOnly today)
         {
             if (StateCategory == StateCategories.Doing)
             {
                 var referencedDate = StartedDate ?? CreatedDate;
-                var todayAtMidnightUtc = today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-                if (referencedDate?.Date <= todayAtMidnightUtc)
+                if (referencedDate.HasValue && DateOnly.FromDateTime(referencedDate.Value) <= today)
                 {
-                    return GetDateDifference(referencedDate.Value, todayAtMidnightUtc);
+                    return GetDateDifference(DateOnly.FromDateTime(referencedDate.Value), today);
                 }
 
                 // Item is in progress,  but started date is in the future or not set --> Default to 1
@@ -116,12 +113,12 @@ namespace Lighthouse.Backend.Models
                 return 0;
             }
 
-            return GetDateDifference(startingReferenceDate.Value, asOf);
+            return GetDateDifference(DateOnly.FromDateTime(startingReferenceDate.Value), DateOnly.FromDateTime(asOf));
         }
 
-        private static int GetDateDifference(DateTime start, DateTime end)
+        private static int GetDateDifference(DateOnly start, DateOnly end)
         {
-            return ((int)(end.Date - start.Date).TotalDays) + 1;
+            return (end.DayNumber - start.DayNumber) + 1;
         }
 
         internal void Update(WorkItemBase workItemBase)
