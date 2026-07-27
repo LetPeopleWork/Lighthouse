@@ -3,7 +3,12 @@
 **Analyst:** Rex (Toyota 5 Whys)
 **Date:** 2026-07-27
 **Scope:** `Lighthouse.Frontend/src` — metrics dashboard data-fetching layer (team + portfolio)
-**Status:** Root causes identified, validated forward and backward. No code changed.
+**Status:** FIXED and shipped 2026-07-27 in `35f3524e1..34edb9d11`. Root causes identified, validated
+forward and backward, then closed. Outcome summary: `docs/evolution/2026-07-27-fix-widget-eager-fetch-by-category.md`.
+Note two corrections found during delivery: §8.1(2)'s positive list is incomplete (it omits
+`getThroughput`, `getArrivals` and `getTotalWorkItemAge`, contradicting §5.1 — §5.1 is right), and
+`estimationVsCycleTime` also depends on `workItemLookup`, which §Q5's table omits. R3 was decided as
+option (a); see §7.
 
 All line references are to the worktree
 `/storage/repos/Lighthouse/.claude/worktrees/cozy-hatching-sunset`.

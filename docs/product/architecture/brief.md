@@ -3247,3 +3247,56 @@ case as a commented plumbing anchor only.
 completion times; `ForecastService` already simulates teams independently. This change makes the
 reported number consistent with the model — it does not make the model match reality where teams share
 people. Stated in the concept docs rather than hidden.
+
+---
+
+## Application Architecture — fix-widget-eager-fetch-by-category (Bug #5571)
+
+This section is **additive** to all prior `## Application Architecture` deltas. Frontend-only; no
+backend, DTO, endpoint or migration change. Pattern, paradigm and core invariants are unchanged.
+
+**The widget → data edge is now a first-class artefact.** `categoryMetadata.ts` already owned
+category → widget (`categoryWidgets`) and widget → trend (`trendPolicies`); it now also owns widget →
+*fetch* via `MetricsFetchKey`, the module-private `widgetFetchRequirements`, and the exported
+`getFetchKeysForCategories(categoryKeys, ownerType)`. Before this, the edge existed only implicitly,
+spread across `buildWidgetNodes`, `buildWidgetFooters`, the trend block and `buildViewData` in
+`BaseMetricsView.tsx` — which is precisely why category-blind fetching survived four months unnoticed.
+
+**Fetching is gated on visited categories, not the current one.** `useMetricsData` takes a fifth
+`activeFetchKeys: ReadonlySet<MetricsFetchKey>` parameter (defaulting to the full key set, so the
+signature stays backward-compatible) and every fetching effect carries an `if (!needsX) return;` guard
+with `needsX` in its dependency array. `BaseMetricsView` derives the set from `useVisitedCategories`
+(`useCategorySelection.ts`), a grow-only, identity-stable accumulator reset by an
+`(entity.id, startDate, endDate)` token built with `formatLocalDate`.
+
+**Why "visited" and not "selected" — the load-bearing invariant.** There is **no cache anywhere in
+the metrics path**: no memoisation in `src/services/Api/`, and react-query is used only by
+`LicenseStatusIcon` and `TerminologyContext`. Metrics results live in ~35 `useState` slots inside
+`useMetricsData`. A gate keyed on the *current* category would therefore flip true→false→true as the
+user navigates and refetch on every return visit — strictly worse than the over-fetching it replaces.
+Monotonicity within a window makes each gate flip false→true at most once, which is exactly one fetch
+per window, achieved with a plain boolean and no cache layer, refs or latches.
+
+**Effect batches are grouped by consumer, not by dependency signature.** The prior "D18" grouping put
+every call sharing `[entity, metricsService, startDate, endDate]` into one `Promise.all`, which made a
+category gate impossible to express. Batches were split so each gate has one consumer — with the
+deliberate exception of the cycle-time batch, gated on the disjunction of its four keys because all
+four are required on the default view anyway. Sibling effects still dispatch in the same commit, so
+the parallelism the original grouping existed for is preserved.
+
+| Invariant | Enforced by |
+|---|---|
+| Every widget in every category × owner type declares a fetch requirement | Vitest `categoryMetadata.test.ts` (a new widget without an entry fails) |
+| Flow Overview fetches nothing its widgets cannot use | Vitest `BaseMetricsView.test.tsx` — `category-scoped fetching (Bug #5571)` |
+| Returning to a visited category triggers no refetch | Same block, visit → leave → return, `toHaveBeenCalledTimes(1)` |
+| An empty key set fetches nothing at all | Vitest `useMetricsData.test.ts` |
+
+**Component inventory (shipped):** `MetricsFetchKey` / `widgetFetchRequirements` /
+`getFetchKeysForCategories` / `getFetchRequirementsForWidget` / `getMetricsFetchKeys`
+(`categoryMetadata.ts`); `useVisitedCategories` (`useCategorySelection.ts`); `activeFetchKeys`
+parameter (`useMetricsData.ts`). `TotalWorkItemAgeWidget` moved off its own fetch onto a `totalAge`
+prop. **Not shipped, known remaining:** `PredictabilityScoreDetailsWidget` and
+`ThroughputRunChartCard` still self-fetch rather than reading the shared data path.
+
+RCA: `docs/analysis/ADO-5571-widgets-fetch-outside-selected-category.md`.
+Outcome: `docs/evolution/2026-07-27-fix-widget-eager-fetch-by-category.md`.
