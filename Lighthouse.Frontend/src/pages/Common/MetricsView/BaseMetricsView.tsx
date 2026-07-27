@@ -995,11 +995,7 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		totalWorkItemAge: (
-			<TotalWorkItemAgeWidget
-				entityId={ctx.entity.id}
-				metricsService={ctx.metricsService}
-				asOfDate={ctx.endDate}
-			/>
+			<TotalWorkItemAgeWidget totalAge={ctx.totalWorkItemAge} />
 		),
 		throughput: ctx.throughputData ? (
 			<ThroughputRunChartCard

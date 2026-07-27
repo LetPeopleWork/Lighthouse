@@ -7,53 +7,22 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
-import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { IWorkItem } from "../../../models/WorkItem";
-import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 interface TotalWorkItemAgeWidgetProps {
-	entityId: number;
-	metricsService: IMetricsService<IWorkItem | IFeature>;
-	asOfDate: Date;
+	// Owned by the shared BaseMetricsView data path (useMetricsData); `null` means "not loaded yet"
+	// and renders the loading branch. The widget never fetches this itself (Bug #5571).
+	totalAge: number | null;
 }
 
 const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
-	entityId,
-	metricsService,
-	asOfDate,
+	totalAge,
 }) => {
-	const [totalAge, setTotalAge] = useState<number | null>(null);
-	const [loading, setLoading] = useState<boolean>(true);
-	const [error, setError] = useState<string | null>(null);
 	const theme = useTheme();
 
 	const { getTerm } = useTerminology();
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
-
-	useEffect(() => {
-		const fetchTotalAge = async () => {
-			setLoading(true);
-			setError(null);
-			try {
-				const age = await metricsService.getTotalWorkItemAge(
-					entityId,
-					asOfDate,
-				);
-				setTotalAge(age);
-			} catch (err) {
-				console.error("Error fetching total work item age:", err);
-				setError("Failed to load data");
-				setTotalAge(null);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchTotalAge();
-	}, [entityId, metricsService, asOfDate]);
 
 	return (
 		<Card
@@ -83,7 +52,7 @@ const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
 					Total {workItemAgeTerm}
 				</Typography>
 
-				{loading && (
+				{totalAge === null && (
 					<Box
 						sx={{
 							display: "flex",
@@ -96,17 +65,7 @@ const TotalWorkItemAgeWidget: React.FC<TotalWorkItemAgeWidgetProps> = ({
 					</Box>
 				)}
 
-				{error && !loading && (
-					<Typography
-						variant="body2"
-						color="error"
-						sx={{ textAlign: "center" }}
-					>
-						{error}
-					</Typography>
-				)}
-
-				{!loading && !error && totalAge !== null && (
+				{totalAge !== null && (
 					<Box sx={{ textAlign: "center" }}>
 						<Box
 							sx={{

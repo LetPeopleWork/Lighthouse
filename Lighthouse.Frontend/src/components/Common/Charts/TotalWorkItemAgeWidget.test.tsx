@@ -1,9 +1,7 @@
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import type { IFeature } from "../../../models/Feature";
-import type { IWorkItem } from "../../../models/WorkItem";
-import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { BaseMetricsService } from "../../../services/Api/MetricsService";
 import TotalWorkItemAgeWidget from "./TotalWorkItemAgeWidget";
 
 const theme = createTheme();
@@ -13,227 +11,70 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 describe("TotalWorkItemAgeWidget", () => {
-	const testAsOfDate = new Date("2026-04-15");
-
-	const createMockMetricsService = (
-		totalAge: number | null,
-		shouldError = false,
-	): IMetricsService<IWorkItem | IFeature> => ({
-		getTotalWorkItemAge: vi.fn().mockImplementation(() => {
-			if (shouldError) {
-				return Promise.reject(new Error("API Error"));
-			}
-			return Promise.resolve(totalAge);
-		}),
-		getThroughput: vi.fn(),
-		getWorkInProgressOverTime: vi.fn(),
-		getInProgressItems: vi.fn(),
-		getCycleTimeData: vi.fn(),
-		getCycleTimePercentiles: vi.fn(),
-		getWorkItemAgePercentiles: vi.fn(),
-		getAgeInStatePercentiles: vi.fn(),
-		getMultiItemForecastPredictabilityScore: vi.fn(),
-		getThroughputPbc: vi.fn(),
-		getWipPbc: vi.fn(),
-		getTotalWorkItemAgePbc: vi.fn(),
-		getCycleTimePbc: vi.fn(),
-		getEstimationVsCycleTimeData: vi.fn(),
-		getArrivals: vi.fn(),
-		getArrivalsPbc: vi.fn(),
-		getThroughputInfo: vi.fn(),
-		getArrivalsInfo: vi.fn(),
-		getWipOverviewInfo: vi.fn(),
-		getTotalWorkItemAgeInfo: vi.fn(),
-		getPredictabilityScoreInfo: vi.fn(),
-		getCycleTimePercentilesInfo: vi.fn(),
-		getCumulativeStateTimeForTeam: vi.fn().mockResolvedValue({ states: [] }),
-		getCumulativeStateTimeItemsForTeam: vi
-			.fn()
-			.mockResolvedValue({ state: "", items: [] }),
-		getCumulativeStateTimeItemsForPortfolio: vi
-			.fn()
-			.mockResolvedValue({ state: "", items: [] }),
-		getCumulativeStateTimeCandidatesForTeam: vi
-			.fn()
-			.mockResolvedValue({ items: [] }),
-		getCumulativeStateTimeCandidatesForPortfolio: vi
-			.fn()
-			.mockResolvedValue({ items: [] }),
-		getFlowEfficiencyInfoForTeam: vi.fn(),
-		getFlowEfficiencyInfoForPortfolio: vi.fn(),
-		getBlockedCountHistory: vi.fn().mockResolvedValue([]),
-		getBlockedItemsAtDate: vi.fn().mockResolvedValue([]),
-		getPercentilesOverTime: vi.fn().mockResolvedValue([]),
-		getProcessBehaviorOverTime: vi.fn().mockResolvedValue([]),
+	afterEach(() => {
+		vi.restoreAllMocks();
 	});
 
-	it("renders loading state initially", () => {
-		const mockService = createMockMetricsService(150);
-
+	it("renders the total age handed to it, synchronously (Bug #5571 AC1/AC2)", () => {
+		// No `await waitFor` on purpose. A widget that fetched its own data would paint the
+		// loading branch on first render, so a synchronous match is the proof that no async
+		// data path of its own is left in the component.
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
+				<TotalWorkItemAgeWidget totalAge={250} />
+			</TestWrapper>,
+		);
+
+		expect(screen.getByText("250")).toBeInTheDocument();
+		expect(screen.getByText("days")).toBeInTheDocument();
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+	});
+
+	it("renders zero as a value, not as missing data", () => {
+		render(
+			<TestWrapper>
+				<TotalWorkItemAgeWidget totalAge={0} />
+			</TestWrapper>,
+		);
+
+		expect(screen.getByText("0")).toBeInTheDocument();
+		expect(screen.getByText("days")).toBeInTheDocument();
+	});
+
+	it("renders the loading branch while totalAge is null (Bug #5571 AC3)", () => {
+		render(
+			<TestWrapper>
+				<TotalWorkItemAgeWidget totalAge={null} />
 			</TestWrapper>,
 		);
 
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+		expect(screen.queryByText("days")).not.toBeInTheDocument();
 	});
 
-	it("displays total work item age after loading", async () => {
-		const mockService = createMockMetricsService(250);
+	it("makes no metrics-service call of its own (Bug #5571 AC2)", () => {
+		const getTotalWorkItemAge = vi
+			.spyOn(BaseMetricsService.prototype, "getTotalWorkItemAge")
+			.mockResolvedValue(0);
 
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
+				<TotalWorkItemAgeWidget totalAge={120} />
 			</TestWrapper>,
 		);
 
-		await waitFor(() => {
-			expect(screen.getByText("250")).toBeInTheDocument();
-			expect(screen.getByText("days")).toBeInTheDocument();
-		});
+		expect(getTotalWorkItemAge).not.toHaveBeenCalled();
 	});
 
-	it("calls getTotalWorkItemAge with correct entity ID and asOfDate", async () => {
-		const mockService = createMockMetricsService(100);
-
+	it("renders the title with work item age terminology", () => {
 		render(
 			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={42}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
+				<TotalWorkItemAgeWidget totalAge={100} />
 			</TestWrapper>,
 		);
 
-		await waitFor(() => {
-			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(
-				42,
-				testAsOfDate,
-			);
-		});
-	});
-
-	it("displays error message when API call fails", async () => {
-		const mockService = createMockMetricsService(null, true);
-
-		render(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
-			</TestWrapper>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByText("Failed to load data")).toBeInTheDocument();
-		});
-	});
-
-	it("does not show loading indicator after data is loaded", async () => {
-		const mockService = createMockMetricsService(75);
-
-		render(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
-			</TestWrapper>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByText("75")).toBeInTheDocument();
-		});
-
-		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-	});
-
-	it("renders title with terminology", async () => {
-		const mockService = createMockMetricsService(100);
-
-		render(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
-			</TestWrapper>,
-		);
-
-		await waitFor(() => {
-			expect(
-				screen.getByRole("heading", { name: /Total.*Work Item Age/i }),
-			).toBeInTheDocument();
-		});
-	});
-
-	it("handles zero age correctly", async () => {
-		const mockService = createMockMetricsService(0);
-
-		render(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
-			</TestWrapper>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByText("0")).toBeInTheDocument();
-			expect(screen.getByText("days")).toBeInTheDocument();
-		});
-	});
-
-	it("refetches data when entity ID changes", async () => {
-		const mockService = createMockMetricsService(100);
-		const { rerender } = render(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={1}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
-			</TestWrapper>,
-		);
-
-		await waitFor(() => {
-			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(
-				1,
-				testAsOfDate,
-			);
-		});
-
-		rerender(
-			<TestWrapper>
-				<TotalWorkItemAgeWidget
-					entityId={2}
-					metricsService={mockService}
-					asOfDate={testAsOfDate}
-				/>
-			</TestWrapper>,
-		);
-
-		await waitFor(() => {
-			expect(mockService.getTotalWorkItemAge).toHaveBeenCalledWith(
-				2,
-				testAsOfDate,
-			);
-		});
+		expect(
+			screen.getByRole("heading", { name: /Total.*Work Item Age/i }),
+		).toBeInTheDocument();
 	});
 });
