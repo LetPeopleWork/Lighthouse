@@ -59,3 +59,46 @@ export function useCategorySelection(
 
 	return { selectedCategory: selectedCategoryState, setSelectedCategory };
 }
+
+interface VisitedCategoriesState {
+	readonly token: string;
+	readonly visited: readonly CategoryKey[];
+}
+
+function nextVisitedState(
+	current: VisitedCategoriesState,
+	selectedCategory: CategoryKey,
+	resetToken: string,
+): VisitedCategoriesState {
+	if (current.token !== resetToken) {
+		return { token: resetToken, visited: [selectedCategory] };
+	}
+	if (current.visited.includes(selectedCategory)) {
+		return current;
+	}
+	return {
+		token: resetToken,
+		visited: [...current.visited, selectedCategory],
+	};
+}
+
+/** Grows as the user visits categories; resets when the entity or date window changes, which is
+ *  the only time a refetch is wanted. Keeps category switching free on re-visit (Bug #5571).
+ *  The returned array keeps its identity while nothing changes, so callers can use it as a
+ *  useMemo/useEffect dependency without re-triggering on every render. */
+export function useVisitedCategories(
+	selectedCategory: CategoryKey,
+	resetToken: string,
+): readonly CategoryKey[] {
+	const [state, setState] = useState<VisitedCategoriesState>(() => ({
+		token: resetToken,
+		visited: [selectedCategory],
+	}));
+
+	const next = nextVisitedState(state, selectedCategory, resetToken);
+	if (next !== state) {
+		setState(next);
+	}
+
+	return next.visited;
+}

@@ -1,6 +1,11 @@
+import type { RenderHookResult } from "@testing-library/react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { useCategorySelection } from "./useCategorySelection";
+import type { CategoryKey } from "./categoryMetadata";
+import {
+	useCategorySelection,
+	useVisitedCategories,
+} from "./useCategorySelection";
 
 describe("useCategorySelection", () => {
 	afterEach(() => {
@@ -58,5 +63,75 @@ describe("useCategorySelection", () => {
 		);
 		const { result } = renderHook(() => useCategorySelection("portfolio", 12));
 		expect(result.current.selectedCategory).toBe("flow-metrics");
+	});
+});
+
+describe("useVisitedCategories", () => {
+	const renderVisited = (
+		category: CategoryKey,
+		resetToken: string,
+	): RenderHookResult<
+		readonly CategoryKey[],
+		{ category: CategoryKey; resetToken: string }
+	> =>
+		renderHook(({ category: c, resetToken: t }) => useVisitedCategories(c, t), {
+			initialProps: { category, resetToken },
+		});
+
+	it("starts with the initially selected category", () => {
+		const { result } = renderVisited("flow-metrics", "window-a");
+		expect(result.current).toEqual(["flow-metrics"]);
+	});
+
+	it("grows in visit order as new categories are selected", () => {
+		const { result, rerender } = renderVisited("flow-overview", "window-a");
+
+		rerender({ category: "flow-metrics", resetToken: "window-a" });
+		rerender({ category: "predictability", resetToken: "window-a" });
+
+		expect(result.current).toEqual([
+			"flow-overview",
+			"flow-metrics",
+			"predictability",
+		]);
+	});
+
+	it("keeps the identical array when an already-visited category is revisited", () => {
+		const { result, rerender } = renderVisited("flow-overview", "window-a");
+		rerender({ category: "flow-metrics", resetToken: "window-a" });
+		const afterSecondVisit = result.current;
+
+		rerender({ category: "flow-overview", resetToken: "window-a" });
+
+		expect(result.current).toBe(afterSecondVisit);
+		expect(result.current).toEqual(["flow-overview", "flow-metrics"]);
+	});
+
+	it("keeps the identical array when nothing changed between renders", () => {
+		const { result, rerender } = renderVisited("predictability", "window-a");
+		const initial = result.current;
+
+		rerender({ category: "predictability", resetToken: "window-a" });
+
+		expect(result.current).toBe(initial);
+	});
+
+	it("collapses to the current selection when the reset token changes", () => {
+		const { result, rerender } = renderVisited("flow-overview", "window-a");
+		rerender({ category: "flow-metrics", resetToken: "window-a" });
+
+		rerender({ category: "flow-metrics", resetToken: "window-b" });
+
+		expect(result.current).toEqual(["flow-metrics"]);
+	});
+
+	it("does not resurrect an earlier set when a previous reset token returns", () => {
+		const { result, rerender } = renderVisited("flow-overview", "window-a");
+		rerender({ category: "flow-metrics", resetToken: "window-a" });
+		rerender({ category: "predictability", resetToken: "window-b" });
+
+		rerender({ category: "predictability", resetToken: "window-a" });
+
+		expect(result.current).toEqual(["predictability"]);
 	});
 });
