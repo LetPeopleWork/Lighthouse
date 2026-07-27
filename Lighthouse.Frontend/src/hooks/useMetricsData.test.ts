@@ -7,6 +7,10 @@ import { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
+import {
+	getFetchKeysForCategories,
+	type MetricsFetchKey,
+} from "../pages/Common/MetricsView/categoryMetadata";
 import type {
 	IProjectMetricsService,
 	ITeamMetricsService,
@@ -784,6 +788,384 @@ describe("useMetricsData", () => {
 
 			expect(result.current.blockedCountHistory).toBeNull();
 			consoleSpy.mockRestore();
+		});
+	});
+
+	describe("Category-scoped fetch gating (Bug #5571)", () => {
+		function activeKeys(
+			...keys: MetricsFetchKey[]
+		): ReadonlySet<MetricsFetchKey> {
+			return new Set(keys);
+		}
+
+		function countServiceCalls(service: object): number {
+			let total = 0;
+			for (const value of Object.values(service)) {
+				if (vi.isMockFunction(value)) {
+					total += value.mock.calls.length;
+				}
+			}
+			return total;
+		}
+
+		it("skips every fetch whose key is not active", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("throughput"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getThroughputPbc).not.toHaveBeenCalled();
+			expect(service.getWipPbc).not.toHaveBeenCalled();
+			expect(service.getTotalWorkItemAgePbc).not.toHaveBeenCalled();
+			expect(service.getCycleTimePbc).not.toHaveBeenCalled();
+			expect(service.getArrivalsPbc).not.toHaveBeenCalled();
+			expect(service.getAgeInStatePercentiles).not.toHaveBeenCalled();
+			expect(service.getCumulativeStateTimeForTeam).not.toHaveBeenCalled();
+			expect(service.getWorkInProgressOverTime).not.toHaveBeenCalled();
+			expect(service.getEstimationVsCycleTimeData).not.toHaveBeenCalled();
+			expect(service.getCycleTimeData).not.toHaveBeenCalled();
+			expect(service.getInProgressItems).not.toHaveBeenCalled();
+			expect(service.getBlockedItemsAtDate).not.toHaveBeenCalled();
+			expect(service.getBlockedCountHistory).not.toHaveBeenCalled();
+			expect(service.getFeaturesWorkedOnInfo).not.toHaveBeenCalled();
+			expect(mockBlackoutPeriodService.getAll).not.toHaveBeenCalled();
+		});
+
+		it("keeps fetching for an active key exactly once across re-renders", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			const { rerender } = renderHook(
+				({ keys }: { keys: ReadonlySet<MetricsFetchKey> }) =>
+					useMetricsData(entity, service, startDate, endDate, keys),
+				{ initialProps: { keys: activeKeys("throughput", "arrivals") } },
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			// A fresh Set with identical contents: the gate is a derived primitive, so an
+			// unchanged key set must not thrash the effect into a second round trip.
+			rerender({ keys: activeKeys("throughput", "arrivals") });
+			rerender({ keys: activeKeys("throughput", "arrivals") });
+
+			expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			expect(service.getArrivals).toHaveBeenCalledTimes(1);
+		});
+
+		it("fetches a newly activated key once without refetching the already-active ones", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			const { rerender } = renderHook(
+				({ keys }: { keys: ReadonlySet<MetricsFetchKey> }) =>
+					useMetricsData(entity, service, startDate, endDate, keys),
+				{ initialProps: { keys: activeKeys("throughput") } },
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+			expect(service.getWipPbc).not.toHaveBeenCalled();
+
+			rerender({ keys: activeKeys("throughput", "pbcCore") });
+
+			await waitFor(() => {
+				expect(service.getWipPbc).toHaveBeenCalledTimes(1);
+			});
+			expect(service.getTotalWorkItemAgePbc).toHaveBeenCalledTimes(1);
+			expect(service.getThroughput).toHaveBeenCalledTimes(1);
+
+			rerender({ keys: activeKeys("throughput", "pbcCore") });
+
+			expect(service.getWipPbc).toHaveBeenCalledTimes(1);
+			expect(service.getThroughput).toHaveBeenCalledTimes(1);
+		});
+
+		it("fetches everything when no key set is supplied", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() => useMetricsData(entity, service, startDate, endDate));
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getThroughputPbc).toHaveBeenCalledTimes(1);
+			expect(service.getAgeInStatePercentiles).toHaveBeenCalledTimes(1);
+			expect(service.getCumulativeStateTimeForTeam).toHaveBeenCalledTimes(1);
+			expect(service.getWorkInProgressOverTime).toHaveBeenCalledTimes(1);
+			expect(service.getEstimationVsCycleTimeData).toHaveBeenCalledTimes(1);
+			expect(mockBlackoutPeriodService.getAll).toHaveBeenCalledTimes(1);
+		});
+
+		it("separates the cumulative-state-time fetch from the cycle-time batch", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("cumulativeStateTime"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getCumulativeStateTimeForTeam).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getCycleTimeData).not.toHaveBeenCalled();
+			expect(service.getCycleTimePercentiles).not.toHaveBeenCalled();
+			expect(service.getWorkItemAgePercentiles).not.toHaveBeenCalled();
+			expect(service.getAgeInStatePercentiles).not.toHaveBeenCalled();
+			expect(service.getFlowEfficiencyInfoForTeam).not.toHaveBeenCalled();
+		});
+
+		it("separates the age-in-state fetch from the cycle-time batch", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("ageInStatePercentiles"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getAgeInStatePercentiles).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getCycleTimeData).not.toHaveBeenCalled();
+			expect(service.getCumulativeStateTimeForTeam).not.toHaveBeenCalled();
+		});
+
+		it("keeps the cycle-time batch parallel when its own keys are active", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys(
+						"cycleTimeData",
+						"cycleTimePercentiles",
+						"workItemAgePercentiles",
+						"flowEfficiency",
+					),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getCycleTimeData).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getCycleTimePercentiles).toHaveBeenCalledTimes(1);
+			// current period + previous period (D5)
+			expect(service.getWorkItemAgePercentiles).toHaveBeenCalledTimes(2);
+			expect(service.getFlowEfficiencyInfoForTeam).toHaveBeenCalledTimes(1);
+			expect(service.getAgeInStatePercentiles).not.toHaveBeenCalled();
+			expect(service.getCumulativeStateTimeForTeam).not.toHaveBeenCalled();
+		});
+
+		it("splits the core process-behaviour charts from the chart-only ones", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("pbcCore"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getWipPbc).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getTotalWorkItemAgePbc).toHaveBeenCalledTimes(1);
+			expect(service.getThroughputPbc).not.toHaveBeenCalled();
+			expect(service.getCycleTimePbc).not.toHaveBeenCalled();
+			expect(service.getArrivalsPbc).not.toHaveBeenCalled();
+		});
+
+		it("fetches only the chart-only process-behaviour charts for pbcCharts", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("pbcCharts"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughputPbc).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getCycleTimePbc).toHaveBeenCalledTimes(1);
+			expect(service.getArrivalsPbc).toHaveBeenCalledTimes(1);
+			expect(service.getWipPbc).not.toHaveBeenCalled();
+			expect(service.getTotalWorkItemAgePbc).not.toHaveBeenCalled();
+		});
+
+		it("splits the work-in-progress-over-time fetch from the in-progress items fetch", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("inProgressItems"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getInProgressItems).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getWorkInProgressOverTime).not.toHaveBeenCalled();
+			expect(service.getBlockedItemsAtDate).not.toHaveBeenCalled();
+		});
+
+		it("splits the portfolio feature-size group by consumer", async () => {
+			const entity = createMockPortfolioEntity();
+			const service = createMockProjectMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("featureSizeData"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getSizePercentiles).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getAllFeaturesForSizeChart).toHaveBeenCalledTimes(1);
+			expect(service.getFeatureSizePbc).not.toHaveBeenCalled();
+			expect(service.getFeatureSizeEstimation).not.toHaveBeenCalled();
+			expect(service.getFeatureSizePercentilesInfo).not.toHaveBeenCalled();
+		});
+
+		it("fetches the feature-size percentiles info without the estimation data", async () => {
+			const entity = createMockPortfolioEntity();
+			const service = createMockProjectMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					activeKeys("featureSizePercentilesInfo"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getFeatureSizePercentilesInfo).toHaveBeenCalledTimes(1);
+			});
+
+			expect(service.getFeatureSizeEstimation).not.toHaveBeenCalled();
+			expect(service.getSizePercentiles).not.toHaveBeenCalled();
+			expect(service.getFeatureSizePbc).not.toHaveBeenCalled();
+		});
+
+		it("still refetches an active key when the date window moves", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+			const laterEnd = new Date("2024-07-31");
+
+			const { rerender } = renderHook(
+				({ end }: { end: Date }) =>
+					useMetricsData(
+						entity,
+						service,
+						startDate,
+						end,
+						activeKeys("throughput"),
+					),
+				{ initialProps: { end: endDate } },
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			rerender({ end: laterEnd });
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(2);
+			});
+			expect(service.getThroughput).toHaveBeenLastCalledWith(
+				entity.id,
+				startDate,
+				laterEnd,
+			);
+		});
+
+		it("holds the first-open request budget for the default team view", async () => {
+			const entity = createMockEntity();
+			const service = createMockTeamMetricsService();
+
+			renderHook(() =>
+				useMetricsData(
+					entity,
+					service,
+					startDate,
+					endDate,
+					getFetchKeysForCategories(["flow-overview"], "team"),
+				),
+			);
+
+			await waitFor(() => {
+				expect(service.getThroughput).toHaveBeenCalledTimes(1);
+			});
+
+			// Measured baseline before the gate: 29 calls from this hook alone (RCA §1.1). The
+			// budget is asserted exactly so that a fetch added without a fetch-key declaration
+			// cannot slip back onto the default view unnoticed (RCA root cause B).
+			const total =
+				countServiceCalls(service) +
+				countServiceCalls(mockBlackoutPeriodService);
+			expect(total).toBe(19);
 		});
 	});
 });
