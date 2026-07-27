@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.API.DTO
             {
                 var likelihood = feature.GetLikelhoodForDate(delivery.Date, today, blackoutPeriods);
 
-                var completionDates = feature.Forecast.CreateForecastDtos(blackoutPeriods, 70, 85, 95);
+                var completionDates = feature.Forecast.CreateForecastDtos(blackoutPeriods, today, 70, 85, 95);
 
                 featureLikelihoods.Add(new FeatureLikelihoodDto
                 {

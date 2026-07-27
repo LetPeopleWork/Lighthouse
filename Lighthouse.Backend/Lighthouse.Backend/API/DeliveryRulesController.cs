@@ -18,7 +18,8 @@ namespace Lighthouse.Backend.API
         IRepository<Portfolio> portfolioRepository,
         IDeliveryRuleService deliveryRuleService,
         IBlackoutPeriodService blackoutPeriodService,
-        IBlockedItemService blockedItemService)
+        IBlockedItemService blockedItemService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpGet("schema")]
@@ -54,11 +55,11 @@ namespace Lighthouse.Backend.API
 
             var ruleSet = ConvertToRuleSet(request);
             var result = deliveryRuleService.GetMatchingFeaturesForRuleset(ruleSet, portfolio.Features).ToList();
-            var forecastWindowStart = DateTime.UtcNow.Date;
+            var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                forecastWindowStart, FeatureForecastWindow.EndFor(result));
+                forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, result));
 
-            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, DateOnly.FromDateTime(forecastWindowStart), blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
+            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
 
             if (matchingFeatures.Count == 0)
             {

@@ -70,7 +70,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
-                Mock.Of<IWorkItemStateTransitionRepository>());
+                Mock.Of<IWorkItemStateTransitionRepository>(),
+                TestToday.Clock);
 
             workItems = new List<WorkItem>();
             workItemRepositoryMock
@@ -207,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // CI4 / US-04 AC2: this is a correctness fix for HISTORICAL ranges only. With endDate = today
             // the population is the currently-Doing set and every age must equal the shipped WorkItemAge
             // property, byte for byte.
-            var today = DateTime.UtcNow.Date;
+            var today = TestToday.AmbientAsUtcMidnight;
             AddItem("OPEN-NOW", started: today.AddDays(-3), closed: null);
             AddItem("ALSO-OPEN-NOW", started: today.AddDays(-9), closed: null);
 
@@ -295,7 +296,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetWorkItemAgePercentiles_WhenTheRangeEndsToday_MatchesTheTodayAnchoredProperty()
         {
-            var today = DateTime.UtcNow.Date;
+            var today = TestToday.AmbientAsUtcMidnight;
             AddFeature("F-OPEN", started: today.AddDays(-5), closed: null);
 
             var wip = subject.GetInProgressFeaturesForPortfolio(portfolio, today).ToList();

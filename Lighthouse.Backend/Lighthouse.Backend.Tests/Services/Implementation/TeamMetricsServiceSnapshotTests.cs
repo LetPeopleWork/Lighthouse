@@ -73,7 +73,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
-                stateTransitionRepositoryMock.Object);
+                stateTransitionRepositoryMock.Object,
+                TestToday.Clock);
 
             workItems = new List<WorkItem>();
             features = new List<Feature>();
@@ -177,10 +178,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // The failing case from the field: in progress on Apr 19, Closed by the time we look.
             // The aging chart buckets by state, so reporting "Closed" drops it out of the chart
             // entirely while WIP-over-time still counts it.
-            AddDoneItem(startedDate: Day1, closedDate: DateTime.UtcNow.Date);
+            AddDoneItem(startedDate: Day1, closedDate: TestToday.AmbientAsUtcMidnight);
             workItems[0].State = "Closed";
             AddTransition(workItemId: 1, toState: "Active", at: Day1);
-            AddTransition(workItemId: 1, toState: "Closed", at: DateTime.UtcNow.Date);
+            AddTransition(workItemId: 1, toState: "Closed", at: TestToday.AmbientAsUtcMidnight);
 
             var item = subject.GetWipSnapshotForTeam(testTeam, Day19).Single();
 

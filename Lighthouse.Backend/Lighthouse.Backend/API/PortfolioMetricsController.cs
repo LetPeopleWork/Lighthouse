@@ -105,8 +105,9 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var features = portfolioMetricsService.GetInProgressFeaturesForPortfolio(portfolio, asOfDate).ToList();
+                var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
+                    forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
                 // UPSTREAM-7: the population is date-correct and D16 made the age as-of, but the state
                 // stayed today-anchored — and the aging chart buckets by state, so features that have
@@ -119,7 +120,7 @@ namespace Lighthouse.Backend.API
                 // prefers them. A feature with no capture history at all predates capture, and there the live
                 // rule is the only answer available; a feature WITH history but no covering spell reads not
                 // blocked — absence of a spell is evidence, not a gap (US-03 AC4). This mirrors the team read.
-                var isHistoricRange = asOfDate.Date < DateTime.UtcNow.Date;
+                var isHistoricRange = DateOnly.FromDateTime(asOfDate) < clock.Today;
                 var featureIds = features.Select(f => f.Id).ToList();
 
                 // Indexed once rather than scanned per feature: both lookups sit inside the projection below,
@@ -252,8 +253,9 @@ namespace Lighthouse.Backend.API
             {
                 var data = portfolioMetricsService.GetNamedCycleTimeDataForPortfolio(portfolio, startDate, endDate);
                 var features = data.Select(entry => entry.Feature).ToList();
+                var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
+                    forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
                 return data.Select(entry => new FeatureDto(entry.Feature, clock.Today, blackoutPeriods, blockedItemService.IsBlocked(entry.Feature, portfolio), null, namedCycleTimes: entry.NamedCycleTimes));
             });
         }
@@ -269,8 +271,9 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var features = portfolioMetricsService.GetAllFeaturesForSizeChart(portfolio, startDate, endDate).ToList();
+                var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
+                    forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
                 return features.Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, blockedItemService.IsBlocked(f, portfolio), null));
             });
         }
@@ -585,7 +588,7 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, (portfolio) =>
             {
                 var targetDate = DateOnly.FromDateTime(date.Date);
-                var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+                var today = clock.Today;
 
                 if (targetDate >= today)
                 {

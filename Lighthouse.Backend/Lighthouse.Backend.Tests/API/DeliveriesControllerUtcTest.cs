@@ -51,7 +51,8 @@ namespace Lighthouse.Backend.Tests.API
                 Mock.Of<IDeliveryRuleService>(),
                 rbacAdministrationService.Object,
                 deliveryMetricSnapshotRepository.Object,
-                Mock.Of<IBlackoutPeriodService>());
+                Mock.Of<IBlackoutPeriodService>(),
+                TestToday.Clock);
         }
 
         [Test]

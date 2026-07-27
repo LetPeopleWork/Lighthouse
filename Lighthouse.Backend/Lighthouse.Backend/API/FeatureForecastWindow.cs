@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.API
         private const int BlackoutDensityMultiplier = 2;
         private const int WorstCasePercentile = 95;
 
-        public static DateTime EndFor(IEnumerable<Feature> features)
+        public static DateTime EndFor(DateTime windowStart, IEnumerable<Feature> features)
         {
             var worstCaseWorkingDays = features
                 .Select(feature => feature.Forecast?.GetProbability(WorstCasePercentile) ?? 0)
@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API
 
             var calendarSpan = (worstCaseWorkingDays * BlackoutDensityMultiplier) + CalendarHeadroomDays;
 
-            return DateTime.UtcNow.Date.AddDays(calendarSpan);
+            return windowStart.AddDays(calendarSpan);
         }
     }
 }

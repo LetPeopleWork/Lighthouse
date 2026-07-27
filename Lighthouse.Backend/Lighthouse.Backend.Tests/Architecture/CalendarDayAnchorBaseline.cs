@@ -13,14 +13,10 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// Bug #5567 - the warn-list for the anchor-seam source guard (RCA section 8-T2).
     ///
-    /// These were the 49 sites verified at HEAD (RCA section 5, 24 files); step 02-01 migrated the
-    /// five entity anchors (Models/Team.cs x2, Models/Feature.cs, Models/Delivery.cs,
-    /// Models/WorkItemBase.cs) onto a caller-supplied DateOnly, leaving 44, and step 02-03 migrated
-    /// the six snapshot-recorder lines onto ILighthouseClock, leaving 38. The guard fails on any
-    /// anchor NOT listed here, so no 50th site can be added while the migration runs, and it fails
-    /// on any entry listed here that no longer exists, so the list cannot rot into a permanent
-    /// allowlist as each phase-02 cluster shrinks it. When the last entry goes, the baseline is
-    /// deleted and the guard becomes a hard fail (RCA section 6, step 5).
+    /// 49 sites were verified at HEAD (RCA section 5, 24 files); steps 02-01, 02-03 and 02-04 have
+    /// since migrated 39 of them, leaving 10. The guard fails on any anchor NOT listed here and on
+    /// any entry listed here that no longer exists, so the list can only shrink. When the last entry
+    /// goes, the baseline is deleted and the guard becomes a hard fail (RCA section 6, step 5).
     ///
     /// Deliberately NOT in this list: the four tracker history cutoffs of decision 4
     /// (Services/Implementation/WorkItems/WorkItemService.cs, the ADO connector and the Jira
@@ -55,47 +51,13 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public static readonly CalendarDayAnchorSite[] KnownSites =
         [
-            // --- Forecast projection & windows (RCA 5(a)) --------------------------------------
-            new("API/DTO/WhenForecastDto.cs", UtcNowDate, "Forecast projection start day; moves to clock.Today."),
-            new("API/FeatureForecastWindow.cs", UtcNowDate, "Forecast window start day; moves to clock.Today."),
-            new("API/FeaturesController.cs", UtcNowDate, "Forecast window start day; moves to clock.Today."),
-            new("API/DeliveryRulesController.cs", UtcNowDate, "Forecast window start day; moves to clock.Today."),
-            new("API/DeliveriesController.cs", UtcNowDate, "Forecast window start day; moves to clock.Today."),
-            new("API/DeliveriesController.cs", UtcNowDate, "Forecast horizon lower bound; moves to clock.Today."),
-            new("API/DeliveriesController.cs", UtcNowDate, "Forecast horizon comparison and fallback; moves to clock.Today."),
-
-            // --- API/ForecastController.cs - the branch-B evidence -----------------------------
-            // This one file carries BOTH spellings. DateTime.Today reads the HOST zone and
-            // DateTime.UtcNow.Date reads UTC, so on a non-UTC standalone instance the two endpoints
-            // of the same controller anchor on different calendar days. No runtime test can show
-            // this - an injected instant never reaches a statically-read clock - which is why this
-            // scanner is the only deterministic proof of branch B.
-            new("API/ForecastController.cs", DateTimeToday, "Manual-forecast anchor day, host-zone spelling; moves to clock.Today."),
-            new("API/ForecastController.cs", UtcNowDate, "Forecast projection anchor day, UTC spelling; moves to clock.Today."),
-            new("API/ForecastController.cs", UtcNowDate, "Forecast projection anchor day, UTC spelling; moves to clock.Today."),
-            new("API/ForecastController.cs", UtcNowDate, "Forecast projection anchor day, UTC spelling; moves to clock.Today."),
-            new("API/ForecastController.cs", UtcNowDate, "Forecast projection anchor day, UTC spelling; moves to clock.Today."),
-            new("API/ForecastController.cs", DateOnlyFromToday, "Item-creation prediction minimum start day; moves to clock.Today."),
-            new("API/ForecastController.cs", DateTimeToday, "ItemCreationPredictionInputDto default initialiser; DELETED per decision 5 (the property is [JsonRequired])."),
-            new("API/ForecastController.cs", DateTimeToday, "ItemCreationPredictionInputDto default initialiser; DELETED per decision 5 (the property is [JsonRequired])."),
-            new("API/ForecastController.cs", DateTimeToday, "ItemCreationPredictionInputDto default initialiser; DELETED per decision 5 (the property is [JsonRequired])."),
-
-            // --- Throughput defaults (RCA 5(a)) ------------------------------------------------
-            new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Current-WIP snapshot day; moves to clock.Today."),
-            new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Metric range end day; moves to clock.Today."),
-            new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Current features-in-progress day; moves to clock.Today."),
-            new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Metric range end day; moves to clock.Today."),
-
-            // --- Historic-range detection (RCA 5(a)) -------------------------------------------
-            new("API/PortfolioMetricsController.cs", UtcNowDate, "Historic-vs-live range detection; moves to clock.Today."),
-            new("API/PortfolioMetricsController.cs", UtcNowDate, "Historic-vs-live range detection; moves to clock.Today."),
-            new("API/PortfolioMetricsController.cs", UtcNowDate, "Historic-vs-live range detection; moves to clock.Today."),
-            new("API/PortfolioMetricsController.cs", UtcNowDate, "Historic-vs-live range detection; moves to clock.Today."),
-            new("API/PortfolioMetricsController.cs", DateOnlyFromUtcNowDate, "Derived DateOnly reduction of the UTC day; same defect, moves to clock.Today."),
-            new("API/TeamMetricsController.cs", UtcNowDate, "Historic-vs-live range detection; moves to clock.Today."),
-            new("API/TeamMetricsController.cs", UtcNowDate, "Historic-vs-live range detection; moves to clock.Today."),
-            new("API/TeamMetricsController.cs", DateOnlyFromUtcNowDate, "Derived DateOnly reduction of the UTC day; same defect, moves to clock.Today."),
-
+            // --- Forecast projection, windows, throughput defaults and historic-range detection ---
+            // Step 02-04 migrated this whole cluster onto ILighthouseClock. Twenty-five lines across
+            // nine files now take the day from clock.Today / clock.TodayAsUtcMidnight, and the three
+            // ItemCreationPredictionInputDto default initialisers were deleted rather than migrated
+            // (decision 5 - every one of those properties is [JsonRequired], so model binding can
+            // never reach the default). With them went API/ForecastController.cs, the one file that
+            // carried BOTH spellings in a single request lifetime - the branch-B evidence.
             // --- Snapshot recording / day keys (RCA 5(a)) --------------------------------------
             // Step 02-03 migrated this whole cluster onto ILighthouseClock: the four snapshot
             // recording handlers now take the clock by constructor injection and every day key is

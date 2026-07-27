@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, forecastFilterRuleServiceMock.Object, Mock.Of<IWorkItemStateTransitionRepository>());
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, forecastFilterRuleServiceMock.Object, Mock.Of<IWorkItemStateTransitionRepository>(), TestToday.Clock);
 
             workItems = new List<WorkItem>();
 
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.ToDo, 1, "Feature1");
             AddWorkItem(StateCategories.Done, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date.AddDays(5)).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight.AddDays(5)).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
@@ -126,11 +126,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
 
@@ -139,12 +139,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
             subject.InvalidateTeamMetrics(testTeam);
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-1);
 
-            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, string.Empty);
 
-            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(0));
         }
@@ -175,7 +175,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
@@ -187,7 +187,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
 
-            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             Assert.That(featuresInProgress, Has.Count.EqualTo(3));
         }
@@ -197,11 +197,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
         }
 
@@ -210,12 +210,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 1, "Feature1");
 
-            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(1));
             subject.InvalidateTeamMetrics(testTeam);
 
             AddWorkItem(StateCategories.Doing, 1, "Feature2");
-            featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            featuresInProgress = subject.GetWipSnapshotForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
             Assert.That(featuresInProgress, Has.Count.EqualTo(2));
         }
 
@@ -686,7 +686,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AddInProgressItemAged(age);
             }
 
-            var percentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var percentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -706,7 +706,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-2);
 
-            var percentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, DateTime.UtcNow.Date).ToList();
+            var percentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -723,7 +723,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             closedItem.StartedDate = DateTime.UtcNow.AddDays(-100);
             closedItem.ClosedDate = DateTime.UtcNow;
 
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var cycleTimePercentiles = subject.GetCycleTimePercentilesForTeam(testTeam, endDate.AddDays(-30), endDate).ToList();
             var agePercentiles = subject.GetWorkItemAgePercentilesForTeam(testTeam, endDate).ToList();
 
@@ -778,7 +778,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItem.StartedDate = DateTime.Now.AddDays(-1);
             workItem.ClosedDate = DateTime.Now.AddDays(-1);
 
-            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Today.AddDays(-1), DateTime.Today).ToList();
+            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -899,7 +899,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var closedItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
             closedItem.ClosedDate = DateTime.UtcNow.AddDays(-1);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, TestToday.AmbientAsUtcMidnight);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -909,7 +909,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             AddWorkItem(StateCategories.Doing, 2, string.Empty);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, TestToday.AmbientAsUtcMidnight);
 
             Assert.That(totalAge, Is.Zero);
         }
@@ -920,7 +920,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var workItem = AddWorkItem(StateCategories.Doing, 1, string.Empty);
             workItem.StartedDate = DateTime.UtcNow.AddDays(-5);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, TestToday.AmbientAsUtcMidnight);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -937,7 +937,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var workItem3 = AddWorkItem(StateCategories.Doing, 1, string.Empty);
             workItem3.StartedDate = DateTime.UtcNow.AddDays(-1);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, TestToday.AmbientAsUtcMidnight);
 
             // 6 + 4 + 2 = 12
             Assert.That(totalAge, Is.EqualTo(12));
@@ -955,7 +955,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, TestToday.AmbientAsUtcMidnight);
 
             Assert.That(totalAge, Is.EqualTo(6));
         }
@@ -968,7 +968,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             workItem.CreatedDate = DateTime.UtcNow.AddDays(-7);
             workItem.ClosedDate = null;
 
-            var totalAge = subject.GetTotalWorkItemAge(testTeam, DateTime.UtcNow.Date);
+            var totalAge = subject.GetTotalWorkItemAge(testTeam, TestToday.AmbientAsUtcMidnight);
 
             Assert.That(totalAge, Is.EqualTo(8));
         }
@@ -996,7 +996,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             var result = subject.GetThroughputProcessBehaviourChart(testTeam, displayStart, displayEnd);
 
@@ -1029,7 +1029,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-7).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1045,7 +1045,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-7).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1062,7 +1062,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-7).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1099,7 +1099,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-2).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1129,7 +1129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-1).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1157,7 +1157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-3).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1187,7 +1187,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-1).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1237,7 +1237,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             var result = subject.GetWipProcessBehaviourChart(testTeam, displayStart, displayEnd);
 
@@ -1255,7 +1255,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-3).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1281,7 +1281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-2).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1312,7 +1312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-1).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1347,7 +1347,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             var result = subject.GetTotalWorkItemAgeProcessBehaviourChart(testTeam, displayStart, displayEnd);
 
@@ -1365,7 +1365,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-3).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1386,7 +1386,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-2).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1411,7 +1411,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-1).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1434,7 +1434,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-1).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1469,7 +1469,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.ProcessBehaviourChartBaselineEndDate = null;
 
             var displayStart = DateTime.UtcNow.AddDays(-30).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             var item = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item.StartedDate = displayStart;
@@ -1491,7 +1491,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-7).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1515,7 +1515,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-7).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1546,7 +1546,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;
             var baselineEnd = DateTime.UtcNow.AddDays(-16).Date;
             var displayStart = DateTime.UtcNow.AddDays(-7).Date;
-            var displayEnd = DateTime.UtcNow.Date;
+            var displayEnd = TestToday.AmbientAsUtcMidnight;
 
             testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
             testTeam.ProcessBehaviourChartBaselineEndDate = baselineEnd;
@@ -1780,7 +1780,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private WorkItem AddInProgressItemAged(int ageDays)
         {
             var item = AddWorkItem(StateCategories.Doing, testTeam.Id, string.Empty);
-            item.StartedDate = DateTime.UtcNow.Date.AddDays(-(ageDays - 1));
+            item.StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-(ageDays - 1));
             return item;
         }
 
@@ -1824,7 +1824,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -1857,7 +1857,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -1884,7 +1884,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -1904,7 +1904,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -1935,7 +1935,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -1966,7 +1966,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -1996,7 +1996,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.UseNonNumericEstimation = false;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -2023,7 +2023,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -2063,7 +2063,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.EstimationCategoryValues = ["S", "M", "L"];
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -2093,7 +2093,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.EstimationUnit = "Points";
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -2112,7 +2112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -2141,7 +2141,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
 
             var startDate = DateTime.UtcNow.AddDays(-10).Date;
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = AddWorkItem(StateCategories.Done, 1, string.Empty);
             item1.StartedDate = startDate;
@@ -2196,8 +2196,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-dayOffset);
             }
 
-            var blackoutStart = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3));
-            var blackoutEnd = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
+            var blackoutStart = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-3));
+            var blackoutEnd = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-2));
             SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = blackoutStart, End = blackoutEnd });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
@@ -2219,7 +2219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-dayOffset);
             }
 
-            var blackoutDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2));
+            var blackoutDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-2));
             SetupEffectiveBlackoutDays(new BlackoutPeriod { Id = 1, Start = blackoutDate, End = blackoutDate });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
@@ -2241,9 +2241,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-6);
 
             SetupEffectiveBlackoutDays(
-                new BlackoutPeriod { Id = 1, Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)), End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1)) },
-                new BlackoutPeriod { Id = 2, Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2)), End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-2)) },
-                new BlackoutPeriod { Id = 3, Start = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3)), End = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3)) });
+                new BlackoutPeriod { Id = 1, Start = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-1)), End = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-1)) },
+                new BlackoutPeriod { Id = 2, Start = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-2)), End = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-2)) },
+                new BlackoutPeriod { Id = 3, Start = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-3)), End = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-3)) });
 
             var throughput = subject.GetCurrentThroughputForTeamForecast(testTeam);
 
@@ -2406,8 +2406,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = DateTime.UtcNow.AddDays(-dayOffset);
             }
 
-            var blackout1 = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1));
-            var blackout2 = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3));
+            var blackout1 = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-1));
+            var blackout2 = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-3));
             SetupEffectiveBlackoutDays(
                 new BlackoutPeriod { Id = 1, Start = blackout1, End = blackout1 },
                 new BlackoutPeriod { Id = 2, Start = blackout2, End = blackout2 });

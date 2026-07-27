@@ -11,6 +11,14 @@ namespace Lighthouse.Backend.Tests
     /// </summary>
     internal static class TestToday
     {
-        internal static DateOnly Ambient => DateOnly.FromDateTime(DateTime.UtcNow.Date);
+        /// <summary>
+        /// One clock per test host, so a subject and the expectations around it can never land on
+        /// different days - not even for a run that crosses midnight.
+        /// </summary>
+        internal static TestDoubles.FakeLighthouseClock Clock { get; } = new(DateTimeOffset.UtcNow);
+
+        internal static DateOnly Ambient => Clock.Today;
+
+        internal static DateTime AmbientAsUtcMidnight => Clock.TodayAsUtcMidnight;
     }
 }

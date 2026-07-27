@@ -520,7 +520,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTotalWorkItemAge_ProjectIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetTotalWorkItemAge(1337, DateTime.UtcNow.Date);
+            var response = subject.GetTotalWorkItemAge(1337, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -589,7 +589,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Setup(x => x.IsBlocked(It.IsAny<Feature>(), project))
                 .Returns((Feature f, Portfolio _) => f.Id == 1);
 
-            var result = subject.GetBlockedItemsAtDate(1, DateTime.UtcNow.Date);
+            var result = subject.GetBlockedItemsAtDate(1, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -606,7 +606,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Features never emit WorkItemBlocked, so there is no per-feature transition history to
             // reconstruct — a past date must return empty rather than a bogus WorkItem-id join.
-            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var pastDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
 
             var result = subject.GetBlockedItemsAtDate(1, pastDate);
 
@@ -624,7 +624,7 @@ namespace Lighthouse.Backend.Tests.API
             // The past-date reconstruction is empty for a Portfolio, but a captured snapshot for THIS
             // owner/type/date records blocked features — that divergence is a capture gap and must never be
             // silent. The guard's snapshot lookup must be scoped to the requested owner/type/date.
-            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var pastDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var targetDate = DateOnly.FromDateTime(pastDate);
             var snapshots = new List<BlockedCountSnapshot>
             {

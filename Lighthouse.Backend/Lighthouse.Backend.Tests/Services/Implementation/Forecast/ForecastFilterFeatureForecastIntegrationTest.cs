@@ -74,7 +74,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
                 forecastFilterRuleService,
-                Mock.Of<IWorkItemStateTransitionRepository>());
+                Mock.Of<IWorkItemStateTransitionRepository>(),
+                TestToday.Clock);
         }
 
         [TearDown]
@@ -276,7 +277,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Name = referenceId,
                 Type = type,
                 StartedDate = DateTime.UtcNow.AddDays(-(daysAgo + 5)),
-                ClosedDate = DateTime.UtcNow.Date.AddDays(-daysAgo),
+                ClosedDate = TestToday.AmbientAsUtcMidnight.AddDays(-daysAgo),
             };
             workItems.Add(workItem);
             return workItem;

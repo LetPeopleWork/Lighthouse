@@ -92,8 +92,9 @@ namespace Lighthouse.Backend.API
         {
             var features = featureRepository.GetAllByPredicate(predicate).OrderBy(f => f, new FeatureComparer()).ToList();
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
+            var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
+                forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))

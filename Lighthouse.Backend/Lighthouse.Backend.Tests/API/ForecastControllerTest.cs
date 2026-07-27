@@ -330,7 +330,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 WorkItemTypes = ["Bug", "Task"],
                 StartDate = DateTime.Now.AddDays(-1),
-                EndDate = DateTime.Now.AddDays(30)
+                EndDate = DateTime.Now.AddDays(30),
+                TargetDate = TestToday.AmbientAsUtcMidnight.AddDays(30),
             };
 
             var simulationResult = new Dictionary<int, int>
@@ -404,10 +405,10 @@ namespace Lighthouse.Backend.Tests.API
 
             var input = new BacktestInputDto
             {
-                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
-                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
-                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60)),
-                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                StartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-16)),
+                HistoricalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-60)),
+                HistoricalEndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -431,10 +432,10 @@ namespace Lighthouse.Backend.Tests.API
 
             var input = new BacktestInputDto
             {
-                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7)), // Only 7 days ago, needs 14
-                EndDate = DateOnly.FromDateTime(DateTime.Today),
-                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-37)),
-                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7)),
+                StartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-7)), // Only 7 days ago, needs 14
+                EndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight),
+                HistoricalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-37)),
+                HistoricalEndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-7)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -452,10 +453,10 @@ namespace Lighthouse.Backend.Tests.API
 
             var input = new BacktestInputDto
             {
-                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
-                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-23)), // Only 7 days after start, needs 14
-                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60)),
-                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                StartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-23)), // Only 7 days after start, needs 14
+                HistoricalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-60)),
+                HistoricalEndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -473,10 +474,10 @@ namespace Lighthouse.Backend.Tests.API
 
             var input = new BacktestInputDto
             {
-                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
-                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
-                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60)),
-                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-20)), // After StartDate
+                StartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-16)),
+                HistoricalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-60)),
+                HistoricalEndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-20)), // After StartDate
             };
 
             var result = subject.RunBacktest(12, input);
@@ -494,10 +495,10 @@ namespace Lighthouse.Backend.Tests.API
 
             var input = new BacktestInputDto
             {
-                StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
-                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-16)),
-                HistoricalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)), // Same as HistoricalEndDate
-                HistoricalEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30)),
+                StartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
+                EndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-16)),
+                HistoricalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)), // Same as HistoricalEndDate
+                HistoricalEndDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30)),
             };
 
             var result = subject.RunBacktest(12, input);
@@ -511,9 +512,9 @@ namespace Lighthouse.Backend.Tests.API
             var expectedTeam = new Team { Id = 12, Name = "Test Team" };
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
-            var startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60));
-            var endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
-            var historicalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-90));
+            var startDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-60));
+            var endDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30));
+            var historicalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-90));
             var historicalEndDate = startDate;
             var forecastDays = endDate.DayNumber - startDate.DayNumber;
 
@@ -577,9 +578,9 @@ namespace Lighthouse.Backend.Tests.API
             var expectedTeam = new Team { Id = 12, Name = "Test Team" };
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
-            var startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-60));
-            var endDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
-            var historicalStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-90));
+            var startDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-60));
+            var endDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-30));
+            var historicalStartDate = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight.AddDays(-90));
             var historicalEndDate = startDate;
             var calendarSpan = endDate.DayNumber - startDate.DayNumber;
 
@@ -662,7 +663,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object);
+            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, TestToday.Clock);
         }
     }
 }

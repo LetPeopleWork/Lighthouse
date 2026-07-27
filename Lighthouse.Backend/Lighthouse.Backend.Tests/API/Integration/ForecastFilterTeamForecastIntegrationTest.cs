@@ -63,7 +63,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 forecastServiceMock.Object,
                 teamRepositoryMock.Object,
                 teamMetricsServiceMock.Object,
-                blackoutPeriodServiceMock.Object);
+                blackoutPeriodServiceMock.Object,
+                TestToday.Clock);
         }
 
         [Test]
@@ -71,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             StubForecastStatus(ThroughputFilterMode.SkipFilter, filterApplied: false, excludedSummary: null);
 
-            await RunManualForecast(applyFilterOverride: false, targetDate: DateTime.Today.AddDays(14));
+            await RunManualForecast(applyFilterOverride: false, targetDate: TestToday.AmbientAsUtcMidnight.AddDays(14));
 
             teamMetricsServiceMock.Verify(s => s.GetForecastThroughputStatus(team, ThroughputFilterMode.SkipFilter), Times.Once);
         }
@@ -81,7 +82,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             StubForecastStatus(ThroughputFilterMode.ApplyFilter, filterApplied: true, excludedSummary: "Excluded 3 work items via team forecast filter");
 
-            await RunManualForecast(applyFilterOverride: true, targetDate: DateTime.Today.AddDays(14));
+            await RunManualForecast(applyFilterOverride: true, targetDate: TestToday.AmbientAsUtcMidnight.AddDays(14));
 
             teamMetricsServiceMock.Verify(s => s.GetForecastThroughputStatus(team, ThroughputFilterMode.ApplyFilter), Times.Once);
         }
@@ -91,7 +92,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             StubForecastStatus(ThroughputFilterMode.RespectTeamSetting, filterApplied: true, excludedSummary: "Excluded 2 work items via team forecast filter");
 
-            await RunManualForecast(applyFilterOverride: null, targetDate: DateTime.Today.AddDays(14));
+            await RunManualForecast(applyFilterOverride: null, targetDate: TestToday.AmbientAsUtcMidnight.AddDays(14));
 
             teamMetricsServiceMock.Verify(s => s.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting), Times.Once);
         }
@@ -101,7 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             StubForecastStatus(ThroughputFilterMode.ApplyFilter, filterApplied: false, excludedSummary: null);
 
-            var result = await RunManualForecast(applyFilterOverride: true, targetDate: DateTime.Today.AddDays(14));
+            var result = await RunManualForecast(applyFilterOverride: true, targetDate: TestToday.AmbientAsUtcMidnight.AddDays(14));
 
             using (Assert.EnterMultipleScope())
             {
@@ -116,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             const string summary = "Excluded 5 work items via team forecast filter";
             StubForecastStatus(ThroughputFilterMode.ApplyFilter, filterApplied: true, excludedSummary: summary);
 
-            var result = await RunManualForecast(applyFilterOverride: true, targetDate: DateTime.Today.AddDays(14));
+            var result = await RunManualForecast(applyFilterOverride: true, targetDate: TestToday.AmbientAsUtcMidnight.AddDays(14));
 
             using (Assert.EnterMultipleScope())
             {

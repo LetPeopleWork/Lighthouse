@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
+#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?"; folding it into an aggregate with the unrelated repositories would hide it.
     public class TeamMetricsService(
         ILogger<TeamMetricsService> logger,
         IWorkItemRepository workItemRepository,
@@ -16,7 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation
         IServiceProvider serviceProvider,
         IBlackoutPeriodService blackoutPeriodService,
         IForecastFilterRuleService forecastFilterRuleService,
-        IWorkItemStateTransitionRepository workItemStateTransitionRepository)
+        IWorkItemStateTransitionRepository workItemStateTransitionRepository,
+        ILighthouseClock clock)
+#pragma warning restore S107
         : BaseMetricsService(appSettingService.GetTeamDataRefreshSettings().Interval, serviceProvider),
             ITeamMetricsService
     {
@@ -72,7 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Forecast Input Candidates for Team {TeamName}", team.Name);
 
-            var currentWipCount = GetWipSnapshotForTeam(team, DateTime.UtcNow.Date).Count();
+            var currentWipCount = GetWipSnapshotForTeam(team, clock.TodayAsUtcMidnight).Count();
 
             var backlogCount = workItemRepository
                 .GetAllByPredicate(i => i.TeamId == team.Id &&
@@ -120,7 +123,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             if (team.UseFixedDatesForThroughput)
             {
-                var endDate = DateTime.UtcNow.Date;
+                var endDate = clock.TodayAsUtcMidnight;
                 var startDate = team.ThroughputHistoryStartDate ?? endDate.AddDays(-(team.ThroughputHistory - 1));
                 var fixedEndDate = team.ThroughputHistoryEndDate ?? endDate;
 
@@ -792,7 +795,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var featureWip = GetCurrentFeaturesInProgressForTeam(team, DateTime.UtcNow.Date).Count();
+            var featureWip = GetCurrentFeaturesInProgressForTeam(team, clock.TodayAsUtcMidnight).Count();
             team.FeatureWIP = featureWip;
         }
 
@@ -806,7 +809,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private RunChartData GetBlackoutAwareThroughputForTeam(Team team, int historyInCalendarDays)
         {
-            var endDate = DateTime.UtcNow.Date;
+            var endDate = clock.TodayAsUtcMidnight;
             var startDate = endDate.AddDays(-(historyInCalendarDays - 1));
 
             return GetBlackoutAwareThroughputForTeam(team, startDate, endDate, ThroughputFilterMode.SkipFilter);

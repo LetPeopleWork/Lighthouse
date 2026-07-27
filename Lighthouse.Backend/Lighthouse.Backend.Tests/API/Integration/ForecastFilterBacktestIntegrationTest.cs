@@ -58,7 +58,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 forecastServiceMock.Object,
                 teamRepositoryMock.Object,
                 teamMetricsServiceMock.Object,
-                blackoutPeriodServiceMock.Object);
+                blackoutPeriodServiceMock.Object,
+                TestToday.Clock);
         }
 
         [Test]
@@ -134,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public void Backtest_WindowContainsBlackoutDays_ForecastHorizonExcludesThem()
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight);
             var windowStart = today.AddDays(-58);
             var windowEnd = windowStart.AddDays(28);
             var blackoutStart = windowStart.AddDays(10);
@@ -153,7 +154,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public void Backtest_WindowWithoutBlackoutDays_ForecastHorizonIsCalendarSpan()
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight);
             var windowStart = today.AddDays(-58);
             var windowEnd = windowStart.AddDays(28);
             var capturedHorizon = CaptureForecastHorizon();
@@ -198,7 +199,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private BacktestResultDto RunBacktest(bool? applyFilterOverride)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateOnly.FromDateTime(TestToday.AmbientAsUtcMidnight);
             return RunBacktest(applyFilterOverride, today.AddDays(-60), today.AddDays(-30));
         }
 

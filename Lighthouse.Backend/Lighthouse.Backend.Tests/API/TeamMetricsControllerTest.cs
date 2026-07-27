@@ -288,7 +288,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetFeaturesInProgress(1337, DateTime.UtcNow.Date);
+            var response = subject.GetFeaturesInProgress(1337, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -342,7 +342,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCurrentWipForTeam(1337, DateTime.UtcNow.Date);
+            var response = subject.GetCurrentWipForTeam(1337, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -402,8 +402,8 @@ namespace Lighthouse.Backend.Tests.API
             // UPSTREAM-7: asOfDate is today, so the live blocked evaluation still applies. The
             // date was previously in the past, which now routes through the blocked-transition
             // history instead — covered by the two historic-range tests below.
-            var blockedAt = DateTime.UtcNow.Date.AddDays(-5).AddHours(8);
-            var asOfDate = DateTime.UtcNow.Date;
+            var blockedAt = TestToday.AmbientAsUtcMidnight.AddDays(-5).AddHours(8);
+            var asOfDate = TestToday.AmbientAsUtcMidnight;
 
             var item1 = new WorkItem
             {
@@ -462,7 +462,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var asOfDate = DateTime.UtcNow.Date.AddDays(-30);
+            var asOfDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var blockedAt = asOfDate.AddDays(-3);
 
             var blockedThen = new WorkItem { Id = 7, Name = "Blocked Back Then", Team = team };
@@ -509,7 +509,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var asOfDate = DateTime.UtcNow.Date.AddDays(-30);
+            var asOfDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var item = new WorkItem { Id = 9, Name = "No History", Team = team };
 
             teamMetricsServiceMock
@@ -540,7 +540,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var asOfDate = DateTime.UtcNow.Date.AddDays(-30);
+            var asOfDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var item = new WorkItem { Id = 10, Name = "Blocked Only Later", Team = team };
 
             teamMetricsServiceMock
@@ -850,7 +850,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetTotalWorkItemAge(1337, DateTime.UtcNow.Date);
+            var response = subject.GetTotalWorkItemAge(1337, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1945,7 +1945,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
 
-            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var pastDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var targetDate = DateOnly.FromDateTime(pastDate);
 
             // Interval reconstruction recovers exactly ONE blocked item at the target date...
@@ -1999,7 +1999,7 @@ namespace Lighthouse.Backend.Tests.API
             workItemBlockedTransitionRepositoryMock.Setup(x => x.GetBlockedWorkItemIdsAt(It.IsAny<DateOnly>())).Returns(new List<int>());
 
             var subject = CreateSubject();
-            var result = subject.GetBlockedItemsAtDate(1, DateTime.UtcNow.Date);
+            var result = subject.GetBlockedItemsAtDate(1, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -2017,7 +2017,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
 
-            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var pastDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var targetDate = DateOnly.FromDateTime(pastDate);
             var covering = new WorkItem { Id = 42, ReferenceId = "BLK-42", TeamId = 1 };
             var notCovering = new WorkItem { Id = 43, ReferenceId = "OPEN-43", TeamId = 1 };
@@ -2043,7 +2043,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1, Name = "Test", WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Conn", WorkTrackingSystem = WorkTrackingSystems.Jira } };
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
 
-            var pastDate = DateTime.UtcNow.Date.AddDays(-30);
+            var pastDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
             var targetDate = DateOnly.FromDateTime(pastDate);
 
             var blockedItem = new WorkItem { Id = 42, ReferenceId = "BLK-42", TeamId = 1 };

@@ -22,7 +22,8 @@ namespace Lighthouse.Backend.API
         IDeliveryRuleService deliveryRuleService,
         IRbacAdministrationService rbacAdministrationService,
         IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
-        IBlackoutPeriodService blackoutPeriodService)
+        IBlackoutPeriodService blackoutPeriodService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpGet("portfolio/{portfolioId:int}")]
@@ -31,11 +32,11 @@ namespace Lighthouse.Backend.API
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId).ToList();
-            var forecastWindowStart = DateTime.UtcNow.Date;
+            var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                forecastWindowStart, ForecastWindowEnd(deliveries));
+                forecastWindowStart, ForecastWindowEnd(deliveries, forecastWindowStart));
             var deliveryDtos = deliveries
-                .Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, DateOnly.FromDateTime(forecastWindowStart), blackoutPeriods))
+                .Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, clock.Today, blackoutPeriods))
                 .ToList();
 
             var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryDtos.Select(d => d.Id));
@@ -322,15 +323,15 @@ namespace Lighthouse.Backend.API
             return null;
         }
 
-        private static DateTime ForecastWindowEnd(List<Delivery> deliveries)
+        private static DateTime ForecastWindowEnd(List<Delivery> deliveries, DateTime today)
         {
             const int CalendarHeadroomDays = 14;
 
             var latestDeliveryDate = deliveries.Count == 0
-                ? DateTime.UtcNow.Date
+                ? today
                 : deliveries.Max(delivery => delivery.Date.Date);
 
-            var horizon = latestDeliveryDate > DateTime.UtcNow.Date ? latestDeliveryDate : DateTime.UtcNow.Date;
+            var horizon = latestDeliveryDate > today ? latestDeliveryDate : today;
 
             return horizon.AddDays(CalendarHeadroomDays);
         }

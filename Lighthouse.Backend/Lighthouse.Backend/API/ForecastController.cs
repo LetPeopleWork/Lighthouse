@@ -23,7 +23,8 @@ namespace Lighthouse.Backend.API
         IForecastService forecastService,
         IRepository<Team> teamRepository,
         ITeamMetricsService teamMetricsService,
-        IBlackoutPeriodService blackoutPeriodService)
+        IBlackoutPeriodService blackoutPeriodService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpPost("update/{id:int}")]
@@ -57,7 +58,7 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, id, team =>
             {
                 var itemCreationPrediction = new ManualForecastDto(0, input.TargetDate);
-                var timeToTargetDate = (input.TargetDate - DateTime.Today).Days;
+                var timeToTargetDate = (input.TargetDate - clock.TodayAsUtcMidnight).Days;
 
                 var howManyForecast = forecastService.PredictWorkItemCreation(team, input.WorkItemTypes, input.StartDate, input.EndDate, timeToTargetDate);
 
@@ -79,11 +80,12 @@ namespace Lighthouse.Backend.API
             {
                 var manualForecast = new ManualForecastDto(input.RemainingItems ?? 0, input.TargetDate);
                 var mode = MapOverrideToFilterMode(input.ApplyFilterOverride);
+                var forecastWindowStart = clock.TodayAsUtcMidnight;
 
                 var timeToTargetDate = input.TargetDate.HasValue
                     ? blackoutPeriodService
-                        .GetEffectiveBlackoutDays(DateTime.UtcNow.Date, input.TargetDate.Value)
-                        .CountWorkingDays(DateTime.UtcNow.Date, input.TargetDate.Value)
+                        .GetEffectiveBlackoutDays(forecastWindowStart, input.TargetDate.Value)
+                        .CountWorkingDays(forecastWindowStart, input.TargetDate.Value)
                     : 0;
 
                 if (input.RemainingItems is > 0)
@@ -91,10 +93,10 @@ namespace Lighthouse.Backend.API
                     var whenForecast = await forecastService.When(team, input.RemainingItems.Value, mode);
 
                     var effectiveBlackoutDays = blackoutPeriodService.GetEffectiveBlackoutDays(
-                        DateTime.UtcNow.Date,
-                        EstimateForecastWindowEnd(whenForecast));
+                        forecastWindowStart,
+                        EstimateForecastWindowEnd(whenForecast, forecastWindowStart));
 
-                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(effectiveBlackoutDays, 50, 70, 85, 95));
+                    manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(effectiveBlackoutDays, clock.Today, 50, 70, 85, 95));
                     manualForecast.FilterApplied = whenForecast.FilterApplied;
                     manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
                     manualForecast.HasSufficientData = whenForecast.HasSufficientData;
@@ -122,7 +124,7 @@ namespace Lighthouse.Backend.API
             });
         }
 
-        private static DateTime EstimateForecastWindowEnd(WhenForecast whenForecast)
+        private static DateTime EstimateForecastWindowEnd(WhenForecast whenForecast, DateTime windowStart)
         {
             const int CalendarHeadroomDays = 14;
             const int BlackoutDensityMultiplier = 2;
@@ -130,7 +132,7 @@ namespace Lighthouse.Backend.API
             var worstCaseWorkingDays = whenForecast.GetProbability(95);
             var calendarSpan = (worstCaseWorkingDays * BlackoutDensityMultiplier) + CalendarHeadroomDays;
 
-            return DateTime.UtcNow.Date.AddDays(calendarSpan);
+            return windowStart.AddDays(calendarSpan);
         }
 
         private static ThroughputFilterMode MapOverrideToFilterMode(bool? applyFilterOverride)
@@ -143,9 +145,9 @@ namespace Lighthouse.Backend.API
             };
         }
 
-        private static string? ValidateBacktestInput(BacktestInputDto input)
+        private static string? ValidateBacktestInput(BacktestInputDto input, DateOnly today)
         {
-            var minStartDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-14);
+            var minStartDate = today.AddDays(-14);
             if (input.StartDate > minStartDate)
             {
                 return "StartDate must be at least 14 days in the past.";
@@ -173,7 +175,7 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.TeamRead, ScopeIdRouteKey = "teamId")]
         public ActionResult<BacktestResultDto> RunBacktest(int teamId, [FromBody] BacktestInputDto input)
         {
-            var validationError = ValidateBacktestInput(input);
+            var validationError = ValidateBacktestInput(input, clock.Today);
             if (validationError != null)
             {
                 return BadRequest(validationError);
@@ -222,13 +224,13 @@ namespace Lighthouse.Backend.API
         public class ItemCreationPredictionInputDto
         {
             [JsonRequired]
-            public DateTime StartDate { get; set; } = DateTime.Today.AddDays(-30);
+            public DateTime StartDate { get; set; }
 
             [JsonRequired]
-            public DateTime EndDate { get; set; } = DateTime.Today;
+            public DateTime EndDate { get; set; }
 
             [JsonRequired]
-            public DateTime TargetDate { get; set; } = DateTime.Today.AddDays(30);
+            public DateTime TargetDate { get; set; }
 
             [JsonRequired]
             public string[] WorkItemTypes { get; set; } = [];

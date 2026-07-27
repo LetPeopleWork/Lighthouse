@@ -9,16 +9,15 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// deliberately NOT ArchUnitNET: <c>DateTime.UtcNow</c> is a property access on a type every
     /// class already depends on, so no dependency rule can express it.
     ///
-    /// This guard is also the only deterministic proof of branch B. An injected instant never
-    /// reaches a statically-read clock, so a runtime test cannot show that
-    /// <c>DateTime.Today</c> and <c>DateTime.UtcNow.Date</c> disagree - they diverge only in real
-    /// wall-clock time. Seeing both spellings recorded against
-    /// <c>API/ForecastController.cs</c> in the baseline does show it.
+    /// This guard was also the only deterministic proof of branch B: an injected instant never
+    /// reaches a statically-read clock, so no runtime test could show that <c>DateTime.Today</c> and
+    /// <c>DateTime.UtcNow.Date</c> disagree. Both spellings stood recorded against
+    /// <c>API/ForecastController.cs</c> until step 02-04 removed them.
     /// </summary>
     [TestFixture]
     public class CalendarDayAnchorSeamArchUnitTest
     {
-        private const int BaselinedSiteCount = 38;
+        private const int BaselinedSiteCount = 10;
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
@@ -78,9 +77,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 CalendarDayAnchorBaseline.KnownSites,
                 Has.Length.EqualTo(BaselinedSiteCount),
                 "The baseline must match the RCA section 5 inventory (49 sites across 24 files) minus every "
-                + "cluster phase 02 has already migrated - 5 entity anchors so far - until the " +
-                "phase-02 clusters start shrinking it - at which point lower this constant by exactly the " +
-                "cluster size in the same commit.");
+                + "cluster phase 02 has already migrated. Lower this constant by exactly the cluster size "
+                + "in the same commit that shrinks the baseline.");
         }
 
         [Test]

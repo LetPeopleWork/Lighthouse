@@ -114,8 +114,9 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var features = teamMetricsService.GetCurrentFeaturesInProgressForTeam(team, asOfDate).ToList();
+                var forecastWindowStart = clock.TodayAsUtcMidnight;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                    DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
+                    forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
                 return features.Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null));
             });
@@ -134,7 +135,7 @@ namespace Lighthouse.Backend.API
                 // read prefers it. An item with no history at all predates blocked capture, and there the
                 // live rule is still the only answer available — the same one today's read gives, so the
                 // fallback cannot regress an item that was already reading correctly.
-                var isHistoricRange = asOfDate.Date < DateTime.UtcNow.Date;
+                var isHistoricRange = DateOnly.FromDateTime(asOfDate) < clock.Today;
                 var workItemIds = workItems.Select(w => w.Id).ToList();
 
                 // Indexed once rather than scanned per item: both lookups sit inside the projection
@@ -570,7 +571,7 @@ namespace Lighthouse.Backend.API
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
             {
                 var targetDate = DateOnly.FromDateTime(date.Date);
-                var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+                var today = clock.Today;
 
                 if (targetDate >= today)
                 {

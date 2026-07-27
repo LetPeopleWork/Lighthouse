@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
     {
         private const int WorkingDaysToCompletion = 10;
 
-        private static DateTime Today => DateTime.UtcNow.Date;
+        private static DateTime Today => TestToday.AmbientAsUtcMidnight;
 
         [Test]
         public void CreateFeatureDto_GivenForecastCreationTime_ReturnsDateAsUTC()
