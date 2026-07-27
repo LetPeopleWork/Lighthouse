@@ -43,6 +43,25 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(cycleTime, Is.EqualTo(2));
         }
 
+        /// <summary>
+        /// Cycle time measures the time spent WORKING on an item, so a started date always wins over
+        /// the created date - reading them the other way round silently re-labels queue time as
+        /// cycle time and inflates every percentile the product is built on.
+        /// </summary>
+        [Test]
+        public void GetCycleTime_ItemClosed_HasBothDates_MeasuresFromStartedNotCreated()
+        {
+            var subject = CreateSubject();
+            subject.CreatedDate = new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc);
+            subject.StartedDate = new DateTime(2026, 7, 24, 8, 0, 0, DateTimeKind.Utc);
+            subject.ClosedDate = new DateTime(2026, 7, 27, 16, 0, 0, DateTimeKind.Utc);
+            subject.StateCategory = StateCategories.Done;
+
+            var cycleTime = subject.CycleTime(TimeZoneInfo.Utc);
+
+            Assert.That(cycleTime, Is.EqualTo(4));
+        }
+
         [Test]
         public void GetCycleTime_ItemClosed_NoStartedDate_NoCreatedDate_Returns1()
         {
@@ -142,12 +161,31 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetWorkItemAge_ItemInProgress_NoStartedDate_FallsBackToCreatedDate()
         {
             var subject = CreateSubject();
-            subject.CreatedDate = DateTime.UtcNow.AddDays(-1);
+            subject.CreatedDate = Clock.TodayAsUtcMidnight.AddDays(-1);
             subject.StateCategory = StateCategories.Doing;
 
             var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
-            
+
             Assert.That(workItemAge, Is.EqualTo(2));
+        }
+
+        /// <summary>
+        /// The fallback above is a fallback, not a preference: once an item HAS a started date, age
+        /// is measured from when work began, never from when the item was filed. An item sitting in
+        /// the backlog for a month before anyone picked it up is one day old on its first day of
+        /// work, and it is that number Lighthouse writes back into Jira/ADO.
+        /// </summary>
+        [Test]
+        public void GetWorkItemAge_ItemInProgress_HasBothDates_MeasuresFromStartedNotCreated()
+        {
+            var subject = CreateSubject();
+            subject.CreatedDate = Clock.TodayAsUtcMidnight.AddDays(-30);
+            subject.StartedDate = Clock.TodayAsUtcMidnight.AddDays(-3);
+            subject.StateCategory = StateCategories.Doing;
+
+            var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
+
+            Assert.That(workItemAge, Is.EqualTo(4));
         }
 
         [Test]
@@ -157,7 +195,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StateCategory = StateCategories.Doing;
 
             var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
-            
+
             Assert.That(workItemAge, Is.EqualTo(1));
         }
 
@@ -165,11 +203,11 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetWorkItemAge_ItemInProgress_StartedDateAfterToday_Returns1()
         {
             var subject = CreateSubject();
-            subject.StartedDate = DateTime.UtcNow.AddDays(1);
+            subject.StartedDate = Clock.TodayAsUtcMidnight.AddDays(1);
             subject.StateCategory = StateCategories.Doing;
 
             var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
-            
+
             Assert.That(workItemAge, Is.EqualTo(1));
         }
 
@@ -178,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            subject.StartedDate = DateTime.UtcNow.AddDays(-1);
+            subject.StartedDate = Clock.TodayAsUtcMidnight.AddDays(-1);
             subject.StateCategory = StateCategories.Doing;
 
             var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);
@@ -191,7 +229,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            subject.StartedDate = DateTime.UtcNow;
+            subject.StartedDate = Clock.TodayAsUtcMidnight.AddHours(10);
             subject.StateCategory = StateCategories.Doing;
 
             var workItemAge = subject.WorkItemAge(Clock.Zone, Clock.Today);

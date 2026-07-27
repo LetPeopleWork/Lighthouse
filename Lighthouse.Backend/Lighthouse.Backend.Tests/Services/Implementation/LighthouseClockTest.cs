@@ -142,6 +142,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
+        /// Branch 3, the other way in: a host with no usable zone database makes
+        /// <see cref="TimeZoneInfo.Local"/> THROW rather than return null. Absent config still means
+        /// "no opinion", so the instance must come up on UTC instead of refusing to start over a
+        /// setting the operator never made.
+        /// </summary>
+        [Test]
+        public void ResolutionOrder_LocalThrowingFallsThroughToUtc()
+        {
+            var resolved = LighthouseClock.ResolveInstanceTimeZone(
+                null,
+                () => throw new TimeZoneNotFoundException("no zone database on this host"));
+
+            Assert.That(resolved, Is.EqualTo(TimeZoneInfo.Utc));
+        }
+
+        /// <summary>
+        /// The fail-fast above is only useful if the operator can act on it, and
+        /// <see cref="UnresolvableTimeZoneId_FailsFastAtStartup"/> cannot prove that: the raw
+        /// <see cref="TimeZoneNotFoundException"/> the framework throws ALSO names the bad id, so
+        /// that assertion passes even when Lighthouse contributes nothing. What is Lighthouse's own
+        /// behaviour - and what an operator staring at a container that will not start needs - is
+        /// the translation into an InvalidOperationException naming the setting to change.
+        /// </summary>
+        [Test]
+        public void UnresolvableTimeZoneId_ExplainsWhichSettingToChange()
+        {
+            var failure = Assert.Throws<InvalidOperationException>(
+                () => LighthouseClock.ResolveInstanceTimeZone(UnresolvableTimeZoneId));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Message, Does.Contain(UnresolvableTimeZoneId),
+                    "the operator has to be told which value was rejected");
+                Assert.That(failure.Message, Does.Contain(InstanceTimeZoneConfigKey),
+                    "and which configuration key it came from");
+                Assert.That(failure.Message, Does.Contain(InstanceTimeZoneEnvironmentVariable),
+                    "including the environment-variable spelling, which is the only route into a container");
+                Assert.That(failure.InnerException, Is.InstanceOf<TimeZoneNotFoundException>(),
+                    "the original failure must stay attached rather than be swallowed");
+            }
+        }
+
+        /// <summary>
         /// The asymmetry with the absent key is deliberate: absent means "no opinion", wrong means
         /// "an opinion that cannot be honoured". Silently downgrading the second to the first is how
         /// this whole bug class hides, so the instance must refuse to come up.

@@ -1,0 +1,132 @@
+=== TOTALS ===
+Killed: 239
+NoCoverage: 5
+Survived: 41
+score: 83.86%  (239/285)
+
+=== PER FILE ===
+ 55.17%    16/29    Lighthouse.Backend/Lighthouse.Backend/Data/DeliveryMetricSnapshotDayCollisionGuard.cs
+ 81.48%    22/27    Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs
+ 77.42%    24/31    Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs
+100.00%     3/3     Lighthouse.Backend/Lighthouse.Backend/Models/InstanceCalendar.cs
+ 77.78%     7/9     Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs
+ 80.56%    29/36    Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs
+100.00%    17/17    Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs
+ 85.71%    24/28    Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs
+ 96.88%    31/32    Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs
+100.00%    38/38    Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs
+ 93.33%    14/15    Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/LighthouseClock.cs
+100.00%    11/11    Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/DeliveryMetricSnapshotRepository.cs
+ 33.33%     3/9     Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ServiceConfig.cs
+
+=== SURVIVORS ===
+
+--- Lighthouse.Backend/Lighthouse.Backend/Data/DeliveryMetricSnapshotDayCollisionGuard.cs (13) ---
+  L54   [Survived] String mutation: -> ""
+        src: "Cannot apply the AddDeliveryMetricSnapshotRecordedDay migration: "
+  L55   [Survived] String mutation: -> $""
+        src: + $"{collisions.Count} delivery/day combination(s) in DeliveryMetricSnapshots have more than one row "
+  L56   [Survived] String mutation: -> ""
+        src: + "recorded on the same calendar day, so the unique (DeliveryId, RecordedDay) index cannot be created. "
+  L57   [Survived] String mutation: -> ""
+        src: + "Colliding rows: " + string.Join("; ", collisions) + ". "
+  L57   [Survived] String mutation: -> ""
+        src: + "Colliding rows: " + string.Join("; ", collisions) + ". "
+  L57   [Survived] String mutation: -> ""
+        src: + "Colliding rows: " + string.Join("; ", collisions) + ". "
+  L58   [Survived] String mutation: -> ""
+        src: + "Lighthouse deliberately does NOT de-duplicate them - rewriting recorded history silently is worse "
+  L59   [Survived] String mutation: -> ""
+        src: + "than refusing to start. Remove or merge the extra rows by hand, then restart Lighthouse.");
+  L91   [Survived] Conditional (false) mutation: -> (false?PostgresCollisionSql :SqliteCollisionSql)
+        src: command.CommandText = context.Database.IsNpgsql() ? PostgresCollisionSql : SqliteCollisionSql;
+  L102  [Survived] Negate expression: -> !(openedHere)
+        src: if (openedHere)
+  L104  [Survived] Statement mutation: -> ;
+        src: connection.Close();
+  L120  [NoCoverage] String mutation: -> ""
+        src: DateTime instant => instant.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+  L121  [NoCoverage] String mutation: -> "Stryker was here!"
+        src: _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+
+--- Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs (5) ---
+  L28   [Survived] String mutation: -> "Stryker was here!"
+        src: Name = string.Empty;
+  L71   [Survived] Linq method mutation (Sum() to Max()): -> feature.FeatureWork.Max
+        src: .Where(feature => feature.FeatureWork.Sum(work => work.TotalWorkItems) > 0)
+  L78   [Survived] Linq method mutation (Sum() to Max()): -> feature.FeatureWork.Max
+        src: var totalItems = feature.FeatureWork.Sum(work => work.TotalWorkItems);
+  L79   [Survived] Linq method mutation (Sum() to Max()): -> feature.FeatureWork.Max
+        src: var remainingItems = feature.FeatureWork.Sum(work => work.RemainingWorkItems);
+  L92   [Survived] Linq method mutation (ThenBy() to ThenByDescending()): -> Features                 .Where(feature => feature.GetLikelhoodForDate(Date, today, blackoutPeriods) >= 0)    
+        src: return Features
+
+--- Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs (7) ---
+  L43   [Survived] Boolean mutation: -> true
+        src: public bool IsParentFeature { get; set; } = false;
+  L62   [Survived] String mutation: -> "Stryker was here!"
+        src: public string OwningTeam { get; set; } = string.Empty;
+  L112  [Survived] Linq method mutation (FirstOrDefault() to First()): -> FeatureWork.First
+        src: var existingTeam = FeatureWork.FirstOrDefault(t => t.TeamId == team.Id);
+  L118  [NoCoverage] UnaryMinusExpression to UnaryPlusExpression mutation: -> +1
+        src: return -1;
+  L123  [Survived] Statement mutation: -> ;
+        src: Forecasts.Clear();
+  L137  [NoCoverage] Statement mutation: -> ;
+        src: featureWork.Clear();
+  L143  [Survived] Statement mutation: -> ;
+        src: base.Update(feature);
+
+--- Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs (2) ---
+  L5    [Survived] String mutation: -> ""
+        src: public override List<string> WorkItemTypes { get; set; } = ["User Story", "Bug"];
+  L5    [Survived] String mutation: -> ""
+        src: public override List<string> WorkItemTypes { get; set; } = ["User Story", "Bug"];
+
+--- Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs (7) ---
+  L20   [Survived] String mutation: -> "Stryker was here!"
+        src: public string ReferenceId { get; set; } = string.Empty;
+  L22   [Survived] String mutation: -> "Stryker was here!"
+        src: public string ParentReferenceId { get; set; } = string.Empty;
+  L26   [Survived] String mutation: -> "Stryker was here!"
+        src: public string Type { get; set; } = string.Empty;
+  L28   [Survived] String mutation: -> "Stryker was here!"
+        src: public string State { get; set; } = string.Empty;
+  L63   [Survived] Equality mutation: -> closedDay > startDay
+        src: if (closedDay >= startDay)
+  L84   [Survived] Equality mutation: -> startDay < today
+        src: if (startDay <= today)
+  L149  [Survived] Statement mutation: -> ;
+        src: AdditionalFieldValues.Clear();
+
+--- Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs (4) ---
+  L68   [Survived] Statement mutation: -> ;
+        src: stopwatch.Stop();
+  L75   [Survived] Statement mutation: -> ;
+        src: stopwatch.Stop();
+  L78   [Survived] String mutation: -> ""
+        src: "Failed to record delivery metric snapshots for Portfolio {PortfolioId} after {ElapsedMilliseconds}ms; snapshot recording is best-
+  L91   [Survived] Equality mutation: -> latestDeliveryDate >= today
+        src: var horizon = latestDeliveryDate > today ? latestDeliveryDate : today;
+
+--- Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs (1) ---
+  L104  [NoCoverage] Statement mutation: -> ;
+        src: LogRecordingFailure(exception, ownerType, ownerId);
+
+--- Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/LighthouseClock.cs (1) ---
+  L55   [Survived] String mutation: -> ""
+        src: "such as 'Europe/Zurich', or remove it to use the host time zone.",
+
+--- Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ServiceConfig.cs (6) ---
+  L9    [Survived] Null coalescing mutation (remove left): -> string.Empty
+        src: BaseUrl = configuration["Lighthouse:BaseUrl"] ?? string.Empty;
+  L9    [Survived] String mutation: -> ""
+        src: BaseUrl = configuration["Lighthouse:BaseUrl"] ?? string.Empty;
+  L9    [Survived] String mutation: -> "Stryker was here!"
+        src: BaseUrl = configuration["Lighthouse:BaseUrl"] ?? string.Empty;
+  L10   [Survived] Null coalescing mutation (remove left): -> string.Empty
+        src: OAuthStateSecret = configuration["Lighthouse:OAuth:StateSecret"] ?? string.Empty;
+  L10   [Survived] String mutation: -> ""
+        src: OAuthStateSecret = configuration["Lighthouse:OAuth:StateSecret"] ?? string.Empty;
+  L10   [Survived] String mutation: -> "Stryker was here!"
+        src: OAuthStateSecret = configuration["Lighthouse:OAuth:StateSecret"] ?? string.Empty;

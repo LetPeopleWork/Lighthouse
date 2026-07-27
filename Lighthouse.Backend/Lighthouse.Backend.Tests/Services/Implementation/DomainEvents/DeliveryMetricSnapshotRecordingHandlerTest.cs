@@ -28,6 +28,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private const int KnownForecastDays = 30;
 
+        /// <summary>Mirrors the recorder's own headroom past the last delivery.</summary>
+        private const int CalendarHeadroomDays = 14;
+
         private const int SingleBucketTrials = 100;
 
         private const double CertainSingleBucketLikelihood = 100.0;
@@ -343,6 +346,102 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
                 Assert.That(breakdown, Is.EquivalentTo(fixture.ExpectedBreakdown));
             }
+        }
+
+        /// <summary>
+        /// Bug #5567 - the blackout window the recorder asks for has to span the whole forecast
+        /// horizon, and both of its ends now come from the clock. If it stops short, every projected
+        /// date past the end of the window is computed as if the team worked through the blackout,
+        /// so the snapshot records dates the team was never going to hit. The window is invisible in
+        /// the persisted row, which is why it is asserted at the port.
+        /// </summary>
+        [Test]
+        public async Task HandleAsync_PortfolioWithoutDeliveries_AsksForBlackoutDaysOverTheHeadroomWindow()
+        {
+            var (handler, blackoutPeriodService) = HandlerOverDeliveriesDated();
+
+            await handler.HandleAsync(new PortfolioForecastsUpdated(1), CancellationToken.None);
+
+            VerifyBlackoutWindowEndsOn(blackoutPeriodService, CalendarHeadroomDays);
+        }
+
+        /// <summary>
+        /// The horizon is the LATEST delivery, not the first one and not an arbitrary one: a
+        /// portfolio is only finished when its last delivery is.
+        /// </summary>
+        [Test]
+        public async Task HandleAsync_DeliveriesInTheFuture_ExtendsTheBlackoutWindowToTheLatestOne()
+        {
+            var (handler, blackoutPeriodService) = HandlerOverDeliveriesDated(10, 40);
+
+            await handler.HandleAsync(new PortfolioForecastsUpdated(1), CancellationToken.None);
+
+            VerifyBlackoutWindowEndsOn(blackoutPeriodService, 40 + CalendarHeadroomDays);
+        }
+
+        /// <summary>
+        /// A portfolio whose deliveries have all come and gone still forecasts forward from today -
+        /// anchoring on the last delivery date would ask for a window that ended in the past.
+        /// </summary>
+        [Test]
+        public async Task HandleAsync_AllDeliveriesInThePast_KeepsTheBlackoutWindowAnchoredOnToday()
+        {
+            var (handler, blackoutPeriodService) = HandlerOverDeliveriesDated(-30);
+
+            await handler.HandleAsync(new PortfolioForecastsUpdated(1), CancellationToken.None);
+
+            VerifyBlackoutWindowEndsOn(blackoutPeriodService, CalendarHeadroomDays);
+        }
+
+        private void VerifyBlackoutWindowEndsOn(Mock<IBlackoutPeriodService> blackoutPeriodService, int daysFromToday)
+        {
+            blackoutPeriodService.Verify(
+                service => service.GetEffectiveBlackoutDays(
+                    clock.TodayAsUtcMidnight,
+                    clock.TodayAsUtcMidnight.AddDays(daysFromToday)),
+                Times.Once);
+        }
+
+        /// <summary>
+        /// Deliberately mock-driven rather than DB-seeded: <see cref="Delivery"/>'s constructor
+        /// rejects a date that is not in the future, so a past-dated delivery - the case that pins
+        /// the horizon clamp - cannot be seeded through it.
+        /// </summary>
+        private (DeliveryMetricSnapshotRecordingHandler Handler, Mock<IBlackoutPeriodService> BlackoutPeriodService)
+            HandlerOverDeliveriesDated(params int[] daysFromToday)
+        {
+            var deliveries = daysFromToday
+                .Select((offset, index) =>
+                {
+                    var delivery = new Delivery($"Release {index}", DateTime.UtcNow.AddDays(1), portfolioId: 1, TestToday.Ambient);
+                    delivery.Date = clock.TodayAsUtcMidnight.AddDays(offset);
+                    return delivery;
+                })
+                .ToList();
+
+            var deliveryRepository = new Mock<IDeliveryRepository>();
+            deliveryRepository
+                .Setup(repository => repository.GetByPortfolioAsync(It.IsAny<int>()))
+                .Returns(deliveries);
+
+            var snapshotRepository = new Mock<IDeliveryMetricSnapshotRepository>();
+            snapshotRepository
+                .Setup(repository => repository.GetOrCreateForDay(It.IsAny<int>(), It.IsAny<DateOnly>()))
+                .Returns(new DeliveryMetricSnapshot());
+
+            var blackoutPeriodService = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodService
+                .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(new List<BlackoutPeriod>());
+
+            var handler = new DeliveryMetricSnapshotRecordingHandler(
+                deliveryRepository.Object,
+                snapshotRepository.Object,
+                blackoutPeriodService.Object,
+                clock,
+                Mock.Of<ILogger<DeliveryMetricSnapshotRecordingHandler>>());
+
+            return (handler, blackoutPeriodService);
         }
 
         private async Task<RecorderFixture> SeedDeliveryWithKnownCounts()

@@ -1,0 +1,40 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/InstanceCalendar.cs",
+      "**/Services/Implementation/LighthouseClock.cs",
+      "**/Models/WorkItemBase.cs",
+      "**/Models/Team.cs",
+      "**/Models/Feature.cs",
+      "**/Models/Delivery.cs",
+      "**/Models/DeliveryMetricSnapshot.cs",
+      "**/Services/Implementation/Repositories/DeliveryMetricSnapshotRepository.cs",
+      "**/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs",
+      "**/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs",
+      "**/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs",
+      "**/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs",
+      "**/Data/DeliveryMetricSnapshotDayCollisionGuard.cs",
+      "**/Services/Implementation/ServiceConfig.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~InstanceCalendarTest|FullyQualifiedName~LighthouseClockTest|FullyQualifiedName~InstanceDay|FullyQualifiedName~InstanceZone|FullyQualifiedName~InstantsUnaffectedByZone|FullyQualifiedName~CalendarDayAnchor|FullyQualifiedName~WorkItemBase|FullyQualifiedName~WorkItemAge|FullyQualifiedName~Models.TeamTest|FullyQualifiedName~Models.FeatureTest|FullyQualifiedName~Models.DeliveryTest|FullyQualifiedName~DeliveriesController|FullyQualifiedName~DeliveryRepositoryTest|FullyQualifiedName~DeliveryRuleServiceTest|FullyQualifiedName~DeliveryMetric|FullyQualifiedName~SnapshotRecordedDay|FullyQualifiedName~RecordingHandler|FullyQualifiedName~ServiceConfig|FullyQualifiedName~TeamMetricsService|FullyQualifiedName~PortfolioMetricsService|FullyQualifiedName~BaseMetricsService|FullyQualifiedName~FeatureDtoTest|FullyQualifiedName~TeamDtoTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

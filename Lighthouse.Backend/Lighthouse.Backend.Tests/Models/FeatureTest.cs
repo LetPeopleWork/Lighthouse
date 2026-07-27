@@ -26,6 +26,54 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(likelihood, Is.EqualTo(100));
         }
 
+        /// <summary>
+        /// The 100 above is a real short circuit, not an accident of an empty forecast: a feature
+        /// with nothing left to do is certain to make ANY date, whatever its stale forecast says.
+        /// The existing case cannot show that - a bare Feature has an empty aggregated forecast,
+        /// which answers 100 as well, so there both branches agree by accident.
+        /// </summary>
+        [Test]
+        public void GetLikelhoodForDate_NoRemainingWork_Returns100EvenWhenTheForecastIsPessimistic()
+        {
+            var subject = CreateSubject();
+            subject.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 0, TotalWorkItems = 5 });
+            subject.Forecasts.Add(MostlySlowForecast());
+
+            var likelihood = subject.GetLikelhoodForDate(Clock.TodayAsUtcMidnight.AddDays(1), Clock.Today, NoBlackoutPeriods);
+
+            Assert.That(likelihood, Is.EqualTo(100));
+        }
+
+        /// <summary>
+        /// No target date means no date to be late for. Both halves of the guard have to hold: work
+        /// remaining is not on its own a reason to run the forecast, or a feature that nobody has
+        /// committed to a date would report a risk against 0001-01-01.
+        /// </summary>
+        [Test]
+        public void GetLikelhoodForDate_NoTargetDate_Returns100EvenWithWorkRemaining()
+        {
+            var subject = CreateSubject();
+            subject.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 5, TotalWorkItems = 5 });
+            subject.Forecasts.Add(MostlySlowForecast());
+
+            var likelihood = subject.GetLikelhoodForDate(default, Clock.Today, NoBlackoutPeriods);
+
+            Assert.That(likelihood, Is.EqualTo(100));
+        }
+
+        /// <summary>
+        /// 5 trials in 100 land within two days, the rest take sixty - so a target one day out
+        /// scores 5%, well clear of the 100 the short circuits return.
+        /// </summary>
+        private static WhenForecast MostlySlowForecast()
+        {
+            var simulationResult = new SimulationResult();
+            simulationResult.SimulationResults[2] = 5;
+            simulationResult.SimulationResults[60] = 95;
+
+            return new WhenForecast(simulationResult);
+        }
+
         [Test]
         public void Update_SetsEstimatedSize()
         {

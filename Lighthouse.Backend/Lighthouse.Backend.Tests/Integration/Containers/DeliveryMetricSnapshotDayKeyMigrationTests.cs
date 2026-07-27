@@ -218,6 +218,46 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
+        /// The guard is a PRE-check for one pending migration, not a standing invariant. Once the
+        /// day key is in place the legacy instant column no longer decides anything, and two rows
+        /// that share a legacy calendar day but hold different day keys are a perfectly legal
+        /// population. A guard that kept firing on them would refuse startup on every restart, for
+        /// ever, over data the schema now permits - the one failure mode worse than the collision
+        /// it exists to report.
+        /// </summary>
+        [Test]
+        public async Task LegacyInstantsSharingACalendarDay_AfterTheMigrationApplied_NoLongerBlockStartup()
+        {
+            await WithSqliteAsync(async provider =>
+            {
+                await MigrateToLatestAsync(provider);
+
+                using var scope = provider.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var deliveryId = await GivenPersistedDeliveryAsync(context);
+
+                context.DeliveryMetricSnapshots.AddRange(
+                    new DeliveryMetricSnapshot
+                    {
+                        DeliveryId = deliveryId,
+                        RecordedDay = new DateOnly(2026, 5, 25),
+                        RecordedAt = CollidingInstants[0],
+                    },
+                    new DeliveryMetricSnapshot
+                    {
+                        DeliveryId = deliveryId,
+                        RecordedDay = new DateOnly(2026, 5, 26),
+                        RecordedAt = CollidingInstants[1],
+                    });
+                await context.SaveChangesAsync();
+
+                Assert.DoesNotThrow(
+                    () => DeliveryMetricSnapshotDayCollisionGuard.EnsureNoCollisions(context),
+                    "nothing is pending, so the guard must not even look at the legacy column");
+            });
+        }
+
+        /// <summary>
         /// The R1 property this whole step exists for: the global convention attaches
         /// UtcDateTimeConverter to Properties&lt;DateTime&gt;() only, so the day key cannot be
         /// shifted by a zone conversion - not on write, not on a query parameter. Asserted
