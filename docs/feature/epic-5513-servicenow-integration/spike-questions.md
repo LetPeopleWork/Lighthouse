@@ -4,8 +4,14 @@
 **Timebox**: 2 days. If a question is still open at the box, record it as open and take the
 documented fallback — do not extend to "just get one more answer".
 
-**Environment**: a self-provisioned ServiceNow cloud developer instance (D10). On-prem is *not* used
-here; it is the slice-05 validation target.
+**Environment**: a self-provisioned ServiceNow cloud Personal Developer Instance (D10), **provisioned
+and seeded by the environment-prereq story before this SPIKE starts** — not inside the timebox. That
+story also stands up a minimal `Scripts/DemoEnv/ServiceNowSystemUpdater.py`, which keeps the PDI from
+hibernating, supplies this SPIKE's test records, and — because creating and transitioning `incident`
+records is real Table API traffic — already answers part of Q2 and Q4. Read its findings before
+re-asking them here.
+
+On-prem is *not* used here; it is the slice-05 validation target.
 
 **Rule for this SPIKE**: every answer is a recorded HTTP call — request, status, and response shape —
 not a documentation quote. The desk research below is what we *expect*; the SPIKE exists because we

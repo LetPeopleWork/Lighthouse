@@ -14,7 +14,7 @@ exists to produce a verdict, and without US-06 that verdict is an opinion.
 - An explicit statement that **v1 authenticates with basic auth** (D3), and what to check if an instance has basic auth restricted (D3a) — so a customer in that position finds out before installing rather than after.
 - A worked ITSM example (D4): a real `sysparm_query` against `incident` or `sc_task`, plus how to point the connector at a different table if the shop runs Agile 2.0.
 - `@screenshot` E2E per theme (project convention: `rm` the old PNG before regenerating — a <0.5% diff silently keeps the old image).
-- `Scripts/DemoEnv/ServiceNowSystemUpdater.py`, matching its three siblings and seeding **ITSM** records (D4).
+- `Scripts/DemoEnv/ServiceNowSystemUpdater.py` brought to parity with its three siblings, seeding **ITSM** records (D4). **The file already exists** — the environment-prereq story created a minimal version to keep the PDI alive and feed the SPIKE. This slice completes and documents it; it does not start from scratch.
 - Standalone validation script/checklist runnable on the on-prem instance **without a Lighthouse build** and under a restricted account (D10, US-06 AC1).
 - Cloud-vs-on-prem divergence list (US-06 AC3), even if empty.
 - Feedback collection from ≥3 ServiceNow users/prospects, written up as a recommendation on ADO 5513.
