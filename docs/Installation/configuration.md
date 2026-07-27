@@ -35,6 +35,58 @@ Please only use this option if you know what you're doing. If you don't provide 
 
 # Configuration Options
 
+## Instance Time Zone
+
+{: .important}
+**If your team is not on UTC, this setting needs your attention.** Lighthouse computes every calendar day — "today", the start and end of a metrics window, the day a snapshot is filed under — in a configurable **instance time zone**. The shipped default deliberately changes nothing: if you set nothing, your instance keeps behaving exactly as it did before. A Docker instance stays on UTC. To get calendar days that match your team's working day, you must **set `Lighthouse__TimeZone` yourself**.
+
+A stored timestamp is an instant and has no time zone. A calendar day is *defined* by one. Lighthouse stores instants in UTC and always has; what this setting controls is the zone it uses when it reduces one of those instants to a day — and which day it considers "today".
+
+**Default Value:** unset. Lighthouse ships no `Lighthouse:TimeZone` key in `appsettings.json`, on purpose: writing a concrete default there would move every existing instance onto a different calendar day on upgrade, unannounced.
+
+**Override Options:**
+- Command Line: `--Lighthouse:TimeZone`
+- Environment Variable: `Lighthouse__TimeZone`
+
+**Accepted values:** an [IANA time zone id](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) such as `Europe/Zurich`, `America/Los_Angeles` or `Asia/Tokyo`. On Windows, .NET 10 accepts both the IANA id and the Windows id (`W. Europe Standard Time`) — prefer the IANA id so the same configuration works on every platform. Daylight saving is handled for you; do not encode a fixed offset.
+
+**Example:**
+
+```bash
+docker run -p 80:80 -e "Lighthouse__TimeZone=Europe/Zurich" ghcr.io/letpeoplework/lighthouse:latest
+```
+
+The container image ships the `tzdata` database, so any IANA id resolves inside Docker without extra packages.
+
+### How the time zone is resolved
+
+In order:
+
+1. **`Lighthouse:TimeZone` is set** → that zone is used. If the id cannot be resolved on the host, **Lighthouse does not start** and logs which id it could not resolve. A silent fallback would hide exactly the kind of defect this setting exists to fix, so a wrong value fails loudly.
+2. **The key is absent or blank** → the host time zone (`TZ` on Linux, the OS setting on Windows/macOS) is used. This is the shipped path. In the official Docker image the host zone is **UTC**, so a containerised instance keeps its previous behaviour; a standalone install picks up the machine's zone, which is usually what you already expected it to do.
+3. **No host time zone can be determined** → UTC.
+
+The resolved zone is written to the log on startup (`Instance calendar day is anchored on time zone …`), so you can confirm what the instance actually picked up rather than what you intended.
+
+{: .note}
+An absent key is a supported configuration, not a missing one — it means "no opinion". Only a value that is *present and wrong* stops startup.
+
+### What changes when you set it
+
+Setting a non-UTC zone moves every surface that reasons about a calendar day:
+
+- **Forecasts** — the day a "when" forecast is projected forward from, and the dates the percentiles resolve to.
+- **Metrics windows** — the days a `30 / 60 / 90 day` window covers, and which day a closed, started or blocked item is counted on.
+- **Recorded snapshots** — the day key that Percentiles Over Time, PBC Over Time, Blocked Over Time and the delivery metric snapshots file each daily reading under.
+- **Work item age and cycle time** — both ends of the span are calendar days, so they move together; the arithmetic is unchanged.
+- **Licence expiry** — a licence is valid through the end of *your* last day, not UTC's.
+- **Delivery target date validation** — "in the future" is judged against your calendar day.
+
+Instants are deliberately **not** affected: audit stamps, token expiry, sync bookkeeping, blocked-transition timestamps and log entries stay UTC, because an instant is a point in time and has no day to move.
+
+{: .note}
+Changing the zone on a running instance shifts the day the next readings are filed under. Existing history is not rewritten and nothing is lost — a chart may show one day's reading landing on the neighbouring day at the moment of the change. See the release notes for the details.
+
 ## Http & Https URL
 By default, Lighthouse will listen on Ports 5000 (http) and 5001 (https). On macOS, the HTTP port defaults to 5002 instead of 5000 to avoid conflicts with the AirPlay Receiver service that commonly uses port 5000. You might want to override this, for example if you want to expose Lighthouse on the default ports (80/443), or need to adjust it to whatever makes sense in your environment.
 

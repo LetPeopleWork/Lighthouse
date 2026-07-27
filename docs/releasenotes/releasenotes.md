@@ -4,6 +4,23 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Your Calendar Day, Not UTC's — and You Need to Switch It On
+
+If your team isn't on UTC, Lighthouse has been quietly answering the wrong question. "Today", the first and last day of a metrics window, the day a daily reading was filed under — all of them were UTC days, not *your* days. Late in the afternoon in Sydney, or early in the morning in California, the day Lighthouse thought it was and the day you were actually in were different, and forecasts, throughput windows and the daily trend charts all inherited the mismatch.
+
+Lighthouse now computes calendar days in a configurable **instance time zone**, so a day means the day your team is having.
+
+{: .important}
+**This does not switch itself on.** The setting ships absent so that upgrading changes nothing for anyone: if you do nothing, your instance behaves exactly as it did before — a Docker instance stays on UTC. To get the fix, set the `Lighthouse__TimeZone` environment variable to your zone, for example `Europe/Zurich`. A standalone install picks up the machine's own time zone automatically. See [Instance Time Zone](https://docs.lighthouse.letpeople.work/Installation/configuration.html#instance-time-zone).
+
+Once it's set, forecasts, metrics windows, work item age, licence expiry, delivery date validation and every recorded daily snapshot all agree on the same calendar day. Timestamps are unaffected — they're points in time and stay UTC, as they always have been.
+
+## Bugfixes and Improvements
+- **Delivery target dates are judged as dates now, not as timestamps** — setting a delivery's target date to tomorrow could be refused as "not in the future", while a date of today sometimes slipped through depending on the time of day it carried. The target date is now compared as a calendar day: tomorrow is always accepted, today is always refused. This one applies to every instance, including those staying on UTC.
+- **One day's readings move when you switch time zone** — the first time you set a non-UTC zone, an evening reading that had been filed under the UTC day is filed under the day your instance is actually on, so the delivery and snapshot trend charts show a one-day shift at that point. Nothing is skipped, lost or overwritten — existing history stays exactly as recorded.
+
 # Lighthouse v26.7.26.8
 
 ## Are Your Percentiles Getting Better or Worse? — Percentiles Over Time

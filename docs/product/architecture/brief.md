@@ -3081,7 +3081,7 @@ Feature: portfolio-blocked-history — bring the **Portfolio** blocked surfaces 
 
 **Capture on the portfolio refresh path (ADR-104, Accepted)**: mirrors the team seam. `RefreshFeatures` hoists the `ReferenceId` lookup out of `AddOrUpdateFeature` (`:530`) so the **pre-update** blocked verdict is read before `Update()` mutates in place — a `SyncedFeature` record twinning `SyncedItem` (`WorkItemService.cs:197`). Edge detection runs in the **existing second pass after `featureRepository.Save()`** (`:496-501`), because `feature.Id` is 0 until saved (the same reason `SyncFeatureStateTransitions` runs there). New `FeatureBlocked(FeatureId, PortfolioId, Reason)` / `FeatureUnblocked(FeatureId, PortfolioId)` domain events on the bus — **not** a generalised `WorkItemBlocked` (which would deliver feature ids to `WorkItemBlockedTransitionCaptureHandler:26-31` and reproduce the collision at runtime for real customers). New capture/close handler pair, keyed `(FeatureId, PortfolioId)`, idempotent. First-observation "—" preserved (an already-blocked feature raises no edge). **Lifecycle**: feature-delete and portfolio-delete close spells via the two cascade FKs (no code); a feature **leaving** a portfolio is closed by a **departure sweep** at the end of `RefreshFeatures` (close open spells whose feature is not in the refreshed set), **guarded to skip on an empty refresh** so a transient connector failure cannot silently close every spell.
 
-**Historic reads (no ADR — straight mirror)**: `wip` gains the historic branch gated by `asOfDate.Date < DateTime.UtcNow.Date` (identical to `TeamMetricsController:130`), using the **indexed-lookup** discipline commit `1d4dcb5a` established (dictionary + hashset, never a per-item scan → O(n²)). `blockedItemsAtDate` replaces its hard-return stub (`PortfolioMetricsController:498-508`) with portfolio-scoped reconstruction, calls the already-wired `ReconcileReconstructedCountWithSnapshot` (`:513`), and deletes the obsolete "reconstruction is impossible for portfolios" comment.
+**Historic reads (no ADR — straight mirror)**: `wip` gains the historic branch gated on the requested day being earlier than the instance's calendar day taken from the `ILighthouseClock` seam (identical to `TeamMetricsController:130`), using the **indexed-lookup** discipline commit `1d4dcb5a` established (dictionary + hashset, never a per-item scan → O(n²)). `blockedItemsAtDate` replaces its hard-return stub (`PortfolioMetricsController:498-508`) with portfolio-scoped reconstruction, calls the already-wired `ReconcileReconstructedCountWithSnapshot` (`:513`), and deletes the obsolete "reconstruction is impossible for portfolios" comment. *(Corrected 2026-07-27, Bug #5567: the branch originally shipped gated on the ambient `DateTime.UtcNow.Date`; it is now a `DateOnly` comparison against the clock's instance day. See "System Architecture — fix-backend-utc-today-anchor" below.)*
 
 **RBAC / contract / website**: all unchanged. Reads inherit the existing `PortfolioRead` gate (`PortfolioMetricsController:18`). No contract-shape change — `blockedSince`/`isBlocked` already exist on `WorkItemDto`, transmitted as `null`/`false` for features today; populating them is additive (ADR-062 rule) ⇒ **no CLI/MCP client version gate** (contrast ADR-072, which gated because contracts changed shape). Non-premium ⇒ **website N/A**. No external integration ⇒ **contract testing (Pact) N/A** — recorded explicitly.
 
@@ -3300,3 +3300,111 @@ prop. **Not shipped, known remaining:** `PredictabilityScoreDetailsWidget` and
 
 RCA: `docs/analysis/ADO-5571-widgets-fetch-outside-selected-category.md`.
 Outcome: `docs/evolution/2026-07-27-fix-widget-eager-fetch-by-category.md`.
+
+## System Architecture — fix-backend-utc-today-anchor (Bug #5567)
+
+This section is **additive** to all prior deltas. Pattern and paradigm unchanged (modular monolith,
+ports-and-adapters). No new bounded context, no new endpoint, no RBAC surface, no frontend change.
+One new seam, one expand-only column.
+
+**The defect it closes.** The codebase had a first-class, enforced abstraction for *storing instants
+in UTC* (two `UtcDateTimeConverter` classes, applied as a global EF convention and a JSON converter)
+and **no abstraction at all** for *computing a calendar day*. An instant has no time zone; a calendar
+day is defined by one. With no named seam, 49 production sites reached for the ambient
+`DateTime.UtcNow.Date` or `DateTime.Today` — two spellings that agree only when the process runs in
+UTC, which the container does and the standalone distribution does not.
+
+### Component inventory (shipped)
+
+| Component | File | Role |
+|---|---|---|
+| `ILighthouseClock` | `Services/Interfaces/ILighthouseClock.cs` | The single seam for "what calendar day is it, and what day does this instant fall on". `Today` (`DateOnly`), `TodayAsUtcMidnight` (`DateTime`, `Kind = Utc`), `Now` (`DateTimeOffset`, delegates to `TimeProvider`), `Zone`, `ToInstanceDay(DateTime utcInstant)`. |
+| `LighthouseClock` | `Services/Implementation/LighthouseClock.cs` | The only implementation. Also owns `ResolveInstanceTimeZone` — configured id → `TimeZoneInfo.Local` → UTC, with an unresolvable configured id throwing. Registered as a singleton in `Program.cs` over the existing `TimeProvider`. |
+| `InstanceCalendar` | `Models/` | Pure instant → `DateOnly` reduction given a zone; the one place the conversion is spelled. |
+| `ServiceConfig.TimeZone` | `Services/Implementation/ServiceConfig.cs` | Reads `Lighthouse:TimeZone` alongside the existing `Lighthouse:BaseUrl` / `Lighthouse:OAuth:StateSecret`. Deliberately **not** an `AppSetting` DB row — the clock is needed by `StandaloneInitializer` and by hosted services independently of the DB-settings surface, and `AppSettingService` itself takes a `TimeProvider`. |
+| `FakeLighthouseClock` | `Lighthouse.Backend.Tests/TestDoubles/` | The test seam. Tests take the day *from* the fake rather than recomputing the production expression. |
+
+### Two non-negotiable constraints
+
+1. **The clock never hands out a `DateTime` with `Kind = Local`.** `TodayAsUtcMidnight` is
+   `Kind = Utc` and that is load-bearing, not cosmetic: the global EF value converter applies
+   `ToUniversalTime()` to every non-`Unspecified` `DateTime` — **query parameters as well as stored
+   values** — so a local midnight leaving the clock would be shifted back by the offset on write and
+   land on the previous UTC day, re-introducing this very bug through the persistence layer.
+   `LighthouseAppContextUtcTest` does **not** guard this: the converter restores `Kind = Utc` on
+   read after shifting the value, so a `Kind`-only assertion sees a correct-looking `Utc` value on
+   the wrong day. Proven empirically by sabotage during delivery. The guard is a read-back-through-a-
+   fresh-EF-context **day** assertion, and it is the only thing covering the defect.
+2. **Entities take the day as a parameter, never the clock.** `Team.GetThroughputSettings()`,
+   `Feature.GetLikelhoodForDate()`, `Delivery.CalculateMetrics()` and `WorkItemBase.WorkItemAge` are
+   parameterised on a `DateOnly today`, matching the existing `blackoutPeriods` parameter-passing
+   style. This keeps the domain pure and is already enforced by the `Models.* ↛ Services.*`
+   ArchUnitNET rule recorded at the "blackout-day-forecast-shift" delta above — injecting
+   `ILighthouseClock` into an entity would violate it.
+
+The two purity rules recorded for `ProjectWorkingDays` / `CountWorkingDays` and for
+`ExpandToBlackoutDays` (also above) are **unchanged and still in force**. They forbid those helpers
+from *reading* an ambient clock (`DateTime.UtcNow` / `DateTime.Today`); they have never forbidden the
+`DateTime` / `DateOnly` **arguments** those helpers legitimately take, and by constraint 2 they
+equally forbid taking `ILighthouseClock`.
+
+### Day-key convention
+
+**Every persisted snapshot day key is `DateOnly`.** This is what keeps it structurally out of reach
+of the global `Properties<DateTime>()` converter — a `DateOnly` column cannot be silently shifted by
+a value converter that only matches `DateTime`. `PercentilesOverTimeSnapshot`,
+`ProcessBehaviourSnapshot` and `BlockedCountSnapshot` already had this shape;
+`DeliveryMetricSnapshot` was converged onto it.
+
+Enforced by `Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs`:
+
+| Rule | Mechanism |
+|---|---|
+| No `UtcNow.Date` / `DateTime.Today` / `DateOnly.FromDateTime(DateTime.` in production outside the clock adapter | Source scan (not ArchUnitNET — `DateTime.UtcNow` is a property access on a universally-referenced type, which dependency rules cannot express). Hard-fail, no baseline. |
+| The four tracker-history cutoffs that deliberately stay UTC still exist and still carry their stated reason | Stale-checked allowlist — the list cannot rot into an unexplained exemption |
+| No persisted snapshot day key is typed `DateTime` | Type-level assertion — catches a fifth snapshot table the day it is added |
+| Instants (token expiry, `GrantedAt`, blocked-transition `EnteredAt`) are unaffected by the zone | `InstantsUnaffectedByZoneTest.cs` — the migration cannot over-reach |
+
+### Expand-only column — scheduled contract-phase drop
+
+`DeliveryMetricSnapshot` now carries **`RecordedDay` (`DateOnly`, the day key)** alongside the legacy
+**`RecordedAt` (`DateTime`)**, added by an expand-only migration (step 02-02, generated with
+`Lighthouse.Backend/Create-Migration.ps1` — hyphenated; note a `CreateMigration*` glob misses it).
+Reads and writes moved to `RecordedDay`; `RecordedAt` is still written at that day's midnight so a
+rollback reads correct data. **The next release should drop `RecordedAt`** in a contract-phase
+migration.
+
+That drop is scheduled rather than remembered: `AllowedInstantTypedSnapshotColumns` in
+`CalendarDayAnchorSeamArchUnitTest.cs` holds an explicit, stale-checked exemption entry for
+`DeliveryMetricSnapshot.RecordedAt`. The stale check requires the property to still exist, so
+dropping the column forces the exemption entry to be deleted **in the same commit** — the guard turns
+red otherwise.
+
+The migration also adds a unique index over the backfilled day key to preserve today's
+database-level guarantee. A row with a non-midnight `RecordedAt` — unreachable via the current
+writer, reachable via a restored backup or an older version — collides, and the application **fails
+to start with a diagnostic naming the colliding delivery ids and dates**. Silently repairing an
+operator's historical metrics is worse than a clear stop.
+
+### Configuration and rollout
+
+`Lighthouse:TimeZone` (env `Lighthouse__TimeZone`) is documented for operators at
+`docs/Installation/configuration.md`. **The key ships absent on purpose**: `appsettings.json` has no
+`Lighthouse` section, so containers resolve to `TimeZoneInfo.Local` = UTC and upgrade to unchanged
+behaviour, while the standalone distribution picks up the host zone (which is the branch-B fix). A
+containerised non-UTC team must opt in — which makes the opt-in the user-facing headline of this fix,
+not a footnote. An absent key resolves silently; a *present and unresolvable* one fails startup.
+
+The API-consumer half of the contract — a bare `YYYY-MM-DD` names a calendar day in the instance
+zone, a timestamped field is a UTC instant — is written down at `docs/concepts/api-versioning.md`.
+Nowhere had ever stated which reading was correct, which is why the frontend and backend converged on
+different ones.
+
+The backend test run is pinned to `Europe/Zurich` via `.runsettings`
+(`RunConfiguration/EnvironmentVariables/TZ`, referenced from the test `.csproj` so a bare local
+`dotnet test` picks it up), with an assertion on `TimeZoneInfo.Local.Id` so a silently-inert pin
+fails loudly. This mirrors `playwright.config.ts` and the frontend `test` script, both already
+pinned. **UTC is the one offset at which the mismatch cancels out, which is exactly why CI was blind
+to it.**
+
+RCA and all nine decisions: `docs/feature/fix-backend-utc-today-anchor/deliver/rca-context.md`.
