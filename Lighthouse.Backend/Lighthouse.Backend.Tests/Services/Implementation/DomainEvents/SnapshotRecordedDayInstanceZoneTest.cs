@@ -416,9 +416,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             featureRepository.Add(feature);
             await featureRepository.Save();
 
-            // Delivery's constructor refuses a target date in the past against the real wall clock,
-            // so the target date is deliberately NOT clock-relative here. It is irrelevant to the
-            // subject of this fixture, which is the recorded DAY KEY, not the delivery date.
+            // Deliberately anchored on TestToday rather than this fixture's boundary clock: the
+            // target date only has to clear Delivery's future-date guard, and it is irrelevant to
+            // the subject here, which is the recorded DAY KEY.
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
             delivery.Features.Add(feature);
             var deliveryRepository = serviceScope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
