@@ -3,24 +3,8 @@ import {
 	loadDemoScenario,
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
-import { createTeam } from "../../helpers/api/teams";
-import { createAzureDevOpsConnection } from "../../helpers/api/workTrackingSystemConnections";
-import { generateRandomName } from "../../helpers/names";
-import {
-	MetricsCategories,
-	MetricsDateRange,
-} from "../../models/metrics/MetricsPage";
-import {
-	PERCENTILES_OVER_TIME_EMPTY_COPY,
-	PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
-	PercentilesOverTimeWidget,
-} from "../../models/metrics/PercentilesOverTimeWidget";
-
-function daysBeforeToday(days: number): Date {
-	const date = new Date();
-	date.setDate(date.getDate() - days);
-	return date;
-}
+import { MetricsCategories } from "../../models/metrics/MetricsPage";
+import { PercentilesOverTimeWidget } from "../../models/metrics/PercentilesOverTimeWidget";
 
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith + portfolio Project Apollo deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
@@ -179,124 +163,9 @@ test("@real-io @driving_adapter @US-03 flow coach reads a dated work item age pe
 	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
 });
 
-// A team created but never refreshed has no recorded percentiles at all, and it
-// sits on a non-demo connection — only demo connections get backdated snapshots
-// (ADR-109 / DDD-4), so this is the honest "fresh team" fixture.
-test("@edge @US-03 a fresh team's work item age tab shows the honest forward only empty state", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	const connection = await createAzureDevOpsConnection(
-		request,
-		generateRandomName(),
-	);
-	const freshTeamName = generateRandomName();
-	await createTeam(
-		request,
-		freshTeamName,
-		connection.id,
-		'[System.TeamProject] = "Lighthouse"',
-		["User Story", "Bug"],
-		{ toDo: ["New"], doing: ["Active"], done: ["Closed"] },
-	);
-
-	// Deliberately never refreshed: nothing has recorded a percentile for it.
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(freshTeamName);
-	const metrics = await teamDetail.goToMetrics();
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	const widget = new PercentilesOverTimeWidget(page);
-	await expect(widget.Widget).toBeVisible();
-
-	await widget.selectAge();
-	await expect.poll(() => widget.isAgeSelected()).toBe(true);
-
-	// Honest forward-only copy, never a broken chart.
-	await expect(widget.emptyState).toHaveText(PERCENTILES_OVER_TIME_EMPTY_COPY);
-	await expect.poll(() => widget.countChartLines()).toBe(0);
-});
-
-// Slice 03b (US-06): the dashboard date pickers now apply to this widget. The demo
-// backfill covers [today-14, today-1], so a ~7-day window inside it plots strictly
-// fewer days than the default 30-day window, and a window that ends before the
-// backfill begins is honestly empty rather than "nothing recorded yet".
-test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fewer recorded days", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	await loadDemoScenario(request, DEMO_SCENARIO_ID);
-	await waitForBackgroundUpdates(request);
-
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
-	const metrics = await teamDetail.goToMetrics();
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	const widget = new PercentilesOverTimeWidget(page);
-	await expect(widget.Widget).toBeVisible();
-	await expect(widget.emptyState).toHaveCount(0);
-	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
-
-	const daysOnDefaultRange = await widget.countPlottedDays();
-	expect(daysOnDefaultRange).toBeGreaterThan(1);
-
-	const dateRange = new MetricsDateRange(page);
-	await dateRange.applyAndWaitFor(
-		daysBeforeToday(7),
-		daysBeforeToday(1),
-		`${HISTORY_ENDPOINT}?`,
-	);
-	await metrics.switchCategory(MetricsCategories.Predictability);
-	await expect(widget.Widget).toBeVisible();
-
-	// Wait for the chart to actually PAINT before measuring. countPlottedDays()
-	// returns 0 while the series is still loading, and 0 satisfies toBeLessThan —
-	// polling the day count directly would pass on the loading sample and the
-	// assertion below would hold even with the date filter deleted from the backend.
-	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
-
-	// Fewer recorded days inside the narrower window — the pickers actually apply.
-	// Bounded on BOTH sides: > 0 proves we measured a painted chart, not an empty one.
-	const daysOnNarrowedRange = await widget.countPlottedDays();
-	expect(daysOnNarrowedRange).toBeGreaterThan(0);
-	expect(daysOnNarrowedRange).toBeLessThan(daysOnDefaultRange);
-	await expect(widget.emptyState).toHaveCount(0);
-});
-
-test("@edge @US-06 a range that ends before recording began says so, instead of blaming forward-only recording", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	await loadDemoScenario(request, DEMO_SCENARIO_ID);
-	await waitForBackgroundUpdates(request);
-
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
-	const metrics = await teamDetail.goToMetrics();
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	const widget = new PercentilesOverTimeWidget(page);
-	await expect(widget.Widget).toBeVisible();
-
-	// Entirely before the demo backfill's earliest day AND ending in the past, so
-	// the honest reading is "nothing in this range" — this owner does have history.
-	const dateRange = new MetricsDateRange(page);
-	await dateRange.applyAndWaitFor(
-		daysBeforeToday(60),
-		daysBeforeToday(45),
-		`${HISTORY_ENDPOINT}?`,
-	);
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	await expect(widget.emptyState).toHaveText(
-		PERCENTILES_OVER_TIME_RANGE_EMPTY_COPY,
-	);
-	await expect.poll(() => widget.countChartLines()).toBe(0);
-});
+// Moved to PredictabilityOverTime.spec.ts: the fresh-team empty state and the two
+// US-06 date-range specs. PBC Over Time sits on this same Predictability category
+// and had byte-for-byte twins of all three — same demo seed, same never-refreshed
+// team, same navigation, same window — so both widgets are now read from one setup
+// there. What stays here is what only this widget does: the CT-30/60/90 horizon
+// toggle and the Work Item Age tab.

@@ -3,29 +3,13 @@ import {
 	loadDemoScenario,
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
-import { createTeam } from "../../helpers/api/teams";
-import { createAzureDevOpsConnection } from "../../helpers/api/workTrackingSystemConnections";
-import { generateRandomName } from "../../helpers/names";
-import {
-	MetricsCategories,
-	MetricsDateRange,
-} from "../../models/metrics/MetricsPage";
+import { MetricsCategories } from "../../models/metrics/MetricsPage";
 import {
 	PBC_LIMIT_LINES,
-	PBC_OVER_TIME_EMPTY_COPY,
-	PBC_OVER_TIME_RANGE_EMPTY_COPY,
 	PBC_PORTFOLIO_METRIC_TYPES,
 	PBC_TEAM_METRIC_TYPES,
 	PbcOverTimeWidget,
 } from "../../models/metrics/PbcOverTimeWidget";
-
-const PBC_OVER_TIME_ENDPOINT = "/metrics/process-behavior-over-time?";
-
-function daysBeforeToday(days: number): Date {
-	const date = new Date();
-	date.setDate(date.getDate() - days);
-	return date;
-}
 
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith + portfolio Project Apollo deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
@@ -92,56 +76,9 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 	expect(new Set(strokes).size).toBe(EXPECTED_LINES);
 });
 
-// A team created but never refreshed has recorded no process-behaviour limits
-// at all, and it sits on a non-demo connection — only demo connections get
-// backdated snapshots (ADR-109 / DDD-4), so this is the honest "fresh team".
-test("@edge @US-04 a fresh team's PBC Over Time widget shows the honest empty state", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	const connection = await createAzureDevOpsConnection(
-		request,
-		generateRandomName(),
-	);
-	const freshTeamName = generateRandomName();
-	await createTeam(
-		request,
-		freshTeamName,
-		connection.id,
-		'[System.TeamProject] = "Lighthouse"',
-		["User Story", "Bug"],
-		{ toDo: ["New"], doing: ["Active"], done: ["Closed"] },
-	);
-
-	// Deliberately never refreshed: nothing has recorded a limit triple for it.
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(freshTeamName);
-	const metrics = await teamDetail.goToMetrics();
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	const widget = new PbcOverTimeWidget(page);
-	await expect(widget.Widget).toBeVisible();
-	await expect.poll(() => widget.isMetricSelected("Throughput")).toBe(true);
-
-	// Honest forward-only copy, never a broken chart.
-	await expect(widget.emptyState).toHaveText(PBC_OVER_TIME_EMPTY_COPY);
-	await expect.poll(() => widget.countChartLines()).toBe(0);
-	await expect(widget.legend).toHaveCount(0);
-
-	// Slice 04: the same honesty has to hold for a family the recorder only
-	// started persisting now. This fresh, never-refreshed team on a non-demo
-	// connection has nothing recorded for ANY family, which makes it the only
-	// deterministic place to assert the empty copy per family — on the demo team
-	// today's refresh records a row for every family.
-	await widget.selectMetric(OTHER_FAMILY);
-	await expect.poll(() => widget.isMetricSelected(OTHER_FAMILY)).toBe(true);
-	await expect(widget.emptyState).toHaveText(PBC_OVER_TIME_EMPTY_COPY);
-	await expect.poll(() => widget.countChartLines()).toBe(0);
-	await expect(widget.legend).toHaveCount(0);
-});
-
+// The fresh-team empty state moved to PredictabilityOverTime.spec.ts: the
+// Percentiles Over Time widget needed the identical never-refreshed team on the
+// identical page, so the two specs were building the same fixture twice.
 // Scenario 14 (US-05 / D8): the toggle row is the one place Feature Size is
 // withheld — the wire deliberately answers a team's `?type=FeatureSize` with an
 // empty series (pinned at the read port in Slice04ProcessBehaviorMetricTypesScenarios.cs),
@@ -240,82 +177,7 @@ test("@real-io @driving_adapter @US-05 selecting another family moves the select
 		.toMatch(/^(plotted|honestly empty)$/);
 });
 
-// Slice 03b (US-06): the dashboard date pickers now apply to this widget. The demo
-// backfill covers [today-14, today-1], so a ~7-day window inside it plots strictly
-// fewer days than the default 30-day window, and a window that ends before the
-// backfill begins is honestly empty rather than "nothing recorded yet".
-test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fewer recorded days", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	await loadDemoScenario(request, DEMO_SCENARIO_ID);
-	await waitForBackgroundUpdates(request);
-
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
-	const metrics = await teamDetail.goToMetrics();
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	const widget = new PbcOverTimeWidget(page);
-	await expect(widget.Widget).toBeVisible();
-	await expect(widget.emptyState).toHaveCount(0);
-	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
-
-	const daysOnDefaultRange = await widget.countPlottedDays();
-	expect(daysOnDefaultRange).toBeGreaterThan(1);
-
-	const dateRange = new MetricsDateRange(page);
-	await dateRange.applyAndWaitFor(
-		daysBeforeToday(7),
-		daysBeforeToday(1),
-		PBC_OVER_TIME_ENDPOINT,
-	);
-	await metrics.switchCategory(MetricsCategories.Predictability);
-	await expect(widget.Widget).toBeVisible();
-
-	// Wait for the chart to actually PAINT before measuring. countPlottedDays()
-	// returns 0 while the series is still loading, and 0 satisfies toBeLessThan —
-	// polling the day count directly would pass on the loading sample and the
-	// assertion below would hold even with the date filter deleted from the backend.
-	await expect.poll(() => widget.countChartLines()).toBe(EXPECTED_LINES);
-
-	// Fewer recorded days inside the narrower window — the pickers actually apply.
-	// Bounded on BOTH sides: > 0 proves we measured a painted chart, not an empty one.
-	const daysOnNarrowedRange = await widget.countPlottedDays();
-	expect(daysOnNarrowedRange).toBeGreaterThan(0);
-	expect(daysOnNarrowedRange).toBeLessThan(daysOnDefaultRange);
-	await expect(widget.emptyState).toHaveCount(0);
-});
-
-test("@edge @US-06 a range that ends before recording began says so, instead of blaming forward-only recording", async ({
-	page,
-	request,
-	overviewPage,
-}) => {
-	await loadDemoScenario(request, DEMO_SCENARIO_ID);
-	await waitForBackgroundUpdates(request);
-
-	await page.goto("/");
-
-	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
-	const metrics = await teamDetail.goToMetrics();
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	const widget = new PbcOverTimeWidget(page);
-	await expect(widget.Widget).toBeVisible();
-
-	// Entirely before the demo backfill's earliest day AND ending in the past, so
-	// the honest reading is "nothing in this range" — this owner does have history.
-	const dateRange = new MetricsDateRange(page);
-	await dateRange.applyAndWaitFor(
-		daysBeforeToday(60),
-		daysBeforeToday(45),
-		PBC_OVER_TIME_ENDPOINT,
-	);
-	await metrics.switchCategory(MetricsCategories.Predictability);
-
-	await expect(widget.emptyState).toHaveText(PBC_OVER_TIME_RANGE_EMPTY_COPY);
-	await expect.poll(() => widget.countChartLines()).toBe(0);
-});
+// The two US-06 date-range specs moved to PredictabilityOverTime.spec.ts. They
+// were byte-for-byte the Percentiles Over Time pair with one widget swapped: same
+// demo seed, same team, same navigation, same window. Both widgets now get read
+// from a single range change there.
