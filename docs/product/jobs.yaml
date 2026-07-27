@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-07-17
+updated: 2026-07-27
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -28,6 +28,8 @@ feature_context:
   - widget-loose-ends
   - flow-overview-named-cycle-time
   - epic-5427-percentiles-over-time
+  - epic-5459-multi-team-forecasts
+  - epic-5513-servicenow-integration
 
 jobs:
   - id: job-rbac-bootstrap
@@ -3552,3 +3554,241 @@ jobs:
         was discarded. Gap: 4 — the highest-value correction available in the forecasting domain,
         and it is served by one well-isolated seam (`AggregatedWhenForecast`) with no change to the
         Monte Carlo itself.
+
+  - id: job-snow-admin-connect-servicenow
+    title: Connect Lighthouse to ServiceNow with the rights I am actually granted
+    persona: config-admin
+    feature_context: epic-5513-servicenow-integration
+    created: 2026-07-27
+    note: >
+      ADO #5513 "ServiceNow Integration". Lighthouse ships four work-tracking connectors today
+      (AzureDevOps, Jira, Linear, Csv) behind one `IWorkTrackingConnector` port; ServiceNow is absent,
+      so a SNOW shop cannot start at all. The distinguishing constraint versus the other connectors is
+      RIGHTS: ServiceNow instances are administered by a central platform team, and the person
+      configuring Lighthouse is typically NOT that team. Whatever role set the integration needs must
+      therefore be minimal, documented, and proved sufficient with a restricted account (D11) — the
+      maintainer's own limited access to the customer's on-prem instance is the proving ground, not
+      an obstacle.
+    job_story: >
+      When my team's work lives in ServiceNow and I have only the rights my platform team will grant me,
+      I want to point Lighthouse at my instance and be told plainly whether the credential actually works,
+      so I can start without escalating for admin rights or guessing why a sync came back empty.
+    dimensions:
+      functional: >
+        Select ServiceNow in the connection wizard, supply an instance base URL and one credential,
+        and get a validation verdict that distinguishes an unreachable host from a bad credential from
+        a reachable instance where the account simply lacks read access to the configured table.
+      emotional: >
+        Move from resignation ("ServiceNow is never in the list; this tool is not for us") through
+        caution ("will the read-only account I was given be enough?") to confidence ("validated green
+        with what I already have, and I know exactly what it can do").
+      social: >
+        Ask the platform team for the smallest thing that works, with a named role list — rather than
+        asking for admin and being refused, or being the person who over-granted.
+    forces:
+      push: >
+        ServiceNow shops are excluded from Lighthouse outright today. There is no workaround short of
+        exporting to CSV by hand, and the CSV connector loses the live refresh that makes the product
+        useful.
+      pull: >
+        The connector port, the encrypted connection-option storage and the schema-driven connection
+        form all already exist and have been exercised four times — so a fifth system is configuration
+        plus one adapter, not a new subsystem.
+      anxiety: >
+        That the only credential which validates requires an elevated role the platform team will
+        refuse — which would make the integration technically working and practically unadoptable.
+        Residual second anxiety: ServiceNow has been restricting inbound Basic Authentication in
+        favour of OAuth 2.0 client credentials. This does NOT block v1 — basic auth was verified
+        working on the target on-prem instance — but a prospect whose instance already restricts it
+        will hit a wall, so the docs must say plainly that v1 is basic auth.
+      habit: >
+        Admins of other tools expect a PAT or API key pasted into a form, and ServiceNow basic auth
+        matches that habit closely. The friction sits in the OTHER direction: the "more secure"
+        OAuth path needs an instance-side application-registry entry made by someone the Lighthouse
+        user usually is not — which is precisely why it is the successor, not the v1 choice.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — it is the gate. Nothing else in this epic is reachable until a connection
+        validates, and no ServiceNow user can use Lighthouse at all today. Current satisfaction: 0 —
+        not partially served, entirely absent; ServiceNow is not an option in the product.
+        Gap: 5 — the largest available, though note the gap measures the ABSENCE, not the proven
+        demand: whether this market is real is precisely what
+        [[job-maintainer-learn-servicenow-viability]] exists to find out.
+
+  - id: job-snow-flow-coach-see-flow-metrics
+    title: Get the same flow metrics on ServiceNow work that every other team gets
+    persona: flow-coach
+    feature_context: epic-5513-servicenow-integration
+    created: 2026-07-27
+    note: >
+      ADO #5513. Once a connection validates, a Team pointed at a ServiceNow query must produce
+      throughput, cycle time and forecasts through the EXISTING metric pipeline — the connector's job
+      ends at producing work items. Two ServiceNow-specific unknowns bound this job and are deferred
+      to a mandatory SPIKE. D4 settled the first one: ITSM (task/incident/change_request/sc_task) is
+      the DEFAULT and the optimisation target — Agile Development 2.0 (rm_epic/rm_story) is a plugin
+      that is not installed by default, so optimising for it would target tables most prospects do
+      not use. The table stays CONFIGURABLE so an Agile 2.0 shop is not locked out. Still open:
+      whether a defensible "started" timestamp exists on `task` at all (opened_at / work_start /
+      sys_created_on are candidates), without which cycle time depends on transition history and the
+      slice order INVERTS. Transition history is declared UNSUPPORTED in v1 (D6) with an honest
+      per-widget downgrade, following the Linear `DowngradeHistorySupport()` precedent.
+    job_story: >
+      When my team's work is ServiceNow records rather than Jira issues,
+      I want the same cycle time, throughput, age and forecast Lighthouse gives every other team,
+      so my organisation's tool choice stops deciding whether I am allowed to measure flow.
+    dimensions:
+      functional: >
+        Point a Team at a ServiceNow table and a user-authored query, map its states to Doing/Done in
+        the existing settings UI, and get Throughput, Cycle Time and the how-many/when forecasts from
+        synced items — with pagination honoured so a large query is not silently truncated.
+      emotional: >
+        Move from exclusion ("every flow tool assumes Jira, so we go without") to inclusion ("we
+        forecast from our own history, not from a guess") — and, where a capability genuinely is not
+        there, from suspicion to trust because the tool says so instead of showing a blank chart.
+      social: >
+        Bring the same evidence to a review that the Jira teams bring, instead of a hand-built
+        spreadsheet that invites arguments about the data rather than about the work.
+    forces:
+      push: >
+        ServiceNow teams currently export to a spreadsheet or go without flow metrics entirely. The
+        spreadsheet goes stale the day it is built and nobody trusts it.
+      pull: >
+        The metric and forecast pipeline is entirely system-agnostic — it consumes Lighthouse work
+        items. Producing those items is the whole job; every chart downstream comes free.
+      anxiety: >
+        That the numbers will be quietly wrong rather than visibly missing — a query that silently
+        truncates at a page boundary, or a cycle time computed from a "started" date that is really
+        a last-updated timestamp. A wrong number is worse than an absent one, because it is acted on.
+      habit: >
+        Coaches are used to reading a state name and knowing what it means. ServiceNow states are
+        commonly numeric choice values with separate display labels, so the mapping step needs to
+        show the label the coach recognises, not the integer the API returns.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — this is the value the epic exists to deliver; connecting (
+        [[job-snow-admin-connect-servicenow]]) is only the gate in front of it, and the epic body
+        explicitly sanctions shipping team-scope alone if nothing else is reachable. Current
+        satisfaction: 0 — no ServiceNow data reaches Lighthouse at all. Gap: 5, with the same caveat
+        as the connect job: it measures absence, not demonstrated demand.
+
+  - id: job-snow-delivery-lead-portfolio-over-servicenow
+    title: Forecast a delivery over ServiceNow parent records, not just one team's throughput
+    persona: delivery-lead-rte
+    feature_context: epic-5513-servicenow-integration
+    created: 2026-07-27
+    note: >
+      ADO #5513 — CONDITIONAL job (D7). The epic body already sanctions the fallback: "is there
+      something like a hierarchy to model Portfolios? If not, we may start with team only". A
+      mandatory SPIKE (Q5) decides whether this job is served or CANCELLED; if cancelled, the docs
+      must state the team-only limitation prominently so a prospect learns the limit before installing
+      rather than after. Recorded here rather than omitted because a cancelled job with a recorded
+      reason is evidence for the viability verdict, whereas a silently dropped one is lost learning.
+    job_story: >
+      When my ServiceNow work rolls up to a parent record,
+      I want a Lighthouse Portfolio over those parents,
+      so I can forecast a delivery date and see which feature is at risk — instead of reading one
+      team's throughput and doing the roll-up in my head.
+    dimensions:
+      functional: >
+        Create a Portfolio on a ServiceNow connection with a parent query; parent records become
+        Lighthouse features, children resolve to their parent, and each feature reports remaining and
+        total work with a forecasted completion date from contributing teams' throughput.
+      emotional: >
+        Move from ambition ("can we forecast the delivery, not just the team?") to either grounded
+        confidence or — equally valuable — a clearly stated, early "no", rather than a vague
+        "coming soon" that quietly never arrives.
+      social: >
+        Answer "when will this be done?" in front of leadership with a distribution rather than a
+        date pulled from a status column.
+    forces:
+      push: >
+        Portfolio forecasting is Lighthouse's headline capability. A ServiceNow integration that stops
+        at team scope reaches the flow coach but never the delivery lead, which halves the market the
+        epic is testing.
+      pull: >
+        `GetFeaturesForProject` / `GetParentFeaturesDetails` are existing port methods with a close
+        analogue in Linear's project→initiative rollup — an unfamiliar hierarchy mapped onto Lighthouse
+        features has been done once already.
+      anxiety: >
+        That a hierarchy exists on paper but is not populated by real customers, or that resolving
+        children costs one API call per feature — viable at ten features, not at two hundred. The
+        SPIKE measures that cost rather than assuming it.
+      habit: >
+        Delivery leads think in epics and features. If ServiceNow's rollup concept is a Demand or a
+        Project rather than an Epic, the vocabulary in the settings UI has to meet them where they are.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 rather than 5 — the epic explicitly permits shipping without it, so it is not a
+        gate on the epic's minimum value, but it IS the gate on Lighthouse's headline capability
+        reaching this market. Current satisfaction: 0. Gap: 4, and unusually uncertain: the gap may
+        turn out to be unclosable, and that finding is itself a deliverable of
+        [[job-maintainer-learn-servicenow-viability]].
+
+  - id: job-maintainer-learn-servicenow-viability
+    title: Decide with evidence whether ServiceNow is a market worth building for
+    persona: lighthouse-maintainer
+    feature_context: epic-5513-servicenow-integration
+    created: 2026-07-27
+    note: >
+      ADO #5513's STATED expected outcome, recorded as a maintainer job rather than dressed up as a
+      user feature. The epic body: "Expected outcome: We know more about the viability of SNOW
+      integration, and will get feedback from potential customers what works and what's missing (and
+      if it's useful at all)." The hypothesis under test — "at least potential customers use Service
+      Now; this is a huge untapped market right now" — is explicitly a hypothesis. Validation runs
+      against a real customer's ON-PREM instance under a restricted account, which the maintainer does
+      not administer and where building Lighthouse is cumbersome; hence the deliverable is a
+      standalone, build-free validation script rather than a full deployment (D10).
+    job_story: >
+      When I am deciding whether ServiceNow is a market worth building for,
+      I want a real integration in front of real ServiceNow users and their feedback in my hands,
+      so I invest based on evidence rather than on a hypothesis about an untapped market.
+    dimensions:
+      functional: >
+        Run a repeatable, build-free validation script against an instance I do not administer, under
+        a restricted account; record pass/fail per capability and every cloud-vs-on-prem divergence;
+        collect structured feedback from at least three ServiceNow users or prospects; record a
+        go / narrow / stop recommendation on the work item.
+      emotional: >
+        Move from speculation ("that is all the market thesis is") through exposure ("it works on my
+        own developer instance; the real test is one I do not control") to a decision I can defend —
+        including the decision to stop.
+      social: >
+        Be the maintainer who narrows or stops on evidence, rather than the one who ships a connector
+        nobody asked for because it was already half-built.
+    forces:
+      push: >
+        Connector work is open-ended: each new system carries permanent maintenance cost, and there
+        are always more systems. Without a verdict the epic has no natural end and quietly becomes
+        a parity project.
+      pull: >
+        A thin, honest integration is a far cheaper instrument for measuring demand than a survey —
+        prospects react to something they can connect, not to a roadmap item.
+      anxiety: >
+        That "it basically works" becomes the verdict by default and the epic drifts into parity work
+        without anyone deciding to fund it. Mitigated by making the recommendation an acceptance
+        criterion with a 30-day window, not a follow-up.
+      habit: >
+        The reflex after shipping a connector is to start closing capability gaps. This epic
+        deliberately ends at a recommendation instead — a "narrow" or "stop" verdict is a SUCCESSFUL
+        outcome, because the epic buys knowledge; only an unrecorded verdict is a failure.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — this is the epic's stated outcome, and it governs whether every other job here
+        gets a successor. Current satisfaction: 1 rather than 0 — the maintainer has anecdotal signal
+        ("at least potential customers use Service Now") plus one named on-prem customer, which is
+        more than nothing but is not evidence. Gap: 4 — closed by putting a working integration in
+        front of real users, which no amount of desk research substitutes for. Note the self-hosted
+        telemetry gap (#5015) means adoption cannot be measured remotely; this verdict must be
+        collected by hand.

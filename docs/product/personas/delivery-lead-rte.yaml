@@ -25,6 +25,7 @@ primary_jobs:
   - job-delivery-lead-see-time-over-custom-window  # multiple-cycle-times (2026-06-08, #5251): see where time goes over a custom start->end window
   - job-delivery-lead-see-blocked-trend  # epic-5074-blocked-items (2026-06-11, #5074): blocked-count trend over time
   - job-delivery-lead-see-process-stability-trend  # epic-5427-percentiles-over-time (2026-07-22, #5427): PBC NPLs over time
+  - job-snow-delivery-lead-portfolio-over-servicenow  # epic-5513-servicenow-integration (2026-07-27, #5513): CONDITIONAL — only if ServiceNow has a usable hierarchy (SPIKE Q5)
 
 goals:
   - Identify which workflow state(s) consume the most of the team's collective time over a

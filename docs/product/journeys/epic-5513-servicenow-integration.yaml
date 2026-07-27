@@ -1,0 +1,209 @@
+schema_version: 1
+feature_id: epic-5513-servicenow-integration
+updated: 2026-07-27
+note: >
+  ADO Epic 5513 "ServiceNow Integration" (Community / Release Notes). A VIABILITY epic, not a parity
+  epic — the epic body states "we don't know SNOW at all". Lighthouse already ships four
+  IWorkTrackingConnector implementations (AzureDevOps, Jira, Linear, Csv) and the frontend connection
+  surface is schema-driven, so the plumbing shape is known; every ServiceNow-domain fact is a
+  hypothesis until a mandatory pre-slice SPIKE closes it (spike-questions.md, 9 questions).
+  Locked: read-only, no write-back (D8); BASIC AUTH for v1 (D3) — an earlier draft challenged this on
+  desk research about ServiceNow restricting inbound Basic Authentication, but the maintainer verified
+  basic auth works on the target on-prem instance while OAuth there would need admin setup they do not
+  have, so first-hand evidence from the deciding environment won and OAuth became a named successor
+  (D3a) rather than a v1 gate; ITSM (task/incident/change_request/sc_task) is the DEFAULT and the
+  optimisation target for field mapping, demo data and docs, with the table still configurable so an
+  Agile 2.0 (rm_story) shop is not locked out (D4); SupportsTransitionHistory=false with an honest downgrade by default,
+  upgraded only if the SPIKE finds an affordable read-only history source (D6); Portfolio support
+  conditional on a hierarchy existing at all (D7, epic body already sanctions "team only"); free tier
+  (D9); cloud developer instance is the build target, the customer's on-prem instance is the
+  validation fallback (D10); and least privilege is a design requirement rather than a nicety,
+  because the maintainer's on-prem access is deliberately restricted (D11). See feature-delta.md.
+
+journeys:
+
+  - name: connect-lighthouse-to-servicenow
+    goal: >
+      A configuration administrator in a ServiceNow shop creates a ServiceNow connection with the
+      credential their platform team actually granted, validates it, and learns immediately and
+      specifically whether it works — rather than discovering a permissions problem a week later
+      through an empty team.
+    persona: "config-admin"
+
+    emotional_arc:
+      start: Resigned — "ServiceNow is never in the list; this tool is probably not for us."
+      middle: Cautious — "it is in the list, but will the read-only account I was given be enough,
+        or do I have to go back and ask for admin?"
+      end: Confident — "validated green with the account I already have; I know exactly what it can do."
+
+    steps:
+      - id: step-create-servicenow-connection
+        action: >
+          Admin opens Settings → Work Tracking Systems → New Connection and picks "ServiceNow", then
+          enters the instance base URL and the credential for the auth method Lighthouse supports
+        expected_output: >
+          The connection form renders the ServiceNow option set from the schema-driven configuration
+          (no bespoke screen), and the credential is stored encrypted — never returned to the client
+          in plaintext on reload.
+        emotional_state: Hopeful — "it is actually offered"
+        shared_artifacts:
+          - ServiceNow connection options (new; instance base URL + auth credential, encrypted via the existing connection-option mechanism)
+          - basic-auth credential (new; ONE auth method in v1 — D3, verified on the target on-prem instance; OAuth is the named successor, D3a)
+
+      - id: step-validate-connection
+        action: Admin clicks Validate
+        expected_output: >
+          Either a success result, or one of three DISTINGUISHABLE failures — unreachable host, bad
+          credential, or a reachable instance where the account lacks read access to the configured
+          table. A permissions failure is never reported as a connection failure.
+        emotional_state: Tense then relieved — "it tells me which of the three things is wrong"
+        shared_artifacts:
+          - ConnectionValidationResult (existing contract, reused unchanged)
+
+      - id: step-know-what-rights-are-needed
+        action: >
+          Admin reads the documented minimum ServiceNow role set before asking their platform team
+          for anything
+        expected_output: >
+          The docs name the minimum roles proved sufficient on a real restricted account — not the
+          roles that happened to work for an admin. The admin asks for exactly those.
+        emotional_state: Prepared — "I can ask for the smallest thing that works"
+        shared_artifacts:
+          - minimum-role-set claim (new; asserted in docs, PROVED on the on-prem instance in slice 05)
+
+  - name: read-flow-metrics-on-servicenow-work
+    goal: >
+      A flow coach whose team tracks work in ServiceNow points a Lighthouse team at a ServiceNow
+      query and gets throughput, cycle time and a forecast — the same flow diagnosis a Jira team gets.
+    persona: "flow-coach (also: delivery-lead-rte at portfolio scope, CONDITIONAL on a hierarchy existing — D7)"
+
+    emotional_arc:
+      start: Excluded — "every flow tool assumes Jira; our work is in ServiceNow so we go without."
+      middle: Testing — "the sync returned items, but are the dates right enough for cycle time to mean anything?"
+      end: Included — "we have throughput and a forecast from our own history, not a guess."
+
+    steps:
+      - id: step-point-a-team-at-a-servicenow-query
+        action: >
+          Coach creates a Team on the ServiceNow connection, sets the work-item table and pastes a
+          ServiceNow query, then configures Doing/Done state mapping in the existing team settings UI
+        expected_output: >
+          Matching records sync as Lighthouse work items with id, title, type, state and the dates
+          cycle time needs. Pagination is honoured. A bad query or unresolvable table produces a
+          specific, actionable message rather than an empty team.
+        emotional_state: Focused — "does it understand our query?"
+        shared_artifacts:
+          - configured work-item table name (new; D4 — defaults to an ITSM task-derived table, configurable so an Agile 2.0 shop can point at rm_story)
+          - user-authored ServiceNow query (new; sysparm_query passed through opaquely, same concept as WIQL and JQL — D5)
+          - team state mapping (existing; but ServiceNow states are commonly NUMERIC choice values with a separate display label — the mapping UI must show the label, never the integer)
+
+      - id: step-read-throughput-and-forecast
+        action: Coach opens the team's metrics and runs a "how many by date" forecast
+        expected_output: >
+          Throughput, Cycle Time and the how-many/when forecasts render from synced data.
+        emotional_state: Validated — "same numbers our Jira colleagues get"
+        shared_artifacts:
+          - synced ServiceNow work items (new; feeding the EXISTING metric and forecast pipeline unchanged)
+
+      - id: step-meet-an-honest-limit
+        action: >
+          Coach opens a widget that needs transition history (Cumulative State Time, per-state
+          percentiles, staleness)
+        expected_output: >
+          The widget shows its documented unsupported state — never a blank chart, never a crash,
+          never a silently-wrong number. SupportsTransitionHistory is false for ServiceNow in v1 (D6).
+        emotional_state: Disappointed but trusting — "it tells me it cannot, instead of lying"
+        shared_artifacts:
+          - SupportsTransitionHistory capability flag (existing contract; false by default for SNOW, per-instance runtime downgrade precedent from Linear)
+
+      - id: step-roll-up-to-a-portfolio
+        action: >
+          Delivery lead creates a Portfolio over ServiceNow parent records (CONDITIONAL — only if the
+          SPIKE finds a usable hierarchy)
+        expected_output: >
+          Features list with child counts and forecasted completion dates. If no usable hierarchy
+          exists, this step does NOT exist and the docs say so prominently — a prospect learns the
+          team-only limit before installing, not after.
+        emotional_state: Ambitious — "can we forecast the delivery, not just the team?"
+        shared_artifacts:
+          - ServiceNow parent→child relationship (new, CONDITIONAL; identified by SPIKE Q5)
+
+  - name: decide-whether-servicenow-is-a-market
+    goal: >
+      The Lighthouse maintainer runs the integration against a real customer's on-prem instance under
+      a restricted account, collects structured feedback from real ServiceNow users, and records a
+      go / narrow / stop recommendation on ADO 5513.
+    persona: "lighthouse-maintainer"
+
+    emotional_arc:
+      start: Speculative — "the hypothesis is that this is a huge untapped market. That is all it is."
+      middle: Exposed — "it works on my own developer instance; the real test is an instance I do not administer."
+      end: Decided — "go, narrow or stop, with evidence attached."
+
+    steps:
+      - id: step-prove-it-on-an-instance-i-do-not-administer
+        action: >
+          Maintainer runs a standalone validation script against the on-prem customer instance under a
+          restricted account
+        expected_output: >
+          Pass/fail per capability (connect → team sync → metrics). The script runs WITHOUT a
+          Lighthouse build on that side and without elevated rights — building Lighthouse there is
+          cumbersome and access is limited (D10), so this constraint is designed in, not retrofitted.
+        emotional_state: Nervous — "this is where assumptions die"
+        shared_artifacts:
+          - standalone validation script/checklist (new; build-free, restricted-account-runnable)
+          - cloud-vs-on-prem divergence list (new; API version, auth acceptance, table availability, plugin presence — recorded even if empty)
+
+      - id: step-collect-real-user-feedback
+        action: Maintainer puts the integration in front of ≥3 ServiceNow users/prospects
+        expected_output: >
+          Written feedback on what works and what is missing, aggregated into a recommendation.
+        emotional_state: Curious — "does this solve a problem they actually have?"
+        shared_artifacts:
+          - structured feedback set (new; ≥3 respondents within 30 days of the release note)
+
+      - id: step-record-the-verdict
+        action: Maintainer records go / narrow / stop on ADO 5513
+        expected_output: >
+          A named decision. If "go", the successor epic's scope is named. The epic ENDS at a
+          recommendation, not at parity.
+        emotional_state: Grounded — "the next investment is evidence-led"
+        shared_artifacts: []
+
+    error_paths_summary:
+      - Basic auth blocked on a PROSPECT's hardened instance: no longer the headline risk for THIS
+        epic (D3 — verified working on our target on-prem instance), but still real for other
+        customers. Mitigation is documentation, not code: US-05 states plainly that v1 is basic auth
+        so such a prospect learns before installing, and OAuth is the named successor (D3a).
+      - Permissions failure reported as a connection failure: forbidden (US-01 AC4). An admin who
+        cannot tell "wrong host" from "insufficient rights" cannot self-serve, which defeats D11.
+        SPIKE Q1 must confirm 401 and 403 are actually distinguishable; if not, the AC drops from
+        three messages to two rather than guessing.
+      - Agile Development 2.0 plugin absent on the customer's instance: assumed to be the NORMAL case
+        — which is why ITSM is the default (D4), not merely a supported alternative. D4's configurable
+        table keeps Agile 2.0 shops working; asking a customer to activate a plugin as a prerequisite
+        for basic team metrics is explicitly out of scope.
+      - ITSM state values are numeric choices: showing a coach "3" instead of "In Progress" in the
+        state-mapping UI makes the mapping unusable even though the sync technically works.
+      - No native "started" timestamp on the chosen table: cycle time then depends on transition
+        history, which INVERTS the slice order (slice 04 becomes a prerequisite of slice 02). SPIKE
+        Q4 exists to find this before the slices are committed; if it fires, re-plan rather than patch.
+      - No usable hierarchy: US-03 is CANCELLED loudly, not silently deferred — the docs state the
+        team-only limitation (US-03 AC5).
+      - Transition history readable only with an elevated role, or only after the customer configures
+        Metric Definitions on their own instance: US-04 is cancelled; slice 02's honest downgrade
+        already covers the user experience, so the cost of this "no" is small by design.
+      - Minimum role set turns out to be effectively `admin`: a headline adoption risk that may sink
+        the market thesis on its own. Recorded in the SPIKE report, not discovered at slice 05.
+      - Rate limit tripped during a refresh: must fail visibly rather than silently truncating the
+        item set — a silently short sync would produce quietly wrong metrics, which is worse than an error.
+
+    success_signal:
+      - A ServiceNow admin connects and sees a Throughput chart within 15 minutes, using only the
+        documented minimum roles.
+      - Zero silent no-ops: each of the 8 IWorkTrackingConnector methods either works or reports a
+        user-visible unsupported state.
+      - ≥3 ServiceNow users/prospects give structured feedback within 30 days, and a go/narrow/stop
+        verdict is recorded on ADO 5513.
+      - Honest-limit caveat: a "narrow" or "stop" verdict is a SUCCESSFUL outcome for this epic. The
+        epic buys knowledge; only an unrecorded verdict is a failure.

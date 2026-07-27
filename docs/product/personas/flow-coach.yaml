@@ -22,6 +22,7 @@ primary_jobs:
   - job-flow-coach-see-how-long-blocked  # epic-5074-blocked-items (2026-06-11, #5074): see per-item blocked duration
   - job-flow-coach-stale-when-blocked-too-long  # epic-5074-blocked-items (2026-06-11, #5074): blocked-duration staleness trigger
   - job-flow-coach-see-predictability-trend  # epic-5427-percentiles-over-time (2026-07-22, #5427): CT/WIA percentiles over time
+  - job-snow-flow-coach-see-flow-metrics  # epic-5513-servicenow-integration (2026-07-27, #5513): same flow metrics on ServiceNow work as on Jira/ADO work
 
 goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast
