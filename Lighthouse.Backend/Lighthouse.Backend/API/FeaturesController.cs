@@ -21,19 +21,22 @@ namespace Lighthouse.Backend.API
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IRbacAdministrationService rbacAdministrationService;
         private readonly IBlockedItemService blockedItemService;
+        private readonly ILighthouseClock clock;
 
         public FeaturesController(
             IRepository<Feature> featureRepository,
             IWorkItemRepository workItemRepository,
             IBlackoutPeriodService blackoutPeriodService,
             IRbacAdministrationService rbacAdministrationService,
-            IBlockedItemService blockedItemService)
+            IBlockedItemService blockedItemService,
+            ILighthouseClock clock)
         {
             this.featureRepository = featureRepository;
             this.workItemRepository = workItemRepository;
             this.blackoutPeriodService = blackoutPeriodService;
             this.rbacAdministrationService = rbacAdministrationService;
             this.blockedItemService = blockedItemService;
+            this.clock = clock;
         }
 
         [HttpGet("ids")]
@@ -79,7 +82,7 @@ namespace Lighthouse.Backend.API
 
             var items = workItemRepository.GetAllByPredicate(wi => wi.ParentReferenceId == feature.ReferenceId)
                 .AsEnumerable()
-                .Select(w => new WorkItemDto(w, w.Team != null && blockedItemService.IsBlocked(w, w.Team)))
+                .Select(w => new WorkItemDto(w, clock.Today, w.Team != null && blockedItemService.IsBlocked(w, w.Team)))
                 .ToList();
 
             return Ok(items);
@@ -94,7 +97,7 @@ namespace Lighthouse.Backend.API
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
-                .Select(f => new FeatureDto(f, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet))
+                .Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet))
                 .ToList();
         }
 

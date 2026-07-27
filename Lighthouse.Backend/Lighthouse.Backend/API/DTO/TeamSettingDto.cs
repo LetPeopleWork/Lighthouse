@@ -9,12 +9,12 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public TeamSettingDto(Team team) : base(team)
+        public TeamSettingDto(Team team, DateOnly today) : base(team)
         {
             ThroughputHistory = team.ThroughputHistory;
             UseFixedDatesForThroughput = team.UseFixedDatesForThroughput;
 
-            var throughputSettings = team.GetThroughputSettings();
+            var throughputSettings = team.GetThroughputSettings(today);
             ThroughputHistoryStartDate = throughputSettings.StartDate;
             ThroughputHistoryEndDate = throughputSettings.EndDate;
 

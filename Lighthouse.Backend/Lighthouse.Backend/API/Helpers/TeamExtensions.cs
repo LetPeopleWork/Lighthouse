@@ -7,9 +7,9 @@ namespace Lighthouse.Backend.API.Helpers
     {
         extension(Team team)
         {
-            public TeamDto CreateTeamDto(List<Portfolio> allPortfolios, ISet<int>? readablePortfolioIds = null)
+            public TeamDto CreateTeamDto(List<Portfolio> allPortfolios, DateOnly today, ISet<int>? readablePortfolioIds = null)
             {
-                var teamDto = new TeamDto(team);
+                var teamDto = new TeamDto(team, today);
 
                 var portfolios = allPortfolios.Where(p => p.Teams.Any(t => t.Id == team.Id));
                 if (readablePortfolioIds is not null)

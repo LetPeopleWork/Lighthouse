@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var team = new Team { ProcessBehaviourChartBaselineStartDate = start };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.ProcessBehaviourChartBaselineStartDate, Is.EqualTo(start));
         }
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var end = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc);
             var team = new Team { ProcessBehaviourChartBaselineEndDate = end };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.ProcessBehaviourChartBaselineEndDate, Is.EqualTo(end));
         }
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team();
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             using (Assert.EnterMultipleScope())
             {

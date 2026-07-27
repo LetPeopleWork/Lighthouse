@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         private TeamDto CreateSubject(Team team)
         {
-            return new TeamDto(team);
+            return new TeamDto(team, TestToday.Ambient);
         }
     }
 }

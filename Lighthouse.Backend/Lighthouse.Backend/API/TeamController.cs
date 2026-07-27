@@ -35,7 +35,8 @@ namespace Lighthouse.Backend.API
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService,
         IBlockedItemService blockedItemService,
-        ILicenseService licenseService)
+        ILicenseService licenseService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         internal const int MinStalenessThresholdDays = 0;
@@ -60,8 +61,8 @@ namespace Lighthouse.Backend.API
                 var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds)
                     .ToHashSet();
 
-                var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdSet);
-                var throughputSettings = team.GetThroughputSettings();
+                var teamDto = team.CreateTeamDto(allPortfolios, clock.Today, readablePortfolioIdSet);
+                var throughputSettings = team.GetThroughputSettings(clock.Today);
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasForecastFilter = forecastFilterRuleService.GetEffectiveRuleSet(team) != null;
@@ -192,7 +193,7 @@ namespace Lighthouse.Backend.API
 
                 await teamRepository.Save();
 
-                var teamSettingDto = new TeamSettingDto(team);
+                var teamSettingDto = new TeamSettingDto(team, clock.Today);
                 return teamSettingDto;
             });
         }
@@ -203,7 +204,7 @@ namespace Lighthouse.Backend.API
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
             {
-                var teamSettingDto = new TeamSettingDto(team)
+                var teamSettingDto = new TeamSettingDto(team, clock.Today)
                 {
                     BlockedRuleSetJson = blockedItemService.GetEffectiveRuleSetJson(team),
                 };

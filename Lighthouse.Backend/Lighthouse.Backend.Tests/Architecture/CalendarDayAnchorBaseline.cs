@@ -13,7 +13,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// Bug #5567 - the warn-list for the anchor-seam source guard (RCA section 8-T2).
     ///
-    /// These are the 49 sites verified at HEAD (RCA section 5, 24 files). The guard fails on any
+    /// These were the 49 sites verified at HEAD (RCA section 5, 24 files); step 02-01 migrated the
+    /// five entity anchors (Models/Team.cs x2, Models/Feature.cs, Models/Delivery.cs,
+    /// Models/WorkItemBase.cs) onto a caller-supplied DateOnly, leaving 44. The guard fails on any
     /// anchor NOT listed here, so no 50th site can be added while the migration runs, and it fails
     /// on any entry listed here that no longer exists, so the list cannot rot into a permanent
     /// allowlist as each phase-02 cluster shrinks it. When the last entry goes, the baseline is
@@ -60,8 +62,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("API/DeliveriesController.cs", UtcNowDate, "Forecast window start day; moves to clock.Today."),
             new("API/DeliveriesController.cs", UtcNowDate, "Forecast horizon lower bound; moves to clock.Today."),
             new("API/DeliveriesController.cs", UtcNowDate, "Forecast horizon comparison and fallback; moves to clock.Today."),
-            new("Models/Feature.cs", UtcNowDate, "Likelihood reference day on the entity; becomes a DateOnly parameter (RCA 4.1 constraint 2)."),
-            new("Models/Delivery.cs", UtcNowDate, "Metric calculation reference day on the entity; becomes a DateOnly parameter."),
 
             // --- API/ForecastController.cs - the branch-B evidence -----------------------------
             // This one file carries BOTH spellings. DateTime.Today reads the HOST zone and
@@ -80,8 +80,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("API/ForecastController.cs", DateTimeToday, "ItemCreationPredictionInputDto default initialiser; DELETED per decision 5 (the property is [JsonRequired])."),
 
             // --- Throughput defaults (RCA 5(a)) ------------------------------------------------
-            new("Models/Team.cs", UtcNowDate, "Default throughput window end day; becomes a DateOnly parameter."),
-            new("Models/Team.cs", UtcNowDate, "Default throughput window start day; becomes a DateOnly parameter."),
             new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Current-WIP snapshot day; moves to clock.Today."),
             new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Metric range end day; moves to clock.Today."),
             new("Services/Implementation/TeamMetricsService.cs", UtcNowDate, "Current features-in-progress day; moves to clock.Today."),
@@ -104,9 +102,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs", DateTimeToday, "Snapshot range end day; moves to clock.Today."),
             new("Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs", DateOnlyFromToday, "Snapshot day key; moves to clock.Today."),
             new("Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs", DateTimeToday, "Snapshot range end day; moves to clock.Today."),
-
-            // --- Aging (decision 3) ------------------------------------------------------------
-            new("Models/WorkItemBase.cs", UtcNowDate, "WorkItemAge reference day; becomes a DateOnly parameter, keeping the inclusive +1."),
 
             // --- Validation / licensing / write-back (RCA 5(a)) --------------------------------
             new("Services/Implementation/BaselineValidationService.cs", UtcNowDate, "Baseline validity day; moves to clock.Today."),

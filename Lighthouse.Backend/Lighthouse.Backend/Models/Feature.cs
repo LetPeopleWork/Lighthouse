@@ -64,11 +64,14 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);
 
-        public double GetLikelhoodForDate(DateTime date, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        /// <param name="today">
+        /// Bug #5567: the instance's calendar day, supplied by the caller (RCA 4.1 constraint 2).
+        /// </param>
+        public double GetLikelhoodForDate(DateTime date, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
-                var timeToTargetDate = blackoutPeriods.CountWorkingDays(DateTime.UtcNow.Date, date);
+                var timeToTargetDate = blackoutPeriods.CountWorkingDays(today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), date);
 
                 return Forecast?.GetLikelihood(timeToTargetDate) ?? 0;
             }

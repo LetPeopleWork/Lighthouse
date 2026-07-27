@@ -1,0 +1,16 @@
+namespace Lighthouse.Backend.Tests
+{
+    /// <summary>
+    /// Bug #5567 - the day to hand to a signature that now takes one, for tests whose subject is
+    /// NOT the calendar anchor. Those subjects keep the behaviour they had before the anchor moved,
+    /// so their expectations are unchanged.
+    ///
+    /// Tests that ARE about the anchor must use <see cref="TestDoubles.FakeLighthouseClock"/> with a
+    /// literal expectation instead - re-deriving the production expression is root cause D of this
+    /// bug and makes an assertion pass for every possible value of "today".
+    /// </summary>
+    internal static class TestToday
+    {
+        internal static DateOnly Ambient => DateOnly.FromDateTime(DateTime.UtcNow.Date);
+    }
+}

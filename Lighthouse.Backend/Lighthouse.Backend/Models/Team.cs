@@ -28,10 +28,16 @@
 
         public List<WorkItem> WorkItems { get; } = [];
 
-        public ThroughputSettings GetThroughputSettings()
+        /// <param name="today">
+        /// Bug #5567: the instance's calendar day, supplied by the caller. Entities are
+        /// EF-materialised and get no constructor injection, so the day arrives as a parameter -
+        /// the same shape the blackout periods already use.
+        /// </param>
+        public ThroughputSettings GetThroughputSettings(DateOnly today)
         {
-            var startDate = DateTime.UtcNow.Date.AddDays(-(ThroughputHistory - 1));
-            var endDate = DateTime.UtcNow.Date;
+            var todayAtMidnightUtc = today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var startDate = todayAtMidnightUtc.AddDays(-(ThroughputHistory - 1));
+            var endDate = todayAtMidnightUtc;
             var numberOfDays = ThroughputHistory;
 
             if (UseFixedDatesForThroughput)

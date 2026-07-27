@@ -25,8 +25,9 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             try
             {
                 var deliveries = deliveryRepository.GetByPortfolioAsync(domainEvent.PortfolioId).ToList();
+                var forecastWindowStart = DateTime.UtcNow.Date;
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                    DateTime.UtcNow.Date, ForecastWindowEnd(deliveries));
+                    forecastWindowStart, ForecastWindowEnd(deliveries));
                 var recordedAt = DateTime.UtcNow;
 
                 foreach (var delivery in deliveries)
@@ -45,7 +46,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                     snapshot.RemainingWork = remainingWork;
                     snapshot.EstimatedItemCount = estimatedPortion > 0 ? estimatedPortion : null;
 
-                    var metrics = delivery.CalculateMetrics(blackoutPeriods, SnapshotPercentiles);
+                    var metrics = delivery.CalculateMetrics(DateOnly.FromDateTime(forecastWindowStart), blackoutPeriods, SnapshotPercentiles);
                     var hasForecast = metrics.WhenDistribution.Count > 0;
                     snapshot.LikelihoodPercentage = hasForecast ? metrics.LikelihoodPercentage : null;
                     snapshot.WhenDistributionJson = hasForecast

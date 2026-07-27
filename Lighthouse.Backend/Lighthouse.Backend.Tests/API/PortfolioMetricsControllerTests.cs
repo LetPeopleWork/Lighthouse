@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Setup(q => q.GetSeries(It.IsAny<int>(), It.IsAny<OwnerType>(), It.IsAny<ProcessBehaviorMetricType>(), It.IsAny<DateOnly?>(), It.IsAny<DateOnly?>()))
                 .Returns([]);
             loggerMock = new Mock<ILogger<PortfolioMetricsController>>();
-            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, loggerMock.Object);
+            subject = new PortfolioMetricsController(portfolioRepository.Object, projectMetricsService.Object, blackoutPeriodServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, blockedItemServiceMock.Object, featureBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), loggerMock.Object);
 
             project = new Portfolio
             {

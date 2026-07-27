@@ -30,10 +30,11 @@ namespace Lighthouse.Backend.API
         private readonly IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository;
         private readonly IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery;
         private readonly IProcessBehaviorSeriesQuery processBehaviorSeriesQuery;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<TeamMetricsController> logger;
 
 #pragma warning disable S107 // The blocked-drill-through endpoint (slice-08) genuinely needs the snapshot repo, work-item repo and blocked-transition repo alongside the existing metrics collaborators; grouping them into an aggregate purely to dodge the 7-param threshold would add indirection without a domain rationale (same rationale as OAuthService).
-        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, ILogger<TeamMetricsController> logger)
+        public TeamMetricsController(IRepository<Team> teamRepository, ITeamMetricsService teamMetricsService, IBlackoutPeriodService blackoutPeriodService, IBlockedItemService blockedItemService, IBlockedCountSnapshotRepository blockedCountSnapshotRepository, IWorkItemRepository workItemRepository, IWorkItemBlockedTransitionRepository workItemBlockedTransitionRepository, IPercentilesOverTimeSeriesQuery percentilesOverTimeSeriesQuery, IProcessBehaviorSeriesQuery processBehaviorSeriesQuery, ILighthouseClock clock, ILogger<TeamMetricsController> logger)
 #pragma warning restore S107
         {
             this.teamRepository = teamRepository;
@@ -45,6 +46,7 @@ namespace Lighthouse.Backend.API
             this.workItemBlockedTransitionRepository = workItemBlockedTransitionRepository;
             this.percentilesOverTimeSeriesQuery = percentilesOverTimeSeriesQuery;
             this.processBehaviorSeriesQuery = processBehaviorSeriesQuery;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -115,7 +117,7 @@ namespace Lighthouse.Backend.API
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                     DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(features));
 
-                return features.Select(f => new FeatureDto(f, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null));
+                return features.Select(f => new FeatureDto(f, clock.Today, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null));
             });
         }
 
@@ -158,7 +160,7 @@ namespace Lighthouse.Backend.API
 
                     // D16: the endpoint already receives asOfDate and used to discard it, leaving the
                     // aging chart's dot heights today-anchored. Pass it so they honour the range.
-                    return new WorkItemDto(w, isBlocked, [], blockedSince, asOfDate);
+                    return new WorkItemDto(w, clock.Today, isBlocked, [], blockedSince, asOfDate);
                 });
             });
         }
@@ -265,7 +267,7 @@ namespace Lighthouse.Backend.API
             LogDateBoundaries("cycleTimeData", teamId, startDate, endDate);
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, (team) =>
                 teamMetricsService.GetCycleTimeDataForTeam(team, startDate, endDate)
-                    .Select(entry => new WorkItemDto(entry.WorkItem, blockedItemService.IsBlocked(entry.WorkItem, team), entry.NamedCycleTimes)));
+                    .Select(entry => new WorkItemDto(entry.WorkItem, clock.Today, blockedItemService.IsBlocked(entry.WorkItem, team), entry.NamedCycleTimes)));
         }
 
         private static bool IsNamedRequest(int? definitionId) => definitionId is > 0;
@@ -575,7 +577,7 @@ namespace Lighthouse.Backend.API
                     return teamMetricsService
                         .GetBlockedEligibleItemsForTeam(team)
                         .Where(w => blockedItemService.IsBlocked(w, team))
-                        .Select(w => new WorkItemDto(w, isBlocked: true, [], w.CurrentStateEnteredAt));
+                        .Select(w => new WorkItemDto(w, clock.Today, isBlocked: true, [], w.CurrentStateEnteredAt));
                 }
 
                 var teamWorkItems = workItemRepository
@@ -585,7 +587,7 @@ namespace Lighthouse.Backend.API
                 var blockedIds = workItemBlockedTransitionRepository.GetBlockedWorkItemIdsAt(targetDate);
                 var reconstructed = teamWorkItems
                     .Where(w => blockedIds.Contains(w.Id))
-                    .Select(w => new WorkItemDto(w, isBlocked: true, [], null))
+                    .Select(w => new WorkItemDto(w, clock.Today, isBlocked: true, [], null))
                     .ToList();
 
                 ReconcileReconstructedCountWithSnapshot(teamId, OwnerType.Team, targetDate, reconstructed.Count);

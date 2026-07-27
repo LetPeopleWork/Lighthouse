@@ -2075,7 +2075,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private TeamMetricsController CreateSubject()
         {
-            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, loggerMock.Object)
+            return new TeamMetricsController(teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, blockedItemServiceMock.Object, blockedCountSnapshotRepositoryMock.Object, workItemRepositoryMock.Object, workItemBlockedTransitionRepositoryMock.Object, percentilesOverTimeSeriesQueryMock.Object, processBehaviorSeriesQueryMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), loggerMock.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
             };

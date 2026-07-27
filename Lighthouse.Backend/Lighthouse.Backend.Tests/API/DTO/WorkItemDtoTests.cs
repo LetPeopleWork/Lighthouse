@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 StateCategory = StateCategories.Doing,
             };
 
-            var dto = new WorkItemDto(workItem, isBlocked: false);
+            var dto = new WorkItemDto(workItem, TestToday.Ambient, isBlocked: false);
 
             Assert.That(dto.Approximate, Is.False,
                 "Approximate must be false by default for non-extrapolated items");
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             };
 
             var blockedSince = new DateTime(2026, 6, 10, 8, 0, 0, DateTimeKind.Utc);
-            var dto = new WorkItemDto(workItem, isBlocked: true, [], blockedSince);
+            var dto = new WorkItemDto(workItem, TestToday.Ambient, isBlocked: true, [], blockedSince);
 
             using (Assert.EnterMultipleScope())
             {
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 CurrentStateEnteredAt = new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc),
             };
 
-            var dto = new WorkItemDto(workItem, isBlocked: false, [], null);
+            var dto = new WorkItemDto(workItem, TestToday.Ambient, isBlocked: false, [], null);
 
             using (Assert.EnterMultipleScope())
             {

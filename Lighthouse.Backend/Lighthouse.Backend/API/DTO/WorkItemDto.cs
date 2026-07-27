@@ -5,13 +5,13 @@ namespace Lighthouse.Backend.API.DTO
 {
     public class WorkItemDto
     {
-        public WorkItemDto(WorkItemBase workItem, bool isBlocked)
-            : this(workItem, isBlocked, [], null)
+        public WorkItemDto(WorkItemBase workItem, DateOnly today, bool isBlocked)
+            : this(workItem, today, isBlocked, [], null)
         {
         }
 
-        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
-            : this(workItem, isBlocked, namedCycleTimes, null)
+        public WorkItemDto(WorkItemBase workItem, DateOnly today, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes)
+            : this(workItem, today, isBlocked, namedCycleTimes, null)
         {
         }
 
@@ -29,7 +29,13 @@ namespace Lighthouse.Backend.API.DTO
         /// and the entity is EF-tracked, so the portfolio path passes the projection in here.
         /// Omitted means "no history for that day" — the item's current state stands.
         /// </param>
-        public WorkItemDto(WorkItemBase workItem, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null, StateAsOf? stateAsOf = null)
+        /// <param name="today">
+        /// Bug #5567: the calendar day <see cref="WorkItemAge"/> is measured against when no
+        /// <paramref name="asOf"/> is supplied. The entity no longer reads an ambient clock.
+        /// </param>
+#pragma warning disable S107 // One more collaborator than the S107 threshold, and it is a value, not a dependency: WorkItemBase.WorkItemAge stopped reading the ambient clock (bug #5567) so the day has to arrive with the item. Grouping the flags into a record would hide that.
+        public WorkItemDto(WorkItemBase workItem, DateOnly today, bool isBlocked, IReadOnlyList<NamedCycleTimeValue> namedCycleTimes, DateTime? blockedSince, DateTime? asOf = null, StateAsOf? stateAsOf = null)
+#pragma warning restore S107
         {
             Name = workItem.Name;
             Id = workItem.Id;
@@ -43,7 +49,7 @@ namespace Lighthouse.Backend.API.DTO
             ClosedDate = workItem.ClosedDate;
             CycleTime = workItem.CycleTime;
             NamedCycleTimes = namedCycleTimes;
-            WorkItemAge = asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge;
+            WorkItemAge = asOf.HasValue ? workItem.AgeOnDay(asOf.Value) : workItem.WorkItemAge(today);
             IsBlocked = isBlocked;
             CurrentStateEnteredAt = stateAsOf?.EnteredAt ?? workItem.CurrentStateEnteredAt;
             BlockedSince = blockedSince;

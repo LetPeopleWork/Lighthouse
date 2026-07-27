@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(closedItem.WorkItemAge, Is.Zero, "WorkItemAge must stay today-anchored and Doing-guarded");
+                Assert.That(closedItem.WorkItemAge(TestToday.Ambient), Is.Zero, "WorkItemAge must stay Doing-guarded, now anchored on the day the caller supplies");
                 Assert.That(closedItem.AgeOnDay(Jul04), Is.EqualTo(4), "AgeOnDay answers the as-of-day question");
             }
         }

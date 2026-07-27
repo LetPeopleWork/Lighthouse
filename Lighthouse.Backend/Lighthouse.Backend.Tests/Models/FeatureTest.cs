@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Tests.TestDoubles;
 
 namespace Lighthouse.Backend.Tests.Models
 {
@@ -7,12 +8,20 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
 
+        /// <summary>
+        /// Bug #5567: a fixed instant on a UTC instance. The expectations below are unchanged from
+        /// before the anchor moved - the point is that they no longer RE-DERIVE the production
+        /// expression, which is root cause D.
+        /// </summary>
+        private static readonly FakeLighthouseClock Clock =
+            new(new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
+
         [Test]
         public void GetLikelihoodForFeature_FeatureHasNoRemainingWork_Returns100()
         {
             var subject = CreateSubject();
 
-            var likelihood = subject.GetLikelhoodForDate(DateTime.Today.AddDays(17), NoBlackoutPeriods);
+            var likelihood = subject.GetLikelhoodForDate(Clock.TodayAsUtcMidnight.AddDays(17), Clock.Today, NoBlackoutPeriods);
 
             Assert.That(likelihood, Is.EqualTo(100));
         }

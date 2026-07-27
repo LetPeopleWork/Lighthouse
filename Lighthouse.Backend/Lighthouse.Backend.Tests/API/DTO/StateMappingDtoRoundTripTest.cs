@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             team.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
             team.StateMappings.Add(new StateMapping { Name = "Waiting", States = ["Blocked"] });
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             using (Assert.EnterMultipleScope())
             {
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { Name = "Test Team" };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.StateMappings, Is.Empty);
         }

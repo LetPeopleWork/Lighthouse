@@ -1,9 +1,18 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Tests.TestDoubles;
 
 namespace Lighthouse.Backend.Tests.Models
 {
     public class TeamTest
     {
+
+        /// <summary>
+        /// Bug #5567: a fixed instant on a UTC instance. The expectations below are unchanged from
+        /// before the anchor moved - the point is that they no longer RE-DERIVE the production
+        /// expression, which is root cause D.
+        /// </summary>
+        private static readonly FakeLighthouseClock Clock =
+            new(new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
         [Test]
         public void GetThroughputSettings_ReturnsCorrectSettings()
         {
@@ -13,10 +22,10 @@ namespace Lighthouse.Backend.Tests.Models
                 UseFixedDatesForThroughput = false
             };
 
-            var settings = team.GetThroughputSettings();
+            var settings = team.GetThroughputSettings(Clock.Today);
 
-            var expectedStartDate = DateTime.UtcNow.Date.AddDays(-29);
-            var expectedEndDate = DateTime.UtcNow.Date;
+            var expectedStartDate = Clock.TodayAsUtcMidnight.AddDays(-29);
+            var expectedEndDate = Clock.TodayAsUtcMidnight;
             var expectedNumberOfDays = 30;
 
             using (Assert.EnterMultipleScope())
@@ -43,7 +52,7 @@ namespace Lighthouse.Backend.Tests.Models
                 ThroughputHistoryEndDate = endDate
             };
 
-            var settings = team.GetThroughputSettings();
+            var settings = team.GetThroughputSettings(Clock.Today);
 
             var expectedNumberOfDays = (endDate - startDate).Days + 1;
 

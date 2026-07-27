@@ -1,11 +1,20 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Tests.TestDoubles;
 
 namespace Lighthouse.Backend.Tests.Models
 {
     public class DeliveryTest
     {
         private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
+
+        /// <summary>
+        /// Bug #5567: a fixed instant on a UTC instance. The expectations below are unchanged from
+        /// before the anchor moved - the point is that they no longer RE-DERIVE the production
+        /// expression, which is root cause D.
+        /// </summary>
+        private static readonly FakeLighthouseClock Clock =
+            new(new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
 
         [Test]
         public void Constructor_WithValidData_CreatesDelivery()
@@ -92,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Models
             // saturates to 100% for every feature once the target date is comfortably far out, so
             // the tie-break fell back to collection order instead of the latest-completing feature.
             // A delivery is only done when its LATEST feature finishes.
-            var deliveryDate = DateTime.UtcNow.AddDays(200); // comfortably far -> every feature is 100% likely
+            var deliveryDate = Clock.TodayAsUtcMidnight.AddDays(200); // comfortably far -> every feature is 100% likely
 
             var lateFeature = new Feature { Id = 1 };
             lateFeature.Forecasts.Add(CreateForecastCompletingInDays(50));
@@ -107,9 +116,9 @@ namespace Lighthouse.Backend.Tests.Models
             delivery.Features.Add(lateFeature);
             delivery.Features.Add(earlyFeature);
 
-            var metrics = delivery.CalculateMetrics(NoBlackoutPeriods, 70, 85, 95);
+            var metrics = delivery.CalculateMetrics(Clock.Today, NoBlackoutPeriods, 70, 85, 95);
 
-            var expectedLatestDate = DateTime.UtcNow.Date.AddDays(50);
+            var expectedLatestDate = Clock.TodayAsUtcMidnight.AddDays(50);
             using (Assert.EnterMultipleScope())
             {
                 foreach (var percentile in metrics.WhenDistribution)

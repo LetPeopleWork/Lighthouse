@@ -48,10 +48,10 @@ namespace Lighthouse.Backend.Models
 
         public int? RuleSchemaVersion { get; set; }
 
-        public DeliveryMetricsProjection CalculateMetrics(IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
+        public DeliveryMetricsProjection CalculateMetrics(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
         {
-            var featureBreakdown = CalculateFeatureBreakdown(blackoutPeriods);
-            var governingFeature = GetGoverningFeature(blackoutPeriods);
+            var featureBreakdown = CalculateFeatureBreakdown(today, blackoutPeriods);
+            var governingFeature = GetGoverningFeature(today, blackoutPeriods);
 
             if (governingFeature == null)
             {
@@ -59,30 +59,30 @@ namespace Lighthouse.Backend.Models
             }
 
             var whenDistribution = percentiles
-                .Select(percentile => ToWhenPercentile(governingFeature.Forecast, percentile, blackoutPeriods))
+                .Select(percentile => ToWhenPercentile(governingFeature.Forecast, percentile, today, blackoutPeriods))
                 .ToList();
 
-            return new DeliveryMetricsProjection(governingFeature.GetLikelhoodForDate(Date, blackoutPeriods), whenDistribution, featureBreakdown);
+            return new DeliveryMetricsProjection(governingFeature.GetLikelhoodForDate(Date, today, blackoutPeriods), whenDistribution, featureBreakdown);
         }
 
-        private List<DeliveryFeatureMetric> CalculateFeatureBreakdown(IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        private List<DeliveryFeatureMetric> CalculateFeatureBreakdown(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             return Features
                 .Where(feature => feature.FeatureWork.Sum(work => work.TotalWorkItems) > 0)
-                .Select(feature => ToFeatureMetric(feature, blackoutPeriods))
+                .Select(feature => ToFeatureMetric(feature, today, blackoutPeriods))
                 .ToList();
         }
 
-        private DeliveryFeatureMetric ToFeatureMetric(Feature feature, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        private DeliveryFeatureMetric ToFeatureMetric(Feature feature, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             var totalItems = feature.FeatureWork.Sum(work => work.TotalWorkItems);
             var remainingItems = feature.FeatureWork.Sum(work => work.RemainingWorkItems);
             var completion = Math.Clamp((double)(totalItems - remainingItems) / totalItems * 100.0, 0.0, 100.0);
 
-            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date, blackoutPeriods));
+            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date, today, blackoutPeriods));
         }
 
-        private Feature? GetGoverningFeature(IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        private Feature? GetGoverningFeature(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             // A delivery finishes only when its latest feature finishes, so the governing feature - the one
             // whose forecast dates and likelihood represent the delivery - is the latest-completing one.
@@ -90,15 +90,15 @@ namespace Lighthouse.Backend.Models
             // the target date is comfortably far out) and the tie-break then falls back to arbitrary
             // collection order, surfacing forecast dates earlier than individual features (ADO #5435).
             return Features
-                .Where(feature => feature.GetLikelhoodForDate(Date, blackoutPeriods) >= 0)
+                .Where(feature => feature.GetLikelhoodForDate(Date, today, blackoutPeriods) >= 0)
                 .OrderByDescending(feature => feature.Forecast.GetProbability(85))
-                .ThenBy(feature => feature.GetLikelhoodForDate(Date, blackoutPeriods))
+                .ThenBy(feature => feature.GetLikelhoodForDate(Date, today, blackoutPeriods))
                 .FirstOrDefault();
         }
 
-        private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
-            var expectedDate = blackoutPeriods.ProjectWorkingDays(DateTime.UtcNow.Date, forecast.GetProbability(percentile));
+            var expectedDate = blackoutPeriods.ProjectWorkingDays(today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc), forecast.GetProbability(percentile));
             return new DeliveryWhenPercentile(percentile, expectedDate, forecast.FilterApplied, forecast.ExcludedSummary);
         }
     }

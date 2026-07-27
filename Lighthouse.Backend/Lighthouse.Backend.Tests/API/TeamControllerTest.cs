@@ -569,7 +569,7 @@ namespace Lighthouse.Backend.Tests.API
             team.ThroughputHistory = 30;
             teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
 
-            var throughputSettings = team.GetThroughputSettings();
+            var throughputSettings = team.GetThroughputSettings(TestToday.Ambient);
             var midPoint = throughputSettings.StartDate.AddDays(10);
 
             blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate)).Returns([
@@ -745,7 +745,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Returns(new WorkItemRuleSet());
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object);
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
     }
 }

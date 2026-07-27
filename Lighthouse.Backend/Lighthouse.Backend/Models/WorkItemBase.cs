@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models
@@ -68,24 +68,28 @@ namespace Lighthouse.Backend.Models
             }
         }
 
-        public int WorkItemAge
+        /// <param name="today">
+        /// Bug #5567: the instance's calendar day, supplied by the caller. Decision 3 - BOTH ends of
+        /// the age move onto that day and the inclusive +1 is unchanged, because the age was already
+        /// calendar-day based (GetDateDifference reduces both ends with .Date). This is a zone shift,
+        /// not an arithmetic change.
+        /// </param>
+        public int WorkItemAge(DateOnly today)
         {
-            get
+            if (StateCategory == StateCategories.Doing)
             {
-                if (StateCategory == StateCategories.Doing)
+                var referencedDate = StartedDate ?? CreatedDate;
+                var todayAtMidnightUtc = today.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+                if (referencedDate?.Date <= todayAtMidnightUtc)
                 {
-                    var referencedDate = StartedDate ?? CreatedDate;
-                    if (referencedDate?.Date <= DateTime.UtcNow.Date)
-                    {
-                        return GetDateDifference(referencedDate.Value, DateTime.UtcNow);
-                    }
-
-                    // Item is in progress,  but started date is in the future or not set --> Default to 1
-                    return 1;
+                    return GetDateDifference(referencedDate.Value, todayAtMidnightUtc);
                 }
 
-                return 0;
+                // Item is in progress,  but started date is in the future or not set --> Default to 1
+                return 1;
             }
+
+            return 0;
         }
 
         /// <summary>

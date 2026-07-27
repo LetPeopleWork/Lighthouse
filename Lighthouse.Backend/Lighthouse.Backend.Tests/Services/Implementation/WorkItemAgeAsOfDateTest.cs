@@ -213,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var wip = subject.GetWipSnapshotForTeam(testTeam, today).ToList();
             var asOfAges = wip.Select(i => i.AgeOnDay(today)).OrderBy(a => a).ToList();
-            var todayAnchoredAges = wip.Select(i => i.WorkItemAge).OrderBy(a => a).ToList();
+            var todayAnchoredAges = wip.Select(i => i.WorkItemAge(TestToday.Ambient)).OrderBy(a => a).ToList();
 
             Assert.That(asOfAges, Is.EqualTo(todayAnchoredAges));
         }
@@ -302,7 +302,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(
                 wip.Select(f => f.AgeOnDay(today)).OrderBy(a => a),
-                Is.EqualTo(wip.Select(f => f.WorkItemAge).OrderBy(a => a)));
+                Is.EqualTo(wip.Select(f => f.WorkItemAge(TestToday.Ambient)).OrderBy(a => a)));
         }
     }
 }

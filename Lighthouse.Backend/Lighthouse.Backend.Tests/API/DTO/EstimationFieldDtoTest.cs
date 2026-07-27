@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { EstimationAdditionalFieldDefinitionId = 42 };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.EstimationAdditionalFieldDefinitionId, Is.EqualTo(42));
         }
@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team();
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.EstimationAdditionalFieldDefinitionId, Is.Null);
         }
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { EstimationUnit = "Points" };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.EstimationUnit, Is.EqualTo("Points"));
         }
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team();
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.EstimationUnit, Is.Null);
         }
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { UseNonNumericEstimation = true };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.UseNonNumericEstimation, Is.True);
         }
@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team();
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.UseNonNumericEstimation, Is.False);
         }
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team { EstimationCategoryValues = ["XS", "S", "M", "L", "XL"] };
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.EstimationCategoryValues, Is.EqualTo(new List<string> { "XS", "S", "M", "L", "XL" }));
         }
@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         {
             var team = new Team();
 
-            var dto = new TeamSettingDto(team);
+            var dto = new TeamSettingDto(team, TestToday.Ambient);
 
             Assert.That(dto.EstimationCategoryValues, Is.Empty);
         }

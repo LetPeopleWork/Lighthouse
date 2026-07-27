@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class CalendarDayAnchorSeamArchUnitTest
     {
-        private const int BaselinedSiteCount = 49;
+        private const int BaselinedSiteCount = 44;
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
@@ -77,7 +77,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(
                 CalendarDayAnchorBaseline.KnownSites,
                 Has.Length.EqualTo(BaselinedSiteCount),
-                "The baseline must match the RCA section 5 inventory (49 sites across 24 files) until the " +
+                "The baseline must match the RCA section 5 inventory (49 sites across 24 files) minus every "
+                + "cluster phase 02 has already migrated - 5 entity anchors so far - until the " +
                 "phase-02 clusters start shrinking it - at which point lower this constant by exactly the " +
                 "cluster size in the same commit.");
         }

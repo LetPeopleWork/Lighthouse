@@ -11,6 +11,7 @@ namespace Lighthouse.Backend.Services.Implementation
         ILicenseService licenseService,
         IWorkItemRepository workItemRepository,
         IBlackoutPeriodService blackoutPeriodService,
+        ILighthouseClock clock,
         ILogger<WriteBackTriggerService> logger)
         : IWriteBackTriggerService
     {
@@ -130,7 +131,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 foreach (var workItem in workItems)
                 {
-                    var value = ResolveWorkItemValue(mapping.ValueSource, workItem);
+                    var value = ResolveWorkItemValue(mapping.ValueSource, workItem, clock.Today);
                     if (value != null)
                     {
                         updates.Add(new WriteBackFieldUpdate
@@ -181,11 +182,13 @@ namespace Lighthouse.Backend.Services.Implementation
             return updates;
         }
 
-        private static string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem)
+        private static string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem, DateOnly today)
         {
+            var workItemAge = workItem.WorkItemAge(today);
+
             return source switch
             {
-                WriteBackValueSource.WorkItemAgeCycleTime when workItem.WorkItemAge > 0 => workItem.WorkItemAge.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when workItemAge > 0 => workItemAge.ToString(),
                 WriteBackValueSource.WorkItemAgeCycleTime when workItem.CycleTime > 0 => workItem.CycleTime.ToString(),
                 _ => null,
             };
@@ -198,10 +201,12 @@ namespace Lighthouse.Backend.Services.Implementation
                 return ResolveForecastValue(mapping, feature);
             }
 
+            var featureAge = feature.WorkItemAge(clock.Today);
+
             return mapping.ValueSource switch
             {
                 WriteBackValueSource.FeatureSize => feature.Size.ToString(),
-                WriteBackValueSource.WorkItemAgeCycleTime when feature.WorkItemAge > 0 => feature.WorkItemAge.ToString(),
+                WriteBackValueSource.WorkItemAgeCycleTime when featureAge > 0 => featureAge.ToString(),
                 WriteBackValueSource.WorkItemAgeCycleTime when feature.CycleTime > 0 => feature.CycleTime.ToString(),
                 _ => null,
             };

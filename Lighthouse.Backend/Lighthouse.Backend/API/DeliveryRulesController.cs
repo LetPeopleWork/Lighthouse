@@ -54,10 +54,11 @@ namespace Lighthouse.Backend.API
 
             var ruleSet = ConvertToRuleSet(request);
             var result = deliveryRuleService.GetMatchingFeaturesForRuleset(ruleSet, portfolio.Features).ToList();
+            var forecastWindowStart = DateTime.UtcNow.Date;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                DateTime.UtcNow.Date, FeatureForecastWindow.EndFor(result));
+                forecastWindowStart, FeatureForecastWindow.EndFor(result));
 
-            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
+            var matchingFeatures = new List<FeatureDto>(result.Select(f => new FeatureDto(f, DateOnly.FromDateTime(forecastWindowStart), blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null)));
 
             if (matchingFeatures.Count == 0)
             {

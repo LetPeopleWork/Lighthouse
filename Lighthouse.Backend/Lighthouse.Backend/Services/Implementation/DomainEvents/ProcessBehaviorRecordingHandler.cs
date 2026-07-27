@@ -116,8 +116,11 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return FixedDatesTeamLookbackDays;
             }
 
-            var throughputSettings = team.GetThroughputSettings();
-            return (int)(throughputSettings.EndDate - throughputSettings.StartDate).TotalDays;
+            // Bug #5567: only the SPAN of the rolling throughput window is wanted, never its
+            // position on the calendar, and that span is ThroughputHistory - 1 by construction
+            // (Team.GetThroughputSettings anchors the window at today and walks back that far).
+            // Reading it directly keeps this handler free of a calendar-day anchor it never needed.
+            return team.ThroughputHistory - 1;
         }
 
         private async Task RecordAsync(

@@ -29,7 +29,8 @@ namespace Lighthouse.Backend.API
         ILicenseService licenseService,
         IBlackoutPeriodService blackoutPeriodService,
         IRbacAdministrationService rbacAdministrationService,
-        IForecastFilterRuleService forecastFilterRuleService)
+        IForecastFilterRuleService forecastFilterRuleService,
+        ILighthouseClock clock)
         : ControllerBase
     {
         [HttpGet]
@@ -55,8 +56,8 @@ namespace Lighthouse.Backend.API
 
             foreach (var team in allTeams.Where(team => readableTeamIdSet.Contains(team.Id)))
             {
-                var teamDto = team.CreateTeamDto(allPortfolios, readablePortfolioIdsSet);
-                var throughputSettings = team.GetThroughputSettings();
+                var teamDto = team.CreateTeamDto(allPortfolios, clock.Today, readablePortfolioIdsSet);
+                var throughputSettings = team.GetThroughputSettings(clock.Today);
                 var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasThroughputBlackoutOverlap = blackoutPeriods.HasOverlapWithDateRange(throughputSettings.StartDate, throughputSettings.EndDate);
                 teamDto.HasForecastFilter = forecastFilterRuleService.GetEffectiveRuleSet(team) != null;
@@ -130,7 +131,7 @@ namespace Lighthouse.Backend.API
 
             await rbacAdministrationService.EnsureCreatorTeamAdminAsync(User, newTeam.Id, cancellationToken);
 
-            var teamSettingDto = new TeamSettingDto(newTeam);
+            var teamSettingDto = new TeamSettingDto(newTeam, clock.Today);
             return Ok(teamSettingDto);
         }
 

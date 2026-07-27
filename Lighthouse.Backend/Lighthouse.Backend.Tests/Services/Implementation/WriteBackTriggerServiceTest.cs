@@ -109,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "101" &&
                         updates[0].TargetFieldReference == "Custom.Age" &&
-                        updates[0].Value == doingItem.WorkItemAge.ToString())),
+                        updates[0].Value == doingItem.WorkItemAge(TestToday.Ambient).ToString())),
                 Times.Once);
         }
 
@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             // Story 5508 CI5: slice 03 makes every Work-Item-Age *dashboard* surface a function of the
             // selected date. Write-back must NOT follow — it keeps emitting the age as of today.
-            // Deliberately NOT expressed as `doingItem.WorkItemAge.ToString()`: that expectation would
+            // Deliberately NOT expressed as `doingItem.WorkItemAge(TestToday.Ambient).ToString()`: that expectation would
             // move with the property and therefore pin nothing. The literal is the point.
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -556,7 +556,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                     It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "F-60" &&
-                        updates[0].Value == doingFeature.WorkItemAge.ToString())),
+                        updates[0].Value == doingFeature.WorkItemAge(TestToday.Ambient).ToString())),
                 Times.Once);
         }
 
@@ -588,6 +588,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
                 loggerMock.Object);
         }
 

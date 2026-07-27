@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature2);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(feature3);
 
             // Act
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {
@@ -232,7 +232,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             delivery.Features.Add(sufficientFeature);
             delivery.Features.Add(governingFeature);
 
-            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, NoBlackoutPeriods);
+            var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
             using (Assert.EnterMultipleScope())
             {

@@ -1,9 +1,18 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Tests.TestDoubles;
 
 namespace Lighthouse.Backend.Tests.Models
 {
     public class WorkItemBaseTest
     {
+
+        /// <summary>
+        /// Bug #5567: a fixed instant on a UTC instance. The expectations below are unchanged from
+        /// before the anchor moved - the point is that they no longer RE-DERIVE the production
+        /// expression, which is root cause D.
+        /// </summary>
+        private static readonly FakeLighthouseClock Clock =
+            new(new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
         [Test]
         [TestCase(StateCategories.Unknown)]
         [TestCase(StateCategories.Doing)]
@@ -124,7 +133,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-2);
             subject.StateCategory = state;
 
-            var workItemAge = subject.WorkItemAge;
+            var workItemAge = subject.WorkItemAge(Clock.Today);
 
             Assert.That(workItemAge, Is.Zero);
         }
@@ -136,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.CreatedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge;
+            var workItemAge = subject.WorkItemAge(Clock.Today);
             
             Assert.That(workItemAge, Is.EqualTo(2));
         }
@@ -147,7 +156,7 @@ namespace Lighthouse.Backend.Tests.Models
             var subject = CreateSubject();
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge;
+            var workItemAge = subject.WorkItemAge(Clock.Today);
             
             Assert.That(workItemAge, Is.EqualTo(1));
         }
@@ -159,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(1);
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge;
+            var workItemAge = subject.WorkItemAge(Clock.Today);
             
             Assert.That(workItemAge, Is.EqualTo(1));
         }
@@ -172,7 +181,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow.AddDays(-1);
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge;
+            var workItemAge = subject.WorkItemAge(Clock.Today);
 
             Assert.That(workItemAge, Is.EqualTo(2));
         }
@@ -185,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Models
             subject.StartedDate = DateTime.UtcNow;
             subject.StateCategory = StateCategories.Doing;
 
-            var workItemAge = subject.WorkItemAge;
+            var workItemAge = subject.WorkItemAge(Clock.Today);
 
             Assert.That(workItemAge, Is.EqualTo(1));
         }

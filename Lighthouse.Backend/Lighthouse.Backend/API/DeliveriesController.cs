@@ -31,9 +31,12 @@ namespace Lighthouse.Backend.API
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId).ToList();
+            var forecastWindowStart = DateTime.UtcNow.Date;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                DateTime.UtcNow.Date, ForecastWindowEnd(deliveries));
-            var deliveryDtos = deliveries.Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, blackoutPeriods)).ToList();
+                forecastWindowStart, ForecastWindowEnd(deliveries));
+            var deliveryDtos = deliveries
+                .Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, DateOnly.FromDateTime(forecastWindowStart), blackoutPeriods))
+                .ToList();
 
             var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryDtos.Select(d => d.Id));
             foreach (var deliveryDto in deliveryDtos)

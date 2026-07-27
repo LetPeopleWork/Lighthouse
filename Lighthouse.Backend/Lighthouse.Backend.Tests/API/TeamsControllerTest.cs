@@ -480,7 +480,7 @@ namespace Lighthouse.Backend.Tests.API
             var team = CreateTeam(1, "Team 1");
             team.ThroughputHistory = 30;
 
-            var throughputSettings = team.GetThroughputSettings();
+            var throughputSettings = team.GetThroughputSettings(TestToday.Ambient);
             var midPoint = throughputSettings.StartDate.AddDays(10);
 
             blackoutPeriodServiceMock.Setup(x => x.GetEffectiveBlackoutDays(throughputSettings.StartDate, throughputSettings.EndDate)).Returns([
@@ -623,7 +623,8 @@ namespace Lighthouse.Backend.Tests.API
                 licenseServiceMock.Object,
                 blackoutPeriodServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
-                forecastFilterRuleServiceMock.Object);
+                forecastFilterRuleServiceMock.Object,
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
     }
 }
