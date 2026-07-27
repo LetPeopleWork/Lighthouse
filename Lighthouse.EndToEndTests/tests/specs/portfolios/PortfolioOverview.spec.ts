@@ -1,14 +1,24 @@
-import {
-	expect,
-	test,
-	testWithDemoData,
-} from "../../fixutres/LighthouseFixture";
+import { expect, testWithDemoData } from "../../fixutres/LighthouseFixture";
 
 const WHEN_WILL_IT_BE_DONE_SCENARIO_ID = 0;
 const testWithPortfolio = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 
+// This grid is the SAME DataOverviewTable the Teams Overview renders — the six specs
+// that used to live here (list, open, edit, delete, cancel-delete, clone) were the
+// team walk with `team` swapped for `portfolio`, each paying a full demo re-seed to
+// re-prove one shared component against a second entity. What is left is the walking
+// skeleton: the seeded portfolios really are listed, and clicking one really opens
+// that portfolio.
+//
+// The rest sits a layer down and covers portfolios explicitly:
+//   - grid filtering, alphabetical order, the clone URL, and the per-row
+//     Edit/Clone/Delete predicates -> DataOverviewTable.test.tsx (which has its own
+//     "with Portfolios data" and "shows Clone action for portfolios" cases)
+//   - the confirm/cancel dialog -> DeleteConfirmationDialog.test.tsx
+//   - create/read/delete on the wire -> PortfoliosControllerTest.cs and
+//     PortfolioDeleteSerialisationTests.cs
 testWithPortfolio(
-	"should show seeded Portfolios on Portfolios Overview",
+	"should list the seeded portfolios and open one from the Portfolios Overview",
 	async ({ testData, overviewPage }) => {
 		expect(testData.portfolios.length).toBeGreaterThan(0);
 
@@ -16,88 +26,13 @@ testWithPortfolio(
 			const portfolioLink = await overviewPage.getPortfolioLink(portfolio.name);
 			await expect(portfolioLink).toBeVisible();
 		}
-	},
-);
 
-testWithPortfolio(
-	"should open portfolio Info when clicking on portfolio",
-	async ({ testData, overviewPage }) => {
 		const [portfolio] = testData.portfolios;
-
 		const portfolioDetailPage = await overviewPage.goToPortfolio(
 			portfolio.name,
 		);
 		expect(portfolioDetailPage.page.url()).toContain(
 			`/portfolios/${portfolio.id}`,
 		);
-	},
-);
-
-testWithPortfolio(
-	"should open portfolio Edit Page when clicking on Edit Icon",
-	async ({ testData, overviewPage }) => {
-		const [portfolio] = testData.portfolios;
-
-		const portfolioEditPage = await overviewPage.editPortfolio(portfolio);
-		expect(portfolioEditPage.page.url()).toContain(
-			`/portfolios/${portfolio.id}/settings`,
-		);
-	},
-);
-
-testWithPortfolio(
-	"should delete portfolio when clicking on Delete Icon and confirming",
-	async ({ testData, overviewPage }) => {
-		const [portfolio] = testData.portfolios;
-
-		await test.step(`Delete portfolio ${portfolio.name}`, async () => {
-			const portfolioDeletionModal =
-				await overviewPage.deletePortfolio(portfolio);
-			await portfolioDeletionModal.delete();
-		});
-
-		await test.step(`Search for portfolio ${portfolio.name}`, async () => {
-			await overviewPage.search(portfolio.name);
-			const portfolioLink = await overviewPage.getPortfolioLink(portfolio.name);
-
-			await expect(portfolioLink).not.toBeVisible();
-		});
-	},
-);
-
-testWithPortfolio(
-	"should not delete portfolio when clicking on Delete Icon and cancelling",
-	async ({ testData, overviewPage }) => {
-		const [portfolio] = testData.portfolios;
-
-		await test.step(`Delete portfolio ${portfolio.name}`, async () => {
-			const portfolioDeletionDialog =
-				await overviewPage.deletePortfolio(portfolio);
-			await portfolioDeletionDialog.cancel();
-		});
-
-		await test.step(`Search for portfolio ${portfolio.name}`, async () => {
-			await overviewPage.search(portfolio.name);
-
-			const portfolioLink = await overviewPage.getPortfolioLink(portfolio.name);
-			await expect(portfolioLink).toBeVisible();
-		});
-	},
-);
-
-testWithPortfolio(
-	"should clone project when clicking on Clone icon",
-	async ({ testData, overviewPage }) => {
-		const [project1] = testData.portfolios;
-
-		await test.step(`Clone Project ${project1.name}`, async () => {
-			const projectEditPage = await overviewPage.clonePortfolio(project1.name);
-
-			expect(projectEditPage.page.url()).toContain("/portfolios/new");
-			expect(projectEditPage.page.url()).toContain(`cloneFrom=${project1.id}`);
-
-			const nameField = await projectEditPage.getName();
-			expect(nameField).toBe(`Copy of ${project1.name}`);
-		});
 	},
 );
