@@ -375,3 +375,133 @@ repository, so there is no contract registry to collide against.
    `BlackoutForecastShiftDeliveryIntegrationTest.SeedPortfolioWithMultiTeamForecastedFeature` already
    builds a two-team forecasted feature and is the obvious starting point.
 4. **`ForecastBase.GetLikelihood`'s `return 100`** — out of scope here (DDD-7), wants its own ticket.
+
+## Wave: DISTILL / [REF] Inherited commitments
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DESIGN#DDD-1 | The joint maths lives in the pure `JointCompletionDistribution`, not in the `AggregatedWhenForecast` ctor | DDR-1 | Tier-1 and Tier-2 tests address the collaborator directly with hand-built histograms — no EF entity, no simulation, no sampling error in the arithmetic tests |
+| DESIGN#DDD-2 | Largest-remainder residue rule lives in the collaborator | DDR-2 | One exact test pins the tie-break (earlier day wins), because a tie-break left implicit is a mutation-testing hole |
+| DESIGN#DDD-3 | Zero-trial contributors are filtered out of the product in this slice | DDR-3 | Two tests: filtered from the histogram, still counted for flags and provenance. Slice-02 replaces the filter |
+| DESIGN#DDD-4 | Provenance: `Team`/`TeamId` null, `NumberOfItems` summed, `CreationTime` oldest | DDR-4 | Three provenance tests; the sum and the oldest date are taken over **all** contributors, including zero-trial ones |
+| DESIGN#DDD-5 | Test seam = `internal` ctor on `WhenForecast` | DDR-5 | The `BindingFlags.NonPublic` reflection is gone from `AggregatedWhenForecastTest`; ~a dozen hand-built histograms now read as data |
+| DISCUSS#AC-01.4 | Single-contributor output identical to today | n/a | Green before the change and after it — a regression guard, deliberately not a RED test |
+| SPIKE-00#Finding-6 | Constant-throughput fixtures cannot discriminate old from new | n/a | Every discriminating fixture is multi-valued; the one constant-throughput test is labelled a plumbing anchor in its own comment |
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Executable SSOT: the NUnit test files listed under *Test placement*. This repository has no Gherkin
+layer — `Given/When/Then` lives in the Arrange/Act/Assert shape of the test bodies, and the tags below
+are documentation, not attributes.
+
+| Scenario (test) | Tags | Tier |
+|---|---|---|
+| `Combine_TwoTeamsWithIdenticalTwoValueHistograms_ProducesTheExactJointHistogram` | `@AC-01.1` `@AC-01.5` `@in-memory` | 1 |
+| `Combine_SingleContributor_ReturnsThatHistogramUnchanged` | `@AC-01.4` `@in-memory` | 1 |
+| `Combine_ContributorFinishedBeforeTheUnionMaximum_KeepsItsProbabilityAtOneBeyondItsLastDay` | `@AC-01.1` `@in-memory` `@edge` | 1 |
+| `Combine_ScaledBucketsLeaveAResidue_AssignsItByLargestRemainderPreferringTheEarlierDay` | `@AC-01.5` `@in-memory` `@edge` | 1 |
+| `Combine_ContributorWithoutTrials_IsExcludedFromTheProduct` | `@DDD-3` `@in-memory` `@edge` | 1 |
+| `Combine_EveryContributorWithoutTrials_ReturnsAnEmptyHistogram` | `@DDD-3` `@in-memory` `@error` | 1 |
+| `Combine_NoContributors_ReturnsAnEmptyHistogram` | `@in-memory` `@error` | 1 |
+| `Combine_CrossingContributors_IsIndependentOfInputOrder` | `@AC-01.6` `@in-memory` | 1 |
+| `Combine_RandomContributors_SumsToThePreservedTotalTrials` | `@AC-01.5` `@property` `@in-memory` | 2 |
+| `Combine_RandomContributors_JointProbabilityNeverExceedsAnyContributorProbability` | `@AC-01.2` `@property` `@in-memory` | 2 |
+| `Combine_RepeatedInvocationOnTheSameInput_ProducesTheSameHistogram` | `@AC-01.5` `@property` `@in-memory` | 2 |
+| `GetProbability_TwoTeamsWithMassAtTheSelectedTeamsDate_IsStrictlyLaterThanThatTeam` | `@AC-01.3` `@in-memory` | 1 |
+| `GetProbability_CrossingContributors_IsAtLeastEveryContributorsSamePercentile` | `@AC-01.2` `@in-memory` | 1 |
+| `SingleContributor_HistogramAndPercentilesAreIdenticalToThatContributor` | `@AC-01.4` `@regression-guard` | 1 |
+| `InputOrder_CrossingContributors_DoesNotChangeTheResult` | `@AC-01.6` `@in-memory` | 1 |
+| `Provenance_AggregateOfMultipleTeams_CarriesNoTeamIdentity` | `@ADR-111` `@in-memory` | 1 |
+| `Provenance_NumberOfItems_IsTheSumOfAllContributors` | `@ADR-111` `@in-memory` | 1 |
+| `Provenance_CreationTime_IsTheOldestContributor` | `@ADR-111` `@in-memory` | 1 |
+| `NoContributors_ProducesAnEmptyForecast` | `@in-memory` `@error` | 1 |
+| `ContributorWithoutTrials_IsExcludedFromTheMathsButStillCountsForProvenance` | `@DDD-3` `@ADR-111` `@edge` | 1 |
+| `HasSufficientData_*`, `FilterApplied_*`, `ExcludedSummary_*` (5, unchanged) | `@AC-01.7` `@regression-guard` | 1 |
+| `FeatureForecast_TwoTeamsWithTwoValueThroughput_IsLaterThanEveryContributingTeam` | `@AC-01.2` `@AC-01.3` `@real-io` | 3 |
+| `FeatureForecast_ConstantThroughputTeams_MatchesTheSlowestTeam` | `@plumbing-anchor` `@real-io` | 4 |
+| `GetDelivery_MultiTeamFeature_LikelihoodIsTheJointProbabilityNotTheWorstTeams` | `@AC-01.8` `@walking_skeleton` `@driving_adapter` `@real-io` | 3 |
+
+**Coverage of US-01**: AC-01.1 ✓, AC-01.2 ✓, AC-01.3 ✓, AC-01.4 ✓, AC-01.5 ✓, AC-01.6 ✓, AC-01.7 ✓
+(pre-existing, unchanged), AC-01.8 ✓. US-02 is slice-02 and is deliberately untouched here.
+
+## Wave: DISTILL / [REF] Test placement
+
+| File | Change | Precedent |
+|---|---|---|
+| `Lighthouse.Backend.Tests/Models/Forecast/JointCompletionDistributionTest.cs` | NEW | sits beside `WhenForecastTest` / `HowManyForecastTest`, mirroring `Models/Forecast/` |
+| `Lighthouse.Backend.Tests/Models/Forecast/AggregatedWhenForecastTest.cs` | EXTEND | the five existing flag tests stay byte-identical in behaviour; only the reflection helper changed |
+| `Lighthouse.Backend.Tests/Services/Implementation/Forecast/MultiTeamJointForecastTest.cs` | NEW | same mock shape as `ForecastServiceTest` (`NotSoRandomNumberService` / `RandomNumberService`, `ITeamMetricsService` mock); kept separate rather than growing that 610-line file |
+| `Lighthouse.Backend.Tests/API/Integration/MultiTeamJointForecastDeliveryIntegrationTest.cs` | NEW | modelled on `BlackoutForecastShiftDeliveryIntegrationTest`, including its `SeedPortfolioWithMultiTeamForecastedFeature` shape (DESIGN open question 3) |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | Marker | State |
+|---|---|---|
+| `Lighthouse.Backend/Models/Forecast/JointCompletionDistribution.cs` | `// __SCAFFOLD__` | `internal static Combine(IEnumerable<IReadOnlyDictionary<int,int>>)` throwing `InvalidOperationException` — DELIVER replaces the body |
+| `Lighthouse.Backend/Models/Forecast/WhenForecast.cs` | none | the DDD-5 `internal` ctor is real, not a scaffold: it is the test seam and has no behaviour to implement |
+
+`InvalidOperationException` rather than `NotImplementedException` — the latter is a SonarQube smell
+(S3717) and would fail the quality gate on a new file. Either way NUnit reports a failing test, never
+a broken suite. Detection: `grep -rn "__SCAFFOLD__" Lighthouse.Backend/Lighthouse.Backend/` must return
+zero hits when DELIVER is done.
+
+`AggregatedWhenForecast` itself was **not** touched — its public API already carries every observable
+the tests assert on, so DELIVER changes only the ctor body.
+
+## Wave: DISTILL / [REF] Driving adapter + adapter coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| *(none added)* | n/a | Per DESIGN, this slice adds no driven port and no persistence — `AggregatedWhenForecast` is computed on read |
+| EF-persisted `Feature.Forecasts` (existing) | YES | `MultiTeamJointForecastDeliveryIntegrationTest` round-trips through the repository and `WebApplicationFactory` |
+
+| Driving port (DESIGN) | Scenario |
+|---|---|
+| `GET /api/latest/deliveries/portfolio/{portfolioId}` | `GetDelivery_MultiTeamFeature_LikelihoodIsTheJointProbabilityNotTheWorstTeams` (real HTTP, real status check) |
+| `GET /api/latest/portfolios/{id}` (`FeatureDto.Forecasts`) | NOT covered end-to-end — the percentile-date surface is asserted at `Feature.Forecast` in Tier 3 instead. Adding a second HTTP scenario for the same computed property would duplicate the walking skeleton; flagged for DELIVER to reconsider only if the DTO assembly is touched |
+| `GET /api/latest/deliveries/{deliveryId}/metrics-history` | N/A — one-time step (DISCUSS D5), no forecast maths in the path |
+| MCP / CLI tools | N/A — they read the DTOs above, shapes unchanged |
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- SPIKE-00 accepted (gate D8/1) — done 2026-07-27.
+- `InternalsVisibleTo("Lighthouse.Backend.Tests")` at `Lighthouse.Backend.csproj:64` — already present, DDD-5 costs no plumbing.
+- No DEVOPS artefacts for this feature: default environment applies (in-process `WebApplicationFactory` + EF InMemory, as every other `API/Integration` test). Logged as a warning, not a block.
+- Multi-team data for AC-01.8 (DESIGN open question 3): resolved inside the test by seeding two teams with identical two-value histograms, so no demo-data dependency remains for the backend suite. The Playwright check in gate 3 still needs seeded multi-team data.
+
+## Wave: DISTILL / [REF] Decisions taken in DISTILL
+
+| ID | Decision | Rationale |
+|----|----------|-----------|
+| DT-1 | `Combine` takes `IEnumerable<IReadOnlyDictionary<int,int>>` and returns `Dictionary<int,int>` | Keeps the collaborator decoupled from `WhenForecast` per DDD-1; `SortedDictionary` already satisfies the input type |
+| DT-2 | The preserved `TotalTrials` is the **maximum** over usable contributors | Loses no precision when contributors were simulated with different trial counts, and is exact for the single-contributor identity |
+| DT-3 | Residue tie-break: equal fractional parts resolve to the **earlier day** | Deterministic and testable; an unspecified tie-break survives mutation |
+| DT-4 | Zero-count buckets are omitted from the output histogram | Otherwise the joint histogram carries days with no mass; AC-01.4 identity is asserted against the contributor's own non-zero buckets |
+| DT-5 | Provenance sums and the oldest `CreationTime` are taken over **all** contributors, zero-trial ones included | DDD-3 filters the *product*, not the bookkeeping; a team with no throughput still contributes items and staleness |
+| DT-6 | No property-testing library introduced (DESIGN open question 2) | Three seeded loops over `Random(5569)` express the invariants; adding FsCheck for three tests would be a dependency for its own sake |
+| DT-7 | Tier-3 asserts percentile **days**, never probabilities | 10 000 trials give σ ≈ 0.5 %; the chosen fixture keeps every asserted day ≥ 10σ from its boundary |
+
+## Wave: DISTILL / [REF] Upstream notes (back-propagation)
+
+1. **AC-01.3 wording** — "non-zero probability mass at the old reported p85" is not the precise
+   condition; the aggregate p85 moves when the *other* contributors' CDFs at that day are below 1, so
+   the product falls under 0.85. The test uses the exact fixture ({1:5000, 2:2500, 3:2500} twice, p50
+   `1` → `2`) and asserts at p50, where the shift is exact on paper. No change requested to the AC —
+   noted so nobody reads the strictness claim as universal.
+2. **AC-01.2 is not a discriminator** — it is satisfied by today's `MaxBy` code and stays green
+   throughout. It constrains the new maths; it does not prove it. AC-01.1/01.3/01.8 are the tests that
+   fail today.
+3. **`FeatureDto.LastUpdated` moves earlier** for multi-team features (DDD-4). No test asserts the DTO
+   field itself — `Provenance_CreationTime_IsTheOldestContributor` covers the source. If DELIVER finds
+   a consumer that treats `LastUpdated` as a staleness alarm, that belongs to a follow-up, not here.
+
+## Wave: DISTILL / [REF] Review gate
+
+The four-reviewer Final Wave Review Gate was **not** dispatched. DISCUSS and DESIGN were reviewed and
+accepted with the maintainer on 2026-07-27 and are pushed; this epic runs under an explicit maintainer
+gate (D8/2 — line-by-line diff review before every commit), which supersedes agent review for the
+production diff. Not a silent skip: re-run `/nw-review` against `feature-delta.md` if a second opinion
+on the DISTILL sections is wanted before DELIVER.
+
+RED classification for the hand-off: `distill-red-classification.md` (18 RED, all
+`MISSING_FUNCTIONALITY`, 0 broken; 10 regression guards green).

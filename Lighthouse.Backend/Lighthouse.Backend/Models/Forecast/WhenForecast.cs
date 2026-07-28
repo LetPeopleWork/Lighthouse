@@ -6,6 +6,12 @@
         {
         }
 
+        // Test seam for hand-built histograms (Story #5569, DDD-5) - replaces reflection on SetSimulationResult.
+        internal WhenForecast(Dictionary<int, int> simulationResult) : this()
+        {
+            SetSimulationResult(simulationResult);
+        }
+
         public WhenForecast(SimulationResult simulationResult) : base(simulationResult.SimulationResults, Comparer<int>.Create((x, y) => x.CompareTo(y)))
         {
             NumberOfItems = simulationResult.InitialRemainingItems;
