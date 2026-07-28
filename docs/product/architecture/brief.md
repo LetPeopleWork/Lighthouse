@@ -3407,4 +3407,4 @@ fails loudly. This mirrors `playwright.config.ts` and the frontend `test` script
 pinned. **UTC is the one offset at which the mismatch cancels out, which is exactly why CI was blind
 to it.**
 
-RCA and all nine decisions: `docs/feature/fix-backend-utc-today-anchor/deliver/rca-context.md`.
+RCA and all nine decisions: `docs/analysis/ADO-5567-backend-utc-today-anchor.md`.

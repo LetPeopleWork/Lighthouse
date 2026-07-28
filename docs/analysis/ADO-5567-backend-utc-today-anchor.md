@@ -1,9 +1,19 @@
-# Bug #5567 — Backend anchors "today" at UTC
+# RCA — Bug #5567: Backend anchors "today" at UTC
 
-**Feature id:** `fix-backend-utc-today-anchor`
-**ADO:** Bug #5567 (Active) — <https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5567>
-**RCA performed at:** HEAD `efd8d0ff7`, 2026-07-27
+**Analyst:** Rex (Toyota 5 Whys)
+**Date:** 2026-07-27
+**Scope:** `Lighthouse.Backend` — every site deriving a calendar day from the machine clock
+**Status:** FIXED and shipped 2026-07-28 in `173c8d889..b19f21270`. 49 production anchors → 0,
+enforced by a hard-fail source guard. Mutation 83.86%.
+**Feature id:** `fix-backend-utc-today-anchor` — roadmap at
+`docs/feature/fix-backend-utc-today-anchor/deliver/roadmap.json`
 **Origin:** surfaced while fixing Bug #5566 (frontend date-range URL round-trip, commit `b956a8857`)
+
+> **Four claims in this document were disproven during delivery and are corrected in place.**
+> Do not re-derive them: the `DeliveryMetricSnapshot` duplicate-row hazard does not exist (§7 R2);
+> T0 does not prove branch B and nothing at runtime can (§8); `LighthouseAppContextUtcTest`'s
+> `Kind == Utc` assertions do NOT guard R1 (§7 R6); and `BaselineValidationService`'s
+> `DateOnly.FromDateTime` is correct, not a mixed-definition defect (§3 decision 4 note).
 
 ---
 
