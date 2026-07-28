@@ -1,0 +1,563 @@
+{
+  "roadmap": {
+    "project_id": "fix-backend-utc-today-anchor",
+    "created_at": "2026-07-27",
+    "amended_at": "2026-07-27",
+    "total_steps": 13,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "scope": "bug-fix",
+    "ado_bug": 5567,
+    "goal": "Bug #5567: the backend anchors \"today\" at UTC. The codebase models \"store instants in UTC\" with a first-class, enforced, tested abstraction (two `UtcDateTimeConverter` classes plus seven `Kind == Utc` tests) and models \"compute a calendar day\" with nothing at all — so 49 production sites each re-derived the anchor from the ambient clock, 12 of them via server-local `DateTime.Today` and 37 via `DateTime.UtcNow.Date`. Introduce `ILighthouseClock` as the single named seam for the instance's calendar day, configured by `Lighthouse:TimeZone`, converge `DeliveryMetricSnapshot` on a `DateOnly` day key so the last instant-bucketed snapshot table matches its three siblings, migrate all 49 anchor sites plus the 8 Finding-F instant-to-day reduction sites onto the clock, and make the seam enforceable with a source guard so no 50th site can appear. Deliberately NOT a general date refactor: ~30 genuine instant sites (audit stamps, sync bookkeeping, blocked-transition intervals, artifact naming, elapsed-duration measurement) stay UTC and step 03-01 proves they were not moved.",
+    "overview": "Four phases, 13 steps, one commit per step, each independently green. Phase 01 builds the seam without touching a single call site: 01-01 pins the backend test timezone via `.runsettings` and lands T0 — a test that fails on today's HEAD with ZERO production changes, because `ForecastController.cs:60` reads `DateTime.Today` while `:85/:86/:94/:133` read `DateTime.UtcNow.Date` in the same request; 01-02 introduces `ILighthouseClock` + `Lighthouse:TimeZone` + `FakeLighthouseClock`, shipping NO default value so containers keep UTC and standalone picks up the host zone; 01-03 lands the source guard in warn-list mode with all 49 known sites baselined, so the migration cannot race a 50th. Phase 02 migrates by cluster, shrinking the baseline each time, in the RCA §6 order with one insertion: entities first (highest blast radius, smallest change set), then the `DeliveryMetricSnapshot` day-key convergence and its expand-only migration (inserted so the snapshot handlers migrate ONTO an already-correct day key rather than onto one that changes under them), then the snapshot handlers, then metrics/forecast controllers, then Finding F, then demo data, then validation/licensing/delivery. Phase 03 flips the guard to hard-fail and sweeps the remaining tautological tests. Phase 04 documents the setting, the API date semantics and the release-note headline — which, because the shipped default is ABSENT, is that non-UTC teams must OPT IN via `Lighthouse__TimeZone`. RED comes first in every phase-02 step: the test asserting the instance-zone day is written against `FakeLighthouseClock` BEFORE the call sites move, and the tests in each cluster are migrated in the SAME commit as their production code — otherwise they re-tautologise against the new expression (RCA §1D, §6.6).",
+    "estimated_hours_total": 20.0
+  },
+  "validation": {
+    "status": "pending",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-07-27",
+    "notes": "AUTHORSHIP: nw-solution-architect, with lean-ctx ctx_* tooling. The nWave skill files (`~/.claude/skills/nw-roadmap/SKILL.md`) and `nWave/templates/roadmap-schema.json` are OUTSIDE the lean-ctx project root and could not be read (`path escapes project root`); the schema was therefore derived from the two most recent shipped in-repo roadmaps, `docs/feature/epic-5427-percentiles-over-time/deliver/roadmap.json` (2026-07-26) and `docs/feature/widget-loose-ends/deliver/roadmap.json` (2026-07-19), which agree on the step shape used here (`id`/`name`/`test_file`/`scenario_name`/`files_to_modify`/`deps`/`criteria`/`implementation_notes`). AMENDED 2026-07-27 for the three coordinator-resolved open questions. Q1 (shipped default ABSENT) rewrote 01-02's configuration criteria and promoted the opt-in to 04-01's release-note headline. Q2 (`.runsettings` + `RunSettingsFilePath`) is encoded in 01-01. Q3 (converge `DeliveryMetricSnapshot` on a `DateOnly` day key) is a NEW step. The schema's step-id pattern forbids a `02-02a` suffix, so the phase-02 chain was RENUMBERED rather than suffixed: the new step takes `02-02` and the five following steps each shift up by one (old 02-02 to 02-03, 02-03 to 02-04, 02-04 to 02-05, 02-05 to 02-06, 02-06 to 02-07). Total steps 12 to 13; `03-01`'s fan-in deps updated to the seven-step chain. SITE VERIFICATION: every file:line in RCA §5 was re-checked at HEAD `efd8d0ff7`. The repo-wide count is EXACTLY 49 `UtcNow.Date`/`DateTime.Today` occurrences across 24 production files, matching the RCA table row for row. Four RCA line references are DERIVED sites rather than independent anchors and are called out per step: `PercentilesOverTimeRecordingHandler.cs:123` and `ProcessBehaviorRecordingHandler.cs:187` are `DateOnly.FromDateTime(endDate)` reductions of the `:90`/`:132` anchor; `DeliveryMetricSnapshotRecordingHandler.cs:30` is a bare `DateTime.UtcNow` instant used as a day key; `DemoBlockedHistoryBackfillHandler.cs:117` derives from `:116`. `DeliveriesController.cs:81,139` and `Models/Delivery.cs:16` are `request.Date <= DateTime.UtcNow` instant comparisons — correctly outside the 49 — and are the decision-2 sites. CLUSTER COUNT DISCREPANCIES (flagged, not blocking): RCA §6.4's per-cluster counts are approximate. The snapshot cluster is 9 anchors across 4 handler files, not 12; the metrics/forecast-controller cluster is 25 anchors plus 3 deletions across 9 files, not 20; the entity cluster is 4 FILES (5 anchors), not 4 sites. Every one of the 49 is assigned to exactly one phase-02 step and the assignment is enumerated in each step's implementation_notes, so the totals reconcile even though the RCA's headline numbers do not. R2 RATIONALE CORRECTION — see `amendment_findings` below; the schema change is retained and justified, but its acceptance criteria assert what is actually reachable at HEAD rather than the duplicate-row mechanism the RCA describes. NO DISTILL WAVE and no `.feature` files: RCA §8's T0/T1/T1b/T2/T3 ARE the acceptance criteria, and `scenario_name` on each step names the NUnit test method that carries it."
+  },
+  "amendment_findings": {
+    "r2_duplicate_row_is_not_reachable_at_head": "MATERIAL, because it is the sole stated rationale for the Q3 schema change. The RCA §7-R2 claim is that `DeliveryMetricSnapshotRepository.cs:12-18` 'buckets a full instant into a day by range scan, so shifting the zone can make an existing row fall outside [day, nextDay) and produce a SECOND row for the same visual day rather than an upsert.' Verified at HEAD, the duplicate cannot occur: (a) `GetOrCreateForDay` NORMALISES on write — line 12 computes `var day = recordedAt.Date;` and line 25 constructs `new DeliveryMetricSnapshot { RecordedAt = day }`, so every persisted `RecordedAt` is midnight, never a mid-day instant, even though `DeliveryMetricSnapshotRecordingHandler.cs:30` passes a full `DateTime.UtcNow`; (b) `GetOrCreateForDay` is the ONLY production writer — a repo-wide search for `RecordedAt =` on this type finds no other production assignment, only test seeding; (c) `Data/LighthouseAppContext.cs:400-401` already declares `HasIndex(s => new { s.DeliveryId, s.RecordedAt }).IsUnique()`, so the database itself forbids two rows for the same delivery and the same midnight. The range scan over midnight-valued data is therefore exactly equivalent to equality on a day key. What a zone shift CAN actually produce is a one-day SKIP or SHIFT in the 22:00-24:00 UTC window where the instance day is already tomorrow — the same artifact the RCA explicitly accepts for the three `DateOnly`-keyed families, and a one-day kink in the trend chart either way. THE SCHEMA CHANGE IS STILL WORTH DOING and is retained as instructed, on the honest rationale rather than the stated one: it makes the day key structurally a day (`DateOnly` is untouched by the global `Properties<DateTime>()` converter convention, so R1 cannot reach it at all), it removes the last instant-to-day reduction living inside a repository, and it converges all four snapshot tables on one shape — `BlockedCountSnapshot.cs:13` and `PercentilesOverTimeSnapshot.cs:22` already declare `public DateOnly RecordedAt`. Step 02-02's criteria are written against that rationale. They do NOT claim to fix a duplicate row, because a test asserting 'no duplicate is created' would pass on unmodified HEAD and prove nothing.",
+    "unique_index_makes_the_backfill_a_deployment_risk": "The expand-only migration must add a unique index on the new (DeliveryId, day) pair to preserve the guarantee `(DeliveryId, RecordedAt)` gives today. If ANY existing row carries a non-midnight `RecordedAt` — impossible via the current writer, but not impossible via an older version, a restored backup, or manual data — two rows can backfill to the same `DateOnly` and the unique-index creation FAILS mid-migration, which on this project means the application does not start. This is encoded as an explicit acceptance criterion in 02-02 (prove the migration against a database seeded with a colliding non-midnight row and decide the collision policy deliberately) rather than left to be discovered on a customer's upgrade.",
+    "expand_only_is_machine_enforced_here": "`Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuard.cs` and its companion `ExpandOnlyMigrationGuardTest.cs` already exist and enforce the additive-only rule automatically. The Q3 migration will be checked by it with no new tooling, and 02-02 asserts it stays green rather than restating the rule by hand. Precedent migration tests for the sibling snapshot tables exist at `Lighthouse.Backend.Tests/Integration/Containers/BlockedCountSnapshotMigrationTests.cs`, `PercentilesOverTimeSnapshotMigrationTests.cs` and `ProcessBehaviorSnapshotMigrationTests.cs` — 02-02's migration test follows their shape.",
+    "migration_script_path_confirmed": "`Lighthouse.Backend/Create-Migration.ps1` exists at HEAD (a glob for `CreateMigration*` misses it because the filename is hyphenated). That is the script 02-02 must use; `dotnet ef migrations add` is forbidden, and Recreate is forbidden."
+  },
+  "ssot_inputs": {
+    "rca_document": "docs/feature/fix-backend-utc-today-anchor/deliver/rca-context.md — root cause (§1 branches A-E), Finding F (§2), user-confirmed decisions (§3), design (§4), verified inventory (§5), migration sequence (§6, which this roadmap follows), risks (§7 R1-R7), regression tests (§8 T0/T1/T1b/T2/T3), follow-through (§9)",
+    "ci_learnings": "docs/ci-learnings.md — pre-apply the Preflight checklist (L45-101) BEFORE writing code. Bearing hardest on this fix: the 2026-07-05 timezone entry at L85 (both suites are pinned to Europe/Zurich BECAUSE UTC is the one offset at which a UTC/local mismatch cancels out — this bug is the backend half of exactly that class, and the entry records that setting `TZ` in `vitest.config.ts`'s `env` block did NOT take effect, which is why Q2 chose a mechanism that runs before the host process starts), NUnit4002/2046/2056/2010, CA1859 on new private helpers and their parameters, CA1861 on inline assertion arrays, S107 on constructor parameter counts, S3776, the EF-migration rules at L68-70 (a new property on a persisted model needs a migration; InMemory tests never catch the gap; generate with the `CreateMigration` script across all providers, never `dotnet ef migrations add`; no non-default sentinel on a bool column), and the L80 rule that an assertion whose failure you have not seen must be proved by sabotage — `if (false)` does not work in C# under TreatWarningsAsErrors.",
+    "architecture": [
+      "docs/product/architecture/brief.md:1939-1943 — Architectural Enforcement table for the blackout-shift feature. Line 1940 declares a static-inspection purity test on `ProjectWorkingDays`/`CountWorkingDays` forbidding `DateTime.UtcNow`/`Today`.",
+      "docs/product/architecture/brief.md:2051-2060 — Architectural Enforcement table for recurring blackout events. Line 2055 declares the same purity test on `ExpandToBlackoutDays`.",
+      "docs/product/architecture/brief.md:3084 — documents the historic-read branch gated on `asOfDate.Date < DateTime.UtcNow.Date`, mirroring `TeamMetricsController:130`. Goes stale in 02-04."
+    ],
+    "shipped_code_to_extend": {
+      "config_surface": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ServiceConfig.cs — 17 lines, two properties, both read from `IConfiguration` in the constructor (`Lighthouse:BaseUrl`, `Lighthouse:OAuth:StateSecret`), NEITHER of which is shipped as a default in `appsettings.json`. That absence is the precedent Q1 follows: `Lighthouse:TimeZone` is read the same way and shipped the same way, which is to say not at all. `IServiceConfig` is registered as a singleton at Program.cs:989, immediately above `TimeProvider.System` at :990.",
+      "time_seam": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:990 — `builder.Services.AddSingleton(TimeProvider.System)`. The existing instant seam, reaching seven OAuth/AppSetting classes. `ILighthouseClock` delegates its `Now` to it rather than competing with it. `Microsoft.Extensions.TimeProvider.Testing` 10.8.0 is ALREADY a test-project package reference, so `FakeTimeProvider` is available to drive `FakeLighthouseClock` with no new dependency.",
+      "ef_converter": "Lighthouse.Backend/Lighthouse.Backend/Data/Converters/UtcDateTimeConverter.cs applied as a global convention at Data/LighthouseAppContext.cs:91-92 over `Properties<DateTime>()`. Applies `ToUniversalTime()` to values AND to query parameters. This is R1. Note the convention is typed to `DateTime` only, which is precisely why moving a day key to `DateOnly` puts it structurally out of reach.",
+      "r1_tripwire": "Lighthouse.Backend/Lighthouse.Backend.Tests/LighthouseAppContextUtcTest.cs — seven tests asserting `Kind == Utc` on persisted values. Keep them; any implementation leaking a Local kind into an entity trips them (R6).",
+      "delivery_snapshot_shape": "Lighthouse.Backend/Lighthouse.Backend/Models/DeliveryMetricSnapshot.cs declares `public DateTime RecordedAt`, alone among the four snapshot types — `Models/BlockedCountSnapshot.cs:13` and `Models/PercentilesOverTimeSnapshot.cs:22` both declare `public DateOnly RecordedAt`. `Data/LighthouseAppContext.cs:391-402` configures the entity: key on `Id`, cascade FK to `Delivery`, and `HasIndex(s => new { s.DeliveryId, s.RecordedAt }).IsUnique()` at `:400-401`. `Services/Implementation/Repositories/DeliveryMetricSnapshotRepository.cs:10-27` is the ONLY production writer and normalises to `.Date` on write; `:31-37` (`GetByDelivery`) and `:39-48` (`GetSnapshotCountsByDelivery`) are the reads. `API/DTO/DeliveryMetricsHistoryDto.cs` is the read-side consumer.",
+      "migration_tooling": "Lighthouse.Backend/Create-Migration.ps1 — generates the migration across all supported providers into `Lighthouse.Migrations.Postgres` and `Lighthouse.Migrations.Sqlite`, both already referenced by the test project. `Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuard.cs` machine-enforces the additive-only rule. `Lighthouse.Backend.Tests/Integration/Containers/BlockedCountSnapshotMigrationTests.cs`, `PercentilesOverTimeSnapshotMigrationTests.cs` and `ProcessBehaviorSnapshotMigrationTests.cs` are the shape precedents for a snapshot-table migration test.",
+      "guard_precedent": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuard.cs (+ its Test) — a plain source-file scanner, the model for T2. Twelve `*SeamArchUnitTest.cs` files already live in that folder; `CalendarDayAnchorSeamArchUnitTest.cs` sits with them. NOT ArchUnitNET: `DateTime.UtcNow` is a property access on a type every class already depends on, which ArchUnitNET's dependency rules cannot express.",
+      "purity_tests": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/BlackoutForecastShiftSeamArchUnitTest.cs and RecurringBlackoutEventsSeamArchUnitTest.cs — carry the brief.md:1940 / :2055 static-inspection purity assertions. `ProjectWorkingDays`, `CountWorkingDays` and `ExpandToBlackoutDays` must contain no `DateTime.UtcNow`/`Today` and must NOT gain an injected clock. They take `DateOnly today` (or the already-computed anchor) as a parameter.",
+      "tautological_tests": "Lighthouse.Backend.Tests/API/DTO/FeatureDtoTest.cs:12, API/Integration/BlackoutForecastShiftTestBase.cs:34, API/Integration/RecurringBlackoutRulesTestBase.cs:39, API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs:26, API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs:35, Services/Implementation/BlackoutForecastShiftWriteBackTest.cs:27 — six `static DateTime Today => DateTime.UtcNow.Date;` recomputations of the production oracle, plus `PercentilesOverTimeRecordingHandlerTests.cs:117` and `ProcessBehaviorRecordingHandlerTests.cs:104` (`=> DateTime.Today`). Root cause D: a test that recomputes the production expression passes for every possible value of \"today\", including a wrong one. 275 occurrences across 45 test files in total.",
+      "e2e_exposure": "Lighthouse.EndToEndTests/tests/helpers/csv/csvTestData.ts:26,70 and tests/fixutres/LighthouseFixture.ts:90 build dates with `toISOString()`; tests/specs/screenshots/Screenshots.spec.ts:143,145,266 does the same. `playwright.config.ts:90` sets `timezoneId: \"Europe/Zurich\"` for the BROWSER CONTEXT ONLY — the Node test process keeps the runner's zone. This is R4.",
+      "decision_4_sites": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs:442,445; .../WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:993; .../WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs:1251 — all four are `DateTime.UtcNow` / `DateTime.UtcNow.AddDays(-n)` tracker history cutoffs. They stay UTC and gain a stated reason (decision 4)."
+    },
+    "ado": "Bug #5567 (Active) — https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5567. Surfaced while fixing Bug #5566 (frontend date-range URL round-trip, commit b956a8857)."
+  },
+  "resolved_decisions": {
+    "Q1_shipped_default": "RESOLVED by the user 2026-07-27 — SHIP THE KEY ABSENT. `appsettings.json` gains no `Lighthouse` section at all, matching the existing treatment of `Lighthouse:BaseUrl` and `Lighthouse:OAuth:StateSecret`, neither of which ships a default either. The resolution order does the work: configured id, else `TimeZoneInfo.Local`, else `TimeZoneInfo.Utc`. Consequences, all deliberate: a containerised instance keeps UTC on upgrade and sees NO behaviour change (verified — the Dockerfile sets no `TZ` and `mcr.microsoft.com/dotnet/aspnet:10.0` defaults to UTC, so `TimeZoneInfo.Local` there IS UTC); a standalone instance picks up the host zone, which is the branch-B fix and the reason this bug is user-visible today. NO startup warning when the key is absent, and NO `TimeZoneInfo.Local`-always variant. Because the containerised default stays UTC, a non-UTC team gets nothing from this release unless they set `Lighthouse__TimeZone` — that opt-in is now the USER-FACING HEADLINE of the bugfix, not a footnote, and 04-01 carries it in both the docs and the release notes.",
+    "Q2_tz_pin_mechanism": "RESOLVED by the user 2026-07-27 — `.runsettings` with `RunConfiguration/EnvironmentVariables/TZ = Europe/Zurich`, referenced from the test `.csproj` via `<RunSettingsFilePath>` so a bare local `dotnet test` picks it up too, not only CI. Encoded in 01-01. The `TimeZoneInfo.Local.Id` assertion STAYS: a silently-inert pin must fail loudly, per the `docs/ci-learnings.md:85` precedent where `TZ` in the vitest `env` block did not take effect because Node had already cached the zone. The same caching applies to .NET, which is exactly why the variable has to be set on the host process before it starts rather than from inside a fixture.",
+    "Q3_r2_disposition": "RESOLVED by the user 2026-07-27 — CONVERGE `DeliveryMetricSnapshot` ON A `DateOnly` DAY KEY, replacing the instant range-scan bucketing at `DeliveryMetricSnapshotRepository.cs:12-18` so the write upserts on equality like the three sibling snapshot tables. This is the ONE schema change in the fix. It needs an EF migration, generated with `Lighthouse.Backend/Create-Migration.ps1` across all providers — never `dotnet ef migrations add`, never a Recreate. The migration is EXPAND-ONLY: add the new `DateOnly` column alongside the existing `RecordedAt`, backfill from it, move reads and writes to the new column, and LEAVE THE OLD COLUMN IN PLACE for a later release to drop. Additive-only per release is a standing project rule and is machine-enforced by `Architecture/ExpandOnlyMigrationGuard.cs`; destructive cleanup is a separate, later change. Split out as its own step (`02-02`) rather than inflating the snapshot-handler step, landing BEFORE it so the handlers migrate onto an already-correct day key. NOTE: see `amendment_findings.r2_duplicate_row_is_not_reachable_at_head` — the change is retained, but on a corrected rationale, and its criteria assert what is actually reachable rather than a duplicate row that the current writer and the shipped unique index already prevent."
+  },
+  "hard_constraints": [
+    "R1 / DESIGN §4.1 constraint 1 — `ILighthouseClock` MUST NEVER return a `DateTime` whose `Kind` is `Local`. The global EF converter (`Data/Converters/UtcDateTimeConverter.cs`, applied as a convention at `Data/LighthouseAppContext.cs:91-92`) applies `ToUniversalTime()` to every non-`Unspecified` `DateTime` property AND to query parameters. A Local-kind local-midnight written to a snapshot timestamp is shifted back by the offset on write, lands on the previous UTC day, and re-introduces this exact bug through the persistence layer — with reads staying self-consistent while the stored data silently goes wrong for every other consumer. `Today` is `DateOnly`; the only `DateTime` the clock hands out is `TodayAsUtcMidnight`, `Kind = Utc`. This is the most likely way the fix ships broken.",
+    "DESIGN §4.1 constraint 2 — pure functions and EF-materialised entities take `DateOnly today` AS A PARAMETER; they never receive an injected clock. `Team.GetThroughputSettings()`, `Feature.GetLikelhoodForDate()`, `Delivery.CalculateMetrics()` and `WorkItemBase.WorkItemAge` become parameterised, matching the existing `blackoutPeriods` parameter-passing style at `Models/Delivery.cs:99`.",
+    "brief.md:1940 and :2055 declare static-inspection purity tests asserting `ProjectWorkingDays`, `CountWorkingDays` and `ExpandToBlackoutDays` contain no `IRepository<>`, `DbContext`, `HttpClient`, `ILogger`, `DateTime.UtcNow` or `DateTime.Today`. Do not inject a clock into them and do not weaken those tests. They already receive the anchor as an argument, which is why they are the ONLY correct shape in the codebase today.",
+    "Q1 — `appsettings.json` ships NO `Lighthouse:TimeZone` value. An ABSENT or empty key resolves `TimeZoneInfo.Local`, then `TimeZoneInfo.Utc`, silently and without a warning. An UNRESOLVABLE configured id FAILS FAST at startup — a silent fallback there would reproduce this bug class invisibly, which is precisely how it shipped the first time. The resolved zone is logged at startup in every case.",
+    "Q3 — the `DeliveryMetricSnapshot` migration is EXPAND-ONLY and generated by `Lighthouse.Backend/Create-Migration.ps1` across all providers. Add the new `DateOnly` column, backfill, repoint reads and writes; do NOT drop `RecordedAt`, do NOT drop the existing `(DeliveryId, RecordedAt)` unique index, do NOT use `dotnet ef migrations add`, do NOT Recreate. `Architecture/ExpandOnlyMigrationGuard.cs` enforces this automatically and must stay green.",
+    "Quality gates per CLAUDE.md: `dotnet build` succeeds with ZERO warnings (`TreatWarningsAsErrors` makes any warning a failure), `dotnet test` all green, no new SonarCloud issues of any severity. Frontend is untouched by this fix (R5) but `pnpm test` / `pnpm build` must still be green before any push.",
+    "Apart from the ONE expand-only migration in 02-02, no step adds schema. If a model diff in any other step shows DDL, STOP and report: the fix has drifted.",
+    "Category (b) of RCA §5 — the ~30 genuine instant sites (audit/lifecycle stamps, sync/refresh bookkeeping, blocked-transition intervals, artifact naming, elapsed-duration measurement) — MUST NOT move. Step 03-01's T3 exists to prove the migration did not over-reach.",
+    "Each cluster's TESTS migrate to the fake clock in the SAME commit as that cluster's production code (RCA §6.6). Deferring them re-tautologises them against the new expression and the suite goes green over a wrong answer for the second time.",
+    "The source guard's allowlist is not a dumping ground. Every entry carries a stated reason in the file, and the decision-4 entries carry the same reason as the code comment at the site."
+  ],
+  "open_questions": [],
+  "out_of_scope": [
+    "Dropping the legacy `DeliveryMetricSnapshot.RecordedAt` column or the `(DeliveryId, RecordedAt)` unique index. Expand-only per release is a standing project rule; the contract phase is a separate, later change and must not be smuggled into this bugfix.",
+    "Any frontend change. R5: `localDate.ts` and `MetricsService.ts:44` already send local calendar days post-b956a8857; this fix closes the asymmetry rather than creating one. `Lighthouse.Frontend/src/models/Delivery.ts:83` renders with `timeZone: \"UTC\"` and STAYS correct so long as the backend keeps stamping `Kind = Utc` per §4.1 — it becomes wrong the moment R1 is mishandled, which is a reason to get R1 right, not a reason to touch the frontend.",
+    "Per-request client timezone. Rejected in RCA §4.3 on evidence: the background snapshot jobs have no request context and would still need a configured zone, and `TeamMetricsService` caches under `(team, metric, mode)` keys with no day component (`:111`), so a per-viewer zone would fragment the metrics cache while a single instance zone preserves it.",
+    "Converting the OTHER three snapshot tables' day keys. `BlockedCountSnapshot` and `PercentilesOverTimeSnapshot` are already `DateOnly`; nothing to do.",
+    "Moving `Cache/CacheItem.cs:13` / `Cache/Cache.cs:29` (`DateTimeOffset.Now`, the only `.Now` in production) to the clock's `Today`. They measure elapsed duration and are correct as instants. Moving them to `TimeProvider` for testability is a separate, unrelated improvement.",
+    "Any change to the tracker history cutoffs' BEHAVIOUR (`WorkItemService.cs:442,445`; ADO connector `:993`; Jira connector `:1251`). Decision 4 leaves them UTC; 02-07 adds only a comment and an allowlist entry.",
+    "A general audit of the ~30 category-(b) instant sites. They are enumerated in RCA §5(b) so that 03-01's T3 can prove they did not move — not so that they can be revisited.",
+    "Screenshot regeneration beyond the R4 baselines 02-06 invalidates, the evolution archive, ADO #5567's transition, and mutation testing — FINALIZATION activities, not roadmap steps. Per-feature mutation testing (Stryker.NET, >=80% kill rate) still applies at feature close-out."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Build the seam without moving a call site",
+      "description": "Turn branch B red with zero production changes, then introduce `ILighthouseClock` + `Lighthouse:TimeZone` + `FakeLighthouseClock` with no shipped default, then baseline all 49 known anchor sites behind a warn-mode source guard so the migration cannot race a 50th.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Pin the backend test timezone via .runsettings and land T0, the test that fails on today's HEAD",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerCalendarDayAnchorTest.cs",
+          "scenario_name": "T0 — RunItemCreationPrediction_AndRunManualForecast_AnchorOnTheSameCalendarDay",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerCalendarDayAnchorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/lighthouse.runsettings"
+          ],
+          "deps": [],
+          "criteria": [
+            "A `.runsettings` file declares `RunConfiguration/EnvironmentVariables/TZ = Europe/Zurich`, matching `Lighthouse.Frontend/package.json:12` and `Lighthouse.EndToEndTests/playwright.config.ts:90`, both of which commit b956a8857 pinned while leaving the backend un-pinned.",
+            "The test `.csproj` references it via `RunSettingsFilePath`, so a BARE local `dotnet test` picks it up with no extra flag — not only CI. A pin that only applies in CI leaves every local run blind to the bug class it exists to catch.",
+            "CI needs NO change to `.github/workflows/ci_backend.yml`: the existing bare `dotnet test` invocations at `:138` and `:143` inherit the pin through the project property. Confirm this rather than assume it; if a `--settings` flag turns out to be required, add it and say so.",
+            "A test asserts `TimeZoneInfo.Local.Id` resolves to Europe/Zurich under the test host, so the pin is PROVEN to have taken effect rather than assumed. This assertion is not optional: `docs/ci-learnings.md:85` records that the equivalent frontend pin placed in `vitest.config.ts`'s `env` block silently did nothing because Node had already cached the zone, and .NET caches `TimeZoneInfo.Local` the same way. A silently-inert pin reads as covered and is worse than no pin.",
+            "T0 drives BOTH `ForecastController` endpoints — the item-creation-prediction path and the manual-forecast path — for the same team in the same test, and asserts the calendar day each one anchors its projection on is the SAME day. It asserts observable output (the returned forecast dates), not clock identity, so it is a behaviour test rather than a tautology.",
+            "T0 FAILS on HEAD with ZERO production changes, deterministically. CORRECTED AFTER EXECUTION (2026-07-27): this criterion originally also demanded the failure occur 'in the ~2-hour nightly window where server-local Zurich and UTC disagree', which is SELF-CONTRADICTORY — deterministic and wall-clock-window-dependent cannot both hold. Branch B is NOT PROVABLE BY ANY RUNTIME TEST: `DateTime.Today` and `DateTime.UtcNow.Date` diverge only in real wall-clock time, and time cannot be injected into code that reads the clock statically (that is root cause D restated). Verified empirically by un-ignoring T0 on HEAD: the two endpoints AGREED (both returned the real current date) and only the expected-anchor-day assertions failed, because the injected `FakeTimeProvider` instant never reaches production. T0 is therefore an END-STATE behaviour test — it fails now, and passes once 02-04 routes both endpoints through the clock. It is NOT evidence of branch B and must not be cited as such. BRANCH B'S ACTUAL PROOF IS THE T2 SOURCE GUARD IN 01-03, which flags `ForecastController` carrying both spellings and is deterministic by construction.",
+            "T0 carries `[Ignore]` (or equivalent) with a reason naming Bug #5567 so `main` stays green after this commit, and 02-04 un-ignores it as the proof its cluster landed. The pin itself is NOT ignored and takes effect immediately.",
+            "The whole existing backend suite still passes under the new pin. Any test that only passed because the host was UTC is a genuine finding of this bug — record it, do not paper over it.",
+            "No production file is touched in this step. `dotnet build` zero warnings; `dotnet test` green.",
+            "Conventional commit `test(forecast)`."
+          ],
+          "implementation_notes": "RCA §6.1 and §8-T0; Q2 RESOLVED — the mechanism is `.runsettings` plus the `RunSettingsFilePath` project property, decided by the user 2026-07-27. `RunConfiguration/EnvironmentVariables` sets the variable on the TEST HOST PROCESS BEFORE IT STARTS, which is the property that matters: both Node and .NET cache the local zone on first use, so anything that sets `TZ` from inside a fixture, a `[SetUpFixture]`, or a config `env` block is too late. That is not a hypothetical — ci-learnings L85 records it happening on the frontend and having to move to the script. This is branch B and it is a LIVE bug today, independent of any team's timezone: `API/ForecastController.cs:60` reads `(input.TargetDate - DateTime.Today).Days` (server local) while `:85`, `:86`, `:94` and `:133` read `DateTime.UtcNow.Date` — same file, same request lifetime. Verified at HEAD. The two agree only when the process runs in UTC. The container does (no `TZ` in the Dockerfile; `mcr.microsoft.com/dotnet/aspnet:10.0` defaults to UTC) but the STANDALONE distribution inherits the host zone via `Standalone/StandaloneInitializer.cs`, so this ships broken to every standalone user outside UTC. `Microsoft.Extensions.TimeProvider.Testing` 10.8.0 is already referenced by the test project, so `FakeTimeProvider` can supply the instant with no new package. ci-learnings to pre-apply: NUnit4002 (`Is.Zero`), NUnit2046 (`Has.Count.EqualTo`), NUnit2056 (`using (Assert.EnterMultipleScope())`), CA1861 (hoist inline assertion arrays to `static readonly`).",
+          "estimated_hours": 2.0
+        },
+        {
+          "id": "01-02",
+          "name": "Introduce ILighthouseClock and Lighthouse:TimeZone with no shipped default",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/LighthouseClockTest.cs",
+          "scenario_name": "T1 (unit level) — Today_AcrossZoneBoundaries_ReturnsTheInstanceCalendarDay, TodayAsUtcMidnight_NeverReturnsLocalKind, ToInstanceDay_ReducesAStoredInstantToTheInstanceDay, ResolutionOrder_ConfiguredThenLocalThenUtc, UnresolvableTimeZoneId_FailsFastAtStartup",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ILighthouseClock.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/LighthouseClock.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/ServiceConfig.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IServiceConfig.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestDoubles/FakeLighthouseClock.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/LighthouseClockTest.cs"
+          ],
+          "deps": ["01-01"],
+          "criteria": [
+            "`ILighthouseClock` exposes exactly the RCA §4.1 surface: `DateOnly Today`, `DateTime TodayAsUtcMidnight`, `DateTimeOffset Now`, `TimeZoneInfo Zone`, `DateOnly ToInstanceDay(DateTime utcInstant)`. No other member; in particular no member that hands out a `DateTime` whose kind is not `Utc`.",
+            "`appsettings.json` IS NOT MODIFIED and gains NO `Lighthouse` section — matching the existing treatment of `Lighthouse:BaseUrl` and `Lighthouse:OAuth:StateSecret`, neither of which ships a default either. A test asserts the shipped `appsettings.json` contains no timezone key, so a later well-meaning edit that adds one has to argue with a red test rather than silently re-zone every instance on upgrade.",
+            "THE RESOLUTION ORDER IS ASSERTED IN ALL THREE BRANCHES, each as its own case: (1) a configured, resolvable id is used; (2) NO CONFIG KEY PRESENT resolves `TimeZoneInfo.Local` — the path every shipped instance actually takes, and therefore the one that must be tested most explicitly; (3) `TimeZoneInfo.Local` unavailable falls through to `TimeZoneInfo.Utc`. An empty-string value behaves as absent.",
+            "The absent-key path produces NO startup warning and NO error — it is the supported default, not a degraded mode. A containerised instance therefore sees NO behaviour change on upgrade, because `TimeZoneInfo.Local` in `mcr.microsoft.com/dotnet/aspnet:10.0` IS UTC (the Dockerfile sets no `TZ`).",
+            "An UNRESOLVABLE configured id FAILS STARTUP with a message naming the offending value — proven by a test that starts the host with a bad id and asserts it does not come up. The asymmetry with the absent key is deliberate: absent means \"no opinion\", wrong means \"an opinion that cannot be honoured\", and silently downgrading the second to the first is how this bug class hides.",
+            "A table-driven test over RCA §8-T1's three rows proves the zone arithmetic: `2026-07-27T23:30Z` under Europe/Zurich gives `2026-07-28`; `2026-07-28T00:30Z` under America/Los_Angeles gives `2026-07-27`; `2026-07-28T00:30Z` under UTC gives `2026-07-28`. All three are wrong today.",
+            "A test asserts `TodayAsUtcMidnight.Kind` is `DateTimeKind.Utc` for EVERY row of that table, including the zones whose local midnight is a different instant. This is the R1 guard at the source, and it is the single most important assertion in this step.",
+            "`ToInstanceDay` reduces a stored UTC instant to the instance calendar day: an instant of `2026-07-27T22:30Z` under Europe/Zurich answers `2026-07-28`. This is the Finding-F primitive; 02-05 consumes it.",
+            "`Lighthouse:TimeZone` is read in `ServiceConfig` alongside the existing two keys, so the `Lighthouse__TimeZone` environment override comes free via the `__` convention already documented at `docs/Installation/configuration.md:20`. A test proves the environment override actually reaches the clock — that variable is the ONLY way a containerised team opts in, so an untested override would make the entire user-facing benefit of this release unreachable.",
+            "A test asserts the resolver accepts an IANA id (`Europe/Zurich`) — .NET 10 accepts IANA ids on Windows too, and `/usr/share/zoneinfo/Europe/Zurich` is present in `mcr.microsoft.com/dotnet/aspnet:10.0`, so no Dockerfile change is needed. This was the RCA's highest-risk unverified assumption and the test closes it in code.",
+            "The resolved zone is logged at startup in every branch, including the absent-key branch, so an operator can tell from the log which day the instance thinks it is on.",
+            "`Now` delegates to the registered `TimeProvider` (Program.cs:990) rather than reading the wall clock, so the existing instant seam and the new day seam cannot disagree.",
+            "`FakeLighthouseClock` lands in `Lighthouse.Backend.Tests/TestDoubles/` and lets a test set both the instant and the zone independently.",
+            "The service registration resolves cleanly — the existing `Startup/ServiceProviderValidationTest.cs` stays green with no edit.",
+            "NOT ONE production call site changes in this step. A repo-wide count of `UtcNow.Date` + `DateTime.Today` under `Lighthouse.Backend/Lighthouse.Backend/` still returns exactly 49.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `feat(config)`."
+          ],
+          "implementation_notes": "RCA §6.2 and §4.1/§4.2; Q1 RESOLVED — ship the key ABSENT, decided by the user 2026-07-27. Note what that choice means and does not mean: it makes the release SAFE (no containerised instance changes behaviour) at the cost of making it INERT for exactly the users who reported the bug, unless they set `Lighthouse__TimeZone`. That is a deliberate trade and it is why 04-01 carries the opt-in as the release-note headline rather than a configuration footnote. The one path that must not be under-tested is the absent-key path, because it is the path every existing instance takes. CARRIES RISK R1 AT ITS SOURCE — this is the step where R1 is either prevented or built in. The global EF converter (`Data/Converters/UtcDateTimeConverter.cs`, convention at `Data/LighthouseAppContext.cs:91-92`) applies `ToUniversalTime()` to values and to query parameters, so a `Kind = Local` local-midnight would be shifted back by the offset on write and land on the previous UTC day. `Models/Team.cs:44` already does `DateTime.SpecifyKind(..., DateTimeKind.Utc)` as a per-site ritual; the clock makes that the default and the ritual redundant. Deliberately NOT an `AppSetting` DB row: the clock is needed by `Standalone/StandaloneInitializer.cs` and by hosted services independently of the DB-settings surface, and `AppSettingService` itself takes a `TimeProvider` (circularity). ci-learnings to pre-apply: S107 (`ServiceConfig`'s constructor stays at one parameter, but watch any new helper), CA1859 (a new private helper typed to the concrete type, parameters included), SYSLIB1045 (no `new Regex`), and the L80 sabotage rule — after writing the `Kind == Utc` assertion, break the clock to return a Local kind and confirm the test goes red before restoring.",
+          "estimated_hours": 2.0
+        },
+        {
+          "id": "01-03",
+          "name": "Anchor-seam source guard in warn-list mode with the 49 known sites baselined",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+          "scenario_name": "T2 — CalendarDayAnchors_OutsideTheClockAdapter_AreOnlyTheBaselinedSites",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02"],
+          "criteria": [
+            "A plain source-file scanner walks `Lighthouse.Backend/Lighthouse.Backend/**/*.cs` for `UtcNow.Date`, `DateTime.Today` and `DateOnly.FromDateTime(DateTime.`, modelled on the shipped `Architecture/ExpandOnlyMigrationGuard.cs`. NOT ArchUnitNET — `DateTime.UtcNow` is a property access on a type every class already depends on, which ArchUnitNET's dependency rules cannot express.",
+            "The scanner EXCLUDES `obj/`, `bin/`, `StrykerOutput*`, `.claude/worktrees/` and `tools/codesign/actions-runner/_work/`, so the count it reports matches the RCA §5 inventory exactly.",
+            "The baseline contains exactly the 49 known sites, each entry carrying its file and a reason. A test asserts the baseline count is 49 on HEAD, so the guard is proven to be scanning something rather than passing vacuously.",
+            "Warn-list mode: a site IN the baseline passes; a site NOT in the baseline FAILS the test. A new 50th anchor added anywhere in production turns the suite red immediately — proven by a test that feeds the scanner a synthetic source string containing a fresh anchor and asserts it is reported.",
+            "A site REMOVED from production but still listed in the baseline also FAILS, with a message naming the stale entry. Without this the baseline rots into a permanent allowlist and the guard stops meaning anything as the migration shrinks it.",
+            "The clock adapter itself is exempt by path, and the exemption is expressed as a single named constant rather than scattered string comparisons.",
+            "The guard test carries no `[Ignore]` — it is green on HEAD by construction, because the baseline is the current state.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `test(architecture)`."
+          ],
+          "implementation_notes": "RCA §6.3 and §8-T2. This guard addresses root causes B and D directly: with no named seam every author reached for `DateTime.UtcNow.Date`, and with no guard nothing stopped them. It goes in BEFORE the migration so the migration cannot race a new site being added underneath it, and each phase-02 step SHRINKS the baseline by exactly its cluster — which is why the stale-entry check matters as much as the new-entry check. Name the file `CalendarDayAnchorSeamArchUnitTest.cs` so it sits with the twelve existing `*SeamArchUnitTest.cs` files in `Lighthouse.Backend.Tests/Architecture/`. Note that the `DateOnly.FromDateTime(DateTime.` pattern catches derived reductions such as `PortfolioMetricsController.cs:587` and `TeamMetricsController.cs:571` even though they read from `DateTime.UtcNow.Date` — that is intentional; both shapes are the same defect. ci-learnings to pre-apply: CA1859 (the scanner's private helpers and their parameters typed concretely, `List<T>` not `IReadOnlyList<T>`), CA1861 (hoist the pattern array to a `static readonly` field), SYSLIB1045 (`[GeneratedRegex]` or plain string search, never `new Regex(...)`), NUnit2046 on any count assertion. Prove the guard can fail before trusting it (ci-learnings L80): feed it a synthetic anchor, confirm red, restore.",
+          "estimated_hours": 1.5
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Migrate by cluster, shrinking the baseline each time",
+      "description": "RCA §6.4 order with one insertion — entities, then the DeliveryMetricSnapshot day-key convergence (Q3), then snapshot handlers, then metrics/forecast controllers, then Finding F, then demo data, then validation/licensing/delivery. Each step migrates its cluster's TESTS in the same commit as its production code and removes exactly its cluster's entries from the 01-03 baseline.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Entities take the instance day as a parameter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/InstanceDayAnchorEntityTest.cs",
+          "scenario_name": "T1 (unit level) — GetThroughputSettings_AtAZoneBoundary_EndsOnTheInstanceDay, GetLikelhoodForDate_CountsWorkingDaysFromTheInstanceDay, ToWhenPercentile_ProjectsFromTheInstanceDay, WorkItemAge_AtAZoneBoundary_MovesBothEndsAndKeepsTheInclusivePlusOne",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/InstanceDayAnchorEntityTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/TeamTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/DeliveryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkItemBaseTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02", "01-03"],
+          "criteria": [
+            "Five anchors move off the ambient clock: `Models/Team.cs:33` and `:34` (throughput window start and end), `Models/Feature.cs:71` (`GetLikelhoodForDate` working-day count), `Models/Delivery.cs:101` (when-percentile projection), `Models/WorkItemBase.cs:78` (the `WorkItemAge` guard) together with `:80` (its other end, per decision 3).",
+            "Each of `Team.GetThroughputSettings`, `Feature.GetLikelhoodForDate`, `Delivery.CalculateMetrics` and `WorkItemBase.WorkItemAge` receives the instance day AS A PARAMETER. NO entity gains an `ILighthouseClock` field, constructor argument or property — these are EF-materialised types that receive no constructor injection, which is exactly why the four highest-value anchors ended up reading the ambient clock in the first place (RCA §1D).",
+            "The parameter style matches the shipped `blackoutPeriods` precedent at `Models/Delivery.cs:99` — an argument threaded from the caller, not a service located inside the model.",
+            "`Team.GetThroughputSettings` returns a window whose END is the configured-zone day: with a fake instant of `2026-07-27T23:30Z` under Europe/Zurich the end date is `2026-07-28`. It returns the UTC day today, so this assertion is RED before the change.",
+            "Decision 3 holds for `WorkItemAge`: BOTH ends move and the inclusive `+1` is unchanged. Age is already calendar-day based, so this is a zone shift and NOT an arithmetic change — a test pins that an item whose age reads N today still reads N when the zone is UTC. Same treatment for the `CycleTime` path at `:60` and `AgeOnDay` at `:115`.",
+            "`AgeOnDay` (`WorkItemBase.cs:107`) keeps its shipped semantics untouched: no state guard, arithmetic unchanged, and the D13 remark at `:91-106` stays accurate. The existing `Models/WorkItemBaseAgeOnDayTest.cs` and `Services/Implementation/WorkItemAgeAsOfDateTest.cs` pass with NO edit to their expectations.",
+            "Write-back output is unchanged for a UTC instance: the `WorkItemAge` property feeds `WriteBackTriggerService.cs:188-205`, and `Services/Implementation/WriteBackTriggerServiceTest.cs` passes with no expectation edit under a UTC-configured clock.",
+            "The 01-03 baseline shrinks by exactly these five entries and the guard stays green — proving no anchor was moved sideways rather than removed.",
+            "`Models/TeamTest.cs:19` and every other assertion in the four entity test files that recomputed `DateTime.UtcNow.Date` now drives `FakeLighthouseClock` instead, IN THIS COMMIT.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `fix(models)`."
+          ],
+          "implementation_notes": "RCA §6.4 cluster 1 and §4.1 constraint 2. Entities go FIRST because they carry the highest blast radius and the change set is still small. RISK: this is where the parameter-versus-injection decision is made for the whole codebase, and getting it wrong here is expensive to undo — passing `DateOnly today` keeps the entities pure and matches the shipped `blackoutPeriods` style, while passing `ILighthouseClock` would put a service inside an EF-materialised model and quietly break the purity discipline brief.md:1940/:2055 already enforces on the blackout helpers those entities call. Note `Feature.cs:71` calls `blackoutPeriods.CountWorkingDays(...)` and `Delivery.cs:101` calls `blackoutPeriods.ProjectWorkingDays(...)` — those two extension methods are covered by the brief.md:1940 purity test and MUST NOT gain a clock; they already take the anchor as their first argument, which is the correct shape and the model for this whole step. `Models/Team.cs:44`'s existing `DateTime.SpecifyKind(..., DateTimeKind.Utc)` ritual becomes redundant once callers pass a value from the clock — leave it or remove it deliberately, and say which. The RCA counts this cluster as \"4 sites\"; that is 4 FILES and 5 anchors (Team has two). ci-learnings to pre-apply: S107 if a signature crosses 7 parameters (group into a record rather than adding a `#pragma`), CA1859 on new private helpers and their parameters, NUnit4002/2046/2056, CA1861 on any inline assertion array. Sabotage check (ci-learnings L80): after the zone-boundary assertion passes, hard-code the entity back to the UTC day and confirm red.",
+          "estimated_hours": 2.0
+        },
+        {
+          "id": "02-02",
+          "name": "Converge DeliveryMetricSnapshot on a DateOnly day key with an expand-only migration",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/DeliveryMetricSnapshotDayKeyMigrationTests.cs",
+          "scenario_name": "Q3 — RecordedDay_IsADateOnlyKey_AndTheSameDayWriteUpsertsInPlace, ExistingRows_BackfillToTheirOriginalDay, Migration_IsAdditiveOnly_AndDropsNothing",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/DeliveryMetricSnapshot.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/DeliveryMetricSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IDeliveryMetricSnapshotRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DeliveryMetricsHistoryDto.cs",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/",
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/DeliveryMetricSnapshotDayKeyMigrationTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/DeliveryMetricSnapshotRepositoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DeliveryMetricsHistoryDtoTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs"
+          ],
+          "deps": ["01-02", "01-03", "02-01"],
+          "criteria": [
+            "`DeliveryMetricSnapshot` gains a `DateOnly` day-key property ALONGSIDE the existing `DateTime RecordedAt`, matching the shape `Models/BlockedCountSnapshot.cs:13` and `Models/PercentilesOverTimeSnapshot.cs:22` already use. The old property is NOT removed and NOT renamed.",
+            "THE MIGRATION IS ADDITIVE ONLY: it adds the new column, adds a unique index over the (DeliveryId, day) pair, and backfills. It does NOT drop `RecordedAt`, does NOT drop the existing `(DeliveryId, RecordedAt)` unique index configured at `Data/LighthouseAppContext.cs:400-401`, and drops no data. The shipped `Architecture/ExpandOnlyMigrationGuard.cs` stays GREEN with no edit and no exemption — it is the machine check for this criterion, so the criterion is satisfied by evidence rather than by inspection.",
+            "The migration is generated with `Lighthouse.Backend/Create-Migration.ps1` across all supported providers, producing matching migrations in BOTH `Lighthouse.Migrations.Postgres` and `Lighthouse.Migrations.Sqlite`. `dotnet ef migrations add` is not used. Recreate is not used.",
+            "EXISTING ROWS SURVIVE THE BACKFILL WITH THEIR ORIGINAL DAY: a migration test seeds rows under the pre-migration schema, migrates, and asserts every row's new day key equals the calendar date of its original `RecordedAt`, with no row lost and no row's day shifted. Run it on both providers, following the shape of the sibling `BlockedCountSnapshotMigrationTests.cs` / `PercentilesOverTimeSnapshotMigrationTests.cs`.",
+            "THE BACKFILL COLLISION CASE FAILS FAST WITH A DIAGNOSTIC — DEDUPLICATION IS FORBIDDEN (user decision 9, binding). Before creating the unique index, the migration PRE-CHECKS for rows whose `RecordedAt` values fall on the same calendar day for the same delivery (unreachable via the current writer, which stores midnight, but reachable via a restored backup or an older version). If ANY collision is found the migration ABORTS with a diagnostic naming every colliding `DeliveryId` and its date. It MUST NOT de-duplicate, collapse, or otherwise repair the rows — silently discarding an operator's historical metrics is worse than a clear stop, and an operator whose application fails to start with a message naming the exact rows can fix it; one whose history was quietly rewritten cannot. A test seeds a colliding pair, runs the migration, asserts it throws, and asserts the message contains the seeded delivery ids and dates. State in the migration code and the commit message that deduplication was considered and rejected, so a later reader does not 'helpfully' add it.",
+            "BOTH READS AND WRITES GO THROUGH THE NEW KEY: `GetOrCreateForDay` matches on day-key EQUALITY rather than the `RecordedAt >= day && < nextDay` range scan, and takes the day as a `DateOnly` rather than reducing an instant internally. `GetByDelivery` and `GetSnapshotCountsByDelivery` order and group by the new key. `API/DTO/DeliveryMetricsHistoryDto.cs` reads the new key.",
+            "A same-day SECOND write UPSERTS rather than inserting: a test calls the get-or-create path twice for the same delivery and the same day, mutates a value between the calls, and asserts exactly ONE row exists carrying the second value. Assert the row COUNT, not merely that a row exists. LABEL THIS EXPLICITLY AS A CHARACTERIZATION TEST, not as proof of this step: it PASSES on unmodified HEAD, because `DeliveryMetricSnapshotRepository.cs:12` already reduces to midnight and `:25` already writes it under the `(DeliveryId, RecordedAt)` unique index at `Data/LighthouseAppContext.cs:400-401`. Its job is to prove the refactor did not BREAK behaviour that already worked — it proves nothing about the fix. The criteria that actually prove this step are the `DateOnly`-is-converter-proof assertion and the fail-fast collision diagnostic.",
+            "The new day key is `DateOnly` and therefore untouched by the global `Properties<DateTime>()` converter convention — a test reads a persisted row back through a FRESH EF context and asserts the day key is byte-identical to what was written under a non-UTC configured zone. This is the R1-proof property that motivates the change: an instant-typed day key can be shifted by the converter, a `DateOnly` one structurally cannot.",
+            "The legacy `RecordedAt` column keeps being written during the expand phase so a rollback to the previous release still reads correct data. Say explicitly in the code or the migration which release is expected to drop it.",
+            "`DeliveryMetricsHistoryReadApiIntegrationTest.cs` passes with its existing expectations — the API response shape is UNCHANGED by this step. This is a storage-shape change, not a contract change; if the wire format moves, the step has drifted.",
+            "`dotnet build` zero warnings; `dotnet test` green, including the container-backed provider tests. Conventional commit `refactor(metrics)` for the schema and repository move, kept SEPARATE from any behavioural commit.",
+            "The 01-03 baseline is unchanged by this step — none of these sites match its three patterns — and the commit message says so, so an unchanged count is not read as \"nothing happened\"."
+          ],
+          "implementation_notes": "Q3 RESOLVED by the user 2026-07-27. READ `amendment_findings.r2_duplicate_row_is_not_reachable_at_head` BEFORE STARTING — it changes what this step should claim. The RCA's R2 rationale (a zone shift produces a SECOND row for the same visual day) does not hold at HEAD: `DeliveryMetricSnapshotRepository.cs:12` normalises with `var day = recordedAt.Date;` and `:25` constructs the row with `RecordedAt = day`, so every persisted value is midnight; that repository method is the only production writer; and `Data/LighthouseAppContext.cs:400-401` already enforces `(DeliveryId, RecordedAt)` UNIQUE. A range scan over midnight-valued data is exactly equality on a day key. Do NOT write a test asserting \"no duplicate row is created\" — it would pass on unmodified HEAD and prove nothing, which is the same self-satisfying-test failure mode ci-learnings records for constants. The change is still worth making on three honest grounds, and the criteria above are written against them: a `DateOnly` key is structurally out of reach of the global `Properties<DateTime>()` converter (a real R1 hardening, and the one testable improvement); the last instant-to-day reduction living inside a repository disappears; and all four snapshot tables converge on one shape. It lands BEFORE 02-03 so the snapshot handlers migrate onto an already-correct day key instead of onto one that changes under them. THE REAL RISK HERE IS THE MIGRATION, NOT THE CODE: adding a unique index over a backfilled column fails the whole migration — and therefore application startup — if the backfill collides, which is why the collision case is an acceptance criterion rather than an edge note. ci-learnings to pre-apply: L68-70 (a new property on a persisted model NEEDS a migration and EF InMemory never catches the gap, so the provider-backed container tests are the only real check here; generate across all providers with the script; no non-default sentinel), `IntegrationTestBase` is `[NonParallelizable]` and EF InMemory does not enforce FKs so the FK-dependent assertions belong on SQLite/Postgres, plus CA1859, CA1861, NUnit4002/2046/2056.",
+          "estimated_hours": 2.5
+        },
+        {
+          "id": "02-03",
+          "name": "Snapshot recording days come from the clock, and the persisted row proves it",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs",
+          "scenario_name": "T1 (handler/persistence level) — RecordedDay_AtAZoneBoundary_IsPersistedAsTheInstanceDay, PersistedRecordedDay_ReadBackThroughEf_IsNotShiftedByTheGlobalConverter, SameDayRerun_UpsertsInPlace_AndDoesNotCreateASecondRow",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandlerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandlerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02", "01-03", "02-02"],
+          "criteria": [
+            "Nine anchors move across four handlers: `DeliveryMetricSnapshotRecordingHandler.cs:29`, `:83`, `:86`; `PercentilesOverTimeRecordingHandler.cs:90` and its `:123` reduction; `BlockedCountSnapshotRecordingHandler.cs:79`; `ProcessBehaviorRecordingHandler.cs:132` and its `:187` reduction. `DeliveryMetricSnapshotRecordingHandler.cs:30` — a bare `DateTime.UtcNow` passed as a day argument, outside the 49 — becomes the clock's `Today` and is passed to the `DateOnly` day-key surface 02-02 introduced, so no instant is reduced to a day anywhere on this path.",
+            "R1 IS PROVEN, NOT ASSUMED: for each of the four snapshot families, a test runs the handler under a fake instant at a zone boundary, then reads the row BACK THROUGH EF — a fresh context, never the change tracker — and asserts the persisted recorded day equals the configured-zone day. Reading from the change tracker would pass even with a Local kind, because the converter only bites on the round trip. This is the single assertion that catches the most likely way this fix ships broken.",
+            "THE R1 READ-BACK TEST IS ITSELF PROVEN TO BITE — SABOTAGE PROOF. The criterion above can pass for the wrong reason: if the round trip happens to preserve the day for the zone and instant chosen, a `Kind = Local` leak would go unnoticed and the test would look green while guarding nothing. So temporarily construct the persisted value with `DateTimeKind.Local` local-midnight instead of going through `TodayAsUtcMidnight`, confirm the read-back assertion goes RED, then revert. Record in the commit message or a test comment that this was done and what it produced. Without this the most important assertion in the migration is unfalsified, which is the same defect as root cause D — a test whose failure mode was never observed.",
+            "All four families are now keyed by `DateOnly`, so a test asserts the persisted day survives a non-UTC configured zone unchanged for EACH of them — the guarantee 02-02 extended to the fourth table.",
+            "The seven shipped assertions in `LighthouseAppContextUtcTest.cs` stay green with NO edit — that file is the cheapest existing tripwire for a leaked Local kind (R6).",
+            "A same-day re-run UPSERTS IN PLACE for every family: a test runs each handler twice under the same fake day, mutates the input between runs, and asserts exactly one row exists per key carrying the second value. Assert the row COUNT, not merely that a row exists.",
+            "THE UPGRADE PATH IS COVERED: a test seeds a row recorded under the old UTC anchor, then runs the handler under a Europe/Zurich clock inside the boundary window, and pins the resulting series — the expected artifact is a one-day kink at upgrade (a day skipped or shifted, never a lost row), and the test states which. 04-01 turns whatever this pins into the release-note line.",
+            "The two derived reductions (`PercentilesOverTimeRecordingHandler.cs:123`, `ProcessBehaviorRecordingHandler.cs:187`) read the clock's `Today` rather than converting the migrated `endDate` locally, so the `DateOnly.FromDateTime(DateTime.` shape disappears from production and the 01-03 guard's third pattern has nothing left to find in these files.",
+            "Per-family failure isolation is unregressed: the existing inner try/catch behaviour in the percentiles and process-behaviour recorders still lets one family fail without taking the others down, verified by the shipped tests passing with no expectation edit.",
+            "The ready-but-zero honesty gate shipped in epic-5427 slice-04 (`ProcessBehaviorRecordingHandler.cs:182-185`) is UNTOUCHED — it is a value predicate and has nothing to do with the day anchor.",
+            "The 01-03 baseline shrinks by exactly these nine entries and the guard stays green.",
+            "`PercentilesOverTimeRecordingHandlerTests.cs:117` and `ProcessBehaviorRecordingHandlerTests.cs:104` — both `static DateTime TodayDate => DateTime.Today;` — are driven from `FakeLighthouseClock` IN THIS COMMIT, along with `DeliveryMetricSnapshotRecordingHandlerTest.cs:611,621,629`.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `fix(metrics)`."
+          ],
+          "implementation_notes": "RCA §6.4 cluster 2, now landing on the already-converged day key from 02-02. CARRIES R1 (HIGH); R2's severity is materially reduced by 02-02 but the upgrade-window artifact is not eliminated by it — see `amendment_findings`. R1: `Data/Converters/UtcDateTimeConverter.cs` is applied by convention over `Properties<DateTime>()` at `Data/LighthouseAppContext.cs:91-92` and EF applies value converters to QUERY PARAMETERS as well as stored values, so an instant-typed day argument arriving `Kind = Local` would have both its stored value and its comparison bounds shifted — reads staying self-consistent while the stored data silently went wrong for every other consumer. That self-consistency is why an in-memory assertion cannot catch it and a read-back-through-EF assertion can. Because 02-02 moved the last of the four families to `DateOnly`, the converter now cannot reach ANY snapshot day key — but keep the read-back assertions anyway: they are cheap, and they are what will catch a future family that ships with a `DateTime` key. What 02-02 does NOT remove is the boundary-window behaviour: in the 22:00-24:00 UTC window the instance day is already tomorrow, so the first post-upgrade run writes tomorrow's key and a day is skipped or shifted in the series. That is the honest description of the artifact and it is what the upgrade-path test must pin. R3 says prefer `DateOnly` for every new comparison — already satisfied for all four families after 02-02. RCA §6.4 calls this cluster 12 sites; it is 9 anchors across 4 files plus the `:30` day argument. ci-learnings to pre-apply: NUnit4002/2046/2056, CA1861, CA1859, S2139 (do not log-and-rethrow — the dispatcher already logs and swallows), and note that `IntegrationTestBase` is `[NonParallelizable]` and EF InMemory does not enforce FKs, so any FK-dependent assertion here belongs on SQLite. Sabotage check: make the clock hand back the UTC day instead of the instance day and confirm the read-back assertion goes red — if it stays green the test is measuring the change tracker, not the database.",
+          "estimated_hours": 2.5
+        },
+        {
+          "id": "02-04",
+          "name": "Metrics and forecast read paths anchor on the instance day; DTO date defaults deleted",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/InstanceDayForecastWindowIntegrationTest.cs",
+          "scenario_name": "T0 (un-ignored) + T1 (API level) — ManualForecast_AtAZoneBoundary_ProjectsFromTheInstanceDay, HistoricRangeDetection_UsesTheInstanceDay, ForecastWindowEnd_StartsFromTheInstanceDay",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryRulesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeatureForecastWindow.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/InstanceDayForecastWindowIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerCalendarDayAnchorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureDtoTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02", "01-03", "02-03"],
+          "criteria": [
+            "T0 from 01-01 is UN-IGNORED and PASSES. Branch B is closed: both `ForecastController` paths anchor on the same calendar day, and a standalone instance outside UTC no longer disagrees with itself inside a single request.",
+            "Twenty-five anchors move: `ForecastController.cs:60,85,86,94,133,148`; `PortfolioMetricsController.cs:108,121,255,272,587`; `TeamMetricsController.cs:116,135,571`; `DeliveriesController.cs:35,327,330`; `DeliveryRulesController.cs:58`; `FeaturesController.cs:93`; `FeatureForecastWindow.cs:20`; `WhenForecastDto.cs:16`; `TeamMetricsService.cs:75,123,795,809`.",
+            "The three `ItemCreationPredictionInputDto` date initialisers at `ForecastController.cs:225`, `:228` and `:231` are DELETED (decision 5). All three properties are `[JsonRequired]`, so the defaults were never reachable through binding.",
+            "`ForecastControllerTest.cs:387` still passes with NO edit — it constructs the DTO bare but returns on the `NotFound` path before reading any date, which is exactly why deleting the initialisers is safe. This is a load-bearing regression assertion, not a formality.",
+            "An API-level test posts a manual forecast with a target date under a fake instant at a zone boundary and asserts the returned expected date is projected from the INSTANCE day, not the UTC day (`WhenForecastDto.cs:16`). It is red before the change.",
+            "Historic-range detection uses the instance day: a request whose as-of date IS the instance-zone today is treated as CURRENT, not historic, at both `TeamMetricsController.cs:135` and `PortfolioMetricsController.cs:121`. Under the old UTC anchor there is a nightly window in which today's data reads as a historic range.",
+            "`blackoutPeriods.ProjectWorkingDays` / `CountWorkingDays` still receive the anchor as an ARGUMENT and gain no clock — the brief.md:1940 purity test in `Architecture/BlackoutForecastShiftSeamArchUnitTest.cs` passes with no edit.",
+            "Every controller takes `ILighthouseClock` through the SAME constructor-injection style the surrounding code already uses; no static accessor, no service-locator call inside an action.",
+            "The `Kind` of every anchor threaded into an EF query stays `Utc` — `LighthouseAppContextUtcTest.cs` stays green with no edit (R1, R6).",
+            "The 01-03 baseline shrinks by exactly these 25 entries plus the 3 deletions, and the guard stays green.",
+            "`API/DTO/FeatureDtoTest.cs:12`'s `static DateTime Today => DateTime.UtcNow.Date;` is replaced by a fake-clock-driven value IN THIS COMMIT — it is the canonical example of the tautology in root cause D.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `fix(forecast)`."
+          ],
+          "implementation_notes": "RCA §6.4 cluster 3, plus decision 5 and the T0 payoff. This is the LARGEST cluster and the one users see: every forecast projection, every metrics window and every historic-range decision runs through it. `ForecastController.cs:60` is the live branch-B defect — `(input.TargetDate - DateTime.Today).Days` against `:85/:86/:94/:133`'s `DateTime.UtcNow.Date` — so this step is where T0 finally goes green. Note `PortfolioMetricsController.cs:587` and `TeamMetricsController.cs:571` are `DateOnly.FromDateTime(DateTime.UtcNow.Date)`, which become a straight `clock.Today` and remove the guard's third pattern from these files. `TeamMetricsService.cs:803` is NOT in this cluster — it is a Finding-F instant-to-day reduction and belongs to 02-05; do not migrate it here or 02-05's RED disappears. DOCUMENTATION DEBT CREATED HERE: `docs/product/architecture/brief.md:3084` documents the historic branch as gated on `asOfDate.Date < DateTime.UtcNow.Date`; it goes stale the moment this step lands and 04-01 fixes it. RCA §6.4 calls this cluster 20 sites; it is 25 anchors plus 3 deletions across 9 files. ci-learnings to pre-apply: S107 — several of these controllers already carry wide constructors and adding `ILighthouseClock` may push one past 7 parameters; group into a record rather than suppressing. Also CA1859, CA1861, NUnit4002/2046/2056, and S6964 (value-type properties on `[FromBody]` DTOs) if the DTO edit touches binding.",
+          "estimated_hours": 2.5
+        },
+        {
+          "id": "02-05",
+          "name": "Finding F — reduce stored instants to the instance day, not the UTC day",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/InstanceDayItemBucketingTest.cs",
+          "scenario_name": "T1b — ItemClosedLateInTheEveningLocal_BucketsIntoTheInstanceDay_NotThePreviousUtcDay",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/InstanceDayItemBucketingTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02", "01-03", "02-04"],
+          "criteria": [
+            "The instant-to-day reductions at `TeamMetricsService.cs:803`, `PortfolioMetricsService.cs:589-590` and `:785-786`, `BaseMetricsService.cs:907`, and `WorkItemBase.cs:120` go through the clock's instance-day conversion instead of the raw `.Date` property.",
+            "T1b is proven end to end through a PUBLIC read: an item closed at `2026-07-27T22:30Z` under Europe/Zurich counts toward throughput day `2026-07-28`, asserted through `TeamMetricsService.GetThroughputForTeam`. It counts toward `2026-07-27` today, so the assertion is red before the change.",
+            "BOTH ENDS move (decision F): the window bounds and the item bucketing use the SAME definition of a day. Moving only one relocates the off-by-one instead of removing it — a test asserts an item on the boundary is counted exactly once across two adjacent windows, never zero times and never twice.",
+            "`WorkItemBase.cs:120` reduces both its start and its end to the instance day, and the inclusive `+1` is unchanged (decision 3). `CycleTime` and `WorkItemAge` both flow through it, so a test pins that a UTC-configured instance produces byte-identical ages and cycle times to HEAD.",
+            "The portfolio-side reductions are covered symmetrically — the same boundary assertion holds for feature bucketing at portfolio scope, not only for team throughput.",
+            "NO EF translation risk is introduced: all five sites run CLIENT-SIDE after `.ToList()` (`TeamMetricsService.cs:801`, `PortfolioMetricsService.cs:583`, `:781`), and a test or an explicit note confirms each conversion still sits after materialisation. Pushing one of these into an EF-translated predicate would be a genuine regression (R3).",
+            "Prefer `DateOnly` for every comparison introduced here — it is untouched by the global `Properties<DateTime>()` convention and already round-trips through both SQLite and Postgres in shipped code.",
+            "The 01-03 baseline is unchanged by this step, because none of these sites match its three patterns — and a note in the step's commit message says so, so the unchanged count is not read as \"nothing happened\".",
+            "The existing metrics suites pass with no expectation edit under a UTC-configured clock, proving this is a zone shift rather than an arithmetic change.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `fix(metrics)`."
+          ],
+          "implementation_notes": "RCA §2 and §6.4 cluster 4. Finding F was NOT in the ADO report and NOT in the original RCA — it was found during review and the user ruled it in scope, because without it the fix RELOCATES the off-by-one instead of removing it: window bounds would become instance-zone days while item bucketing stayed UTC days, and an item closed at 00:30 Zurich (22:30Z the previous day) would still land on the previous day. MITIGATING FACT, verified at HEAD: all three service-layer filters run client-side — `TeamMetricsService.cs:801` and `PortfolioMetricsService.cs:583`/`:781` each materialise with `.ToList()` BEFORE filtering — so there is no EF translation risk at any of these sites (R3, LOW). That is the whole reason this cluster is safe to do in one step. `BaseMetricsService.cs:907` is the `WasItemProgressOnDay` population predicate and `WorkItemBase.cs:120` is the shared day-difference reduction feeding both `CycleTime` and `WorkItemAge`; between them they touch nearly every metric surface, so keep the UTC-instance regression assertions tight. RCA §6.4 calls this cluster 8 sites; it is 7 expressions across 4 files, with `WorkItemBase.cs:120` reducing two ends. ci-learnings to pre-apply: CA1859 on any new private conversion helper AND its parameters (6x recurrence), CA1861, NUnit4002/2046/2056. Sabotage check: revert one end of the conversion and confirm the both-ends test goes red — a test that only exercises one end passes for a fix that relocates the bug.",
+          "estimated_hours": 2.0
+        },
+        {
+          "id": "02-06",
+          "name": "Demo data and the E2E date helpers move together",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+          "scenario_name": "T1 (demo seam) — DatePlaceholders_ResolveAgainstTheInstanceDay, DemoSeedDates_MatchTheDaysTheApiReportsForThem",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoDataFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DemoDataService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/DemoDataFactoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DemoDataServiceTest.cs",
+            "Lighthouse.EndToEndTests/tests/helpers/csv/csvTestData.ts",
+            "Lighthouse.EndToEndTests/tests/fixutres/LighthouseFixture.ts",
+            "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+            "Lighthouse.EndToEndTests/playwright.config.ts",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02", "01-03", "02-05"],
+          "criteria": [
+            "Seven anchors move: `Factories/DemoDataFactory.cs:105`; `Services/Implementation/DemoDataService.cs:104`, `:142`, `:147`; `DomainEvents/DemoBlockedHistoryBackfillHandler.cs:116` and its `:117` derivation; `DomainEvents/DemoPercentilesBackfillHandler.cs:93`.",
+            "The `{n}` / `{wn}` CSV placeholder resolution anchors on the instance day, so seeded demo dates stay in lockstep with the windows the migrated read paths now compute. A test asserts a seeded item lands on the day the API subsequently reports it on — the demo seam and the read seam agree by construction, not by coincidence.",
+            "R4 IS CLOSED ON THE E2E SIDE: `tests/helpers/csv/csvTestData.ts:26` and `:70`, `tests/fixutres/LighthouseFixture.ts:90` and `tests/specs/screenshots/Screenshots.spec.ts:143,145,266` stop building dates with `toISOString()` and use a local-calendar-day formatter, mirroring the frontend's `src/utils/date/localDate.ts` discipline.",
+            "The E2E RUNNER's `TZ` is pinned to match `playwright.config.ts:90`'s `timezoneId`. `timezoneId` sets the BROWSER CONTEXT ONLY — the Node test process keeps the CI runner's zone — so without this the Node-side UTC day and the backend day differ for roughly two hours every night and every date-boundary assertion becomes intermittently flaky. A comment at the pin states this, so nobody \"simplifies\" it back (ci-learnings L85 records the same rule for the two suites already pinned).",
+            "The E2E backend under test is configured with a zone consistent with the pinned runner and browser zones. With the Q1 default absent, an unconfigured E2E backend runs on the CI host's zone — so the three zones must be made to agree explicitly rather than by luck, or the suite is testing a configuration no user has.",
+            "The full Playwright suite is RUN LOCALLY against a live Lighthouse before commit. This project never commits an unrun spec or POM locator.",
+            "`@screenshot` baselines invalidated by the demo-date shift are regenerated, and the PNGs are removed FIRST — an `@screenshot` test keeps the old image when the diff is under 0.5%, so regenerating without deleting silently keeps the stale baseline.",
+            "No new Page Object is introduced and no spec gains an inline `page.locator()` — the E2E changes are confined to date construction and the runner's zone.",
+            "The 01-03 baseline shrinks by exactly these seven entries and the guard stays green.",
+            "`dotnet build` zero warnings; `dotnet test` green; the E2E suite green locally. Conventional commit `fix(demo)`."
+          ],
+          "implementation_notes": "RCA §6.4 cluster 5. CARRIES RISK R4 (MEDIUM) — and R4 is asymmetric in a way that makes this step easy to under-do: the BACKEND half is trivial (four files, seven anchors, and `DemoDataFactory.cs:105` resolves the placeholders so demo dates move in lockstep automatically), while the real exposure is entirely on the E2E side, which does NOT move with it. `playwright.config.ts:90` sets `timezoneId: \"Europe/Zurich\"` for the browser context; the Node process that builds the CSV fixtures is unaffected and keeps the runner's zone, so `toISOString()` there produces a UTC day that disagrees with the backend's Europe/Zurich day for about two hours each night. That is a flaky-test generator, and flaky date tests get quarantined rather than fixed. Do the E2E half in this commit or R4 ships. NOTE THE Q1 INTERACTION: because nothing ships a default, the E2E backend picks up the CI host zone unless told otherwise — three independent zones (runner, browser, backend) now have to be aligned deliberately, which is a small extra job this step owns. Standing project rules that apply verbatim: E2E goes through Page Objects, is driven by seeded demo data, and a spec or POM locator is NEVER committed unrun. Screenshot regeneration trap: delete the PNG first. ci-learnings to pre-apply: the L85 timezone rule (any date crossing a boundary is written and read as local Y/M/D, never `toISOString().split(\"T\")[0]` or `new Date(\"YYYY-MM-DD\")`), the Playwright strict-mode/locator traps, and the vacuous-one-sided-assertion rule if any count assertion is added.",
+          "estimated_hours": 2.0
+        },
+        {
+          "id": "02-07",
+          "name": "Validation, licensing, delivery-date validation and write-back; decision-4 comments",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs",
+          "scenario_name": "T1 (policy level) — DeliveryDateEqualToTheInstanceToday_IsRejected_AndTomorrowIsAccepted, PremiumRemainsAvailableThroughTheLicenseesOwnLastDay, BaselineEndDateEqualToTheInstanceToday_IsNotRejectedAsFuture",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaselineValidationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Licensing/LicenseService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerUtcTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaselineValidationServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/LicenseServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs"
+          ],
+          "deps": ["01-02", "01-03", "02-06"],
+          "criteria": [
+            "Four anchors move: `BaselineValidationService.cs:32` and `:43`, `Licensing/LicenseService.cs:55`, `WriteBackTriggerService.cs:227`.",
+            "DECISION 2 — delivery date validation becomes an instance-zone DAY comparison at `API/DeliveriesController.cs:81`, `:139` and `Models/Delivery.cs:16`: a request whose date resolves to today or earlier is rejected, and tomorrow is accepted. This also fixes the pre-existing instant-versus-day defect where today's date was rejected all day long because `request.Date <= DateTime.UtcNow` compares a midnight-valued date against a mid-day instant.",
+            "Decision 2's behaviour change is proven for a UTC instance TOO — a test asserts that on a UTC-configured instance a delivery dated today is still rejected while one dated tomorrow is accepted, so the change is characterised rather than discovered by a user. 04-01 writes the release-note line.",
+            "DECISION 1 — license expiry is evaluated on the instance day (`Licensing/LicenseService.cs:55`), so a licensee keeps premium through their OWN last day. No grace day is added: a test asserts premium is available on the expiry day and unavailable on the following day, both in the instance zone.",
+            "`BaselineValidationService` no longer rejects an end date equal to the instance-zone today as being in the future — a test covers the boundary in both directions.",
+            "DECISION 4 — the four tracker history cutoffs STAY UTC and each gains a comment stating why: `WorkItems/WorkItemService.cs:442` and `:445`, `AzureDevOps/AzureDevOpsWorkTrackingConnector.cs:993`, `Jira/JiraWorkTrackingConnector.cs:1251`. All four are `DateTime.UtcNow` instant arithmetic feeding a remote query, not a calendar-day anchor. Their guard-allowlist entries carry the SAME reason as the code comment, so the allowlist reads as a decision rather than as four missed sites.",
+            "A test asserts the tracker cutoff behaviour is UNCHANGED by a zone configuration — configuring Europe/Zurich must not alter which items a connector asks for.",
+            "The 01-03 baseline shrinks by exactly the four moved entries and the guard stays green; the four decision-4 sites are not in it (they carry no `.Date`) but their allowlist entries exist for the 03-01 pattern extension.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `fix(validation)`."
+          ],
+          "implementation_notes": "RCA §6.4 cluster 6, plus decisions 1, 2 and 4. This is the cluster where BEHAVIOUR changes for existing users rather than merely becoming correct — decision 2 in particular changes what a UTC instance accepts, so it needs its own regression characterisation and its own release-note line, and it should not be smuggled in as \"part of the timezone fix\". Note that with Q1's absent default, decision 2 is the ONE change in this whole bugfix that a containerised UTC instance actually experiences on upgrade — everything else is inert until the operator opts in. That makes its release-note line more important than it looks, not less. `Models/Delivery.cs` is touched by BOTH 02-01 (the `:101` when-percentile projection) and this step (the `:16` constructor guard); they are different concerns in the same file and the ordering is safe because 02-01 lands first. Note that `DeliveriesController.cs:81,139` and `Delivery.cs:16` are `request.Date <= DateTime.UtcNow` — bare instant comparisons, correctly OUTSIDE the 49-site count, which is why the guard never flagged them and why they need naming explicitly here. `API/DeliveriesControllerUtcTest.cs` already exists and is the natural home for the decision-2 assertions. Decision 4's comments are the difference between an allowlist that documents a decision and an allowlist that hides four bugs — write the reason at the site, not only in the guard. ci-learnings to pre-apply: NUnit4002/2046/2056, CA1861, CA1859, S2139, and S6964 if any `[FromBody]` DTO binding is touched.",
+          "estimated_hours": 1.5
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Make the seam permanent",
+      "description": "Delete the baseline, flip the guard to hard-fail, prove the instants did not move, and sweep the remaining tests that recompute the production oracle.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Flip the source guard to hard-fail and prove the instants did not move",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+          "scenario_name": "T2 (hard-fail) — NoCalendarDayAnchorOutsideTheClockAdapter; T3 — InstantValuedTimestamps_AreUnaffectedByTheConfiguredZone",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorBaseline.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs"
+          ],
+          "deps": ["02-01", "02-02", "02-03", "02-04", "02-05", "02-06", "02-07"],
+          "criteria": [
+            "The baseline is EMPTY of migrated sites and the guard is hard-fail: ANY occurrence of `UtcNow.Date`, `DateTime.Today` or `DateOnly.FromDateTime(DateTime.` anywhere under `Lighthouse.Backend/Lighthouse.Backend/` outside the clock adapter FAILS the suite.",
+            "A repo-wide count of those patterns in production returns ZERO outside the clock adapter — down from the 49 baselined in 01-03. The guard reports the count, so a future reader can see it is scanning rather than passing vacuously.",
+            "THE GUARD GAINS A FOURTH PATTERN CLOSING WHAT 02-02 EXPOSED: no persisted snapshot day key may be typed `DateTime`. After 02-02 all four snapshot entities key their day as `DateOnly`, so this is green by construction today — and it is the pattern that stops a FIFTH snapshot table shipping with an instant-typed day key and quietly re-opening R1 through the global `Properties<DateTime>()` converter. Root cause C was \"recorded day was never modelled\"; a type-level rule closes it more completely than a source-text rule can.",
+            "The guard's pattern set is also extended to catch the decision-4 shape (`DateTime.UtcNow` arithmetic feeding a day comparison) at the four allowlisted sites only, each entry carrying the stated reason from its code comment. An allowlist entry whose corresponding comment is missing FAILS — otherwise the reasons rot away and the allowlist silently becomes a permanent exemption list.",
+            "T3 proves the migration did not OVER-REACH into RCA §5 category (b): a test configures a non-UTC zone and asserts that instant-valued timestamps are unchanged — OAuth/API-key token expiry, RBAC `GrantedAt`, and blocked-transition `EnteredAt` all produce the same values as under UTC. These are instants; an instant has no timezone, and moving one would be a new bug introduced by this fix.",
+            "T3 covers at least one site from EACH category-(b) family named in RCA §5(b): an audit/lifecycle stamp, a sync/refresh bookkeeping field, and a blocked-transition interval endpoint.",
+            "T3 explicitly EXCLUDES the legacy `DeliveryMetricSnapshot.RecordedAt` column that 02-02 left in place — it is written during the expand phase and its values do move with the zone, by design. Say so in the test rather than letting a future reader treat a passing T3 as proof that nothing about that table changed.",
+            "`LighthouseAppContextUtcTest.cs`'s seven `Kind == Utc` assertions pass with NO edit — the R6 tripwire survives the whole migration untouched, which is itself evidence R1 was handled.",
+            "The `ExpandOnlyMigrationGuard` stays green, confirming 02-02's migration is still the only schema change and is still additive.",
+            "The guard is proven able to fail: a synthetic anchor is fed to the scanner and reported, and a real anchor temporarily reintroduced into a production file turns the suite red before being reverted.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `test(architecture)`."
+          ],
+          "implementation_notes": "RCA §6.5 and §8-T2/T3, extended for Q3. This is the step that makes the fix durable rather than momentary — root cause D was not \"someone wrote the wrong expression\", it was \"nothing could tell them they had\". THE Q3 AMENDMENT ADDS ONE GENUINELY NEW EXPECTATION: because 02-02 converged the fourth and last snapshot table on `DateOnly`, the guard can now assert a TYPE-level invariant (no persisted day key typed `DateTime`) that was not expressible before, and that invariant is strictly stronger than the source-text patterns — it catches a new table on the day it is added rather than on the day someone writes `UtcNow.Date` next to it. T3 matters more than it looks for the opposite reason: the failure mode of a timezone migration is over-reach, and a well-meaning follow-up that moves `UserProfile.cs:19` or `WorkItemBlockedTransitionCaptureHandler.cs:29` onto the clock would corrupt audit data in a way no existing test catches. RCA §5(b) enumerates roughly 30 such sites precisely so this test can pin them. The legacy-column carve-out is not a loose end — it is the visible cost of expand-only, and naming it in the test is how the eventual contract-phase change knows what it is allowed to delete. Note the decision-4 allowlist needs the comment-presence check, not just the path: an allowlist entry with no stated reason is indistinguishable from a missed site six months later, which is exactly the confusion RCA decision 4 exists to prevent. ci-learnings to pre-apply: CA1859 (scanner helpers and parameters concrete), CA1861 (hoist pattern arrays), SYSLIB1045, NUnit2046/4002/2056. Sabotage check per ci-learnings L80 — and remember `if (false)` does not work in C# here, since `TreatWarningsAsErrors` turns CS0162 into a build error.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "03-02",
+          "name": "Sweep the remaining tests that recompute the production oracle",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+          "scenario_name": "T2 (test-project extension) — NoTestRecomputesTheProductionCalendarDayOracle",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftTestBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesTestBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricSnapshotCascadeDeleteIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05DemoPortfolioBlockedHistorySpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs"
+          ],
+          "deps": ["03-01"],
+          "criteria": [
+            "Every remaining `static DateTime Today => DateTime.UtcNow.Date;` (and `=> DateTime.Today;`) helper in the test project is gone, replaced by a value the test SUPPLIES via `FakeLighthouseClock`. The named sites are `BlackoutForecastShiftTestBase.cs:34`, `RecurringBlackoutRulesTestBase.cs:39`, `BlackoutForecastShiftDeliveryIntegrationTest.cs:26`, `RecurringBlackoutRulesWriteBackIntegrationTest.cs:35` and `BlackoutForecastShiftWriteBackTest.cs:27`; the two recorder-test helpers and `FeatureDtoTest.cs:12` were already handled by 02-03 and 02-04.",
+            "The 01-03 guard is extended to scan `Lighthouse.Backend.Tests/` for the same patterns and to FAIL on a test that recomputes the production oracle. A test that recomputes the expression it is meant to check passes for every possible value of \"today\", including a wrong one — that is precisely how this bug shipped over a green suite (root cause D), and only a guard stops it recurring.",
+            "The guard reports the residual count in the test project, and any deliberate survivor carries an allowlist entry with a stated reason. A repo-wide count in the test project drops materially from the 275 occurrences across 45 files recorded in the RCA §5 inventory.",
+            "Every migrated test still asserts the SAME behaviour it asserted before: each one is driven by an explicit fixed date and gives the same verdict, so this is a de-tautologisation and not a rewrite. Any test whose meaning changes is called out individually in the commit message.",
+            "At least one migrated test is proven able to fail: with the production anchor sabotaged, it goes red — whereas in its tautological form it stayed green. This is the concrete demonstration that the sweep bought something.",
+            "No production file is touched in this step.",
+            "`dotnet build` zero warnings; `dotnet test` green. Conventional commit `test(backend)`."
+          ],
+          "implementation_notes": "RCA §6.6 and root cause D. The 275 test occurrences are not all tautologies — many are incidental date arithmetic that is fine — so the goal is NOT to hit zero, it is to eliminate every test that recomputes the PRODUCTION ORACLE and to make new ones impossible. `Lighthouse.Backend.Tests/API/DTO/FeatureDtoTest.cs:12` was the canonical example (`private static DateTime Today => DateTime.UtcNow.Date;`) and 02-04 already handled it; the five remaining base-class and integration helpers are the same shape at a wider blast radius, because a base class propagates the tautology to every derived fixture. Bulk of the work is mechanical; the judgement is in deciding which occurrences are oracle-recomputation and which are incidental, and that judgement belongs in the allowlist reasons. ci-learnings to pre-apply: mutation-driven test-strengthening is exactly when CA1861 inline arrays and NUnit2045/2046 assert-pairs sneak in — re-grep every touched test file before committing. Also NUnit4002 (`Is.Zero`), NUnit2056 (`Assert.EnterMultipleScope`), NUnit2010. Note the pre-commit `Scripts/ledger_check.py` hook greps the STAGED diff for several of these and hard-blocks the commit.",
+          "estimated_hours": 1.5
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Write down what was never written down",
+      "description": "RCA §9. Root cause E is that the FE/BE date contract was never documented, which is why the two stacks converged on different readings of the same `YYYY-MM-DD`. With the Q1 default absent, the opt-in is the release headline.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Document the opt-in, the API date semantics, and back-propagate the architecture claims",
+          "test_file": "",
+          "scenario_name": "RCA §9 follow-through — no automated scenario; the acceptance criteria below are the checks",
+          "files_to_modify": [
+            "docs/Installation/configuration.md",
+            "docs/concepts/api-versioning.md",
+            "docs/product/architecture/brief.md",
+            "docs/releasenotes/releasenotes.md",
+            "docs/ci-learnings.md"
+          ],
+          "deps": ["03-02"],
+          "criteria": [
+            "THE OPT-IN IS THE HEADLINE, NOT A FOOTNOTE. Both the docs and the release notes lead with the fact that Lighthouse now computes calendar days in a configurable instance timezone, that the shipped default is UNCHANGED behaviour (containers keep UTC), and that a non-UTC team MUST SET `Lighthouse__TimeZone` to get the fix. A reader who skims must come away knowing an action is required of them; a reader who does nothing must come away knowing nothing broke.",
+            "`docs/Installation/configuration.md` gains a `Lighthouse:TimeZone` section under Configuration Options, stating: the accepted id format (IANA, also accepted on Windows under .NET 10); the `Lighthouse__TimeZone` environment override that the `__` convention at `:20` already provides, with a worked docker example; the full resolution order including the absent-key path; and that an unresolvable id FAILS STARTUP while an absent one does not.",
+            "The docs state which surfaces the setting affects — forecast projections, metric windows, snapshot recorded days, license expiry and delivery-date validation — so an operator can predict what will move when they set it, rather than discovering it on a dashboard.",
+            "The API date semantics are written down where API consumers look: a bare `YYYY-MM-DD` on the metrics and forecast endpoints names a calendar day IN THE INSTANCE TIMEZONE. This is root cause E — the semantics were never stated, so the frontend and backend each picked a reading and shipped. State it once, in prose, where a client author will find it.",
+            "`docs/product/architecture/brief.md:3084` is corrected: it documents the historic-read branch as gated on `asOfDate.Date < DateTime.UtcNow.Date`, which 02-04 replaced. The corrected text names the clock seam rather than the raw expression.",
+            "`docs/product/architecture/brief.md:1940` and `:2055` are reviewed and left INTACT if still accurate — the purity tests on `ProjectWorkingDays`/`CountWorkingDays`/`ExpandToBlackoutDays` still forbid `DateTime.UtcNow`/`Today` and this fix did not weaken them. If either line's wording now reads as forbidding the ARGUMENT the helpers legitimately take, clarify it; do not delete it.",
+            "The architecture doc gains the `ILighthouseClock` seam in its component inventory, with the two non-negotiable constraints stated (never a Local kind; entities take the day as a parameter) and the snapshot day-key convention recorded: all persisted day keys are `DateOnly`, which is what keeps them out of reach of the global `DateTime` converter.",
+            "Release notes carry THREE customer-facing lines: (1) the opt-in headline above; (2) the decision-2 delivery-date behaviour change, which affects UTC users TOO and is the one change an unconfigured instance actually experiences on upgrade — it also fixes the pre-existing all-day rejection of today's date; (3) the one-day kink in delivery and snapshot trend charts that appears at the moment an operator sets a non-UTC zone, per whatever 02-03's upgrade-path test pinned.",
+            "The `DeliveryMetricSnapshot` expand-only column is recorded where the next release will look for it, so the contract-phase drop is scheduled rather than forgotten.",
+            "A `/clean-ci`-style entry is added to `docs/ci-learnings.md` capturing the durable rule this bug produced: an instant has no timezone and a calendar day is defined by one — anything that reduces an instant to a day names the zone it is reducing in; persisted day keys are `DateOnly`, never `DateTime`; and the backend test run stays pinned to Europe/Zurich via `.runsettings` for the same reason `playwright.config.ts` and the frontend test script already are (UTC is the one offset at which the mismatch cancels out and CI goes blind).",
+            "No production code is touched in this step. Conventional commit `docs(config)`."
+          ],
+          "implementation_notes": "RCA §9, amended for Q1 and Q3. Root cause E in one sentence: `b956a8857` made the client half of the date contract consistently local while the backend stayed UTC, and NOTHING anywhere said which reading was correct — so the fix that made the frontend right made the asymmetry sharper rather than milder. Documentation here is not a formality; it is the artefact that stops the next author re-deriving the wrong answer. THE Q1 DECISION CHANGES THIS STEP'S CENTRE OF GRAVITY: with the key shipped absent, the release is deliberately inert for the users who reported the bug until they act, so documentation is not describing the fix — it IS the delivery mechanism for it. A release note that buries the opt-in in a configuration section ships a fix nobody turns on. Per the project's per-feature discipline, docs land WITH the feature and not deferred to `/release`; the standing rule is also that docs updates wait for the user's confirmation in their own environment, so treat this step as ready-to-write rather than auto-push. The ci-learnings entry follows the file's own template (Symptom / Root cause / Fix / Rule going forward) and — per the note at `docs/ci-learnings.md:45-51` — the NON-GREPPABLE rules should be folded up into the Preflight checklist, not merely appended as a dated entry, because the append-only log demonstrably does not get re-applied. There is no obvious greppable ledger-check pattern to add: `DateTime.UtcNow.Date` in production is now covered by the 03-01 source guard, and the `DateOnly` day-key rule is covered by its type-level assertion — both stronger mechanisms than a staged-diff grep.",
+          "estimated_hours": 1.5
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/API/",
+      "Lighthouse.Backend/Lighthouse.Backend/Data/",
+      "Lighthouse.Backend/Lighthouse.Backend/Models/",
+      "Lighthouse.Backend/Lighthouse.Backend/Factories/",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/",
+      "Lighthouse.Backend/Lighthouse.Migrations.Postgres/",
+      "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/"
+    ],
+    "test_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/TestDoubles/",
+      "Lighthouse.EndToEndTests/tests/"
+    ],
+    "excluded_patterns": [
+      "**/bin/**",
+      "**/obj/**",
+      "**/node_modules/**",
+      "**/StrykerOutput*/**",
+      ".claude/worktrees/**",
+      "tools/codesign/actions-runner/**"
+    ]
+  }
+}
