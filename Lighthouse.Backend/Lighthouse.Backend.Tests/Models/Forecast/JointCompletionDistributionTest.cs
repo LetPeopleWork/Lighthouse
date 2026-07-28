@@ -140,6 +140,41 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
+        public void Combine_SingleRandomContributorAtProductionTrialCount_RoundTripsExactly()
+        {
+            // The CDF round-trip must not perturb single-team forecasts by even one trial (AC-01.4):
+            // dividing by the trial count and multiplying back is where drift would show up.
+            var random = new Random(RandomSeed);
+
+            for (var run = 0; run < 50; run++)
+            {
+                var contributor = CreateRandomHistogram(random, 10_000);
+                var expected = contributor.Where(bucket => bucket.Value > 0).ToDictionary(bucket => bucket.Key, bucket => bucket.Value);
+
+                var joint = JointCompletionDistribution.Combine([contributor]);
+
+                Assert.That(joint, Is.EqualTo(expected), $"run {run}");
+            }
+        }
+
+        [Test]
+        public void Combine_RandomContributors_IsIndependentOfInputOrder()
+        {
+            var random = new Random(RandomSeed);
+
+            for (var run = 0; run < 50; run++)
+            {
+                var contributors = CreateRandomContributors(random);
+                var shuffled = contributors.OrderBy(_ => random.Next()).ToList();
+
+                var forwards = JointCompletionDistribution.Combine(contributors);
+                var backwards = JointCompletionDistribution.Combine(shuffled);
+
+                Assert.That(backwards, Is.EqualTo(forwards), $"run {run}");
+            }
+        }
+
+        [Test]
         public void Combine_RepeatedInvocationOnTheSameInput_ProducesTheSameHistogram()
         {
             var contributors = CreateRandomContributors(new Random(RandomSeed));
@@ -170,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 .ToList();
         }
 
-        private static Dictionary<int, int> CreateRandomHistogram(Random random)
+        private static Dictionary<int, int> CreateRandomHistogram(Random random, int? trials = null)
         {
             var days = Enumerable.Range(0, random.Next(2, 7))
                 .Select(_ => random.Next(1, 40))
@@ -178,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 .OrderBy(day => day)
                 .ToList();
 
-            var totalTrials = random.Next(1, 5) * 1000;
+            var totalTrials = trials ?? random.Next(1, 5) * 1000;
             var histogram = days.ToDictionary(day => day, _ => 0);
             var remaining = totalTrials;
 

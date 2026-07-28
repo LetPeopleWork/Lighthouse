@@ -25,10 +25,15 @@ namespace Lighthouse.Backend.Models.Forecast
 
             for (var index = 0; index < days.Length; index++)
             {
+                // Ascending, so the result cannot depend on the order the contributors arrived in:
+                // floating-point multiplication is commutative but not associative (AC-01.6).
                 var jointProbability = 1d;
-                foreach (var contributor in cumulativeProbabilities)
+
+                // Stryker disable once Linq: descending is an equally canonical order and yields the same
+                // product - what matters is that the order does not come from the caller.
+                foreach (var probability in cumulativeProbabilities.Select(contributor => contributor[index]).Order())
                 {
-                    jointProbability *= contributor[index];
+                    jointProbability *= probability;
                 }
 
                 exactTrials[index] = Math.Max(0, (jointProbability - previousProbability) * totalTrials);

@@ -200,6 +200,22 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
+        public void EveryContributorWithoutTrials_KeepsEveryContributorDayRegardlessOfOrder()
+        {
+            var doneToday = CreateForecast(histogram: new Dictionary<int, int> { { 0, 0 } });
+            var doneLater = CreateForecast(histogram: new Dictionary<int, int> { { 5, 0 } });
+
+            var forwards = new AggregatedWhenForecast([doneToday, doneLater]);
+            var backwards = new AggregatedWhenForecast([doneLater, doneToday]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(forwards.SimulationResult.Keys, Is.EqualTo(new[] { 0, 5 }));
+                Assert.That(backwards.SimulationResult, Is.EqualTo(forwards.SimulationResult));
+            }
+        }
+
+        [Test]
         public void ContributorWithoutTrials_IsExcludedFromTheMathsButStillCountsForProvenance()
         {
             var forecasted = CreateForecast(histogram: new Dictionary<int, int> { { 1, 5 }, { 4, 5 } }, numberOfItems: 3);

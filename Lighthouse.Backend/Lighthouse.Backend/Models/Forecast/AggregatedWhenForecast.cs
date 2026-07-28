@@ -15,9 +15,9 @@
                 var joint = JointCompletionDistribution.Combine(materialized.Select(f => f.SimulationResult));
 
                 // No contributor carries trials - a feature with no remaining work gets the day-0 sentinel
-                // from ForecastService. Keep it: that is a fact, not a forecast (AC-02.3).
+                // from ForecastService. Keep those days so "done" still reads as done today (AC-02.3).
                 // Team/TeamId stay null: the aggregate belongs to no single team (ADR-111).
-                SetSimulationResult(joint.Count > 0 ? joint : new Dictionary<int, int>(materialized[0].SimulationResult));
+                SetSimulationResult(joint.Count > 0 ? joint : DaysWithoutTrials(materialized));
                 NumberOfItems = materialized.Sum(f => f.NumberOfItems);
                 CreationTime = materialized.Min(f => f.CreationTime);
             }
@@ -30,6 +30,14 @@
                 .Distinct()
                 .ToList();
             ExcludedSummary = summaries.Count == 0 ? null : string.Join("; ", summaries);
+        }
+
+        private static Dictionary<int, int> DaysWithoutTrials(IEnumerable<WhenForecast> forecasts)
+        {
+            return forecasts
+                .SelectMany(f => f.SimulationResult.Keys)
+                .Distinct()
+                .ToDictionary(day => day, _ => 0);
         }
     }
 }
