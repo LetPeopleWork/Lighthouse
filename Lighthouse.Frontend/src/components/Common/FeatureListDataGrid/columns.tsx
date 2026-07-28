@@ -22,7 +22,7 @@ export const createForecastsColumn = (
 	width: 200,
 	sortable: false,
 	renderCell: ({ row }) => (
-		<Box>
+		<Box data-testid="feature-forecast-cell">
 			{cannotBeForecast({ teamsWithoutForecast: row.teamsWithoutForecast }) ? (
 				<Tooltip title={cannotForecastReason(row.teamsWithoutForecast ?? [])}>
 					<Typography variant="body2" color="text.secondary">

@@ -25,6 +25,13 @@ export class PortfolioDetailPage {
 			.getByTestId("active-work-indicator");
 	}
 
+	getFeatureForecastCell(featureName: string): Locator {
+		return this.page
+			.getByRole("row")
+			.filter({ hasText: featureName })
+			.getByTestId("feature-forecast-cell");
+	}
+
 	getFeatureHasWarning(featureName: string): Locator {
 		const warningIcon = this.page
 			.getByRole("row")
