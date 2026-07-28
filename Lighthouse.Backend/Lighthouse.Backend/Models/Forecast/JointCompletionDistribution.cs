@@ -25,8 +25,9 @@ namespace Lighthouse.Backend.Models.Forecast
 
             for (var index = 0; index < days.Length; index++)
             {
-                // Ascending, so the result cannot depend on the order the contributors arrived in:
-                // floating-point multiplication is commutative but not associative (AC-01.6).
+                // Multiply in a canonical order rather than the caller's. IEEE 754 multiplication is not
+                // associative, so a reordered input can differ in the last bit and tip a rounding decision
+                // below; sorting first makes the result depend only on the values (AC-01.6).
                 var jointProbability = 1d;
 
                 // Stryker disable once Linq: descending is an equally canonical order and yields the same

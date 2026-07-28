@@ -98,6 +98,35 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
+        public void Combine_IdenticalRandomContributors_RaisesEachProbabilityToThePowerOfTheirCount()
+        {
+            // The random invariants below (sum preserved, joint never above a contributor) are all
+            // satisfied by the OLD worst-team copy too, so none of them discriminate. This one does:
+            // copying any single contributor leaves its probabilities untouched, whereas multiplying
+            // n identical contributors must raise each one to the n-th power.
+            var random = new Random(RandomSeed);
+
+            for (var run = 0; run < 25; run++)
+            {
+                var contributor = CreateRandomHistogram(random, 10_000);
+                var contributorCount = random.Next(2, 5);
+                var contributors = Enumerable.Range(0, contributorCount)
+                    .Select(_ => new Dictionary<int, int>(contributor))
+                    .ToList();
+
+                var joint = JointCompletionDistribution.Combine(contributors);
+
+                foreach (var day in contributor.Keys)
+                {
+                    var expected = Math.Pow(CumulativeProbability(contributor, day), contributorCount);
+
+                    // Tolerance covers the rounding to whole trials, which is bounded by one trial.
+                    Assert.That(CumulativeProbability(joint, day), Is.EqualTo(expected).Within(0.001), $"run {run}, day {day}");
+                }
+            }
+        }
+
+        [Test]
         public void Combine_RandomContributors_SumsToThePreservedTotalTrials()
         {
             var random = new Random(RandomSeed);

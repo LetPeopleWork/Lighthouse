@@ -70,6 +70,9 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         [Test]
         public void GetProbability_TwoTeamsWithMassAtTheSelectedTeamsDate_IsStrictlyLaterThanThatTeam()
         {
+            // p50 only, deliberately: with this fixture both the contributor and the aggregate reach
+            // p85 on day 3, so asserting strictness there would fail. The shift is exact on paper at
+            // p50, and the >= relation at every percentile is covered by the crossing-contributors test.
             var teamHistogram = new Dictionary<int, int> { { 1, 5000 }, { 2, 2500 }, { 3, 2500 } };
             var first = CreateForecast(histogram: teamHistogram);
             var second = CreateForecast(histogram: new Dictionary<int, int>(teamHistogram));

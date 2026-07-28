@@ -96,10 +96,15 @@ namespace Lighthouse.Backend.Models
             // Ranking by likelihood alone saturates for large deliveries (every feature is 100% likely once
             // the target date is comfortably far out) and the tie-break then falls back to arbitrary
             // collection order, surfacing forecast dates earlier than individual features (ADO #5435).
+            // Feature.Forecast is computed on every read and now runs the joint distribution, so the
+            // likelihood and the forecast are each taken once per feature rather than per comparison.
             return Features
-                .Where(feature => feature.GetLikelhoodForDate(Date, today, blackoutPeriods) >= 0)
-                .OrderByDescending(feature => feature.Forecast.GetProbability(85))
-                .ThenBy(feature => feature.GetLikelhoodForDate(Date, today, blackoutPeriods))
+                .Select(feature => (feature, likelihood: feature.GetLikelhoodForDate(Date, today, blackoutPeriods)))
+                .Where(candidate => candidate.likelihood >= 0)
+                .Select(candidate => (candidate.feature, candidate.likelihood, forecast: candidate.feature.Forecast))
+                .OrderByDescending(candidate => candidate.forecast.GetProbability(85))
+                .ThenBy(candidate => candidate.likelihood)
+                .Select(candidate => candidate.feature)
                 .FirstOrDefault();
         }
 

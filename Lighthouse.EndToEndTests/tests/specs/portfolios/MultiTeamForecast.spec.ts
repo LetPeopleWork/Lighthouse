@@ -37,6 +37,10 @@ testWithDependencies(
 			});
 		});
 
+		// This step proves the forecast still renders, NOT that the joint maths is right - dates would
+		// appear under the old worst-team code too. The discrimination lives in
+		// MultiTeamJointForecastDeliveryIntegrationTest, which asserts 25 % against the same HTTP
+		// endpoint where the worst-team answer would be 50 %.
 		await test.step("Feature whose teams all have throughput still shows dates", async () => {
 			const forecastCell = portfolioDetailPage.getFeatureForecastCell(
 				FEATURE_WITH_FORECAST,
