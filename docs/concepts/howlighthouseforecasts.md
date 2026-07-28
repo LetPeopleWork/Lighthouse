@@ -211,10 +211,7 @@ That does not mean that one team is slower, they might just have other work that
 
 Why multiply? Think of each team finishing on time as a coin landing heads. One coin landing heads is not unlikely. Both coins landing heads at the same time is rarer. If two teams each have an 85% chance of being done by a date, the chance that *both* are done by that date is about 72%. So the date Lighthouse can honestly call "85% likely" is a bit later than either team's own 85% date.
 
-{: .important}
-Lighthouse used to simply show you the forecast of the team that predicted to be done later, which quietly assumed every other team was a certainty. That made the numbers optimistic: what was labelled 95/85/70/50% was really worth about 90/72/49/25% with two teams, and it got worse the more teams were involved. This is fixed - the percentages you see now account for all contributing teams.
-
-Two things worth knowing about the change:
+Two things worth knowing about this:
 
 - **Dates only ever move later, never earlier.** Nobody's forecast becomes more optimistic because of this.
 - **Features with a single team are completely unaffected**, at every percentile. If only one team contributes, there is nothing to combine.
