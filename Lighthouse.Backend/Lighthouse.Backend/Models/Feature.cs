@@ -64,6 +64,13 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);
 
+        // __SCAFFOLD__ RED scaffold for Story #5570 (ADR-112). DELIVER replaces both bodies.
+        [NotMapped]
+        public bool CanBeForecast => throw new InvalidOperationException($"__SCAFFOLD__ {nameof(CanBeForecast)} is not implemented yet (Story #5570).");
+
+        [NotMapped]
+        public IEnumerable<Team> TeamsWithoutForecast => throw new InvalidOperationException($"__SCAFFOLD__ {nameof(TeamsWithoutForecast)} is not implemented yet (Story #5570).");
+
         public double GetLikelhoodForDate(DateTime date, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)

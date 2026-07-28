@@ -1,7 +1,8 @@
 # ADR-112: When a contributing team cannot be forecast, the feature forecast is UNKNOWN — and must never fall through to 100 %
 
-- **Status**: **Proposed** — the detection rule and the suppression requirement are settled; the
-  DTO carrier shape is the one open item, to be confirmed when Story 5570 starts.
+- **Status**: **Accepted** (2026-07-28, Story 5570 DISTILL) — carrier shape settled as **(a) nullable**
+  on the evidence below; **pending maintainer ratification** of that call and of the delivery-rollup
+  decision (D8), both taken while the maintainer was unavailable.
 - **Date**: 2026-07-27
 - **Feature**: epic-5459-multi-team-forecasts (ADO Epic 5459, Story 5570)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
@@ -68,6 +69,39 @@ Two candidate shapes, to be settled at the start of Story 5570:
 
 Recommendation leans (a) for honest modelling with (b)'s client-compatibility risk quantified first;
 DESIGN deliberately does not pre-empt the Story 5570 client check.
+
+### Resolved (2026-07-28): (a) nullable — the client check found no risk to quantify
+
+The compatibility worry that made (b) tempting does not apply to the actual clients:
+
+- **CLI/MCP do not deserialise the payload.** `listDeliveries` is typed
+  `Promise<LighthouseApiResult<readonly unknown[]>>` (`packages/client/src/index.ts:1311`) and
+  `lighthouse_delivery_list` forwards it verbatim through `encodePayload`
+  (`packages/mcp-core/src/index.ts:2213`). There is no non-nullable `double` to break and no
+  human-rendered percentage to mis-render — the "older client reads null as 0 %" scenario has no
+  instance in this codebase.
+- **The frontend already carries a nullable likelihood in the same domain.**
+  `DeliveryMetricsHistory.ts:21` declares `likelihoodPercentage: number | null`, parses it with
+  `asNullableNumber`, and `DeliveryPredictabilityChart.tsx:85` already gaps the line on `null`. (a)
+  follows an established precedent rather than introducing a new idiom.
+- **(b) reproduces the defect this ADR exists to close**, one level up: a numeric field that is only
+  meaningful once a companion boolean has been consulted is the same "infer from silence" trap as
+  `return 100`, and every future consumer would have to re-learn it.
+
+### D8 (new, 2026-07-28): the delivery-level likelihood is unknown when any of its features is
+
+Not covered by the original ADR and surfaced while implementing: `DeliveryWithLikelihoodDto` carries
+its **own** `LikelihoodPercentage`, derived by `GetLeastLikelyFeature` (`:109-124`), which filters
+`fl.LikelihoodPercentage >= 0` and takes the minimum. An unknown feature would silently drop out of
+that filter and the delivery would report the least likely of the features that *could* be forecast —
+the worst-team defect of ADR-110, one level up, and the second "infer from silence" path in the
+codebase (which is what US-02's learning hypothesis predicted would decide whether this is a local
+change).
+
+Decision: a delivery containing a feature that cannot be forecast **cannot itself be honestly
+forecast**, so its `LikelihoodPercentage` is unknown too, and it names the same teams. The alternative
+— show the minimum over the forecastable features — is rejected for the same reason the partial
+feature forecast was rejected: it presents a number that quietly ignores work that must still happen.
 
 ## Alternatives considered
 
