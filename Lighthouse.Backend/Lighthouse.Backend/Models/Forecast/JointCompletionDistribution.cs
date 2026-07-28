@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Models.Forecast
         {
             var contributors = histograms
                 .Select(histogram => histogram.OrderBy(bucket => bucket.Key).ToList())
-                .Where(buckets => buckets.Sum(bucket => bucket.Value) > 0)
+                .Where(buckets => TrialsIn(buckets) > 0)
                 .ToList();
 
             if (contributors.Count == 0)
@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Models.Forecast
                 return [];
             }
 
-            var totalTrials = contributors.Max(buckets => buckets.Sum(bucket => bucket.Value));
+            var totalTrials = contributors.Max(TrialsIn);
             var days = contributors.SelectMany(buckets => buckets.Select(bucket => bucket.Key)).Distinct().Order().ToArray();
 
             var cumulativeProbabilities = contributors.Select(buckets => CumulativeProbabilities(buckets, days)).ToList();
@@ -44,9 +44,16 @@ namespace Lighthouse.Backend.Models.Forecast
             return DistributeByLargestRemainder(days, exactTrials, totalTrials);
         }
 
+        // A method group rather than an inline lambda: CS9236 fires on Sonar when the same nested
+        // generic lambda has to be bound repeatedly, and this expression appeared three times.
+        private static int TrialsIn(List<KeyValuePair<int, int>> buckets)
+        {
+            return buckets.Sum(bucket => bucket.Value);
+        }
+
         private static double[] CumulativeProbabilities(List<KeyValuePair<int, int>> buckets, int[] days)
         {
-            var totalTrials = (double)buckets.Sum(bucket => bucket.Value);
+            var totalTrials = (double)TrialsIn(buckets);
             var probabilities = new double[days.Length];
             var completedTrials = 0;
             var nextBucket = 0;
