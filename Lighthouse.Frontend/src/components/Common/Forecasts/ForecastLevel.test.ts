@@ -1,11 +1,13 @@
 import CertainIcon from "@mui/icons-material/CheckCircle";
 import ConfidentIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import RiskyIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import UnknownIcon from "@mui/icons-material/HelpOutline";
 import RealisticIcon from "@mui/icons-material/QueryBuilder";
 import { describe, expect, it } from "vitest";
 import {
 	certainColor,
 	confidentColor,
+	defaultColor,
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
@@ -38,5 +40,19 @@ describe("ForecastLevel class", () => {
 		expect(forecastLevel.level).toBe("Certain");
 		expect(forecastLevel.IconComponent).toBe(CertainIcon);
 		expect(forecastLevel.color).toBe(certainColor);
+	});
+
+	it("should treat a missing probability as its own level rather than a risky one", () => {
+		// null coerces to 0 in a numeric comparison, so without the explicit branch this
+		// reads as "Risky" - a risk the data cannot actually support (ADR-112).
+		const forecastLevel = new ForecastLevel(null);
+
+		expect(forecastLevel.level).toBe("Unknown");
+		expect(forecastLevel.IconComponent).toBe(UnknownIcon);
+		expect(forecastLevel.color).toBe(defaultColor);
+	});
+
+	it("should not report a missing probability as risky", () => {
+		expect(new ForecastLevel(null).color).not.toBe(riskyColor);
 	});
 });

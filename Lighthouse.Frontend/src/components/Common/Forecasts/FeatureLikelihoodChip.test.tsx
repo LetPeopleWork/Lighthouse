@@ -82,5 +82,34 @@ describe("FeatureLikelihoodChip", () => {
 		);
 
 		expect(screen.queryByText("Cannot forecast")).not.toBeInTheDocument();
+		expect(screen.queryByText("62%")).not.toBeInTheDocument();
+	});
+
+	it("shows the percentage once there is no remaining work to be insufficient about", () => {
+		render(
+			<FeatureLikelihoodChip
+				featureLikelihood={featureLikelihood({ hasSufficientData: false })}
+				hasRemainingWork={false}
+			/>,
+		);
+
+		expect(screen.getByText("62%")).toBeInTheDocument();
+	});
+
+	it("prefers cannot-forecast over insufficient data when both apply", () => {
+		// Unknown outranks thin history: one says no forecast exists, the other that a
+		// forecast exists but rests on little data.
+		render(
+			<FeatureLikelihoodChip
+				featureLikelihood={featureLikelihood({
+					likelihoodPercentage: null,
+					teamsWithoutForecast: ["Team Meridian"],
+					hasSufficientData: false,
+				})}
+				hasRemainingWork={true}
+			/>,
+		);
+
+		expect(screen.getByText("Cannot forecast")).toBeInTheDocument();
 	});
 });

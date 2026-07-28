@@ -23,10 +23,10 @@ export const FeatureLikelihoodChip: React.FC<FeatureLikelihoodChipProps> = ({
 	const teamsWithoutForecast = featureLikelihood.teamsWithoutForecast ?? [];
 	const likelihood = featureLikelihood.likelihoodPercentage;
 	const isUnforecastable =
-		cannotBeForecast({ teamsWithoutForecast }) || likelihood === null;
+		likelihood === null || cannotBeForecast({ teamsWithoutForecast });
 
 	let label: string;
-	if (isUnforecastable || likelihood === null) {
+	if (isUnforecastable) {
 		label = CANNOT_FORECAST_SHORT;
 	} else if (
 		isForecastDataInsufficient({
