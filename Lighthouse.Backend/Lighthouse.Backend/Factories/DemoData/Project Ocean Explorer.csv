@@ -9,6 +9,6 @@ OE-007,Kelp Forest Conservation,Backlog,Epic,,,,,
 OE-008,Deep Water Mineral Survey,Backlog,Epic,,,,,
 OE-009,Marine Ecosystem Database,Backlog,Epic,,,,,
 OE-010,Whale Migration Study,Backlog,Epic,,,,,
-OE-011,Tidal Energy Harvesting,Backlog,Epic,,,,,
+OE-011,Tidal Energy Harvesting,Done,Epic,,{w-30},{w-4},,{w-4}
 OE-012,Plastic Cleanup Operations,Backlog,Epic,,,,,
 OE-013,Underwater Communication Network,Backlog,Epic,,,,,

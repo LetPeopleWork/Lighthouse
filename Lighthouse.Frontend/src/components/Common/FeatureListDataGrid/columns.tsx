@@ -1,8 +1,13 @@
-import { Box } from "@mui/material";
+import { Box, Tooltip, Typography } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
 import type { IFeature } from "../../../models/Feature";
+import {
+	CANNOT_FORECAST_SHORT,
+	cannotBeForecast,
+	cannotForecastReason,
+} from "../../../utils/forecast/cannotForecast";
 import type { DataGridColumn } from "../DataGrid/types";
 import ForecastInfoList from "../Forecasts/ForecastInfoList";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
@@ -18,7 +23,15 @@ export const createForecastsColumn = (
 	sortable: false,
 	renderCell: ({ row }) => (
 		<Box>
-			<ForecastInfoList title={""} forecasts={row.forecasts} />
+			{cannotBeForecast({ teamsWithoutForecast: row.teamsWithoutForecast }) ? (
+				<Tooltip title={cannotForecastReason(row.teamsWithoutForecast ?? [])}>
+					<Typography variant="body2" color="text.secondary">
+						{CANNOT_FORECAST_SHORT}
+					</Typography>
+				</Tooltip>
+			) : (
+				<ForecastInfoList title={""} forecasts={row.forecasts} />
+			)}
 		</Box>
 	),
 });

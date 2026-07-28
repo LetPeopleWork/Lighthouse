@@ -172,6 +172,9 @@ namespace Lighthouse.Backend.Factories
 
         // Contributes to a shared Epic but has closed nothing, so it has no throughput to forecast from.
         public static string NoThroughput => "Team Meridian";
+
+        // Closed work on only three days, below the five active days a forecast needs to be trusted.
+        public static string ThinThroughput => "Team Equinox";
     }
 
     public static class DemoProjectNames

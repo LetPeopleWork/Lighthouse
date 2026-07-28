@@ -67,16 +67,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void LoadScenarios_DependenciesScenario_IncludesATeamWithoutThroughput()
+        public void LoadScenarios_DependenciesScenario_CoversEveryForecastDataState()
         {
-            // The scenario exists to show Epics with several teams; one of them deliberately has closed
-            // nothing, so the Epic demonstrates the unknown-forecast state (ADR-112). Removing that team
-            // would quietly take the only demo coverage of it with it.
+            // The scenario carries one team with no throughput at all and one with too little to trust,
+            // so its Epics demonstrate the unknown-forecast state (ADR-112) and the insufficient-data
+            // signal side by side. Removing either team would quietly take the demo coverage with it.
             var subject = CreateSubject();
 
             var dependencies = subject.GetAllScenarios().Single(x => x.Title == "Dependencies");
 
-            Assert.That(dependencies.Teams, Does.Contain("Team Meridian"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dependencies.Teams, Does.Contain("Team Meridian"));
+                Assert.That(dependencies.Teams, Does.Contain("Team Equinox"));
+            }
         }
 
         [Test]

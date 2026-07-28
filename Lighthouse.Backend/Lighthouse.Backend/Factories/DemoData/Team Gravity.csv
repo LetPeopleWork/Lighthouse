@@ -99,3 +99,7 @@ OE-009-009,Build mobile field data collection app,Backlog,User Story,OE-009,,,,
 OE-009-010,Train researchers on system usage,Backlog,User Story,OE-009,,,,
 OE-009-011,Launch public access portal,Backlog,User Story,OE-009,,,,
 OE-009-012,Implement data backup systems,Backlog,User Story,OE-009,,,,
+OE-011-001,Site survey for tidal array,Done,User Story,OE-011,{w-28},{w-22},,{w-22}
+OE-011-002,Install seabed anchor points,Done,User Story,OE-011,{w-24},{w-16},,{w-16}
+OE-011-003,Fix turbine blade cavitation,Done,Bug,OE-011,{w-18},{w-11},,{w-11}
+OE-011-004,Commission grid connection,Done,User Story,OE-011,{w-12},{w-4},,{w-4}

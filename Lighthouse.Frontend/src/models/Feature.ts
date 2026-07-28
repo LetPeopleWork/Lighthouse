@@ -16,6 +16,8 @@ export interface IFeature extends IWorkItem {
 	totalWork: { [key: number]: number };
 	projects: IEntityReference[];
 	forecasts: IWhenForecast[];
+	// Non-empty means no forecast exists at all, and names the teams to chase (ADR-112).
+	teamsWithoutForecast?: string[];
 
 	getRemainingWorkForFeature(): number;
 	getRemainingWorkForTeam(id: number): number;
@@ -47,6 +49,7 @@ export const FeatureSchema = z.object({
 	remainingWork: WorkByTeamSchema,
 	totalWork: WorkByTeamSchema,
 	forecasts: z.array(WhenForecastSchema),
+	teamsWithoutForecast: z.array(z.string()).optional().default([]),
 });
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
@@ -66,6 +69,7 @@ export class Feature implements IFeature {
 	remainingWork: { [key: number]: number } = {};
 	totalWork: { [key: number]: number } = {};
 	forecasts: IWhenForecast[] = [];
+	teamsWithoutForecast: string[] = [];
 
 	owningTeam!: string;
 
@@ -160,6 +164,7 @@ export class Feature implements IFeature {
 		feature.forecasts = data.forecasts.map((forecast) =>
 			WhenForecast.new(forecast.probability, forecast.expectedDate),
 		);
+		feature.teamsWithoutForecast = data.teamsWithoutForecast ?? [];
 		return feature;
 	}
 }

@@ -331,6 +331,10 @@ namespace Lighthouse.Backend.Services.Implementation
             // when one contributing team has no throughput at all (ADR-112).
             projectDependencies.Teams.Add(DemoTeamNames.NoThroughput);
 
+            // Shares the second Epic, with just enough history to forecast but not enough to trust -
+            // the insufficient-data signal, which composes with the unknown state rather than replacing it.
+            projectDependencies.Teams.Add(DemoTeamNames.ThinThroughput);
+
             projectDependencies.Projects.Add(DemoProjectNames.ProjectWithDependencies);
 
             premiumScenarios.Add(projectDependencies);

@@ -1,0 +1,11 @@
+ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate
+EQ-001,Publish reef survey baseline,Done,User Story,OE-002,{w-12},{w-9},,{w-9}
+EQ-002,Fix salinity probe drift,Done,Bug,OE-002,{w-10},{w-6},,{w-6}
+EQ-003,Tag nursery coral batches,Done,User Story,OE-002,{w-7},{w-3},,{w-3}
+EQ-004,Transplant coral fragments,Next,User Story,OE-002,{-4},,,{-4}
+EQ-005,Monitor bleaching indicators,Backlog,User Story,OE-002,,,,
+EQ-006,Rebuild nursery frames,Backlog,User Story,OE-002,,,,
+EQ-007,Survey predator population,Backlog,User Story,OE-002,,,,
+EQ-008,Fix airlift pump failures,Backlog,Bug,OE-002,,,,
+EQ-009,Refresh dive schedule roster,Backlog,User Story,,,,,
+EQ-010,Order replacement wetsuits,Backlog,User Story,,,,,
