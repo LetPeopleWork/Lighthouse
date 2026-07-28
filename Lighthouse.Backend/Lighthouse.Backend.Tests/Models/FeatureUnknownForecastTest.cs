@@ -79,6 +79,82 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        [Test]
+        public void CanBeForecast_NoRemainingWorkButATeamForecastCarriesNoTrials_IsStillTrue()
+        {
+            // The exemption is about remaining work, not about who owns the empty forecast: a finished
+            // feature can still carry a stale per-team forecast with no trials.
+            var done = new Team { Id = 1, Name = "Done" };
+            var subject = new Feature([(done, 0, 3)]);
+            subject.SetFeatureForecasts([ForecastFor(done, [])]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.CanBeForecast, Is.True);
+                Assert.That(subject.TeamsWithoutForecast, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void TeamsWithoutForecast_ForecastCarriesOnlyATeamId_ResolvesTheTeamFromTheFeature()
+        {
+            // Forecasts loaded from EF need not have the Team navigation populated.
+            var withoutThroughput = new Team { Id = 7, Name = "No Throughput" };
+            var subject = new Feature([(withoutThroughput, 2, 2)]);
+
+            var forecast = new WhenForecast([]) { TeamId = withoutThroughput.Id };
+            subject.SetFeatureForecasts([forecast]);
+
+            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(new[] { "No Throughput" }));
+        }
+
+        [Test]
+        public void TeamsWithoutForecast_ForecastMatchesNoTeamOnTheFeature_IsIgnored()
+        {
+            var contributing = new Team { Id = 1, Name = "Contributing" };
+            var subject = new Feature([(contributing, 2, 2)]);
+
+            subject.SetFeatureForecasts([new WhenForecast([]) { TeamId = 999 }]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.TeamsWithoutForecast, Is.Empty);
+                Assert.That(subject.CanBeForecast, Is.True);
+            }
+        }
+
+        [Test]
+        public void TeamsWithoutForecast_ForecastNamesADifferentTeamThanItsTeamId_PrefersTheForecastsOwnTeam()
+        {
+            // Precedence matters: the forecast knows which team it was run for, the feature only knows
+            // who contributes. Resolving by id is the fallback, not the first choice.
+            var runFor = new Team { Id = 42, Name = "Ran Without Throughput" };
+            var contributing = new Team { Id = 1, Name = "Contributing" };
+
+            var subject = new Feature([(contributing, 2, 2)]);
+            subject.SetFeatureForecasts([new WhenForecast([]) { Team = runFor, TeamId = contributing.Id }]);
+
+            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(new[] { "Ran Without Throughput" }));
+        }
+
+        [Test]
+        public void SetFeatureForecasts_CalledAgain_ReplacesTheForecastsRatherThanAddingToThem()
+        {
+            // A stale forecast left behind would keep a team in TeamsWithoutForecast after its
+            // throughput arrived, so the feature would stay un-forecastable forever.
+            var team = new Team { Id = 1, Name = "Team" };
+            var subject = new Feature([(team, 3, 3)]);
+
+            subject.SetFeatureForecasts([ForecastFor(team, [])]);
+            subject.SetFeatureForecasts([ForecastFor(team, new Dictionary<int, int> { { 5, 100 } })]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.Forecasts, Has.Count.EqualTo(1));
+                Assert.That(subject.CanBeForecast, Is.True);
+            }
+        }
+
         private static Feature FeatureWithUnforecastableTeam()
         {
             var forecasting = new Team { Id = 1, Name = "Forecasting" };
