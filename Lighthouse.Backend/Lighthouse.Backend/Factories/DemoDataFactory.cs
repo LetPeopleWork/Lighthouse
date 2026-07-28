@@ -169,6 +169,9 @@ namespace Lighthouse.Backend.Factories
         public static string OldItems => "Team Gravity";
 
         public static string PartTimeWork => "Team Lightspeed";
+
+        // Contributes to a shared Epic but has closed nothing, so it has no throughput to forecast from.
+        public static string NoThroughput => "Team Meridian";
     }
 
     public static class DemoProjectNames

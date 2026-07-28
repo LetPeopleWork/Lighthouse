@@ -47,6 +47,7 @@ namespace Lighthouse.Backend.Tests.Factories
         [Test]
         [TestCase("Team Gravity")]
         [TestCase("Team Lightspeed")]
+        [TestCase("Team Meridian")]
         [TestCase("Team Pulsar")]
         [TestCase("Team Voyager")]
         [TestCase("Team Zenith")]

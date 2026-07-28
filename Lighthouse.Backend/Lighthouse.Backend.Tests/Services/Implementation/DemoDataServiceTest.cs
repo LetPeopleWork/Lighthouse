@@ -67,6 +67,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void LoadScenarios_DependenciesScenario_IncludesATeamWithoutThroughput()
+        {
+            // The scenario exists to show Epics with several teams; one of them deliberately has closed
+            // nothing, so the Epic demonstrates the unknown-forecast state (ADR-112). Removing that team
+            // would quietly take the only demo coverage of it with it.
+            var subject = CreateSubject();
+
+            var dependencies = subject.GetAllScenarios().Single(x => x.Title == "Dependencies");
+
+            Assert.That(dependencies.Teams, Does.Contain("Team Meridian"));
+        }
+
+        [Test]
         [TestCase("Flow in Scrum", "A team that is focusing on delivering at the end of their Sprint. What does it do to their flow?")]
         [TestCase("It's Not Always What It Seems", "Two teams that look a certain way on first glance. Explore all Flow Metrics to get a full picture and don't draw conclusions before.")]
         [TestCase("Dependencies", "Explore a project where we have Epics with multiple Teams involved.")]

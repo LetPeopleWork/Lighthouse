@@ -327,6 +327,10 @@ namespace Lighthouse.Backend.Services.Implementation
             projectDependencies.Teams.Add(DemoTeamNames.PartTimeWork);
             projectDependencies.Teams.Add(DemoTeamNames.OldItems);
 
+            // Shares the first Epic with two teams that can be forecast, so that Epic shows what happens
+            // when one contributing team has no throughput at all (ADR-112).
+            projectDependencies.Teams.Add(DemoTeamNames.NoThroughput);
+
             projectDependencies.Projects.Add(DemoProjectNames.ProjectWithDependencies);
 
             premiumScenarios.Add(projectDependencies);

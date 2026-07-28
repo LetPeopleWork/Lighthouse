@@ -203,14 +203,76 @@ If we have two teams working on two features independently, it's the same case a
 
 ### 2 Teams - 1 Feature
 A tricky case is if we have a feature that is being worked on by two teams. This means both teams have work to do for this feature. Lighthouse will run two forecasts, one for each team with the remaining work for the Feature (similar to [1 Team - 1 Feature](#1-team---1-feature)). Then both forecasts will be stored for this Feature.
-Lighthouse is then presenting you the forecast that is predicting to be done later.
+
+The Feature is only done once **every** team is done. So Lighthouse combines the two forecasts into one: it multiplies the teams' probabilities together.
 
 {: .note}
 That does not mean that one team is slower, they might just have other work that is ordered higher up.
 
+Why multiply? Think of each team finishing on time as a coin landing heads. One coin landing heads is not unlikely. Both coins landing heads at the same time is rarer. If two teams each have an 85% chance of being done by a date, the chance that *both* are done by that date is about 72%. So the date Lighthouse can honestly call "85% likely" is a bit later than either team's own 85% date.
+
 {: .important}
-What Lighthouse does in such cases is not ideal. It's suggesting that there is a 95/85/70/50% probability for the forecast that predicts to be done later. However, as it's two forecasts that both need to happen, the real probabilities would be 90/72/49/25%. This would be even worse if three or more teams would be involved. [Dependencies](#dependencies) are horrible, try to get rid of them.
-While we know it's not properly done at the moment, we are not sure what's the best way to handle this. We're open for ideas.
+Lighthouse used to simply show you the forecast of the team that predicted to be done later, which quietly assumed every other team was a certainty. That made the numbers optimistic: what was labelled 95/85/70/50% was really worth about 90/72/49/25% with two teams, and it got worse the more teams were involved. This is fixed - the percentages you see now account for all contributing teams.
+
+Two things worth knowing about the change:
+
+- **Dates only ever move later, never earlier.** Nobody's forecast becomes more optimistic because of this.
+- **Features with a single team are completely unaffected**, at every percentile. If only one team contributes, there is nothing to combine.
+
+[Dependencies](#dependencies) are still horrible, so try to get rid of them. Lighthouse now tells you the truth about what they cost you instead of hiding it.
+
+#### Doing it by hand
+
+You can reproduce this yourself with a spreadsheet - it needs no simulation, just the two teams' results. Say both teams have 3 items left and their [When](#1-team---1-feature) forecasts each came out like this, out of 10'000 trials:
+
+| Finished on day | Team A | Team B |
+|---|---|---|
+| 1 | 5000 | 5000 |
+| 2 | 2500 | 2500 |
+| 3 | 2500 | 2500 |
+
+**Step 1 - turn each team into "chance of being done *by* this day".** Add the trials up as you go down the column, then divide by 10'000:
+
+| By day | Team A | Team B |
+|---|---|---|
+| 1 | 5000 / 10'000 = 0.50 | 0.50 |
+| 2 | 7500 / 10'000 = 0.75 | 0.75 |
+| 3 | 10'000 / 10'000 = 1.00 | 1.00 |
+
+**Step 2 - multiply the two columns, row by row.** This is the whole idea: both teams have to be done.
+
+| By day | Team A × Team B | Both done by then |
+|---|---|---|
+| 1 | 0.50 × 0.50 | 0.25 |
+| 2 | 0.75 × 0.75 | 0.5625 |
+| 3 | 1.00 × 1.00 | 1.00 |
+
+**Step 3 - read your percentile off that last column.** It is the first day where the chance reaches the number you care about.
+
+- 50%: day 1 is only at 0.25, day 2 is at 0.5625 → **day 2**
+- 85%: day 1 and day 2 are both below 0.85, day 3 reaches 1.00 → **day 3**
+
+Each team on its own would have told you day 1 for the 50% mark. Together they say day 2. Neither team got slower - you are simply asking a harder question, namely whether *both* of them are finished.
+
+{: .note}
+If a team has already finished its share, its column is 1.00 everywhere, and multiplying by 1.00 changes nothing. That is why finished teams and single-team Features do not shift the result.
+
+{: .important}
+The multiplication treats the teams as independent of each other. If the same people work in both teams, or one team has to hand something over to the other before it can start, that assumption breaks - and reality will be **worse** than this maths suggests, not better. That is another good reason to get rid of [dependencies](#dependencies).
+
+### When a Team Cannot Be Forecast
+
+A forecast needs history. If one of the teams working on a Feature has no closed items in its history, Lighthouse has nothing to simulate for that team, and therefore no honest answer for the Feature as a whole.
+
+In that case Lighthouse tells you so instead of guessing: the Feature shows **Cannot forecast** rather than dates or a likelihood, and names the team whose data is missing. The same goes for any [Delivery](../portfolios/detail.html#deliveries) that contains such a Feature - one Feature nobody can forecast makes the whole Delivery unforecastable.
+
+{: .note}
+This is different from the *insufficient data* warning, which means the forecast rests on very little history but still exists. "Cannot forecast" means there is no forecast at all.
+
+The fix is in your data, not in Lighthouse: give that team some closed work items in its history, and the Feature starts forecasting again.
+
+{: .note}
+A Feature with no remaining work is not affected. It is done - that is a fact, not a forecast - and it still reads as 100%.
 
 ## Dependencies
 Lighthouse does **not** offer any possibility to define dependencies in the sense of:

@@ -1,0 +1,13 @@
+ID,Name,State,Type,Parent,StartedDate,ClosedDate,Tags,StateEnteredDate
+ME-001,Calibrate deep water pressure sensors,Next,User Story,OE-001,{-12},,,{-12}
+ME-002,Certify hull for 4000m descent,Backlog,User Story,OE-001,,,,
+ME-003,Map thermal vent survey corridors,Backlog,User Story,OE-001,,,,
+ME-004,Qualify sonar array for cold water,Backlog,User Story,OE-001,,,,
+ME-005,Draft descent safety protocol,Backlog,User Story,OE-001,,,,
+ME-006,Source titanium sensor housings,Backlog,User Story,OE-001,,,,
+ME-007,Fix buoyancy drift in test rig,Backlog,Bug,OE-001,,,,
+ME-008,Rehearse emergency ascent procedure,Backlog,User Story,OE-001,,,,
+ME-009,Provision onboard telemetry storage,Next,User Story,,{-6},,,{-6}
+ME-010,Replace corroded mounting brackets,Backlog,Bug,,,,,
+ME-011,Document sensor calibration steps,Backlog,User Story,,,,,
+ME-012,Schedule dry dock inspection,Backlog,User Story,,,,,
