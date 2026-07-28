@@ -8,6 +8,10 @@ namespace Lighthouse.Backend.Tests.Models
     // returning 100 on an empty histogram, i.e. maximum confidence on the one feature nobody can forecast.
     public class FeatureUnknownForecastTest
     {
+        // CA1861: inline arrays in NUnit assertions are new-code Sonar violations.
+        private static readonly string[] TeamWithoutThroughput = ["No Throughput"];
+        private static readonly string[] TeamTheForecastRanFor = ["Ran Without Throughput"];
+
         private static readonly DateOnly Today = new(2026, 7, 28);
         private static readonly DateTime TargetDate = new(2026, 8, 28, 0, 0, 0, DateTimeKind.Utc);
 
@@ -36,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = FeatureWithUnforecastableTeam();
 
-            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(new[] { "No Throughput" }));
+            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(TeamWithoutThroughput));
         }
 
         [Test]
@@ -105,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Models
             var forecast = new WhenForecast([]) { TeamId = withoutThroughput.Id };
             subject.SetFeatureForecasts([forecast]);
 
-            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(new[] { "No Throughput" }));
+            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(TeamWithoutThroughput));
         }
 
         [Test]
@@ -134,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Models
             var subject = new Feature([(contributing, 2, 2)]);
             subject.SetFeatureForecasts([new WhenForecast([]) { Team = runFor, TeamId = contributing.Id }]);
 
-            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(new[] { "Ran Without Throughput" }));
+            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(TeamTheForecastRanFor));
         }
 
         [Test]

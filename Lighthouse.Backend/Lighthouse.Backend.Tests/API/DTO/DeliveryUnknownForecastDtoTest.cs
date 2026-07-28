@@ -9,6 +9,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
     {
         private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
 
+        // CA1861: inline arrays in NUnit assertions are new-code Sonar violations.
+        private static readonly string[] OneMissingTeam = ["Team Pulsar"];
+        private static readonly string[] TwoMissingTeams = ["Team Pulsar", "Team Voyager"];
+
         [Test]
         public void FromDelivery_OneFeatureCannotBeForecast_ReportsNoDeliveryLikelihood()
         {
@@ -20,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Assert.That(dto.LikelihoodPercentage, Is.Null);
                 Assert.That(dto.CompletionDates, Is.Empty);
-                Assert.That(dto.TeamsWithoutForecast, Is.EqualTo(new[] { "Team Pulsar" }));
+                Assert.That(dto.TeamsWithoutForecast, Is.EqualTo(OneMissingTeam));
             }
         }
 
@@ -48,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var dto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
-            Assert.That(dto.TeamsWithoutForecast, Is.EqualTo(new[] { "Team Pulsar", "Team Voyager" }));
+            Assert.That(dto.TeamsWithoutForecast, Is.EqualTo(TwoMissingTeams));
         }
 
         [Test]
@@ -65,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 // The hazard this story exists to close: the empty-histogram path used to report 100.
                 Assert.That(featureLikelihood.LikelihoodPercentage, Is.Null);
                 Assert.That(featureLikelihood.CompletionDates, Is.Empty);
-                Assert.That(featureLikelihood.TeamsWithoutForecast, Is.EqualTo(new[] { "Team Pulsar" }));
+                Assert.That(featureLikelihood.TeamsWithoutForecast, Is.EqualTo(OneMissingTeam));
             }
         }
 
@@ -139,7 +143,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             var dto = DeliveryWithLikelihoodDto.FromDelivery(DeliveryWith(feature), TestToday.Ambient, NoBlackoutPeriods);
 
-            Assert.That(dto.FeatureLikelihoods.Single().TeamsWithoutForecast, Is.EqualTo(new[] { "Team Pulsar", "Team Voyager" }));
+            Assert.That(dto.FeatureLikelihoods.Single().TeamsWithoutForecast, Is.EqualTo(TwoMissingTeams));
         }
 
         private static Delivery DeliveryWith(params Feature[] features)

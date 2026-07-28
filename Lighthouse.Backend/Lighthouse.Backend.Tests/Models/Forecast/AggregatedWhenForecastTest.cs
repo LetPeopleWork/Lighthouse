@@ -7,6 +7,9 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
     {
         private static readonly int[] Percentiles = [50, 70, 85, 95];
 
+        // CA1861: inline arrays in NUnit assertions are new-code Sonar violations.
+        private static readonly int[] BothContributorDays = [0, 5];
+
         [Test]
         public void HasSufficientData_OneContributingForecastInsufficient_AggregatesToFalse()
         {
@@ -210,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(forwards.SimulationResult.Keys, Is.EqualTo(new[] { 0, 5 }));
+                Assert.That(forwards.SimulationResult.Keys, Is.EqualTo(BothContributorDays));
                 Assert.That(backwards.SimulationResult, Is.EqualTo(forwards.SimulationResult));
             }
         }
