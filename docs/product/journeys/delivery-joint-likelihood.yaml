@@ -1,0 +1,279 @@
+schema_version: 1
+feature_id: delivery-joint-likelihood
+updated: 2026-07-28
+ado: "#5587 (parent Epic #5459)"
+extends: epic-5459-multi-team-forecasts
+
+journeys:
+
+  - name: honest-delivery-likelihood-across-all-features
+    goal: >
+      A delivery-forecaster opens a portfolio delivery holding several features and reads a headline
+      likelihood — and 70/85/95 completion dates — that reflect the JOINT probability that ALL of its
+      features land by the target date, not the marginal probability of the single governing feature.
+      Both surfaces state which probability they are showing, so the gap between the header and the
+      per-feature rows explains itself at a glance instead of reading as an inconsistency.
+    persona: delivery-forecaster
+    secondary_persona: >
+      product-owner — reads the same breakdown grid to decide a scope cut
+      (job-po-scope-cut-from-delivery-trend). The decision gets better, not different: the row-vs-header
+      gap now shows which feature is actually governing the delivery.
+
+    emotional_arc:
+      start: Unsettled — "The delivery says 85% and so does the top feature. Are the other four
+        features free? I cannot show my working and I cannot explain the match."
+      middle: Oriented — "The header says ALL features. The rows say each on its own. Of course the
+        header is the lower one — that is what 'all' means. And when they match, I can see which
+        single feature is carrying the delivery."
+      end: Defensible — "I can reproduce this by hand from the per-team numbers, the concept page
+        shows me how, and I can say out loud what the number means without a caveat speech."
+
+    mental_model:
+      brings: >
+        "The delivery is done when the last feature is done, so the delivery percentage should be the
+        worst feature's percentage." Almost right, and exactly why the current number survives casual
+        inspection — the worst feature IS a bound, just an upper one. The model has no slot for "and
+        the others each have to land too".
+      installs: >
+        The relabelled header ("All {features} by {date}") is what installs that slot. The forecaster
+        does not need to learn the maths; they need the number to name the conjunction it represents.
+
+    design_decisions_resolved:
+      - id: D1
+        question: How is the joint-vs-marginal distinction communicated?
+        decision: >
+          RELABEL BOTH SURFACES. The header chip becomes "All {features} by {date}: NN%" with an info
+          tooltip "P(ALL of these land by the date)". The breakdown grid's Likelihood column gets
+          "each on its own" framing with a tooltip "P(this one lands), ignoring the others". Chosen
+          (maintainer, 2026-07-28) over showing both joint and marginal numbers on the badge (two
+          competing numbers) and over tooltip-only with no label change (leaves the row-vs-header
+          mismatch unexplained at a glance).
+          CONSTRAINT A: all new copy routes through useTerminology() / getTerm(TERMINOLOGY_KEYS.DELIVERY
+          | FEATURE | FEATURES). "Delivery" and "Feature" are user-renamable; never hardcode.
+          CONSTRAINT B: the copy must NOT promise the header is always lower than every row — equality
+          is legitimate (D5).
+      - id: D2
+        question: What happens when a feature in the delivery cannot be forecast?
+        decision: >
+          UNCHANGED — ADR-112 D8 stands. The delivery is itself un-forecastable and names the teams.
+          The check runs BEFORE the joint computation. Rejected (maintainer, 2026-07-28): exposing a
+          forecastable-subset upper bound alongside it; replacing D8 with a subset-plus-warning. Same
+          reason the partial feature forecast was rejected in ADR-112 — a number that quietly ignores
+          work that must still happen.
+      - id: D3
+        question: How is the upgrade shock handled?
+        decision: >
+          RELEASE NOTES + DOCS ONLY. A release-notes lead item written as positioning (customer pain →
+          outcome win), plus extending docs/concepts/howlighthouseforecasts.md — which already explains
+          the multi-team coin analogy from Epic 5459 — one level up to deliveries. NO in-app banner, NO
+          dismissible notice, NO trend-chart annotation. Rationale (maintainer, 2026-07-28): matches
+          how ADR-110 D5 handled 5459's own one-time step; no dismissible-notice mechanism exists today
+          and building one for a single-release message is disproportionate.
+      - id: D4
+        question: Is the team-independence assumption surfaced in the product?
+        decision: >
+          DOCS ONLY. The assumption is already stated plainly in the concept docs post-5459 ("shared
+          people or a hand-off make reality worse than the maths suggests"). No in-product caveat, no
+          detector. Grounding evidence (recorded so it is not re-litigated): a grep for "Assignee"
+          across the backend C# returns ZERO hits — Lighthouse stores no person or assignee data at
+          all, so shared-people correlation is not merely undetected, it is UNDERIVABLE from what is
+          persisted.
+      - id: D5
+        question: At what grain does the decomposition happen when a feature is shared by two teams?
+        decision: >
+          PER TEAM, NEVER AT FEATURE GRAIN. A feature worked by teams A and B contributes one row to
+          A's bucket and one to B's. Every (team, feature) row lands in exactly one bucket, so the
+          sharing is expressed once and never re-applied. `min` operates only WITHIN a team's bucket;
+          the product operates only ACROSS buckets; the two operators never touch the same pair.
+          Raised by the maintainer as the correctness backbone.
+          INVARIANT: delivery <= every breakdown row, with EQUALITY POSSIBLE. One line of proof: team
+          t's min <= any row in bucket(t), and every other team's term <= 1. Equality occurs when a
+          single feature governs entirely and the other teams' rows carry slack.
+          CANONICAL CONSISTENCY FIXTURE: a delivery holding exactly ONE FEATURE SHARED BY TWO TEAMS
+          must produce a result bit-identical to that feature's AggregatedWhenForecast. The
+          single-TEAM version of this check is trivially true and proves nothing — the shared version
+          kills all three grain traps at once.
+          THREE-WAY DISCRIMINATING FIXTURE: F1 shared by A+B, F2 owned by B alone; at some day
+          A/F1 = 0.90, B/F1 = 0.80, B/F2 = 0.95.
+            correct (row grain):            0.90 x min(0.80, 0.95)        = 0.720
+            multiplying feature CDFs:       (0.90x0.80) x 0.95            = 0.684  (B double-penalised)
+            team term from feature.Forecast:(0.90x0.80) x min(0.72, 0.95) = 0.518  (B folded into A,
+                                                                                    then multiplied again)
+          Breakdown rows here are F1 = 0.72 and F2 = 0.95, so the correct delivery number EQUALS F1's
+          row — which is exactly why D1's copy must not promise "always lower".
+      - id: D6
+        question: What happens to GetLeastLikelyFeature and the delivery's HasSufficientData?
+        decision: >
+          DELETE GetLeastLikelyFeature; HasSufficientData becomes an AND across the delivery's
+          contributing features, EXEMPTING those with no remaining work; empty set yields true.
+          Derived at DISCUSS, 2026-07-28. Since ADR-112 D8 the helper no longer drives the likelihood
+          but it DOES still drive the sufficiency flag, making it the third instance of "one
+          representative stands for the whole" in the delivery rollup. AND is consistent with ADR-039's
+          across-teams rule and with AggregatedWhenForecast.HasSufficientData = All(...), which already
+          ANDs across a feature's team rows. FeatureLikelihoodDto.HasSufficientData is itself the
+          All-across-teams aggregate, so All-across-features == All across every (team, feature) row —
+          the exact row set the likelihood now uses.
+          THE EXEMPTION IS NOT OPTIONAL: a feature with no remaining work carries the whole-feature
+          {0: 0} sentinel whose Team is null, so ForecastService never copies the sufficiency flag and
+          the bool stays at its false default. A plain All(...) would make EVERY delivery containing a
+          completed feature report "not enough data". Today GetLeastLikelyFeature masks this by
+          accident (a finished feature sorts to likelihood 100 and is never selected). The exemption
+          keys off remaining work — the same rule as ADR-112's completed-feature exemption.
+          VISIBLE DELTA: a delivery whose least-likely feature has sufficient data but where another
+          feature does not now reports false where it reported true. Intentional; goes in the release
+          notes.
+      - id: D7
+        question: What happens to the percentile chips?
+        decision: >
+          THEY MOVE TOO. GetGoverningFeature is deleted; delivery.completionDates comes from the joint
+          histogram instead of the governing feature's. Dates move OUTWARD, not just the badge — the
+          most under-communicated consequence of the change, and it must be named in the release notes.
+          Side effect: the ADO #5435 symptom (delivery forecast dates earlier than an individual
+          feature's) becomes structurally impossible, because the delivery CDF is pointwise <= every
+          feature's CDF. Assert it directly rather than relying on the deleted tie-break.
+      - id: D8
+        question: Is any of this persisted?
+        decision: >
+          NO. Read-side only — no schema change, no DTO field, no endpoint, no migration. Recorded
+          DeliveryMetricSnapshot history shows a one-time step at the release boundary. Snapshots are
+          forward-only (ADR-048/049) and store percentile DATES, so the history physically cannot be
+          recomputed. Same situation as ADR-110 D5, one level up. Documented in the release notes
+          rather than backfilled.
+
+    implementation_traps:
+      - id: T1
+        trap: >
+          Team term built from feature.Forecast (the AggregatedWhenForecast) instead of
+          feature.Forecasts.Where(team == t). Folds team B's risk into team A's term, then multiplies B
+          again. Yields 0.518 on the three-way fixture.
+      - id: T2
+        trap: >
+          `min` taken over feature aggregates per team rather than over per-team rows — the same
+          double-count in different clothing. Same fixture discriminates it.
+      - id: T3
+        trap: >
+          Row enumeration by cartesian product (teams x features) instead of from the actual work
+          pairs. Injects degenerate empty CDFs for teams with no work on a feature.
+          AddOrUpdateWorkForTeam / RemoveTeamFromFeature make the row set genuinely sparse.
+      - id: T4
+        trap: >
+          A finished row inside an unfinished shared feature. Team A can have RemainingWorkItems == 0
+          on F1 while B still has work. Feature.GetLikelhoodForDate short-circuits to 100 only at
+          FEATURE level. A's row must contribute CDF == 1, and if it is A's only row, bucket(A) must
+          resolve to 1 — NOT to "cannot forecast". The row-level replay of the Epic 5459 bug where the
+          zero-trial filter turned "done" into -1; the exemption keys off remaining work, not off who
+          owns the empty forecast.
+          DISCUSS finding (2026-07-28): such a row is normally ABSENT from Forecasts, because
+          InitializeSimulationResults only emits a SimulationResult for FeatureWork with
+          RemainingWorkItems > 0 — so the naive failure is a MISSING bucket rather than a degenerate
+          one. But Forecasts is EF-persisted and only rewritten by SetFeatureForecasts on the next
+          forecast run, so a stale zero-trial row IS reachable between runs. Both shapes must resolve
+          to CDF == 1.
+
+    row_states:
+      - row: remaining > 0, team has throughput
+        shape: present in Forecasts, TotalTrials 10000 — normal contributor
+      - row: remaining > 0, team has NO throughput
+        shape: present in Forecasts, TotalTrials 0 — cannot forecast (ADR-112)
+      - row: remaining == 0
+        shape: >
+          ABSENT from Forecasts — InitializeSimulationResults only emits a SimulationResult for
+          FeatureWork with RemainingWorkItems > 0. Done; contributes CDF == 1.
+      - row: all of a feature's rows remaining == 0
+        shape: >
+          one sentinel row, Team null, day-0 bucket with zero trials. Done;
+          Feature.GetLikelhoodForDate short-circuits to 100. Carries HasSufficientData == false by
+          default, because ForecastService only copies the sufficiency flag when the row has a Team —
+          which is why D6 needs its exemption.
+
+    error_paths:
+      - path: Any feature cannot be forecast
+        behaviour: >
+          "Cannot forecast", names the teams. UNCHANGED (D2). The joint maths is never reached.
+      - path: All features finished
+        behaviour: >
+          100% / Done, dates as today. The joint rollup must not turn "done" into "cannot forecast"
+          (T4 at delivery grain).
+      - path: Delivery with no features
+        behaviour: 0%, empty completion dates — as today.
+      - path: Some features finished, others not
+        behaviour: >
+          Finished rows drop out (CDF == 1); the delivery reflects only the rows with remaining work.
+
+    shared_artifacts:
+      - variable: "{features} / {feature} / {delivery}"
+        source: getTerm(TERMINOLOGY_KEYS.FEATURES | FEATURE | DELIVERY) — user-renamable, never hardcoded
+      - variable: "{date} in the header chip"
+        source: delivery.getFormattedDate() — the same formatter as the "Delivery Date:" text beside it
+      - variable: header NN%
+        source: DeliveryWithLikelihoodDto.LikelihoodPercentage <- Delivery.CalculateMetrics joint histogram
+      - variable: header 70/85/95 chips
+        source: DeliveryWithLikelihoodDto.CompletionDates <- the SAME joint histogram (D7)
+      - variable: row NN%
+        source: FeatureLikelihoodDto.LikelihoodPercentage <- feature.GetLikelhoodForDate — UNCHANGED (marginal)
+      - variable: "Cannot forecast" + team names
+        source: TeamsWithoutForecast (ADR-112) — UNCHANGED (D2)
+      - variable: "Not enough data"
+        source: DeliveryWithLikelihoodDto.HasSufficientData — rule changes (D6)
+      - variable: recorded trend points
+        source: DeliveryMetricSnapshot — forward-only, one-time step, no backfill (D8)
+
+    integration_checkpoints:
+      - The relabel (D1) is only truthful once the header is joint — slices 01-04 ship as ONE release
+        unit; slice order is a build order, not a release order.
+      - The sufficiency signal composes with, and does not replace, the ADR-112 unknown state and the
+        existing INSUFFICIENT_FORECAST_DATA_SHORT rendering (ADR-039, ADR-112 D4).
+      - The snapshot recorder writes the new percentile dates from the day of release; no backfill.
+
+    surfaces:
+      - portfolio-delivery-header: likelihood badge + 70/85/95 chips via
+        `GET /api/latest/deliveries/portfolio/{portfolioId}` -> `DeliveryWithLikelihoodDto`.
+      - portfolio-delivery-breakdown: per-feature Likelihood column via `FeatureLikelihoodDto` —
+        values unchanged, framing relabelled.
+      - delivery-trend: recorded percentile snapshots feeding the over-time delivery charts (D8).
+      - docs: `docs/concepts/howlighthouseforecasts.md` extended one level up to deliveries; live on
+        letpeople.work via jsDelivr the moment it merges.
+      - release-notes: lead item written as positioning, plus a separate sufficiency bullet.
+
+    out_of_scope:
+      - Changing the Monte Carlo, the throughput sampling, the filter modes, or the blackout day-shift
+        translation.
+      - Per-trial max across teams, or modelling cross-team correlation (ADR-110's deferred door).
+      - Modelling INTRA-team correlation more exactly than the comonotonic `min` proxy. `min` is the
+        honest upper bound under perfect positive dependence; a per-trial max within a team's bucket
+        would be exact and is deferred for the same reason ADR-110 deferred it.
+      - Any schema change, new DTO field, new endpoint, or migration.
+      - Changing per-feature likelihood or per-feature dates — the rows are marginals and stay
+        marginals (that is the point of D1).
+      - Changing ADR-112 D8 (D2), including any forecastable-subset upper bound.
+      - In-app upgrade messaging of any kind (D3).
+      - An in-product independence caveat or a shared-people detector (D4).
+      - Backfilling DeliveryMetricSnapshot history.
+      - Filing the standing ForecastBase.GetLikelihood `return 100` ticket — still open from Epic 5459,
+        still deliberately untouched, still wants its own ticket.
+
+    cross_cutting:
+      rbac: >
+        N/A — the change alters WHAT number an existing surface renders, not who may read it. No new
+        operation, no IRbacAdministrationService interaction, no new UI gate, no change to useRbac().
+        The premium gate on the delivery Metrics tab is untouched.
+      clients: >
+        NO version gate required. The change is read-side and adds no DTO field.
+        `lighthouse_delivery_list` forwards the delivery payload verbatim through encodePayload, and
+        `listDeliveries` is typed Promise<LighthouseApiResult<readonly unknown[]>> — the clients do not
+        deserialise or render a likelihood to a human. LikelihoodPercentage, CompletionDates and
+        HasSufficientData all already exist and keep their types (LikelihoodPercentage is already
+        nullable per ADR-112). No FEATURE_REQUIRES_SERVER_NEWER_THAN gate applies and no clients
+        release is needed. Re-confirm rather than re-derive at DELIVER.
+      website: >
+        N/A for the marketing surface — no new capability, screen or headline claim; the marketing
+        pages do not quote a delivery likelihood. IN SCOPE for `docs/`, which the website hot-links
+        from Lighthouse@main/docs/ via jsDelivr: the concept-page edit is live the moment it merges, so
+        it must be complete and self-consistent at merge time.
+      migrations: >
+        N/A — read-side only. No entity, no column, no CreateMigration run.
+      demo_data: >
+        No change expected. The premium Dependencies scenario already demonstrates joint / thin-data /
+        cannot-forecast / finished side by side (Epic 5459) and is the natural fixture for the visible
+        deltas. DELIVER should confirm it exercises a shared feature across two teams within ONE
+        delivery, and add one if it does not.

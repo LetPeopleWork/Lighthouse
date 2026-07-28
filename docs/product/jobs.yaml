@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-07-27
+updated: 2026-07-28
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -30,6 +30,7 @@ feature_context:
   - epic-5427-percentiles-over-time
   - epic-5459-multi-team-forecasts
   - epic-5513-servicenow-integration
+  - delivery-joint-likelihood
 
 jobs:
   - id: job-rbac-bootstrap
@@ -3792,3 +3793,93 @@ jobs:
         front of real users, which no amount of desk research substitutes for. Note the self-hosted
         telemetry gap (#5015) means adoption cannot be measured remotely; this verdict must be
         collected by hand.
+
+  - id: job-delivery-likelihood-covers-every-feature
+    title: Read a delivery's likelihood as the chance that ALL its features land
+    persona: delivery-forecaster
+    feature_context: delivery-joint-likelihood
+    created: 2026-07-28
+    note: >
+      ADO #5587, child of Epic #5459. Epic 5459 fixed the FEATURE rollup (worst-team copy → product of
+      the contributing teams' CDFs, ADR-110). The DELIVERY rollup still selects a single representative:
+      `Delivery.CalculateMetrics` calls `GetGoverningFeature`, picks one feature, and reports that
+      feature's likelihood AND its 70/85/95 percentile dates as the delivery's — treating every other
+      feature as a certainty. Two features each 85% land near 72% jointly. A THIRD instance of the same
+      defect sits one file over: `DeliveryWithLikelihoodDto.GetLeastLikelyFeature` no longer drives the
+      likelihood (ADR-112 D8) but still drives `HasSufficientData`, so the delivery's "not enough data"
+      warning is also read off one representative feature.
+      The correct decomposition is over (team, feature) ROWS, not over features:
+      `ForecastService.RunMonteCarloSimulation` groups trials by team, so intra-team rows share
+      throughput draws and contend via the random FeatureWIP allocation (positively correlated → the
+      elementwise MIN of that team's rows' CDFs is the honest proxy), while cross-team trial streams are
+      independent by construction (→ product, as ADR-110 already does). Multiplying FEATURE CDFs is
+      wrong and double-penalises same-team features. Read-side only; no schema change.
+      Invariant: delivery ≤ every breakdown row, with EQUALITY POSSIBLE — which is why the UI copy may
+      not promise "always lower".
+    job_story: >
+      When I read a delivery's likelihood and its per-feature breakdown before committing to a date,
+      I want the headline number to be the chance that ALL of its features land by the date — not the
+      chance that the single governing one does —
+      so the number I commit to in front of leadership is not optimistic by construction, and so the
+      difference between the header and the rows is something I can explain rather than something I
+      have to explain away.
+    dimensions:
+      functional: >
+        The delivery's likelihood and its 70/85/95 completion dates are computed from the joint
+        distribution over every contributing (team, feature) row — elementwise min within a team's
+        bucket, product across buckets — instead of being copied from one selected feature. The
+        breakdown rows stay marginal ("this one on its own") and both surfaces say which probability
+        they are: the header reads "All {features} by {date}: NN%", the breakdown column reads
+        "Likelihood (each on its own)". The "not enough data" signal becomes an AND across the
+        contributing features, exempting those with no remaining work. A delivery containing a feature
+        that cannot be forecast is unchanged — it still reports "cannot forecast" and names the teams
+        (ADR-112 D8).
+      emotional: >
+        Move from a quiet inconsistency the forecaster cannot explain ("the delivery says 85% and so
+        does the top feature — are the other four free?") to a number that states its own meaning
+        ("it says ALL features; of course it is the lower one — and when it matches a row, I can see
+        which single feature is carrying the delivery").
+      social: >
+        Be the forecaster who is never asked "why is your delivery number the same as your worst
+        feature?" without an answer — and who is never the person who presented an 85% that was really
+        a 72% because the tool treated four of five features as certainties.
+    forces:
+      push: >
+        Delivery likelihood is the most leadership-facing number Lighthouse produces, and it is
+        systematically optimistic today. The bias is invisible: nothing on screen hints that the other
+        features' probabilities were discarded, so there is no workaround short of redoing the maths by
+        hand from the per-team rows. The percentile chips carry the same defect and nobody has noticed,
+        because the badge is what gets screenshotted.
+      pull: >
+        One read-side change at one seam (`Delivery.CalculateMetrics`) makes the badge AND the 70/85/95
+        chips honest at once, with no schema change, no new endpoint and no client release. Nothing new
+        to configure, nothing new to learn.
+      anxiety: >
+        The number drops and the dates move OUT at the release boundary, and the recorded
+        DeliveryMetricSnapshot trend shows a one-time step that cannot be backfilled (forward-only,
+        ADR-048/049). A forecaster mid-commitment may read all three as the delivery getting worse
+        rather than the tool getting honest. Mitigated by relabelling both surfaces so the number states
+        its own meaning, and by release notes plus a delivery-level worked example in the forecasting
+        concept page — exactly as ADR-110 D5 handled Epic 5459's own step. Second anxiety: forecasting
+        is the core of the product, so a grain error here is a trust-ending bug — mitigated by a single
+        fixture (one shared feature plus one owned feature) that yields three DISTINCT values for the
+        correct maths and the two plausible wrong ones.
+      habit: >
+        Forecasters read a delivery percentage as if it were one feature's, and their mental model has
+        no slot for "and the others each have to land too". The new number needs no new ritual, but the
+        first release will prompt "why is my delivery lower than every row?" — the relabelled chip is
+        what converts that from alarm to comprehension at a glance, and the concept page is what lets
+        them reproduce it by hand.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — the delivery badge is the single most leadership-facing forecast surface in the
+        product, the defect biases it in the dangerous direction (too optimistic), and it silently
+        carries the percentile dates with it. Current satisfaction: 1 — the behaviour is wrong today
+        with no user-side workaround and no on-screen signal that anything was discarded; the row-vs-
+        header mismatch is actively confusing. Gap: 4 — the highest-value correction left in the
+        forecasting domain after Epic 5459, served by one read-side seam with no schema change, no new
+        endpoint and no clients release. Kept below the "unclosable" tier only because the intra-team
+        correlation is approximated (comonotonic min) rather than simulated exactly.
