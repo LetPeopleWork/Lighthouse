@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private static DateTime Today => DateTime.UtcNow.Date;
 
         [Test]
-        [Ignore("RED until Story #5569 implements the joint distribution")]
         public async Task GetDelivery_MultiTeamFeature_LikelihoodIsTheJointProbabilityNotTheWorstTeams()
         {
             var portfolio = await SeedPortfolioWithTwoEquallyForecastedTeams();

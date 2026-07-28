@@ -10,14 +10,16 @@
         {
             var materialized = forecasts.ToList();
 
-            var worstCase = materialized.MaxBy(f => f.GetProbability(85));
-            if (worstCase != null)
+            if (materialized.Count > 0)
             {
-                SetSimulationResult(new Dictionary<int, int>(worstCase.SimulationResult));
-                Team = worstCase.Team;
-                TeamId = worstCase.TeamId;
-                NumberOfItems = worstCase.NumberOfItems;
-                CreationTime = worstCase.CreationTime;
+                var joint = JointCompletionDistribution.Combine(materialized.Select(f => f.SimulationResult));
+
+                // No contributor carries trials - a feature with no remaining work gets the day-0 sentinel
+                // from ForecastService. Keep it: that is a fact, not a forecast (AC-02.3).
+                // Team/TeamId stay null: the aggregate belongs to no single team (ADR-111).
+                SetSimulationResult(joint.Count > 0 ? joint : new Dictionary<int, int>(materialized[0].SimulationResult));
+                NumberOfItems = materialized.Sum(f => f.NumberOfItems);
+                CreationTime = materialized.Min(f => f.CreationTime);
             }
 
             FilterApplied = materialized.Any(f => f.FilterApplied);

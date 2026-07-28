@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore("RED until Story #5569 implements the joint distribution")]
         public async Task FeatureForecast_TwoTeamsWithTwoValueThroughput_IsLaterThanEveryContributingTeam()
         {
             var subject = CreateSubject(new RandomNumberService());

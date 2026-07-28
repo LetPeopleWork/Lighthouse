@@ -65,7 +65,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        [Ignore("RED until Story #5569 implements the joint distribution")]
         public void GetProbability_TwoTeamsWithMassAtTheSelectedTeamsDate_IsStrictlyLaterThanThatTeam()
         {
             var teamHistogram = new Dictionary<int, int> { { 1, 5000 }, { 2, 2500 }, { 3, 2500 } };
@@ -131,7 +130,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        [Ignore("RED until Story #5569 applies the ADR-111 provenance")]
         public void Provenance_AggregateOfMultipleTeams_CarriesNoTeamIdentity()
         {
             var first = CreateForecast(team: new Team { Id = 1, Name = "Team A" });
@@ -147,7 +145,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        [Ignore("RED until Story #5569 applies the ADR-111 provenance")]
         public void Provenance_NumberOfItems_IsTheSumOfAllContributors()
         {
             var first = CreateForecast(numberOfItems: 3);
@@ -159,7 +156,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        [Ignore("RED until Story #5569 applies the ADR-111 provenance")]
         public void Provenance_CreationTime_IsTheOldestContributor()
         {
             var oldest = new DateTime(2026, 7, 20, 8, 0, 0, DateTimeKind.Utc);
@@ -184,7 +180,26 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        [Ignore("RED until Story #5569 implements the joint distribution")]
+        public void EveryContributorWithoutTrials_KeepsTheContributorHistogram()
+        {
+            // A feature with no remaining work carries ForecastService's day-0 sentinel {0: 0}. It is a
+            // fact, not a forecast, and must not degrade to "no percentile date" (AC-02.3).
+            var noRemainingWork = CreateForecast(histogram: new Dictionary<int, int> { { 0, 0 } });
+
+            var aggregate = new AggregatedWhenForecast([noRemainingWork]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var percentile in Percentiles)
+                {
+                    Assert.That(aggregate.GetProbability(percentile), Is.Zero, $"p{percentile} is today");
+                }
+
+                Assert.That(aggregate.GetLikelihood(0), Is.EqualTo(100));
+            }
+        }
+
+        [Test]
         public void ContributorWithoutTrials_IsExcludedFromTheMathsButStillCountsForProvenance()
         {
             var forecasted = CreateForecast(histogram: new Dictionary<int, int> { { 1, 5 }, { 4, 5 } }, numberOfItems: 3);

@@ -141,3 +141,43 @@ Full text in `../feature-delta.md` US-01. Summary:
 2. Mutation testing ≥ 80 % on `AggregatedWhenForecast`.
 3. Playwright run locally against a portfolio with a multi-team feature.
 4. **Maintainer diff review** (D8 gate 2) — no commit before it.
+
+## Docs impact — rewrite `docs/concepts/howlighthouseforecasts.md` (at finalization)
+
+The user doc does not merely omit this behaviour — it **documents the bug as an open problem and asks
+readers for ideas**. Section `### 2 Teams - 1 Feature` (`docs/concepts/howlighthouseforecasts.md:204-213`)
+currently says:
+
+> Lighthouse is then presenting you the forecast that is predicting to be done later. […] What Lighthouse
+> does in such cases is not ideal. It's suggesting that there is a 95/85/70/50% probability for the
+> forecast that predicts to be done later. However, as it's two forecasts that both need to happen, the
+> real probabilities would be 90/72/49/25%. […] While we know it's not properly done at the moment, we
+> are not sure what's the best way to handle this. We're open for ideas.
+
+Every sentence of that passage is obsolete once this slice ships. The rewrite must:
+
+1. **Delete the apology.** The `{: .important}` block and "we're open for ideas" go away — this is solved.
+2. **State the new rule in one plain sentence**: a feature is done only when every contributing team is
+   done, so Lighthouse now multiplies the teams' probabilities together instead of showing the slowest
+   team's dates.
+3. **Keep the worked numbers, flipped.** The doc's own 95/85/70/50 → 90/72/49/25 example is the clearest
+   thing on the page: it now describes what Lighthouse *does*, not what it fails to do. Re-frame it as
+   "you asked for 85 %, and with two teams you now get a date that really is 85 %."
+4. **Explain it without the maths vocabulary.** No "CDF", no "product of distributions", no "joint
+   probability" as a bare term. The two-coin framing works: each team finishing on time is like a coin
+   landing heads; both teams landing heads at once is rarer than either one alone. Two teams at 85 %
+   give ~72 % together, which is why the honest date moves later.
+5. **Say what does NOT change**, because it is the first thing a reader will fear: single-team features
+   move zero days, at every percentile (AC-01.4, measured in SPIKE-00).
+6. **Note the direction of travel**: dates get later, never earlier. Nobody's forecast gets more
+   optimistic because of this change.
+7. Keep the existing pointer to [Dependencies](#dependencies) — the advice to avoid them stands, it is
+   just no longer compensating for a known inaccuracy.
+
+Also check on the same pass: `### 2 Teams - 2 Features` (line 201) claims independent teams are "the same
+case as 1 Team - 1 Feature", which stays true, and the `# Conclusion` section, which should not still
+imply the multi-team number is approximate.
+
+Screenshots: no UI change in this slice, so no `@screenshot` regeneration is expected — confirm rather
+than assume, since forecast dates appear in committed portfolio screenshots and the demo data may shift
+them.

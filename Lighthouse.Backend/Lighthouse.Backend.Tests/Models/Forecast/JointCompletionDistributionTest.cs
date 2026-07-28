@@ -5,7 +5,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
     // Story #5569 (ADR-110). Tier 1 (exact) + Tier 2 (invariants) of the slice-01 test strategy.
     // Constant-throughput fixtures are point masses, and the product of point masses IS the max the
     // buggy code already returned - every fixture here is deliberately multi-valued.
-    [Ignore("RED until Story #5569 implements JointCompletionDistribution - see distill-red-classification.md")]
     public class JointCompletionDistributionTest
     {
         private const int RandomSeed = 5569;
