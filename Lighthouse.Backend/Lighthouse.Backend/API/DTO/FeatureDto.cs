@@ -22,7 +22,14 @@ namespace Lighthouse.Backend.API.DTO
             Size = feature.Size;
             OwningTeam = feature.OwningTeam;
 
-            Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(clock.Today, blackoutPeriods, 50, 70, 85, 95) ?? []);
+            // A feature a contributing team cannot be forecast for reports no dates at all rather than
+            // dates built from the teams that could be forecast (ADR-112).
+            TeamsWithoutForecast.AddRange(feature.TeamsWithoutForecast.Select(team => team.Name).Distinct().Order());
+
+            if (feature.CanBeForecast)
+            {
+                Forecasts.AddRange(feature.Forecast?.CreateForecastDtos(clock.Today, blackoutPeriods, 50, 70, 85, 95) ?? []);
+            }
 
             foreach (var work in feature.FeatureWork)
             {
@@ -61,5 +68,8 @@ namespace Lighthouse.Backend.API.DTO
         public Dictionary<int, int> TotalWork { get; } = new Dictionary<int, int>();
 
         public List<WhenForecastDto> Forecasts { get; } = new List<WhenForecastDto>();
+
+        // Non-empty means the feature cannot be forecast, and names the teams to chase (ADR-112).
+        public List<string> TeamsWithoutForecast { get; } = [];
     }
 }

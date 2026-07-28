@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.Models
         private static readonly DateTime TargetDate = new(2026, 8, 28, 0, 0, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore("RED until Story #5570 carries the unknown forecast state")]
         public void CanBeForecast_ContributingTeamHasNoThroughput_IsFalse()
         {
             var subject = FeatureWithUnforecastableTeam();
@@ -21,7 +20,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5570 carries the unknown forecast state")]
         public void GetLikelhoodForDate_ContributingTeamHasNoThroughput_IsNotHundred()
         {
             // AC-02.2, the sharp edge: falling through to ForecastBase.GetLikelihood's `return 100`
@@ -34,7 +32,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5570 carries the unknown forecast state")]
         public void TeamsWithoutForecast_NamesTheTeamThatCouldNotBeForecast()
         {
             var subject = FeatureWithUnforecastableTeam();
@@ -43,7 +40,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5570 carries the unknown forecast state")]
         public void CanBeForecast_EveryContributingTeamHasThroughput_IsTrue()
         {
             var forecasting = new Team { Id = 1, Name = "Forecasting" };
@@ -54,7 +50,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5570 carries the unknown forecast state")]
         public void CanBeForecast_NoRemainingWork_IsTrueEvenThoughNothingWasSimulated()
         {
             // AC-02.3: a finished feature is a fact, not a forecast. It carries ForecastService's day-0
@@ -71,7 +66,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5570 carries the unknown forecast state")]
         public void HasSufficientData_ContributingTeamHasNoThroughput_StaysFalse()
         {
             // AC-02.4: the two signals compose. Unknown says no distribution exists; insufficient data

@@ -1,4 +1,4 @@
-import { Box, Chip, Typography } from "@mui/material";
+import { Box, Chip, Tooltip, Typography } from "@mui/material";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
@@ -6,6 +6,11 @@ import type { Delivery } from "../../../models/Delivery";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	CANNOT_FORECAST_SHORT,
+	cannotBeForecast,
+	cannotForecastReason,
+} from "../../../utils/forecast/cannotForecast";
 import { formatLikelihood } from "../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../utils/forecast/isForecastDataInsufficient";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
@@ -54,15 +59,44 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 		<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
 			{deliveries.map((delivery) => {
 				const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
-				const forecastSummary = isForecastDataInsufficient({
-					hasRemainingWork: delivery.remainingWork > 0,
-					hasSufficientData: delivery.hasSufficientData,
-				})
-					? INSUFFICIENT_FORECAST_DATA_SHORT
-					: `Likelihood: ${formatLikelihood(delivery.likelihoodPercentage, {
+				const teamsWithoutForecast = delivery.teamsWithoutForecast ?? [];
+				const isUnforecastable = cannotBeForecast({ teamsWithoutForecast });
+
+				let forecastSummary: string;
+				if (isUnforecastable || delivery.likelihoodPercentage === null) {
+					forecastSummary = CANNOT_FORECAST_SHORT;
+				} else if (
+					isForecastDataInsufficient({
+						hasRemainingWork: delivery.remainingWork > 0,
+						hasSufficientData: delivery.hasSufficientData,
+					})
+				) {
+					forecastSummary = INSUFFICIENT_FORECAST_DATA_SHORT;
+				} else {
+					forecastSummary = `Likelihood: ${formatLikelihood(
+						delivery.likelihoodPercentage,
+						{
 							hasRemainingWork: delivery.remainingWork > 0,
 							precision: "round",
-						})}`;
+						},
+					)}`;
+				}
+
+				const chip = (
+					<Chip
+						label={`${delivery.name} | ${delivery.getFeatureCount()} ${featuresTerm} | ${forecastSummary}`}
+						size="small"
+						sx={{
+							bgcolor: forecastLevel.color,
+							color: "#fff",
+							fontWeight: "bold",
+							cursor: "pointer",
+							"&:hover": {
+								opacity: 0.8,
+							},
+						}}
+					/>
+				);
 
 				return (
 					<Link
@@ -70,19 +104,13 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 						to={`/portfolios/${delivery.portfolioId}/deliveries`}
 						style={{ textDecoration: "none" }}
 					>
-						<Chip
-							label={`${delivery.name} | ${delivery.getFeatureCount()} ${featuresTerm} | ${forecastSummary}`}
-							size="small"
-							sx={{
-								bgcolor: forecastLevel.color,
-								color: "#fff",
-								fontWeight: "bold",
-								cursor: "pointer",
-								"&:hover": {
-									opacity: 0.8,
-								},
-							}}
-						/>
+						{isUnforecastable ? (
+							<Tooltip title={cannotForecastReason(teamsWithoutForecast)}>
+								<span>{chip}</span>
+							</Tooltip>
+						) : (
+							chip
+						)}
 					</Link>
 				);
 			})}

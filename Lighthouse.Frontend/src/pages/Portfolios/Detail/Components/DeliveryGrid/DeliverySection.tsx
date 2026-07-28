@@ -31,6 +31,7 @@ import {
 import FeatureListDataGrid from "../../../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureProgressIndicator from "../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
+import { FeatureLikelihoodChip } from "../../../../../components/Common/Forecasts/FeatureLikelihoodChip";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../components/Common/Forecasts/InsufficientForecastDataIndicator";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
@@ -46,6 +47,11 @@ import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../utils/featureName";
+import {
+	CANNOT_FORECAST_SHORT,
+	cannotBeForecast,
+	cannotForecastReason,
+} from "../../../../../utils/forecast/cannotForecast";
 import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 
@@ -227,25 +233,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					delivery.featureLikelihoods
 						.filter((fl) => fl.featureId === row.id)
 						.map((fl) => (
-							<Chip
+							<FeatureLikelihoodChip
 								key={fl.featureId}
-								label={
-									isForecastDataInsufficient({
-										hasRemainingWork: row.getRemainingWorkForFeature() > 0,
-										hasSufficientData: fl.hasSufficientData,
-									})
-										? INSUFFICIENT_FORECAST_DATA_SHORT
-										: formatLikelihood(fl.likelihoodPercentage, {
-												hasRemainingWork: row.getRemainingWorkForFeature() > 0,
-												precision: "round",
-											})
-								}
-								size="small"
-								sx={{
-									bgcolor: new ForecastLevel(fl.likelihoodPercentage).color,
-									color: "#fff",
-									fontWeight: "bold",
-								}}
+								featureLikelihood={fl}
+								hasRemainingWork={row.getRemainingWorkForFeature() > 0}
 							/>
 						)),
 			},
@@ -255,6 +246,28 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	);
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
+
+	const teamsWithoutForecast = delivery.teamsWithoutForecast ?? [];
+	const deliveryLikelihood = delivery.likelihoodPercentage;
+	const deliveryCannotBeForecast =
+		cannotBeForecast({ teamsWithoutForecast }) || deliveryLikelihood === null;
+
+	let likelihoodLabel: string;
+	if (deliveryCannotBeForecast || deliveryLikelihood === null) {
+		likelihoodLabel = CANNOT_FORECAST_SHORT;
+	} else if (
+		isForecastDataInsufficient({
+			hasRemainingWork: delivery.remainingWork > 0,
+			hasSufficientData: delivery.hasSufficientData,
+		})
+	) {
+		likelihoodLabel = INSUFFICIENT_FORECAST_DATA_SHORT;
+	} else {
+		likelihoodLabel = `Likelihood: ${formatLikelihood(deliveryLikelihood, {
+			hasRemainingWork: delivery.remainingWork > 0,
+			precision: "round",
+		})}`;
+	}
 
 	return (
 		<Paper elevation={1} sx={{ mb: 2, overflow: "hidden" }}>
@@ -394,20 +407,12 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											Delivery Date: {delivery.getFormattedDate()}
 										</Typography>
 										<Chip
-											label={
-												isForecastDataInsufficient({
-													hasRemainingWork: delivery.remainingWork > 0,
-													hasSufficientData: delivery.hasSufficientData,
-												})
-													? INSUFFICIENT_FORECAST_DATA_SHORT
-													: `Likelihood: ${formatLikelihood(
-															delivery.likelihoodPercentage,
-															{
-																hasRemainingWork: delivery.remainingWork > 0,
-																precision: "round",
-															},
-														)}`
+											title={
+												deliveryCannotBeForecast
+													? cannotForecastReason(teamsWithoutForecast)
+													: undefined
 											}
+											label={likelihoodLabel}
 											size="small"
 											sx={{
 												bgcolor: forecastLevel.color,

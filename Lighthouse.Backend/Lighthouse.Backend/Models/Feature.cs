@@ -64,17 +64,46 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public IEnumerable<Team> Teams => FeatureWork.Select(t => t.Team);
 
-        // __SCAFFOLD__ RED scaffold for Story #5570 (ADR-112). DELIVER replaces both bodies.
         [NotMapped]
-        public bool CanBeForecast => throw new InvalidOperationException($"__SCAFFOLD__ {nameof(CanBeForecast)} is not implemented yet (Story #5570).");
+        public bool CanBeForecast => !TeamsWithoutForecast.Any();
 
+        // A team that must still finish but has no throughput leaves the feature with no honest
+        // completion distribution (ADR-112). A feature with no remaining work is exempt - it carries
+        // ForecastService's day-0 sentinel, which has no trials either, but is a fact, not a forecast.
         [NotMapped]
-        public IEnumerable<Team> TeamsWithoutForecast => throw new InvalidOperationException($"__SCAFFOLD__ {nameof(TeamsWithoutForecast)} is not implemented yet (Story #5570).");
+        public IEnumerable<Team> TeamsWithoutForecast
+        {
+            get
+            {
+                if (FeatureWork.Sum(work => work.RemainingWorkItems) <= 0)
+                {
+                    return [];
+                }
 
-        public double GetLikelhoodForDate(DateTime date, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+                return Forecasts
+                    .Where(forecast => forecast.TotalTrials == 0)
+                    .Select(TeamFor)
+                    .Where(team => team is not null)
+                    .Select(team => team!);
+            }
+        }
+
+        private Team? TeamFor(WhenForecast forecast)
+        {
+            return forecast.Team ?? Teams.FirstOrDefault(team => team.Id == forecast.TeamId);
+        }
+
+        public double? GetLikelhoodForDate(DateTime date, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
+                // Unknown is carried out explicitly. Falling through would hit ForecastBase.GetLikelihood's
+                // trialCounter == 0 branch and report 100 % on the one feature nobody can forecast (ADR-112).
+                if (!CanBeForecast)
+                {
+                    return null;
+                }
+
                 var timeToTargetDate = blackoutPeriods.CountWorkingDays(InstanceCalendar.AsUtcMidnight(today), date);
 
                 return Forecast?.GetLikelihood(timeToTargetDate) ?? 0;

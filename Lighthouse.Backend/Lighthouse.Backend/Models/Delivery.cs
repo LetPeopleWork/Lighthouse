@@ -58,6 +58,13 @@ namespace Lighthouse.Backend.Models
                 return new DeliveryMetricsProjection(0.0, [], featureBreakdown);
             }
 
+            // One un-forecastable feature makes the whole delivery un-forecastable - reporting the
+            // governing feature's number would quietly ignore work that must still happen (ADR-112 D8).
+            if (Features.Any(feature => !feature.CanBeForecast))
+            {
+                return new DeliveryMetricsProjection(null, [], featureBreakdown);
+            }
+
             var whenDistribution = percentiles
                 .Select(percentile => ToWhenPercentile(governingFeature.Forecast, percentile, today, blackoutPeriods))
                 .ToList();

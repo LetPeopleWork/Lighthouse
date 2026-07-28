@@ -8,7 +8,10 @@ namespace Lighthouse.Backend.API.DTO
     {
         public int FeatureId { get; set; }
 
-        public double LikelihoodPercentage { get; set; }
+        // null = cannot be forecast; the named teams say why (ADR-112).
+        public double? LikelihoodPercentage { get; set; }
+
+        public List<string> TeamsWithoutForecast { get; set; } = [];
 
         public List<WhenForecastDto> CompletionDates { get; set; } = [];
 
@@ -25,7 +28,9 @@ namespace Lighthouse.Backend.API.DTO
 
         public int PortfolioId { get; set; }
 
-        public double LikelihoodPercentage { get; set; }
+        public double? LikelihoodPercentage { get; set; }
+
+        public List<string> TeamsWithoutForecast { get; set; } = [];
 
         public List<WhenForecastDto> CompletionDates { get; set; } = [];
 
@@ -75,7 +80,8 @@ namespace Lighthouse.Backend.API.DTO
                 TotalWork = totalWork,
                 Features = delivery.Features.Select(f => f.Id).ToList(),
                 FeatureLikelihoods = featureLikelihoods,
-                HasSufficientData = leastLikelyFeature?.HasSufficientData ?? true,
+                TeamsWithoutForecast = GetTeamsWithoutForecast(delivery),
+                HasSufficientData = leastLikelyFeature?.HasSufficientData ?? featureLikelihoods.All(fl => fl.HasSufficientData),
                 SelectionMode = delivery.SelectionMode,
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
@@ -105,6 +111,16 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+        private static List<string> GetTeamsWithoutForecast(Delivery delivery)
+        {
+            return delivery.Features
+                .SelectMany(feature => feature.TeamsWithoutForecast)
+                .Select(team => team.Name)
+                .Distinct()
+                .Order()
+                .ToList();
+        }
 
         private static FeatureLikelihoodDto? GetLeastLikelyFeature(List<FeatureLikelihoodDto> featureLikelihoods)
         {
@@ -150,13 +166,16 @@ namespace Lighthouse.Backend.API.DTO
             {
                 var likelihood = feature.GetLikelhoodForDate(delivery.Date, today, blackoutPeriods);
 
-                var completionDates = feature.Forecast.CreateForecastDtos(today, blackoutPeriods, 70, 85, 95);
+                var completionDates = feature.CanBeForecast
+                    ? feature.Forecast.CreateForecastDtos(today, blackoutPeriods, 70, 85, 95).ToList()
+                    : [];
 
                 featureLikelihoods.Add(new FeatureLikelihoodDto
                 {
                     FeatureId = feature.Id,
                     LikelihoodPercentage = likelihood,
-                    CompletionDates = completionDates.ToList(),
+                    TeamsWithoutForecast = feature.TeamsWithoutForecast.Select(team => team.Name).Distinct().Order().ToList(),
+                    CompletionDates = completionDates,
                     HasSufficientData = feature.Forecast.HasSufficientData,
                 });
             }

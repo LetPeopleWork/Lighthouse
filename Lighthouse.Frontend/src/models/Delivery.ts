@@ -7,7 +7,9 @@ import {
 
 export interface IFeatureLikelihood {
 	featureId: number;
-	likelihoodPercentage: number;
+	// null when a contributing team has no throughput history, so no forecast exists (ADR-112).
+	likelihoodPercentage: number | null;
+	teamsWithoutForecast?: string[];
 	hasSufficientData?: boolean;
 }
 
@@ -17,7 +19,8 @@ export interface IDelivery {
 	date: string;
 	portfolioId: number;
 	features: number[];
-	likelihoodPercentage: number;
+	likelihoodPercentage: number | null;
+	teamsWithoutForecast?: string[];
 	progress: number;
 	remainingWork: number;
 	totalWork: number;
@@ -37,7 +40,8 @@ export class Delivery implements IDelivery {
 	date!: string;
 	portfolioId!: number;
 	features!: number[];
-	likelihoodPercentage!: number;
+	likelihoodPercentage!: number | null;
+	teamsWithoutForecast!: string[];
 	progress!: number;
 	remainingWork!: number;
 	totalWork!: number;
@@ -57,7 +61,8 @@ export class Delivery implements IDelivery {
 		delivery.date = data.date;
 		delivery.portfolioId = data.portfolioId;
 		delivery.features = data.features || [];
-		delivery.likelihoodPercentage = data.likelihoodPercentage;
+		delivery.likelihoodPercentage = data.likelihoodPercentage ?? null;
+		delivery.teamsWithoutForecast = data.teamsWithoutForecast ?? [];
 		delivery.progress = data.progress || 0;
 		delivery.remainingWork = data.remainingWork || 0;
 		delivery.totalWork = data.totalWork || 0;
@@ -89,6 +94,9 @@ export class Delivery implements IDelivery {
 	}
 
 	getLikelihoodLevel(): "risky" | "realistic" | "likely" | "certain" {
+		// No forecast is not the same as a bad one, but "risky" is the honest fallback for a caller
+		// that insists on a level - it must not read as certainty (ADR-112).
+		if (this.likelihoodPercentage === null) return "risky";
 		if (this.likelihoodPercentage < 50) return "risky";
 		if (this.likelihoodPercentage < 70) return "realistic";
 		if (this.likelihoodPercentage < 85) return "likely";

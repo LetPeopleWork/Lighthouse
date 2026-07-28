@@ -181,3 +181,51 @@ imply the multi-team number is approximate.
 Screenshots: no UI change in this slice, so no `@screenshot` regeneration is expected — confirm rather
 than assume, since forecast dates appear in committed portfolio screenshots and the demo data may shift
 them.
+
+## Second docs deliverable — a hand-runnable step-by-step (maintainer request, 2026-07-28)
+
+Beyond the conceptual rewrite above, Benjamin wants to be able to **run a two-team forecast by hand**
+from the two individual team distributions, and to turn that into a blog post in the style of
+[An Introduction and Step-by-Step Guide to Monte Carlo Simulations](https://blog.letpeople.work/p/an-introduction-and-step-by-step-guide-to-monte-carlo-simulations).
+
+That post opens with motivation, carries **one** concrete scenario the whole way, hands the reader a
+spreadsheet to follow along in, leans on run charts / histograms / tables, and deliberately avoids
+formal notation — "randomly select values", "sum up", never `∏` or "CDF". Match that. The sequel
+framing is natural: **its output is this post's input.** Where that post stops at one team's
+histogram, this one starts there and asks "now do it for two teams."
+
+**Use one worked example throughout** — the same fixture the tests use, because it is exact on paper
+and needs no simulation to reproduce:
+
+> Two teams, each with throughput history `[1, 3]` and 3 items left. Each team's Monte Carlo run gives
+> **day 1: 5 000 runs · day 2: 2 500 · day 3: 2 500** (out of 10 000).
+
+Five spreadsheet columns, one per step:
+
+| Step | What the reader does | Team A | Team B | Joint |
+|---|---|---|---|---|
+| 1 | Take each team's simulation results (the "When" sheet of the earlier post) | 5000 / 2500 / 2500 | same | — |
+| 2 | Running total ÷ 10 000 = "chance this team is done **by** day X" | .50 / .75 / 1.00 | .50 / .75 / 1.00 | — |
+| 3 | **Multiply the two columns, row by row** — both teams must be done | | | .25 / .5625 / 1.00 |
+| 4 | Subtract the row above to get "chance it finishes **on** day X" | | | .25 / .3125 / .4375 |
+| 5 | Read the percentile off column 3: first day where the running chance passes 50 % / 85 % | p50 = **day 1** | p50 = **day 1** | p50 = **day 2** |
+
+Step 3 is the whole insight and deserves the most words: *both* teams have to be finished, and two
+coin-flips both landing heads is rarer than either one alone. Step 5 is the payoff — each team alone
+says day 1, together they say day 2, and no team got slower.
+
+Points the post must land, in plain language:
+
+1. **Why multiply rather than take the worst team.** The worst-team answer silently assumes every other
+   team is a certainty. Use the 85 % → 72 % framing from `howlighthouseforecasts.md`.
+2. **Dates move later, never earlier**, and single-team features do not move at all.
+3. **What "independent" assumes** — the multiplication treats the teams as unrelated. Shared people or
+   a hand-off between them breaks that, and the honest answer is then *worse* than the maths says. Say
+   so plainly; it is the post's main caveat and the natural bridge to the Dependencies section.
+4. **Where the reader sees this in Lighthouse**: the portfolio feature forecast columns and the
+   delivery likelihood.
+
+Deliverables: the walkthrough lives in `docs/concepts/howlighthouseforecasts.md` (or a linked page) so
+the product docs are self-contained; the blog post is Benjamin's, drafted from the same worked example.
+A companion spreadsheet mirroring the five columns would match the earlier post's format — offer it,
+do not assume it.
