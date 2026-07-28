@@ -126,6 +126,8 @@ oidc:
   allowedOrigins: []
 
 app:
+  # -- Instance time zone as an IANA id (e.g. `Europe/Zurich`) used for every calendar day — "today", metric window bounds, the day a snapshot is filed under (Bug #5567). Empty keeps the pod's zone, which is UTC, so set this if your team is not on UTC. An id that cannot be resolved fails startup rather than falling back.
+  timeZone: ""
   proxy:
     # -- Trusted reverse-proxy IPs (epic-5305 #5311) so OIDC redirect URIs + secure cookies are correct behind the ingress.
     trustedProxies: []

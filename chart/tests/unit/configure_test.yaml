@@ -58,3 +58,23 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: ConnectionStrings__Redis
+
+  # Bug #5567: a pod's zone is UTC, so the chart is the only way a k8s team opts into its own
+  # calendar day. Absent must stay absent — emitting an empty value would fail startup.
+  - it: app.timeZone renders Lighthouse__TimeZone when set
+    set:
+      postgresql.auth.password: testpass
+      app.timeZone: "Europe/Zurich"
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Lighthouse__TimeZone
+          value: "Europe/Zurich"
+
+  - it: app.timeZone absent by default leaves the key out entirely
+    set:
+      postgresql.auth.password: testpass
+    template: templates/configmap.yaml
+    asserts:
+      - notExists:
+          path: data.Lighthouse__TimeZone

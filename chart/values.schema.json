@@ -92,6 +92,7 @@
     "app": {
       "type": "object",
       "properties": {
+        "timeZone": { "type": "string" },
         "proxy": {
           "type": "object",
           "properties": {

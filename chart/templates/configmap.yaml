@@ -11,6 +11,11 @@ data:
   Database__Provider: "postgres"
   Telemetry__Enabled: {{ .Values.telemetry.enabled | quote }}
   Shutdown__TimeoutSeconds: {{ .Values.shutdownTimeoutSeconds | quote }}
+  {{- with .Values.app.timeZone }}
+  # Bug #5567: a pod's zone is UTC, so a non-UTC team must set this to get calendar days
+  # that match its working day. Absent leaves the previous UTC behaviour untouched.
+  Lighthouse__TimeZone: {{ . | quote }}
+  {{- end }}
   # The image binds privileged ports (Dockerfile ENV Kestrel__Endpoints__*: 80/443), which a
   # non-root container cannot bind on a standard cluster (ip_unprivileged_port_start=1024) — it
   # crashes with SocketException(13) Permission denied. Override to unprivileged ports; TLS is
