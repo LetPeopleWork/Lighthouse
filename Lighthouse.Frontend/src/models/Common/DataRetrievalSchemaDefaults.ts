@@ -43,16 +43,15 @@ const teamSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
 		isWorkItemTypesRequired: true,
 		wizardHint: "csv-team-wizard",
 	},
-	// SCAFFOLD (DISTILL slice 01, Story #5574) — placeholder so the exhaustive Record compiles
-	// once the union gains "ServiceNow". DELIVER fills in the encoded-query shape;
-	// DataRetrievalSchemaDefaults.serviceNow.test.ts is RED against this.
 	ServiceNow: {
-		key: "__scaffold__",
-		displayLabel: "__scaffold__",
-		inputKind: "none",
-		isRequired: false,
-		isWorkItemTypesRequired: true,
-		wizardHint: "__scaffold__",
+		key: "servicenow.query",
+		displayLabel: "ServiceNow Query (Encoded Query)",
+		inputKind: "freetext",
+		isRequired: true,
+		// The configured table is the type for an ITSM-first read (C-3, revisit in slice 02).
+		isWorkItemTypesRequired: false,
+		// No wizard: SPIKE Q8 measured table/field discovery unavailable below itil (ADR-116).
+		wizardHint: null,
 	},
 };
 
@@ -89,14 +88,14 @@ const portfolioSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
 		isWorkItemTypesRequired: true,
 		wizardHint: "csv-portfolio-wizard",
 	},
-	// SCAFFOLD (DISTILL slice 01, Story #5574) — placeholder. DELIVER replaces this with the
-	// entry that declines the portfolio capability outright.
+	// SPIKE Q5 measured no forecastable rollup in ITSM, so the capability is declined here
+	// rather than offered as a field that leads nowhere (ADR-116).
 	ServiceNow: {
-		key: "__scaffold__",
-		displayLabel: "__scaffold__",
-		inputKind: "freetext",
-		isRequired: true,
-		isWorkItemTypesRequired: true,
+		key: "servicenow.query",
+		displayLabel: "Not supported for ServiceNow",
+		inputKind: "none",
+		isRequired: false,
+		isWorkItemTypesRequired: false,
 		wizardHint: null,
 	},
 };

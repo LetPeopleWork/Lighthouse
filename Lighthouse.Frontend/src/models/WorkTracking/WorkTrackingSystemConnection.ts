@@ -102,6 +102,8 @@ export class WorkTrackingSystemConnection
 				return "Linear Team";
 			case "Csv":
 				return "CSV File Content";
+			case "ServiceNow":
+				return "ServiceNow Query";
 			default:
 				return "Query";
 		}
