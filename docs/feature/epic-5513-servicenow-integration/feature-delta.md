@@ -162,7 +162,7 @@ Decision enabled: decide whether the account I was granted is sufficient, or whe
 - AC1: "ServiceNow" appears as a selectable system in the connection-creation wizard alongside Azure DevOps, Jira, Linear and CSV.
 - AC2: The connection form renders the SNOW option set (instance base URL + basic-auth username/password, per D3) from the schema-driven configuration — no bespoke React screen.
 - AC3: Clicking Validate against a reachable instance with a sufficient credential returns a success result.
-- AC4: Validate against an unreachable host, a wrong credential, and a **reachable instance where the account lacks read access to the configured table** each return three *distinguishable* failure messages. A permissions failure must never be reported as a connection failure. *(This AC is the one D11 exists for.)*
+- AC4 *(amended per C-1, accepted 2026-07-29)*: Validate against an unreachable host, a wrong credential, and a **reachable instance whose configured table returns no visible rows** each return three distinguishable, actionable failures. A permissions failure is never reported as a connection failure and never as a success. Because ServiceNow returns `200` with zero rows for a permitted-but-unauthorised read, the third message names **both** possible causes and the role to grant, rather than asserting a certainty the API cannot supply. *(This AC is the one D11 exists for.)*
 - AC5: The credential is stored using the existing encrypted connection-option mechanism; it is never returned to the client in plaintext on reload.
 
 ---
@@ -786,10 +786,10 @@ A bypass of any one layer is caught by at least one other.
 
 ## Wave: DESIGN / [REF] Flagged Contradictions
 
-Per the DESIGN mandate these are surfaced rather than papered over. **C-1 needs a maintainer decision
-before DISTILL writes AC4's acceptance tests.**
+Per the DESIGN mandate these are surfaced rather than papered over. **C-1 was ruled on 2026-07-29:
+the amendment is ACCEPTED. DISTILL writes AC4's tests against the amended wording below.**
 
-### C-1 — US-01 AC4 asks for a distinction the platform cannot make (BLOCKING, needs confirmation)
+### C-1 — US-01 AC4 asks for a distinction the platform cannot make (RESOLVED — amendment accepted)
 
 - **DISCUSS US-01 AC4** requires three distinguishable failures, the third being "a reachable instance
   where the account **lacks read access** to the configured table".
@@ -806,7 +806,8 @@ before DISTILL writes AC4's acceptance tests.**
   failure is never reported as a connection failure, and never as a success**.
 - **What changes**: AC4's third bullet asserts a certainty the API does not provide.
 
-**Proposed AC4 amendment** (maintainer to accept before DISTILL):
+**AC4 amendment — ACCEPTED 2026-07-29 (maintainer ruling). This is the binding AC4 for DISTILL;
+the US-01 AC4 bullet above has been replaced with it:**
 
 > AC4: Validate against an unreachable host, a wrong credential, and a reachable instance whose
 > configured table returns no visible rows each return three distinguishable, actionable failures. A
@@ -856,7 +857,7 @@ deliberately. Cost of being wrong: one boolean and one FE test.
 
 | Gate | Status |
 |---|---|
-| Requirements traced to components | ✓ AC1→#1 · AC2→#3 · AC3→ladder rung 7 · AC4→rungs 1/2/6 (**subject to C-1**) · AC5→#18 unchanged mechanism |
+| Requirements traced to components | ✓ AC1→#1 · AC2→#3 · AC3→ladder rung 7 · AC4 (amended, C-1 accepted)→rungs 1/2/6 · AC5→#18 unchanged mechanism |
 | Component boundaries with responsibilities | ✓ Reuse Analysis, 27 rows |
 | Technology choices in ADRs with alternatives | ✓ ADR-114/115/116, ≥2 alternatives each |
 | Quality attributes | ✓ least privilege (D11) is the design driver; honest capability reporting (KPI 3); ~600 ms/call ⇒ **one** probe call, never per-item |
@@ -898,12 +899,12 @@ Lean density: the following are **listed, not rendered**. Request with `--expand
   verdict into a **pure function** with a 7-rung ladder, every rung but one grounded in measurement.
 - **The one thing Lighthouse must not build** is basic-auth-restriction detection — measured impossible
   for the account that would need it. Recorded as a rejection in ADR-115 so it is not re-proposed.
-- **The one thing that must be confirmed before DISTILL** is the AC4 amendment (C-1).
+- **The AC4 amendment (C-1) is accepted** (2026-07-29); US-01 AC4 above carries the amended wording.
 - **Slice 03 stays cancelled**, and the frontend portfolio schema entry makes that structural rather
   than documentary.
 
 ## Next Wave
 
 **DISTILL** (`nw-acceptance-designer`) against US-01 AC1–AC5, with the L1–L7 lie catalogue as the
-acceptance-test spine — **after** C-1 is resolved.
+acceptance-test spine. **C-1 is resolved — the amended AC4 is binding.**
 Then **DEVOPS** (`nw-platform-architect`, KPIs + the Pact recommendation), then **DELIVER**.
