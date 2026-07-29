@@ -146,6 +146,34 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(dto.FeatureLikelihoods.Single().TeamsWithoutForecast, Is.EqualTo(TwoMissingTeams));
         }
 
+        [Test]
+        [Ignore("RED until Story #5587 slice-01 extends Feature.TeamsWithoutForecast (DDD-8)")]
+        public void FromDelivery_ContributingPairHasNoForecastRow_ReportsUnknownAndNamesThatTeam()
+        {
+            // Story #5587, DDD-7/DDD-8. A team added to an already-forecast feature by work-item sync
+            // has remaining work and NO Forecasts row - so today TeamsWithoutForecast cannot see it, the
+            // delivery reports a number, and that number quietly assumes the new team's work is done.
+            // The delivery must say "cannot forecast" and NAME the team; GetTeamsWithoutForecast ->
+            // feature.TeamsWithoutForecast is the only path that names teams, which is why the
+            // detection has to live at feature grain.
+            var forecasting = new Team { Id = 21, Name = "Team Gravity" };
+            var newlySynced = new Team { Id = 22, Name = "Team Pulsar" };
+
+            var feature = new Feature([(forecasting, 3, 3), (newlySynced, 2, 2)]);
+            feature.SetFeatureForecasts([
+                new WhenForecast(new Dictionary<int, int> { { 10, 100 } }) { Team = forecasting, TeamId = forecasting.Id, HasSufficientData = true },
+            ]);
+
+            var dto = DeliveryWithLikelihoodDto.FromDelivery(DeliveryWith(feature), TestToday.Ambient, NoBlackoutPeriods);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dto.LikelihoodPercentage, Is.Null);
+                Assert.That(dto.CompletionDates, Is.Empty);
+                Assert.That(dto.TeamsWithoutForecast, Is.EqualTo(OneMissingTeam));
+            }
+        }
+
         private static Delivery DeliveryWith(params Feature[] features)
         {
             var delivery = new Delivery

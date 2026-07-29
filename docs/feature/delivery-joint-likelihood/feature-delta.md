@@ -2,7 +2,7 @@
 
 **ADO**: User Story **#5587** "Delivery likelihood reflects all features, not just the governing one"
 (parent Epic **#5459** "Multi Team Forecasts")
-**Waves**: DISCUSS ✅ · DESIGN ✅ · DISTILL ⬜ · DELIVER ⬜
+**Waves**: DISCUSS ✅ · DESIGN ✅ · DISTILL ✅ · DELIVER ⬜ *(DISTILL covers slice-01 only)*
 **Density**: lean (Tier-1 [REF] only) · `expansion_prompt = ask-intelligent`
 **Feature type**: cross-cutting (backend forecast maths · frontend copy · concept docs · release-notes positioning)
 
@@ -1501,3 +1501,230 @@ Deliberately not decided here.
     off `metrics.WhenDistribution.Count > 0`. A delivery that today records `LikelihoodPercentage =
     100` will record `null` for the runs where the guard fires. DISTILL decides whether the recorder
     should skip the row rather than record a null.
+
+---
+
+## Wave: DISTILL / [REF] Inherited commitments
+
+Scope of this wave: **slice-01 only** (US-01, AC-01.1 … AC-01.12). Slices 02 (sufficiency), 03 (copy)
+and 04 (docs/notes) are deliberately untested here; where a slice-01 test will later need extending,
+the note is in the test's own comment, not a stub.
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D5 | Shared features decompose per team; `min` only WITHIN a bucket, product only ACROSS | n/a | The three-way fixture is asserted at the `DeliveryCompletionForecast` seam, where all three grain traps produce three distinct values (.720 / .684 / .518) from one input |
+| DISCUSS#D5 | The invariant is `delivery <= every breakdown row`, **equality permitted** | n/a | `Build_ThreeWayFixture_IsNeverAboveAnyFeaturesOwnProbabilityAndIsAllowedToEqualOne` asserts `<=` and then asserts the equality explicitly. No test asserts strict inequality anywhere |
+| DISCUSS#D11 | The cross-bucket product REUSES `JointCompletionDistribution` | n/a | Forced structurally by the AC-01.5 bit-identity test on a **shared** feature — a parallel product cannot satisfy it by accident. The single-team version is not written at all |
+| DESIGN#DDD-1 | `Min` is a sibling type; `count == 1` short-circuits verbatim; `Min` does NOT sort | DDR-1 | `Min_SingleContributor_ReturnsThatHistogramVerbatimIncludingItsEmptyDays` uses a histogram with an empty day bucket, which the round-trip would drop — so the short-circuit is pinned, not assumed. `Min_ContributorsInEitherOrder_...` asserts permutation invariance without requiring a sort |
+| DESIGN#DDD-1 | `CompletionHistogram` is a verbatim, behaviour-preserving extraction in a SEPARATE refactor commit | DDR-1 | **No test targets it directly** — the extraction is proven by `JointCompletionDistributionTest` passing untouched, exactly as the reuse table words it. Writing a parallel residue test would duplicate the very code the extraction exists to de-duplicate |
+| DESIGN#DDD-5 | Likelihood and all three dates come off ONE `AggregatedWhenForecast`; carriers leave `Team`/`Feature` null | DDR-5 | The bit-identity test asserts likelihood, histogram, `TotalTrials`, all three percentile days, `NumberOfItems`, `CreationTime`, `FilterApplied`, `ExcludedSummary` and `HasSufficientData` in one `Assert.EnterMultipleScope()`. `FromDelivery_JointRollup_AttachesNothingToTheChangeTracker` covers the unset navigations |
+| DESIGN#C1 / DDD-7 | Rows are enumerated FROM `FeatureWork.Where(RemainingWorkItems > 0)` LEFT JOIN `Forecasts` — never the reverse | DDR-7 | Three tests at three grains: `Build_ContributingPairWithNoForecastRow_ReportsNoForecast` (pure), `CalculateMetrics_ContributingPairHasNoForecastRow_...` (entity), `FromDelivery_ContributingPairHasNoForecastRow_ReportsUnknownAndNamesThatTeam` (DTO + team naming) |
+| DESIGN#DDD-8 | `Feature.TeamsWithoutForecast` gains a second clause — **and the feature surface moves too** | DDR-8 | DISTILL owns `FeatureMissingForecastRowTest`, an AC for the FEATURE grain, not only the delivery one. Three RED (names the team / `CanBeForecast` false / likelihood unknown) plus three green guards for the exemption and the unnameable-team case |
+| DESIGN#DDD-6 | Guards 1 and 2 are DISJOINT, so their relative order is unobservable | DDR-6 | **No order-sensitivity test is written** — it could never fail. The observable delta is the SPLIT: `CalculateMetrics_EveryFeatureCannotBeForecast_ReportsUnknownRatherThanZeroPercent` |
+| DESIGN#DDD-9 | Guard 3's dates are unchanged only if the delivery was complete at the last forecast run | DDR-9 | Two separate fixtures, because they are two different shapes: the `{0: 0}` sentinel (green) and the stale full-trial rows (RED) |
+| DESIGN#enforcement | `delivery <= every row` is exact on the CDFs, ±1 trial on the emitted histograms | n/a | **No strict day-level ordering is asserted over demo data anywhere.** Day-level assertions use exact hand-built histograms whose percentile boundaries are nowhere near a rounding edge; the probability-level invariant carries a one-trial tolerance |
+| Epic 5459 evolution | Constant-throughput fixtures cannot discriminate the joint from the marginal | n/a | Every discriminating fixture here is multi-valued and crossing. The one test that is green under both implementations is labelled a GRAIN ANCHOR in its own comment and in the RED classification |
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Executable SSOT: the NUnit test files listed under *Test placement*. This repository has **no Gherkin
+layer, no pytest-bdd and no `.feature` files** — `Given/When/Then` lives in the Arrange/Act/Assert shape
+of the test bodies, and the tags below are documentation, not attributes.
+
+| Scenario (test) | Tags | Tier |
+|---|---|---|
+| `Min_TwoCrossingContributors_TakesTheElementwiseMinimumOfTheirCumulativeSeries` | `@AC-01.1` `@in-memory` | 1 |
+| `Min_TwoIdenticalContributors_ReturnsThatHistogramUnchanged` | `@AC-01.3` `@discriminator` `@in-memory` | 1 |
+| `Min_SingleContributor_ReturnsThatHistogramVerbatimIncludingItsEmptyDays` | `@AC-01.5` `@in-memory` | 1 |
+| `Min_ContributorFinishedBeforeTheUnionMaximum_HoldsItsProbabilityAtOneBeyondItsLastDay` | `@AC-01.1` `@edge` `@in-memory` | 1 |
+| `Min_ScaledContributorsLeaveAResidue_AssignsItByLargestRemainder` | `@AC-01.5` `@edge` `@in-memory` | 1 |
+| `Min_ContributorWithoutTrials_IsExcludedFromTheMinimum` | `@AC-01.7` `@defence-in-depth` `@in-memory` | 1 |
+| `Min_EveryContributorWithoutTrials_ReturnsAnEmptyHistogram` | `@error` `@in-memory` | 1 |
+| `Min_NoContributors_ReturnsAnEmptyHistogram` | `@error` `@in-memory` | 1 |
+| `Min_ContributorsInEitherOrder_ProduceTheSameHistogram` | `@ADR-113-s3` `@in-memory` | 1 |
+| `Min_RandomContributors_IsNeverAboveAnyContributorsCumulativeProbability` | `@AC-01.4` `@property` `@in-memory` | 2 |
+| `Min_RandomContributors_SumsToThePreservedTotalTrials` | `@property` `@in-memory` | 2 |
+| `ContributingRows_TeamWorksOnlyOneOfTwoFeatures_ProducesThreeRowsNotFour` | `@AC-01.6` `@D10` `@in-memory` | 1 |
+| `ContributingRows_NoFeatures_IsEmpty` | `@error` `@in-memory` | 1 |
+| `Build_ThreeWayFixture_IsTheProductOfPerTeamMinimaNotOfFeatureDistributions` | `@AC-01.1` `@AC-01.2` `@AC-01.3` `@kill-shot` `@in-memory` | 1 |
+| `Build_ThreeWayFixture_IsNeverAboveAnyFeaturesOwnProbabilityAndIsAllowedToEqualOne` | `@AC-01.4` `@in-memory` | 1 |
+| `Build_OneFeatureSharedByTwoTeams_IsBitIdenticalToThatFeaturesOwnForecast` | `@AC-01.5` `@D11` `@in-memory` | 1 |
+| `Build_ContributingPairWithNoForecastRow_ReportsNoForecast` | `@C1` `@DDD-7` `@error` `@in-memory` | 1 |
+| `ContributingRows_PairWhoseWorkFinishedSinceTheLastForecastRun_IsNotEnumerated` | `@AC-01.7` `@edge` `@in-memory` | 1 |
+| `ContributingRows_PairWhoseWorkIsFinishedAndWhoseRowIsAbsent_IsNotEnumeratedAndIsNotACannotForecast` | `@AC-01.7` `@edge` `@in-memory` | 1 |
+| `Build_TeamWhoseOnlyPairIsFinished_ContributesCertaintyRatherThanCannotForecast` | `@AC-01.8` `@edge` `@in-memory` | 1 |
+| `ContributingRows_WholeFeatureDayZeroSentinel_IsNeverEnumeratedAsARow` | `@AC-01.8` `@edge` `@in-memory` | 1 |
+| `CalculateMetrics_DeliveryWithoutFeatures_ReportsZeroPercentAndNoDates` | `@AC-01.11` `@regression-guard` | 3 |
+| `CalculateMetrics_EveryFeatureCannotBeForecast_ReportsUnknownRatherThanZeroPercent` | `@DDD-6` `@visible-delta` | 3 |
+| `CalculateMetrics_OneFeatureCannotBeForecast_ReportsUnknownAndNoDates` | `@AC-01.10` `@D2` `@regression-guard` | 3 |
+| `CalculateMetrics_EveryFeatureWasAlreadyFinishedAtTheLastForecastRun_ReportsHundredPercentForToday` | `@guard-3` `@regression-guard` | 3 |
+| `CalculateMetrics_DeliveryFinishedBetweenForecastRuns_MovesEveryPercentileDateToToday` | `@DDD-9` `@visible-delta` | 3 |
+| `CalculateMetrics_TwoFeaturesOnSeparateTeams_HeadlineAndPercentileDatesComeFromTheJointHistogram` | `@AC-01.1` `@AC-01.9` `@D7` `@visible-delta` | 3 |
+| `CalculateMetrics_ThreeWayFixture_HeadlineIsSeventyTwoAndEqualsTheGoverningBreakdownRow` | `@AC-01.2` `@AC-01.4` `@grain-anchor` | 4 |
+| `CalculateMetrics_ContributingPairHasNoForecastRow_ReportsUnknownRatherThanASilentCertainty` | `@C1` `@DDD-7` `@error` | 3 |
+| `CalculateMetrics_ContributingPairHasNoForecastRowAndNoTeamNavigation_StillReportsUnknown` | `@guard-4` `@error` | 3 |
+| `CalculateMetrics_DeliveryWithoutADate_KeepsReportingHundredPercentAndPublishesTheJointDates` | `@deferred-q1` `@edge` | 3 |
+| `CalculateMetrics_LateAndEarlyFeatureOnSeparateTeams_PercentileDatesAreNeverEarlierThanTheLatestFeature` | `@AC-01.9` `@ADO-5435` `@regression-guard` | 3 |
+| `CalculateMetrics_OverdueDelivery_ReportsZeroPercentAndStillSaysWhenItWillLand` | `@regression-guard` | 3 |
+| `TeamsWithoutForecast_ContributingPairHasNoForecastRow_NamesThatTeam` | `@DDD-8` `@feature-surface` | 3 |
+| `CanBeForecast_ContributingPairHasNoForecastRow_IsFalse` | `@DDD-8` `@feature-surface` | 3 |
+| `GetLikelhoodForDate_ContributingPairHasNoForecastRow_IsUnknownRatherThanAlphasNumberAlone` | `@DDD-8` `@feature-surface` | 3 |
+| `TeamsWithoutForecast_PairWithNoRemainingWorkAndNoForecastRow_IsNotNamed` | `@AC-01.7` `@regression-guard` | 3 |
+| `TeamsWithoutForecast_ContributingPairWithNoForecastRowAndNoTeamNavigation_IsNotNamed` | `@deferred-q3` `@regression-guard` | 3 |
+| `TeamsWithoutForecast_EveryContributingPairHasARow_StaysEmpty` | `@DDD-8` `@regression-guard` | 3 |
+| `FromDelivery_ContributingPairHasNoForecastRow_ReportsUnknownAndNamesThatTeam` | `@C1` `@DDD-8` `@error` | 3 |
+| `GetDelivery_TwoFeaturesOnSeparateTeams_LikelihoodIsTheJointAcrossEveryFeature` | `@AC-01.1` `@walking_skeleton` `@driving_adapter` `@real-io` | 3 |
+| `GetDelivery_TwoFeaturesOnSeparateTeams_PercentileDatesComeFromTheJointHistogram` | `@AC-01.9` `@driving_adapter` `@real-io` | 3 |
+| `GetDelivery_JointRollup_LeavesTheDeliveryPayloadShapeUnchanged` | `@AC-01.12` `@contract-guard` `@real-io` | 3 |
+| `FromDelivery_JointRollup_AttachesNothingToTheChangeTracker` | `@enforcement` `@real-io` | 3 |
+| `Delivery_DoesNotReachForACompletionCombinatorDirectly` | `@enforcement` `@archunit` | 4 |
+
+**Coverage of US-01**: AC-01.1 ✓ · AC-01.2 ✓ · AC-01.3 ✓ · AC-01.4 ✓ · AC-01.5 ✓ · AC-01.6 ✓ ·
+AC-01.7 ✓ · AC-01.8 ✓ · AC-01.9 ✓ · AC-01.10 ✓ · AC-01.11 ✓ · AC-01.12 ✓. Plus DDD-6, DDD-7, DDD-8
+(feature surface), DDD-9, guard 4 and deferred question 1 — the four design-introduced behaviour deltas
+each have their own scenario, as DESIGN asked. US-02/03/04 are slices 02–04 and are untouched.
+
+**Error/edge share**: 20 of 45 scenarios carry `@error`, `@edge`, `@visible-delta` or a guard tag — 44 %.
+
+## Wave: DISTILL / [REF] Test placement
+
+| File | Change | Precedent |
+|---|---|---|
+| `Lighthouse.Backend.Tests/Models/Forecast/ComonotonicCompletionDistributionTest.cs` | NEW | sits beside `JointCompletionDistributionTest`, its sibling combinator, and reuses that file's seeded-`Random` invariant idiom |
+| `Lighthouse.Backend.Tests/Models/Forecast/DeliveryCompletionForecastTest.cs` | NEW | same directory; the builder is a `Models/Forecast/` type, and the design made it constructible without a `Delivery` graph precisely so it could be tested here |
+| `Lighthouse.Backend.Tests/Models/DeliveryJointForecastTest.cs` | NEW | beside `DeliveryTest.cs`. Kept separate rather than growing that file, mirroring how `FeatureUnknownForecastTest` sits beside `FeatureTest` for ADR-112 |
+| `Lighthouse.Backend.Tests/Models/FeatureMissingForecastRowTest.cs` | NEW | beside `FeatureUnknownForecastTest.cs` — same subject (`TeamsWithoutForecast` / `CanBeForecast`), one story later. The existing zero-trial clause and completed-feature exemption stay in that file and are not duplicated |
+| `Lighthouse.Backend.Tests/API/DTO/DeliveryUnknownForecastDtoTest.cs` | EXTEND (+1 test) | the ADR-112 D8 delivery-grain file is the right home for "the delivery reports unknown and names the team"; a new file would fork the fixture helpers |
+| `Lighthouse.Backend.Tests/API/Integration/DeliveryJointForecastIntegrationTest.cs` | NEW | modelled on `MultiTeamJointForecastDeliveryIntegrationTest` (Story #5569), including its seed/POST/GET shape and `JsonStringEnumConverter` options |
+| `Lighthouse.Backend.Tests/Architecture/DeliveryGrainSeamArchUnitTest.cs` | NEW | same shape as `BlackoutForecastShiftSeamArchUnitTest`; `LighthouseArchitecture.Production` + `.Because(...)` |
+
+**No E2E for slice-01.** Playwright is a thin walking-skeleton sanity check in this repo, and the shape
+that most needs proving here — a contributing pair with no forecast row — requires a seeded-then-resynced
+sequence that does not belong in an E2E. It stays at unit/integration grain. Slice 03 owns the
+UI-facing E2E for the relabel.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+| File | Marker | State |
+|---|---|---|
+| `Lighthouse.Backend/Models/Forecast/ComonotonicCompletionDistribution.cs` | `__SCAFFOLD__` | `internal static Dictionary<int,int> Min(IEnumerable<IReadOnlyDictionary<int,int>>)` throwing `InvalidOperationException`; the ADR-113 contract is in the comment above it |
+| `Lighthouse.Backend/Models/Forecast/DeliveryCompletionForecast.cs` | `__SCAFFOLD__` | `ContributingRows(List<Feature>) -> List<DeliveryForecastRow>` and `Build(List<Feature>) -> AggregatedWhenForecast?`, both throwing. `DeliveryForecastRow` is a real `internal sealed record`, not a scaffold — it has no behaviour to implement |
+| `Lighthouse.Backend/Models/Forecast/CompletionHistogram.cs` | `__SCAFFOLD__` | the three shared primitives, throwing. **DELIVER's FIRST commit is the behaviour-preserving `refactor(forecast):` that lifts the bodies out of `JointCompletionDistribution` verbatim** — that commit precedes the feature commit, and until it lands this type is unreferenced |
+
+`InvalidOperationException` rather than `NotImplementedException`: the latter is SonarQube S3717 and
+would fail the quality gate on a new file. Either way NUnit reports a failing test, never a broken
+suite. Detection: `grep -rn "__SCAFFOLD__" Lighthouse.Backend/Lighthouse.Backend/` returns **9 hits
+across 3 files** today and must return zero when DELIVER is done.
+
+`JointCompletionDistribution`, `AggregatedWhenForecast` and `WhenForecast` were **not** touched — their
+public surface already carries every observable the tests assert on. `WhenForecast`'s `internal`
+histogram ctor is used as the carrier seam by the tests exactly as production will use it, which is why
+its "Test seam for hand-built histograms" comment must change in the same DELIVER commit (DDD-5).
+
+## Wave: DISTILL / [REF] Driving adapter + adapter coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| *(none added)* | n/a | Per DESIGN this slice is read-side only: no entity, no column, no migration, no new driven port |
+| EF-persisted `Feature.Forecasts` + `Feature.FeatureWork` (existing) | YES | `DeliveryJointForecastIntegrationTest` round-trips through the repositories and `WebApplicationFactory`; `FromDelivery_JointRollup_AttachesNothingToTheChangeTracker` additionally asserts the read path attaches nothing |
+
+| Driving port (DESIGN) | Scenario |
+|---|---|
+| `GET /api/latest/deliveries/portfolio/{portfolioId}` | `GetDelivery_TwoFeaturesOnSeparateTeams_LikelihoodIsTheJointAcrossEveryFeature` (real HTTP, real status check, real DTO deserialisation) + `..._PercentileDatesComeFromTheJointHistogram` + `GetDelivery_JointRollup_LeavesTheDeliveryPayloadShapeUnchanged` |
+| `POST /api/latest/deliveries/portfolio/{portfolioId}` | Exercised as the fixture's own setup — a delivery is created through the real endpoint, not inserted behind it |
+| `GET /api/latest/portfolios/{id}` (`FeatureDto`) | NOT covered end-to-end. DDD-8 moves this surface too, but the behaviour is asserted at `Feature.TeamsWithoutForecast` / `CanBeForecast` in `FeatureMissingForecastRowTest`; a second HTTP scenario for the same computed property would duplicate the walking skeleton. Flagged for DELIVER to reconsider only if the DTO assembly is touched |
+| `GET /api/latest/deliveries/{deliveryId}/metrics-history` | N/A — one-time step (DISCUSS), no forecast maths in the path. See upstream note 5 |
+| MCP / CLI tools | N/A — they forward the DTO above verbatim; `GetDelivery_JointRollup_LeavesTheDeliveryPayloadShapeUnchanged` is the guard that keeps them out of this release |
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- `InternalsVisibleTo("Lighthouse.Backend.Tests")` at `Lighthouse.Backend.csproj:64` — already present,
+  so the `internal` combinators, the builder and the `WhenForecast` histogram ctor cost no plumbing.
+- No DEVOPS artefacts exist for this feature: the default environment applies (in-process
+  `WebApplicationFactory` + EF InMemory, as every other `API/Integration` test). Logged as a warning,
+  not a block. This repo has **no** `docs/architecture/atdd-infrastructure-policy.md` and none was
+  created — the test conventions are established and live in `CLAUDE.md`.
+- No `discuss/`, `design/` or `devops/` sub-directories and no per-wave `wave-decisions.md`: this
+  feature uses the single-narrative `feature-delta.md` layout. Wave-decision reconciliation was run
+  against the DISCUSS and DESIGN sections of this file instead — **0 contradictions**, with one
+  correction DESIGN had already made to itself (DDD-6 withdrew the guard-reordering claim).
+- No demo-data dependency in the backend suite: every fixture is hand-built, so the "does the
+  Dependencies scenario contain a shared feature across two teams in one delivery?" question stays open
+  for DELIVER's visible-delta check but blocks nothing here.
+
+## Wave: DISTILL / [REF] Decisions taken in DISTILL
+
+| ID | Decision | Rationale |
+|----|----------|-----------|
+| DT-1 | `ComonotonicCompletionDistribution.Min` takes `IEnumerable<IReadOnlyDictionary<int,int>>` and returns `Dictionary<int,int>` | Mirrors `Combine` exactly, which is what AC-01.5 needs; CA1859 forbids the interface return on a non-public member |
+| DT-2 | `DeliveryCompletionForecast` exposes **two** members: `ContributingRows(List<Feature>)` and `Build(List<Feature>)` | AC-01.6 ("3 rows, not 4") is a statement about the ROW SET, not about the distribution — asserting it through the histogram would be indirect and mutation-weak. Both parameters are the concrete `List<T>` per CA1859's parameter clause |
+| DT-3 | `Build` returns `AggregatedWhenForecast?`, null meaning "a contributing pair has no forecast row" | One null, one meaning. Guards 1/2/3 run before it in `CalculateMetrics`, so `Build` never has to distinguish "empty delivery" from "all done" — the conflation DDD-6 exists to remove is not re-introduced one layer down |
+| DT-4 | `DeliveryForecastRow(int TeamId, Team? Team, WhenForecast? Forecast)` carries the team NAVIGATION as well as the id | DDD-8 has to name the team, and the join already has it in hand. Nullable because a `FeatureWork` loaded without its navigation is reachable (deferred question 3) |
+| DT-5 | **Deferred question 1 — `Delivery.Date == default`: MIRROR the guard.** The delivery keeps reporting 100 %; the percentile dates still come off the joint histogram | The design said "mirror or assert unreachable, do not invent a third behaviour". Mirroring is the cheaper of the two and preserves today's answer on an EF-only shape; letting it silently flip 100 % → 0 % (because `CountWorkingDays` against `DateTime.MinValue` is negative) is a behaviour change nobody asked for. Note the guard only ever touched the LIKELIHOOD — the dates came from the forecast on both sides — so this is a mirror, not a third behaviour |
+| DT-6 | **Deferred question 4 — `ExcludedSummary` composing twice: do NOT assert distinctness** | Accepted as cosmetic, as DESIGN allowed. No AC specifies it, the fixture that actually bites needs a multi-row bucket (`"X; Y"` vs `"X"` → `"X; Y; X"`), and a test built on the two-single-row shape passes with no production change — i.e. it would be theatre. Recorded so a future reader knows it was decided, not missed |
+| DT-7 | **Deferred question 10 — `DeliveryMetricSnapshot` `hasForecast`: no test, no change** | The recorder already handles `(null, [])` today — that is exactly what an ADR-112 D8 delivery produces. DDD-7 makes that shape more FREQUENT, it does not make it new. No schema or handler behaviour is introduced, so there is nothing for slice-01 to assert; slice 04's release note should mention the frequency change |
+| DT-8 | No property-testing library introduced | Consistent with Story #5569's DT-6: two seeded loops over `Random(5587)` express the `Min` invariants. Adding FsCheck for two tests would be a dependency for its own sake, and the repo's stack is NUnit + Moq + EF InMemory + `WebApplicationFactory` |
+| DT-9 | `CompletionHistogram` gets **no direct test** | The reuse table words its contract as "existing tests pass unchanged across the extraction". A parallel residue/tie-break test would duplicate `Combine_ScaledBucketsLeaveAResidue_AssignsItByLargestRemainderPreferringTheEarlierDay` and, worse, would let the two copies drift — the exact failure the shared type exists to prevent |
+| DT-10 | No reflection test asserting `GetGoverningFeature` / `GetLeastLikelyFeature` are gone | The design's own enforcement table says "deletion proven by compilation". A `GetMethods()` assertion is an AST-shape test: it pins the code's shape rather than its behaviour, and it would go green on a rename |
+| DT-11 | Day-level assertions use hand-built histograms only; the probability-level invariant carries a one-trial tolerance | ADR-113 is explicit that the `delivery <= every row` ordering holds exactly on the CDFs but only ±1 trial on the emitted histograms, because `DistributeByLargestRemainder` is not monotone across two different day-key grids. Every asserted percentile day in this suite sits on an actual histogram key, far from a rounding edge |
+| DT-12 | `CalculateMetrics_ThreeWayFixture_...` is kept as a labelled GRAIN ANCHOR rather than deleted or forced red | It is green under both implementations by construction (see upstream note 1). It still fails on a wrong grain, which is what it is for. Labelling it beats deleting a fixture the ACs name explicitly, and beats pretending it discriminates |
+
+## Wave: DISTILL / [REF] Upstream notes (back-propagation)
+
+1. **AC-01.2's three-way fixture does not discriminate old from new at the `Delivery.CalculateMetrics`
+   seam.** It discriminates the three GRAIN traps (.720 / .684 / .518) — which is what the AC claims —
+   but on this fixture today's governing-feature answer is *also* .720, because Checkout governs
+   entirely and Reporting carries slack. That is the AC-01.4 equality corner working as designed, not a
+   defect; it just means the fixture proves the grain at the builder seam and proves nothing about
+   old-vs-new at the entity seam. A **second** fixture (two independent teams, .90 × .90 = .81) is what
+   makes the change visible end to end, and it is now the one wired through the HTTP port. No change
+   requested to the AC — recorded so nobody reads the fixture as an end-to-end discriminator.
+2. **DDD-8's code snippet is missing a null filter.** As written,
+   `FeatureWork.Where(...).Select(w => w.Team)` yields nulls for pairs loaded without their `Team`
+   navigation, where the existing zero-trial clause has `.Where(team => team is not null)`. Without the
+   filter the property either throws downstream or renders a dangling "no throughput history for ".
+   With it, guard 4 stops being "unreachable" and becomes **load-bearing** for exactly that shape —
+   which is why `CalculateMetrics_ContributingPairHasNoForecastRowAndNoTeamNavigation_StillReportsUnknown`
+   exists and is RED. This also answers deferred question 3 at backend grain; the frontend half
+   (does `cannotForecastReason` degrade on an empty team list?) is slice 03's.
+3. **Two pre-existing `DeliveryTest` fixtures will need repair in DELIVER.**
+   `CalculateMetrics_MultipleFeaturesTiedOnLikelihood_...` and
+   `CalculateMetrics_FeatureWithZeroLikelihood_...` build `FeatureWork` with no `Team` and forecasts
+   with no `TeamId`, so under the new LEFT JOIN they resolve to "cannot forecast". That is a fixture
+   defect, not a regression, and both are already covered by direct replacements in
+   `DeliveryJointForecastTest`. The first one asserts the *governing feature's* dates — the behaviour
+   AC-01.9 deletes — so it can be removed rather than repaired. Full detail in
+   `distill-red-classification.md`.
+4. **`ForecastBase.GetLikelihood` adds a day's mass BEFORE testing `key >= daysToTargetDate`**, so mass
+   on a day strictly later than the target can count toward the likelihood when no earlier key reaches
+   it. Adjacent to ADO Bug #5586 and deliberately out of scope; noted because every fixture here was
+   chosen so the delivery date lands **on** an actual histogram key, which keeps the suite independent
+   of that quirk. A future fix to #5586's family should not silently move these expectations.
+5. **`DeliveryMetricSnapshotRecordingHandler` passes FOUR percentiles** (`:53`) where the DTO passes
+   three. Nothing in slice-01 depends on the count, but DDD-3's cost measurement must use the handler's
+   figure (2N + 5 today) for that path, not the DTO's (2N + 4), or the "roughly half" claim will read as
+   a smaller win than it is.
+6. **ADO #5587's `System.Description` is still unfetched** across three waves. Every claim in this
+   wave was re-derived from code, so it blocks nothing, but it remains slice-01 gate 4 and DELIVER
+   should read it before writing production code.
+
+## Wave: DISTILL / [REF] Review gate
+
+The four-reviewer Final Wave Review Gate was **not** dispatched. This feature runs under the same
+explicit maintainer gate as its parent epic (line-by-line diff review before every commit), which
+supersedes agent review for the production diff; DISCUSS and DESIGN were reviewed and accepted with the
+maintainer and are pushed at `ff9f06d15`. Not a silent skip: re-run `/nw-review` against
+`feature-delta.md` if a second opinion on the DISTILL sections is wanted before DELIVER.
+
+Gates verified this wave: `dotnet build` **0 warnings** (`TreatWarningsAsErrors` is on) and
+`dotnet test` **3918 passed / 0 failed / 33 skipped** with the RED tests ignored. `docs/ci-learnings.md`
+was pre-applied rather than discovered: `Is.Zero` (never `Is.EqualTo(0)`), `Is.Default` (never
+`Is.EqualTo(default(X))`), `Has.Count.EqualTo(N)` (never `Assert.That(collection.Count, …)`),
+`using (Assert.EnterMultipleScope())` (never `Assert.Multiple(() => …)`), every constant array literal
+— including collection expressions — hoisted to a `private static readonly` field, and `Min` returning
+the concrete `Dictionary<int,int>` for CA1859. Still owed by DELIVER: the Stryker `test-case-filter`
+check against the three new class names, mutation ≥ 80 % on the changed surface, and the DDD-3 cost
+measurement on the endpoint (not only the header).
+
+RED classification for the hand-off: `distill-red-classification.md` (33 RED, all
+`MISSING_FUNCTIONALITY`, 0 broken; 21 regression guards and anchors green).
