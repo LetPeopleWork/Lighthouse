@@ -1728,3 +1728,210 @@ measurement on the endpoint (not only the header).
 
 RED classification for the hand-off: `distill-red-classification.md` (33 RED, all
 `MISSING_FUNCTIONALITY`, 0 broken; 21 regression guards and anchors green).
+
+---
+
+## Wave: DISTILL / [REF] Inherited commitments — slices 02, 03, 04
+
+Scope of this pass: **slices 02 (sufficiency), 03 (copy) and 04 (docs/notes)**. Slice-01's sections
+above are unchanged and its tests were not touched. As above, this repository has **no Gherkin layer,
+no pytest-bdd and no `.feature` files**: `Given/When/Then` lives in the Arrange/Act/Assert shape of
+NUnit / Vitest / Playwright bodies, and the tags below are documentation, not attributes.
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DISCUSS#D6 | `HasSufficientData` is the AND across the delivery's features **that have remaining work**; empty set ⇒ true | n/a | Nine fixtures in `DeliverySufficiencyDtoTest`. The exemption is pinned from both sides — one fixture fails without it (`FinishedFeatureAlongsideAWellSupportedOne`), one fails if it over-exempts (`FinishedFeatureAlongsideAThinOne`) |
+| DISCUSS#D6 | AND can only flip `true → false`, never the reverse | n/a | `ThinHistoryOnTheLeastLikelyFeature_KeepsReportingInsufficientData` is the direction guard; `EveryContributingFeatureHasAmpleHistory` is the negative control |
+| DISCUSS#D6 / AC-02.3 | `GetLeastLikelyFeature` is deleted | n/a | **No test.** Deletion is proven by compilation, exactly as slice-01's DT-10 ruled for `GetGoverningFeature`. A `GetMethods()` assertion pins shape, not behaviour, and goes green on a rename |
+| DESIGN#DDD-2 | Sufficiency is carried on `DeliveryMetricsProjection`, zero wire change | DDR-2 | The **carrier** is untested and the field was not added in DISTILL; every AC-02.* words its subject as the DTO, which is where the value is genuinely computed today. Full reasoning in `distill-red-classification.md` § "Why every slice-02 assertion is at the DTO grain" |
+| DESIGN#DDD-2 | Feature-grain AND and row-grain AND diverge on a stale done row inside a live feature; **feature grain wins** | DDR-2 | `StaleDoneRowInsideALiveFeature_IsStillCountedByTheFeatureGrainAnd` — pinned so a future reader does not unify the two grains without noticing they are different sets |
+| DISCUSS#AC-02.5 | The unknown state and the sufficiency signal **compose** | n/a | `UnforecastableDeliveryWithThinHistoryElsewhere_ReportsBothSignals` asserts `LikelihoodPercentage is null` **and** `HasSufficientData is false` in one scope |
+| DISCUSS#AC-02.6 | The existing `INSUFFICIENT_FORECAST_DATA_SHORT` rendering is reused unchanged | n/a | Carried by slice-03's `keeps the not-enough-data label, without the joint framing` guard rather than duplicated — the same assertion proves the indicator is reused AND that the new framing does not leak into that branch |
+| DISCUSS#D1 | Header `All {featuresTerm} by {date}: NN%`; column "each on its own"; the two tooltips | n/a | Five RED cases in `DeliverySection.likelihoodCopy.test.tsx`. Every user-visible string is asserted against the **literal**, never rebuilt from a shared const — a self-comparing assertion survives blanking the copy to `""` (ci-learnings, mutation section) |
+| DISCUSS#D1 constraint A | All new copy routes through `getTerm(...)`; no new hardcoded literal | n/a | The terminology mock is **parameterised per test**, not hardcoded to "Feature". `builds the header from the renamed vocabulary` renders under `features: "Epics"` and additionally asserts `All Features by` is **absent** — a mock returning a fixed term cannot fail on the defect it exists to catch |
+| DISCUSS#D1 constraint B | The copy must NOT promise the header is lower than every row | n/a | `never claims the header is lower than every row` (frontend) + `never claims the delivery is always lower than every feature` (docs). Both are **outside** the skipped blocks and both are **vacuous today** — labelled as such in their own bodies, because a guard on copy that does not exist yet cannot be RED |
+| DISCUSS#AC-03.5 / 03.6 / 03.7 | Non-numeric states, the row chip's tooltip and chip size/colour are untouched | n/a | Three green guards. Chip **position** is deliberately not asserted: jsdom has no layout, and every available assertion would pin markup order rather than appearance |
+| DESIGN#frontend / AC-03.8 | The header date uses `delivery.getFormattedDate()`, the same call the "Delivery Date:" text makes | n/a | The Vitest case asserts both strings against the same `getFormattedDate()` result in one test; the E2E asserts the chip contains the date the header renders beside it |
+| DESIGN#deferred-q8 | Long-terminology truncation test before the copy is final | n/a | **Half-covered, and said so.** The Vitest case proves the full string is rendered under "Programme Increment Epics"; it cannot prove it does not visually truncate. That half stays a manual check — DESIGN already says a truncation failure returns a chip restructure to DESIGN rather than shortening locked copy |
+| DISCUSS#D3 | Upgrade shock is handled with release notes + concept docs only; **no** in-app messaging | n/a | Six RED drift guards over `releasenotes.md` and `howlighthouseforecasts.md`, plus a green source scan of `DeliverySection.tsx` for `Alert` / `Snackbar` / `dismiss` |
+| DISCUSS#D4 / AC-04.5 | Team independence stays docs-only | n/a | Asserted **inside the new delivery-grain section**, not page-wide. The page already states independence at feature grain, so a page-wide check is green today and can never fail — see the note below |
+| DISCUSS#D12 | The delivery number is an **upper bound twice over** | n/a | **Not covered by any test, by nature.** It is a claim about the model's honesty, not about behaviour. It is a required element of slice-04's prose and a maintainer review item; no keyword check would distinguish saying it from saying it well |
+| DESIGN#DDD-8 | The feature surface moves too (Team/Portfolio grids read "Cannot forecast") | DDR-8 | **Backend covered by slice-01** (`FeatureMissingForecastRowTest`). Judged: **no new frontend AC here** — see the ruling below |
+
+## Wave: DISTILL / [REF] Scenario list with tags — slices 02, 03, 04
+
+| Scenario (test) | Tags | Slice |
+|---|---|---|
+| `FromDelivery_ThinHistoryOnAFeatureThatIsNotTheLeastLikely_ReportsInsufficientData` | `@AC-02.1` `@AC-02.4` `@visible-delta` | 02 |
+| `FromDelivery_EveryFeatureIsFinished_ReportsSufficientDataRatherThanTheSentinelDefault` | `@AC-02.1` `@landmine` `@edge` | 02 |
+| `FromDelivery_UnforecastableDeliveryWithThinHistoryElsewhere_ReportsBothSignals` | `@AC-02.5` `@D2` `@error` | 02 |
+| `FromDelivery_FinishedFeatureAlongsideAWellSupportedOne_StillReportsSufficientData` | `@AC-02.2` `@regression-guard` `@kill-shot` | 02 |
+| `FromDelivery_FinishedFeatureAlongsideAThinOne_StillReportsInsufficientData` | `@AC-02.2` `@regression-guard` | 02 |
+| `FromDelivery_EveryContributingFeatureHasAmpleHistory_KeepsReportingSufficientData` | `@AC-02.1` `@regression-guard` | 02 |
+| `FromDelivery_ThinHistoryOnTheLeastLikelyFeature_KeepsReportingInsufficientData` | `@AC-02.4` `@regression-guard` | 02 |
+| `FromDelivery_DeliveryWithoutFeatures_ReportsSufficientData` | `@AC-02.1` `@edge` `@regression-guard` | 02 |
+| `FromDelivery_StaleDoneRowInsideALiveFeature_IsStillCountedByTheFeatureGrainAnd` | `@DDD-2` `@edge` `@regression-guard` | 02 |
+| `labels the header with the joint framing, the renamable plural term and the delivery date` | `@AC-03.1` `@AC-03.8` `@in-memory` | 03 |
+| `explains on the header what ALL means` | `@AC-03.1` `@in-memory` | 03 |
+| `frames the breakdown column as the per-feature probability and says what it ignores` | `@AC-03.2` `@in-memory` | 03 |
+| `builds the header from the renamed vocabulary rather than a literal` | `@AC-03.3` `@kill-shot` `@in-memory` | 03 |
+| `keeps the full label reachable under a long renamed term` | `@deferred-q8` `@edge` `@partial` | 03 |
+| `never claims the header is lower than every row` | `@AC-03.4` `@constraint-guard` `@vacuous-today` | 03 |
+| `keeps the cannot-forecast label and its team-naming tooltip, without the joint framing` | `@AC-03.5` `@regression-guard` | 03 |
+| `keeps the not-enough-data label, without the joint framing` | `@AC-03.5` `@AC-02.6` `@regression-guard` | 03 |
+| `keeps the per-row chip's own cannot-forecast tooltip alongside the column header` | `@AC-03.6` `@regression-guard` | 03 |
+| `keeps the header chip's size and ForecastLevel colour` | `@AC-03.7` `@regression-guard` | 03 |
+| `forecaster reads which probability each delivery surface is showing` | `@walking_skeleton` `@driving_adapter` `@real-io` `@US-03` | 03 |
+| `names all three visible consequences in the release notes` | `@AC-04.1` `@drift-guard` | 04 |
+| `calls the sufficiency change out separately` | `@AC-04.2` `@drift-guard` | 04 |
+| `adds a delivery-level worked example to the concept page` | `@AC-04.3` `@drift-guard` | 04 |
+| `teaches the per-team-per-feature grain` | `@AC-04.4` `@D5` `@drift-guard` | 04 |
+| `restates the independence assumption at delivery grain` | `@AC-04.5` `@D4` `@drift-guard` | 04 |
+| `shows the equality case` | `@AC-04.6` `@D1-constraint-B` `@drift-guard` | 04 |
+| `never claims the delivery is always lower than every feature` | `@AC-04.6` `@constraint-guard` `@vacuous-today` | 04 |
+| `adds no in-app banner or dismissible notice to the delivery surface` | `@AC-04.7` `@D3` `@regression-guard` | 04 |
+
+**Coverage.** US-02: AC-02.1 ✓ · 02.2 ✓ · 02.3 — deliberately untested (deletion proven by
+compilation) · 02.4 ✓ · 02.5 ✓ · 02.6 ✓ (carried by slice-03's guard). US-03: AC-03.1 ✓ · 03.2 ✓ ·
+03.3 ✓ · 03.4 ✓ (vacuous today) · 03.5 ✓ · 03.6 ✓ · 03.7 ✓ (size + colour; position not asserted) ·
+03.8 ✓. US-04: AC-04.1 ✓ · 04.2 ✓ · 04.3 ✓ · 04.4 ✓ · 04.5 ✓ · 04.6 ✓ · 04.7 ✓ (`DeliverySection`
+scanned; the trend-annotation half is a diff-review item) — **all as drift guards, not quality gates.**
+
+**Counts**: 28 scenarios (27 automated + 1 E2E). **15 RED** (3 backend + 5 frontend + 6 docs +
+1 E2E), **13 green** guards. Error/edge/visible-delta/constraint-guard tags: 12 of 28 — 43 %.
+
+## Wave: DISTILL / [REF] Test placement — slices 02, 03, 04
+
+| File | Change | Precedent |
+|---|---|---|
+| `Lighthouse.Backend.Tests/API/DTO/DeliverySufficiencyDtoTest.cs` | NEW | beside `DeliveryUnknownForecastDtoTest.cs`, the ADR-112 delivery-grain sufficiency file. Kept separate rather than grown into it because that file's fixtures are shaped for the unknown state; the same split slice-01 made between `DeliveryTest` and `DeliveryJointForecastTest` |
+| `Lighthouse.Frontend/src/pages/.../DeliveryGrid/DeliverySection.likelihoodCopy.test.tsx` | NEW | beside `DeliverySection.metrics.test.tsx` — this component already splits its tests by concern. A new file is also what makes the parameterised terminology mock possible: the existing `DeliverySection.test.tsx` hardcodes `getTerm` to return "Feature" |
+| `Lighthouse.Frontend/src/utils/forecast/deliveryJointLikelihoodDocs.enforcement.test.ts` | NEW | beside `formatLikelihood.enforcement.test.ts`, this repo's only `readFileSync`-plus-regex enforcement precedent. **Not** under `src/docs` — a `src/docs` path here has a history of Biome reformatting the entire docs tree |
+| `Lighthouse.EndToEndTests/tests/specs/portfolios/DeliveryJointLikelihood.spec.ts` | NEW | modelled on `DeliveryMetrics.spec.ts` (same demo scenario 0, same `loadDemoScenario` → `goToPortfolio` → `goToDeliveries` shape) and on `OAuthConnection.spec.ts` for the `test.skip` DISTILL skeleton convention |
+| `Lighthouse.EndToEndTests/tests/models/portfolios/Deliveries/DeliveryItem.ts` | EXTEND (+3 members) | `forecastChip` / `getForecastChipLabel()` / `getDeliveryDate()` / `likelihoodColumnHeader`. Specs go through POMs; two of these exist because the live run found the existing helpers unusable — see the classification doc |
+
+**One E2E for the whole feature.** Slice-01 has none by design; this is the single thin walking
+skeleton, driven by seeded demo data, through Page Objects. No team↔portfolio twin, no permutation
+matrix, no re-seed to reach the same page.
+
+## Wave: DISTILL / [REF] Scaffolds — slices 02, 03, 04
+
+**None.** Every observable these slices assert already exists: `DeliveryWithLikelihoodDto.HasSufficientData`
+(slice 02), the rendered `DeliverySection` (slice 03), and two committed Markdown files (slice 04). No
+production type had to be stubbed for the tests to compile, so
+`grep -rn "__SCAFFOLD__" Lighthouse.Backend/Lighthouse.Backend/` still returns slice-01's **9 hits
+across 3 files** and no more.
+
+The one production change these slices need — `DeliveryMetricsProjection` gaining `bool
+HasSufficientData` (DDD-2) — was **deliberately not made in DISTILL**. It is a data-only field with no
+behaviour, and adding it would have forced a default value that makes half the sufficiency suite green
+for the wrong reason. Reasoning in full in `distill-red-classification.md`.
+
+## Wave: DISTILL / [REF] Driving adapter + adapter coverage — slices 02, 03, 04
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| *(none added)* | n/a | Slice 02 is a read-side predicate change; slices 03/04 are presentation and prose. No entity, no column, no migration, no new driven port |
+
+| Driving port | Scenario |
+|---|---|
+| `GET /api/latest/deliveries/portfolio/{portfolioId}` | Covered end-to-end by slice-01's `DeliveryJointForecastIntegrationTest`. Slice 02 adds **no** HTTP scenario: `hasSufficientData` is an existing key with an existing type, so slice-01's `GetDelivery_JointRollup_LeavesTheDeliveryPayloadShapeUnchanged` contract guard already covers the wire surface, and a second round-trip for one boolean would duplicate it |
+| Portfolio → Deliveries UI (browser) | `DeliveryJointLikelihood.spec.ts` — real navigation, real DTO, real terminology service, real MUI rendering. **Run live before commit**; all three steps observed failing on missing copy |
+| MCP / CLI tools | N/A — zero wire-contract change (DDD-2). Slice-01's payload-shape guard is what keeps them out of this release |
+
+## Wave: DISTILL / [REF] Decisions taken in DISTILL — slices 02, 03, 04
+
+| ID | Decision | Rationale |
+|----|----------|-----------|
+| DT-13 | **Slice-02 asserts only at the DTO grain.** `DeliveryMetricsProjection.HasSufficientData` gets no test and is not added in DISTILL | Every AC-02.* words its subject as `DeliveryWithLikelihoodDto.HasSufficientData`, and the DTO computes the value today, so all nine fixtures discriminate old from new. A defaulted projection field would make half the suite pass by default value rather than by computation; pinning the route is an AST-shape test, which DT-10 already refused |
+| DT-14 | **Both new tooltips are carried in a native `title` attribute**, asserted with `getByTitle` / `page.getByTitle` | The header chip already uses `title=` for `cannotForecastReason`, so this is the component's own idiom rather than a new one. An MUI `<Tooltip>` renders only on hover and is queryable neither from RTL without `userEvent` nor from Playwright without a hover — and the CI ledger warns that `getByRole("tooltip")` matches two elements on a page hosting the component twice. **Open to veto**: if DELIVER prefers MUI `Tooltip`, both assertions must change to hover-based, and the cost is a slower, flakier test |
+| DT-15 | **The header label uses `featuresTerm` VERBATIM** — `All Features by …`, not `All features by …` | AC-03.1 is the normative statement and writes `All {featuresTerm} by {formatted delivery date}: NN%`. The lowercase "All features" / "All epics" in the US-03 prose is illustrative. Lower-casing would also mangle acronym-shaped renames ("PIs" → "pis"). Flagged as upstream note S3-2 |
+| DT-16 | **The AC-03.4 and AC-04.6 "must not overclaim" guards live OUTSIDE the skipped blocks and are labelled vacuous** | They constrain copy that does not exist yet, so they cannot be RED. Leaving them skipped would mean they first run only when someone remembers to un-skip them — i.e. after the copy is already written. Running them from now on means the first over-promising draft fails immediately. A vacuous guard is honest only when it says so in its own body, which both do |
+| DT-17 | **Slice-04's docs checks are DRIFT guards, not quality gates**, and say so at the top of the file | No test can judge whether an explanation explains. The real gates are the maintainer's reproduce-by-hand walkthrough (slice-04 gate 1, also an outcome KPI) and the DIVIO/Diataxis prose review. What a machine can do is fail when the section is never written, is deleted, or makes the one claim D1 constraint B forbids — on a page published live via jsDelivr the moment it merges |
+| DT-18 | **Slice-04's content assertions are scoped to the new delivery-grain SECTION, never page-wide** | AC-04.4/04.5/04.6 were first written page-wide and observed **passing against the unchanged page**: it already teaches independence, the coin analogy and "about 72%" at feature grain. A check that cannot fail is worse than no check. Recorded in the classification doc rather than quietly corrected |
+| DT-19 | **No new AC for DDD-8's frontend surface** | DDD-8 moves the Team/Portfolio feature grids to "Cannot forecast" for a newly-synced team. That is not a rendering change: `FeatureLikelihoodChip` and the Team/Portfolio grids already render `CANNOT_FORECAST_SHORT` from `teamsWithoutForecast`, and slice-01's `FeatureMissingForecastRowTest` pins the backend value that feeds them. A frontend test would re-assert a code path that has not changed and would go green with the backend fix absent. **Slice-04's release note must still name the feature-grid change** — that is where it needs to surface, and AC-04.1's release-notes check is the mechanical hook |
+| DT-20 | **Deferred question 10 (`DeliveryMetricSnapshot` `hasForecast`) is not in slice-02's scope** | It is a consequence of slice-01's guard 4 returning an empty `WhenDistribution`, already answered by DT-7. Slice-02 changes one boolean and introduces no new empty-distribution path; the snapshot table has no sufficiency column at all, so the recorder cannot observe this slice |
+| DT-21 | **No new test for AC-02.6**; it is carried by slice-03's not-enough-data guard | AC-02.6 is a "no change" criterion about a rendering slice-03 also touches. One assertion proves both that the indicator is reused unchanged and that the new joint framing does not leak into that branch. A separate test would assert the absence of a change nobody proposed |
+| DT-22 | **The E2E was run against a live instance before hand-off**, not merely typechecked | Standing project rule: never commit a Playwright spec or POM locator you have not run. The run paid for itself twice — `getTargetDate()` and the page-global `/^Likelihood/` locator were both broken and would have produced wrong-reason REDs |
+
+## Wave: DISTILL / [REF] Upstream notes (back-propagation) — slices 02, 03, 04
+
+1. **S3-1 — `DeliveriesChips` is left describing the same number differently.** The portfolio
+   **overview** table (`components/Common/DataOverviewTable/DeliveriesChips.tsx:76`) renders
+   `Likelihood: NN%` for a delivery from the very same DTO field the detail header uses. D1's copy is
+   scoped to `DeliverySection`, and slice-03's OUT-of-scope list does not mention the overview at all.
+   After slice-03 a user sees the joint number labelled "All Features by …" on one screen and
+   "Likelihood" on another. **Not fixed here and no AC invented** — but it is a gap in D1's scope
+   rather than a deliberate exclusion, and it is cheap to close (the same `getTerm`-built string).
+   Worth a maintainer ruling before DELIVER writes the copy.
+2. **S3-2 — AC-03.1 and the US-03 prose disagree on the term's case.** AC-03.1 specifies
+   `All {featuresTerm} by …`; the elevator pitch and UAT scenarios read "All features by Oct 14, 2026"
+   and "All epics by …". DT-15 takes AC-03.1 as normative (verbatim term), which renders
+   `All Features by …` under the default vocabulary. A one-word maintainer ruling settles it; the tests
+   pin the literal either way and would need a one-line change if the ruling goes the other way.
+3. **S1-1 (a slice-01 finding, surfaced here) — `PortfolioDetail.spec.ts:87` breaks on slice-01, not
+   on slice-03.** `expect(featureLikelihoods).toContain(details.likelihood)` asserts the delivery
+   number **equals one of its feature rows**. That is true today because the governing feature answers
+   for the delivery; after the joint rollup it is `<=` every row, with equality the exception (D5).
+   Slice-01's own classification lists the two `DeliveryTest` fixtures that need repair but not this
+   one, because it lives in the E2E suite. It also breaks a second time on slice-03's relabel, via
+   `getLikelihood()`. **DELIVER must repair it as part of slice-01, not discover it at slice-03.**
+4. **S2-1 — one existing DTO test must be INVERTED, not repaired.**
+   `DeliveryUnknownForecastDtoTest.FromDelivery_ForecastableFeatureIsSufficientButAnUnknownOneIsNot_TheGoverningFeatureStillAnswers`
+   pins the precedence rule D6 deletes ("the all-features fallback must not take over while a feature
+   that can be forecast is still there to govern the delivery"). Under the new AND it flips from
+   `True` to `False`. That is the AC-02.4 delta asserted from the other side, not a regression. Two
+   neighbours in the same file and `Should_Mirror_Insufficient_Data_From_Governing_Feature` are
+   value-stable but **name-drifted** once nothing governs anything.
+5. **S3-3 — `DeliveryItem.getTargetDate()` has never worked on this page.** It matches a
+   `Target Date:` prefix; `DeliverySection` renders `Delivery Date:`. Verified live: it returns
+   `null`. Harmless today because its only caller reads `name` and `scope` off `getDetails()`, but it
+   is a POM getter that silently returns null rather than failing — the exact shape the CI ledger warns
+   makes one-sided assertions vacuous. Left in place, `getDeliveryDate()` added beside it.
+6. **S4-1 — two `@screenshot` images must be regenerated after slice-03.**
+   `Screenshots.spec.ts:308` (`features/delivery_detail.png`) and `:247`
+   (`features/portfoliodetail.png`) both show the delivery header chip. Standing trap: an
+   `@screenshot` test keeps the OLD PNG when the pixel diff is under 0.5 %, so `rm` the old file
+   first. A DELIVER task, recorded so it is not found at release time.
+7. **D12's "upper bound twice over" has no mechanical home.** It is a claim about the model's honesty,
+   required in slice-04's prose (`min` is optimistic within a team, cross-team independence is
+   optimistic where teams share people, both err in the same direction, so the shipped figure is a
+   ceiling and never a floor). No keyword check distinguishes stating it from stating it well. It is a
+   maintainer review item on the release notes and the concept page.
+
+## Wave: DISTILL / [REF] Review gate — slices 02, 03, 04
+
+The four-reviewer Final Wave Review Gate was **not** dispatched, for the same reason recorded for
+slice-01: this feature runs under an explicit maintainer gate (line-by-line diff review before every
+commit) that supersedes agent review for the production diff. Not a silent skip — re-run `/nw-review`
+against `feature-delta.md` if a second opinion on these sections is wanted before DELIVER.
+
+**Gates verified this wave, all run rather than asserted:**
+
+- `dotnet build` — **0 warnings** (`TreatWarningsAsErrors` on).
+- `dotnet test` — **3924 passed, 0 failed, 37 skipped** (33 slice-01, 3 slice-02, 1 from a concurrent
+  slice-01 edit that landed mid-wave).
+- `pnpm build` — green, which implies a clean Biome `prebuild`.
+- `pnpm test` — **281 files, 3779 passed, 11 skipped** (5 slice-03, 6 slice-04).
+- `pnpm biome check ./src` — clean. One `info` remains (`noUselessFragments` in
+  `FeatureListDataGrid/columns.test.tsx`), pre-existing and untouched by this wave.
+- `pnpm exec tsc --noEmit` in `Lighthouse.EndToEndTests` — clean; `playwright test` lists and skips the
+  new spec.
+- **Playwright run live** against a local instance (backend on `:5169`, frontend built into `wwwroot`,
+  demo scenario 0, `TZ=Europe/Zurich`), un-skipped, all three steps observed failing on missing copy.
+
+`docs/ci-learnings.md` was pre-applied rather than discovered: `Is.Zero` / `Is.Default` /
+`Has.Count.EqualTo(N)` / `using (Assert.EnterMultipleScope())`, every constant array literal —
+including collection expressions — hoisted to `private static readonly` (`NoBlackoutPeriods`), the
+concrete-type rule for new non-public members (CA1859), and on the frontend the POM-locator rules
+(scope a shared locator to its container; never trust an icon `data-testid` in a production build;
+never commit an unrun spec).
+
+**Still owed by DELIVER**: mutation ≥ 80 % on the changed surface for both stacks (with the Stryker
+`test-case-filter` / frontend `include:` re-anchoring check — three new test files here, and a file
+missing from the frontend runner's include list reads as a coverage gap that is really a run gap), the
+long-terminology **visual** truncation check, the two screenshot regenerations, and the maintainer's
+reproduce-by-hand walkthrough of the slice-04 worked example.
+
+RED classification for the hand-off: `distill-red-classification.md` — slices 02/03/04 add **15 RED**,
+all `MISSING_FUNCTIONALITY`, 0 broken, plus **13 green** guards (two of them labelled vacuous-today).

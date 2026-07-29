@@ -5,6 +5,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,7 +40,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Converters = { new JsonStringEnumConverter() },
         };
 
-        private static DateTime Today => DateTime.UtcNow.Date;
+        // The server anchors on the instance zone, so the expectations must too - Bug #5567.
+        private DateTime Today => ServiceProvider.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         [Test]
         [Ignore("RED until Story #5587 slice-01 rolls the delivery up over every (team, feature) row")]

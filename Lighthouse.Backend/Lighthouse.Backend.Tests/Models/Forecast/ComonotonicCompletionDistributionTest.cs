@@ -114,8 +114,10 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         [Test]
         public void Min_ContributorsInEitherOrder_ProduceTheSameHistogram()
         {
-            // Min does not sort its inputs and does not need to - it returns one of them unchanged and
-            // rounds nothing. The invariant is asserted, the sort is deliberately absent (ADR-113 s.3).
+            // Min does not sort its inputs and does not need to (ADR-113 s.3). This fixture's minimum is
+            // NEITHER input - the cumulative series over days 2/8/9/10/20 is 0/.05/.70/.70/1.00 - so it
+            // does traverse the largest-remainder pass; the invariant is asserted because a fold that
+            // rounded per step could be order-sensitive there.
             var wideEarly = new Dictionary<int, int> { { 2, 4000 }, { 9, 3000 }, { 20, 3000 } };
             var tightLate = new Dictionary<int, int> { { 8, 500 }, { 9, 9000 }, { 10, 500 } };
 
@@ -128,6 +130,9 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         [Test]
         public void Min_RandomContributors_IsNeverAboveAnyContributorsCumulativeProbability()
         {
+            // ANCHOR, NOT A DISCRIMINATOR: the pointwise product of CDFs is <= the pointwise minimum, so
+            // JointCompletionDistribution.Combine satisfies this too. It guards the shape, not the
+            // operator. The only test that separates the two is Min_TwoIdenticalContributors_*.
             var random = new Random(RandomSeed);
 
             for (var run = 0; run < 50; run++)
@@ -154,6 +159,8 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         [Test]
         public void Min_RandomContributors_SumsToThePreservedTotalTrials()
         {
+            // ANCHOR, NOT A DISCRIMINATOR: Combine preserves Max(TrialsIn) too. It guards the
+            // largest-remainder residue, not the choice of operator.
             var random = new Random(RandomSeed);
 
             for (var run = 0; run < 50; run++)

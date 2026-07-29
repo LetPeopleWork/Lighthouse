@@ -23,6 +23,10 @@ namespace Lighthouse.Backend.Tests.Models
         private const int TargetDay = 10;
         private const int TailDay = 20;
 
+        // Hoisted rather than inline: CA1861 fires on constant arrays inside assertions, and the Sonar
+        // gate is zero new issues of any severity (docs/ci-learnings.md).
+        private static readonly double?[] ExpectedMarginalRowLikelihoods = [72, 95];
+
         // Cumulative probability at TargetDay: .90 / .80 / .95 - the three-way fixture from DISCUSS.
         private static Dictionary<int, int> NinetyPercentByTargetDay => new() { { TargetDay, 9000 }, { TailDay, 1000 } };
 
@@ -189,7 +193,9 @@ namespace Lighthouse.Backend.Tests.Models
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(metrics.LikelihoodPercentage, Is.EqualTo(72).Within(0.001));
-                Assert.That(metrics.FeatureBreakdown.Select(row => row.Likelihood), Has.All.GreaterThanOrEqualTo(72));
+                // The exact pair, not just ">= 72": rows that had gone joint too would all read 72 and
+                // an at-least assertion would still pass. The rows are marginals and stay marginals.
+                Assert.That(metrics.FeatureBreakdown.Select(row => row.Likelihood), Is.EqualTo(ExpectedMarginalRowLikelihoods).Within(0.001));
             }
         }
 

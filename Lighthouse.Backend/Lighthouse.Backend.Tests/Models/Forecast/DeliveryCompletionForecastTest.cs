@@ -26,6 +26,10 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
 
         private static Dictionary<int, int> BetaOnReporting => new() { { TargetDay, 9500 }, { TailDay, 500 } };
 
+        // A fixed instant, not a clock reading: the assertion is "the oldest contributor wins", which
+        // does not depend on today (Bug #5567 - a calendar day is defined by a zone, an instant is not).
+        private static readonly DateTime OldestCreationTime = new(2026, 7, 20, 8, 0, 0, DateTimeKind.Utc);
+
         [Test]
         public void ContributingRows_TeamWorksOnlyOneOfTwoFeatures_ProducesThreeRowsNotFour()
         {
@@ -241,6 +245,55 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
             {
                 Assert.That(rows, Has.Count.EqualTo(1));
                 Assert.That(rows[0].TeamId, Is.EqualTo(beta.Id));
+            }
+        }
+
+        [Test]
+        public void Build_TeamWorkingTwoFeatures_ComposesTheCarrierMetadataAcrossBothOfItsRows()
+        {
+            // The bit-identity fixture has single-row buckets only, so every carrier there is a straight
+            // copy and this composition never runs. Delivery.CalculateMetrics reads FilterApplied and
+            // ExcludedSummary off the joint forecast and puts both on WhenForecastDto, so an
+            // implementation that composes the histogram correctly and drops the metadata regresses the
+            // "filter applied" indicator on every delivery whose teams work more than one feature.
+            // Within a bucket the rule is the one AggregatedWhenForecast already uses across carriers:
+            // FilterApplied is an OR, ExcludedSummary a distinct join, CreationTime the oldest.
+            var alpha = TeamNamed(1, "Alpha");
+            var beta = TeamNamed(2, "Beta");
+
+            var checkout = new Feature([(alpha, 3, 6), (beta, 3, 6)]);
+            checkout.SetFeatureForecasts([
+                new WhenForecast(AlphaOnCheckout) { Team = alpha, TeamId = alpha.Id, HasSufficientData = true },
+                new WhenForecast(BetaOnCheckout)
+                {
+                    Team = beta,
+                    TeamId = beta.Id,
+                    HasSufficientData = true,
+                    FilterApplied = true,
+                    ExcludedSummary = "2 items excluded by the Checkout filter",
+                    CreationTime = OldestCreationTime,
+                },
+            ]);
+
+            var reporting = new Feature([(beta, 4, 7)]);
+            reporting.SetFeatureForecasts([
+                new WhenForecast(BetaOnReporting)
+                {
+                    Team = beta,
+                    TeamId = beta.Id,
+                    HasSufficientData = true,
+                    ExcludedSummary = "1 item excluded by the Reporting filter",
+                    CreationTime = OldestCreationTime.AddDays(2),
+                },
+            ]);
+
+            var forecast = DeliveryCompletionForecast.Build([checkout, reporting])!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(forecast.FilterApplied, Is.True);
+                Assert.That(forecast.ExcludedSummary, Does.Contain("Checkout filter").And.Contains("Reporting filter"));
+                Assert.That(forecast.CreationTime, Is.EqualTo(OldestCreationTime));
             }
         }
 

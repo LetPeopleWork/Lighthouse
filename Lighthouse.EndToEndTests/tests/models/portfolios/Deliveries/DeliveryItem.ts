@@ -44,6 +44,48 @@ export class DeliveryItem {
 		return match ? Number.parseInt(match[1], 10) : null;
 	}
 
+	/**
+	 * The delivery header's forecast chip, read as rendered rather than parsed against a label
+	 * prefix. Story #5587 slice-03 replaces "Likelihood: NN%" with "All {features} by {date}: NN%",
+	 * so `getLikelihood()` above stops matching; a getter that returns the raw label survives the
+	 * relabel and lets a spec assert the copy itself.
+	 *
+	 * Scoped to the filled chip: the same AccordionSummary also renders one OUTLINED chip per
+	 * completion-date percentile, so an unqualified `.MuiChip-label` matches several (ci-learnings —
+	 * a shared locator on a page that hosts the component twice breaks in strict mode).
+	 */
+	get forecastChip(): Locator {
+		return this.container.locator(".MuiChip-filled").first();
+	}
+
+	async getForecastChipLabel(): Promise<string> {
+		return (await this.forecastChip.textContent())?.trim() ?? "";
+	}
+
+	/**
+	 * The date the header renders beside the forecast chip. NOT `getTargetDate()` above, which looks
+	 * for a "Target Date:" prefix that DeliverySection does not render — it returns null on this page
+	 * and always has (verified live, 2026-07-29). Left in place because other callers only read
+	 * `name` and `scope` off `getDetails()`; flagged rather than silently repaired here.
+	 */
+	async getDeliveryDate(): Promise<string | null> {
+		const text = await this.container.textContent();
+		const match = text?.match(/Delivery Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/);
+		return match ? match[1] : null;
+	}
+
+	/**
+	 * The breakdown grid's Likelihood column header. Keyed on `data-field`, not on the header text,
+	 * so the locator survives Story #5587 slice-03 relabelling it. Page-scoped like
+	 * `getFeatureLikelihoods()` below and safe for the same reason: one delivery is expanded at a
+	 * time, so `toggleDetails()` establishes the single match.
+	 */
+	get likelihoodColumnHeader(): Locator {
+		return this.container
+			.page()
+			.locator('[role="columnheader"][data-field="likelihood"]');
+	}
+
 	async getProgress(): Promise<string | null> {
 		const text = await this.container.textContent();
 		const match = text?.match(/(\d+%\s*\(\d+\/\d+\))/);
