@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Models;
@@ -171,14 +172,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetWorkItemsForTeam(ATeam());
 
-            logger.Verify(
-                log => log.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => $"{state}".Contains("Awaiting Vendor", StringComparison.Ordinal)),
-                    It.IsAny<Exception?>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once,
+            logger.Verify(AWarningContaining("Awaiting Vendor"), Times.Once,
                 "The label that was left out has to be named, or there is nothing for the flow coach to correct.");
         }
 
@@ -187,8 +181,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ATeamThatHasNotSaidWhichWorkIsTheirs_ReadsNothingRatherThanEverything()
         {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
-            var subject = CreateSubject(instance);
+            var subject = CreateSubject(instance, logger.Object);
 
             var workItems = await subject.GetWorkItemsForTeam(ATeam(query: string.Empty));
 
@@ -198,6 +193,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(instance.Requests, Is.Empty,
                     "A team with no query must not ask the instance for anything, because asking with no query returns the whole table.");
             }
+
+            logger.Verify(AWarning(), Times.Once,
+                "DoD 5 forbids the silent no-op: reading nothing has to say why, or it reads as a team with no work.");
         }
 
         // AC5. ServiceNow cannot supply transition history on a read-only account, so the connector
@@ -266,21 +264,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
 
-            Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"));
+                Assert.That(failure?.Message, Does.Contain(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable),
+                    "sysparm_offset is the setting at fault and the table is where to look, so both belong in what the administrator reads.");
+            }
         }
 
-        [Test]
-        public void AnInstanceThatKeepsOfferingAnotherPage_IsStoppedRatherThanReadWithoutEnd()
+        // The cap is the result-set size the instance itself reported, plus two pages of slack for a
+        // table that grew while it was being read — so it stops long before memory does, and the two
+        // page sizes below prove the cap is derived rather than a constant.
+        [TestCase(2, 4, TestName = "AnInstanceThatKeepsOfferingPagesOfTwo_IsStoppedAfterFourReads")]
+        [TestCase(1, 7, TestName = "AnInstanceThatKeepsOfferingPagesOfOne_IsStoppedAfterSevenReads")]
+        public void AnInstanceThatKeepsOfferingAnotherPage_IsStoppedRatherThanReadWithoutEnd(int pageSize, int expectedReads)
         {
-            var subject = CreateSubject(AnInstanceHolding(
+            var instance = AnInstanceHolding(
                 FiveRecordsOfMixedState(),
-                new InstanceBehaviour { PageSize = 2, NeverRunsOutOfPages = true }));
+                new InstanceBehaviour { PageSize = pageSize, NeverRunsOutOfPages = true });
+            var subject = CreateSubject(instance);
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
                 async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
 
-            Assert.That(failure?.Code, Is.EqualTo("paging_did_not_terminate"),
-                "The cap comes from the result-set size the instance itself reported, so it stops long before memory does.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure?.Code, Is.EqualTo("paging_did_not_terminate"));
+                Assert.That(failure?.Message, Does.Contain(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable),
+                    "The table has to be named, or an administrator cannot tell which read stopped.");
+                Assert.That(instance.Requests, Has.Count.EqualTo(expectedReads));
+            }
         }
 
         // The Link header the SPIKE measured is the paging signal that survives a stripped
@@ -298,8 +311,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems.ToList(), Has.Count.EqualTo(5));
-                Assert.That(instance.Requests, Has.Count.LessThanOrEqualTo(4),
-                    "The paging links say which page is last, so the read stops there rather than probing on.");
+                Assert.That(instance.Requests, Has.Count.EqualTo(3),
+                    "Three pages of two hold five records, and the link saying which page is last means the read stops there instead of probing for an empty one.");
             }
         }
 
@@ -464,6 +477,197 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // The boundary of the no-work rung. One record is work; zero is not, and the difference
+        // decides whether a small service desk can save its settings at all.
+        [Test]
+        public async Task AQueryThatSelectsASingleRecord_IsAccepted()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 10, RowsTheQuerySelects = 1 }));
+
+            var result = await subject.ValidateTeamSettings(ATeam());
+
+            Assert.That(result.Code, Is.EqualTo("valid"));
+        }
+
+        // Zero rows is a countable answer. Reading an explicit 0 the same way as a missing header
+        // would tell an empty service desk its instance is unreadable, which is a different problem
+        // with a different fix.
+        [Test]
+        public async Task ValidatingATeamAgainstATableWithNothingInIt_IsToldTheTableIsEmpty()
+        {
+            var subject = CreateSubject(AnInstanceHolding([], pageSize: 10));
+
+            var result = await subject.ValidateTeamSettings(ATeam());
+
+            Assert.That(result.Code, Is.EqualTo("no_work_items_found"));
+        }
+
+        // The unfiltered probe can fail on its own — a credential may be allowed to read a table
+        // through a filter and refused without one. Reporting that as a verdict on the query would
+        // send the flow coach to edit a query that is not the problem.
+        [Test]
+        public async Task ValidatingATeam_WhenTheProbeForTheWholeTableIsRefused_ReportsTheRefusal()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour
+                {
+                    PageSize = 10,
+                    RowsTheQuerySelects = 2,
+                    BreaksFromRequest = 2,
+                    Breakage = ARefusedRead,
+                }));
+
+            var result = await subject.ValidateTeamSettings(ATeam());
+
+            Assert.That(result.Code, Is.EqualTo("insufficient_permissions"));
+        }
+
+        [Test]
+        public async Task ValidatingATeamAgainstAnInstanceThatNeverAnswers_IsToldTheInstanceIsNotThere()
+        {
+            var subject = CreateSubject(AnInstanceThatFails(new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")));
+
+            var result = await subject.ValidateTeamSettings(ATeam());
+
+            Assert.That(result.Code, Is.EqualTo("connection_failed"));
+        }
+
+        // A stored address that is not an address fails both paths. On the read path it must throw
+        // rather than return nothing, for the same reason every other read failure does.
+        [Test]
+        public void AReadAgainstAnAddressThatIsNotAnInstance_FailsRatherThanReturningNothing()
+        {
+            var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState()));
+
+            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+                async () => await subject.GetWorkItemsForTeam(ATeam(instanceUrl: "not-an-instance")));
+
+            Assert.That(failure?.Code, Is.EqualTo("invalid_url"));
+        }
+
+        [Test]
+        public async Task ValidatingATeamAgainstAnAddressThatIsNotAnInstance_IsToldTheAddressIsWrong()
+        {
+            var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState()));
+
+            var result = await subject.ValidateTeamSettings(ATeam(instanceUrl: "not-an-instance"));
+
+            Assert.That(result.Code, Is.EqualTo("invalid_url"));
+        }
+
+        // The next page is followed blind, so it may only ever point back at the instance that was
+        // asked — a rewriting proxy naming another host would otherwise be handed the credential.
+        [Test]
+        public async Task ANextPageOnAnotherHost_IsNotFollowedAndTheReadCarriesOnByOffset()
+        {
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, PagingLinksPointElsewhere = true });
+            var subject = CreateSubject(instance);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(instance.Requests.Select(uri => uri.Authority), Has.All.EqualTo(new Uri(InstanceUrl).Authority),
+                    "The credential goes to the configured instance and nowhere the response names.");
+                Assert.That(workItems.ToList(), Has.Count.EqualTo(5),
+                    "A link Lighthouse will not follow is not evidence that this was the last page, so the read continues by offset rather than stopping short.");
+            }
+        }
+
+        // AC7. The instance already said how big the result set is, so asking for one more page is a
+        // wasted round trip on every sync of every team.
+        [Test]
+        public async Task AnInstanceThatSaidHowManyRowsExist_IsNotAskedForAPagePastTheEnd()
+        {
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 10, OmitsThePagingLinks = true });
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+
+            Assert.That(instance.Requests, Has.Count.EqualTo(1));
+        }
+
+        // `number` is an ITSM task field, not a Table API guarantee. Records without one are still
+        // distinct records, and treating them as repeats would fail the sync of a custom table.
+        [Test]
+        public async Task RecordsThatCarryNoNumber_AreNotMistakenForRepeatsOfOneAnother()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                [ARecordWithoutANumber("first"), ARecordWithoutANumber("second")],
+                pageSize: 10));
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+
+            Assert.That(workItems.ToList(), Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void ARecordSentAgainAfterItWasEdited_IsStillRecognisedAsOneAlreadyRead()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, ResendsTheFirstRecordAmended = true }));
+
+            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+
+            Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"),
+                "Comparing the bytes rather than the record would let an edited row through and count the same work twice.");
+        }
+
+        // A warning about nothing trains its reader to ignore the ones that matter.
+        [Test]
+        public async Task ATeamThatMappedEveryStateItsWorkIsIn_IsNotWarnedAbout()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10), logger.Object);
+
+            await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+
+            logger.Verify(AWarning(), Times.Never);
+        }
+
+        [Test]
+        public async Task WorkCarryingNoStateAtAll_IsNamedInTheLogAsHavingNone()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var subject = CreateSubject(
+                AnInstanceHolding([ARecord("INC0000009", string.Empty, string.Empty)], pageSize: 10),
+                logger.Object);
+
+            await subject.GetWorkItemsForTeam(ATeam());
+
+            logger.Verify(AWarningContaining("(no state)"), Times.Once,
+                "A record with no state at all still has to be countable in the log, or the number left out cannot be reconciled.");
+        }
+
+        private static Expression<Action<ILogger<ServiceNowWorkTrackingConnector>>> AWarning()
+        {
+            return log => log.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>());
+        }
+
+        private static Expression<Action<ILogger<ServiceNowWorkTrackingConnector>>> AWarningContaining(string text)
+        {
+            return log => log.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) => $"{state}".Contains(text, StringComparison.Ordinal)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>());
+        }
+
         private static ServiceNowWorkTrackingConnector CreateSubject(
             StubbedInstance instance, ILogger<ServiceNowWorkTrackingConnector>? logger = null)
         {
@@ -486,7 +690,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return factory.Object;
         }
 
-        private static Team ATeam(string query = TeamsOwnQuery, string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable)
+        private static Team ATeam(
+            string query = TeamsOwnQuery,
+            string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
+            string instanceUrl = InstanceUrl)
         {
             return new Team
             {
@@ -495,7 +702,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],
-                WorkTrackingSystemConnection = AConnection(table),
+                WorkTrackingSystemConnection = AConnection(table, instanceUrl),
             };
         }
 
@@ -511,7 +718,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private static WorkTrackingSystemConnection AConnection(string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable)
+        private static WorkTrackingSystemConnection AConnection(
+            string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, string instanceUrl = InstanceUrl)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -521,7 +729,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
 
             connection.Options.AddRange([
-                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = InstanceUrl },
+                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = instanceUrl },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Username, Value = "lighthouse.integration" },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Password, Value = "encrypted-secret", IsSecret = true },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = table, IsOptional = true },
@@ -560,6 +768,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                   "sys_created_on": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                   "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                   "resolved_at": { "display_value": "{{resolvedDisplay}}", "value": "{{resolvedValue}}" },
+                  "closed_at": { "display_value": "", "value": "" }
+                }
+                """;
+        }
+
+        // Not every ServiceNow table carries `number` — it is an ITSM task field, and a custom table
+        // need not have one. Records without it are still distinct records.
+        private static string ARecordWithoutANumber(string description)
+        {
+            return $$"""
+                {
+                  "short_description": { "display_value": "{{description}}", "value": "{{description}}" },
+                  "state": { "display_value": "New", "value": "1" },
+                  "sys_created_on": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
+                  "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
+                  "resolved_at": { "display_value": "", "value": "" },
                   "closed_at": { "display_value": "", "value": "" }
                 }
                 """;
@@ -662,6 +886,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public bool OmitsThePagingLinks { get; init; }
 
+            /// <summary>The Link header names a next page on a host other than the one asked.</summary>
+            public bool PagingLinksPointElsewhere { get; init; }
+
+            /// <summary>A record already sent comes back on a later page with its text changed.</summary>
+            public bool ResendsTheFirstRecordAmended { get; init; }
+
             /// <summary>The instance keeps naming a next page holding records nobody has seen.</summary>
             public bool NeverRunsOutOfPages { get; init; }
 
@@ -760,6 +990,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     ? AlwaysAnotherPage(offset)
                     : visible.Skip(offset).Take(behaviour.PageSize).ToList();
 
+                // A record edited between two pages comes back a second time with different text.
+                // Offset paging cannot tell that from a new row, so the guard has to recognise the
+                // record rather than the bytes.
+                if (behaviour.ResendsTheFirstRecordAmended && offset > 0 && visible.Count > 0)
+                {
+                    page.Insert(0, visible[0].Replace("Request INC", "Amended request INC", StringComparison.Ordinal));
+                }
+
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent($"{{\"result\":[{string.Join(",", page)}]}}", Encoding.UTF8, "application/json"),
@@ -842,7 +1080,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (next < total)
                 {
-                    links.Add($"<{PageAddress(uri, next)}>;rel=\"next\"");
+                    var address = behaviour.PagingLinksPointElsewhere
+                        ? PageAddress(uri, next).Replace(new Uri(InstanceUrl).Authority, "someone-elses-instance.example.com", StringComparison.Ordinal)
+                        : PageAddress(uri, next);
+
+                    links.Add($"<{address}>;rel=\"next\"");
                 }
 
                 links.Add($"<{PageAddress(uri, Math.Max(0, total - behaviour.PageSize))}>;rel=\"last\"");

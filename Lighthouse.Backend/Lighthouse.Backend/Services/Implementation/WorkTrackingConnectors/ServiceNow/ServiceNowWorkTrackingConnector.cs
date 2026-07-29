@@ -157,6 +157,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return;
             }
 
+            // Stryker disable once Linq: the order only exists so a support log reads the same twice;
+            // descending is equally canonical and names the same labels.
             var labels = leftOut
                 .Select(entry => string.IsNullOrWhiteSpace(entry.Label) ? "(no state)" : entry.Label)
                 .Distinct(StringComparer.Ordinal)

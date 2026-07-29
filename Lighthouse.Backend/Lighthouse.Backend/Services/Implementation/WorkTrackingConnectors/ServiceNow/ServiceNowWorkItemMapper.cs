@@ -156,6 +156,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             return value.ValueKind switch
             {
+                // Stryker disable once String: GetString() cannot return null for a String kind, so
+                // the coalesce is here for the compiler and no input can reach it.
                 JsonValueKind.String => value.GetString() ?? string.Empty,
                 JsonValueKind.Null or JsonValueKind.Undefined => string.Empty,
                 _ => value.ToString(),
