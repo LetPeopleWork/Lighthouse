@@ -81,7 +81,7 @@ function deliveryGrainSection(): string {
 	return nextHeading === null ? rest : rest.slice(0, nextHeading.index);
 }
 
-describe.skip("delivery joint likelihood is explained in the docs (Story #5587 slice-04)", () => {
+describe("delivery joint likelihood is explained in the docs (Story #5587 slice-04)", () => {
 	it("names all three visible consequences in the release notes (AC-04.1)", () => {
 		const section = vNextSection();
 

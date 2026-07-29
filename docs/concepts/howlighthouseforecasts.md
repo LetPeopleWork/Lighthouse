@@ -271,6 +271,44 @@ The fix is in your data, not in Lighthouse: give that team some closed work item
 {: .note}
 A Feature with no remaining work is not affected. It is done - that is a fact, not a forecast - and it still reads as 100%.
 
+### A Delivery With Several Features
+
+A [Delivery](../portfolios/detail.html#deliveries) groups Features that have to be there together. So the question it answers is not "when is one of these done" but "when are **all** of them done" - the same step up you just saw from one team to two, one level higher.
+
+The trap is that a Delivery is not simply its Features multiplied together. Two Features worked by the same team are not independent: that team can only do one thing at a time, so its Features queue up behind each other rather than racing in parallel. Multiplying them would charge that team twice for the same capacity.
+
+So Lighthouse works with **one row per team per Feature**:
+
+- **Within a team**, take that team's worst row. A team is done with the Delivery when it has finished the last of its own share.
+- **Across teams**, multiply, exactly as it does for a single Feature with two teams.
+
+A Feature worked by two teams contributes one row to each team's side, so it is counted once on each and never penalised twice.
+
+An example. Two teams, two Features. Team A works on Checkout only, Team B works on both Checkout and Reporting. By your target date, their rows say:
+
+| Row | Chance of being done by the date |
+|---|---|
+| Team A on Checkout | 0.90 |
+| Team B on Checkout | 0.80 |
+| Team B on Reporting | 0.95 |
+
+Team A's side is just its one row, 0.90. Team B's side is its **worst** row, 0.80 - Reporting's 0.95 does not help, because Team B still has Checkout to finish. Multiply the two sides:
+
+> 0.90 × 0.80 = **0.72**, so the Delivery reads **72%**.
+
+Now look at what the Feature rows themselves show. Checkout needs both teams, so it reads 0.90 × 0.80 = **0.72**. Reporting needs only Team B, so it reads **0.95**.
+
+The Delivery's 72% is **equal to** Checkout's 72%, not below it. That is not a rounding artefact: Checkout is the Feature that governs this Delivery entirely, and Reporting has enough slack that it adds no further risk. A Delivery is never *more* likely than the Features it contains, but it can match the least likely one exactly.
+
+{: .note}
+The same combination drives the 70/85/95 dates under the Delivery. They come from the combined distribution, not from any single Feature's, which is why they can sit later than every date you see on the Features themselves.
+
+{: .important}
+Across teams this multiplication assumes the teams are independent of each other, exactly as it does for a single Feature. Shared people, or one team waiting on a hand-off from another, break that assumption and make reality **worse** than the number suggests. Within a team, taking the worst row is the optimistic end of the range too: it assumes that team's Features do not delay each other beyond the queueing already in its throughput. Both approximations lean the same way, so treat the Delivery number as a ceiling rather than a floor.
+
+{: .note}
+A Feature with no remaining work drops out of the calculation - it is done, and multiplying by a certainty changes nothing. A Delivery whose work is all finished simply reads 100%.
+
 ## Dependencies
 Lighthouse does **not** offer any possibility to define dependencies in the sense of:
 - This work item can only be started once that work was done

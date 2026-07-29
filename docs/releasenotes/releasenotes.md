@@ -17,7 +17,23 @@ Lighthouse now computes calendar days in a configurable **instance time zone**, 
 
 Once it's set, forecasts, metrics windows, work item age, licence expiry, delivery date validation and every recorded daily snapshot all agree on the same calendar day. Timestamps are unaffected — they're points in time and stay UTC, as they always have been.
 
+## Your Delivery Likelihood Now Answers the Question You Were Asking
+
+A Delivery groups the Features that have to land together, so the number on it should answer "will **all** of these be there by the date". It didn't. It reported the odds for a single governing Feature — one representative standing in for the whole Delivery — and since the chance of one thing happening is never worse than the chance of everything happening, that number was optimistic by construction. The more Features a Delivery held, the further off it was.
+
+Lighthouse now combines every team's work on every Feature in the Delivery, the same way it already combines two teams working one Feature. The result answers the question the badge claims to answer.
+
+**Your Delivery numbers will drop when you upgrade, and some will drop hard.** That is the correction, not a regression — the old number was answering an easier question. Two consequences worth expecting:
+
+- **The 70/85/95 dates move outward too.** They used to come from the governing Feature's own distribution and now come from the combined one. If you watch only the percentage you will be surprised by the dates.
+- **The recorded trend takes a one-time step.** Delivery history is recorded forward-only and stores the percentile *dates* rather than each team's underlying simulation, so past points cannot be recomputed — there is nothing stored to backfill them from. Expect one visible step on the day you upgrade, and read across it rather than through it.
+
+The Feature rows inside a Delivery are unchanged: each still shows that Feature on its own. A Delivery can equal its least likely Feature — that happens whenever one Feature governs it entirely — so seeing the same number in both places is correct, not a bug.
+
+[How Lighthouse Forecasts](https://docs.lighthouse.letpeople.work/concepts/howlighthouseforecasts.html#a-delivery-with-several-features) now walks the delivery-level maths with a worked example you can reproduce in a spreadsheet from your own teams' rows.
+
 ## Bugfixes and Improvements
+- **The "not enough data" warning on a Delivery now covers every Feature in it** — it used to be read off the single least likely Feature, so a Delivery whose least likely Feature had solid history reported nothing even when another Feature it depends on rested on almost none. It is now an AND across all of them, with finished Features exempt. Some Deliveries will show the indicator for the first time; it can only appear where it was previously hidden, never disappear.
 - **Delivery target dates are judged as dates now, not as timestamps** — setting a delivery's target date to tomorrow could be refused as "not in the future", while a date of today sometimes slipped through depending on the time of day it carried. The target date is now compared as a calendar day: tomorrow is always accepted, today is always refused. This one applies to every instance, including those staying on UTC.
 - **One day's readings move when you switch time zone** — the first time you set a non-UTC zone, an evening reading that had been filed under the UTC day is filed under the day your instance is actually on, so the delivery and snapshot trend charts show a one-day shift at that point. Nothing is skipped, lost or overwritten — existing history stays exactly as recorded.
 
