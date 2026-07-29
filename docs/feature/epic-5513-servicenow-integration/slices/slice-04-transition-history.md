@@ -4,6 +4,14 @@
 readable with a non-admin role, at acceptable cost, without instance-side configuration by the
 customer. Slice 02 already ships the honest downgrade (D6), so "no" here is cheap and visible.
 
+> **Scope grew 2026-07-29 (ADR-117).** Q6 answered: `metric_instance` is the source, and it is 403 for
+> every read-only role — so the "readable with a non-admin role" condition above is **not** met at
+> read-only grade, only at `itil`. Slice 02 therefore ships request-to-resolution measured from
+> `opened_at`, and **true time-in-Doing is now this slice's job**, not just cumulative state time and
+> staleness. That makes slice 04 the one that turns an inflated span into an accurate one, which is a
+> stronger reason to build it than the original brief assumed — and it carries a role-escalation
+> adoption cost that belongs in the build/cancel decision.
+
 **Goal**: Cumulative State Time, per-state percentiles and staleness work on ServiceNow teams.
 
 **Stories**: US-04 (value).
