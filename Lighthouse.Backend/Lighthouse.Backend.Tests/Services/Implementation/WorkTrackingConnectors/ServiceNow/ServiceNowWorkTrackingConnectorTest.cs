@@ -160,9 +160,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Times.AtLeastOnce);
         }
 
-        // DoD 5 / KPI 3: every capability slice 01 does not deliver says so out loud. A method
+        // DoD 5 / KPI 3: every capability ServiceNow does not deliver says so out loud. A method
         // that quietly returns nothing is the failure mode this epic is trying to avoid, because
-        // it reads to the user as "no work found" rather than "not built yet".
+        // it reads to the user as "no work found" rather than "not supported". Reading a team's
+        // work moved off this list in slice 02 (#5575); the portfolio refusals are permanent.
         [Test]
         public void ReadingWorkFromServiceNow_IsDeclaredUnsupportedRatherThanReturningNothing()
         {
@@ -170,8 +171,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(async () => await subject.GetWorkItemsForTeam(new Team()),
-                    Throws.InstanceOf<NotSupportedException>());
                 Assert.That(async () => await subject.GetFeaturesForProject(new Portfolio()),
                     Throws.InstanceOf<NotSupportedException>());
                 Assert.That(async () => await subject.GetParentFeaturesDetails(new Portfolio(), ["PRJ0001"]),
@@ -189,20 +188,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Throws.InstanceOf<NotSupportedException>());
         }
 
-        [Test]
-        public async Task PointingATeamAtServiceNow_IsRefusedWithAnActionableReason()
-        {
-            var subject = CreateSubject(RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord));
-
-            var result = await subject.ValidateTeamSettings(new Team());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Code, Is.EqualTo("team_settings_not_supported"));
-                Assert.That(result.Message, Is.Not.Empty);
-            }
-        }
+        // Slice 02 (#5575) replaced the blanket team refusal this fixture used to assert with a
+        // verdict about the team's own query. Its successors are the ValidatingATeam… tests in
+        // ServiceNowTeamSyncTest.
 
         // Slice 03 is cancelled: ITSM has no rollup Lighthouse can forecast over. The connector
         // declines rather than half-working.
