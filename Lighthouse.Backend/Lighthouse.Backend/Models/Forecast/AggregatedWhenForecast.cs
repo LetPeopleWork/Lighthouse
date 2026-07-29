@@ -14,9 +14,8 @@
             {
                 var joint = JointCompletionDistribution.Combine(materialized.Select(f => f.SimulationResult));
 
-                // No contributor carries trials - a feature with no remaining work gets the day-0 sentinel
-                // from ForecastService. Keep those days so "done" still reads as done today (AC-02.3).
-                // Team/TeamId stay null: the aggregate belongs to no single team (ADR-111).
+                // No contributor carries trials: keep the sentinel days so the percentiles still read
+                // as done today (AC-02.3). Team/TeamId stay null - the aggregate has no team (ADR-111).
                 SetSimulationResult(joint.Count > 0 ? joint : DaysWithoutTrials(materialized));
                 NumberOfItems = materialized.Sum(f => f.NumberOfItems);
                 CreationTime = materialized.Min(f => f.CreationTime);

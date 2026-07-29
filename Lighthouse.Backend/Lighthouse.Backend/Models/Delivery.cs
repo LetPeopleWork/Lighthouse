@@ -69,10 +69,6 @@ namespace Lighthouse.Backend.Models
                 return new DeliveryMetricsProjection(null, [], featureBreakdown, hasSufficientData);
             }
 
-            // Stryker disable once all: equivalent while Bug #5586 stands. Skipping this guard falls
-            // through to an empty aggregate, whose GetLikelihood returns 100 from the trialCounter == 0
-            // branch and whose GetProbability returns today - the same answer by luck. The guard is what
-            // stops the delivery depending on that branch, and becomes observable when #5586 is fixed.
             if (!HasRemainingWork())
             {
                 return new DeliveryMetricsProjection(100.0, PercentilesOf(DayZeroMarker, today, blackoutPeriods, percentiles), featureBreakdown, hasSufficientData);

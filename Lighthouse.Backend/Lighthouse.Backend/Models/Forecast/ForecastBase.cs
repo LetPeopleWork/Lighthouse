@@ -67,31 +67,30 @@
             return -1;
         }
 
-        public double GetLikelihood(int daysToTargetDate)
+        public double GetLikelihood(int threshold)
         {
-            if (daysToTargetDate < 0)
+            if (TotalTrials == 0)
             {
                 return 0;
             }
+
+            // The comparer carries the direction, so the threshold means "by day t" ascending and
+            // "at least N items" descending (Bug #5586).
+            var keyOrder = comparer ?? Comparer<int>.Default;
 
             var trialCounter = 0;
 
             foreach (var simulation in SimulationResult)
             {
-                trialCounter += simulation.Value;
-
-                if (simulation.Key >= daysToTargetDate)
+                if (keyOrder.Compare(simulation.Key, threshold) > 0)
                 {
                     break;
                 }
+
+                trialCounter += simulation.Value;
             }
 
-            if (trialCounter > 0)
-            {
-                return 100 / ((double)TotalTrials) * trialCounter;
-            }
-
-            return 100;
+            return 100 / (double)TotalTrials * trialCounter;
         }
 
         protected void SetSimulationResult(Dictionary<int, int> simulationResult)

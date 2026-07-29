@@ -27,10 +27,8 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         /// <summary>
-        /// The 100 above is a real short circuit, not an accident of an empty forecast: a feature
-        /// with nothing left to do is certain to make ANY date, whatever its stale forecast says.
-        /// The existing case cannot show that - a bare Feature has an empty aggregated forecast,
-        /// which answers 100 as well, so there both branches agree by accident.
+        /// The short circuit stands on its own: a feature with nothing left to do is certain to make
+        /// ANY date, whatever its stale forecast says.
         /// </summary>
         [Test]
         public void GetLikelhoodForDate_NoRemainingWork_Returns100EvenWhenTheForecastIsPessimistic()

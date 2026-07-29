@@ -115,8 +115,7 @@ namespace Lighthouse.Backend.Models
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
-                // Unknown is carried out explicitly. Falling through would hit ForecastBase.GetLikelihood's
-                // trialCounter == 0 branch and report 100 % on the one feature nobody can forecast (ADR-112).
+                // An un-forecastable feature reports "unknown", not a number (ADR-112).
                 if (!CanBeForecast)
                 {
                     return null;
