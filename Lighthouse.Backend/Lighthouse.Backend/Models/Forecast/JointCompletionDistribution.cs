@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Models.Forecast
         {
             var contributors = histograms
                 .Select(histogram => histogram.OrderBy(bucket => bucket.Key).ToList())
-                .Where(buckets => TrialsIn(buckets) > 0)
+                .Where(buckets => CompletionHistogram.TrialsIn(buckets) > 0)
                 .ToList();
 
             if (contributors.Count == 0)
@@ -16,10 +16,10 @@ namespace Lighthouse.Backend.Models.Forecast
                 return [];
             }
 
-            var totalTrials = contributors.Max(TrialsIn);
+            var totalTrials = contributors.Max(CompletionHistogram.TrialsIn);
             var days = contributors.SelectMany(buckets => buckets.Select(bucket => bucket.Key)).Distinct().Order().ToArray();
 
-            var cumulativeProbabilities = contributors.Select(buckets => CumulativeProbabilities(buckets, days)).ToList();
+            var cumulativeProbabilities = contributors.Select(buckets => CompletionHistogram.CumulativeProbabilities(buckets, days)).ToList();
             var exactTrials = new double[days.Length];
             var previousProbability = 0d;
 
@@ -41,69 +41,7 @@ namespace Lighthouse.Backend.Models.Forecast
                 previousProbability = jointProbability;
             }
 
-            return DistributeByLargestRemainder(days, exactTrials, totalTrials);
-        }
-
-        // A method group rather than an inline lambda: CS9236 fires on Sonar when the same nested
-        // generic lambda has to be bound repeatedly, and this expression appeared three times.
-        private static int TrialsIn(List<KeyValuePair<int, int>> buckets)
-        {
-            return buckets.Sum(bucket => bucket.Value);
-        }
-
-        private static double[] CumulativeProbabilities(List<KeyValuePair<int, int>> buckets, int[] days)
-        {
-            var totalTrials = (double)TrialsIn(buckets);
-            var probabilities = new double[days.Length];
-            var completedTrials = 0;
-            var nextBucket = 0;
-
-            for (var index = 0; index < days.Length; index++)
-            {
-                while (nextBucket < buckets.Count && buckets[nextBucket].Key <= days[index])
-                {
-                    completedTrials += buckets[nextBucket].Value;
-                    nextBucket++;
-                }
-
-                probabilities[index] = completedTrials / totalTrials;
-            }
-
-            return probabilities;
-        }
-
-        private static Dictionary<int, int> DistributeByLargestRemainder(int[] days, double[] exactTrials, int totalTrials)
-        {
-            var trials = new int[days.Length];
-            var assignedTrials = 0;
-
-            for (var index = 0; index < days.Length; index++)
-            {
-                trials[index] = (int)Math.Floor(exactTrials[index]);
-                assignedTrials += trials[index];
-            }
-
-            var residue = totalTrials - assignedTrials;
-            var byLargestRemainder = Enumerable.Range(0, days.Length)
-                .OrderByDescending(index => exactTrials[index] - trials[index])
-                .ThenBy(index => days[index])
-                .Take(residue);
-
-            foreach (var index in byLargestRemainder)
-            {
-                trials[index]++;
-            }
-
-            var histogram = new Dictionary<int, int>();
-            for (var index = 0; index < days.Length; index++)
-            {
-                if (trials[index] > 0)
-                {
-                    histogram[days[index]] = trials[index];
-                }
-            }
-
-            return histogram;
+            return CompletionHistogram.DistributeByLargestRemainder(days, exactTrials, totalTrials);
         }
     }
 }
