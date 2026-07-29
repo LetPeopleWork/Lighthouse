@@ -284,8 +284,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 : null;
         }
 
-        // The elements outlive the document they were parsed from, so each one is cloned.
+        private sealed record ServiceNowAnswer(HttpStatusCode StatusCode, string Body, int? TotalCount);
+
         private static List<JsonElement> ReadRecords(string body)
+        {
+            return ParseRecords(body).Records;
+        }
+
+        // ADR-114: whether the body is JSON is decided by parsing it, never by Content-Type —
+        // ServiceNow's gateway owns that header, and the body is parsed anyway to count rows.
+        private static (bool ResponseIsJson, int RowCount) ReadRows(string body)
+        {
+            var (responseIsJson, records) = ParseRecords(body);
+
+            return (responseIsJson, records.Count);
+        }
+
+        // The elements outlive the document they were parsed from, so each one is cloned.
+        private static (bool ResponseIsJson, List<JsonElement> Records) ParseRecords(string body)
         {
             try
             {
@@ -296,40 +312,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     || !root.TryGetProperty(ResultProperty, out var rows)
                     || rows.ValueKind != JsonValueKind.Array)
                 {
-                    return [];
+                    return (true, []);
                 }
 
-                return rows.EnumerateArray().Select(row => row.Clone()).ToList();
+                return (true, rows.EnumerateArray().Select(row => row.Clone()).ToList());
             }
             catch (JsonException)
             {
-                return [];
-            }
-        }
-
-        private sealed record ServiceNowAnswer(HttpStatusCode StatusCode, string Body, int? TotalCount);
-
-        // ADR-114: whether the body is JSON is decided by parsing it, never by Content-Type —
-        // ServiceNow's gateway owns that header, and the body is parsed anyway to count rows.
-        private static (bool ResponseIsJson, int RowCount) ReadRows(string body)
-        {
-            try
-            {
-                using var document = JsonDocument.Parse(body);
-                var root = document.RootElement;
-
-                if (root.ValueKind == JsonValueKind.Object
-                    && root.TryGetProperty("result", out var rows)
-                    && rows.ValueKind == JsonValueKind.Array)
-                {
-                    return (true, rows.GetArrayLength());
-                }
-
-                return (true, 0);
-            }
-            catch (JsonException)
-            {
-                return (false, 0);
+                return (false, []);
             }
         }
 
