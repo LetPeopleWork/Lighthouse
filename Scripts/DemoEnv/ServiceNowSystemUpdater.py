@@ -90,6 +90,22 @@ def value_of(field):
     return field.get("value", "") if isinstance(field, dict) else (field or "")
 
 
+_resolution_code = None
+
+
+def resolution_code():
+    global _resolution_code
+    if _resolution_code is None:
+        choices = query(
+            "sys_choice",
+            f"name={TABLE}^element=close_code^language=en",
+            "value",
+            limit=1,
+        )
+        _resolution_code = value_of(choices[0].get("value")) if choices else "Solution provided"
+    return _resolution_code
+
+
 # --- Step 1: Get Environment State ---
 open_items = query(
     TABLE,
@@ -148,7 +164,10 @@ for item in in_flight:
 
     payload = {"state": target}
     if target == RESOLVED:
-        payload["close_code"] = "Solved (Permanently)"
+        # An invalid choice is dropped silently, and the "Make close info mandatory when
+        # resolved or closed" data policy then rejects the write for an empty field — so
+        # the value has to come from the instance rather than a constant.
+        payload["close_code"] = resolution_code()
         payload["close_notes"] = "Seeded resolution."
 
     if patch(TABLE, value_of(item.get("sys_id")), payload):
