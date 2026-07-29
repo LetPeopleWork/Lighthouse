@@ -49,9 +49,18 @@ interacts with ACL row filtering, and a probe whose whole job is to distrust the
 itself rest on an unmeasured mechanism.
 
 **2. The verdict is produced by a pure function, not by branching inside the HTTP call.**
-`ServiceNowValidationVerdict.From(HttpStatusCode status, int rowCount, bool contentIsJson, string table)`
-returns a `ConnectionValidationResult`. `ServiceNowWorkTrackingConnector` is the imperative shell: it
-performs the call, catches transport exceptions, and hands the mapper three scalars.
+`ServiceNowValidationVerdict` is a static class with three entry points, each returning a
+`ConnectionValidationResult`:
+
+- `FromInvalidInstanceAddress(string instanceUrl)` — rung 0, pre-flight, before any IO.
+- `FromUnreachableInstance(string technicalDetails)` — rung 1, the transport never got an answer.
+- `FromResponse(HttpStatusCode statusCode, bool responseIsJson, int rowCount, string table)` — rungs 2-7,
+  the instance answered and the three scalars are everything the ladder needs.
+
+`ServiceNowWorkTrackingConnector` is the imperative shell: it performs the call, catches transport
+exceptions, extracts the scalars and returns what the mapper says, unchanged. An earlier draft of this
+ADR described a single `From(status, rowCount, contentIsJson, table)` entry point; the shipped shape
+splits the two no-response rungs out so neither has to invent a status code it never received.
 
 **3. The ladder** — the first matching rung wins:
 
@@ -65,6 +74,14 @@ performs the call, catches transport exceptions, and hands the mapper three scal
 | 5 | `403` | `insufficient_permissions` | false |
 | 6 | `200`, JSON, **zero rows** | `no_records_visible` | **false** |
 | 7 | `200`, JSON, **one or more rows** | `valid` | true |
+
+**Rung 3's input is decided by parse-and-catch, never by the `Content-Type` header** (maintainer
+ruling, 2026-07-29, closing the one open question the DESIGN peer review raised). The shell attempts
+`JsonDocument.Parse(body)` and treats a `JsonException` as "not JSON". ServiceNow's gateway — and any
+reverse proxy or SSO portal sitting in front of it — controls that header, so it can claim JSON while
+serving a sign-in page; meanwhile the body is parsed anyway to count rows, so the check costs nothing
+extra. Both the detection and rung 3 itself remain a hypothesis rather than a measurement: no SSO-fronted
+instance was probed during the SPIKE (see Consequences).
 
 **4. Rung 6 is a failure, and it names both of its possible causes.** Zero visible rows means *either*
 the account lacks read access to the configured table *or* the table is genuinely empty. The platform

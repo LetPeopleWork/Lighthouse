@@ -2,18 +2,15 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
-    // SCAFFOLD (DISTILL slice 01, Story #5574) — signatures only. Every member deliberately
-    // returns the OPPOSITE of the specified behaviour so ServiceNowWorkTrackingConnectorTest
-    // fails at its assertions (MISSING_FUNCTIONALITY) rather than passing by accident.
-    // DELIVER replaces the bodies.
-    //
-    // The imperative shell around ServiceNowValidationVerdict: one Table API probe
-    // (GET /api/now/table/{table}?sysparm_limit=1), hand (status, contentIsJson, rowCount) to the
-    // pure verdict, return what it says. Slice 01 implements ValidateConnection only; the other
-    // seven members report an explicit unsupported state — never a silent no-op (DoD 5 / KPI 3).
+    // The imperative shell around ServiceNowValidationVerdict (ADR-114): one Table API probe,
+    // hand (status, responseIsJson, rowCount) to the pure verdict, return what it says unchanged.
+    // Slice 01 implements ValidateConnection only; the remaining members are still scaffolds.
     public class ServiceNowWorkTrackingConnector(
         ILogger<ServiceNowWorkTrackingConnector> logger,
         IWorkTrackingAuthStrategyFactory authStrategyFactory,
@@ -40,13 +37,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return [new AdditionalFieldDefinition { DisplayName = "__scaffold__" }];
         }
 
-        public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
+        public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
-            // Must NOT be Success(): the happy-path test asserts IsValid plus Code "valid", which is
-            // exactly what Success() returns, so the scaffold would pass it vacuously — the same
-            // denial-in-a-success-costume shape this slice exists to prevent.
-            LogScaffoldUse(nameof(ValidateConnection));
-            return Task.FromResult(ConnectionValidationResult.Failure("__scaffold__", "__scaffold__"));
+            var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
+            var table = ResolveWorkItemTable(connection);
+
+            if (!TryCreateProbeUri(instanceUrl, table, out var probeUri))
+            {
+                return ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl);
+            }
+
+            try
+            {
+                var (statusCode, body) = await Probe(probeUri, connection);
+                var (responseIsJson, rowCount) = ReadRows(body);
+
+                return ServiceNowValidationVerdict.FromResponse(statusCode, responseIsJson, rowCount, table);
+            }
+            catch (HttpRequestException exception)
+            {
+                return UnreachableInstance(exception, instanceUrl);
+            }
+            catch (TaskCanceledException exception)
+            {
+                return UnreachableInstance(exception, instanceUrl);
+            }
         }
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
@@ -83,6 +98,99 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             LogScaffoldUse(nameof(WriteFieldsToWorkItems));
             return Task.FromResult(new WriteBackResult());
+        }
+
+        private async Task<(HttpStatusCode StatusCode, string Body)> Probe(Uri probeUri, WorkTrackingSystemConnection connection)
+        {
+            var authStrategy = authStrategyFactory.Resolve(ResolveAuthenticationMethodKey(connection));
+
+            using var client = CreateHttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, probeUri);
+            await authStrategy.ApplyAsync(request, connection, CancellationToken.None);
+
+            using var response = await client.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+
+            return (response.StatusCode, body);
+        }
+
+        // ADR-114: whether the body is JSON is decided by parsing it, never by Content-Type —
+        // ServiceNow's gateway owns that header, and the body is parsed anyway to count rows.
+        private static (bool ResponseIsJson, int RowCount) ReadRows(string body)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(body);
+                var root = document.RootElement;
+
+                if (root.ValueKind == JsonValueKind.Object
+                    && root.TryGetProperty("result", out var rows)
+                    && rows.ValueKind == JsonValueKind.Array)
+                {
+                    return (true, rows.GetArrayLength());
+                }
+
+                return (true, 0);
+            }
+            catch (JsonException)
+            {
+                return (false, 0);
+            }
+        }
+
+        private static bool TryCreateProbeUri(string instanceUrl, string table, [NotNullWhen(true)] out Uri? probeUri)
+        {
+            probeUri = null;
+
+            if (!Uri.TryCreate(instanceUrl, UriKind.Absolute, out var instanceUri))
+            {
+                return false;
+            }
+
+            if (instanceUri.Scheme != Uri.UriSchemeHttp && instanceUri.Scheme != Uri.UriSchemeHttps)
+            {
+                return false;
+            }
+
+            // No sysparm_fields: field projection was never measured against ACL row filtering
+            // (SPIKE Q8), and this probe exists to distrust exactly that substrate.
+            return Uri.TryCreate(
+                $"{instanceUrl.TrimEnd('/')}/api/now/table/{Uri.EscapeDataString(table)}?sysparm_limit=1",
+                UriKind.Absolute,
+                out probeUri);
+        }
+
+        private static string ResolveWorkItemTable(WorkTrackingSystemConnection connection)
+        {
+            var table = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.WorkItemTable);
+
+            return string.IsNullOrWhiteSpace(table) ? ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable : table;
+        }
+
+        private static string ResolveAuthenticationMethodKey(WorkTrackingSystemConnection connection)
+        {
+            return string.IsNullOrWhiteSpace(connection.AuthenticationMethodKey)
+                ? AuthenticationMethodKeys.ServiceNowBasic
+                : connection.AuthenticationMethodKey;
+        }
+
+        private static string GetOptionValue(WorkTrackingSystemConnection connection, string key)
+        {
+            return connection.Options.Find(option => option.Key == key)?.Value ?? string.Empty;
+        }
+
+        private HttpClient CreateHttpClient()
+        {
+            return httpMessageHandlerForTesting is null
+                ? new HttpClient()
+                : new HttpClient(httpMessageHandlerForTesting, disposeHandler: false);
+        }
+
+        private ConnectionValidationResult UnreachableInstance(Exception exception, string instanceUrl)
+        {
+            logger.LogWarning(exception, "Could not reach ServiceNow instance {InstanceUrl}", instanceUrl);
+
+            return ServiceNowValidationVerdict.FromUnreachableInstance(exception.Message);
         }
 
         private void LogScaffoldUse(string member)
