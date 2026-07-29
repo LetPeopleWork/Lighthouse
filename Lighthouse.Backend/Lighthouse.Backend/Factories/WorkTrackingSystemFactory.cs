@@ -37,6 +37,8 @@ namespace Lighthouse.Backend.Factories
                     return GetOptionsForLinear();
                 case WorkTrackingSystems.Csv:
                     return GetOptionsForCsv();
+                case WorkTrackingSystems.ServiceNow:
+                    return GetOptionsForServiceNow();
                 default:
                     throw new NotSupportedException("Selected Work Tracking System is Not Supported");
             }
@@ -233,6 +235,15 @@ namespace Lighthouse.Backend.Factories
                     IsOptional = true,
                 }
             ];
+        }
+
+        // SCAFFOLD (DISTILL slice 01, Story #5574) — the real option set is instance address,
+        // username, secret password and the connection-scope work item table defaulting to
+        // "incident" (ADR-116). Returning nothing keeps /supported working while leaving
+        // ServiceNowConnectionConfigurationTest RED.
+        private static List<WorkTrackingSystemConnectionOption> GetOptionsForServiceNow()
+        {
+            return [];
         }
 
         private static List<WorkTrackingSystemConnectionOption> GetOptionsForLinear()

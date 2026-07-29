@@ -14,6 +14,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new PatAuthStrategy(cryptoService),
                 new JiraCloudBasicAuthStrategy(cryptoService),
                 new LinearApiKeyAuthStrategy(cryptoService),
+                new ServiceNowBasicAuthStrategy(cryptoService),
                 new NoOpAuthStrategy(),
                 new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>()));
         }

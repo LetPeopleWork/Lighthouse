@@ -43,6 +43,17 @@ const teamSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
 		isWorkItemTypesRequired: true,
 		wizardHint: "csv-team-wizard",
 	},
+	// SCAFFOLD (DISTILL slice 01, Story #5574) — placeholder so the exhaustive Record compiles
+	// once the union gains "ServiceNow". DELIVER fills in the encoded-query shape;
+	// DataRetrievalSchemaDefaults.serviceNow.test.ts is RED against this.
+	ServiceNow: {
+		key: "__scaffold__",
+		displayLabel: "__scaffold__",
+		inputKind: "none",
+		isRequired: false,
+		isWorkItemTypesRequired: true,
+		wizardHint: "__scaffold__",
+	},
 };
 
 const portfolioSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
@@ -77,6 +88,16 @@ const portfolioSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
 		isRequired: true,
 		isWorkItemTypesRequired: true,
 		wizardHint: "csv-portfolio-wizard",
+	},
+	// SCAFFOLD (DISTILL slice 01, Story #5574) — placeholder. DELIVER replaces this with the
+	// entry that declines the portfolio capability outright.
+	ServiceNow: {
+		key: "__scaffold__",
+		displayLabel: "__scaffold__",
+		inputKind: "freetext",
+		isRequired: true,
+		isWorkItemTypesRequired: true,
+		wizardHint: null,
 	},
 };
 

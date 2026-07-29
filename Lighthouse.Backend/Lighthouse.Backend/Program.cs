@@ -24,6 +24,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
@@ -965,6 +966,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();
             builder.Services.AddScoped<ILinearWorkTrackingConnector, LinearWorkTrackingConnector>();
             builder.Services.AddScoped<CsvWorkTrackingConnector>();
+            builder.Services.AddScoped<IServiceNowWorkTrackingConnector, ServiceNowWorkTrackingConnector>();
 
             // Seeding Services - Register in order they should run
             builder.Services.AddScoped<ISeeder, AppSettingSeeder>();
@@ -1034,6 +1036,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<PatAuthStrategy>();
             builder.Services.AddScoped<JiraCloudBasicAuthStrategy>();
             builder.Services.AddScoped<LinearApiKeyAuthStrategy>();
+            builder.Services.AddScoped<ServiceNowBasicAuthStrategy>();
             builder.Services.AddScoped<NoOpAuthStrategy>();
             builder.Services.AddScoped<OAuthBearerAuthStrategy>();
             builder.Services.AddScoped<IWorkTrackingAuthStrategyFactory, WorkTrackingAuthStrategyFactory>();

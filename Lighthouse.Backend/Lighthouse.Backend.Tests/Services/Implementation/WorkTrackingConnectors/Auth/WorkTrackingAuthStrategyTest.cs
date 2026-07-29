@@ -215,6 +215,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new PatAuthStrategy(cryptoServiceMock.Object),
                 new JiraCloudBasicAuthStrategy(cryptoServiceMock.Object),
                 new LinearApiKeyAuthStrategy(cryptoServiceMock.Object),
+                new ServiceNowBasicAuthStrategy(cryptoServiceMock.Object),
                 new NoOpAuthStrategy(),
                 new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>()));
         }

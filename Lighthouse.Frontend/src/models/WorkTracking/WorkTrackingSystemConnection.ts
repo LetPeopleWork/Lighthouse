@@ -2,7 +2,12 @@ import type { IAdditionalFieldDefinition } from "./AdditionalFieldDefinition";
 import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
 import type { IWriteBackMappingDefinition } from "./WriteBackMappingDefinition";
 
-export type WorkTrackingSystemType = "Jira" | "AzureDevOps" | "Linear" | "Csv";
+export type WorkTrackingSystemType =
+	| "Jira"
+	| "AzureDevOps"
+	| "Linear"
+	| "Csv"
+	| "ServiceNow";
 
 export const AuthenticationMethodKeys = {
 	AzureDevOpsPat: "ado.pat",
@@ -10,6 +15,7 @@ export const AuthenticationMethodKeys = {
 	JiraDataCenter: "jira.datacenter",
 	JiraScopedToken: "jira.scopedtoken",
 	LinearApiKey: "linear.apikey",
+	ServiceNowBasic: "servicenow.basic",
 	None: "none",
 } as const;
 

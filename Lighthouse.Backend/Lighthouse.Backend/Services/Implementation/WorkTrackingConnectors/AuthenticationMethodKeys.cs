@@ -22,6 +22,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
         // Linear
         public const string LinearApiKey = "linear.apikey";
 
+        // ServiceNow
+        public const string ServiceNowBasic = "servicenow.basic";
+
         // No authentication (e.g., CSV)
         public const string None = "none";
 
@@ -33,6 +36,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
                 WorkTrackingSystems.Jira => JiraCloud,
                 WorkTrackingSystems.Linear => LinearApiKey,
                 WorkTrackingSystems.Csv => None,
+                WorkTrackingSystems.ServiceNow => ServiceNowBasic,
                 _ => throw new NotSupportedException($"No default authentication method for {system}")
             };
         }
