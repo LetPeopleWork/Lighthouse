@@ -45,7 +45,9 @@ namespace Lighthouse.Backend.Models.Forecast
             {
                 var minimumProbability = cumulativeProbabilities.Min(contributor => contributor[index]);
 
-                exactTrials[index] = Math.Max(0, (minimumProbability - previousProbability) * totalTrials);
+                // No Math.Max(0, ...) clamp here, unlike Combine: a pointwise minimum of non-decreasing
+                // series is itself non-decreasing exactly, with no arithmetic to introduce float noise.
+                exactTrials[index] = (minimumProbability - previousProbability) * totalTrials;
                 previousProbability = minimumProbability;
             }
 

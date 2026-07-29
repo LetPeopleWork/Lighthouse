@@ -59,12 +59,20 @@ namespace Lighthouse.Backend.Models
 
             // One un-forecastable feature makes the whole delivery un-forecastable - reporting a number
             // for the rest would quietly ignore work that must still happen (ADR-112 D8).
+            //
+            // Stryker disable once all: since the row-set guard below also rejects a missing or
+            // zero-trial row, the two detect the same condition and mutating this one is unobservable.
+            // It stays because it carries the ADR-112 semantic at feature grain and runs first.
             if (Features.Any(feature => !feature.CanBeForecast))
             {
                 return new DeliveryMetricsProjection(null, [], featureBreakdown);
             }
 
-            if (RemainingWorkItems() <= 0)
+            // Stryker disable once all: equivalent while Bug #5586 stands. Skipping this guard falls
+            // through to an empty aggregate, whose GetLikelihood returns 100 from the trialCounter == 0
+            // branch and whose GetProbability returns today - the same answer by luck. The guard is what
+            // stops the delivery depending on that branch, and becomes observable when #5586 is fixed.
+            if (!HasRemainingWork())
             {
                 return new DeliveryMetricsProjection(100.0, PercentilesOf(DayZeroMarker, today, blackoutPeriods, percentiles), featureBreakdown);
             }
@@ -89,9 +97,11 @@ namespace Lighthouse.Backend.Models
         // work is all done reports today rather than a stale future date (ADR-113 DDD-9).
         private static WhenForecast DayZeroMarker => new(new Dictionary<int, int> { { 0, 0 } });
 
-        private int RemainingWorkItems()
+        private bool HasRemainingWork()
         {
-            return Features.Sum(feature => feature.FeatureWork.Sum(work => work.RemainingWorkItems));
+            // The same predicate the row set uses, per pair rather than summed, so the two cannot
+            // disagree about what "nothing left to do" means.
+            return Features.Exists(feature => feature.FeatureWork.Exists(work => work.RemainingWorkItems > 0));
         }
 
         private double LikelihoodOf(WhenForecast forecast, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)

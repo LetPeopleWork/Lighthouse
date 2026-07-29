@@ -91,10 +91,13 @@ namespace Lighthouse.Backend.Models
                     .Where(work => !HasForecastRowFor(work))
                     .Select(work => work.Team);
 
+                // Distinct at the source: AddOrUpdateWorkForTeam treats duplicate pairs for one team as
+                // reachable, and both clauses can name the same team.
                 return withoutThroughput
                     .Concat(withoutAnyRow)
                     .Where(team => team is not null)
-                    .Select(team => team!);
+                    .Select(team => team!)
+                    .Distinct();
             }
         }
 

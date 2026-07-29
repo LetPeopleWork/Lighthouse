@@ -29,6 +29,11 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         // does not depend on today (Bug #5567 - a calendar day is defined by a zone, an instant is not).
         private static readonly DateTime OldestCreationTime = new(2026, 7, 20, 8, 0, 0, DateTimeKind.Utc);
 
+        // Per TEAM, not per row: ForecastService reads the summary off the team's chip status, so both
+        // of a team's rows carry the identical string.
+        private const string AlphaExcludedSummary = "3 items excluded for Alpha";
+        private const string BetaExcludedSummary = "2 items excluded for Beta";
+
         [Test]
         public void ContributingRows_TeamWorksOnlyOneOfTwoFeatures_ProducesThreeRowsNotFour()
         {
@@ -270,7 +275,9 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                     Team = alpha,
                     TeamId = alpha.Id,
                     HasSufficientData = true,
+                    ExcludedSummary = AlphaExcludedSummary,
                     CreationTime = OldestCreationTime.AddDays(1),
+                    NumberOfItems = 3,
                 },
                 new WhenForecast(BetaOnCheckout)
                 {
@@ -278,8 +285,9 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                     TeamId = beta.Id,
                     HasSufficientData = true,
                     FilterApplied = true,
-                    ExcludedSummary = "2 items excluded by the Checkout filter",
+                    ExcludedSummary = BetaExcludedSummary,
                     CreationTime = OldestCreationTime,
+                    NumberOfItems = 4,
                 },
             ]);
 
@@ -289,9 +297,15 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 {
                     Team = beta,
                     TeamId = beta.Id,
-                    HasSufficientData = true,
-                    ExcludedSummary = "1 item excluded by the Reporting filter",
+                    // One thin row in the bucket. The carrier ANDs, so the delivery inherits it - an
+                    // implementation that ORed would report sufficient off this row's sibling.
+                    HasSufficientData = false,
+                    // The SAME string as Beta's other row, because ForecastService derives the summary
+                    // from the TEAM's chip status - so within a bucket it is always identical, and
+                    // Distinct() is the only thing standing between the delivery and "X; X".
+                    ExcludedSummary = BetaExcludedSummary,
                     CreationTime = OldestCreationTime.AddDays(2),
+                    NumberOfItems = 6,
                 },
             ]);
 
@@ -300,9 +314,79 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(forecast.FilterApplied, Is.True);
-                Assert.That(forecast.ExcludedSummary, Does.Contain("Checkout filter").And.Contains("Reporting filter"));
+
+                // Exactly once for Beta, even though both of its rows carry it - and Alpha's joined
+                // after. Without Distinct() this reads "beta; beta; alpha".
+                Assert.That(forecast.ExcludedSummary, Is.EqualTo($"{AlphaExcludedSummary}; {BetaExcludedSummary}"));
                 Assert.That(forecast.CreationTime, Is.EqualTo(OldestCreationTime));
+
+                // Summed within the bucket, not maxed: Beta's two rows carry 4 and 6, so its carrier is
+                // 10 and the delivery is 13. Taking the larger row instead would read 9.
+                Assert.That(forecast.NumberOfItems, Is.EqualTo(13));
+
+                // ANDed, not ORed: Beta's bucket holds one thin row beside a sufficient one.
+                Assert.That(forecast.HasSufficientData, Is.False);
             }
+        }
+
+        [Test]
+        public void Build_ContributingPairWhoseRowRanNoTrials_IsUnknownRatherThanACertainty()
+        {
+            // Min drops a zero-trial contributor, so without this guard the team becomes CDF = 1 - the
+            // same silent certainty as a missing row, one shape lower. Feature.TeamsWithoutForecast
+            // normally catches it, but only when it can NAME the team: here the row has no Team
+            // navigation and the pair's Team is not loaded either, which is what a read path without
+            // FeatureWork.ThenInclude(Team) produces.
+            var alpha = TeamNamed(1, "Alpha");
+
+            var checkout = new Feature([(alpha, 3, 6)]);
+            checkout.FeatureWork[0].Team = null!;
+            checkout.SetFeatureForecasts([
+                new WhenForecast(new Dictionary<int, int>()) { TeamId = alpha.Id },
+            ]);
+
+            Assert.That(DeliveryCompletionForecast.Build([checkout]), Is.Null);
+        }
+
+        [Test]
+        public void ContributingRows_ForecastNamesADifferentTeamThanItsTeamId_BelongsToTheTeamItRanFor()
+        {
+            // The join takes Team?.Id before TeamId, matching Feature.TeamFor: the forecast knows which
+            // team it was run for, the id is the fallback. Swapping that precedence would hand Beta's
+            // row to Alpha's pair - a shape production never writes (ForecastService sets both from one
+            // SimulationResult) but which decides which pair a row is matched against.
+            var alpha = TeamNamed(1, "Alpha");
+            var beta = TeamNamed(2, "Beta");
+
+            var checkout = new Feature([(alpha, 3, 6)]);
+            checkout.SetFeatureForecasts([
+                new WhenForecast(BetaOnCheckout) { Team = beta, TeamId = alpha.Id, HasSufficientData = true },
+            ]);
+
+            var rows = DeliveryCompletionForecast.ContributingRows([checkout]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rows, Has.Count.EqualTo(1));
+                Assert.That(rows[0].TeamId, Is.EqualTo(alpha.Id));
+
+                // Alpha's pair owns no row of its own, because the only row belongs to Beta.
+                Assert.That(rows[0].Forecast, Is.Null);
+            }
+        }
+
+        [Test]
+        public void Build_BucketWhoseRowsExcludeNothing_LeavesTheExcludedSummaryUnset()
+        {
+            // null, not "". The DTO passes ExcludedSummary straight to WhenForecastDto, where an empty
+            // string renders as a filter note about nothing.
+            var alpha = TeamNamed(1, "Alpha");
+
+            var checkout = FeatureFor([new Row(alpha, 3, AlphaOnCheckout)]);
+
+            var forecast = DeliveryCompletionForecast.Build([checkout])!;
+
+            Assert.That(forecast.ExcludedSummary, Is.Null);
         }
 
         private static AggregatedWhenForecast BuildThreeWayFixture()
