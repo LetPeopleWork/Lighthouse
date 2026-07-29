@@ -870,7 +870,7 @@ deliberately. Cost of being wrong: one boolean and one FE test.
 | Architecture enforcement tooling | ✓ ArchUnitNET (already at 0.13.3, 7 fixtures) — purity rule specified; label-boundary rule scheduled for slice 02 |
 | Simplest-solution check | ✓ 2 simpler alternatives rejected with reasons at Open Calls 1b and 3; no new abstraction layer, no new port, no new context |
 | Mutation ≥80 % BE/FE | ✓ addressed structurally — the pure verdict mapper is why the ladder is reachable without HTTP mocks |
-| Peer review | ⚠ **not run** — `nw-solution-architect-reviewer` not dispatched in this session (see report) |
+| Peer review | ✓ **run late, after DISTILL** (2026-07-29) — `nw-solution-architect-reviewer`, verdict `conditionally_approved`: 1 blocker, 1 high, 2 low. Triage below |
 
 ---
 
@@ -1175,3 +1175,24 @@ Lean density: listed, not rendered. Request with `--expand <id>`.
 | DISCUSS D8 | Write-back is permanently out of scope | n/a | Asserted at the connector and at the FE write-back editor, so the capability is declined in both the API and the UI rather than silently doing nothing |
 | DISCUSS DoD 5 / KPI 3 | Zero silent no-ops | n/a | Nine tests assert that each unsupported capability reports an explicit state; the ladder table additionally asserts every rung carries a non-empty message |
 | SPIKE Q8 | Minimum rights are read-only; `snc_read_only` grants nothing | n/a | Both facts are asserted in the no-records message, so the guidance reaches the administrator at the moment of failure rather than only in the docs |
+
+---
+
+## Wave: DISTILL / [REF] Peer review triage (DESIGN, run late)
+
+`nw-solution-architect-reviewer` was dispatched on 2026-07-29 — after DISTILL, not before it, so
+three of its four findings were already answered by the acceptance tests. Verdict
+`conditionally_approved`. Each finding is dispositioned here rather than left in a reviewer report
+nobody reads again.
+
+| Severity | Finding | Disposition |
+|---|---|---|
+| **Blocker** | The 7 unsupported `IWorkTrackingConnector` methods are named but their return behaviour is unspecified — throw, or return a failure result, and with which code? | **CLOSED by DISTILL.** Every method is pinned by a test: `GetWorkItemsForTeam` / `GetFeaturesForProject` / `GetParentFeaturesDetails` / `WriteFieldsToWorkItems` throw `NotSupportedException`; `ValidateTeamSettings` → `team_settings_not_supported`; `ValidatePortfolioSettings` → `portfolio_not_supported`, both with a non-empty message; `SupportsTransitionHistory` → `false`; `GetPredefinedAdditionalFields` → empty. The DESIGN prose was thin, but the executable spec is not. |
+| **High** | The `unexpected_response` rung takes `responseIsJson` as an input but nothing specifies how the shell *decides* it — content-type header, parse-and-catch, or first non-whitespace character. | **STANDS — carried into DELIVER.** `ServiceNowValidationVerdict.FromResponse` receives `responseIsJson` as a `bool` parameter, so the ladder tests exercise both values but no test covers the detection itself. The detection lives in the imperative shell and is currently unspecified and uncovered. DELIVER must choose a rule, and the choice belongs in ADR-114 alongside the rung it feeds. This is also the rung the SPIKE never measured, so the shell logic and the verdict it produces are *both* hypothesis today. |
+| Low | The FE `workTrackingSystemGetDataRetrievalDisplayName()` switch has a `default:` arm, so the new case is not compiler-enforced and needs an explicit test. | **CLOSED by DISTILL** — `WorkTrackingSystemConnection.serviceNow.test.ts`, "calls a team's data retrieval field a ServiceNow query, not just a query". |
+| Low | Unclear whether the `AdditionalFieldsEditor` / `WriteBackMappingsEditor` exclusions already exist or need building. | **CLOSED by DISTILL** — both are asserted in `ConnectionEditors.serviceNow.test.tsx`. Note the trap recorded there: `WriteBackMappingsEditor` renders its button only when `additionalFields` is non-empty, so the obvious setup yields a misleading green. |
+
+The reviewer also confirmed what the design got right, and those are not re-listed here: the pure-mapper
+boundary, the evidence-grounded ADRs, and hexagonal compliance (fifth adapter, unchanged 8-method
+port, no new controller, no migration) all passed on inspection of the real interface rather than the
+document's claim about it.
