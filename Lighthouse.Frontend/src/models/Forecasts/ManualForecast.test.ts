@@ -31,7 +31,7 @@ describe("ManualForecast", () => {
 		expect(forecast.likelihood).toBe(likelihood);
 	});
 
-	it("should set a default likelihood of 0 if not provided", () => {
+	it("should report no likelihood when one is not provided", () => {
 		const whenForecasts: IWhenForecast[] = [mockWhenForecast];
 		const howManyForecasts: IHowManyForecast[] = [mockHowManyForecast];
 		const forecast = new ManualForecast(
@@ -41,7 +41,7 @@ describe("ManualForecast", () => {
 			howManyForecasts,
 		);
 
-		expect(forecast.likelihood).toBe(0);
+		expect(forecast.likelihood).toBeNull();
 	});
 
 	it("should implement the IManualForecast interface", () => {

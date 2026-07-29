@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.API
                     manualForecast.ExcludedSummary = whenForecast.ExcludedSummary;
                     manualForecast.HasSufficientData = whenForecast.HasSufficientData;
 
-                    if (timeToTargetDate > 0)
+                    if (timeToTargetDate > 0 && whenForecast.TotalTrials > 0)
                     {
                         manualForecast.Likelihood = whenForecast.GetLikelihood(timeToTargetDate);
                     }

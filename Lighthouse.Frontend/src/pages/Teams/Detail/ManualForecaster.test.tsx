@@ -108,14 +108,10 @@ vi.mock("../../../components/Common/Forecasts/ForecastInfoList", () => ({
 }));
 
 vi.mock("../../../components/Common/Forecasts/ForecastLikelihood", () => ({
-	default: ({
-		likelihood,
-	}: {
-		howMany: number;
-		when: Date;
-		likelihood: number;
-	}) => (
-		<div data-testid="forecast-likelihood">{`Likelihood: ${likelihood}%`}</div>
+	default: ({ likelihood }: { likelihood: number | null }) => (
+		<div data-testid="forecast-likelihood" data-likelihood={String(likelihood)}>
+			{`Likelihood: ${likelihood}%`}
+		</div>
 	),
 }));
 
@@ -388,7 +384,6 @@ describe("ManualForecaster component", () => {
 		it("should render only When results when only whenForecasts populated", () => {
 			const forecastResult = getMockManualForecast({
 				howManyForecasts: [],
-				likelihood: 0,
 			});
 			render(
 				<ManualForecaster
@@ -410,7 +405,6 @@ describe("ManualForecaster component", () => {
 		it("should render only How Many results when only howManyForecasts populated", () => {
 			const forecastResult = getMockManualForecast({
 				whenForecasts: [],
-				likelihood: 0,
 			});
 			render(
 				<ManualForecaster
@@ -445,6 +439,38 @@ describe("ManualForecaster component", () => {
 				screen.getByText(/How Many Work Items will you get done till/),
 			).toBeInTheDocument();
 			expect(screen.getByTestId("forecast-likelihood")).toBeInTheDocument();
+		});
+
+		// Bug #5586: a target below the histogram's shortest run is an honest 0%, and it became
+		// common once no-evidence stopped answering 100. Hiding it would be new silence of our own.
+		it("should render a genuine zero likelihood instead of hiding it", () => {
+			const forecastResult = getMockManualForecast({ likelihood: 0 });
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					targetDate={dayjs()}
+					manualForecastResult={forecastResult}
+				/>,
+			);
+			expect(screen.getByTestId("forecast-likelihood")).toHaveAttribute(
+				"data-likelihood",
+				"0",
+			);
+		});
+
+		it("should still render the likelihood block when the forecast cannot be made", () => {
+			const forecastResult = getMockManualForecast({ likelihood: null });
+			render(
+				<ManualForecaster
+					{...defaultProps}
+					targetDate={dayjs()}
+					manualForecastResult={forecastResult}
+				/>,
+			);
+			expect(screen.getByTestId("forecast-likelihood")).toHaveAttribute(
+				"data-likelihood",
+				"null",
+			);
 		});
 	});
 

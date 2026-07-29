@@ -6,7 +6,8 @@ export interface IManualForecast {
 	targetDate: Date;
 	whenForecasts: IWhenForecast[];
 	howManyForecasts: IHowManyForecast[];
-	likelihood: number;
+	/** Null when the forecast has no trials behind it - see Bug #5586. */
+	likelihood: number | null;
 	filterApplied: boolean;
 	excludedSummary?: string;
 	hasSufficientData?: boolean;
@@ -15,7 +16,7 @@ export interface IManualForecast {
 export class ManualForecast implements IManualForecast {
 	whenForecasts: IWhenForecast[];
 	howManyForecasts: IHowManyForecast[];
-	likelihood: number;
+	likelihood: number | null;
 	remainingItems: number;
 	targetDate: Date;
 	filterApplied: boolean;
@@ -27,7 +28,7 @@ export class ManualForecast implements IManualForecast {
 		targetDate: Date,
 		whenForecasts: IWhenForecast[],
 		howManyForecasts: IHowManyForecast[],
-		likelihood = 0,
+		likelihood: number | null = null,
 		filterApplied = false,
 		excludedSummary?: string,
 	) {

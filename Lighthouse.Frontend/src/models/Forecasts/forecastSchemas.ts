@@ -24,7 +24,7 @@ export const ManualForecastSchema = z.object({
 	targetDate: z.coerce.date(),
 	whenForecasts: z.array(WhenForecastSchema),
 	howManyForecasts: z.array(HowManyForecastSchema),
-	likelihood: z.number(),
+	likelihood: z.number().nullable(),
 	filterApplied: z.boolean().optional().default(false),
 	excludedSummary: optionalString,
 	hasSufficientData: z.boolean().optional().default(true),

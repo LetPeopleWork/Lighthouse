@@ -404,10 +404,7 @@ const ManualForecaster: React.FC<ManualForecasterProps> = ({
 					)}
 			</Grid>
 			{manualForecastResult &&
-				manualForecastResult.likelihood > 0 &&
-				manualForecastResult.whenForecasts &&
 				manualForecastResult.whenForecasts.length > 0 &&
-				manualForecastResult.howManyForecasts &&
 				manualForecastResult.howManyForecasts.length > 0 && (
 					<Grid size={{ xs: 12 }}>
 						<ForecastLikelihood

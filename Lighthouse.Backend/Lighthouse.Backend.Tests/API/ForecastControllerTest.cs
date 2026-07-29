@@ -207,7 +207,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
-                Assert.That(manualForecast.Likelihood, Is.Zero);
+                Assert.That(manualForecast.Likelihood, Is.Null);
 
                 forecastServiceMock.Verify(x => x.When(It.IsAny<Team>(), It.IsAny<int>(), It.IsAny<ThroughputFilterMode>()), Times.Never);
             }
@@ -238,7 +238,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
-                Assert.That(manualForecast.Likelihood, Is.Zero);
+                Assert.That(manualForecast.Likelihood, Is.Null);
             }
         }
 
@@ -248,7 +248,8 @@ namespace Lighthouse.Backend.Tests.API
             var expectedTeam = new Team();
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
-            forecastServiceMock.Setup(x => x.When(expectedTeam, 42, It.IsAny<ThroughputFilterMode>())).Returns(Task.FromResult(new WhenForecast()));
+            var whenForecast = new WhenForecast(new Dictionary<int, int> { { 2, 30 }, { 5, 70 } });
+            forecastServiceMock.Setup(x => x.When(expectedTeam, 42, It.IsAny<ThroughputFilterMode>())).Returns(Task.FromResult(whenForecast));
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
             teamMetricsServiceMock
                 .Setup(x => x.GetForecastThroughputStatus(expectedTeam, It.IsAny<ThroughputFilterMode>()))
@@ -272,6 +273,31 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(4));
                 Assert.That(manualForecast.Likelihood, Is.Not.Zero);
             }
+        }
+
+        [Test]
+        public async Task RunManualForecast_WhenForecastHasNoTrials_ReportsNoLikelihood()
+        {
+            var expectedTeam = new Team();
+            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+
+            // A team with no usable throughput produces a forecast with no trials - there is no
+            // distribution to read a likelihood off, so the honest answer is none (Bug #5586).
+            forecastServiceMock.Setup(x => x.When(expectedTeam, 42, It.IsAny<ThroughputFilterMode>())).Returns(Task.FromResult(new WhenForecast()));
+            forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(expectedTeam, It.IsAny<ThroughputFilterMode>()))
+                .Returns(new ForecastThroughputStatus(new RunChartData(), false, null));
+
+            var subject = CreateSubject();
+
+            var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42, TargetDate = DateTime.Now.AddDays(3) };
+            var result = await subject.RunManualForecastAsync(12, manualForecastInput);
+
+            var okResult = result.Result as OkObjectResult;
+            var manualForecast = okResult.Value as ManualForecastDto;
+
+            Assert.That(manualForecast.Likelihood, Is.Null);
         }
 
         [Test]
@@ -311,7 +337,7 @@ namespace Lighthouse.Backend.Tests.API
 
                 Assert.That(manualForecast.HowManyForecasts, Has.Count.EqualTo(0));
                 Assert.That(manualForecast.WhenForecasts, Has.Count.EqualTo(0));
-                Assert.That(manualForecast.Likelihood, Is.Zero);
+                Assert.That(manualForecast.Likelihood, Is.Null);
 
                 forecastServiceMock.Verify(x => x.When(It.IsAny<Team>(), It.IsAny<int>()), Times.Never);
                 forecastServiceMock.Verify(x => x.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()), Times.Never);
@@ -365,7 +391,7 @@ namespace Lighthouse.Backend.Tests.API
                 var prediction = okResult.Value as ManualForecastDto;
 
                 Assert.That(prediction.WhenForecasts, Has.Count.EqualTo(0));
-                Assert.That(prediction.Likelihood, Is.Zero);
+                Assert.That(prediction.Likelihood, Is.Null);
 
                 var forecasts = prediction.HowManyForecasts;
                 Assert.That(forecasts, Has.Count.EqualTo(4));

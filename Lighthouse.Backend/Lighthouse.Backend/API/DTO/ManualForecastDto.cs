@@ -6,7 +6,9 @@
 
         public DateTime? TargetDate { get; } = targetDate;
 
-        public double Likelihood { get; set; }
+        // Null when the forecast has no trials to read a likelihood off - 0 would state a certainty
+        // of failure the data cannot support (Bug #5586, same carrier as ADR-112).
+        public double? Likelihood { get; set; }
 
         public List<WhenForecastDto> WhenForecasts { get; } = [];
 

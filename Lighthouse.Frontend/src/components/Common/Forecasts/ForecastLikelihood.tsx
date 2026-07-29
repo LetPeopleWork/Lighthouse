@@ -1,6 +1,7 @@
 import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
+import { CANNOT_FORECAST_SHORT } from "../../../utils/forecast/cannotForecast";
 import { formatLikelihood } from "../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../utils/forecast/isForecastDataInsufficient";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
@@ -10,7 +11,7 @@ import InsufficientForecastDataIndicator from "./InsufficientForecastDataIndicat
 interface ForecastLikelihoodProps {
 	remainingItems: number;
 	targetDate: Date;
-	likelihood: number;
+	likelihood: number | null;
 	showText?: boolean;
 	hasSufficientData?: boolean;
 }
@@ -23,14 +24,21 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({
 	hasSufficientData,
 }) => {
 	const forecastLevel = new ForecastLevel(likelihood);
-	const formattedLikelihood = formatLikelihood(likelihood, {
-		hasRemainingWork: remainingItems > 0,
-		precision: "fixed2",
-	});
-	const dataInsufficient = isForecastDataInsufficient({
-		hasRemainingWork: remainingItems > 0,
-		hasSufficientData,
-	});
+	// A missing likelihood outranks the thin-history signal: that one says the forecast rests on
+	// little data, this one says there is no forecast at all (Bug #5586).
+	const cannotForecast = likelihood === null;
+	const formattedLikelihood = cannotForecast
+		? CANNOT_FORECAST_SHORT
+		: formatLikelihood(likelihood, {
+				hasRemainingWork: remainingItems > 0,
+				precision: "fixed2",
+			});
+	const dataInsufficient =
+		!cannotForecast &&
+		isForecastDataInsufficient({
+			hasRemainingWork: remainingItems > 0,
+			hasSufficientData,
+		});
 
 	return (
 		<Grid container sx={{ width: "100%", flexDirection: "column" }}>

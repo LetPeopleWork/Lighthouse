@@ -11,10 +11,11 @@ namespace Lighthouse.Backend.Tests.API.DTO
             // ADR-112 makes the two multi-team-reachable fields nullable, which is a domain fact rather than
             // a display concern: when a contributing team has no throughput the value does not exist, and
             // null is the shape DeliveryMetricSnapshot and DeliveryMetricsHistoryDto already use for it.
-            // The manual forecast is single-team and keeps a plain double.
+            // Bug #5586 extends the same reading to the manual forecast: a team with no trials has no
+            // likelihood, and null says so where 0 would claim a certainty of failure.
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(typeof(ManualForecastDto).GetProperty(nameof(ManualForecastDto.Likelihood))!.PropertyType, Is.EqualTo(typeof(double)));
+                Assert.That(typeof(ManualForecastDto).GetProperty(nameof(ManualForecastDto.Likelihood))!.PropertyType, Is.EqualTo(typeof(double?)));
                 Assert.That(typeof(DeliveryWithLikelihoodDto).GetProperty(nameof(DeliveryWithLikelihoodDto.LikelihoodPercentage))!.PropertyType, Is.EqualTo(typeof(double?)));
                 Assert.That(typeof(FeatureLikelihoodDto).GetProperty(nameof(FeatureLikelihoodDto.LikelihoodPercentage))!.PropertyType, Is.EqualTo(typeof(double?)));
             }

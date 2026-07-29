@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { CANNOT_FORECAST_SHORT } from "../../../utils/forecast/cannotForecast";
 import ForecastLikelihood from "./ForecastLikelihood";
 
 vi.mock("../LocalDateTimeDisplay/LocalDateTimeDisplay", () => ({
@@ -132,6 +133,34 @@ describe("ForecastLikelihood component", () => {
 
 			expect(screen.getByText("100.00%")).toBeInTheDocument();
 			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();
+		});
+	});
+
+	describe("separates a missing forecast from a zero one", () => {
+		it("says the forecast cannot be made when there is no likelihood at all", () => {
+			render(
+				<ForecastLikelihood
+					remainingItems={5}
+					targetDate={when}
+					likelihood={null}
+				/>,
+			);
+
+			expect(screen.getByText(CANNOT_FORECAST_SHORT)).toBeInTheDocument();
+			expect(screen.queryByText("0.00%")).not.toBeInTheDocument();
+		});
+
+		it("reports a genuine zero likelihood as 0.00% rather than hiding it", () => {
+			render(
+				<ForecastLikelihood
+					remainingItems={5}
+					targetDate={when}
+					likelihood={0}
+				/>,
+			);
+
+			expect(screen.getByText("0.00%")).toBeInTheDocument();
+			expect(screen.queryByText(CANNOT_FORECAST_SHORT)).not.toBeInTheDocument();
 		});
 	});
 });
