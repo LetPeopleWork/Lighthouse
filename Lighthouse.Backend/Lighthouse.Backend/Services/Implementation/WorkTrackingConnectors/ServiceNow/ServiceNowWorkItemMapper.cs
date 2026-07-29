@@ -61,6 +61,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
+        /// The number the service desk quotes, e.g. <c>INC0010029</c>. It is also what tells one
+        /// record from another across pages.
+        /// </summary>
+        public static string ReadRecordNumber(JsonElement record)
+        {
+            return ReadForm(record, RecordNumberField, UniversalForm);
+        }
+
+        /// <summary>
         /// Maps one ServiceNow record onto a Lighthouse work item. US-02 AC2.
         /// </summary>
         /// <param name="record">A record from a <c>sysparm_display_value=all</c> response.</param>
@@ -70,7 +79,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, string table)
         {
             var stateLabel = ReadStateLabel(record);
-            var recordNumber = ReadForm(record, RecordNumberField, UniversalForm);
+            var recordNumber = ReadRecordNumber(record);
+            var stateCategory = owner.MapStateToStateCategory(stateLabel);
 
             return new WorkItemBase
             {
@@ -78,30 +88,60 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 Name = ReadForm(record, TitleField, UniversalForm),
                 Type = table,
                 State = owner.MapRawStateToMappedName(stateLabel),
-                StateCategory = owner.MapStateToStateCategory(stateLabel),
+                StateCategory = stateCategory,
                 Order = recordNumber,
                 CreatedDate = ReadInstant(record, CreatedField),
                 StartedDate = ReadInstant(record, OpenedField) ?? ReadInstant(record, CreatedField),
-                ClosedDate = ReadInstant(record, ResolvedField) ?? ReadInstant(record, ClosedField),
+                ClosedDate = WhenWorkFinished(record, stateCategory),
             };
+        }
+
+        /// <summary>
+        /// Only finished work carries a finish date, the way every other connector already couples
+        /// the two. ServiceNow's reopen path does not reliably clear <c>resolved_at</c>, so a
+        /// reopened incident arrives with a resolution instant and a state the team maps to Doing.
+        /// Carrying both would hide it from every chart at once: Throughput counts Done only, and
+        /// the WIP series drops anything closed on or before the day being drawn.
+        /// </summary>
+        private static DateTime? WhenWorkFinished(JsonElement record, StateCategories stateCategory)
+        {
+            if (stateCategory != StateCategories.Done)
+            {
+                return null;
+            }
+
+            return ReadInstant(record, ResolvedField) ?? ReadInstant(record, ClosedField);
         }
 
         /// <summary>
         /// Instants always come from the universal form. The instance-local form of the same field
         /// can fall on a different calendar day, and Throughput buckets by day.
         /// </summary>
+        /// <remarks>
+        /// <c>AdjustToUniversal | AssumeUniversal</c> rather than a trailing <c>SpecifyKind</c>: a
+        /// value carrying <c>Z</c> or an offset is converted to universal time instead of being
+        /// relabelled with the host machine's own wall clock, and a value carrying neither is read
+        /// as universal rather than as local. Bug #5567 is the ledger entry for what relabelling
+        /// costs.
+        /// </remarks>
         private static DateTime? ReadInstant(JsonElement record, string field)
         {
+            const DateTimeStyles asUniversalTime = DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal;
+
             var universalTime = ReadForm(record, field, UniversalForm);
 
-            if (!DateTime.TryParse(universalTime, CultureInfo.InvariantCulture, DateTimeStyles.None, out var instant))
+            if (!DateTime.TryParse(universalTime, CultureInfo.InvariantCulture, asUniversalTime, out var instant))
             {
                 return null;
             }
 
-            return DateTime.SpecifyKind(instant, DateTimeKind.Utc);
+            return instant;
         }
 
+        // A field can be absent, an explicit JSON null (which is the shape change_request.resolved_at
+        // returns), a bare scalar rather than the two-form object, or a number where a string was
+        // expected. GetString() throws on anything that is neither string nor null, and that
+        // exception would take the whole team sync down with a stack trace no rung explains.
         private static string ReadForm(JsonElement record, string field, string form)
         {
             if (record.ValueKind != JsonValueKind.Object || !record.TryGetProperty(field, out var bothForms))
@@ -114,7 +154,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return string.Empty;
             }
 
-            return value.GetString() ?? string.Empty;
+            return value.ValueKind switch
+            {
+                JsonValueKind.String => value.GetString() ?? string.Empty,
+                JsonValueKind.Null or JsonValueKind.Undefined => string.Empty,
+                _ => value.ToString(),
+            };
         }
     }
 }

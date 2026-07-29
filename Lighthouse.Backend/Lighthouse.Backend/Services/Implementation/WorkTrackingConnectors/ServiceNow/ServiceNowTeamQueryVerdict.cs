@@ -44,6 +44,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
+        /// Rung 0b — the instance answered, but did not say how big the result set is.
+        /// </summary>
+        /// <remarks>
+        /// The count probe asks for a single row, so the body can only ever say 0 or 1 and
+        /// <c>X-Total-Count</c> is the sole source of the number both sides of the comparison rest
+        /// on. Guessing when the header is absent makes matched and total both 1 for every team on
+        /// the instance, which reads as a query that selects the whole table — a refusal that names
+        /// the wrong cause, for every team, on every save. Naming the missing header instead sends
+        /// the administrator at the proxy that stripped it.
+        /// </remarks>
+        public static ConnectionValidationResult FromUncountableResultSet(string table)
+        {
+            return ConnectionValidationResult.Failure(
+                "result_size_unknown",
+                $"ServiceNow did not report how many records '{table}' holds, so Lighthouse cannot tell whether this query was silently widened to the whole table. A proxy in front of the instance usually strips the X-Total-Count header this rests on. Let that header through, then validate again.",
+                // Stryker disable once String: the header to let through is named in the message
+                // above, which is the half an administrator acts on; this repeats it for a support log.
+                $"The response for '{table}' carried no usable X-Total-Count header.",
+                QueryFieldName);
+        }
+
+        /// <summary>
         /// Rungs 1-3 — the instance answered both probes. US-02 AC6.
         /// </summary>
         /// <param name="table">The configured table, named back to the user in every message.</param>

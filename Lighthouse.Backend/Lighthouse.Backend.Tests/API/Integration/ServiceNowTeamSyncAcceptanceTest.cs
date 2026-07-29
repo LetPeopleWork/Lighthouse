@@ -70,6 +70,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task AFlowCoachWhoseQueryTheInstanceSilentlyIgnored_IsStoppedOnTheSettingsPage()
         {
+            // The two settings are independent: this query would legitimately select two of the
+            // five records, and the instance drops the term and answers with all five anyway. Both
+            // have to be set, or the scenario passes because nothing filtered rather than because
+            // Lighthouse noticed.
+            instance.MatchesForAQuery = 2;
             instance.IgnoresTheQuery = true;
             var connectionId = await GivenAServiceNowConnection();
 
@@ -276,13 +281,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             private void Answer(HttpListenerContext context)
             {
-                var query = context.Request.Url?.Query ?? string.Empty;
+                var uri = context.Request.Url ?? new Uri(BaseAddress);
+                var query = uri.Query;
 
                 var isFiltered = query.Contains("sysparm_query=", StringComparison.Ordinal)
                     && !query.Contains("sysparm_query=&", StringComparison.Ordinal);
 
-                var visible = (isFiltered && !IgnoresTheQuery && MatchesForAQuery.HasValue)
-                    ? Records().Take(MatchesForAQuery.Value).ToList()
+                // The flag decides on its own: an instance that honours the query answers with the
+                // rows it selects, one that drops the term answers with the whole table.
+                var visible = isFiltered && !IgnoresTheQuery
+                    ? Records().Take(MatchesForAQuery ?? Records().Count).ToList()
                     : Records();
 
                 var offset = NumberFromQuery(query, "sysparm_offset");
@@ -292,25 +300,38 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
                 context.Response.ContentType = "application/json";
                 context.Response.Headers.Add("X-Total-Count", visible.Count.ToString(CultureInfo.InvariantCulture));
-                context.Response.Headers.Add("Link", LinkHeader(offset, visible.Count));
+                context.Response.Headers.Add("Link", LinkHeader(uri, offset, visible.Count));
                 context.Response.ContentLength64 = body.Length;
                 context.Response.OutputStream.Write(body, 0, body.Length);
                 context.Response.OutputStream.Close();
             }
 
-            private string LinkHeader(int offset, int total)
+            private static string LinkHeader(Uri uri, int offset, int total)
             {
-                var links = new List<string> { $"<{BaseAddress}api/now/table/incident?sysparm_offset=0>;rel=\"first\"" };
+                var links = new List<string> { $"<{PageAddress(uri, 0)}>;rel=\"first\"" };
                 var next = offset + PageSize;
 
                 if (next < total)
                 {
-                    links.Add($"<{BaseAddress}api/now/table/incident?sysparm_offset={next}>;rel=\"next\"");
+                    links.Add($"<{PageAddress(uri, next)}>;rel=\"next\"");
                 }
 
-                links.Add($"<{BaseAddress}api/now/table/incident?sysparm_offset={Math.Max(0, total - PageSize)}>;rel=\"last\"");
+                links.Add($"<{PageAddress(uri, Math.Max(0, total - PageSize))}>;rel=\"last\"");
 
                 return string.Join(",", links);
+            }
+
+            // The real header echoes every sysparm_* it was asked with and moves only the offset. A
+            // listener that dropped the query would let a connector which follows the link read the
+            // whole table with nothing noticing.
+            private static string PageAddress(Uri uri, int offset)
+            {
+                var parameters = uri.Query.TrimStart('?')
+                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(pair => !pair.StartsWith("sysparm_offset=", StringComparison.Ordinal))
+                    .Append($"sysparm_offset={offset.ToString(CultureInfo.InvariantCulture)}");
+
+                return $"{uri.GetLeftPart(UriPartial.Path)}?{string.Join("&", parameters)}";
             }
 
             private List<string> Records()

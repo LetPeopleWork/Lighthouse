@@ -42,6 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void WorkThatWasResolvedButNeverFormallyClosed_StillCountsAsFinished()
         {
             var record = ARecordWith(
+                AResolvedState,
                 (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 17:25:29", "2026-07-30 00:25:29"),
                 (ServiceNowWorkItemMapper.ClosedField, "", ""));
 
@@ -53,18 +54,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         // ADR-117's ladder, one case per rung. Resolution outranks closure, and closure is only a
         // fallback for the shops that do move records all the way to Closed.
-        [TestCase("2026-07-29 07:25:29", "2026-07-30 08:00:00", "2026-07-29 07:25:29", TestName = "WhenBothAreRecorded_TheResolutionIsWhenWorkFinished")]
-        [TestCase("", "2026-07-30 08:00:00", "2026-07-30 08:00:00", TestName = "WhenOnlyTheClosureIsRecorded_TheClosureIsWhenWorkFinished")]
-        [TestCase("2026-07-29 07:25:29", "", "2026-07-29 07:25:29", TestName = "WhenOnlyTheResolutionIsRecorded_TheResolutionIsWhenWorkFinished")]
-        public void WhenWorkFinished_IsReadFromTheResolutionBeforeTheClosure(string resolved, string closed, string expected)
+        [Test]
+        public void WhenBothAreRecorded_TheResolutionIsWhenWorkFinished()
         {
-            var record = ARecordWith(
-                (ServiceNowWorkItemMapper.ResolvedField, resolved, resolved),
-                (ServiceNowWorkItemMapper.ClosedField, closed, closed));
+            var record = AFinishedRecordWith(resolved: "2026-07-29 07:25:29", closed: "2026-07-30 08:00:00");
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            Assert.That(workItem.ClosedDate, Is.EqualTo(AnInstant(expected)));
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 29, 7, 25, 29, DateTimeKind.Utc)));
+        }
+
+        [Test]
+        public void WhenOnlyTheClosureIsRecorded_TheClosureIsWhenWorkFinished()
+        {
+            var record = AFinishedRecordWith(resolved: "", closed: "2026-07-30 08:00:00");
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 8, 0, 0, DateTimeKind.Utc)));
+        }
+
+        [Test]
+        public void WhenOnlyTheResolutionIsRecorded_TheResolutionIsWhenWorkFinished()
+        {
+            var record = AFinishedRecordWith(resolved: "2026-07-29 07:25:29", closed: "");
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 29, 7, 25, 29, DateTimeKind.Utc)));
         }
 
         [Test]
@@ -77,6 +94,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
             Assert.That(workItem.ClosedDate, Is.Null);
+        }
+
+        // H2. ServiceNow's reopen path does not reliably clear resolved_at, so a reopened incident
+        // arrives carrying a resolution instant and a state the team maps to Doing. Setting both
+        // hides it from every chart at once: Throughput counts Done only, and the WIP series drops
+        // anything closed on or before the day being drawn. Actively-worked item, invisible.
+        [Test]
+        public void WorkThatWasReopened_IsNotCountedAsFinishedWhileItIsBeingWorkedOn()
+        {
+            var record = ARecordWith(
+                (ServiceNowWorkItemMapper.StateField, "In Progress", "2"),
+                (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 17:25:29", "2026-07-30 00:25:29"));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.StateCategory, Is.EqualTo(StateCategories.Doing));
+                Assert.That(workItem.ClosedDate, Is.Null,
+                    "A Doing item carrying a closure is counted in neither Throughput nor WIP, so it disappears from every chart while the team is still working on it.");
+            }
         }
 
         // ADR-117: opened_at is a real, settable timestamp a customer backdates when importing
@@ -92,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            Assert.That(workItem.StartedDate, Is.EqualTo(AnInstant("2026-07-09 09:46:49")));
+            Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 9, 9, 46, 49, DateTimeKind.Utc)));
         }
 
         [Test]
@@ -104,7 +142,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            Assert.That(workItem.StartedDate, Is.EqualTo(AnInstant("2026-07-29 13:46:49")));
+            Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 29, 13, 46, 49, DateTimeKind.Utc)));
         }
 
         // The date trap, and the reason this test picks instants that fall on DIFFERENT DAYS in the
@@ -118,17 +156,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void TheDayWorkFinished_IsTheDayTheInstanceRecordedInUniversalTime()
         {
             var record = ARecordWith(
+                AResolvedState,
                 (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 21:25:29", "2026-07-30 04:25:29"),
                 (ServiceNowWorkItemMapper.ClosedField, "", ""));
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(workItem.ClosedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 30, 0, 0, 0, DateTimeKind.Utc)),
-                    "The instance-local form of this timestamp falls on the 29th and the universal form on the 30th. Throughput buckets by day, so reading the wrong form moves finished work to the wrong day.");
-                Assert.That(workItem.ClosedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            }
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 4, 25, 29, DateTimeKind.Utc)),
+                "The instance-local form of this timestamp falls on the 29th and the universal form on the 30th. Throughput buckets by day, so reading the wrong form moves finished work to the wrong day.");
         }
 
         [Test]
@@ -139,11 +174,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(workItem.StartedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 10, 0, 0, 0, DateTimeKind.Utc)));
-                Assert.That(workItem.StartedDate?.Kind, Is.EqualTo(DateTimeKind.Utc));
-            }
+            Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 10, 4, 46, 49, DateTimeKind.Utc)));
         }
 
         [Test]
@@ -154,7 +185,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            Assert.That(workItem.CreatedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 29, 0, 0, 0, DateTimeKind.Utc)));
+            Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2026, 7, 29, 6, 46, 48, DateTimeKind.Utc)));
+        }
+
+        // H1. A value carrying its own offset has to be CONVERTED to universal time, not relabelled
+        // as universal. Relabelling reads the instant on the host machine's clock and then stamps
+        // that wall-clock reading as UTC, which moves the instant by the machine's own offset — and
+        // across a day boundary near midnight. The assertion is the instant rather than the Kind,
+        // because a mapper that hardcodes DateTimeKind.Utc satisfies a Kind assertion by
+        // construction and can never fail it.
+        [TestCase("2026-07-30T02:25:29+02:00", TestName = "AnInstantCarryingItsOwnOffset_IsConvertedToUniversalTimeRatherThanRelabelled")]
+        [TestCase("2026-07-30T00:25:29Z", TestName = "AnInstantCarryingAZuluMarker_IsReadAsTheInstantItNames")]
+        [TestCase("2026-07-30 00:25:29", TestName = "AnInstantCarryingNoOffsetAtAll_IsReadAsUniversalTimeRatherThanLocal")]
+        public void AnInstantTheInstanceReported_IsTheInstantLighthouseStores(string universalForm)
+        {
+            var record = ARecordWith(
+                AResolvedState,
+                (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 17:25:29", universalForm));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 0, 25, 29, DateTimeKind.Utc)),
+                "All three forms name the same instant, so all three have to map onto it whatever the host machine's own timezone is.");
         }
 
         // AC3, the other half of the display/value split. A flow coach maps the words their service
@@ -227,9 +279,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(workItem.Type, Is.EqualTo("change_request"));
         }
 
-        private static DateTime AnInstant(string universalTime)
+        // H3. Every guard in ReadForm was unreachable, because the fixture above can only ever emit
+        // two well-formed strings. These are the shapes the live API actually returns — an explicit
+        // JSON null for an unset date on change_request, a bare scalar where a field is not
+        // display-valued, a number where a string was expected — and GetString() throws on the last
+        // one, which would take the whole team sync down with it.
+        [TestCase("""{"state": {"display_value": "In Progress", "value": 2}}""", TestName = "AFieldWhoseValueIsANumber_IsReadRatherThanThrown")]
+        [TestCase("""{"state": null}""", TestName = "AFieldThatIsExplicitlyNull_IsReadAsNothing")]
+        [TestCase("""{"state": "In Progress"}""", TestName = "AFieldThatIsABareScalar_IsReadAsNothing")]
+        [TestCase("""{"state": {"display_value": null, "value": "2"}}""", TestName = "AFormThatIsExplicitlyNull_IsReadAsNothing")]
+        [TestCase("""{"short_description": {"display_value": "x", "value": "x"}}""", TestName = "AFieldThatIsAbsentAltogether_IsReadAsNothing")]
+        [TestCase("""[{"state": {"display_value": "In Progress", "value": "2"}}]""", TestName = "ARecordThatIsNotAnObject_IsReadAsNothing")]
+        public void ARecordShapedInAWayTheMapperDidNotExpect_IsMappedRatherThanFatal(string json)
         {
-            return DateTime.SpecifyKind(DateTime.Parse(universalTime, System.Globalization.CultureInfo.InvariantCulture), DateTimeKind.Utc);
+            var record = ARecordFrom(json);
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            Assert.That(workItem, Is.Not.Null,
+                "A record Lighthouse cannot read a field off is one unmapped record, not a failed sync for the whole team.");
+        }
+
+        [Test]
+        public void TheStateOfARecordThatCarriesANumberWhereALabelBelongs_IsReadAsThatNumber()
+        {
+            var record = ARecordFrom("""{"state": {"display_value": 2, "value": 2}}""");
+
+            Assert.That(ServiceNowWorkItemMapper.ReadStateLabel(record), Is.EqualTo("2"));
+        }
+
+        [TestCase("""{"state": null}""", TestName = "TheStateOfARecordWhoseStateIsNull_IsEmpty")]
+        [TestCase("""{"state": "In Progress"}""", TestName = "TheStateOfARecordWhoseStateIsABareScalar_IsEmpty")]
+        [TestCase("""{"state": {"display_value": null, "value": "2"}}""", TestName = "TheStateOfARecordWhoseLabelIsNull_IsEmpty")]
+        [TestCase("""{}""", TestName = "TheStateOfARecordWithNoStateAtAll_IsEmpty")]
+        [TestCase("""[]""", TestName = "TheStateOfSomethingThatIsNotARecord_IsEmpty")]
+        public void AStateTheMapperCannotRead_IsEmptyRatherThanAGuess(string json)
+        {
+            Assert.That(ServiceNowWorkItemMapper.ReadStateLabel(ARecordFrom(json)), Is.Empty);
+        }
+
+        // The team above files "Resolved" under Done, and only finished work carries a finish date.
+        private static (string Field, string DisplayValue, string Value) AResolvedState =>
+            (ServiceNowWorkItemMapper.StateField, "Resolved", "6");
+
+        private static JsonElement AFinishedRecordWith(string resolved, string closed)
+        {
+            return ARecordWith(
+                AResolvedState,
+                (ServiceNowWorkItemMapper.ResolvedField, resolved, resolved),
+                (ServiceNowWorkItemMapper.ClosedField, closed, closed));
         }
 
         // Shapes a record the way sysparm_display_value=all shapes one. Unnamed fields get a
@@ -255,7 +353,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var body = string.Join(",", record.Select(entry =>
                 $"{JsonSerializer.Serialize(entry.Key)}:{{\"display_value\":{JsonSerializer.Serialize(entry.Value.DisplayValue)},\"value\":{JsonSerializer.Serialize(entry.Value.Value)}}}"));
 
-            using var document = JsonDocument.Parse($"{{{body}}}");
+            return ARecordFrom($"{{{body}}}");
+        }
+
+        // The escape hatch from the well-formed fixture above, for the shapes it cannot express.
+        private static JsonElement ARecordFrom(string json)
+        {
+            using var document = JsonDocument.Parse(json);
             return document.RootElement.Clone();
         }
     }

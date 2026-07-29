@@ -25,6 +25,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string InstanceUrl = "https://dev12345.service-now.com/";
         private const string TeamsOwnQuery = "assignment_group.name=Service Desk^active=true";
 
+        private static readonly string[] EveryRecordInTheFixture =
+            ["INC0000001", "INC0000002", "INC0000003", "INC0000004", "INC0000005"];
+
         // AC1. The query the flow coach wrote is the query that gets asked, against the table the
         // connection was configured for. Anything else and the team is looking at somebody else's work.
         [Test]
@@ -87,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(referenceIds, Is.Unique);
-                Assert.That(referenceIds, Is.EquivalentTo(new[] { "INC0000001", "INC0000002", "INC0000003", "INC0000004", "INC0000005" }));
+                Assert.That(referenceIds, Is.EquivalentTo(EveryRecordInTheFixture));
             }
         }
 
@@ -105,6 +108,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "Five records over pages of two is three reads. Anything approaching one call per record is a five-minute sync on a real instance.");
         }
 
+        // H5. Offset paging is only safe over a stable order, and an incident table on a live
+        // instance is neither ordered nor still. This stub gains a record between two pages and
+        // places it the way the instance would: at the end when an order was asked for, and at the
+        // front when it was not — which is what pushes an unread row past the offset for good.
+        [Test]
+        public async Task WorkThatArrivesWhileTheTeamIsBeingRead_IsNotSkippedOver()
+        {
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, GainsARecordAfterTheFirstPage = true });
+            var subject = CreateSubject(instance);
+
+            var referenceIds = (await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState())).Select(item => item.ReferenceId).ToList();
+
+            Assert.That(referenceIds, Is.SupersetOf(EveryRecordInTheFixture),
+                "Without an explicit order the row created between the pages lands ahead of the rows already read, and the ones it displaced past the offset are never read at all.");
+        }
+
+        [Test]
+        public async Task SyncingATeam_AsksForTheRecordsInAStableOrder()
+        {
+            var instance = AnInstanceHolding(FiveRecordsOfMixedState());
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeam());
+
+            var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.Query)).ToList();
+
+            Assert.That(asked, Has.All.Contains("^ORDERBYsys_created_on"),
+                "Offset paging over an unordered result set skips rows the moment the table changes between pages.");
+        }
+
         // Linear's precedent: a team only sees work in the states it has mapped. An unmapped label
         // is work the flow coach never told Lighthouse how to interpret.
         [Test]
@@ -113,10 +148,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10);
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = (await subject.GetWorkItemsForTeam(ATeam())).ToList();
 
-            Assert.That(workItems.Select(item => item.ReferenceId), Has.No.Member("INC0000005"),
-                "INC0000005 sits in 'Awaiting Vendor', which this team has not mapped to any of its own states.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Has.Count.EqualTo(4),
+                    "The other four records sit in states this team did map, and have to survive.");
+                Assert.That(workItems.Select(item => item.ReferenceId), Has.No.Member("INC0000005"),
+                    "INC0000005 sits in 'Awaiting Vendor', which this team has not mapped to any of its own states.");
+            }
+        }
+
+        // DoD 5. Dropping records without a word reads as low Throughput with the settings page
+        // still saying the team is valid. The flow coach types these labels by hand against a
+        // choice list a read-only account cannot query, so the label has to be in the log to be
+        // correctable.
+        [Test]
+        public async Task WorkInAStateTheTeamNeverMapped_IsNamedInTheLogRatherThanDroppedInSilence()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10), logger.Object);
+
+            await subject.GetWorkItemsForTeam(ATeam());
+
+            logger.Verify(
+                log => log.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => $"{state}".Contains("Awaiting Vendor", StringComparison.Ordinal)),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once,
+                "The label that was left out has to be named, or there is nothing for the flow coach to correct.");
         }
 
         // The silent-filter trap's sibling. An unconfigured team must not degrade into an
@@ -138,22 +201,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         // AC5. ServiceNow cannot supply transition history on a read-only account, so the connector
-        // must not invent any: WorkItemService's sync-delta fallback is what fills the gap, and it
-        // only runs when the connector leaves the history empty and declares it unsupported.
+        // says so rather than guessing: WorkItemService's sync-delta fallback is what fills the gap,
+        // and it only runs when the connector declares the history unsupported. That the mapper
+        // leaves SyncedTransitions empty is a field initializer rather than behaviour — the
+        // assertion carrying AC5 end to end is CurrentStateEnteredAt in the acceptance test.
         [Test]
-        public async Task SyncedWork_CarriesNoInventedHistory()
+        public void ServiceNowWork_DeclaresThatNoTransitionHistoryIsAvailable()
         {
-            var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10);
-            var subject = CreateSubject(instance);
+            var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState()));
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False);
-                Assert.That(workItems.SelectMany(item => item.SyncedTransitions), Is.Empty,
-                    "A fabricated transition is worse than none: it would look like measured time-in-state and be a guess.");
-            }
+            Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False);
         }
 
         // AC2 end to end through the connector, because the mapper being right is worth nothing if
@@ -175,6 +232,88 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(resolvedItem?.State, Is.EqualTo("Resolved"),
                     "The label the service desk uses, not the choice value 6.");
             }
+        }
+
+        // The failure the review of this slice stopped. A read that answers a denial with an empty
+        // list is not a failed sync — it is a successful sync of nothing, and RefreshWorkItems
+        // deletes every stored item the sync did not return. The team's SyncedTransitions and
+        // CurrentStateEnteredAt go with them, and restoring the credential does not bring them back.
+        [TestCase(nameof(ARefusedRead), "insufficient_permissions", TestName = "ACredentialThatLosesItsRightsPartWayThrough_FailsTheSyncRatherThanEmptyingTheTeam")]
+        [TestCase(nameof(ASignInPage), "unexpected_response", TestName = "ASignInPageServedPartWayThrough_FailsTheSyncRatherThanEmptyingTheTeam")]
+        [TestCase(nameof(AnErrorEnvelope), "unexpected_response", TestName = "AnErrorEnvelopeServedPartWayThrough_FailsTheSyncRatherThanEmptyingTheTeam")]
+        public void AReadThatFailsPartWayThrough_ThrowsRatherThanReportingAnEmptyTeam(string breakage, string expectedCode)
+        {
+            var subject = CreateSubject(AnInstanceThatBreaksAfterTheFirstPage(breakage));
+
+            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+
+            Assert.That(failure?.Code, Is.EqualTo(expectedCode),
+                "The read path routes through slice 01's ladder, so a denial keeps the name the settings page would have given it.");
+        }
+
+        // An instance that ignores sysparm_offset answers every page with the first page. With
+        // X-Total-Count present that reports the same work several times over as the team's;
+        // without it the loop never ends. Both fixtures used to compute a perfect
+        // Skip(offset).Take(pageSize), so neither failure was reachable.
+        [Test]
+        public void AnInstanceThatIgnoresTheOffsetItWasGiven_IsCaughtRatherThanCountedTwice()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, IgnoresTheOffset = true }));
+
+            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+
+            Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"));
+        }
+
+        [Test]
+        public void AnInstanceThatKeepsOfferingAnotherPage_IsStoppedRatherThanReadWithoutEnd()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, NeverRunsOutOfPages = true }));
+
+            var failure = Assert.ThrowsAsync<ServiceNowReadException>(
+                async () => await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState()));
+
+            Assert.That(failure?.Code, Is.EqualTo("paging_did_not_terminate"),
+                "The cap comes from the result-set size the instance itself reported, so it stops long before memory does.");
+        }
+
+        // The Link header the SPIKE measured is the paging signal that survives a stripped
+        // X-Total-Count, which is exactly what a proxy in front of the instance takes away.
+        [Test]
+        public async Task AnInstanceThatDoesNotSayHowManyRowsExist_IsStillPagedToTheEnd()
+        {
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, OmitsTheResultSetSize = true });
+            var subject = CreateSubject(instance);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems.ToList(), Has.Count.EqualTo(5));
+                Assert.That(instance.Requests, Has.Count.LessThanOrEqualTo(4),
+                    "The paging links say which page is last, so the read stops there rather than probing on.");
+            }
+        }
+
+        [Test]
+        public async Task AnInstanceThatSaysNeitherHowManyRowsExistNorWhereTheNextPageIs_IsReadUntilItRunsOut()
+        {
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, OmitsTheResultSetSize = true, OmitsThePagingLinks = true });
+            var subject = CreateSubject(instance);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+
+            Assert.That(workItems.ToList(), Has.Count.EqualTo(5));
         }
 
         // AC6. The comparison IS the detection — one probe cannot tell a silently-widened query from
@@ -210,6 +349,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(result.Code, Is.EqualTo("missing_query"));
                 Assert.That(instance.Requests, Is.Empty);
+            }
+        }
+
+        // The count probe asks for one row, so the body can only ever say 0 or 1 and the header is
+        // the only source of the result-set size. Guessing when it is missing makes matched and
+        // total both 1 for every team on the instance, which reads as a query selecting the whole
+        // table — the wrong cause, named confidently, on every save.
+        [TestCase(null, TestName = "AnInstanceThatSendsNoResultSetSize_IsSaidToBeUncountableRatherThanGuessedAt")]
+        [TestCase("", TestName = "AnInstanceThatSendsAnEmptyResultSetSize_IsSaidToBeUncountableRatherThanGuessedAt")]
+        [TestCase("many", TestName = "AnInstanceThatSendsAResultSetSizeThatIsNotANumber_IsSaidToBeUncountableRatherThanGuessedAt")]
+        [TestCase("-1", TestName = "AnInstanceThatSendsANegativeResultSetSize_IsSaidToBeUncountableRatherThanGuessedAt")]
+        public async Task AResultSetSizeLighthouseCannotRead_IsReportedRatherThanSubstitutedFor(string? headerValue)
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour
+                {
+                    PageSize = 10,
+                    OmitsTheResultSetSize = headerValue is null,
+                    ResultSetSize = headerValue,
+                }));
+
+            var result = await subject.ValidateTeamSettings(ATeam());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("result_size_unknown"),
+                    "Guessing the size turns every team on the instance into a widened query, which is a diagnosis rather than an observation.");
             }
         }
 
@@ -261,25 +429,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // The whole point of AC6, driven through the connector: the flow coach fat-fingers a field
         // name, ServiceNow drops the term and hands back the entire table, and Lighthouse stops
         // rather than rendering the instance's metrics as the team's.
-        [Test]
-        public async Task ValidatingAQueryThatTheInstanceSilentlyIgnored_StopsRatherThanAcceptingWholeInstanceMetrics()
+        //
+        // The two cases below differ in one flag and nothing else. That is the point: the fixture
+        // used to ignore the flag entirely, so this scenario passed because nothing filtered rather
+        // than because the connector caught anything.
+        [TestCase(true, "query_matches_whole_table", TestName = "ValidatingAQueryThatTheInstanceSilentlyIgnored_StopsRatherThanAcceptingWholeInstanceMetrics")]
+        [TestCase(false, "valid", TestName = "ValidatingTheSameQueryOnAnInstanceThatHonoursIt_Passes")]
+        public async Task AQueryTheInstanceMayOrMayNotHonour_IsJudgedByWhatCameBack(bool ignoresTheQuery, string expectedCode)
         {
-            var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10, ignoresTheQuery: true);
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 10, RowsTheQuerySelects = 2, IgnoresTheQuery = ignoresTheQuery });
             var subject = CreateSubject(instance);
 
             var result = await subject.ValidateTeamSettings(ATeam());
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Code, Is.EqualTo("query_matches_whole_table"));
-            }
+            Assert.That(result.Code, Is.EqualTo(expectedCode));
         }
 
         [Test]
         public async Task ValidatingAQueryThatSelectsOneTeamsWork_Passes()
         {
-            var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10, matchedByTheQuery: 2);
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 10, RowsTheQuerySelects = 2 });
             var subject = CreateSubject(instance);
 
             var result = await subject.ValidateTeamSettings(ATeam());
@@ -291,10 +464,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private static ServiceNowWorkTrackingConnector CreateSubject(StubbedInstance instance)
+        private static ServiceNowWorkTrackingConnector CreateSubject(
+            StubbedInstance instance, ILogger<ServiceNowWorkTrackingConnector>? logger = null)
         {
             return new ServiceNowWorkTrackingConnector(
-                Mock.Of<ILogger<ServiceNowWorkTrackingConnector>>(),
+                logger ?? Mock.Of<ILogger<ServiceNowWorkTrackingConnector>>(),
                 NoOpAuthStrategyFactory(),
                 instance.Handler);
         }
@@ -391,10 +565,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 """;
         }
 
-        private static StubbedInstance AnInstanceHolding(
-            List<string> records, int pageSize = 100, bool ignoresTheQuery = false, int? matchedByTheQuery = null)
+        private static StubbedInstance AnInstanceHolding(List<string> records, int pageSize = 100)
         {
-            return StubbedInstance.Holding(records, pageSize, ignoresTheQuery, matchedByTheQuery);
+            return AnInstanceHolding(records, new InstanceBehaviour { PageSize = pageSize });
+        }
+
+        private static StubbedInstance AnInstanceHolding(List<string> records, InstanceBehaviour behaviour)
+        {
+            return StubbedInstance.Holding(records, behaviour);
+        }
+
+        private static StubbedInstance AnInstanceThatBreaksAfterTheFirstPage(string breakage)
+        {
+            return AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour
+                {
+                    PageSize = 2,
+                    BreaksFromRequest = 2,
+                    Breakage = BreakageNamed(breakage),
+                });
+        }
+
+        private static Func<HttpResponseMessage> BreakageNamed(string breakage)
+        {
+            return breakage switch
+            {
+                nameof(ARefusedRead) => ARefusedRead,
+                nameof(ASignInPage) => ASignInPage,
+                _ => AnErrorEnvelope,
+            };
+        }
+
+        // The credential's rights were revoked, or a row-level ACL changed, between two pages.
+        private static HttpResponseMessage ARefusedRead()
+        {
+            return new HttpResponseMessage(HttpStatusCode.Forbidden)
+            {
+                Content = new StringContent("{\"error\":{\"message\":\"denied\"}}", Encoding.UTF8, "application/json"),
+            };
+        }
+
+        // Single sign-on kicked in mid-read and the gateway answered 200 with its login form.
+        private static HttpResponseMessage ASignInPage()
+        {
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("<html><body><form id=\"sso-login\"></form></body></html>", Encoding.UTF8, "text/html"),
+            };
+        }
+
+        // A 200 carrying ServiceNow's own error envelope, which has no result array at all.
+        private static HttpResponseMessage AnErrorEnvelope()
+        {
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "{\"error\":{\"message\":\"Operation Failed\",\"detail\":\"Maximum execution time exceeded\"},\"status\":\"failure\"}",
+                    Encoding.UTF8,
+                    "application/json"),
+            };
         }
 
         private static StubbedInstance AnInstanceThatAnswers(HttpStatusCode statusCode)
@@ -407,13 +637,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return StubbedInstance.Failing(exception);
         }
 
+        // What a stubbed instance does differently from the well-behaved one. Every flag here is a
+        // behaviour the measured API can actually produce, and each one changes the outcome of at
+        // least one test — a flag no test can fail over is a flag that proves nothing.
+        private sealed record InstanceBehaviour
+        {
+            /// <summary>Rows per page, whatever sysparm_limit asked for.</summary>
+            public int PageSize { get; init; } = 100;
+
+            /// <summary>How many of the held records the flow coach's query legitimately selects.</summary>
+            public int? RowsTheQuerySelects { get; init; }
+
+            /// <summary>The instance drops a query term it does not recognise and answers with the whole table.</summary>
+            public bool IgnoresTheQuery { get; init; }
+
+            /// <summary>The instance answers every page from the top, whatever sysparm_offset said.</summary>
+            public bool IgnoresTheOffset { get; init; }
+
+            /// <summary>A proxy stripped X-Total-Count, or the instance never sent one.</summary>
+            public bool OmitsTheResultSetSize { get; init; }
+
+            /// <summary>An X-Total-Count Lighthouse cannot read as a count.</summary>
+            public string? ResultSetSize { get; init; }
+
+            public bool OmitsThePagingLinks { get; init; }
+
+            /// <summary>The instance keeps naming a next page holding records nobody has seen.</summary>
+            public bool NeverRunsOutOfPages { get; init; }
+
+            /// <summary>A record is created on the instance while the team is being read.</summary>
+            public bool GainsARecordAfterTheFirstPage { get; init; }
+
+            public int? BreaksFromRequest { get; init; }
+
+            public Func<HttpResponseMessage>? Breakage { get; init; }
+        }
+
         // A ServiceNow instance that behaves the way the measured one does: it honours
         // sysparm_offset, caps its own page size regardless of the requested sysparm_limit, and
-        // reports the true total in X-Total-Count with a Link header carrying the paging relations.
+        // reports the true total in X-Total-Count with a Link header carrying the paging relations —
+        // unless the behaviour it was given says otherwise.
         private sealed class StubbedInstance
         {
+            private const string TotalCountHeader = "X-Total-Count";
+
+            private readonly List<string> records;
+            private readonly InstanceBehaviour behaviour;
+
+            private int requestsServed;
+            private bool hasGained;
+
+            private StubbedInstance(List<string> records, InstanceBehaviour behaviour)
+            {
+                this.records = records;
+                this.behaviour = behaviour;
+
+                Requests = [];
+                Handler = HandlerRespondingWith(Answer);
+            }
+
             private StubbedInstance(HttpMessageHandler handler, List<Uri> requests)
             {
+                records = [];
+                behaviour = new InstanceBehaviour();
+
                 Handler = handler;
                 Requests = requests;
             }
@@ -422,44 +709,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public List<Uri> Requests { get; }
 
-            public static StubbedInstance Holding(List<string> records, int pageSize, bool ignoresTheQuery, int? matchedByTheQuery)
+            public static StubbedInstance Holding(List<string> records, InstanceBehaviour behaviour)
             {
-                var requests = new List<Uri>();
-
-                var handler = HandlerRespondingWith((request) =>
-                {
-                    var uri = request.RequestUri ?? new Uri(InstanceUrl);
-                    requests.Add(uri);
-
-                    var isFiltered = uri.Query.Contains("sysparm_query=", StringComparison.Ordinal)
-                        && !uri.Query.Contains("sysparm_query=&", StringComparison.Ordinal);
-
-                    var visible = (isFiltered && !ignoresTheQuery && matchedByTheQuery.HasValue)
-                        ? records.Take(matchedByTheQuery.Value).ToList()
-                        : records;
-
-                    var offset = NumberFromQuery(uri.Query, "sysparm_offset");
-                    var page = visible.Skip(offset).Take(pageSize).ToList();
-
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent($"{{\"result\":[{string.Join(",", page)}]}}", Encoding.UTF8, "application/json"),
-                    };
-
-                    response.Headers.TryAddWithoutValidation("X-Total-Count", visible.Count.ToString(CultureInfo.InvariantCulture));
-                    response.Headers.TryAddWithoutValidation("Link", LinkHeaderFor(uri, offset, pageSize, visible.Count));
-
-                    return response;
-                });
-
-                return new StubbedInstance(handler, requests);
+                return new StubbedInstance(records, behaviour);
             }
 
             public static StubbedInstance Answering(HttpStatusCode statusCode)
             {
                 var requests = new List<Uri>();
 
-                var handler = HandlerRespondingWith((request) =>
+                var handler = HandlerRespondingWith(request =>
                 {
                     requests.Add(request.RequestUri ?? new Uri(InstanceUrl));
                     return new HttpResponseMessage(statusCode)
@@ -473,8 +732,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public static StubbedInstance Failing(Exception exception)
             {
-                var requests = new List<Uri>();
-
                 var handler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
                 handler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
                 handler
@@ -482,7 +739,128 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
                     .ThrowsAsync(exception);
 
-                return new StubbedInstance(handler.Object, requests);
+                return new StubbedInstance(handler.Object, []);
+            }
+
+            private HttpResponseMessage Answer(HttpRequestMessage request)
+            {
+                var uri = request.RequestUri ?? new Uri(InstanceUrl);
+                Requests.Add(uri);
+                requestsServed++;
+
+                if (behaviour.Breakage is not null && requestsServed >= behaviour.BreaksFromRequest)
+                {
+                    return behaviour.Breakage();
+                }
+
+                var visible = VisibleTo(uri);
+                var offset = behaviour.IgnoresTheOffset ? 0 : NumberFromQuery(uri.Query, "sysparm_offset");
+
+                var page = behaviour.NeverRunsOutOfPages
+                    ? AlwaysAnotherPage(offset)
+                    : visible.Skip(offset).Take(behaviour.PageSize).ToList();
+
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent($"{{\"result\":[{string.Join(",", page)}]}}", Encoding.UTF8, "application/json"),
+                };
+
+                ReportTheResultSetSize(response, visible.Count);
+                ReportThePagingLinks(response, uri, offset, behaviour.NeverRunsOutOfPages ? int.MaxValue : visible.Count);
+
+                GainARecordIfAsked(uri);
+
+                return response;
+            }
+
+            // The flag and the count are independent on purpose. An instance that honours the query
+            // answers with the rows it selects; one that drops the term answers with the whole
+            // table, whatever the query would have selected.
+            private List<string> VisibleTo(Uri uri)
+            {
+                var isFiltered = uri.Query.Contains("sysparm_query=", StringComparison.Ordinal)
+                    && !uri.Query.Contains("sysparm_query=&", StringComparison.Ordinal);
+
+                if (!isFiltered || behaviour.IgnoresTheQuery)
+                {
+                    return [.. records];
+                }
+
+                return records.Take(behaviour.RowsTheQuerySelects ?? records.Count).ToList();
+            }
+
+            private List<string> AlwaysAnotherPage(int offset)
+            {
+                return Enumerable.Range(offset, behaviour.PageSize)
+                    .Select(index => ARecord($"INC{index.ToString("D7", CultureInfo.InvariantCulture)}", "New", "1"))
+                    .ToList();
+            }
+
+            // A record created now sorts last under sys_created_on, so everything already read keeps
+            // its position. Without that order the API's window is arbitrary, and a new row landing
+            // ahead of the rows already read pushes unread ones past the offset for good.
+            private void GainARecordIfAsked(Uri uri)
+            {
+                if (!behaviour.GainsARecordAfterTheFirstPage || hasGained)
+                {
+                    return;
+                }
+
+                hasGained = true;
+                var arrival = ARecord("INC0000090", "New", "1");
+
+                if (Uri.UnescapeDataString(uri.Query).Contains("^ORDERBYsys_created_on", StringComparison.Ordinal))
+                {
+                    records.Add(arrival);
+                    return;
+                }
+
+                records.Insert(0, arrival);
+            }
+
+            private void ReportTheResultSetSize(HttpResponseMessage response, int total)
+            {
+                if (behaviour.OmitsTheResultSetSize)
+                {
+                    return;
+                }
+
+                response.Headers.TryAddWithoutValidation(
+                    TotalCountHeader,
+                    behaviour.ResultSetSize ?? total.ToString(CultureInfo.InvariantCulture));
+            }
+
+            private void ReportThePagingLinks(HttpResponseMessage response, Uri uri, int offset, int total)
+            {
+                if (behaviour.OmitsThePagingLinks)
+                {
+                    return;
+                }
+
+                var links = new List<string> { $"<{PageAddress(uri, 0)}>;rel=\"first\"" };
+                var next = offset + behaviour.PageSize;
+
+                if (next < total)
+                {
+                    links.Add($"<{PageAddress(uri, next)}>;rel=\"next\"");
+                }
+
+                links.Add($"<{PageAddress(uri, Math.Max(0, total - behaviour.PageSize))}>;rel=\"last\"");
+
+                response.Headers.TryAddWithoutValidation("Link", string.Join(",", links));
+            }
+
+            // The real header echoes every sysparm_* it was asked with and moves only the offset. A
+            // stub that dropped the query would let a connector which follows the link read the
+            // whole table with nothing noticing.
+            private static string PageAddress(Uri uri, int offset)
+            {
+                var parameters = uri.Query.TrimStart('?')
+                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(pair => !pair.StartsWith("sysparm_offset=", StringComparison.Ordinal))
+                    .Append($"sysparm_offset={offset.ToString(CultureInfo.InvariantCulture)}");
+
+                return $"{uri.GetLeftPart(UriPartial.Path)}?{string.Join("&", parameters)}";
             }
 
             private static HttpMessageHandler HandlerRespondingWith(Func<HttpRequestMessage, HttpResponseMessage> respond)
@@ -495,22 +873,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     .ReturnsAsync((HttpRequestMessage request, CancellationToken _) => respond(request));
 
                 return handler.Object;
-            }
-
-            private static string LinkHeaderFor(Uri uri, int offset, int pageSize, int total)
-            {
-                var withoutOffset = uri.GetLeftPart(UriPartial.Path);
-                var next = offset + pageSize;
-                var links = new List<string> { $"<{withoutOffset}?sysparm_offset=0>;rel=\"first\"" };
-
-                if (next < total)
-                {
-                    links.Add($"<{withoutOffset}?sysparm_offset={next}>;rel=\"next\"");
-                }
-
-                links.Add($"<{withoutOffset}?sysparm_offset={Math.Max(0, total - pageSize)}>;rel=\"last\"");
-
-                return string.Join(",", links);
             }
 
             private static int NumberFromQuery(string query, string key)
