@@ -1,0 +1,329 @@
+{
+  "roadmap": {
+    "project_id": "epic-5513-servicenow-integration",
+    "slice_id": "slice-01-connect-and-validate",
+    "created_at": "2026-07-29",
+    "total_steps": 8,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Slice 01 (walking skeleton, ADO Story 5574): a configuration administrator creates a ServiceNow connection in Lighthouse, clicks Validate, and gets a truthful verdict — green only when the configured table actually shows rows to the credential, and otherwise a failure that names whether it was the host, the credential, or the rights. Turn the 47 already-authored RED tests green without authoring a single new test.",
+    "overview": "UNUSUAL SHAPE — DISTILL has already written every acceptance test AND every production scaffold. This roadmap plans NO test authoring. It plans turning 40 backend RED + 7 frontend RED tests green, in the order their dependencies imply, and deleting the scaffolds that made them RED. Backbone: 01-01 pure verdict ladder (no dependencies, 19 tests, where the mutants land) -> 01-02 basic auth strategy -> 01-03 connector probe shell (parse-and-catch ruling lands here, ADR-114 updated) -> 01-04 the seven declared-unsupported members -> 01-05 backend connection configuration surface -> 01-06/01-07 the two frontend edits (independent of the backend) -> 01-08 walking skeleton closes the loop through the real ASP.NET host. RED mechanism is NOT the project's usual RED-by-skip: DISTILL used WRONG-VALUE SCAFFOLDS. Every scaffold returns a `__scaffold__` sentinel or the deliberate opposite of the specification, so each test already fails at its assertion site with a real NUnit AssertionException. Nothing is [Ignore]d and nothing is skipped — the suite compiles, `dotnet build` is clean at zero warnings and `pnpm build` is clean. Each step replaces one scaffold body and removes that file's `// SCAFFOLD (DISTILL slice 01, Story #5574)` marker as part of the step, so the DoD sweep is distributed rather than deferred to a cleanup pass."
+  },
+  "validation": {
+    "status": "pending_review",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": null,
+    "notes": "Slice-01-only roadmap (ADO Story 5574). Slices 02-05 are OUT and no test was authored against them. Slice 03 is cancelled and its cancellation is structural — the frontend portfolio schema entry declares it unsupported (01-06)."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5513-servicenow-integration/feature-delta.md",
+    "slice_brief": "docs/feature/epic-5513-servicenow-integration/slices/slice-01-connect-and-validate.md",
+    "red_classification": "docs/feature/epic-5513-servicenow-integration/distill/red-classification.md",
+    "spike": [
+      "docs/feature/epic-5513-servicenow-integration/spike/findings.md",
+      "docs/feature/epic-5513-servicenow-integration/spike/wave-decisions.md"
+    ],
+    "architecture": [
+      "docs/product/architecture/brief.md",
+      "docs/product/architecture/adr-114-servicenow-connection-validation-verdict-ladder.md",
+      "docs/product/architecture/adr-115-servicenow-basic-auth-prerequisite-not-detected.md",
+      "docs/product/architecture/adr-116-servicenow-table-at-connection-scope.md"
+    ],
+    "gherkin": [],
+    "gherkin_note": "There are no .feature files and no pytest-bdd in this repo. The acceptance tests ARE the executable specification: 6 NUnit fixtures + 3 Vitest files, named in domain language, matching the four existing connectors. See feature-delta.md `## Wave: DISTILL / [REF] Test placement`.",
+    "siblings_to_mirror": {
+      "auth_strategy": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs",
+      "connector_skeleton": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+      "stubbed_transport_test_idiom": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs",
+      "connection_options": "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs (GetOptionsForLinear @ L249)",
+      "fe_editor_gates": "Lighthouse.Frontend/src/pages/Settings/Connections/AdditionalFieldsEditor.tsx (L162-164) and WriteBackMappingsEditor.tsx (L276-278)"
+    }
+  },
+  "distill_state": {
+    "tests_authored": 58,
+    "backend_cases": 50,
+    "frontend_cases": 8,
+    "red_for_missing_functionality": 47,
+    "already_green_against_scaffold": 11,
+    "red_mechanism": "wrong-value scaffolds — sentinels and deliberate opposites, failing at the assertion site. NOT [Ignore]/skip. Nothing to un-ignore.",
+    "scaffold_marker": "// SCAFFOLD (DISTILL slice 01, Story #5574)",
+    "scaffold_marker_files": [
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs",
+      "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts"
+    ],
+    "already_green_tests_must_stay_green": [
+      "ServiceNowValidationVerdictPurityArchUnitTest.TheVerdictLadder_DoesNotSpeakHttp (step 01-01)",
+      "ServiceNowValidationVerdictPurityArchUnitTest.TheVerdictLadder_DoesNotLog (step 01-01)",
+      "ServiceNowValidationVerdictPurityArchUnitTest.TheVerdictLadder_DoesNotReachForThePersistenceLayer (step 01-01)",
+      "ServiceNowValidationVerdictTest.ARightsProblem_IsNeverDressedUpAsAReachabilityProblem (step 01-01, currently vacuous — becomes load-bearing)",
+      "ServiceNowConnectionConfigurationTest.ServiceNow_SitsAtTheEndOfTheStoredWorkTrackingSystemOrder (step 01-05)",
+      "ServiceNowConnectionConfigurationTest.AShopThatTracksWorkInServiceNow_FindsItAmongTheSystemsTheyCanConnect (step 01-05)",
+      "ServiceNowConnectionConfigurationTest.ANewServiceNowConnection_StartsOutUsingUsernameAndPassword (step 01-05)",
+      "WorkTrackingSystemConnection.serviceNow.test.ts — 'authenticates with a username and password' (step 01-06)",
+      "ServiceNowConnectionAcceptanceTest.AnAdministratorOpeningTheConnectionWizard_CanChooseServiceNow (step 01-08)",
+      "ServiceNowConnectionAcceptanceTest.TheCredentialAnAdministratorEnters_IsNeverHandedBackToTheBrowser (step 01-08)"
+    ],
+    "pre_existing_failures_not_ours": [
+      "LicenseServiceTest.ValidLicenseLoaded_LoadNewLicense_IsValid",
+      "LicenseServiceTest.ValidLicenseLoaded_RemoveLicense_LoadNewLicense_IsValid"
+    ],
+    "pre_existing_failures_note": "Both fail identically at `main` with every change in this run stashed — verified by DISTILL, not assumed. They depend on a license fixture whose validity window has passed. Do NOT fix them inside slice 01 and do NOT let them mask a real regression: the DELIVER green bar is 'these two and only these two'."
+  },
+  "open_questions_resolved": {
+    "response_is_json_detection": "RULED by the maintainer 2026-07-29: PARSE-AND-CATCH. `ServiceNowValidationVerdict.FromResponse` takes `responseIsJson` as a bool, and the DESIGN peer review flagged (severity High) that nothing specified how the imperative shell decides it. The shell attempts `JsonDocument.Parse(body)`; a `JsonException` means not-JSON. Rationale: it trusts the actual payload rather than a Content-Type header ServiceNow's gateway controls, and it costs nothing extra because the body is already being parsed to count rows. Implemented in step 01-03; recorded in ADR-114 in the same step. Note this feeds rung 3 (`unexpected_response`), the ONE rung the SPIKE never measured — so the detection rule and the verdict it produces are both hypothesis, and the test that covers it is named `Hypothesis_...` so a later reader cannot mistake it for a finding.",
+    "adr_114_naming_drift": "Recorded, resolved in 01-03. ADR-114's Decision 2 names the mapper `ServiceNowValidationVerdict.From(HttpStatusCode status, int rowCount, bool contentIsJson, string table)`. The scaffold DISTILL actually shipped — and every test is written against it — has THREE entry points with a different order: `FromInvalidInstanceAddress(instanceUrl)`, `FromUnreachableInstance(technicalDetails)`, `FromResponse(HttpStatusCode statusCode, bool responseIsJson, int rowCount, string table)`. The tests are the source of truth; 01-03's ADR edit reconciles the ADR prose to the shipped signatures rather than renaming the API under 19 passing tests."
+  },
+  "out_of_scope": [
+    "Any read of work items from ServiceNow (slice 02) — GetWorkItemsForTeam / GetFeaturesForProject / GetParentFeaturesDetails throw NotSupportedException in this slice, by test",
+    "Team or portfolio settings pointing at ServiceNow (slices 02/03) — ValidateTeamSettings and ValidatePortfolioSettings return coded refusals, by test",
+    "Write-back (D8, PERMANENTLY out) — WriteFieldsToWorkItems throws, and the FE write-back editor is excluded",
+    "sys_choice label resolution and the label-boundary ArchUnit rule (slice 02, DESIGN Open Call 4)",
+    "A DataRetrievalWizardRegistry entry — absence IS the decision (ADR-116); the FE test asserts wizardHint is null",
+    "Any live-instance ServiceNow test. If slice 02 wants one it needs `[Category(\"Integration\")] [Category(\"ServiceNowIntegration\")]` PLUS a matching `servicenow_connector` input in ci_changes.yml and Scripts/test-selection/path-classifier.sh — without the CI plumbing the category is never run, which is silence rather than coverage",
+    "The S107 regrouping refactor (keyed IEnumerable<IWorkTrackingAuthStrategy> replacing 6 ctor params) — Tier-2 T2-05, a separate `refactor(worktracking):` commit. Do NOT undo the existing `#pragma warning disable S107` wrapping the WorkTrackingAuthStrategyFactory declaration",
+    "Pact contract tests for the L1-L7 Table API response catalogue (T2-08) — belongs to whoever runs DEVOPS, which has not run for this epic",
+    "Bringing Scripts/DemoEnv/ServiceNowSystemUpdater.py to sibling parity (slice 05)",
+    "Fixing the two pre-existing LicenseServiceTest failures"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Connect and validate a ServiceNow instance (walking skeleton)",
+      "description": "Turn 47 already-authored RED tests green: the pure verdict ladder, the basic-auth strategy, the connector shell and its declared limitations, the connection configuration surface, the two frontend edits, and the walking skeleton through the real ASP.NET host.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The verdict ladder — pure function, seven rungs, no IO",
+          "criteria": [
+            "An instance address that is not an absolute address is rejected before anything is sent, with code `invalid_url` and IsValid false",
+            "An instance that cannot be reached reports `connection_failed`; a credential the instance rejects reports `authentication_failed`; an instance that refuses the read outright reports `insufficient_permissions`; a table the instance does not have reports `unknown_table`",
+            "A rejected credential names the basic-auth role in its message and stays CONDITIONAL — it must not claim to know the restriction is the cause, because ADR-115 records that Lighthouse measured that detection to be impossible for the account that would need it",
+            "An instance that answers successfully with nothing visible is NEVER reported as valid: 200 + JSON + zero rows yields `no_records_visible` with IsValid false. This is the headline bug the whole slice exists to make unshippable",
+            "The nothing-visible message names BOTH possible causes (the account lacks read access to the configured table, or the table is genuinely empty), names the role to grant, and says that `snc_read_only` grants no read access despite its name (amended AC4, contradiction C-1 accepted 2026-07-29)",
+            "A login page wearing a success status is not mistaken for data: 200 with a non-JSON body yields `unexpected_response`. This rung is a HYPOTHESIS, never measured by the SPIKE, and its test name carries the `Hypothesis_` prefix — keep it",
+            "An instance that shows work to the credential reports `valid` with IsValid true — success now requires rows to come back, not merely a 200",
+            "The three failures an administrator will meet are told apart, and a rights problem is never dressed up as a reachability problem: no denial rung carries `connection_failed` or `invalid_url`",
+            "Every rung carries a non-empty message (DoD 5 / KPI 3 — zero silent no-ops)",
+            "ALREADY GREEN, MUST STAY GREEN: the three `ServiceNowValidationVerdictPurityArchUnitTest` tests (the ladder must not depend on HttpClient, ILogger or Lighthouse.Backend.Data) and `ARightsProblem_IsNeverDressedUpAsAReachabilityProblem`, which passes vacuously against the sentinel today and becomes load-bearing the moment the ladder has a body",
+            "All 19 cases in ServiceNowValidationVerdictTest green; `// SCAFFOLD (DISTILL slice 01, Story #5574)` and the `__scaffold__` sentinel gone from this file; dotnet build zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdictTest.cs",
+          "scenario_name": "Every rung of the ladder produces its own verdict — and an instance that answers successfully with nothing visible is never reported as valid",
+          "dependencies": [],
+          "implementation_notes": "FIRST because it has no dependencies, it turns 19 of the 47 tests green in one step, and it is where the Stryker mutants land — ADR-114 Alternative E exists precisely so all seven rungs are reachable without an HTTP mock. Ladder order matters (first matching rung wins): invalid_url -> connection_failed -> 401 -> 200-non-JSON -> 400 -> 403 -> 200-JSON-zero-rows -> 200-JSON-rows. The three entry points already exist with the signatures the tests are written against — `FromInvalidInstanceAddress(string)`, `FromUnreachableInstance(string)`, `FromResponse(HttpStatusCode, bool responseIsJson, int rowCount, string table)`. Do NOT rename them to match ADR-114's prose; 01-03 reconciles the ADR to the code instead. CI rules that bite here: S8969/S8970 — NO null-forgiving `!` anywhere (ERROR severity since SonarAnalyzer 10.30); CA1859 — concrete return AND parameter types on every private helper; SYSLIB1045 — no `new Regex(...)`, the messages are string interpolation; S2325/S1144 — every private member must justify itself (this is a static class, so a helper that does not touch state should BE static). Exact expected message wording for the no-records rung is in ADR-114 Decision 4 and in the test's own assertions — read the test, it is the specification.",
+          "estimated_hours": 3
+        },
+        {
+          "id": "01-02",
+          "name": "ServiceNow basic-auth strategy — the credential reaches the wire",
+          "criteria": [
+            "A ServiceNow credential is presented to the instance as Basic authentication — the outgoing request carries an Authorization header with the Basic scheme",
+            "The header payload carries the connection's username and the DECRYPTED password, base64-encoded as `username:password`",
+            "The stored password reaches the instance through the crypto service — the strategy asks ICryptoService to decrypt the stored value rather than sending the ciphertext or reading a plaintext field (AC5)",
+            "All 3 tests in ServiceNowBasicAuthStrategyTest green; the `// SCAFFOLD (DISTILL slice 01, Story #5574)` marker gone from this file; dotnet build zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTest.cs",
+          "scenario_name": "A ServiceNow credential is presented to the instance as Basic authentication, carrying the username and the decrypted password",
+          "dependencies": [],
+          "implementation_notes": "Independent of 01-01 — sequenced second only because the connector (01-03) resolves it, and because the walking skeleton needs both real. Roughly 20 lines. Shape-mirror JiraCloudBasicAuthStrategy.ApplyAsync but do NOT reuse it: it reads Jira option keys by name and falls through to Bearer for the token methods, so reusing it would put ServiceNow knowledge inside a Jira-named class — repeating KNOWLEDGE, which the project's DRY rule forbids (Reuse Analysis row 7). Read option values via ServiceNowWorkTrackingOptionNames.Username / .Password, which already exist and are real, not scaffolded. The generalisation to `BasicAuthStrategy(usernameKey, secretKey)` was considered and rejected — it forces a refactor of a live Jira path inside a walking skeleton; revisit at the rule of three. S8969/S8970: no `!`; handle a missing option with `??` rather than null-forgiving. `RecordingCryptoService` in the test observes the decrypt call, so the strategy must actually route through ICryptoService, not just produce a correct-looking header.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "01-03",
+          "name": "Connector probe shell — one Table API call, parse-and-catch, verdict returned unchanged",
+          "criteria": [
+            "Validating a connection asks the configured table for a single record and NOTHING else: exactly one outbound request, to `{instanceUrl}/api/now/table/{table}` with `sysparm_limit=1`, and NO `sysparm_fields` (never measured against ACL row filtering, and a probe whose job is to distrust the substrate must not itself rest on an unmeasured mechanism)",
+            "A connection with no table chosen is probed against the incident table (ADR-116 default)",
+            "Validating a connection leaves the credential handling to the resolved authentication strategy — the connector asks the auth strategy factory and never touches the stored password itself (AC5)",
+            "An instance that answers successfully with nothing visible is NOT reported as a working connection; an instance that shows work to the credential IS; a rejected credential surfaces as an authentication failure; an unreachable instance surfaces as a connection failure; an address that is not an address is rejected WITHOUT contacting anything (verify the transport recorded zero requests)",
+            "Whether the response body was JSON is decided by PARSE-AND-CATCH: attempt `JsonDocument.Parse(body)`, and treat a `JsonException` as not-JSON. Never by the Content-Type header — ServiceNow's gateway controls that header, and the body is already being parsed to count rows so the check costs nothing extra (maintainer ruling, 2026-07-29)",
+            "ADR-114 records the parse-and-catch rule alongside the `unexpected_response` rung it feeds, notes that both the detection and the rung remain HYPOTHESIS because the SPIKE never measured an SSO-fronted instance, and its Status moves from Proposed to Accepted now that the C-1 amendment it forced has been accepted",
+            "ADR-114's Decision 2 prose is reconciled to the three entry points actually shipped (`FromInvalidInstanceAddress` / `FromUnreachableInstance` / `FromResponse`) rather than the single `From(...)` it currently describes",
+            "Transport failures are logged AND a failure result is returned — never logged and rethrown (S2139; follow the Linear precedent)",
+            "8 of the 14 ServiceNowWorkTrackingConnectorTest tests green (the five rungs re-asserted through the shell plus the three probe-shape/auth-delegation tests); dotnet build zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+            "docs/product/architecture/adr-114-servicenow-connection-validation-verdict-ladder.md"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+          "scenario_name": "Validating a connection asks the configured table for a single record and nothing else, and returns exactly what the verdict ladder says",
+          "dependencies": ["01-01", "01-02"],
+          "implementation_notes": "The imperative shell around the pure core: perform the call, catch transport exceptions, hand three scalars to ServiceNowValidationVerdict, return what it says. The shell must add NO branching of its own beyond the parse-and-catch and the pre-flight absolute-Uri check — every verdict decision belongs to 01-01, and the ArchUnit purity fixture only guards the core, not the shell, so this discipline is on the author. The test fixture injects transport via the existing `HttpMessageHandler? httpMessageHandlerForTesting` ctor parameter (Mock<HttpMessageHandler> + Moq.Protected, mirroring LinearWorkTrackingConnectorHistoryParsingTest, NOT the live-instance LinearWorkTrackingConnectorTest). CI rules that bite hardest in this file: CA1869 — cache any JsonSerializerOptions in a `static readonly` field, never construct per call; S8969/S8970 — zero `!`, the JSON parsing is exactly where the temptation lives, use `??` and explicit null checks; CA1859 — concrete types on the private helpers; S2139 — log and return a failure result, do not rethrow; SYSLIB1045 — no Regex. Do NOT remove the SCAFFOLD marker from this file yet: 01-04 still has members to write. Timing note for the ADR edit: ~600 ms measured per probe on a PDI and unmeasured on-prem, so keep it one call and re-measure before promising the US-06 AC3 time-to-first-metric KPI.",
+          "estimated_hours": 4
+        },
+        {
+          "id": "01-04",
+          "name": "The seven declared limitations — every unsupported capability reports an explicit state",
+          "criteria": [
+            "Reading work from ServiceNow is declared unsupported rather than returning nothing: GetWorkItemsForTeam, GetFeaturesForProject and GetParentFeaturesDetails throw NotSupportedException instead of returning an empty collection that reads as 'we looked and there was nothing'",
+            "Writing back to ServiceNow is declared unsupported — WriteFieldsToWorkItems throws NotSupportedException (D8, permanent)",
+            "Pointing a team at ServiceNow is refused with an actionable reason: ValidateTeamSettings returns IsValid false, code `team_settings_not_supported`, non-empty message",
+            "Pointing a portfolio at ServiceNow is refused with an actionable reason: ValidatePortfolioSettings returns IsValid false, code `portfolio_not_supported`, non-empty message (US-03 AC5 — this is what makes the cancellation of slice 03 structural rather than documentary)",
+            "Time-in-state on ServiceNow work is declared unavailable: SupportsTransitionHistory returns false (D6)",
+            "A ServiceNow connection brings no predefined additional fields: GetPredefinedAdditionalFields returns empty",
+            "All 14 ServiceNowWorkTrackingConnectorTest tests now green; the scaffold's `LogScaffoldUse` helper and the `// SCAFFOLD (DISTILL slice 01, Story #5574)` marker are gone from this file; dotnet build zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
+          "scenario_name": "Every capability ServiceNow does not have in slice 01 reports an explicit unsupported state rather than a silent no-op",
+          "dependencies": ["01-03"],
+          "implementation_notes": "Separated from 01-03 because it is a different kind of work — declaring limitations, not implementing behaviour — and because it closes the DESIGN peer review's single BLOCKER: the seven unsupported members were named in DESIGN but their return behaviour was unspecified. It is no longer unspecified; every one is pinned by a test, and the tests are the specification. Read them before writing. Follow the CSV and Linear precedent for the idiom (`=> []`, `=> false`, `throw new NotSupportedException`). This is the DoD 5 / KPI 3 step: zero silent no-ops, which is why an empty collection is the WRONG answer for the read methods and the RIGHT answer for GetPredefinedAdditionalFields — the tests encode which is which. S2325/S1144: once LogScaffoldUse is deleted, make sure no now-unused private member or field survives; the `logger` field must still earn its place (it does — 01-03's catch blocks log). Removing this file's SCAFFOLD marker belongs to this step, not 01-03.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "01-05",
+          "name": "Connection configuration surface — the form renders from schema, pre-filled with incident",
+          "criteria": [
+            "The ServiceNow connection form asks for an instance address, a username and a password — the option set the schema exposes drives the form, with no bespoke React screen (AC2)",
+            "The ServiceNow connection form offers exactly ONE way to authenticate (username + password), and its display name is a real name — the placeholder 'ServiceNow (SCAFFOLD - not yet implemented)' is user-visible today and must go",
+            "A new ServiceNow connection comes pre-filled with the incident table (ADR-116: the work item table lives at connection scope so ValidateConnection has something to probe rights against), and the table stays editable so an Agile Development shop is not locked out",
+            "A new ServiceNow connection keeps the password as a secret — the option is flagged secret so the existing EncryptSecrets change-tracker hook and DTO redaction cover it with no new mechanism (AC5)",
+            "ALREADY GREEN, MUST STAY GREEN: `ServiceNow_SitsAtTheEndOfTheStoredWorkTrackingSystemOrder` — the enum-ordering guard pinning `(int)WorkTrackingSystems.ServiceNow == 4` with every sibling pinned. There is no HasConversion on this property anywhere in LighthouseAppContext, so EF persists it as an int; inserting a member mid-enum silently repoints every stored connection. Do not touch the enum",
+            "ALREADY GREEN, MUST STAY GREEN: `AShopThatTracksWorkInServiceNow_FindsItAmongTheSystemsTheyCanConnect` (AC1, satisfied by the enum member alone because GetSupportedWorkTrackingSystemConnections iterates Enum.GetValues) and `ANewServiceNowConnection_StartsOutUsingUsernameAndPassword` (the AuthenticationMethodKeys.ServiceNowBasic default)",
+            "All 7 ServiceNowConnectionConfigurationTest tests green; both `// SCAFFOLD (DISTILL slice 01, Story #5574)` markers gone; dotnet build zero warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs",
+          "scenario_name": "The ServiceNow connection form asks for an instance address, a username and a password, and comes pre-filled with the incident table",
+          "dependencies": [],
+          "implementation_notes": "Independent of 01-01..01-04 — it can be done in parallel with the connector work; sequenced here because 01-08 needs it. Two declaration-grade edits: (a) AuthenticationMethodSchema's MethodsBySystem entry currently has a placeholder display name and zero options — give it the real name and the three options; (b) WorkTrackingSystemFactory.GetOptionsForServiceNow currently returns `[]` — return the four options (instance address, username, secret password, work item table defaulting to ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable = 'incident'), mirroring GetOptionsForLinear @ L249 for the idiom. The option KEYS already exist and are real in ServiceNowWorkTrackingOptionNames.cs — do not redefine them. Three of this fixture's seven tests are already green because the declarations had to exist for the suite to compile at all; that is argued in distill/red-classification.md note 2 rather than hidden, and it means this step's real work is the option sets, not the enum or the key constants. Do NOT touch WorkTrackingSystems.cs.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "01-06",
+          "name": "Frontend schema — what Lighthouse asks a ServiceNow shop for, and what it declines",
+          "criteria": [
+            "A team pointed at ServiceNow is asked for a ServiceNow query in the shop's own words — not a generic 'Query' label (AC2)",
+            "A team pointed at ServiceNow is NOT asked for a separate list of work item types: for the ITSM-first default the table IS the type (C-3, recorded as thin evidence with a slice-02 revisit note carried in the test body itself, so the revisit is a decision someone makes deliberately rather than a discovery under deadline)",
+            "No discovery wizard is offered, because discovery needs rights the customer will not have — wizardHint is null, and absence IS the decision (ADR-116); do not add a DataRetrievalWizardRegistry entry",
+            "Someone trying to build a portfolio over ServiceNow is declined rather than offered a field that leads nowhere: displayLabel 'Not supported for ServiceNow', inputKind 'none', not required, no wizard. This is what makes the cancellation of slice 03 structural rather than documentary (US-03 AC5)",
+            "A team's data retrieval field is called a ServiceNow query, not just a query — this switch has a `default:` arm so `tsc` will NOT force the new case, and it would silently render 'Query'; the explicit test is the only guard",
+            "ALREADY GREEN, MUST STAY GREEN: 'authenticates with a username and password' — the FE AuthenticationMethodKeys mirror, which had to exist for the file to compile",
+            "6 of the 8 frontend tests green (both files); both `// SCAFFOLD (DISTILL slice 01, Story #5574)` markers and every `__scaffold__` sentinel gone from DataRetrievalSchemaDefaults.ts; pnpm test green; pnpm build zero TypeScript, Biome and Vite warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts",
+            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts"
+          ],
+          "test_file": "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts",
+          "scenario_name": "What Lighthouse asks a ServiceNow shop for — a ServiceNow query, no work item types, no wizard, and an honest decline for portfolios",
+          "dependencies": [],
+          "implementation_notes": "Fully independent of the backend — the frontend renders the connection form from the backend auth schema, so nothing here waits on 01-01..01-05. Two Records in DataRetrievalSchemaDefaults.ts carry `__scaffold__` entries (team @ L49, portfolio @ L94); both are exhaustive over the WorkTrackingSystemType union, which is why the placeholders had to exist for `tsc` to pass. The second test file for this step is `Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.serviceNow.test.ts` (2 tests, 1 already green) — its subject is `workTrackingSystemGetDataRetrievalDisplayName()`, the ONE frontend touch point the compiler cannot enforce because the switch has a `default:` arm. The union member and the AuthenticationMethodKeys const in that file are already real; only the display-name switch arm is missing. Read the tests for the exact expected strings — they are the specification. typescript:S107 / S3776 are low risk here; these are declarative edits.",
+          "estimated_hours": 1.5
+        },
+        {
+          "id": "01-07",
+          "name": "Frontend editors — do not offer a ServiceNow administrator a control that does nothing",
+          "criteria": [
+            "A ServiceNow administrator is not offered the Additional Fields editor: ServiceNow's GetPredefinedAdditionalFields returns empty in slice 01, so leaving the editor visible ships a control that does nothing — a silent no-op, which DoD 5 / KPI 3 forbid",
+            "A ServiceNow administrator is not offered the write-back mapping editor, and this exclusion is PERMANENT (D8) rather than a slice-01 deferral",
+            "The exclusions live in the same gate as the existing Linear and Csv exclusions, so the three read as one rule rather than three special cases",
+            "Both ConnectionEditors.serviceNow.test.tsx tests green; pnpm test green; pnpm build zero TypeScript, Biome and Vite warnings"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/Connections/AdditionalFieldsEditor.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/Connections/WriteBackMappingsEditor.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionEditors.serviceNow.test.tsx",
+          "scenario_name": "Connection settings a ServiceNow administrator should not be offered — no additional field ServiceNow cannot fill, no value mapped back into ServiceNow",
+          "dependencies": [],
+          "implementation_notes": "Two one-line edits to gates currently written as `!== null && !== \"Linear\" && !== \"Csv\"` — AdditionalFieldsEditor.tsx L162-164 and WriteBackMappingsEditor.tsx L276-278. DESIGN flagged these as found-by-inspection and easy to miss (Reuse Analysis rows 24-25); two tests guard them. TRAP recorded by DISTILL and worth reading before you touch the test setup: WriteBackMappingsEditor renders its 'Add Sync Mapping' button only when at least one additional field exists, so the obvious setup (empty additionalFields) renders a different branch entirely and produces a misleading green. The authored test already accounts for this — do not 'simplify' its fixture.",
+          "estimated_hours": 1
+        },
+        {
+          "id": "01-08",
+          "name": "Walking skeleton — a real Validate click against a genuinely closed port, through the real host",
+          "criteria": [
+            "An administrator validating a connection to an instance that is not there is told the instance is not there: a real HTTP POST to `/api/latest/worktrackingsystemconnections/validate` as a system admin, through the real ASP.NET host, the real enum, both real factories, the real DI container, the real connector, the real auth strategy and a real HttpClient, pointed at `http://127.0.0.1:1/` — returns `connection_failed`, not a 500 and not a success",
+            "The default transport path works — the connector's real-HttpClient branch (the one the stubbed-transport unit tests never exercise, because they inject a handler) resolves and completes; nothing about ServiceNow is faked and no external system is needed, so the test is both a true end-to-end wiring proof and deterministic",
+            "The ServiceNow entry in the wizard carries the fields the form needs to render — the schema reaches the browser over real HTTP with its option set intact (AC2 at the HTTP boundary)",
+            "ALREADY GREEN, MUST STAY GREEN: `AnAdministratorOpeningTheConnectionWizard_CanChooseServiceNow` (AC1, satisfied by the enum member alone) and `TheCredentialAnAdministratorEnters_IsNeverHandedBackToTheBrowser` (AC5, satisfied by the INHERITED EncryptSecrets hook and DTO redaction — a regression guard on a mechanism this slice does not build, and it goes red if a future change stops marking the ServiceNow password secret)",
+            "All 4 ServiceNowConnectionAcceptanceTest tests green",
+            "SLICE DONE: all 47 RED tests green; every other test still green except the two pre-existing LicenseServiceTest failures that also fail at `main`; `grep -rn \"SCAFFOLD (DISTILL slice 01\"` returns nothing; `grep -rn \"__scaffold__\"` returns nothing; dotnet build zero warnings; pnpm build and pnpm test clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs",
+          "scenario_name": "An administrator validating a connection to an instance that is not there is told the instance is not there",
+          "dependencies": ["01-03", "01-04", "01-05"],
+          "implementation_notes": "LAST because it is the only test that proves the composition root, and it needs the connector, the auth strategy and the schema all real. The two DI registrations already exist (Program.cs L969 `IServiceNowWorkTrackingConnector`, L1039 `ServiceNowBasicAuthStrategy`) and the two factory arms already exist — the work here is the transport path they resolve to. The connector's third ctor parameter `HttpMessageHandler? httpMessageHandlerForTesting = null` is the test seam; under DI it is null, so this step settles and verifies how the production path gets its HttpClient (lifetime, timeout, socket handling) and confirms the closed-port connect surfaces as an HttpRequestException the shell catches into `connection_failed` rather than escaping as a 500. Do not remove the test seam. Every scaffold marker should already be gone by the time this step runs; the final greps are a verification of that, not a licence to defer the sweep to here. Run the epic's dogfood moment after this step: create a ServiceNow connection against the dev instance in a local Lighthouse, validate green, then deliberately break each of the three failure modes and confirm three different messages — that is the slice's learning hypothesis, and it is the one thing no automated test in slice 01 can prove.",
+          "estimated_hours": 2.5
+        }
+      ]
+    }
+  ],
+  "walking_skeleton": {
+    "scenario": "An administrator validating a connection to an instance that is not there is told the instance is not there — ServiceNowConnectionAcceptanceTest.AnAdministratorValidatingAConnectionToAnInstanceThatIsNotThere_IsToldTheInstanceIsNotThere",
+    "covered_by_step": "01-08",
+    "backbone_closed_by_step": "01-03",
+    "coverage_estimate": "Full backbone end-to-end through the production composition root: real HTTP POST -> real controller -> real WorkTrackingConnectorFactory -> real ServiceNowWorkTrackingConnector -> real WorkTrackingAuthStrategyFactory -> real ServiceNowBasicAuthStrategy -> real HttpClient against a genuinely closed port -> real ServiceNowValidationVerdict. Nothing faked, no external system needed, deterministic.",
+    "contract_assertion": "The single assertion that makes the headline bug non-shippable is `AnInstanceThatAnswersSuccessfullyWithNothingVisible_IsNotReportedAsAWorkingConnection` (01-03): a 200-with-zero-rows response cannot produce IsValid == true without deleting a rung."
+  },
+  "quality_gates": {
+    "backend": [
+      "dotnet build zero warnings (TreatWarningsAsErrors)",
+      "dotnet test all NUnit suites green (NUnit 4.6 + Moq + EF InMemory + WebApplicationFactory<Program>) — expected green bar is 'everything except the two pre-existing LicenseServiceTest failures, which also fail at main'",
+      "Stryker.NET kill rate >= 80% — aim it at ServiceNowValidationVerdict FIRST; the ladder is where the mutants land and it is reachable with no HTTP, which is what makes the bar affordable (ADR-114 Alternative E). Note: no committed Stryker config exists in this repo today (DISTILL Tier-2 D2-05)"
+    ],
+    "frontend": [
+      "pnpm test all Vitest suites green",
+      "pnpm build zero TypeScript, Biome and Vite warnings (Biome runs as the prebuild hook)"
+    ],
+    "sonarqube": [
+      "No new SonarCloud issues of any severity",
+      "S8969 / S8970 — zero null-forgiving `!` in new C#; ERROR severity since SonarAnalyzer.CSharp 10.30",
+      "CA1859 — concrete return AND parameter types on every new private helper",
+      "CA1869 — JsonSerializerOptions cached in a static readonly field, never per call",
+      "SYSLIB1045 — no `new Regex(...)` anywhere",
+      "S2139 — log and return a failure result, never log-and-rethrow (Linear precedent)",
+      "S2325 / S1144 — every private member justifies its existence and its instance-state use",
+      "S107 — the existing `#pragma warning disable S107` wrapping the WorkTrackingAuthStrategyFactory DECLARATION stays; placement elsewhere silently does nothing. The keyed-IEnumerable regrouping is a separate refactor commit"
+    ],
+    "architecture": [
+      "ServiceNowValidationVerdictPurityArchUnitTest stays green — the verdict ladder must not depend on HttpClient, ILogger or Lighthouse.Backend.Data. It is green today and its job STARTS in DELIVER, when the ladder acquires a body and the temptation to let it fetch its own input appears",
+      "No change to IWorkTrackingConnector (unchanged 8-method driven port), no new controller, no new route, no EF migration"
+    ],
+    "scaffold_sweep": [
+      "grep -rn \"SCAFFOLD (DISTILL slice 01\" returns nothing",
+      "grep -rn \"__scaffold__\" returns nothing"
+    ],
+    "e2e": [
+      "No Playwright spec in slice 01 — the connection surface is settings configuration, and the walking skeleton is the WebApplicationFactory acceptance test. The dogfood moment in the slice brief covers manual validation against the dev instance"
+    ],
+    "red_mechanism": [
+      "WRONG-VALUE SCAFFOLDS, not the project's usual RED-by-skip. Every scaffold returns a `__scaffold__` sentinel or the deliberate opposite of the specification, so each test already fails at its assertion site with a real NUnit AssertionException — the diff between expected and actual reads as the specification. Nothing is [Ignore]d, so there is nothing to un-ignore; a step is done when its tests go green and its scaffold marker is gone."
+    ]
+  },
+  "risks": [
+    {
+      "risk": "The `unexpected_response` rung (200 + non-JSON, the SSO-fronted-instance case) is the one rung the SPIKE never measured, and now the parse-and-catch rule that feeds it is also unmeasured. Both are hypothesis.",
+      "mitigation": "The test name carries the `Hypothesis_` prefix so provenance survives a grep, and 01-03 records the same caveat in ADR-114. If a real SSO-fronted instance ever becomes available, this is the first thing to measure."
+    },
+    {
+      "risk": "The backend suite is not green at `main` — two LicenseServiceTest cases fail on an expired license fixture. A DELIVER author could mistake them for a regression, or use them as cover for a real one.",
+      "mitigation": "Named explicitly in distill_state. Verify the failing set is exactly those two before and after each step. Someone should own the fixture; it is not slice 01's problem."
+    },
+    {
+      "risk": "No DEVOPS wave has run for this epic. Environment defaults came from the ATDD infrastructure policy, and the DESIGN wave's Pact recommendation for the L1-L7 Table API response catalogue (T2-08) is unrouted.",
+      "mitigation": "Recorded, not blocking for slice 01 — no live-instance test is authored, so no runner credential or CI path-scope input is needed. Route T2-08 when DEVOPS runs."
+    }
+  ]
+}

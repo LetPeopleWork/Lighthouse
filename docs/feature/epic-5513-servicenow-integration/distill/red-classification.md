@@ -126,16 +126,35 @@ shape of Fixture Theater and deserves an argument, not a silence.
    already impure. Its job starts in DELIVER, when the ladder acquires a body and the temptation to
    let it fetch its own input appears.
 
+## Correction — one test was green for the wrong reason (found 2026-07-29, pre-DELIVER)
+
+`ServiceNowWorkTrackingConnectorTest.AnInstanceThatShowsWorkToTheCredential_IsReportedAsAWorkingConnection`
+is classified `MISSING_FUNCTIONALITY` in the table above, and that classification is correct — but it
+was **passing**. The connector scaffold returned `ConnectionValidationResult.Success()`, whose `Code`
+is `"valid"`, which is exactly what the AC3 happy path asserts. The one method slice 01 actually
+implements had a scaffold that said yes to everything, so its positive-path test would have stayed
+green through any implementation that always returned success — the same denial-in-a-success-costume
+shape this slice exists to prevent, reproduced in the scaffold.
+
+Fixed by returning `ConnectionValidationResult.Failure("__scaffold__", "__scaffold__")`. Backend RED
+is therefore **41, not 40**, and the green-against-scaffold count is **9**, which now reconciles
+exactly with the `SCAFFOLD_SATISFIED` rows enumerated above. The earlier "10 green" figure was this
+bug.
+
 ## Failures that are not ours
 
-Two tests fail on `main` independently of this work and continue to fail here:
+Twelve tests fail independently of this work:
 
-- `LicenseServiceTest.ValidLicenseLoaded_LoadNewLicense_IsValid`
-- `LicenseServiceTest.ValidLicenseLoaded_RemoveLicense_LoadNewLicense_IsValid`
+- `LicenseServiceTest.ValidLicenseLoaded_LoadNewLicense_IsValid` and
+  `…_RemoveLicense_LoadNewLicense_IsValid` — these fail **only in a full-suite run**. All 21
+  `LicenseServiceTest` cases pass in isolation, and they also pass when run alongside all 41
+  ServiceNow tests. So this is a pre-existing **test-order dependence**, not an expired license
+  fixture. (An earlier draft of this document said expired fixture; that diagnosis was wrong.)
+- `GetAllReleases_ReturnsReleasesInOrder`, `GetLatestVersion_DoesGetLatestTag` and the eight
+  `InstallUpdate_SupportedPlatform_*` cases — these fail **in isolation too**. They reach for the
+  GitHub releases API, and the sandbox this ran in has no network.
 
-Verified by stashing every change in this run and re-running the two tests at `main` — both fail
-identically. They depend on a license fixture whose validity window has passed. Out of scope for
-slice 01; flagged upstream in the DISTILL wave section of `feature-delta.md`.
+Neither set is in scope for slice 01.
 
 ## Verification commands
 

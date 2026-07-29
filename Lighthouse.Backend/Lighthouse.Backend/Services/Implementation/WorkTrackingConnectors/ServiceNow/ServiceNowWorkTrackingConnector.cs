@@ -42,8 +42,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
+            // Must NOT be Success(): the happy-path test asserts IsValid plus Code "valid", which is
+            // exactly what Success() returns, so the scaffold would pass it vacuously — the same
+            // denial-in-a-success-costume shape this slice exists to prevent.
             LogScaffoldUse(nameof(ValidateConnection));
-            return Task.FromResult(ConnectionValidationResult.Success());
+            return Task.FromResult(ConnectionValidationResult.Failure("__scaffold__", "__scaffold__"));
         }
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
