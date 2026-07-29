@@ -1418,3 +1418,384 @@ detection itself, and the rung it feeds is the unmeasured L6 hypothesis. Both re
 | DISCUSS D8 | Write-back permanently out of scope | n/a | Declined at the connector *and* hidden in the FE write-back editor, so the API and the UI agree |
 | DISCUSS DoD 5 / KPI 3 | Zero silent no-ops | n/a | Met — seven declared limitations, each with a worded reason, nine tests |
 | SPIKE Q8 | Minimum rights are read-only; `snc_read_only` grants nothing | n/a | Both facts reach the administrator inside the `no_records_visible` message, at the moment of failure rather than only in the docs |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Confirmation (slice 02)
+
+DISTILL ran 2026-07-29, acceptance designer Quinn, density **lean**, scoped to **slice 02 / ADO
+Story 5575** only. Slices 03–05 are out of scope for this run and no test was written against them.
+Slice 01 is delivered and committed; this run extends it and does not revisit it.
+
+| Upstream artifact | Read | Status |
+|---|---|---|
+| `feature-delta.md` DISCUSS US-02 AC1–AC7 | ✓ | Binding — **AC2 and AC4 read in their amended (ADR-117, 2026-07-29) wording**, not the original |
+| `docs/product/architecture/adr-117-servicenow-started-and-closed-dates-without-itil.md` | ✓ | Binding. Status is still **Proposed** — see upstream issues below |
+| `spike/findings.md` **CORRECTION 2026-07-29** | ✓ | Binding, and it **removes** a component DESIGN specified — see below |
+| `spike/findings.md` Q3 (silent filter), Q5 (no hierarchy), Q7 (pagination + latency) | ✓ | Q3 becomes AC6's mechanism; Q7 becomes a batched-read assertion |
+| `slices/slice-02-team-sync-and-metrics.md` | ✓ | IN/OUT scope respected; portfolio, real history, docs untouched |
+| `docs/architecture/atdd-infrastructure-policy.md` | ✓ | Applied, mode inherit — one new row proposed below |
+| `LinearWorkTrackingConnector` (`GetWorkItemsForTeam`, `FilterIssuesForStates`, `ValidateTeamSettings`) | ✓ | Reference class. **The `if (closed != null && started == null) started = closed` shape was deliberately NOT copied** — ADR-117 alternative C rejects it, because for ServiceNow it would be the normal path rather than an edge case |
+| `docs/ci-learnings.md`, root `CLAUDE.md` | ✓ | Applied, see CI section below |
+
+**Wave-decision reconciliation.** Run against this file plus `spike/` and `slices/`, as for slice 01.
+**One contradiction found and resolved before any test was written**: DESIGN specifies a
+`ServiceNowChoiceLabelResolver` reading `sys_choice`; the SPIKE correction disproves it (non-admin
+accounts get `label` only, and *filtering* by `name`/`element` fails for every account including
+`itil`). The correction is dated later and is measured; DESIGN's seam is superseded. **No test in
+this slice references `sys_choice`.** No other contradiction found. **DEVOPS still has not run.**
+
+**The correction removes a component rather than adding one.** `sysparm_display_value=all` on the
+record query needs no `sys_choice` access, works on `sn_incident_read`, and returns
+`{display_value, value}` for every field — which is also what makes the date trap below possible.
+
+## Wave: DISTILL / [REF] Scenario list (slice 02)
+
+48 backend test cases across 4 fixtures. **No frontend test** — see the note at the end of this
+section. Against the scaffolds, **43 are RED for `MISSING_FUNCTIONALITY`**; the remaining 5 pass and
+each is argued individually in `distill/red-classification-slice-02.md` rather than left as an
+unexplained green.
+
+Two rules carry the slice, and both fail *invisibly* when broken. They are why the fixture data uses
+instants that fall on different days in the two forms, and a record that is resolved but never
+closed.
+
+### The mapper — `ServiceNowWorkItemMapperTest` (layer 1, pure, 20 cases)
+
+| Scenario | AC | Why it exists |
+|---|---|---|
+| Work that was resolved but never formally closed still counts as finished | AC2 | `closed_at` is **empty on Resolved (state 6)** — measured. Keying on it alone drops every resolved-but-not-closed record out of Throughput, silently |
+| When work finished is read from the resolution before the closure (3 `TestCase` rows) | AC2 | ADR-117 decision 1, one row per rung |
+| Work that is still underway has not finished | AC2 | Both empty → null, not epoch, not "now" |
+| When work arrived is when the request was opened | AC2 | ADR-117 decision 2; `opened_at` is settable and backdated on import |
+| Work that carries no request time arrived when it was recorded | AC2 | `sys_created_on` fallback |
+| **The day work finished is the day the instance recorded in universal time** | AC2 | **The date trap.** `value` is UTC, `display_value` is instance-local, measured 7h apart with `sys_created_on` crossing midnight. Throughput buckets by day. Fixture instants deliberately fall on *different days* |
+| The day work arrived is the day the instance recorded in universal time | AC2 | same trap, `opened_at` |
+| The day work was recorded is the day the instance recorded in universal time | AC2 | same trap, `sys_created_on` |
+| **The state a flow coach sees is the label their service desk uses** | AC3 | `.display_value` = "In Progress", never `.value` = "2". A mapping screen offering integers is unconfigurable |
+| Work in a state the team has renamed is reported under the team's own name | AC3 | `MapRawStateToMappedName` over the label |
+| Work is categorised by the label the team mapped (4 `TestCase` rows) | AC3 | ToDo / Doing / Done / Unknown |
+| Work is identified by the number the service desk quotes | AC2 | `number` → `ReferenceId` |
+| Work is titled by its short description | AC2 | `short_description` → `Name` |
+| The kind of work is the table it was read from | AC2 | ITSM records carry no type field — which is why the team scope sets `isWorkItemTypesRequired: false` |
+
+The rule the fixture encodes: **identifiers and instants from `.value`; human-facing labels from
+`.display_value`.**
+
+### The query verdict — `ServiceNowTeamQueryVerdictTest` (layer 1, pure, 9 cases)
+
+| Scenario | Code asserted | Why it exists |
+|---|---|---|
+| A team that has not said which work is theirs is asked for a query | `missing_query` | Pre-flight, no IO, `FieldName` points at the settings field |
+| A query that selects no work is told it selected no work | `no_work_items_found` | Linear precedent |
+| **A query that selects every record in the table stops the flow coach rather than showing whole-instance metrics** | `query_matches_whole_table` | **Q3's silent filter.** `not_a_real_field=whatever` returned all 96 rows, byte-identical to no query at all |
+| A query that selects everything names both possible causes rather than guessing | `query_matches_whole_table` | Same obligation as slice 01's `no_records_visible` |
+| A query that selects one team's work is accepted | `valid` | The converse — no false alarm, or the check trains people to ignore it |
+| A query against a table with nothing in it is told the table is empty rather than accused | `no_work_items_found` | Rung order: 0 == 0 is an empty table, not a widened query |
+| A query problem is never reported as a reachability or credential problem (3 rows) | safety property | Slice 01's shape — the two failures send an administrator to different people |
+
+**On whether the silent filter is reliably detectable — the honest answer, stated rather than
+pretended.** It is **not** provable on a read-only account. Equal counts is *suspicion*: a query can
+legitimately select a whole table. `sys_dictionary` would settle it by verifying the field exists,
+but **its readability under `sn_*_read` has never been measured**, and building on an unmeasured read
+is exactly the works-for-admin trap the Q10 correction just caught. So the design is: run both
+probes, compare, and on equality **block with a message naming both causes** — a false alarm the
+flow coach can read and dismiss, rather than a Throughput chart drawn over the whole instance. The
+cost is real and is stated in the message; `AQueryThatSelectsOneTeamsWork_IsAccepted` is the test
+that keeps the false-alarm rate honest.
+
+### The connector — `ServiceNowTeamSyncTest` (layer 3, real adapter, stubbed transport, 15 tests)
+
+| Scenario | AC | Why it exists |
+|---|---|---|
+| Syncing a team asks the configured table for the work the flow coach described | AC1 | The query reaches the instance verbatim; the table is the configured one |
+| Syncing a team asks for both the label and the underlying value of every field | AC2 / AC3 | `sysparm_display_value=all` — without it there is no label to map |
+| Work spread across more pages than one is all brought back | AC7 | The stub caps pages at 2 **regardless of the requested `sysparm_limit`**, so a pager that trusts its own limit stops early |
+| Pages of work neither overlap nor skip | AC7 | Disjointness, measured on the real instance |
+| Syncing a team reads in batches rather than one record at a time | SPIKE Q7 | ~600 ms/call, no rate limit — the constraint is wall-clock. N+1 is a five-minute sync |
+| Work in a state the team never mapped is left out | AC1 | Linear's `FilterIssuesForStates` precedent, over the label |
+| A team that has not said which work is theirs reads nothing rather than everything | AC1 / AC6 | An unconfigured team must not degrade into an unfiltered read |
+| Synced work carries no invented history | AC5 | The connector must leave history empty so the service's sync-delta fallback is what runs |
+| Work that was resolved but never closed arrives with the day it finished | AC2 | The mapper being right is worth nothing if the connector reads the wrong form |
+| Validating a team's settings compares what the query selects against what the table holds | AC6 | **The comparison IS the detection** — one probe cannot tell a widened query from a correct one |
+| Validating a team that has not said which work is theirs asks for a query without contacting the instance | AC6 | 0 requests |
+| Validating a team against a table the instance does not have is told the table is unknown | AC6 | Routes through slice 01's ladder rather than inventing a second vocabulary |
+| Validating a team with a credential that cannot read the table is told it is a permissions problem | AC6 | same ladder |
+| Validating a team against an instance that cannot be reached is told the instance is not there | AC6 | same ladder |
+| Validating a query the instance silently ignored stops rather than accepting whole-instance metrics | AC6 | AC6's point, through the connector |
+| Validating a query that selects one team's work passes | AC6 | the converse |
+
+### The walking skeleton — `ServiceNowTeamSyncAcceptanceTest` (layer 5, real stack, 4 tests)
+
+Everything the flow coach's click traverses is real: the HTTP endpoint, the connector factory, the DI
+container, the ServiceNow connector, the auth strategy, **a real `HttpClient` making a real request
+over loopback**, the record mapper, `WorkItemService` and the persisted work items. The only thing
+that is not a customer's ServiceNow is the instance itself — a `HttpListener` on 127.0.0.1 answering
+the way the measured PDI answers (short pages, `X-Total-Count`, a `Link` header, and
+`display_value=all` with UTC in `value` and instance-local time in `display_value`).
+
+| Scenario | AC | Driving port |
+|---|---|---|
+| A flow coach pointing a team at their own ServiceNow query is told their settings are good | AC1 / AC6 | `POST /api/latest/teams/validate` |
+| A flow coach whose query the instance silently ignored is stopped on the settings page | AC6 | `POST /api/latest/teams/validate` |
+| A team's ServiceNow work arrives as work items on the days Throughput counts by | AC1 / AC2 / AC4 / AC7 | `IWorkTrackingConnectorFactory` from the production container |
+| Time-in-state on ServiceNow work is derived from observed changes rather than invented or left blank | AC5 | `IWorkItemService.UpdateWorkItemsForTeam`, two syncs with a changed state |
+
+**No frontend test in this slice, deliberately.** AC3 is entirely backend: the state-mapping UI is
+generic and renders whatever raw states the backend reports, so surfacing the label rather than the
+choice value is `ReadStateLabel`'s job and is pinned at layer 1. AC4's honesty qualification is
+**ADR-117's open question for ratification** and ADR-117 is still `Proposed`; authoring a UI test
+would pin a choice the maintainer has not made. Both are recorded under upstream issues.
+
+## Wave: DISTILL / [REF] Driving adapter coverage (slice 02)
+
+| Entry point in DESIGN / slice brief | Covered by | Layer |
+|---|---|---|
+| `POST /api/latest/teams/validate` (the Validate button on team settings) | `AFlowCoachPointingATeamAtTheirOwnServiceNowQuery_IsToldTheirSettingsAreGood`, `AFlowCoachWhoseQueryTheInstanceSilentlyIgnored_IsStoppedOnTheSettingsPage` | 5, real HTTP through the real host |
+| Team sync (`IWorkItemService.UpdateWorkItemsForTeam`, driven by the update queue) | `TimeInStateOnServiceNowWork_IsDerivedFromObservedChangesRatherThanInventedOrLeftBlank` | 5, real DI + real EF |
+| Connector resolution through `IWorkTrackingConnectorFactory` | `ATeamsServiceNowWork_ArrivesAsWorkItemsOnTheDaysThroughputCountsBy` | 5, production container |
+
+No Playwright spec was added. The E2E surface for slice 02 (connect → sync → Throughput renders) is
+listed as expansion `D2-06` and belongs with slice 05's demo-data script, which is what makes a
+deterministic E2E possible; driving it from a hand-seeded instance today would be a flake generator.
+
+## Wave: DISTILL / [REF] Adapter coverage (slice 02)
+
+| Adapter | Real-I/O scenario | Covered by |
+|---|---|---|
+| ServiceNow Table API (`GET /api/now/table/{table}`) | YES | `ServiceNowTeamSyncAcceptanceTest` — real `HttpClient`, real TCP, real HTTP parsing, real pagination over three pages |
+| `ServiceNowBasicAuthStrategy` | YES (inherited) | Resolved from the real factory in the layer-5 fixture; asserted directly in slice 01 |
+| EF `LighthouseAppContext` (persisted work items + transitions) | YES | `TimeInStateOnServiceNowWork_…` — real EF via `IntegrationTestBase` |
+
+The layer-3 fixture stubs only `HttpMessageHandler`, which is the transport, not the adapter — the
+connector, the auth resolution, the JSON parsing, the paging logic and the mapper are all real in
+both fixtures.
+
+**Proposed infrastructure-policy row** (Driven external / non-deterministic), to be appended when
+DELIVER lands: *ServiceNow Table API — `HttpListener` on loopback serving canned
+`sysparm_display_value=all` responses for layer-5; `Mock<HttpMessageHandler>` for layer-3. A real PDI
+only under `[Category("ServiceNowIntegration")]`.*
+
+## Wave: DISTILL / [REF] Scaffolds (slice 02)
+
+`grep -rn "SCAFFOLD (DISTILL slice 02" Lighthouse.Backend/` finds all of them; zero should remain at
+the end of DELIVER.
+
+| File | Status | Deliberate wrong value |
+|---|---|---|
+| `…/ServiceNow/ServiceNowWorkItemMapper.cs` | **new** | `MapRecord` returns `__scaffold__` strings, `StateCategories.Unknown` and `DateTime.UnixEpoch`; `ReadStateLabel` returns `__scaffold__` |
+| `…/ServiceNow/ServiceNowTeamQueryVerdict.cs` | **new** | both entry points return `Failure("__scaffold__", "__scaffold__")` |
+| `…/ServiceNow/ServiceNowWorkTrackingConnector.cs` | **extended** | `GetWorkItemsForTeam` returns exactly one item — `ReferenceId = "INC0000005"`, the record the team never mapped — carrying one **fabricated** transition; `ValidateTeamSettings` routes to the scaffolded verdict |
+
+**The slice-01 lesson was applied.** The first draft scaffolded `GetWorkItemsForTeam` as an *empty
+list*, which is what three tests specify for their own inputs — so all three passed vacuously and
+would have stayed green through a connector that always returned nothing, which is the epic's
+headline failure reproduced inside the scaffold. Changing it to one deliberately wrong item took
+green-against-scaffold from 8 to 5. Full argument per surviving green in
+`distill/red-classification-slice-02.md`.
+
+## Wave: DISTILL / [REF] Test placement (slice 02)
+
+| File | Precedent |
+|---|---|
+| `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapperTest.cs` | mirrors `ServiceNowValidationVerdictTest` — the pure core beside its shell |
+| `…/ServiceNow/ServiceNowTeamQueryVerdictTest.cs` | same |
+| `…/ServiceNow/ServiceNowTeamSyncTest.cs` | mirrors `ServiceNowWorkTrackingConnectorTest`; a **separate file** so slice 01's fixture stays untouched |
+| `Lighthouse.Backend.Tests/API/Integration/ServiceNowTeamSyncAcceptanceTest.cs` | mirrors `ServiceNowConnectionAcceptanceTest`, tagged `[Category("epic-5513-servicenow")]` |
+
+## Wave: DISTILL / [REF] CI rules pre-applied (slice 02)
+
+`Assert.EnterMultipleScope()` (never `Assert.Multiple`) · `Has.Count.EqualTo` · no null-forgiving `!`
+anywhere (S8969/S8970) · no `new Regex` — the `Link`/query parsing is manual `Split` (SYSLIB1045) ·
+no `JsonSerializerOptions` allocation in a hot path (CA1869 — the fixtures use `JsonDocument.Parse`
+and need none) · concrete return types on private helpers (CA1859) · `CultureInfo.InvariantCulture`
+on every parse/format · scaffold parameters consumed with `_ =` discards so S1172 stays clean.
+`dotnet build` is **0 warnings, 0 errors**.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER (slice 02)
+
+1. **Retire two superseded slice-01 assertions first.** They live in
+   `ServiceNowWorkTrackingConnectorTest.cs`, which this run left untouched because a concurrent
+   session is strengthening it for mutation coverage. Remove the `GetWorkItemsForTeam` line from
+   `ReadingWorkFromServiceNow_IsDeclaredUnsupportedRatherThanReturningNothing` (keep the
+   `GetFeaturesForProject` / `GetParentFeaturesDetails` lines — slice 03 is cancelled and those
+   refusals are permanent), and delete `PointingATeamAtServiceNow_IsRefusedWithAnActionableReason`
+   outright. Detail and reasoning in `distill/red-classification-slice-02.md`.
+2. **ADR-117 is still `Proposed`.** Its decisions 1–2 are implemented by these tests; its decision 3
+   (the honesty obligation on the cycle-time label) is **not**, and cannot be until ratification says
+   where it surfaces.
+3. **A label-boundary ArchUnit rule is still owed** (DESIGN Open Call 4, deferred from slice 01 with
+   the note "scheduled for slice 02"). Slice 02 pins the label rule behaviourally at layer 1 but adds
+   no structural guard that a raw choice value never crosses the connector boundary. Listed as
+   expansion `D2-07` rather than silently dropped.
+4. **DEVOPS still has not run for this epic.** Defaults came from the ATDD infrastructure policy.
+
+## Wave: DISTILL / [REF] Upstream issues found (slice 02)
+
+1. **DESIGN's `ServiceNowChoiceLabelResolver` is disproven and must not be built.** `sys_choice` is
+   readable but not *queryable* by non-admin accounts; filtering by `name`/`element` fails for every
+   account including `itil`. The replacement — `sysparm_display_value=all` on the record query — needs
+   no `sys_choice` access. This **removes** a component from the slice-02 design. Recorded here
+   because the DESIGN section of this file still names the resolver.
+
+2. **ADR-117 is `Proposed`, and its decision 3 is unimplementable as written.** It asserts that
+   *something* user-visible must carry the request-to-resolution qualification, and leaves *where* as
+   an open question for DISCUSS. AC4 inherits that gap. **No test in this slice asserts a label,
+   annotation or wording**, because doing so would pin a decision the maintainer has not made. This
+   is the one AC in slice 02 that is only partially testable, and it is the one whose failure mode is
+   "Lighthouse quietly overstates" — the failure this epic exists to prevent. It needs a ruling before
+   slice 02 can be called done.
+
+3. **The Q3 silent-filter detector is a heuristic and the AC should say so.** AC6 reads as though a
+   bad query is reliably detectable. It is not: equal counts is suspicion, `sys_dictionary` is
+   unmeasured under `sn_*_read`, and a legitimate whole-table query will produce a false alarm. The
+   design blocks with a both-causes message and accepts that cost. If the maintainer prefers a
+   non-blocking warning, `ConnectionValidationResult` has no valid-with-warning shape today and would
+   need one — a shared-contract change, hence flagged rather than assumed.
+
+4. **`Resolved` maps to `Doing` in Lighthouse's out-of-the-box state mapping.** For an ITSM shop a
+   resolved incident is finished work, so every team fixture in this slice explicitly maps
+   `Resolved → Done`. A ServiceNow customer who accepts the defaults will see Throughput of zero and
+   nothing will tell them why. That is a US-05 docs obligation at minimum, and arguably a
+   ServiceNow-specific default. Not in slice-02 scope; recorded so it is not discovered by a customer.
+
+## Wave: DISTILL / [REF] Tier-2 Expansion Catalog (slice 02)
+
+Lean density: listed, not rendered. Request with `--expand <id>`.
+
+| id | Expansion |
+|---|---|
+| `D2-07` | The label-boundary ArchUnit rule owed from DESIGN Open Call 4 (no raw choice value crosses the connector boundary) |
+| `D2-08` | Exact `Message` / `TechnicalDetails` / `FieldName` strings per team-query rung, as an assertion table |
+| `D2-09` | Domain-language fact→test-name table for slice 02 (the soft gate, rendered) |
+| `D2-10` | Encoded-query edge cases: `^OR`, `javascript:` relative dates, `ORDERBY`, and how each survives URL encoding |
+| `D2-11` | A `[Category("ServiceNowIntegration")]` live counterpart to the pagination and display-value tests |
+| `D2-12` | Throughput/forecast assertions computed through `ITeamMetricsService` rather than stopping at `ClosedDate` |
+| `D2-13` | Stryker configuration for the slice-02 ServiceNow surface (no committed config exists in this repo) |
+
+## Wave: DISTILL / [REF] Inherited commitments (slice 02)
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DISCUSS US-02 AC1 | A team accepts a query and syncs matching records; the table defaults to ITSM and is configurable | n/a | Six tests pin the query reaching the instance verbatim, the configured table being the one read, and an unconfigured team reading **nothing** rather than degrading into a whole-table read |
+| DISCUSS US-02 AC2 (amended, ADR-117) | `StartedDate` ← `opened_at`/`sys_created_on`; `ClosedDate` ← `resolved_at`/`closed_at` | ADR-117 | Eleven mapper tests plus one connector test; the resolved-but-never-closed case is asserted first because keying on `closed_at` alone drops it from Throughput with no failure anywhere |
+| DISCUSS US-02 AC2 (date trap) | Dates from `.value` (UTC), never `.display_value` | SPIKE correction | Three tests whose fixture instants fall on **different days** in the two forms, so reading the wrong one is a visible day-shift rather than a silent seven-hour offset — the ground Bug #5567 spent a whole pass reclaiming |
+| DISCUSS US-02 AC3 | State surfaced as the display label, never the raw choice integer | SPIKE correction | Pinned at layer 1 through `ReadStateLabel` and again through the connector; the mapping UI needs no change because it renders whatever the backend reports |
+| DISCUSS US-02 AC4 (amended, ADR-117) | Throughput and the forecasts render; the cycle-time surface is request-to-resolution and that must be visible | ADR-117 | **Partially covered.** The data half is pinned (`ClosedDate` lands on the correct UTC day, which is what Throughput buckets by). The honesty half is **not** — ADR-117 leaves *where* the qualification surfaces open, and no test pins an unratified wording |
+| DISCUSS US-02 AC5 | `SupportsTransitionHistory` false; history-dependent widgets degrade honestly | D6 | Two tests: the connector fabricates no transitions, and the sync-delta fallback derives `CurrentStateEnteredAt` from a change observed across two real syncs — so a widget shows something honest rather than a blank chart or a guess |
+| DISCUSS US-02 AC6 | A bad query or unresolvable table gets a specific, actionable message | SPIKE Q3 | Sixteen tests. The detector is a **heuristic and is documented as one**; equal counts blocks with a message naming both causes, and one test guards the false-alarm rate by requiring a narrowing query to pass |
+| DISCUSS US-02 AC7 | Pagination is honoured | SPIKE Q7 | The stub caps pages below the requested limit, so a pager trusting its own limit fails; disjointness is asserted separately, and a batched-read bound guards against the N+1 that Q7 measured as a five-minute sync |
+| DESIGN `ServiceNowChoiceLabelResolver` | State labels resolved via `sys_choice` | superseded | **Not built.** Disproven by the SPIKE correction; `display_value=all` replaces it and removes a component |
+| DESIGN Open Call 4 | No raw choice value crosses the connector boundary | n/a | Pinned behaviourally at layer 1; the **structural** ArchUnit guard is still owed and is listed as `D2-07` rather than dropped |
+| SPIKE Q5 | ITSM carries no usable hierarchy | n/a | Untouched by this slice; slice 01 already declined portfolios structurally, and slice 02 adds nothing that would need revisiting |
+| ADR-117 decision 3 | Something user-visible must carry the request-to-resolution qualification | ADR-117 | **Open.** ADR-117 is still `Proposed` and does not say where. Flagged as an upstream blocker for calling slice 02 done, not silently deferred |
+| Slice 01 DoD 5 / KPI 3 | Zero silent no-ops | n/a | The two slice-01 refusals this slice supersedes are named explicitly with the exact edits DELIVER must make, so the transition is a recorded decision rather than two mysterious red tests |
+
+---
+
+## Wave: DISTILL / [REF] Maintainer rulings on the slice-02 open questions (2026-07-29)
+
+DISTILL surfaced four decisions rather than assuming them. Ruled here so DELIVER is unblocked. Each is
+reversible and each is flagged for Benjamin's review.
+
+### R-1 — AC4's honesty obligation is NOT met by slice 02, and is not pretended to be
+
+Slice 02 ships the **data** contract: `StartedDate` = `opened_at`, `ClosedDate` = `resolved_at`, dates
+read from `.value` (UTC). That semantic is pinned by tests and is unambiguous in code.
+
+The **user-visible qualification** — that for ServiceNow this span is request-to-resolution and not
+time-in-progress — is deliberately **not** implemented here. Where it surfaces (terminology, a UI
+annotation, docs, or all three) is a product decision that ADR-117 itself leaves open and that the
+DISCUSS wave owns. Inventing chart copy inside an implementation slice would be making that decision
+by accident, in the place least likely to be reviewed.
+
+**This is recorded as an epic-level obligation that blocks the epic, not the slice.** Slice 02 is
+completable; the epic is not shippable to a customer until it is resolved. It is the one remaining
+place where Lighthouse could still overstate quietly — the exact failure this epic exists to prevent —
+so it must not decay into a footnote. Carried to slice 05 and to ADR-117's ratification.
+
+### R-2 — The Q3 silent-filter check reports, it does not block
+
+DISTILL proposed blocking when the filtered and unfiltered counts match, and correctly noted the
+detector cannot be made reliable.
+
+**Ruling: do not block.** A legitimate small service desk whose team genuinely *is* the whole incident
+table would be refused a valid configuration. Rejecting correct setups is a worse and more visible
+failure than the one being prevented, and it would land on exactly the small-shop customers this epic
+is trying to win.
+
+**Do not silently pass either.** `ValidateTeamSettings` returns valid, with the suspicion named in the
+`Message` — `ConnectionValidationResult` already carries a `Message` on success, so this needs no
+shared-contract change. The message names both readings: the query may be selecting everything because
+the team really is everything, or because a field name was mistyped and silently dropped.
+
+**Recorded gap**: `ConnectionValidationResult` has no valid-with-warning shape, so this leans on a
+success message the UI may or may not surface. Adding a warning channel is a shared-contract change
+(grep usages, extend the test factory first) and is deliberately out of slice-02 scope. DELIVER must
+report whether the frontend actually displays a success message; if it does not, this ruling has not
+achieved its purpose and needs revisiting.
+
+### R-3 — The two superseded slice-01 assertions are updated, not worked around
+
+`GetWorkItemsForTeam` and `ValidateTeamSettings` become real in this slice, so the slice-01 tests
+asserting they are *declared unsupported* are correct history and wrong specification. DELIVER edits
+them in the **same commit** as the behaviour change, so the suite is never red at any commit. This is
+expected evolution of a walking skeleton, not a regression, and the exact edits are named in
+`distill/red-classification-slice-02.md`.
+
+### R-4 — `ServiceNowChoiceLabelResolver` is cancelled, not deferred
+
+The DESIGN sections above still name it. It must not be built: the 2026-07-29 correction in
+`spike/findings.md` measured that `sys_choice` is queryable only by `admin`, so the component would
+work for the maintainer and fail silently for every customer. `sysparm_display_value=all` replaces it
+and needs no `sys_choice` access at all. The slice-02 ArchUnit rule that was to police the
+choice-value boundary is likewise unnecessary — there is no raw choice value crossing the boundary,
+because the label arrives with the record.
+
+### R-5 — Recorded, out of scope: `Resolved` maps to `Doing` by default
+
+DISTILL found that Lighthouse's default state mapping puts `Resolved` in `Doing`. For an ITSM shop a
+resolved incident is finished work, so a ServiceNow customer who accepts the defaults sees a Throughput
+of zero with nothing explaining why. Every slice-02 fixture maps `Resolved → Done` explicitly. This is
+a **demo-data and documentation** concern (slice 05), and a strong candidate for a ServiceNow-specific
+default. Recorded here so a customer is not the one who finds it.
+
+---
+
+## Wave: DELIVER / [REF] Mutation testing setup (reproducible — the config is deliberately not in git)
+
+`.gitignore` excludes `**/stryker-config*.json` with the note *"Stryker mutation-testing configs are
+local tooling, not source"*. That is project policy, not an oversight — so the config used here cannot
+be committed, and is recorded instead so the run is reproducible.
+
+Written to `Lighthouse.Backend/stryker-config.json`, then `cd Lighthouse.Backend && dotnet stryker`:
+
+```json
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/*.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs"
+    ],
+    "coverage-analysis": "perTest",
+    "reporters": ["progress", "html", "json"],
+    "thresholds": { "high": 90, "low": 80, "break": 80 }
+  }
+}
+```
+
+`dotnet-stryker` 4.14.1, installed as a global tool.
+
+**Two things worth knowing before running it.**
+
+`coverage-analysis: perTest` is not optional here. Without it Stryker runs the full ~4000-test suite
+per mutant, which is unusably slow. With it, only the tests covering each mutant run.
+
+**Stryker.NET has no test filter**, so the 6 `[Category("ServiceNowIntegration")]` live tests execute
+inside the mutation loop, hitting a real ServiceNow instance once per covering mutant. That is why a
+scoped run takes roughly 20 minutes rather than a few. It also means a hibernating or reclaimed PDI
+turns a mutation run into noise — if scores move without a code change, check the instance before
+believing the number.

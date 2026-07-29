@@ -174,6 +174,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(HttpStatusCode.OK, true, 0, "no_records_visible", false)]
         [TestCase(HttpStatusCode.OK, true, 1, "valid", true)]
         [TestCase(HttpStatusCode.OK, true, 42, "valid", true)]
+        [TestCase(HttpStatusCode.InternalServerError, true, 0, "unexpected_response", false)]
         public void EveryRungOfTheLadder_ProducesItsOwnVerdict(
             HttpStatusCode statusCode, bool responseIsJson, int rowCount, string expectedCode, bool expectedIsValid)
         {
@@ -220,6 +221,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(reachabilityCodes, Does.Not.Contain(deniedOutright.Code));
                 Assert.That(reachabilityCodes, Does.Not.Contain(deniedSilently.Code));
+            }
+        }
+
+        // The catch-all rung. The SPIKE never measured a 5xx from the Table API, so where an
+        // unrecognised status lands was a judgement call rather than a finding — which is exactly
+        // why it is pinned here instead of trusted. An answer arrived, so it is not a reachability
+        // problem; the ladder just cannot interpret it.
+        [Test]
+        public void AnInstanceThatAnswersWithAStatusTheLadderDoesNotKnow_IsReportedAsAnUnexpectedResponse()
+        {
+            var reachabilityCodes = new[] { "connection_failed", "invalid_url" };
+
+            var verdict = WhenTheInstanceAnswers(HttpStatusCode.InternalServerError, rowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False);
+                Assert.That(verdict.Code, Is.EqualTo("unexpected_response"));
+                Assert.That(verdict.Message, Does.Contain("500"),
+                    "Naming the status is the only actionable thing Lighthouse can say about an answer it cannot interpret.");
+                Assert.That(reachabilityCodes, Does.Not.Contain(verdict.Code),
+                    "The instance answered, so this must not be dressed up as a network or address problem.");
             }
         }
 

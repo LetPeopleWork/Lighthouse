@@ -19,6 +19,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Failure(
                 "invalid_url",
                 $"'{instanceUrl}' is not a valid ServiceNow instance address. Enter the full address of the instance, including the scheme.",
+                // Stryker disable once String: the technical detail restates, for a support log, the address
+                // the message above already quotes back. The message is the half an administrator acts on and
+                // is asserted; blanking this line changes nothing anyone can observe.
                 $"The configured address could not be parsed as an absolute URI: '{instanceUrl}'.");
         }
 
@@ -71,6 +74,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Failure(
                 UnexpectedResponseCode,
                 "The instance answered successfully but did not return data, which usually means a sign-in page was served instead. Lighthouse needs an account that can authenticate against the Table API with a user name and password rather than through single sign-on.",
+                // Stryker disable once String: a support-log restatement of "the status said success, the
+                // body was not JSON". The ladder decision is the code and the guidance is the message; both
+                // are asserted. Nothing reads this line.
                 "The response carried a success status but its body was not JSON.");
         }
 
@@ -79,6 +85,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Failure(
                 "unknown_table",
                 $"ServiceNow does not recognise the table '{table}'. Check the spelling, and use the table's system name rather than the label shown in the interface.",
+                // Stryker disable once String: repeats the 400 and the table name the message above already
+                // names. The message is what carries the correction an administrator has to make, and that
+                // is the assertion in ATableTheInstanceDoesNotHave_IsReportedAsAnUnknownTable.
                 $"ServiceNow returned 400 for the table '{table}'.");
         }
 
@@ -87,6 +96,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Failure(
                 "insufficient_permissions",
                 $"ServiceNow refused to read the table '{table}' with this account. Grant the account a role that can read that table.",
+                // Stryker disable once String: repeats the 403 and the table name the message above already
+                // names. The role an administrator has to grant is in the message, not here.
                 $"ServiceNow returned 403 for the table '{table}'.");
         }
 
@@ -99,6 +110,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Failure(
                 "no_records_visible",
                 $"The credential authenticated, but the table '{table}' returned no visible rows. Either the account lacks read access to it — grant sn_incident_read or the matching per-table role; note that snc_read_only grants no read access at all despite its name — or the table is genuinely empty.",
+                // Stryker disable once String: AC4's requirement — name both causes and the role to grant —
+                // lives in the message above, and NothingVisible_NamesBothPossibleCausesAndTheRoleToGrant
+                // asserts every part of it. This line only repeats "200 with zero rows" for a support log.
                 $"ServiceNow returned 200 with zero rows for the table '{table}'.");
         }
 
@@ -107,6 +121,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Failure(
                 UnexpectedResponseCode,
                 $"ServiceNow answered with an unexpected status ({(int)statusCode}). Check that the configured address points at a ServiceNow instance and that the instance is healthy.",
+                // Stryker disable once String: the status is already named in the message above, where
+                // AnInstanceThatAnswersWithAStatusTheLadderDoesNotKnow_IsReportedAsAnUnexpectedResponse
+                // asserts it. This line repeats it for a support log.
                 $"Unhandled status code {(int)statusCode} ({statusCode}).");
         }
     }

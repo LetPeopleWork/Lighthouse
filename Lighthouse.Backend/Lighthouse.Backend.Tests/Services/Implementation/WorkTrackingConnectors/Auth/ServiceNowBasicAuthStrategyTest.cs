@@ -56,6 +56,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(cryptoService.Decrypted, Does.Contain(StoredPassword));
         }
 
+        // The strategy is handed its request and its connection by whichever connector resolved it,
+        // so a missing one is a wiring fault in the caller. It says so at the argument that is
+        // actually missing rather than dereferencing it and reporting a null somewhere downstream.
+        [Test]
+        public void AStrategyGivenNoRequestToDecorate_SaysWhichArgumentIsMissing()
+        {
+            var subject = CreateSubject();
+
+            Assert.That(async () => await subject.ApplyAsync(null!, CreateConnection(), CancellationToken.None),
+                Throws.InstanceOf<ArgumentNullException>());
+        }
+
+        [Test]
+        public void AStrategyGivenNoConnectionToReadTheCredentialFrom_SaysWhichArgumentIsMissing()
+        {
+            var subject = CreateSubject();
+            using var request = new HttpRequestMessage();
+
+            Assert.That(async () => await subject.ApplyAsync(request, null!, CancellationToken.None),
+                Throws.InstanceOf<ArgumentNullException>());
+        }
+
         private sealed class RecordingCryptoService : Lighthouse.Backend.Services.Interfaces.ICryptoService
         {
             public List<string> Decrypted { get; } = [];

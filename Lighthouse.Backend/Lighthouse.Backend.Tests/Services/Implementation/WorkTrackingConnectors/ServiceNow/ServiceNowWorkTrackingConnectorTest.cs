@@ -238,16 +238,139 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(subject.GetPredefinedAdditionalFields(CreateConnection()), Is.Empty);
         }
 
+        // ServiceNow answers some failures with a structured error envelope carrying a 200. That is
+        // still JSON, and still zero rows, so it belongs on the no-visible-rows rung. Reading it as
+        // "not data" would send the administrator off to look at single sign-on instead of at rights.
+        [Test]
+        public async Task AnInstanceThatAnswersWithAStructuredErrorEnvelope_IsReadAsJsonWithNoRows()
+        {
+            var subject = CreateSubject(RespondingWith(
+                HttpStatusCode.OK, """{"error":{"message":"Insufficient rights"},"status":"failure"}"""));
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("no_records_visible"));
+            }
+        }
+
+        // The single-sign-on shape behind the hypothesis rung: a login page wearing a 200. Nothing
+        // in it parses, so the connector reports an answer it could not read rather than no rows.
+        [Test]
+        public async Task AnInstanceThatAnswersWithASignInPage_IsNotMistakenForAnEmptyTable()
+        {
+            var subject = CreateSubject(RespondingWith(
+                HttpStatusCode.OK,
+                "<html><head><title>Sign In</title></head><body>Log in to continue</body></html>",
+                contentType: "text/html"));
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("unexpected_response"));
+            }
+        }
+
+        // Parseable as a URI, but not one the Table API can be reached over. Rejected pre-flight for
+        // the same reason an unparseable address is: there is nothing worth sending.
+        [Test]
+        public async Task AnInstanceAddressThatIsNotAnHttpAddress_IsRejectedWithoutContactingAnything()
+        {
+            var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
+            var subject = CreateSubject(handler);
+
+            var result = await subject.ValidateConnection(CreateConnection(instanceUrl: "ftp://dev12345.service-now.com"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("invalid_url"));
+            }
+
+            VerifyRequestCount(handler, 0);
+        }
+
+        // An option nobody ever saved and an option saved blank are the same thing to an
+        // administrator, so they have to produce the same answer — neither may substitute an
+        // address of its own for the one that is missing.
+        [Test]
+        public async Task AConnectionWithNoInstanceAddressAtAll_IsRejectedExactlyAsABlankOneIs()
+        {
+            var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
+            var subject = CreateSubject(handler);
+
+            var withoutTheOption = await subject.ValidateConnection(ConnectionWithoutAnInstanceAddressOption());
+            var withABlankOption = await subject.ValidateConnection(CreateConnection(instanceUrl: string.Empty));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(withoutTheOption.Code, Is.EqualTo("invalid_url"));
+                Assert.That(withoutTheOption.Message, Is.EqualTo(withABlankOption.Message));
+            }
+
+            VerifyRequestCount(handler, 0);
+        }
+
+        // ~600ms per Table API call was measured during the SPIKE, so a probe that never comes back
+        // is a shape this connector will meet. It is an instance Lighthouse could not reach, and it
+        // has to read as that rather than escaping as a cancellation.
+        [Test]
+        public async Task AnInstanceThatNeverAnswers_IsReportedAsAConnectionFailure()
+        {
+            var subject = CreateSubject(Failing(
+                new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout elapsing.")));
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("connection_failed"));
+            }
+        }
+
+        // A connection saved before ServiceNow recorded an authentication method still has to
+        // authenticate. An unset method means the one method slice 01 ships, never "no credential".
+        [Test]
+        [TestCase("")]
+        [TestCase("   ")]
+        public async Task AConnectionWithNoAuthenticationMethodRecorded_IsAuthenticatedWithBasic(string storedKey)
+        {
+            var factory = NoOpAuthStrategyFactory();
+            var subject = CreateSubject(RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord), factory.Object);
+
+            await subject.ValidateConnection(CreateConnection(authenticationMethodKey: storedKey));
+
+            factory.Verify(f => f.Resolve(AuthenticationMethodKeys.ServiceNowBasic), Times.Once);
+        }
+
+        // ...and a connection that does record one is authenticated with that one, so the fallback
+        // above cannot quietly become the only path once a second method exists.
+        [Test]
+        public async Task AConnectionThatRecordsItsAuthenticationMethod_IsAuthenticatedWithThatMethod()
+        {
+            var factory = NoOpAuthStrategyFactory();
+            var subject = CreateSubject(RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord), factory.Object);
+
+            await subject.ValidateConnection(CreateConnection(authenticationMethodKey: "servicenow.oauth"));
+
+            factory.Verify(f => f.Resolve("servicenow.oauth"), Times.Once);
+        }
+
         private static ServiceNowWorkTrackingConnector CreateSubject(
             Mock<HttpMessageHandler> handler, IWorkTrackingAuthStrategyFactory? authStrategyFactory = null)
         {
             return new ServiceNowWorkTrackingConnector(
                 Mock.Of<ILogger<ServiceNowWorkTrackingConnector>>(),
-                authStrategyFactory ?? NoOpAuthStrategyFactory(),
+                authStrategyFactory ?? NoOpAuthStrategyFactory().Object,
                 handler.Object);
         }
 
-        private static IWorkTrackingAuthStrategyFactory NoOpAuthStrategyFactory()
+        private static Mock<IWorkTrackingAuthStrategyFactory> NoOpAuthStrategyFactory()
         {
             var strategy = new Mock<IWorkTrackingAuthStrategy>();
             strategy
@@ -257,17 +380,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var factory = new Mock<IWorkTrackingAuthStrategyFactory>();
             factory.Setup(f => f.Resolve(It.IsAny<string>())).Returns(strategy.Object);
 
-            return factory.Object;
+            return factory;
         }
 
         private static WorkTrackingSystemConnection CreateConnection(
-            string instanceUrl = InstanceUrl, string? table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable)
+            string instanceUrl = InstanceUrl,
+            string? table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
+            string authenticationMethodKey = AuthenticationMethodKeys.ServiceNowBasic)
         {
             var connection = new WorkTrackingSystemConnection
             {
                 Name = "ServiceNow Test Connection",
                 WorkTrackingSystem = WorkTrackingSystems.ServiceNow,
-                AuthenticationMethodKey = AuthenticationMethodKeys.ServiceNowBasic,
+                AuthenticationMethodKey = authenticationMethodKey,
             };
 
             connection.Options.AddRange([
@@ -276,6 +401,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Password, Value = "encrypted-secret", IsSecret = true },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = table ?? string.Empty, IsOptional = true },
             ]);
+
+            return connection;
+        }
+
+        private static WorkTrackingSystemConnection ConnectionWithoutAnInstanceAddressOption()
+        {
+            var connection = CreateConnection();
+            connection.Options.RemoveAll(option => option.Key == ServiceNowWorkTrackingOptionNames.InstanceUrl);
 
             return connection;
         }
