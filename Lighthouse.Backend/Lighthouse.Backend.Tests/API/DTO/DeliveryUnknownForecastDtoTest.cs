@@ -76,8 +76,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void FromDelivery_EveryFeatureUnforecastableAndInsufficient_StillReportsInsufficientData()
         {
-            // AC-02.4: the signals compose. With no forecastable feature to govern the delivery, the
-            // sufficiency answer has to come from the features themselves rather than defaulting to true.
+            // AC-02.5: the two signals compose - an un-forecastable delivery still answers on data.
             var delivery = DeliveryWith(
                 UnforecastableFeature("Team Pulsar", hasSufficientData: false),
                 UnforecastableFeature("Team Voyager", hasSufficientData: true));
@@ -101,10 +100,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        public void FromDelivery_AForecastableFeatureGovernsSufficiency_EvenWhenAnotherIsUnknown()
+        public void FromDelivery_AForecastableFeatureIsInsufficientAndAnotherIsUnknown_ReportsInsufficientData()
         {
-            // The governing feature still answers when one exists; the all-features fallback only
-            // applies once none of them can be forecast.
             var insufficient = ForecastableFeature();
             insufficient.Forecasts.Single().HasSufficientData = false;
 
@@ -116,17 +113,18 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        public void FromDelivery_ForecastableFeatureIsSufficientButAnUnknownOneIsNot_TheGoverningFeatureStillAnswers()
+        public void FromDelivery_ForecastableFeatureIsSufficientButAnUnknownOneIsNot_ReportsInsufficientData()
         {
-            // Pins the precedence: the all-features fallback must not take over while a feature that
-            // can be forecast is still there to govern the delivery.
+            // Inverted by Story #5587 slice-02: this pinned the precedence D6 deletes - a forecastable
+            // feature answering for the delivery while an un-forecastable one's thin history stayed
+            // hidden. The AND now surfaces it, which is AC-02.4's visible delta seen from this side.
             var delivery = DeliveryWith(
                 ForecastableFeature(),
                 UnforecastableFeature("Team Pulsar", hasSufficientData: false));
 
             var dto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 
-            Assert.That(dto.HasSufficientData, Is.True);
+            Assert.That(dto.HasSufficientData, Is.False);
         }
 
         [Test]

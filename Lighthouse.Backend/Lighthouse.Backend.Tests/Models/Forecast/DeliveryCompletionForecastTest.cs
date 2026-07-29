@@ -147,7 +147,11 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 Assert.That(forecast.CreationTime, Is.EqualTo(expected.CreationTime), "oldest contributor wins");
                 Assert.That(forecast.FilterApplied, Is.EqualTo(expected.FilterApplied), "filter applied");
                 Assert.That(forecast.ExcludedSummary, Is.EqualTo(expected.ExcludedSummary), "excluded summary");
-                Assert.That(forecast.HasSufficientData, Is.EqualTo(expected.HasSufficientData), "sufficiency");
+
+                // Sufficiency is NOT part of the bit-identity claim. The carriers do not carry it, so the
+                // delivery aggregate's flag is false by default rather than by computation, and nothing
+                // reads it - Delivery.HasSufficientDataAcrossContributingFeatures owns the rule at the
+                // grain AC-02.1 words it (slice-02). Asserting equality here would pin an accident.
             }
         }
 
@@ -323,9 +327,9 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 // Summed within the bucket, not maxed: Beta's two rows carry 4 and 6, so its carrier is
                 // 10 and the delivery is 13. Taking the larger row instead would read 9.
                 Assert.That(forecast.NumberOfItems, Is.EqualTo(13));
-
-                // ANDed, not ORed: Beta's bucket holds one thin row beside a sufficient one.
-                Assert.That(forecast.HasSufficientData, Is.False);
+                // No sufficiency assertion: the carrier does not carry it. Slice-02 established that
+                // sufficiency is a FEATURE-grain rule (Delivery.HasSufficientDataAcrossContributingFeatures),
+                // and a row-grain answer here would diverge on a stale done row inside a live feature.
             }
         }
 

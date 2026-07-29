@@ -225,7 +225,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        public void Should_Mirror_Insufficient_Data_From_Governing_Feature()
+        public void Should_Report_Insufficient_Data_When_Any_Contributing_Feature_Is_Insufficient()
         {
             var deliveryDate = DateTime.UtcNow.AddDays(30);
 

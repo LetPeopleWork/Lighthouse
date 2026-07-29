@@ -51,10 +51,11 @@ namespace Lighthouse.Backend.Models
         public DeliveryMetricsProjection CalculateMetrics(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
         {
             var featureBreakdown = CalculateFeatureBreakdown(today, blackoutPeriods);
+            var hasSufficientData = HasSufficientDataAcrossContributingFeatures();
 
             if (Features.Count == 0)
             {
-                return new DeliveryMetricsProjection(0.0, [], featureBreakdown);
+                return new DeliveryMetricsProjection(0.0, [], featureBreakdown, hasSufficientData);
             }
 
             // One un-forecastable feature makes the whole delivery un-forecastable - reporting a number
@@ -65,7 +66,7 @@ namespace Lighthouse.Backend.Models
             // It stays because it carries the ADR-112 semantic at feature grain and runs first.
             if (Features.Any(feature => !feature.CanBeForecast))
             {
-                return new DeliveryMetricsProjection(null, [], featureBreakdown);
+                return new DeliveryMetricsProjection(null, [], featureBreakdown, hasSufficientData);
             }
 
             // Stryker disable once all: equivalent while Bug #5586 stands. Skipping this guard falls
@@ -74,7 +75,7 @@ namespace Lighthouse.Backend.Models
             // stops the delivery depending on that branch, and becomes observable when #5586 is fixed.
             if (!HasRemainingWork())
             {
-                return new DeliveryMetricsProjection(100.0, PercentilesOf(DayZeroMarker, today, blackoutPeriods, percentiles), featureBreakdown);
+                return new DeliveryMetricsProjection(100.0, PercentilesOf(DayZeroMarker, today, blackoutPeriods, percentiles), featureBreakdown, hasSufficientData);
             }
 
             // Backstop at pair grain: guard 2 already covers this once Feature.TeamsWithoutForecast can
@@ -84,13 +85,14 @@ namespace Lighthouse.Backend.Models
 
             if (deliveryForecast == null)
             {
-                return new DeliveryMetricsProjection(null, [], featureBreakdown);
+                return new DeliveryMetricsProjection(null, [], featureBreakdown, hasSufficientData);
             }
 
             return new DeliveryMetricsProjection(
                 LikelihoodOf(deliveryForecast, today, blackoutPeriods),
                 PercentilesOf(deliveryForecast, today, blackoutPeriods, percentiles),
-                featureBreakdown);
+                featureBreakdown,
+                hasSufficientData);
         }
 
         // ForecastService emits this shape for a feature with nothing left to do, so a delivery whose
@@ -99,9 +101,28 @@ namespace Lighthouse.Backend.Models
 
         private bool HasRemainingWork()
         {
-            // The same predicate the row set uses, per pair rather than summed, so the two cannot
-            // disagree about what "nothing left to do" means.
-            return Features.Exists(feature => feature.FeatureWork.Exists(work => work.RemainingWorkItems > 0));
+            return Features.Exists(StillHasWork);
+        }
+
+        // The exemption is not cosmetic: a finished feature carries ForecastService's day-0 sentinel,
+        // whose null Team stops CreateWhenForecastForSimulationResult assigning the flag, so it reads
+        // false without ever having been asked (ADR-113 D6/AC-02.1).
+        private bool HasSufficientDataAcrossContributingFeatures()
+        {
+            return Features.Where(StillHasWork).All(RestsOnEnoughHistory);
+        }
+
+        // Per pair rather than summed, so this cannot disagree with the row set about what "nothing
+        // left to do" means.
+        private static bool StillHasWork(Feature feature)
+        {
+            return feature.FeatureWork.Exists(work => work.RemainingWorkItems > 0);
+        }
+
+        // Equals feature.Forecast.HasSufficientData without rebuilding the aggregate (AggregatedWhenForecast.cs:26).
+        private static bool RestsOnEnoughHistory(Feature feature)
+        {
+            return feature.Forecasts.TrueForAll(forecast => forecast.HasSufficientData);
         }
 
         private double LikelihoodOf(WhenForecast forecast, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)

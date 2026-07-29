@@ -73,7 +73,6 @@ namespace Lighthouse.Backend.Models.Forecast
                 CreationTime = contributors.Min(forecast => forecast.CreationTime),
                 FilterApplied = contributors.Exists(forecast => forecast.FilterApplied),
                 ExcludedSummary = summaries.Count == 0 ? null : string.Join("; ", summaries),
-                HasSufficientData = contributors.TrueForAll(forecast => forecast.HasSufficientData),
             };
         }
     }

@@ -63,8 +63,6 @@ namespace Lighthouse.Backend.API.DTO
             var metrics = delivery.CalculateMetrics(today, blackoutPeriods, 70, 85, 95);
             var completionDates = metrics.WhenDistribution.Select(ToWhenForecastDto).ToList();
 
-            var leastLikelyFeature = GetLeastLikelyFeature(featureLikelihoods);
-
             var (progress, remainingWork, totalWork) = CalculateDeliveryWork(delivery);
 
             return new DeliveryWithLikelihoodDto
@@ -81,7 +79,7 @@ namespace Lighthouse.Backend.API.DTO
                 Features = delivery.Features.Select(f => f.Id).ToList(),
                 FeatureLikelihoods = featureLikelihoods,
                 TeamsWithoutForecast = GetTeamsWithoutForecast(delivery),
-                HasSufficientData = leastLikelyFeature?.HasSufficientData ?? featureLikelihoods.All(fl => fl.HasSufficientData),
+                HasSufficientData = metrics.HasSufficientData,
                 SelectionMode = delivery.SelectionMode,
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
@@ -120,23 +118,6 @@ namespace Lighthouse.Backend.API.DTO
                 .Distinct()
                 .Order()
                 .ToList();
-        }
-
-        private static FeatureLikelihoodDto? GetLeastLikelyFeature(List<FeatureLikelihoodDto> featureLikelihoods)
-        {
-            var likelihoods = featureLikelihoods
-                .Where(fl => fl.LikelihoodPercentage >= 0)
-                .OrderByDescending(fl => fl.LikelihoodPercentage)
-                .ToList();
-
-            // Return 0 if no features have forecasts
-            if (likelihoods.Count == 0)
-            {
-                return null;
-            }
-
-            // Return the minimum likelihood (most conservative estimate)
-            return likelihoods[^1];
         }
 
         private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)

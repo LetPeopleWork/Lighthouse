@@ -46,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         private static Dictionary<int, int> NinetyFivePercentByTargetDay => new() { { TargetDay, 9500 }, { TailDay, 500 } };
 
         [Test]
-        [Ignore("RED until Story #5587 slice-02 ANDs sufficiency across the delivery's contributing features (D6/AC-02.1)")]
         public void FromDelivery_ThinHistoryOnAFeatureThatIsNotTheLeastLikely_ReportsInsufficientData()
         {
             // AC-02.1 and AC-02.4, the visible delta. Checkout is the LEAST LIKELY feature and rests on
@@ -71,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-02 exempts features with no remaining work, making the empty AND true (AC-02.1)")]
         public void FromDelivery_EveryFeatureIsFinished_ReportsSufficientDataRatherThanTheSentinelDefault()
         {
             // AC-02.1's "empty set yields true", and the sharpest statement of the landmine. Every
@@ -90,7 +88,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-02 ANDs sufficiency across the delivery's contributing features (AC-02.5)")]
         public void FromDelivery_UnforecastableDeliveryWithThinHistoryElsewhere_ReportsBothSignals()
         {
             // AC-02.5: the ADR-112 unknown state and the sufficiency signal COMPOSE. A delivery can be
