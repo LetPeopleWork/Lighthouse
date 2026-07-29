@@ -1305,3 +1305,103 @@ Four commitments the diagrams make visible:
 3. **Forward-only owner-grained trend (ADR-069)** — a sibling `BlockedCountSnapshot` (NOT the delivery-grained `DeliveryMetricSnapshot`) fed by a post-sync recorder; new endpoint ⇒ client version-gate `> v26.6.7.1`.
 4. **Staleness amends ADR-026 (ADR-070)** — `deriveStaleness` returns a multi-reason result; time-in-state keeps the `!isBlocked` guard; a distinct blocked-duration trigger (`≥`) OR's in; one stale state, reasons listed.
 
+---
+
+# C4 Architecture Diagrams — delivery-joint-likelihood
+
+ADO Story **#5587** (Epic **#5459**) · DESIGN 2026-07-29 ·
+[ADR-113](./adr-113-delivery-grain-joint-completion.md).
+
+**Topology delta: none.** No new actor, external system, container, endpoint or store. The change is a
+read-path change inside one container, so L1 and L2 are reproduced honestly and small, and the
+component-level rollup chain is the diagram that carries the information.
+
+## C4 Level 1 — System Context (unchanged)
+
+```mermaid
+C4Context
+  title System Context — Lighthouse (delivery-joint-likelihood)
+  Person(forecaster, "Delivery forecaster", "Takes a delivery's headline number into a steering or commitment conversation and is accountable for the date")
+  System(lighthouse, "Lighthouse", "Flow metrics and Monte Carlo forecasting. Reports a delivery's joint completion likelihood and its 70/85/95 dates")
+  System_Ext(tracker, "Work tracking system", "Azure DevOps / Jira — work items, states, throughput history")
+  System_Ext(clients, "Lighthouse CLI / MCP clients", "Forward delivery payloads verbatim; render no likelihood to a human")
+  Rel(forecaster, lighthouse, "Reads a delivery's likelihood and dates from")
+  Rel(lighthouse, tracker, "Imports work items and throughput from")
+  Rel(clients, lighthouse, "Reads delivery payloads from")
+  UpdateRelStyle(forecaster, lighthouse, $offsetY="-20")
+```
+
+## C4 Level 2 — Container (unchanged topology; one container's read path changes)
+
+```mermaid
+C4Container
+  title Container Diagram — Lighthouse (delivery-joint-likelihood)
+  Person(forecaster, "Delivery forecaster")
+  Container(spa, "Frontend SPA", "React 18 + TypeScript", "Renders the delivery header chip and the per-feature breakdown grid")
+  Container(api, "Backend API", "C# .NET ASP.NET Core", "Forecasting domain, delivery rollup, DTO assembly")
+  ContainerDb(db, "Lighthouse database", "SQLite / PostgreSQL via EF Core", "Persists features, feature work, per-team WhenForecast rows, delivery metric snapshots")
+  System_Ext(tracker, "Work tracking system", "Azure DevOps / Jira")
+  Rel(forecaster, spa, "Opens a delivery on")
+  Rel(spa, api, "Requests delivery likelihoods from", "GET /api/latest/deliveries/portfolio/{id}")
+  Rel(api, db, "Reads persisted per-team forecasts and feature work from")
+  Rel(api, tracker, "Imports work items and throughput from")
+```
+
+No new endpoint, no new store, no new external integration. The whole delta sits inside the Backend
+API container.
+
+## C4 Level 3 — Component: the delivery forecast-rollup chain
+
+Rows → bucket `min` → cross-bucket product → projection → DTO.
+
+```mermaid
+flowchart LR
+    subgraph unchanged["unchanged — the inputs were always right"]
+        FS["ForecastService<br/>Monte Carlo · one Task.Run per TEAM<br/>10 000 trials"]
+        FS --> ROWS["Feature.Forecasts<br/>one WhenForecast per (team, feature)<br/>EF-persisted · LAGS FeatureWork"]
+        WIS["WorkItemService sync<br/>AddOrUpdateWorkForTeam"] --> FW["Feature.FeatureWork<br/>RemainingWorkItems per (team, feature)<br/>THE authoritative pair set"]
+    end
+    subgraph changed["changed — DeliveryCompletionForecast (NEW builder), called by Delivery.CalculateMetrics"]
+        FW --> PAIRS{"contributing pair?<br/>RemainingWorkItems &gt; 0"}
+        PAIRS -->|"no — CDF ≡ 1"| DROP["not enumerated<br/>identity of min and of ×"]
+        PAIRS -->|yes| JOIN{"LEFT JOIN Forecasts<br/>row for this pair?"}
+        ROWS --> JOIN
+        JOIN -->|"NO"| UNK["cannot forecast<br/>team named in teamsWithoutForecast<br/>never a silent certainty"]
+        JOIN -->|yes| BUCK["bucket by team"]
+        BUCK --> MIN["ComonotonicCompletionDistribution.Min<br/>NEW · pure · comonotonic WITHIN a team<br/>count==1 ⇒ verbatim"]
+        MIN --> CARR["WhenForecast carrier per team<br/>ADR-111 provenance · Team/Feature left null"]
+        CARR --> AWF["AggregatedWhenForecast<br/>REUSED unchanged"]
+        AWF --> JCD["JointCompletionDistribution<br/>REUSED · product ACROSS teams"]
+        JCD --> AWF
+    end
+    subgraph gone["deleted — two selectors, two files"]
+        GGF["GetGoverningFeature<br/>Delivery.cs — fed the DATES"]
+        GLL["GetLeastLikelyFeature<br/>DeliveryWithLikelihoodDto.cs — fed HasSufficientData"]
+    end
+    subgraph out["consumers — values change, shapes do not"]
+        AWF --> PROJ["DeliveryMetricsProjection<br/>+ HasSufficientData"]
+        UNK --> PROJ
+        PROJ --> DTO["DeliveryWithLikelihoodDto<br/>no new field, no wire change"]
+        DTO --> UI["DeliverySection.tsx<br/>header chip + breakdown grid"]
+        PROJ --> SNAP["DeliveryMetricSnapshot<br/>one-time step, ADR-048/049"]
+    end
+```
+
+Six commitments the diagrams make visible:
+
+1. **`min` within a bucket, product across buckets, never the reverse (ADR-113 §1)** — two types on
+   cohesion grounds, made *checkable* by the builder boundary: `Models.Delivery` may not depend on
+   either combinator. ("Neither combinator depends on the other" would be vacuous — the invariant is a
+   property of the call site, which needs both.)
+2. **The enumeration direction is `FeatureWork` → `Forecasts`, never the reverse (ADR-113 §5)** —
+   `FeatureWork` is authoritative and `Forecasts` lags it, so a pair with remaining work and no row is
+   a *detected absence*, not an undetectable CDF ≡ 1.
+3. **No representative feature survives anywhere in the delivery read path (ADR-113 §7)** — both
+   selectors are deleted, and the header dates come off the same joint object as the likelihood.
+4. **The exemption keys off `FeatureWork.RemainingWorkItems`** — never off the emptiness of a forecast.
+   Four `Forecasts` shapes are reachable, not three; the fourth is the missing-row case above.
+5. **Done pairs are not enumerated and empty buckets are absent, because 1 is the identity of both
+   operators** — no degenerate empty CDF is ever constructed.
+6. **The rollup never reaches `ForecastBase.GetLikelihood`'s `trialCounter == 0 → return 100`**
+   (ADO Bug #5586) — every 100 % it reports comes from an explicit guard.
+
