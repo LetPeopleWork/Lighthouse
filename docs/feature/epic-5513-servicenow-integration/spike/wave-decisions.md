@@ -28,9 +28,11 @@ Narrowing:
 
 ## Promotion Decision
 
-**PENDING** — awaiting the maintainer's call at the promotion gate.
+**PROMOTED** — accepted at the promotion gate on 2026-07-29. The walking skeleton is ADO **5574**
+("Connect and validate a ServiceNow instance"); no separate skeleton work item is created. 5576 is
+Removed on the board; 5577 stays conditional on the customer accepting an `itil`-grade account.
 
-Recommendation: **PROMOTE**. The probe already performs authenticated read, create and patch against
+The recommendation as it stood before the gate: **PROMOTE**. The probe already performs authenticated read, create and patch against
 the real Table API, and `Scripts/DemoEnv/ServiceNowSystemUpdater.py` is a working, committed client
 for the same calls. The walking skeleton is a short hop: connect a ServiceNow work-tracking system in
 the wizard and list work items for a configured table.

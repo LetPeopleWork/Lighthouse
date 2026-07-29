@@ -421,3 +421,489 @@ of the SPIKE — where the transition-history source (D6/US-04) sits relative to
 
 Deliberately **not** a DESIGN question this epic: the OAuth client-credentials shape (D3a). It is
 successor work; designing it now would be speculative generality.
+
+---
+
+## Wave: DESIGN / [REF] Upstream Confirmation
+
+DESIGN ran 2026-07-29, architect Morgan, interaction mode **propose**, scope **application/components**,
+density **lean**, stress analysis **off**. Scoped to **slice 01 / ADO Story 5574** only.
+
+| Upstream artifact | Read | Status |
+|---|---|---|
+| `feature-delta.md` DISCUSS (16 `[REF]` sections, D1–D11, US-01 AC1–AC5) | ✓ | Binding |
+| `slices/slice-01-connect-and-validate.md` | ✓ | Binding |
+| `spike/findings.md` (10 questions, all answered) | ✓ | **Measured fact — not re-derived** |
+| `spike/wave-decisions.md` (PROMOTED, 7 design implications) | ✓ | Binding |
+| `docs/product/architecture/brief.md` (SSOT) | ✓ | Extended, not rewritten |
+| ADR-001 … ADR-113 | ✓ (index) | Next free = **ADR-114** |
+| `docs/ci-learnings.md` | ✓ | Pre-applied, see CI section |
+| `docs/product/outcomes/registry.yaml` | ⊘ | **Does not exist** — Outcome Collision Check skipped per instruction |
+| DISCOVER / DIVERGE artifacts | ⊘ | Never existed (DISCUSS Pre-requisites records this) |
+| `--residuality` stress analysis | ⊘ | Flag off |
+
+**Paradigm and pattern are not re-opened.** OOP C# backend, functional-leaning React frontend,
+ports-and-adapters. This feature adds a **fifth driven adapter behind an existing port**. No new
+bounded context, no new port, no new controller, no schema change, no EF migration, no new library.
+
+---
+
+## Wave: DESIGN / [REF] Open Call 1 — Three distinguishable validation failures
+
+**The problem, restated from measurement.** SPIKE Q8: a permitted-but-unauthorised read of `incident`
+returns **`200` with zero rows**, byte-identical to a legitimately empty table. Q3: an unknown field in
+`sysparm_query` makes the term vanish and returns the *whole table*. ServiceNow's failure modes are
+shaped like successes. This is the single hardest thing in the slice.
+
+### 1a — Does the port need to change to carry a three-way verdict?
+
+**Verdict: NO. `IWorkTrackingConnector` and `ConnectionValidationResult` are used unchanged.**
+
+`ConnectionValidationResult` already carries `IsValid` + **`Code`** + `Message` + `TechnicalDetails` +
+`FieldName`, and `Code` is a **free-form per-connector string** — Jira emits `invalid_url` /
+`authentication_failed` / `connection_failed` / `additional_fields_invalid`; Linear emits
+`validation_failed` / `no_work_items_found`; CSV emits `missing_required_option`. There is no shared
+enum to widen and no exhaustive switch to break. A fifth connector emitting its own codes breaks
+nothing in the other four.
+
+This closes the DISCUSS "Next Wave" question about the verdict contract: **there was never a contract
+problem, only a connector-internal one.**
+
+### 1b — Where does the "rows actually came back" assertion live?
+
+| Option | Shape | Trade-off |
+|---|---|---|
+| **A** Inline in `ServiceNowWorkTrackingConnector.ValidateConnection` | Jira/Linear precedent, ~60 lines of mixed IO + branching | Cheapest. But the verdict ladder is the *only interesting logic in the slice* and it becomes reachable only through an `HttpMessageHandler` mock — expensive to reach at the ≥80 % Stryker density the DoD demands |
+| **B** ✅ **Pure verdict mapper + thin IO in the connector** | `ServiceNowValidationVerdict.From(status, rowCount, table, wasJson)` → `ConnectionValidationResult`; connector performs one HTTP call and hands the mapper two scalars | Functional core / imperative shell at adapter grain. Every one of the 7 ladder rungs is a table-driven unit test with no HTTP. Mutants land on the branch that matters. Cost: one extra ~40-line static class |
+| **C** Cross-connector `IConnectionProbe` abstraction | Shared probe port, all five connectors implement | **Rejected — speculative generality.** One connector needs it. Revisit at the rule of three |
+
+**Verdict: B.** The verdict ladder is a **pure function** (contract shape: pure-function, return-only);
+the connector is the imperative shell that supplies `(HttpStatusCode, int rowCount, bool wasJson)`.
+The bug class "validation reported success because nobody counted the rows" becomes a mapper unit test
+rather than an integration concern.
+
+### 1c — The ladder itself (all rungs grounded in measured SPIKE data)
+
+| # | Observation | `Code` | `IsValid` | Provenance |
+|---|---|---|---|---|
+| 0 | Base URL not an absolute `Uri` | `invalid_url` | false | Jira precedent, pre-flight, no IO |
+| 1 | `HttpRequestException` / timeout (DNS, refused, TLS) | `connection_failed` | false | **AC4 failure #1 — unreachable host** |
+| 2 | `401` | `authentication_failed` | false | **AC4 failure #2 — bad credential.** Carries the D3a hint (Open Call 2) |
+| 3 | `200` but body is not JSON (SSO/SAML-fronted instance serving a login page) | `unexpected_response` | false | **[hypothesis — NOT measured.]** Defensive rung; provenance tagged so nobody later mistakes it for a finding |
+| 4 | `400` | `unknown_table` | false | Measured: `pm_project`, `rm_story`, `demand` all return 400 |
+| 5 | `403` | `insufficient_permissions` | false | Measured: `sys_db_object`, `metric_definition` below `itil`. An *honest* denial |
+| 6 | `200`, JSON, **0 rows** | `no_records_visible` | false | **AC4 failure #3 — the denial in a success costume** |
+| 7 | `200`, JSON, **≥1 row** | `valid` | true | Measured: `sn_incident_read` → 200/5 |
+
+**Probe call**: `GET {baseUrl}/api/now/table/{table}?sysparm_limit=1`, verdict from
+`(status, result.Length, contentIsJson)`. Deliberately **no `sysparm_fields`** — the SPIKE never measured
+whether field projection interacts with ACL filtering, and a validation probe is the wrong place to
+rely on an unmeasured mechanism. Slice 02 may add projection once it measures it.
+
+**Rung 6 is honest about its own ambiguity — see Flagged Contradiction C-1.** Its message names both
+causes and the role to grant. It is a *failure*, never a success, so AC4's "a permissions failure must
+never be reported as a connection failure" holds, and so does the KPI-3 no-silent-no-op rule.
+
+---
+
+## Wave: DESIGN / [REF] Open Call 2 — the `snc_basic_auth_api_access` prerequisite
+
+Measured: the restriction is **armed** on the Australia release with an enforcement date; after it,
+accounts without the role are blocked. Also measured: as `sn_*_read`, `sys_properties` returns
+**200 with zero rows** for all three restriction properties, `sys_plugins` returns 403. **Lighthouse
+cannot see this using the credentials a customer would give it.**
+
+| Option | Trade-off |
+|---|---|
+| **A** Docs-only prerequisite (US-05) | Honest and cheap, but the customer meets it at 3 a.m. when the sync starts 401-ing, having forgotten the docs |
+| **B** ✅ **Docs prerequisite + a static hint on the `authentication_failed` rung** | The failure we already surface carries the one sentence that turns a 40-minute hunt into a 2-minute role grant. Zero detection, zero new IO, zero speculation |
+| **C** Detect and warn — read the restriction properties at validation time | **FORBIDDEN.** Measured invisible to the integration account. An earlier SPIKE draft proposed exactly this and was *disproven*. Building it would produce a warning that silently never fires for the only users who need it |
+
+**Verdict: B, with C recorded as forbidden** so slice 02+ cannot resurrect it. → **ADR-115**.
+
+The hint is worded as a *conditional*, never as a claim of knowledge: rung 2's `TechnicalDetails` reads
+"ServiceNow returned 401. If this instance enforces the inbound basic-auth restriction, the account
+also needs the `snc_basic_auth_api_access` role — Lighthouse cannot check this for you." It does not
+assert the restriction is active, because it cannot know.
+
+**Also recorded for US-05 docs**: `snc_read_only` grants **no read access whatsoever** (measured
+identical to holding no roles) — its name invites precisely the wrong guess.
+
+---
+
+## Wave: DESIGN / [REF] Open Call 3 — Configuration surface
+
+Measured: `sys_db_object` → 403 below `itil`; `sys_dictionary` → 200/EMPTY at *every* level including
+`itil`. **Table and field discovery cannot be offered to a least-privilege account.** A wizard that
+enumerates tables works for the maintainer and shows the customer a silent empty list.
+
+| Option | Where the table name lives | Trade-off |
+|---|---|---|
+| **A** Connection-scope only | One connection = one table | Gives `ValidateConnection` a probe target, satisfying AC4 today. Boxes in a shop reading both `incident` and `change_request` — they need two connections |
+| **B** Team-scope only, inside the query | Nothing to probe at connection scope | **Fails AC4 outright**: slice-01 validation has no table to test rights against, and the third failure mode becomes unreachable |
+| **C** ✅ **Connection-scope default table + team-scope query (and, in slice 02, an optional per-team table override)** | Both | AC4 is satisfiable now; slice 02 is not boxed in. Cost: one option key that slice 01 ships and slice 02 re-reads |
+
+**Verdict: C.** → **ADR-116**.
+
+**Slice-01 connection options** (`ServiceNowWorkTrackingOptionNames`):
+
+| Key | Default | Secret | Optional |
+|---|---|---|---|
+| `Instance Url` | `""` | no | no |
+| `Username` | `""` | no | no |
+| `Password` | `""` | **yes** | no |
+| `Work Item Table` | **`incident`** | no | yes |
+
+`Password` secret ⇒ AC5 is satisfied by the **existing** `EncryptSecrets` change-tracker hook and the
+existing DTO redaction — no new mechanism.
+
+**Frontend `DataRetrievalSchemaDefaults` (both records are exhaustive `Record<WorkTrackingSystemType, …>`,
+so `tsc` forces both entries the moment the union gains `"ServiceNow"` — the enforcement is free):**
+
+```ts
+// teamSchemas
+ServiceNow: { key: "servicenow.query", displayLabel: "ServiceNow Query (Encoded Query)",
+              inputKind: "freetext", isRequired: true,
+              isWorkItemTypesRequired: false, wizardHint: null }
+
+// portfolioSchemas — slice 03 is CANCELLED; the schema says so in the type system
+ServiceNow: { key: "servicenow.portfolio.unsupported", displayLabel: "Not supported for ServiceNow",
+              inputKind: "none", isRequired: false,
+              isWorkItemTypesRequired: false, wizardHint: null }
+```
+
+- `wizardHint: null` — **no wizard entry in slice 01**, matching the slice brief, *and* matching the
+  measurement: a discovery wizard cannot work for the account it would be built for.
+- `isWorkItemTypesRequired: false` — for the ITSM-first default the **table is the type**
+  (Linear precedent, `isWorkItemTypesRequired=false`). A `task`-rooted read scopes by `sys_class_name`
+  inside the query instead. **Revisit at slice 02**, where the type-vs-`sys_class_name` mapping is
+  actually exercised; recorded here so the revisit is a decision, not a discovery.
+- The portfolio entry makes **US-03 AC5's "state the limit prominently"** structural rather than
+  documentary — the config surface itself declines, so there is no half-working portfolio path to
+  stumble into.
+
+---
+
+## Wave: DESIGN / [REF] Open Call 4 — `sys_choice` label resolution placement
+
+Measured: `sys_choice` is readable **with no roles at all** (200/5 for every account), and `state`
+values collide across subclasses (`3` = On Hold on `incident`, Closed Complete on `task`). Choice values
+are also instance- and release-specific — the seeder already had to resolve `close_code` at runtime
+after a hardcoded value from the instance's own sample data was rejected.
+
+| Option | Trade-off |
+|---|---|
+| **A** Private helper inside `ServiceNowWorkTrackingConnector` | Cheapest. But it has two foreseeable consumers (state-mapping labels for US-02 AC3; runtime choice resolution on the write/seed path) and a cache lifetime longer than one connector call — a private method makes the second consumer a copy-paste |
+| **B** ✅ **A named collaborator, `ServiceNowChoiceLabelResolver`, injected into the connector — specified now, built in slice 02** | Keeps slice 01 to its stated scope while fixing the seam so slice 02 does not have to refactor a private method outward under delivery pressure |
+| **C** Defer the question entirely to slice 02 | Rejected by the task brief and by experience: the placement gets decided by whoever is closest to a deadline |
+
+**Verdict: B — seam named, not built.** Slice 01 ships **no** resolver class. What slice 01 does ship is
+the constraint that makes slice 02 cheap:
+
+> **Invariant (slice 02 gate):** no raw ServiceNow choice *value* may cross the connector boundary. What
+> reaches `Team.MapStateToStateCategory` / `MapRawStateToMappedName` and the state-mapping UI is always
+> the `sys_choice` **label**. Enforced by a `ServiceNowLabelBoundaryArchUnitTest` added in slice 02
+> (`Lighthouse.Backend.Tests/Architecture/`, the established convention — 7 such fixtures exist).
+
+Because `sys_choice` needs no roles, the resolver can populate the mapping UI **even on a connection
+whose table read is failing rung 6** — a small, real usability win that only falls out if the resolver
+is a separate collaborator rather than a step inside the work-item read.
+
+---
+
+## Wave: DESIGN / [REF] Open Call 5 — ADR verdicts
+
+Three of the five calls are precedent-setting or contested; two are mechanical.
+
+| Call | ADR? | Reason |
+|---|---|---|
+| 1 — validation verdict ladder | ✅ **ADR-114** | First connector whose *success is indistinguishable from a denial*. It redefines what "valid" means for a work-tracking connection and the reasoning must survive the next connector |
+| 2 — basic-auth prerequisite, detection forbidden | ✅ **ADR-115** | **Contested and already disproven once.** A rejection needs a durable home or it gets re-proposed |
+| 3 — table at connection scope, portfolio declared unsupported | ✅ **ADR-116** | First connector where the *entity kind* is configuration, and the first to decline a capability in the schema rather than in prose |
+| 4 — choice-label placement | ⊘ No ADR | The *rule* (labels never numbers) is a SPIKE finding, already recorded; restating it in an ADR adds a second source of truth. The *placement* is uncontested and unbuilt — slice 02 raises one if it becomes contested |
+| 5 — enum / factory / DI / schema touch points | ⊘ No ADR | Mechanical. Seven touch points already enumerated and verified by the SPIKE; a fifth traversal of a known path sets no precedent |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis (hard gate)
+
+Default is EXTEND; every CREATE NEW carries evidence for why extension fails. Contract shape per
+component: **pure** (return-only) · **bounded** (declared mutation set) · **io** (imperative shell).
+
+| # | Component | Path | Verdict | Evidence | Shape |
+|---|---|---|---|---|---|
+| 1 | `WorkTrackingSystems` | `Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs` | **EXTEND** | 4 members. `GetSupportedWorkTrackingSystemConnections` iterates `Enum.GetValues<WorkTrackingSystems>()`, so **AC1 is satisfied by the enum addition alone** — no controller change. ⚠ **Append `ServiceNow` after `Csv`**: no `HasConversion` on this property anywhere in `LighthouseAppContext`, so EF persists it as **int**; inserting mid-enum silently repoints every stored connection | pure |
+| 2 | `AuthenticationMethodKeys` | `…/AuthenticationMethodKeys.cs` | **EXTEND** | Per-system consts + `GetDefaultForSystem` switch that throws on unknown. Add `ServiceNowBasic = "servicenow.basic"` + one arm | pure |
+| 3 | `AuthenticationMethodSchema` | `…/AuthenticationMethodSchema.cs` | **EXTEND** | `MethodsBySystem` dictionary; `GetMethodsForSystem` **throws** if a system is absent. One entry with 3 options drives **AC2** — the form renders from schema, no React screen | pure |
+| 4 | `IWorkTrackingConnector` | `Services/Interfaces/WorkTrackingConnectors/` | **REUSE — UNCHANGED** | 8-method port, 4 implementations. Nothing in slice 01 needs a 9th method | — |
+| 5 | `ConnectionValidationResult` | `Models/Validation/` | **REUSE — UNCHANGED** | Already carries `Code`/`Message`/`TechnicalDetails`/`FieldName`; codes are free-form per connector. **Direct answer to Open Call 1a** | pure |
+| 6 | `IWorkTrackingAuthStrategy` | `Services/Interfaces/WorkTrackingConnectors/` | **REUSE — UNCHANGED** | `ApplyAsync(request, connection, ct)` already fits Basic | — |
+| 7 | `JiraCloudBasicAuthStrategy` | `…/Auth/JiraCloudBasicAuthStrategy.cs` | **CREATE NEW** `ServiceNowBasicAuthStrategy` | Extension fails on inspection: `ApplyAsync` reads `JiraWorkTrackingOptionNames.ApiToken`/`.Username` **by name** and branches on `AuthenticationMethodKeys.JiraCloud or JiraScopedToken`, falling through to **Bearer**. Reusing it means putting ServiceNow option keys inside a Jira-named class — repeating *knowledge*, which the project's DRY rule forbids. New class ≈ 20 lines, same shape. *Alternative considered:* generalise to `BasicAuthStrategy(usernameKey, secretKey)` — rejected, it forces a refactor of a live Jira path inside a walking skeleton; revisit at the rule of three | io |
+| 8 | `WorkTrackingAuthStrategyFactory` | `…/Auth/` | **EXTEND** | Add ctor param + switch arm. ⚠ **6th constructor parameter** — see CI section, S107 |  bounded |
+| 9 | `WorkTrackingConnectorFactory` | `Factories/` | **EXTEND** | Switch + 2-minute cache. One arm | bounded |
+| 10 | `WorkTrackingSystemFactory` | `Factories/` | **EXTEND** | `CreateOptionsForWorkTrackingSystem` switch **throws** on unknown. Add `GetOptionsForServiceNow()` (4 options, table 3 above) | pure |
+| 11 | `LinearWorkTrackingConnector` | `…/Linear/` | **REFERENCE ONLY — NOT MODIFIED** | The model for the skeleton (`SupportsTransitionHistory`, `DowngradeHistorySupport`, unsupported write-back). Reading it is the reuse | — |
+| 12 | `ServiceNowWorkTrackingConnector` | `…/ServiceNow/` | **CREATE NEW** | No existing connector speaks the ServiceNow Table API. `ValidateConnection` real; the other 7 return **declared** unsupported/empty (CSV + Linear precedent: `=> []`, `=> false`, `throw new NotSupportedException`) — never a silent no-op (DoD 5 / KPI 3) | io |
+| 13 | `IServiceNowWorkTrackingConnector` | `Services/Interfaces/WorkTrackingConnectors/` | **CREATE NEW** | Marker for DI, precedent `ILinearWorkTrackingConnector`. **Does not** extend `IBoardInformationProvider` — no board concept, no wizard (Open Call 3) | — |
+| 14 | `ServiceNowWorkTrackingOptionNames` | `…/ServiceNow/` | **CREATE NEW** | Every system has one (`Jira`, `AzureDevOps`, `Linear`, `Csv`). Not shared — the keys *are* the per-system knowledge | pure |
+| 15 | `ServiceNowValidationVerdict` | `…/ServiceNow/` | **CREATE NEW** | The Open Call 1b functional core. Pure: `(HttpStatusCode, int, bool, string) → ConnectionValidationResult`. Universe: return value only; performs **no IO, no logging, no mutation** — asserted by an ArchUnit rule | **pure** |
+| 16 | `Program.cs` DI | `Program.cs` | **EXTEND** | 2 registrations beside `LinearApiKeyAuthStrategy` (L1036) and `ILinearWorkTrackingConnector` (L966) | io |
+| 17 | `WorkTrackingSystemConnectionsController` | `API/` | **NO CHANGE** | Enumerates the enum. Confirmed by reading L41–52 | — |
+| 18 | `LighthouseAppContext` / EF | `Data/` | **NO CHANGE** | New enum member, new option **rows** — no new column, **no migration**. Existing `EncryptSecrets` hook covers AC5 | — |
+| 19 | FE `WorkTrackingSystemType` | `models/WorkTracking/WorkTrackingSystemConnection.ts` | **EXTEND** | Add `"ServiceNow"` to the union. Cascades into both exhaustive `Record`s — free compile-time enforcement | pure |
+| 20 | FE `AuthenticationMethodKeys` (const) | same file | **EXTEND** | Mirror of the backend consts | pure |
+| 21 | FE `workTrackingSystemGetDataRetrievalDisplayName()` | same file | **EXTEND** | ⚠ this `switch` has a `default:` arm, so **`tsc` will NOT force the new case** — it would silently render "Query". The only drift-prone touch point in the FE set; needs an explicit unit test, not compiler trust | pure |
+| 22 | FE `DataRetrievalSchemaDefaults` | `models/Common/` | **EXTEND** | Two entries, shapes in Open Call 3 | pure |
+| 23 | FE `DataRetrievalWizardRegistry` | `components/DataRetrievalWizards/` | **NO CHANGE** | `applicableSystemTypes` is opt-in; absence = no wizard, which is the decision | — |
+| 24 | FE `AdditionalFieldsEditor` | `pages/Settings/Connections/` | **EXTEND** | ⚠ **found by inspection, easy to miss.** Gates on `workTrackingSystemType !== "Linear"`. ServiceNow's `GetPredefinedAdditionalFields` returns `[]` in slice 01, so leaving the editor visible ships a control that does nothing — a **silent no-op**, which DoD 5 / KPI 3 forbid. Add ServiceNow to the exclusion | bounded |
+| 25 | FE `WriteBackMappingsEditor` | `pages/Settings/Connections/` | **EXTEND** | Same gate, same reason, and **permanent** (D8) | bounded |
+| 26 | `Scripts/DemoEnv/ServiceNowSystemUpdater.py` | `Scripts/DemoEnv/` | **NO CHANGE in slice 01** | **Already exists** (pre-SPIKE environment prereq; it is the working Table API client the SPIKE used). Brought to sibling parity in **slice 05**, per the ownership split DISCUSS already recorded | io |
+| 27 | `Lighthouse.Backend.Tests/Architecture/` | tests | **EXTEND** | 7 ArchUnitNET fixtures exist. Add one (below) | — |
+
+**Net: 13 EXTEND · 5 CREATE NEW · 6 REUSE-UNCHANGED / NO-CHANGE · 1 reference-only.** Every CREATE NEW
+is either a per-system artifact that every one of the four existing systems also has (12, 13, 14) or is
+justified above against a named extension candidate (7, 15).
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context (L1)
+
+```mermaid
+C4Context
+    title System Context — Lighthouse with a ServiceNow connection (slice 01)
+
+    Person(admin, "Configuration Administrator", "Owns the connection. Holds only the rights their platform team granted.")
+    Person(coach, "Flow Coach", "Waits on slice 02 for metrics.")
+
+    System(lighthouse, "Lighthouse", "Flow metrics and delivery forecasting. Polls work-tracking systems; never receives webhooks.")
+
+    System_Ext(snow, "ServiceNow Instance", "ITSM. Table API over HTTPS, basic auth. Returns 200 with zero rows for a permitted-but-unauthorised read.")
+    System_Ext(ado, "Azure DevOps", "Existing connector")
+    System_Ext(jira, "Jira", "Existing connector")
+    System_Ext(linear, "Linear", "Existing connector")
+
+    Rel(admin, lighthouse, "Creates and validates a connection in")
+    Rel(coach, lighthouse, "Reads flow metrics from")
+    Rel(lighthouse, snow, "Probes read access against, over", "HTTPS / Table API, Basic")
+    Rel(lighthouse, ado, "Reads work items from", "HTTPS")
+    Rel(lighthouse, jira, "Reads work items from", "HTTPS")
+    Rel(lighthouse, linear, "Reads work items from", "HTTPS / GraphQL")
+
+    UpdateRelStyle(lighthouse, snow, $offsetY="-30")
+```
+
+Lighthouse installs **nothing** on the customer instance — no business rules, no flows, no scripted REST
+endpoints. That is D11 (least privilege) expressed at system-context grain, and it is why the arrow runs
+one way only.
+
+## Wave: DESIGN / [REF] C4 — Container (L2)
+
+```mermaid
+C4Container
+    title Container Diagram — the fifth adapter behind an existing port
+
+    Person(admin, "Configuration Administrator")
+
+    Container_Boundary(fe, "Lighthouse Frontend — React + TypeScript") {
+        Container(wizard, "CreateConnectionWizard", "React", "Renders the connection form from the backend auth schema. No ServiceNow-specific screen.")
+        Container(schema, "DataRetrievalSchemaDefaults", "TypeScript", "Exhaustive Record per system. Declares ServiceNow team-scope query and portfolio-unsupported.")
+    }
+
+    Container_Boundary(be, "Lighthouse Backend — ASP.NET Core, ports-and-adapters") {
+        Container(ctrl, "WorkTrackingSystemConnectionsController", "ASP.NET Core", "Existing. Enumerates the enum; unchanged.")
+        Container(port, "IWorkTrackingConnector", "C# port", "Existing 8-method driven port. UNCHANGED.")
+        Container(cfac, "WorkTrackingConnectorFactory", "C#", "Resolves adapter by enum member.")
+        Container(afac, "WorkTrackingAuthStrategyFactory", "C#", "Resolves auth strategy by method key.")
+        Container(snowc, "ServiceNowWorkTrackingConnector", "C# — NEW adapter", "Imperative shell. One Table API call for ValidateConnection; 7 methods declared unsupported.")
+        Container(verdict, "ServiceNowValidationVerdict", "C# — NEW, pure", "Functional core. (status, rowCount, wasJson) -> ConnectionValidationResult. No IO.")
+        Container(auth, "ServiceNowBasicAuthStrategy", "C# — NEW", "Basic header from Username + decrypted Password.")
+        Container(other, "ADO / Jira / Linear / CSV connectors", "C#", "Existing adapters. UNTOUCHED.")
+        ContainerDb(db, "Lighthouse DB", "SQLite / PostgreSQL", "Connection options; secrets encrypted by the existing EncryptSecrets hook. No schema change.")
+    }
+
+    System_Ext(snow, "ServiceNow Instance", "Table API")
+
+    Rel(admin, wizard, "Enters instance URL and credential into")
+    Rel(wizard, ctrl, "Posts connection and validation request to", "HTTPS/JSON")
+    Rel(schema, wizard, "Supplies the query field shape to")
+    Rel(ctrl, cfac, "Asks for the adapter of")
+    Rel(cfac, port, "Returns an implementation of")
+    Rel(port, snowc, "Is implemented by")
+    Rel(port, other, "Is implemented by")
+    Rel(snowc, afac, "Resolves its auth strategy from")
+    Rel(afac, auth, "Returns")
+    Rel(auth, db, "Decrypts the stored password from")
+    Rel(snowc, snow, "Probes the configured table against", "GET /api/now/table/{t}?sysparm_limit=1")
+    Rel(snowc, verdict, "Hands status, row count and content kind to")
+    Rel(verdict, ctrl, "Returns a coded verdict to")
+```
+
+**L3 is deliberately not produced.** The new subsystem is three classes; a component diagram over three
+classes restates the container diagram at a smaller font. The threshold this project uses is 5+
+interacting components.
+
+---
+
+## Wave: DESIGN / [REF] Earned Trust — the probe and the lies it must survive
+
+ServiceNow is a **substrate that lies in a specific, measured way**: it answers a denial with a success.
+The probe is therefore not a nicety bolted onto validation — it *is* validation.
+
+**Probe placement.** `ValidateConnection` is the probe. There is no composition-root "wire then probe
+then use" gate here and inventing one would be wrong: connections are **user data created at runtime**,
+not startup configuration, so there is nothing to refuse to start. The probe runs when the admin clicks
+Validate and again on every settings save. Stated plainly rather than forced into a startup shape that
+does not fit.
+
+**Catalogued substrate lies the probe must survive** — these are the DISTILL acceptance-test rows:
+
+| Lie | Injected as | Required verdict | Measured? |
+|---|---|---|---|
+| L1 Denial in a success costume | `200` + `{"result":[]}` | `no_records_visible` (**never** `valid`, **never** `connection_failed`) | ✓ measured |
+| L2 Bad credential | `401` | `authentication_failed` + D3a hint | ✓ measured |
+| L3 Honest denial | `403` | `insufficient_permissions` | ✓ measured |
+| L4 Table does not exist | `400` | `unknown_table` | ✓ measured |
+| L5 Host unreachable | `HttpRequestException`, timeout | `connection_failed` | ✓ (control) |
+| L6 SSO login page wearing a 200 | `200` + `text/html` | `unexpected_response` | ✗ **hypothesis** |
+| L7 The truth | `200` + ≥1 row | `valid` | ✓ measured |
+
+L6 is the only unmeasured rung and is tagged as such everywhere it appears, so a later reader cannot
+mistake a defensive guess for a finding.
+
+**Enforcement — three orthogonal layers, matching the project's existing ArchUnitNET convention**
+(`Lighthouse.Backend.Tests/Architecture/`, 7 fixtures):
+
+1. **Structural** — `ServiceNowValidationVerdictPurityArchUnitTest`: `ServiceNowValidationVerdict` must
+   not depend on `HttpClient`, `ILogger`, or `Lighthouse.Backend.Data`. Keeps the functional core pure.
+2. **Behavioural** — a table-driven NUnit fixture over all 7 rungs. This is where the Stryker mutants
+   land, and it is the reason Option 1b/B exists.
+3. **Contract** — one integration test asserting `ValidateConnection` returns `IsValid == false` for a
+   `200`-with-zero-rows response. The single assertion that makes the headline bug non-shippable.
+
+A bypass of any one layer is caught by at least one other.
+
+---
+
+## Wave: DESIGN / [REF] Flagged Contradictions
+
+Per the DESIGN mandate these are surfaced rather than papered over. **C-1 needs a maintainer decision
+before DISTILL writes AC4's acceptance tests.**
+
+### C-1 — US-01 AC4 asks for a distinction the platform cannot make (BLOCKING, needs confirmation)
+
+- **DISCUSS US-01 AC4** requires three distinguishable failures, the third being "a reachable instance
+  where the account **lacks read access** to the configured table".
+- **SPIKE Q8** measured that `incident` returns `200` with zero rows for *both* an unauthorised account
+  **and** a genuinely empty table. `X-Total-Count` is 0 in both. No status code, header or body field
+  separates them, and every alternative discriminator is itself unavailable: `sys_db_object` 403,
+  `sys_dictionary` 200/EMPTY at every role level, `sys_properties` 200/EMPTY.
+- **Therefore**: rung 6 cannot honestly claim "you lack rights". It can only report "the credential
+  authenticated, and the configured table returned nothing visible — either the account lacks read
+  access to `{table}` (grant `sn_incident_read` or its per-table sibling; note `snc_read_only` grants
+  nothing), or the table is genuinely empty."
+- **What is preserved**: three distinguishable *codes* and *messages* (`connection_failed`,
+  `authentication_failed`, `no_records_visible`), and AC4's real safety property — **a permissions
+  failure is never reported as a connection failure, and never as a success**.
+- **What changes**: AC4's third bullet asserts a certainty the API does not provide.
+
+**Proposed AC4 amendment** (maintainer to accept before DISTILL):
+
+> AC4: Validate against an unreachable host, a wrong credential, and a reachable instance whose
+> configured table returns no visible rows each return three distinguishable, actionable failures. A
+> permissions failure is never reported as a connection failure and never as a success. Because
+> ServiceNow returns `200` with zero rows for a permitted-but-unauthorised read, the third message names
+> **both** possible causes and the role to grant, rather than asserting a certainty the API cannot
+> supply.
+
+### C-2 — the no-instance-side-setup scope line is already broken (recorded, not blocking)
+
+DISCUSS "Out of scope" states Lighthouse requires no instance-side configuration. The SPIKE measured
+that a current release needs `snc_basic_auth_api_access` granted to the integration account after the
+enforcement date. **The SPIKE already recorded this contradiction**; DESIGN does not re-litigate it —
+D3 stands, the grant is small and documentable. Carried here so it reaches US-05's docs as a
+**prerequisite** rather than a footnote, and so ADR-115 exists to hold the "do not build detection"
+rejection. It also strengthens the OAuth successor case (D3a).
+
+### C-3 — `isWorkItemTypesRequired` is decided on thin evidence (recorded, low risk)
+
+Set `false` on the reasoning that for the ITSM-first default the table *is* the type. That reasoning
+holds for `incident`/`change_request` and weakens for a `task`-rooted read scoped by `sys_class_name`.
+Slice 01 does not read work items, so nothing is at risk yet. Flagged so slice 02 revisits it
+deliberately. Cost of being wrong: one boolean and one FE test.
+
+---
+
+## Wave: DESIGN / [REF] CI rules pre-applied (from `docs/ci-learnings.md`)
+
+| Rule | Where it bites | Pre-applied |
+|---|---|---|
+| **S107** — too many ctor params (fires at 6–7; ledger entry 2026-07-10) | `WorkTrackingAuthStrategyFactory` goes **5 → 6** params | Highest-probability CI failure in the slice. Either group the strategies behind an `IEnumerable<IWorkTrackingAuthStrategy>` + key lookup, or `#pragma warning disable S107` **wrapping the declaration that triggers it** (ledger 2026-05-16 — placement elsewhere silently does nothing). Prefer the pragma in the walking skeleton; the regrouping is a separate `refactor(worktracking):` commit |
+| **CA1859** — return/param should be the concrete type (3 recurrences) | New private helpers in the connector and the verdict mapper | Concrete return **and** parameter types on every new private helper |
+| **NUnit2045 / NUnit2056** — INFO severity, invisible to a warning-clean local build | The 7-rung table-driven fixture | `Assert.EnterMultipleScope`, never `Assert.Multiple` |
+| **NUnit4002** | Row-count assertions in the ladder tests | `Is.Zero`, never `Is.EqualTo(0)` |
+| **NUnit2046** | `result.Length` assertions | `Has.Count.EqualTo(…)`, never `Assert.That(x.Count, …)` |
+| **S8969 / S8970** — null-forgiving operators, **ERROR** severity since SonarAnalyzer.CSharp 10.30 (2026-07-29, PR #1622) | JSON parsing in the connector | No `!` anywhere in the new C# |
+| **CA1869** | Any `JsonSerializerOptions` for the Table API response | Cache it in a `static readonly` field |
+| **S2139** — log-and-rethrow when a higher layer already logs | Connector catch blocks | Follow the Linear precedent: log **and return a failure result**; do not rethrow |
+| **SYSLIB1045** | Any parsing temptation | No `new Regex(...)` |
+| **S2325 / S1144** | New private members | Every private member justifies its existence and its instance-state use |
+| Per-connector path-scoped integration tests (2026-05-18) | New live-instance tests | Path-scope any ServiceNow live test as the ADO/Jira/Linear ones are, so it does not run on every PR |
+| **typescript:S107 / S3776** | FE touch points are all small | Low risk; the FE work is 5 declarative edits |
+
+---
+
+## Wave: DESIGN / [REF] Quality Gates
+
+| Gate | Status |
+|---|---|
+| Requirements traced to components | ✓ AC1→#1 · AC2→#3 · AC3→ladder rung 7 · AC4→rungs 1/2/6 (**subject to C-1**) · AC5→#18 unchanged mechanism |
+| Component boundaries with responsibilities | ✓ Reuse Analysis, 27 rows |
+| Technology choices in ADRs with alternatives | ✓ ADR-114/115/116, ≥2 alternatives each |
+| Quality attributes | ✓ least privilege (D11) is the design driver; honest capability reporting (KPI 3); ~600 ms/call ⇒ **one** probe call, never per-item |
+| Dependency-inversion compliance | ✓ new adapter behind an unchanged driven port; pure core has no outward dependency |
+| C4 L1 + L2 in Mermaid, verbs on every arrow | ✓ L3 justified as omitted |
+| Integration patterns specified | ✓ HTTPS poll, Basic, `sysparm_limit=1`, no `sysparm_fields` (unmeasured), no inbound webhook |
+| OSS preference | ✓ **no new dependency of any kind**; `HttpClient` + existing auth-strategy plumbing |
+| AC behavioural, not implementation-coupled | ✓ the 7 rungs are observable `(Code, IsValid)` pairs |
+| **External integration → contract tests** | ✓ ServiceNow Table API is an external integration. **Consumer-driven contract tests recommended (e.g. Pact) for the ServiceNow Table API response shapes** — the L1–L7 lie catalogue *is* the contract, and it is exactly what a vendor release change would break silently. Carried into the platform-architect handoff |
+| Architecture enforcement tooling | ✓ ArchUnitNET (already at 0.13.3, 7 fixtures) — purity rule specified; label-boundary rule scheduled for slice 02 |
+| Simplest-solution check | ✓ 2 simpler alternatives rejected with reasons at Open Calls 1b and 3; no new abstraction layer, no new port, no new context |
+| Mutation ≥80 % BE/FE | ✓ addressed structurally — the pure verdict mapper is why the ladder is reachable without HTTP mocks |
+| Peer review | ⚠ **not run** — `nw-solution-architect-reviewer` not dispatched in this session (see report) |
+
+---
+
+## Wave: DESIGN / [REF] Tier-2 Expansion Catalog
+
+Lean density: the following are **listed, not rendered**. Request with `--expand <id>`.
+
+| id | Expansion |
+|---|---|
+| `T2-01` | Full `ServiceNowValidationVerdict` behaviour table with exact `Message` / `TechnicalDetails` / `FieldName` strings per rung |
+| `T2-02` | Slice-02 read-path sketch: `sysparm_query` pass-through, the unknown-field no-op detector (configured total vs unfiltered total), `sys_class_name` scoping, pagination |
+| `T2-03` | `ServiceNowChoiceLabelResolver` interface, cache lifetime and the label-boundary ArchUnit rule |
+| `T2-04` | US-05 docs outline: minimum role set, the `snc_read_only` trap, the `snc_basic_auth_api_access` prerequisite, a worked query |
+| `T2-05` | S107 regrouping refactor: keyed `IEnumerable<IWorkTrackingAuthStrategy>` replacing 6 ctor params across all strategies |
+| `T2-06` | OAuth client-credentials successor shape (D3a) — **deliberately out of scope**, catalogued only so it is not re-raised as an oversight |
+| `T2-07` | Slice-04 `metric_instance` history design and the `itil` adoption-cost decision |
+| `T2-08` | Pact contract-test scaffold for the L1–L7 Table API response catalogue |
+
+---
+
+## Wave: DESIGN / [REF] Wave Decisions Summary
+
+- **Shape**: a fifth driven adapter behind an unchanged 8-method port. 5 new classes, 13 extensions,
+  no new port, no new controller, no new dependency, **no EF migration**.
+- **The one hard problem** is that ServiceNow answers a denial with a success. It is solved by moving the
+  verdict into a **pure function** with a 7-rung ladder, every rung but one grounded in measurement.
+- **The one thing Lighthouse must not build** is basic-auth-restriction detection — measured impossible
+  for the account that would need it. Recorded as a rejection in ADR-115 so it is not re-proposed.
+- **The one thing that must be confirmed before DISTILL** is the AC4 amendment (C-1).
+- **Slice 03 stays cancelled**, and the frontend portfolio schema entry makes that structural rather
+  than documentary.
+
+## Next Wave
+
+**DISTILL** (`nw-acceptance-designer`) against US-01 AC1–AC5, with the L1–L7 lie catalogue as the
+acceptance-test spine — **after** C-1 is resolved.
+Then **DEVOPS** (`nw-platform-architect`, KPIs + the Pact recommendation), then **DELIVER**.
