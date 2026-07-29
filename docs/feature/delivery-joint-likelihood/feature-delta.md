@@ -1952,3 +1952,34 @@ and ruled; they are locked, not proposals.
 R1's own guard is worth naming, because it is the trap slice-04's checks fell into first: the
 "never promises the number is below every feature" assertion **passes against today's copy**, so it is
 kept in the green block rather than the skipped one. As a RED it could never fail.
+
+---
+
+## Wave: DELIVER / [REF] DDD-3 cost measurement, slice-01
+
+DESIGN deferred the measurement to DELIVER and asked for the **endpoint**, not the header, because
+`CalculateFeatureLikelihoods` dominates and is unchanged.
+
+Measured 2026-07-29 against a local instance on the Dependencies demo scenario — the largest
+multi-team shape the demo has, **13 features across 5 teams**, one delivery, warm (5 discarded
+warm-up requests, then 60 samples of `GET /api/latest/deliveries/portfolio/{id}`):
+
+| | |
+|---|---|
+| min | 12.9 ms |
+| p50 | 13.6 ms |
+| **p95** | **21.5 ms** |
+| max | 29.2 ms |
+
+**Verdict: no rethink triggered.** ADR-110 point 4 declined memoisation on a measured 0.113 ms p95
+for the combination itself, and that reasoning stands one grain up: at 21.5 ms the endpoint is
+dominated by the EF query, the unchanged per-feature breakdown and serialisation, not by the rollup.
+No memoisation, no caching, no change to `Feature.Forecast` being a computed property.
+
+**What was NOT measured, stated rather than implied.** The direction claim — that the header path
+drops from ≈`2N + percentiles.Length + 1` `AggregatedWhenForecast` rebuilds to `N + 1`, because
+`GetGoverningFeature` re-read the computed `Feature.Forecast` once per candidate and again once per
+percentile — is derived from the code, **not** from a timed before/after. Building the pre-change
+revision in a worktree failed to start (its migrations assemblies are not built there), and the
+comparison was abandoned rather than faked. The absolute figure above is what the gate actually
+needed; the direction claim remains analytical.
