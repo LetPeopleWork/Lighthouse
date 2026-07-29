@@ -43,8 +43,9 @@
     "tests_authored": 58,
     "backend_cases": 50,
     "frontend_cases": 8,
-    "red_for_missing_functionality": 47,
-    "already_green_against_scaffold": 11,
+    "red_for_missing_functionality": 48,
+    "already_green_against_scaffold": 10,
+    "count_correction_note": "Was 47/11. The connector's ValidateConnection scaffold returned ConnectionValidationResult.Success(), whose Code is 'valid', so the AC3 happy path passed vacuously. Fixed at ba91f485e; backend is now 41 RED / 9 green, frontend 7 RED / 1 green.",
     "red_mechanism": "wrong-value scaffolds — sentinels and deliberate opposites, failing at the assertion site. NOT [Ignore]/skip. Nothing to un-ignore.",
     "scaffold_marker": "// SCAFFOLD (DISTILL slice 01, Story #5574)",
     "scaffold_marker_files": [
