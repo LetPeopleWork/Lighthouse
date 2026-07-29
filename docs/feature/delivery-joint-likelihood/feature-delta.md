@@ -1935,3 +1935,20 @@ reproduce-by-hand walkthrough of the slice-04 worked example.
 
 RED classification for the hand-off: `distill-red-classification.md` — slices 02/03/04 add **15 RED**,
 all `MISSING_FUNCTIONALITY`, 0 broken, plus **13 green** guards (two of them labelled vacuous-today).
+
+---
+
+## Wave: DISTILL / [REF] Maintainer rulings, 2026-07-29
+
+Three questions DISTILL raised rather than answered. All three were put to the maintainer at wave end
+and ruled; they are locked, not proposals.
+
+| ID | Question | Ruling |
+|----|----------|--------|
+| **R1** | `DeliveriesChips` (portfolio overview) renders the same joint number as `Likelihood: NN%`. D1 scopes the relabel to the detail header and the breakdown column only — gap or deliberate exclusion? | **Gap. Relabel it too.** Slice-03 extends by one component: the overview chip carries the same misreading risk with no cue that the number means "all of these together". Covered by `DeliveriesChips.likelihoodCopy.test.tsx` — 2 RED (joint framing, verbatim term) + 3 green guards. |
+| **R2** | AC-03.1 says `All {featuresTerm} by …` (verbatim); the US-03 prose says "All features" (lower-case). Which is normative? | **AC-03.1 — the term renders VERBATIM.** Lower-casing mangles acronym terms: "PIs" → "pis", "OKRs" → "okrs". The prose is illustrative, not normative. Asserted directly by the `PIs` fixture in both copy test files. |
+| **R3** | DT-14 made both new tooltips native `title` attributes — a DISTILL-imposed implementation constraint, flagged open to veto. | **Kept.** It matches `FeatureLikelihoodChip`'s existing idiom and is queryable from RTL and Playwright without simulating hover, which is what lets the tests assert tooltip text at all. |
+
+R1's own guard is worth naming, because it is the trap slice-04's checks fell into first: the
+"never promises the number is below every feature" assertion **passes against today's copy**, so it is
+kept in the green block rather than the skipped one. As a RED it could never fail.
