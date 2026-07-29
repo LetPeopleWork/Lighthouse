@@ -305,16 +305,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return connection;
         }
 
+        // Both accessors treat an empty value as absent. A GitHub secret that is not set is still
+        // exported as an environment variable holding the empty string, so `??` never fires and the
+        // empty value reaches the connector — which is how CI reported `invalid_url` against a
+        // perfectly good instance.
+        private static string FromEnvironment(string name)
+        {
+            var value = Environment.GetEnvironmentVariable(name);
+
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
+        }
+
         // The probe accounts created during the SPIKE share the admin password.
         private static string Password()
         {
-            return Environment.GetEnvironmentVariable("ServiceNowLighthouseIntegrationTestToken")
-                ?? throw new NotSupportedException("Can run test only if Environment Variable 'ServiceNowLighthouseIntegrationTestToken' is set!");
+            var password = FromEnvironment("ServiceNowLighthouseIntegrationTestToken");
+
+            if (password.Length < 1)
+            {
+                throw new NotSupportedException("Can run test only if Environment Variable 'ServiceNowLighthouseIntegrationTestToken' is set!");
+            }
+
+            return password;
         }
 
         private static string InstanceUrl()
         {
-            return Environment.GetEnvironmentVariable("ServiceNowLighthouseIntegrationTestInstance") ?? DefaultInstanceUrl;
+            var instanceUrl = FromEnvironment("ServiceNowLighthouseIntegrationTestInstance");
+
+            return instanceUrl.Length < 1 ? DefaultInstanceUrl : instanceUrl;
         }
 
         private static ServiceNowWorkTrackingConnector CreateSubject()
