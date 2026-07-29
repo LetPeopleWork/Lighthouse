@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 
@@ -44,8 +45,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         public const string ClosedField = "closed_at";
 
-        // SCAFFOLD (DISTILL slice 02, Story #5575)
-        private const string ScaffoldSentinel = "__scaffold__";
+        /// <summary>The universal-time half of a <c>sysparm_display_value=all</c> field.</summary>
+        private const string UniversalForm = "value";
+
+        /// <summary>The instance-local, human-readable half of the same field.</summary>
+        private const string ReadableForm = "display_value";
 
         /// <summary>
         /// Reads the state label a flow coach recognises ("In Progress"), never the raw choice
@@ -53,9 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public static string ReadStateLabel(JsonElement record)
         {
-            // SCAFFOLD (DISTILL slice 02, Story #5575)
-            _ = record;
-            return ScaffoldSentinel;
+            return ReadForm(record, StateField, ReadableForm);
         }
 
         /// <summary>
@@ -67,25 +69,52 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// carry no separate type field, which is why the team scope does not ask for one.</param>
         public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, string table)
         {
-            // SCAFFOLD (DISTILL slice 02, Story #5575)
-            // Sentinels rather than a throw: the failure then lands at the assertion site, and the
-            // expected/actual diff reads as the specification. See distill/red-classification-slice-02.md.
-            _ = record;
-            _ = owner;
-            _ = table;
+            var stateLabel = ReadStateLabel(record);
+            var recordNumber = ReadForm(record, RecordNumberField, UniversalForm);
 
             return new WorkItemBase
             {
-                ReferenceId = ScaffoldSentinel,
-                Name = ScaffoldSentinel,
-                Type = ScaffoldSentinel,
-                State = ScaffoldSentinel,
-                StateCategory = StateCategories.Unknown,
-                Order = ScaffoldSentinel,
-                CreatedDate = DateTime.UnixEpoch,
-                StartedDate = DateTime.UnixEpoch,
-                ClosedDate = DateTime.UnixEpoch,
+                ReferenceId = recordNumber,
+                Name = ReadForm(record, TitleField, UniversalForm),
+                Type = table,
+                State = owner.MapRawStateToMappedName(stateLabel),
+                StateCategory = owner.MapStateToStateCategory(stateLabel),
+                Order = recordNumber,
+                CreatedDate = ReadInstant(record, CreatedField),
+                StartedDate = ReadInstant(record, OpenedField) ?? ReadInstant(record, CreatedField),
+                ClosedDate = ReadInstant(record, ResolvedField) ?? ReadInstant(record, ClosedField),
             };
+        }
+
+        /// <summary>
+        /// Instants always come from the universal form. The instance-local form of the same field
+        /// can fall on a different calendar day, and Throughput buckets by day.
+        /// </summary>
+        private static DateTime? ReadInstant(JsonElement record, string field)
+        {
+            var universalTime = ReadForm(record, field, UniversalForm);
+
+            if (!DateTime.TryParse(universalTime, CultureInfo.InvariantCulture, DateTimeStyles.None, out var instant))
+            {
+                return null;
+            }
+
+            return DateTime.SpecifyKind(instant, DateTimeKind.Utc);
+        }
+
+        private static string ReadForm(JsonElement record, string field, string form)
+        {
+            if (record.ValueKind != JsonValueKind.Object || !record.TryGetProperty(field, out var bothForms))
+            {
+                return string.Empty;
+            }
+
+            if (bothForms.ValueKind != JsonValueKind.Object || !bothForms.TryGetProperty(form, out var value))
+            {
+                return string.Empty;
+            }
+
+            return value.GetString() ?? string.Empty;
         }
     }
 }

@@ -25,16 +25,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// </remarks>
     public static class ServiceNowTeamQueryVerdict
     {
-        // SCAFFOLD (DISTILL slice 02, Story #5575)
-        private const string ScaffoldSentinel = "__scaffold__";
+        /// <summary>The settings field every one of these verdicts sends the flow coach back to.</summary>
+        private const string QueryFieldName = "DataRetrievalValue";
 
         /// <summary>
         /// Rung 0 — the team carries no ServiceNow query. Pre-flight, no IO.
         /// </summary>
         public static ConnectionValidationResult FromMissingQuery()
         {
-            // SCAFFOLD (DISTILL slice 02, Story #5575)
-            return ConnectionValidationResult.Failure(ScaffoldSentinel, ScaffoldSentinel);
+            return ConnectionValidationResult.Failure(
+                "missing_query",
+                "This team has not said which ServiceNow records are theirs. Enter the encoded query that selects them, for example 'assignment_group.name=Service Desk^active=true'.",
+                // Stryker disable once String: a support-log restatement of the message above, which is
+                // what the flow coach acts on and what ATeamThatHasNotSaidWhichWorkIsTheirs_IsAskedForAQuery
+                // asserts. Nothing branches on this line.
+                "The team carries no ServiceNow query, and asking the Table API without one returns the whole table.",
+                QueryFieldName);
         }
 
         /// <summary>
@@ -45,12 +51,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <param name="tableTotalCount">Rows the same table holds with no query at all.</param>
         public static ConnectionValidationResult FromTeamProbe(string table, int matchedCount, int tableTotalCount)
         {
-            // SCAFFOLD (DISTILL slice 02, Story #5575)
-            _ = table;
-            _ = matchedCount;
-            _ = tableTotalCount;
+            if (matchedCount < 1)
+            {
+                return NoWorkSelected(table);
+            }
 
-            return ConnectionValidationResult.Failure(ScaffoldSentinel, ScaffoldSentinel);
+            if (matchedCount == tableTotalCount)
+            {
+                return QuerySelectsEverything(table, matchedCount);
+            }
+
+            return ConnectionValidationResult.Success();
+        }
+
+        // Zero is checked before the equality above on purpose: a table with nothing in it also has
+        // matched == total, and telling an empty service desk that its query is too wide is an
+        // accusation about the one thing that is definitely not wrong.
+        private static ConnectionValidationResult NoWorkSelected(string table)
+        {
+            return ConnectionValidationResult.Failure(
+                "no_work_items_found",
+                $"This query selects no records in '{table}'. Either the query matches nothing, or the table holds nothing yet. Check the query against the fields and values '{table}' actually uses.",
+                // Stryker disable once String: the correction an administrator makes is in the message
+                // above; this only repeats the count for a support log.
+                $"The query matched 0 rows in '{table}'.",
+                QueryFieldName);
+        }
+
+        private static ConnectionValidationResult QuerySelectsEverything(string table, int matchedCount)
+        {
+            return ConnectionValidationResult.Failure(
+                "query_matches_whole_table",
+                $"This query selects every record in '{table}'. ServiceNow drops a query term naming a field the table does not have and answers with the whole table in silence, so either a field name is misspelled or this team genuinely is the entire table. Check the field names before saving.",
+                $"The query matched {matchedCount} rows, and '{table}' holds {matchedCount} rows with no query at all.",
+                QueryFieldName);
         }
     }
 }
