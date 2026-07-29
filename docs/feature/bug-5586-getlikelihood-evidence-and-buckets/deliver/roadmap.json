@@ -1,0 +1,159 @@
+{
+  "roadmap": {
+    "project_id": "bug-5586-getlikelihood-evidence-and-buckets",
+    "created_at": "2026-07-29",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Fix ADO Bug 5586 — ForecastBase.GetLikelihood(int) reports confidence the simulation does not support, in two independent ways. Defect 1: trialCounter == 0 falls to `return 100`, so an absence of evidence reads as certainty. Defect 2 (confirmed by execution, not by reading): the loop adds a bucket's mass BEFORE testing the break, so GetLikelihood(t) returns CDF(min{k in keys : k >= t}) rather than CDF(t) — correct only when t is itself a bucket key or t > maxKey. Sparse histograms (every AggregatedWhenForecast and every DeliveryCompletionForecast, because CompletionHistogram.DistributeByLargestRemainder emits only days with trials > 0) against an arbitrary working-day target make that error unbounded: {5:5000,40:5000} at day 6 returns 100 where 50 is the truth. The fix expresses the threshold through the injected IComparer rather than a literal `key <= t`, because HowManyForecast passes a DESCENDING comparer over an item-count key and a literal would silently invert it. Acceptance: the new non-key WhenForecast cases and the HowManyForecast at-least-N pin pass; the two existing tests that assert the defect are flipped to the honest expectation and pass; the whole backend suite stays green; the manual When-forecast reports 'cannot forecast' rather than a fabricated 100 % or an equally false 0 %; Stryker per-feature kill rate >= 80 % on the touched scope, with the Delivery.cs guard-3 mutant now dying without a new test.",
+    "rca_source": "docs/feature/bug-5586-getlikelihood-evidence-and-buckets/deliver/rca-context.md (Rex / @nw-troubleshooter, /nw-bugfix Phase 1, 2026-07-29 — executed probes, not reading)"
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, per the /nw-bugfix minimal-roadmap path and the bug-5064 / bug-5016 precedent)",
+    "reviewed_at": "2026-07-29",
+    "notes": "No architect dispatch. The RCA is the design doc: it carries the exact corrected method body, the per-subclass comparer analysis that constrains the fix's FORM, the complete file list, and an executed inventory of which existing tests stay green and which two assert the defect. Three steps rather than the two-step bugfix default because the maintainer ruled the manual-forecast surface must report 'cannot forecast' (nullable carrier, ADR-112 precedent) rather than fall to 0 — that is a DTO contract change with its own RED and its own frontend surface, and folding it into the GREEN step would mix a wire-format change into a domain fix. All test edits live in 01-01 so the RED is honest; all production code lives in 01-02 and 01-03."
+  },
+  "ssot_inputs": {
+    "rca_context": "docs/feature/bug-5586-getlikelihood-evidence-and-buckets/deliver/rca-context.md",
+    "ado_bug": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5586",
+    "parent_epic": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5459",
+    "adr": "docs/product/architecture/adr-112 (nullable likelihood carrier — the precedent 01-03 follows)"
+  },
+  "maintainer_decisions": [
+    "Both defects fixed together, plus the ForecastController guard.",
+    "Snapshot step accepted SILENTLY. Persisted DeliveryMetricSnapshot.LikelihoodPercentage rows carry pre-fix numbers and are forward-only (ADR-048/049/050), so DeliveryPredictabilityChart will show a step at deploy. No chart annotation, no release-note copy, no backfill. Do not add any.",
+    "Manual forecast reports 'cannot forecast', not 0 %. ManualForecastDto.Likelihood becomes double? — the same nullable-carrier move ADR-112 made for delivery likelihood."
+  ],
+  "out_of_scope": [
+    "Relocating GetLikelihood from ForecastBase onto WhenForecast with a literal `key <= t`. Cleaner typing, but a wider EF + API surface change for a latent-only benefit. The comparer-based form gets the same correctness at a fraction of the blast radius.",
+    "Backfilling or annotating historical DeliveryMetricSnapshot rows — explicitly declined by the maintainer.",
+    "Release-note copy for the moved numbers — explicitly declined by the maintainer.",
+    "Delivery.cs:64-67 guard 2's Stryker annotation. It is NOT #5586-dependent: skipping guard 2 falls through to guard 5, where DeliveryCompletionForecast.Build returns null for both the missing-row and zero-trial cases, so the mutant stays unobservable after this fix. Leave it exactly as it is.",
+    "Harmonising GetProbability with the fixed GetLikelihood loop. GetProbability (ForecastBase.cs:53-68) is correct under BOTH comparer directions today; touching it would be a regression risk with no defect behind it.",
+    "The Lighthouse-Clients CLI/MCP repo — not checked out in this working tree. If its surface exposes the manual-forecast likelihood, the version bump is a finalize-time follow-up, not a step here. Verify at finalize and report either way."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "GetLikelihood tells the truth about evidence and about bucket boundaries",
+      "description": "RED (01-01, tests only) -> GREEN (01-02, the domain fix) -> carrier (01-03, the manual-forecast surface). Every test edit is in 01-01 so the RED output is real and capturable; no production line moves until 01-02.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Author RED regression tests for both defects and flip the two that assert the bug",
+          "description": "Tests only — do NOT touch any production file in this step. (a) Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/WhenForecastTest.cs:34-40 — the existing GetLikelihood_ReturnsCorrectValue [TestCase] table only uses targets 3, 4, 5, 6, 7 (every one a key of its own fixture) and 12 (beyond maxKey 9), which is exactly why Defect 2 shipped. Add non-key targets: (8, 90), (2, 0), (0, 0). Read the fixture at the top of that test to confirm it is {3:1,4:2,5:3,6:2,7:1,9:1} with 10 total trials; if the fixture differs, recompute the expected CDF values from the ACTUAL fixture rather than pasting these numbers. (b) Add ONE new test pinning the zero-evidence answer: a WhenForecast with an empty simulation result (or the {0:0} day-0 sentinel that ForecastService.cs:141-146 emits) answers 0, not 100. (c) Add ONE new test for HowManyForecast likelihood pinning at-least-N semantics — HowManyForecast passes a DESCENDING comparer (HowManyForecast.cs:7,12) and its key is an item COUNT, so with {3:10,5:20,8:70} the honest GetLikelihood(5) is 90 ('90 % chance of at least 5 items'). This test is the guard against a future 'simplification' to a literal key <= t; without it root cause C stays open. If HowManyForecast has no existing test class, create one following the WhenForecastTest layout. (d) Flip the two existing tests that assert the defect: AggregatedWhenForecastTest.cs:204 `Assert.That(aggregate.GetLikelihood(0), Is.EqualTo(100))` in EveryContributorWithoutTrials_KeepsTheContributorHistogram becomes Is.Zero — leave the percentile half at :199-202 completely untouched, that invariant is legitimate and is the actual subject of the test; and ForecastServiceTest.cs:162-172 When_FixedThroughput_TargetDateToday_ReturnLikelihood, whose minKey is 13 so 35 items cannot finish in zero days — rename it to say so and assert Is.Zero. (e) Run the suite and CAPTURE the RED output: every one of (a)(b)(c)(d) must fail against today's ForecastBase.cs, with the actual values matching the RCA table (GetLikelihood(8) = 100 not 90, GetLikelihood(2) = 10 not 0, zero-trial = 100 not 0, HowMany(5) = 70 not 90). If any of them PASSES on today's code, STOP and report — it means the fixture or the expectation is wrong, not the production code.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/WhenForecastTest.cs",
+          "scenario_name": "GetLikelihood is CDF(t), not CDF of the next bucket, and answers 0 on no evidence",
+          "red_to_green_tests": [
+            "WhenForecastTest :: GetLikelihood_ReturnsCorrectValue (8, 90) — NEW case, RED at 100",
+            "WhenForecastTest :: GetLikelihood_ReturnsCorrectValue (2, 0) — NEW case, RED at 10",
+            "WhenForecastTest :: GetLikelihood_ReturnsCorrectValue (0, 0) — NEW case, RED at 10",
+            "WhenForecastTest :: zero-evidence test — NEW, RED at 100",
+            "HowManyForecastTest :: at-least-N likelihood pin — NEW, RED at 70",
+            "AggregatedWhenForecastTest :: EveryContributorWithoutTrials_KeepsTheContributorHistogram — FLIPPED to Is.Zero, RED at 100",
+            "ForecastServiceTest :: When_FixedThroughput_TargetDateToday_* — FLIPPED to Is.Zero, RED at 0.01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/WhenForecastTest.cs (edit — add TestCases + one zero-evidence test)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/HowManyForecastTest.cs (edit or create — one at-least-N test)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/AggregatedWhenForecastTest.cs (edit — line 204 only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs (edit — lines 162-172 only)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "ZERO production files modified in this step. `git diff --name-only` shows only files under Lighthouse.Backend.Tests/.",
+            "Test names are PascalCase scenario names describing the behaviour, never Test_X_Y. The zero-evidence test must name the semantic ('no trials' / 'no evidence'), not the mechanism ('trialCounter').",
+            "The new WhenForecast expectations are derived from the ACTUAL fixture in that file, not pasted from the roadmap. State the fixture and the arithmetic in the execution log.",
+            "AggregatedWhenForecastTest.cs:199-202 (the percentile assertions) are byte-identical after the edit. Only the likelihood assertion at :204 changes.",
+            "The HowManyForecast test asserts at-least-N (descending key = item count). Getting this backwards is the single most likely way to ship a wrong fix — state in the execution log why 90 and not 30 is the honest answer for GetLikelihood(5) on {3:10,5:20,8:70}.",
+            "RED output captured with actual-vs-expected for every listed test. Any test that passes on today's code is a STOP condition, not something to adjust away.",
+            "No banned comments (no // ===== dividers, no // Arrange/Act/Assert, no // Given/When/Then, no provenance like '// bug 5586' — the ADO id belongs in the commit message only). Per CLAUDE.md comments are sparse by default.",
+            "Boy-Scout rule inside the touched regions only.",
+            "Commit message: `test(forecast): pin likelihood to the target day and to the evidence that exists (bug 5586)`"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Express the likelihood threshold through the injected comparer",
+          "description": "Replace ForecastBase.GetLikelihood (Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastBase.cs:70-95) with the corrected body from the RCA: return 0 when TotalTrials == 0; then walk the SortedDictionary breaking when `keyOrder.Compare(simulation.Key, threshold) > 0` and accumulating AFTER the test rather than before; then the unchanged percentage arithmetic. `var keyOrder = comparer ?? Comparer<int>.Default;` is REQUIRED, not defensive padding — the protected ForecastBase() ctor at :8 leaves the field null and the SortedDictionary at :44 silently falls back to the same default, so a comparer-based loop would NRE without it. Rename the parameter off `daysToTargetDate` (it is an item count for HowManyForecast) — `threshold` or similar; update the three production call sites' argument names only if they use named arguments. Drop the `daysToTargetDate < 0 => return 0` guard: under ascending order the first key is > -1 so the loop breaks immediately and returns 0 anyway (ForecastServiceTest.cs:159 stays green — verified, minKey is 13), and under descending order the guard was actively WRONG ('at least -1 items' is 100 %). Then: delete the four-line `// Stryker disable once all: equivalent while Bug #5586 stands ...` block at Models/Delivery.cs:72-75, keeping the `if (!HasRemainingWork())` guard itself — that guard is now genuinely observable and DeliveryJointForecastTest.cs:96-118 already kills its mutant. Do NOT touch the annotation at Delivery.cs:64-67; it is a different guard and is not #5586-dependent. Finally trim the two comments that become false: Models/Feature.cs:118-119 and Models/Forecast/AggregatedWhenForecast.cs:17-19 both explain that they exist to avoid the trialCounter == 0 branch reporting 100 %. The guards stay; the comments should shrink to a line that says what the code still means (unknown is carried out explicitly, ADR-112) rather than describing a branch that no longer exists — per CLAUDE.md, one line pointing at the ADR, not narration. Same for the XML doc at Tests/Models/FeatureTest.cs:29-34 which claims both branches 'agree by accident'.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/WhenForecastTest.cs",
+          "scenario_name": "Every 01-01 test goes GREEN and the existing suite does not move",
+          "red_to_green_tests": [
+            "All seven 01-01 tests — GREEN",
+            "DeliveryCompletionForecastTest :: :73, :94-96, :142, :231 — stay GREEN (histograms {10:..,20:..}, TargetDay 10 is a key)",
+            "DeliveryJointForecastTest :: all, incl. :96-118 CalculateMetrics_EveryFeatureWasAlreadyFinishedAtTheLastForecastRun_ReportsHundredPercentForToday — stays GREEN via Delivery.cs:78, and now KILLS the guard-3 mutant",
+            "FeatureTest :: :24, :42, :59 — stay GREEN (Feature.cs:130 short-circuit fires first)",
+            "FeatureUnknownForecastTest :: :37, :72 — stay GREEN",
+            "FeatureMissingForecastRowTest :: :51 — stays GREEN",
+            "InstanceDayAnchorEntityTest :: :55, :58 — stay GREEN (targets 9 and 10 are both keys)",
+            "MultiTeamJointForecastDeliveryIntegrationTest :: :40, :44 — stay GREEN (target 5 is a key)",
+            "RecurringBlackoutRulesDeliveryIntegrationTest :: :94 — stays GREEN",
+            "ForecastServiceTest :: :159 GetLikelihood(-1) Is.Zero — stays GREEN with the < 0 guard removed",
+            "ForecastServiceTest :: :206 GetLikelihood(30) InRange(65,73) — stays GREEN at 66.49 (day 30 is a key)",
+            "Full Lighthouse.Backend.Tests suite — GREEN"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastBase.cs (edit — GetLikelihood only, lines 70-95)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs (edit — delete the annotation at 72-75, keep the guard)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs (edit — trim the comment at 118-119)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/AggregatedWhenForecast.cs (edit — trim the comment at 17-19)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureTest.cs (edit — XML doc at 29-34)"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "GetProbability (ForecastBase.cs:53-68) is byte-identical after the edit. It is correct under both comparer directions today and is explicitly out of scope.",
+            "The zero-evidence predicate is `TotalTrials == 0`, NOT `trialCounter == 0`. With TotalTrials > 0 and no bucket at or before the threshold, the arithmetic yields 0 naturally — there must be no second early return.",
+            "`comparer ?? Comparer<int>.Default` present. Confirm by reading ForecastBase.cs:8 that the protected ctor really does leave it null.",
+            "The accumulate moves AFTER the break test. A fix that keeps `trialCounter += ...` first and only changes the predicate does not fix anything.",
+            "Delivery.cs: exactly four comment lines removed (72-75); the `if (!HasRemainingWork())` guard and its `return new DeliveryMetricsProjection(100.0, ...)` body are unchanged; lines 61-70 including guard 2's annotation are byte-identical.",
+            "All 01-01 tests GREEN; full `dotnet test Lighthouse.Backend/` GREEN with counts captured.",
+            "`dotnet build` warning-free (TreatWarningsAsErrors).",
+            "Trimmed comments follow CLAUDE.md: one line pointing at ADR-112, no narration of what the code does, no mention of a branch that no longer exists.",
+            "Commit message: `fix(forecast): report the likelihood the simulation supports (bug 5586)`"
+          ],
+          "implementation_notes": [
+            "Verification trap: dense single-team forecasts barely move — GetLikelihood(30) was already exact at 66.49 before the fix. A smoke test against a single-team forecast will look IDENTICAL either way. Verify against a sparse multi-team fixture or you are testing nothing.",
+            "If any existing test listed as 'stays GREEN' goes red, that is new information, not a test to adjust. Stop and report which one and what it now returns — the RCA's green list was derived by execution and by tracing the guard that fires first, so a surprise there means a guard is not doing what the RCA believed."
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Manual forecast says 'cannot forecast' instead of a fabricated number",
+          "description": "ForecastController.RunManualForecastAsync (API/ForecastController.cs:104-107) is the one production caller that was never guarded, so a team with no usable throughput currently ships 100 % and would ship 0 % after 01-02 — both lies. The maintainer ruled for the nullable carrier, matching ADR-112 and Feature.GetLikelhoodForDate's `return null`. RED first: add a controller-level test asserting that a manual forecast for a team whose When-forecast has TotalTrials == 0 leaves Likelihood null, and a frontend test asserting the cannot-forecast rendering. Then: (a) API/DTO/ManualForecastDto.cs:9 `public double Likelihood { get; set; }` -> `public double? Likelihood { get; set; }`; (b) ForecastController.cs:104-107 — only assign when `whenForecast.TotalTrials > 0` alongside the existing `timeToTargetDate > 0`; (c) Lighthouse.Frontend/src/models/Forecasts/ManualForecast.ts — `likelihood: number` -> `likelihood: number | null` on both the interface and the class, and the constructor default from `likelihood = 0` to `likelihood: number | null = null`; (d) Lighthouse.Frontend/src/pages/Teams/Detail/ManualForecaster.tsx:406-420 — the render gate is currently `manualForecastResult.likelihood > 0`, which after 01-02 would ALSO hide a legitimate 0 % (now common, since any target below the histogram's minKey honestly answers 0). Replace it with a null check so a real 0 % renders as 0 % and only null suppresses or shows 'cannot forecast'. Follow whatever the existing cannot-forecast copy is on the delivery surfaces (grep for the string introduced by ADR-112 / US 5587 and reuse it verbatim rather than inventing new wording). Check whether ForecastLikelihood's props type needs to stay non-null — if so, keep the null check at the call site and pass a narrowed number.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+          "scenario_name": "A team that cannot be forecast reports no likelihood rather than a number",
+          "red_to_green_tests": [
+            "ForecastControllerTest :: manual forecast with a zero-trial when-forecast leaves Likelihood null — NEW",
+            "ManualForecaster.test.tsx :: renders the cannot-forecast state for a null likelihood — NEW",
+            "ManualForecaster.test.tsx :: renders 0 % as 0 % rather than hiding it — NEW (this is the regression the old `> 0` gate would cause)",
+            "ManualForecaster.test.tsx :: existing cases at :384, :406, :428, :432-447 — reconcile with the new gate; a case asserting the block is ABSENT for likelihood 0 is now asserting the wrong thing and must flip",
+            "TeamForecastView.test.tsx :: :330, :366, :442, :797 (likelihood: 0 fixtures) — stay GREEN or be updated deliberately",
+            "Full backend suite + `pnpm test` — GREEN"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/ManualForecastDto.cs (edit — line 9, double -> double?)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs (edit — lines 104-107, zero-trial guard)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs (edit or create — one new test)",
+            "Lighthouse.Frontend/src/models/Forecasts/ManualForecast.ts (edit — nullable likelihood)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/ManualForecaster.tsx (edit — lines 406-420 render gate)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/ManualForecaster.test.tsx (edit — new cases + reconcile existing)"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "Before editing ManualForecastDto: grep the repo for every consumer of that DTO and of the frontend IManualForecast.likelihood, per the CLAUDE.md shared-contract rule. Report the full consumer list in the execution log BEFORE the edit, not after.",
+            "The cannot-forecast copy is REUSED from the existing delivery surfaces, not newly invented. Quote the source file:line it came from.",
+            "A genuine 0 % renders as 0 %. The old `likelihood > 0` gate must not survive in any form — it is the reason this step exists.",
+            "Any DTO stability test covering ManualForecastDto is reconciled deliberately. Note that ForecastLikelihoodCapDtoStabilityTest (ADR-038 D2) was NARROWED, not deleted, during US 5587 for exactly this reason: D2 keeps presentation state off the wire, but a value that does not exist is a domain fact. If it blocks this change, narrow it the same way and say so.",
+            "`pnpm test` green, `pnpm build` zero errors AND zero warnings, Biome clean on ./src.",
+            "`dotnet build` warning-free, full backend suite green.",
+            "Commit message: `fix(forecast): report no likelihood when a manual forecast has no evidence (bug 5586)`"
+          ],
+          "implementation_notes": [
+            "The Lighthouse-Clients CLI/MCP repo is not in this working tree. If it deserialises ManualForecastDto.likelihood as a non-nullable number this is a breaking wire change for it; if it forwards payloads verbatim as `readonly unknown[]` (the pattern ADR-112 recorded) it is unaffected. Flag this in the completion report either way — the version-bump call is the maintainer's."
+          ]
+        }
+      ]
+    }
+  ]
+}

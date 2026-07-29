@@ -3496,10 +3496,11 @@ flowchart LR
   identity element of their operator (`min(x,1) = x`, `1 × x = x`), so no degenerate empty CDF is ever
   constructed and no bucket vanishes carrying the wrong value — sound only because the *only* pairs
   that resolve to 1 are pairs with no remaining work.
-- **The rollup never reaches `ForecastBase.GetLikelihood`'s `trialCounter == 0 → return 100`** (ADO Bug
-  **#5586**, filed, deliberately untouched — it is reachable from single-team paths). Every 100 % the
-  delivery reports comes from an explicit rule, never from an empty histogram. Reaching that branch is
-  a test failure, exactly as ADR-112 requires one grain down.
+- **Every 100 % the delivery reports comes from an explicit rule, never from an empty histogram.**
+  `ForecastBase.GetLikelihood` used to answer `100` when `trialCounter == 0`; ADO Bug **#5586** fixed
+  that, and it now returns 0 on no evidence and cumulates to `CDF(threshold)` instead of to the next
+  bucket at or after the threshold. Depending on that branch for a 100 % is still a test failure,
+  exactly as ADR-112 requires one grain down.
 - **Transient read-path forecasts are never attached to EF.** The per-team carriers deliberately leave
   `Team`/`TeamId`/`Feature`/`FeatureId` null, so there is no navigation for EF to fix up onto a tracked
   entity. Asserted by a `ChangeTracker` integration test, not by convention.

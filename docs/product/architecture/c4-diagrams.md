@@ -1402,6 +1402,7 @@ Six commitments the diagrams make visible:
    Four `Forecasts` shapes are reachable, not three; the fourth is the missing-row case above.
 5. **Done pairs are not enumerated and empty buckets are absent, because 1 is the identity of both
    operators** — no degenerate empty CDF is ever constructed.
-6. **The rollup never reaches `ForecastBase.GetLikelihood`'s `trialCounter == 0 → return 100`**
-   (ADO Bug #5586) — every 100 % it reports comes from an explicit guard.
+6. **Every 100 % the rollup reports comes from an explicit guard, never from an empty histogram.**
+   `GetLikelihood`'s old `trialCounter == 0 → return 100` was ADO Bug #5586 and now returns 0; the
+   guards remain the rollup's only source of certainty.
 

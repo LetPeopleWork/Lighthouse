@@ -206,12 +206,14 @@ opposite numbers. Both are answered by explicit guards in `Delivery.CalculateMet
    the maths actually consumes, so the two cannot drift apart silently.
 5. Otherwise: build the buckets and read likelihood and dates off the aggregate.
 
-Guards 3 and 4 exist for the same reason: `ForecastBase.GetLikelihood` ends `return 100` when
-`trialCounter == 0` (ADO Bug **#5586**, filed, deliberately untouched — it is reachable from
-single-team paths and changing it here would alter behaviour outside this story's scope). **The
-delivery rollup must never reach that branch**, exactly as ADR-112 point 3 requires of the feature
-path. A 100 % that is *meant* is returned by an explicit rule; a 100 % that falls out of an empty
-histogram is the defect this ADR family exists to remove.
+Guards 3 and 4 exist for the same reason: `ForecastBase.GetLikelihood` used to end `return 100` when
+`trialCounter == 0`, so an absence of evidence read as certainty. ADO Bug **#5586** fixed that — the
+method now returns 0 on no evidence and cumulates to `CDF(threshold)` rather than to the next bucket
+at or after it. The guards stay: **the delivery rollup must never depend on that branch for its
+100 %**, exactly as ADR-112 point 3 requires of the feature path. A 100 % that is *meant* is returned
+by an explicit rule; a 100 % that falls out of an empty histogram is the defect this ADR family
+exists to remove. Guard 3 carried a `// Stryker disable once all` annotation that was only an
+equivalent mutant while #5586 stood; the fix made it observable and the annotation is gone.
 
 ### 7. `GetGoverningFeature` and `GetLeastLikelyFeature` are both deleted
 

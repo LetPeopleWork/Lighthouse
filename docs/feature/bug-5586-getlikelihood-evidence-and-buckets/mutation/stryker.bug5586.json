@@ -1,0 +1,32 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/Forecast/ForecastBase.cs",
+      "**/Models/Forecast/AggregatedWhenForecast.cs",
+      "**/Models/Forecast/WhenForecast.cs",
+      "**/Models/Forecast/HowManyForecast.cs",
+      "**/Models/Delivery.cs",
+      "**/Models/Feature.cs"
+    ],
+    "thresholds": {
+      "high": 90,
+      "low": 80,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~Forecast|FullyQualifiedName~Delivery|FullyQualifiedName~Feature|FullyQualifiedName~InstanceDayAnchor|FullyQualifiedName~RecurringBlackout",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
