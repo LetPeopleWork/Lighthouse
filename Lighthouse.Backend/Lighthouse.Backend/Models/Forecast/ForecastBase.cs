@@ -29,6 +29,8 @@
 
         public List<IndividualSimulationResult> SimulationResults { get; set; } = new List<IndividualSimulationResult>();
 
+        private IComparer<int> KeyOrder => comparer ?? Comparer<int>.Default;
+
         public SortedDictionary<int, int> SimulationResult
         {
             get
@@ -41,7 +43,7 @@
                         dictionary.Add(item.Key, item.Value);
                     }
 
-                    simulationResult = new SortedDictionary<int, int>(dictionary, comparer);
+                    simulationResult = new SortedDictionary<int, int>(dictionary, KeyOrder);
                 }
 
                 return simulationResult;
@@ -74,15 +76,13 @@
                 return 0;
             }
 
-            // The comparer carries the direction, so the threshold means "by day t" ascending and
-            // "at least N items" descending (Bug #5586).
-            var keyOrder = comparer ?? Comparer<int>.Default;
-
             var trialCounter = 0;
 
+            // KeyOrder carries the direction, so the threshold means "by day t" ascending and
+            // "at least N items" descending (Bug #5586).
             foreach (var simulation in SimulationResult)
             {
-                if (keyOrder.Compare(simulation.Key, threshold) > 0)
+                if (KeyOrder.Compare(simulation.Key, threshold) > 0)
                 {
                     break;
                 }

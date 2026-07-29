@@ -24,21 +24,15 @@ const ForecastLikelihood: React.FC<ForecastLikelihoodProps> = ({
 	hasSufficientData,
 }) => {
 	const forecastLevel = new ForecastLevel(likelihood);
-	// A missing likelihood outranks the thin-history signal: that one says the forecast rests on
-	// little data, this one says there is no forecast at all (Bug #5586).
+	const hasRemainingWork = remainingItems > 0;
+	// "No forecast" outranks the thin-history signal - see utils/forecast/cannotForecast.ts (Bug #5586).
 	const cannotForecast = likelihood === null;
-	const formattedLikelihood = cannotForecast
-		? CANNOT_FORECAST_SHORT
-		: formatLikelihood(likelihood, {
-				hasRemainingWork: remainingItems > 0,
-				precision: "fixed2",
-			});
 	const dataInsufficient =
 		!cannotForecast &&
-		isForecastDataInsufficient({
-			hasRemainingWork: remainingItems > 0,
-			hasSufficientData,
-		});
+		isForecastDataInsufficient({ hasRemainingWork, hasSufficientData });
+	const formattedLikelihood = cannotForecast
+		? CANNOT_FORECAST_SHORT
+		: formatLikelihood(likelihood, { hasRemainingWork, precision: "fixed2" });
 
 	return (
 		<Grid container sx={{ width: "100%", flexDirection: "column" }}>
