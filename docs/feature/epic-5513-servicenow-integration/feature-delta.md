@@ -1714,26 +1714,38 @@ completable; the epic is not shippable to a customer until it is resolved. It is
 place where Lighthouse could still overstate quietly — the exact failure this epic exists to prevent —
 so it must not decay into a footnote. Carried to slice 05 and to ADR-117's ratification.
 
-### R-2 — The Q3 silent-filter check reports, it does not block
+### R-2 — REVERSED. The Q3 silent-filter check blocks.
 
-DISTILL proposed blocking when the filtered and unfiltered counts match, and correctly noted the
-detector cannot be made reliable.
+**Original ruling (wrong, superseded — kept because the reasoning still matters):** do not block, return
+valid with the suspicion named in the `Message`. The concern behind it was real: a legitimate small
+service desk whose team genuinely *is* the whole incident table gets refused a valid configuration, and
+rejecting correct setups lands on exactly the small-shop customers this epic is trying to win.
 
-**Ruling: do not block.** A legitimate small service desk whose team genuinely *is* the whole incident
-table would be refused a valid configuration. Rejecting correct setups is a worse and more visible
-failure than the one being prevented, and it would land on exactly the small-shop customers this epic
-is trying to win.
+**Reversed the same day, on evidence.** The ruling asked DELIVER to verify that the frontend surfaces a
+success message. It does not. `TeamService.validateTeamSettings` returns `Promise<boolean>` and ends
+`return response.data.isValid === true` — `Message`, `Code`, `TechnicalDetails` and `FieldName` are all
+discarded on success, and nothing in `useCreateWizard` or `useModifySettings` renders anything for a
+valid result. The failure path is fine: a 400 becomes an `ApiError` and the wizard shows `error.message`
+plus `error.technicalDetails`.
 
-**Do not silently pass either.** `ValidateTeamSettings` returns valid, with the suspicion named in the
-`Message` — `ConnectionValidationResult` already carries a `Message` on success, so this needs no
-shared-contract change. The message names both readings: the query may be selecting everything because
-the team really is everything, or because a field name was mistyped and silently dropped.
+So "report but do not block" would have degenerated into **silently pass** — a warning written to a
+channel with no reader. That is the precise failure this epic exists to prevent, and it would have been
+shipped under a ruling that congratulated itself for avoiding it.
 
-**Recorded gap**: `ConnectionValidationResult` has no valid-with-warning shape, so this leans on a
-success message the UI may or may not surface. Adding a warning channel is a shared-contract change
-(grep usages, extend the test factory first) and is deliberately out of slice-02 scope. DELIVER must
-report whether the frontend actually displays a success message; if it does not, this ruling has not
-achieved its purpose and needs revisiting.
+**Binding ruling: `ValidateTeamSettings` blocks.** `IsValid` false, code `query_matches_whole_table`, and
+the endpoint answers 400 so the message reaches the flow coach where they are actually looking. This is
+what the three DISTILL tests specified across three layers; the crafter followed the tests over the
+prose, which was the right call — a doc paragraph should not outweigh three assertions.
+
+**The false-positive cost is real and accepted.** A team whose query legitimately matches the whole
+table must narrow it or make it explicit. That is an annoying, visible, recoverable refusal with a
+message that says what to do. The alternative was computing metrics over everything and looking
+plausible. Blocking is the right trade only because there is nowhere to put a warning; **if a
+valid-with-warning channel is ever added to `ConnectionValidationResult`, revisit this.** That is a
+shared-contract change (grep usages, extend the test factory first) and stays out of slice-02 scope.
+
+**Generalised lesson**: "warn instead of blocking" is only honest when a warning channel demonstrably
+exists and is rendered. Check the reader before choosing to warn.
 
 ### R-3 — The two superseded slice-01 assertions are updated, not worked around
 

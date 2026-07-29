@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 2);
             var subject = CreateSubject(instance);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
 
             Assert.That(workItems.ToList(), Has.Count.EqualTo(5));
         }
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 2);
             var subject = CreateSubject(instance);
 
-            var referenceIds = (await subject.GetWorkItemsForTeam(ATeam())).Select(item => item.ReferenceId).ToList();
+            var referenceIds = (await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState())).Select(item => item.ReferenceId).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -323,6 +323,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DoneStates = ["Resolved", "Closed"],
                 WorkTrackingSystemConnection = AConnection(table),
             };
+        }
+
+        // The paging tests need every record in the fixture to survive state filtering. Otherwise
+        // "all five came back" cannot tell a working pager from one that stopped early and happened
+        // to lose the record the team never mapped. This team maps Awaiting Vendor too, so five
+        // means five, and a single-page reader still fails at two.
+        private static Team ATeamThatMapsEveryState()
+        {
+            var team = ATeam();
+            team.DoingStates = ["In Progress", "Awaiting Vendor"];
+
+            return team;
         }
 
         private static WorkTrackingSystemConnection AConnection(string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable)
