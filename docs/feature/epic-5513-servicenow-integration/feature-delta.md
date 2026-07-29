@@ -832,6 +832,23 @@ holds for `incident`/`change_request` and weakens for a `task`-rooted read scope
 Slice 01 does not read work items, so nothing is at risk yet. Flagged so slice 02 revisits it
 deliberately. Cost of being wrong: one boolean and one FE test.
 
+**Maintainer note, 2026-07-29 — the shape the slice-02 revisit should start from.** Work Item Types is
+already a manually-typed *list* at team scope, and for a `task`-rooted read `sys_class_name` **is**
+literally the work item type, so the mapping is exact rather than analogical. That makes it the
+natural home for the per-team type filter, and it is strictly better than the current single
+connection-scope table for a shop spanning `incident` + `change_request` in one team.
+
+It cannot *replace* the connection-scope table: `ValidateConnection` runs before any team exists, so a
+team-scope-only table leaves the probe with nothing to read and makes AC4's third failure structurally
+unreachable — the reason ADR-116 rejected Option B in the first place. The shape that falls out is
+both: connection-scope table as the probe target and default, Work Item Types as the `sys_class_name`
+filter when a shop roots at `task`. That likely makes `isWorkItemTypesRequired` conditional on the
+configured table rather than flat `false`.
+
+**Check before committing to it**: whether `isWorkItemTypesRequired: false` merely skips validation or
+actually hides the field in the UI. If it hides it, the field is not available to repurpose without a
+schema change, and the cost estimate above ("one boolean and one FE test") is wrong.
+
 ---
 
 ## Wave: DESIGN / [REF] CI rules pre-applied (from `docs/ci-learnings.md`)
@@ -1196,3 +1213,208 @@ The reviewer also confirmed what the design got right, and those are not re-list
 boundary, the evidence-grounded ADRs, and hexagonal compliance (fifth adapter, unchanged 8-method
 port, no new controller, no migration) all passed on inspection of the real interface rather than the
 document's claim about it.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Slice 01 ships a fifth driven adapter behind the unchanged 8-method `IWorkTrackingConnector` port:
+an administrator can now pick ServiceNow in the connection wizard, fill in a form rendered from the
+shared schema, and press Validate. The validation is a single Table API probe
+(`GET /api/now/table/{table}?sysparm_limit=1`) whose three observable scalars — status, whether the
+body parsed as JSON, and how many rows came back — are handed to `ServiceNowValidationVerdict`, a
+pure static mapper that returns one of eight coded verdicts. Everything the slice does not do says
+so out loud: reading work items, write-back, transition history, team settings and portfolios each
+return or throw an explicit, worded refusal rather than an empty result. No new port, no new
+controller, no new route, no EF migration.
+
+## Wave: DELIVER / [REF] Files modified
+
+**Production — backend** (steps 01-01 … 01-05)
+
+| File | Change |
+|---|---|
+| `Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs` | The eight-rung verdict ladder as a pure static mapper (ADR-114) |
+| `Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs` | The imperative shell: probe URI, one HTTP call, row count, plus seven declared refusals |
+| `Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs` | Stored credential presented as HTTP basic, decrypted through the crypto service |
+| `Services/Factories/WorkTrackingSystemFactory.cs` | The ServiceNow entry the wizard and the form both render from |
+| `Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs` | The `servicenow.basic` method and its three option fields |
+
+**Production — frontend** (steps 01-06, 01-07)
+
+| File | Change |
+|---|---|
+| `models/Common/DataRetrievalSchemaDefaults.ts` | Team query shape; portfolio declined; no work-item types |
+| `models/WorkTracking/WorkTrackingSystemConnection.ts` | Display-name case (the switch has a `default:` arm, so `tsc` would not have caught its absence) |
+| `pages/Settings/Connections/AdditionalFieldsEditor.tsx` | ServiceNow excluded — no predefined additional fields exist |
+| `pages/Settings/Connections/WriteBackMappingsEditor.tsx` | ServiceNow excluded — write-back is permanently out of scope (D8) |
+
+**Docs**
+
+| File | Change |
+|---|---|
+| `docs/architecture/adr/…-servicenow-connection-validation-verdict-ladder.md` | ADR-114 reconciled with the implemented ladder during step 01-03 |
+| `docs/feature/epic-5513-servicenow-integration/feature-delta.md` | This DELIVER section (step 01-08) |
+
+**Tests** — none written or changed in DELIVER. All 50 backend and 8 frontend cases were authored in
+DISTILL (`f7d8924c2`, `ba91f485e`) and are unmodified. Step 01-08 wrote no test and edited no test.
+
+**Composition root** — `Program.cs`, `WorkTrackingConnectorFactory.cs`, `WorkTrackingSystems.cs`,
+`WorkTrackingAuthStrategyFactory.cs`, `ServiceNowWorkTrackingOptionNames.cs`,
+`IServiceNowWorkTrackingConnector.cs` all landed in the DISTILL commit `f7d8924c2`, not in DELIVER.
+This matters for the walking-skeleton verdict below and is recorded here rather than left implicit.
+
+## Wave: DELIVER / [REF] Scenarios green
+
+**58 of 58** — 50 backend, 8 frontend.
+
+| Fixture | Cases | State |
+|---|---|---|
+| `ServiceNowValidationVerdictTest` (the ladder) | 19 | green |
+| `ServiceNowWorkTrackingConnectorTest` (shell, stubbed transport) | 14 | green |
+| `ServiceNowConnectionConfigurationTest` | 7 | green |
+| `ServiceNowConnectionAcceptanceTest` (walking skeleton) | 4 | green |
+| `ServiceNowBasicAuthStrategyTest` | 3 | green |
+| `ServiceNowValidationVerdictPurityArchUnitTest` | 3 | green |
+| FE: schema defaults / display name / connection editors | 8 | green |
+
+Verified at step 01-08: `dotnet test --filter "FullyQualifiedName~ServiceNow"` → 50 passed, 0 failed,
+0 skipped.
+
+## Wave: DELIVER / [REF] DoD check
+
+Against the nine items in *DISCUSS / Definition of Done*. No silent N/A.
+
+| # | Item | Verdict |
+|---|---|---|
+| 1 | All non-cancelled ACs pass; cancelled stories recorded with the SPIKE finding | **PASS for slice 01.** US-01's five ACs are green. US-03/US-04 remain recorded-as-cancelled with their SPIKE findings in the DISCUSS section. Epic-level DoD stays open — slices 02+ are unstarted. |
+| 2 | `dotnet build` zero warnings; `dotnet test` green; `pnpm test`/`pnpm build`/Biome clean | **PASS with one caveat.** Build 0/0 under `TreatWarningsAsErrors`; FE 3790 passed / 0 failed / 13 skipped across 285 files, `pnpm build` clean. Backend full suite 3972 passed / 2 failed / 37 skipped — the 2 are `LicenseServiceTest.ValidLicenseLoaded_LoadNewLicense_IsValid` and `…_RemoveLicense_LoadNewLicense_IsValid`, a **pre-existing test-order dependence** already recorded in *DISTILL / Upstream issues found* #1. All 21 license cases pass in isolation and alongside the ServiceNow tests. Not caused by this slice; still unowned. |
+| 3 | EF migration additive / generated via `CreateMigration` | **N/A, because** the slice adds no schema. A new work-tracking system is an enum member and connection options on existing tables. Zero migrations were generated. |
+| 4 | Mutation ≥80% BE + FE on new code, per-feature | **FAIL — not run.** No Stryker run has happened for this slice, and no committed Stryker config exists in this repo for either stack. Whoever runs it writes the config first (catalogued as `D2-05`). The verdict ladder is where the mutants land and is reachable with no HTTP, so aim there first. This is the one DoD item slice 01 does not meet. |
+| 5 | Every unsupported capability declared and user-visible; no silent no-op | **PASS.** Seven declared limitations at the connector (4 throw `NotSupportedException`, 2 return coded failures, 2 return empty/false), plus the two FE editor exclusions so the UI does not offer controls that would do nothing. Nine tests assert it. |
+| 6 | One E2E walking-skeleton spec: connect → team sync → metric, from demo data | **N/A for slice 01, because** the journey it describes does not exist yet — this slice validates a connection and explicitly refuses team sync. There is nothing to sync and no metric to reach. Carried to the slice that first reads work items (`D2-06` holds the spec shape). The backend `ServiceNowConnectionAcceptanceTest` is slice 01's wiring proof; it is not, and does not claim to be, the Playwright E2E. |
+| 7 | `Scripts/DemoEnv/ServiceNowSystemUpdater.py` exists and is documented | **FAIL — not delivered.** No demo-env updater was written. Belongs with the slice that produces demo-visible ServiceNow data; a seeder for a connection that cannot read work has nothing to seed. Deferred deliberately, recorded here so it is not lost. |
+| 8 | Docs page + per-feature screenshots; clients versioning; website surface | **DEFERRED to feature finalisation, not skipped.** Per the project's per-feature-not-batched rule this belongs at the finalisation of the *feature*, and ServiceNow is not yet a shippable claim — the connection validates but reads nothing. Clients CLI/MCP versioning: **N/A, because** no client-facing contract changed. Website marketing surface: **in scope but premature** — confirm with the maintainer before publishing, and not before a connection can do something. |
+| 9 | SonarCloud no new issues; ADO children mirrored + transitioned | **UNVERIFIED — CI-side.** Locally clean (0 build warnings, Biome clean via the `prebuild` hook). SonarCloud runs on PR and has not run for these seven commits. ADO 5574 has not been transitioned. Both belong to the push/finalise step. |
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Step | Delivered | Suite at step exit |
+|---|---|---|
+| 01-01 `038002a4f` | Verdict ladder | 19 ladder + 3 purity green |
+| 01-02 `62d004523` | Basic auth strategy | 3 auth green |
+| 01-03 `7af1cf529` | Connector probe + ADR-114 reconciliation | 14 connector green |
+| 01-04 `82dd4bb8f` | Seven declared limitations | 14 connector green |
+| 01-05 `f277b70b1` | Connection configuration surface | 7 configuration green |
+| 01-06 `082e7d3bd` | Frontend schema | FE green |
+| 01-07 `c01587d97` | Frontend editors | FE green |
+| 01-08 (this) | Documentation | 50 BE ServiceNow green, re-verified |
+
+**Evidence.** Backend `dotnet build`: 0 warnings, 0 errors under `TreatWarningsAsErrors`. Backend full
+suite 3972/2/37 of 4011 (the 2 pre-existing, see DoD 2). Frontend 3790 passed / 0 failed / 13 skipped
+across 285 files; `pnpm build` zero errors and zero warnings.
+
+**Scaffold sweep** (the DISTILL pre-requisite): `grep -rn "SCAFFOLD (DISTILL slice 01"` and
+`grep -rn "__scaffold__"` both return nothing across backend and frontend production sources.
+
+**Not run**: Stryker (DoD 4), SonarCloud (DoD 9), Playwright (DoD 6, N/A this slice).
+
+## Wave: DELIVER / [REF] Walking skeleton verdict
+
+**Sound, and load-bearing — but it never drove anything.** Both halves are worth stating.
+
+*Load-bearing, established by deletion rather than by argument.* Deleting the single line
+`WorkTrackingSystems.ServiceNow => serviceProvider.GetRequiredService<IServiceNowWorkTrackingConnector>()`
+from `WorkTrackingConnectorFactory` and re-running the 50 ServiceNow tests produced **1 failed, 49
+passed** — the one failure being
+`AnAdministratorValidatingAConnectionToAnInstanceThatIsNotThere_IsToldTheInstanceIsNotThere`. The
+line was restored and 50/50 re-confirmed. So the acceptance test is the *only* test in the slice that
+holds the composition-root wiring: all 14 connector tests construct the connector directly and are
+blind to whether the container can produce it. Two further call-sites are equally load-bearing by the
+same mechanism — the DI registration at `Program.cs:969` (`GetRequiredService` would throw) and the
+`AuthenticationMethodKeys.ServiceNowBasic` arm in `WorkTrackingAuthStrategyFactory` (which throws
+`WorkTrackingAuthStrategyNotFoundException`). Each turns the 400 the test asserts into a 500.
+
+*Real transport, not a stub.* The test replaces exactly two things — `ILicenseService` (a Moq stub)
+and the authentication scheme. It injects **no** `HttpMessageHandler`. The connector's
+`CreateHttpClient()` therefore takes its `httpMessageHandlerForTesting is null` branch and issues a
+real socket connect to `http://127.0.0.1:1/`, a genuinely closed port; the refusal surfaces as
+`HttpRequestException`, is caught, and becomes `connection_failed`. All 14 connector unit tests
+inject a handler (7 references in that fixture), so **the default-transport branch is reached by this
+test and by nothing else in the slice.** That is the crux the walking skeleton was asked to earn, and
+it earns it.
+
+*The unwelcome half.* The skeleton was never red for a wiring reason. The enum member, the DI
+registration and the factory arm all landed in the DISTILL commit `f7d8924c2` alongside the scaffolds
+— so at no point did a missing wire make this test fail and a crafter make it pass. It flipped green
+as a by-product of steps 01-03/01-04/01-05 filling in the connector behind wiring that was already
+there. It is a genuine regression guard on the composition root; it was not a driver. Step 01-08
+consequently wrote **no production code** — there was no gap to close, and manufacturing one would
+have been worse than reporting this. The DES log records RED as `SKIPPED / NOT_APPLICABLE`.
+
+*What it still does not prove.* The test proves a closed port is reported as unreachable. It says
+nothing about the other seven rungs against a real instance — see the open items below.
+
+## Wave: DELIVER / [REF] Open items carried out of slice 01
+
+1. **The dogfood moment has not happened and cannot be automated.** Validating green against the live
+   dev instance, then deliberately breaking each of the three failure modes in turn, is the only
+   thing that can confirm or disprove the slice's learning hypothesis — that what an administrator
+   actually gets wrong is *rights*, not credentials. **No test in this slice touches a real
+   ServiceNow instance.** The L6 rung (a login page wearing a 200) remains explicitly a hypothesis,
+   tagged `Hypothesis_` in the test method name so a later reader cannot mistake it for a finding.
+2. **A live-instance test needs two pieces of CI plumbing, not one.** Adding a
+   `[Category("ServiceNowIntegration")]` fixture requires **both** a `servicenow_connector` input in
+   `ci_changes.yml` **and** a matching arm in `Scripts/test-selection/path-classifier.sh`. With only
+   one, the fixture silently never runs — which reads as coverage but is silence. Recipe catalogued
+   as `D2-04`.
+3. **ADR-114, ADR-115 and ADR-116 are all still status *Proposed*.** The implementation follows all
+   three; none has been ratified.
+4. **`ValidateConnection` creates and disposes an `HttpClient` per call**, following the Linear
+   precedent. Correct for a user-triggered button. If slice 02 calls the Table API on the refresh
+   schedule, that becomes socket exhaustion — move to a cached/shared handler as
+   `JiraWorkTrackingConnector` does.
+5. **Mutation testing not run** (DoD 4) and **no demo-env updater** (DoD 7).
+6. **The two `LicenseServiceTest` failures** in the full backend suite remain unowned. Pre-existing,
+   order-dependent, unrelated to this feature — but the backend suite is not green on `main` today.
+
+## Wave: DELIVER / [REF] Pre-requisites
+
+**Consumed from DISTILL** — the 58 scenarios listed in *DISTILL / Scenario list*, all authored
+upstream and unmodified here; the implementation order it prescribed (ladder → shell → auth → schema
+→ frontend, skeleton green last) was followed exactly across steps 01-01 … 01-07; the scaffold-sweep
+gate; and the standing requirement that `ServiceNowValidationVerdictPurityArchUnitTest` stay green,
+which it does.
+
+**Consumed from DESIGN** — the C4 container manifest's component set: `ServiceNowValidationVerdict`
+(pure core), `ServiceNowWorkTrackingConnector` (imperative shell), `ServiceNowBasicAuthStrategy`,
+plus the three registration points in the existing composition root. ADR-114 (verdict ladder as pure
+mapper), ADR-115 (basic-auth-restriction detection forbidden, hint conditional), ADR-116 (table at
+connection scope, query at team scope). The Reuse Analysis conclusion — fifth adapter behind an
+unchanged 8-method port, no new port, no new controller, no migration — held through implementation
+without amendment.
+
+**Carried forward unresolved** — the DESIGN peer review's one standing High finding: how the shell
+*decides* `responseIsJson`. DELIVER chose parse-and-catch (`JsonDocument.Parse`, `JsonException` →
+not-JSON) explicitly **not** Content-Type, on the grounds that ServiceNow's gateway owns that header
+and the body is parsed anyway to count rows. The rule is recorded in a comment at the call site and
+in ADR-114, but it is still exercised only through the `bool` parameter — no test drives the
+detection itself, and the rung it feeds is the unmeasured L6 hypothesis. Both remain open.
+
+### [REF] Inherited commitments
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DISCUSS US-01 AC1 | ServiceNow is selectable alongside the other four systems | n/a | Delivered; the enum-ordering guard pins `(int)ServiceNow == 4` so a future mid-enum insert fails a test instead of silently repointing every stored connection |
+| DISCUSS US-01 AC2 | The connection form renders from schema, not a bespoke screen | n/a | Delivered via `WorkTrackingSystemFactory` + `AuthenticationMethodSchema`; zero React screens were written, which is the point |
+| DISCUSS US-01 AC3 | A reachable instance with a sufficient credential validates | n/a | Delivered at rung 7 — but success now requires rows to come back, not merely a 200, and **that path has never run against a real instance** (open item 1) |
+| DISCUSS US-01 AC4 (amended, C-1 accepted) | Three distinguishable, actionable failures; a rights problem is never a reachability problem and never a success | C-1 | Delivered across 8 rungs; only the reachability failure is proven end-to-end through real wiring, the rest through the pure ladder |
+| DISCUSS US-01 AC5 | The credential is stored encrypted and never returned in plaintext | n/a | Delivered by the inherited `EncryptSecrets` hook; the acceptance test is a regression guard, not a driver — it was green before this slice began |
+| DESIGN Open Call 1b | Verdict pure, connector imperative | ADR-114 | Held; enforced structurally by the ArchUnit purity fixture, which is what keeps the ≥80% Stryker bar affordable when someone finally runs it |
+| DESIGN Open Call 2 | Basic-auth-restriction detection forbidden; role hint stays conditional | ADR-115 | Held; the rung-2 message names `snc_basic_auth_api_access` and says Lighthouse cannot check it, so a later author cannot quietly upgrade the guess to a claim |
+| DESIGN Open Call 3 | Table at connection scope; portfolio unsupported in the schema | ADR-116 | Held on both stacks; the slice-03 cancellation is structural, not documentary |
+| DESIGN Open Call 4 | No raw choice value crosses the connector boundary | n/a | Untouched — slice 01 reads no work. The label-boundary ArchUnit rule remains scheduled for slice 02 |
+| DESIGN Earned Trust | Three orthogonal enforcement layers over the probe | ADR-114 | All three exist and are green: ArchUnit purity, the table-driven ladder, and the contract test asserting 200-with-zero-rows is not valid |
+| DISCUSS D8 | Write-back permanently out of scope | n/a | Declined at the connector *and* hidden in the FE write-back editor, so the API and the UI agree |
+| DISCUSS DoD 5 / KPI 3 | Zero silent no-ops | n/a | Met — seven declared limitations, each with a worded reason, nine tests |
+| SPIKE Q8 | Minimum rights are read-only; `snc_read_only` grants nothing | n/a | Both facts reach the administrator inside the `no_records_visible` message, at the moment of failure rather than only in the docs |
