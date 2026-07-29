@@ -115,6 +115,40 @@ For an ITSM `task`-derived table (D4), identify the source for: id, title, type,
 - **Decides**: whether US-04 is built or cancelled. D6 already ships the honest downgrade in slice 02,
   so "no" here is cheap.
 
+**Answered pre-SPIKE, as a two-rung ladder.** Probing on PDI dev191338 (admin, Australia release)
+plus a seeded create-and-transition run settled the source question; what remains for the SPIKE is
+whether a *customer's* least-privilege user can reach rung 1.
+
+1. **`metric_instance` when available.** The PDI ships an active `field_value_duration` metric
+   definition — "Incident State Duration" on `incident.incident_state`. A seeded incident driven
+   `New → In Progress` produced, within seconds, one row per state span:
+   `incident_state=New start=06:46:44 end=06:46:50 duration=00:00:06 complete=true`, then
+   `incident_state=In Progress start=06:46:50` left open with `calculation_complete=false`. That is
+   Lighthouse's transition-history shape directly, no reconstruction. Spans exist only from the
+   moment the record was created under an active definition, so **partial history is the expected
+   case and is acceptable.** Detect during connection validation whether definitions are active for
+   the configured table, so the mode is known up front rather than discovered mid-refresh.
+2. **Otherwise, an explicit unsupported mode.** Candidate: treat time-in-state as the whole time the
+   item was active — a single Doing span from start to done. It must read visibly as a downgrade
+   (D6's honest-downgrade precedent), never a silent approximation presented as measured data.
+
+**`sys_audit` is ruled out by decision, not by evidence.** It is present (41 133 rows) and readable
+as admin, and it is the only universal, retroactive source — but a customer platform team will
+realistically never grant read on it, so building a fallback nobody can switch on is waste. Metrics
+or nothing. Do not spend SPIKE time probing it beyond the Q8 role check.
+
+`sys_history_line` is not a rung either — 0 rows, because it is a view populated on demand, not a
+queryable store.
+
+**Q4 is closed by the same evidence.** `work_start` stays empty after a real API-driven transition
+with business rules firing, so there is no trustworthy started-timestamp on the record. The started
+time is instead the `start` of the first metric span mapping to Doing — which means Q4 and Q6 have
+one answer, and the "no started date re-orders the slice plan" risk is retired rather than realised.
+
+Two parsing traps for slice 04: `duration` is a Glide duration rendered as an offset from the epoch
+(`1970-01-01 00:00:06` is six seconds, not a date), and some rows carry an empty `field`, so a reader
+must not assume every row is a state span.
+
 ## Q7 — Volume and rate limits (unblocks slice 02 AC7, KPI "time to first metric")
 
 - Pagination mechanics (`sysparm_limit` / `sysparm_offset`) and whether a stable total count is available.
@@ -127,6 +161,10 @@ For an ITSM `task`-derived table (D4), identify the source for: id, title, type,
 Starting from an admin account, remove rights until sync breaks; record the minimum that still works.
 This is the deliverable a customer's platform team will actually read.
 
+- Create a restricted user on the PDI and re-run the pre-SPIKE probe set as that user: `incident`,
+  `task`, `change_request`, `sc_task`, `sys_choice` (Q10), `metric_definition` + `metric_instance`
+  and `sys_audit` (Q6's rungs 1 and 2). All seven answered 200 as `admin`, which proves nothing about
+  a customer. The rung-by-rung result *is* Q6's answer.
 - **Fallback**: if the minimum is effectively `admin`, that is a serious adoption finding — record it
   as a headline risk in the SPIKE report, because it may sink the market thesis on its own.
 
@@ -136,6 +174,26 @@ Without on-prem access during the SPIKE, establish what *could* differ and how t
 version reporting, plugin availability, auth restrictions, table presence. Produce a short
 **detection checklist** the maintainer can run under a restricted account with no Lighthouse build
 (US-06 AC1) — this is the artifact that makes the on-prem fallback usable at all.
+
+## Q10 — Can state mapping be authored in labels instead of magic numbers? (unblocks slice 01 wizard)
+
+`state` is an integer whose meaning depends on the table it lives on. Confirmed on PDI dev191338:
+`task.state` is `1=Open, 2=Work in Progress, 3=Closed Complete, 4=Closed Incomplete, 7=Closed Skipped,
+-5=Pending`, while `incident.state` is `1=New, 2=In Progress, 3=On Hold, 6=Resolved, 7=Closed,
+8=Canceled`. **`3` means "On Hold" on one and "Closed Complete" on the other.** Asking a user to type
+a raw number into the ToDo/Doing/Done mapping is therefore both hostile and quietly wrong-able.
+
+The choice list is readable through the Table API — `sys_choice` with
+`name=<table>^element=state^language=en` returned the label sets above — so the connector can offer
+labels at setup and store the numbers itself.
+
+- Does that query work for an **arbitrary configured table**, including a custom `task`-derived one,
+  or only for the ITSM tables that ship with choice lists?
+- Does it work for a **least-privilege user**? Rides along with Q8's restricted-user run.
+- Is `language` a complication on a non-English instance — do we filter by language, or take whatever
+  the authenticated user's language yields?
+- **Decides**: whether slice 01's wizard offers a label picker or falls back to numeric entry. Not a
+  blocker either way; a "no" costs UX, not viability.
 
 ---
 
