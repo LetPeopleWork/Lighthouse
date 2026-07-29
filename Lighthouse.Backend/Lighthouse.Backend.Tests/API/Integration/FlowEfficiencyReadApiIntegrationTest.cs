@@ -374,7 +374,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // body afterwards proves the overlay changed nothing else (D9).
             var settingsBody = await ReadBody($"/api/latest/teams/{teamId}/settings");
             var payload = JsonNode.Parse(settingsBody)!.AsObject();
-            payload["waitStates"] = new JsonArray(waitStates.Select(s => (JsonNode)s!).ToArray());
+            payload["waitStates"] = new JsonArray(waitStates.Select(s => (JsonNode)s).ToArray());
 
             var content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");
             return await client.PutAsync($"/api/latest/teams/{teamId}", content);
@@ -405,7 +405,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 ["workTrackingSystemConnectionId"] = connectionId,
                 ["workItemTypes"] = new JsonArray("User Story", "Bug"),
                 ["toDoStates"] = new JsonArray("To Do"),
-                ["doingStates"] = new JsonArray(WorkflowDoingStates.Select(s => (JsonNode)s!).ToArray()),
+                ["doingStates"] = new JsonArray(WorkflowDoingStates.Select(s => (JsonNode)s).ToArray()),
                 ["doneStates"] = new JsonArray(Done),
                 ["serviceLevelExpectationProbability"] = 0,
                 ["serviceLevelExpectationRange"] = 0,
@@ -424,7 +424,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     ["name"] = "Waiting",
                     ["states"] = new JsonArray(WaitingForReview, BlockedExternal),
                 }),
-                ["waitStates"] = new JsonArray(waitStates.Select(s => (JsonNode)s!).ToArray()),
+                ["waitStates"] = new JsonArray(waitStates.Select(s => (JsonNode)s).ToArray()),
             };
 
             var content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");

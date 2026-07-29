@@ -47,11 +47,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             {
                 Assert.That(ProbeState.HandledWorkItemIds, Is.EqualTo(new[] { persistedItem!.Id }), "the non-throwing probe handler ran despite a sibling throwing");
                 Assert.That(persistedItem, Is.Not.Null, "the committed work-item fact survives a throwing handler");
-                Assert.That(persistedItem!.CurrentStateEnteredAt, Is.EqualTo(enteredCurrentState), "the committed derived projection survives a throwing handler");
+                Assert.That(persistedItem.CurrentStateEnteredAt, Is.EqualTo(enteredCurrentState), "the committed derived projection survives a throwing handler");
             }
 
             var dispatcher = ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
-            await dispatcher.PublishAsync(new WorkItemTransitioned(persistedItem!.Id, "New", "In Progress"));
+            await dispatcher.PublishAsync(new WorkItemTransitioned(persistedItem.Id, "New", "In Progress"));
 
             Assert.That(ProbeState.HandledWorkItemIds, Is.EqualTo(new[] { persistedItem.Id, persistedItem.Id }), "the next publish re-drives the reaction");
         }

@@ -242,7 +242,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var mappings = payload["writeBackMappingDefinitions"]?.AsArray() ?? new JsonArray();
             var offending = mappings.OfType<JsonObject>()
                 .Select(m => m["additionalFieldDefinitionId"])
-                .Where(id => id is not null && predefinedIds.Contains(id!.GetValue<int>()))
+                .Where(id => id is not null && predefinedIds.Contains(id.GetValue<int>()))
                 .ToList();
 
             Assert.That(offending, Is.Empty,

@@ -59,8 +59,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
             {
                 Assert.That(subject.DetailRows, Has.Length.EqualTo(3));
                 Assert.That(subject.DetailRows![0].Label, Is.EqualTo("50th percentile"));
-                Assert.That(subject.DetailRows![1].CurrentValue, Is.EqualTo("8 days"));
-                Assert.That(subject.DetailRows![2].PreviousValue, Is.EqualTo("18 days"));
+                Assert.That(subject.DetailRows[1].CurrentValue, Is.EqualTo("8 days"));
+                Assert.That(subject.DetailRows[2].PreviousValue, Is.EqualTo("18 days"));
             }
         }
     }

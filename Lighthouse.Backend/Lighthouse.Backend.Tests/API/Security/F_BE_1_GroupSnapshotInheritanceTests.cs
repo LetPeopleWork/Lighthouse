@@ -315,7 +315,7 @@ namespace Lighthouse.Backend.Tests.API.Security
                 createdByUser: owner.Subject,
                 ownerSubject: owner.Subject,
                 scope: scope);
-            return creationResult.PlainTextKey!;
+            return creationResult.PlainTextKey;
         }
 
         private static WebApplicationFactory<Program> WithRealRbacService(TestWebApplicationFactory<Program> root)

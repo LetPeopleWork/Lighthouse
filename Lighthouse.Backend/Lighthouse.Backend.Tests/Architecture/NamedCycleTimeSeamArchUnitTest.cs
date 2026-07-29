@@ -100,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "ADR-061 §3: WorkItemBase.CycleTime stays computed — it is not turned into a stored/settable value.");
             }
 
-            var parameters = cycleTime!.GetParameters();
+            var parameters = cycleTime.GetParameters();
 
             using (Assert.EnterMultipleScope())
             {

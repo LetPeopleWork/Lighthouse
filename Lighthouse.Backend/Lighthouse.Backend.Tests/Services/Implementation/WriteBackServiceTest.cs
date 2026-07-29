@@ -296,7 +296,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 Assert.That(errorInvocations, Has.Count.EqualTo(1));
                 Assert.That(errorInvocations[0].Arguments[3], Is.InstanceOf<HttpRequestException>());
-                Assert.That(((Exception)errorInvocations[0].Arguments[3]!).Message, Does.Contain("Service unavailable"));
+                Assert.That(((Exception)errorInvocations[0].Arguments[3]).Message, Does.Contain("Service unavailable"));
             }
         }
 

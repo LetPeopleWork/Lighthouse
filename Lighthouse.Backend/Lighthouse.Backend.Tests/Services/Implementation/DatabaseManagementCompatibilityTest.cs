@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.Ignore("LighthouseBackupPassword environment variable is not set. Skipping compatibility tests.");
             }
 
-            return password!;
+            return password;
         }
 
         [Test]
