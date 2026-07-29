@@ -272,10 +272,12 @@ const WriteBackMappingsEditor: React.FC<WriteBackMappingsEditorProps> = ({
 	const [tempIdCounter, setTempIdCounter] = useState(-1);
 	const { licenseStatus } = useLicenseRestrictions();
 
+	// Write-back to ServiceNow is permanently out of scope (#5574, D8).
 	const isSupportedSystem =
 		workTrackingSystemType !== null &&
 		workTrackingSystemType !== "Linear" &&
-		workTrackingSystemType !== "Csv";
+		workTrackingSystemType !== "Csv" &&
+		workTrackingSystemType !== "ServiceNow";
 
 	const canAddMapping =
 		licenseStatus?.canUsePremiumFeatures === true && isSupportedSystem;

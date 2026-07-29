@@ -158,10 +158,13 @@ const AdditionalFieldsEditor: React.FC<AdditionalFieldsEditorProps> = ({
 	const [tempIdCounter, setTempIdCounter] = useState(-1);
 	const { licenseStatus } = useLicenseRestrictions();
 
+	// ServiceNow ships no predefined additional fields and cannot fill custom ones in slice 01
+	// (#5574) — this exclusion is expected to lift once the connector can.
 	const isSupportedSystem =
 		workTrackingSystemType !== null &&
 		workTrackingSystemType !== "Linear" &&
-		workTrackingSystemType !== "Csv";
+		workTrackingSystemType !== "Csv" &&
+		workTrackingSystemType !== "ServiceNow";
 
 	// Predefined (system-owned) fields are surfaced read-only: they are not
 	// editable/deletable and do not consume a user field slot. Filter only at
