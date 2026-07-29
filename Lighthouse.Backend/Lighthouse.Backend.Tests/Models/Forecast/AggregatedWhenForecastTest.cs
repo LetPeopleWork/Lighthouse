@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                     Assert.That(aggregate.GetProbability(percentile), Is.Zero, $"p{percentile} is today");
                 }
 
-                Assert.That(aggregate.GetLikelihood(0), Is.EqualTo(100));
+                Assert.That(aggregate.GetLikelihood(0), Is.Zero);
             }
         }
 

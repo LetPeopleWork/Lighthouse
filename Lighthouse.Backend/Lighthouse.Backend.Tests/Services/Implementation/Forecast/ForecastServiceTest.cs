@@ -160,7 +160,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task When_FixedThroughput_TargetDateToday_ReturnLikelihood()
+        public async Task When_FixedThroughput_TargetDateToday_ReturnZeroLikelihood()
         {
             var subject = CreateSubjectWithRealThroughput();
             int[] throughput = [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var forecast = await subject.When(team, 35);
 
-            Assert.That(forecast.GetLikelihood(0), Is.GreaterThan(0));
+            Assert.That(forecast.GetLikelihood(0), Is.Zero);
         }
 
         [Test]

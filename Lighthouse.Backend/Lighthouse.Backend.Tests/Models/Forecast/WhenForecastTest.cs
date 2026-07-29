@@ -32,13 +32,16 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
+        [TestCase(0, 0)]
+        [TestCase(2, 0)]
         [TestCase(3, 10)]
         [TestCase(4, 30)]
         [TestCase(5, 60)]
         [TestCase(6, 80)]
         [TestCase(7, 90)]
+        [TestCase(8, 90)]
         [TestCase(12, 100)]
-        public void GetLikelihood_ReturnsCorrectValue(int daysToTargetDate, int expecedLikelihood)
+        public void GetLikelihood_ReportsShareOfTrialsFinishedByTheTargetDay(int daysToTargetDate, int expectedLikelihood)
         {
             var simulationResult = new SimulationResult(new Team(), new Feature(), 1);
             simulationResult.SimulationResults.Add(4, 2);
@@ -52,7 +55,26 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
 
             var forecast = subject.GetLikelihood(daysToTargetDate);
 
-            Assert.That(forecast, Is.EqualTo(expecedLikelihood));
+            Assert.That(forecast, Is.EqualTo(expectedLikelihood));
+        }
+
+        [Test]
+        [TestCaseSource(nameof(HistogramsWithoutTrials))]
+        public void GetLikelihood_WithoutAnyTrials_ReportsNoChance(Dictionary<int, int> histogram)
+        {
+            var subject = new WhenForecast(histogram);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.GetLikelihood(0), Is.Zero);
+                Assert.That(subject.GetLikelihood(5), Is.Zero);
+            }
+        }
+
+        private static IEnumerable<TestCaseData> HistogramsWithoutTrials()
+        {
+            yield return new TestCaseData(new Dictionary<int, int>());
+            yield return new TestCaseData(new Dictionary<int, int> { { 0, 0 } });
         }
     }
 }

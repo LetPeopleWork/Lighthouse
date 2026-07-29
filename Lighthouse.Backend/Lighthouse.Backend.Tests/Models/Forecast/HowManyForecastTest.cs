@@ -28,5 +28,26 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
 
             Assert.That(forecast, Is.EqualTo(expectedResult));
         }
+
+        [Test]
+        [TestCase(3, 100)]
+        [TestCase(4, 90)]
+        [TestCase(5, 90)]
+        [TestCase(9, 0)]
+        public void GetLikelihood_ReportsShareOfTrialsDeliveringAtLeastTheTargetItemCount(int targetItems, int expectedLikelihood)
+        {
+            var simulationResult = new Dictionary<int, int>
+            {
+                {3, 10 },
+                {5, 20 },
+                {8, 70 },
+            };
+
+            var subject = new HowManyForecast(simulationResult, 1);
+
+            var forecast = subject.GetLikelihood(targetItems);
+
+            Assert.That(forecast, Is.EqualTo(expectedLikelihood));
+        }
     }
 }
