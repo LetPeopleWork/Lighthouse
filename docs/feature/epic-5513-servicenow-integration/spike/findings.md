@@ -285,6 +285,69 @@ a restricted account can answer: *can I read the configured table, and does it r
 
 For version identification specifically, `glide.war` is the reliable signal and is admin-only.
 
+## CORRECTION 2026-07-29 — Q10's mechanism was wrong, and the replacement carries a date trap
+
+Re-measured while preparing slice 02, against the same PDI, using the probe accounts.
+
+**Q10 as recorded is disproven.** It says `sys_choice` "is readable with no roles at all, so
+label-based state mapping works for every account that can reach the instance". Readable, yes —
+*queryable*, no. A bare `sys_choice` read succeeds for every account, but non-admin accounts get only
+`label`; the `name`, `element` and `value` fields are stripped by field-level ACL. Filtering by them —
+which is the only way to ask "what are the state labels for `incident`?" — fails outright:
+
+| Account | bare read | `name=incident` | `name=incident^element=state` |
+|---|---|---|---|
+| no roles | 3 rows, label only | **403-shaped error** | **403-shaped error** |
+| `snc_read_only` | 3 rows, label only | **error** | **error** |
+| `itil` | 3 rows, label only | **error** | **error** |
+| `admin` | 3 rows, all fields | 5 rows | 6 rows (`New`/`In Progress`/`On Hold`/…) |
+
+Error body: *"Insufficient rights to query records — Field(s) present in the query do not have
+permission to be read."* So the `ServiceNowChoiceLabelResolver` seam named in DESIGN would work for
+the maintainer's `admin` and silently fail for every customer — the same works-for-me shape as the
+discovery wizard, and the same shape as the epic's headline bug.
+
+**The replacement is `sysparm_display_value=all` on the record query itself**, which needs no
+`sys_choice` access at all. It works for `sn_*_read` and returns every field as
+`{display_value, value}`:
+
+```
+"state":          { "display_value": "Closed",              "value": "7" }
+"opened_at":      { "display_value": "2026-07-05 03:46:48", "value": "2026-07-05 10:46:48" }
+"sys_created_on": { "display_value": "2026-07-28 23:46:48", "value": "2026-07-29 06:46:48" }
+```
+
+**The trap: `value` is UTC, `display_value` is the instance timezone — seven hours apart here, and
+`sys_created_on` crosses a date boundary between the two.** Lighthouse buckets Throughput by day, so
+reading `display_value` for a date silently files work under the wrong day, and only for instances
+whose timezone is far enough from UTC to cross midnight. The rule is therefore split by field kind:
+
+- **dates → `.value`** (UTC), never `.display_value`
+- **state → `.display_value`** (the label the user recognises), with `.value` kept for diagnostics
+
+This also removes a component from the slice-02 design rather than adding one.
+
+### Q3's silent-filter trap, reproduced (same session)
+
+Confirmed live rather than carried on trust, because slice 02 turns it into an acceptance criterion:
+
+| `sysparm_query` | rows returned |
+|---|---|
+| `not_a_real_field=whatever` | **96 — the entire table** |
+| *(no query at all)* | 96 |
+| `state=99999` (real field, impossible value) | 0 |
+
+An unknown field name is **silently dropped from the filter** and the query degrades to "everything".
+A wrong value on a real field returns nothing. Neither errors. A flow coach who fat-fingers a field
+name therefore gets a team whose metrics are computed over the whole incident table, looking
+plausible and being wrong — the same failure family as the headline bug. The only detection available
+is to compare the filtered count against the unfiltered count and treat equality as suspicious.
+
+### Pagination, reconfirmed
+
+`X-Total-Count: 96` and a `Link` header carrying `rel="first"` / `rel="next"` / `rel="last"` with
+`sysparm_offset` values. Offset paging, disjoint pages.
+
 ## Still open
 
 Nothing from the original ten. Q2, Q3, Q5, Q7, Q9 and Q10 are answered above or in
