@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 {
     // The imperative shell around ServiceNowValidationVerdict (ADR-114): one Table API probe,
     // hand (status, responseIsJson, rowCount) to the pure verdict, return what it says unchanged.
-    // Slice 01 implements ValidateConnection only; the remaining members are still scaffolds.
+    // Slice 01 delivers ValidateConnection; every other capability refuses out loud (DoD 5).
     public class ServiceNowWorkTrackingConnector(
         ILogger<ServiceNowWorkTrackingConnector> logger,
         IWorkTrackingAuthStrategyFactory authStrategyFactory,
@@ -23,18 +23,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         private readonly HttpMessageHandler? httpMessageHandlerForTesting = httpMessageHandlerForTesting;
 
+        private const string WorkItemReadingUnavailableMessage =
+            "Reading work items from ServiceNow is not available yet. This release validates a ServiceNow " +
+            "connection so you know the instance and credential work; fetching work from it follows in a " +
+            "later release.";
+
+        private const string WriteBackUnsupportedMessage =
+            "Lighthouse does not write back to ServiceNow, and will not. Reading work data is the only " +
+            "supported direction for this connection.";
+
+        // D6: transition history lives behind an itil-grade role, so v1 says no rather than guessing.
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
         {
-            // Scaffold returns the opposite of the specified false (D6) so the test is RED.
-            LogScaffoldUse(nameof(SupportsTransitionHistory));
-            return true;
+            return false;
         }
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)
         {
-            // Scaffold returns a placeholder where the specification says empty, so the test is RED.
-            LogScaffoldUse(nameof(GetPredefinedAdditionalFields));
-            return [new AdditionalFieldDefinition { DisplayName = "__scaffold__" }];
+            return [];
         }
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
@@ -66,38 +72,44 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
-            LogScaffoldUse(nameof(GetWorkItemsForTeam));
-            return Task.FromResult(Enumerable.Empty<WorkItem>());
+            throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
         public Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
-            LogScaffoldUse(nameof(GetFeaturesForProject));
-            return Task.FromResult(new List<Feature>());
+            throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
         public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
-            LogScaffoldUse(nameof(GetParentFeaturesDetails));
-            return Task.FromResult(new List<Feature>());
+            throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
         public Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
         {
-            LogScaffoldUse(nameof(ValidateTeamSettings));
-            return Task.FromResult(ConnectionValidationResult.Success());
+            return Task.FromResult(ConnectionValidationResult.Failure(
+                "team_settings_not_supported",
+                "A team cannot draw its work from ServiceNow yet. This release lets you configure and validate a " +
+                "ServiceNow connection, so you can confirm the instance and credential are good; reading a team's " +
+                "work items from ServiceNow follows in a later release. Until then, point this team at another " +
+                "work tracking system."));
         }
 
+        // SPIKE Q5: no rollup exists to forecast over, so this refusal is settled rather than pending.
         public Task<ConnectionValidationResult> ValidatePortfolioSettings(Portfolio portfolio)
         {
-            LogScaffoldUse(nameof(ValidatePortfolioSettings));
-            return Task.FromResult(ConnectionValidationResult.Success());
+            return Task.FromResult(ConnectionValidationResult.Failure(
+                "portfolio_not_supported",
+                "Portfolios are not supported for ServiceNow, and are not planned. ServiceNow's ITSM tables carry " +
+                "no parent record that Lighthouse could forecast a portfolio over: parent references sit empty in " +
+                "practice, and the project, portfolio and demand tables are not exposed to reporting credentials. " +
+                "Rather than show you a portfolio forecast it cannot compute, Lighthouse declines. Point this " +
+                "portfolio at another work tracking system."));
         }
 
         public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
         {
-            LogScaffoldUse(nameof(WriteFieldsToWorkItems));
-            return Task.FromResult(new WriteBackResult());
+            throw new NotSupportedException(WriteBackUnsupportedMessage);
         }
 
         private async Task<(HttpStatusCode StatusCode, string Body)> Probe(Uri probeUri, WorkTrackingSystemConnection connection)
@@ -191,15 +203,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             logger.LogWarning(exception, "Could not reach ServiceNow instance {InstanceUrl}", instanceUrl);
 
             return ServiceNowValidationVerdict.FromUnreachableInstance(exception.Message);
-        }
-
-        private void LogScaffoldUse(string member)
-        {
-            logger.LogDebug(
-                "ServiceNow connector scaffold hit for {Member} (auth strategies: {HasFactory}, test transport: {HasHandler})",
-                member,
-                authStrategyFactory is not null,
-                httpMessageHandlerForTesting is not null);
         }
     }
 }
