@@ -1928,5 +1928,34 @@ return null for a `String` kind, and the label ordering in the warning log is co
 | **R-1 — AC4's honesty obligation.** The request-to-resolution span is not qualified anywhere the user can see it. | **No longer a blocker — maintainer ruling, 2026-07-29.** No user-facing qualification will be built, because the surface is being reworked anyway and slice 04 replaces the measure outright with true time-in-progress from transition history. Building copy for a number that is about to change would be work done twice and a decision made in the wrong place. The obligation lapses with the measure; if slice 04 does not land, it returns. |
 | **DoD 6 — the Playwright walking skeleton.** | Deferred to the end of the epic by maintainer ruling, 2026-07-29. Not blocked on the seeder, which already runs daily. |
 | **R-5 — `Resolved` maps to `Doing` by default.** A ServiceNow shop accepting Lighthouse's defaults sees a Throughput of zero with nothing explaining why. | Slice 05 (docs + demo data), and a candidate for a ServiceNow-specific default. |
-| **The dogfood moment** — sync a team on the dev instance by hand and confirm the metrics render. | Not performed. Belongs with the maintainer's own verification. |
+| **The dogfood moment** — sync a team on the dev instance by hand and confirm the metrics render. | **Done, 2026-07-29.** Findings below. |
 | **`LicenseServiceTest` order-dependence.** | Still unowned, still not ours. The next person to chase it starts from the missing content file, not from ordering in the abstract. |
+
+## Wave: DELIVER / [REF] Dogfood findings (slice 02, 2026-07-29)
+
+The maintainer set up a connection, created a team against a real ServiceNow query, and read the
+metrics. **The slice works.** What follows is what the exercise found that the 164 tests could not.
+
+**What held up.** The connection wizard was straightforward and caught a wrong password. State
+mapping worked by *typing the labels* — `Resolved`, `On Hold` — with no choice values anywhere in
+sight, which is `sysparm_display_value=all` earning its place and the reason R-4 could cancel
+`ServiceNowChoiceLabelResolver` outright. Work items, ages and states all render.
+
+**Filed as work items under this epic:**
+
+| Finding | Item |
+|---|---|
+| No idea what to type in the team query, and a missing query blocks the save — R-2's accepted cost, landing on the first real user within minutes. Boards carry table + filter and could pre-fill it; manual entry stays primary. Query-authoring docs are the cheap, separable half. | **#5610** |
+| Table reads as "kind of work" (Incident / Request / Task) with the query as the sub-filter. Needs several tables per team, surfaced as work item types. Also carries the per-team table override DESIGN accepted and slice 02 did not build. | **#5611** |
+| Work items have no click-through to the record. The connector maps `number`, not `sys_id`, so it needs one more field. Bucket for small polish, to be picked up at the end of the epic. | **#5612** |
+| A blocked-item rule was created and silently not saved. Not reproduced yet, and probably not ServiceNow-specific — blocked rules are generic team settings. | **#5613** |
+
+**Noted, deliberately not filed — parent items and portfolios.** Slice 03 was cancelled, so there is
+no plan for reading ServiceNow parents, and `GetFeaturesForProject` refuses permanently. Revisit once
+the remaining slices are done, when there is more evidence to decide with. The open question is what
+a parent even *is* in ITSM — `parent`, `parent_incident`, an `rm_story` → `rm_epic` relationship, or
+a `correlation_id` convention — and each answer implies a different read. Filing a story now would
+fix a shape before anything is known about it.
+
+**Expected, not a finding.** Time-in-state and the finer details are thin without transition history.
+That is slice 04, and slice 02 declares the gap rather than filling it with invented data.
