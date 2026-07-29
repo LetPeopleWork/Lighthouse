@@ -1811,3 +1811,122 @@ inside the mutation loop, hitting a real ServiceNow instance once per covering m
 scoped run takes roughly 20 minutes rather than a few. It also means a hibernating or reclaimed PDI
 turns a mutation run into noise — if scores move without a code change, check the instance before
 believing the number.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary (slice 02)
+
+Slice 02 makes `GetWorkItemsForTeam` and `ValidateTeamSettings` real, and they are the two methods
+slice 01 shipped as worded refusals. A flow coach points a team at a `sysparm_query`, and the
+connector pages the Table API with `sysparm_display_value=all`, maps each record to a Lighthouse work
+item, and drops the ones in states the team never mapped — Linear's precedent. `ValidateTeamSettings`
+compares what the query selects against what the table holds, because a single probe cannot tell a
+silently-widened query from a correct one: both answer 200 with rows.
+
+No new port, no new controller, no new route, no EF migration, and **no frontend change** — the
+state-mapping UI renders whatever raw states the backend reports, so surfacing the label rather than
+the choice value is entirely a backend decision (`ReadStateLabel`).
+
+Three ADR-117 consequences are pinned in code rather than left to prose: `ClosedDate` reads from
+`resolved_at` before `closed_at` (the instance leaves `closed_at` empty on state 6, so keying on it
+alone silently drops resolved work from Throughput), `StartedDate` reads from `opened_at`, and the
+resulting span is **request-to-resolution, not time-in-progress**. The user-visible qualification of
+that span is R-1 below, and it is not in this slice.
+
+## Wave: DELIVER / [REF] Files modified (slice 02)
+
+**Production — backend**
+
+| File | Change |
+|---|---|
+| `ServiceNow/ServiceNowWorkItemMapper.cs` | New. Record → work item: number, title, state label, category, the three dates, all read from `sysparm_display_value=all`'s two forms |
+| `ServiceNow/ServiceNowTeamQueryVerdict.cs` | New. The team-query rungs: missing query, no work selected, whole-table match, uncountable result set |
+| `ServiceNow/ServiceNowReadException.cs` | New. Every read-path failure, carrying the slice-01 verdict code |
+| `ServiceNow/ServiceNowWorkTrackingConnector.cs` | `GetWorkItemsForTeam` + `ValidateTeamSettings` implemented; paging, the two paging guards, the count probes |
+
+**Tests**
+
+| File | Change |
+|---|---|
+| `ServiceNowWorkItemMapperTest.cs` | New, layer 1 — mapping rules and date traps |
+| `ServiceNowTeamQueryVerdictTest.cs` | New, layer 1 — the query rungs |
+| `ServiceNowTeamSyncTest.cs` | New, layer 3 — what the connector asks for and what it does with the answer |
+| `ServiceNowTeamSyncAcceptanceTest.cs` | New, layer 5 — real stack over loopback HTTP |
+| `ServiceNowWorkTrackingConnectorIntegrationTest.cs` | Extended — the read pinned against the live PDI |
+| `ServiceNowWorkTrackingConnectorTest.cs` | The two slice-01 refusal assertions this slice supersedes, per R-3 |
+
+## Wave: DELIVER / [REF] Scenarios green (slice 02)
+
+All 43 REDs from `distill/red-classification-slice-02.md` are green, and the 5 SCAFFOLD_SATISFIED
+rows remain green with their scaffolds gone. `grep -rn "SCAFFOLD (DISTILL slice 02"` returns nothing.
+
+**164 ServiceNow tests pass**, up from the 48 the slice was distilled with — the difference is the
+live-instance pins (11 under `ServiceNowIntegration`) and the mutation-driven tests below.
+
+## Wave: DELIVER / [REF] DoD check (slice 02)
+
+Against the nine items in *DISCUSS / Definition of Done*. No silent N/A.
+
+| # | Item | Verdict |
+|---|---|---|
+| 1 | All non-cancelled ACs pass | **PASS for slice 02.** US-02 AC1–AC7 are green. AC4's *honesty obligation* is explicitly not met and is carried as R-1 — an epic blocker, not a slice one. |
+| 2 | Build zero warnings; tests green; FE clean | **PASS with the same pre-existing caveat.** `dotnet build` 0/0 under `TreatWarningsAsErrors`. Backend suite 3886 passed / 2 failed / 3 skipped — the 2 are the `LicenseServiceTest` order-dependence recorded in slice 01, reproduced here with its specific cause (`valid_not_expired_license.json` missing from the output directory in a full-suite run). FE untouched by this slice: `git diff --stat` over `Lighthouse.Frontend` for the whole slice is empty. |
+| 3 | EF migration additive | **N/A, because** the slice adds no schema. Reading work items uses the existing work-item tables. |
+| 4 | Mutation ≥80% BE + FE on new code | **PASS. 92.22%** (232 killed of 257 tested), scoped to `**/ServiceNow/*.cs` + `ServiceNowBasicAuthStrategy.cs`. First run scored 78.29% and is recorded below with what it caught. FE: **N/A, because** no frontend code changed. |
+| 5 | Every unsupported capability declared; no silent no-op | **PASS.** `SupportsTransitionHistory => false` with no invented history (AC5). A team with no query reads nothing *and says so in the log*. Records in unmapped states are left out *and their labels are named in the log*, because a flow coach types those labels by hand against a choice list a read-only account cannot query. |
+| 6 | One E2E walking-skeleton spec: connect → team sync → metric, from demo data | **NOT DELIVERED.** No Playwright spec mentions ServiceNow. `ServiceNowTeamSyncAcceptanceTest` is a backend layer-5 test over loopback HTTP — it proves the wiring, and it is not the E2E this item asks for. It is **not blocked on the seeder**, which already runs daily (DoD 7): what it needs is a ServiceNow connection and team present in the demo environment, and the spec written against them. Deferred by decision, and the decision is the maintainer's. |
+| 7 | `ServiceNowSystemUpdater.py` demo-env updater | **PARTIAL — exists and runs.** 211 lines against `LinearSystemUpdater.py`'s 209, seeding real incidents and advancing them daily, and already invoked by `.github/workflows/updatedemoenv.yml:51` alongside its three siblings. Written by the environment-prereq story (`6ee97a03d`, `a8e51df53`), so it is on `main` rather than in this slice. What slice 05 still owes it is parity, not creation: it is undocumented, and its step 4 is SPIKE Q4/Q6 timestamp instrumentation that has served its purpose and should come out. Slice 01's "not delivered" verdict was wrong and is corrected here. |
+| 8 | Docs page + screenshots; clients versioning; website | **DEFERRED to feature finalisation.** Clients CLI/MCP: **N/A, because** no client-facing contract changed. |
+| 9 | SonarCloud clean; ADO mirrored + transitioned | **UNVERIFIED — CI-side.** Locally clean. ADO #5575 is Active and has not been transitioned. Belongs to the push step. |
+
+## Wave: DELIVER / [REF] Quality gates (slice 02)
+
+Slice 02 was executed as a commit sequence rather than through `deliver/roadmap.json`, which still
+describes slice 01's eight steps and has deliberately **not** been back-filled — inventing step ids
+after the fact would record a history that did not happen.
+
+| Commit | Delivered |
+|---|---|
+| `8c20dbd09` | DISTILL slice 02 scaffolds; slice-01 mutation gaps closed |
+| `34857df03` | Mapper + team-query verdict (layer 1) |
+| `bc2a21d19` | `GetWorkItemsForTeam` + `ValidateTeamSettings` |
+| `e00743059` | The read pinned against the live PDI |
+| `c39be8ad5` | Refactor: the result array parsed in one place |
+| `a9179a3a0` | The contradictory paging fixtures resolved; ruling R-2 reversed |
+| `2f8065603` | Read failures throw rather than emptying the team |
+| `2d02207da` | Mutation gaps on the read path closed |
+
+## Wave: DELIVER / [REF] Mutation testing (slice 02)
+
+**78.29% → 92.22%.** The config is the one recorded above; `dotnet-stryker` 4.14.1; 26–29 minutes per
+run because the 6 live-instance tests execute inside the mutation loop.
+
+The first run is worth keeping because of *where* it failed. The survivors were not spread thin —
+they clustered in the three places the read-path hardening had gone and no test had followed:
+
+- **The same-instance check on a paging link could be deleted and stay green.** A rewriting proxy
+  naming another host would have been handed the credential, and nothing would have failed.
+- **The page ceiling could be replaced by a constant.** One fixture cannot tell a derived cap from a
+  fixed one; the test is now parametrised over two page sizes with exact read counts.
+- **The repeat guard's identity was untested at both ends.** Records with no `number` are legitimate
+  (an ITSM task field, not a Table API guarantee) and must not read as repeats of one another; a
+  record edited between two pages returns with the same number and different text, and comparing
+  bytes rather than records would count it twice.
+
+**Twenty survivors remain, recorded rather than chased**: diagnostic log text (project policy — log
+text is not behaviour), index arithmetic inside the Link-header parser whose mutated states no input
+can reach, `FirstOrDefault → First` where `TryGetValues` has already guaranteed a value, and
+`pagesRead == 1 → != 1`, which is equivalent for any instance that caps its pages consistently.
+
+Two suppressions were added, each one line with its reason at the call site: `GetString()` cannot
+return null for a `String` kind, and the label ordering in the warning log is cosmetic.
+
+## Wave: DELIVER / [REF] Open items carried out of slice 02
+
+| Item | Where it goes |
+|---|---|
+| **R-1 — AC4's honesty obligation.** The request-to-resolution span is not qualified anywhere the user can see it. | **No longer a blocker — maintainer ruling, 2026-07-29.** No user-facing qualification will be built, because the surface is being reworked anyway and slice 04 replaces the measure outright with true time-in-progress from transition history. Building copy for a number that is about to change would be work done twice and a decision made in the wrong place. The obligation lapses with the measure; if slice 04 does not land, it returns. |
+| **DoD 6 — the Playwright walking skeleton.** | Deferred to the end of the epic by maintainer ruling, 2026-07-29. Not blocked on the seeder, which already runs daily. |
+| **R-5 — `Resolved` maps to `Doing` by default.** A ServiceNow shop accepting Lighthouse's defaults sees a Throughput of zero with nothing explaining why. | Slice 05 (docs + demo data), and a candidate for a ServiceNow-specific default. |
+| **The dogfood moment** — sync a team on the dev instance by hand and confirm the metrics render. | Not performed. Belongs with the maintainer's own verification. |
+| **`LicenseServiceTest` order-dependence.** | Still unowned, still not ours. The next person to chase it starts from the missing content file, not from ordering in the abstract. |
