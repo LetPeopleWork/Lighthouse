@@ -8,6 +8,7 @@
 JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/'
 ADO_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/AzureDevOps/'
 LINEAR_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Linear/'
+SERVICENOW_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/ServiceNow/'
 GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/(Implementation|Interfaces)/[^/]*([Gg]it[Hh]ubService|LighthouseReleaseService)[^/]*\.cs$'
 
 # A change in any of these locations must force every integration category to
@@ -23,5 +24,6 @@ SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tes
 classify_jira()   { printf '%s\n' "$1" | grep -Eq "$JIRA_REGEX"   && echo true || echo false; }
 classify_ado()    { printf '%s\n' "$1" | grep -Eq "$ADO_REGEX"    && echo true || echo false; }
 classify_linear() { printf '%s\n' "$1" | grep -Eq "$LINEAR_REGEX" && echo true || echo false; }
+classify_servicenow() { printf '%s\n' "$1" | grep -Eq "$SERVICENOW_REGEX" && echo true || echo false; }
 classify_github() { printf '%s\n' "$1" | grep -Eq "$GITHUB_REGEX" && echo true || echo false; }
 classify_shared() { printf '%s\n' "$1" | grep -Eq "$SHARED_REGEX" && echo true || echo false; }

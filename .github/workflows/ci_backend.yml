@@ -18,6 +18,10 @@ on:
         required: false
         type: string
         default: 'false'
+      servicenow_connector:
+        required: false
+        type: string
+        default: 'false'
       github_connector:
         required: false
         type: string
@@ -41,6 +45,8 @@ jobs:
       JiraScopedTokenIntegrationTestToken: ${{ secrets.JIRASCOPEDTOKENINTEGRATIONTESTTOKEN }}
       AzureDevOpsLighthouseE2ETestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
       LinearAPIKey: ${{ secrets.LINEARAPIKEY }}
+      ServiceNowLighthouseIntegrationTestToken: ${{ secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTTOKEN }}
+      ServiceNowLighthouseIntegrationTestInstance: ${{ secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE }}
       LighthouseBackupPassword: ${{ secrets.LIGHTHOUSEBACKUPPASSWORD }}
 
     steps:
@@ -124,6 +130,7 @@ jobs:
           [ "${{ inputs.jira_connector }}"   == "true" ] && parts+=("Category=JiraIntegration")
           [ "${{ inputs.ado_connector }}"    == "true" ] && parts+=("Category=AdoIntegration")
           [ "${{ inputs.linear_connector }}" == "true" ] && parts+=("Category=LinearIntegration")
+          [ "${{ inputs.servicenow_connector }}" == "true" ] && parts+=("Category=ServiceNowIntegration")
           [ "${{ inputs.github_connector }}" == "true" ] && parts+=("Category=GithubIntegration")
         fi
 
