@@ -138,18 +138,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
                 ]
             },
             {
-                // SCAFFOLD (DISTILL slice 01, Story #5574) — declaration only, so that the
-                // connection endpoints and the all-systems schema tests keep working once
-                // WorkTrackingSystems.ServiceNow exists. The real option set (instance address,
-                // username, password) is DELIVER's job; ServiceNowConnectionConfigurationTest
-                // is RED against this placeholder.
                 WorkTrackingSystems.ServiceNow,
                 [
                     new AuthenticationMethod
                     {
                         Key = AuthenticationMethodKeys.ServiceNowBasic,
-                        DisplayName = "ServiceNow (SCAFFOLD - not yet implemented)",
-                        Options = []
+                        DisplayName = "Username and Password",
+                        Options =
+                        [
+                            new AuthenticationMethodOption { Key = ServiceNow.ServiceNowWorkTrackingOptionNames.InstanceUrl, DisplayName = "ServiceNow Instance URL", IsSecret = false },
+                            new AuthenticationMethodOption { Key = ServiceNow.ServiceNowWorkTrackingOptionNames.Username, DisplayName = "Username", IsSecret = false },
+                            new AuthenticationMethodOption { Key = ServiceNow.ServiceNowWorkTrackingOptionNames.Password, DisplayName = "Password", IsSecret = true }
+                        ]
                     }
                 ]
             }

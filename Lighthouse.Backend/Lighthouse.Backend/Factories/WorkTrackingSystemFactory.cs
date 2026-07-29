@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 
 namespace Lighthouse.Backend.Factories
 {
@@ -237,13 +238,44 @@ namespace Lighthouse.Backend.Factories
             ];
         }
 
-        // SCAFFOLD (DISTILL slice 01, Story #5574) — the real option set is instance address,
-        // username, secret password and the connection-scope work item table defaulting to
-        // "incident" (ADR-116). Returning nothing keeps /supported working while leaving
-        // ServiceNowConnectionConfigurationTest RED.
         private static List<WorkTrackingSystemConnectionOption> GetOptionsForServiceNow()
         {
-            return [];
+            return
+            [
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = ServiceNowWorkTrackingOptionNames.InstanceUrl,
+                    Value = string.Empty,
+                    IsSecret = false,
+                    IsOptional = false,
+                },
+
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = ServiceNowWorkTrackingOptionNames.Username,
+                    Value = string.Empty,
+                    IsSecret = false,
+                    IsOptional = false,
+                },
+
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = ServiceNowWorkTrackingOptionNames.Password,
+                    Value = string.Empty,
+                    IsSecret = true,
+                    IsOptional = false,
+                },
+
+                // Typed freetext rather than a picker: table discovery is unavailable to a
+                // least-privilege account (SPIKE Q8), so a wizard would show an empty list.
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = ServiceNowWorkTrackingOptionNames.WorkItemTable,
+                    Value = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
+                    IsSecret = false,
+                    IsOptional = true,
+                }
+            ];
         }
 
         private static List<WorkTrackingSystemConnectionOption> GetOptionsForLinear()
