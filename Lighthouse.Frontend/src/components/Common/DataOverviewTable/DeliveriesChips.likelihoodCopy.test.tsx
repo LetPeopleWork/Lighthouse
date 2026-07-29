@@ -20,8 +20,7 @@ import { DeliveriesChips } from "./DeliveriesChips";
  *
  * Constraint B (no false promise): the delivery number is <= every row but MAY EQUAL one (D5).
  *
- * `describe.skip` = RED scaffold; DELIVER enables it. The green block at the bottom is NOT skipped —
- * those are the states the relabel must leave alone.
+ * The second block holds the states the relabel must leave alone.
  */
 
 const { terminology } = vi.hoisted(() => ({
@@ -76,7 +75,7 @@ beforeEach(() => {
 	getByPortfolio.mockResolvedValue([deliveryWith(81)]);
 });
 
-describe.skip("DeliveriesChips joint framing (RED until #5587 slice-03)", () => {
+describe("DeliveriesChips joint framing (#5587 slice-03)", () => {
 	it("says the number covers all of them, not a bare likelihood", async () => {
 		await renderChips();
 

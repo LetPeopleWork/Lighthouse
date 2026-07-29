@@ -127,7 +127,9 @@ describe("DeliverySection", () => {
 
 		expect(screen.getByText("Test Delivery")).toBeInTheDocument();
 		expect(screen.getByText("Delivery Date: 1/31/2025")).toBeInTheDocument();
-		expect(screen.getByText("Likelihood: 75%")).toBeInTheDocument();
+		expect(
+			screen.getByText("All features by 1/31/2025: 75%"),
+		).toBeInTheDocument();
 		expect(screen.getByText(/1 Feature/i)).toBeInTheDocument();
 	});
 
@@ -238,8 +240,12 @@ describe("DeliverySection", () => {
 				</MemoryRouter>,
 			);
 
-			expect(screen.getByText("Likelihood: >95%")).toBeInTheDocument();
-			expect(screen.queryByText("Likelihood: 100%")).not.toBeInTheDocument();
+			expect(
+				screen.getByText("All features by 1/31/2025: >95%"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByText("All features by 1/31/2025: 100%"),
+			).not.toBeInTheDocument();
 		});
 
 		it("reads >95% on a per-feature chip above 95% with work left", () => {
@@ -373,8 +379,12 @@ describe("DeliverySection", () => {
 			);
 
 			expect(screen.getByText(/not enough data/i)).toBeInTheDocument();
-			expect(screen.queryByText("Likelihood: 100%")).not.toBeInTheDocument();
-			expect(screen.queryByText("Likelihood: >95%")).not.toBeInTheDocument();
+			expect(
+				screen.queryByText(/^All features by .*: 100%$/),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByText(/^All features by .*: >95%$/),
+			).not.toBeInTheDocument();
 		});
 
 		it("shows a not-enough-data label on a per-feature chip instead of a percentage", () => {

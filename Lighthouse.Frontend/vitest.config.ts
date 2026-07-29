@@ -19,7 +19,9 @@ export default defineConfig({
 		exclude: [
 			"**/node_modules/**",
 			"**/dist/**",
-			"**/.stryker-tmp/**",
+			// Trailing wildcard: every stryker config here uses a per-feature suffixed temp dir, so a
+			// bare ".stryker-tmp" matched none of them and a run in progress polluted `pnpm test`.
+			"**/.stryker-tmp*/**",
 			"**/StrykerOutput/**",
 		],
 		reporters: [

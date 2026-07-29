@@ -24,9 +24,8 @@ import DeliverySection from "./DeliverySection";
  * Constraint B (no false promise): the header is <= every row but MAY EQUAL one (D5). Nothing in the
  * copy may claim it is lower than every row.
  *
- * `describe.skip` = RED scaffold; DELIVER enables it (ADR-025). The green block at the bottom is NOT
- * skipped: those are regression guards for the states slice-03 must leave alone (AC-03.5, AC-03.6,
- * AC-03.7) and they must stay green across the change.
+ * The second block holds the regression guards for the states slice-03 must leave alone (AC-03.5,
+ * AC-03.6, AC-03.7) - they were green before the relabel and must stay green after it.
  */
 
 const { terminology } = vi.hoisted(() => ({
@@ -132,7 +131,7 @@ beforeEach(() => {
 	terminology.current = { ...DEFAULT_TERMINOLOGY };
 });
 
-describe.skip("DeliverySection joint/marginal copy (Story #5587 slice-03)", () => {
+describe("DeliverySection joint/marginal copy (Story #5587 slice-03)", () => {
 	it("labels the header with the joint framing, the renamable plural term and the delivery date (AC-03.1, AC-03.8)", () => {
 		const delivery = deliveryWith({});
 
@@ -242,6 +241,11 @@ describe("DeliverySection states slice-03 must leave alone (Story #5587)", () =>
 			screen.getByTitle(/No throughput history for Team Meridian/),
 		).toBeInTheDocument();
 		expect(screen.queryByText(/^All /)).not.toBeInTheDocument();
+
+		// The affordance carries its copy in a title ATTRIBUTE, which queryByText cannot see - so
+		// without this the whole "only in the numeric state" rule is invisible and a "Cannot forecast"
+		// chip could ship beside a tooltip promising odds.
+		expect(screen.queryByTitle(HEADER_TOOLTIP)).not.toBeInTheDocument();
 	});
 
 	it("keeps the not-enough-data label, without the joint framing (AC-03.5, AC-02.6)", () => {
@@ -253,6 +257,7 @@ describe("DeliverySection states slice-03 must leave alone (Story #5587)", () =>
 
 		expect(screen.getByText(/not enough data/i)).toBeInTheDocument();
 		expect(screen.queryByText(/^All /)).not.toBeInTheDocument();
+		expect(screen.queryByTitle(HEADER_TOOLTIP)).not.toBeInTheDocument();
 	});
 
 	it("keeps the per-row chip's own cannot-forecast tooltip alongside the column header (AC-03.6)", () => {

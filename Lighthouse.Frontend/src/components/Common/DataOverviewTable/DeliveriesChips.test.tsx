@@ -103,10 +103,10 @@ describe("DeliveriesChips", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText(/Q1 Release.*3 features.*Likelihood: 75%/),
+				screen.getByText(/Q1 Release.*3 features.*All features: 75%/),
 			).toBeInTheDocument();
 			expect(
-				screen.getByText(/Q2 Release.*3 features.*Likelihood: 90%/),
+				screen.getByText(/Q2 Release.*3 features.*All features: 90%/),
 			).toBeInTheDocument();
 		});
 
@@ -140,7 +140,7 @@ describe("DeliveriesChips", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText(/Q1 Release.*3 features.*Likelihood: 75%/),
+				screen.getByText(/Q1 Release.*3 features.*All features: 75%/),
 			).toBeInTheDocument();
 		});
 
@@ -219,7 +219,7 @@ describe("DeliveriesChips", () => {
 	});
 
 	describe("never presents a portfolio delivery forecast as a certainty", () => {
-		it("reads Likelihood: >95% for a delivery above 95% with work left", async () => {
+		it("reads >95% on the portfolio chip for a delivery above 95% with work left", async () => {
 			const mockDeliveries = [
 				getMockDelivery({
 					id: 1,
@@ -236,13 +236,13 @@ describe("DeliveriesChips", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByText(/Q1 Release.*Likelihood: >95%/),
+					screen.getByText(/Q1 Release.*All features: >95%/),
 				).toBeInTheDocument();
 			});
-			expect(screen.queryByText(/Likelihood: 100%/)).not.toBeInTheDocument();
+			expect(screen.queryByText(/All features: 100%/)).not.toBeInTheDocument();
 		});
 
-		it("keeps the precise Likelihood: 95% for a delivery at the boundary", async () => {
+		it("keeps the precise 95% for a delivery at the boundary", async () => {
 			const mockDeliveries = [
 				getMockDelivery({
 					id: 1,
@@ -259,13 +259,13 @@ describe("DeliveriesChips", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByText(/Q1 Release.*Likelihood: 95%/),
+					screen.getByText(/Q1 Release.*All features: 95%/),
 				).toBeInTheDocument();
 			});
-			expect(screen.queryByText(/Likelihood: >95%/)).not.toBeInTheDocument();
+			expect(screen.queryByText(/All features: >95%/)).not.toBeInTheDocument();
 		});
 
-		it("still reads Likelihood: 100% for a completed delivery with no work left", async () => {
+		it("still reads 100% for a completed delivery with no work left", async () => {
 			const mockDeliveries = [
 				getMockDelivery({
 					id: 1,
@@ -282,10 +282,10 @@ describe("DeliveriesChips", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByText(/Q1 Release.*Likelihood: 100%/),
+					screen.getByText(/Q1 Release.*All features: 100%/),
 				).toBeInTheDocument();
 			});
-			expect(screen.queryByText(/Likelihood: >95%/)).not.toBeInTheDocument();
+			expect(screen.queryByText(/All features: >95%/)).not.toBeInTheDocument();
 		});
 	});
 
@@ -309,8 +309,8 @@ describe("DeliveriesChips", () => {
 			await waitFor(() => {
 				expect(screen.getByText(/not enough.*data/i)).toBeInTheDocument();
 			});
-			expect(screen.queryByText(/Likelihood: 100%/)).not.toBeInTheDocument();
-			expect(screen.queryByText(/Likelihood: >95%/)).not.toBeInTheDocument();
+			expect(screen.queryByText(/All features: 100%/)).not.toBeInTheDocument();
+			expect(screen.queryByText(/All features: >95%/)).not.toBeInTheDocument();
 		});
 
 		it("still shows the precise likelihood when the owning team has enough throughput data", async () => {
@@ -331,7 +331,7 @@ describe("DeliveriesChips", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByText(/Mature Team Release.*Likelihood: 80%/),
+					screen.getByText(/Mature Team Release.*All features: 80%/),
 				).toBeInTheDocument();
 			});
 			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();
@@ -355,7 +355,7 @@ describe("DeliveriesChips", () => {
 
 			await waitFor(() => {
 				expect(
-					screen.getByText(/Done Release.*Likelihood: 100%/),
+					screen.getByText(/Done Release.*All features: 100%/),
 				).toBeInTheDocument();
 			});
 			expect(screen.queryByText(/not enough.*data/i)).not.toBeInTheDocument();

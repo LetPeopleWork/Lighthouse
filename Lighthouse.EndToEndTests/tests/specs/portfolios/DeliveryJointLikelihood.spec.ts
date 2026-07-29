@@ -8,7 +8,6 @@ import {
  * Delivery joint likelihood — Playwright spec
  *
  * Feature: delivery-joint-likelihood (ADO User Story #5587, Epic #5459)
- * Wave: DISTILL (skeleton — the scenario starts as test.skip())
  *
  * ONE thin walking skeleton for the whole feature's UI surface, per the project's standing E2E rule.
  * Slice-01 deliberately has no E2E: the shape that most needed proving there (a contributing pair
@@ -37,7 +36,7 @@ const DEMO_SCENARIO_ID = 0;
 const DEMO_PORTFOLIO_NAME = "Project Apollo";
 const DEMO_DELIVERY_NAME = "Apollo Release";
 
-test.skip("@walking_skeleton @driving_adapter @real-io @US-03 forecaster reads which probability each delivery surface is showing", async ({
+test("@walking_skeleton @driving_adapter @real-io @US-03 forecaster reads which probability each delivery surface is showing", async ({
 	page,
 	request,
 	overviewPage,
@@ -67,7 +66,7 @@ test.skip("@walking_skeleton @driving_adapter @real-io @US-03 forecaster reads w
 
 	await test.step("the header explains what ALL means", async () => {
 		await expect(
-			page.getByTitle("P(ALL of these land by the date)"),
+			delivery.container.getByTitle("P(ALL of these land by the date)"),
 		).toBeAttached();
 	});
 

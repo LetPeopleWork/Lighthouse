@@ -13,6 +13,7 @@ import {
 } from "../../../utils/forecast/cannotForecast";
 import { formatLikelihood } from "../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../utils/forecast/isForecastDataInsufficient";
+import { jointLikelihoodLabel } from "../../../utils/forecast/jointLikelihoodLabel";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../Forecasts/InsufficientForecastDataIndicator";
 
@@ -73,13 +74,16 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 				) {
 					forecastSummary = INSUFFICIENT_FORECAST_DATA_SHORT;
 				} else {
-					forecastSummary = `Likelihood: ${formatLikelihood(
-						delivery.likelihoodPercentage,
-						{
+					// Same joint framing as the delivery header (ADR-113 D1, ruling R1). No date: this
+					// surface renders none, and no count either - the segment before it already carries
+					// the scope, and it has to stay there for the two states that name no term at all.
+					forecastSummary = jointLikelihoodLabel({
+						term: featuresTerm,
+						value: formatLikelihood(delivery.likelihoodPercentage, {
 							hasRemainingWork: delivery.remainingWork > 0,
 							precision: "round",
-						},
-					)}`;
+						}),
+					});
 				}
 
 				const chip = (

@@ -38,9 +38,14 @@ export class DeliveryItem {
 		return match ? Number.parseInt(match[1], 10) : null;
 	}
 
+	/**
+	 * Read off the forecast chip's trailing percentage rather than a label prefix — Story #5587
+	 * slice-03 relabelled it to "All {features} by {date}: NN%". Returns null for the non-numeric
+	 * states ("Cannot forecast", "Not enough data"), which carry no percentage at all.
+	 */
 	async getLikelihood(): Promise<number | null> {
-		const text = await this.container.textContent();
-		const match = text?.match(/Likelihood:\s*>?(\d+)%/);
+		const label = await this.getForecastChipLabel();
+		const match = label.match(/:\s*>?(\d+)%$/);
 		return match ? Number.parseInt(match[1], 10) : null;
 	}
 
@@ -75,10 +80,13 @@ export class DeliveryItem {
 	}
 
 	/**
-	 * The breakdown grid's Likelihood column header. Keyed on `data-field`, not on the header text,
-	 * so the locator survives Story #5587 slice-03 relabelling it. Page-scoped like
-	 * `getFeatureLikelihoods()` below and safe for the same reason: one delivery is expanded at a
-	 * time, so `toggleDetails()` establishes the single match.
+	 * The breakdown grid's Likelihood column header. Keyed on `data-field`, not on the header text, so
+	 * the locator survives Story #5587 slice-03 relabelling it.
+	 *
+	 * Page-scoped, and it has to be: `container` is the AccordionSummary, while the grid renders in the
+	 * sibling AccordionDetails, so a container-scoped locator finds nothing (verified live 2026-07-29).
+	 * That makes this an exception to the scope-to-container rule in docs/ci-learnings.md, and it holds
+	 * only because one delivery is expanded at a time - `toggleDetails()` establishes the single match.
 	 */
 	get likelihoodColumnHeader(): Locator {
 		return this.container
