@@ -82,3 +82,106 @@ test.skip("@walking_skeleton @driving_adapter @real-io @US-03 forecaster reads w
 		).toBeAttached();
 	});
 });
+
+const DEPENDENCIES_SCENARIO_ID = 12;
+const DEPENDENCIES_PORTFOLIO_NAME = "Project Ocean Explorer";
+const MULTI_TEAM_DELIVERY_NAME = "Ocean Explorer Milestone";
+const TEAM_WITHOUT_THROUGHPUT = "Team Meridian";
+
+/**
+ * Slice-01's maths, on real data — the one thing no unit or integration fixture can show: that the
+ * rollup reaches a real delivery built from a real Monte Carlo run over several teams.
+ *
+ * The Dependencies scenario is the only demo portfolio whose features span teams, and one of those
+ * teams ("Team Meridian") has closed nothing, so it has no throughput to forecast from. That makes
+ * every feature it touches un-forecastable, and one un-forecastable feature makes the whole delivery
+ * un-forecastable (ADR-112 D8). Deleting the team removes its work pairs — FeatureWork.Team cascades
+ * — so the remaining teams' rows are all that is left and the delivery becomes forecastable.
+ *
+ * The assertion that matters is the LAST one: the delivery number is at or below every feature's own
+ * number. That is the invariant the whole feature exists to establish, and it is the one thing a
+ * governing-feature rollup could not satisfy for a multi-team delivery. Equality IS permitted (D5),
+ * so this asserts `<=`, never `<`.
+ *
+ * Deliberately NOT asserted: an exact percentage. Demo throughput moves with the calendar, so a pinned
+ * number is a flake generator; the exact joint is pinned in DeliveryJointForecastIntegrationTest.
+ */
+test("@premium @real-io @US-01 a delivery is unforecastable while one team has no throughput, then reports the joint across the rest", async ({
+	page,
+	request,
+	overviewPage,
+}) => {
+	await loadDemoScenario(request, DEPENDENCIES_SCENARIO_ID);
+	await waitForBackgroundUpdates(request);
+	await page.goto("/");
+
+	const portfolioDetail = await overviewPage.goToPortfolio(
+		DEPENDENCIES_PORTFOLIO_NAME,
+	);
+	let deliveries = await portfolioDetail.goToDeliveries();
+	let delivery = deliveries.getDeliveryByName(MULTI_TEAM_DELIVERY_NAME);
+
+	await test.step("cannot be forecast while a contributing team has no throughput", async () => {
+		await expect(delivery.forecastChip).toContainText("Cannot forecast");
+	});
+
+	await test.step("the team with no throughput is removed", async () => {
+		await page.goto("/");
+		const deletionDialog = await overviewPage.deleteTeam(
+			TEAM_WITHOUT_THROUGHPUT,
+		);
+		await deletionDialog.delete();
+	});
+
+	await test.step("the delivery can now be forecast and publishes dates", async () => {
+		await page.goto("/");
+		const refreshedPortfolio = await overviewPage.goToPortfolio(
+			DEPENDENCIES_PORTFOLIO_NAME,
+		);
+		deliveries = await refreshedPortfolio.goToDeliveries();
+		delivery = deliveries.getDeliveryByName(MULTI_TEAM_DELIVERY_NAME);
+
+		await expect(delivery.forecastChip).not.toContainText("Cannot forecast");
+	});
+
+	await test.step("and that forecast is at or below every feature's own", async () => {
+		// Asserted against the same endpoint the page just rendered rather than off the header: another
+		// team in this scenario has thin history, and DeliverySection renders the insufficient-data
+		// label INSTEAD of a percentage (strict either/or), which no amount of team deletion changes.
+		// This is the invariant the whole feature exists to establish, on real Monte Carlo output over
+		// four teams and thirteen features - the one thing hand-built fixtures cannot be. Equality is
+		// PERMITTED (D5), so this is <= and never <.
+		const portfolios = (await (
+			await request.get("/api/latest/portfolios")
+		).json()) as { id: number; name: string }[];
+		const portfolioId = portfolios.find(
+			(candidate) => candidate.name === DEPENDENCIES_PORTFOLIO_NAME,
+		)?.id;
+
+		const response = await request.get(
+			`/api/latest/deliveries/portfolio/${portfolioId}`,
+		);
+		expect(response.ok()).toBe(true);
+
+		const payloads = (await response.json()) as DeliveryPayload[];
+		const payload = payloads.find(
+			(candidate) => candidate.name === MULTI_TEAM_DELIVERY_NAME,
+		) as DeliveryPayload;
+
+		const rowLikelihoods = payload.featureLikelihoods
+			.map((row) => row.likelihoodPercentage)
+			.filter((likelihood): likelihood is number => likelihood !== null);
+
+		expect(payload.likelihoodPercentage).not.toBeNull();
+		expect(rowLikelihoods.length).toBeGreaterThan(1);
+		expect(payload.likelihoodPercentage as number).toBeLessThanOrEqual(
+			Math.min(...rowLikelihoods),
+		);
+	});
+});
+
+interface DeliveryPayload {
+	name: string;
+	likelihoodPercentage: number | null;
+	featureLikelihoods: { likelihoodPercentage: number | null }[];
+}

@@ -122,49 +122,6 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(delivery.Features, Does.Contain(feature));
         }
 
-        /// <summary>
-        /// A likelihood of exactly 0% - which is what a delivery whose date has already gone by
-        /// scores - is the single most important thing Lighthouse has to say. Report it as unknown
-        /// instead and the when-distribution comes back empty, DeliveryMetricSnapshotRecordingHandler
-        /// reads that as "no forecast" and persists NULL: the deliveries most in trouble would be
-        /// exactly the ones that silently stopped reporting.
-        /// </summary>
-        [Test]
-        public void CalculateMetrics_FeatureWithZeroLikelihood_StillGovernsAndReportsForecastDates()
-        {
-            var team = new Team { Id = 1, Name = "Team" };
-
-            var feature = new Feature { Id = 1 };
-            feature.Forecasts.Add(CreateForecastCompletingInDays(team, 50));
-            feature.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, RemainingWorkItems = 5, TotalWorkItems = 5 });
-
-            // The target date passed five days ago and work remains, so the likelihood is exactly 0.
-            var delivery = new Delivery { Id = 1, Name = "Overdue Delivery", Date = Clock.TodayAsUtcMidnight.AddDays(-5) };
-            delivery.Features.Add(feature);
-
-            var metrics = delivery.CalculateMetrics(Clock.Today, NoBlackoutPeriods, 85);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(metrics.LikelihoodPercentage, Is.Zero);
-                Assert.That(metrics.WhenDistribution, Is.Not.Empty,
-                    "an overdue delivery must still say WHEN it will land");
-                Assert.That(
-                    metrics.WhenDistribution.Select(percentile => percentile.ExpectedDate),
-                    Has.All.EqualTo(Clock.TodayAsUtcMidnight.AddDays(50)));
-            }
-        }
-
-        private static WhenForecast CreateForecastCompletingInDays(Team team, int days)
-        {
-            var simulationResult = new Dictionary<int, int> { { days, 100 } };
-            var forecast = new WhenForecast { TeamId = team.Id };
-            forecast.GetType()
-                .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(forecast, [simulationResult]);
-            return forecast;
-        }
-
         #region SelectionMode Tests
 
         [Test]

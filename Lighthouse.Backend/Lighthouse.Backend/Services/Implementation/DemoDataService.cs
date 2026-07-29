@@ -12,6 +12,13 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         private const string DemoDeliveryPortfolioName = "Project Apollo";
         private const string DemoDeliveryName = "Apollo Release";
+
+        // The Dependencies scenario is the only one where a delivery spans several teams, so it is the
+        // only one that shows the joint rollup doing anything (ADR-113). One contributing team has no
+        // throughput, so the delivery reports "cannot forecast" until that team is dealt with.
+        private const string MultiTeamDeliveryPortfolioName = "Project Ocean Explorer";
+        private const string MultiTeamDeliveryName = "Ocean Explorer Milestone";
+        private const int MultiTeamDeliveryDays = 60;
         private const int DemoBurnupDays = 14;
 
         private static readonly int[] SnapshotPercentiles = [50, 70, 85, 95];
@@ -62,6 +69,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var addedPortfolios = await AddProjectsForSceanrios(scenariosToLoad, workTrackingSystemConnection);
 
             await SeedDemoDeliveryWithBurnup(addedPortfolios);
+            await SeedMultiTeamDelivery(addedPortfolios);
         }
 
         private async Task<IReadOnlyDictionary<string, Portfolio>> AddProjectsForSceanrios(IEnumerable<DemoDataScenario> scenariosToLoad, WorkTrackingSystemConnection workTrackingSystemConnection)
@@ -115,6 +123,26 @@ namespace Lighthouse.Backend.Services.Implementation
 
             SeedBurnupSnapshots(delivery.Id);
             await deliveryMetricSnapshotRepository.Save();
+        }
+
+        // No burnup snapshots: this delivery exists to show the forecast rollup across teams, and one of
+        // its contributing teams cannot be forecast at all, so there is no history worth inventing.
+        private async Task SeedMultiTeamDelivery(IReadOnlyDictionary<string, Portfolio> addedPortfolios)
+        {
+            if (!addedPortfolios.TryGetValue(MultiTeamDeliveryPortfolioName, out var portfolio))
+            {
+                return;
+            }
+
+            var delivery = new Delivery(MultiTeamDeliveryName, clock.TodayAsUtcMidnight.AddDays(MultiTeamDeliveryDays), portfolio.Id, clock.Today)
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                RuleSchemaVersion = WorkItemRuleSet.SchemaVersion,
+                RuleDefinitionJson = BuildAllFeaturesRuleDefinition(),
+            };
+
+            deliveryRepository.Add(delivery);
+            await deliveryRepository.Save();
         }
 
         private static string BuildAllFeaturesRuleDefinition()
