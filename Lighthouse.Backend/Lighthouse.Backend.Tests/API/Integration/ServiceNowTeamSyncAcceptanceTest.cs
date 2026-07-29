@@ -59,8 +59,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var response = await Client.PostAsJsonAsync("/api/latest/teams/validate", TeamSettings(connectionId, TeamsOwnQuery));
             var verdict = await ReadVerdict(response);
 
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), verdict.Message);
-            Assert.That(verdict.IsValid, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), verdict.Message);
+                Assert.That(verdict.IsValid, Is.True);
+            }
         }
 
         // The other half of AC6, and the failure this slice exists to make visible. ServiceNow drops
@@ -82,9 +85,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "/api/latest/teams/validate", TeamSettings(connectionId, "not_a_real_field=whatever"));
             var verdict = await ReadVerdict(response);
 
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-            Assert.That(verdict.Code, Is.EqualTo("query_matches_whole_table"));
-            Assert.That(verdict.Message, Does.Contain("incident"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(verdict.Code, Is.EqualTo("query_matches_whole_table"));
+                Assert.That(verdict.Message, Does.Contain("incident"));
+            }
         }
 
         // AC1, AC2, AC7 together over real HTTP. The day assertion is the load-bearing one: this
@@ -99,13 +105,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var workItems = (await connector.GetWorkItemsForTeam(team)).ToList();
             var resolvedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
 
-            Assert.That(workItems, Has.Count.EqualTo(4),
-                "Five records exist over three pages; the fifth sits in a label this team never mapped.");
-            Assert.That(resolvedItem, Is.Not.Null);
-            Assert.That(resolvedItem?.ClosedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 30, 0, 0, 0, DateTimeKind.Utc)),
-                "The record was resolved and never closed, and its universal-time resolution falls on the 30th.");
-            Assert.That(resolvedItem?.State, Is.EqualTo("Resolved"),
-                "The label the service desk uses, not the choice value.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Has.Count.EqualTo(4),
+                    "Five records exist over three pages; the fifth sits in a label this team never mapped.");
+                Assert.That(resolvedItem, Is.Not.Null);
+                Assert.That(resolvedItem?.ClosedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 30, 0, 0, 0, DateTimeKind.Utc)),
+                    "The record was resolved and never closed, and its universal-time resolution falls on the 30th.");
+                Assert.That(resolvedItem?.State, Is.EqualTo("Resolved"),
+                    "The label the service desk uses, not the choice value.");
+            }
         }
 
         // AC5. ServiceNow cannot supply transition history to a read-only account, and Lighthouse
@@ -129,11 +138,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var persisted = DatabaseContext.WorkItems.FirstOrDefault(item => item.ReferenceId == "INC0000001");
 
-            Assert.That(ConnectorFor(team).SupportsTransitionHistory(team.WorkTrackingSystemConnection), Is.False);
-            Assert.That(persisted, Is.Not.Null);
-            Assert.That(persisted?.State, Is.EqualTo("Resolved"));
-            Assert.That(persisted?.CurrentStateEnteredAt, Is.Not.Null,
-                "ServiceNow supplies no history, so the change Lighthouse observed between two syncs is the only honest signal — and it must be captured rather than left blank.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ConnectorFor(team).SupportsTransitionHistory(team.WorkTrackingSystemConnection), Is.False);
+                Assert.That(persisted, Is.Not.Null);
+                Assert.That(persisted?.State, Is.EqualTo("Resolved"));
+                Assert.That(persisted?.CurrentStateEnteredAt, Is.Not.Null,
+                    "ServiceNow supplies no history, so the change Lighthouse observed between two syncs is the only honest signal — and it must be captured rather than left blank.");
+            }
         }
 
         private IWorkTrackingConnector ConnectorFor(Team team)
