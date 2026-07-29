@@ -92,7 +92,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await teamRepository.Save();
 
             var feature = new Feature(team, 5) { Name = "Feature", Order = "12" };
-            feature.SetFeatureForecasts([DeterministicForecast(WorkingDaysToCompletion)]);
+
+            // The row has to name its team, as the multi-team seed below already does: since Story
+            // #5587 the delivery rollup enumerates FROM FeatureWork and LEFT JOINs Forecasts.
+            var forecast = DeterministicForecast(WorkingDaysToCompletion);
+            forecast.TeamId = team.Id;
+            feature.SetFeatureForecasts([forecast]);
 
             var portfolio = new Portfolio { Name = "Test Portfolio", WorkTrackingSystemConnection = connection };
             portfolio.UpdateFeatures([feature]);

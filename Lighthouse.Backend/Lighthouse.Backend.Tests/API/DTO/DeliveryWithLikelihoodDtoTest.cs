@@ -27,9 +27,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast, [simulationResult]);
 
+            // Since Story #5587 the rollup enumerates FROM FeatureWork and LEFT JOINs Forecasts, so
+            // the pair and its row have to name the same team or the delivery cannot be forecast.
+            var team = new Team { Id = 1, Name = "Team" };
+            forecast.TeamId = team.Id;
+
             var feature = new Feature();
             feature.Forecasts.Add(forecast);
-            feature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+            feature.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, RemainingWorkItems = 12 });
 
             var delivery = new Delivery
             {
@@ -110,13 +115,22 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast2, [simulationResult2]);
 
+            // Both pairs already carried the same (unset) team id, so the fixture is ONE team working
+            // two features. Naming that team on the pairs and their rows is what Story #5587's LEFT
+            // JOIN needs; the two features then share a bucket and the delivery is the elementwise
+            // minimum of their CDFs - still 60 %, now by the comonotonic rule rather than by selecting
+            // a governing feature.
+            var team = new Team { Id = 1, Name = "Team" };
+            forecast1.TeamId = team.Id;
+            forecast2.TeamId = team.Id;
+
             var feature1 = new Feature();
             feature1.Forecasts.Add(forecast1);
-            feature1.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+            feature1.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, RemainingWorkItems = 12 });
 
             var feature2 = new Feature();
             feature2.Forecasts.Add(forecast2);
-            feature2.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+            feature2.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, RemainingWorkItems = 12 });
 
             var delivery = new Delivery
             {

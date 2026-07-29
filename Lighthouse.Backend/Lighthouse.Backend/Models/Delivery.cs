@@ -51,25 +51,67 @@ namespace Lighthouse.Backend.Models
         public DeliveryMetricsProjection CalculateMetrics(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
         {
             var featureBreakdown = CalculateFeatureBreakdown(today, blackoutPeriods);
-            var governingFeature = GetGoverningFeature(today, blackoutPeriods);
 
-            if (governingFeature == null)
+            if (Features.Count == 0)
             {
                 return new DeliveryMetricsProjection(0.0, [], featureBreakdown);
             }
 
-            // One un-forecastable feature makes the whole delivery un-forecastable - reporting the
-            // governing feature's number would quietly ignore work that must still happen (ADR-112 D8).
+            // One un-forecastable feature makes the whole delivery un-forecastable - reporting a number
+            // for the rest would quietly ignore work that must still happen (ADR-112 D8).
             if (Features.Any(feature => !feature.CanBeForecast))
             {
                 return new DeliveryMetricsProjection(null, [], featureBreakdown);
             }
 
-            var whenDistribution = percentiles
-                .Select(percentile => ToWhenPercentile(governingFeature.Forecast, percentile, today, blackoutPeriods))
-                .ToList();
+            if (RemainingWorkItems() <= 0)
+            {
+                return new DeliveryMetricsProjection(100.0, PercentilesOf(DayZeroMarker, today, blackoutPeriods, percentiles), featureBreakdown);
+            }
 
-            return new DeliveryMetricsProjection(governingFeature.GetLikelhoodForDate(Date, today, blackoutPeriods), whenDistribution, featureBreakdown);
+            // Backstop at pair grain: guard 2 already covers this once Feature.TeamsWithoutForecast can
+            // name the team, but this is the one place that re-derives the predicate from the row set
+            // the maths actually consumes, so the two cannot drift apart silently (ADR-113 DDD-7).
+            var deliveryForecast = DeliveryCompletionForecast.Build(Features);
+
+            if (deliveryForecast == null)
+            {
+                return new DeliveryMetricsProjection(null, [], featureBreakdown);
+            }
+
+            return new DeliveryMetricsProjection(
+                LikelihoodOf(deliveryForecast, today, blackoutPeriods),
+                PercentilesOf(deliveryForecast, today, blackoutPeriods, percentiles),
+                featureBreakdown);
+        }
+
+        // ForecastService emits this shape for a feature with nothing left to do, so a delivery whose
+        // work is all done reports today rather than a stale future date (ADR-113 DDD-9).
+        private static WhenForecast DayZeroMarker => new(new Dictionary<int, int> { { 0, 0 } });
+
+        private int RemainingWorkItems()
+        {
+            return Features.Sum(feature => feature.FeatureWork.Sum(work => work.RemainingWorkItems));
+        }
+
+        private double LikelihoodOf(WhenForecast forecast, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        {
+            // Mirrors Feature.GetLikelhoodForDate's `date != default` short-circuit, which the delivery
+            // used to inherit through the deleted governing-feature call. Reachable only through the EF
+            // parameterless constructor.
+            if (Date == default)
+            {
+                return 100;
+            }
+
+            return forecast.GetLikelihood(blackoutPeriods.CountWorkingDays(InstanceCalendar.AsUtcMidnight(today), Date));
+        }
+
+        private static List<DeliveryWhenPercentile> PercentilesOf(WhenForecast forecast, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, int[] percentiles)
+        {
+            return percentiles
+                .Select(percentile => ToWhenPercentile(forecast, percentile, today, blackoutPeriods))
+                .ToList();
         }
 
         private List<DeliveryFeatureMetric> CalculateFeatureBreakdown(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
@@ -87,25 +129,6 @@ namespace Lighthouse.Backend.Models
             var completion = Math.Clamp((double)(totalItems - remainingItems) / totalItems * 100.0, 0.0, 100.0);
 
             return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date, today, blackoutPeriods));
-        }
-
-        private Feature? GetGoverningFeature(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
-        {
-            // A delivery finishes only when its latest feature finishes, so the governing feature - the one
-            // whose forecast dates and likelihood represent the delivery - is the latest-completing one.
-            // Ranking by likelihood alone saturates for large deliveries (every feature is 100% likely once
-            // the target date is comfortably far out) and the tie-break then falls back to arbitrary
-            // collection order, surfacing forecast dates earlier than individual features (ADO #5435).
-            // Feature.Forecast is computed on every read and now runs the joint distribution, so the
-            // likelihood and the forecast are each taken once per feature rather than per comparison.
-            return Features
-                .Select(feature => (feature, likelihood: feature.GetLikelhoodForDate(Date, today, blackoutPeriods)))
-                .Where(candidate => candidate.likelihood >= 0)
-                .Select(candidate => (candidate.feature, candidate.likelihood, forecast: candidate.feature.Forecast))
-                .OrderByDescending(candidate => candidate.forecast.GetProbability(85))
-                .ThenBy(candidate => candidate.likelihood)
-                .Select(candidate => candidate.feature)
-                .FirstOrDefault();
         }
 
         private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)

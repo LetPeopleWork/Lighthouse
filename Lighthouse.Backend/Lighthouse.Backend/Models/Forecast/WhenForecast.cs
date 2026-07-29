@@ -6,7 +6,9 @@
         {
         }
 
-        // Test seam for hand-built histograms (Story #5569, DDD-5) - replaces reflection on SetSimulationResult.
+        // Production seam for hand-built histograms: DeliveryCompletionForecast builds a per-team
+        // carrier through it and Delivery its all-done day-0 marker (ADR-113 DDD-5). Added by Story
+        // #5569 as a test seam only - do not delete it as scaffolding.
         internal WhenForecast(Dictionary<int, int> simulationResult) : this()
         {
             SetSimulationResult(simulationResult);

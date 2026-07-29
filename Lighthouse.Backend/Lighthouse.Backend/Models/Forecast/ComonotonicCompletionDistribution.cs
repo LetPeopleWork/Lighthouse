@@ -10,24 +10,46 @@ namespace Lighthouse.Backend.Models.Forecast
     // does no arithmetic and no rounding, and is invariant under permutation of finite inputs. A
     // mirrored .Order() would be dead code the next reader mistakes for a load-bearing invariant.
     // ADR-113 section 3.
-    //
-    // __SCAFFOLD__ - DISTILL wrote the seam and the contract; DELIVER writes the body.
     internal static class ComonotonicCompletionDistribution
     {
         // Returns the concrete Dictionary rather than an interface, mirroring Combine: CA1859 fires on
         // the Sonar gate for non-public members declared as an interface.
-        //
-        // Contract (ADR-113):
-        //   contributors = each histogram's buckets ordered by day key, TrialsIn > 0
-        //   count == 0  -> []                       caller treats this as "no bucket", never a distribution
-        //   count == 1  -> that histogram VERBATIM  short-circuit; the CDF round-trip is not the identity
-        //                                           in IEEE 754 and one shifted trial breaks AC-01.5
-        //   count >= 2  -> elementwise minimum of the contributors' cumulative series over the ascending
-        //                  union of their day keys, differentiated, scaled by contributors.Max(TrialsIn)
-        //                  and allocated with DistributeByLargestRemainder
         public static Dictionary<int, int> Min(IEnumerable<IReadOnlyDictionary<int, int>> histograms)
         {
-            throw new InvalidOperationException("__SCAFFOLD__ ComonotonicCompletionDistribution.Min is not implemented yet");
+            var contributors = histograms
+                .Select(histogram => histogram.OrderBy(bucket => bucket.Key).ToList())
+                .Where(buckets => CompletionHistogram.TrialsIn(buckets) > 0)
+                .ToList();
+
+            if (contributors.Count == 0)
+            {
+                return [];
+            }
+
+            if (contributors.Count == 1)
+            {
+                // Verbatim, not round-tripped: (a/T - b/T) * T can floor a trial short and the residue
+                // pass hands it to a different day, which breaks AC-01.5 bit-identity. Correctness, not
+                // speed. Days carrying no mass survive here and would not survive the round trip.
+                return contributors[0].ToDictionary(bucket => bucket.Key, bucket => bucket.Value);
+            }
+
+            var totalTrials = contributors.Max(CompletionHistogram.TrialsIn);
+            var days = contributors.SelectMany(buckets => buckets.Select(bucket => bucket.Key)).Distinct().Order().ToArray();
+
+            var cumulativeProbabilities = contributors.Select(buckets => CompletionHistogram.CumulativeProbabilities(buckets, days)).ToList();
+            var exactTrials = new double[days.Length];
+            var previousProbability = 0d;
+
+            for (var index = 0; index < days.Length; index++)
+            {
+                var minimumProbability = cumulativeProbabilities.Min(contributor => contributor[index]);
+
+                exactTrials[index] = Math.Max(0, (minimumProbability - previousProbability) * totalTrials);
+                previousProbability = minimumProbability;
+            }
+
+            return CompletionHistogram.DistributeByLargestRemainder(days, exactTrials, totalTrials);
         }
     }
 }

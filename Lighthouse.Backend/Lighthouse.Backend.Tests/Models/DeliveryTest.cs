@@ -122,56 +122,21 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(delivery.Features, Does.Contain(feature));
         }
 
-        [Test]
-        public void CalculateMetrics_MultipleFeaturesTiedOnLikelihood_WhenDistributionReflectsLatestCompletingFeature()
-        {
-            // Regression for ADO #5435: for large deliveries the forecast dates were taken from
-            // an arbitrary feature. Selection ranked features by likelihood-for-target-date, which
-            // saturates to 100% for every feature once the target date is comfortably far out, so
-            // the tie-break fell back to collection order instead of the latest-completing feature.
-            // A delivery is only done when its LATEST feature finishes.
-            var deliveryDate = Clock.TodayAsUtcMidnight.AddDays(200); // comfortably far -> every feature is 100% likely
-
-            var lateFeature = new Feature { Id = 1 };
-            lateFeature.Forecasts.Add(CreateForecastCompletingInDays(50));
-            lateFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 5 });
-
-            var earlyFeature = new Feature { Id = 2 };
-            earlyFeature.Forecasts.Add(CreateForecastCompletingInDays(5));
-            earlyFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 5 });
-
-            var delivery = new Delivery { Id = 1, Name = "Large Delivery", Date = deliveryDate };
-            // Late feature added first: the buggy selection returns the last-ranked (early) feature on a likelihood tie.
-            delivery.Features.Add(lateFeature);
-            delivery.Features.Add(earlyFeature);
-
-            var metrics = delivery.CalculateMetrics(Clock.Today, NoBlackoutPeriods, 70, 85, 95);
-
-            var expectedLatestDate = Clock.TodayAsUtcMidnight.AddDays(50);
-            using (Assert.EnterMultipleScope())
-            {
-                foreach (var percentile in metrics.WhenDistribution)
-                {
-                    Assert.That(percentile.ExpectedDate, Is.EqualTo(expectedLatestDate),
-                        $"Percentile {percentile.Percentile} must reflect the latest-completing feature");
-                }
-            }
-        }
-
         /// <summary>
         /// A likelihood of exactly 0% - which is what a delivery whose date has already gone by
-        /// scores - is the single most important thing Lighthouse has to say, so that feature still
-        /// governs. Drop it and the delivery has no governing feature at all, the when-distribution
-        /// comes back empty, and DeliveryMetricSnapshotRecordingHandler reads an empty distribution
-        /// as "no forecast" and persists NULL: the deliveries most in trouble would be exactly the
-        /// ones that silently stopped reporting.
+        /// scores - is the single most important thing Lighthouse has to say. Report it as unknown
+        /// instead and the when-distribution comes back empty, DeliveryMetricSnapshotRecordingHandler
+        /// reads that as "no forecast" and persists NULL: the deliveries most in trouble would be
+        /// exactly the ones that silently stopped reporting.
         /// </summary>
         [Test]
         public void CalculateMetrics_FeatureWithZeroLikelihood_StillGovernsAndReportsForecastDates()
         {
+            var team = new Team { Id = 1, Name = "Team" };
+
             var feature = new Feature { Id = 1 };
-            feature.Forecasts.Add(CreateForecastCompletingInDays(50));
-            feature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 5, TotalWorkItems = 5 });
+            feature.Forecasts.Add(CreateForecastCompletingInDays(team, 50));
+            feature.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, RemainingWorkItems = 5, TotalWorkItems = 5 });
 
             // The target date passed five days ago and work remains, so the likelihood is exactly 0.
             var delivery = new Delivery { Id = 1, Name = "Overdue Delivery", Date = Clock.TodayAsUtcMidnight.AddDays(-5) };
@@ -190,10 +155,10 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
-        private static WhenForecast CreateForecastCompletingInDays(int days)
+        private static WhenForecast CreateForecastCompletingInDays(Team team, int days)
         {
             var simulationResult = new Dictionary<int, int> { { days, 100 } };
-            var forecast = new WhenForecast();
+            var forecast = new WhenForecast { TeamId = team.Id };
             forecast.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast, [simulationResult]);

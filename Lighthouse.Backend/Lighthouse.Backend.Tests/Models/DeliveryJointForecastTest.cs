@@ -53,7 +53,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 splits guard 1 from the deleted governing-feature selector (DDD-6)")]
         public void CalculateMetrics_EveryFeatureCannotBeForecast_ReportsUnknownRatherThanZeroPercent()
         {
             // DDD-6, a visible delta. GetGoverningFeature filters likelihood >= 0 and `null >= 0` is
@@ -119,7 +118,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 introduces guard 3 (DDD-9)")]
         public void CalculateMetrics_DeliveryFinishedBetweenForecastRuns_MovesEveryPercentileDateToToday()
         {
             // DDD-9, a visible delta the earlier design draft denied. When the work finished BETWEEN
@@ -146,7 +144,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 rolls the delivery up over every (team, feature) row")]
         public void CalculateMetrics_TwoFeaturesOnSeparateTeams_HeadlineAndPercentileDatesComeFromTheJointHistogram()
         {
             // AC-01.1 and AC-01.9 in one fixture: two independent teams each 90 % likely by the delivery
@@ -200,7 +197,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 enumerates rows FROM FeatureWork and DDD-8 extends TeamsWithoutForecast")]
         public void CalculateMetrics_ContributingPairHasNoForecastRow_ReportsUnknownRatherThanASilentCertainty()
         {
             // C1 / DDD-7 through guard 2. A team added to an already-forecast feature by work-item sync
@@ -224,7 +220,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 adds the pair-grain backstop (guard 4)")]
         public void CalculateMetrics_ContributingPairHasNoForecastRowAndNoTeamNavigation_StillReportsUnknown()
         {
             // Guard 4, and the reason it is retained even though DDD-8 makes guard 2 cover C1. A pair
@@ -250,7 +245,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 takes the percentile dates off the joint histogram")]
         public void CalculateMetrics_DeliveryWithoutADate_KeepsReportingHundredPercentAndPublishesTheJointDates()
         {
             // DESIGN deferred question 1, decided in DISTILL: MIRROR the guard, do not invent a third

@@ -80,9 +80,19 @@ namespace Lighthouse.Backend.Models
                     return [];
                 }
 
-                return Forecasts
+                var withoutThroughput = Forecasts
                     .Where(forecast => forecast.TotalTrials == 0)
-                    .Select(TeamFor)
+                    .Select(TeamFor);
+
+                // A pair added by work-item sync after the last forecast run has no row at all, which
+                // is strictly worse than a zero-trial one (ADR-113 DDD-8).
+                var withoutAnyRow = FeatureWork
+                    .Where(work => work.RemainingWorkItems > 0)
+                    .Where(work => !HasForecastRowFor(work))
+                    .Select(work => work.Team);
+
+                return withoutThroughput
+                    .Concat(withoutAnyRow)
                     .Where(team => team is not null)
                     .Select(team => team!);
             }
@@ -91,6 +101,11 @@ namespace Lighthouse.Backend.Models
         private Team? TeamFor(WhenForecast forecast)
         {
             return forecast.Team ?? Teams.FirstOrDefault(team => team.Id == forecast.TeamId);
+        }
+
+        private bool HasForecastRowFor(FeatureWork work)
+        {
+            return Forecasts.Exists(forecast => (forecast.Team?.Id ?? forecast.TeamId) == work.TeamId);
         }
 
         public double? GetLikelhoodForDate(DateTime date, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)

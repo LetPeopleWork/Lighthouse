@@ -557,7 +557,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             featureRepository.Add(feature);
             await featureRepository.Save();
 
-            feature.SetFeatureForecasts([SingleOutcomeForecast(KnownForecastDays)]);
+            feature.SetFeatureForecasts([SingleOutcomeForecast(team, KnownForecastDays)]);
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id, TestToday.Ambient);
@@ -609,7 +609,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             featureRepository.Add(emptyFeature);
             await featureRepository.Save();
 
-            inProgressFeature.SetFeatureForecasts([SingleOutcomeForecast(KnownForecastDays)]);
+            inProgressFeature.SetFeatureForecasts([SingleOutcomeForecast(team, KnownForecastDays)]);
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id, TestToday.Ambient);
@@ -680,12 +680,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             };
         }
 
-        private static WhenForecast SingleOutcomeForecast(int days)
+        // The row has to name its team: since Story #5587 the delivery rollup enumerates FROM
+        // FeatureWork and LEFT JOINs Forecasts, so a row that names no team covers no contributing
+        // pair and the delivery reports "cannot forecast".
+        private static WhenForecast SingleOutcomeForecast(Team team, int days)
         {
             var simulationResult = new SimulationResult();
             simulationResult.SimulationResults[days] = SingleBucketTrials;
 
-            return new WhenForecast(simulationResult);
+            return new WhenForecast(simulationResult) { TeamId = team.Id };
         }
 
         private static readonly JsonSerializerOptions WhenDistributionReadOptions = new() { PropertyNameCaseInsensitive = true };

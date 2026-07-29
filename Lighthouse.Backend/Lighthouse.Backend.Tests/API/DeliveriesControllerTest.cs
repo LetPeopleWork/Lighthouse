@@ -83,9 +83,14 @@ namespace Lighthouse.Backend.Tests.API
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast, [simulationResult]);
 
+            // Since Story #5587 the rollup enumerates FROM FeatureWork and LEFT JOINs Forecasts, so
+            // the pair and its row have to name the same team or the delivery cannot be forecast.
+            var team = new Team { Id = 1, Name = "Team" };
+            forecast.TeamId = team.Id;
+
             var feature = new Feature();
             feature.Forecasts.Add(forecast);
-            feature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
+            feature.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, RemainingWorkItems = 12 });
 
             var delivery = new Delivery
             {
@@ -472,6 +477,8 @@ namespace Lighthouse.Backend.Tests.API
                 Id = 1,
                 Name = "Test Feature"
             };
+            // The row has to name the pair's team since Story #5587's LEFT JOIN.
+            forecast.TeamId = team.Id;
             feature.Forecasts.Add(forecast);
 
             var featureWork = new FeatureWork(team, 20, 100, feature); // 80% progress (80/100 completed)

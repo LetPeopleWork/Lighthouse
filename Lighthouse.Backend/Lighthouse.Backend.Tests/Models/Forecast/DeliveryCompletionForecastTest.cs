@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
     // taking the team term off feature.Forecast (0.518). A fixture that cannot separate all three is
     // not coverage - constant-throughput fixtures in particular are point masses whose product IS the
     // number the wrong implementations return.
-    [Ignore("RED until Story #5587 slice-01 implements DeliveryCompletionForecast")]
     public class DeliveryCompletionForecastTest
     {
         private const int TargetDay = 10;
@@ -263,7 +262,16 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
 
             var checkout = new Feature([(alpha, 3, 6), (beta, 3, 6)]);
             checkout.SetFeatureForecasts([
-                new WhenForecast(AlphaOnCheckout) { Team = alpha, TeamId = alpha.Id, HasSufficientData = true },
+                // Alpha's row must carry a CreationTime too. Left unset it defaults to DateTime.MinValue,
+                // which wins the minimum ACROSS carriers and hides whatever the bucket composed - the
+                // assertion would then hold for every implementation, including one that composes nothing.
+                new WhenForecast(AlphaOnCheckout)
+                {
+                    Team = alpha,
+                    TeamId = alpha.Id,
+                    HasSufficientData = true,
+                    CreationTime = OldestCreationTime.AddDays(1),
+                },
                 new WhenForecast(BetaOnCheckout)
                 {
                     Team = beta,

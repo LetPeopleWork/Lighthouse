@@ -44,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private DateTime Today => ServiceProvider.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 rolls the delivery up over every (team, feature) row")]
         public async Task GetDelivery_TwoFeaturesOnSeparateTeams_LikelihoodIsTheJointAcrossEveryFeature()
         {
             var portfolio = await SeedPortfolioWithTwoSingleTeamFeatures();
@@ -63,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 takes the percentile dates off the joint histogram")]
         public async Task GetDelivery_TwoFeaturesOnSeparateTeams_PercentileDatesComeFromTheJointHistogram()
         {
             // The percentile chips move outward too, not only the badge - the single most

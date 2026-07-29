@@ -42,10 +42,11 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetLikelhoodForDate_CountsWorkingDaysFromTheInstanceDay()
         {
             var clock = new FakeLighthouseClock(LateEveningInZurich, Zurich);
-            var feature = new Feature(new Team(), 10);
+            var team = ContributingTeam();
+            var feature = new Feature(team, 10);
 
             // 40% of the simulations finish in 9 days, the rest need 10.
-            feature.Forecasts.Add(ForecastFrom(new Dictionary<int, int> { { 9, 40 }, { 10, 60 } }));
+            feature.Forecasts.Add(ForecastFrom(team, new Dictionary<int, int> { { 9, 40 }, { 10, 60 } }));
 
             // 2026-08-06 is nine days after the Zurich day (2026-07-28) but ten after the UTC day,
             // so the anchor alone decides which side of the distribution the target lands on.
@@ -68,8 +69,9 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var clock = new FakeLighthouseClock(LateEveningInZurich, Zurich);
             var delivery = new Delivery("Zone boundary", new DateTime(2026, 12, 31, 0, 0, 0, DateTimeKind.Utc), 1, TestToday.Ambient);
-            var feature = new Feature(new Team(), 10);
-            feature.Forecasts.Add(ForecastFrom(new Dictionary<int, int> { { 10, 100 } }));
+            var team = ContributingTeam();
+            var feature = new Feature(team, 10);
+            feature.Forecasts.Add(ForecastFrom(team, new Dictionary<int, int> { { 10, 100 } }));
             delivery.Features.Add(feature);
 
             var metrics = delivery.CalculateMetrics(clock.Today, [], 85);
@@ -104,9 +106,16 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
-        private static WhenForecast ForecastFrom(Dictionary<int, int> simulationResult)
+        private static Team ContributingTeam()
         {
-            var forecast = new WhenForecast();
+            return new Team { Id = 1, Name = "Contributing" };
+        }
+
+        // The row names its team: since Story #5587 a contributing pair whose row does not name it has
+        // no honest distribution, so the feature reports "cannot forecast" rather than a number.
+        private static WhenForecast ForecastFrom(Team team, Dictionary<int, int> simulationResult)
+        {
+            var forecast = new WhenForecast { TeamId = team.Id };
             forecast.GetType()
                 .GetMethod("SetSimulationResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(forecast, [simulationResult]);

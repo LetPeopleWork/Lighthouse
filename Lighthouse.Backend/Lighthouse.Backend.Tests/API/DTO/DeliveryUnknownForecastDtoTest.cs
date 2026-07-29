@@ -147,7 +147,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 extends Feature.TeamsWithoutForecast (DDD-8)")]
         public void FromDelivery_ContributingPairHasNoForecastRow_ReportsUnknownAndNamesThatTeam()
         {
             // Story #5587, DDD-7/DDD-8. A team added to an already-forecast feature by work-item sync

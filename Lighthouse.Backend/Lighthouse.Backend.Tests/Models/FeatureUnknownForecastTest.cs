@@ -12,6 +12,10 @@ namespace Lighthouse.Backend.Tests.Models
         private static readonly string[] TeamWithoutThroughput = ["No Throughput"];
         private static readonly string[] TeamTheForecastRanFor = ["Ran Without Throughput"];
 
+        private static readonly string[] ContributingTeam = ["Contributing"];
+
+        private static readonly string[] BothTeamsForThePrecedenceFixture = ["Ran Without Throughput", "Contributing"];
+
         private static readonly DateOnly Today = new(2026, 7, 28);
         private static readonly DateTime TargetDate = new(2026, 8, 28, 0, 0, 0, DateTimeKind.Utc);
 
@@ -113,8 +117,12 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void TeamsWithoutForecast_ForecastMatchesNoTeamOnTheFeature_IsIgnored()
+        public void TeamsWithoutForecast_ForecastMatchesNoTeamOnTheFeature_LeavesTheContributingTeamUnforecast()
         {
+            // Inverted for ADR-113 DDD-8. The row names nobody on this feature, so it is still ignored
+            // as a zero-trial signal - but the contributing team then has no row at all, which is worse
+            // than a zero-trial one. Reporting the feature as forecastable here was the silent
+            // certainty the delivery-grain rollup exists to remove.
             var contributing = new Team { Id = 1, Name = "Contributing" };
             var subject = new Feature([(contributing, 2, 2)]);
 
@@ -122,8 +130,8 @@ namespace Lighthouse.Backend.Tests.Models
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(subject.TeamsWithoutForecast, Is.Empty);
-                Assert.That(subject.CanBeForecast, Is.True);
+                Assert.That(subject.TeamsWithoutForecast.Select(team => team.Name), Is.EqualTo(ContributingTeam));
+                Assert.That(subject.CanBeForecast, Is.False);
             }
         }
 
@@ -132,13 +140,18 @@ namespace Lighthouse.Backend.Tests.Models
         {
             // Precedence matters: the forecast knows which team it was run for, the feature only knows
             // who contributes. Resolving by id is the fallback, not the first choice.
+            //
+            // Both teams are named after ADR-113 DDD-8, and for two different reasons: the row ran for
+            // team 42 and produced no trials, and team 1 - which actually contributes - therefore owns
+            // no row at all. Production never builds this shape; ForecastService writes Team and TeamId
+            // together from the same SimulationResult.
             var runFor = new Team { Id = 42, Name = "Ran Without Throughput" };
             var contributing = new Team { Id = 1, Name = "Contributing" };
 
             var subject = new Feature([(contributing, 2, 2)]);
             subject.SetFeatureForecasts([new WhenForecast([]) { Team = runFor, TeamId = contributing.Id }]);
 
-            Assert.That(subject.TeamsWithoutForecast.Select(t => t.Name), Is.EqualTo(TeamTheForecastRanFor));
+            Assert.That(subject.TeamsWithoutForecast.Select(team => team.Name), Is.EqualTo(BothTeamsForThePrecedenceFixture));
         }
 
         [Test]

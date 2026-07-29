@@ -84,7 +84,14 @@ testWithPortfolio(
 
 			const featureLikelihoods = await delivery.getFeatureLikelihoods();
 			expect(featureLikelihoods.length).toBe(2);
-			expect(featureLikelihoods).toContain(details.likelihood);
+			// Story #5587 (ADR-113): the delivery number is the joint across every feature, so it is
+			// never ABOVE any of its rows rather than equal to one of them — equality is permitted but
+			// is no longer the rule (D5). One point of slack absorbs the header and the row chips
+			// rounding independently.
+			expect(details.likelihood).not.toBeNull();
+			expect(details.likelihood as number).toBeLessThanOrEqual(
+				Math.min(...featureLikelihoods) + 1,
+			);
 		});
 
 		await test.step("Rule Based Delivery Modification", async () => {

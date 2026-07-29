@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.Models
         private static readonly DateTime TargetDate = new(2026, 8, 29, 0, 0, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 extends Feature.TeamsWithoutForecast (DDD-8)")]
         public void TeamsWithoutForecast_ContributingPairHasNoForecastRow_NamesThatTeam()
         {
             var subject = FeatureWithNewlySyncedTeam();
@@ -34,7 +33,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 extends Feature.TeamsWithoutForecast (DDD-8)")]
         public void CanBeForecast_ContributingPairHasNoForecastRow_IsFalse()
         {
             var subject = FeatureWithNewlySyncedTeam();
@@ -43,7 +41,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("RED until Story #5587 slice-01 extends Feature.TeamsWithoutForecast (DDD-8)")]
         public void GetLikelhoodForDate_ContributingPairHasNoForecastRow_IsUnknownRatherThanAlphasNumberAlone()
         {
             // The sharp edge at feature grain: today the feature answers with Alpha's distribution as

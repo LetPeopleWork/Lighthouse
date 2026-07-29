@@ -161,6 +161,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await teamRepository.Save();
 
             var feature = new Feature(team, 5) { Name = "Feature", Order = "12" };
+
+            // The row has to name its team: since Story #5587 the delivery rollup enumerates FROM
+            // FeatureWork and LEFT JOINs Forecasts, so a row naming no team covers no contributing pair.
+            forecast.TeamId = team.Id;
             feature.SetFeatureForecasts([forecast]);
 
             var portfolio = new Portfolio { Name = $"Test Portfolio {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection };

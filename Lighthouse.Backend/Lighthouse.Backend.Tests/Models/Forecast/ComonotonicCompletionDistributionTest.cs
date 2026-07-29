@@ -9,7 +9,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
     // they cannot tell Min from Combine at all. Every fixture here is deliberately multi-valued, and
     // Min_TwoIdenticalContributors_ReturnsThatHistogramUnchanged is the one that separates the two
     // operators outright: minimum leaves an identical pair alone, product squares it.
-    [Ignore("RED until Story #5587 slice-01 implements ComonotonicCompletionDistribution.Min")]
     public class ComonotonicCompletionDistributionTest
     {
         private const int RandomSeed = 5587;
