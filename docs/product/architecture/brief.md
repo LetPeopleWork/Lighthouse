@@ -3867,5 +3867,6 @@ violation that **ADO 5612** is parked to evaluate at the end of the MVP.
 
 **`StartedDate` switches** to the first Doing span's `start` where history is readable, falling back
 to ADR-117's `opened_at` where it is not (ADR-118 decision 7, ratified 2026-07-30). `ClosedDate` does
-not switch. **Upgrade consequence for the release notes:** teams granting `itil` see Cycle Time and
-Work Item Age drop, and historical charts move, with no user action.
+not switch. **No upgrade consequence** — no ServiceNow code has ever been released, so slices 01, 02
+and 04 ship together. The residual is **mixed provenance within one sync**: records predating the
+metric definition fall back to `opened_at` alongside teammates using span starts. Accepted for v1.

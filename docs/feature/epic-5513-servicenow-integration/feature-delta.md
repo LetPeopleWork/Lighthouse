@@ -2115,8 +2115,11 @@ batch cannot silently return partial history, which is the failure shape this ep
   the maintainer: it switches**, falling back to ADR-117's `opened_at` only where history is
   unreadable. ADR-118 decision 7. `ClosedDate` deliberately does **not** switch — `resolved_at` is a
   genuine recorded instant, unlike the absent `work_start` that forced `StartedDate` to substitute in
-  the first place. **Upgrade consequence for the release notes:** teams that grant `itil` see Cycle
-  Time and Work Item Age drop, and historical charts move, without the user editing anything.
+  the first place. **No upgrade consequence** — checked 2026-07-30, zero ServiceNow commits are
+  reachable from `v26.7.26.8`, so slices 01, 02 and 04 all ship in one release and no customer ever
+  sees the inflated number first. What survives is **mixed provenance inside a single sync**: records
+  older than the metric definition fall back to `opened_at` while their teammates use span starts, so
+  one chart aggregates two definitions of "started". Accepted for v1 (ADR-118).
 
 ---
 

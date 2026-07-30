@@ -102,10 +102,26 @@ resolution instant, measured present on the record, whereas `work_start` is empt
 is the entire reason `StartedDate` needed a substitute in the first place. Deriving a close instant
 from history would add a dependency without adding accuracy.
 
-**Upgrade consequence, which must reach the release notes and not only the docs.** Existing
-ServiceNow teams that grant `itil` will see Cycle Time and Work Item Age *drop*, and historical
-charts move with them. The number was inflated before and is correct after, but it changes without
-the user editing anything.
+The question that gets asked next is why the first Done span's start is not used, given a Done span
+exists and is equally measured. Three reasons, recorded so this is not re-derived: `resolved_at` is
+available to a **read-only** account while spans are not, so keying on it keeps Throughput working
+for every customer rather than only the escalated ones; spans lag the record by ~30 s, so a
+span-derived close would report a finish instant later than the platform's own; and a reopened
+record has *several* Done spans, which makes "the first Done span" the wrong answer for exactly the
+rework case the transitions are there to expose.
+
+**There is no upgrade consequence** (checked 2026-07-30: zero ServiceNow commits are reachable from
+`v26.7.26.8`, the latest tag). Slices 01, 02 and 04 all ship in the same release, so no customer ever
+sees the request-to-resolution number before the time-in-progress one. An earlier draft of this ADR
+called for a release note warning of a Cycle Time drop; that warning would have had no audience.
+
+**What does survive is mixed provenance inside a single sync.** Spans begin only when the metric
+definition was activated, so a team can hold records that have spans alongside older records that do
+not. Each item individually gets the most honest number available to it — span start where measured,
+`opened_at` where not — but one chart then aggregates two different definitions of "started", and
+nothing records which is which. Accepted for v1: the alternative is a per-item provenance field and
+an EF migration, for an inaccuracy that shrinks to nothing as the definition's coverage grows.
+Revisit if a customer's records substantially predate their metric definition.
 
 ## Consequences
 
