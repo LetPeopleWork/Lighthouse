@@ -1,0 +1,223 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+
+namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.ServiceNow
+{
+    // Story #5577, US-04 AC2 + ADR-118 decisions 1 and 7. The functional core of slice 04.
+    //
+    // Layer 1 (pure, no IO). ServiceNow reports history as spans — "this record sat in In Progress
+    // from 09:00" — while Lighthouse models transitions — "it went New -> In Progress at 09:00".
+    // Converting one to the other is where slice 04 is either right or quietly wrong, and it is
+    // testable without an HttpMessageHandler anywhere near it.
+    //
+    // Every fixture uses the span shape the live instance returns: a label from `value` (never the
+    // choice number in `field_value`) and a start in universal time. No `end`, no `duration` — the
+    // span type does not carry them, which is ADR-118 decision 6 made structural.
+    [TestFixture]
+    public class ServiceNowStateSpanMapperTest
+    {
+        private const string Record = "7f10b53a83da4310ad56c670ceaad387";
+
+        // A service desk that has told Lighthouse what its labels mean. Matches the label set both
+        // `state` and `incident_state` were measured to carry on the live instance.
+        private static Team AServiceDesk()
+        {
+            return new Team
+            {
+                Name = "Service Desk",
+                ToDoStates = ["New"],
+                DoingStates = ["In Progress", "On Hold"],
+                DoneStates = ["Resolved", "Closed"],
+            };
+        }
+
+        private static ServiceNowStateSpan ASpan(string label, string start)
+        {
+            return new ServiceNowStateSpan(Record, label, DateTime.Parse(start, null, System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal));
+        }
+
+        // AC2, the headline behaviour. Three spans describe two moves, and each move is dated by the
+        // arrival — the start of the span being entered, never the end of the one being left. The
+        // two differ whenever the metric calculation lags, which it does by ~30s on a live instance.
+        [Test]
+        public void ConsecutiveSpans_BecomeTheMovesBetweenThem()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-29 06:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+            ];
+
+            var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, AServiceDesk());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(2));
+                Assert.That(transitions[0].FromState, Is.EqualTo("New"));
+                Assert.That(transitions[0].ToState, Is.EqualTo("In Progress"));
+                Assert.That(transitions[0].TransitionedAt, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)),
+                    "The move is dated by the arrival, not by the departure — they differ while the metric calculation lags.");
+                Assert.That(transitions[1].FromState, Is.EqualTo("In Progress"));
+                Assert.That(transitions[1].ToState, Is.EqualTo("Resolved"));
+            }
+        }
+
+        // The first DISTILL question, answered: the earliest span is an arrival Lighthouse did not
+        // witness, and it stays unreported.
+        //
+        // Spans only start once the metric definition was activated, so a record older than that
+        // carries partial history and its first observed label is not necessarily the state it was
+        // created in. Manufacturing a "created -> first observed label" transition would assert a
+        // state the record may never have held, dated to a moment nothing measured. That is the
+        // invented-data failure this epic exists to prevent, so the first span yields nothing.
+        [Test]
+        public void TheEarliestSpan_IsAnArrivalNobodyWitnessed_AndIsNotReportedAsAMove()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("In Progress", "2026-07-29 09:00:00")];
+
+            var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, AServiceDesk());
+
+            Assert.That(transitions, Is.Empty,
+                "One span is one arrival with nothing before it. Inventing a move into it would date a state change nothing measured.");
+        }
+
+        // The Table API's row order is not the chronological order of the spans, and nothing in the
+        // response promises it is. Pairing unsorted spans produces moves that never happened.
+        [Test]
+        public void SpansArrivingOutOfOrder_ArePairedByWhenTheyStarted()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+                ASpan("New", "2026-07-29 06:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+            ];
+
+            var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, AServiceDesk());
+
+            Assert.That(
+                transitions.Select(transition => $"{transition.FromState}->{transition.ToState}"),
+                Is.EqualTo(new[] { "New->In Progress", "In Progress->Resolved" }));
+        }
+
+        // The second DISTILL question, answered. A reopened incident produces a later span carrying
+        // a label it already held, and pairing reports the journey back — which is correct, and is
+        // exactly what a flow coach investigating rework needs to see.
+        [Test]
+        public void AReopenedRecord_ReportsTheJourneyBackOutOfDone()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-29 06:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+                ASpan("In Progress", "2026-07-30 08:00:00"),
+            ];
+
+            var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, AServiceDesk());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(3));
+                Assert.That(transitions[2].FromState, Is.EqualTo("Resolved"));
+                Assert.That(transitions[2].ToState, Is.EqualTo("In Progress"));
+                Assert.That(transitions[2].TransitionedAt, Is.EqualTo(new DateTime(2026, 7, 30, 8, 0, 0, DateTimeKind.Utc)));
+            }
+        }
+
+        // AC2 requires the shared mapper, and this is what the shared mapper buys. A team that has
+        // grouped two ServiceNow labels under one name did so because it considers them one state;
+        // reporting a move between them would put phantom churn in every state-time chart.
+        [Test]
+        public void TwoLabelsTheTeamTreatsAsOneState_ProduceNoMoveBetweenThem()
+        {
+            var team = AServiceDesk();
+            team.StateMappings = [new StateMapping { Name = "Working", States = ["In Progress", "On Hold"] }];
+
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("On Hold", "2026-07-29 12:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+            ];
+
+            var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(1),
+                    "The team calls both labels Working, so moving between them is not a state change it recognises.");
+                Assert.That(transitions[0].FromState, Is.EqualTo("Working"));
+                Assert.That(transitions[0].ToState, Is.EqualTo("Resolved"));
+            }
+        }
+
+        [Test]
+        public void ARecordWithNoHistory_ReportsNoMoves()
+        {
+            var transitions = ServiceNowStateSpanMapper.ToTransitions([], AServiceDesk());
+
+            Assert.That(transitions, Is.Empty);
+        }
+
+        // ADR-118 decision 7, and the reason the itil escalation is worth paying for. Before this,
+        // StartedDate was opened_at — when the request was logged, which on a real service desk can
+        // be days before anyone picked it up.
+        [Test]
+        public void WorkStarted_WhenTheRecordFirstReachedAStateTheTeamCallsDoing()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-20 06:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+            ];
+
+            var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted(spans, AServiceDesk());
+
+            Assert.That(startedAt, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)),
+                "Nine days sat in New is queue time, and counting it as work is what ADR-117 accepted only until this slice.");
+        }
+
+        // Rework must not restart the clock. Cycle Time spans the whole life of the work, and taking
+        // the later visit would report a fraction of it as though the first attempt never happened.
+        [Test]
+        public void WorkThatReturnedToDoing_StartedTheFirstTimeItGotThere()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+                ASpan("In Progress", "2026-07-30 08:00:00"),
+            ];
+
+            var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted(spans, AServiceDesk());
+
+            Assert.That(startedAt, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)));
+        }
+
+        // Work sitting in the queue has not started, and saying it has would put every untouched
+        // ticket into Cycle Time and Work Item Age with a start date it never earned.
+        [Test]
+        public void WorkThatNeverLeftTheQueue_HasNotStarted()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("New", "2026-07-29 06:00:00")];
+
+            var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted(spans, AServiceDesk());
+
+            Assert.That(startedAt, Is.Null);
+        }
+
+        // A record whose history is unreadable is a different question from a record that has not
+        // started, but both arrive here as no spans. The caller decides which it is — this function
+        // only reports what the spans support, and no spans support nothing.
+        [Test]
+        public void NoSpansAtAll_ReportNoStart()
+        {
+            var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted([], AServiceDesk());
+
+            Assert.That(startedAt, Is.Null);
+        }
+    }
+}
