@@ -10,6 +10,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [TestCase(WorkTrackingSystems.AzureDevOps, "ado.wiql", "freetext", true, true)]
         [TestCase(WorkTrackingSystems.Jira, "jira.jql", "freetext", true, true)]
         [TestCase(WorkTrackingSystems.Csv, "csv.filedata", "file-upload", true, true)]
+        [TestCase(WorkTrackingSystems.ServiceNow, "servicenow.query", "freetext", true, false)]
         public void ForTeam_ReturnsCorrectSchema(WorkTrackingSystems system, string expectedKey, string expectedInputKind, bool expectedIsRequired, bool expectedIsWorkItemTypesRequired)
         {
             var schema = DataRetrievalSchemaDto.ForTeam(system);
@@ -37,6 +38,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [TestCase(WorkTrackingSystems.AzureDevOps, "ado.wiql", "freetext", true, true)]
         [TestCase(WorkTrackingSystems.Jira, "jira.jql", "freetext", true, true)]
         [TestCase(WorkTrackingSystems.Csv, "csv.filedata", "file-upload", true, true)]
+        [TestCase(WorkTrackingSystems.ServiceNow, "servicenow.query", "none", false, false)]
         public void ForPortfolio_ReturnsCorrectSchema(WorkTrackingSystems system, string expectedKey, string expectedInputKind, bool expectedIsRequired, bool expectedIsWorkItemTypesRequired)
         {
             var schema = DataRetrievalSchemaDto.ForPortfolio(system);
@@ -57,6 +59,28 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var schema = DataRetrievalSchemaDto.ForPortfolio(WorkTrackingSystems.Linear);
 
             Assert.That(schema.WizardHint, Is.Null);
+        }
+
+        [Test]
+        public void ForTeam_ServiceNow_HasNoWizardHint()
+        {
+            var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow);
+
+            Assert.That(schema.WizardHint, Is.Null);
+        }
+
+        // Gives the switch the exhaustiveness the frontend Record gets from its type system (Bug #5613).
+        [Test]
+        public void SchemaFactories_EveryDeclaredWorkTrackingSystem_DoesNotUseTheQueryFallback()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var system in Enum.GetValues<WorkTrackingSystems>())
+                {
+                    Assert.That(DataRetrievalSchemaDto.ForTeam(system).Key, Is.Not.EqualTo("query"), $"Team schema for {system} falls through to the fallback arm");
+                    Assert.That(DataRetrievalSchemaDto.ForPortfolio(system).Key, Is.Not.EqualTo("query"), $"Portfolio schema for {system} falls through to the fallback arm");
+                }
+            }
         }
     }
 }

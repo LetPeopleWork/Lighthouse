@@ -58,6 +58,15 @@ namespace Lighthouse.Backend.API.DTO
                     IsWorkItemTypesRequired = true,
                     WizardHint = "csv-team-wizard",
                 },
+                WorkTrackingSystems.ServiceNow => new DataRetrievalSchemaDto
+                {
+                    Key = "servicenow.query",
+                    DisplayLabel = "ServiceNow Query (Encoded Query)",
+                    InputKind = FreeTextInput,
+                    IsRequired = true,
+                    // The configured table is the type for an ITSM-first read (C-3, revisit in slice 02).
+                    IsWorkItemTypesRequired = false,
+                },
                 _ => new DataRetrievalSchemaDto
                 {
                     Key = "query",
@@ -107,6 +116,15 @@ namespace Lighthouse.Backend.API.DTO
                     IsRequired = true,
                     IsWorkItemTypesRequired = true,
                     WizardHint = "csv-portfolio-wizard",
+                },
+                // SPIKE Q5 measured no forecastable rollup in ITSM, so the capability is declined here (ADR-116).
+                WorkTrackingSystems.ServiceNow => new DataRetrievalSchemaDto
+                {
+                    Key = "servicenow.query",
+                    DisplayLabel = "Not supported for ServiceNow",
+                    InputKind = "none",
+                    IsRequired = false,
+                    IsWorkItemTypesRequired = false,
                 },
                 _ => new DataRetrievalSchemaDto
                 {
