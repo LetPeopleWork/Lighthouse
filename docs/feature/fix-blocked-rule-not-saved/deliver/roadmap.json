@@ -1,0 +1,99 @@
+{
+  "roadmap": {
+    "project_id": "fix-blocked-rule-not-saved",
+    "created_at": "2026-07-30",
+    "total_steps": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "ADO Bug #5613: a blocked-item rule created on a ServiceNow team was silently discarded. Root cause (see rca.md): the frontend and backend each keep their own copy of the data-retrieval schema table, and slice-01 of Epic 5513 extended only the frontend copy. The TS copy is an exhaustive Record so the compiler forced a ServiceNow entry (isWorkItemTypesRequired: false); the C# copy is a switch with a `_` fallback, so ServiceNow silently inherits isWorkItemTypesRequired = true. The create wizard reads the frontend copy and hid the Work Item Types step, so the team was created with an empty list; the settings page reads the backend copy via the settings DTO and therefore considers the form permanently invalid. The autosave effect is the only save trigger and it returns before arming its debounce when the form is invalid, so no request is ever sent — and because saveState never leaves 'idle' the save indicator renders nothing. Two fixes: give the backend factory the missing ServiceNow arms plus a test that supplies the exhaustiveness C# lacks, and make an invalid settings form say which field is blocking it instead of failing silently."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator-self-review",
+    "reviewed_at": "2026-07-30",
+    "notes": "Bugfix flow (/nw-bugfix Phase 3) — minimal roadmap, no DISCUSS/DESIGN/DISTILL waves for this feature. RCA reviewed and approved by the maintainer, who locked scope to P1a+P1b+P1c and explicitly excluded P2. Two steps because the two defects are independent: 01-01 is the trigger (backend, ServiceNow-specific, Epic 5513) and 01-02 is the silence (frontend, generic, pre-existing across every connector). They fail for different reasons and are verified by different suites, so collapsing them would produce a muddled RED."
+  },
+  "ssot_inputs": {
+    "rca": "docs/feature/fix-blocked-rule-not-saved/rca.md",
+    "ado_work_item": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5613"
+  },
+  "out_of_scope": [
+    "P2 — TeamController.cs:279 and PortfolioController.cs:185 deserialize camelCase blocked-rule JSON with default case-SENSITIVE System.Text.Json options against the PascalCase WorkItemRuleSet, so Conditions is always empty and every blocked-rule validation check (MaxRules, field, operator, length) is bypassed. Real, pre-existing, and NOT the cause of #5613. Excluded by the maintainer because fixing it flips validation from 'accepts anything' to enforcing, which would start returning 400 for rule sets already stored in the wild. Keep it filed as its own bug.",
+    "De-duplicating the two schema tables into one source of truth. The enum-exhaustiveness test in 01-01 makes the drift loud instead of silent, which is what this bug needs; collapsing the tables is a design change, not a fix.",
+    "Playwright coverage. A ServiceNow end-to-end needs a live ServiceNow instance — Epic 5513 deferred its own walking skeleton for exactly that reason. The existing CSV-team BlockedItems.spec.ts passes today and would not have caught this."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Regression tests and fix for ADO Bug 5613",
+      "description": "Give the backend schema factory its missing ServiceNow arms so the settings form can become valid, then make any invalid settings form name the field that is blocking autosave.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "ServiceNow arms in DataRetrievalSchemaDto plus exhaustiveness guard",
+          "description": "TDD execution.\n\n**RED phase** — Extend `Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs` (it has no ServiceNow case today). Add: (a) a team case asserting `ForTeam(WorkTrackingSystems.ServiceNow)` returns Key `servicenow.query`, InputKind `freetext`, IsRequired true, IsWorkItemTypesRequired **false**, WizardHint null; (b) a portfolio case asserting `ForPortfolio(WorkTrackingSystems.ServiceNow)` returns Key `servicenow.query`, InputKind `none`, IsRequired **false**, IsWorkItemTypesRequired false, WizardHint null; (c) a guard iterating `Enum.GetValues<WorkTrackingSystems>()` and asserting that neither factory ever returns the `query` fallback Key for any declared system. Every value above is copied from the frontend table at `Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts` (team arm lines 46-55, portfolio arm lines 91-98) — that file is the reference; do NOT change it. Confirm all three fail against the unmodified DTO before touching production code.\n\n**GREEN phase** — Add the two `WorkTrackingSystems.ServiceNow` arms to `ForTeam` and `ForPortfolio` in `Lighthouse.Backend/Lighthouse.Backend/API/DTO/DataRetrievalSchemaDto.cs`. Leave the `_` fallback arms in place (the enum is a persisted DB value, so an unmapped future member must still yield something) — the new test is what stops a real member from silently landing there. Do not touch the AzureDevOps, Jira, Linear or Csv arms.\n\n**COMMIT phase** — Conventional commit `fix(settings): give ServiceNow its own data-retrieval schema on the backend`. The body must carry `Task-Id: fix-blocked-rule-not-saved` (des-commit only adds the Step-Id trailer; without Task-Id in the body the stop-hook fails with COMMIT_NOT_VERIFIED). Reference Bug #5613 and state that the frontend table is unchanged and remains the reference values.\n\n**Quality gates (mandatory before COMMIT):** `dotnet build` from `Lighthouse.Backend/` with zero warnings (TreatWarningsAsErrors), and `dotnet test` fully green.",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "ForTeam(ServiceNow) returns key servicenow.query, freetext, required, IsWorkItemTypesRequired false, null wizard hint",
+            "ForPortfolio(ServiceNow) returns key servicenow.query, inputKind none, IsRequired false, IsWorkItemTypesRequired false",
+            "A test over every WorkTrackingSystems enum value asserts neither factory returns the query fallback key",
+            "Existing AzureDevOps, Jira, Linear and Csv values are unchanged and their tests stay green",
+            "dotnet build has zero warnings and dotnet test is fully green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs",
+          "scenario_name": "ServiceNow team settings expose the same data-retrieval schema the frontend already declares",
+          "red_to_green_tests": [
+            "ForTeam returns the ServiceNow schema with work item types not required",
+            "ForPortfolio returns the unsupported-portfolio ServiceNow schema",
+            "No declared work tracking system falls through to the query fallback for teams or portfolios"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DataRetrievalSchemaDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs"
+          ],
+          "dependencies": [],
+          "estimated_hours": 0.5,
+          "deliverables": [
+            "DataRetrievalSchemaDto.cs (modified: +2 switch arms)",
+            "DataRetrievalSchemaDtoTest.cs (modified: +3 tests)"
+          ]
+        },
+        {
+          "id": "01-02",
+          "name": "Settings pages name the blocking field instead of failing silently",
+          "description": "TDD execution. This is the generic half of the bug: whatever made the form invalid, the user was told nothing.\n\n**RED phase** — Add tests to `Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx` and `Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx`: render each page with settings that fail exactly one predicate — the #5613 shape is `workItemTypes: []` together with `dataRetrievalSchema.isWorkItemTypesRequired: true` — and assert a persistent visible warning appears that names the offending field (assert on the field name text, not merely on the presence of an alert). Add the complementary case: a fully valid settings object renders no warning. Confirm both fail before production edits.\n\n**GREEN phase** — The root cause of the silence is that `validateForm` collapses seven independent predicates into one opaque boolean, so the system structurally cannot say which one failed. Change the `validateForm` prop of `useModifySettings` (`Lighthouse.Frontend/src/hooks/useModifySettings.ts`) to return a list of human-readable reasons — empty means valid. The hook derives `formValid` from `reasons.length === 0` (so the autosave gate at line 265 keeps its current behaviour exactly) and additionally returns the reasons. Both pages then destructure the reasons and render a persistent MUI Alert (severity warning) listing them; follow the existing MUI + `data-testid` conventions used elsewhere in these pages. Update the two `validateForm` implementations (`ModifyTeamSettings.tsx:85-101`, `ModifyProjectSettings.tsx` around line 111) to return reasons instead of a boolean, and fix up the hook's own test files, which currently stub `validateForm` as a boolean-returning function.\n\nDo NOT change the autosave debounce, the conflict handling, or `SaveStateIndicator` — the indicator is correct to render nothing while `saveState` is `idle`; the new warning is a separate surface. Do NOT touch the blocked-rule editor: it was never at fault.\n\n**COMMIT phase** — Conventional commit `fix(settings): tell the user which field is blocking autosave`. The body must carry `Task-Id: fix-blocked-rule-not-saved` and reference Bug #5613.\n\n**Quality gates (mandatory before COMMIT):** from `Lighthouse.Frontend/` run `pnpm test` fully green and `pnpm build` with zero errors and zero warnings (its prebuild hook runs `pnpm biome check ./src`).",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "An invalid team or portfolio settings form renders a persistent visible warning naming each blocking field",
+            "A fully valid settings form renders no warning and autosave fires exactly as it does today",
+            "formValid stays derived from the reasons list so the autosave gate behaviour is unchanged",
+            "pnpm test is fully green and pnpm build has zero errors and zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+          "scenario_name": "A settings edit that cannot autosave tells the user why",
+          "red_to_green_tests": [
+            "team settings warn that work item types are missing when the schema requires them",
+            "project settings warn about the field that is blocking the save",
+            "a valid settings form renders no warning"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "dependencies": ["01-01"],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "useModifySettings.ts (modified: validateForm returns reasons, hook exposes them)",
+            "ModifyTeamSettings.tsx and ModifyProjectSettings.tsx (modified: reasons warning)",
+            "Both page test files (modified: +3 tests)"
+          ]
+        }
+      ]
+    }
+  ]
+}
