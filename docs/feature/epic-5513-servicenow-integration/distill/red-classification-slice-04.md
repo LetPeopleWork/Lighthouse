@@ -3,9 +3,12 @@
 Pre-DELIVER fail-for-the-right-reason gate. Every failing test is classified; anything not
 `MISSING_FUNCTIONALITY` blocks handoff.
 
-**Status: PARTIAL — the three pure cores are written and RED (31 tests). The connector wiring,
-`sys_id` carriage, the acceptance test, the frontend and the ArchUnit fixture are not yet written.**
-See "Still to write" below.
+**Status: COMPLETE. 43 tests RED (38 backend + 5 frontend), both stacks building with 0 warnings.**
+
+Whole-area check: `--filter ServiceNow` → **Failed 38 / Passed 176**; frontend
+`ConnectionValidationResult.test.ts` → 5 failed / 1 passed. Every failure is `MISSING_FUNCTIONALITY`
+at an assertion site. Nothing is `IMPORT_ERROR`, `FIXTURE_BROKEN`, `SETUP_FAILURE` or
+`OBSERVABLE_NOT_AT_PORT`, so the DELIVER handoff is not blocked.
 
 Whole-area check after the shared-contract change: `dotnet build` 0 warnings, and
 `--filter ServiceNow|WorkTrackingSystemConnectionsController|TeamsController|PortfoliosController|Validation`
@@ -126,16 +129,13 @@ constant happens to match an assertion is a test that will never fail for the ri
 Purely additive — `Success()` and `Failure()` are untouched, so all 27 existing call sites keep
 working, confirmed by the 263 passing tests in the same area.
 
-## Still to write (DISTILL is NOT complete)
+## Carried into DELIVER (specified and RED, not yet wired)
 
-| Component | Tests owed | Carries |
-|---|---|---|
-| `ServiceNowWorkTrackingConnector` | `SupportsTransitionHistory` per-instance; runtime downgrade; `StartedDate` switch | AC1, AC4, ADR-118 D7 |
-| `ServiceNowWorkItemMapper` | carry `sys_id` (the batch key) | ADR-118 D4 |
-| Acceptance (`ServiceNowTeamSyncAcceptanceTest`) | AC3 end to end — state-time widgets on a ServiceNow team | AC3 |
-| Frontend | advisory rendered in wizard + settings, and **absent from the metrics UI** | ADR-118 D5 |
-| ArchUnit | span mapper purity fixture | ADR-114 shape |
-
-Three existing tests currently **assert the opposite** and must flip when `SupportsTransitionHistory`
-stops returning a constant: `ServiceNowTeamSyncTest.cs:211`,
-`ServiceNowWorkTrackingConnectorTest.cs:218`, `ServiceNowTeamSyncAcceptanceTest.cs:143`.
+| Item | State |
+|---|---|
+| The three pure cores | scaffolds returning chosen-wrong values |
+| Connector history read | seam marked `// SCAFFOLD (DISTILL slice 04` in `GetWorkItemsForTeam` |
+| Frontend advisory | `readConnectionValidation` RED; the service still collapses the response to a boolean, and the wizard has no success-path channel |
+| Advisory absent from metrics UI | **structurally satisfied, not tested** — no metrics component receives a `ConnectionValidationResult`. Worth a reviewer's eye, not a test asserting an absence across the whole UI |
+| Mutation ≥80 % both stacks | owed at the end; **no Stryker config is committed in this repo** |
+| Dogfood | move records through states on the PDI as `lh_probe_itil`, confirm Cycle Time drops, then revoke the role and confirm the downgrade rather than an error |

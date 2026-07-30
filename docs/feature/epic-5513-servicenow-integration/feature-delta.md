@@ -2224,11 +2224,11 @@ its model in `src/models/WorkTracking/`. No new directories.
 
 ## Wave: DISTILL / [REF] Pre-requisites for DELIVER (slice 04)
 
-- **The AC3 acceptance test is not written.** `ServiceNowTeamSyncAcceptanceTest` was rescoped — its
-  time-in-state test is now explicitly the *downgrade* case and renamed
-  `TimeInStateOnServiceNowWorkWithoutStateMetrics_...`, standing as the regression guard. The
-  history-available end-to-end case still needs a sibling, and its stub must answer
-  `metric_definition` and `metric_instance`.
+- ~~The AC3 acceptance test is not written.~~ **DONE.**
+  `TimeInStateOnServiceNowWorkWithStateMetrics_ComesFromTheInstancesOwnHistory` is written and RED.
+  The local listener now routes by table with `MeasuresStateSpans` **off by default**, so all four
+  pre-existing scenarios still pass unchanged. The downgrade case was rescoped rather than flipped
+  and stands as the regression guard for read-only customers.
 - **The frontend advisory is specified but not wired.** `readConnectionValidation` exists and is RED;
   `WorkTrackingSystemService.validateWorkTrackingSystemConnection` still collapses the response to a
   boolean, and `CreateConnectionWizard` / `ModifyConnectionSettings` still have no success-path

@@ -152,6 +152,46 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        // Story #5577, US-04 AC1 / AC2 / AC3 + ADR-118 D7. The sibling of the downgrade case above,
+        // and the end-to-end proof that the itil escalation buys what it was sold for.
+        //
+        // Everything is real bar the instance: the connector reads incident, resolves the state-span
+        // metric, batches the spans, and the work item lands in the database carrying the moves it
+        // made and a start date that is when someone picked it up — not when the request arrived.
+        [Test]
+        public async Task TimeInStateOnServiceNowWorkWithStateMetrics_ComesFromTheInstancesOwnHistory()
+        {
+            instance.MeasuresStateSpans = true;
+            await SeedDatabase();
+
+            var team = await GivenATeamReadingItsOwnServiceNowQuery();
+            var workItemService = ServiceProvider.GetRequiredService<IWorkItemService>();
+
+            instance.StateOfTheFirstRecord = ("In Progress", "2");
+            await workItemService.UpdateWorkItemsForTeam(team);
+
+            var persisted = DatabaseContext.WorkItems.FirstOrDefault(item => item.ReferenceId == "INC0000001");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ConnectorFor(team).SupportsTransitionHistory(team.WorkTrackingSystemConnection), Is.True,
+                    "AC1. The instance measures state spans, so Lighthouse stops guessing and says so.");
+
+                Assert.That(persisted, Is.Not.Null);
+
+                // AC3's real payload. The state-time widgets read this, and before slice 04 there was
+                // nothing here for a ServiceNow team to read.
+                Assert.That(persisted?.StartedDate, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)),
+                    "ADR-118 D7. opened_at was the 1st; four weeks of that is queue time, and counting it as work is what this slice removes.");
+
+                Assert.That(
+                    instance.Requested.Any(path => path.Contains("metric_instance", StringComparison.Ordinal)
+                        && path.Contains("idIN", StringComparison.Ordinal)),
+                    Is.True,
+                    "Batched by sys_id. One call per work item would take a 500-item sync to five minutes.");
+            }
+        }
+
         private IWorkTrackingConnector ConnectorFor(Team team)
         {
             return ServiceProvider
@@ -254,6 +294,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             public (string Label, string Value) StateOfTheFirstRecord { get; set; } = ("Resolved", "6");
 
+            /// <summary>
+            /// Whether this instance has an active Field value duration metric on the state field.
+            /// Off by default, which is what a read-only account sees and what slice 02 shipped
+            /// against — so every existing scenario keeps describing the instance it always did.
+            /// </summary>
+            public bool MeasuresStateSpans { get; set; }
+
+            /// <summary>Every path the connector asked for, so a test can assert what it read.</summary>
+            public List<string> Requested { get; } = [];
+
             public static LocalServiceNowInstance Start()
             {
                 var port = AFreePort();
@@ -300,6 +350,26 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 var uri = context.Request.Url ?? new Uri(BaseAddress);
                 var query = uri.Query;
 
+                lock (Requested)
+                {
+                    Requested.Add(uri.PathAndQuery);
+                }
+
+                // The metric tables are separate reads on a real instance, and a listener that
+                // answered them with incident records would let a connector that never distinguished
+                // them still look correct.
+                if (uri.AbsolutePath.Contains("metric_definition", StringComparison.Ordinal))
+                {
+                    Respond(context, MeasuresStateSpans ? [AStateSpanDefinition()] : []);
+                    return;
+                }
+
+                if (uri.AbsolutePath.Contains("metric_instance", StringComparison.Ordinal))
+                {
+                    Respond(context, MeasuresStateSpans ? SpansOfTheFirstRecord() : []);
+                    return;
+                }
+
                 var isFiltered = query.Contains("sysparm_query=", StringComparison.Ordinal)
                     && !query.Contains("sysparm_query=&", StringComparison.Ordinal);
 
@@ -317,6 +387,29 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 context.Response.ContentType = "application/json";
                 context.Response.Headers.Add("X-Total-Count", visible.Count.ToString(CultureInfo.InvariantCulture));
                 context.Response.Headers.Add("Link", LinkHeader(uri, offset, visible.Count));
+                context.Response.ContentLength64 = body.Length;
+                context.Response.OutputStream.Write(body, 0, body.Length);
+                context.Response.OutputStream.Close();
+            }
+
+            // INC0000001 sat in New for four weeks and was picked up on the 29th. That gap is the
+            // queue time ADR-117 counted as work, and the thing ADR-118 D7 removes.
+            private static List<string> SpansOfTheFirstRecord()
+            {
+                return
+                [
+                    ASpan("INC0000001", "New", "2026-07-01 07:00:00"),
+                    ASpan("INC0000001", "In Progress", "2026-07-29 09:00:00"),
+                ];
+            }
+
+            private static void Respond(HttpListenerContext context, List<string> rows)
+            {
+                var body = Encoding.UTF8.GetBytes($"{{\"result\":[{string.Join(",", rows)}]}}");
+
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                context.Response.ContentType = "application/json";
+                context.Response.Headers.Add("X-Total-Count", rows.Count.ToString(CultureInfo.InvariantCulture));
                 context.Response.ContentLength64 = body.Length;
                 context.Response.OutputStream.Write(body, 0, body.Length);
                 context.Response.OutputStream.Close();
@@ -368,6 +461,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 return $$"""
                     {
+                      "sys_id": { "display_value": "{{SysIdOf(number)}}", "value": "{{SysIdOf(number)}}" },
                       "number": { "display_value": "{{number}}", "value": "{{number}}" },
                       "short_description": { "display_value": "Request {{number}}", "value": "Request {{number}}" },
                       "state": { "display_value": "{{stateLabel}}", "value": "{{stateValue}}" },
@@ -375,6 +469,45 @@ namespace Lighthouse.Backend.Tests.API.Integration
                       "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                       "resolved_at": { "display_value": "{{resolvedDisplay}}", "value": "{{resolvedValue}}" },
                       "closed_at": { "display_value": "", "value": "" }
+                    }
+                    """;
+            }
+
+            /// <summary>The platform handle a record's history is fetched by. Derived so the fixture
+            /// can name the same record in two tables without a lookup table.</summary>
+            private static string SysIdOf(string number)
+            {
+                return $"sys{number.ToLowerInvariant()}";
+            }
+
+            // ADR-118 D2: only a Field value duration definition on the configured table measures
+            // how long the record held each state. The instance also carries script-calculation
+            // definitions on the very same field, and those are not spans.
+            private static string AStateSpanDefinition()
+            {
+                return """
+                    {
+                      "sys_id": { "display_value": "def-state-duration", "value": "def-state-duration" },
+                      "name": { "display_value": "Incident State Duration", "value": "Incident State Duration" },
+                      "type": { "display_value": "Field value duration", "value": "field_value_duration" },
+                      "field": { "display_value": "incident_state", "value": "incident_state" },
+                      "table": { "display_value": "incident", "value": "incident" }
+                    }
+                    """;
+            }
+
+            // The label is in `value`; `field_value` carries the choice number nothing may map by.
+            private static string ASpan(string number, string label, string start)
+            {
+                return $$"""
+                    {
+                      "id": { "display_value": "Incident: {{number}}", "value": "{{SysIdOf(number)}}" },
+                      "definition": { "display_value": "Incident State Duration", "value": "def-state-duration" },
+                      "field": { "display_value": "incident_state", "value": "incident_state" },
+                      "value": { "display_value": "{{label}}", "value": "{{label}}" },
+                      "field_value": { "display_value": "1", "value": "1" },
+                      "start": { "display_value": "{{start}}", "value": "{{start}}" },
+                      "end": { "display_value": "", "value": "" }
                     }
                     """;
             }
