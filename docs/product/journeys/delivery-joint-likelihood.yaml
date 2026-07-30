@@ -22,8 +22,8 @@ journeys:
     emotional_arc:
       start: Unsettled — "The delivery says 85% and so does the top feature. Are the other four
         features free? I cannot show my working and I cannot explain the match."
-      middle: Oriented — "The header says ALL features. The rows say each on its own. Of course the
-        header is the lower one — that is what 'all' means. And when they match, I can see which
+      middle: Oriented — "The header says ALL features, so the rows must be each on its own. Of course
+        the header is the lower one — that is what 'all' means. And when they match, I can see which
         single feature is carrying the delivery."
       end: Defensible — "I can reproduce this by hand from the per-team numbers, the concept page
         shows me how, and I can say out loud what the number means without a caveat speech."
@@ -42,12 +42,16 @@ journeys:
       - id: D1
         question: How is the joint-vs-marginal distinction communicated?
         decision: >
-          RELABEL BOTH SURFACES. The header chip becomes "All {features} by {date}: NN%" with an info
-          tooltip "P(ALL of these land by the date)". The breakdown grid's Likelihood column gets
-          "each on its own" framing with a tooltip "P(this one lands), ignoring the others". Chosen
+          RELABEL THE HEADER, LEAVE THE COLUMN PLAIN. The header chip becomes "All {features} by
+          {date}: NN%"; the breakdown grid's Likelihood column stays "Likelihood". Chosen
           (maintainer, 2026-07-28) over showing both joint and marginal numbers on the badge (two
           competing numbers) and over tooltip-only with no label change (leaves the row-vs-header
           mismatch unexplained at a glance).
+          REVISED (maintainer, 2026-07-30, follow-up to Epic 5459): the two explanatory tooltips this
+          decision originally carried — an info affordance "P(ALL of these land by the date)" beside
+          the chip and "P(this one lands), ignoring the others" on the column, which also read
+          "Likelihood (each on its own)" — are REMOVED. The header copy carries the framing on its
+          own; the UI does not explain the probability model.
           CONSTRAINT A: all new copy routes through useTerminology() / getTerm(TERMINOLOGY_KEYS.DELIVERY
           | FEATURE | FEATURES). "Delivery" and "Feature" are user-renamable; never hardcode.
           CONSTRAINT B: the copy must NOT promise the header is always lower than every row — equality

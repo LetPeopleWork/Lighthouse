@@ -18,8 +18,8 @@ import {
  *
  * What this asserts, and what it deliberately does NOT:
  *   DOES  — the delivery header states it covers ALL features and carries the date (AC-03.1), the
- *           breakdown column states it ignores the others (AC-03.2), and both render in the real app
- *           with real terminology rather than a mocked getTerm.
+ *           breakdown column is named plainly (AC-03.2), and both render in the real app with real
+ *           terminology rather than a mocked getTerm.
  *   NOT   — the joint MATHS. Demo throughput moves, so pinning a percentage here would be a flake
  *           generator; the number is pinned in DeliveryJointForecastIntegrationTest, which asserts
  *           81 % against the same endpoint where the governing-feature answer is 90 %.
@@ -64,21 +64,13 @@ test("@walking_skeleton @driving_adapter @real-io @US-03 forecaster reads which 
 		await expect(delivery.forecastChip).not.toContainText(/lower than/i);
 	});
 
-	await test.step("the header explains what ALL means", async () => {
-		await expect(
-			delivery.container.getByTitle("P(ALL of these land by the date)"),
-		).toBeAttached();
-	});
-
-	await test.step("the breakdown column says it ignores the other features", async () => {
+	await test.step("the breakdown column is named plainly", async () => {
 		await delivery.toggleDetails();
 
-		await expect(delivery.likelihoodColumnHeader).toContainText(
+		await expect(delivery.likelihoodColumnHeader).toContainText("Likelihood");
+		await expect(delivery.likelihoodColumnHeader).not.toContainText(
 			"each on its own",
 		);
-		await expect(
-			page.getByTitle("P(this one lands), ignoring the others"),
-		).toBeAttached();
 	});
 });
 

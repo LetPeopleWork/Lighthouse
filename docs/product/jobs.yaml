@@ -3828,9 +3828,9 @@ jobs:
         The delivery's likelihood and its 70/85/95 completion dates are computed from the joint
         distribution over every contributing (team, feature) row — elementwise min within a team's
         bucket, product across buckets — instead of being copied from one selected feature. The
-        breakdown rows stay marginal ("this one on its own") and both surfaces say which probability
-        they are: the header reads "All {features} by {date}: NN%", the breakdown column reads
-        "Likelihood (each on its own)". The "not enough data" signal becomes an AND across the
+        breakdown rows stay marginal ("this one on its own"), and the header says so for both: it
+        reads "All {features} by {date}: NN%" while the breakdown column stays a plain "Likelihood".
+        The "not enough data" signal becomes an AND across the
         contributing features, exempting those with no remaining work. A delivery containing a feature
         that cannot be forecast is unchanged — it still reports "cannot forecast" and names the teams
         (ADR-112 D8).

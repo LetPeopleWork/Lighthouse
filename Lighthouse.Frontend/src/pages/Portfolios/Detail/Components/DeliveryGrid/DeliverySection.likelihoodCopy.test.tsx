@@ -13,9 +13,10 @@ import DeliverySection from "./DeliverySection";
  *
  * D1 is locked by the maintainer and is not re-designed here:
  *   header chip  → `All {featuresTerm} by {delivery.getFormattedDate()}: NN%`
- *                  info affordance → "P(ALL of these land by the date)"
- *   grid column  → "Likelihood (each on its own)"
- *                  header affordance → "P(this one lands), ignoring the others"
+ *   grid column  → "Likelihood"
+ *
+ * The explanatory affordances D1 originally paired with both surfaces were dropped on maintainer
+ * request (follow-up to Epic #5459): the framing stays in the header copy, the UI stops explaining it.
  *
  * Constraint A (terminology): every new domain noun comes from `getTerm(TERMINOLOGY_KEYS.FEATURES)`.
  * The terminology mock below is deliberately parameterised per test — a mock that hardcodes "Feature"
@@ -72,9 +73,6 @@ const DEFAULT_TERMINOLOGY: Record<string, string> = {
 	deliveries: "Deliveries",
 	workItems: "Work Items",
 };
-
-const HEADER_TOOLTIP = "P(ALL of these land by the date)";
-const COLUMN_TOOLTIP = "P(this one lands), ignoring the others";
 
 const teams: IEntityReference[] = [{ id: 1, name: "Team Alpha" }];
 
@@ -149,22 +147,12 @@ describe("DeliverySection joint/marginal copy (Story #5587 slice-03)", () => {
 		).toBeInTheDocument();
 	});
 
-	it("explains on the header what ALL means (AC-03.1)", () => {
-		renderSection(deliveryWith({}));
+	it("names the breakdown column plainly, with no explanatory affordance (AC-03.2)", () => {
+		const { container } = renderSection(deliveryWith({}));
 
-		// DT-14: the affordance carries the copy in a native `title`, the same mechanism the header
-		// chip already uses for cannotForecastReason. Queryable from RTL and from Playwright without
-		// a hover, which an MUI <Tooltip> is not.
-		expect(screen.getByTitle(HEADER_TOOLTIP)).toBeInTheDocument();
-	});
-
-	it("frames the breakdown column as the per-feature probability and says what it ignores (AC-03.2)", () => {
-		renderSection(deliveryWith({}));
-
-		expect(
-			screen.getByText(/Likelihood \(each on its own\)/),
-		).toBeInTheDocument();
-		expect(screen.getByTitle(COLUMN_TOOLTIP)).toBeInTheDocument();
+		expect(screen.getByText("Likelihood")).toBeInTheDocument();
+		expect(screen.queryByText(/each on its own/)).not.toBeInTheDocument();
+		expect(container.querySelector('[title*="P("]')).toBeNull();
 	});
 
 	it("builds the header from the renamed vocabulary rather than a literal (AC-03.3)", () => {
@@ -241,11 +229,6 @@ describe("DeliverySection states slice-03 must leave alone (Story #5587)", () =>
 			screen.getByTitle(/No throughput history for Team Meridian/),
 		).toBeInTheDocument();
 		expect(screen.queryByText(/^All /)).not.toBeInTheDocument();
-
-		// The affordance carries its copy in a title ATTRIBUTE, which queryByText cannot see - so
-		// without this the whole "only in the numeric state" rule is invisible and a "Cannot forecast"
-		// chip could ship beside a tooltip promising odds.
-		expect(screen.queryByTitle(HEADER_TOOLTIP)).not.toBeInTheDocument();
 	});
 
 	it("keeps the not-enough-data label, without the joint framing (AC-03.5, AC-02.6)", () => {
@@ -257,7 +240,6 @@ describe("DeliverySection states slice-03 must leave alone (Story #5587)", () =>
 
 		expect(screen.getByText(/not enough data/i)).toBeInTheDocument();
 		expect(screen.queryByText(/^All /)).not.toBeInTheDocument();
-		expect(screen.queryByTitle(HEADER_TOOLTIP)).not.toBeInTheDocument();
 	});
 
 	it("keeps the per-row chip's own cannot-forecast tooltip alongside the column header (AC-03.6)", () => {

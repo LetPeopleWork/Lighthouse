@@ -2,7 +2,6 @@ import AutoModeIcon from "@mui/icons-material/AutoMode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import {
 	Accordion,
@@ -17,7 +16,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { type GridValidRowModel, gridClasses } from "@mui/x-data-grid";
+import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
 import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
@@ -59,10 +58,8 @@ import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelih
 
 export const MINIMUM_METRIC_SNAPSHOTS = 3;
 
-// Locked copy, ADR-113 D1. Nothing here may promise the header is lower than every row (D5).
-const JOINT_LIKELIHOOD_TOOLTIP = "P(ALL of these land by the date)";
-const MARGINAL_LIKELIHOOD_HEADER = "Likelihood (each on its own)";
-const MARGINAL_LIKELIHOOD_TOOLTIP = "P(this one lands), ignoring the others";
+// ADR-113 D1. Nothing here may promise the header is lower than every row (D5).
+const MARGINAL_LIKELIHOOD_HEADER = "Likelihood";
 
 interface DeliverySectionProps {
 	delivery: Delivery;
@@ -233,15 +230,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			{
 				field: "likelihood",
 				headerName: MARGINAL_LIKELIHOOD_HEADER,
-				renderHeader: ({ colDef }) => (
-					<div
-						className={gridClasses.columnHeaderTitle}
-						title={MARGINAL_LIKELIHOOD_TOOLTIP}
-					>
-						{colDef.headerName}
-					</div>
-				),
-				minWidth: 210,
+				minWidth: 110,
 				flex: 0.3,
 				sortable: false,
 				renderCell: ({ row }) =>
@@ -272,7 +261,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		hasSufficientData: delivery.hasSufficientData,
 	});
 	let likelihoodLabel: string;
-	let jointFramingTooltip: string | undefined;
 	if (deliveryCannotBeForecast || deliveryLikelihood === null) {
 		likelihoodLabel = CANNOT_FORECAST_SHORT;
 	} else if (hasInsufficientData) {
@@ -286,7 +274,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				precision: "round",
 			}),
 		});
-		jointFramingTooltip = JOINT_LIKELIHOOD_TOOLTIP;
 	}
 
 	return (
@@ -426,46 +413,20 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 										<Typography variant="body2" color="text.secondary">
 											Delivery Date: {delivery.getFormattedDate()}
 										</Typography>
-										<Box
+										<Chip
+											title={
+												deliveryCannotBeForecast
+													? cannotForecastReason(teamsWithoutForecast)
+													: undefined
+											}
+											label={likelihoodLabel}
+											size="small"
 											sx={{
-												display: "flex",
-												alignItems: "center",
-												gap: 0.5,
+												bgcolor: forecastLevel.color,
+												color: "#fff",
+												fontWeight: "bold",
 											}}
-										>
-											<Chip
-												title={
-													deliveryCannotBeForecast
-														? cannotForecastReason(teamsWithoutForecast)
-														: undefined
-												}
-												label={likelihoodLabel}
-												size="small"
-												sx={{
-													bgcolor: forecastLevel.color,
-													color: "#fff",
-													fontWeight: "bold",
-												}}
-											/>
-											{jointFramingTooltip && (
-												// title alone is mouse-only: the icon is aria-hidden and the
-												// span has no role, so the explanation would never reach a
-												// screen reader (R3 keeps title for the tests).
-												<Box
-													component="span"
-													role="img"
-													aria-label={jointFramingTooltip}
-													title={jointFramingTooltip}
-													sx={{
-														display: "flex",
-														alignItems: "center",
-														color: "text.secondary",
-													}}
-												>
-													<InfoOutlinedIcon fontSize="small" />
-												</Box>
-											)}
-										</Box>
+										/>
 									</Box>
 									<Box
 										sx={{
