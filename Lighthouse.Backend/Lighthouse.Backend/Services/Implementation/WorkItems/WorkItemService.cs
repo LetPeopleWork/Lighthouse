@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
-            var actualWorkItems = await workItemService.GetWorkItemsForTeam(team);
+            var actualWorkItems = DeduplicateByReferenceId(await workItemService.GetWorkItemsForTeam(team), team);
 
             var itemsWithTransitions = new List<SyncedItem>();
 
@@ -100,6 +100,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await workItemRepository.Save();
 
             await PublishDomainEvents(events);
+        }
+
+        // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;
+        // persisting both breaks the SingleOrDefault above on every later sync (docs/ci-learnings.md 2026-05-25).
+        private List<WorkItem> DeduplicateByReferenceId(IEnumerable<WorkItem> fetchedWorkItems, Team team)
+        {
+            var groupedByReferenceId = fetchedWorkItems.GroupBy(workItem => workItem.ReferenceId).ToList();
+            var duplicatedGroups = groupedByReferenceId.Where(group => group.Count() > 1).ToList();
+
+            if (duplicatedGroups.Count > 0)
+            {
+                logger.LogWarning(
+                    "Work Tracking System returned {DroppedCopies} duplicate Work Item copies for Team {TeamName} - keeping the first copy of each. Affected Reference Ids: {ReferenceIds}",
+                    duplicatedGroups.Sum(group => group.Count() - 1),
+                    team.Name,
+                    string.Join(",", duplicatedGroups.Select(group => group.Key)));
+            }
+
+            return groupedByReferenceId.Select(group => group.First()).ToList();
         }
 
         private bool WasBlocked(Team team, WorkItem? existingItem)
