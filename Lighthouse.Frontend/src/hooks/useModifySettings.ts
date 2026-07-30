@@ -36,11 +36,12 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	saveSettings: (settings: TSettings) => Promise<TSettings | undefined>;
 	validateSettings: (settings: TSettings) => Promise<boolean>;
 	modifyDefaultSettings: boolean;
+	// Returns one human-readable reason per field blocking the save; empty means valid (Bug #5613).
 	validateForm: (
 		settings: TSettings,
 		selectedSystem: IWorkTrackingSystemConnection | null,
 		modifyDefaultSettings: boolean,
-	) => boolean;
+	) => string[];
 	getSchemaForSystem: (
 		wts: WorkTrackingSystemType,
 	) => TSettings["dataRetrievalSchema"];
@@ -127,7 +128,6 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	>([]);
 	const [selectedWorkTrackingSystem, setSelectedWorkTrackingSystem] =
 		useState<IWorkTrackingSystemConnection | null>(null);
-	const [formValid, setFormValid] = useState(false);
 	const [validationError, setValidationError] = useState<string | null>(null);
 	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
 		string | null
@@ -146,22 +146,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	saveSettingsRef.current = saveSettings;
 	tokenRef.current = settings?.concurrencyToken;
 
-	useEffect(() => {
-		if (settings) {
-			setFormValid(
-				validateForm(
-					settings,
-					selectedWorkTrackingSystem,
-					modifyDefaultSettings,
-				),
-			);
-		}
-	}, [
-		settings,
-		selectedWorkTrackingSystem,
-		modifyDefaultSettings,
-		validateForm,
-	]);
+	const formInvalidReasons = settings
+		? validateForm(settings, selectedWorkTrackingSystem, modifyDefaultSettings)
+		: [];
+	const formValid = settings !== null && formInvalidReasons.length === 0;
 
 	const autoSaveEnabled = autoSave?.enabled ?? false;
 	const autoSaveCanSave = autoSave?.canSave ?? false;
@@ -407,6 +395,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formValid,
+		formInvalidReasons,
 		validationError,
 		validationTechnicalDetails,
 		updateSettings,

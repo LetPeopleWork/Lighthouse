@@ -496,6 +496,36 @@ describe("ModifyTeamSettings", () => {
 		});
 	});
 
+	describe("blocked autosave feedback", () => {
+		it("names the work item types field when the schema requires them and none are set", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				workItemTypes: [],
+				dataRetrievalSchema: {
+					key: "query",
+					displayLabel: "Query",
+					inputKind: "freetext" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: true,
+					wizardHint: "servicenow-team-wizard",
+				},
+			});
+
+			await renderModifyTeamSettings();
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(warning).toHaveTextContent("Add at least one Work Item Type");
+		});
+
+		it("renders no warning while the form can be saved", async () => {
+			await renderModifyTeamSettings();
+
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	// The seed value is owner-specific wiring: ModifyTeamSettings passes 5,
 	// ModifyProjectSettings passes 14. FlowMetricsConfigurationComponent's own test
 	// only proves it seeds with whatever it is handed, so the per-owner number is

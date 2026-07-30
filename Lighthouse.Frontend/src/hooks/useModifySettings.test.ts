@@ -48,7 +48,7 @@ const makeSettings = (
 	...overrides,
 });
 
-const alwaysValid = () => true;
+const alwaysValid = (): string[] => [];
 
 const makeHookArgs = (
 	overrides: Partial<
@@ -167,9 +167,9 @@ describe("useModifySettings", () => {
 	});
 
 	describe("formValid", () => {
-		it("is true when validateForm returns true", async () => {
+		it("is true when validateForm reports no blocking reasons", async () => {
 			const args = makeHookArgs({
-				validateForm: vi.fn().mockReturnValue(true),
+				validateForm: vi.fn().mockReturnValue([]),
 			});
 			const { result } = renderHook(() => useModifySettings(args));
 
@@ -177,9 +177,9 @@ describe("useModifySettings", () => {
 			expect(result.current.formValid).toBe(true);
 		});
 
-		it("is false when validateForm returns false", async () => {
+		it("is false when validateForm reports a blocking reason", async () => {
 			const args = makeHookArgs({
-				validateForm: vi.fn().mockReturnValue(false),
+				validateForm: vi.fn().mockReturnValue(["Enter a Name"]),
 			});
 			const { result } = renderHook(() => useModifySettings(args));
 
@@ -191,7 +191,7 @@ describe("useModifySettings", () => {
 			let callCount = 0;
 			const validateForm = vi.fn().mockImplementation((s: SimpleSettings) => {
 				callCount++;
-				return s.name !== "";
+				return s.name !== "" ? [] : ["Enter a Name"];
 			});
 			const args = makeHookArgs({ validateForm });
 			const { result } = renderHook(() => useModifySettings(args));

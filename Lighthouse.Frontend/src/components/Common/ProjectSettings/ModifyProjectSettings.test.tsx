@@ -825,4 +825,52 @@ describe("ModifyProjectSettings", () => {
 			);
 		});
 	});
+
+	describe("blocked autosave feedback", () => {
+		it("names the To Do States field when no To Do state is configured", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				toDoStates: [],
+			});
+
+			renderWithProvider(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(warning).toHaveTextContent("Add at least one To Do State");
+		});
+
+		it("renders no warning while the form can be saved", async () => {
+			renderWithProvider(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+	});
 });

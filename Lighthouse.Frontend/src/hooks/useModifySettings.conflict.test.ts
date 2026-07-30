@@ -67,7 +67,9 @@ const makeArgs = (
 	modifyDefaultSettings: false,
 	validateForm: vi
 		.fn()
-		.mockImplementation((s: TokenedSettings) => s.name !== ""),
+		.mockImplementation((s: TokenedSettings) =>
+			s.name !== "" ? [] : ["Enter a Name"],
+		),
 	getSchemaForSystem: vi
 		.fn()
 		.mockReturnValue({ isRequired: true, isWorkItemTypesRequired: true }),

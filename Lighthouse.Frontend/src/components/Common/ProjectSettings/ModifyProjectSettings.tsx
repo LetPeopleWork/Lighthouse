@@ -1,5 +1,7 @@
 import {
 	Alert,
+	AlertTitle,
+	Box,
 	Container,
 	type SelectChangeEvent,
 	Typography,
@@ -12,9 +14,11 @@ import { useModifySettings } from "../../../hooks/useModifySettings";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -42,6 +46,65 @@ interface ModifyProjectSettingsProps {
 	modifyDefaultSettings?: boolean;
 }
 
+// Bug #5613: autosave is the only save trigger, so an invalid form has to name what blocks it.
+function portfolioAutoSaveBlockers(
+	s: IPortfolioSettings,
+	system: IWorkTrackingSystemConnection | null,
+	isDefault: boolean,
+	getTerm: (key: string) => string,
+): string[] {
+	const schema = s.dataRetrievalSchema;
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const reasons: string[] = [];
+	if (s.name === "") {
+		reasons.push("Enter a Name");
+	}
+	if (s.defaultAmountOfWorkItemsPerFeature === undefined) {
+		reasons.push(
+			`Set a Default Number of ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} per ${featureTerm}`,
+		);
+	}
+	if (
+		s.usePercentileToCalculateDefaultAmountOfWorkItems &&
+		!(s.defaultWorkItemPercentile > 0 && s.percentileHistoryInDays >= 30)
+	) {
+		reasons.push(
+			`Set a ${featureTerm} Size Percentile above 0 and a History in Days of at least 30`,
+		);
+	}
+	if (
+		schema?.isWorkItemTypesRequired !== false &&
+		s.workItemTypes.length === 0
+	) {
+		reasons.push(
+			`Add at least one ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Type`,
+		);
+	}
+	if (s.toDoStates.length === 0) {
+		reasons.push("Add at least one To Do State");
+	}
+	if (s.doingStates.length === 0) {
+		reasons.push("Add at least one Doing State");
+	}
+	if (s.doneStates.length === 0) {
+		reasons.push("Add at least one Done State");
+	}
+	if (isDefault) {
+		return reasons;
+	}
+	if (system === null) {
+		reasons.push(`Select a ${getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM)}`);
+	} else if (
+		schema?.isRequired !== false &&
+		(s.dataRetrievalValue ?? "") === ""
+	) {
+		reasons.push(
+			`Enter a ${schema?.displayLabel ?? system.workTrackingSystemGetDataRetrievalDisplayName()}`,
+		);
+	}
+	return reasons;
+}
+
 const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	title,
 	getWorkTrackingSystems,
@@ -54,6 +117,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const [teams, setTeams] = useState<ITeam[]>([]);
 	const { canUpdatePortfolioData } = useLicenseRestrictions();
 	const { portfolioService } = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
 	const portfolioIdRef = useRef(0);
 
 	const loadTeams = useCallback(async () => {
@@ -74,6 +138,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		settings: projectSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
+		formInvalidReasons,
 		validationError,
 		validationTechnicalDetails,
 		saveState,
@@ -99,26 +164,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			canSave: canUpdatePortfolioData,
 			refreshOnSave: true,
 		},
-		validateForm: (s, system, isDefault) => {
-			if (!s) return false;
-			const schema = s.dataRetrievalSchema;
-			return (
-				s.name !== "" &&
-				s.defaultAmountOfWorkItemsPerFeature !== undefined &&
-				(!s.usePercentileToCalculateDefaultAmountOfWorkItems ||
-					(s.defaultWorkItemPercentile > 0 &&
-						s.percentileHistoryInDays >= 30)) &&
-				(schema?.isWorkItemTypesRequired === false ||
-					s.workItemTypes.length > 0) &&
-				s.toDoStates.length > 0 &&
-				s.doingStates.length > 0 &&
-				s.doneStates.length > 0 &&
-				(isDefault ||
-					(system !== null &&
-						(schema?.isRequired === false ||
-							(s.dataRetrievalValue ?? "") !== "")))
-			);
-		},
+		validateForm: (s, system, isDefault) =>
+			portfolioAutoSaveBlockers(s, system, isDefault, getTerm),
 		additionalFetch: refreshDependentData,
 		initialFetch: loadTeams,
 	});
@@ -310,6 +357,24 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 											{validationTechnicalDetails}
 										</Typography>
 									)}
+								</Alert>
+							</Grid>
+						)}
+
+						{canUpdatePortfolioData && formInvalidReasons.length > 0 && (
+							<Grid size={{ xs: 12 }}>
+								<Alert
+									severity="warning"
+									data-testid="settings-blocking-warning"
+								>
+									<AlertTitle>Your changes are not being saved</AlertTitle>
+									<Box component="ul" sx={{ m: 0, pl: 2 }}>
+										{formInvalidReasons.map((reason) => (
+											<li key={reason}>
+												<Typography variant="body2">{reason}</Typography>
+											</li>
+										))}
+									</Box>
 								</Alert>
 							</Grid>
 						)}

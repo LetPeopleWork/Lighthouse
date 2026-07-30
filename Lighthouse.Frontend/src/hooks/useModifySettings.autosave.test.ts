@@ -60,7 +60,9 @@ const makeArgs = (
 	modifyDefaultSettings: false,
 	validateForm: vi
 		.fn()
-		.mockImplementation((s: SimpleSettings) => s.name !== ""),
+		.mockImplementation((s: SimpleSettings) =>
+			s.name !== "" ? [] : ["Enter a Name"],
+		),
 	getSchemaForSystem: vi
 		.fn()
 		.mockReturnValue({ isRequired: true, isWorkItemTypesRequired: true }),
@@ -309,7 +311,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity 
 			{
 				saveSettings,
 				additionalFetch,
-				validateForm: vi.fn().mockReturnValue(false),
+				validateForm: vi.fn().mockReturnValue(["Enter a Name"]),
 			},
 			teamAdminCanSaveAndRefresh,
 		);
@@ -420,7 +422,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 						forecastFilterRuleSetJson: persistedRuleSet,
 					} as Partial<SimpleSettings>),
 				),
-				validateForm: vi.fn().mockReturnValue(false),
+				validateForm: vi.fn().mockReturnValue(["Enter a Name"]),
 			},
 			teamAdminCanSave,
 		);
@@ -593,7 +595,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		const args = makeArgs(
 			{
 				saveSettings,
-				validateForm: vi.fn().mockReturnValue(false),
+				validateForm: vi.fn().mockReturnValue(["Enter a Name"]),
 			},
 			teamAdminCanSave,
 		);
