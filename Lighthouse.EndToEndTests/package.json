@@ -22,7 +22,7 @@
   "description": "",
   "devDependencies": {
     "@biomejs/biome": "2.5.5",
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "^1.62.0",
     "@types/node": "^26.1.1",
     "cross-env": "^10.1.0",
     "typescript": "^7.0.2",
