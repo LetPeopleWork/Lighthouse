@@ -965,6 +965,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        public async Task UpdateWorkItemsForTeam_ConnectorReturnsSameItemTwice_PersistsItemOnceWithoutDuplicatingTransitions()
+        {
+            var team = CreateTeam();
+            var duplicates = CreateSameItemReturnedTwice(team, "Doing", new DateTime(2026, 7, 20, 8, 0, 0, DateTimeKind.Utc));
+            AssignIdentitiesOnSave();
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync(duplicates);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+
+            var persisted = workItems.Where(wi => wi.ReferenceId == duplicates[0].ReferenceId).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(persisted, Has.Count.EqualTo(1));
+                Assert.That(storedTransitions, Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ConnectorReturnsSameItemTwice_FollowUpSyncStillPersistsItemOnce()
+        {
+            var team = CreateTeam();
+            var duplicates = CreateSameItemReturnedTwice(team, "Doing", new DateTime(2026, 7, 20, 8, 0, 0, DateTimeKind.Utc));
+            AssignIdentitiesOnSave();
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team)).ReturnsAsync(duplicates);
+
+            var subject = CreateSubject();
+            await subject.UpdateWorkItemsForTeam(team);
+            await subject.UpdateWorkItemsForTeam(team);
+
+            var persisted = workItems.Where(wi => wi.ReferenceId == duplicates[0].ReferenceId).ToList();
+            Assert.That(persisted, Has.Count.EqualTo(1));
+        }
+
+        [Test]
         public async Task RefreshWorkItems_DerivesCurrentStateEnteredAt_FromLatestMatchingTransition_Idempotently()
         {
             var team = CreateTeam();
@@ -1234,6 +1271,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 TeamId = existing.TeamId,
                 SyncedTransitions = syncedTransitions,
             };
+        }
+
+        private List<WorkItem> CreateSameItemReturnedTwice(Team team, string state, DateTime enteredState)
+        {
+            var template = CreateWorkItemWithTransitions(team, state, ("To Do", state, enteredState));
+
+            return
+            [
+                CreateIncomingFor(template, state, template.StateCategory, ("To Do", state, enteredState)),
+                CreateIncomingFor(template, state, template.StateCategory, ("To Do", state, enteredState)),
+            ];
+        }
+
+        // The database assigns identities on Save; without that, two rows for the same ReferenceId would
+        // both keep Id 0 and their duplicated transitions would collapse instead of being observable.
+        private void AssignIdentitiesOnSave()
+        {
+            workItemRepositoryMock.Setup(x => x.Save())
+                .Callback(() =>
+                {
+                    foreach (var unpersisted in workItems.Where(wi => wi.Id == 0).ToList())
+                    {
+                        unpersisted.Id = idCounter++;
+                    }
+                })
+                .Returns(Task.CompletedTask);
         }
 
         private void SetupWorkForFeature(Feature feature, int doneItems, int toDoItems)
