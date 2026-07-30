@@ -849,6 +849,22 @@ configured table rather than flat `false`.
 actually hides the field in the UI. If it hides it, the field is not available to repurpose without a
 schema change, and the cost estimate above ("one boolean and one FE test") is wrong.
 
+**ANSWERED 2026-07-30, by Bug #5613 rather than by the check.** It does **both** — it skips validation
+*and* hides the field — so the cost estimate above was wrong. Worse, the two stacks disagreed about the
+value: `DataRetrievalSchemaDto.cs` is a `switch` with a `_` fallback and slice 01 extended only the
+exhaustive TS `Record`, so the backend answered `true` while the frontend answered `false`. The create
+wizard (frontend copy) hid the field; the settings page (backend copy) then demanded it. Every
+ServiceNow team was created permanently unsaveable, and because autosave is the only save trigger and it
+bails before arming its debounce, the failure was completely silent. Fixed in `cb5f0efb0` (the missing
+arms plus an enum-exhaustiveness guard) and `a0f6f9032` (an invalid form now names the blocking field).
+Full account: `docs/evolution/2026-07-30-bug-5613-schema-twin-drift.md`.
+
+Consequence for the slice-02 revisit above: repurposing Work Item Types as the `sys_class_name` filter
+means the field must become *visible* for a `task`-rooted team, so `isWorkItemTypesRequired` genuinely
+does have to go conditional on the configured table — flipping it is not a validation-only change. And
+whatever it becomes, it must change in **both** schema tables; the guard test now fails if only one is
+touched.
+
 ---
 
 ## Wave: DESIGN / [REF] CI rules pre-applied (from `docs/ci-learnings.md`)
