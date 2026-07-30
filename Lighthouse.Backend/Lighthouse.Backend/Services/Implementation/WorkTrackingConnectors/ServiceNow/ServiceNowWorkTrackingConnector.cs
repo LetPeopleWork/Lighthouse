@@ -70,10 +70,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         private const int PageCeiling = 1000;
 
-        // D6: transition history lives behind an itil-grade role, so v1 says no rather than guessing.
+        // SCAFFOLD (DISTILL slice 04, Story #5577)
+        //
+        // Per-instance, and only ever on evidence (ADR-118). Slice 02 answered a flat no because the
+        // metric tables are itil-gated; slice 04 asks, and reports what the instance actually said.
+        //
+        // Unlike Linear's optimistic default, this starts as "not observed" and turns true only after
+        // a definition read succeeded. Linear can afford to assume history and downgrade on rejection;
+        // here the assumption would be that a customer paid for a role, and claiming a capability
+        // nobody has checked is the shape of failure this epic exists to prevent.
+        private ServiceNowHistoryAvailability? observedAvailability;
+
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
         {
-            return false;
+            // Nothing sets the field yet, so this answers exactly what slice 02 answered. That is the
+            // safe direction to be wrong in: the test that history is declared once the instance
+            // supplies it stays red, and only the downgrade case — already shipped behaviour — passes.
+            return observedAvailability == ServiceNowHistoryAvailability.Available;
         }
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)
@@ -127,6 +140,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var connection = team.WorkTrackingSystemConnection;
             var table = ResolveWorkItemTable(connection);
             var records = await ReadEveryPage(connection, table, teamsOwnQuery);
+
+            // SCAFFOLD (DISTILL slice 04, Story #5577). The seam where the history read belongs.
+            // Until it exists nothing has been observed, so the conservative answer stands and
+            // WorkItemService keeps deriving transitions from the sync delta exactly as it does today.
+            observedAvailability = ServiceNowHistoryAvailability.NoStateMetric;
 
             var mapped = records
                 .Select(record => (Label: ServiceNowWorkItemMapper.ReadStateLabel(record), Item: ServiceNowWorkItemMapper.MapRecord(record, team, table)))

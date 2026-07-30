@@ -2117,3 +2117,127 @@ batch cannot silently return partial history, which is the failure shape this ep
   genuine recorded instant, unlike the absent `work_start` that forced `StartedDate` to substitute in
   the first place. **Upgrade consequence for the release notes:** teams that grant `itil` see Cycle
   Time and Work Item Age drop, and historical charts move, without the user editing anything.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Confirmation (slice 04)
+
+Read before writing scenarios: the DESIGN sections above, ADR-118 (all 7 decisions), ADR-117 (as
+amended), `spike/findings.md` (Q6 pre-slice probe + row shape), `slices/slice-04-transition-history.md`.
+
+**Wave-decision reconciliation: 2 findings, 0 blocking.** Both recorded in
+`distill/upstream-issues-slice-04.md` rather than resolved silently — the slice's learning hypothesis
+is formally disproven and was accepted as an adoption cost, and the metric-definition prerequisite
+brushes against D11 without crossing it.
+
+Graceful degradation: this project uses the single-narrative layout, so `discuss/`, `design/` and
+`devops/` directories do not exist. DESIGN content is present in this file, so the hexagonal boundary
+is verifiable and the wave proceeds. **No DEVOPS wave has ever run for this epic** — carried since
+slice 01, and it is why the Pact/contract-test recommendation from DESIGN is still unrouted.
+
+## Wave: DISTILL / [REF] Two open questions, answered (slice 04)
+
+**Q1 — reopened records.** A later span carrying an already-held label pairs into a
+`Resolved → In Progress` transition. **Correct, and kept** — it is what a flow coach investigating
+rework needs to see. Pinned by `AReopenedRecord_ReportsTheJourneyBackOutOfDone`.
+
+**Q2 — partial history.** **No leading synthetic transition.** Spans begin only when the metric
+definition was activated, so a record older than that has a first observed label that is not
+necessarily the state it was created in. Manufacturing a "created → first label" move would assert a
+state the record may never have held, dated to a moment nothing measured. Pinned by
+`TheEarliestSpan_IsAnArrivalNobodyWitnessed_AndIsNotReportedAsAMove`.
+
+## Wave: DISTILL / [REF] Scenario list (slice 04)
+
+42 tests, all RED for missing functionality. Both stacks build with **0 warnings**.
+
+| File | Layer | Tests | Carries |
+|---|---|---|---|
+| `ServiceNowStateSpanMapperTest` | 1 — pure | 10 RED | AC2 · ADR-118 D1, D7 · both open questions |
+| `ServiceNowHistoryVerdictTest` | 1 — pure | 9 RED / 2 green | ADR-118 D5 · ADR-117 honesty obligation |
+| `ServiceNowHistoryQueryTest` | 1 — pure | 12 RED | ADR-118 D2, D4 · the 8192-byte cliff |
+| `ServiceNowTransitionHistoryTest` | 3 — real adapter, stubbed transport | 6 RED / 4 green | AC1, AC2, AC4 · ADR-118 D7 |
+| `ServiceNowHistoryPurityArchUnitTest` | arch | 3 | ADR-114 shape held for slice 04's cores |
+| `ConnectionValidationResult.test.ts` | 1 — pure (FE) | 5 RED / 1 green | ADR-118 D5 frontend channel |
+
+Sad paths are enumerated one example each, never generated — layer 3 discipline, matching slice 02.
+
+## Wave: DISTILL / [REF] Scaffolds (slice 04)
+
+C# adaptation of the RED rule, inherited from slice 01: the production assembly cannot reference
+NUnit, so scaffolds **return deliberate wrong values** rather than throwing. The failure lands at the
+assertion site and the expected/actual diff reads as the specification.
+
+| Scaffold | Wrong value | Why that value |
+|---|---|---|
+| `ServiceNowStateSpanMapper.ToTransitions` | one `__scaffold__` transition | empty would satisfy the two "reports nothing" cases |
+| `ServiceNowStateSpanMapper.WhenWorkStarted` | `DateTime.UnixEpoch` | null would satisfy the not-started cases |
+| `ServiceNowHistoryVerdict.From` | `NoStateMetric` | **`Available` would be a scaffold that says history works whatever the instance answered** |
+| `ServiceNowHistoryVerdict.ToValidationResult` | `Failure(...)` | a valid result would satisfy "an advisory never fails the connection" |
+| `ServiceNowHistoryQuery.IntoBatches` | one batch, one id belonging to nobody | echoing the input satisfies the fits-in-one-batch case |
+| `ServiceNowHistoryQuery.SpanQueryFor` | 8000 characters | **a short sentinel satisfies the URL-length guard** |
+| `ServiceNowHistoryQuery.SpansFrom` | two sentinel spans | **one span satisfies the definition filter's own test while filtering nothing** |
+| `readConnectionValidation` (FE) | `isValid: false` + sentinels | echoing the payload satisfies the validity cases |
+
+**Choosing the wrong values mattered more than writing them.** The first pass had five false passes,
+three of them load-bearing (marked above). All three are the shape of the defect slice 01 found in
+flight — its `ValidateConnection` scaffold returned `Success()`, which is exactly what AC3's happy
+path asserts. Caught before the fact this time.
+
+## Wave: DISTILL / [REF] Argued greens (slice 04)
+
+Seven tests pass against the scaffolds. Each is argued here rather than hidden, per slice 01's rule.
+
+| Test | Why it is green | Category |
+|---|---|---|
+| `AnInstanceMeasuringNothing_HasNoStateMetric` | the conservative constant matches its own case | declaration-grade |
+| `AnAnswerNobodyExpected_IsNotTreatedAsWorking` | negative assertion any conservative value satisfies | future regression guard |
+| `AnInstanceThatRefusesTheMetricTables_DowngradesRatherThanFailing` | slice 02's shipped behaviour | **regression guard** |
+| `AnInstanceMeasuringNoStateSpans_DowngradesRatherThanFailing` | slice 02's shipped behaviour | **regression guard** |
+| `WhenHistoryIsUnavailable_WorkStartedWhenTheRequestArrived` | ADR-117's fallback, already shipped | **regression guard** |
+| `ATeamWithNoWork_AsksForNoHistoryAtAll` | no history read exists yet | future regression guard |
+| `readConnectionValidation` treats a missing answer as invalid | scaffold returns `isValid: false` | declaration-grade |
+
+The three marked **regression guard** are the valuable ones: they assert that slice 04 does not take
+the read-only fallback away from the customers who cannot pay the `itil` cost. They are green because
+they describe behaviour that already works, which is what a regression guard is for.
+
+## Wave: DISTILL / [REF] Test placement (slice 04)
+
+Alongside slice 02's files in
+`Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/`, the ArchUnit
+fixture in `Lighthouse.Backend.Tests/Architecture/` (9th in the folder), and the frontend test beside
+its model in `src/models/WorkTracking/`. No new directories.
+
+## Wave: DISTILL / [REF] Contract changes (slice 04)
+
+- **`ConnectionValidationResult`** gains `Advisory` + `AdvisoryCode` and a `SuccessWith(...)` factory.
+  Purely additive: `Success()` and `Failure()` are untouched, all 27 call sites verified green.
+- **`ServiceNowWorkItemMapper.ReadRecordId`** reads `sys_id`, the key `metric_instance.id` is
+  batched on. **Correction to DESIGN**: `sys_id` does *not* need to reach `WorkItemBase`. The
+  connector already holds the raw records in `GetWorkItemsForTeam` and can pair them locally, so no
+  shared-contract change is needed. ADO 5612's work-item-link item still needs it on the item; that
+  stays 5612's.
+- **DESIGN component renamed**: `ServiceNowHistoryReader` → **`ServiceNowHistoryQuery`**. It does not
+  read — the connector owns HTTP — and inventing a second IO abstraction would have broken ADR-114's
+  shell/core split. Batching, query building and row filtering are pure.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER (slice 04)
+
+- **The AC3 acceptance test is not written.** `ServiceNowTeamSyncAcceptanceTest` was rescoped — its
+  time-in-state test is now explicitly the *downgrade* case and renamed
+  `TimeInStateOnServiceNowWorkWithoutStateMetrics_...`, standing as the regression guard. The
+  history-available end-to-end case still needs a sibling, and its stub must answer
+  `metric_definition` and `metric_instance`.
+- **The frontend advisory is specified but not wired.** `readConnectionValidation` exists and is RED;
+  `WorkTrackingSystemService.validateWorkTrackingSystemConnection` still collapses the response to a
+  boolean, and `CreateConnectionWizard` / `ModifyConnectionSettings` still have no success-path
+  channel to render it in.
+- **The advisory must not reach the metrics UI.** This is structurally satisfied rather than tested:
+  no metrics component receives a `ConnectionValidationResult`, so there is nothing to render it
+  from. Worth a reviewer's eye rather than a test that asserts an absence across the whole UI.
+- **Mutation testing ≥80 % both stacks** is owed at the end, and no Stryker config is committed in
+  this repo — whoever runs it writes one.
+- **Dogfood**: move records through states on the PDI as `lh_probe_itil`, refresh, confirm Cumulative
+  State Time shows real durations and Cycle Time drops — then **revoke the role** and confirm the
+  runtime downgrade rather than an error.

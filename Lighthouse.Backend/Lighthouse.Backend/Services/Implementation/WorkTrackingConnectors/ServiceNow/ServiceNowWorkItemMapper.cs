@@ -34,6 +34,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>The record title.</summary>
         public const string TitleField = "short_description";
 
+        /// <summary>The platform's own handle for the record, and the key history is fetched by.</summary>
+        public const string RecordIdField = "sys_id";
+
         /// <summary>A numeric choice value whose label is the thing a flow coach maps.</summary>
         public const string StateField = "state";
 
@@ -67,6 +70,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public static string ReadRecordNumber(JsonElement record)
         {
             return ReadForm(record, RecordNumberField, UniversalForm);
+        }
+
+        /// <summary>
+        /// The record's <c>sys_id</c> — the handle <c>metric_instance.id</c> is keyed on, and the only
+        /// way to ask for a batch of records' history. Distinct from <see cref="ReadRecordNumber"/>,
+        /// which is what a service desk quotes and what Lighthouse shows.
+        /// </summary>
+        public static string ReadRecordId(JsonElement record)
+        {
+            return ReadForm(record, RecordIdField, UniversalForm);
         }
 
         /// <summary>

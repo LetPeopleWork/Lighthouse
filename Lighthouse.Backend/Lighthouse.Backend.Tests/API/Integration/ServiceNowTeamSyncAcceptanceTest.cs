@@ -117,13 +117,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // AC5. ServiceNow cannot supply transition history to a read-only account, and Lighthouse
-        // says so rather than guessing: SupportsTransitionHistory is false, the connector brings no
-        // fabricated history, and the sync-delta fallback in WorkItemService is what fills the gap —
-        // so a time-in-state widget shows something honest rather than a blank chart or a
-        // confidently wrong number.
+        // US-02 AC5, and after slice 04 (#5577) this is the DOWNGRADE case rather than the only case.
+        // This instance measures no state spans, so SupportsTransitionHistory is false, the connector
+        // brings no fabricated history, and WorkItemService's sync-delta fallback fills the gap — a
+        // time-in-state widget shows something honest rather than a blank chart or a confidently
+        // wrong number.
+        //
+        // It stays as the regression guard proving slice 04 did not take the fallback away from the
+        // read-only customers who still depend on it. The history-available case is US-04 AC3 and is
+        // a separate test.
         [Test]
-        public async Task TimeInStateOnServiceNowWork_IsDerivedFromObservedChangesRatherThanInventedOrLeftBlank()
+        public async Task TimeInStateOnServiceNowWorkWithoutStateMetrics_IsDerivedFromObservedChangesRatherThanInventedOrLeftBlank()
         {
             await SeedDatabase();
 
