@@ -4,7 +4,9 @@
 - **Date**: 2026-07-30
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5577)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
-- **Supersedes nothing. Resolves**: ADR-117's open question. **Cancels**: the
+- **Supersedes nothing. Resolves**: ADR-117's open question. **Amends**: ADR-117 decision 2 —
+  `StartedDate` is the first Doing span's `start` where history is readable, and ADR-117's
+  `opened_at` only where it is not. **Cancels**: the
   `ServiceNowChoiceLabelResolver` seam named in slice 01's DESIGN.
 
 ## Context
@@ -81,6 +83,30 @@ a capability limit belongs where the capability is configured.
 **6. AC5's opt-in team setting is not built.** Measured cost is 3 chunks ≈ 2.4 s per 500 items, which
 is not material against existing refresh expectations. The feature ships on by default.
 
+**7. `StartedDate` switches to the first Doing span's `start` when history is available, and falls
+back to ADR-117's `opened_at` when it is not.** Ratified by the maintainer 2026-07-30: *"this is how
+it is meant to be"*.
+
+This is the point of the slice. ADR-117 decision 4 deferred true time-in-progress to slice 04, and
+the `itil` escalation is paid for precisely to get it. Without this, a team that granted the role
+would see Cumulative State Time report ~20 h in Doing while Cycle Time reported ~600 h for the same
+work, with nothing on the page explaining the difference — two numbers contradicting each other is
+not a more conservative outcome than one number changing.
+
+The fallback is the existing per-instance capability branch, not new machinery: the same verdict that
+drives `SupportsTransitionHistory` and the runtime downgrade selects the `StartedDate` source.
+
+**`ClosedDate` is deliberately NOT switched** and stays `resolved_at ?? closed_at` from ADR-117
+decision 1. The asymmetry is justified rather than an oversight: `resolved_at` is a genuine recorded
+resolution instant, measured present on the record, whereas `work_start` is empty (SPIKE Q4) — which
+is the entire reason `StartedDate` needed a substitute in the first place. Deriving a close instant
+from history would add a dependency without adding accuracy.
+
+**Upgrade consequence, which must reach the release notes and not only the docs.** Existing
+ServiceNow teams that grant `itil` will see Cycle Time and Work Item Age *drop*, and historical
+charts move with them. The number was inflated before and is correct after, but it changes without
+the user editing anything.
+
 ## Consequences
 
 **Good.** ServiceNow teams reach flow-diagnosis parity — Cumulative State Time, per-state percentiles
@@ -131,5 +157,5 @@ dismissed-flag is additive later if wanted.
 - Spans begin when the definition became active, so records predating it carry partial history and
   the first span's `value` is not guaranteed to be the record's first state. Whether a leading
   synthetic transition from creation is honest or invented is a DISTILL call.
-- Whether `StartedDate` should switch to the first Doing span's `start` when history is available.
-  That is a behaviour change to an already-shipped metric, recorded here and not decided.
+- ~~Whether `StartedDate` should switch to the first Doing span's `start`.~~ **Decided 2026-07-30 —
+  it switches. See decision 7.**

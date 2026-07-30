@@ -2111,6 +2111,9 @@ batch cannot silently return partial history, which is the failure shape this ep
 - **Partial history.** Spans begin when the definition became active, so records predating it carry
   none. The first span's `value` is therefore not guaranteed to be the record's first state. DISTILL
   decides whether a leading synthetic transition from creation is warranted or dishonest.
-- **`ClosedDate` / `StartedDate` under ADR-117 are unchanged by this slice.** Whether `StartedDate`
-  should switch to the first Doing span's `start` when history is available is a *behaviour* change
-  on an already-shipped metric. Recorded, not decided here.
+- ~~Whether `StartedDate` should switch to the first Doing span's `start`.~~ **DECIDED 2026-07-30 by
+  the maintainer: it switches**, falling back to ADR-117's `opened_at` only where history is
+  unreadable. ADR-118 decision 7. `ClosedDate` deliberately does **not** switch — `resolved_at` is a
+  genuine recorded instant, unlike the absent `work_start` that forced `StartedDate` to substitute in
+  the first place. **Upgrade consequence for the release notes:** teams that grant `itil` see Cycle
+  Time and Work Item Age drop, and historical charts move, without the user editing anything.

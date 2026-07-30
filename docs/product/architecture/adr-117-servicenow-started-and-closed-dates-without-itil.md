@@ -6,6 +6,9 @@
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5575)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 - **Supersedes nothing. Constrains**: slice 02 scope, slice 04 scope.
+- **Amended 2026-07-30 by [ADR-118](./adr-118-servicenow-transition-history-from-metric-instance-spans.md)**:
+  decision 2 below now describes only the **no-history** path. Where `metric_instance` is readable,
+  `StartedDate` is the first Doing span's `start`. Decisions 1 and 3 stand unchanged.
 
 ## Context
 
