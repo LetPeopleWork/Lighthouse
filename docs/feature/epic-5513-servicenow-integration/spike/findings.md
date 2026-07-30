@@ -348,6 +348,47 @@ is to compare the filtered count against the unfiltered count and treat equality
 `X-Total-Count: 96` and a `Link` header carrying `rel="first"` / `rel="next"` / `rel="last"` with
 `sysparm_offset` values. Offset paging, disjoint pages.
 
+## Q6 pre-slice probe — the slice-04 sizing question (measured 2026-07-30, live PDI)
+
+The slice-04 brief made this the hard gate: **≤1 day if the history source is a single queryable
+table, >1 day and a re-slice if it is per-item.** Measured as `lh_probe_itil`:
+
+| Probe | Result |
+|---|---|
+| `incident?sysparm_limit=1` | 200, 0.67 s |
+| `metric_instance?sysparm_limit=1` as `itil` | 200, 0.61 s |
+| `metric_instance?sysparm_limit=1` as `snc_read` | **403** — Q8's role matrix reproduced |
+| `metric_instance?sysparm_query=idIN<96 sys_ids>` | **200, 0.81 s — 157 spans in ONE call** |
+
+**Verdict: batch. `metric_instance.id` takes an `IN` list of work-item sys_ids, so the whole team's
+history is one call, not one per item.** Slice 04 is the ≤1-day shape; the re-slice branch does not fire.
+
+### The real constraint is URL length, and it fails loudly
+
+`sysparm_query` rides in the query string, so the batch is bounded by the **8192-byte URL limit**,
+not by a row count. Pinned by bisection with synthetic non-matching sys_ids:
+
+| ids | URL bytes | Status |
+|---|---|---|
+| 200 | 6697 | 200 |
+| 245 | 8182 | 200 |
+| **250** | **8347** | **414 URI Too Long** |
+| 500 | 16597 | 414 |
+
+**Chunk at 200 ids.** That is ~18 % headroom under the cliff, and the headroom is load-bearing: the
+real query also carries `sysparm_fields` and `sysparm_limit`, and a customer instance may sit on a
+longer hostname or a reverse-proxy subpath than this PDI does.
+
+**414 is the good kind of failure** — a hard, visible status, not the 200/EMPTY denial-in-a-success-
+costume this epic exists to prevent. An over-long batch cannot silently return partial history.
+
+### Cost for ~500 items, as the brief demanded
+
+500 items = 3 chunks × ~0.8 s ≈ **2.4 s added to a team refresh**. That is not material against the
+existing refresh-duration expectations, so **AC5's opt-in team setting is not needed** — the feature
+can ship on by default. Re-measure if a customer's team spans a table far larger than this PDI's 96
+incidents; the cost scales with chunk count, which scales with item count, not with span count.
+
 ## Still open
 
 Nothing from the original ten. Q2, Q3, Q5, Q7, Q9 and Q10 are answered above or in

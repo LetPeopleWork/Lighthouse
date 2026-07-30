@@ -1,6 +1,7 @@
 # ADR-117: ServiceNow started and closed dates come from the record, so slice-02 metrics measure request-to-resolution rather than time-in-progress
 
-- **Status**: **Proposed** (2026-07-29, Epic 5513 slice 02 re-plan) — pending maintainer ratification.
+- **Status**: **Accepted** (ratified 2026-07-30 by the maintainer). The open question below is
+  deferred to slice 04's DESIGN, which must answer it for *both* cases — with and without `itil`.
 - **Date**: 2026-07-29
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5575)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
