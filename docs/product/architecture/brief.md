@@ -3718,10 +3718,13 @@ flowchart LR
   Standing prohibition, not a slice-01 scoping call.
 - **No raw ServiceNow choice *value* may cross the connector boundary** — `3` is On Hold on `incident`
   and Closed Complete on `task`. What reaches `Team.MapStateToStateCategory` / `MapRawStateToMappedName`
-  and the state-mapping UI is always the `sys_choice` **label**. `sys_choice` is readable with no roles at
-  all, so this costs nothing in permissions. Slice 01 reads no work items; the seam is named
-  (`ServiceNowChoiceLabelResolver`, a collaborator rather than a private method) and the enforcing
-  ArchUnit rule lands in slice 02.
+  and the state-mapping UI is always the **label**.
+  **Superseded in the how, not the what (2026-07-30, [ADR-118](./adr-118-servicenow-transition-history-from-metric-instance-spans.md)):**
+  slice 02 reads labels straight from `sysparm_display_value=all`, and slice 04's history rows carry
+  the label in `metric_instance.value` (the *number* is in `field_value`). **The named
+  `ServiceNowChoiceLabelResolver` seam is cancelled — it was never built and is not needed**; no
+  `sys_choice` lookup happens anywhere. The prohibition itself stands and is what the ArchUnit rule
+  enforces.
 - **Batch reads, never per-item.** ~600 ms per call measured, with no rate limiting observed at 1.6 req/s.
   The constraint is wall-clock latency, not throttling: an N+1 per-item sync of 500 items is ~5 minutes.
   Slice-01 validation is exactly one call.
@@ -3792,3 +3795,74 @@ System Context (L1) and Container (L2) in Mermaid:
 `docs/feature/epic-5513-servicenow-integration/feature-delta.md` → "Wave: DESIGN / [REF] C4".
 **L3 deliberately omitted** — the new subsystem is three classes; a component diagram over three classes
 restates the container diagram at a smaller font.
+
+---
+
+## Application Architecture — epic-5513-servicenow-integration (ADO Epic 5513, Story 5577 — slice 04)
+
+Feature: epic-5513-servicenow-integration · Wave: **DESIGN** (2026-07-30) · Architect: Morgan,
+application scope, propose mode. Slice 04 turns ADR-117's request-to-resolution span into true
+time-in-progress. **No new library, no EF migration, no new HTTP route.** One shared contract changes.
+
+### The conditional gate opened
+
+The slice was conditional on SPIKE Q6 finding an affordable transition-history source. Measured on
+the live PDI 2026-07-30: `metric_instance.id` accepts an `IN` list — 96 sys_ids returned 157 spans in
+one 0.81 s call. The per-item re-slice branch does not fire. The binding constraint is the
+**8192-byte URL limit** (245 ids pass, 250 return `414`), so reads chunk at **200 sys_ids**.
+
+### Design decisions ([ADR-118](./adr-118-servicenow-transition-history-from-metric-instance-spans.md))
+
+- **Transitions are derived from each span's `start`**, pairing consecutive spans per record. This is
+  the decision that removes the rest of the complexity: 128 of 189 PDI rows have an empty `end`, so
+  open spans need no special case; the ~30 s async metric lag stops mattering; and the Glide-duration
+  epoch-offset trap disappears because `duration` is never read.
+- **Spans are filtered by metric definition, resolved once per sync.** `metric_instance` mixes
+  definitions on the same field — "Incident State Duration" (*Field value duration*) alongside
+  "Create to Resolve Duration" and "First Call Resolution" (*Script calculation*). Reading them all
+  would fabricate transitions out of assignment changes. Filtering on the `field` *name* instead was
+  rejected: it hardcodes which field is "state" per table and is blind to customer definitions.
+- **The label is free.** `metric_instance.value` carries `"New"`; `field_value` carries `"1"`. The
+  label sets on `state` and `incident_state` are identical, so **a team's existing hand-typed state
+  mapping works on history unchanged** — no migration, no second mapping surface, and the
+  `ServiceNowChoiceLabelResolver` seam is cancelled outright.
+- **The capability disclosure is a connection-validation notice, not a chart annotation.** This
+  answers the question ADR-117 deferred. Two causes produce the downgraded metric and — unlike the
+  rights-vs-empty case that forced the C-1 amendment — **they are distinguishable**: `403` means the
+  account lacks `itil`; `200` with zero matching definitions means no state-span metric is set up.
+  The verdict names which fired and its remedy. It surfaces at connection setup, re-evaluates on
+  re-validation, and **does not appear in the metrics UI** — a caveat pinned to every chart is noise,
+  and a capability limit belongs where the capability is configured.
+- **AC5's opt-in team setting is not built.** ~2.4 s per 500 items is not material; the feature ships
+  on by default.
+
+### Component decomposition
+
+Full Reuse Analysis in `docs/feature/epic-5513-servicenow-integration/feature-delta.md` →
+"Wave: DESIGN / [REF] Reuse Analysis (hard gate, slice 04)".
+
+| Component | Path | Change |
+|---|---|---|
+| `ServiceNowStateSpanMapper` | `…/ServiceNow/` | **CREATE NEW** — pure: ordered spans → `WorkItemStateTransition[]`. Testable with no `HttpMessageHandler` mock, per ADR-114's shape |
+| `ServiceNowHistoryReader` | `…/ServiceNow/` | **CREATE NEW** — batched `metric_instance` + one `metric_definition` resolve per sync |
+| `ServiceNowHistoryVerdict` | `…/ServiceNow/` | **CREATE NEW** — the three-way capability verdict (available · no rights · no metric set up) |
+| `ServiceNowWorkTrackingConnector` | `…/ServiceNow/` | **EXTEND** — composes the above. `SupportsTransitionHistory` stops returning a constant and becomes per-instance with a runtime downgrade |
+| `ServiceNowWorkItemMapper` | `…/ServiceNow/` | **EXTEND** — carry `sys_id`, the batch key. Also pays for most of ADO 5612's work-item-link item |
+| `ConnectionValidationResult` | `Models/Validation/` | **EXTEND** — advisory channel surviving `IsValid = true`. **Shared contract**: grep usages and extend the test factory first |
+| `WorkItemStateTransitionMapper` | `WorkTrackingConnectors/` | **REUSE UNCHANGED** — AC2 requires the shared path; label sets match so nothing ServiceNow-specific is needed |
+| `WorkItemService.WithSyncDeltaTransition` | `WorkItems/` | **NO CHANGE** — already branches on `SupportsTransitionHistory` |
+
+Linear's `DowngradeHistorySupport()` is followed as a **pattern, not extended**: its trigger is a
+rejected GraphQL field, ServiceNow's is a `403` or an empty definition set, and only ServiceNow's has
+to carry a reason to the user. Generalising two dissimilar triggers now would be the rule-of-three
+violation that **ADO 5612** is parked to evaluate at the end of the MVP.
+
+### Open items carried into DISTILL
+
+- Whether a reopened record emits a second span with an earlier label (pairing would yield
+  `Resolved → In Progress`, which is correct but unverified).
+- Partial history: spans start when the definition became active, so the first span's `value` is not
+  guaranteed to be the record's first state. Whether a leading synthetic transition from creation is
+  honest or invented is a DISTILL call.
+- Whether `StartedDate` should switch to the first Doing span's `start` when history is available —
+  a behaviour change to an already-shipped metric, recorded and not decided.

@@ -1959,3 +1959,158 @@ fix a shape before anything is known about it.
 
 **Expected, not a finding.** Time-in-state and the finer details are thin without transition history.
 That is slice 04, and slice 02 declares the gap rather than filling it with invented data.
+
+---
+
+## Wave: DESIGN / [REF] Upstream Confirmation (slice 04)
+
+Read before designing: `slices/slice-04-transition-history.md`, `spike/findings.md` (including the
+Q6 pre-slice probe measured 2026-07-30), `spike/wave-decisions.md`, US-04 AC1–AC5 above,
+ADR-114/115/116, and ADR-117 (**Accepted** 2026-07-30). Scope: application. Mode: propose.
+
+The slice was conditional on SPIKE Q6. **The condition is met and the gate opens**: the history
+source is a single queryable table read in batches, not one call per work item.
+
+## Wave: DESIGN / [REF] What the live probe corrected (2026-07-30)
+
+Three beliefs carried out of the SPIKE were wrong, all in the design's favour. They are recorded
+here because the earlier prose in `spike/findings.md` reads as though the opposite were true.
+
+| Belief carried into DESIGN | Measured |
+|---|---|
+| `metric_instance.value` holds the raw choice value, so Q10 forces a label resolver | **`value` holds the LABEL (`"New"`); `field_value` holds the number (`"1"`)** |
+| The team's state mapping may not fit history, which reports on a different field | **Label sets are identical** — `New / In Progress / On Hold / Resolved / Closed` on both `state` and `incident_state` |
+| A reader must filter rows carrying an empty `field` and rows carrying an empty `value` | Those are *script-calculation* rows. **The real discriminator is the metric definition**, not emptiness |
+
+Consequences: **`ServiceNowChoiceLabelResolver` is not built** — the seam named in slice 01's DESIGN
+is cancelled, which is R-4 arriving from a second direction. **A team's existing hand-typed state
+mapping works on history unchanged** — no migration, no second mapping surface.
+
+## Wave: DESIGN / [REF] DDD — slice 04 design decisions
+
+| ID | Decision | Verdict |
+|---|---|---|
+| D-04-1 | Transitions are derived from each span's **`start`**, never from `end` or `duration` | Locked |
+| D-04-2 | Spans are filtered by **metric definition**, resolved per sync (Option A1) | Locked |
+| D-04-3 | The capability disclosure lives in **`ValidateConnection`**, not in the metrics UI (Option B1, as refined by the maintainer) | Locked |
+| D-04-4 | History reading and span→transition mapping are **separate collaborators** the connector composes (Option C1) | Locked |
+| D-04-5 | AC5's opt-in team setting is **not built** — measured cost is ~2.4 s per 500 items | Locked |
+| D-04-6 | `duration`, `business_duration` and `field_value` are **never read** | Locked |
+
+### D-04-1 — derive at the span start
+
+`metric_instance` yields spans (`value`, `start`, `end`), while Lighthouse's model is transitions
+(`FromState → ToState` at an instant). Sorting a record's spans by `start` and pairing consecutive
+entries gives `previous.value → current.value` at `current.start`.
+
+Deriving at the **start** rather than the end is what makes the rest cheap:
+
+- **128 of 189 rows on the PDI carry an empty `end`.** Open spans need no special case — the newest
+  span simply contributes no outgoing transition yet.
+- **The ~30 s asynchronous lag stops mattering.** A span whose `calculation_complete` is still
+  `false` has a valid `start`; only its duration is pending. The connector never has to decide
+  whether a lagging tail means "still in that state".
+- **The Glide-duration trap disappears.** `duration` renders as an epoch offset
+  (`1970-01-01 21:09:13` = 21 h 9 min). Nothing reads it, so nothing has to parse it — D-04-6.
+
+### D-04-2 — filter by definition, not by field name
+
+`metric_instance` mixes definitions on the same field. On the PDI, `field=incident_state` carries
+rows from **"Incident State Duration"** (type *Field value duration* — the state spans we want) and
+from **"Create to Resolve Duration"** and **"First Call Resolution"** (type *Script calculation* —
+not spans at all). Other definitions cover `active`, `assigned_to` and `assignment_group`.
+
+Reading them all would fabricate transitions out of assignment changes. The connector therefore
+resolves the definition set once per sync — `metric_definition` filtered to the configured table and
+`type = Field value duration` — and keeps only spans whose `definition` is in that set.
+
+Rejected: filtering client-side on the `field` name against a known list. It hardcodes which field
+counts as "state" per table (`incident_state` on incident, `state` elsewhere, `problem_state` on
+problem) and is blind to a customer's own definitions — brittle in exactly the place customers differ.
+The extra call is one per sync, not one per item.
+
+### D-04-3 — the disclosure is a connection-validation notice, not a chart annotation
+
+ADR-117 deferred one question to this slice: how Lighthouse carries the honesty obligation once the
+same team reports **request-to-resolution** (no `itil`) or **true time-in-progress** (with `itil`).
+
+**Two distinct causes produce the downgraded metric, and — unlike slice 01's C-1 case — they are
+distinguishable:**
+
+| Cause | Signal | What the customer must do |
+|---|---|---|
+| The account lacks the rights | `403` on `metric_definition` / `metric_instance` | Grant the integration account `itil` |
+| Rights are granted, but no state-span metric is set up | `200` with **zero** matching definitions | Activate a *Field value duration* definition on the state field |
+
+Conflating them would repeat the epic's headline mistake in a new place. The verdict names which one
+fired and what to do about it.
+
+**Placement, per the maintainer's ruling:** the notice is raised at **connection setup, in
+`ValidateConnection`**, as something the user acknowledges. Re-validating later re-evaluates it, so a
+customer who grants `itil` afterwards sees it clear. It **must not leak into the metrics UI** — a
+permanent caveat pinned to every chart is noise, and the place a capability limit belongs is where
+the capability is configured.
+
+**Contract consequence.** `ConnectionValidationResult` today carries a notice only on failure — the
+frontend surfaces `message` / `technicalDetails` through the error path in
+`CreateConnectionWizard.tsx` and `ModifyConnectionSettings.tsx`. A *successful* validation has no
+channel for an advisory. This slice adds one, and it is a shared contract: per the project rule, grep
+every usage and extend the test factory before touching it.
+
+**Assumption stated rather than blocked on:** the acknowledgement is **not persisted**. Validation
+always reports the instance's current capability, and "reset by re-validating" falls out of that with
+no new schema and no migration. If a durable dismissed-flag is wanted, it is additive later.
+
+### D-04-4 — collaborators, composed by the connector
+
+`ServiceNowWorkTrackingConnector` is already 672 lines and sits one parameter under the S107 ceiling
+the CI ledger flags. Following ADR-114's shape — pure mapper, imperative shell — the span→transition
+conversion lands in its own type so it is testable without an `HttpMessageHandler` mock, and the
+connector composes both as collaborators rather than growing a second entry point.
+
+## Wave: DESIGN / [REF] Component decomposition (slice 04)
+
+| Component | Path | Change |
+|---|---|---|
+| `ServiceNowStateSpanMapper` | `Services/Implementation/WorkTrackingConnectors/ServiceNow/` | CREATE NEW — pure: spans → `WorkItemStateTransition[]` |
+| `ServiceNowHistoryReader` | `Services/Implementation/WorkTrackingConnectors/ServiceNow/` | CREATE NEW — batched `metric_instance` + `metric_definition` reads |
+| `ServiceNowHistoryVerdict` | `Services/Implementation/WorkTrackingConnectors/ServiceNow/` | CREATE NEW — the three-way capability verdict of D-04-3 |
+| `ServiceNowWorkTrackingConnector` | same dir | EXTEND — compose the above; `SupportsTransitionHistory` stops returning a constant |
+| `ServiceNowWorkItemMapper` | same dir | EXTEND — carry `sys_id` (the batch key) alongside `number` |
+| `ConnectionValidationResult` | `Models/Validation/` | EXTEND — advisory channel on a successful result |
+| `WorkItemStateTransitionMapper` | `Services/Implementation/WorkTrackingConnectors/` | **NO CHANGE** — reused as-is |
+| `WorkItemService.WithSyncDeltaTransition` | `Services/Implementation/WorkItems/` | **NO CHANGE** — already branches on `SupportsTransitionHistory` |
+
+## Wave: DESIGN / [REF] Reuse Analysis (hard gate, slice 04)
+
+| Existing Component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `WorkItemStateTransitionMapper` | `WorkTrackingConnectors/WorkItemStateTransitionMapper.cs` | Raw → mapped state names, drops self-transitions | **REUSE UNCHANGED** | AC2 requires the shared path. Label sets match, so nothing ServiceNow-specific is needed |
+| `LinearWorkTrackingConnector.DowngradeHistorySupport` | `Linear/LinearWorkTrackingConnector.cs:475` | Runtime per-instance downgrade | **CREATE NEW (same pattern)** | Linear's flag is private connector state driven by a GraphQL field rejection. ServiceNow's trigger is a 403 or an empty definition set, and AC4 needs the *reason* to reach the verdict. Generalising two dissimilar triggers now would be the rule-of-three violation ADO 5612 is parked to evaluate |
+| `LinearWorkTrackingConnector.MapProjectSyncedTransitions` | `Linear/LinearWorkTrackingConnector.cs:423` | Builds raw transitions, then calls the shared mapper | **CREATE NEW** | Linear's source is an event log already shaped `from → to`. ServiceNow's is spans needing pairing. Same destination, different derivation |
+| `ServiceNowWorkTrackingConnector.ReadEveryPage` | `ServiceNow/ServiceNowWorkTrackingConnector.cs:180` | Paged Table API reads with a stable order and repeat guard | **EXTEND** | The history read is the same Table API with the same paging semantics. Chunking by sys_id is a caller concern layered on top, not a second pager |
+| `ServiceNowWorkItemMapper.ReadForm` | `ServiceNow/ServiceNowWorkItemMapper.cs:145` | Tolerant two-form field reads under `display_value=all` | **REUSE** | `metric_instance` returns the identical two-form shape. The tolerance it already has for absent / null / bare-scalar fields is exactly what the history rows need |
+| `ConnectionValidationResult` | `Models/Validation/ConnectionValidationResult.cs` | Carries code + message + technical details | **EXTEND** | `Code` is free-form per connector, but there is no advisory channel on `IsValid = true`. Additive property, no migration |
+
+## Wave: DESIGN / [REF] Driven ports (slice 04)
+
+| Port | Adapter | Notes |
+|---|---|---|
+| `GET /api/now/table/metric_definition` | `ServiceNowHistoryReader` | Once per sync; `table={configured}`, `type=Field value duration` |
+| `GET /api/now/table/metric_instance` | `ServiceNowHistoryReader` | `sysparm_query=idIN<≤200 sys_ids>`, `sysparm_display_value=all` |
+
+**Chunk at 200 sys_ids.** The 8192-byte URL cliff sits between 245 ids (8182 bytes, `200`) and 250
+(8347 bytes, `414`). 200 leaves ~18 % headroom for `sysparm_fields`, `sysparm_limit`, and customer
+instances on longer hostnames or a reverse-proxy subpath. **A 414 is a loud failure** — an over-long
+batch cannot silently return partial history, which is the failure shape this epic exists to prevent.
+
+## Wave: DESIGN / [REF] Open questions carried into DISTILL (slice 04)
+
+- **Does a reopened record produce a second span with the same label?** If so, pairing yields a
+  `Resolved → In Progress` transition, which is correct — but it is unverified on the PDI.
+- **Partial history.** Spans begin when the definition became active, so records predating it carry
+  none. The first span's `value` is therefore not guaranteed to be the record's first state. DISTILL
+  decides whether a leading synthetic transition from creation is warranted or dishonest.
+- **`ClosedDate` / `StartedDate` under ADR-117 are unchanged by this slice.** Whether `StartedDate`
+  should switch to the first Doing span's `start` when history is available is a *behaviour* change
+  on an already-shipped metric. Recorded, not decided here.

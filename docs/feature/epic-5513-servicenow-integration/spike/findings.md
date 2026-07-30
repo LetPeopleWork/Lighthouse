@@ -184,6 +184,10 @@ answers bear directly on how the connector must read state.
   validation must not conclude "metrics unavailable" from a read taken immediately after a write.
 - **Rows with an empty `value` exist as well as rows with an empty `field`** — the "Open" definition
   produces `incident_state=(empty)` spanning the whole active period. A reader must filter on both.
+  **CORRECTED 2026-07-30 (see the Q6 pre-slice probe below): filtering on emptiness is the wrong
+  discriminator.** Those rows come from *Script calculation* definitions ("Create to Resolve
+  Duration", "First Call Resolution") that share the field with the state spans. The correct filter
+  is the **metric definition** — `type = Field value duration` on the configured table.
 
 ## Q3 — `sysparm_query` works, and fails silently in two opposite directions
 
@@ -362,6 +366,48 @@ table, >1 day and a re-slice if it is per-item.** Measured as `lh_probe_itil`:
 
 **Verdict: batch. `metric_instance.id` takes an `IN` list of work-item sys_ids, so the whole team's
 history is one call, not one per item.** Slice 04 is the ≤1-day shape; the re-slice branch does not fire.
+
+### The row shape, and three earlier beliefs it disproves
+
+A `metric_instance` row under `sysparm_display_value=all`:
+
+```
+"value":       { "display_value": "New",        "value": "New" }      <- the LABEL
+"field_value": { "display_value": "1",          "value": "1" }        <- the choice NUMBER
+"field":       { "display_value": "incident_state", ... }
+"start":       { "display_value": "2026-07-28 23:46:43", "value": "2026-07-29 06:46:43" }
+"end":         { "display_value": "",           "value": "" }         <- open span
+"definition":  { "display_value": "Incident State Duration", "value": "35f2b283…" }
+"id":          { "display_value": "Incident: INC0010014", "value": "7f10b53a…" }
+```
+
+**1. `value` is the label, not the number.** The number lives in `field_value`. Q10's "map by label,
+never number" is therefore satisfied **for free**, and `ServiceNowChoiceLabelResolver` is cancelled
+rather than deferred — no `sys_choice` access happens anywhere.
+
+**2. The label sets match across the two fields**, so a team's hand-typed state mapping works on
+history unchanged — no migration, no second mapping surface:
+
+| Label | `metric_instance.value` (history) | `incident.state` display (items) |
+|---|---|---|
+| New | 29 | 18 |
+| In Progress | 24 | 33 |
+| On Hold | 1 | 8 |
+| Resolved | 10 | 8 |
+| Closed | 7 | 29 |
+
+**3. The definition, not emptiness, is the discriminator.** `field=incident_state` carries rows from
+**"Incident State Duration"** (*Field value duration* — the state spans) and from **"Create to Resolve
+Duration"** and **"First Call Resolution"** (*Script calculation* — not spans, and the source of the
+empty-`value` rows). Other definitions cover `active`, `assigned_to`, `assignment_group`. Reading them
+all fabricates transitions out of assignment changes.
+
+**4. 128 of 189 rows have an empty `end`.** Deriving transitions at each span's **`start`** makes open
+spans a non-case, makes the ~30 s `calculation_complete` lag irrelevant, and means `duration` — the
+Glide epoch-offset trap — is never read at all.
+
+`metric_definition` is **403 for read-only** just as `metric_instance` is, so the capability question
+cannot be answered without the role. That is why the verdict is produced where a read is attempted.
 
 ### The real constraint is URL length, and it fails loudly
 
