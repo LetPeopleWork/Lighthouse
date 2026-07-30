@@ -37,10 +37,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         private IQueryable<Feature> GetFeatures()
         {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
             return Context.Features
                 .Include(f => f.Portfolios)
                 .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults);
+#pragma warning restore S8733
         }
     }
 }

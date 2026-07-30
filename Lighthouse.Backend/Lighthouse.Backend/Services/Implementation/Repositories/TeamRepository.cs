@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public override IEnumerable<Team> GetAll()
         {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
             return Context.Teams
                 .Include(x => x.WorkTrackingSystemConnection)
                     .ThenInclude(wtsc => wtsc.Options)
@@ -26,6 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     .ThenInclude(p => p.Features)
                         .ThenInclude(f => f.FeatureWork)
                             .ThenInclude(rw => rw.Team);
+#pragma warning restore S8733
         }
 
         public override Team? GetById(int id)

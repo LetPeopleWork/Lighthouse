@@ -55,6 +55,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         private IEnumerable<Portfolio> GetAllProjectsWithIncludes()
         {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
             return Context.Portfolios
                 .Include(r => r.Features).ThenInclude(f => f.FeatureWork).ThenInclude(rw => rw.Team).ThenInclude(t => t.WorkTrackingSystemConnection).ThenInclude(wtsc => wtsc.Options)
                 .Include(f => f.Features).ThenInclude(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
@@ -62,6 +64,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .Include(p => p.WorkTrackingSystemConnection).ThenInclude(wtsc => wtsc.AdditionalFieldDefinitions)
                 .Include(p => p.WorkTrackingSystemConnection).ThenInclude(wtsc => wtsc.WriteBackMappingDefinitions)
                 .Include(p => p.Teams);
+#pragma warning restore S8733
         }
     }
 }
