@@ -1,10 +1,16 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
     public class DataRetrievalSchemaDtoTest
     {
+        private const string TheWholeHierarchy = "task";
+
+        private static readonly DateOnly Today = new(2026, 7, 31);
+
         [Test]
         [TestCase(WorkTrackingSystems.Linear, "linear.team", "wizard-select", true, false)]
         [TestCase(WorkTrackingSystems.AzureDevOps, "ado.wiql", "freetext", true, true)]
@@ -67,6 +73,61 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow);
 
             Assert.That(schema.WizardHint, Is.Null);
+        }
+
+        // Story #5611 slice 01, AC-B4 / ADR-123 decision 6. A team reading a whole ServiceNow
+        // hierarchy has to say which kinds of work are its own, so the settings screen and the create
+        // wizard both show the field and both refuse an empty save. Neither component changes — they
+        // already gate on this flag; what changes is what the schema says.
+        [Test]
+        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
+        public void ATeamOnAWholeServiceNowHierarchy_IsAskedWhichKindsOfWorkAreItsOwn()
+        {
+            var settings = new TeamSettingDto(ATeamReading(TheWholeHierarchy), Today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(settings.DataRetrievalSchema.IsWorkItemTypesRequired, Is.True);
+                Assert.That(settings.DataRetrievalSchema.Key, Is.EqualTo("servicenow.query"),
+                    "Still the ServiceNow arm — a fallback that happens to require the field would pass this for the wrong reason.");
+            }
+        }
+
+        // AC-B5. The shipped configuration keeps hiding the field and keeps saving without it.
+        [Test]
+        public void ATeamOnASingleKindOfServiceNowWork_IsNotAskedForKindsOfWorkAtAll()
+        {
+            var settings = new TeamSettingDto(ATeamReading(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable), Today);
+
+            Assert.That(settings.DataRetrievalSchema.IsWorkItemTypesRequired, Is.False);
+        }
+
+        // A connection that never named a table reads the shipped default, so it behaves as a
+        // single-kind team rather than as one on the whole hierarchy.
+        [Test]
+        public void ATeamOnAServiceNowConnectionThatNamedNoTable_IsNotAskedForKindsOfWorkEither()
+        {
+            var settings = new TeamSettingDto(ATeamReading(string.Empty), Today);
+
+            Assert.That(settings.DataRetrievalSchema.IsWorkItemTypesRequired, Is.False);
+        }
+
+        private static Team ATeamReading(string table)
+        {
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = "Acme ServiceNow",
+                WorkTrackingSystem = WorkTrackingSystems.ServiceNow,
+            };
+
+            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            {
+                Key = ServiceNowWorkTrackingOptionNames.WorkItemTable,
+                Value = table,
+                IsOptional = true,
+            });
+
+            return new Team { Name = "Service Desk", WorkTrackingSystemConnection = connection };
         }
 
         // Gives the switch the exhaustiveness the frontend Record gets from its type system (Bug #5613).

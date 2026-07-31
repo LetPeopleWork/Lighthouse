@@ -31,6 +31,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // it authenticates, and every ITSM read comes back 200 with zero rows.
         private const string NoRolesUser = "lh_probe_none";
 
+        // Created during the SPIKE with sn_incident_read but no sn_problem_read. The asymmetry is what
+        // makes AC-B6 provable: incident and problem are the same response shape to this account, and
+        // only the ACL-blind X-Total-Count tells them apart (ADR-124).
+        private const string RestrictedUser = "lh_probe_snc_read";
+
+        // ServiceNow's work hierarchy. Everything the ITSM applications file lives under it, which is
+        // why a team rooted here has to name the kinds of work that are its own (ADR-123 decision 5).
+        private const string HierarchyRootTable = "task";
+
         private const string MetricsTable = "metric_definition";
 
         // Held 105 records when slice 02 was written, which is what makes it the table that can
@@ -254,6 +263,95 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Code, Is.EqualTo("query_matches_whole_table"));
             }
+        }
+
+        /// <summary>
+        /// Story #5611 slice 01, AC-B6 / ADR-124 decision 2 rung 1. The one link in the ladder that was
+        /// inferred before it was measured: a class is a table, so a name that is not a table answers
+        /// 400 rather than narrowing to nothing in silence. Measured credential-independent across all
+        /// four probe accounts; this assertion exists so a future ServiceNow release cannot quietly
+        /// turn it into a 200.
+        /// </summary>
+        [Test]
+        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
+        public async Task AKindOfWorkTheInstanceDoesNotHave_IsRefusedBySaveAndNamed()
+        {
+            var team = ATeamCovering(["not_a_real_class"], "active=true", AdminUser);
+
+            var result = await CreateSubject().ValidateTeamSettings(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("unknown_table"));
+                Assert.That(result.Message, Does.Contain("not_a_real_class"));
+            }
+        }
+
+        /// <summary>
+        /// AC-B6 / ADR-124 decision 2 rungs 3 and 4, and the single mechanism the whole acceptance
+        /// criterion rests on: X-Total-Count reports what the instance holds while the body reports
+        /// what the account may read. <c>lh_probe_snc_read</c> can read incidents but not problems, and
+        /// the two answers are otherwise the same HTTP response with fewer rows in it. If this ever
+        /// passes for both classes, ServiceNow has started applying ACLs to the header and the ladder
+        /// has lost its only signal.
+        /// </summary>
+        [Test]
+        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
+        public async Task AKindOfWorkTheAccountMayNotRead_IsToldApartFromOneItCan()
+        {
+            var subject = CreateSubject();
+
+            var readable = await subject.ValidateTeamSettings(
+                ATeamCovering(["incident"], "active=true", RestrictedUser));
+            var hidden = await subject.ValidateTeamSettings(
+                ATeamCovering(["incident", "problem"], "active=true", RestrictedUser));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(readable.IsValid, Is.True, readable.Message);
+                Assert.That(hidden.IsValid, Is.False,
+                    "problem holds records this account cannot see, and a team told nothing would quietly sync half its work.");
+                Assert.That(hidden.Message, Does.Contain("problem"));
+            }
+        }
+
+        /// <summary>
+        /// S4. metric_definition rows attach to concrete classes and never to the base table — measured
+        /// 0 for <c>table=task</c>, 6 for <c>tableINincident,change_request</c>. Shipping the class
+        /// filter without scoping the definition read takes every started date and state span away from
+        /// exactly the configuration this feature recommends.
+        /// </summary>
+        [Test]
+        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
+        public async Task ATeamCoveringSeveralKindsOfWork_StillLearnsWhenItsWorkChangedState()
+        {
+            var team = ATeamCovering(["incident"], "active=true", AdminUser);
+
+            var workItems = (await CreateSubject().GetWorkItemsForTeam(team)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Not.Empty);
+                Assert.That(workItems.SelectMany(item => item.SyncedTransitions), Is.Not.Empty,
+                    "Read through the whole hierarchy, the definitions have to be looked for on the kinds of work the team named.");
+            }
+        }
+
+        // A team reading the whole task hierarchy and naming the kinds of work that are its own.
+        private static Team ATeamCovering(List<string> kindsOfWork, string query, string username)
+        {
+            var team = ATeamReading(
+                query,
+                HierarchyRootTable,
+                ["New"],
+                ["In Progress", "On Hold", "Assess", "Authorize", "Scheduled", "Implement", "Review"],
+                ["Resolved", "Closed", "Canceled"]);
+
+            team.WorkItemTypes = kindsOfWork;
+            team.WorkTrackingSystemConnection = CreateConnection(username, table: HierarchyRootTable);
+
+            return team;
         }
 
         private static Team ATeamReadingIncidents(string query)

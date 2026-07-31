@@ -318,6 +318,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(ServiceNowWorkItemMapper.ReadStateLabel(ARecordFrom(json)), Is.Empty);
         }
 
+        // Story #5611 slice 01, AC-B2 / ADR-123 decision 8. A ServiceNow record class IS a Lighthouse
+        // work item type, so a change request says "change_request" whatever hierarchy the team reads
+        // it through. Today Type is the configured table, which for a team on the whole hierarchy is
+        // the same lie repeated on every row.
+        [Test]
+        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
+        public void WorkThatSaysWhatKindItIs_IsLabelledWithItsOwnKind()
+        {
+            var record = ARecordWith((RecordClassField, "Change Request", "change_request"));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), TheWholeHierarchy);
+
+            Assert.That(workItem.Type, Is.EqualTo("change_request"),
+                "The system name the query matches on, never the label the coach reads on their own screen.");
+        }
+
+        // AC-B2's other half, and the reason no shipped team's data moves: for a team reading a single
+        // kind of work the record's own kind and the configured table are the same string.
+        [Test]
+        public void WorkOnATeamReadingOneKindOfWork_IsLabelledExactlyAsItWasBefore()
+        {
+            var record = ARecordWith((RecordClassField, "Incident", Table));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            Assert.That(workItem.Type, Is.EqualTo(Table));
+        }
+
+        // Not defensive padding: ReadForm answers string.Empty for a field that is not there, and an
+        // empty Type on every row of a custom table would be a worse silent data change than the one
+        // this rule fixes.
+        [Test]
+        public void WorkThatLeavesItsKindBlank_KeepsTheKindTheTeamReadsThrough()
+        {
+            var record = ARecordWith((RecordClassField, "", ""));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+
+            Assert.That(workItem.Type, Is.EqualTo(Table));
+        }
+
+        [Test]
+        public void WorkFromATableThatDoesNotRecordItsKind_KeepsTheKindTheTeamReadsThrough()
+        {
+            var workItem = ServiceNowWorkItemMapper.MapRecord(ARecordWith(), ATeamThatCalls(), Table);
+
+            Assert.That(workItem.Type, Is.EqualTo(Table));
+        }
+
+        // The field is already in every record of the connector's sysparm_display_value=all read, so
+        // reading it costs no extra request. DELIVER moves this to a constant on the mapper.
+        private const string RecordClassField = "sys_class_name";
+
+        private const string TheWholeHierarchy = "task";
+
         // The team above files "Resolved" under Done, and only finished work carries a finish date.
         private static (string Field, string DisplayValue, string Value) AResolvedState =>
             (ServiceNowWorkItemMapper.StateField, "Resolved", "6");

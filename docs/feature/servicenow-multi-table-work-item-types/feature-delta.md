@@ -653,12 +653,12 @@ Deliberately deferred rather than guessed. None of them blocks DISTILL from writ
 |---|---|---|---|
 | **OQ-1** | Should the schema twins be de-duplicated for real — a per-connection schema served by the backend, with the frontend `Record` demoted to an offline fallback? | **Defer.** It removes D-D7's guard by removing the duplication, and a failed fetch degrades safely to today's `false` (AC-B5-safe). But it adds a driving port and touches both wizards and both settings screens, and Bug #5613 explicitly ruled that collapsing the tables is "a design change, not a fix". Revisit the moment a *second* conditional flag appears. ADR-123 alternative F. | Maintainer, post-slice |
 | **OQ-2** | Should `isWorkItemTypesRequired` split into separate "shown" and "required" flags? | **Defer, but it is the real fix for D-D5's residual risk.** Visible-but-optional would let a customer on an unlisted hierarchy root type classes and recover without a Lighthouse release. Cost: a shared contract change across five systems and two entity types, and it weakens AC-B5's promise not to make the shipped configuration harder. ADR-123 alternative G. | Maintainer, post-slice |
-| **OQ-3** | Does `GET /api/now/table/{unknown_class}` actually answer `400`? | **Ship the ladder, assert it live.** It is the one inferred link (ADR-114 measured `400` for an unknown *table*; a class is a table). ADR-124 alternative B is the drop-in fallback if it fails — at the cost of the ambiguous rung. | DELIVER, integration fixture |
+| **OQ-3** | Does `GET /api/now/table/{unknown_class}` actually answer `400`? | **SETTLED — measured 2026-07-31, after this wave.** `400 {"error":{"message":"Invalid table not_a_real_class"}}` from all four probe accounts including the no-roles one, so the verdict is credential-independent. ADR-124 alternative B is not needed. The same run found no ITSM class ever answers `403`, so that rung is correct where it fires and likely unreachable for the names a coach types. | ✓ Settled; assertion still lands in DELIVER |
 | **OQ-4** | Is `{ "task" }` the whole hierarchy-root set? | **Ship `task` alone.** It is the ITSM work hierarchy and the only root the SPIKE observed. The docs must say what a customer does whose root is not listed — today the answer is "open an issue", which OQ-2 would turn into "type the classes anyway". | DISTILL / docs |
 | **OQ-5** | Should the number of named classes be capped, and should the probes fan out? | **Serial, uncapped, for now.** Serial matches every other read in this adapter and the instance's rate-limiting behaviour is measured at exactly one request rate. A cap invents a limit nobody has hit. Revisit if a real team names more than a handful. | DISTILL |
 | **OQ-6** | State mapping is this feature's real usability risk — does slice 01 do anything about it beyond docs? | **Docs only in slice 01, and say so out loud.** Surfacing `ReportStatesTheTeamNeverMapped` in the UI is a genuinely valuable, genuinely separate story: it is not ServiceNow-specific, and every connector would benefit. Filing it is worth more than half-building it here. | Maintainer — candidate follow-up story |
 | **OQ-7** | Now that a hierarchy-rooted **connection** says nothing about history (D-D10), should `ValidateTeamSettings` report history availability instead? | **Not in slice 01.** It would need a definition read per team save — the cost S2 just declined for the class probes — and the sync already reports it through `ReportHistoryUnavailable`. But it leaves a `task`-rooted administrator with no screen that answers "will I get time-in-state?". Worth a maintainer call. | Maintainer |
-| **OQ-8** | AC-B6 says "produces a specific message naming the class". Which of the four rungs are in scope for the acceptance tests, and does a class that is merely *empty* count as a pass or a failure? | **Empty is a pass, not a failure** — a class with no records is a legitimate configuration, and refusing the save would block a team on a quiet quarter. DISTILL should pin all four rungs as distinct observable outcomes regardless. | DISTILL |
+| **OQ-8** | AC-B6 says "produces a specific message naming the class". Which of the four rungs are in scope for the acceptance tests, and does a class that is merely *empty* count as a pass or a failure? | **SETTLED — maintainer, 2026-07-31: empty is a pass.** A class with no records is a legitimate configuration; refusing the save would block a team on a quiet quarter. DISTILL pins all four rungs as distinct observable outcomes regardless. | ✓ Settled |
 
 ---
 
@@ -684,3 +684,157 @@ What DISTILL should know before writing:
 - **DoD item 5 stands unchanged and is not negotiable**: verified against a real instance with a
   `task`-rooted team returning at least two classes. The epic's own lesson is that 164 tests did not
   find what one manual run did.
+
+---
+
+## Wave: DISTILL / [REF] Inputs read
+
+Scope: **slice 01 only**. Consolidated four-reviewer gate deferred by instruction — the maintainer
+reviews before DELIVER and triggers review explicitly.
+
+| Artifact | |
+|---|---|
+| This file — DISCUSS (D1–D7, AC-B1…B6, DoD), SPIKE handoff (S1–S4), DESIGN (D-D1…D-D10, reuse table, OQ-1…OQ-8) | ✓ read in full |
+| `spike/findings.md` · `spike/wave-decisions.md` | ✓ |
+| `slices/slice-01-work-item-types-as-record-classes.md` | ✓ |
+| `docs/product/architecture/adr-123-…-record-classes-as-work-item-types.md` · `adr-124-…-record-class-readability-ladder.md` | ✓ both in full |
+| `docs/ci-learnings.md` | ✓ ledger patterns + the preflight rules that bind test code (CA1859, CA1861, NUnit2045/2046/2056/4002, S107, S3776) |
+| Production: `ServiceNowWorkTrackingConnector.cs` · `ServiceNowWorkItemMapper.cs` · `ServiceNowHistoryQuery.cs` · `ServiceNowTeamQueryVerdict.cs` · `ConnectionValidationResult.cs` · `DataRetrievalSchemaDto.cs` · `TeamSettingDto.cs` · `DataRetrievalSchemaDefaults.ts` | ✓ |
+| Neighbouring tests: `ServiceNowTeamSyncTest.cs` · `ServiceNowTransitionHistoryTest.cs` · `ServiceNowWorkItemMapperTest.cs` · `ServiceNowWorkTrackingConnectorIntegrationTest.cs` · `DataRetrievalSchemaDtoTest.cs` · `DataRetrievalSchemaDefaults.serviceNow.test.ts` · `formatLikelihood.enforcement.test.ts` | ✓ |
+| `docs/feature/{...}/{discuss,design,devops}/` subdirectories | ⊘ **do not exist for this feature** — the whole chain lives in this one file. Recorded rather than treated as a missing-artifact block. DEVOPS was never run; slice 01 implies no infrastructure change |
+
+**Wave-decision reconciliation: 0 contradictions.** DISCUSS D2/D3/D4/D6, the SPIKE's S1–S4 and
+DESIGN's D-D1…D-D10 are consistent; where DESIGN amends DISCUSS (D-D3 gates the class clause on
+"classes were named" rather than on D3's hierarchy-root test) it says so and gives the reason. One
+item is recorded under Open questions below rather than treated as a contradiction.
+
+---
+
+## Wave: DISTILL / [REF] Scenario list
+
+29 scenarios. Language: **C# / NUnit 4.6 + Moq** (backend) and **Vitest** (frontend) — this repo's
+conventions, per `CLAUDE.md`. No Gherkin feature files: the repo ships no BDD runner, and the
+existing ServiceNow suites carry the domain language in the test name and the comment above it. That
+is the convention this slice follows rather than introducing a second one.
+
+| # | Scenario | AC / decision | Layer | Tags |
+|---|---|---|---|---|
+| 1 | A team that handles incidents and changes sees both kinds of work as one team | AC-B1 + AC-B2 | 3 | `@walking_skeleton` `@driving_port` |
+| 2 | A team that handles several kinds of work asks for them in one read | AC-B1 / D-D2 | 3 | `@driving_port` |
+| 3 | A team that handles one kind of work asks for it by name | AC-B1 / ADR-123 §2 | 3 | `@driving_port` `@boundary` |
+| 4 | An incident team that named no kinds of work asks exactly what it asked before | AC-B5 | 3 | `@driving_port` `@backward-compat` |
+| 5 | A team on the whole hierarchy that named no kinds of work reads nothing rather than everything | AC-B3 / D3 | 3 | `@driving_port` `@error` |
+| 6 | Saving such a team is asked which kinds, without contacting the instance | AC-B3 / D-D4 | 3 | `@driving_port` `@error` |
+| 7 | Saving an incident team that named no kinds of work is still accepted | AC-B5 | 3 | `@driving_port` `@backward-compat` |
+| 8 | Saving a team that names a kind of work the instance does not have is told which name is wrong | AC-B6 / ADR-124 rung 1 | 3 | `@driving_port` `@error` |
+| 9 | Saving a team that names a kind of work the instance refuses is told it is a permissions problem | AC-B6 / ADR-124 rung 2 | 3 | `@driving_port` `@error` |
+| 10 | Saving a team that names a kind of work the account cannot see is told which kind is hidden | AC-B6 / ADR-124 rung 4 | 3 | `@driving_port` `@error` |
+| 11 | Saving a team that names a kind of work with nothing in it yet is accepted | AC-B6 / OQ-8 | 3 | `@driving_port` `@boundary` |
+| 12 | Saving a team that names three kinds of work asks the instance about each of them once | S2 / OQ-5 | 3 | `@driving_port` |
+| 13 | Saving a team that handles several kinds measures its query against its own kinds of work | S1 / ADR-124 §3 | 3 | `@driving_port` |
+| 14 | A team that handles several kinds looks for state history on each of those kinds | S4 / ADR-123 §9 | 3 | `@driving_port` |
+| 15 | An incident team looks for state history exactly where it did before | AC-B5 | 3 | `@driving_port` `@backward-compat` |
+| 16 | Validating a connection rooted at the whole hierarchy says state history is decided per team | D-D10 | 3 | `@driving_port` `@error` |
+| 17 | Work that says what kind it is, is labelled with its own kind | AC-B2 / ADR-123 §8 | 1 | `@pure` |
+| 18 | Work on a team reading one kind of work is labelled exactly as it was before | AC-B2 | 1 | `@pure` `@backward-compat` |
+| 19 | Work that leaves its kind blank keeps the kind the team reads through | AC-B2 / D-D5 | 1 | `@pure` `@boundary` |
+| 20 | Work from a table that does not record its kind keeps the kind the team reads through | AC-B2 / D-D5 | 1 | `@pure` `@boundary` |
+| 21 | A team on a whole ServiceNow hierarchy is asked which kinds of work are its own | AC-B4 / D6 | 1 | `@driving_port` |
+| 22 | A team on a single kind of ServiceNow work is not asked for kinds of work at all | AC-B5 | 1 | `@driving_port` `@backward-compat` |
+| 23 | A team on a connection that named no table is not asked either | AC-B5 | 1 | `@driving_port` `@boundary` |
+| 24 | The settings screen and wizard ask which kinds of work when the table holds several | AC-B4 / D6 | 1 | `@frontend` |
+| 25 | …and leave a team reading only incidents exactly as it was | AC-B5 | 1 | `@frontend` `@backward-compat` |
+| 26 | …and treat a connection that named no table as reading one kind of work | AC-B5 | 1 | `@frontend` `@boundary` |
+| 27 | The hierarchy-root set agrees across the stacks | AC-B4 / D-D7 / Bug #5613 | structural | `@enforcement` `@cross-stack` |
+| 28 | The work item table setting is called the same thing on both sides | AC-B4 / D-D7 / Bug #5613 | structural | `@enforcement` `@cross-stack` |
+| 29 | A kind of work the instance does not have is refused by Save and named | AC-B6 / ADR-124 rung 1 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+| 30 | A kind of work the account may not read is told apart from one it can | AC-B6 / ADR-124 rungs 3+4 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+| 31 | A team covering several kinds of work still learns when its work changed state | S4 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+
+**Error / edge share: 12 of 31 (39%)**, plus 7 backward-compatibility pins. One scenario below the
+40% target, and deliberately so: AC-B2 and AC-B5 are claims about the *absence* of change, and the
+tests carrying them are structurally happy-path.
+
+**Walking skeleton**: scenario 1. Litmus test — *"a flow coach whose team handles incidents and
+changes points one Lighthouse team at both, sees both, and sees each row labelled with the kind of
+work it actually is"* is a sentence the maintainer can confirm without reading a line of C#.
+
+**Every AC is covered.** AC-B1 → 1, 2, 3. AC-B2 → 1, 17–20. AC-B3 → 5, 6. AC-B4 → 21, 24, 27, 28.
+AC-B5 → 4, 7, 15, 18, 22, 23, 25, 26. AC-B6 → 8–11, 29, 30. Plus S1 → 13, S2 → 12, S4 → 14, 15, 31,
+D-D10 → 16.
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+| Where | Why |
+|---|---|
+| `Lighthouse.Backend.Tests/…/ServiceNow/ServiceNowRecordClassTest.cs` — **new fixture** | One file per concern is this folder's convention: `ServiceNowTeamSyncTest` (paging + the query verdict), `ServiceNowTransitionHistoryTest` (slice 04's three reads), `ServiceNowStateSpanMapperTest`. Slice 04 added a fixture rather than growing `ServiceNowTeamSyncTest` past 1 138 lines; slice 01 follows it. The stub is purpose-built: it routes by table **and honours the class filter**, so a connector that emits no filter gets every kind of work back instead of a green test |
+| `ServiceNowWorkItemMapperTest.cs` — **extended** | The `Type` rule is one more field's source changing, in the one place a record becomes a `WorkItemBase`. A separate "class reader" fixture would split one record-mapping rule across two files |
+| `DataRetrievalSchemaDtoTest.cs` — **extended** | The C# half of the twin story, and the home of the #5613 exhaustiveness guard. Keeping both in one file is what makes a future reader see them together |
+| `ServiceNowWorkTrackingConnectorIntegrationTest.cs` — **extended, not forked** | ADR-124 decision 5 and DESIGN reuse row 24 both say so explicitly. The fixture slice 02 extended |
+| `Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts` — **extended** | Already "the ServiceNow settings screen expressed as data" |
+| `Lighthouse.Frontend/src/models/Common/serviceNowSchemaTwin.enforcement.test.ts` — **new** | D-D7 / reuse row 25. `formatLikelihood.enforcement.test.ts` is the *pattern*, not a host: merging them would make one invariant's failure read as the other's |
+
+**No production code was written.** Every scenario enters through a driving port that already ships,
+so no RED scaffolds were needed — see `distill/red-classification.md` for why, and for the two
+signature changes that had to be reached indirectly.
+
+---
+
+## Wave: DISTILL / [REF] Adapter and driving-port coverage
+
+| Driven adapter | Real-I/O scenario | Covered by |
+|---|---|---|
+| ServiceNow Table API — record read | YES | 31 (live), 1–5 + 14–15 (stubbed transport over the real adapter code path) |
+| ServiceNow Table API — per-class probe | YES | 29, 30 (live), 8–12 (stubbed) |
+| ServiceNow Table API — count probes | YES | 13, plus the existing live `AQueryThatSelectsOneTeamsWork_ValidatesSuccessfully` |
+| ServiceNow Table API — `metric_definition` | YES | 31 (live), 14–15 (stubbed) |
+| Credential application | reused unchanged | existing live fixture |
+| Persistence (EF) | not touched — read only, no migration | — |
+
+| Driving port | Scenarios |
+|---|---|
+| `GetWorkItemsForTeam` (team sync) | 1–5, 14, 15 |
+| `ValidateTeamSettings` (`PUT /api/teams/{id}`) | 6–13, 29, 30 |
+| `ValidateConnection` | 16 |
+| `TeamSettingDto` (`GET` team settings) | 21–23 |
+| `getDefaultTeamSchema` (settings screen + create wizard) | 24–26 |
+
+No CLI, no hook and no new HTTP route in this slice, so there is no subprocess or endpoint scenario
+to add. `ModifyTeamSettings.tsx` / `CreateTeamWizard.tsx` are asserted through the schema they render
+from rather than through the components, because DESIGN says the components do not change — and a
+component test would pin the gate rather than the answer.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds and skip markers
+
+Zero production scaffolds. 23 tests carry a skip marker and un-skip in DELIVER:
+
+- C#: `[Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]` × 18
+- TypeScript: `describe.skip` × 2 blocks (5 tests)
+
+`grep -rn "DISTILL scaffold for #5611"` finds them all; zero should remain at the end of DELIVER.
+Eight backward-compatibility pins are **not** skipped — they pass on `main` today and exist to fail
+the moment a shipped team's wire form, `Type` or schema flag changes.
+
+Gate state: `dotnet build` 0 warnings / 0 errors · `dotnet test` (ServiceNow + schema filter) 242
+passed, 18 skipped, 0 failed · `pnpm exec tsc -b` exit 0 · `pnpm biome check` clean · Vitest 3
+passed, 5 skipped.
+
+---
+
+## Wave: DISTILL / [REF] Open questions for DELIVER
+
+Not contradictions with DESIGN — gaps DISTILL could not close without inventing contract.
+
+| ID | Question | What DISTILL did |
+|---|---|---|
+| **T-1** | ADR-124 rung 4 ("denied or invisible") has no verdict **code** named anywhere. Rungs 1 and 2 reuse `unknown_table` / `insufficient_permissions`; rung 4's own code is described but never spelt. | Scenario 10 asserts the observable contract DESIGN *does* fix — not valid, message names the class, `fieldName` is `WorkItemTypes` — and deliberately does not pin a string DISTILL would have had to invent. DELIVER names it and tightens the assertion to `Is.EqualTo(...)` in the same commit. |
+| **T-2** | DESIGN reuse row 21 wants the #5613 guard extended with "a second enum pass with a hierarchy-root table". That needs `ForTeam(system, workItemTable)`, which does not exist yet, so a test calling it would not compile and would break `pnpm build`'s sibling gate. | Deferred to DELIVER as a named obligation. AC-B4's behaviour is covered meanwhile through `TeamSettingDto`, which is the shape the settings screen actually reads. |
+| **T-3** | The three new live assertions were compiled and skipped, not run — the PDI credential is not in this working tree. | Classified `MISSING_FUNCTIONALITY` *by construction*, and flagged in `red-classification.md` as derived rather than observed. DoD item 5 already requires a real-instance run; this is where it lands. |
+| **T-4** | `getDefaultTeamSchema`'s two surviving system-type call sites stop compiling when the signature takes a connection (D-D6). | Left as they are, with the obligation noted at the new block's call site. DELIVER updates them along with the cast it deletes. |
+| **T-5** | D3 says Work Item Types "becomes required" when the table has descendants; D-D3 emits the clause "whenever classes are named", so a **leaf**-rooted team that names classes gets them honoured. Scenario 3 pins the hierarchy-rooted single-class form but no scenario pins the leaf-rooted-plus-classes cell of ADR-123 decision 3's table. | Recorded rather than written: it is a fourth cell of a table whose other three are covered, and pinning it would require deciding whether `Type` then comes from the record or the table — which D-D5 answers but no AC names. Cheap for DELIVER to add if the maintainer wants the whole table pinned. |
+
+DISTILL is done; DELIVER un-skips one scenario at a time.
