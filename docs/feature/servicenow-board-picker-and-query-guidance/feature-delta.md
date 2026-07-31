@@ -49,21 +49,61 @@ D-numbers are local to this feature. Epic 5513's own D1–D11 and 5611's D1–D7
 | **D3** | The guidance is carried by the **data-retrieval schema** as a new nullable field, rendered on the field that already exists — **not** hardcoded per connector inside the component. | `GeneralSettingsComponent.tsx:160-182` renders one `TextField` for every connector, labelled from `schema.displayLabel`. Branching on `systemType === "ServiceNow"` inside a shared component is the twin-drift anti-pattern pointing the other way. The schema is where connector knowledge already lives. |
 | **D4** | The new schema field changes in **both twins** — `DataRetrievalSchemaDto.cs` and `DataRetrievalSchemaDefaults.ts` — and the #5613 exhaustiveness guard must still pass. | `docs/evolution/2026-07-30-bug-5613-schema-twin-drift.md`: this table is duplicated knowledge that already drifted once and shipped unsaveable ServiceNow teams. Same constraint 5611 D6 accepted. |
 | **D5** | **`wizardHint` is not the vehicle.** It stays what it is (a wizard id) and a separate field carries the help text. | Measured, not assumed: `wizardHint` is declared in `IDataRetrievalSchema`, set for four connectors in both twins, asserted in `DataRetrievalSchemaDtoTest`, and **consumed by nothing in the frontend**. Overloading a dead field with a second meaning would make it harder to either use or delete. That it is dead is itself a finding — recorded, not fixed here. |
-| **D6** | The board pre-fill rides **5611 slice 01** (class filter): the board's **table** becomes a `sys_class_name` value in **Work Item Types**, the board's **filter** becomes the **query**. | The ADO body says "pre-fill the team's table and query", and the team's table does not exist: ADR-116 puts `Work Item Table` at *connection* scope and `Team` has no option bag (5611 D7). `BoardInformation` already carries `DataRetrievalValue` **and** `WorkItemTypes`, so this needs zero contract change — the picker fills two fields that both already exist. The alternative (ride 5611 slice 02's per-team override) needs a new persisted column and an expand-only migration across every provider, and 5611 deliberately ordered that slice second. Maintainer, 2026-07-31. |
+| **D6** | The board pre-fill rides **5611 slice 01** (class filter): the board's **table** becomes a `sys_class_name` value in **Work Item Types**, the board's **filter** becomes the **query**. | The ADO body says "pre-fill the team's table and query", and there is no team table to fill. Originally because ADR-116 put `Work Item Table` at *connection* scope and `Team` has no option bag (5611 D7); **now because the option is being removed altogether** — see the amendment below. Either way `BoardInformation` already carries `DataRetrievalValue` **and** `WorkItemTypes`, so the pre-fill needs zero contract change. Maintainer, 2026-07-31. |
 | **D7** | ServiceNow implements the **existing** `IBoardInformationProvider` and joins the existing `WizardsController` switch. No new port, no new endpoint, no new dialog. | `GET /api/latest/wizards/{connId}/boards` and `/boards/{boardId}` already exist and are already generic; `BoardWizard.tsx` already serves Jira, ADO and Linear from one component through `DataRetrievalWizardRegistry.ts`. A ServiceNow picker is one provider implementation, one `switch` arm and one registry row. |
 | **D8** | ServiceNow's `inputKind` stays **`freetext`**. Only `wizardHint` is set. | `GeneralSettingsComponent.tsx:126` computes `isDataRetrievalReadOnly = schema?.inputKind !== "freetext"`, so Linear's `wizard-select` makes the field read-only. The ADO body is explicit that manual entry stays the primary path and the pre-filled query must remain fully editable. Copying Linear's shape would silently contradict that. |
 | **D9** | A board read that fails must **not** offer a pre-fill. | `BoardWizard.tsx:71-82` catches a failed `getBoardInformation` and substitutes an all-empty `IBoardInformation`, which is truthy, which enables **Confirm**, which overwrites whatever the user typed with blanks. Given OC-1's live risk that `vtb_board` is 403 for a least-privilege account, this is the epic's signature failure — quietly wrong beating visibly missing — wired up and waiting. Fixing it in the shared component fixes it for Jira, ADO and Linear too. |
 | **D10** | A board whose membership cannot be expressed as a query is **excluded or refused by name**, never silently pre-filled with a partial query. | Freeform boards hold hand-placed `vtb_card` rows that no filter describes. Syncing "the filtered part of a freeform board" is a wrong number that looks right, which is the one outcome this epic exists to prevent. Which of exclude-from-list vs list-and-refuse is a DESIGN call, gated on OC-2. |
 | **D11** | **SPIKE first**, against PDI `dev191338`, **reusing 5611's probe accounts**. | The maintainer's call was "one combined probe run with 5611's OC-1/2/3". **Superseded within the hour: 5611's SPIKE landed first (`1c3cbf58c`) and settled all three of its open calls.** The intent survives the change — 5610's two board questions run on the same instance with the same scaffolding, against the accounts 5611 already created: `lh_probe_none` (no roles), `lh_probe_snc_read` (`sn_incident/change/request_read`, deliberately no `sn_problem_read`), `lh_probe_itil`, all sharing the admin password in `$ServiceNowLighthouseIntegrationTestToken`. So this is now a small standalone probe rather than a combined one, and it is cheaper than when the call was made. |
 | **D12** | **No DESIGN wave for 5610 starts until #5611 is delivered.** Not merely slice 02 — the whole feature waits. | Maintainer, 2026-07-31. D6 makes the picker's entire pre-fill model a consumer of 5611's class filter, so designing against it while it is in flight designs against a moving target. 5611's SPIKE has since confirmed the model holds (`IN` over `^OR`, class names not labels), which removes the re-scope risk but not the gate: the field the picker fills does not exist until 5611 ships it. Slice 01's *content* does not depend on 5611, but it is held by the same gate for sequencing simplicity; it is small enough that waiting costs little. |
-| **D13** | A board pick must not silently move a team into a configuration that **loses its transition history**. | 5611's SPIKE measured that `metric_definition` has **zero rows for `table=task`** — definitions attach to concrete classes only — so a `task`-rooted team gets no state spans at all unless the definition read is class-scoped (5611 slice 01 carries that repair). Worse and outside Lighthouse's reach: stock `change_request` has **no state-tracking definition whatsoever**, so a change-request board can never yield time-in-state however the read is scoped. Picking a board is the easiest way for a user to land in that configuration without having chosen it. Where this surfaces is a DESIGN call (OC-6); that it must surface is not. |
+| **D13** | A board pick must not silently hand a team a **class that yields no time-in-state**. | 5611's SPIKE measured that stock `change_request` has **no state-tracking metric definition at all** — its two definitions sit on `approval` and `type` — so a change-request board can never produce state spans, whatever Lighthouse does. (The related `metric_definition`-is-empty-for-`table=task` finding is 5611's to carry: its class-scoped definition read is the repair, and it is no longer a *choice* a user makes now that every read is task-rooted.) A picker is the one moment the user is choosing a class, so it is the moment to say the choice costs time-in-state. Where it surfaces is a DESIGN call (OC-6); that it must surface is not. |
+
+---
+
+## Wave: DISCUSS / [REF] Amendment — the connection-scope table is going away (2026-07-31)
+
+Written hours after the decisions above, once #5611's delivery landed on local `main` and the
+maintainer confirmed the direction. Recorded as an amendment rather than a rewrite, so the reasoning
+that produced D6 stays legible.
+
+**What changed.** `ServiceNowWorkTrackingOptionNames.WorkItemTable` — the connection-scope option
+ADR-116 introduced — **is being removed**, and every ServiceNow read becomes `task`-rooted. Work in
+progress on `main` at the time of writing; assume it lands.
+
+Note the two commits on `main` read in the opposite order tell a confusing story, and only the later
+one is current: `e466caaf8` cancels 5611's per-team-override slice *because* the table option was
+removed, while `a84859b26` records that the removal was implemented and then **reverted before
+commit**, killed by two PDI measurements — a `task`-rooted read has no `resolved_at` (the Table API
+projects an extended record onto the addressed table's columns, and `sysparm_fields` does not recover
+it), and `ORDERBYsys_created_on` is not a unique sort key, which lost a row across a page boundary.
+**This amendment assumes those two are being solved on `main` as part of the removal.** They are not
+5610's to solve, but if the removal stalls on them, D6 reverts to its original wording and nothing
+else here moves.
+
+**What it changes for 5610 — less than it looks:**
+
+| | Effect |
+|---|---|
+| **D6** | Unaffected in substance, **strengthened** in rationale. With no table field anywhere, Work Item Types is not merely the *available* home for a board's table — it is the only one. |
+| **OC-5** | **Dissolved and re-narrowed.** No configured table means no board-vs-connection mismatch. What survives is the smaller case of a board rooted outside the `task` hierarchy. |
+| **D13 / OC-6** | **Re-aimed.** "The picker steers you into task-rooting" is no longer meaningful when everything is task-rooted. The residual is per-class and outside Lighthouse's reach: stock `change_request` has no state-tracking definition, so a change-request board yields no time-in-state however the read is scoped. OC-6 also got *harder*: 5611 withdrew the connection-validation advice about history rather than rewording it, so there is currently no channel to put this in — the R-2 lesson, again. |
+| **Pre-requisite 1** | **Mostly satisfied already.** 5611 shipped `isWorkItemTypesRequired: true` unconditionally for a ServiceNow team (ADR-123 decision 6, amended 2026-07-31), asserted in both twins. The pre-fill target exists and is visible today. |
+| **D12** | **Unchanged** — the maintainer's gate is on 5611 being *delivered*, not on any one mechanism, and the table removal is precisely the part still in flight. |
+| Slices, stories, ACs, KPIs, WS strategy | **Unchanged.** No AC was written against the connection table. |
+
+**What does not change and is worth saying plainly**: this makes the board picker *more* valuable, not
+less. Removing the table option removes the last place a user could say "my work lives in
+`change_request`" outside of Work Item Types — so the picker, which derives exactly that from a board
+the user already maintains, becomes the shortest path to a correctly-scoped team rather than a
+convenience on top of one.
 
 ---
 
 ## Wave: DISCUSS / [REF] Out of scope
 
 - **The ServiceNow docs page** — D2, it is #5578's.
-- **A per-team table override** — 5611 Story A. D6 routes around needing it.
+- **A per-team table override** — 5611 Story A, since **cancelled** (`e466caaf8`) because the
+  connection-scope table is going away. D6 never needed it.
 - **Field or table discovery** (offering a list of tables/columns to build a query from). SPIKE Q8
   measured `sys_db_object` 403 and `sys_dictionary` 200/EMPTY below `itil`: a discovery UI would work
   for the maintainer and show an empty list to every customer. ADR-116 already declined it.
@@ -78,8 +118,11 @@ D-numbers are local to this feature. Epic 5513's own D1–D11 and 5611's D1–D7
 ## Wave: DISCUSS / [REF] Pre-requisites
 
 1. **#5611 slice 01 (Work Item Types as record classes) must land before 5610 slice 02.** D6 pre-fills
-   Work Item Types with a class name; that field is hidden for a ServiceNow team until 5611 makes it
-   conditional. Slice 01 of *this* feature has no such dependency.
+   Work Item Types with a class name. **Now largely satisfied**: 5611 shipped that field as
+   `isWorkItemTypesRequired: true` unconditionally for a ServiceNow team (ADR-123 decision 6, amended
+   2026-07-31, asserted in both twins), so the pre-fill target already exists and is already visible.
+   What remains is the table-removal work in flight on main. Slice 01 of *this* feature has no such
+   dependency.
 2. **The SPIKE (D11) must close OC-1 and OC-2.** Slice 02 is not buildable until it does. 5611's SPIKE
    (`1c3cbf58c`) already left the probe accounts and scaffolding in place, so this is a short run.
 3. **Story 5577 landed and pushed** — done, `0e2e78340`. Code against
@@ -197,8 +240,8 @@ The epic's standing rule — 164 tests did not find what one manual run did.
 | **OC-2** | Can every board's membership be expressed as a query? | Freeform boards hold hand-placed `vtb_card` rows that no filter describes. Probe: create or find a freeform board and a filtered/guided board, and compare each board's card set against running its stored filter. If they diverge, D10 applies and board support covers filtered boards only — said out loud, not discovered from a wrong throughput. | SPIKE, before DESIGN. |
 | **OC-3** | Which columns carry the table and the filter, and is the stored filter a verbatim encoded query? | The dogfood board showed Board Filter = `Correlation ID = LIGHTHOUSE_DEMO` — a **label**, and the slice-04 dogfood proved `sysparm_query` matches the stored value, not the label (`correlation_id` is the column, and the label form silently matched all 103 incidents). If boards store the label form, pre-filling it verbatim ships the exact query that slice 01's widening guard exists to catch. | SPIKE, before DESIGN. |
 | **OC-4** | `WizardsController` is `[RbacGuard(RbacGuardRequirement.SystemAdmin)]`, while creating a team is `CanCreateTeam`. So a user who may create a team may not be able to use the picker. | Pre-existing and identical for Jira, ADO and Linear, so 5610 is not the place to change it — but it is the reason Story A is ordered first and is not optional: it is the only half that reaches the persona who actually hits the blank field. Decide whether to widen the guard, or to state the constraint in #5578's docs. | Maintainer, before slice 02 DESIGN. |
-| **OC-5** | Does the board's table always sit under the connection's configured table? | D6 turns the board's table into a `sys_class_name` filter, which only reads anything if the connection is rooted at a common ancestor (`task`). A connection rooted at `incident` picking a `change_request` board pre-fills a class the read can never return. Note 5611's SPIKE measured that `sys_class_name=task` is an **exact match, not hierarchy-inclusive** (30 base rows, not the 725 below it), so there is no forgiving fallback to lean on. Needs a stated behaviour: refuse with the mismatch named, or fall back to query-only. | DESIGN, after 5611 slice 01 lands. |
-| **OC-6** | Where does a user learn that the board they picked yields **no time-in-state**? | D13. A `task`-rooted team is the configuration the picker steers people into, and `change_request` has no state-tracking definition at all on a stock instance. Slice 04 already built a connection-validation notice for history being unavailable (ADR-118 D-04-3) — the question is whether that channel covers this case or whether the picker has to say it at pick time, which is the only moment the user is choosing. | DESIGN. |
+| **OC-5** | ~~Does the board's table always sit under the connection's configured table?~~ **Narrowed, 2026-07-31**: what happens to a board rooted **outside** the `task` hierarchy? | The original question dissolves with the connection-scope table (see amendment): every read is task-rooted, so any task-descendant class a board names is reachable and no mismatch is possible. What survives is the outside case — a board on `cmdb_ci`, `sys_user`, or an Agile 2.0 `rm_story`. `sys_class_name` cannot express it from a `task` root, so the picker must refuse by name rather than pre-fill a class that returns nothing. Still needs a stated behaviour, on a smaller surface. | DESIGN. |
+| **OC-6** | Where does a user learn that the board they picked yields **no time-in-state**? | D13. Slice 04 built a connection-validation notice for history being unavailable (ADR-118 D-04-3), but 5611 **withdrew** the advice it used to give rather than rewording it (`e466caaf8`), and parked the replacement against #5612 as probably out of MVP scope. So today there is no channel at all, which makes this the same shape as ruling R-2: do not choose to warn without checking the reader exists. Either the picker says it at pick time, or nobody does. | DESIGN. |
 | **OC-7** | Does the board's stored filter suffer the same ACL blindness as `X-Total-Count`? | 5611's SPIKE found `X-Total-Count` is **ACL-blind** — a no-roles account gets header=103 / body=0 on `incident` — which is both a pre-existing defect in `ValidateTeamSettings`' widening detector and, usefully, a denial detector. If the board list or a board's card count comes back through a similarly blind counter, the picker could show a board it cannot actually read. Worth one read during the SPIKE while the probe accounts are up. | SPIKE, with OC-1. |
 
 ---
@@ -275,8 +318,8 @@ answers may cancel slice 02 outright.
 | 4 | Acceptance criteria testable | AC-A1..A6, AC-B1..B6; each names a surface and an observable outcome. |
 | 5 | Elevator pitch per story | Both stories; both "After" lines name a real UI action and a visible result. |
 | 6 | Effort honestly estimated | ≤1 day each — slice 02 only because the picker port already exists (D7). Contingent on the SPIKE having been paid for separately. |
-| 7 | Dependencies named | 5611 slice 01, the combined SPIKE, #5613's guard, #5578 for docs. |
-| 8 | Open questions recorded rather than assumed | OC-1..OC-5, each with a named settle-by. |
+| 7 | Dependencies named | #5611's delivery, the SPIKE, #5613's guard, #5578 for docs. |
+| 8 | Open questions recorded rather than assumed | OC-1..OC-7, each with a named settle-by. |
 | 9 | Out-of-scope explicit | Listed above, each with a reason. |
 
 Requirements completeness: **0.96** — the residual is OC-3 and OC-5, both of which change slice 02's

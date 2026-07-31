@@ -101,7 +101,7 @@ journeys:
           so unlike Linear the field never goes read-only, because manual entry stays the primary path.
         emotional_state: In control — "pre-filled, not locked"
         shared_artifacts:
-          - Team.WorkItemTypes as a sys_class_name filter (from #5611 slice 01 — this journey is a consumer of it, not the place it is built)
+          - Team.WorkItemTypes as a sys_class_name filter (shipped by #5611 — this journey is a consumer of it, not the place it is built; with the connection-scope Work Item Table option being removed it is the ONLY place a kind of work can be named)
 
       - id: step-meet-an-honest-refusal
         action: A board cannot be read, or its membership is not expressible as a query

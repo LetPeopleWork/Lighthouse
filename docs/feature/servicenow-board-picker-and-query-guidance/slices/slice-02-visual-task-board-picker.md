@@ -1,7 +1,7 @@
 # Slice 02 — pick a Visual Task Board to pre-fill the query and the kind of work
 
 **Story**: B (`../feature-delta.md`) · **ADO**: #5610 · **Effort**: ~1 day, no new port
-**Order**: second (D1). Hard-blocked twice: by the SPIKE (D11) and by #5611 slice 01 (D6, D12).
+**Order**: second (D1). Hard-blocked twice: by the SPIKE (D11) and by #5611's delivery (D6, D12).
 
 ## Goal
 
@@ -40,7 +40,8 @@ why it ships first.
 
 - Changing `inputKind` to `wizard-select` (D8) — that would make the query read-only, contradicting
   "manual entry stays primary".
-- A per-team table override (5611 Story A). D6 exists to avoid needing it.
+- A per-team table override (5611 Story A) — cancelled on main, and the connection-scope table it
+  would have overridden is being removed too. D6 never needed it.
 - Portfolio context — ServiceNow portfolios are `inputKind: "none"`.
 - Deleting the dead `wizardHint` field. Recorded in the delta, belongs in a cleanup.
 - Building a query builder. This slice reads ServiceNow's filter UI output; it does not reimplement it.
@@ -51,16 +52,20 @@ AC-B1..AC-B6 in `../feature-delta.md`.
 
 ## Dependencies
 
-- **#5611 slice 01 delivered** — D6 pre-fills Work Item Types, which is hidden for a ServiceNow team
-  until 5611 makes `isWorkItemTypesRequired` conditional. Also D12's gate.
+- **#5611 delivered** — D12's gate. The pre-fill target itself already exists: 5611 shipped
+  `isWorkItemTypesRequired: true` unconditionally for a ServiceNow team (ADR-123 decision 6, amended
+  2026-07-31), so the field is visible and required today. What is still in flight on `main` is the
+  removal of the connection-scope `Work Item Table` option.
 - **OC-1, OC-2 and OC-3 closed against the PDI.** Not buildable until they are.
-- **OC-5 answered in DESIGN**: what happens when the board's table is not under the connection's
-  configured table. No forgiving fallback exists — 5611's SPIKE measured `sys_class_name=task` as an
-  exact match, not hierarchy-inclusive.
+- **OC-5 answered in DESIGN** — now the narrower question: a board rooted **outside** the `task`
+  hierarchy (`cmdb_ci`, `sys_user`, an Agile 2.0 `rm_story`). `sys_class_name` cannot express it from
+  a `task` root, and 5611's SPIKE measured `sys_class_name=task` as an exact match rather than
+  hierarchy-inclusive, so there is no forgiving fallback. Refuse by name.
 - **OC-6 answered in DESIGN**: where the user learns that the board they picked yields no time-in-state
-  (D13). `metric_definition` has zero rows for `table=task`, and stock `change_request` has no
-  state-tracking definition at all — so a change-request board can never produce spans, whatever
-  Lighthouse does. The picker is the moment the user is choosing, and therefore the moment to say so.
+  (D13). Stock `change_request` has no state-tracking definition at all, so a change-request board can
+  never produce spans whatever Lighthouse does — and 5611 withdrew the connection-validation advice
+  about history rather than rewording it, so there is currently no channel to say it in. The picker is
+  the moment the user is choosing, and may be the only place left to say so.
 
 ## Reference class
 
