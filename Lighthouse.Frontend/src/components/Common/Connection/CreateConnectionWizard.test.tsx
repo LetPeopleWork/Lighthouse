@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
+import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -256,7 +257,7 @@ const createQueryClient = () =>
 
 interface RenderOptions {
 	supportedSystems?: WorkTrackingSystemConnection[];
-	validateConnection?: (conn: unknown) => Promise<boolean>;
+	validateConnection?: (conn: unknown) => Promise<IConnectionValidationResult>;
 	saveConnection?: (
 		conn: WorkTrackingSystemConnection,
 	) => Promise<WorkTrackingSystemConnection>;
@@ -272,7 +273,7 @@ interface RenderOptions {
 const renderWizard = (options: RenderOptions = {}) => {
 	const {
 		supportedSystems = [mockAdoSystem, mockJiraSystem, mockLinearSystem],
-		validateConnection = vi.fn().mockResolvedValue(true),
+		validateConnection = vi.fn().mockResolvedValue({ isValid: true }),
 		saveConnection = vi
 			.fn()
 			.mockImplementation(async (conn: WorkTrackingSystemConnection) => conn),
@@ -535,7 +536,7 @@ describe("CreateConnectionWizard", () => {
 
 		it("validates connection on Next and advances to Name & Create on success", async () => {
 			const user = userEvent.setup();
-			const validateConnection = vi.fn().mockResolvedValue(true);
+			const validateConnection = vi.fn().mockResolvedValue({ isValid: true });
 			renderWizard({ validateConnection });
 			await waitFor(() => {
 				expect(
@@ -560,7 +561,7 @@ describe("CreateConnectionWizard", () => {
 
 		it("shows validation error inline and stays on Auth step when validation fails", async () => {
 			const user = userEvent.setup();
-			const validateConnection = vi.fn().mockResolvedValue(false);
+			const validateConnection = vi.fn().mockResolvedValue({ isValid: false });
 			renderWizard({ validateConnection });
 			await waitFor(() => {
 				expect(
@@ -689,7 +690,7 @@ describe("CreateConnectionWizard", () => {
 
 		it("advances to step 3 when the OAuth popup resolves with success", async () => {
 			const user = userEvent.setup();
-			const validateConnection = vi.fn().mockResolvedValue(true);
+			const validateConnection = vi.fn().mockResolvedValue({ isValid: true });
 			const savedDraft = new WorkTrackingSystemConnection({
 				id: 88,
 				name: "Jira",
@@ -1067,7 +1068,7 @@ describe("CreateConnectionWizard", () => {
 	describe("Step 3: Name & Create", () => {
 		const goToStep3 = async () => {
 			const user = userEvent.setup();
-			const validateConnection = vi.fn().mockResolvedValue(true);
+			const validateConnection = vi.fn().mockResolvedValue({ isValid: true });
 			const saveConnection = vi.fn().mockResolvedValue(undefined);
 			renderWizard({ validateConnection, saveConnection });
 			await waitFor(() => {
@@ -1179,7 +1180,7 @@ describe("CreateConnectionWizard", () => {
 	describe("No standalone Validate button", () => {
 		it("does not render a standalone Validate button at any step", async () => {
 			const user = userEvent.setup();
-			const validateConnection = vi.fn().mockResolvedValue(true);
+			const validateConnection = vi.fn().mockResolvedValue({ isValid: true });
 			renderWizard({ validateConnection });
 
 			// Step 1

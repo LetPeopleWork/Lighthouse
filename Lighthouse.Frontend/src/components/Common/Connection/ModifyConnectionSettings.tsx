@@ -18,6 +18,7 @@ import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
+import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import type {
 	IAuthenticationMethod,
 	IWorkTrackingSystemConnection,
@@ -75,7 +76,7 @@ interface ModifyConnectionSettingsProps {
 	) => Promise<unknown>;
 	validateConnectionSettings: (
 		connection: IWorkTrackingSystemConnection,
-	) => Promise<boolean>;
+	) => Promise<IConnectionValidationResult>;
 	disableSave?: boolean;
 	saveTooltip?: string;
 }
@@ -404,7 +405,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			};
 
 			try {
-				const isValid = await validateConnectionSettings(connection);
+				const { isValid } = await validateConnectionSettings(connection);
 				if (!isValid) {
 					setValidationErrorMessage(
 						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,

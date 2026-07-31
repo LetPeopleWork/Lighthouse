@@ -274,7 +274,9 @@ export const createMockWorkTrackingSystemService =
 			addNewWorkTrackingSystemConnection: vi.fn(),
 			updateWorkTrackingSystemConnection: vi.fn(),
 			deleteWorkTrackingSystemConnection: vi.fn(),
-			validateWorkTrackingSystemConnection: vi.fn(),
+			validateWorkTrackingSystemConnection: vi
+				.fn()
+				.mockResolvedValue({ isValid: false }),
 		};
 	};
 

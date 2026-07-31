@@ -15,6 +15,7 @@ import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useOAuthPopup } from "../../../hooks/useOAuthPopup";
+import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import type {
 	IAuthenticationMethod,
 	IWorkTrackingSystemConnection,
@@ -53,7 +54,7 @@ interface CreateConnectionWizardProps {
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
 	validateConnection: (
 		connection: IWorkTrackingSystemConnection,
-	) => Promise<boolean>;
+	) => Promise<IConnectionValidationResult>;
 	saveConnection: (
 		connection: IWorkTrackingSystemConnection,
 	) => Promise<IWorkTrackingSystemConnection>;
@@ -249,7 +250,8 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		const dto = buildConnectionDto();
 		if (!dto) return false;
 
-		return await validateConnection(dto);
+		const validation = await validateConnection(dto);
+		return validation.isValid;
 	}, [buildConnectionDto, validateConnection]);
 
 	const handleCreate = async () => {

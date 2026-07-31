@@ -283,7 +283,9 @@ describe("ModifyConnectionSettings", () => {
 		defaultProps.getSupportedSystems.mockResolvedValue([mockSystem]);
 		defaultProps.getConnectionSettings.mockResolvedValue(null);
 		defaultProps.saveConnectionSettings.mockResolvedValue(undefined);
-		defaultProps.validateConnectionSettings.mockResolvedValue(true);
+		defaultProps.validateConnectionSettings.mockResolvedValue({
+			isValid: true,
+		});
 	});
 
 	describe("Loading state", () => {
@@ -447,7 +449,9 @@ describe("ModifyConnectionSettings", () => {
 
 		it("shows error and does not save when validation fails", async () => {
 			const user = userEvent.setup();
-			defaultProps.validateConnectionSettings.mockResolvedValue(false);
+			defaultProps.validateConnectionSettings.mockResolvedValue({
+				isValid: false,
+			});
 			renderComponent({
 				getSupportedSystems: vi.fn().mockResolvedValue([mockSystemNoAuth]),
 			});
@@ -508,7 +512,9 @@ describe("ModifyConnectionSettings", () => {
 
 		it("shows a reload-and-reapply message when the save is rejected with a 409 conflict", async () => {
 			const user = userEvent.setup();
-			defaultProps.validateConnectionSettings.mockResolvedValue(true);
+			defaultProps.validateConnectionSettings.mockResolvedValue({
+				isValid: true,
+			});
 			defaultProps.saveConnectionSettings.mockRejectedValue(
 				new ApiError(409, "This record was modified by someone else."),
 			);

@@ -94,12 +94,12 @@ describe("WorkTrackingSystemService", () => {
 		};
 		mockedAxios.post.mockResolvedValueOnce({ data: true });
 
-		const isValid =
+		const validation =
 			await workTrackingSystemService.validateWorkTrackingSystemConnection(
 				mockConnection,
 			);
 
-		expect(isValid).toBe(true);
+		expect(validation).toEqual({ isValid: true });
 		expect(mockedAxios.post).toHaveBeenCalledWith(
 			"/worktrackingsystemconnections/validate",
 			mockConnection,
@@ -126,12 +126,12 @@ describe("WorkTrackingSystemService", () => {
 		};
 		mockedAxios.post.mockResolvedValueOnce({ data: { isValid: true } });
 
-		const isValid =
+		const validation =
 			await workTrackingSystemService.validateWorkTrackingSystemConnection(
 				mockConnection,
 			);
 
-		expect(isValid).toBe(true);
+		expect(validation).toEqual({ isValid: true });
 	});
 
 	it("should get configured work tracking systems", async () => {

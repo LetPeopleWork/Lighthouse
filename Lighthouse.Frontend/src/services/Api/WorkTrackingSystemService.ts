@@ -1,4 +1,8 @@
 import {
+	type IConnectionValidationResult,
+	readConnectionValidation,
+} from "../../models/WorkTracking/ConnectionValidationResult";
+import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -22,7 +26,7 @@ export interface IWorkTrackingSystemService {
 	deleteWorkTrackingSystemConnection(connectionId: number): Promise<void>;
 	validateWorkTrackingSystemConnection(
 		workTrackingConnection: IWorkTrackingSystemConnection,
-	): Promise<boolean>;
+	): Promise<IConnectionValidationResult>;
 }
 
 export class WorkTrackingSystemService
@@ -43,20 +47,16 @@ export class WorkTrackingSystemService
 
 	async validateWorkTrackingSystemConnection(
 		workTrackingConnection: IWorkTrackingSystemConnection,
-	): Promise<boolean> {
+	): Promise<IConnectionValidationResult> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<
-				boolean | { isValid?: boolean }
+				boolean | Partial<IConnectionValidationResult>
 			>(
 				"/worktrackingsystemconnections/validate",
 				this.serializeConnectionForApi(workTrackingConnection),
 			);
 
-			if (typeof response.data === "boolean") {
-				return response.data;
-			}
-
-			return response.data.isValid === true;
+			return readConnectionValidation(response.data);
 		});
 	}
 
