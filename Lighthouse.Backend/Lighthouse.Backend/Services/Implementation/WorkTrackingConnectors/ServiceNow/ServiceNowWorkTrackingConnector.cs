@@ -153,7 +153,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // label is work the flow coach never told Lighthouse how to interpret.
             return mapped
                 .Where(entry => entry.Item.StateCategory != StateCategories.Unknown)
-                .Select(entry => new WorkItem(entry.Item, team) { SyncedTransitions = MovesMadeBy(entry, history, team) })
+                .Select(entry => new WorkItem(entry.Item, team)
+                {
+                    SyncedTransitions = MovesMadeBy(entry, history, team),
+                    StartedDate = WorkStartedFor(entry, history, team),
+                })
                 .ToList();
         }
 
@@ -279,6 +283,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return history.TryGetValue(entry.RecordId, out var spans)
                 ? ServiceNowStateSpanMapper.ToTransitions(spans, team)
                 : [];
+        }
+
+        // ADR-118 decision 7. Where the record's spans were measured, work started when it reached
+        // Doing — and nowhere, where it never did: a record that has not started must not carry a
+        // start date into Cycle Time and Work Item Age. Where no span was measured for it, ADR-117's
+        // request-logged instant stands, inflated by queue time and still the only thing a read-only
+        // account can support.
+        private static DateTime? WorkStartedFor(
+            MappedRecord entry, Dictionary<string, List<ServiceNowStateSpan>> history, Team team)
+        {
+            return history.TryGetValue(entry.RecordId, out var spans)
+                ? ServiceNowStateSpanMapper.WhenWorkStarted(spans, team)
+                : entry.Item.StartedDate;
         }
 
         // DoD 5 forbids the silent no-op: a team quietly losing time-in-state reads as a team whose
