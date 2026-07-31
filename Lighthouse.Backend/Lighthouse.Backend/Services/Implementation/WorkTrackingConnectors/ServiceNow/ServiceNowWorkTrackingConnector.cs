@@ -594,7 +594,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ServiceNowTeamQueryVerdict.FromTeamProbe(scope.Table, matched.Count, everything.Count);
         }
 
-        // ADR-124 decision 1. One cheap probe per named kind of work, at the one moment a human is
+        // ADR-124 decision 1. Cheap probes per named kind of work, at the one moment a human is
         // already waiting on a Save, and never on a refresh. Serial and uncapped (OQ-5): a fan-out
         // here would be the only concurrent call path in this adapter, against an instance whose
         // rate-limiting behaviour is measured at exactly one request rate.
@@ -603,24 +603,73 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             foreach (var recordClass in scope.KindsOfWork)
             {
-                if (!TryCreateProbeUri(instanceUrl, recordClass, out var probeUri))
+                var unreadable = await WhyThisKindOfWorkCannotBeRead(connection, instanceUrl, scope.Table, recordClass);
+
+                if (unreadable is not null)
                 {
-                    return ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl);
-                }
-
-                var answer = await Read(probeUri, connection);
-                var body = ParseRecords(answer.Body);
-
-                var verdict = ServiceNowTeamQueryVerdict.FromClassProbe(
-                    recordClass, answer.StatusCode, body.CarriesRecords, answer.TotalCount, body.Records.Count);
-
-                if (!verdict.IsValid)
-                {
-                    return verdict;
+                    return unreadable;
                 }
             }
 
             return null;
+        }
+
+        // Two probes establishing two different facts, and only the second is the one the sync
+        // depends on (ADR-124 decision 2, amended 2026-07-31). The class's own table answers "is
+        // this a readable table on this instance", and is the only probe that answers 400 to a
+        // misspelling instead of narrowing to nothing. The connection's table answers "are records
+        // of that class reachable through the table this team reads" — measured, a team rooted at
+        // `incident` naming `change_request` passes the first and reads zero.
+        private async Task<ConnectionValidationResult?> WhyThisKindOfWorkCannotBeRead(
+            WorkTrackingSystemConnection connection, string instanceUrl, string table, string recordClass)
+        {
+            if (!TryCreateProbeUri(instanceUrl, recordClass, out var ownTableUri)
+                || !TryCreateClassUnderTableProbeUri(instanceUrl, table, recordClass, out var underTheTableUri))
+            {
+                return ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl);
+            }
+
+            var onItsOwnTable = await Probe(connection, ownTableUri);
+
+            var known = ServiceNowTeamQueryVerdict.FromClassProbe(
+                recordClass,
+                onItsOwnTable.StatusCode,
+                onItsOwnTable.CarriesRecords,
+                onItsOwnTable.RecordsTheInstanceHolds,
+                onItsOwnTable.VisibleRowCount);
+
+            if (!known.IsValid)
+            {
+                return known;
+            }
+
+            // A kind of work the instance holds nothing of anywhere is a legitimate configuration
+            // (OQ-8), and the second probe has nothing to find: under any table it would answer
+            // header = 0, so "not under this table" and "empty everywhere" would be one answer.
+            if (onItsOwnTable.RecordsTheInstanceHolds is < 1)
+            {
+                return null;
+            }
+
+            var underTheTable = await Probe(connection, underTheTableUri);
+
+            var reachable = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
+                recordClass,
+                table,
+                underTheTable.StatusCode,
+                underTheTable.CarriesRecords,
+                underTheTable.RecordsTheInstanceHolds,
+                underTheTable.VisibleRowCount);
+
+            return reachable.IsValid ? null : reachable;
+        }
+
+        private async Task<ProbedTable> Probe(WorkTrackingSystemConnection connection, Uri probeUri)
+        {
+            var answer = await Read(probeUri, connection);
+            var body = ParseRecords(answer.Body);
+
+            return new ProbedTable(answer.StatusCode, body.CarriesRecords, answer.TotalCount, body.Records.Count);
         }
 
         // One row is asked for and the size of the whole result set is read from the header, so a
@@ -833,6 +882,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>Every page of a read, and the status the read ended on.</summary>
         private sealed record PagedRead(HttpStatusCode StatusCode, List<JsonElement> Records);
 
+        /// <summary>
+        /// One <c>sysparm_limit=1</c> probe, reduced to the four scalars a verdict is read from. The
+        /// gap between what the instance says it holds and what came back is the whole mechanism
+        /// (ADR-124).
+        /// </summary>
+        private sealed record ProbedTable(
+            HttpStatusCode StatusCode, bool CarriesRecords, int? RecordsTheInstanceHolds, int VisibleRowCount);
+
         /// <summary>One record as mapped, kept alongside the handle its history is fetched by.</summary>
         private sealed record MappedRecord(string Label, string RecordId, WorkItemBase Item);
 
@@ -880,6 +937,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // No sysparm_fields: field projection was never measured against ACL row filtering
             // (SPIKE Q8), and this probe exists to distrust exactly that substrate.
             return TryCreateTableUri(instanceUrl, table, SingleRowParameter, out probeUri);
+        }
+
+        // The clause comes from the same pure function the read emits, so the probe cannot drift
+        // into a form the sync never asks in — and one class always means the measured `=` shape.
+        private static bool TryCreateClassUnderTableProbeUri(
+            string instanceUrl, string table, string recordClass, [NotNullWhen(true)] out Uri? probeUri)
+        {
+            var classClause = ServiceNowReadScope.Matching(ServiceNowWorkItemMapper.RecordClassField, [recordClass]);
+
+            return TryCreateTableUri(
+                instanceUrl, table, $"{SingleRowParameter}&sysparm_query={Uri.EscapeDataString(classClause)}", out probeUri);
         }
 
         private static bool TryCreateTableUri(string instanceUrl, string table, string parameters, [NotNullWhen(true)] out Uri? tableUri)

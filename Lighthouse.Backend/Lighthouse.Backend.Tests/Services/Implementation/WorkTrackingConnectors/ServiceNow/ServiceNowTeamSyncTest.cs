@@ -507,6 +507,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // The unfiltered probe can fail on its own — a credential may be allowed to read a table
         // through a filter and refused without one. Reporting that as a verdict on the query would
         // send the flow coach to edit a query that is not the problem.
+        //
+        // Request 4 is that probe: the two class probes (#5611 — the class's own table, then that
+        // class under the team's table) come first, then the matched count, then this one.
         [Test]
         public async Task ValidatingATeam_WhenTheProbeForTheWholeTableIsRefused_ReportsTheRefusal()
         {
@@ -516,7 +519,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 {
                     PageSize = 10,
                     RowsTheQuerySelects = 2,
-                    BreaksFromRequest = 2,
+                    BreaksFromRequest = 4,
                     Breakage = ARefusedRead,
                 }));
 

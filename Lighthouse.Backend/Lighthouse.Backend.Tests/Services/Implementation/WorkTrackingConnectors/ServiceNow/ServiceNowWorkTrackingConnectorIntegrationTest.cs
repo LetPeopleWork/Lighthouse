@@ -315,6 +315,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
+        /// Story #5611, AC-B6 / ADR-124 decision 2 as amended. The probe on a class's own table
+        /// establishes "this name is a readable table on this instance"; the read needs the strictly
+        /// stronger "records of this class are readable <i>under the table this connection reads</i>",
+        /// and only a class-scoped probe against that table measures it. The two answers genuinely
+        /// diverge on a real instance and cannot be told apart from a fixture:
+        /// <c>/change_request</c> reports 105 while <c>/incident?sys_class_name=change_request</c>
+        /// reports 0, to the same account, in the same second. If this ever passes, ServiceNow has
+        /// started resolving <c>sys_class_name</c> across the hierarchy and the refusal is wrong.
+        /// </summary>
+        [Test]
+        public async Task AKindOfWorkThatDoesNotLiveUnderTheConfiguredTable_IsToldApartFromOneThatDoes()
+        {
+            var subject = CreateSubject();
+
+            var underItsOwnRoot = await subject.ValidateTeamSettings(
+                ATeamCovering([ChangeTable], "active=true", AdminUser));
+
+            var underTheWrongRoot = ATeamReadingIncidents("active=true");
+            underTheWrongRoot.WorkItemTypes = [ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, ChangeTable];
+
+            var result = await subject.ValidateTeamSettings(underTheWrongRoot);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(underItsOwnRoot.IsValid, Is.True, underItsOwnRoot.Message);
+                Assert.That(result.IsValid, Is.False,
+                    "change_request is readable on its own table, so the class ladder alone accepts this team — and it then syncs no change at all.");
+                Assert.That(result.Code, Is.EqualTo("class_not_under_configured_table"));
+                Assert.That(result.Message, Does.Contain(ChangeTable).And.Contain(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable));
+            }
+        }
+
+        /// <summary>
         /// S4. metric_definition rows attach to concrete classes and never to the base table — measured
         /// 0 for <c>table=task</c>, 6 for <c>tableINincident,change_request</c>. Shipping the class
         /// filter without scoping the definition read takes every started date and state span away from

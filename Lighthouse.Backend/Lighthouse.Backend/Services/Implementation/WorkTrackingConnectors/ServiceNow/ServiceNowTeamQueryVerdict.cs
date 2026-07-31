@@ -100,6 +100,80 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Success();
         }
 
+        /// <summary>
+        /// The second half of the class ladder (ADR-124 decision 2, amended 2026-07-31): what
+        /// <c>/api/now/table/{table}?sysparm_query=sys_class_name={recordClass}</c> answered.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="FromClassProbe"/> establishes "this name is a readable table on this instance".
+        /// The read needs the strictly stronger "records whose own class is this name are readable
+        /// <i>under the table this connection is rooted at</i>", and only this probe measures it.
+        /// Measured on the PDI: a team rooted at <c>incident</c> naming <c>change_request</c> passes
+        /// the first probe (105 rows on its own table) and answers <c>header = 0</c> here — it would
+        /// have synced nothing of that kind and said nothing about it.
+        /// <para>
+        /// Only reached for a class the instance holds records of somewhere, which is what makes
+        /// <c>header = 0</c> mean "not under this table" rather than "empty everywhere".
+        /// </para>
+        /// </remarks>
+        /// <param name="recordClass">The class name the flow coach typed.</param>
+        /// <param name="table">The table this connection reads, and the one the probe addressed.</param>
+        /// <param name="statusCode">What the instance answered.</param>
+        /// <param name="carriesRecords">Whether the body parsed and carried a record set.</param>
+        /// <param name="recordsTheInstanceHolds">
+        /// <c>X-Total-Count</c> for that class under that table, or <c>null</c> where the header was
+        /// absent. Measured ACL-blind through a class-scoped <c>sysparm_query</c> as well as at table
+        /// granularity: <c>/task?sys_class_name=problem</c> reports 24 to an account shown none of them.
+        /// </param>
+        /// <param name="visibleRowCount">Rows the account actually got back.</param>
+        public static ConnectionValidationResult FromClassUnderTableProbe(
+            string recordClass,
+            string table,
+            HttpStatusCode statusCode,
+            bool carriesRecords,
+            int? recordsTheInstanceHolds,
+            int visibleRowCount)
+        {
+            if (statusCode != HttpStatusCode.OK || !carriesRecords)
+            {
+                // The table is the connection's, so the ladder names the table rather than the class.
+                return AboutTheKindOfWork(
+                    ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, visibleRowCount, table));
+            }
+
+            if (recordsTheInstanceHolds is null)
+            {
+                return AboutTheKindOfWork(FromUncountableResultSet(table));
+            }
+
+            if (recordsTheInstanceHolds < 1)
+            {
+                return NotUnderTheTable(recordClass, table);
+            }
+
+            if (visibleRowCount < 1)
+            {
+                return RecordsNotVisible(recordClass);
+            }
+
+            return ConnectionValidationResult.Success();
+        }
+
+        // Neither "this kind of work does not exist" nor "it is empty" — the probe on its own table
+        // has already ruled both out, each with a better message. What is left is a real, populated
+        // class whose records live somewhere else in the instance, which is what a flow coach reaches
+        // by naming a sibling of the table their connection reads.
+        private static ConnectionValidationResult NotUnderTheTable(string recordClass, string table)
+        {
+            return ConnectionValidationResult.Failure(
+                "class_not_under_configured_table",
+                $"'{recordClass}' is a kind of work this instance holds, but none of it lives under '{table}' — the table this connection reads. This team would sync nothing of that kind, and say nothing about it. Either name only kinds of work that '{table}' covers, or point the connection at a table they all sit under.",
+                // Stryker disable once String: the two ways out are named in the message above, which
+                // is what the flow coach acts on. This repeats the counts for a support log.
+                $"'{table}' reported no records of the kind '{recordClass}' in X-Total-Count, while '{recordClass}' itself holds some.",
+                KindsOfWorkFieldName);
+        }
+
         // Suspicion, not proof: rows all filtered out by row-level ACLs for legitimate reasons read
         // identically to a class-level denial, so the message names both causes rather than asserting
         // a certainty the platform cannot supply. Same house style as no_records_visible.

@@ -265,24 +265,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // S2 and OQ-5: one cheap probe per named kind of work, at the one moment a human is already
-        // waiting on a Save, and never on a refresh. Serial and uncapped, matching every other read
-        // in this connector.
+        // AC-B6, and the fact the read actually depends on. A kind of work can be perfectly readable
+        // on its own table and still be unreachable through the table this connection is rooted at:
+        // measured on the PDI, /change_request answers 105 rows to the same account that gets
+        // header = 0 from /incident?sys_class_name=change_request. Probing only the class's own table
+        // accepts that team, which then syncs nothing of that kind and says nothing about it.
         [Test]
-        public async Task SavingATeamThatNamesThreeKindsOfWork_AsksTheInstanceAboutEachOfThemOnce()
+        public async Task SavingATeamThatNamesAKindOfWorkThatDoesNotLiveUnderItsTable_IsToldSoAndToldWhichTable()
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var subject = CreateSubject(instance);
+
+            var result = await subject.ValidateTeamSettings(
+                ATeamWorkingOn(IncidentsAndChanges, rootedAt: Incidents));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("class_not_under_configured_table"));
+                Assert.That(result.Message, Does.Contain(Changes).And.Contain(Incidents),
+                    "Both halves or there is nothing to act on: which kind of work, and which table it is not under.");
+                Assert.That(result.Message, Does.Not.Contain("does not exist"),
+                    "The class exists and is readable. Saying otherwise sends the flow coach to check a spelling that is right.");
+                Assert.That(result.FieldName, Is.EqualTo("WorkItemTypes"));
+            }
+        }
+
+        // The converse, and the reason this is two probes rather than a rule about table names: the
+        // same two kinds of work under a table that does cover them go through without a false alarm.
+        [Test]
+        public async Task SavingATeamWhoseKindsOfWorkAllLiveUnderItsTable_IsAccepted()
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var subject = CreateSubject(instance);
+
+            var result = await subject.ValidateTeamSettings(
+                ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy));
+
+            Assert.That(result.Code, Is.EqualTo("valid"), result.Message);
+        }
+
+        // S2 and OQ-5: two cheap probes per named kind of work, at the one moment a human is already
+        // waiting on a Save, and never on a refresh. Serial and uncapped, matching every other read
+        // in this connector — the budget doubled, not fanned out.
+        [Test]
+        public async Task SavingATeamThatNamesThreeKindsOfWork_AsksTheInstanceAboutEachOfThemTwice()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
             await subject.ValidateTeamSettings(ATeamWorkingOn(IncidentsChangesAndProblems, rootedAt: TheWholeHierarchy));
 
+            var probesUnderTheTable = QueriesAskedOf(instance, TheWholeHierarchy)
+                .Where(query => query.Contains("sys_class_name=", StringComparison.Ordinal))
+                .ToList();
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(ProbesOf(instance, Incidents), Has.Count.EqualTo(1));
                 Assert.That(ProbesOf(instance, Changes), Has.Count.EqualTo(1));
                 Assert.That(ProbesOf(instance, Problems), Has.Count.EqualTo(1));
-                Assert.That(instance.Requests, Has.Count.EqualTo(5),
-                    "Three kinds of work plus the two counts the widening detector already costs. Nothing fans out.");
+                Assert.That(probesUnderTheTable, Has.Count.EqualTo(3),
+                    "And each one asked again under the table the team reads, which is the fact the sync depends on.");
+                Assert.That(instance.Requests, Has.Count.EqualTo(8),
+                    "Two probes per kind of work plus the two counts the widening detector already costs. Nothing fans out.");
             }
         }
 
@@ -301,9 +347,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(counts, Has.Count.EqualTo(2));
-                Assert.That(counts, Is.All.Contain("sys_class_nameINincident,change_request"),
-                    "Both sides of the comparison count the same kinds of work.");
+                Assert.That(counts, Has.Exactly(2).Contains("sys_class_nameINincident,change_request"),
+                    "Both sides of the comparison count the same kinds of work. The per-class probes name one kind each and are not it.");
                 Assert.That(counts, Has.Exactly(1).Contains(TeamsOwnQuery),
                     "One side carries the team's query and the other does not. That difference IS the detection.");
             }
