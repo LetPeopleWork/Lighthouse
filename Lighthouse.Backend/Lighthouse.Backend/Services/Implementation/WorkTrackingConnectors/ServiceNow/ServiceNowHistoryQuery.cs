@@ -82,19 +82,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public static IReadOnlyList<ServiceNowStateSpan> SpansFrom(
             IReadOnlyList<JsonElement> rows, IReadOnlyCollection<string> stateSpanDefinitionIds)
         {
-            var spans = new List<ServiceNowStateSpan>();
-
-            foreach (var row in rows)
-            {
-                var span = SpanFrom(row, stateSpanDefinitionIds);
-
-                if (span != null)
-                {
-                    spans.Add(span);
-                }
-            }
-
-            return spans;
+            return [.. rows.Select(row => SpanFrom(row, stateSpanDefinitionIds)).OfType<ServiceNowStateSpan>()];
         }
 
         private static ServiceNowStateSpan? SpanFrom(JsonElement row, IReadOnlyCollection<string> stateSpanDefinitionIds)

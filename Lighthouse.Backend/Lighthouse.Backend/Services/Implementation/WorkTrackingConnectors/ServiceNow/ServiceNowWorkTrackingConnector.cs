@@ -134,13 +134,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             try
             {
-                var definitions = await ReadEveryPage(
-                    connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(table), WhenRefused.Downgrade);
+                var definitions = await ReadStateSpanDefinitions(connection, table);
 
-                var availability = ServiceNowHistoryVerdict.From(
-                    definitions.StatusCode, DefinitionIdsIn(definitions.Records).Count);
-
-                return ServiceNowHistoryVerdict.ToValidationResult(availability, table);
+                return ServiceNowHistoryVerdict.ToValidationResult(definitions.Availability, table);
             }
             catch (ServiceNowReadException)
             {
@@ -244,20 +240,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return [];
             }
 
-            var definitions = await ReadEveryPage(
-                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(table), WhenRefused.Downgrade);
+            var definitions = await ReadStateSpanDefinitions(connection, table);
+            observedAvailability = definitions.Availability;
 
-            var stateSpanDefinitions = DefinitionIdsIn(definitions.Records);
-            observedAvailability = ServiceNowHistoryVerdict.From(definitions.StatusCode, stateSpanDefinitions.Count);
-
-            if (observedAvailability != ServiceNowHistoryAvailability.Available)
+            if (definitions.Availability != ServiceNowHistoryAvailability.Available)
             {
-                ReportHistoryUnavailable(team, observedAvailability.Value);
+                ReportHistoryUnavailable(team, definitions.Availability);
 
                 return [];
             }
 
-            return await ReadSpans(connection, recordIds, stateSpanDefinitions, team);
+            return await ReadSpans(connection, recordIds, definitions.Ids, team);
         }
 
         // One request per batch of records rather than one per record: at ~600ms per call with no
@@ -305,12 +298,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             recordsSpans.Add(span);
         }
 
-        private static List<string> DefinitionIdsIn(List<JsonElement> definitions)
+        // ADR-118 D5: capability is read from the instance, never inferred — the administrator's
+        // validation and the sync ask this same question of the same table.
+        private async Task<StateSpanDefinitions> ReadStateSpanDefinitions(
+            WorkTrackingSystemConnection connection, string table)
         {
-            return definitions
+            var read = await ReadEveryPage(
+                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(table), WhenRefused.Downgrade);
+
+            var definitionIds = read.Records
                 .Select(ServiceNowWorkItemMapper.ReadRecordId)
                 .Where(definitionId => !string.IsNullOrWhiteSpace(definitionId))
                 .ToList();
+
+            return new StateSpanDefinitions(
+                ServiceNowHistoryVerdict.From(read.StatusCode, definitionIds.Count), definitionIds);
         }
 
         // The moves a record made, or none where the instance measured none. Set as the WorkItem is
@@ -765,6 +767,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         /// <summary>One record as mapped, kept alongside the handle its history is fetched by.</summary>
         private sealed record MappedRecord(string Label, string RecordId, WorkItemBase Item);
+
+        /// <summary>The definitions measuring state on a table, and what their read says the instance can supply.</summary>
+        private sealed record StateSpanDefinitions(ServiceNowHistoryAvailability Availability, List<string> Ids);
 
         private sealed record ServiceNowBody(bool ResponseIsJson, bool CarriesRecords, List<JsonElement> Records);
 
