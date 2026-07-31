@@ -106,7 +106,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 var answer = await Read(probeUri, connection);
                 var (responseIsJson, rowCount) = ReadRows(answer.Body);
 
-                return ServiceNowValidationVerdict.FromResponse(answer.StatusCode, responseIsJson, rowCount, table);
+                var verdict = ServiceNowValidationVerdict.FromResponse(answer.StatusCode, responseIsJson, rowCount, table);
+
+                // The capability question is only worth asking of a connection that already works —
+                // every failure rung above returns before it, so a closed port stays connection_failed.
+                return verdict.IsValid
+                    ? await CapabilityOf(connection, table, verdict)
+                    : verdict;
             }
             catch (HttpRequestException exception)
             {
@@ -115,6 +121,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             catch (TaskCanceledException exception)
             {
                 return UnreachableInstance(exception, instanceUrl);
+            }
+        }
+
+        // ADR-118 D5: what the instance can actually measure, read rather than inferred from
+        // configuration — a second round trip, at the one moment the administrator clicked a button
+        // and expects a wait. A capability limit is not a broken connection, so nothing that goes
+        // wrong here may fail the validation: whatever the read did, the verdict on the connection
+        // the administrator was testing stands, without an advisory.
+        private async Task<ConnectionValidationResult> CapabilityOf(
+            WorkTrackingSystemConnection connection, string table, ConnectionValidationResult workingConnection)
+        {
+            try
+            {
+                var definitions = await ReadEveryPage(
+                    connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(table), WhenRefused.Downgrade);
+
+                var availability = ServiceNowHistoryVerdict.From(
+                    definitions.StatusCode, DefinitionIdsIn(definitions.Records).Count);
+
+                return ServiceNowHistoryVerdict.ToValidationResult(availability, table);
+            }
+            catch (ServiceNowReadException)
+            {
+                return workingConnection;
+            }
+            catch (HttpRequestException)
+            {
+                return workingConnection;
+            }
+            catch (TaskCanceledException)
+            {
+                return workingConnection;
             }
         }
 

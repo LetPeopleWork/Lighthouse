@@ -98,17 +98,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             VerifyRequestCount(handler, 0);
         }
 
-        // ~600ms per Table API call was measured during the SPIKE, so validation asks the instance
-        // exactly one question and asks for exactly one row.
+        // Since ADR-118 D5 the probe is the first question validation asks rather than the only one:
+        // a capability read follows it. The SPIKE's ~600ms per call still governs the sync path.
         [Test]
-        public async Task ValidatingAConnection_AsksTheConfiguredTableForASingleRecordAndNothingElse()
+        public async Task ValidatingAConnection_AsksTheConfiguredTableForASingleRecord()
         {
             var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
             var subject = CreateSubject(handler);
 
             await subject.ValidateConnection(CreateConnection(table: "change_request"));
 
-            var probe = CapturedRequests(handler).Single();
+            var probe = CapturedRequests(handler)[0];
             var probeUri = probe.RequestUri?.ToString() ?? string.Empty;
 
             using (Assert.EnterMultipleScope())
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.ValidateConnection(CreateConnection(table: null));
 
-            var probeUri = CapturedRequests(handler).Single().RequestUri?.ToString() ?? string.Empty;
+            var probeUri = CapturedRequests(handler)[0].RequestUri?.ToString() ?? string.Empty;
 
             Assert.That(probeUri, Does.Contain($"/api/now/table/{ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable}"));
         }
@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.ValidateConnection(CreateConnection(authenticationMethodKey: storedKey));
 
-            factory.Verify(f => f.Resolve(AuthenticationMethodKeys.ServiceNowBasic), Times.Once);
+            factory.Verify(f => f.Resolve(AuthenticationMethodKeys.ServiceNowBasic), Times.AtLeastOnce);
         }
 
         // ...and a connection that does record one is authenticated with that one, so the fallback
@@ -346,7 +346,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.ValidateConnection(CreateConnection(authenticationMethodKey: "servicenow.oauth"));
 
-            factory.Verify(f => f.Resolve("servicenow.oauth"), Times.Once);
+            factory.Verify(f => f.Resolve("servicenow.oauth"), Times.AtLeastOnce);
         }
 
         private static ServiceNowWorkTrackingConnector CreateSubject(
