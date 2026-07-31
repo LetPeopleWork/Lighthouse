@@ -67,8 +67,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// The number the service desk quotes, e.g. <c>INC0010029</c>. It is also what tells one
-        /// record from another across pages.
+        /// The number the service desk quotes, e.g. <c>INC0010029</c>. Not unique on a real instance
+        /// and never an identity — see <see cref="ReadRecordId"/>.
         /// </summary>
         public static string ReadRecordNumber(JsonElement record)
         {
@@ -76,9 +76,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// The record's <c>sys_id</c> — the handle <c>metric_instance.id</c> is keyed on, and the only
-        /// way to ask for a batch of records' history. Distinct from <see cref="ReadRecordNumber"/>,
-        /// which is what a service desk quotes and what Lighthouse shows.
+        /// The record's <c>sys_id</c> — the handle <c>metric_instance.id</c> is keyed on, the only
+        /// way to ask for a batch of records' history, and the only field that tells one record from
+        /// another across pages. Distinct from <see cref="ReadRecordNumber"/>, which is what a
+        /// service desk quotes, what Lighthouse shows, and what a busy instance re-issues.
         /// </summary>
         public static string ReadRecordId(JsonElement record)
         {

@@ -258,7 +258,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void AnInstanceThatIgnoresTheOffsetItWasGiven_IsCaughtRatherThanCountedTwice()
         {
             var subject = CreateSubject(AnInstanceHolding(
-                FiveRecordsOfMixedState(),
+                FiveRecordsCarryingTheirIdentity(),
                 new InstanceBehaviour { PageSize = 2, IgnoresTheOffset = true }));
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
@@ -597,10 +597,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(instance.Requests, Has.Count.EqualTo(1));
         }
 
-        // `number` is an ITSM task field, not a Table API guarantee. Records without one are still
-        // distinct records, and treating them as repeats would fail the sync of a custom table.
+        // A record that carries neither identity is still a distinct record. Treating the two as
+        // repeats of one another would fail the sync of a table that answers with neither field.
         [Test]
-        public async Task RecordsThatCarryNoNumber_AreNotMistakenForRepeatsOfOneAnother()
+        public async Task RecordsThatCarryNoIdentity_AreNotMistakenForRepeatsOfOneAnother()
         {
             var subject = CreateSubject(AnInstanceHolding(
                 [ARecordWithoutANumber("first"), ARecordWithoutANumber("second")],
@@ -611,11 +611,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(workItems.ToList(), Has.Count.EqualTo(2));
         }
 
+        // `number` is not unique on a real instance. Measured on the PDI, 2026-07-31: the demo seeder
+        // minted CHG0030004-CHG0030008 over stock sample changes shipped in 2025-11, and
+        // change_request held 118 rows with 113 distinct numbers. Identifying records by it made one
+        // collision anywhere in the result set cost the customer every work item on that team.
+        [Test]
+        public async Task RecordsThatShareANumber_AreBothReadRatherThanFailingTheWholeTeam()
+        {
+            var subject = CreateSubject(AnInstanceHolding(
+                [
+                    ARecord("CHG0030004", "In Progress", "2", sysId: "1d5b3e79c0a801670060f9d8b1c1a2f1"),
+                    ARecord("CHG0030004", "In Progress", "2", sysId: "46e88ff0a9fe19810012d100cca80666"),
+                ],
+                pageSize: 10));
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+
+            Assert.That(workItems.ToList(), Has.Count.EqualTo(2),
+                "Two records that happen to share a number are two records, and the guard exists to catch a repeated page rather than a repeated label.");
+        }
+
+        // The other half: a record genuinely served twice across pages still stops the read, which is
+        // the protection the guard exists for. The instance re-sends it with its text changed, so
+        // only sys_id can recognise it.
         [Test]
         public void ARecordSentAgainAfterItWasEdited_IsStillRecognisedAsOneAlreadyRead()
         {
             var subject = CreateSubject(AnInstanceHolding(
-                FiveRecordsOfMixedState(),
+                FiveRecordsCarryingTheirIdentity(),
                 new InstanceBehaviour { PageSize = 2, ResendsTheFirstRecordAmended = true }));
 
             var failure = Assert.ThrowsAsync<ServiceNowReadException>(
@@ -750,25 +773,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // INC0000005 sits in a label the team has not mapped.
         private static List<string> FiveRecordsOfMixedState()
         {
+            return FiveRecords(withIdentities: false);
+        }
+
+        // The same five as a real instance sends them, every record carrying its sys_id. Kept apart
+        // from the fixture above because a record with an identity also triggers the history read,
+        // and the paging tests count requests.
+        private static List<string> FiveRecordsCarryingTheirIdentity()
+        {
+            return FiveRecords(withIdentities: true);
+        }
+
+        private static List<string> FiveRecords(bool withIdentities)
+        {
             return
             [
-                ARecord("INC0000001", "Resolved", "6", resolvedDisplay: "2026-07-29 17:25:29", resolvedValue: "2026-07-30 00:25:29"),
-                ARecord("INC0000002", "Resolved", "6", resolvedDisplay: "2026-07-28 09:00:00", resolvedValue: "2026-07-28 16:00:00"),
-                ARecord("INC0000003", "In Progress", "2"),
-                ARecord("INC0000004", "New", "1"),
-                ARecord("INC0000005", "Awaiting Vendor", "18"),
+                ARecord("INC0000001", "Resolved", "6", "2026-07-29 17:25:29", "2026-07-30 00:25:29", IdentityOf("INC0000001", withIdentities)),
+                ARecord("INC0000002", "Resolved", "6", "2026-07-28 09:00:00", "2026-07-28 16:00:00", IdentityOf("INC0000002", withIdentities)),
+                ARecord("INC0000003", "In Progress", "2", sysId: IdentityOf("INC0000003", withIdentities)),
+                ARecord("INC0000004", "New", "1", sysId: IdentityOf("INC0000004", withIdentities)),
+                ARecord("INC0000005", "Awaiting Vendor", "18", sysId: IdentityOf("INC0000005", withIdentities)),
             ];
         }
 
+        private static string IdentityOf(string number, bool withIdentities)
+        {
+            return withIdentities ? $"sys{number.ToLowerInvariant()}" : string.Empty;
+        }
+
+        // An empty sys_id is how a table that does not answer with one reads to the mapper, so the
+        // default keeps the fixture on the identity-less path the paging tests were written against.
         private static string ARecord(
             string number,
             string stateLabel,
             string stateValue,
             string resolvedDisplay = "",
-            string resolvedValue = "")
+            string resolvedValue = "",
+            string sysId = "")
         {
             return $$"""
                 {
+                  "sys_id": { "display_value": "{{sysId}}", "value": "{{sysId}}" },
                   "number": { "display_value": "{{number}}", "value": "{{number}}" },
                   "short_description": { "display_value": "Request {{number}}", "value": "Request {{number}}" },
                   "state": { "display_value": "{{stateLabel}}", "value": "{{stateValue}}" },

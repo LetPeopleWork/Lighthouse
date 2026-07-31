@@ -449,11 +449,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return body.Records;
         }
 
+        // Identity is sys_id, never number. `number` is not unique on a real instance — measured on
+        // the PDI, change_request held 118 rows with 113 distinct numbers — and tripping this guard
+        // aborts the whole team's sync, so one collision anywhere would cost a customer every work
+        // item on that team rather than the colliding pair.
         private static void GuardAgainstRepeatedRecords(List<JsonElement> page, HashSet<string> alreadyRead, string table)
         {
             foreach (var record in page)
             {
-                var identity = ServiceNowWorkItemMapper.ReadRecordNumber(record);
+                var identity = ServiceNowWorkItemMapper.ReadRecordId(record);
 
                 if (!alreadyRead.Add(string.IsNullOrWhiteSpace(identity) ? record.GetRawText() : identity))
                 {
