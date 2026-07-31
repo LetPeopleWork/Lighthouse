@@ -3,12 +3,10 @@ using Lighthouse.Backend.Models.Validation;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
-    // SCAFFOLD (DISTILL slice 04, Story #5577)
-    //
-    // ADR-118 decision 5. The second pure core, on ADR-114's pattern: three scalars in, a verdict out,
-    // no IO. Two different things stop a team getting true time-in-progress, and — unlike the
-    // rights-versus-empty case that forced the C-1 amendment in slice 01 — the platform CAN tell them
-    // apart. Conflating them would repeat this epic's headline mistake in a new place.
+    /// <summary>
+    /// Whether a ServiceNow instance can supply transition history, and what an administrator would
+    /// have to change if it cannot. Pure (ADR-114): scalars in, a verdict out, no IO.
+    /// </summary>
     public static class ServiceNowHistoryVerdict
     {
         /// <summary>The account cannot read the metric tables at all.</summary>
@@ -17,7 +15,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>The account can read them, but the instance measures no state spans.</summary>
         public const string NoStateMetricCode = "history_requires_state_metric";
 
-        private const string ScaffoldSentinel = "__scaffold__";
+        // ADR-117: whichever cause fired, the administrator has to learn which number they get meanwhile.
+        private const string RequestToResolutionCaveat =
+            "Until then, cycle time and work item age for this team are measured opened-to-resolution — from when the "
+            + "record was raised to when it was closed — which reads longer than the time the team spent working on it.";
 
         /// <summary>
         /// Decides whether this instance can supply transition history, from the answer to the
@@ -26,12 +27,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public static ServiceNowHistoryAvailability From(HttpStatusCode statusCode, int stateSpanDefinitions)
         {
-            // The scaffold answers with the CONSERVATIVE wrong value on purpose. Returning Available
-            // would be a scaffold that says history works whatever the instance answered — the same
-            // success-costume shape slice 01 found in its own ValidateConnection scaffold, and the
-            // one this epic exists to prevent. Being wrong towards "unavailable" cannot fake a
-            // passing capability test.
-            return ServiceNowHistoryAvailability.NoStateMetric;
+            // A refusal outranks the count: zero definitions came back because the read was refused,
+            // not because none exist, and the two remedies are different (ADR-118 D5).
+            if (statusCode == HttpStatusCode.Forbidden)
+            {
+                return ServiceNowHistoryAvailability.NoRights;
+            }
+
+            // An unrecognised answer is not evidence that history works. It resolves to the remedy an
+            // administrator can verify before acting on it — rationale in the commit for step 04-03.
+            if (statusCode != HttpStatusCode.OK)
+            {
+                return ServiceNowHistoryAvailability.NoStateMetric;
+            }
+
+            return stateSpanDefinitions > 0
+                ? ServiceNowHistoryAvailability.Available
+                : ServiceNowHistoryAvailability.NoStateMetric;
         }
 
         /// <summary>
@@ -40,9 +52,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public static ConnectionValidationResult ToValidationResult(ServiceNowHistoryAvailability availability, string table)
         {
-            // Failure rather than SuccessWith: a scaffold that already returns a valid result would
-            // let the "an advisory never fails the connection" test pass before anything implements it.
-            return ConnectionValidationResult.Failure(ScaffoldSentinel, ScaffoldSentinel);
+            return availability switch
+            {
+                ServiceNowHistoryAvailability.NoRights => ConnectionValidationResult.SuccessWith(
+                    NoRightsCode,
+                    "The connection works, but ServiceNow refuses this account the metric tables, so Lighthouse cannot "
+                    + "see when work started or stopped. Ask your ServiceNow administrator to grant the integration "
+                    + "account the itil role, then validate the connection again to pick up true time in progress. "
+                    + RequestToResolutionCaveat),
+
+                ServiceNowHistoryAvailability.NoStateMetric => ConnectionValidationResult.SuccessWith(
+                    NoStateMetricCode,
+                    $"The connection works, but nothing on the {table} table measures how long a record spends in each "
+                    + "state, so Lighthouse cannot see when work started or stopped. Activate a Field value duration "
+                    + $"metric definition on the state field of {table}, then validate the connection again to pick up "
+                    + "true time in progress. "
+                    + RequestToResolutionCaveat),
+
+                _ => ConnectionValidationResult.Success(),
+            };
         }
     }
 
