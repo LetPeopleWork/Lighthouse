@@ -109,6 +109,10 @@ of decision 5 small enough to be safe.
 
 ### 4. A hierarchy-rooted team with no classes reads nothing, and is refused at save time
 
+> **Amended 2026-07-31 — the rule is uniform, not hierarchy-conditional.** With decision 6 amended
+> below, *any* ServiceNow team with no classes reads nothing and is refused at save time. The
+> hierarchy test is gone from both places; everything else in this decision stands.
+
 This is the epic's AC1 rule ("a team that has not written a query reads nothing rather than
 everything", `ServiceNowWorkTrackingConnector.cs:111-125`) applied to the class dimension instead of
 the query dimension, and it is the rule measurement 2 exists to justify.
@@ -126,6 +130,12 @@ save team settings). A gate that lives only in the schema flag is a gate the API
 
 ### 5. "This table has descendants" is a static known-hierarchy set, in both stacks
 
+> **Amended 2026-07-31 — backend only.** The frontend constant is deleted: with decision 6 amended,
+> nothing on that side of the stack branches on the table any more. `ServiceNowTableHierarchy`
+> survives for its remaining reader, decision 10's connection-scope history verdict. The residual
+> risk recorded below is also gone — a customer rooting at an unknown hierarchy table now names its
+> kinds of work like everyone else.
+
 `ServiceNowTableHierarchy.RootTables` on the backend, an exported constant beside the `Record` on the
 frontend. Content today: **`task`**, and nothing else.
 
@@ -142,6 +152,30 @@ covers the whole sub-hierarchy. That is not a regression — it is what every Se
 it. Adding a root is a two-line code change in two files, which decision 7 makes loud.
 
 ### 6. `isWorkItemTypesRequired` becomes a function of the connection, on both stacks
+
+> **SUPERSEDED 2026-07-31 by the maintainer: `isWorkItemTypesRequired` is `true` for every ServiceNow
+> team, unconditionally.** Two reasons, and the second is what makes it a simplification rather than
+> a trade.
+>
+> 1. **The conditional hid a field the read still honoured.** A team migrated from Jira keeps its
+>    Jira-shaped `["User Story", "Bug"]` — `useModifySettings.handleWorkTrackingSystemChange` swaps
+>    the schema and never clears the types — and those values are still emitted as a class filter.
+>    For a leaf-rooted team the field is hidden while the read obeys it: through the UI that is a
+>    save refused naming a field the screen does not show; through the API, the CLI, the MCP server
+>    or the default-settings path it is silent, and the team reads nothing.
+> 2. **It protected a configuration that was never shipped.** No ServiceNow release has ever gone
+>    out, so there was no leaf-rooted installation to keep saving without the field, and the
+>    conditional bought nothing at all.
+>
+> What follows from that: `DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems system)` loses the
+> `workItemTable` parameter, `getDefaultTeamSchema` stops reading the connection's options, the two
+> frontend twin constants are deleted with the enforcement test of decision 7, and
+> `ServiceNowReadScope.ReadsAWholeHierarchy` collapses to `NamesNoKindsOfWork`. The accepted cost is
+> that a ServiceNow team cannot be saved until its owner names its kinds of work. **This is not
+> scoped to ServiceNow's team schema by accident**: Linear's team schema, Linear's portfolio schema
+> and ServiceNow's portfolio schema keep `false`, because there the field is genuinely unused
+> (`LinearWorkTrackingConnector.cs:874` hardcodes `WorkItemTypes = []`) rather than hidden and
+> honoured.
 
 Both schema factories take the **connection**, not the system type:
 
@@ -162,6 +196,11 @@ changes: `ModifyTeamSettings.tsx:76,190`, `CreateTeamWizard.tsx:74` and `useCrea
 keep gating on `isWorkItemTypesRequired !== false`.
 
 ### 7. The twins are policed by a source-text enforcement test, not by a comment
+
+> **Withdrawn 2026-07-31 with decision 6.** Both frontend halves are deleted, so there is no pair
+> left to drift; `serviceNowSchemaTwin.enforcement.test.ts` is removed. The Bug #5613 exhaustiveness
+> guard (`SchemaFactories_EveryDeclaredWorkTrackingSystem_DoesNotUseTheQueryFallback`) stays, and
+> drops back to a single pass now that the ServiceNow arm has one branch again.
 
 A frontend enforcement test — the mechanism already used by
 `Lighthouse.Frontend/src/utils/forecast/formatLikelihood.enforcement.test.ts` and

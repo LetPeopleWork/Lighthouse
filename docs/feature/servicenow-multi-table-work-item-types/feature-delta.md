@@ -146,8 +146,13 @@ and says why, in the shape `GetWorkItemsForTeam` already uses for a missing quer
 **AC-B4** — The team settings screen and the create-team wizard **show** the Work Item Types field for
 a hierarchy-rooted ServiceNow team and **reject the save** when it is empty — and the backend and the
 frontend agree about that, asserted in both schema twins (D6, Bug #5613).
-**AC-B5** — A leaf-rooted ServiceNow team (`incident` alone, the shipped default) keeps hiding the
-field and keeps saving without it. This story does not make the shipped configuration harder.
+**AC-B5** — ~~A leaf-rooted ServiceNow team (`incident` alone, the shipped default) keeps hiding the
+field and keeps saving without it. This story does not make the shipped configuration harder.~~
+**AMENDED 2026-07-31 — this promise is deliberately broken.** Every ServiceNow team shows the field
+and refuses an empty save, leaf-rooted or not; a leaf-rooted team's read is no longer byte-identical,
+because it now carries `sys_class_name=<its one class>`. What survives of AC-B5 is what is still
+true: the item `Type`, the definition scope and the single-class `=` form (never a one-element `IN`).
+See "Wave: DELIVER / [REF] Amended decision" at the end of this file.
 **AC-B6** — A class named in Work Item Types that does not exist, or that the account cannot read,
 produces a specific message naming the class — not an empty team and not a silent subset.
 
@@ -156,8 +161,8 @@ produces a specific message naming the class — not an empty team and not a sil
 ## Wave: DISCUSS / [REF] Definition of Done
 
 1. Both slices' ACs green, backend and frontend.
-2. `isWorkItemTypesRequired` conditional asserted on **both** stacks; the #5613 exhaustiveness guard
-   still passes.
+2. ~~`isWorkItemTypesRequired` conditional~~ **`isWorkItemTypesRequired = true` for ServiceNow teams**
+   asserted on **both** stacks (amended 2026-07-31); the #5613 exhaustiveness guard still passes.
 3. Mutation testing ≥ 80% on the changed backend and frontend surface (project standing gate).
 4. No new SonarCloud issues; `dotnet build` and `pnpm build` warning-free.
 5. Verified against a real instance — a `task`-rooted team returning at least two classes — not only
@@ -838,3 +843,84 @@ Not contradictions with DESIGN — gaps DISTILL could not close without inventin
 | **T-5** | D3 says Work Item Types "becomes required" when the table has descendants; D-D3 emits the clause "whenever classes are named", so a **leaf**-rooted team that names classes gets them honoured. Scenario 3 pins the hierarchy-rooted single-class form but no scenario pins the leaf-rooted-plus-classes cell of ADR-123 decision 3's table. | Recorded rather than written: it is a fourth cell of a table whose other three are covered, and pinning it would require deciding whether `Type` then comes from the record or the table — which D-D5 answers but no AC names. Cheap for DELIVER to add if the maintainer wants the whole table pinned. |
 
 DISTILL is done; DELIVER un-skips one scenario at a time.
+
+---
+
+## Wave: DELIVER / [REF] Amended decision — Work Item Types is always required for a ServiceNow team
+
+Maintainer, 2026-07-31, on top of a green slice 01. **Reverses D3 / S3 / ADR-123 decision 6: the
+requirement stops being conditional on whether the configured table has descendants.**
+
+### Why
+
+**1. The conditional produced a field that was hidden but still honoured by the read.** A team
+migrated from Jira to a ServiceNow connection keeps its Jira-shaped `["User Story","Bug"]` —
+`useModifySettings.handleWorkTrackingSystemChange` swaps the schema and never clears the types — and
+those values were still emitted as a `sys_class_name` filter. For a leaf-rooted team the field was
+hidden while the read obeyed it. Through the UI that surfaces as a save refused naming a field the
+screen does not show, which is an unrecoverable dead end. Through the API, the CLI, the MCP server or
+the default-settings path it is silent: the team reads nothing. Making the field always required
+kills the whole class of problem at the source rather than papering over one route into it.
+
+**2. The conditional protected a configuration that was never shipped.** Nothing ServiceNow has ever
+been released. There are no `incident`-rooted teams in the wild, so there was no migration to protect
+and no legacy read to keep working — which is what makes this a simplification rather than a trade.
+It also removes the asymmetry the first draft of this amendment carried (schema strict, read lenient);
+save and read now refuse on exactly the same condition.
+
+### What changed
+
+| | Before | After |
+|---|---|---|
+| `DataRetrievalSchemaDto.ForTeam` | `(system, workItemTable)`, ServiceNow arm `= HasDescendants(table)` | `(system)`, ServiceNow arm `= true` |
+| `getDefaultTeamSchema` | read the connection's `Work Item Table` option | plain lookup by system type |
+| `ServiceNowReadScope.ReadsAWholeHierarchy` | `NamesNoKindsOfWork && HasDescendants(Table)` | collapsed to `NamesNoKindsOfWork` |
+| `GetWorkItemsForTeam` / `ValidateTeamSettings` | refused only a hierarchy-rooted empty team | refuse any ServiceNow team with no types |
+| `missing_work_item_types` message | named the table and its descendants | says the simple true thing: name your kinds of work, or read nothing |
+
+**Deleted as newly dead**: `TeamSettingDto.WorkItemTableOf`; the frontend `serviceNowHierarchyRootTables`
+and `serviceNowWorkItemTableOptionKey` constants with `readsSeveralKindsOfWork`; the whole
+`serviceNowSchemaTwin.enforcement.test.ts` (both twins it policed are gone from the frontend, so
+there is no pair left to drift); the "named no kinds of work" branches of `ScopedQuery`,
+`BaselineQuery` and `DefinitionTables`, and with them `CountRows`' null-query branch.
+
+**Deliberately kept**: `ServiceNowTableHierarchy`. It is *not* unreferenced — `CapabilityOf` still
+asks `HasDescendants` to decide whether a *connection* rooted at a hierarchy table can say anything
+about transition history (ADR-123 decision 10 / `history_determined_per_team`). That is a
+connection-scope question the schema change does not touch. The ArchUnit purity fixture keeps
+covering it. Also kept, unchanged: `IsWorkItemTypesRequired = false` for the Linear team schema, the
+Linear portfolio schema and the ServiceNow portfolio schema — there the field is genuinely unused
+(`LinearWorkTrackingConnector.cs:874` hardcodes `WorkItemTypes = []`) rather than hidden and honoured.
+
+### Accepted cost
+
+A ServiceNow team cannot be saved until its owner names the kinds of work it handles. With nothing
+released, that cost is entirely prospective.
+
+### How the AC-B5 scenarios were re-pinned
+
+AC-B5's promise — "this story does not make the shipped configuration harder" — is broken on purpose.
+Rather than deleting its scenarios, each was re-pinned to the assertion that is still true:
+
+| Was | Now |
+|---|---|
+| `AnIncidentTeamThatNamedNoKindsOfWork_AsksExactlyWhatItAskedBefore` (no `sys_class_name` at all) | `AnIncidentTeamThatNamesIncidents_AsksForThemByName` — still `sys_class_name=incident`, still never a one-element `IN` |
+| `AnIncidentTeamThatNamedNoKindsOfWork_LooksForStateHistoryExactlyWhereItDidBefore` | `AnIncidentTeamThatNamesIncidents_LooksForStateHistoryOnIncidents` — definition scope unchanged |
+| `SavingAnIncidentTeamThatNamedNoKindsOfWork_IsStillAccepted` (expected `valid`) | folded into the refusal test, which now runs over both a hierarchy root and a leaf table |
+| `ATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything` | same test, parametrised over both roots — the rule is uniform |
+| `ATeamOnASingleKindOfServiceNowWork_IsNotAskedForKindsOfWorkAtAll` and its no-table sibling | folded into `AServiceNowTeam_IsAskedWhichKindsOfWorkAreItsOwn`, over `task` / `incident` / `""` |
+| FE "leaves a team reading only incidents exactly as it was" and its no-table sibling | one `it.each` over the same three tables, all asserting `true` |
+| #5613 guard's second hierarchy-root pass (T-2) | **dropped** — with the ServiceNow arm unconditional there is one branch again, so the second pass asserted nothing the first did not |
+
+Two test *stubs* also had to change, and neither is a production behaviour change. Both the
+`ServiceNowTeamSyncTest` in-process instance and the `ServiceNowTeamSyncAcceptanceTest` loopback
+listener decided "was this read narrowed?" by asking whether a `sysparm_query` was present at all.
+Every ServiceNow read now carries the class clause, and the widening detector's *baseline* probe
+carries that clause alone — so under the old rule the baseline counted as narrowed and every team
+validated as `query_matches_whole_table`. Both stubs now ignore `sys_class_name` and `ORDERBY` terms
+when deciding, which is what a real instance does implicitly.
+
+### Not done here
+
+Mutation testing, adversarial review, finalize, user-facing docs, screenshots and ADO were all left
+for the maintainer, per the instruction that ends at the four local gates.

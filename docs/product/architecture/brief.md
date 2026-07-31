@@ -3980,6 +3980,25 @@ Three findings the DISCUSS wave could not have had, all binding:
 
 ### Key invariants introduced
 
+> **Amended 2026-07-31 (DELIVER, on top of a green slice 01).** Work Item Types is **always** required
+> for a ServiceNow team, whatever table the connection reads — see ADR-123 decision 6, superseded in
+> place. Three of the bullets below no longer hold and are kept for the record:
+>
+> - *"Every currently-shipped ServiceNow team is byte-identical on the wire"* — **withdrawn.** There is
+>   no shipped ServiceNow team; nothing ServiceNow has ever been released. A leaf-rooted team now
+>   names its one class and its read carries `sys_class_name=<class>`. What survives is the item
+>   `Type`, the definition scope, and the `=`-for-one form.
+> - *"Hierarchy-root knowledge is load-bearing in exactly two places"* — now **one**, and neither of
+>   the two named: the empty-classes refusal and the schema flag both stopped asking. The single
+>   remaining reader is `CapabilityOf`, deciding what a hierarchy-rooted *connection* may claim about
+>   transition history (decision 10). The frontend half of the set is deleted.
+> - *"The schema twins gain a third piece of duplicated knowledge, and a guard to go with it"* —
+>   **withdrawn.** The frontend no longer holds either constant, so there is no pair to drift and
+>   `serviceNowSchemaTwin.enforcement.test.ts` is removed. The #5613 enum-exhaustiveness guard stays.
+>
+> "The residual risk, stated" below is likewise resolved rather than mitigated: a customer rooting at
+> an unlisted hierarchy table now names its kinds of work like every other ServiceNow team.
+
 - **A ServiceNow record class *is* a work item type.** Not "maps to". `Team.WorkItemTypes` is not being
   repurposed; it is finally being used for ServiceNow. No new field, no migration — which is the whole
   of D7, and why this slice ships before the per-team table override.
@@ -4078,8 +4097,9 @@ valuable and genuinely separate story that every connector would benefit from.
 
 - [ADR-123](./adr-123-servicenow-record-classes-as-work-item-types.md) — record classes as work item
   types: one class-filtered read, class-scoped history, a static hierarchy-root set. **Amends ADR-116
-  decision 6** (the C-3 soft call is settled: the flag becomes conditional) and **ADR-118 D2** (the
-  definition read is scoped by class).
+  decision 6** (the C-3 soft call is settled: the flag becomes required for every ServiceNow team —
+  decision 6 was conditional at DESIGN time and was superseded in place on 2026-07-31) and
+  **ADR-118 D2** (the definition read is scoped by class).
 - [ADR-124](./adr-124-servicenow-record-class-readability-ladder.md) — what an ACL-blind count can and
   cannot prove: the per-class readability ladder, the class-filtered widening baseline, and the three
   claims this slice refuses to make.

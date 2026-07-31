@@ -4104,8 +4104,10 @@ jobs:
       to root the read at a hierarchy table (`task`, whose descendants include incident,
       change_request, problem, sc_request) and use the team's existing Work Item Types field as a
       `sys_class_name` filter — a ServiceNow class name IS a work item type rather than an analogy for
-      one. That makes `isWorkItemTypesRequired` conditional on the configured table, which after Bug
-      #5613 must change in BOTH schema twins.
+      one. That makes `isWorkItemTypesRequired` true for every ServiceNow team — conditional on the
+      configured table as first designed, then made unconditional on 2026-07-31 because a hidden field
+      the read still honoured was a dead end and nothing ServiceNow had shipped for the conditional to
+      protect. Either way it must change in BOTH schema twins after Bug #5613.
     job_story: >
       When my team handles more than one kind of ServiceNow record — incidents and changes, the way a
       Jira team has stories and bugs,

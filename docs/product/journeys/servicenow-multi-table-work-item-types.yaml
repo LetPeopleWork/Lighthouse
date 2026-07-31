@@ -51,7 +51,7 @@ journeys:
         emotional_state: Reassured — "it will not let me leave this blank"
         shared_artifacts:
           - Team.WorkItemTypes (existing; repurposed as the `sys_class_name` filter — persisted, in the DTO and rendered already, hidden rather than absent)
-          - isWorkItemTypesRequired (existing; becomes conditional on the configured table, in BOTH schema twins)
+          - isWorkItemTypesRequired (existing; becomes true for every ServiceNow team, in BOTH schema twins — conditional on the configured table as first designed, made unconditional 2026-07-31)
 
       - id: step-read-both-kinds-as-one-team
         action: The team syncs
