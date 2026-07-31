@@ -20,7 +20,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public static IReadOnlyList<WorkItemStateTransition> ToTransitions(
             IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            return WorkItemStateTransitionMapper.MapToMappedStates(PairConsecutive(InStartOrder(spans)), owner);
+            return WorkItemStateTransitionMapper.MapToMappedStates(
+                PairConsecutive(InStartOrder(TheTeamRecognisesAsState(spans, owner))), owner);
         }
 
         /// <summary>
@@ -34,6 +35,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .Find(span => owner.MapStateToStateCategory(span.Label) == StateCategories.Doing);
 
             return arrivalInDoing?.Start;
+        }
+
+        // A `field_value_duration` definition is not necessarily a definition on the state field:
+        // the stock incident table also measures `active` and `assignment_group` that way, which
+        // would pair `true` against a group name and report it as a move. A label the team never
+        // mapped is not a state. Amends ADR-118 D2, which discriminated on the definition type alone.
+        private static List<ServiceNowStateSpan> TheTeamRecognisesAsState(
+            IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
+        {
+            return [.. spans.Where(span => owner.MapStateToStateCategory(span.Label) != StateCategories.Unknown)];
         }
 
         private static List<ServiceNowStateSpan> InStartOrder(IReadOnlyList<ServiceNowStateSpan> spans)

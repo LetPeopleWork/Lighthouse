@@ -79,18 +79,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "8192 bytes is the cliff and the rest of the URL has to fit too — instance address, path and the other sysparm_* parameters.");
         }
 
-        // ADR-118 D2. Filtering by the `field` name was the rejected alternative: it hardcodes which
-        // field counts as state per table and is blind to a customer's own definitions.
+        // ADR-118 D2, corrected by measurement against the live PDI: `sysparm_query` matches the
+        // STORED value of a choice field, never its label. `type=Field value duration` answered 200
+        // with an empty result; `type=field_value_duration` returned the incident table's four span
+        // definitions. Filtering by the `field` name stays the rejected alternative — it hardcodes
+        // which field counts as state per table and is blind to a customer's own definitions.
         [Test]
-        public void TheDefinitionQuery_AsksForTheTablesStateSpanMeasurements()
+        public void TheDefinitionQuery_AsksForTheTypeByTheValueTheInstanceStores()
         {
             var query = ServiceNowHistoryQuery.DefinitionQueryFor(Table);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(query, Does.Contain(Table));
-                Assert.That(query, Does.Contain(ServiceNowHistoryQuery.StateSpanDefinitionType),
-                    "Script-calculation definitions share the field with the real spans, so the type is the discriminator.");
+                Assert.That(query, Does.Contain("type=field_value_duration"),
+                    "The display label matches nothing at all — the instance filters on the stored value.");
             }
         }
 

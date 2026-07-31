@@ -153,6 +153,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // Measured on the live PDI: `field_value_duration` is not unique to the state field. The
+        // stock incident table carries four such definitions — Incident State Duration, Open (on
+        // `active`), Assignment Group and Assigned to Duration — and one record returns spans from
+        // all of them at once. Pairing them all reports `true -> false` and a group name as state
+        // changes. A label no team mapped is not a state, and that discriminator works for a
+        // customer's own definitions too, which filtering by field name never would.
+        [Test]
+        public void SpansMeasuringSomethingOtherThanState_ProduceNoMovesBetweenThem()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-29 06:00:00"),
+                ASpan("true", "2026-07-29 06:00:00"),
+                ASpan("Network Team", "2026-07-29 07:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("false", "2026-07-29 17:00:00"),
+            ];
+
+            var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, AServiceDesk());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(transitions, Has.Count.EqualTo(1),
+                    "Only two of these spans measure state; the others measure `active` and `assignment_group`.");
+                Assert.That(transitions[0].FromState, Is.EqualTo("New"));
+                Assert.That(transitions[0].ToState, Is.EqualTo("In Progress"));
+            }
+        }
+
         [Test]
         public void ARecordWithNoHistory_ReportsNoMoves()
         {

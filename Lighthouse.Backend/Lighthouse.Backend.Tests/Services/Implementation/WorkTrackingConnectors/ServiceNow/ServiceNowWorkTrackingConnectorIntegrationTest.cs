@@ -160,10 +160,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     Is.All.Matches<string>(state => !int.TryParse(state, CultureInfo.InvariantCulture, out _)),
                     "The state has to be the label the service desk uses. The raw choice value is an integer nobody outside the platform team recognises — on change_request it is even negative.");
                 Assert.That(workItems.Select(item => item.CreatedDate?.Kind), Is.All.EqualTo(DateTimeKind.Utc));
+
+                // Slice 04 turned this assertion around: an itil-grade credential DOES get history,
+                // so the guard is no longer "none arrives" but "none of it was invented". The stock
+                // incident table measures `active`, `assigned_to` and `assignment_group` with the
+                // same `field_value_duration` definition type as the state field, so before the
+                // discriminator moved to the label this reported `true -> false` and group names as
+                // state changes.
+                var transitions = workItems.SelectMany(item => item.SyncedTransitions).ToList();
+                Assert.That(transitions, Is.Not.Empty,
+                    "An itil-grade credential can read metric_instance, so the incidents carry history. Empty here means the definition query matched nothing again.");
                 Assert.That(
-                    workItems.SelectMany(item => item.SyncedTransitions),
-                    Is.Empty,
-                    "AC5: ServiceNow supplies no history to a read-only account, and a fabricated transition would look like measured time-in-state.");
+                    transitions.SelectMany(transition => new List<string> { transition.FromState, transition.ToState }),
+                    Is.All.Matches<string>(team.AllStates.Contains),
+                    "A move between labels the team never mapped is not a state change — it is a span from a definition measuring some other field.");
             }
         }
 

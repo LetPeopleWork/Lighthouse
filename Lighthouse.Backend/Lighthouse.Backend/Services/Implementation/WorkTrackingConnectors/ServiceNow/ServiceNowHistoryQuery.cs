@@ -18,7 +18,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public const int RecordsPerBatch = 200;
 
         /// <summary>Only this kind of definition measures how long a field held each of its values.</summary>
-        public const string StateSpanDefinitionType = "Field value duration";
+        /// <remarks>
+        /// The STORED value, which is what <c>sysparm_query</c> matches on. The label a customer sees
+        /// in the UI is "Field value duration", and asking for that form answered 200 with an empty
+        /// result on a stock PDI whose definitions are all present and active.
+        /// </remarks>
+        public const string StateSpanDefinitionType = "field_value_duration";
 
         private const string DefinitionTableField = "table";
 
