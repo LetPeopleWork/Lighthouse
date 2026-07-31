@@ -1988,6 +1988,16 @@ sight, which is `sysparm_display_value=all` earning its place and the reason R-4
   `WorkItemTypes`; the config must keep holding `change_request` because `sysparm_query` matches the
   stored value, so if those two are compared anywhere, the divergence is what the static map has to
   bridge.
+- **Connection validation should say whether time-in-state will work.** Since #5611's D-D10 it says
+  nothing: the old advice ("activate a Field value duration metric definition on the state field of
+  `task`") was un-followable, so it was withdrawn rather than reworded — correct, but it left an
+  administrator with no screen answering *"will I get time-in-state on this connection?"*. Now that
+  every connection roots at `task` there is no per-connection variation to reason about, so the answer
+  is a property of the instance and belongs exactly where the administrator already clicks: connection
+  setup and validation. Cost is one `metric_definition` read at validation time — the read is already
+  written (`ReadStateSpanDefinitions`) and `ServiceNowHistoryVerdict` already has the vocabulary; what
+  was declined in #5611 was doing it per *team* save, which is a different and worse trade.
+  **Maintainer, 2026-07-31: probably out of MVP scope, revisit here.**
 - **`GuardAgainstRepeatedRecords` keys identity on `number`, which is not unique.** `sys_id` is, and
   `ReadRecordId` already reads it two lines away. Reached for real on the PDI on 2026-07-31: five
   change requests sharing a number aborted an entire team sync with `paging_repeated_records` — so a

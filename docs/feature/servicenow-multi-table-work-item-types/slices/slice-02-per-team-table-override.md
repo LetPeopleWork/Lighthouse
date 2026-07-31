@@ -1,5 +1,20 @@
 # Slice 02 — a team reads its own table
 
+> **CANCELLED — maintainer, 2026-07-31. Do not build this.**
+>
+> Slice 01 removed the `Work Item Table` connection option outright and rooted every ServiceNow read
+> at `task`. There is no longer a table to override, so Story A and AC-A1..AC-A4 no longer describe
+> anything the system can do.
+>
+> **What Story A wanted is already delivered, more cheaply.** "An incident team and a change team share
+> one connection and one credential" is now just two teams on the same connection with different
+> **Work Item Types** — no per-team column, no EF migration across every provider, no second validation
+> path. The slice existed to buy something the class filter turned out to subsume.
+>
+> The brief below is kept as the record of what was planned and why it stopped being needed. If a
+> per-team root ever becomes necessary — the only case being a shop whose work lives outside the `task`
+> hierarchy, which the SPIKE found no evidence of — reopen from here.
+
 **Story**: A (feature-delta.md) · **ADO**: #5611 · **Effort**: ~1 day + an EF migration
 **Order**: second (D7). Independent of every open call, so it can start the moment slice 01's model holds — or on its own if slice 01 stalls on OC-1.
 
