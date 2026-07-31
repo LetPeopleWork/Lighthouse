@@ -34,6 +34,7 @@ feature_context:
   - pricing-adjustment-2026-08
   - epic-size-and-count-over-time
   - servicenow-multi-table-work-item-types
+  - servicenow-board-picker-and-query-guidance
 
 jobs:
   - id: job-rbac-bootstrap
@@ -4153,3 +4154,74 @@ jobs:
         core value (any ServiceNow flow metrics at all) is already delivered. Current satisfaction: 1
         — there is a workaround (one team per class) and it produces numbers, but they are the wrong
         numbers. Gap: 3, and it is served by a field that already exists on the team.
+
+  - id: job-snow-team-creator-author-a-query
+    title: Know what to type in the ServiceNow query field
+    persona: flow-coach
+    feature_context: servicenow-board-picker-and-query-guidance
+    created: 2026-07-31
+    note: >
+      ADO #5610, filed out of the slice-02 dogfood of Epic 5513 on 2026-07-29. This job sits IN FRONT
+      of [[job-snow-flow-coach-see-flow-metrics]] rather than refining it: that job is delivered and
+      works, and this is the gate a user has to get through before any of it happens. The dogfood was
+      blunt — the connection wizard was straightforward and caught a wrong password, state mapping
+      worked by typing labels, and then team creation stopped dead at the query field. Nothing in the
+      product says what a ServiceNow query is, which fields exist, or where to get one, and DISTILL
+      ruling R-2 makes a missing or whole-table query a BLOCKING verdict. R-2's reasoning was that a
+      warning is dishonest when no warning channel renders it; it did not argue that blocking without
+      guidance is acceptable. Two independent answers: in-product guidance on the field itself (reaches
+      everyone, needs nothing), and a Visual Task Board picker that lifts the table and filter out of a
+      board the team already maintains (needs #5611's sys_class_name model, and is gated on a SPIKE —
+      this epic has twice found a table readable for the maintainer and 403 for every customer:
+      sys_choice and metric_instance).
+    job_story: >
+      When I am pointing a Lighthouse team at ServiceNow work and the query field is blank,
+      I want the product to tell me what a ServiceNow query is and where to get one — or hand me one
+      from a board I already maintain,
+      so I can finish creating the team instead of abandoning it.
+    dimensions:
+      functional: >
+        Author, or acquire, a ServiceNow encoded query that expresses this team's boundary — and know
+        in advance that a typo in a field NAME silently widens the read to the whole table while a bad
+        VALUE silently returns nothing, because neither failure raises an error.
+      emotional: >
+        Stop feeling excluded by a tool that has just said it supports your system. Being blocked with
+        no instruction, one step after a wizard that worked, reads as "this was not built for us"
+        rather than "you are missing one field".
+      social: >
+        Be the person who got the team's board into the forecasting tool, rather than the person who
+        raised an integration with the platform team and then could not finish configuring it.
+    forces:
+      push: >
+        The very first real user hit the wall within minutes of a connection that validated cleanly.
+        There is no in-product explanation, no example, and no ServiceNow docs page at all, and the
+        save is refused rather than degraded — so the failure is total, immediate, and silent about
+        its cause.
+      pull: >
+        ServiceNow users already think in Visual Task Boards, and a board carries exactly the two
+        things Lighthouse needs: a table and a board filter. Reading one turns query authoring into a
+        pick. The generic board port that Jira, Azure DevOps and Linear already use exists and is
+        unimplemented for ServiceNow, so the pull is cheap to satisfy if the instance permits it.
+      anxiety: >
+        A picker that works for the maintainer and 403s for every customer would be the third
+        occurrence of one pattern in this epic. It is also the one place where a pre-fill could
+        overwrite a query the user typed with an empty one, because the shared board dialog currently
+        substitutes empty board information when the read fails. Mitigated by measuring readability as
+        a role matrix before building, and by refusing rather than pre-filling when a board cannot be
+        read or cannot be expressed as a query.
+      habit: >
+        ServiceNow users build filters in ServiceNow's own condition builder and copy the encoded query
+        out via the breadcrumb right-click. The guidance leans on that habit instead of replacing it;
+        the picker automates it. Lighthouse deliberately does not build a second condition builder.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — this is not a refinement, it is the gate. Every other ServiceNow job in this
+        epic is unreachable until a team can be saved, and the failure lands on first contact, which is
+        where prospects are lost rather than merely inconvenienced. Current satisfaction: 0 — there is
+        no in-product help, no placeholder, no ServiceNow docs page and no picker; the only path is to
+        already know ServiceNow's encoded-query syntax. Gap: 5, and unusually cheap to close: half of
+        it is help text on a field that already renders, and the other half is one provider
+        implementation behind a port that already exists.

@@ -1,0 +1,115 @@
+schema_version: 1
+feature_id: servicenow-board-picker-and-query-guidance
+updated: 2026-07-31
+note: >
+  ADO User Story #5610 under Epic 5513, filed out of the slice-02 dogfood on 2026-07-29. Kept separate
+  from journeys/epic-5513-servicenow-integration.yaml for the same reason #5611 was: it is a
+  post-DESIGN story rather than one of the epic's slices 01-05, and the epic's artifacts are still
+  being appended to by #5578. The finding was blunt: the connection wizard worked, a wrong password
+  was caught, state mapping worked — and then team creation stopped dead at the query field, because
+  nothing in the product says what a ServiceNow query is or where to get one, and ruling R-2 makes a
+  missing query a blocking verdict. Two answers, deliberately independent: tell the user what the
+  field wants (works for everyone, needs nothing), and let an admin lift the configuration out of a
+  Visual Task Board they already maintain (needs #5611's class filter, and needs a SPIKE first because
+  this epic has twice discovered a table that is readable for the maintainer and 403 for every
+  customer). No DESIGN wave starts until #5611 is delivered. See
+  docs/feature/servicenow-board-picker-and-query-guidance/feature-delta.md.
+
+journeys:
+
+  - name: fill-in-the-query-field-without-leaving-the-product
+    goal: >
+      A flow coach creating a ServiceNow team knows what the query field wants, writes one that works,
+      and saves the team — instead of guessing, hitting the blocking verdict, and concluding the
+      connector is broken.
+    persona: "flow-coach"
+
+    emotional_arc:
+      start: Stranded — "the connection worked, and now there is an empty box labelled Encoded Query and no clue."
+      middle: Oriented — "so that is what it wants, and that is where my instance will give me one."
+      end: Through — "the team saved, and I never left the page to find out how."
+
+    steps:
+      - id: step-meet-the-field
+        action: Coach reaches the data-retrieval field on the create-team wizard or team settings
+        expected_output: >
+          The field shows a real example encoded query as its placeholder and help text naming where
+          ServiceNow itself hands you one. It is the same TextField every connector renders; only the
+          schema knows it has something extra to say.
+        emotional_state: Oriented — "this is a filter, not a language I have to learn"
+        shared_artifacts:
+          - data-retrieval schema help text (NEW; a nullable field on IDataRetrievalSchema / DataRetrievalSchemaDto — must change in BOTH twins, Bug #5613)
+
+      - id: step-be-warned-before-the-guard
+        action: Coach reads the help before typing
+        expected_output: >
+          The two silent-failure modes are named in advance — an unknown FIELD NAME is dropped and the
+          query widens to the whole table; a bad VALUE on a real field silently matches nothing. This
+          is the only place a user can learn that before hitting it.
+        emotional_state: Forewarned — "a typo here does not error, it lies"
+        shared_artifacts:
+          - ServiceNow encoded query (existing; the team's dataRetrievalValue)
+
+      - id: step-save-past-the-guard
+        action: Coach saves the team
+        expected_output: >
+          ValidateTeamSettings behaves exactly as it does today. Ruling R-2's blocking verdict is
+          unchanged; the guidance sits in front of the guard rather than softening it.
+        emotional_state: Through — "refused for a reason I now understand, or accepted"
+        shared_artifacts:
+          - ConnectionValidationResult (existing contract, unchanged)
+
+  - name: lift-the-configuration-out-of-a-board-you-already-maintain
+    goal: >
+      A configuration administrator turns an existing Visual Task Board — which already carries a table
+      and a filter — into a configured Lighthouse team, without re-authoring in Lighthouse a boundary
+      the team already agreed on in ServiceNow.
+    persona: "config-admin"
+
+    emotional_arc:
+      start: Duplicating — "we already decided what this team's work is; it is a board, and I am retyping it."
+      middle: Checking — "show me what you found before you overwrite what I typed."
+      end: Confident — "the thing Lighthouse forecasts is the thing we stand up around."
+
+    steps:
+      - id: step-open-the-picker
+        action: Admin clicks the board-select button on a ServiceNow connection
+        expected_output: >
+          The boards the credential can see, listed. Served by the board endpoints that already exist
+          for Jira, Azure DevOps and Linear — one provider implementation and one switch arm, not a
+          new port. Gated at SystemAdmin, which is narrower than the CanCreateTeam right that creates
+          the team (open call OC-4).
+        emotional_state: Recognising — "these are our boards"
+        shared_artifacts:
+          - /api/latest/wizards/{connId}/boards (existing generic endpoint; ServiceNow currently falls through to NotImplementedException)
+
+      - id: step-see-what-was-found-before-committing
+        action: Admin selects a board
+        expected_output: >
+          The filter and the record class are shown side by side BEFORE Confirm. A read that failed
+          cannot be confirmed at all — today the shared dialog swallows the error and offers an
+          all-empty pre-fill that would overwrite a typed query with blanks.
+        emotional_state: Checking — "I can see it before it lands"
+        shared_artifacts:
+          - BoardInformation (existing contract; DataRetrievalValue and WorkItemTypes both already on it, so the pre-fill needs no contract change)
+
+      - id: step-pre-fill-two-fields-that-already-exist
+        action: Admin confirms
+        expected_output: >
+          The board's filter fills the query; the board's table fills Work Item Types as a
+          sys_class_name value, which is #5611's model. Both stay editable — inputKind remains freetext,
+          so unlike Linear the field never goes read-only, because manual entry stays the primary path.
+        emotional_state: In control — "pre-filled, not locked"
+        shared_artifacts:
+          - Team.WorkItemTypes as a sys_class_name filter (from #5611 slice 01 — this journey is a consumer of it, not the place it is built)
+
+      - id: step-meet-an-honest-refusal
+        action: A board cannot be read, or its membership is not expressible as a query
+        expected_output: >
+          Named and refused. A 403 says the account cannot read the board table; a freeform board whose
+          hand-placed cards no filter describes is excluded or refused rather than pre-filled from a
+          partial filter. Syncing the filtered part of a freeform board is a wrong number that looks
+          right — the one outcome this epic exists to prevent.
+        emotional_state: Protected — "it declined instead of guessing"
+        shared_artifacts:
+          - SPIKE verdict on board readability and board-membership expressibility (open calls OC-1/OC-2, measured before this slice is built)
