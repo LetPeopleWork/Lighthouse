@@ -1,3 +1,4 @@
+using System.Net;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.ServiceNow
@@ -97,6 +98,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var result = ServiceNowTeamQueryVerdict.FromTeamProbe(Table, matchedCount: 0, tableTotalCount: 0);
 
             Assert.That(result.Code, Is.EqualTo("no_work_items_found"));
+        }
+
+        // A gateway that rewrites ServiceNow's own 400 error envelope into a 200 hands the ladder a
+        // body that parses and carries no record set. Read as "JSON, zero rows" that is a misspelt
+        // class passing validation, after which the team syncs a subset with nothing logged. The
+        // sync's own RecordsFrom has always refused this shape; the class probe now agrees.
+        [Test]
+        public void AKindOfWorkWhoseAnswerCarriesNoRecordSetAtAll_IsNeverReportedAsReadable()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
+                "change_request", HttpStatusCode.OK, carriesRecords: false, recordsTheInstanceHolds: 0, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.FieldName, Is.EqualTo("WorkItemTypes"),
+                    "Whatever the rung, a kind of work the coach typed sends them back to the field they typed it in.");
+            }
         }
 
         // Slice 01 established this shape: a settings problem is never dressed up as a transport

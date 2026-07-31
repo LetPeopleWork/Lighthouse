@@ -59,20 +59,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         /// <param name="recordClass">The class name the flow coach typed.</param>
         /// <param name="statusCode">What <c>/api/now/table/{recordClass}?sysparm_limit=1</c> answered.</param>
-        /// <param name="responseIsJson">Whether the body parsed at all.</param>
+        /// <param name="carriesRecords">
+        /// Whether the body parsed <i>and</i> carried a record set. A success whose JSON has no
+        /// <c>result</c> array — an error envelope a gateway rewrote into a 200, a sign-in page — is
+        /// no evidence that the class is readable, so it is read as "answered, returned no data"
+        /// exactly as the sync's own <c>RecordsFrom</c> reads it. Passing a class on it is how a
+        /// misspelt name reaches a team that then syncs a subset in silence.
+        /// </param>
         /// <param name="recordsTheInstanceHolds">
         /// <c>X-Total-Count</c>, which ServiceNow reports without consulting the ACLs it just applied.
         /// </param>
         /// <param name="visibleRowCount">Rows the account actually got back.</param>
         public static ConnectionValidationResult FromClassProbe(
-            string recordClass, HttpStatusCode statusCode, bool responseIsJson, int recordsTheInstanceHolds, int visibleRowCount)
+            string recordClass, HttpStatusCode statusCode, bool carriesRecords, int recordsTheInstanceHolds, int visibleRowCount)
         {
-            if (statusCode != HttpStatusCode.OK || !responseIsJson)
+            if (statusCode != HttpStatusCode.OK || !carriesRecords)
             {
                 // Rungs 1 and 2 are the connection ladder's 400 and 403 with a class name where the
                 // table name went — a class IS a table, so the messages are already right.
                 return AboutTheKindOfWork(
-                    ServiceNowValidationVerdict.FromResponse(statusCode, responseIsJson, visibleRowCount, recordClass));
+                    ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, visibleRowCount, recordClass));
             }
 
             // Rung 4. The gap between what the instance holds and what the account can see is the

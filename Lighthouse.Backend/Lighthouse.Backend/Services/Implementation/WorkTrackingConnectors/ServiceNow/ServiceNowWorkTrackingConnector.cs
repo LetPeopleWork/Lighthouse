@@ -104,9 +104,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             try
             {
                 var answer = await Read(probeUri, connection);
-                var (responseIsJson, rowCount) = ReadRows(answer.Body);
+                var body = ParseRecords(answer.Body);
 
-                var verdict = ServiceNowValidationVerdict.FromResponse(answer.StatusCode, responseIsJson, rowCount, table);
+                var verdict = ServiceNowValidationVerdict.FromResponse(
+                    answer.StatusCode, body.ResponseIsJson, body.Records.Count, table);
 
                 // The capability question is only worth asking of a connection that already works —
                 // every failure rung above returns before it, so a closed port stays connection_failed.
@@ -608,10 +609,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 }
 
                 var answer = await Read(probeUri, connection);
-                var (responseIsJson, rowCount) = ReadRows(answer.Body);
+                var body = ParseRecords(answer.Body);
 
                 var verdict = ServiceNowTeamQueryVerdict.FromClassProbe(
-                    recordClass, answer.StatusCode, responseIsJson, answer.TotalCount ?? 0, rowCount);
+                    recordClass, answer.StatusCode, body.CarriesRecords, answer.TotalCount ?? 0, body.Records.Count);
 
                 if (!verdict.IsValid)
                 {
@@ -637,11 +638,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             }
 
             var answer = await Read(countUri, connection);
-            var (responseIsJson, rowCount) = ReadRows(answer.Body);
+            var body = ParseRecords(answer.Body);
 
-            if (answer.StatusCode != HttpStatusCode.OK || !responseIsJson)
+            if (answer.StatusCode != HttpStatusCode.OK || !body.ResponseIsJson)
             {
-                return (ServiceNowValidationVerdict.FromResponse(answer.StatusCode, responseIsJson, rowCount, table), 0);
+                return (ServiceNowValidationVerdict.FromResponse(
+                    answer.StatusCode, body.ResponseIsJson, body.Records.Count, table), 0);
             }
 
             // The probe asks for one row, so the body can only ever say 0 or 1 and the header is the
@@ -837,17 +839,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>The definitions measuring state on a table, and what their read says the instance can supply.</summary>
         private sealed record StateSpanDefinitions(ServiceNowHistoryAvailability Availability, List<string> Ids);
 
+        /// <summary>
+        /// What a body turned out to be. The two booleans are not the same question and every caller
+        /// has to pick: <c>ResponseIsJson</c> is "it parsed", <c>CarriesRecords</c> is "it parsed and
+        /// held a record set". A class probe that settles for the first passes an error envelope
+        /// wearing a 200 as a readable class.
+        /// </summary>
         private sealed record ServiceNowBody(bool ResponseIsJson, bool CarriesRecords, List<JsonElement> Records);
 
         // ADR-114: whether the body is JSON is decided by parsing it, never by Content-Type —
         // ServiceNow's gateway owns that header, and the body is parsed anyway to count rows.
-        private static (bool ResponseIsJson, int RowCount) ReadRows(string body)
-        {
-            var parsed = ParseRecords(body);
-
-            return (parsed.ResponseIsJson, parsed.Records.Count);
-        }
-
         // The elements outlive the document they were parsed from, so each one is cloned.
         private static ServiceNowBody ParseRecords(string body)
         {
