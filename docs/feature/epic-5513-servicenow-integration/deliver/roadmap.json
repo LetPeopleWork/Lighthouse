@@ -1,24 +1,26 @@
 {
   "roadmap": {
     "project_id": "epic-5513-servicenow-integration",
-    "slice_id": "slice-01-connect-and-validate",
-    "created_at": "2026-07-29",
-    "total_steps": 8,
+    "slice_id": "slice-04-transition-history",
+    "created_at": "2026-07-31",
+    "total_steps": 10,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "goal": "Slice 01 (walking skeleton, ADO Story 5574): a configuration administrator creates a ServiceNow connection in Lighthouse, clicks Validate, and gets a truthful verdict — green only when the configured table actually shows rows to the credential, and otherwise a failure that names whether it was the host, the credential, or the rights. Turn the 47 already-authored RED tests green without authoring a single new test.",
-    "overview": "UNUSUAL SHAPE — DISTILL has already written every acceptance test AND every production scaffold. This roadmap plans NO test authoring. It plans turning 40 backend RED + 7 frontend RED tests green, in the order their dependencies imply, and deleting the scaffolds that made them RED. Backbone: 01-01 pure verdict ladder (no dependencies, 19 tests, where the mutants land) -> 01-02 basic auth strategy -> 01-03 connector probe shell (parse-and-catch ruling lands here, ADR-114 updated) -> 01-04 the seven declared-unsupported members -> 01-05 backend connection configuration surface -> 01-06/01-07 the two frontend edits (independent of the backend) -> 01-08 walking skeleton closes the loop through the real ASP.NET host. RED mechanism is NOT the project's usual RED-by-skip: DISTILL used WRONG-VALUE SCAFFOLDS. Every scaffold returns a `__scaffold__` sentinel or the deliberate opposite of the specification, so each test already fails at its assertion site with a real NUnit AssertionException. Nothing is [Ignore]d and nothing is skipped — the suite compiles, `dotnet build` is clean at zero warnings and `pnpm build` is clean. Each step replaces one scaffold body and removes that file's `// SCAFFOLD (DISTILL slice 01, Story #5574)` marker as part of the step, so the DoD sweep is distributed rather than deferred to a cleanup pass."
+    "goal": "Slice 04 (ADO Story 5577): a service desk that granted its integration account the `itil` role stops seeing request-to-resolution dressed up as time-in-progress. Lighthouse reads the instance's own state spans, turns them into the moves the record actually made, dates the start of work at the moment someone picked it up — and, where the instance cannot supply that, says so at connection setup instead of quietly shipping the inflated number. Turn the 43 already-authored RED tests green without authoring a single new test.",
+    "overview": "REPLACES SLICE 01's ROADMAP. This file previously held the slice-01 (Story #5574) plan; that version is preserved in git history at commit d7401b80b and is not reproduced here. Step ids are namespaced `04-NN` so they never collide with slice 01's `01-NN` in the shared execution log. UNUSUAL SHAPE, inherited from slice 01 — DISTILL has already written every acceptance test AND every production scaffold. This roadmap plans NO test authoring. It plans turning 38 backend RED + 5 frontend RED tests green, in the order the data flow implies, and deleting the scaffolds that made them RED. Backbone: 04-01 the query core (what is asked of the instance, what is kept of the answer, 12 tests) -> 04-02 the span mapper (spans become moves; when work started, 10 tests) -> 04-03 the capability verdict and its advisory copy (9 tests) -> 04-04 the connector composes the history read (5 tests) -> 04-05 StartedDate moves onto the first Doing span (1 test) -> 04-06 ValidateConnection carries the advisory (0 tests, and that is exactly why it gets its own step) -> 04-07 the frontend reads the validation answer (5 tests) -> 04-08 the frontend service stops collapsing that answer to a boolean (0 tests) -> 04-09 the wizard and the settings page actually show the advisory (0 tests, THE EXIT GATE) -> 04-10 the walking skeleton through the real ASP.NET host (1 test). RED mechanism is NOT the project's usual RED-by-skip and NOT [Ignore]: DISTILL used WRONG-VALUE SCAFFOLDS — `__scaffold__` sentinels, `DateTime.UnixEpoch`, an 8000-character string, a conservative `NoStateMetric` constant — so every test already fails at its assertion site with a real NUnit or Vitest failure and the expected/actual diff reads as the specification. Nothing is skipped, `dotnet build` is clean at zero warnings and `pnpm build` is clean. Each step replaces one scaffold body and removes that file's `// SCAFFOLD (DISTILL slice 04, Story #5577)` marker and its sentinel constants as part of the step, so the DoD sweep is distributed rather than deferred to a cleanup pass. THREE STEPS TURN ZERO RED TESTS GREEN (04-06, 04-08, 04-09) and are load-bearing anyway: they are the advisory's path from the connector to the administrator's screen. DISTILL specified that path and authored the pure function at each end, but authored nothing over the wiring between them. If those three ship undone the slice produces an advisory nobody ever reads, and ADR-117's honesty obligation — the reason this slice exists — is unmet."
   },
   "validation": {
-    "status": "pending_review",
+    "status": "approved",
     "reviewer": "nw-acceptance-designer-reviewer",
-    "reviewed_at": null,
-    "notes": "Slice-01-only roadmap (ADO Story 5574). Slices 02-05 are OUT and no test was authored against them. Slice 03 is cancelled and its cancellation is structural — the frontend portfolio schema entry declares it unsupported (01-06)."
+    "reviewed_at": "2026-07-31",
+    "review_outcome": "APPROVED. Coverage, sizing, walking-skeleton placement, ADR-118 compliance, regression-guard preservation and dependency order all pass. The reviewer raised one HIGH — `ServiceNowTransitionHistoryTest.cs` had a test it could not attribute — and it was WRONG: the fixture runs Failed 6 / Passed 4 / Total 10 (measured 2026-07-31), which is exactly the 5 (04-04) + 1 (04-05) RED the roadmap claims plus 4 argued greens. The reviewer had counted 3 greens, not 4. Its remaining conditions are kept as standing obligations rather than roadmap changes: diff discipline on 04-08's contract widening, the mandatory dogfood behind 04-09, and mutation >=80% on both stacks.",
+    "notes": "Slice-04-only roadmap (ADO Story 5577). Replaces the slice-01 roadmap that occupied this path; slice 01's version is at commit d7401b80b. Slice 02 is shipped and three of its behaviours are guarded here as regressions. Slice 03 is cancelled. Slice 05 (docs, demo-data parity, viability verdict) is OUT and no test was authored against it. Reviewer attention is requested specifically on: (a) the three zero-RED-test steps 04-06 / 04-08 / 04-09, which carry the advisory to the screen with no authored test over them; (b) the structural claim that the advisory does not reach the metrics UI (D-04-3), which DISTILL deliberately left as a reviewer's eye rather than a test asserting an absence across the whole UI; (c) the unrecognised-status rung named in 04-03's open decision."
   },
   "ssot_inputs": {
-    "feature_delta": "docs/feature/epic-5513-servicenow-integration/feature-delta.md",
-    "slice_brief": "docs/feature/epic-5513-servicenow-integration/slices/slice-01-connect-and-validate.md",
-    "red_classification": "docs/feature/epic-5513-servicenow-integration/distill/red-classification.md",
+    "feature_delta": "docs/feature/epic-5513-servicenow-integration/feature-delta.md (slice-04 DESIGN + DISTILL block, L1981-2262; mutation-testing setup L1793-1832)",
+    "slice_brief": "docs/feature/epic-5513-servicenow-integration/slices/slice-04-transition-history.md",
+    "red_classification": "docs/feature/epic-5513-servicenow-integration/distill/red-classification-slice-04.md",
+    "upstream_issues": "docs/feature/epic-5513-servicenow-integration/distill/upstream-issues-slice-04.md",
     "spike": [
       "docs/feature/epic-5513-servicenow-integration/spike/findings.md",
       "docs/feature/epic-5513-servicenow-integration/spike/wave-decisions.md"
@@ -26,305 +28,421 @@
     "architecture": [
       "docs/product/architecture/brief.md",
       "docs/product/architecture/adr-114-servicenow-connection-validation-verdict-ladder.md",
-      "docs/product/architecture/adr-115-servicenow-basic-auth-prerequisite-not-detected.md",
-      "docs/product/architecture/adr-116-servicenow-table-at-connection-scope.md"
+      "docs/product/architecture/adr-117-servicenow-started-and-closed-dates-without-itil.md",
+      "docs/product/architecture/adr-118-servicenow-transition-history-from-metric-instance-spans.md"
     ],
+    "ci_ledger": "docs/ci-learnings.md — read the 'Preflight rules' block before the first C# or TypeScript edit. The greppable subset is enforced by Scripts/ledger_check.py as a PreToolUse hook on git commit and HARD-BLOCKS the commit; the non-greppable subset (CA1859, S2325/S1144, S3776, S8969/S8970, S3358) only ever fails in Sonar, never locally.",
     "gherkin": [],
-    "gherkin_note": "There are no .feature files and no pytest-bdd in this repo. The acceptance tests ARE the executable specification: 6 NUnit fixtures + 3 Vitest files, named in domain language, matching the four existing connectors. See feature-delta.md `## Wave: DISTILL / [REF] Test placement`.",
+    "gherkin_note": "There are no .feature files and no pytest-bdd in this repo. The acceptance tests ARE the executable specification: 4 NUnit fixtures, 1 ArchUnit fixture, 1 WebApplicationFactory acceptance case and 1 Vitest file, named in domain language, matching the four existing connectors. See feature-delta.md `## Wave: DISTILL / [REF] Test placement (slice 04)`.",
     "siblings_to_mirror": {
-      "auth_strategy": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategy.cs",
-      "connector_skeleton": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
-      "stubbed_transport_test_idiom": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorHistoryParsingTest.cs",
-      "connection_options": "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs (GetOptionsForLinear @ L249)",
-      "fe_editor_gates": "Lighthouse.Frontend/src/pages/Settings/Connections/AdditionalFieldsEditor.tsx (L162-164) and WriteBackMappingsEditor.tsx (L276-278)"
+      "runtime_downgrade_precedent": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:475 (DowngradeHistorySupport) — same pattern, different trigger; ServiceNow's starts pessimistic where Linear's starts optimistic",
+      "raw_transitions_then_shared_mapper": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:423 (MapProjectSyncedTransitions)",
+      "shared_transition_mapper": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/WorkItemStateTransitionMapper.cs — MapToMappedStates(IReadOnlyList<WorkItemStateTransition>, IWorkItemQueryOwner). REUSED UNCHANGED; it is what maps names and drops self-transitions",
+      "paging_to_extend": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs:198 (ReadEveryPage) — EXTEND, do not fork",
+      "tolerant_two_form_field_read": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapper.cs:158 — see the visibility finding in 04-01's implementation_notes",
+      "advisory_contract": "Lighthouse.Backend/Lighthouse.Backend/Models/Validation/ConnectionValidationResult.cs — Advisory / AdvisoryCode / SuccessWith(...) already landed with the tests"
     }
   },
   "distill_state": {
-    "tests_authored": 58,
-    "backend_cases": 50,
-    "frontend_cases": 8,
-    "red_for_missing_functionality": 48,
+    "tests_red": 43,
+    "backend_red": 38,
+    "frontend_red": 5,
     "already_green_against_scaffold": 10,
-    "count_correction_note": "Was 47/11. The connector's ValidateConnection scaffold returned ConnectionValidationResult.Success(), whose Code is 'valid', so the AC3 happy path passed vacuously. Fixed at ba91f485e; backend is now 41 RED / 9 green, frontend 7 RED / 1 green.",
+    "verified_baseline": "`dotnet test --filter FullyQualifiedName~ServiceNow` -> Failed 38 / Passed 176 / Total 214, measured 2026-07-31. Frontend `ConnectionValidationResult.test.ts` -> 5 failed / 1 passed.",
     "red_mechanism": "wrong-value scaffolds — sentinels and deliberate opposites, failing at the assertion site. NOT [Ignore]/skip. Nothing to un-ignore.",
-    "scaffold_marker": "// SCAFFOLD (DISTILL slice 01, Story #5574)",
+    "scaffold_marker": "// SCAFFOLD (DISTILL slice 04, Story #5577)",
     "scaffold_marker_files": [
-      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs",
-      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
-      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs",
-      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
-      "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs",
-      "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts"
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQuery.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdict.cs",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs (two sites: the capability field at ~L73-90, the read seam at ~L144)",
+      "Lighthouse.Frontend/src/models/WorkTracking/ConnectionValidationResult.ts"
     ],
+    "red_per_step": {
+      "04-01": 12,
+      "04-02": 10,
+      "04-03": 9,
+      "04-04": 5,
+      "04-05": 1,
+      "04-06": 0,
+      "04-07": 5,
+      "04-08": 0,
+      "04-09": 0,
+      "04-10": 1,
+      "total": 43,
+      "arithmetic_note": "12+10+9+5+1+0+5+0+0+1 = 43. Backend 38 = 12 (query) + 10 (mapper) + 9 (verdict) + 5 (connector composition) + 1 (StartedDate) + 1 (walking skeleton). Frontend 5 = readConnectionValidation. The 3 ServiceNowHistoryPurityArchUnitTest cases are NOT in the 38 — they already pass against the scaffolds and are must-stay-green, not work."
+    },
     "already_green_tests_must_stay_green": [
-      "ServiceNowValidationVerdictPurityArchUnitTest.TheVerdictLadder_DoesNotSpeakHttp (step 01-01)",
-      "ServiceNowValidationVerdictPurityArchUnitTest.TheVerdictLadder_DoesNotLog (step 01-01)",
-      "ServiceNowValidationVerdictPurityArchUnitTest.TheVerdictLadder_DoesNotReachForThePersistenceLayer (step 01-01)",
-      "ServiceNowValidationVerdictTest.ARightsProblem_IsNeverDressedUpAsAReachabilityProblem (step 01-01, currently vacuous — becomes load-bearing)",
-      "ServiceNowConnectionConfigurationTest.ServiceNow_SitsAtTheEndOfTheStoredWorkTrackingSystemOrder (step 01-05)",
-      "ServiceNowConnectionConfigurationTest.AShopThatTracksWorkInServiceNow_FindsItAmongTheSystemsTheyCanConnect (step 01-05)",
-      "ServiceNowConnectionConfigurationTest.ANewServiceNowConnection_StartsOutUsingUsernameAndPassword (step 01-05)",
-      "WorkTrackingSystemConnection.serviceNow.test.ts — 'authenticates with a username and password' (step 01-06)",
-      "ServiceNowConnectionAcceptanceTest.AnAdministratorOpeningTheConnectionWizard_CanChooseServiceNow (step 01-08)",
-      "ServiceNowConnectionAcceptanceTest.TheCredentialAnAdministratorEnters_IsNeverHandedBackToTheBrowser (step 01-08)"
+      "ServiceNowHistoryPurityArchUnitTest.TheHistoryCores_DoNotSpeakHttp (steps 04-01/02/03)",
+      "ServiceNowHistoryPurityArchUnitTest.TheHistoryCores_DoNotLog (steps 04-01/02/03)",
+      "ServiceNowHistoryPurityArchUnitTest.TheHistoryCores_DoNotReachForThePersistenceLayer (steps 04-01/02/03)",
+      "ServiceNowHistoryVerdictTest.AnInstanceMeasuringNothing_HasNoStateMetric (04-03, declaration-grade — the conservative constant matches its own case)",
+      "ServiceNowHistoryVerdictTest.AnAnswerNobodyExpected_IsNotTreatedAsWorking (04-03, future regression guard — a negative assertion any conservative value satisfies)",
+      "ServiceNowTransitionHistoryTest.AnInstanceThatRefusesTheMetricTables_DowngradesRatherThanFailing (04-04, REGRESSION GUARD on slice 02's shipped behaviour)",
+      "ServiceNowTransitionHistoryTest.AnInstanceMeasuringNoStateSpans_DowngradesRatherThanFailing (04-04, REGRESSION GUARD on slice 02's shipped behaviour)",
+      "ServiceNowTransitionHistoryTest.WhenHistoryIsUnavailable_WorkStartedWhenTheRequestArrived (04-05, REGRESSION GUARD on ADR-117's shipped fallback)",
+      "ServiceNowTransitionHistoryTest.ATeamWithNoWork_AsksForNoHistoryAtAll (04-04, future regression guard — green because no history read exists yet)",
+      "ConnectionValidationResult.test.ts — 'treats a missing answer as not valid rather than as valid' (04-07, declaration-grade)"
     ],
+    "regression_guard_note": "The three marked REGRESSION GUARD are the valuable ones. They assert that slice 04 does not take the sync-delta fallback and ADR-117's opened_at away from the read-only customers who cannot pay the `itil` cost. A step that turns its own tests green while flipping one of these has broken the slice, not finished it — check them explicitly at 04-04 and 04-05, not only at the end.",
     "pre_existing_failures_not_ours": [
       "LicenseServiceTest.ValidLicenseLoaded_LoadNewLicense_IsValid",
       "LicenseServiceTest.ValidLicenseLoaded_RemoveLicense_LoadNewLicense_IsValid"
     ],
-    "pre_existing_failures_note": "Both fail identically at `main` with every change in this run stashed — verified by DISTILL, not assumed. They depend on a license fixture whose validity window has passed. Do NOT fix them inside slice 01 and do NOT let them mask a real regression: the DELIVER green bar is 'these two and only these two'."
+    "pre_existing_failures_note": "Both fail identically at `main` with every change in this run stashed — verified by DISTILL in slice 01 and unchanged since. They depend on a license fixture whose validity window has passed. Do NOT fix them inside slice 04 and do NOT let them mask a real regression: the DELIVER green bar is 'these two and only these two'."
   },
-  "open_questions_resolved": {
-    "response_is_json_detection": "RULED by the maintainer 2026-07-29: PARSE-AND-CATCH. `ServiceNowValidationVerdict.FromResponse` takes `responseIsJson` as a bool, and the DESIGN peer review flagged (severity High) that nothing specified how the imperative shell decides it. The shell attempts `JsonDocument.Parse(body)`; a `JsonException` means not-JSON. Rationale: it trusts the actual payload rather than a Content-Type header ServiceNow's gateway controls, and it costs nothing extra because the body is already being parsed to count rows. Implemented in step 01-03; recorded in ADR-114 in the same step. Note this feeds rung 3 (`unexpected_response`), the ONE rung the SPIKE never measured — so the detection rule and the verdict it produces are both hypothesis, and the test that covers it is named `Hypothesis_...` so a later reader cannot mistake it for a finding.",
-    "adr_114_naming_drift": "Recorded, resolved in 01-03. ADR-114's Decision 2 names the mapper `ServiceNowValidationVerdict.From(HttpStatusCode status, int rowCount, bool contentIsJson, string table)`. The scaffold DISTILL actually shipped — and every test is written against it — has THREE entry points with a different order: `FromInvalidInstanceAddress(instanceUrl)`, `FromUnreachableInstance(technicalDetails)`, `FromResponse(HttpStatusCode statusCode, bool responseIsJson, int rowCount, string table)`. The tests are the source of truth; 01-03's ADR edit reconciles the ADR prose to the shipped signatures rather than renaming the API under 19 passing tests."
+  "locked_decisions": {
+    "adr_118_1": "Transitions are derived at each span's `start`, never from `end` or `duration`. 128 of 189 rows on the PDI carry an empty `end`, so open spans need no special case, and the Glide epoch-offset duration is never parsed.",
+    "adr_118_2": "Spans are filtered by metric DEFINITION — `metric_definition` on the configured table with `type = Field value duration` — not by field name and not by field emptiness. Filtering on the `field` name was rejected: it hardcodes which field counts as state per table and is blind to a customer's own definitions.",
+    "adr_118_3": "`metric_instance.value` is the LABEL; `field_value` is the choice number and is never read. No choice-label resolver is built anywhere.",
+    "adr_118_4": "Chunk at 200 sys_ids. The measured 8192-byte URL cliff sits between 245 ids (8182 bytes, 200 OK) and 250 (8347 bytes, 414). A 414 is loud, which is the point: an over-long batch cannot silently return partial history.",
+    "adr_118_5": "The capability disclosure lives in `ValidateConnection` only. It is not persisted and it MUST NOT reach the metrics UI.",
+    "adr_118_6": "AC5's opt-in team setting is NOT built. Measured cost is ~2.4 s per 500 items.",
+    "adr_118_7": "`StartedDate` switches to the first Doing span's `start` where history is readable, and falls back to ADR-117's `opened_at` where it is not. `ClosedDate` does NOT switch — `resolved_at` is a genuine recorded instant, unlike the absent `work_start` that forced `StartedDate` to substitute in the first place."
   },
   "out_of_scope": [
-    "Any read of work items from ServiceNow (slice 02) — GetWorkItemsForTeam / GetFeaturesForProject / GetParentFeaturesDetails throw NotSupportedException in this slice, by test",
-    "Team or portfolio settings pointing at ServiceNow (slices 02/03) — ValidateTeamSettings and ValidatePortfolioSettings return coded refusals, by test",
-    "Write-back (D8, PERMANENTLY out) — WriteFieldsToWorkItems throws, and the FE write-back editor is excluded",
-    "sys_choice label resolution and the label-boundary ArchUnit rule (slice 02, DESIGN Open Call 4)",
-    "A DataRetrievalWizardRegistry entry — absence IS the decision (ADR-116); the FE test asserts wizardHint is null",
-    "Any live-instance ServiceNow test. If slice 02 wants one it needs `[Category(\"Integration\")] [Category(\"ServiceNowIntegration\")]` PLUS a matching `servicenow_connector` input in ci_changes.yml and Scripts/test-selection/path-classifier.sh — without the CI plumbing the category is never run, which is silence rather than coverage",
-    "The S107 regrouping refactor (keyed IEnumerable<IWorkTrackingAuthStrategy> replacing 6 ctor params) — Tier-2 T2-05, a separate `refactor(worktracking):` commit. Do NOT undo the existing `#pragma warning disable S107` wrapping the WorkTrackingAuthStrategyFactory declaration",
-    "Pact contract tests for the L1-L7 Table API response catalogue (T2-08) — belongs to whoever runs DEVOPS, which has not run for this epic",
-    "Bringing Scripts/DemoEnv/ServiceNowSystemUpdater.py to sibling parity (slice 05)",
+    "Any live-instance ServiceNow test. It would need `[Category(\"Integration\")] [Category(\"ServiceNowIntegration\")]` PLUS a matching input in ci_changes.yml and Scripts/test-selection/path-classifier.sh — without the CI plumbing the category is never run, which is silence rather than coverage",
+    "Pact / consumer-driven contract tests for the metric_definition and metric_instance responses — belongs to whoever runs DEVOPS, which has still never run for this epic (carried since slice 01)",
+    "Slice 05 — docs, screenshots, demo-data parity (Scripts/DemoEnv/ServiceNowSystemUpdater.py) and US-06's viability verdict. The verdict must carry U-1's negative result, not just the fact that slice 04 shipped",
+    "ADO 5612 — carrying `sys_id` onto `WorkItemBase` for work-item links, and the cross-connector capability surface (ADR-118 alternative C, parked as a rule-of-three question for the end of the MVP)",
+    "AC5's opt-in team setting (ADR-118 decision 6 — not built)",
+    "Any `end` / `duration` / `business_duration` / `field_value` read (ADR-118 decision 6). `ServiceNowStateSpan` deliberately carries no End and no Duration — do NOT add them to the record to make something convenient",
+    "A leading synthetic transition from record creation into the first observed label (DISTILL Q2, answered NO — it would assert a state the record may never have held, dated to a moment nothing measured)",
+    "Persisting the advisory acknowledgement, or a durable dismissed-flag (ADR-118 alternative D — additive later if wanted)",
+    "Backfilling history for items synced before this slice",
     "Fixing the two pre-existing LicenseServiceTest failures"
   ],
   "phases": [
     {
-      "id": "01",
-      "name": "Connect and validate a ServiceNow instance (walking skeleton)",
-      "description": "Turn 47 already-authored RED tests green: the pure verdict ladder, the basic-auth strategy, the connector shell and its declared limitations, the connection configuration surface, the two frontend edits, and the walking skeleton through the real ASP.NET host.",
+      "id": "04",
+      "name": "Time-in-state on ServiceNow work comes from the instance's own history",
+      "description": "Turn 43 already-authored RED tests green: the three pure cores, the connector's composition of them, the start-of-work switch, and the advisory's path from the connector through the validation response to the administrator's screen — plus the walking skeleton through the real ASP.NET host.",
       "steps": [
         {
-          "id": "01-01",
-          "name": "The verdict ladder — pure function, seven rungs, no IO",
+          "id": "04-01",
+          "name": "What is asked of the instance, and what is kept of the answer",
           "criteria": [
-            "An instance address that is not an absolute address is rejected before anything is sent, with code `invalid_url` and IsValid false",
-            "An instance that cannot be reached reports `connection_failed`; a credential the instance rejects reports `authentication_failed`; an instance that refuses the read outright reports `insufficient_permissions`; a table the instance does not have reports `unknown_table`",
-            "A rejected credential names the basic-auth role in its message and stays CONDITIONAL — it must not claim to know the restriction is the cause, because ADR-115 records that Lighthouse measured that detection to be impossible for the account that would need it",
-            "An instance that answers successfully with nothing visible is NEVER reported as valid: 200 + JSON + zero rows yields `no_records_visible` with IsValid false. This is the headline bug the whole slice exists to make unshippable",
-            "The nothing-visible message names BOTH possible causes (the account lacks read access to the configured table, or the table is genuinely empty), names the role to grant, and says that `snc_read_only` grants no read access despite its name (amended AC4, contradiction C-1 accepted 2026-07-29)",
-            "A login page wearing a success status is not mistaken for data: 200 with a non-JSON body yields `unexpected_response`. This rung is a HYPOTHESIS, never measured by the SPIKE, and its test name carries the `Hypothesis_` prefix — keep it",
-            "An instance that shows work to the credential reports `valid` with IsValid true — success now requires rows to come back, not merely a 200",
-            "The three failures an administrator will meet are told apart, and a rights problem is never dressed up as a reachability problem: no denial rung carries `connection_failed` or `invalid_url`",
-            "Every rung carries a non-empty message (DoD 5 / KPI 3 — zero silent no-ops)",
-            "ALREADY GREEN, MUST STAY GREEN: the three `ServiceNowValidationVerdictPurityArchUnitTest` tests (the ladder must not depend on HttpClient, ILogger or Lighthouse.Backend.Data) and `ARightsProblem_IsNeverDressedUpAsAReachabilityProblem`, which passes vacuously against the sentinel today and becomes load-bearing the moment the ladder has a body",
-            "All 19 cases in ServiceNowValidationVerdictTest green; `// SCAFFOLD (DISTILL slice 01, Story #5574)` and the `__scaffold__` sentinel gone from this file; dotnet build zero warnings"
+            "A team's records are split into batches no larger than the measured safe size, every record appears exactly once across the batches, and a team that fits in one batch is not split",
+            "A team whose query matched nothing asks for nothing — no batch, and therefore no request that would read every span in the instance",
+            "A full batch's assembled query stays comfortably under the measured URL cliff, with room left for the instance address, the path and the other request parameters. This is the single check standing between a full batch and a 414 that fails the whole sync",
+            "The definition query names the configured table and the kind of measurement that records how long a field held each of its values — script-calculation definitions share the field with the real spans, so the kind is the discriminator, not the field name",
+            "The span query restricts to BOTH the records asked about and the definitions that actually measure state: without the record filter it reads every span in the instance, without the definition filter it reads rows that are not spans at all",
+            "A span row is read for its state label, never for its choice number — the number means different states on different tables, so mapping by it would be wrong on every table but one",
+            "Rows produced by a definition that does not measure state are discarded. Keeping them fabricates state changes out of assignment changes and script calculations",
+            "A span's start is read in universal time. The instance-local form of the same instant falls on the previous calendar day in the fixture, and everything downstream buckets by day",
+            "A row whose start cannot be read is not a span at all — no epoch, no now, no substitute instant. A fabricated instant in a state-time chart reads as measurement",
+            "An empty answer produces no spans",
+            "All 12 cases in ServiceNowHistoryQueryTest green (12 of the 43); the SCAFFOLD marker and the `__scaffold__` sentinel constant gone from this file; `dotnet build` zero warnings",
+            "ALREADY GREEN, MUST STAY GREEN: the three ServiceNowHistoryPurityArchUnitTest cases — this core must not acquire an HttpClient, a logger or a persistence dependency while it grows a body"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdict.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQuery.cs"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowValidationVerdictTest.cs",
-          "scenario_name": "Every rung of the ladder produces its own verdict — and an instance that answers successfully with nothing visible is never reported as valid",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQueryTest.cs",
+          "scenario_name": "A full batch's query stays under the measured URL limit, and only rows from a definition that measures state survive as spans",
           "dependencies": [],
-          "implementation_notes": "FIRST because it has no dependencies, it turns 19 of the 47 tests green in one step, and it is where the Stryker mutants land — ADR-114 Alternative E exists precisely so all seven rungs are reachable without an HTTP mock. Ladder order matters (first matching rung wins): invalid_url -> connection_failed -> 401 -> 200-non-JSON -> 400 -> 403 -> 200-JSON-zero-rows -> 200-JSON-rows. The three entry points already exist with the signatures the tests are written against — `FromInvalidInstanceAddress(string)`, `FromUnreachableInstance(string)`, `FromResponse(HttpStatusCode, bool responseIsJson, int rowCount, string table)`. Do NOT rename them to match ADR-114's prose; 01-03 reconciles the ADR to the code instead. CI rules that bite here: S8969/S8970 — NO null-forgiving `!` anywhere (ERROR severity since SonarAnalyzer 10.30); CA1859 — concrete return AND parameter types on every private helper; SYSLIB1045 — no `new Regex(...)`, the messages are string interpolation; S2325/S1144 — every private member must justify itself (this is a static class, so a helper that does not touch state should BE static). Exact expected message wording for the no-records rung is in ADR-114 Decision 4 and in the test's own assertions — read the test, it is the specification.",
+          "implementation_notes": "FIRST because it sits at the head of the data flow — rows become spans here, and 04-02 consumes what this produces. 12 of the 43 in one step. FINDING THAT WILL BITE IMMEDIATELY: the Reuse Analysis (feature-delta.md L2108) says to REUSE ServiceNowWorkItemMapper's tolerant two-form field read, but that reader and both form constants (UniversalForm = \"value\", ReadableForm = \"display_value\") are PRIVATE. Widening them to `internal` is the smallest honest move and keeps one tolerant reader for the whole connector; duplicating the null / absent / bare-scalar tolerance into this file is the alternative and is worse, because that tolerance is exactly what the metric rows need and a second copy will drift. Decide once, here, and note it in the commit body. FIELD MAPPING for a span row, following the mapper's existing split (identifiers and instants from the universal form, human-facing labels from the readable form): RecordId <- `id`.value; Label <- `value`.display_value; Start <- `start`.value parsed with `AdjustToUniversal | AssumeUniversal` and `CultureInfo.InvariantCulture` (Bug #5567 is the ledger entry for what relabelling costs — never `SpecifyKind`). THE URL BUDGET IS TIGHT: 200 ids x 32 hex chars + 199 separators is ~6599 characters before the definition clause, and the test bounds the result at 7000 — so this function must NOT URL-encode; encoding happens where the URI is built, in 04-04. `RecordsPerBatch` (200) and `StateSpanDefinitionType` (\"Field value duration\") are already public consts and the tests read them, so do not rename or inline them. LIVE-INSTANCE RISK worth naming in the commit body: the definition query filters on the literal `Field value duration`, which is the choice LABEL; a real instance may need the underlying value (`field_value_duration`) in `sysparm_query`. The test pins the label because ADR-118 states it that way; the dogfood moment is what proves it, and it is the first thing to check if the PDI returns zero definitions. CI ledger rules that bite here: NUnit2046 / NUnit4002 / CA1861 are pre-commit HARD BLOCKS if you touch the test file (do not); CA1859 — every new private helper takes and returns the CONCRETE `List<T>` / `string[]`, never an interface, and the rule applies to parameters too; SYSLIB1045 — no `new Regex(...)`, this is string building; CA1869 — if any `JsonSerializerOptions` appears, cache it in a `static readonly` field; S2325 / S1144 — a private helper that touches no instance state must BE static (this is a static class, so all of them are); S8969 / S8970 — zero null-forgiving `!` anywhere, ERROR severity since SonarAnalyzer.CSharp 10.30 and it breaks the build, not just the gate; S3776 — keep the row reader under cognitive complexity 15, extract before adding a third branch.",
           "estimated_hours": 3
         },
         {
-          "id": "01-02",
-          "name": "ServiceNow basic-auth strategy — the credential reaches the wire",
+          "id": "04-02",
+          "name": "Spans become the moves between them, and the moment work actually started",
           "criteria": [
-            "A ServiceNow credential is presented to the instance as Basic authentication — the outgoing request carries an Authorization header with the Basic scheme",
-            "The header payload carries the connection's username and the DECRYPTED password, base64-encoded as `username:password`",
-            "The stored password reaches the instance through the crypto service — the strategy asks ICryptoService to decrypt the stored value rather than sending the ciphertext or reading a plaintext field (AC5)",
-            "All 3 tests in ServiceNowBasicAuthStrategyTest green; the `// SCAFFOLD (DISTILL slice 01, Story #5574)` marker gone from this file; dotnet build zero warnings"
+            "Three spans describe two moves: consecutive spans pair into `previous label -> current label`, and each move is dated by the ARRIVAL — the start of the span being entered, never the end of the one being left. The two differ by roughly thirty seconds on a live instance whenever the metric calculation lags",
+            "Spans that arrive out of order are paired by when they started, not by the order the Table API happened to return them in. Pairing unsorted spans produces moves that never happened",
+            "The earliest span is an arrival nobody witnessed and is not reported as a move. Spans begin only when the metric definition was activated, so a record older than that has a first observed label that is not necessarily the state it was created in — manufacturing a move into it would assert a state the record may never have held",
+            "A reopened record reports the journey back out of Done: a later span carrying an already-held label pairs into a move from Done back into Doing, which is exactly what a flow coach investigating rework needs to see",
+            "Two labels the team has grouped under one state produce no move between them — the team called them one state because it considers them one state, and reporting churn between them would put phantom transitions in every state-time chart",
+            "A record with no history reports no moves",
+            "Work started when the record first reached a state the team calls Doing. Nine days sitting in the queue is queue time, and counting it as work is precisely what ADR-117 accepted only until this slice existed",
+            "Work that returned to Doing started the FIRST time it got there — rework must not restart the clock, or Cycle Time reports a fraction of the work's life as though the first attempt never happened",
+            "Work that never left the queue has not started, and neither does a record with no spans at all. Saying otherwise would put every untouched ticket into Cycle Time and Work Item Age with a start date it never earned",
+            "All 10 cases in ServiceNowStateSpanMapperTest green (10 of the 43); the SCAFFOLD marker and the `__scaffold__` sentinel constant gone from this file; `dotnet build` zero warnings",
+            "ALREADY GREEN, MUST STAY GREEN: the three ServiceNowHistoryPurityArchUnitTest cases"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategy.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTest.cs",
-          "scenario_name": "A ServiceNow credential is presented to the instance as Basic authentication, carrying the username and the decrypted password",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperTest.cs",
+          "scenario_name": "Consecutive spans become the moves between them, dated by the arrival — and work started the first time the record reached a state the team calls Doing",
+          "dependencies": ["04-01"],
+          "implementation_notes": "The headline behaviour of the slice, and where the mutants will land alongside 04-01. AC2 REQUIRES THE SHARED PATH: build raw transitions (`previous.Label -> current.Label` at `current.Start`) and then hand them to `WorkItemStateTransitionMapper.MapToMappedStates(raw, owner)` UNCHANGED — that shared mapper is what maps raw labels to the team's mapped names and drops self-transitions, which is the only reason `TwoLabelsTheTeamTreatsAsOneState_ProduceNoMoveBetweenThem` collapses three spans to one move with FromState \"Working\". Do not reimplement either behaviour locally; the whole point of ADR-118's label finding is that ServiceNow needs no mapping surface of its own. Sort by `Start` FIRST, then pair — `SpansArrivingOutOfOrder_ArePairedByWhenTheyStarted` is the only thing standing between a stable sort and invented moves, and the Table API promises no order. `WhenWorkStarted` is the earliest span by `Start` whose label the owner maps to the Doing category, or null — note the two null cases are different questions (never reached Doing / no spans at all) that both arrive here as nothing to report; the caller decides which it is, this function only reports what the spans support. Both public signatures already exist and every test is written against them — `ToTransitions(IReadOnlyList<ServiceNowStateSpan>, IWorkItemQueryOwner)` and `WhenWorkStarted(...)` — so do not change them. `ServiceNowStateSpan` carries RecordId, Label and Start and DELIBERATELY carries no End and no Duration (ADR-118 D6 made structural); do not add them for convenience, the ArchUnit fixture's own comment records why. CI ledger rules that bite here: CA1859 on any new private helper (concrete `List<T>` in and out, parameters included); S2325 / S1144 — static class, so every helper is static and must justify its existence; S8969 / S8970 — zero `!`; S3776 — the pairing loop plus the sort plus the mapper call is already three concerns, extract before adding a fourth. Sonar only re-scans PRs and the Nightly, so a clean local build here proves nothing about the gate.",
+          "estimated_hours": 2.5
+        },
+        {
+          "id": "04-03",
+          "name": "Two different reasons the history is missing, and two different remedies",
+          "criteria": [
+            "An instance that measures state spans on the configured table can supply history",
+            "An account the instance refuses the metric tables to lacks the rights — the measured signal is a refusal for every read-only role, opening only at `itil` grade",
+            "A refused read that returned nothing is about rights, not about configuration. Both cases saw zero definitions; only one of them is a permissions problem, and telling an administrator to go configure a metric they cannot even see sends them after entirely the wrong thing",
+            "An answer nobody expected is not treated as working. Assuming availability from an unrecognised response would have the connector ask for spans it cannot get and report an empty history as though it were a record that never moved",
+            "A missing capability does not fail the connection. The advisory rides a success — ServiceNow without `itil` still gives a team its throughput and its forecast, and failing validation would stop an administrator finishing a setup that works",
+            "An instance that can supply history carries no advisory at all — neither the text nor its code. Nothing to warn about, so nothing is said, and an empty banner in front of an administrator with nothing to act on is worse than silence",
+            "The advisory for missing rights names the role to grant. An administrator cannot act on 'history unavailable'; they can act on the name of a role",
+            "The advisory for a missing metric names the configured table and the kind of measurement to activate. Naming the metric kind is what turns a complaint into an instruction",
+            "Whichever cause fired, the advisory says which number the team is actually going to get — that the measurement is request-to-resolution rather than time in progress. Shipping the inflated number unqualified is what this slice exists to stop, and it is ADR-117's honesty obligation coming due",
+            "All 11 cases in ServiceNowHistoryVerdictTest green — 9 of the 43 newly green, plus the 2 argued greens that must not regress; the SCAFFOLD marker and the `__scaffold__` sentinel constant gone from this file; `dotnet build` zero warnings",
+            "ALREADY GREEN, MUST STAY GREEN: `AnInstanceMeasuringNothing_HasNoStateMetric` (the conservative constant matched its own case) and `AnAnswerNobodyExpected_IsNotTreatedAsWorking` (a negative assertion any conservative value satisfied) — both become load-bearing the moment the verdict has a body, and the three ServiceNowHistoryPurityArchUnitTest cases"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdict.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdictTest.cs",
+          "scenario_name": "An account that is refused the metric tables is told to grant a role; an instance measuring nothing is told to activate a measurement — and neither one fails the connection",
           "dependencies": [],
-          "implementation_notes": "Independent of 01-01 — sequenced second only because the connector (01-03) resolves it, and because the walking skeleton needs both real. Roughly 20 lines. Shape-mirror JiraCloudBasicAuthStrategy.ApplyAsync but do NOT reuse it: it reads Jira option keys by name and falls through to Bearer for the token methods, so reusing it would put ServiceNow knowledge inside a Jira-named class — repeating KNOWLEDGE, which the project's DRY rule forbids (Reuse Analysis row 7). Read option values via ServiceNowWorkTrackingOptionNames.Username / .Password, which already exist and are real, not scaffolded. The generalisation to `BasicAuthStrategy(usernameKey, secretKey)` was considered and rejected — it forces a refactor of a live Jira path inside a walking skeleton; revisit at the rule of three. S8969/S8970: no `!`; handle a missing option with `??` rather than null-forgiving. `RecordingCryptoService` in the test observes the decrypt call, so the strategy must actually route through ICryptoService, not just produce a correct-looking header.",
-          "estimated_hours": 1.5
+          "implementation_notes": "Independent of 04-01 and 04-02 — it could run first, and is placed third only so the two cores that feed the connector land together. The rung order is a refusal outranking the count: a refusal is NoRights whatever the definition count says, then a successful read with at least one matching definition is Available, then a successful read with none is NoStateMetric. OPEN DECISION THE TESTS DO NOT CONSTRAIN, and the one thing to record in the commit body rather than decide silently: an UNRECOGNISED status (the fixture uses 500) is pinned only by a negative assertion — it must not be Available, and the enum offers no third non-available value that is honest about it. NoRights would tell an administrator to buy a role that changes nothing; NoStateMetric would send them to activate a definition that already exists. Both remedies are wrong for a 500. Pick the one you can defend, write down why, and note that this is the rung neither the SPIKE nor the tests measured — the same provenance problem slice 01 marked with its `Hypothesis_` prefix. `NoRightsCode` and `NoStateMetricCode` already exist as public consts and the tests read them; `ConnectionValidationResult.SuccessWith(code, advisory)` already exists and is the factory for the two advisory cases, with plain `Success()` for Available. ADVISORY COPY IS USER-VISIBLE TEXT and the mutation ledger's single most common survivor is a test that compares a value to the constant it came from — the tests pin the LITERALS \"itil\", \"Field value duration\", the table name and \"resolution\" (case-insensitive), so blanking the copy to \"\" is caught. Write the copy so each of those literals earns its place in a sentence an administrator can act on, not as a keyword list assembled to satisfy the assertions. The table name goes into the message by string interpolation; SYSLIB1045 forbids `new Regex(...)` and nothing here needs one. Other CI ledger rules: CA1859 on private helpers (concrete types, parameters included); S2325 / S1144 — static class; S8969 / S8970 — zero `!`; S1192 territory if the same literal appears three times, hoist it to a private const. This core must stay pure — the ArchUnit fixture forbids it acquiring a logger, and its own `.Because` clause says why: what an administrator needs to know about a missing capability belongs in the advisory they read, not in a log line nobody opens.",
+          "estimated_hours": 2
         },
         {
-          "id": "01-03",
-          "name": "Connector probe shell — one Table API call, parse-and-catch, verdict returned unchanged",
+          "id": "04-04",
+          "name": "The connector reads the history: the measurement first, then the spans, in one batched call",
           "criteria": [
-            "Validating a connection asks the configured table for a single record and NOTHING else: exactly one outbound request, to `{instanceUrl}/api/now/table/{table}` with `sysparm_limit=1`, and NO `sysparm_fields` (never measured against ACL row filtering, and a probe whose job is to distrust the substrate must not itself rest on an unmeasured mechanism)",
-            "A connection with no table chosen is probed against the incident table (ADR-116 default)",
-            "Validating a connection leaves the credential handling to the resolved authentication strategy — the connector asks the auth strategy factory and never touches the stored password itself (AC5)",
-            "An instance that answers successfully with nothing visible is NOT reported as a working connection; an instance that shows work to the credential IS; a rejected credential surfaces as an authentication failure; an unreachable instance surfaces as a connection failure; an address that is not an address is rejected WITHOUT contacting anything (verify the transport recorded zero requests)",
-            "Whether the response body was JSON is decided by PARSE-AND-CATCH: attempt `JsonDocument.Parse(body)`, and treat a `JsonException` as not-JSON. Never by the Content-Type header — ServiceNow's gateway controls that header, and the body is already being parsed to count rows so the check costs nothing extra (maintainer ruling, 2026-07-29)",
-            "ADR-114 records the parse-and-catch rule alongside the `unexpected_response` rung it feeds, notes that both the detection and the rung remain HYPOTHESIS because the SPIKE never measured an SSO-fronted instance, and its Status moves from Proposed to Accepted now that the C-1 amendment it forced has been accepted",
-            "ADR-114's Decision 2 prose is reconciled to the three entry points actually shipped (`FromInvalidInstanceAddress` / `FromUnreachableInstance` / `FromResponse`) rather than the single `From(...)` it currently describes",
-            "Transport failures are logged AND a failure result is returned — never logged and rethrown (S2139; follow the Linear precedent)",
-            "8 of the 14 ServiceNowWorkTrackingConnectorTest tests green (the five rungs re-asserted through the shell plus the three probe-shape/auth-delegation tests); dotnet build zero warnings"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
-            "docs/product/architecture/adr-114-servicenow-connection-validation-verdict-ladder.md"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
-          "scenario_name": "Validating a connection asks the configured table for a single record and nothing else, and returns exactly what the verdict ladder says",
-          "dependencies": ["01-01", "01-02"],
-          "implementation_notes": "The imperative shell around the pure core: perform the call, catch transport exceptions, hand three scalars to ServiceNowValidationVerdict, return what it says. The shell must add NO branching of its own beyond the parse-and-catch and the pre-flight absolute-Uri check — every verdict decision belongs to 01-01, and the ArchUnit purity fixture only guards the core, not the shell, so this discipline is on the author. The test fixture injects transport via the existing `HttpMessageHandler? httpMessageHandlerForTesting` ctor parameter (Mock<HttpMessageHandler> + Moq.Protected, mirroring LinearWorkTrackingConnectorHistoryParsingTest, NOT the live-instance LinearWorkTrackingConnectorTest). CI rules that bite hardest in this file: CA1869 — cache any JsonSerializerOptions in a `static readonly` field, never construct per call; S8969/S8970 — zero `!`, the JSON parsing is exactly where the temptation lives, use `??` and explicit null checks; CA1859 — concrete types on the private helpers; S2139 — log and return a failure result, do not rethrow; SYSLIB1045 — no Regex. Do NOT remove the SCAFFOLD marker from this file yet: 01-04 still has members to write. Timing note for the ADR edit: ~600 ms measured per probe on a PDI and unmeasured on-prem, so keep it one call and re-measure before promising the US-06 AC3 time-to-first-metric KPI.",
-          "estimated_hours": 4
-        },
-        {
-          "id": "01-04",
-          "name": "The seven declared limitations — every unsupported capability reports an explicit state",
-          "criteria": [
-            "Reading work from ServiceNow is declared unsupported rather than returning nothing: GetWorkItemsForTeam, GetFeaturesForProject and GetParentFeaturesDetails throw NotSupportedException instead of returning an empty collection that reads as 'we looked and there was nothing'",
-            "Writing back to ServiceNow is declared unsupported — WriteFieldsToWorkItems throws NotSupportedException (D8, permanent)",
-            "Pointing a team at ServiceNow is refused with an actionable reason: ValidateTeamSettings returns IsValid false, code `team_settings_not_supported`, non-empty message",
-            "Pointing a portfolio at ServiceNow is refused with an actionable reason: ValidatePortfolioSettings returns IsValid false, code `portfolio_not_supported`, non-empty message (US-03 AC5 — this is what makes the cancellation of slice 03 structural rather than documentary)",
-            "Time-in-state on ServiceNow work is declared unavailable: SupportsTransitionHistory returns false (D6)",
-            "A ServiceNow connection brings no predefined additional fields: GetPredefinedAdditionalFields returns empty",
-            "All 14 ServiceNowWorkTrackingConnectorTest tests now green; the scaffold's `LogScaffoldUse` helper and the `// SCAFFOLD (DISTILL slice 01, Story #5574)` marker are gone from this file; dotnet build zero warnings"
+            "An instance that measures state spans is DECLARED to supply history — the connector stops answering from a constant and starts answering from what the instance actually said. This is AC1 and the whole point of the slice",
+            "The state measurement is resolved BEFORE the spans are asked for. Without that read there is nothing to restrict the span request to, and an unrestricted span read is how assignment changes become state transitions",
+            "Every record's history is asked for at once rather than one record at a time: two records fit in one batch, so exactly one span request is made, and it carries the batch as a list of record handles. At roughly 600 ms per call with no rate limiting the constraint is wall clock — one call per work item would turn a 500-item sync into five minutes",
+            "Work synced with history carries the moves it made. The pure mapper being right is worth nothing if the connector never hangs the transitions on the work items",
+            "An instance that refuses the metric tables downgrades rather than failing: the team's work still syncs, only the history is missing, and the connector declares history unsupported so the existing sync-delta derivation takes over. This is AC4 and it is what a customer sees when the role is revoked after a connection validated perfectly well",
+            "An instance that is readable but measures no state spans downgrades the same way, and must not be reported as the rights case",
+            "Downgrading says so rather than going quiet. A team quietly losing time-in-state reads as a team whose work never moves, and the administrator has no way to discover why — DoD 5 forbids the silent no-op",
+            "A team whose query matched nothing asks for no history at all. An unfiltered request for record handles is an unfiltered read of every span in the instance",
+            "All 10 cases in ServiceNowTransitionHistoryTest green except the start-of-work case, which is 04-05 — 5 of the 43 newly green here; both SCAFFOLD markers in the connector's capability field and read seam gone; `dotnet build` zero warnings",
+            "ALREADY GREEN, MUST STAY GREEN — check these explicitly, not only at the end: `AnInstanceThatRefusesTheMetricTables_DowngradesRatherThanFailing` and `AnInstanceMeasuringNoStateSpans_DowngradesRatherThanFailing` are regression guards proving read-only customers keep the fallback, and `ATeamWithNoWork_AsksForNoHistoryAtAll` stops being vacuous the moment a history read exists. The four pre-existing ServiceNowTeamSyncAcceptanceTest scenarios must also stay green — the local listener has the state-span measurement OFF by default precisely so they do"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorTest.cs",
-          "scenario_name": "Every capability ServiceNow does not have in slice 01 reports an explicit unsupported state rather than a silent no-op",
-          "dependencies": ["01-03"],
-          "implementation_notes": "Separated from 01-03 because it is a different kind of work — declaring limitations, not implementing behaviour — and because it closes the DESIGN peer review's single BLOCKER: the seven unsupported members were named in DESIGN but their return behaviour was unspecified. It is no longer unspecified; every one is pinned by a test, and the tests are the specification. Read them before writing. Follow the CSV and Linear precedent for the idiom (`=> []`, `=> false`, `throw new NotSupportedException`). This is the DoD 5 / KPI 3 step: zero silent no-ops, which is why an empty collection is the WRONG answer for the read methods and the RIGHT answer for GetPredefinedAdditionalFields — the tests encode which is which. S2325/S1144: once LogScaffoldUse is deleted, make sure no now-unused private member or field survives; the `logger` field must still earn its place (it does — 01-03's catch blocks log). Removing this file's SCAFFOLD marker belongs to this step, not 01-03.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTransitionHistoryTest.cs",
+          "scenario_name": "The connector resolves the state measurement, asks for every record's spans in one batched call, and hangs the resulting moves on the work items — or says out loud that it could not",
+          "dependencies": ["04-01", "04-02", "04-03"],
+          "implementation_notes": "Where the three cores get composed, and the first step that touches IO. The seam is already marked at ~L144 of GetWorkItemsForTeam, immediately after the paged record read, and the capability field plus SupportsTransitionHistory are marked at ~L73-90. That field starts as 'not observed' rather than Linear's optimistic default ON PURPOSE — claiming a capability nobody has checked is the shape of failure this epic exists to prevent — so it turns Available only after a definition read actually succeeded. SHAPE: read `metric_definition` once with the definition query, take the status AND the count of matching rows into the verdict, store the verdict, and branch. On Available, batch the record handles, issue one read per batch, filter the rows to the state-span definitions, group the spans by record, map each record's spans to transitions and set them on the mapped item BEFORE it becomes a `WorkItem` — the copy constructor preserves SyncedTransitions and `WorkItemTest.Construct_FromWorkItemBaseCarryingSyncedTransitions_PreservesTransitions` is the green test that proves it, but this project has been bitten before by `[NotMapped]` init-only properties the copy constructor drops, so verify rather than assume. On anything else, log ONE warning naming the team and the reason, skip the span read entirely, and leave the transitions empty so WorkItemService's sync-delta branch runs. EXTEND the existing paged reader, do NOT fork it — the history reads are the same Table API with the same paging semantics, and chunking by record handle is a caller concern layered on top rather than a second pager. It currently ignores non-OK statuses; the verdict needs the status, so widen what it returns rather than adding a parallel reader. NO NEW IO ABSTRACTION: `ServiceNowHistoryQuery` is pure and the connector owns the HTTP — that is why DESIGN's `ServiceNowHistoryReader` was renamed, and inventing a reader now breaks ADR-114's shell/core split and the ArchUnit fixture with it. The connector is already 690 lines and one parameter under the S107 ceiling, so extract the history read into private methods rather than growing GetWorkItemsForTeam, which is already at three concerns against a cognitive-complexity bound of 15. CI ledger rules that bite here: CA1859 — new private helpers take and return concrete `List<T>` / `List<JsonElement>`, never `IReadOnlyList<T>`, and the rule covers parameters; S107 — do not add a constructor parameter, and note that a `#pragma warning disable S107` only works wrapping the declaration it applies to; S2139 — log and continue with a downgraded verdict, never log-and-rethrow; S8969 / S8970 — zero null-forgiving `!`; NUnit2046 / NUnit4002 / CA1861 are pre-commit hard blocks if you touch the test file (do not). URL ENCODING happens here, not in the query builder — the assertions unescape the request URI before matching, so encode when building the URI and keep 04-01's length budget valid.",
+          "estimated_hours": 4
+        },
+        {
+          "id": "04-05",
+          "name": "Work started when someone picked it up, not when the request arrived",
+          "criteria": [
+            "Where the instance supplies history, a record's start of work is the moment it first reached a state the team calls Doing — not the moment the request was logged. In the fixture those are nine days apart, and that gap is the queue time ADR-117 has been counting as work",
+            "Where the instance supplies no history, the start of work stays the moment the request arrived. This is ADR-117's fallback: inflated by queue time, and still the only thing the record itself supports. It must not disappear for the read-only customers who cannot pay the role cost",
+            "The finish of work does NOT move onto the history. The recorded resolution instant stays the source, and the asymmetry is deliberate rather than an oversight — a resolution instant is genuinely recorded and is readable by a read-only account, whereas the start had no recorded equivalent at all, which is the entire reason it needed a substitute",
+            "A record whose history is readable but which never reached a state the team calls Doing does not acquire a start of work from somewhere else. Unstarted work with a start date lands in Cycle Time and Work Item Age carrying a number it never earned",
+            "Both start-of-work cases in ServiceNowTransitionHistoryTest green — 1 of the 43 newly green here, plus the fallback case that was already green and is a regression guard on shipped behaviour; `dotnet build` zero warnings",
+            "ALREADY GREEN, MUST STAY GREEN: `WhenHistoryIsUnavailable_WorkStartedWhenTheRequestArrived`, and the pre-existing acceptance scenario that pins a resolved record's finish date on the calendar day throughput counts by — it is the guard that the finish did not move"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTransitionHistoryTest.cs",
+          "scenario_name": "Work started when the record first reached Doing where history is readable, and when the request arrived where it is not",
+          "dependencies": ["04-04"],
+          "implementation_notes": "ADR-118 decision 7, and the reason the role escalation is worth paying for at all: without it a team that granted `itil` sees Cumulative State Time report ~20 h in Doing while Cycle Time reports ~600 h for the same work, with nothing on the page explaining the difference. Small step by test count, separate step by decision — it is the one behaviour in this slice that CHANGES a number customers already see, and burying it inside 04-04's composition is how it ships unnoticed. The mapper's `WhenWorkStarted` already exists from 04-02; this is where its answer overrides what the record mapper produced from the request-logged instant. OPEN QUESTION THE TESTS DO NOT PIN, and the fourth criterion above is the position this roadmap takes: a record with readable spans, none of which are Doing, gets nothing. The mapper's own test says null means not started and that saying otherwise puts unstarted work into Cycle Time — but no connector-level test covers 'has spans, none Doing', so a crafter who leaves the request-logged fallback in place for that case will be green and inconsistent with the core. Distinguish 'this record has no spans' (mixed provenance, keep the fallback, accepted for v1 in ADR-118) from 'this record has spans but never reached Doing' (not started). Record the choice in the commit body. MIXED PROVENANCE IS ACCEPTED, NOT SOLVED: records predating the metric definition fall back while their teammates use span starts, so one chart aggregates two definitions of 'started' and nothing records which is which. ADR-118 accepted that for v1 rather than adding a per-item provenance field and an EF migration — do not invent the field here. DO NOT TOUCH the finish date. There is no EF migration in this slice and no new persisted property; the start date is an existing column. CI ledger rules that bite here: the calendar-days-versus-instants rule is the live one — a start date is an instant and stays an instant, but everything downstream buckets it by day, so it must be universal time throughout and never relabelled with the host's wall clock. All three suites are pinned to Europe/Zurich (backend via `Lighthouse.Backend.Tests/lighthouse.runsettings`) precisely so a UTC runner cannot hide a day shift — do not 'simplify' that pin. Also CA1859 on any new private helper, and S8969 / S8970 zero `!`.",
           "estimated_hours": 1.5
         },
         {
-          "id": "01-05",
-          "name": "Connection configuration surface — the form renders from schema, pre-filled with incident",
+          "id": "04-06",
+          "name": "Validating a connection reports the capability the instance actually has",
           "criteria": [
-            "The ServiceNow connection form asks for an instance address, a username and a password — the option set the schema exposes drives the form, with no bespoke React screen (AC2)",
-            "The ServiceNow connection form offers exactly ONE way to authenticate (username + password), and its display name is a real name — the placeholder 'ServiceNow (SCAFFOLD - not yet implemented)' is user-visible today and must go",
-            "A new ServiceNow connection comes pre-filled with the incident table (ADR-116: the work item table lives at connection scope so ValidateConnection has something to probe rights against), and the table stays editable so an Agile Development shop is not locked out",
-            "A new ServiceNow connection keeps the password as a secret — the option is flagged secret so the existing EncryptSecrets change-tracker hook and DTO redaction cover it with no new mechanism (AC5)",
-            "ALREADY GREEN, MUST STAY GREEN: `ServiceNow_SitsAtTheEndOfTheStoredWorkTrackingSystemOrder` — the enum-ordering guard pinning `(int)WorkTrackingSystems.ServiceNow == 4` with every sibling pinned. There is no HasConversion on this property anywhere in LighthouseAppContext, so EF persists it as an int; inserting a member mid-enum silently repoints every stored connection. Do not touch the enum",
-            "ALREADY GREEN, MUST STAY GREEN: `AShopThatTracksWorkInServiceNow_FindsItAmongTheSystemsTheyCanConnect` (AC1, satisfied by the enum member alone because GetSupportedWorkTrackingSystemConnections iterates Enum.GetValues) and `ANewServiceNowConnection_StartsOutUsingUsernameAndPassword` (the AuthenticationMethodKeys.ServiceNowBasic default)",
-            "All 7 ServiceNowConnectionConfigurationTest tests green; both `// SCAFFOLD (DISTILL slice 01, Story #5574)` markers gone; dotnet build zero warnings"
+            "Validating a ServiceNow connection against an instance whose account cannot read the metric tables returns a VALID result carrying the missing-rights advisory and its code — the connection works, and the administrator learns that the number their team will read is request-to-resolution",
+            "Validating against a readable instance that measures no state spans returns a valid result carrying the missing-measurement advisory instead, naming the table and the measurement to activate",
+            "Validating against an instance that measures state spans returns a valid result with no advisory at all",
+            "A connection that fails for any of the reasons the existing verdict ladder already reports still fails, with its existing code and message and with no advisory attached. The capability question is only asked of a connection that already works — an unreachable instance, a rejected credential, a missing table or an instance showing nothing must not be turned into a success by the advisory path",
+            "A failure of the capability read itself never fails the validation. Whatever went wrong reading the measurement, the administrator still gets the verdict on the connection they were actually testing",
+            "Re-validating re-evaluates the advisory, so a customer who grants the role afterwards sees it clear. The acknowledgement is not persisted and no schema changes",
+            "The advisory does NOT reach the metrics UI. No metrics component receives a validation result, so there is nothing to render it from — this stays structurally true rather than becoming true by convention",
+            "Turns 0 of the 43 RED tests green — DISTILL authored the pure verdict at one end (04-03) and the frontend reader at the other (04-07) but nothing over this wiring. Verification is that every existing ServiceNow validation test and the whole ServiceNowConnectionAcceptanceTest fixture stay green, plus the dogfood moment; `dotnet build` zero warnings"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AuthenticationMethodSchema.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Factories/WorkTrackingSystemFactory.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowConnectionConfigurationTest.cs",
-          "scenario_name": "The ServiceNow connection form asks for an instance address, a username and a password, and comes pre-filled with the incident table",
-          "dependencies": [],
-          "implementation_notes": "Independent of 01-01..01-04 — it can be done in parallel with the connector work; sequenced here because 01-08 needs it. Two declaration-grade edits: (a) AuthenticationMethodSchema's MethodsBySystem entry currently has a placeholder display name and zero options — give it the real name and the three options; (b) WorkTrackingSystemFactory.GetOptionsForServiceNow currently returns `[]` — return the four options (instance address, username, secret password, work item table defaulting to ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable = 'incident'), mirroring GetOptionsForLinear @ L249 for the idiom. The option KEYS already exist and are real in ServiceNowWorkTrackingOptionNames.cs — do not redefine them. Three of this fixture's seven tests are already green because the declarations had to exist for the suite to compile at all; that is argued in distill/red-classification.md note 2 rather than hidden, and it means this step's real work is the option sets, not the enum or the key constants. Do NOT touch WorkTrackingSystems.cs.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs",
+          "scenario_name": "An administrator validating a working ServiceNow connection whose account lacks the metric rights is told the connection works and which number their team will get",
+          "dependencies": ["04-03"],
+          "implementation_notes": "ZERO RED TESTS, AND ITS OWN STEP FOR THAT REASON. This is the backend half of the slice's exit gate: ADR-118 decision 5 puts the disclosure in ValidateConnection and nowhere else, and DISTILL's pre-requisites list flags the whole advisory path as specified-but-not-wired. Folded into 04-04 it would have no visible criteria and would ship undone. The named test_file is the regression suite this step must not break, not a test that drives it — the crafter authors nothing. ORDER MATTERS AT THE SEAM (~L97): the existing table probe runs first and returns early on every failure rung, so the capability read only happens on the path where the base verdict is already valid. That also keeps slice 01's closed-port walking skeleton returning `connection_failed` rather than a 500, because the base probe throws and is caught before anything asks about metrics. Wrap the capability read so a refusal becomes a verdict and any transport failure becomes 'no advisory' rather than an escaping exception — an advisory is by definition something the connection works without. Reuse 04-03's ToValidationResult for the advisory text and carry it onto the already-successful result; do not build a second copy of the copy. NOTE THIS ADDS A SECOND ROUND TRIP TO VALIDATE — acceptable at connection setup where the user clicked a button and expects a wait, and it is what makes the advisory truthful rather than inferred from configuration (ADR-118's 'Bad, and named': Lighthouse cannot distinguish 'not granted' from 'not looked yet' without reading). THE METRICS-UI ABSENCE (D-04-3) IS THE REVIEWER'S ITEM: DISTILL deliberately did not write a test asserting an absence across the whole UI. It is structurally satisfied today because no metrics component receives a `ConnectionValidationResult`; this step must not open a path that changes that, and 04-09 must not either. CI ledger rules that bite here: S2139 — do not log-and-rethrow around the capability read; S8969 / S8970 — zero `!`; CA1859 on new private helpers; S3776 — ValidateConnection already has a try/catch ladder, so the capability read goes in its own private method rather than a fourth branch inline.",
           "estimated_hours": 1.5
         },
         {
-          "id": "01-06",
-          "name": "Frontend schema — what Lighthouse asks a ServiceNow shop for, and what it declines",
+          "id": "04-07",
+          "name": "The browser reads the whole validation answer, not just the verdict",
           "criteria": [
-            "A team pointed at ServiceNow is asked for a ServiceNow query in the shop's own words — not a generic 'Query' label (AC2)",
-            "A team pointed at ServiceNow is NOT asked for a separate list of work item types: for the ITSM-first default the table IS the type (C-3, recorded as thin evidence with a slice-02 revisit note carried in the test body itself, so the revisit is a decision someone makes deliberately rather than a discovery under deadline)",
-            "No discovery wizard is offered, because discovery needs rights the customer will not have — wizardHint is null, and absence IS the decision (ADR-116); do not add a DataRetrievalWizardRegistry entry",
-            "Someone trying to build a portfolio over ServiceNow is declined rather than offered a field that leads nowhere: displayLabel 'Not supported for ServiceNow', inputKind 'none', not required, no wizard. This is what makes the cancellation of slice 03 structural rather than documentary (US-03 AC5)",
-            "A team's data retrieval field is called a ServiceNow query, not just a query — this switch has a `default:` arm so `tsc` will NOT force the new case, and it would silently render 'Query'; the explicit test is the only guard",
-            "ALREADY GREEN, MUST STAY GREEN: 'authenticates with a username and password' — the FE AuthenticationMethodKeys mirror, which had to exist for the file to compile",
-            "6 of the 8 frontend tests green (both files); both `// SCAFFOLD (DISTILL slice 01, Story #5574)` markers and every `__scaffold__` sentinel gone from DataRetrievalSchemaDefaults.ts; pnpm test green; pnpm build zero TypeScript, Biome and Vite warnings"
+            "A bare boolean is read as a verdict, because that is what the older connectors answer and they must keep working unchanged",
+            "A verdict inside a full result object is read as that verdict",
+            "A working connection with nothing extra to say produces no advisory and no advisory code — neither an empty string nor a placeholder. A connector with no capability gap must not put an empty banner in front of an administrator who has nothing to act on",
+            "An advisory that arrived alongside a valid connection is carried through with its text and its code intact",
+            "An advisory does not make the connection invalid. Treating it as an error would block a setup that works perfectly well for throughput and forecasting, which is most of what the connector is for",
+            "A missing answer is treated as not valid rather than as valid — an absent response is not evidence that anything worked",
+            "All 6 cases in ConnectionValidationResult.test.ts green — 5 of the 43 newly green, plus the 1 argued green that was passing because the scaffold answered invalid; the SCAFFOLD marker and the sentinel constant gone from this file; `pnpm build` zero errors and zero warnings and Biome clean on ./src"
           ],
           "files_to_modify": [
-            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts",
-            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts"
+            "Lighthouse.Frontend/src/models/WorkTracking/ConnectionValidationResult.ts"
           ],
-          "test_file": "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts",
-          "scenario_name": "What Lighthouse asks a ServiceNow shop for — a ServiceNow query, no work item types, no wizard, and an honest decline for portfolios",
+          "test_file": "Lighthouse.Frontend/src/models/WorkTracking/ConnectionValidationResult.test.ts",
+          "scenario_name": "A working connection that still has something worth saying is read as valid AND carrying an advisory",
           "dependencies": [],
-          "implementation_notes": "Fully independent of the backend — the frontend renders the connection form from the backend auth schema, so nothing here waits on 01-01..01-05. Two Records in DataRetrievalSchemaDefaults.ts carry `__scaffold__` entries (team @ L49, portfolio @ L94); both are exhaustive over the WorkTrackingSystemType union, which is why the placeholders had to exist for `tsc` to pass. The second test file for this step is `Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.serviceNow.test.ts` (2 tests, 1 already green) — its subject is `workTrackingSystemGetDataRetrievalDisplayName()`, the ONE frontend touch point the compiler cannot enforce because the switch has a `default:` arm. The union member and the AuthenticationMethodKeys const in that file are already real; only the display-name switch arm is missing. Read the tests for the exact expected strings — they are the specification. typescript:S107 / S3776 are low risk here; these are declarative edits.",
-          "estimated_hours": 1.5
-        },
-        {
-          "id": "01-07",
-          "name": "Frontend editors — do not offer a ServiceNow administrator a control that does nothing",
-          "criteria": [
-            "A ServiceNow administrator is not offered the Additional Fields editor: ServiceNow's GetPredefinedAdditionalFields returns empty in slice 01, so leaving the editor visible ships a control that does nothing — a silent no-op, which DoD 5 / KPI 3 forbid",
-            "A ServiceNow administrator is not offered the write-back mapping editor, and this exclusion is PERMANENT (D8) rather than a slice-01 deferral",
-            "The exclusions live in the same gate as the existing Linear and Csv exclusions, so the three read as one rule rather than three special cases",
-            "Both ConnectionEditors.serviceNow.test.tsx tests green; pnpm test green; pnpm build zero TypeScript, Biome and Vite warnings"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Settings/Connections/AdditionalFieldsEditor.tsx",
-            "Lighthouse.Frontend/src/pages/Settings/Connections/WriteBackMappingsEditor.tsx"
-          ],
-          "test_file": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionEditors.serviceNow.test.tsx",
-          "scenario_name": "Connection settings a ServiceNow administrator should not be offered — no additional field ServiceNow cannot fill, no value mapped back into ServiceNow",
-          "dependencies": [],
-          "implementation_notes": "Two one-line edits to gates currently written as `!== null && !== \"Linear\" && !== \"Csv\"` — AdditionalFieldsEditor.tsx L162-164 and WriteBackMappingsEditor.tsx L276-278. DESIGN flagged these as found-by-inspection and easy to miss (Reuse Analysis rows 24-25); two tests guard them. TRAP recorded by DISTILL and worth reading before you touch the test setup: WriteBackMappingsEditor renders its 'Add Sync Mapping' button only when at least one additional field exists, so the obvious setup (empty additionalFields) renders a different branch entirely and produces a misleading green. The authored test already accounts for this — do not 'simplify' its fixture.",
+          "implementation_notes": "Independent of every backend step — it can run in parallel with 04-01 through 04-06, and only 04-08 depends on it. `IConnectionValidationResult` and both optional fields already exist and match the backend contract's JSON property names (`advisory`, `advisoryCode`); only the function body is scaffolded. The absent-advisory case wants UNDEFINED, not an empty string — the test asserts `toBeUndefined()`, and a component rendering `advisory && <Alert>` would show an empty banner for an empty string, which is exactly what the third criterion forbids. CI LEDGER, PRE-COMMIT HARD BLOCK: `typescript:S7735` forbids a negated condition in a ternary — no `!==` and no `!=` in a ternary condition anywhere in this file; write `payload === undefined ? falsy : truthy`. This function handles three shapes (boolean, object, nullish) and the obvious implementation is a nested ternary, which trips `typescript:S3358` (nested ternaries, including inside template literals) — use early returns instead. Other frontend Sonar rules from the ledger: prefer `globalThis` over `window` (S7764); pass single-argument pure functions directly rather than wrapping them in an arrow (S7770). Biome runs as the `prebuild` hook, so a clean `pnpm build` implies a clean Biome check — but run `pnpm test` first, since nothing else counts as done while the suite is red.",
           "estimated_hours": 1
         },
         {
-          "id": "01-08",
-          "name": "Walking skeleton — a real Validate click against a genuinely closed port, through the real host",
+          "id": "04-08",
+          "name": "The validation service stops collapsing the answer to a verdict",
           "criteria": [
-            "An administrator validating a connection to an instance that is not there is told the instance is not there: a real HTTP POST to `/api/latest/worktrackingsystemconnections/validate` as a system admin, through the real ASP.NET host, the real enum, both real factories, the real DI container, the real connector, the real auth strategy and a real HttpClient, pointed at `http://127.0.0.1:1/` — returns `connection_failed`, not a 500 and not a success",
-            "The default transport path works — the connector's real-HttpClient branch (the one the stubbed-transport unit tests never exercise, because they inject a handler) resolves and completes; nothing about ServiceNow is faked and no external system is needed, so the test is both a true end-to-end wiring proof and deterministic",
-            "The ServiceNow entry in the wizard carries the fields the form needs to render — the schema reaches the browser over real HTTP with its option set intact (AC2 at the HTTP boundary)",
-            "ALREADY GREEN, MUST STAY GREEN: `AnAdministratorOpeningTheConnectionWizard_CanChooseServiceNow` (AC1, satisfied by the enum member alone) and `TheCredentialAnAdministratorEnters_IsNeverHandedBackToTheBrowser` (AC5, satisfied by the INHERITED EncryptSecrets hook and DTO redaction — a regression guard on a mechanism this slice does not build, and it goes red if a future change stops marking the ServiceNow password secret)",
-            "All 4 ServiceNowConnectionAcceptanceTest tests green",
-            "SLICE DONE: all 47 RED tests green; every other test still green except the two pre-existing LicenseServiceTest failures that also fail at `main`; `grep -rn \"SCAFFOLD (DISTILL slice 01\"` returns nothing; `grep -rn \"__scaffold__\"` returns nothing; dotnet build zero warnings; pnpm build and pnpm test clean"
+            "Validating a connection through the API service yields the whole answer — the verdict and, when the backend sent one, the advisory and its code. The service no longer discards everything but the verdict on the way back from the server",
+            "Every existing caller of connection validation keeps behaving exactly as it does today for connectors that send no advisory: the connection wizard still advances on a valid answer and still refuses on an invalid one, and the settings page still saves on a valid answer and still refuses on an invalid one",
+            "The shared test double for the service answers in the new shape, so a component test cannot be written against a contract the real service no longer has",
+            "Turns 0 of the 43 RED tests green. It is a contract change, and the existing frontend tests over that contract are updated to follow it — that is contract-following, not new specification, and it is the ONE place in this roadmap where an already-green test file is edited. Do not take it as licence to add cases",
+            "Before the contract is touched, every usage is found and the shared test double is extended first, per the project's shared-contract rule — the blast radius is the service, its own tests, the mock provider, the connection page, and the prop types of both connection components",
+            "`pnpm test` green, `pnpm build` zero errors and zero warnings, Biome clean on ./src, and no new SonarCloud issues"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts",
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx"
           ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowConnectionAcceptanceTest.cs",
-          "scenario_name": "An administrator validating a connection to an instance that is not there is told the instance is not there",
-          "dependencies": ["01-03", "01-04", "01-05"],
-          "implementation_notes": "LAST because it is the only test that proves the composition root, and it needs the connector, the auth strategy and the schema all real. The two DI registrations already exist (Program.cs L969 `IServiceNowWorkTrackingConnector`, L1039 `ServiceNowBasicAuthStrategy`) and the two factory arms already exist — the work here is the transport path they resolve to. The connector's third ctor parameter `HttpMessageHandler? httpMessageHandlerForTesting = null` is the test seam; under DI it is null, so this step settles and verifies how the production path gets its HttpClient (lifetime, timeout, socket handling) and confirms the closed-port connect surfaces as an HttpRequestException the shell catches into `connection_failed` rather than escaping as a 500. Do not remove the test seam. Every scaffold marker should already be gone by the time this step runs; the final greps are a verification of that, not a licence to defer the sweep to here. Run the epic's dogfood moment after this step: create a ServiceNow connection against the dev instance in a local Lighthouse, validate green, then deliberately break each of the three failure modes and confirm three different messages — that is the slice's learning hypothesis, and it is the one thing no automated test in slice 01 can prove.",
-          "estimated_hours": 2.5
+          "test_file": "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts",
+          "scenario_name": "Validating a connection returns everything the server said about it, and every existing caller still behaves the same for connectors with nothing extra to say",
+          "dependencies": ["04-07"],
+          "implementation_notes": "ZERO RED TESTS, AND THE STEP MOST LIKELY TO BE SKIPPED. `WorkTrackingSystemService.validateWorkTrackingSystemConnection` currently returns `Promise<boolean>` and hand-rolls the boolean-or-object collapse at L44-60; replace that body with `readConnectionValidation(response.data)` from 04-07 and widen the return type on both the interface and the class. THE BLAST RADIUS IS REAL AND THE PROJECT RULE IS EXPLICIT ABOUT IT — grep for usages and extend the test double BEFORE touching the contract. Known callers: `WorkTrackingSystemService.test.ts` (three assertions on the boolean, L98 / L130 / L479), `MockApiServiceProvider.ts` L277 (a bare `vi.fn()`, so it needs a default resolved value in the new shape or every component test that does not stub it explicitly breaks), `EditConnection.tsx` L64-69 (passes the function straight through as a prop to both components), `CreateConnectionWizard.tsx` L54-56 (the `validateConnection` prop type, consumed at L248-253 and branched at L368) and `ModifyConnectionSettings.tsx` L76-78 (the same, consumed at L407). Both component test files stub the prop with `mockResolvedValue(true)`, and `CreateConnectionWizard.test.tsx` even declares `Promise<boolean>` explicitly at L259. THOSE EDITS ARE MECHANICAL AND ARE THE POINT: a boolean becomes an object carrying a verdict. Changing an assertion's expected VALUE is following the contract; adding a case is authoring a test, and this roadmap plans none. If the diff to a test file grows past renaming the shape, stop — something in the production change is wrong. Keeping the boolean and adding a second method was considered and rejected: two ways to validate one connection is how the advisory ends up read by neither. This step deliberately does NOT render anything — the components take the new shape and keep using only its verdict, so the suite stays green on behaviour and 04-09 is a pure addition on top. CI ledger rules that bite here: `typescript:S7735` is a pre-commit hard block, so no `!==` or `!=` in any ternary condition you touch; S3358 forbids nested ternaries including inside template literals; S7770 wants single-argument pure functions passed directly. Watch for the docs-symlink hazard before running Biome with `--write` — a stray `src/docs` symlink makes it reformat the whole documentation tree.",
+          "estimated_hours": 2
+        },
+        {
+          "id": "04-09",
+          "name": "The administrator actually reads the advisory — the slice's exit gate",
+          "criteria": [
+            "An administrator who creates a ServiceNow connection whose account lacks the metric rights advances through the wizard as normal AND is shown the advisory: the connection is valid, and they learn which number their team will get and which role would change that",
+            "The same administrator editing an existing connection in the settings page sees the same advisory on a successful validation, and the save still succeeds",
+            "The advisory is presented as information, never as an error. It does not use the failure channel, it does not block the wizard advancing, and it does not block the save — a setup that works for throughput and forecasting is not a broken setup",
+            "A connector with nothing extra to say shows nothing. No empty banner, no placeholder, no reserved space",
+            "Re-validating after the role is granted clears the advisory, because the advisory is whatever the last validation reported and nothing about it is remembered",
+            "The advisory appears only where the capability is configured. Nothing on any metrics page renders it, and no metrics component receives a validation result — a caveat pinned permanently to every chart is noise, which is exactly why ADR-118 rejected the chart annotation",
+            "Turns 0 of the 43 RED tests green, and is nonetheless THE EXIT GATE for the slice. If this ships unwired the backend produces an advisory that reaches nobody, and ADR-117's honesty obligation — the reason slice 04 exists — is unmet",
+            "`pnpm test` green, `pnpm build` zero errors and zero warnings, Biome clean on ./src, no new SonarCloud issues, and the dogfood moment run: grant the role on the dev instance and confirm the advisory clears, revoke it and confirm the advisory returns rather than an error"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx",
+          "scenario_name": "An administrator whose ServiceNow account lacks the metric rights finishes the setup and is told, on the way through, which number their team is going to get",
+          "dependencies": ["04-06", "04-08"],
+          "implementation_notes": "ZERO RED TESTS AND THE HIGHEST-VALUE STEP IN THE SLICE. DISTILL's own pre-requisites list says it plainly: the frontend advisory is specified but not wired, and neither component has a success-path channel. The named test_file is the regression suite that must stay green; the crafter authors nothing. THE CHANNEL ALREADY HAS A SHAPE TO COPY IN BOTH FILES. `CreateConnectionWizard.tsx` holds `validationError` / `validationTechnicalDetails` state (L91-94) rendered as an error Alert at L509-518, and it already has a second, non-error inline channel — `InlineMessage` at L36-39 with `severity: \"error\" | \"info\"` rendered at L520 onwards — which is the closer precedent: an advisory is `info`, not `warning` and certainly not `error`. `ModifyConnectionSettings.tsx` holds `validationErrorMessage` / `validationTechnicalDetails` (L119-123) rendered as an error Alert at L673-689 and already renders info Alerts elsewhere (L527, L624). Add advisory state alongside, set it from the validation result in `handleNext` (L354-388) and `handleSave` (L389-422) respectively, and CLEAR IT on the same edits that already clear the validation error — a stale advisory pinned to settings the administrator has since changed is a new lie in the place this slice went to fix one. The wizard must still advance on a valid verdict and the settings page must still save; the advisory is rendered on the way past, not as a gate. GIVE THE ALERT A `data-testid` in the convention the surrounding code uses, so slice 05's screenshot pass and any future E2E has something stable to point at. DO NOT let the advisory reach any metrics surface — criterion 6 is D-04-3 and it is a reviewer's item precisely because there is no test asserting an absence across the whole UI. RUN IT IN A BROWSER, not only in Vitest: the ledger records that MUI-X series styling keyed on a class that does not exist silently does nothing and only a live check catches it, and the same category of miss applies to an Alert rendered behind a conditional nobody exercised. CI ledger rules that bite here: `typescript:S7735` pre-commit hard block on `!==` / `!=` in a ternary condition; S3358 on nested ternaries; S3776 and typescript:S107 land together when a component grows a third branch, and both of these components are already large — extract a small presentational piece rather than adding a fourth conditional inline.",
+          "estimated_hours": 2
+        },
+        {
+          "id": "04-10",
+          "name": "Walking skeleton — time in state on a real sync, through the real host and the real database",
+          "criteria": [
+            "A ServiceNow team synced against an instance that measures state spans lands in the database carrying a start of work that is when someone picked the work up, not when the request was logged — through the real ASP.NET host, the real sync service, the real connector, the real mapper and the real repository, with nothing faked but the instance",
+            "The connector declares that it can supply history for that connection, because the instance said so and not because a constant said so",
+            "The spans are asked for in one batched request keyed on the records' handles. One request per work item would take a 500-item sync to five minutes",
+            "The sibling downgrade scenario still passes unchanged: a team on an instance that measures no state spans still syncs, still gets a current-state-entered instant derived from what Lighthouse observed between two syncs, and still reports history unsupported. It is the regression guard for every read-only customer and it must not be collateral",
+            "SLICE DONE: all 43 RED tests green; every other test still green except the two pre-existing LicenseServiceTest failures that also fail at `main`; `grep -rn \"SCAFFOLD (DISTILL slice 04\"` returns nothing; `grep -rn \"__scaffold__\"` returns nothing across both stacks; `dotnet build` zero warnings; `pnpm test`, `pnpm build` and Biome clean",
+            "Mutation testing run on both stacks at or above 80 percent kill rate, with survivors judged rather than counted"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ServiceNowTeamSyncAcceptanceTest.cs",
+          "scenario_name": "Time in state on ServiceNow work with state metrics comes from the instance's own history — TimeInStateOnServiceNowWorkWithStateMetrics_ComesFromTheInstancesOwnHistory",
+          "dependencies": ["04-04", "04-05"],
+          "implementation_notes": "LAST because it is the only test that proves the whole backend path at once, and THE EXPECTATION IS ZERO PRODUCTION CHANGE HERE — if 04-04 and 04-05 are right, this case goes green when they land. The file is listed because it is the one place a fix would go, and a change needed at this step is a signal that the composition got something wrong, not a licence to special-case the acceptance fixture. The local listener already routes by table and has the state-span measurement OFF by default, which is why the four pre-existing scenarios still pass; this case turns it on. Verify the whole suite, not just this fixture: the green bar is 'everything except the two LicenseServiceTest cases that also fail at main'. THE SCAFFOLD SWEEP IS A VERIFICATION, NOT A CLEANUP PASS — every marker and every sentinel should already be gone, deleted by the step that replaced its body. If a grep finds one here, the step that owned it was not finished. MUTATION TESTING: no Stryker config is committed in this repo and `.gitignore` excludes `**/stryker-config*.json` as deliberate policy, so write one from scratch — the exact backend config used for slice 01 is recorded verbatim in feature-delta.md L1793-1832. Two things from that record and from the ledger: `coverage-analysis: perTest` is not optional (without it Stryker runs the full ~4000-test suite per mutant, which is unusably slow), and Stryker.NET has no test filter, so any live-instance categories execute inside the mutation loop — if scores move without a code change, check the instance before believing the number. Point it at the ServiceNow directory; the mutants land in 04-01, 04-02 and 04-03, which is exactly why those three were designed to be reachable without a transport mock. On the frontend, the ledger warns that the Stryker runner has an explicit include list and that a test file missing from it makes every mutant survive for want of a test run, which is indistinguishable in the report from a real gap. Judge survivors: an equivalent mutant gets a written reason, not an invented test asserting an implementation detail. THE DOGFOOD MOMENT IS OWED AFTER THIS STEP and no automated test in this slice can replace it: move records through states on the PDI as the itil-granted probe account, refresh, confirm Cumulative State Time shows real durations and Cycle Time drops — then REVOKE the role and confirm the runtime downgrade and the advisory rather than an error. That revoke-and-observe is the slice's learning hypothesis, and it is also the only end-to-end proof that the definition query's literal filter works against a real instance.",
+          "estimated_hours": 1.5
         }
       ]
     }
   ],
   "walking_skeleton": {
-    "scenario": "An administrator validating a connection to an instance that is not there is told the instance is not there — ServiceNowConnectionAcceptanceTest.AnAdministratorValidatingAConnectionToAnInstanceThatIsNotThere_IsToldTheInstanceIsNotThere",
-    "covered_by_step": "01-08",
-    "backbone_closed_by_step": "01-03",
-    "coverage_estimate": "Full backbone end-to-end through the production composition root: real HTTP POST -> real controller -> real WorkTrackingConnectorFactory -> real ServiceNowWorkTrackingConnector -> real WorkTrackingAuthStrategyFactory -> real ServiceNowBasicAuthStrategy -> real HttpClient against a genuinely closed port -> real ServiceNowValidationVerdict. Nothing faked, no external system needed, deterministic.",
-    "contract_assertion": "The single assertion that makes the headline bug non-shippable is `AnInstanceThatAnswersSuccessfullyWithNothingVisible_IsNotReportedAsAWorkingConnection` (01-03): a 200-with-zero-rows response cannot produce IsValid == true without deleting a rung."
+    "scenario": "Time in state on ServiceNow work with state metrics comes from the instance's own history — ServiceNowTeamSyncAcceptanceTest.TimeInStateOnServiceNowWorkWithStateMetrics_ComesFromTheInstancesOwnHistory",
+    "covered_by_step": "04-10",
+    "backbone_closed_by_step": "04-05",
+    "coverage_estimate": "Full backbone through the production composition root for the backend half: real DI container -> real WorkItemService.UpdateWorkItemsForTeam -> real WorkTrackingConnectorFactory -> real ServiceNowWorkTrackingConnector -> real ServiceNowHistoryQuery / ServiceNowStateSpanMapper / ServiceNowHistoryVerdict -> real WorkItemStateTransitionMapper -> real repository and database. Only the ServiceNow instance is local and stubbed, and it routes by table the way a real instance does. The FRONTEND half of the slice has no equivalent — the advisory's path from the validation response to the screen (04-08, 04-09) is covered by no authored test at any level, which is why the dogfood moment is a gate rather than a nicety.",
+    "contract_assertion": "The single assertion that makes the slice's value non-fakeable is the persisted start-of-work equalling 2026-07-29 09:00 in 04-10: the record's request-logged instant is four weeks earlier in that fixture, so the assertion cannot pass unless the span actually reached the database through every layer. Its counterweight is `TimeInStateOnServiceNowWorkWithoutStateMetrics_IsDerivedFromObservedChangesRatherThanInventedOrLeftBlank`, which must stay green: together they say the escalated customer gets the true number and the read-only customer keeps the honest fallback."
   },
   "quality_gates": {
     "backend": [
-      "dotnet build zero warnings (TreatWarningsAsErrors)",
-      "dotnet test all NUnit suites green (NUnit 4.6 + Moq + EF InMemory + WebApplicationFactory<Program>) — expected green bar is 'everything except the two pre-existing LicenseServiceTest failures, which also fail at main'",
-      "Stryker.NET kill rate >= 80% — aim it at ServiceNowValidationVerdict FIRST; the ladder is where the mutants land and it is reachable with no HTTP, which is what makes the bar affordable (ADR-114 Alternative E). Note: no committed Stryker config exists in this repo today (DISTILL Tier-2 D2-05)"
+      "dotnet build zero warnings (TreatWarningsAsErrors makes any warning a failure — verify locally, do not assume)",
+      "dotnet test all NUnit suites green — expected green bar is 'everything except the two pre-existing LicenseServiceTest failures, which also fail at main'. Verified baseline before any work: --filter FullyQualifiedName~ServiceNow -> Failed 38 / Passed 176 / Total 214",
+      "Stryker.NET kill rate >= 80% — aim it at the three pure cores FIRST; they are where the mutants land and they are reachable with no HTTP, which is what makes the bar affordable. No Stryker config is committed in this repo by policy; the reproducible one is recorded in feature-delta.md L1793-1832"
     ],
     "frontend": [
-      "pnpm test all Vitest suites green",
-      "pnpm build zero TypeScript, Biome and Vite warnings (Biome runs as the prebuild hook)"
+      "pnpm test all Vitest suites green — the baseline prerequisite; nothing else counts as done while tests are red",
+      "pnpm build zero errors and zero warnings (tsc -b then vite build)",
+      "Biome zero errors and zero warnings on ./src — it runs as the prebuild hook, so a clean pnpm build implies a clean check",
+      "StrykerJS kill rate >= 80% on the touched frontend code. The runner has an explicit include list; a test file missing from it makes every mutant survive for want of a test run, which reads identically to a real gap"
     ],
     "sonarqube": [
-      "No new SonarCloud issues of any severity",
-      "S8969 / S8970 — zero null-forgiving `!` in new C#; ERROR severity since SonarAnalyzer.CSharp 10.30",
-      "CA1859 — concrete return AND parameter types on every new private helper",
+      "No new SonarCloud issues of any severity — the gate fails on new violations even where existing debt remains, and Sonar only re-scans PRs and the Nightly, so a green push to main proves nothing",
+      "S8969 / S8970 — zero null-forgiving `!` in new C#; ERROR severity since SonarAnalyzer.CSharp 10.30 and it breaks the build, not just the gate",
+      "CA1859 — concrete return AND parameter types on every new non-public member; six recurrences in the ledger",
       "CA1869 — JsonSerializerOptions cached in a static readonly field, never per call",
-      "SYSLIB1045 — no `new Regex(...)` anywhere",
-      "S2139 — log and return a failure result, never log-and-rethrow (Linear precedent)",
-      "S2325 / S1144 — every private member justifies its existence and its instance-state use",
-      "S107 — the existing `#pragma warning disable S107` wrapping the WorkTrackingAuthStrategyFactory DECLARATION stays; placement elsewhere silently does nothing. The keyed-IEnumerable regrouping is a separate refactor commit"
+      "SYSLIB1045 — no `new Regex(...)` anywhere; the query builders are string interpolation",
+      "S2139 — log and continue with a downgraded verdict, never log-and-rethrow",
+      "S2325 / S1144 — every new private member justifies its existence and its instance-state use; the three cores are static classes, so their helpers are static",
+      "S107 / S3776 — the connector is 690 lines and one constructor parameter under the ceiling; extract private methods rather than growing GetWorkItemsForTeam or ValidateConnection",
+      "typescript:S7735 — no negated condition in a ternary; this one is a PRE-COMMIT HARD BLOCK via Scripts/ledger_check.py, not just a gate failure",
+      "typescript:S3358 — no nested ternaries, including inside template literals; use early returns",
+      "typescript:S7764 / S7770 — prefer globalThis over window; pass single-argument pure functions directly"
     ],
     "architecture": [
-      "ServiceNowValidationVerdictPurityArchUnitTest stays green — the verdict ladder must not depend on HttpClient, ILogger or Lighthouse.Backend.Data. It is green today and its job STARTS in DELIVER, when the ladder acquires a body and the temptation to let it fetch its own input appears",
-      "No change to IWorkTrackingConnector (unchanged 8-method driven port), no new controller, no new route, no EF migration"
+      "ServiceNowHistoryPurityArchUnitTest stays green — none of the three cores may acquire an HttpClient, a logger or a persistence dependency. It is green today and its job STARTS in DELIVER, when the cores acquire bodies and the temptation to let one fetch its own input appears",
+      "ServiceNowStateSpan keeps NO End and NO Duration (ADR-118 D6 made structural). Adding either to make something convenient reopens the Glide epoch-offset parsing trap the type exists to close",
+      "WorkItemStateTransitionMapper unchanged, WorkItemService.WithSyncDeltaTransition unchanged, IWorkTrackingConnector unchanged, no new IO abstraction, no new controller, no new route, no EF migration"
     ],
     "scaffold_sweep": [
-      "grep -rn \"SCAFFOLD (DISTILL slice 01\" returns nothing",
-      "grep -rn \"__scaffold__\" returns nothing"
+      "grep -rn \"SCAFFOLD (DISTILL slice 04\" returns nothing",
+      "grep -rn \"__scaffold__\" returns nothing across backend and frontend",
+      "Distributed, not deferred: each step deletes its own marker and its own sentinel constants. The sweep at 04-10 is a verification that this happened"
     ],
     "e2e": [
-      "No Playwright spec in slice 01 — the connection surface is settings configuration, and the walking skeleton is the WebApplicationFactory acceptance test. The dogfood moment in the slice brief covers manual validation against the dev instance"
+      "No Playwright spec in slice 04. The connection surface is settings configuration and the advisory is a validation-time notice; the walking skeleton is the WebApplicationFactory acceptance case, and the dogfood moment covers the advisory end to end. If slice 05's screenshot pass wants the advisory in a shot, the data-testid added in 04-09 is what it points at"
     ],
     "red_mechanism": [
-      "WRONG-VALUE SCAFFOLDS, not the project's usual RED-by-skip. Every scaffold returns a `__scaffold__` sentinel or the deliberate opposite of the specification, so each test already fails at its assertion site with a real NUnit AssertionException — the diff between expected and actual reads as the specification. Nothing is [Ignore]d, so there is nothing to un-ignore; a step is done when its tests go green and its scaffold marker is gone."
+      "WRONG-VALUE SCAFFOLDS, not the project's usual RED-by-skip. Every scaffold returns a `__scaffold__` sentinel, `DateTime.UnixEpoch`, an 8000-character string or a deliberately conservative constant, so each test already fails at its assertion site and the expected/actual diff reads as the specification. Nothing is [Ignore]d, so there is nothing to un-ignore; a step is done when its tests go green and its scaffold marker is gone"
+    ],
+    "dogfood": [
+      "Move records through states on the PDI as the itil-granted probe account, refresh, confirm Cumulative State Time shows real durations and Cycle Time drops",
+      "Then REVOKE the role and confirm the runtime downgrade and the advisory, rather than an error. This is the slice's learning hypothesis and no automated test in slice 04 can prove it"
     ]
   },
   "risks": [
     {
-      "risk": "The `unexpected_response` rung (200 + non-JSON, the SSO-fronted-instance case) is the one rung the SPIKE never measured, and now the parse-and-catch rule that feeds it is also unmeasured. Both are hypothesis.",
-      "mitigation": "The test name carries the `Hypothesis_` prefix so provenance survives a grep, and 01-03 records the same caveat in ADR-114. If a real SSO-fronted instance ever becomes available, this is the first thing to measure."
+      "risk": "Three steps (04-06, 04-08, 04-09) carry the advisory from the connector to the administrator's screen and NOT ONE of them turns a RED test green. DISTILL authored the pure function at each end and nothing over the wiring between them. A crafter working the RED list top to bottom finishes at 43/43 with an advisory nobody ever reads — and ADR-117's honesty obligation, which is the reason this slice exists, silently unmet.",
+      "mitigation": "Each is its own step with its own visible criteria rather than folded into a neighbour, 04-09 is labelled the exit gate in three places, and the dogfood moment's revoke-and-observe is the manual proof. The reviewer is asked to check these three specifically in validation.notes."
     },
     {
-      "risk": "The backend suite is not green at `main` — two LicenseServiceTest cases fail on an expired license fixture. A DELIVER author could mistake them for a regression, or use them as cover for a real one.",
-      "mitigation": "Named explicitly in distill_state. Verify the failing set is exactly those two before and after each step. Someone should own the fixture; it is not slice 01's problem."
+      "risk": "The metric_definition query filters on the literal `Field value duration`, which is the choice LABEL. A real instance may require the underlying choice value in its query, in which case every customer sees zero definitions and the connector downgrades — an honest downgrade, but the wrong answer, and it would look exactly like a correctly-detected missing metric.",
+      "mitigation": "Named in 04-01's notes as the first thing to check if the PDI returns zero definitions, and the dogfood moment is what proves it. The failure is at least not silent: the advisory says a definition is missing, so a customer who has one will report the contradiction."
     },
     {
-      "risk": "No DEVOPS wave has run for this epic. Environment defaults came from the ATDD infrastructure policy, and the DESIGN wave's Pact recommendation for the L1-L7 Table API response catalogue (T2-08) is unrouted.",
-      "mitigation": "Recorded, not blocking for slice 01 — no live-instance test is authored, so no runner credential or CI path-scope input is needed. Route T2-08 when DEVOPS runs."
+      "risk": "The unrecognised-status rung in the capability verdict is pinned only by a negative assertion — it must not be Available — and the enum offers no third value that is honest about a 500. Whichever of the two remaining values is chosen, the advisory sends the administrator after the wrong remedy.",
+      "mitigation": "Named as an open decision in 04-03's notes, to be recorded in the commit body rather than decided silently. It is the same unmeasured-rung provenance problem slice 01 handled with its Hypothesis_ prefix; the difference is that here the surviving mutant is visible in the Stryker report, so it will be judged rather than missed."
+    },
+    {
+      "risk": "The slice's own learning hypothesis is formally DISPROVEN (upstream issue U-1): the history source is refused for every read-only role, so ServiceNow history is not affordable on a least-privilege account. The maintainer accepted the escalation as a documented adoption cost and the slice was built anyway.",
+      "mitigation": "Recorded, not re-litigated here. It is US-06's problem: the epic's viability verdict must carry this negative result, not merely the fact that slice 04 shipped. Flagged in out_of_scope so the slice-05 author does not have to rediscover it."
+    },
+    {
+      "risk": "04-08 edits already-green frontend test files to follow a contract change. That is the one place in this roadmap where an authored test is touched, and it is a short step from there to 'while I am here' additions that quietly re-open DISTILL.",
+      "mitigation": "Bounded explicitly in 04-08's criteria and notes: a boolean becomes an object with a verdict, nothing more. If the diff to a test file grows past renaming the shape, that is a signal the production change is wrong, not that the test needs more cases."
+    },
+    {
+      "risk": "A record whose history IS readable but which never reached a state the team calls Doing is covered by no connector-level test. A crafter who leaves the request-logged fallback in place for that case will be green and inconsistent with the pure core, which says explicitly that nothing means not started.",
+      "mitigation": "Stated as a criterion in 04-05 with the distinction spelled out — 'no spans at all' keeps the fallback (mixed provenance, accepted in ADR-118), 'spans but none Doing' does not — and the choice goes in the commit body."
+    },
+    {
+      "risk": "ValidateConnection gains a second round trip, and 04-04 widens the paged reader to surface non-OK statuses. Both touch code paths that four connectors' worth of shipped behaviour flows through, and slice 01's closed-port walking skeleton is the only test that exercises the real transport path.",
+      "mitigation": "The capability read sits strictly after the existing probe's early returns, so every failure rung short-circuits before it; the whole ServiceNowConnectionAcceptanceTest fixture is 04-06's regression suite. If the paged reader's return shape changes, re-run the slice 01 and slice 02 ServiceNow fixtures before moving on, not at the end."
+    },
+    {
+      "risk": "The advisory must not reach the metrics UI (D-04-3). This is structurally satisfied rather than tested — no metrics component receives a ConnectionValidationResult — so nothing stops a future step from opening that path, and nothing would catch it.",
+      "mitigation": "Carried as a criterion in both 04-06 and 04-09 and named as a reviewer item in validation.notes. DISTILL considered and rejected a test asserting an absence across the whole UI, which would be brittle and would still not cover a component added later."
+    },
+    {
+      "risk": "No DEVOPS wave has ever run for this epic. The DESIGN wave's Pact recommendation for the metric_definition and metric_instance response shapes is unrouted, so nothing outside the dogfood moment will notice if ServiceNow changes either table's contract.",
+      "mitigation": "Recorded, not blocking for slice 04 — no live-instance test is authored, so no runner credential or CI path-scope input is needed. Route the contract-test recommendation when DEVOPS runs; it has now been carried across three slices."
     }
   ]
 }
