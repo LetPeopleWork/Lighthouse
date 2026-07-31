@@ -44,8 +44,7 @@ function quotedValuesIn(source: string, declaration: RegExp): string[] {
 	);
 }
 
-// DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).
-describe.skip("what Lighthouse knows about ServiceNow agrees across the stacks", () => {
+describe("what Lighthouse knows about ServiceNow agrees across the stacks", () => {
 	it("names the same tables as holding several kinds of work", () => {
 		const backend = quotedValuesIn(
 			sourceOf(twins.backendHierarchy),

@@ -4,10 +4,7 @@ import { getWizardsForSystem } from "../components/DataRetrievalWizards";
 import type { IBoardInformation } from "../models/Boards/BoardInformation";
 import type { IDataRetrievalSchema } from "../models/Common/DataRetrievalSchema";
 import type { IDataRetrievalWizard } from "../models/DataRetrievalWizard/DataRetrievalWizard";
-import type {
-	IWorkTrackingSystemConnection,
-	WorkTrackingSystemType,
-} from "../models/WorkTracking/WorkTrackingSystemConnection";
+import type { IWorkTrackingSystemConnection } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
 export const STEPS = [
 	"Choose Connection",
@@ -26,8 +23,9 @@ interface UseCreateWizardOptions<TDto> {
 	entityType: WizardEntityType;
 	defaultName: string;
 	getConnections: () => Promise<IWorkTrackingSystemConnection[]>;
+	// The connection rather than its system type (ADR-123 decision 6).
 	getSchema: (
-		workTrackingSystem: WorkTrackingSystemType,
+		connection: IWorkTrackingSystemConnection,
 	) => IDataRetrievalSchema | null;
 	buildDto: (base: WizardDtoBase, name: string) => TDto;
 	validateSettings: (settings: TDto) => Promise<boolean>;
@@ -82,10 +80,7 @@ export function useCreateWizard<TDto>({
 	);
 
 	const schema = useMemo(
-		() =>
-			selectedConnection
-				? getSchema(selectedConnection.workTrackingSystem)
-				: null,
+		() => (selectedConnection ? getSchema(selectedConnection) : null),
 		[selectedConnection, getSchema],
 	);
 

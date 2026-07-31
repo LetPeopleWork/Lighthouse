@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type {
-	IWorkTrackingSystemConnection,
-	WorkTrackingSystemType,
-} from "../models/WorkTracking/WorkTrackingSystemConnection";
+import type { IWorkTrackingSystemConnection } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
 
 export interface ModifySettingsBase {
@@ -42,8 +39,10 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 		selectedSystem: IWorkTrackingSystemConnection | null,
 		modifyDefaultSettings: boolean,
 	) => string[];
+	// The connection rather than its system type: what a ServiceNow team is asked for depends on
+	// the table the connection reads (ADR-123 decision 6).
 	getSchemaForSystem: (
-		wts: WorkTrackingSystemType,
+		connection: IWorkTrackingSystemConnection,
 	) => TSettings["dataRetrievalSchema"];
 	additionalFetch?: () => Promise<void>;
 	initialFetch?: () => Promise<void>;
@@ -329,9 +328,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				prev
 					? {
 							...prev,
-							dataRetrievalSchema: getSchemaForSystem(
-								system.workTrackingSystem,
-							),
+							dataRetrievalSchema: getSchemaForSystem(system),
 						}
 					: prev,
 			);

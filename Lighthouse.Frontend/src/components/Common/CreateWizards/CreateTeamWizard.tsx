@@ -22,7 +22,7 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 		entityType: "team",
 		defaultName: "New Team",
 		getConnections,
-		getSchema: (wts) => getDefaultTeamSchema(wts),
+		getSchema: getDefaultTeamSchema,
 		buildDto: (base, name) => ({
 			id: 0,
 			name,

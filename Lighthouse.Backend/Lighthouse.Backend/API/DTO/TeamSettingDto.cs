@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
@@ -26,8 +27,19 @@ namespace Lighthouse.Backend.API.DTO
 
             if (team.WorkTrackingSystemConnection != null)
             {
-                DataRetrievalSchema = DataRetrievalSchemaDto.ForTeam(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+                DataRetrievalSchema = DataRetrievalSchemaDto.ForTeam(
+                    team.WorkTrackingSystemConnection.WorkTrackingSystem,
+                    WorkItemTableOf(team.WorkTrackingSystemConnection));
             }
+        }
+
+        // Read here rather than looked up inside the schema factory, so the factory stays a pure
+        // function of two scalars and every caller is forced by the compiler to answer (ADR-123 D6).
+        private static string WorkItemTableOf(WorkTrackingSystemConnection connection)
+        {
+            return connection.Options
+                .Find(option => option.Key == ServiceNowWorkTrackingOptionNames.WorkItemTable)?.Value
+                ?? string.Empty;
         }
 
         [JsonRequired]

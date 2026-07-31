@@ -22,7 +22,7 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 		entityType: "portfolio",
 		defaultName: "New Portfolio",
 		getConnections,
-		getSchema: (wts) => getDefaultPortfolioSchema(wts),
+		getSchema: getDefaultPortfolioSchema,
 		buildDto: (base, name) => ({
 			id: 0,
 			name,
