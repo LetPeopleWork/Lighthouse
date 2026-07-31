@@ -3981,3 +3981,108 @@ jobs:
         today, but the structured data already contradicts it, so machine-mediated answers about price
         are already wrong. Gap: 3 — closed entirely by binding display and Stripe to one resolved
         value, with no schema, no new endpoint and no second payment path.
+
+  - id: job-forecaster-attribute-scope-change-to-an-epic
+    title: Name the epic and the day behind a delivery's scope change
+    persona: delivery-forecaster
+    feature_context: epic-size-and-count-over-time
+    created: 2026-07-31
+    note: >
+      Epic 5585, reported by Chris. Extends the Epic 3993 delivery-metrics charts. The burnup already
+      shows THAT the backlog stepped up (DeliveryBurnupChart.tsx Backlog series) but attributes the step
+      to nothing. Load-bearing code fact: DeliveryMetricSnapshot.FeatureBreakdownJson already holds one
+      entry per epic per day (ReferenceId, Name, Completion, Likelihood), so epic COUNT over time is
+      already recorded and needs no new column — unlike epic SIZE, which Delivery.ToFeatureMetric
+      computes and discards, and which is forward-only per the parent journey's D11.
+    job_story: >
+      When a delivery's backlog line steps up and leadership asks why,
+      I want to see how many epics were in the delivery each day and how big each one was,
+      so I can name the epic and the day instead of saying "scope grew" and being asked to prove it.
+    dimensions:
+      functional: >
+        Read an epic-count line and a per-day stacked bar (one segment per epic, height = that epic's
+        total child items regardless of state) alongside the existing burnup; isolate one or more epics
+        via the legend to follow a single trajectory; see epics that left the delivery stop rather than
+        vanish, so a scope cut is as visible as a scope addition.
+      emotional: >
+        Move from the defensiveness of an unattributable number ("scope grew, I don't know where") to
+        the calm of a specific answer ("epic X doubled on the 14th") — without rebuilding it by hand.
+      social: >
+        Be the forecaster who answers the follow-up question in the room rather than promising to dig
+        into it and come back next week.
+    forces:
+      push: >
+        Attribution today means diffing the Work Items tab against memory, or a spreadsheet — the same
+        workaround Epic 3993 set out to kill for the burnup, still alive one level down.
+      pull: >
+        The count line separates "an epic joined" from "an existing epic grew" at a glance, and the
+        stacked bars name which one.
+      anxiety: >
+        A delivery with a dozen epics could render an unreadable stack. Mitigated by the legend
+        click-to-filter (multi-select) and treated as the slice-04 learning hypothesis — if filtering
+        still leaves it unreadable, the chart's form is wrong, not its controls.
+      habit: >
+        Forecasters read the burnup first and stop there. The new chart sits directly under it, in the
+        same tab, so the second look costs no navigation.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — attribution is the immediate follow-up question to every scope step the burnup
+        shows; it recurs in every leadership review. Current satisfaction: 1 — nothing in the product
+        attributes a backlog change to an epic over time. Gap: 3 — the spine of Epic 5585, and the
+        cheapest of the two jobs to serve because the count series is already in the database.
+
+  - id: job-forecaster-know-how-much-of-the-size-is-guessed
+    title: Know how much of a delivery's size is a default guess, and when each epic stopped being one
+    persona: product-owner
+    feature_context: epic-size-and-count-over-time
+    created: 2026-07-31
+    note: >
+      Epic 5585 secondary job; the delivery-forecaster is the secondary persona on it (same chart, no
+      bespoke view). Partially served today: the burnup's dashed "Estimated (not broken down)" line
+      gives the AGGREGATE estimated portion from DeliveryMetricSnapshot.EstimatedItemCount, but never
+      per epic — and it is invisible whenever it falls inside the filled Done area (DeliveryBurnupChart
+      paints the Done series with area: true), which is exactly late in a delivery. Source of truth for
+      the per-epic flag is Feature.IsUsingDefaultFeatureSize, set by
+      WorkItemService.ExtrapolateNotBrokenDownFeatures.
+    job_story: >
+      When part of a delivery's total is the portfolio default size for epics nobody has broken down yet,
+      I want to see which epics are still estimates and the day each one flipped to a real breakdown,
+      so I can say how much of the number is real and chase the epics that aren't.
+    dimensions:
+      functional: >
+        Distinguish a default-sized epic from a broken-down one at segment level (hatched fill plus a
+        tooltip), locate the flip day, and read the aggregate estimated line in the burnup even when it
+        sits below the done count.
+      emotional: >
+        Stop quoting a total that quietly contains guesses — replace the unease of an unqualified number
+        with a qualified one you can defend.
+      social: >
+        Chase the right people for the right breakdown, with the chart rather than authority as the
+        prompt.
+    forces:
+      push: >
+        A delivery total silently mixes real breakdowns with portfolio default sizes; the only signal is
+        an aggregate dashed line that disappears under the Done area exactly when the remaining guessed
+        scope becomes the interesting number.
+      pull: >
+        Hatched segments make the guessed portion per-epic and the estimate-to-actual flip a visible
+        event on a specific day.
+      anxiety: >
+        Hatching could read as a different epic rather than a different confidence. Mitigated by keeping
+        the epic's colour and varying only the fill pattern, plus a tooltip line stating the default.
+      habit: >
+        POs judge breakdown status from the Work Items tab per epic; this asks them to read it off a
+        trend chart instead — eased because it is the same tab they already open for the burnup.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 — an un-qualified delivery total is how forecasts lose credibility, and default
+        sizing is the common early-stage case. Current satisfaction: 2 — an aggregate estimated line
+        exists but is per-delivery, not per-epic, and is invisible under the Done area. Gap: 2 — smaller
+        than the attribution job because it is a refinement of a signal that partly exists, and it rides
+        on the same chart the attribution job pays for.

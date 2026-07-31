@@ -1,0 +1,271 @@
+schema_version: 1
+feature_id: epic-size-and-count-over-time
+updated: 2026-07-31
+note: >
+  Epic 5585 (reported by Chris). A fourth chart on the delivery Metrics tab that Epic 3993 shipped —
+  see journeys/delivery-metrics.yaml, whose D4 (premium gating inherited), D6 (forward-only empty state)
+  and D11 (ONE DeliveryMetricSnapshot store, forward-recorded, no backfill) are inherited verbatim and
+  not re-litigated here. Grounded in a pre-DISCUSS code reality check
+  (DeliveryMetricSnapshot.cs, DeliveryMetricsHistoryDto.cs, DeliveryMetricSnapshotRecordingHandler.cs,
+  Delivery.cs, Feature.cs, WorkItemService.cs, DeliveriesController.cs, DeliverySection.tsx,
+  DeliveryBurnupChart.tsx, DeliveryMetricsHistory.ts) plus the lighthouse-clients packages. The
+  load-bearing find: FeatureBreakdownJson ALREADY holds one entry per epic per day, so epic COUNT over
+  time is already recorded — the one series in this store that is not forward-only. Epic SIZE and the
+  estimate flag are new optional fields on that same JSON payload and ARE forward-only (no new table,
+  no EF migration). Second find: the clients carry delivery CRUD but expose nothing from
+  metrics-history, so the whole delivery over-time story is browser-only until D12's slice.
+
+journeys:
+
+  - name: attribute-a-delivery-scope-change-to-an-epic
+    goal: >
+      Delivery Forecaster / RTE opens a delivery's Metrics tab while preparing a status report, sees how
+      many epics were in the delivery each day and how big each one was, and answers "did scope grow or
+      did an existing epic grow?" by naming the epic and the day — and can say how much of the delivery's
+      size is still a portfolio-default guess rather than a real breakdown. The same series is reachable
+      from the CLI and through an AI assistant (D12).
+    persona: "delivery-forecaster (secondary: product-owner, who acts on the same chart to chase
+      un-broken-down epics and to choose what to cut — job-forecaster-know-how-much-of-the-size-is-guessed;
+      flow-coach reads the same series through the CLI/MCP port)"
+
+    emotional_arc:
+      start: Defensive — "the burnup says the backlog stepped up on the 14th and I have no idea which
+        epic did it; I'll have to diff the Work Items tab by hand before the review."
+      middle: Focused — "the count line is flat across that step, so nothing joined — one of the epics
+        we already had doubled. There it is, and it's still hatched, so that number is a default guess."
+      end: Confident — "scope didn't grow, epic X's breakdown landed on the 14th and it was bigger than
+        the default we'd assumed. That's the story, and it's on the chart."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Where does the chart live?
+        decision: >
+          One new "Epic Size & Count" card directly under the burnup on the existing per-delivery Metrics
+          tab; the fever chart loses its full-width span (DeliverySection.tsx gridColumn "1 / -1") and
+          becomes a half-width cell. Final layout is 2x2: Burnup / Predictability / Epic Size & Count /
+          Fever. Exactly the layout ADO 5585 asks for; no new route, no new tab.
+      - id: D2
+        question: What does the count line count?
+        decision: >
+          All epics in the delivery that day, regardless of state (done epics included) — one line, no
+          done-split (user, 2026-07-31). It mirrors the burnup's Backlog line: a step in the line means
+          an epic joined or left. A done-split would restate the burnup's Done story on a different unit.
+      - id: D3
+        question: Is the count series forward-only like everything else in this store?
+        decision: >
+          NO — and this is the one place this feature diverges from the parent journey's D6/D11. The count
+          is DERIVED from featureBreakdown.length on each existing history point, so it has real history
+          from the day the Epic 3993 recorder started. No new column. Caveat, stated in the chart's help
+          text: Delivery.CalculateFeatureBreakdown filters epics whose total item count is 0, so a 0-size
+          epic is not counted; in practice WorkItemService.ExtrapolateNotBrokenDownFeatures gives
+          un-broken-down epics the portfolio default size, making 0-size the rare case.
+      - id: D4
+        question: What is an epic's "size"?
+        decision: >
+          Its total child work items that day, regardless of state — the totalItems value
+          Delivery.ToFeatureMetric already computes and currently discards. For an un-broken-down epic
+          that is the extrapolated portfolio default. Per ADO 5585: "total, independent of state".
+      - id: D5
+        question: Where do size and the estimate flag get stored?
+        decision: >
+          Two new fields (TotalItems, IsUsingDefaultSize) on the EXISTING FeatureBreakdownJson payload —
+          no new table, no EF migration, expand-only by construction. Forward-only: days already recorded
+          keep the 4-field shape and render no bars. Both parsers (C# ParseFeatureBreakdown and the
+          strict TS boundary parser in DeliveryMetricsHistory.ts, which throws BoundaryError on shape
+          drift) must treat the new fields as OPTIONAL.
+      - id: D6
+        question: How is an estimated size distinguished from a real breakdown?
+        decision: >
+          Hatched segment fill plus a tooltip line (user, 2026-07-31). The point is pinpointing the day an
+          epic flips estimate -> actual; a lighter-shade encoding reads as a different epic, and
+          tooltip-only means hovering every bar to find the flip. Cost accepted: MUI-X bar charts have no
+          native pattern fill, so this needs an SVG <pattern> def and per-item fill — isolated into its
+          own slice with a 1h spike and a documented fallback (shade + tooltip) if the library refuses.
+      - id: D7
+        question: What happens to an epic that leaves the delivery?
+        decision: >
+          Its history stays: segments on the days it was a member, then nothing, and it remains in the
+          legend for the whole window (user, 2026-07-31). Free by construction — each day's breakdown is
+          that day's membership — and it is exactly how a scope CUT becomes visible. Dropping it would
+          hide the cut.
+      - id: D8
+        question: How does drill-down on a specific epic work?
+        decision: >
+          Legend entries are click-to-toggle and MULTI-select; clicking isolates, clicking more adds,
+          a reset shows all. Filtering affects the BARS only — the count line is a delivery-level fact and
+          filtering it would make it read as a different number for the same day.
+      - id: D9
+        question: Is the burnup estimated-line visibility defect part of this epic?
+        decision: >
+          Yes, as its own slice and its own ADO Story (user, 2026-07-31). Chris flagged it as "not strictly
+          part of this epic"; it lands in the same file family and the same review, so carrying it here
+          beats a detached bug. Root cause verified: DeliveryBurnupChart paints the Done series with
+          area: true, so the dashed warning-coloured estimated line is drawn beneath that fill whenever
+          estimatedItemCount < doneWork — it vanishes exactly late in a delivery.
+      - id: D10
+        question: What are these things called in the UI?
+        decision: >
+          Whatever the instance calls them — title and legend header resolve through
+          getTerm(TERMINOLOGY_KEYS.FEATURES), which DeliverySection already resolves for the Work Items
+          tab. "Epic" is the ADO wording, not the UI wording.
+      - id: D11
+        question: Any new premium gate or RBAC rule?
+        decision: >
+          None. The chart sits inside the delivery surface, already premium-gated and already behind the
+          portfolio read check. No component fetches the authorization summary directly; nothing bypasses
+          useRbac(). The CLI/MCP port (D12) calls the same endpoint, which enforces
+          RbacGuardRequirement.PortfolioRead server-side (DeliveriesController.cs:57-70), so it inherits
+          the guard rather than routing around it. Inherited from delivery-metrics D4.
+      - id: D12
+        question: Does the delivery trend get a CLI / MCP port?
+        decision: >
+          Yes (user, 2026-07-31), as slice 06, sequenced AFTER the size slice so the client is written
+          once against the final payload shape. The clients already carry deliveries — CRUD at
+          packages/client/src/index.ts:1310-1324, the "lh delivery list" command, the
+          lighthouse_delivery_list MCP tool — but expose NOTHING from metrics-history, so every delivery
+          over-time chart is browser-only. Slice 06 adds getDeliveryMetricsHistory, an
+          "lh delivery metrics --delivery-id" command, and a read-only lighthouse_delivery_metrics tool.
+          It needs a changeset plus a MANUAL pnpm release:version before the clients release gate; slices
+          01-05 need no client bump at all, because they only add optional fields to an endpoint the
+          clients never called.
+      - id: D13
+        question: How much of the series does the CLI / MCP port return?
+        decision: >
+          Summarised by default — one row per day (date, total, done, remaining, epic count, estimated
+          portion, likelihood) — with per-epic rows and the whenDistribution array behind an explicit
+          detail opt-in. DeliveriesController.GetMetricsHistory takes NO parameters and returns the whole
+          recorded series, so a 90-day 15-epic delivery is roughly 1350 breakdown objects plus a
+          distribution array per day; dumping that into an assistant's context is the failure mode. A
+          server-side range/projection parameter is a SEPARATE backend story, raised only if the measured
+          summarised payload still blows the budget (success signal 6).
+
+    steps:
+
+      - id: step-open-metrics-tab
+        action: >
+          Forecaster opens Portfolio -> a delivery -> the Metrics tab before a status report, on a premium
+          instance
+        expected_output: >
+          Four charts in a 2x2 grid: Burnup, Predictability, the new Epic Size & Count card, and the fever
+          chart now at half width. The new card's line already shows weeks of history on an instance that
+          has been recording since Epic 3993 (D3) — unlike every other series here, it did not have to
+          wait. A delivery with no snapshots at all shows the same forward-only empty state the other
+          three charts use.
+        emotional_state: Curious — "did scope grow, or did our epics grow?"
+        shared_artifacts:
+          - deliveryMetricsHistory (existing, GET .../deliveries/{deliveryId}/metrics-history)
+          - featureBreakdown[] (existing per-epic-per-day array; count derived from its length, D3)
+          - featuresTerm (existing, getTerm(TERMINOLOGY_KEYS.FEATURES), D10)
+
+      - id: step-read-count-line-against-burnup-step
+        action: >
+          Forecaster reads the count line against the burnup's backlog step directly above it
+        expected_output: >
+          A step in the count line at the same date means an epic joined (or left) the delivery; a flat
+          count line under a rising backlog means an existing epic grew. The two charts are stacked
+          vertically for exactly this comparison.
+        emotional_state: Focused — "count is flat, so nothing joined — something we already had grew"
+        shared_artifacts:
+          - rendered count line
+          - burnup backlog line (existing, unchanged)
+
+      - id: step-attribute-the-change-to-an-epic
+        action: >
+          Forecaster reads the stacked bars to see which epic carries the weight and which one changed
+        expected_output: >
+          One segment per epic per day, height = that epic's total child items that day (D4). The epic
+          whose segment jumped is named on hover. Bars exist only for days recorded after the size field
+          shipped (D5, forward-only); earlier days render the line alone. An epic that left the delivery
+          keeps its earlier segments and stops (D7).
+        emotional_state: Relieved — "epic X doubled on the 14th; that's the whole step"
+        shared_artifacts:
+          - featureBreakdown[].totalItems (new, forward-recorded, D5)
+          - stable per-epic colour keyed on referenceId
+
+      - id: step-judge-how-much-is-guessed
+        action: >
+          Product Owner / forecaster reads which segments are hatched and where a hatched segment turns
+          solid
+        expected_output: >
+          Hatched = the size is the portfolio default because nobody has broken the epic down; solid = a
+          real breakdown. The day a segment turns solid is the day that epic got broken down — often the
+          same day the backlog line stepped. A missing flag on older rows renders SOLID, never hatched:
+          absence is not treated as "estimated" (D5, D6).
+        emotional_state: Qualified — "three of eight epics are still defaults; the total is that soft"
+        shared_artifacts:
+          - featureBreakdown[].isUsingDefaultSize (new, forward-recorded, sourced from
+            Feature.IsUsingDefaultFeatureSize)
+          - hatch pattern def (per-chart-instance unique id)
+
+      - id: step-focus-on-the-epics-that-matter
+        action: >
+          Forecaster clicks epics in the legend to isolate the one or two under discussion
+        expected_output: >
+          Only the selected epics' segments render; the count line is unchanged and the y-axis rescales
+          to the selection (D8). A second expanded delivery on the same page filters independently.
+        emotional_state: In control — "just these two; I can follow their trajectory"
+        shared_artifacts:
+          - legend selection (component-local state, not persisted)
+
+      - id: step-read-the-aggregate-estimate-in-the-burnup
+        action: >
+          Forecaster looks back at the burnup to read the delivery-wide estimated (not broken down) total
+        expected_output: >
+          The dashed estimated line stays legible even when it falls below the done count — where it
+          previously disappeared under the filled Done area, leaving the forecaster to conclude there was
+          no estimated work left (D9). The Done series is still a filled area.
+        emotional_state: Trusting — "the guessed portion is small now; the number is solid"
+        shared_artifacts:
+          - estimatedItemCount (existing, DeliveryMetricSnapshot, unchanged)
+
+      - id: step-ask-an-assistant-or-the-cli
+        action: >
+          Flow coach, away from the browser, runs "lh delivery metrics --delivery-id <id>" or asks an
+          assistant that calls the lighthouse_delivery_metrics MCP tool (D12)
+        expected_output: >
+          One summarised row per recorded day — date, total, done, remaining, epic count, estimated
+          portion, likelihood — enough to make the same attribution call the chart supports. Per-epic
+          detail and the when-distribution require an explicit opt-in (D13). Against a server whose
+          snapshots predate the size slice, per-epic size reports as unknown rather than erroring.
+        emotional_state: Unblocked — "I can ask about the delivery without screen-sharing the chart"
+        shared_artifacts:
+          - getDeliveryMetricsHistory (new client method)
+          - lighthouse_delivery_metrics (new read-only MCP tool)
+          - summarised day rows (client-side projection, D13)
+
+    error_paths_summary:
+      - Delivery with no snapshots at all: the card shows the same forward-only empty state as the other
+        three charts ("builds forward from today — no snapshots recorded yet"); no crash.
+      - History recorded before this feature (4-field featureBreakdown entries): the count line renders in
+        full (D3) and no bars render for those days. This is the normal state at launch, not a defect.
+      - Missing totalItems or isUsingDefaultSize on an entry: the segment is skipped / rendered solid
+        respectively. A null flag is never read as "estimated".
+      - Epic with 0 total items on a day: absent from featureBreakdown entirely (existing
+        CalculateFeatureBreakdown filter), so it is not counted and has no segment — stated in the chart's
+        help text rather than silently wrong (D3).
+      - Epic leaves the delivery: segments stop at the leave day, legend entry stays (D7).
+      - Two deliveries expanded at once: hatch pattern ids and legend selections are per chart instance;
+        neither leaks across cards.
+      - Non-premium instance: the whole Metrics tab is already behind the delivery surface's premium gate;
+        the new chart never renders (D11).
+      - CLI/MCP against a caller without portfolio read access: the endpoint returns 403 and the client
+        surfaces the standard error category — the guard is server-side, not re-implemented in the client.
+      - CLI/MCP against an older server: metrics-history exists (shipped with Epic 3993) but carries no
+        per-epic size; the port reports size as unknown rather than failing (D12/D13).
+      - Delivery deleted: snapshot rows cascade-delete as today; no new cleanup path.
+
+    success_signal:
+      - Scope-change attribution in a delivery review names a specific epic and a specific day in at least
+        2 of the next 3 dogfood reviews (KPI 1).
+      - At least one un-broken-down epic per review is identified from the chart rather than by opening the
+        Work Items tab (KPI 2).
+      - The recorder writes totalItems and isUsingDefaultSize for 100% of epics in every snapshot after the
+        size slice, with zero duplicate day rows (KPI 3, backend integration assertion).
+      - Pre-existing 4-field snapshots keep rendering the count line with zero regressions (KPI 4, CI).
+      - Metrics tab render time on a 90-day, 15-epic delivery no worse than +20% vs the current three
+        charts (KPI 5).
+      - The summarised MCP tool result for that same delivery stays within roughly 2k tokens without the
+        detail opt-in (KPI 6); a miss sends the backend range/projection parameter ahead of the port.
+      - Measurement caveat: unchanged from Epic 3993 — cross-instance behavioural telemetry is blocked on
+        Epic 5015 (opt-in telemetry, no timeline), so KPIs 1-2 are dogfood + Chris interviews until then;
+        KPIs 3-6 are assertable or measurable in CI today.
