@@ -37,6 +37,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>The platform's own handle for the record, and the key history is fetched by.</summary>
         public const string RecordIdField = "sys_id";
 
+        /// <summary>The record's own class, which is its kind of work (ADR-123 decision 8).</summary>
+        public const string RecordClassField = "sys_class_name";
+
         /// <summary>A numeric choice value whose label is the thing a flow coach maps.</summary>
         public const string StateField = "state";
 
@@ -87,8 +90,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         /// <param name="record">A record from a <c>sysparm_display_value=all</c> response.</param>
         /// <param name="owner">The team whose state mapping decides category and mapped name.</param>
-        /// <param name="table">The configured table, which is also the work item type — ITSM records
-        /// carry no separate type field, which is why the team scope does not ask for one.</param>
+        /// <param name="table">The table the team reads through, used as the kind of work only where
+        /// the record does not say its own (ADR-123 decision 8).</param>
         public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, string table)
         {
             var stateLabel = ReadStateLabel(record);
@@ -99,7 +102,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             {
                 ReferenceId = recordNumber,
                 Name = ReadForm(record, TitleField, UniversalForm),
-                Type = table,
+                Type = KindOfWork(record, table),
                 State = owner.MapRawStateToMappedName(stateLabel),
                 StateCategory = stateCategory,
                 Order = recordNumber,
@@ -107,6 +110,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 StartedDate = ReadInstant(record, OpenedField) ?? ReadInstant(record, CreatedField),
                 ClosedDate = WhenWorkFinished(record, stateCategory),
             };
+        }
+
+        // ADR-123 decision 8. A record class IS a work item type, so a change request read through
+        // the task hierarchy says change_request. The fallback is not padding: ReadForm answers
+        // string.Empty for a field that is not there, and an empty Type on every row of a table that
+        // does not carry sys_class_name would be a worse silent data change than the one being fixed.
+        private static string KindOfWork(JsonElement record, string table)
+        {
+            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
+
+            return string.IsNullOrWhiteSpace(recordClass) ? table : recordClass;
         }
 
         /// <summary>

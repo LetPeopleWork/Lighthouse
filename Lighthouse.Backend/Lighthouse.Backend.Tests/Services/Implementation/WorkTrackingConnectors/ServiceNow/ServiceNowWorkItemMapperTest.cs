@@ -323,7 +323,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // it through. Today Type is the configured table, which for a team on the whole hierarchy is
         // the same lie repeated on every row.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public void WorkThatSaysWhatKindItIs_IsLabelledWithItsOwnKind()
         {
             var record = ARecordWith((RecordClassField, "Change Request", "change_request"));
@@ -368,8 +367,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         // The field is already in every record of the connector's sysparm_display_value=all read, so
-        // reading it costs no extra request. DELIVER moves this to a constant on the mapper.
-        private const string RecordClassField = "sys_class_name";
+        // reading it costs no extra request.
+        private const string RecordClassField = ServiceNowWorkItemMapper.RecordClassField;
 
         private const string TheWholeHierarchy = "task";
 
