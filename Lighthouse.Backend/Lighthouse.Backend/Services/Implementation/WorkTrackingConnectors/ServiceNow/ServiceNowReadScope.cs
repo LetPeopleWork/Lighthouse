@@ -12,9 +12,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// </remarks>
     public sealed class ServiceNowReadScope
     {
-        /// <summary>The field a ServiceNow record states its own kind of work in.</summary>
-        private const string RecordClassField = "sys_class_name";
-
         private const string ConditionSeparator = "^";
 
         private readonly List<string> kindsOfWork;
@@ -36,7 +33,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// return the whole hierarchy, so it reads nothing and is refused at save time
         /// (ADR-123 decision 4).
         /// </summary>
-        public bool ReadsAWholeHierarchy => kindsOfWork.Count < 1 && ServiceNowTableHierarchy.HasDescendants(Table);
+        public bool ReadsAWholeHierarchy => NamesNoKindsOfWork && ServiceNowTableHierarchy.HasDescendants(Table);
+
+        private bool NamesNoKindsOfWork => kindsOfWork.Count < 1;
 
         public static ServiceNowReadScope For(string table, List<string> workItemTypes)
         {
@@ -55,9 +54,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public string ScopedQuery(string teamsOwnQuery)
         {
-            return kindsOfWork.Count < 1
+            return NamesNoKindsOfWork
                 ? teamsOwnQuery
-                : $"{Matching(RecordClassField, kindsOfWork)}{ConditionSeparator}{teamsOwnQuery}";
+                : $"{ClassClause()}{ConditionSeparator}{teamsOwnQuery}";
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public string? BaselineQuery()
         {
-            return kindsOfWork.Count < 1 ? null : Matching(RecordClassField, kindsOfWork);
+            return NamesNoKindsOfWork ? null : ClassClause();
         }
 
         /// <summary>
@@ -77,7 +76,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public List<string> DefinitionTables()
         {
-            return kindsOfWork.Count < 1 ? [Table] : [.. kindsOfWork];
+            return NamesNoKindsOfWork ? [Table] : [.. kindsOfWork];
+        }
+
+        private string ClassClause()
+        {
+            return Matching(ServiceNowWorkItemMapper.RecordClassField, kindsOfWork);
         }
 
         /// <summary>
