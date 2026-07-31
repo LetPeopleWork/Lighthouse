@@ -132,6 +132,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         private async Task<ConnectionValidationResult> CapabilityOf(
             WorkTrackingSystemConnection connection, string table, ConnectionValidationResult workingConnection)
         {
+            if (ServiceNowTableHierarchy.HasDescendants(table))
+            {
+                return ServiceNowHistoryVerdict.ForHierarchyRoot(table);
+            }
+
             try
             {
                 var definitions = await ReadStateSpanDefinitions(connection, [table]);

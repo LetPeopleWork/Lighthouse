@@ -347,7 +347,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // administrator to activate a definition on the state field of task, advice that cannot be
         // followed and that contradicts what their teams will get. One false statement not made.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ValidatingAConnectionRootedAtTheWholeHierarchy_SaysStateHistoryIsDecidedPerTeam()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
