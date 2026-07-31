@@ -1978,6 +1978,16 @@ sight, which is `sysparm_display_value=all` earning its place and the reason R-4
   incomplete for custom classes, which is the accepted cost. The richer options (echoing the label
   back from the validation probe, which already reads each class; or a real `sys_db_object` dropdown
   that degrades to free text) stay available if the static map proves too thin.
+- **A work item's `Type` should show the label too, not the class name.** Maintainer, 2026-07-31, on
+  seeing `change_request` in the UI: with the mapping in place he expects the nice name there as well.
+  Belongs with the label map rather than with #5611, which is why it is here. **Probably cheaper than
+  the map**: the record read already returns `sys_class_name` as
+  `{"display_value": "Change Request", "value": "change_request"}`, so `Type` can read the display
+  form (`ServiceNowWorkItemMapper.ReadableForm`) instead of the universal one — no map needed for the
+  record side. **Check first** whether anything matches an item's `Type` against the team's configured
+  `WorkItemTypes`; the config must keep holding `change_request` because `sysparm_query` matches the
+  stored value, so if those two are compared anywhere, the divergence is what the static map has to
+  bridge.
 - **`GuardAgainstRepeatedRecords` keys identity on `number`, which is not unique.** `sys_id` is, and
   `ReadRecordId` already reads it two lines away. Reached for real on the PDI on 2026-07-31: five
   change requests sharing a number aborted an entire team sync with `paging_repeated_records` — so a
