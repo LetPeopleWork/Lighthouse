@@ -105,43 +105,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // AC-B5. Every shipped team is byte-identical on the wire — same URL, same query. This is the
-        // claim that makes "this story does not make the shipped configuration harder" checkable
-        // rather than hoped for.
+        // ADR-123 decision 2's leaf case, from the other direction: a team rooted at one table names
+        // the one kind of work it handles, and asks for it by name rather than by the table alone.
         [Test]
-        public async Task AnIncidentTeamThatNamedNoKindsOfWork_AsksExactlyWhatItAskedBefore()
+        public async Task AnIncidentTeamThatNamesIncidents_AsksForThemByName()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([], rootedAt: Incidents));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents], rootedAt: Incidents));
 
             var workReads = QueriesAskedOf(instance, Incidents);
 
-            Assert.That(workReads[0], Does.Not.Contain("sys_class_name"),
-                "A team rooted at a single kind of work reads exactly the way it did before this story existed.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workReads[0], Does.Contain("sys_class_name=incident"));
+                Assert.That(workReads[0], Does.Not.Contain("sys_class_nameIN"));
+            }
         }
 
         // AC-B3. The epic's AC1 rule ("a team that has not said which work is theirs reads nothing
-        // rather than everything") applied to the kind-of-work dimension. Unfiltered, the same team
-        // reads the whole instance's work: 579 records of 13 kinds where it wanted 159 of 2.
+        // rather than everything") applied to the kind-of-work dimension, and applied uniformly:
+        // amended ADR-123 decision 6 makes the kinds of work mandatory for every ServiceNow team, so
+        // the read has no leaf case to except. Unfiltered, the hierarchy-rooted team reads the whole
+        // instance's work — 579 records of 13 kinds where it wanted 159 of 2.
         [Test]
-        public async Task ATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything()
+        [TestCase(TheWholeHierarchy, TestName = "ATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything")]
+        [TestCase(Incidents, TestName = "ATeamOnASingleTableThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything")]
+        public async Task ATeamThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything(string rootTable)
         {
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance, logger.Object);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamWorkingOn([], rootedAt: TheWholeHierarchy));
+            var workItems = await subject.GetWorkItemsForTeam(ATeamWorkingOn([], rootedAt: rootTable));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems, Is.Empty);
                 Assert.That(instance.Requests, Is.Empty,
-                    "Asking the hierarchy without naming a kind of work returns every kind in it.");
+                    "Asking a table without naming a kind of work returns every kind in it.");
             }
 
-            logger.Verify(AWarningContaining(TheWholeHierarchy), Times.Once,
+            logger.Verify(AWarningContaining(rootTable), Times.Once,
                 "DoD 5 forbids the silent no-op: reading nothing has to say why, and name the table it refused to read.");
         }
 
@@ -149,12 +155,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // and PUT /api/teams/{id} also serves the CLI and the MCP server. A gate that lives only in
         // the schema flag is a gate the API does not have.
         [Test]
-        public async Task SavingATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance()
+        [TestCase(TheWholeHierarchy, TestName = "SavingATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance")]
+        [TestCase(Incidents, TestName = "SavingATeamOnASingleTableThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance")]
+        public async Task SavingATeamThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance(string rootTable)
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([], rootedAt: TheWholeHierarchy));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([], rootedAt: rootTable));
 
             using (Assert.EnterMultipleScope())
             {
@@ -164,18 +172,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "The settings screen routes the message to the field the flow coach has to fix.");
                 Assert.That(instance.Requests, Is.Empty, "Pre-flight. Nothing to ask the instance yet.");
             }
-        }
-
-        // AC-B5. The shipped configuration keeps saving without the field.
-        [Test]
-        public async Task SavingAnIncidentTeamThatNamedNoKindsOfWork_IsStillAccepted()
-        {
-            var instance = AnInstanceHolding(ThreeKindsOfWork());
-            var subject = CreateSubject(instance);
-
-            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([], rootedAt: Incidents));
-
-            Assert.That(result.Code, Is.EqualTo("valid"));
         }
 
         // AC-B6, ADR-124 rung 1. The most likely mistake there is: the flow coach reads
@@ -329,14 +325,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "Definitions attach to the kinds of work, never to the hierarchy they sit in.");
         }
 
-        // AC-B5's history half. A shipped team looks for state history exactly where it did before.
+        // The single-kind half of decision 9: definitions are looked for on the one kind of work the
+        // team named, in the one-value form.
         [Test]
-        public async Task AnIncidentTeamThatNamedNoKindsOfWork_LooksForStateHistoryExactlyWhereItDidBefore()
+        public async Task AnIncidentTeamThatNamesIncidents_LooksForStateHistoryOnIncidents()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([], rootedAt: Incidents));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents], rootedAt: Incidents));
 
             Assert.That(QueriesAskedOf(instance, "metric_definition"),
                 Has.Some.Contains("table=incident"));

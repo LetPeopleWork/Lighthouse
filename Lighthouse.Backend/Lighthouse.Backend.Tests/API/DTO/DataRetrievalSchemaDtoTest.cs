@@ -9,8 +9,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
     {
         private const string TheWholeHierarchy = "task";
 
-        private const string ALeafTable = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable;
-
         private static readonly DateOnly Today = new(2026, 7, 31);
 
         [Test]
@@ -18,10 +16,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [TestCase(WorkTrackingSystems.AzureDevOps, "ado.wiql", "freetext", true, true)]
         [TestCase(WorkTrackingSystems.Jira, "jira.jql", "freetext", true, true)]
         [TestCase(WorkTrackingSystems.Csv, "csv.filedata", "file-upload", true, true)]
-        [TestCase(WorkTrackingSystems.ServiceNow, "servicenow.query", "freetext", true, false)]
+        [TestCase(WorkTrackingSystems.ServiceNow, "servicenow.query", "freetext", true, true)]
         public void ForTeam_ReturnsCorrectSchema(WorkTrackingSystems system, string expectedKey, string expectedInputKind, bool expectedIsRequired, bool expectedIsWorkItemTypesRequired)
         {
-            var schema = DataRetrievalSchemaDto.ForTeam(system, ALeafTable);
+            var schema = DataRetrievalSchemaDto.ForTeam(system);
 
             using (Assert.EnterMultipleScope())
             {
@@ -36,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void ForTeam_Linear_HasWizardHint()
         {
-            var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.Linear, ALeafTable);
+            var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.Linear);
 
             Assert.That(schema.WizardHint, Is.EqualTo("linear-team-select"));
         }
@@ -72,19 +70,23 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void ForTeam_ServiceNow_HasNoWizardHint()
         {
-            var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow, ALeafTable);
+            var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow);
 
             Assert.That(schema.WizardHint, Is.Null);
         }
 
-        // Story #5611 slice 01, AC-B4 / ADR-123 decision 6. A team reading a whole ServiceNow
-        // hierarchy has to say which kinds of work are its own, so the settings screen and the create
-        // wizard both show the field and both refuse an empty save. Neither component changes — they
+        // Story #5611, AC-B4 / ADR-123 decision 6 as amended 2026-07-31. Every ServiceNow team says
+        // which kinds of work are its own — whatever table its connection reads. A field that is
+        // hidden and still honoured by the read is the hazard the conditional carried, and no
+        // ServiceNow team was ever shipped for it to protect. Neither component changes: they
         // already gate on this flag; what changes is what the schema says.
         [Test]
-        public void ATeamOnAWholeServiceNowHierarchy_IsAskedWhichKindsOfWorkAreItsOwn()
+        [TestCase(TheWholeHierarchy, TestName = "AServiceNowTeamOnAHierarchyRoot_IsAskedWhichKindsOfWorkAreItsOwn")]
+        [TestCase(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, TestName = "AServiceNowTeamOnALeafTable_IsAskedWhichKindsOfWorkAreItsOwn")]
+        [TestCase("", TestName = "AServiceNowTeamOnAConnectionThatNamedNoTable_IsAskedWhichKindsOfWorkAreItsOwn")]
+        public void AServiceNowTeam_IsAskedWhichKindsOfWorkAreItsOwn(string table)
         {
-            var settings = new TeamSettingDto(ATeamReading(TheWholeHierarchy), Today);
+            var settings = new TeamSettingDto(ATeamReading(table), Today);
 
             using (Assert.EnterMultipleScope())
             {
@@ -92,25 +94,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(settings.DataRetrievalSchema.Key, Is.EqualTo("servicenow.query"),
                     "Still the ServiceNow arm — a fallback that happens to require the field would pass this for the wrong reason.");
             }
-        }
-
-        // AC-B5. The shipped configuration keeps hiding the field and keeps saving without it.
-        [Test]
-        public void ATeamOnASingleKindOfServiceNowWork_IsNotAskedForKindsOfWorkAtAll()
-        {
-            var settings = new TeamSettingDto(ATeamReading(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable), Today);
-
-            Assert.That(settings.DataRetrievalSchema.IsWorkItemTypesRequired, Is.False);
-        }
-
-        // A connection that never named a table reads the shipped default, so it behaves as a
-        // single-kind team rather than as one on the whole hierarchy.
-        [Test]
-        public void ATeamOnAServiceNowConnectionThatNamedNoTable_IsNotAskedForKindsOfWorkEither()
-        {
-            var settings = new TeamSettingDto(ATeamReading(string.Empty), Today);
-
-            Assert.That(settings.DataRetrievalSchema.IsWorkItemTypesRequired, Is.False);
         }
 
         private static Team ATeamReading(string table)
@@ -132,18 +115,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         // Gives the switch the exhaustiveness the frontend Record gets from its type system (Bug #5613).
-        // Both tables, so the ServiceNow arm is covered on the branch that requires kinds of work as
-        // well as the one that does not — a conditional arm is two arms to fall through (#5611 T-2).
         [Test]
-        [TestCase(ALeafTable, TestName = "SchemaFactories_EveryDeclaredWorkTrackingSystem_DoesNotUseTheQueryFallback")]
-        [TestCase(TheWholeHierarchy, TestName = "SchemaFactories_EveryDeclaredWorkTrackingSystemOnAHierarchyRoot_DoesNotUseTheQueryFallback")]
-        public void SchemaFactories_EveryDeclaredWorkTrackingSystem_DoesNotUseTheQueryFallback(string workItemTable)
+        public void SchemaFactories_EveryDeclaredWorkTrackingSystem_DoesNotUseTheQueryFallback()
         {
             using (Assert.EnterMultipleScope())
             {
                 foreach (var system in Enum.GetValues<WorkTrackingSystems>())
                 {
-                    Assert.That(DataRetrievalSchemaDto.ForTeam(system, workItemTable).Key, Is.Not.EqualTo("query"), $"Team schema for {system} falls through to the fallback arm");
+                    Assert.That(DataRetrievalSchemaDto.ForTeam(system).Key, Is.Not.EqualTo("query"), $"Team schema for {system} falls through to the fallback arm");
                     Assert.That(DataRetrievalSchemaDto.ForPortfolio(system).Key, Is.Not.EqualTo("query"), $"Portfolio schema for {system} falls through to the fallback arm");
                 }
             }

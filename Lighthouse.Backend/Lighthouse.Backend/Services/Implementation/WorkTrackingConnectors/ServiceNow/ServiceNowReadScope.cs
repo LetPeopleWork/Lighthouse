@@ -9,6 +9,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// item type, the metric-definition scope and the subject of every validation message — and
     /// decisions 8 and 9 split three of them apart. This is also the single point slice 02's per-team
     /// table plugs into.
+    /// <para>
+    /// Everything below <see cref="NamesNoKindsOfWork"/> assumes the team named at least one kind of
+    /// work. Both call sites refuse before asking (ADR-123 decision 6, amended 2026-07-31).
+    /// </para>
     /// </remarks>
     public sealed class ServiceNowReadScope
     {
@@ -29,13 +33,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public IReadOnlyList<string> KindsOfWork => kindsOfWork;
 
         /// <summary>
-        /// A team whose table has descendants and that named no kinds of work. Reading it would
-        /// return the whole hierarchy, so it reads nothing and is refused at save time
+        /// A team that named no kinds of work. It reads nothing and is refused at save time
         /// (ADR-123 decision 4).
         /// </summary>
-        public bool ReadsAWholeHierarchy => NamesNoKindsOfWork && ServiceNowTableHierarchy.HasDescendants(Table);
-
-        private bool NamesNoKindsOfWork => kindsOfWork.Count < 1;
+        public bool NamesNoKindsOfWork => kindsOfWork.Count < 1;
 
         public static ServiceNowReadScope For(string table, List<string> workItemTypes)
         {
@@ -54,29 +55,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public string ScopedQuery(string teamsOwnQuery)
         {
-            return NamesNoKindsOfWork
-                ? teamsOwnQuery
-                : $"{ClassClause()}{ConditionSeparator}{teamsOwnQuery}";
+            return $"{ClassClause()}{ConditionSeparator}{teamsOwnQuery}";
         }
 
         /// <summary>
         /// The denominator the widening detector measures itself against (ADR-124 decision 3): the
-        /// same kinds of work, without the team's own query. Null where none were named, which is
-        /// the unfiltered count every shipped team already compares against.
+        /// same kinds of work, without the team's own query.
         /// </summary>
-        public string? BaselineQuery()
+        public string BaselineQuery()
         {
-            return NamesNoKindsOfWork ? null : ClassClause();
+            return ClassClause();
         }
 
         /// <summary>
         /// The tables state-span definitions can sit on. Definitions attach to concrete classes and
-        /// never to a base table, so a team that named kinds of work looks on those and a team that
-        /// named none looks where it always did (ADR-123 decision 9).
+        /// never to a base table, so they are looked for on the kinds of work the team named rather
+        /// than on the table it is rooted at (ADR-123 decision 9).
         /// </summary>
         public List<string> DefinitionTables()
         {
-            return NamesNoKindsOfWork ? [Table] : [.. kindsOfWork];
+            return [.. kindsOfWork];
         }
 
         private string ClassClause()
@@ -87,8 +85,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// <summary>
         /// One <c>IN</c> condition for several values, an equality for exactly one
         /// (ADR-123 decision 2). <c>IN</c> is one condition against the 8192-byte URL cliff instead
-        /// of 2n−1, and <c>=</c> is the only single-value form on record — which is what keeps every
-        /// shipped leaf-rooted read byte-identical.
+        /// of 2n−1, and <c>=</c> is the only single-value form on record.
         /// </summary>
         internal static string Matching(string field, List<string> values)
         {

@@ -42,42 +42,25 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 		});
 	});
 
-	// Story #5611 slice 01, AC-B4 / AC-B5 / ADR-123 decision 6. Whether a ServiceNow team is asked
-	// which kinds of work are its own stops being a constant per system and becomes a question about
-	// the table its connection reads. Neither the settings screen nor the create wizard changes —
-	// both already gate on this flag; only what the schema says changes. Replaces the flat
-	// "does not ask for a separate list of work item types" case, whose answer is now conditional.
-	//
-	// The schema is looked up through the connection rather than the system type, so the Work Item
-	// Table option key is read in exactly one place on this side of the stack, mirroring where the
-	// backend keeps it.
-	describe("when a ServiceNow team reads a table holding several kinds of work", () => {
-		it("asks which kinds of work are the team's own", () => {
-			const schema = getDefaultTeamSchema(aServiceNowConnectionReading("task"));
+	// Story #5611, AC-B4 / AC-B5 / ADR-123 decision 6 as amended 2026-07-31. Every ServiceNow team
+	// says which kinds of work are its own, whatever table its connection reads. The conditional this
+	// replaces hid a field the read still honoured, and it protected a configuration nothing was ever
+	// shipped on. Neither the settings screen nor the create wizard changes — both already gate on
+	// this flag; only what the schema says changes.
+	describe("when a ServiceNow team is asked what work is its own", () => {
+		it.each(["task", "incident", ""])(
+			"asks which kinds of work are the team's own, reading '%s'",
+			(table) => {
+				const schema = getDefaultTeamSchema(
+					aServiceNowConnectionReading(table),
+				);
 
-			// The fallback schema also requires the field, so the ServiceNow arm has to be named
-			// too, or this passes for the wrong reason.
-			expect(schema.key).toBe("servicenow.query");
-			expect(schema.isWorkItemTypesRequired).toBe(true);
-		});
-
-		// AC-B5. A team on a single kind of work keeps hiding the field and keeps saving without it.
-		it("leaves a team reading only incidents exactly as it was", () => {
-			const schema = getDefaultTeamSchema(
-				aServiceNowConnectionReading("incident"),
-			);
-
-			expect(schema.key).toBe("servicenow.query");
-			expect(schema.isWorkItemTypesRequired).toBe(false);
-		});
-
-		// A connection that never named a table reads the shipped default.
-		it("treats a connection that named no table as reading one kind of work", () => {
-			const schema = getDefaultTeamSchema(aServiceNowConnectionReading(""));
-
-			expect(schema.key).toBe("servicenow.query");
-			expect(schema.isWorkItemTypesRequired).toBe(false);
-		});
+				// The fallback schema also requires the field, so the ServiceNow arm has to be named
+				// too, or this passes for the wrong reason.
+				expect(schema.key).toBe("servicenow.query");
+				expect(schema.isWorkItemTypesRequired).toBe(true);
+			},
+		);
 	});
 
 	describe("when someone tries to build a portfolio over ServiceNow", () => {

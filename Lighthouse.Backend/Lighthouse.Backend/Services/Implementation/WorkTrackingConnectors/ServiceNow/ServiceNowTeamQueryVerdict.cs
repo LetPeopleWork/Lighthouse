@@ -33,8 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         private const string KindsOfWorkFieldName = "WorkItemTypes";
 
         /// <summary>
-        /// Rung 0c — the team reads a table that holds several kinds of record and has not said which
-        /// of them are its own. Pre-flight, no IO.
+        /// Rung 0c — the team has not said which kinds of work are its own. Pre-flight, no IO.
         /// </summary>
         /// <remarks>
         /// ADR-123 decision 4. This is the missing-query rule on the kind-of-work dimension, and it
@@ -42,14 +41,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// to the web UI while <c>PUT /api/teams/{id}</c> also serves the CLI and the MCP server,
         /// neither of which reads the schema.
         /// </remarks>
-        public static ConnectionValidationResult FromMissingWorkItemTypes(string table)
+        public static ConnectionValidationResult FromMissingWorkItemTypes()
         {
             return ConnectionValidationResult.Failure(
                 "missing_work_item_types",
-                $"The ServiceNow table '{table}' holds several kinds of record, so this team has to say which kinds are its own. Enter them as work item types, using the system names ServiceNow stores — 'change_request', not 'Change Request'. Reading '{table}' without them would return every kind of work in the instance.",
+                "This team has not said which kinds of work are its own, so it would read nothing. Enter them as work item types, using the system names ServiceNow stores — 'change_request', not 'Change Request'.",
                 // Stryker disable once String: a support-log restatement of the message above, which is
                 // what the flow coach acts on. Nothing branches on this line.
-                $"The team reads '{table}', which has descendants, and named no work item types.",
+                "The team named no work item types, and a ServiceNow read is always scoped to them.",
                 KindsOfWorkFieldName);
         }
 

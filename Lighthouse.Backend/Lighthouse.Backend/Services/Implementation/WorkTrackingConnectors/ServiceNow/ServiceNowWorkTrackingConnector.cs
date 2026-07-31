@@ -178,10 +178,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             // ADR-123 decision 4: the missing-query rule above, on the kind-of-work dimension.
             // Unfiltered, the same team read 579 records of 13 kinds where it wanted 159 of 2.
-            if (scope.ReadsAWholeHierarchy)
+            if (scope.NamesNoKindsOfWork)
             {
                 logger.LogWarning(
-                    "Team {TeamName} reads the ServiceNow table {Table}, which holds several kinds of work, but has not said which kinds are its own, so no work was read. Asking that table without naming them would return every kind in it.",
+                    "Team {TeamName} has not said which kinds of work are its own, so no work was read from the ServiceNow table {Table}. Asking that table without naming them would return every kind in it.",
                     team.Name, scope.Table);
 
                 return [];
@@ -543,9 +543,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
             var scope = ReadScopeFor(connection, team);
 
-            if (scope.ReadsAWholeHierarchy)
+            if (scope.NamesNoKindsOfWork)
             {
-                return ServiceNowTeamQueryVerdict.FromMissingWorkItemTypes(scope.Table);
+                return ServiceNowTeamQueryVerdict.FromMissingWorkItemTypes();
             }
 
             try
@@ -559,7 +559,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
                 // ADR-124 decision 3: both counts are scoped to the kinds of work the team named, so
                 // the ratio keeps meaning "how much of your work did this query select" rather than
-                // "how much of the instance". For a team that named none the two are the shipped pair.
+                // "how much of the instance".
                 var matched = await CountRows(connection, instanceUrl, scope.Table, scope.ScopedQuery(teamsOwnQuery));
 
                 if (matched.Problem is not null)
@@ -620,11 +620,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // is not a query problem at all, and routes through slice 01's ladder — a rights failure
         // keeps its own name instead of being reported as a badly written query.
         private async Task<(ConnectionValidationResult? Problem, int Count)> CountRows(
-            WorkTrackingSystemConnection connection, string instanceUrl, string table, string? query)
+            WorkTrackingSystemConnection connection, string instanceUrl, string table, string query)
         {
-            var parameters = query is null
-                ? SingleRowParameter
-                : $"{SingleRowParameter}&sysparm_query={Uri.EscapeDataString(query)}";
+            var parameters = $"{SingleRowParameter}&sysparm_query={Uri.EscapeDataString(query)}";
 
             if (!TryCreateTableUri(instanceUrl, table, parameters, out var countUri))
             {

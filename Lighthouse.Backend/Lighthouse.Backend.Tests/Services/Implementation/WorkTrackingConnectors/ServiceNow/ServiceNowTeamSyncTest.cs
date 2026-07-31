@@ -699,11 +699,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Name = "Service Desk",
                 DataRetrievalValue = query,
-                // What a shipped ServiceNow team actually holds. Team's own default is the
-                // Jira-shaped ["User Story", "Bug"], which no ServiceNow team ever persists: the
-                // field is hidden for this connector and every save path writes the DTO's empty
-                // list. Leaving the default here would model a team that cannot exist (#5611).
-                WorkItemTypes = [],
+                // Every ServiceNow team names the kinds of work it handles (#5611, ADR-123 decision 6
+                // as amended). A team rooted at one table names that one kind; Team's own Jira-shaped
+                // default would model a team that cannot exist.
+                WorkItemTypes = [table],
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],
@@ -1019,10 +1018,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             // The flag and the count are independent on purpose. An instance that honours the query
             // answers with the rows it selects; one that drops the term answers with the whole
             // table, whatever the query would have selected.
+            //
+            // Narrowing is recognised by the team's own query rather than by "a query is present":
+            // every ServiceNow read now also carries the class clause (#5611), and the widening
+            // detector's baseline probe carries that clause alone. Keying on presence would make the
+            // baseline count itself as narrowed, and every team read as query_matches_whole_table.
             private List<string> VisibleTo(Uri uri)
             {
-                var isFiltered = uri.Query.Contains("sysparm_query=", StringComparison.Ordinal)
-                    && !uri.Query.Contains("sysparm_query=&", StringComparison.Ordinal);
+                var isFiltered = Uri.UnescapeDataString(uri.Query)
+                    .Contains(TeamsOwnQuery, StringComparison.Ordinal);
 
                 if (!isFiltered || behaviour.IgnoresTheQuery)
                 {

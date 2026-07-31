@@ -218,6 +218,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Name = "Service Desk",
                 DataRetrievalValue = TeamsOwnQuery,
+                // Every ServiceNow team names the kinds of work it handles (#5611); Team's own
+                // Jira-shaped default is one this connector never sees.
+                WorkItemTypes = ["incident"],
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],
@@ -255,6 +258,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Name = "Service Desk",
                 DataRetrievalValue = query,
+                WorkItemTypes = ["incident"],
                 WorkTrackingSystemConnectionId = connectionId,
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
@@ -370,8 +374,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     return;
                 }
 
-                var isFiltered = query.Contains("sysparm_query=", StringComparison.Ordinal)
-                    && !query.Contains("sysparm_query=&", StringComparison.Ordinal);
+                var isFiltered = NarrowsTheTable(query);
 
                 // The flag decides on its own: an instance that honours the query answers with the
                 // rows it selects, one that drops the term answers with the whole table.
@@ -390,6 +393,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 context.Response.ContentLength64 = body.Length;
                 context.Response.OutputStream.Write(body, 0, body.Length);
                 context.Response.OutputStream.Close();
+            }
+
+            // Narrowing is decided by the team's own terms. Every ServiceNow read now also carries
+            // the class clause (#5611) and the widening detector's baseline probe carries that clause
+            // alone, so "a query is present" would count the baseline as narrowed and report every
+            // team as query_matches_whole_table.
+            private static bool NarrowsTheTable(string query)
+            {
+                var teamsTerms = query.TrimStart('?')
+                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault(parameter => parameter.StartsWith("sysparm_query=", StringComparison.Ordinal))
+                    ?["sysparm_query=".Length..];
+
+                if (string.IsNullOrEmpty(teamsTerms))
+                {
+                    return false;
+                }
+
+                return Uri.UnescapeDataString(teamsTerms)
+                    .Split('^', StringSplitOptions.RemoveEmptyEntries)
+                    .Any(term => !term.StartsWith("sys_class_name", StringComparison.Ordinal)
+                        && !term.StartsWith("ORDERBY", StringComparison.Ordinal));
             }
 
             // INC0000001 sat in New for four weeks and was picked up on the 29th. That gap is the

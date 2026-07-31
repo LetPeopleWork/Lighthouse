@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -20,16 +19,10 @@ namespace Lighthouse.Backend.API.DTO
         public string? WizardHint { get; set; }
 
         /// <summary>
-        /// What a team's settings screen asks for, and what it refuses to save without.
+        /// What a team's settings screen asks for, and what it refuses to save without. Twinned in
+        /// <c>DataRetrievalSchemaDefaults.ts</c>; the two disagreeing is Bug #5613.
         /// </summary>
-        /// <param name="system">The connection's work tracking system.</param>
-        /// <param name="workItemTable">
-        /// The ServiceNow table the connection reads, ignored by every other arm. Deliberately
-        /// without a default value (ADR-123 decision 6), so a call site cannot inherit leaf-table
-        /// semantics by forgetting to answer. Twinned in <c>DataRetrievalSchemaDefaults.ts</c>;
-        /// the two disagreeing is Bug #5613, which shipped teams that could not be saved.
-        /// </param>
-        public static DataRetrievalSchemaDto ForTeam(WorkTrackingSystems system, string workItemTable)
+        public static DataRetrievalSchemaDto ForTeam(WorkTrackingSystems system)
         {
             return system switch
             {
@@ -75,9 +68,9 @@ namespace Lighthouse.Backend.API.DTO
                     DisplayLabel = "ServiceNow Query (Encoded Query)",
                     InputKind = FreeTextInput,
                     IsRequired = true,
-                    // A table with descendants read unfiltered returns the whole instance's work, so
-                    // the kinds of work stop being optional (ADR-123 decision 6).
-                    IsWorkItemTypesRequired = ServiceNowTableHierarchy.HasDescendants(workItemTable),
+                    // Always, whatever table the connection reads (ADR-123 decision 6, amended
+                    // 2026-07-31): a field hidden here is still honoured by the read.
+                    IsWorkItemTypesRequired = true,
                 },
                 _ => new DataRetrievalSchemaDto
                 {
