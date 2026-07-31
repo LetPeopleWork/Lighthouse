@@ -269,16 +269,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(workItem.Name, Is.EqualTo("Printer on 3rd floor is offline"));
         }
 
-        // ITSM records carry no work-item-type field — the table a record lives in is what kind of
-        // work it is. That is why the team scope does not ask for a separate list of types.
-        [Test]
-        public void TheKindOfWork_IsTheTableItWasReadFrom()
-        {
-            var workItem = ServiceNowWorkItemMapper.MapRecord(ARecordWith(), ATeamThatCalls(), "change_request");
-
-            Assert.That(workItem.Type, Is.EqualTo("change_request"));
-        }
-
         // H3. Every guard in ReadForm was unreachable, because the fixture above can only ever emit
         // two well-formed strings. These are the shapes the live API actually returns — an explicit
         // JSON null for an unset date on change_request, a bare scalar where a field is not

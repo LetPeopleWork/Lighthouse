@@ -5,16 +5,11 @@ import {
 	getDefaultTeamSchema,
 } from "./DataRetrievalSchemaDefaults";
 
-const aServiceNowConnectionReading = (table: string) => ({
+// No options: the schema factories are a lookup by system type and read nothing else off the
+// connection (ADR-123 decision 6 as amended 2026-07-31). A `Work Item Table` option here would be
+// an input nothing can reach, which reads as coverage of a dependency that no longer exists.
+const aServiceNowConnection = () => ({
 	workTrackingSystem: "ServiceNow" as WorkTrackingSystemType,
-	options: [
-		{
-			key: "Work Item Table",
-			value: table,
-			isSecret: false,
-			isOptional: true,
-		},
-	],
 });
 
 // Story #5574, US-01 AC2 / ADR-116. The connection and settings surfaces render from these
@@ -22,9 +17,7 @@ const aServiceNowConnectionReading = (table: string) => ({
 describe("What Lighthouse asks a ServiceNow shop for", () => {
 	describe("when a team is pointed at ServiceNow", () => {
 		it("asks for a ServiceNow query in the shop's own words", () => {
-			const schema = getDefaultTeamSchema(
-				aServiceNowConnectionReading("incident"),
-			);
+			const schema = getDefaultTeamSchema(aServiceNowConnection());
 
 			expect(schema.key).toBe("servicenow.query");
 			expect(schema.displayLabel).toBe("ServiceNow Query (Encoded Query)");
@@ -36,8 +29,7 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 		// wizard would work for an admin and show the customer a silent empty list.
 		it("offers no discovery wizard, because discovery needs rights the customer will not have", () => {
 			expect(
-				getDefaultTeamSchema(aServiceNowConnectionReading("incident"))
-					.wizardHint,
+				getDefaultTeamSchema(aServiceNowConnection()).wizardHint,
 			).toBeNull();
 		});
 	});
@@ -47,29 +39,24 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 	// replaces hid a field the read still honoured, and it protected a configuration nothing was ever
 	// shipped on. Neither the settings screen nor the create wizard changes — both already gate on
 	// this flag; only what the schema says changes.
+	// The table is not parametrised over: it is not an input to the factory at all, so a case per
+	// table would run one case three times while reading as a table-independence claim.
 	describe("when a ServiceNow team is asked what work is its own", () => {
-		it.each(["task", "incident", ""])(
-			"asks which kinds of work are the team's own, reading '%s'",
-			(table) => {
-				const schema = getDefaultTeamSchema(
-					aServiceNowConnectionReading(table),
-				);
+		it("asks which kinds of work are the team's own", () => {
+			const schema = getDefaultTeamSchema(aServiceNowConnection());
 
-				// The fallback schema also requires the field, so the ServiceNow arm has to be named
-				// too, or this passes for the wrong reason.
-				expect(schema.key).toBe("servicenow.query");
-				expect(schema.isWorkItemTypesRequired).toBe(true);
-			},
-		);
+			// The fallback schema also requires the field, so the ServiceNow arm has to be named
+			// too, or this passes for the wrong reason.
+			expect(schema.key).toBe("servicenow.query");
+			expect(schema.isWorkItemTypesRequired).toBe(true);
+		});
 	});
 
 	describe("when someone tries to build a portfolio over ServiceNow", () => {
 		// The limitation lives in the configuration surface rather than only in the docs, so
 		// there is no half-working portfolio path to stumble into.
 		it("declines rather than offering a field that leads nowhere", () => {
-			const schema = getDefaultPortfolioSchema(
-				aServiceNowConnectionReading("incident"),
-			);
+			const schema = getDefaultPortfolioSchema(aServiceNowConnection());
 
 			expect(schema.displayLabel).toBe("Not supported for ServiceNow");
 			expect(schema.inputKind).toBe("none");

@@ -80,38 +80,52 @@ namespace Lighthouse.Backend.Tests.API.DTO
         // hidden and still honoured by the read is the hazard the conditional carried, and no
         // ServiceNow team was ever shipped for it to protect. Neither component changes: they
         // already gate on this flag; what changes is what the schema says.
+        //
+        // The table is said out loud rather than parametrised over. ForTeam takes the system and
+        // nothing else, so a case per table would run one case three times while reading as a
+        // table-independence claim; the connection with no options at all is the case that actually
+        // states it.
         [Test]
-        [TestCase(TheWholeHierarchy, TestName = "AServiceNowTeamOnAHierarchyRoot_IsAskedWhichKindsOfWorkAreItsOwn")]
-        [TestCase(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, TestName = "AServiceNowTeamOnALeafTable_IsAskedWhichKindsOfWorkAreItsOwn")]
-        [TestCase("", TestName = "AServiceNowTeamOnAConnectionThatNamedNoTable_IsAskedWhichKindsOfWorkAreItsOwn")]
-        public void AServiceNowTeam_IsAskedWhichKindsOfWorkAreItsOwn(string table)
+        public void AServiceNowTeam_IsAskedWhichKindsOfWorkAreItsOwn_WhateverTableItsConnectionReads()
         {
-            var settings = new TeamSettingDto(ATeamReading(table), Today);
+            var rootedAtAHierarchy = new TeamSettingDto(ATeamReading(TheWholeHierarchy), Today).DataRetrievalSchema;
+            var onAConnectionThatNamedNoTable = new TeamSettingDto(ATeamOnAConnectionWithNoOptions(), Today).DataRetrievalSchema;
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(settings.DataRetrievalSchema.IsWorkItemTypesRequired, Is.True);
-                Assert.That(settings.DataRetrievalSchema.Key, Is.EqualTo("servicenow.query"),
+                Assert.That(rootedAtAHierarchy.IsWorkItemTypesRequired, Is.True);
+                Assert.That(rootedAtAHierarchy.Key, Is.EqualTo("servicenow.query"),
                     "Still the ServiceNow arm — a fallback that happens to require the field would pass this for the wrong reason.");
+                Assert.That(onAConnectionThatNamedNoTable.IsWorkItemTypesRequired, Is.True,
+                    "The connection's options are not an input to the schema at all any more, and this says so rather than leaving it to be inferred.");
             }
         }
 
         private static Team ATeamReading(string table)
         {
-            var connection = new WorkTrackingSystemConnection
-            {
-                Name = "Acme ServiceNow",
-                WorkTrackingSystem = WorkTrackingSystems.ServiceNow,
-            };
+            var team = ATeamOnAConnectionWithNoOptions();
 
-            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            team.WorkTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption
             {
                 Key = ServiceNowWorkTrackingOptionNames.WorkItemTable,
                 Value = table,
                 IsOptional = true,
             });
 
-            return new Team { Name = "Service Desk", WorkTrackingSystemConnection = connection };
+            return team;
+        }
+
+        private static Team ATeamOnAConnectionWithNoOptions()
+        {
+            return new Team
+            {
+                Name = "Service Desk",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = "Acme ServiceNow",
+                    WorkTrackingSystem = WorkTrackingSystems.ServiceNow,
+                },
+            };
         }
 
         // Gives the switch the exhaustiveness the frontend Record gets from its type system (Bug #5613).
