@@ -21,6 +21,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string Problems = "problem";
 
+        /// <summary>A real, readable, populated table that is not a kind of work (641 rows, none under task).</summary>
+        private const string NotWork = "sys_user";
+
         /// <summary>The settings field every kind-of-work verdict has to send the flow coach to.</summary>
         private const string KindsOfWorkField = "WorkItemTypes";
 
@@ -130,152 +133,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // Rungs 1 and 2 of ADR-124 decision 2. A class IS a table, so these are the connection
-        // ladder's own verdicts with a class name where the table name went -- but pointing at the
-        // field the flow coach typed it in, not at the connection's.
-        [TestCase(HttpStatusCode.BadRequest, "unknown_table", TestName = "AKindOfWorkTheInstanceDoesNotHave_IsNamedBackAsAnUnknownTable")]
-        [TestCase(HttpStatusCode.Forbidden, "insufficient_permissions", TestName = "AKindOfWorkTheInstanceRefuses_IsNamedBackAsAPermissionsProblem")]
-        public void AKindOfWorkTheInstanceWillNotAnswerFor_KeepsTheConnectionLaddersName(HttpStatusCode status, string expectedCode)
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
-                Changes, status, carriesRecords: false, recordsTheInstanceHolds: null, visibleRowCount: 0);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Code, Is.EqualTo(expectedCode));
-                Assert.That(result.Message, Does.Contain(Changes));
-                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
-            }
-        }
-
-        // Rung 4, and the mechanism the whole acceptance criterion rests on: X-Total-Count is
-        // ACL-blind, so a count above zero with an empty body is the one signal that a kind of work
-        // is hidden rather than empty.
-        [Test]
-        public void AKindOfWorkTheInstanceHoldsAndTheAccountCannotSee_IsReportedAsHidden()
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
-                Problems, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 24, visibleRowCount: 0);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Code, Is.EqualTo("class_records_not_visible"));
-                Assert.That(result.Message, Does.Contain(Problems).And.Contain("role"),
-                    "Both causes and the role to grant, because the platform cannot separate a class-level denial from a row-level one.");
-                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
-            }
-        }
-
-        // Rung 5 and the readable rung. An empty kind of work is a legitimate configuration (OQ-8) --
-        // refusing it would block a team on a quiet quarter.
-        [TestCase(103, 1, TestName = "AKindOfWorkTheAccountCanRead_IsAccepted")]
-        [TestCase(0, 0, TestName = "AKindOfWorkWithNothingInItYet_IsAccepted")]
-        public void AKindOfWorkThisAccountHasNoProblemWith_IsAccepted(int holds, int visible)
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
-                Changes, HttpStatusCode.OK, carriesRecords: true, holds, visible);
-
-            Assert.That(result.Code, Is.EqualTo("valid"));
-        }
-
-        // A gateway that rewrites ServiceNow's own 400 error envelope into a 200 hands the ladder a
-        // body that parses and carries no record set. Read as "JSON, zero rows" that is a misspelt
-        // class passing validation, after which the team syncs a subset with nothing logged. The
-        // sync's own RecordsFrom has always refused this shape; the class probe now agrees.
-        [Test]
-        public void AKindOfWorkWhoseAnswerCarriesNoRecordSetAtAll_IsNeverReportedAsReadable()
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
-                Changes, HttpStatusCode.OK, carriesRecords: false, recordsTheInstanceHolds: 0, visibleRowCount: 0);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField),
-                    "Whatever the rung, a kind of work the coach typed sends them back to the field they typed it in.");
-            }
-        }
-
-        // X-Total-Count against the row count is the ONLY signal that separates a class this account
-        // may not read from one that is genuinely empty, so a probe that did not get the header has
-        // measured nothing. Collapsing the absent header into 0 disables rung 4 silently and reports
-        // a pass -- the same proxy CountRows already refuses over, one rung earlier and about the
-        // same instance.
-        [Test]
-        public void AKindOfWorkTheInstanceWouldNotSizeAtAll_IsRefusedRatherThanPassed()
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
-                Problems, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: null, visibleRowCount: 0);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Code, Is.EqualTo("result_size_unknown"));
-                Assert.That(result.Message, Does.Contain(Problems));
-                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
-            }
-        }
-
         // ---------------------------------------------------------------------------------------
-        // The second probe: the same kind of work, asked of the table this connection is rooted at.
-        // Readable on its own table is not the fact the read depends on.
+        // The primary probe: does this kind of work contribute rows to the read Lighthouse makes?
+        // One request per class when the configuration is right (ADR-124 decision 2, re-ordered).
         // ---------------------------------------------------------------------------------------
 
-        // The headline of the amendment. Measured: /change_request answers 105 to the account that
-        // gets header = 0 from /incident?sys_class_name=change_request. Accepting that team means it
-        // syncs no change at all and says nothing about it.
-        [Test]
-        public void AKindOfWorkThatDoesNotLiveUnderTheConfiguredTable_NamesBothTheKindAndTheTable()
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
-                Changes, Table, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 0, visibleRowCount: 0);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Code, Is.EqualTo("class_not_under_configured_table"));
-                Assert.That(result.Message, Does.Contain(Changes).And.Contain(Table),
-                    "Which kind of work, and which table it is not under. Either half alone is unactionable.");
-                Assert.That(result.Message, Does.Not.Contain("does not exist"),
-                    "The class exists and is readable -- the other probe already covers a name that does not, with a better message.");
-                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
-            }
-        }
-
-        // The gap between the ACL-blind header and the body survives a class-scoped sysparm_query,
-        // measured: /task?sys_class_name=problem reports 24 to an account shown none of them. So the
-        // hidden-kind rung is reachable here too, and keeps its own name rather than being reported
-        // as a class living somewhere else.
-        [Test]
-        public void AKindOfWorkUnderTheTableThatTheAccountCannotSee_IsStillReportedAsHidden()
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
-                Problems, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 24, visibleRowCount: 0);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.Code, Is.EqualTo("class_records_not_visible"));
-                Assert.That(result.Message, Does.Contain(Problems));
-            }
-        }
-
-        [Test]
-        public void AKindOfWorkThatIsReadableUnderTheConfiguredTable_IsAccepted()
-        {
-            var result = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
-                Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 105, visibleRowCount: 1);
-
-            Assert.That(result.Code, Is.EqualTo("valid"));
-        }
-
-        // This probe addressed the connection's table, so a transport failure is about that table.
+        // This probe addressed the work hierarchy, so a transport failure is about the hierarchy.
         // Naming the class instead would send the flow coach to correct a spelling that is right.
-        [TestCase(HttpStatusCode.Forbidden, "insufficient_permissions", TestName = "ATableTheAccountMayNotReadThroughAClassFilter_IsReportedAgainstTheTable")]
-        [TestCase(HttpStatusCode.BadRequest, "unknown_table", TestName = "ATableTheInstanceDoesNotHave_IsReportedAgainstTheTable")]
-        public void ARefusalOfTheConfiguredTable_IsReportedAgainstThatTableRatherThanTheKindOfWork(
+        [TestCase(HttpStatusCode.Forbidden, "insufficient_permissions", TestName = "AHierarchyTheAccountMayNotReadThroughAClassFilter_IsReportedAgainstTheHierarchy")]
+        [TestCase(HttpStatusCode.BadRequest, "unknown_table", TestName = "AHierarchyTheInstanceDoesNotHave_IsReportedAgainstTheHierarchy")]
+        public void ARefusalOfTheWorkHierarchy_IsReportedAgainstItRatherThanAgainstTheKindOfWork(
             HttpStatusCode status, string expectedCode)
         {
-            var result = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
+            var result = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
                 Changes, TheWholeHierarchy, status, carriesRecords: false, recordsTheInstanceHolds: null, visibleRowCount: 0);
 
             using (Assert.EnterMultipleScope())
@@ -287,16 +157,140 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // A gateway that rewrites ServiceNow's own error envelope into a 200 hands the ladder a body
+        // that parses and carries no record set. Read as "JSON, zero rows" that is a broken read
+        // passing validation. The sync's own RecordsFrom has always refused this shape.
         [Test]
-        public void AKindOfWorkUnderATableTheInstanceWouldNotSize_IsRefusedRatherThanPassed()
+        public void AnAnswerCarryingNoRecordSetAtAll_IsNeverReportedAsReadable()
         {
-            var result = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
-                Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: null, visibleRowCount: 0);
+            var result = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
+                Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: false, recordsTheInstanceHolds: 0, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField),
+                    "Whatever the rung, a kind of work the coach typed sends them back to the field they typed it in.");
+            }
+        }
+
+        // X-Total-Count against the row count is the ONLY signal that separates a kind of work this
+        // account may not read from one the hierarchy holds none of, so a probe that did not get the
+        // header has measured nothing. Collapsing the absent header into 0 disables the hidden rung
+        // silently and reports a pass.
+        [Test]
+        public void AHierarchyTheInstanceWouldNotSizeAtAll_IsRefusedRatherThanPassed()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
+                Problems, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: null, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("result_size_unknown"));
+                Assert.That(result.Message, Does.Contain(TheWholeHierarchy));
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
+            }
+        }
+
+        // The mechanism the whole acceptance criterion rests on: X-Total-Count is ACL-blind, and the
+        // blindness survives a class-scoped sysparm_query — measured, /task?sys_class_name=problem
+        // reports 32 to an account shown none of them. A count above zero with an empty body is the
+        // one signal that a kind of work is hidden rather than absent.
+        [Test]
+        public void AKindOfWorkTheHierarchyHoldsAndTheAccountCannotSee_IsReportedAsHidden()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
+                Problems, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 24, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo("class_records_not_visible"));
+                Assert.That(result.Message, Does.Contain(Problems).And.Contain("role"),
+                    "Both causes and the role to grant, because the platform cannot separate a class-level denial from a row-level one.");
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
+            }
+        }
+
+        // The two valid answers, and they are NOT the same answer: rows means done, none means the
+        // caller has to ask the class's own table why. Both come back valid because neither is yet a
+        // failure — which is what makes the caller's header check load-bearing rather than defensive.
+        [TestCase(105, 1, TestName = "AKindOfWorkThatContributesRows_IsAccepted")]
+        [TestCase(0, 0, TestName = "AKindOfWorkTheHierarchyHoldsNoneOf_IsNotYetAFailure")]
+        public void AKindOfWorkTheHierarchyHasNoObjectionTo_IsAccepted(int holds, int visible)
+        {
+            var result = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
+                Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, holds, visible);
+
+            Assert.That(result.Code, Is.EqualTo("valid"));
+        }
+
+        // ---------------------------------------------------------------------------------------
+        // The secondary probe: why the hierarchy holds none of it. Paid for only by the class that
+        // is actually wrong.
+        // ---------------------------------------------------------------------------------------
+
+        // Rungs 1 and 2 of ADR-124 decision 2. A class IS a table, so these are the connection
+        // ladder's own verdicts with a class name where the table name went -- but pointing at the
+        // field the flow coach typed it in, not at the connection's.
+        [TestCase(HttpStatusCode.BadRequest, "unknown_table", TestName = "AKindOfWorkTheInstanceDoesNotHave_IsNamedBackAsAnUnknownTable")]
+        [TestCase(HttpStatusCode.Forbidden, "insufficient_permissions", TestName = "AKindOfWorkTheInstanceRefuses_IsNamedBackAsAPermissionsProblem")]
+        public void AKindOfWorkTheInstanceWillNotAnswerFor_KeepsTheConnectionLaddersName(HttpStatusCode status, string expectedCode)
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassTableProbe(
+                Changes, TheWholeHierarchy, status, carriesRecords: false, recordsTheInstanceHolds: null, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo(expectedCode));
+                Assert.That(result.Message, Does.Contain(Changes));
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
+            }
+        }
+
+        // The rung the second probe exists for. Measured: /sys_user answers 641 to the same account
+        // that gets header = 0 from /task?sys_class_name=sys_user. A ladder that only asked whether
+        // the name resolves accepts that team, which then syncs nothing of that kind in silence.
+        [Test]
+        public void AKindOfWorkThatIsNotWorkAtAll_NamesBothTheKindAndTheHierarchy()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassTableProbe(
+                NotWork, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 641, visibleRowCount: 1);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("class_is_not_a_kind_of_work"));
+                Assert.That(result.Message, Does.Contain(NotWork).And.Contain(TheWholeHierarchy),
+                    "Which name, and what it is not under. Either half alone is unactionable.");
+                Assert.That(result.Message, Does.Not.Contain("does not exist"),
+                    "The name resolves and is readable -- a name that does not gets a 400 and a better message.");
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
+            }
+        }
+
+        // OQ-8's charitable reading, and the case that keeps a team on a quiet quarter saveable: both
+        // probes said zero, so the class exists and the instance holds none of it anywhere.
+        [Test]
+        public void AKindOfWorkTheInstanceHoldsNothingOfAnywhere_IsAccepted()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassTableProbe(
+                Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 0, visibleRowCount: 0);
+
+            Assert.That(result.Code, Is.EqualTo("valid"));
+        }
+
+        [Test]
+        public void AKindOfWorkWhoseOwnTableTheInstanceWouldNotSize_IsRefusedRatherThanPassed()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassTableProbe(
+                Problems, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: null, visibleRowCount: 0);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Code, Is.EqualTo("result_size_unknown"));
-                Assert.That(result.Message, Does.Contain(TheWholeHierarchy));
+                Assert.That(result.Message, Does.Contain(Problems));
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
             }
         }
 

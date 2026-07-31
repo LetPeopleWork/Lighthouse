@@ -53,18 +53,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// The four-rung readability ladder for one named kind of work, read off its own table
-        /// (ADR-124 decision 2). A verdict that is valid means the class is readable, or exists and
-        /// holds nothing — which is a legitimate configuration, not a failure.
+        /// The readability ladder for one named kind of work, asked of <b>the read Lighthouse
+        /// actually performs</b>: <c>/api/now/table/{table}?sysparm_limit=1&amp;sysparm_query=sys_class_name={recordClass}</c>
+        /// (ADR-124 decision 2, re-ordered 2026-07-31).
         /// </summary>
+        /// <remarks>
+        /// This is the primary probe and the only one a correct configuration pays for. A valid
+        /// verdict means one of two things, and the caller has to tell them apart by the header: the
+        /// class contributes rows to the read (header &gt; 0, done), or the hierarchy holds none of it
+        /// (header = 0), which is not yet an error — it may be a kind of work with nothing in it, a
+        /// name that is not a table at all, or a table that is not work. Only that case pays a second
+        /// request, to <see cref="FromClassTableProbe"/>.
+        /// <para>
+        /// Measured on the PDI, 2026-07-31: <c>/task?sys_class_name=incident</c> reports 103 with a
+        /// row to <c>admin</c>; <c>/task?sys_class_name=problem</c> reports 32 with <b>no</b> row to
+        /// an account without <c>sn_problem_read</c> — so the ACL-blindness of <c>X-Total-Count</c>
+        /// survives a class-scoped query, which is the one mechanism this rung rests on.
+        /// </para>
+        /// </remarks>
         /// <param name="recordClass">The class name the flow coach typed.</param>
-        /// <param name="statusCode">What <c>/api/now/table/{recordClass}?sysparm_limit=1</c> answered.</param>
+        /// <param name="table">The work hierarchy every read is rooted at, and the one probed.</param>
+        /// <param name="statusCode">What the instance answered.</param>
         /// <param name="carriesRecords">
         /// Whether the body parsed <i>and</i> carried a record set. A success whose JSON has no
         /// <c>result</c> array — an error envelope a gateway rewrote into a 200, a sign-in page — is
-        /// no evidence that the class is readable, so it is read as "answered, returned no data"
-        /// exactly as the sync's own <c>RecordsFrom</c> reads it. Passing a class on it is how a
-        /// misspelt name reaches a team that then syncs a subset in silence.
+        /// no evidence of anything, so it is read as "answered, returned no data" exactly as the
+        /// sync's own <c>RecordsFrom</c> reads it.
         /// </param>
         /// <param name="recordsTheInstanceHolds">
         /// <c>X-Total-Count</c>, which ServiceNow reports without consulting the ACLs it just applied,
@@ -73,60 +87,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// without it has measured nothing and must say so rather than pass.
         /// </param>
         /// <param name="visibleRowCount">Rows the account actually got back.</param>
-        public static ConnectionValidationResult FromClassProbe(
-            string recordClass, HttpStatusCode statusCode, bool carriesRecords, int? recordsTheInstanceHolds, int visibleRowCount)
-        {
-            if (statusCode != HttpStatusCode.OK || !carriesRecords)
-            {
-                // Rungs 1 and 2 are the connection ladder's 400 and 403 with a class name where the
-                // table name went — a class IS a table, so the messages are already right.
-                return AboutTheKindOfWork(
-                    ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, visibleRowCount, recordClass));
-            }
-
-            if (recordsTheInstanceHolds is null)
-            {
-                return AboutTheKindOfWork(FromUncountableResultSet(recordClass));
-            }
-
-            // Rung 4. The gap between what the instance holds and what the account can see is the
-            // only signal there is: an ACL-filtered read and a correct one are otherwise the same
-            // response with fewer rows in it. Header = 0 is rung 5 — the class is simply empty.
-            if (recordsTheInstanceHolds > 0 && visibleRowCount < 1)
-            {
-                return RecordsNotVisible(recordClass);
-            }
-
-            return ConnectionValidationResult.Success();
-        }
-
-        /// <summary>
-        /// The second half of the class ladder (ADR-124 decision 2, amended 2026-07-31): what
-        /// <c>/api/now/table/{table}?sysparm_query=sys_class_name={recordClass}</c> answered.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="FromClassProbe"/> establishes "this name is a readable table on this instance".
-        /// The read needs the strictly stronger "records whose own class is this name are readable
-        /// <i>under the table this connection is rooted at</i>", and only this probe measures it.
-        /// Measured on the PDI: a team rooted at <c>incident</c> naming <c>change_request</c> passes
-        /// the first probe (105 rows on its own table) and answers <c>header = 0</c> here — it would
-        /// have synced nothing of that kind and said nothing about it.
-        /// <para>
-        /// Only reached for a class the instance holds records of somewhere, which is what makes
-        /// <c>header = 0</c> mean "not under this table" rather than "empty everywhere".
-        /// </para>
-        /// </remarks>
-        /// <param name="recordClass">The class name the flow coach typed.</param>
-        /// <param name="table">The table this connection reads, and the one the probe addressed.</param>
-        /// <param name="statusCode">What the instance answered.</param>
-        /// <param name="carriesRecords">Whether the body parsed and carried a record set.</param>
-        /// <param name="recordsTheInstanceHolds">
-        /// <c>X-Total-Count</c> for that class under that table, or <c>null</c> where the header was
-        /// absent. Measured ACL-blind through a class-scoped <c>sysparm_query</c> as well as at table
-        /// granularity: <c>/task?sys_class_name=problem</c> reports 24 to an account shown none of them.
-        /// </param>
-        /// <param name="visibleRowCount">Rows the account actually got back.</param>
-        public static ConnectionValidationResult FromClassUnderTableProbe(
+        public static ConnectionValidationResult FromWorkHierarchyProbe(
             string recordClass,
             string table,
             HttpStatusCode statusCode,
@@ -136,7 +97,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             if (statusCode != HttpStatusCode.OK || !carriesRecords)
             {
-                // The table is the connection's, so the ladder names the table rather than the class.
+                // The hierarchy is the subject, so the ladder names the table rather than the class.
                 return AboutTheKindOfWork(
                     ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, visibleRowCount, table));
             }
@@ -146,12 +107,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return AboutTheKindOfWork(FromUncountableResultSet(table));
             }
 
-            if (recordsTheInstanceHolds < 1)
-            {
-                return NotUnderTheTable(recordClass, table);
-            }
-
-            if (visibleRowCount < 1)
+            // The gap between what the instance holds and what the account can see is the only signal
+            // there is: an ACL-filtered read and a correct one are otherwise the same response with
+            // fewer rows in it.
+            if (recordsTheInstanceHolds > 0 && visibleRowCount < 1)
             {
                 return RecordsNotVisible(recordClass);
             }
@@ -159,17 +118,72 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return ConnectionValidationResult.Success();
         }
 
-        // Neither "this kind of work does not exist" nor "it is empty" — the probe on its own table
-        // has already ruled both out, each with a better message. What is left is a real, populated
-        // class whose records live somewhere else in the instance, which is what a flow coach reaches
-        // by naming a sibling of the table their connection reads.
-        private static ConnectionValidationResult NotUnderTheTable(string recordClass, string table)
+        /// <summary>
+        /// Why the work hierarchy holds nothing of a named class: what
+        /// <c>/api/now/table/{recordClass}?sysparm_limit=1</c> answers about the class's own table.
+        /// </summary>
+        /// <remarks>
+        /// The lazy half of the ladder, reached only when <see cref="FromWorkHierarchyProbe"/>
+        /// reported that the hierarchy holds none of this class. Measured on the PDI, 2026-07-31:
+        /// <c>/not_a_real_class</c> answers <c>400</c> identically for all four probe accounts;
+        /// <c>/sys_user</c>, <c>/cmdb_ci</c> and <c>/kb_knowledge</c> answer <c>200</c> with 641,
+        /// 2784 and 53 — real, populated tables that are not work; <c>/incident_task</c> answers
+        /// <c>200</c> with 0, a genuine kind of work this instance has none of yet.
+        /// <para>
+        /// Visibility is not judged here — the hierarchy probe already ruled on it, and an account
+        /// shown no rows of a table that is not work still gets the more useful answer, which is that
+        /// it is not work.
+        /// </para>
+        /// </remarks>
+        /// <param name="recordClass">The class name the flow coach typed.</param>
+        /// <param name="table">The work hierarchy, named back in the message that rejects the class.</param>
+        /// <param name="statusCode">What the instance answered.</param>
+        /// <param name="carriesRecords">Whether the body parsed and carried a record set.</param>
+        /// <param name="recordsTheInstanceHolds"><c>X-Total-Count</c>, or <c>null</c> where absent.</param>
+        /// <param name="visibleRowCount">Rows the account got back, used only to name a non-200.</param>
+        public static ConnectionValidationResult FromClassTableProbe(
+            string recordClass,
+            string table,
+            HttpStatusCode statusCode,
+            bool carriesRecords,
+            int? recordsTheInstanceHolds,
+            int visibleRowCount)
+        {
+            if (statusCode != HttpStatusCode.OK || !carriesRecords)
+            {
+                // 400 and 403 are the connection ladder's rungs with a class name where the table
+                // name went — a class IS a table, so the messages are already right.
+                return AboutTheKindOfWork(
+                    ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, visibleRowCount, recordClass));
+            }
+
+            if (recordsTheInstanceHolds is null)
+            {
+                return AboutTheKindOfWork(FromUncountableResultSet(recordClass));
+            }
+
+            if (recordsTheInstanceHolds > 0)
+            {
+                return NotAKindOfWork(recordClass, table);
+            }
+
+            // Header = 0 on both probes: the class exists, the instance holds none of it anywhere,
+            // and OQ-8 already chose the charitable reading — a kind of work with nothing in it yet
+            // is a legitimate configuration.
+            return ConnectionValidationResult.Success();
+        }
+
+        // Neither "this name does not exist" nor "it is empty" — the class's own table has ruled both
+        // out, each with a better message. What is left is a real, populated table whose records are
+        // not work: sys_user, cmdb_ci and kb_knowledge all reach here, and so does any ITSM sibling
+        // that does not extend task.
+        private static ConnectionValidationResult NotAKindOfWork(string recordClass, string table)
         {
             return ConnectionValidationResult.Failure(
-                "class_not_under_configured_table",
-                $"'{recordClass}' is a kind of work this instance holds, but none of it lives under '{table}' — the table this connection reads. This team would sync nothing of that kind, and say nothing about it. Either name only kinds of work that '{table}' covers, or point the connection at a table they all sit under.",
-                // Stryker disable once String: the two ways out are named in the message above, which
-                // is what the flow coach acts on. This repeats the counts for a support log.
+                "class_is_not_a_kind_of_work",
+                $"'{recordClass}' is a real table on this instance and holds records, but none of them are work: nothing of that kind sits under '{table}', which is where Lighthouse reads every ServiceNow record from. This team would sync nothing of that kind and say nothing about it. Name kinds of work instead — 'incident', 'change_request', 'problem', 'sc_task' and their siblings all qualify; a table like 'sys_user' or 'cmdb_ci' does not.",
+                // Stryker disable once String: what to name instead is in the message above, which is
+                // what the flow coach acts on. This repeats the counts for a support log.
                 $"'{table}' reported no records of the kind '{recordClass}' in X-Total-Count, while '{recordClass}' itself holds some.",
                 KindsOfWorkFieldName);
         }

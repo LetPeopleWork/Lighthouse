@@ -46,6 +46,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // prove paging on an instance whose incident table fits in a single page.
         private const string ChangeTable = "change_request";
 
+        // A real, readable, populated table that is not a task descendant — 641 rows, and zero of
+        // them under `task`. The case the second probe exists for.
+        private const string NotWorkTable = "sys_user";
+
+        // A genuine task descendant this instance holds no records of. The case the second probe has
+        // to ACCEPT rather than refuse (OQ-8).
+        private const string EmptyKindOfWorkTable = "incident_task";
+
         // Mirrors the connector's own sysparm_limit. A pager that reads one page and stops brings
         // back exactly this many.
         private const int SinglePageSize = 100;
@@ -100,35 +108,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// SPIKE Q8: metric_definition returns 403 for every read-only role and opens only at
-        /// itil-grade. This is the rung that proves ServiceNow does sometimes deny honestly —
-        /// without it, "everything is a silent 200" would be indistinguishable from a bug in the ladder.
+        /// SPIKE Q8: <c>metric_definition</c> returns 403 for every read-only role and opens only at
+        /// itil-grade. This is the rung that proves ServiceNow does sometimes deny honestly — without
+        /// it, "everything is a silent 200" would be indistinguishable from a bug in the ladder. It
+        /// moved from connection scope to the kind-of-work ladder when the connection stopped having
+        /// a table to point anywhere: a name the hierarchy holds none of gets a second probe, and a
+        /// refusal there keeps its own name rather than being reported as an absence.
         /// </summary>
         [Test]
-        public async Task ATableTheCredentialMayNotTouch_IsReportedAsInsufficientPermissions()
+        public async Task AKindOfWorkTheCredentialMayNotTouch_IsReportedAsInsufficientPermissions()
         {
-            var connection = CreateConnection(NoRolesUser, table: MetricsTable);
+            var team = ATeamCovering([MetricsTable], "active=true", NoRolesUser);
 
-            var result = await CreateSubject().ValidateConnection(connection);
+            var result = await CreateSubject().ValidateTeamSettings(team);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Code, Is.EqualTo("insufficient_permissions"));
-            }
-        }
-
-        [Test]
-        public async Task ATableTheInstanceDoesNotHave_IsReportedAsAnUnknownTable()
-        {
-            var connection = CreateConnection(AdminUser, table: "lighthouse_no_such_table");
-
-            var result = await CreateSubject().ValidateConnection(connection);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Code, Is.EqualTo("unknown_table"));
             }
         }
 
@@ -359,36 +356,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// Story #5611, AC-B6 / ADR-124 decision 2 as amended. The probe on a class's own table
-        /// establishes "this name is a readable table on this instance"; the read needs the strictly
-        /// stronger "records of this class are readable <i>under the table this connection reads</i>",
-        /// and only a class-scoped probe against that table measures it. The two answers genuinely
-        /// diverge on a real instance and cannot be told apart from a fixture:
-        /// <c>/change_request</c> reports 105 while <c>/incident?sys_class_name=change_request</c>
-        /// reports 0, to the same account, in the same second. If this ever passes, ServiceNow has
-        /// started resolving <c>sys_class_name</c> across the hierarchy and the refusal is wrong.
+        /// Story #5611, AC-B6 / ADR-124 decision 2 as re-ordered 2026-07-31. A name can be a real,
+        /// readable, populated table on this instance and still contribute nothing to the read, and
+        /// the two answers diverge only against a real instance — a fixture can be made to say
+        /// either. Measured, same account, same second: <c>/sys_user</c> reports 641 while
+        /// <c>/task?sysparm_query=sys_class_name=sys_user</c> reports 0. If this ever passes,
+        /// ServiceNow has started resolving <c>sys_class_name</c> outside the work hierarchy and the
+        /// refusal has quietly become wrong.
         /// </summary>
         [Test]
-        public async Task AKindOfWorkThatDoesNotLiveUnderTheConfiguredTable_IsToldApartFromOneThatDoes()
+        public async Task AKindOfWorkThatIsNotWork_IsToldApartFromOneThatIs()
         {
             var subject = CreateSubject();
 
-            var underItsOwnRoot = await subject.ValidateTeamSettings(
+            var realWork = await subject.ValidateTeamSettings(
                 ATeamCovering([ChangeTable], "active=true", AdminUser));
 
-            var underTheWrongRoot = ATeamReadingIncidents("active=true");
-            underTheWrongRoot.WorkItemTypes = [ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, ChangeTable];
-
-            var result = await subject.ValidateTeamSettings(underTheWrongRoot);
+            var result = await subject.ValidateTeamSettings(
+                ATeamCovering(["incident", NotWorkTable], "active=true", AdminUser));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(underItsOwnRoot.IsValid, Is.True, underItsOwnRoot.Message);
+                Assert.That(realWork.IsValid, Is.True, realWork.Message);
                 Assert.That(result.IsValid, Is.False,
-                    "change_request is readable on its own table, so the class ladder alone accepts this team — and it then syncs no change at all.");
-                Assert.That(result.Code, Is.EqualTo("class_not_under_configured_table"));
-                Assert.That(result.Message, Does.Contain(ChangeTable).And.Contain(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable));
+                    "sys_user is a readable table holding 641 records, so a ladder that only asked whether the name resolves would accept this team — and it would then sync no user at all, silently.");
+                Assert.That(result.Code, Is.EqualTo("class_is_not_a_kind_of_work"));
+                Assert.That(result.Message, Does.Contain(NotWorkTable).And.Contain(HierarchyRootTable));
             }
+        }
+
+        /// <summary>
+        /// The case the second probe has to ACCEPT rather than refuse: a genuine kind of work this
+        /// instance holds none of yet. OQ-8 settled that as a legitimate configuration, and only a
+        /// live instance has a class in that state to prove it with.
+        /// </summary>
+        [Test]
+        public async Task AKindOfWorkTheInstanceHoldsNothingOfAnywhere_IsAcceptedRatherThanRefused()
+        {
+            var team = ATeamCovering(["incident", EmptyKindOfWorkTable], "active=true", AdminUser);
+
+            var result = await CreateSubject().ValidateTeamSettings(team);
+
+            Assert.That(result.IsValid, Is.True,
+                $"'{EmptyKindOfWorkTable}' is a task descendant this instance has no records of. If it has since gained some, pick another empty descendant rather than weakening the assertion.");
         }
 
         /// <summary>
@@ -412,30 +422,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // A team reading the whole task hierarchy and naming the kinds of work that are its own.
+        // A team naming the kinds of work that are its own. Every read is rooted at the hierarchy,
+        // so the classes are the only thing that varies.
         private static Team ATeamCovering(List<string> kindsOfWork, string query, string username)
         {
             var team = ATeamReading(
                 query,
-                HierarchyRootTable,
+                kindsOfWork,
                 ["New"],
                 ["In Progress", "On Hold", "Assess", "Authorize", "Scheduled", "Implement", "Review"],
                 ["Resolved", "Closed", "Canceled"]);
 
-            team.WorkItemTypes = kindsOfWork;
-            team.WorkTrackingSystemConnection = CreateConnection(username, table: HierarchyRootTable);
+            team.WorkTrackingSystemConnection = CreateConnection(username);
 
             return team;
         }
 
         private static Team ATeamReadingIncidents(string query)
         {
-            return ATeamReading(
-                query,
-                ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
-                ["New"],
-                ["In Progress", "On Hold"],
-                ["Resolved", "Closed"]);
+            return ATeamReading(query, ["incident"], ["New"], ["In Progress", "On Hold"], ["Resolved", "Closed"]);
         }
 
         // Every label change_request uses, so nothing is filtered out and the count is purely about
@@ -444,35 +449,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             return ATeamReading(
                 query,
-                ChangeTable,
+                [ChangeTable],
                 ["New", "Assess"],
                 ["Authorize", "Scheduled", "Implement", "Review"],
                 ["Closed", "Canceled"]);
         }
 
         private static Team ATeamReading(
-            string query, string table, List<string> toDoStates, List<string> doingStates, List<string> doneStates)
+            string query,
+            List<string> kindsOfWork,
+            List<string> toDoStates,
+            List<string> doingStates,
+            List<string> doneStates)
         {
             return new Team
             {
                 Name = "ServiceNow Integration Test Team",
                 DataRetrievalValue = query,
-                // Every ServiceNow team names the kinds of work it handles, so a team rooted at one
-                // table names that one kind (#5611). Team's own default is the Jira-shaped
-                // ["User Story", "Bug"], which no ServiceNow team ever persists.
-                WorkItemTypes = [table],
+                // Every ServiceNow team names the kinds of work it handles (#5611). Team's own
+                // default is the Jira-shaped ["User Story", "Bug"], which no ServiceNow team persists.
+                WorkItemTypes = kindsOfWork,
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
-                WorkTrackingSystemConnection = CreateConnection(AdminUser, table: table),
+                WorkTrackingSystemConnection = CreateConnection(AdminUser),
             };
         }
 
         private static WorkTrackingSystemConnection CreateConnection(
-            string username,
-            string? password = null,
-            string? instanceUrl = null,
-            string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable)
+            string username, string? password = null, string? instanceUrl = null)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -485,7 +490,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = instanceUrl ?? InstanceUrl() },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Username, Value = username },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Password, Value = password ?? Password(), IsSecret = true },
-                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = table, IsOptional = true },
             ]);
 
             return connection;

@@ -1178,3 +1178,82 @@ ties — which is exactly ADR-124 decision 5's rule about what belongs in the li
 
 `SyncingATeam_AsksForTheRecordsInAStableOrder` now pins the full two-term clause rather than the
 prefix, so dropping the tie-breaker fails on the wire form as well as on the instance.
+
+---
+
+## Wave: DELIVER / [REF] Every read is rooted at `task` (shipped 2026-07-31)
+
+The change halted above, re-applied. **Both defects that stopped it are fixed rather than worked
+around**: `resolved_at` is not read at all any more (every field the mapper reads is declared on
+`task`), and the paging sort is total. Neither was patched over on the way past — each got its own
+commit, its own live assertion, and its own ADR amendment.
+
+### What changed
+
+| | Before | After |
+|---|---|---|
+| `Work Item Table` connection option | typed freetext, default `incident` | **deleted**, with its default and its factory entry |
+| `ValidateConnection` | probed the configured table, then read `metric_definition` for a capability advisory | probes `task`; says `history_determined_per_team` and reads nothing further |
+| `ServiceNowReadScope` | carried a `Table` | carries a `const RootTable = "task"` and no instance table |
+| `ServiceNowTableHierarchy` | the static known-hierarchy set | **deleted** — nothing branches on a table name any more |
+| `ServiceNowHistoryVerdict` | `ForHierarchyRoot(table)` + `ToValidationResult` + two advisory codes | `HistoryIsDecidedPerTeam()`; the enum keeps `NoRights` / `NoStateMetric`, which the *sync* still reports per team |
+| The class ladder | probe the class's own table, then the same class under the configured table | **inverted** — see below |
+
+### The class ladder, inverted (maintainer's correction, mid-implementation)
+
+The first brief said to delete the second probe. The previous agent's counter — that a real,
+readable, populated non-`task` class passes a name-resolves check and then reads zero — was right and
+the probe was kept. The maintainer then caught the *remaining* flaw: with the root constant, probing
+the class's own table asks about a table Lighthouse never reads work from. It is a proxy for the
+question that matters.
+
+So the order is inverted rather than the probe removed:
+
+| # | probe | when |
+|---|---|---|
+| 1 | `/task?sysparm_limit=1&sysparm_query=sys_class_name={class}` | always — this *is* the read |
+| 2 | `/{class}?sysparm_limit=1` | only when probe 1 says the hierarchy holds none |
+
+**One request per kind of work when the configuration is right** — cheaper than what was shipped an
+hour earlier, which always paid two — and two only for the class that is actually wrong. Full
+discrimination is preserved; each rung was measured on the PDI *before* the code was written, one row
+per rung (the table is in ADR-124 decision 2). `incident_task` turned out to be a genuine empty
+task-descendant on the instance, so the OQ-8 accept rung has a live assertion rather than a fixture.
+
+**Verdict-code decision: `class_not_under_configured_table` → `class_is_not_a_kind_of_work`.** The old
+name asserted a relation to a configured table that no longer exists, so it described nothing. The new
+one says what the two probes jointly established — a real, populated table whose records are not work —
+keeps the `class_*` prefix `class_records_not_visible` set, and reads the same as the message a coach
+sees. `sys_user`, `cmdb_ci` and `kb_knowledge` are the measured examples.
+
+One thing the inversion gives up, stated rather than discovered: probe 2 no longer has its own ACL
+rung. An account shown no rows of a table that is not work hears "that is not a kind of work" instead
+of "you cannot read it" — the more useful of the two, and probe 1 already rules on visibility for
+every class that *is* work.
+
+### The `insufficient_permissions` rung did not disappear with the option
+
+It used to be reachable at connection scope by pointing a connection at `metric_definition`. With no
+table to point, that live test would have been deleted. Instead it moved onto the kind-of-work ladder,
+where it is reachable through probe 2 — measured, `lh_probe_none` naming `metric_definition` as a kind
+of work gets `403` and keeps its own verdict. The live assertion moved with it rather than being lost.
+
+### Not written: cleanup for the removed option
+
+Nothing ServiceNow has ever been released, so there is no migration. A local development connection
+may still carry a stored `Work Item Table` row; the read path simply stops reading it, and no code is
+written to delete a value nothing consults.
+
+### ADRs amended
+
+- [ADR-116](../../product/architecture/adr-116-servicenow-table-at-connection-scope.md) — decision 1
+  **withdrawn** (and 3 with it), with a section recording why the original reasoning no longer holds
+  and what is genuinely given up. Decision 4 (no discovery) is what makes the withdrawal safe rather
+  than merely regrettable, and now says so.
+- [ADR-123](../../product/architecture/adr-123-servicenow-record-classes-as-work-item-types.md) —
+  decision 3's table collapses to one root, decision 5 **withdrawn** (`ServiceNowTableHierarchy`
+  deleted), decision 8's fallback re-worded, decision 10 is no longer a branch.
+- [ADR-124](../../product/architecture/adr-124-servicenow-record-class-readability-ladder.md) —
+  decision 2 **re-ordered**, with the measured per-rung table; the DELIVER-review amendment that
+  introduced the second probe is kept verbatim below it, because its reasoning about *why* both
+  probes are needed is unchanged. Consequences re-costed: one round trip per correct class, not two.

@@ -19,12 +19,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Story #5611 / ADR-124 decision 4. The team-settings ladder answers the same question in the
         // same vocabulary and was never covered here; the class rungs are what make that a gap worth
-        // closing. ServiceNowReadScope and ServiceNowTableHierarchy join it as the slice's new cores.
+        // closing. ServiceNowReadScope joins it as the slice's new core.
         private const string TeamQueryVerdict = Namespace + ".ServiceNowTeamQueryVerdict";
 
         private const string ReadScope = Namespace + ".ServiceNowReadScope";
-
-        private const string TableHierarchy = Namespace + ".ServiceNowTableHierarchy";
 
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
         private const string LoggingPattern = @"^Microsoft\.Extensions\.Logging($|\..*)";
@@ -37,7 +35,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(Verdict)
                 .Or().HaveFullName(TeamQueryVerdict)
                 .Or().HaveFullName(ReadScope)
-                .Or().HaveFullName(TableHierarchy)
                 .Should().NotDependOnAny(Types().That().HaveFullName("System.Net.Http.HttpClient")
                     .Or().HaveFullName("System.Net.Http.HttpMessageHandler")
                     .Or().HaveFullName("System.Net.Http.HttpResponseMessage")
@@ -55,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(Verdict)
                 .Or().HaveFullName(TeamQueryVerdict)
                 .Or().HaveFullName(ReadScope)
-                .Or().HaveFullName(TableHierarchy)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(LoggingPattern))
                 .Because(
                     "ADR-114: the verdict is return-only. Anything worth saying about a rung belongs in the " +
@@ -69,7 +65,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(Verdict)
                 .Or().HaveFullName(TeamQueryVerdict)
                 .Or().HaveFullName(ReadScope)
-                .Or().HaveFullName(TableHierarchy)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(PersistencePattern))
                 .Because(
                     "ADR-114: the verdict is a pure function of what the instance answered. A lookup against " +

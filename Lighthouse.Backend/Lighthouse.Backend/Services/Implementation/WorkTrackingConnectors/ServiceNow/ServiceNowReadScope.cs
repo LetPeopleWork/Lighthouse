@@ -1,8 +1,8 @@
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
     /// <summary>
-    /// What one team is reading: the table its connection is rooted at, and the kinds of work it
-    /// named. Pure (ADR-114).
+    /// What one team is reading: the kinds of work it named, and the queries that scope a read to
+    /// them. Pure (ADR-114).
     /// </summary>
     /// <remarks>
     /// ADR-123 decisions 1, 8 and 9 — one string used to answer the URL path, the work item type and
@@ -14,18 +14,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// </remarks>
     public sealed class ServiceNowReadScope
     {
+        /// <summary>
+        /// The table every ServiceNow read is addressed to (ADR-116 decision 1, withdrawn
+        /// 2026-07-31). <c>task</c> is ServiceNow's base work table and everything the ITSM
+        /// applications file extends it, so rooting here and naming the classes is the one scope
+        /// that cannot silently read less work than the team named.
+        /// </summary>
+        public const string RootTable = "task";
+
         private const string ConditionSeparator = "^";
 
         private readonly List<string> kindsOfWork;
 
-        private ServiceNowReadScope(string table, List<string> kindsOfWork)
+        private ServiceNowReadScope(List<string> kindsOfWork)
         {
-            Table = table;
             this.kindsOfWork = kindsOfWork;
         }
-
-        /// <summary>The table every read of this team's work is addressed to.</summary>
-        public string Table { get; }
 
         /// <summary>The record classes the team named, in the order it named them.</summary>
         public IReadOnlyList<string> KindsOfWork => kindsOfWork;
@@ -36,14 +40,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public bool NamesNoKindsOfWork => kindsOfWork.Count < 1;
 
-        public static ServiceNowReadScope For(string table, List<string> workItemTypes)
+        public static ServiceNowReadScope For(List<string> workItemTypes)
         {
             var named = workItemTypes
                 .Where(kindOfWork => !string.IsNullOrWhiteSpace(kindOfWork))
                 .Select(kindOfWork => kindOfWork.Trim())
                 .ToList();
 
-            return new ServiceNowReadScope(table, named);
+            return new ServiceNowReadScope(named);
         }
 
         /// <summary>

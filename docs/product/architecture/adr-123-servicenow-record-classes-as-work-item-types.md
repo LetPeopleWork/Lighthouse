@@ -6,6 +6,10 @@
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 - **Amends**: [ADR-116](./adr-116-servicenow-table-at-connection-scope.md) decision 6 (the C-3 soft call).
   [ADR-118](./adr-118-servicenow-transition-history-from-metric-instance-spans.md) D2 (definition scope).
+- **Amended 2026-07-31 (maintainer, same story)**: [ADR-116](./adr-116-servicenow-table-at-connection-scope.md)
+  decision 1 is withdrawn and **every read is rooted at the constant `task`**. "The configured
+  table" is gone from this ADR's vocabulary — decisions 3, 5, 8 and 10 are marked below where they
+  reasoned about one. Decisions 1, 2, 4 and 9 are untouched: they were always about the class list.
 
 ## Context
 
@@ -94,22 +98,21 @@ SPIKE recommends and the one whose result set is on record.
 
 ### 3. The clause is emitted whenever classes are named — not when the table is a hierarchy root
 
-> **Amended 2026-07-31 with decision 6, and again by the DELIVER review.** The "none" column has no
-> surviving cell: with the field always required, a ServiceNow team with no classes reads nothing
-> whatever its table, so the two rows below that described it are gone. The read rule itself is
-> unchanged — the clause is emitted because classes were named, never because the table has
-> descendants — and it is now uniform rather than a deliberate non-coincidence with the refusal.
+> **Amended twice on 2026-07-31.** First with decision 6: with the field always required, a
+> ServiceNow team with no classes reads nothing whatever its table, so the "none" rows are gone.
+> Then with ADR-116 decision 1's withdrawal: **there is no configured table left to vary**. The
+> table column collapses to the constant `task`, and with it the whole class of
+> "named-a-class-the-table-does-not-cover" configuration, which was reachable only because two
+> settings had to agree. The read rule itself never changed.
 
-| configured table | classes | behaviour |
+| root table | classes | behaviour |
 |---|---|---|
-| hierarchy root (`task`) | named | clause emitted (AC-B1) |
-| leaf (`incident`) | `["incident"]` | clause emitted; the shipped shape, and the one whose `=` form is measured |
-| leaf (`incident`) | `["change_request"]` | clause emitted and honoured — and the save is **refused**, because the records are not under `incident` ([ADR-124](./adr-124-servicenow-record-class-readability-ladder.md) decision 2b). Emitting it anyway is what makes the read match what validation measured |
-| any | none | **reads nothing and says why** (AC-B3, decision 4) |
+| `task` (always) | named | clause emitted (AC-B1) |
+| `task` (always) | `["incident"]` | clause emitted; the single-class `=` form, which is the one measured |
+| `task` (always) | none | **reads nothing and says why** (AC-B3, decision 4) |
 
-Hierarchy-root knowledge is therefore load-bearing in exactly **one** place — decision 10's
-connection-scope history verdict — and nowhere in the read path or the schema. That is what keeps the
-static set of decision 5 small enough to be safe.
+The clause is emitted because classes were named, never because of anything about the table — which
+is now trivially true, there being one table.
 
 ### 4. A hierarchy-rooted team with no classes reads nothing, and is refused at save time
 
@@ -134,11 +137,12 @@ save team settings). A gate that lives only in the schema flag is a gate the API
 
 ### 5. "This table has descendants" is a static known-hierarchy set, in both stacks
 
-> **Amended 2026-07-31 — backend only.** The frontend constant is deleted: with decision 6 amended,
-> nothing on that side of the stack branches on the table any more. `ServiceNowTableHierarchy`
-> survives for its remaining reader, decision 10's connection-scope history verdict. The residual
-> risk recorded below is also gone — a customer rooting at an unknown hierarchy table now names its
-> kinds of work like everyone else.
+> **WITHDRAWN 2026-07-31.** First the frontend constant went with decision 6; then, with ADR-116
+> decision 1 withdrawn, `ServiceNowTableHierarchy` lost its last reader (decision 10 no longer asks
+> whether the table has descendants — it always does) and the type is **deleted**. Nothing in either
+> stack branches on a table name any more, which is the strongest possible answer to the residual
+> risk this decision recorded: there is no unlisted root to get wrong, because there is no root to
+> choose. What survives of the set is one constant, `ServiceNowReadScope.RootTable`.
 
 `ServiceNowTableHierarchy.RootTables` on the backend, an exported constant beside the `Record` on the
 frontend. Content today: **`task`**, and nothing else.
@@ -222,12 +226,12 @@ The existing Bug #5613 guard (`SchemaFactories_EveryDeclaredWorkTrackingSystem_D
 gains the new parameter and a second pass over the enum with a hierarchy-root table, so both branches
 of the ServiceNow arm are covered by the exhaustiveness guard rather than only the leaf one.
 
-### 8. A work item's `Type` is its own `sys_class_name`, with the configured table as fallback
+### 8. A work item's `Type` is its own `sys_class_name`, with the read's root table as fallback
 
-`ServiceNowWorkItemMapper.MapRecord` reads `sys_class_name` from the record's universal form and uses
-the configured table only when the field is absent or empty. For a leaf-rooted team the two are
-identical by construction, so **no shipped team sees a changed `Type` and no data migration exists**
-(AC-B2). For a `task`-rooted team the record's own class is the only answer that is not a lie.
+`ServiceNowWorkItemMapper.MapRecord` reads `sys_class_name` from the record's universal form and
+falls back to the table the read addressed — which since 2026-07-31 is always `task` — only when the
+field is absent or empty. Nothing shipped, so there is no data migration either way (AC-B2). Reading
+through the hierarchy, the record's own class is the only answer that is not a lie.
 
 The fallback is not defensive padding: `ReadForm` returns `string.Empty` for a missing field, and an
 empty `Type` on every item would be a silent data change worse than the one being fixed.
@@ -252,15 +256,22 @@ the label still read from `value`.
 
 ### 10. At connection scope, a hierarchy root claims nothing about history
 
-`ValidateConnection`'s capability probe (ADR-118 D5) asks `metric_definition` about the *connection's*
-table. For a `task`-rooted connection that question has no meaningful answer, and the answer it does
-return is actively wrong: `NoStateMetric`, whose message tells the administrator to "activate a Field
-value duration metric definition on the state field of task" — advice that cannot be followed and that
+> **Amended 2026-07-31**: with every connection rooted at `task`, this is not a branch any more — it
+> is the only answer connection validation has. `CapabilityOf` is deleted along with the
+> `history_requires_itil` and `history_requires_state_metric` advisories, which could only ever have
+> been produced by a leaf-rooted connection that can no longer exist. Both remedies survive where
+> they are true: `ServiceNowHistoryAvailability` still carries `NoRights` and `NoStateMetric`, the
+> sync still reports them per team, and the advisory below now names where the definition has to go.
+
+`ValidateConnection`'s capability probe (ADR-118 D5) asked `metric_definition` about the connection's
+table. Rooted at `task` that question has no meaningful answer, and the answer it did return was
+actively wrong: `NoStateMetric`, whose message tells the administrator to "activate a Field value
+duration metric definition on the state field of task" — advice that cannot be followed and that
 contradicts what their teams will actually get.
 
-So for a hierarchy-root table, `CapabilityOf` skips the definition read entirely and returns a success
-carrying a new advisory, `history_determined_per_team`: this connection reads a table with several
-record classes, and whether Lighthouse can see when work started is decided by the classes each team
+So `ValidateConnection` skips the definition read entirely and returns a success carrying the
+advisory `history_determined_per_team`: Lighthouse reads through a table holding every kind of record
+a team might work on, and whether it can see when work started is decided by the classes each team
 names. One request saved, one false statement not made.
 
 This is a new *message*, not a new `ServiceNowHistoryAvailability` member. The enum is what

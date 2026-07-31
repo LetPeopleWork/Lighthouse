@@ -79,93 +79,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
 
-        // A missing capability is not a broken connection. Failing validation over it would stop an
-        // administrator finishing a setup that works perfectly well for throughput and forecasting.
+        // ADR-123 decision 10. Connection validation reads no metric definitions at all now that
+        // every connection is rooted at the work hierarchy: `metric_definition` holds 0 rows for
+        // `table=task` (measured), so the only answer available at that scope would be "activate a
+        // definition on the state field of task" — advice nobody can follow, printed by the very
+        // feature that recommends the recipe. The remaining verdict says the one true thing.
         [Test]
-        public void AMissingCapability_DoesNotFailTheConnection()
+        public void AConnection_SaysWhoDecidesWhetherHistoryIsAvailableRatherThanDecidingItself()
         {
-            var verdict = ServiceNowHistoryVerdict.ToValidationResult(ServiceNowHistoryAvailability.NoRights, Table);
-
-            Assert.That(verdict.IsValid, Is.True,
-                "ADR-118 D5: the advisory rides a success. ServiceNow without itil still gives throughput and a forecast.");
-        }
-
-        [Test]
-        public void AnInstanceThatCanSupplyHistory_CarriesNoAdvisory()
-        {
-            var verdict = ServiceNowHistoryVerdict.ToValidationResult(ServiceNowHistoryAvailability.Available, Table);
+            var verdict = ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(verdict.IsValid, Is.True);
-                Assert.That(verdict.Advisory, Is.Null, "Nothing to warn about, so nothing is said.");
-                Assert.That(verdict.AdvisoryCode, Is.Null);
+                Assert.That(verdict.IsValid, Is.True,
+                    "ADR-118 D5: the advisory rides a success. ServiceNow without itil still gives throughput and a forecast.");
+                Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.PerTeamCode));
             }
         }
 
-        // The advisory has to name the remedy, and the two remedies are different. This is the whole
-        // reason the availability is three-valued rather than a boolean.
+        // An advisory nobody can act on is the silent no-op DoD 5 forbids. What the administrator
+        // has to be told is that the connection is fine, who decides the thing it declined to
+        // decide, and where the metric definition actually has to go.
         [Test]
-        public void TheAdvisoryForMissingRights_NamesTheRoleToGrant()
+        public void TheAdvisory_SaysTheConnectionWorksAndWhereTheMetricDefinitionHasToGo()
         {
-            var verdict = ServiceNowHistoryVerdict.ToValidationResult(ServiceNowHistoryAvailability.NoRights, Table);
+            var advisory = ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam().Advisory;
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.NoRightsCode));
-                Assert.That(verdict.Advisory, Does.Contain("grant the integration account the itil role"),
-                    "An administrator cannot act on 'history unavailable'. They can act on the name of a role.");
-                Assert.That(verdict.Advisory, Does.Contain("ServiceNow refuses this account the metric tables"),
-                    "And they can only judge whether that role is the right remedy if they are told what was refused.");
-            }
-        }
-
-        [Test]
-        public void TheAdvisoryForAMissingMetric_NamesTheTableAndTheMetricKind()
-        {
-            var verdict = ServiceNowHistoryVerdict.ToValidationResult(ServiceNowHistoryAvailability.NoStateMetric, Table);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.NoStateMetricCode));
-                Assert.That(verdict.Advisory, Does.Contain("nothing on the incident table measures how long a record spends in each state"));
-                Assert.That(verdict.Advisory, Does.Contain("Activate a Field value duration metric definition on the state field of incident"),
-                    "Naming the metric type, and the field of the table it has to go on, is what turns this from a complaint into an instruction.");
-            }
-        }
-
-        // The honesty obligation ADR-117 made load-bearing and deferred to this slice. Whichever
-        // cause fired, the administrator has to learn that the number they are about to read is
-        // request-to-resolution and not time-in-progress.
-        [TestCase(ServiceNowHistoryAvailability.NoRights)]
-        [TestCase(ServiceNowHistoryAvailability.NoStateMetric)]
-        public void WhateverTheCause_TheAdvisorySaysWhichNumberTheTeamWillGet(ServiceNowHistoryAvailability availability)
-        {
-            var verdict = ServiceNowHistoryVerdict.ToValidationResult(availability, Table);
-
-            Assert.That(verdict.Advisory, Does.Contain("resolution").IgnoreCase,
-                "ADR-117's honesty obligation: shipping the inflated number unqualified is what this slice exists to stop.");
-        }
-
-        // Each advisory is one sentence concatenated out of several fragments, so losing any one of
-        // them still leaves a message that reads like a message. What the administrator has to be
-        // told does not vary with the cause: that the connection itself is fine, what Lighthouse
-        // cannot see, what to do about it, and what to do afterwards.
-        [TestCase(ServiceNowHistoryAvailability.NoRights)]
-        [TestCase(ServiceNowHistoryAvailability.NoStateMetric)]
-        public void WhateverTheCause_TheAdvisorySaysWhatIsWrongAndWhatToDoAboutIt(ServiceNowHistoryAvailability availability)
-        {
-            var verdict = ServiceNowHistoryVerdict.ToValidationResult(availability, Table);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(verdict.Advisory, Is.Not.Null.And.Not.Empty, "An advisory nobody can read is the silent no-op DoD 5 forbids.");
-                Assert.That(verdict.Advisory, Does.Contain("The connection works, but"),
+                Assert.That(advisory, Does.Contain("The connection works"),
                     "Leading with the reassurance is what stops an administrator undoing a connection that is fine.");
-                Assert.That(verdict.Advisory, Does.Contain("Lighthouse cannot see when work started or stopped"),
-                    "The consequence, in the flow coach's words rather than ServiceNow's.");
-                Assert.That(verdict.Advisory, Does.Contain("then validate the connection again to pick up true time in progress"),
-                    "A remedy with no way to check it worked leaves the administrator guessing.");
+                Assert.That(advisory, Does.Contain("decided by the kinds of work each team names"),
+                    "The question was declined, not answered, and the administrator has to know who answers it.");
+                Assert.That(advisory, Does.Contain("activate a Field value duration metric definition on the state field of each of those"),
+                    "Naming the metric type and where it goes is what turns this from a complaint into an instruction.");
+                Assert.That(advisory, Does.Contain(ServiceNowReadScope.RootTable),
+                    "The table that carries none of them has to be named, or the instruction reads as 'somewhere else'.");
             }
         }
     }

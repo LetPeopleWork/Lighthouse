@@ -29,21 +29,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] EveryRecordInTheFixture =
             ["INC0000001", "INC0000002", "INC0000003", "INC0000004", "INC0000005"];
 
-        // AC1. The query the flow coach wrote is the query that gets asked, against the table the
-        // connection was configured for. Anything else and the team is looking at somebody else's work.
+        // AC1. The query the flow coach wrote is the query that gets asked, and it is asked of the
+        // work hierarchy whatever kinds of work the team named — the class is a filter, never a path
+        // (ADR-116 decision 1, withdrawn 2026-07-31).
         [Test]
-        public async Task SyncingATeam_AsksTheConfiguredTableForTheWorkTheFlowCoachDescribed()
+        public async Task SyncingATeam_AsksTheWorkHierarchyForTheWorkTheFlowCoachDescribed()
         {
             var instance = AnInstanceHolding(FiveRecordsOfMixedState());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeam(query: TeamsOwnQuery, table: "change_request"));
+            await subject.GetWorkItemsForTeam(ATeam(query: TeamsOwnQuery, kindOfWork: "change_request"));
 
             var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.AbsoluteUri)).ToList();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(asked, Has.Some.Contains("/api/now/table/change_request"));
+                Assert.That(asked, Has.All.Contains($"/api/now/table/{ServiceNowReadScope.RootTable}"),
+                    "A change request is read through the hierarchy like everything else. Addressing its own table is what made a team able to read less work than it named.");
                 Assert.That(asked, Has.Some.Contains(TeamsOwnQuery),
                     "The flow coach's own query has to reach the instance verbatim.");
             }
@@ -286,7 +288,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(failure?.Code, Is.EqualTo("paging_repeated_records"));
-                Assert.That(failure?.Message, Does.Contain(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable),
+                Assert.That(failure?.Message, Does.Contain(ServiceNowReadScope.RootTable),
                     "sysparm_offset is the setting at fault and the table is where to look, so both belong in what the administrator reads.");
             }
         }
@@ -309,7 +311,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(failure?.Code, Is.EqualTo("paging_did_not_terminate"));
-                Assert.That(failure?.Message, Does.Contain(ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable),
+                Assert.That(failure?.Message, Does.Contain(ServiceNowReadScope.RootTable),
                     "The table has to be named, or an administrator cannot tell which read stopped.");
                 Assert.That(instance.Requests, Has.Count.EqualTo(expectedReads));
             }
@@ -421,7 +423,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var subject = CreateSubject(AnInstanceThatAnswers(HttpStatusCode.BadRequest));
 
-            var result = await subject.ValidateTeamSettings(ATeam(table: "no_such_table"));
+            var result = await subject.ValidateTeamSettings(ATeam());
 
             using (Assert.EnterMultipleScope())
             {
@@ -538,7 +540,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 {
                     PageSize = 10,
                     RowsTheQuerySelects = 2,
-                    BreaksFromRequest = 4,
+                    // One kind-of-work probe, then the matched count, then the baseline this test is
+                    // about. It was request 4 while every kind of work cost two probes.
+                    BreaksFromRequest = 3,
                     Breakage = ARefusedRead,
                 }));
 
@@ -737,7 +741,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static Team ATeam(
             string query = TeamsOwnQuery,
-            string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
+            string kindOfWork = "incident",
             string instanceUrl = InstanceUrl)
         {
             return new Team
@@ -745,13 +749,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Name = "Service Desk",
                 DataRetrievalValue = query,
                 // Every ServiceNow team names the kinds of work it handles (#5611, ADR-123 decision 6
-                // as amended). A team rooted at one table names that one kind; Team's own Jira-shaped
-                // default would model a team that cannot exist.
-                WorkItemTypes = [table],
+                // as amended); Team's own Jira-shaped default would model a team that cannot exist.
+                WorkItemTypes = [kindOfWork],
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],
-                WorkTrackingSystemConnection = AConnection(table, instanceUrl),
+                WorkTrackingSystemConnection = AConnection(instanceUrl),
             };
         }
 
@@ -767,8 +770,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return team;
         }
 
-        private static WorkTrackingSystemConnection AConnection(
-            string table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, string instanceUrl = InstanceUrl)
+        private static WorkTrackingSystemConnection AConnection(string instanceUrl = InstanceUrl)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -781,7 +783,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = instanceUrl },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Username, Value = "lighthouse.integration" },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Password, Value = "encrypted-secret", IsSecret = true },
-                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = table, IsOptional = true },
             ]);
 
             return connection;

@@ -4,6 +4,12 @@
 - **Date**: 2026-07-29
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5574)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
+- **Decision 1 WITHDRAWN 2026-07-31 (maintainer, Story 5611)**, and decision 3 with it. There is no
+  work-item table option at any scope: every ServiceNow read is rooted at the constant `task`, and
+  the team's kinds of work (ADR-123) are the only thing that varies. Decisions 2, 4 and 5 stand
+  — and decision 4's reasoning is what makes the withdrawal *safe*, since an option a
+  least-privilege account cannot discover is one a customer can only get wrong. See the
+  "2026-07-31 withdrawal" section below.
 
 ## Context
 
@@ -45,17 +51,18 @@ to the frontend and stay silent about portfolios; the only choice is *what* the 
 
 ## Decision
 
-**1. The work-item table is a connection-scope option with an ITSM default.**
+**1. The work-item table is a connection-scope option with an ITSM default.** ~~*(withdrawn
+2026-07-31 — see below)*~~
 
 | Key | Default | Secret | Optional |
 |---|---|---|---|
 | `Instance Url` | `""` | no | no |
 | `Username` | `""` | no | no |
 | `Password` | `""` | **yes** | no |
-| `Work Item Table` | **`incident`** | no | yes |
+| ~~`Work Item Table`~~ | ~~**`incident`**~~ | | |
 
-The default encodes D4: a customer who accepts it gets the ITSM path the docs, demo data and worked
-examples are built around. Marking it optional means a connection created without touching it is valid.
+The default encoded D4: a customer who accepted it got the ITSM path the docs, demo data and worked
+examples are built around. Marking it optional meant a connection created without touching it was valid.
 
 **2. The query stays at team scope**, as it does for every other system — schema key `servicenow.query`,
 `inputKind: "freetext"`, holding a ServiceNow encoded query (`sysparm_query`). This preserves D5: an
@@ -64,11 +71,16 @@ new UX vocabulary.
 
 **3. Slice 02 may add an optional per-team table override** that falls back to the connection value. It is
 not built in slice 01. The split is stated now so the read path is not later forced to invent a second
-home for the table name under delivery pressure.
+home for the table name under delivery pressure. ~~*(Withdrawn with decision 1; the override was
+cancelled as slice 02 of Story 5611 and there is no longer a table for a team to override.)*~~
 
 **4. No discovery, and no wizard entry** (`wizardHint: null`). Not deferred for effort reasons — measured
 impossible for the target account. Discovery may later be offered as a convenience *for privileged
 accounts only*, and if it ever is, it must fail visibly rather than render an empty list.
+
+> **Still true, and it is the reason decision 1 could be withdrawn rather than merely regretted.** A
+> setting whose valid values the customer's own account cannot enumerate is a setting they can only
+> get wrong. Removing it removes the failure mode instead of documenting it.
 
 **5. The portfolio schema entry declines the capability:**
 
@@ -149,6 +161,44 @@ but stay quiet about portfolios" unrepresentable.
 - The frontend `workTrackingSystemGetDataRetrievalDisplayName()` switch has a `default:` arm, so unlike
   the two `Record`s it will **not** force the new case — it would silently render "Query". The only
   drift-prone touch point in the frontend set; it needs an explicit unit test rather than compiler trust.
+
+## 2026-07-31 withdrawal of decision 1
+
+**Maintainer's decision, Story 5611.** Every ServiceNow read is rooted at the constant `task`. The
+`Work Item Table` option is deleted from the connection, `ValidateConnection` probes `task`, and a
+team's `WorkItemTypes` are the only thing that varies.
+
+**Why the original decision no longer holds.** It was made when a class filter did not exist. Its
+context section frames the problem as *"ServiceNow is the first system where the entity kind is a
+separate axis from the filter"* — and ADR-123 answered that axis with `sys_class_name`, which is a
+better answer than a table name for three measured reasons:
+
+1. **Exact match is not hierarchy-inclusive** (ADR-123 measurement 4). A connection rooted at
+   `incident` whose team names `change_request` reads **nothing** of that kind, passes the widening
+   comparison, and says nothing — measured on the PDI. Two settings that have to agree, where only
+   one of them is visible on the screen the coach is looking at.
+2. **The two settings were never independent.** With Work Item Types unconditionally required
+   (ADR-123 decision 6 as superseded), the table only ever answered "which subtree may these classes
+   come from" — a question the classes already answer, and answer better.
+3. **Nobody could fill it in correctly.** Decision 4 above measured `sys_db_object` at 403 for every
+   account below `itil`, so the field was hand-typed with no way to check the value.
+
+**What decision 2's premise costs, and why it is paid.** Decision 2 said slice-01 validation "needs
+something to read", and it still does — it now reads `task`, which every account that can read any
+ITSM table can address. The rung that used to be reachable by pointing a connection at
+`metric_definition` (`insufficient_permissions`) is not lost: it moved onto the kind-of-work ladder,
+where a name the hierarchy holds none of gets a second probe against its own table and a `403` there
+keeps its own verdict. Measured on the PDI, `lh_probe_none` + `metric_definition`.
+
+**What is genuinely given up.** A shop whose work lives outside the `task` hierarchy — the Agile
+Development 2.0 case D4 kept the table configurable for — cannot be served at all. That case has
+never been served in practice (`rm_story` and `rm_epic` measured **400, table does not exist** on the
+PDI, ADR-116 context 3) and remains DISCUSS's named out-of-scope successor: reading tables that are
+not one hierarchy needs a model D2 cannot express, not a table field.
+
+**Nothing shipped.** No ServiceNow release has ever gone out, so there is no persisted option to
+migrate. A local development connection may still carry a stored `Work Item Table` row; the read path
+simply stops reading it, and no cleanup code is written for a value nothing consults.
 
 ## Related
 

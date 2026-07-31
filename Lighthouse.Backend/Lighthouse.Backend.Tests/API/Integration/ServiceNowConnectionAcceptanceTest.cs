@@ -168,7 +168,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 new WorkTrackingSystemConnectionOptionDto { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = UnreachableInstance },
                 new WorkTrackingSystemConnectionOptionDto { Key = ServiceNowWorkTrackingOptionNames.Username, Value = "lighthouse.integration" },
                 new WorkTrackingSystemConnectionOptionDto { Key = ServiceNowWorkTrackingOptionNames.Password, Value = Password, IsSecret = true },
-                new WorkTrackingSystemConnectionOptionDto { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = "incident", IsOptional = true },
             ]);
 
             return connection;

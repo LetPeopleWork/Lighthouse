@@ -13,6 +13,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [TestFixture]
     public class ServiceNowConnectionConfigurationTest
     {
+        // Hoisted rather than inline per CA1861.
+        private static readonly string[] EverythingAServiceNowConnectionAsksFor =
+        [
+            ServiceNowWorkTrackingOptionNames.InstanceUrl,
+            ServiceNowWorkTrackingOptionNames.Username,
+            ServiceNowWorkTrackingOptionNames.Password,
+        ];
+
         // Bug guard, not a style preference: the work tracking system is persisted as an int, so
         // a member inserted above ServiceNow silently repoints every stored connection to a
         // different system.
@@ -87,23 +95,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // ADR-116. The table is a connection option rather than something discovered: table and
-        // field discovery both measured unavailable to a least-privilege account, so a wizard
-        // that enumerates tables would work for an admin and show a customer an empty list.
+        // ADR-116 decision 1, withdrawn 2026-07-31. There is no table to configure: every read is
+        // rooted at the work hierarchy and the team names the kinds of work inside it. An option that
+        // is no longer read would be a setting an administrator can change to no effect.
         [Test]
-        public void ANewServiceNowConnection_ComesPreFilledWithTheIncidentTable()
+        public void ANewServiceNowConnection_AsksForNoTable()
         {
             var connection = CreateDefaultServiceNowConnection();
 
-            var table = connection.Options.Single(o => o.Key == ServiceNowWorkTrackingOptionNames.WorkItemTable);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(table.Value, Is.EqualTo("incident"));
-                Assert.That(table.IsOptional, Is.True,
-                    "ITSM-first, but an Agile Development 2.0 shop must be able to type their own table.");
-                Assert.That(table.IsSecret, Is.False);
-            }
+            Assert.That(connection.Options.Select(option => option.Key), Is.EqualTo(EverythingAServiceNowConnectionAsksFor));
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(connection.Options, Has.Count.EqualTo(4));
+                Assert.That(connection.Options, Has.Count.EqualTo(3));
 
                 var password = connection.Options.Single(o => o.Key == ServiceNowWorkTrackingOptionNames.Password);
                 Assert.That(password.IsSecret, Is.True,

@@ -36,6 +36,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // What a flow coach typing the label "Change Request" instead of the system name reaches.
         private const string NoSuchKindOfWork = "not_a_real_class";
 
+        // A real, readable, populated table that is not work: the hierarchy holds none of it. On the
+        // PDI, /sys_user answers 641 while /task?sys_class_name=sys_user answers 0.
+        private const string NotAKindOfWork = "sys_user";
+
+        // A real kind of work this instance holds none of yet — both probes answer zero.
+        private const string EmptyKindOfWork = "sc_task";
+
+        // A kind of work the instance refuses outright, which only a class-level ACL produces.
+        private const string RefusedKindOfWork = "sn_hr_core_case";
+
         private static readonly string[] IncidentsAndChanges = [Incidents, Changes];
         private static readonly string[] IncidentsChangesAndProblems = [Incidents, Changes, Problems];
         private static readonly string[] BothKindsOfWork = ["INC0000001", "CHG0000001"];
@@ -49,8 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var workItems = (await subject.GetWorkItemsForTeam(
-                ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy))).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges))).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -69,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges));
 
             var workReads = QueriesAskedOf(instance, TheWholeHierarchy);
 
@@ -87,14 +96,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         // ADR-123 decision 2's other half. A one-element IN was never measured and the equals form
-        // was, so a team on a single kind of work asks the shape that is on record.
+        // was, so a team on a single kind of work asks the shape that is on record — of the same
+        // hierarchy every other team reads, because there is no longer a table to vary.
         [Test]
         public async Task ATeamThatHandlesOneKindOfWork_AsksForItByName()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents], rootedAt: TheWholeHierarchy));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents]));
 
             var workReads = QueriesAskedOf(instance, TheWholeHierarchy);
 
@@ -102,25 +112,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(workReads[0], Does.Contain("sys_class_name=incident"));
                 Assert.That(workReads[0], Does.Not.Contain("sys_class_nameIN"));
-            }
-        }
-
-        // ADR-123 decision 2's leaf case, from the other direction: a team rooted at one table names
-        // the one kind of work it handles, and asks for it by name rather than by the table alone.
-        [Test]
-        public async Task AnIncidentTeamThatNamesIncidents_AsksForThemByName()
-        {
-            var instance = AnInstanceHolding(ThreeKindsOfWork());
-            var subject = CreateSubject(instance);
-
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents], rootedAt: Incidents));
-
-            var workReads = QueriesAskedOf(instance, Incidents);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(workReads[0], Does.Contain("sys_class_name=incident"));
-                Assert.That(workReads[0], Does.Not.Contain("sys_class_nameIN"));
+                Assert.That(QueriesAskedOf(instance, Incidents), Is.Empty,
+                    "A kind of work is a filter, never a path. Addressing its own table is what let a team read less work than it named.");
             }
         }
 
@@ -130,24 +123,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // the read has no leaf case to except. Unfiltered, the hierarchy-rooted team reads the whole
         // instance's work — 579 records of 13 kinds where it wanted 159 of 2.
         [Test]
-        [TestCase(TheWholeHierarchy, TestName = "ATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything")]
-        [TestCase(Incidents, TestName = "ATeamOnASingleTableThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything")]
-        public async Task ATeamThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything(string rootTable)
+        public async Task ATeamThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything()
         {
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance, logger.Object);
 
-            var workItems = await subject.GetWorkItemsForTeam(ATeamWorkingOn([], rootedAt: rootTable));
+            var workItems = await subject.GetWorkItemsForTeam(ATeamWorkingOn([]));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems, Is.Empty);
                 Assert.That(instance.Requests, Is.Empty,
-                    "Asking a table without naming a kind of work returns every kind in it.");
+                    "Asking the hierarchy without naming a kind of work returns every kind in it.");
             }
 
-            logger.Verify(AWarningContaining(rootTable), Times.Once,
+            logger.Verify(AWarningContaining(TheWholeHierarchy), Times.Once,
                 "DoD 5 forbids the silent no-op: reading nothing has to say why, and name the table it refused to read.");
         }
 
@@ -155,14 +146,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // and PUT /api/teams/{id} also serves the CLI and the MCP server. A gate that lives only in
         // the schema flag is a gate the API does not have.
         [Test]
-        [TestCase(TheWholeHierarchy, TestName = "SavingATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance")]
-        [TestCase(Incidents, TestName = "SavingATeamOnASingleTableThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance")]
-        public async Task SavingATeamThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance(string rootTable)
+        public async Task SavingATeamThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([], rootedAt: rootTable));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([]));
 
             using (Assert.EnterMultipleScope())
             {
@@ -184,8 +173,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .Where(NoSuchKindOfWork, HttpStatusCode.BadRequest, holds: 0, visible: 0);
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(
-                ATeamWorkingOn([Incidents, NoSuchKindOfWork], rootedAt: TheWholeHierarchy));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([Incidents, NoSuchKindOfWork]));
 
             using (Assert.EnterMultipleScope())
             {
@@ -204,34 +192,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SavingATeamThatNamesAKindOfWorkTheInstanceRefuses_IsToldItIsAPermissionsProblem()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
-                .Where(Problems, HttpStatusCode.Forbidden, holds: 0, visible: 0);
+                .Where(RefusedKindOfWork, HttpStatusCode.Forbidden, holds: 0, visible: 0);
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(
-                ATeamWorkingOn([Incidents, Problems], rootedAt: TheWholeHierarchy));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([Incidents, RefusedKindOfWork]));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Code, Is.EqualTo("insufficient_permissions"));
-                Assert.That(result.Message, Does.Contain(Problems));
+                Assert.That(result.Message, Does.Contain(RefusedKindOfWork));
             }
         }
 
-        // AC-B6, ADR-124 rung 4 — the rung the whole feature rests on. An account that may read
-        // incidents but not problems gets a 200 with the problem rows simply absent: no error, no
-        // header, no partial-result marker. X-Total-Count is ACL-blind, so a count above zero with an
-        // empty body is the one signal there is that a kind of work is being hidden rather than
-        // being empty.
+        // AC-B6, and the rung the whole feature rests on. An account that may read incidents but not
+        // problems gets a 200 with the problem rows simply absent: no error, no header, no
+        // partial-result marker. X-Total-Count is ACL-blind — measured through a class-scoped query
+        // as well as at table granularity — so a count above zero with an empty body is the one
+        // signal there is that a kind of work is being hidden rather than being absent.
         [Test]
         public async Task SavingATeamThatNamesAKindOfWorkTheAccountCannotSee_IsToldWhichKindIsHidden()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
-                .Where(Problems, HttpStatusCode.OK, holds: 24, visible: 0);
+                .WhereTheHierarchy(Problems, HttpStatusCode.OK, holds: 24, visible: 0);
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(
-                ATeamWorkingOn([Incidents, Problems], rootedAt: TheWholeHierarchy));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([Incidents, Problems]));
 
             using (Assert.EnterMultipleScope())
             {
@@ -241,94 +227,95 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(result.FieldName, Is.EqualTo("WorkItemTypes"));
                 Assert.That(result.Code, Is.EqualTo("class_records_not_visible"),
                     "T-1, settled by the maintainer: it parallels no_records_visible at connection scope and states what was seen without asserting a cause the platform cannot supply.");
+                Assert.That(ProbesOf(instance, Problems), Is.Empty,
+                    "A hidden kind of work is decided by the read Lighthouse makes. Nothing about its own table would add to that.");
             }
         }
 
-        // OQ-8, settled by the maintainer: a kind of work with nothing in it is a legitimate
-        // configuration, and refusing the save would block a team on a quiet quarter. The probe still
-        // has to happen — otherwise this passes for the reason that nothing was checked.
+        // OQ-8, settled by the maintainer: a kind of work with nothing in it anywhere is a legitimate
+        // configuration, and refusing the save would block a team on a quiet quarter. Both probes have
+        // to happen — otherwise this passes for the reason that nobody asked.
         [Test]
         public async Task SavingATeamThatNamesAKindOfWorkWithNothingInItYet_IsAccepted()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
-                .Where(Changes, HttpStatusCode.OK, holds: 0, visible: 0);
+                .Where(EmptyKindOfWork, HttpStatusCode.OK, holds: 0, visible: 0);
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(
-                ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([Incidents, EmptyKindOfWork]));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.Code, Is.EqualTo("valid"));
-                Assert.That(ProbesOf(instance, Changes), Has.Count.EqualTo(1),
-                    "An empty kind of work passes because it was asked about and answered, not because nobody asked.");
+                Assert.That(ProbesOf(instance, EmptyKindOfWork), Has.Count.EqualTo(1),
+                    "The hierarchy said nothing of that kind. Accepting without asking why would accept a misspelling too.");
             }
         }
 
-        // AC-B6, and the fact the read actually depends on. A kind of work can be perfectly readable
-        // on its own table and still be unreachable through the table this connection is rooted at:
-        // measured on the PDI, /change_request answers 105 rows to the same account that gets
-        // header = 0 from /incident?sys_class_name=change_request. Probing only the class's own table
-        // accepts that team, which then syncs nothing of that kind and says nothing about it.
+        // AC-B6, and the fact the read actually depends on. A name can be a real, readable, populated
+        // table on this instance and still contribute nothing: measured, /sys_user answers 641 rows
+        // to the same account that gets header = 0 from /task?sys_class_name=sys_user. A ladder that
+        // only asked whether the name resolves accepts that team, which then syncs nothing of that
+        // kind and says nothing about it.
         [Test]
-        public async Task SavingATeamThatNamesAKindOfWorkThatDoesNotLiveUnderItsTable_IsToldSoAndToldWhichTable()
+        public async Task SavingATeamThatNamesSomethingThatIsNotWork_IsToldSoAndToldWhereLighthouseLooks()
         {
-            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var instance = AnInstanceHolding(ThreeKindsOfWork())
+                .Where(NotAKindOfWork, HttpStatusCode.OK, holds: 641, visible: 1);
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(
-                ATeamWorkingOn(IncidentsAndChanges, rootedAt: Incidents));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn([Incidents, NotAKindOfWork]));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Code, Is.EqualTo("class_not_under_configured_table"));
-                Assert.That(result.Message, Does.Contain(Changes).And.Contain(Incidents),
-                    "Both halves or there is nothing to act on: which kind of work, and which table it is not under.");
+                Assert.That(result.Code, Is.EqualTo("class_is_not_a_kind_of_work"));
+                Assert.That(result.Message, Does.Contain(NotAKindOfWork).And.Contain(TheWholeHierarchy),
+                    "Both halves or there is nothing to act on: which name, and where Lighthouse looked for it.");
                 Assert.That(result.Message, Does.Not.Contain("does not exist"),
-                    "The class exists and is readable. Saying otherwise sends the flow coach to check a spelling that is right.");
+                    "The name resolves and is readable. Saying otherwise sends the flow coach to check a spelling that is right.");
                 Assert.That(result.FieldName, Is.EqualTo("WorkItemTypes"));
             }
         }
 
-        // The converse, and the reason this is two probes rather than a rule about table names: the
-        // same two kinds of work under a table that does cover them go through without a false alarm.
+        // The converse, and the reason the ladder is two probes rather than one: kinds of work that
+        // do contribute rows go through without a false alarm, and without a second request.
         [Test]
-        public async Task SavingATeamWhoseKindsOfWorkAllLiveUnderItsTable_IsAccepted()
+        public async Task SavingATeamWhoseKindsOfWorkAreAllWork_IsAccepted()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(
-                ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn(IncidentsAndChanges));
 
             Assert.That(result.Code, Is.EqualTo("valid"), result.Message);
         }
 
-        // S2 and OQ-5: two cheap probes per named kind of work, at the one moment a human is already
-        // waiting on a Save, and never on a refresh. Serial and uncapped, matching every other read
-        // in this connector — the budget doubled, not fanned out.
+        // S2 and OQ-5, and what the re-ordering bought: ONE cheap probe per named kind of work when
+        // the configuration is right, at the one moment a human is already waiting on a Save, and
+        // never on a refresh. Serial, matching every other read in this connector.
         [Test]
-        public async Task SavingATeamThatNamesThreeKindsOfWork_AsksTheInstanceAboutEachOfThemTwice()
+        public async Task SavingATeamThatNamesThreeKindsOfWork_AsksTheInstanceAboutEachOfThemOnce()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.ValidateTeamSettings(ATeamWorkingOn(IncidentsChangesAndProblems, rootedAt: TheWholeHierarchy));
+            await subject.ValidateTeamSettings(ATeamWorkingOn(IncidentsChangesAndProblems));
 
-            var probesUnderTheTable = QueriesAskedOf(instance, TheWholeHierarchy)
+            var probesOfTheHierarchy = QueriesAskedOf(instance, TheWholeHierarchy)
                 .Where(query => query.Contains("sys_class_name=", StringComparison.Ordinal))
                 .ToList();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ProbesOf(instance, Incidents), Has.Count.EqualTo(1));
-                Assert.That(ProbesOf(instance, Changes), Has.Count.EqualTo(1));
-                Assert.That(ProbesOf(instance, Problems), Has.Count.EqualTo(1));
-                Assert.That(probesUnderTheTable, Has.Count.EqualTo(3),
-                    "And each one asked again under the table the team reads, which is the fact the sync depends on.");
-                Assert.That(instance.Requests, Has.Count.EqualTo(8),
-                    "Two probes per kind of work plus the two counts the widening detector already costs. Nothing fans out.");
+                Assert.That(probesOfTheHierarchy, Has.Count.EqualTo(3),
+                    "One per kind of work, and each asks the question the sync asks.");
+                Assert.That(ProbesOf(instance, Incidents), Is.Empty);
+                Assert.That(ProbesOf(instance, Changes), Is.Empty);
+                Assert.That(ProbesOf(instance, Problems), Is.Empty,
+                    "Nothing pays for the explanation probe unless the hierarchy held none of it.");
+                Assert.That(instance.Requests, Has.Count.EqualTo(5),
+                    "Three probes plus the two counts the widening detector already costs. Nothing fans out.");
             }
         }
 
@@ -341,7 +328,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.ValidateTeamSettings(ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy));
+            await subject.ValidateTeamSettings(ATeamWorkingOn(IncidentsAndChanges));
 
             var counts = QueriesAskedOf(instance, TheWholeHierarchy);
 
@@ -363,7 +350,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges, rootedAt: TheWholeHierarchy));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(IncidentsAndChanges));
 
             Assert.That(QueriesAskedOf(instance, "metric_definition"),
                 Has.Some.Contains("tableINincident,change_request"),
@@ -378,23 +365,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents], rootedAt: Incidents));
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn([Incidents]));
 
             Assert.That(QueriesAskedOf(instance, "metric_definition"),
                 Has.Some.Contains("table=incident"));
         }
 
-        // D-D10. Asked of the whole hierarchy, "can this instance measure how long work sat in a
-        // state" has no answer, and the answer it gives today is actively wrong: it tells the
-        // administrator to activate a definition on the state field of task, advice that cannot be
-        // followed and that contradicts what their teams will get. One false statement not made.
+        // D-D10. Asked of the whole hierarchy — which is now every connection — "can this instance
+        // measure how long work sat in a state" has no answer, and the answer it used to give was
+        // actively wrong: it told the administrator to activate a definition on the state field of
+        // task, advice that cannot be followed and that contradicts what their teams will get.
         [Test]
-        public async Task ValidatingAConnectionRootedAtTheWholeHierarchy_SaysStateHistoryIsDecidedPerTeam()
+        public async Task ValidatingAConnection_SaysStateHistoryIsDecidedPerTeam()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateConnection(AConnection(TheWholeHierarchy));
+            var result = await subject.ValidateConnection(AConnection());
 
             using (Assert.EnterMultipleScope())
             {
@@ -447,7 +434,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 instance.Handler);
         }
 
-        private static Team ATeamWorkingOn(string[] kindsOfWork, string rootedAt)
+        private static Team ATeamWorkingOn(string[] kindsOfWork)
         {
             return new Team
             {
@@ -457,11 +444,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],
-                WorkTrackingSystemConnection = AConnection(rootedAt),
+                WorkTrackingSystemConnection = AConnection(),
             };
         }
 
-        private static WorkTrackingSystemConnection AConnection(string table)
+        private static WorkTrackingSystemConnection AConnection()
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -472,7 +459,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             connection.Options.AddRange([
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = InstanceUrl },
-                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = table, IsOptional = true },
             ]);
 
             return connection;
@@ -511,6 +497,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             private readonly List<Record> records;
             private readonly Dictionary<string, ClassAnswer> classAnswers = [];
+            private readonly Dictionary<string, ClassAnswer> hierarchyAnswers = [];
 
             public StubbedInstance(List<Record> records)
             {
@@ -532,9 +519,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public List<Uri> Requests { get; }
 
+            /// <summary>What a kind of work answers when its own table is addressed directly.</summary>
             public StubbedInstance Where(string recordClass, HttpStatusCode status, int holds, int visible)
             {
                 classAnswers[recordClass] = new ClassAnswer(status, holds, visible);
+
+                return this;
+            }
+
+            /// <summary>
+            /// What the work hierarchy answers when it is asked about ONE kind of work — the primary
+            /// probe. The discriminator is the single-class <c>=</c> form with no team query, which is
+            /// a shape only that probe asks in: the widening detector's baseline uses the <c>IN</c>
+            /// form for a team naming more than one kind, so an override here needs such a team.
+            /// </summary>
+            public StubbedInstance WhereTheHierarchy(string recordClass, HttpStatusCode status, int holds, int visible)
+            {
+                hierarchyAnswers[recordClass] = new ClassAnswer(status, holds, visible);
 
                 return this;
             }
@@ -556,9 +557,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return AnswerFor(answer);
                 }
 
-                var visible = SelectedBy(Uri.UnescapeDataString(uri.Query), table);
+                var query = Uri.UnescapeDataString(uri.Query);
+
+                if (table == TheWholeHierarchy && ProbedKindOfWorkIn(query) is { } probed
+                    && hierarchyAnswers.TryGetValue(probed, out var underTheHierarchy))
+                {
+                    return AnswerFor(underTheHierarchy);
+                }
+
+                var visible = SelectedBy(query, table);
 
                 return Rows([.. visible.Select(AsJson)], visible.Count);
+            }
+
+            private static string? ProbedKindOfWorkIn(string query)
+            {
+                if (query.Contains(TeamsOwnQuery, StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
+                var named = NamedIn(query);
+
+                return named.Count == 1 ? named[0] : null;
             }
 
             private static HttpResponseMessage AnswerFor(ClassAnswer answer)

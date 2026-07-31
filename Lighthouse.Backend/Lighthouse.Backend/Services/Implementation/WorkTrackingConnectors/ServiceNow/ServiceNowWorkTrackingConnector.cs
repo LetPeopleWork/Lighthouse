@@ -101,9 +101,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
-            var table = ResolveWorkItemTable(connection);
 
-            if (!TryCreateProbeUri(instanceUrl, table, out var probeUri))
+            if (!TryCreateProbeUri(instanceUrl, ServiceNowReadScope.RootTable, out var probeUri))
             {
                 return ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl);
             }
@@ -114,12 +113,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 var body = ParseRecords(answer.Body);
 
                 var verdict = ServiceNowValidationVerdict.FromResponse(
-                    answer.StatusCode, body.ResponseIsJson, body.Records.Count, table);
+                    answer.StatusCode, body.ResponseIsJson, body.Records.Count, ServiceNowReadScope.RootTable);
 
-                // The capability question is only worth asking of a connection that already works —
-                // every failure rung above returns before it, so a closed port stays connection_failed.
+                // The capability question is only worth answering for a connection that already works
+                // — every failure rung above returns before it, so a closed port stays
+                // connection_failed.
                 return verdict.IsValid
-                    ? await CapabilityOf(connection, table, verdict)
+                    ? ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam()
                     : verdict;
             }
             catch (HttpRequestException exception)
@@ -129,39 +129,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             catch (TaskCanceledException exception)
             {
                 return UnreachableInstance(exception, instanceUrl);
-            }
-        }
-
-        // ADR-118 D5: what the instance can actually measure, read rather than inferred from
-        // configuration — a second round trip, at the one moment the administrator clicked a button
-        // and expects a wait. A capability limit is not a broken connection, so nothing that goes
-        // wrong here may fail the validation: whatever the read did, the verdict on the connection
-        // the administrator was testing stands, without an advisory.
-        private async Task<ConnectionValidationResult> CapabilityOf(
-            WorkTrackingSystemConnection connection, string table, ConnectionValidationResult workingConnection)
-        {
-            if (ServiceNowTableHierarchy.HasDescendants(table))
-            {
-                return ServiceNowHistoryVerdict.ForHierarchyRoot(table);
-            }
-
-            try
-            {
-                var definitions = await ReadStateSpanDefinitions(connection, [table]);
-
-                return ServiceNowHistoryVerdict.ToValidationResult(definitions.Availability, table);
-            }
-            catch (ServiceNowReadException)
-            {
-                return workingConnection;
-            }
-            catch (HttpRequestException)
-            {
-                return workingConnection;
-            }
-            catch (TaskCanceledException)
-            {
-                return workingConnection;
             }
         }
 
@@ -182,7 +149,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             }
 
             var connection = team.WorkTrackingSystemConnection;
-            var scope = ReadScopeFor(connection, team);
+            var scope = ServiceNowReadScope.For(team.WorkItemTypes);
 
             // ADR-123 decision 4: the missing-query rule above, on the kind-of-work dimension.
             // Unfiltered, the same team read 579 records of 13 kinds where it wanted 159 of 2.
@@ -190,18 +157,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             {
                 logger.LogWarning(
                     "Team {TeamName} has not said which kinds of work are its own, so no work was read from the ServiceNow table {Table}. Asking that table without naming them would return every kind in it.",
-                    team.Name, scope.Table);
+                    team.Name, ServiceNowReadScope.RootTable);
 
                 return [];
             }
 
-            var records = (await ReadEveryPage(connection, scope.Table, scope.ScopedQuery(teamsOwnQuery), WhenRefused.Fail)).Records;
+            var records = (await ReadEveryPage(
+                connection, ServiceNowReadScope.RootTable, scope.ScopedQuery(teamsOwnQuery), WhenRefused.Fail)).Records;
 
             var mapped = records
                 .Select(record => new MappedRecord(
                     ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
-                    ServiceNowWorkItemMapper.MapRecord(record, team, scope.Table)))
+                    ServiceNowWorkItemMapper.MapRecord(record, team, ServiceNowReadScope.RootTable)))
                 .ToList();
 
             ReportStatesTheTeamNeverMapped(mapped, team);
@@ -576,7 +544,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             var connection = team.WorkTrackingSystemConnection;
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
-            var scope = ReadScopeFor(connection, team);
+            var scope = ServiceNowReadScope.For(team.WorkItemTypes);
 
             if (scope.NamesNoKindsOfWork)
             {
@@ -612,24 +580,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // ADR-124 decision 3: both counts are scoped to the kinds of work the team named, so
             // the ratio keeps meaning "how much of your work did this query select" rather than
             // "how much of the instance".
-            var matched = await CountRows(connection, instanceUrl, scope.Table, scope.ScopedQuery(teamsOwnQuery));
+            var matched = await CountRows(
+                connection, instanceUrl, ServiceNowReadScope.RootTable, scope.ScopedQuery(teamsOwnQuery));
 
             if (matched.Problem is not null)
             {
                 return matched.Problem;
             }
 
-            var everything = await CountRows(connection, instanceUrl, scope.Table, scope.BaselineQuery());
+            var everything = await CountRows(
+                connection, instanceUrl, ServiceNowReadScope.RootTable, scope.BaselineQuery());
 
             if (everything.Problem is not null)
             {
                 return everything.Problem;
             }
 
-            return ServiceNowTeamQueryVerdict.FromTeamProbe(scope.Table, matched.Count, everything.Count);
+            return ServiceNowTeamQueryVerdict.FromTeamProbe(
+                ServiceNowReadScope.RootTable, matched.Count, everything.Count);
         }
 
-        // ADR-124 decision 1. Cheap probes per named kind of work, at the one moment a human is
+        // ADR-124 decision 1. One cheap probe per named kind of work, at the one moment a human is
         // already waiting on a Save, and never on a refresh. Serial and uncapped (OQ-5): a fan-out
         // here would be the only concurrent call path in this adapter, against an instance whose
         // rate-limiting behaviour is measured at exactly one request rate.
@@ -638,7 +609,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             foreach (var recordClass in scope.KindsOfWork)
             {
-                var unreadable = await WhyThisKindOfWorkCannotBeRead(connection, instanceUrl, scope.Table, recordClass);
+                var unreadable = await WhyThisKindOfWorkCannotBeRead(connection, instanceUrl, recordClass);
 
                 if (unreadable is not null)
                 {
@@ -649,54 +620,52 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return null;
         }
 
-        // Two probes establishing two different facts, and only the second is the one the sync
-        // depends on (ADR-124 decision 2, amended 2026-07-31). The class's own table answers "is
-        // this a readable table on this instance", and is the only probe that answers 400 to a
-        // misspelling instead of narrowing to nothing. The connection's table answers "are records
-        // of that class reachable through the table this team reads" — measured, a team rooted at
-        // `incident` naming `change_request` passes the first and reads zero.
+        // ADR-124 decision 2, re-ordered 2026-07-31. The probe that runs first is the one that asks
+        // about the read Lighthouse actually performs — does this class contribute rows under `task`
+        // — rather than the proxy question "is this name a readable table somewhere". A right
+        // configuration therefore costs ONE request per kind of work, and only a class the hierarchy
+        // holds none of pays for a second to explain why: misspelt, not work at all, or genuinely
+        // empty everywhere, which is accepted (OQ-8).
         private async Task<ConnectionValidationResult?> WhyThisKindOfWorkCannotBeRead(
-            WorkTrackingSystemConnection connection, string instanceUrl, string table, string recordClass)
+            WorkTrackingSystemConnection connection, string instanceUrl, string recordClass)
         {
-            if (!TryCreateProbeUri(instanceUrl, recordClass, out var ownTableUri)
-                || !TryCreateClassUnderTableProbeUri(instanceUrl, table, recordClass, out var underTheTableUri))
+            if (!TryCreateClassInTheHierarchyProbeUri(instanceUrl, recordClass, out var inTheHierarchyUri)
+                || !TryCreateProbeUri(instanceUrl, recordClass, out var ownTableUri))
             {
                 return ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl);
             }
 
+            var inTheHierarchy = await Probe(connection, inTheHierarchyUri);
+
+            var contributes = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
+                recordClass,
+                ServiceNowReadScope.RootTable,
+                inTheHierarchy.StatusCode,
+                inTheHierarchy.CarriesRecords,
+                inTheHierarchy.RecordsTheInstanceHolds,
+                inTheHierarchy.VisibleRowCount);
+
+            if (!contributes.IsValid)
+            {
+                return contributes;
+            }
+
+            if (inTheHierarchy.RecordsTheInstanceHolds is not 0)
+            {
+                return null;
+            }
+
             var onItsOwnTable = await Probe(connection, ownTableUri);
 
-            var known = ServiceNowTeamQueryVerdict.FromClassProbe(
+            var kindOfWork = ServiceNowTeamQueryVerdict.FromClassTableProbe(
                 recordClass,
+                ServiceNowReadScope.RootTable,
                 onItsOwnTable.StatusCode,
                 onItsOwnTable.CarriesRecords,
                 onItsOwnTable.RecordsTheInstanceHolds,
                 onItsOwnTable.VisibleRowCount);
 
-            if (!known.IsValid)
-            {
-                return known;
-            }
-
-            // A kind of work the instance holds nothing of anywhere is a legitimate configuration
-            // (OQ-8), and the second probe has nothing to find: under any table it would answer
-            // header = 0, so "not under this table" and "empty everywhere" would be one answer.
-            if (onItsOwnTable.RecordsTheInstanceHolds is < 1)
-            {
-                return null;
-            }
-
-            var underTheTable = await Probe(connection, underTheTableUri);
-
-            var reachable = ServiceNowTeamQueryVerdict.FromClassUnderTableProbe(
-                recordClass,
-                table,
-                underTheTable.StatusCode,
-                underTheTable.CarriesRecords,
-                underTheTable.RecordsTheInstanceHolds,
-                underTheTable.VisibleRowCount);
-
-            return reachable.IsValid ? null : reachable;
+            return kindOfWork.IsValid ? null : kindOfWork;
         }
 
         private async Task<ProbedTable> Probe(WorkTrackingSystemConnection connection, Uri probeUri)
@@ -976,13 +945,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         // The clause comes from the same pure function the read emits, so the probe cannot drift
         // into a form the sync never asks in — and one class always means the measured `=` shape.
-        private static bool TryCreateClassUnderTableProbeUri(
-            string instanceUrl, string table, string recordClass, [NotNullWhen(true)] out Uri? probeUri)
+        private static bool TryCreateClassInTheHierarchyProbeUri(
+            string instanceUrl, string recordClass, [NotNullWhen(true)] out Uri? probeUri)
         {
             var classClause = ServiceNowReadScope.Matching(ServiceNowWorkItemMapper.RecordClassField, [recordClass]);
 
             return TryCreateTableUri(
-                instanceUrl, table, $"{SingleRowParameter}&sysparm_query={Uri.EscapeDataString(classClause)}", out probeUri);
+                instanceUrl,
+                ServiceNowReadScope.RootTable,
+                $"{SingleRowParameter}&sysparm_query={Uri.EscapeDataString(classClause)}",
+                out probeUri);
         }
 
         private static bool TryCreateTableUri(string instanceUrl, string table, string parameters, [NotNullWhen(true)] out Uri? tableUri)
@@ -1003,18 +975,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 $"{instanceUrl.TrimEnd('/')}/api/now/table/{Uri.EscapeDataString(table)}?{parameters}",
                 UriKind.Absolute,
                 out tableUri);
-        }
-
-        private static ServiceNowReadScope ReadScopeFor(WorkTrackingSystemConnection connection, Team team)
-        {
-            return ServiceNowReadScope.For(ResolveWorkItemTable(connection), team.WorkItemTypes);
-        }
-
-        private static string ResolveWorkItemTable(WorkTrackingSystemConnection connection)
-        {
-            var table = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.WorkItemTable);
-
-            return string.IsNullOrWhiteSpace(table) ? ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable : table;
         }
 
         private static string ResolveAuthenticationMethodKey(WorkTrackingSystemConnection connection)

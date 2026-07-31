@@ -22,16 +22,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string InstanceUrl = "https://dev12345.service-now.com/";
         private const string ProbeResponseWithOneRecord = """{"result":[{"sys_id":"abc","number":"INC0010001"}]}""";
         private const string ProbeResponseWithNothingVisible = """{"result":[]}""";
-        private const string DefinitionResponseWithOneStateMetric =
-            """{"result":[{"sys_id":{"display_value":"35f2b283c0a808ae","value":"35f2b283c0a808ae"}}]}""";
-
-        // The two ways the second round trip can end without an answer, and both have to leave the
-        // administrator's verdict alone. Hoisted rather than inline per CA1861.
-        private static readonly Exception[] TransportFailures =
-        [
-            new HttpRequestException("The SSL connection could not be established."),
-            new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout elapsing."),
-        ];
 
         // The headline assertion. A permitted-but-unauthorised read and a genuinely empty table
         // are byte-identical, so a connector that infers success from the status code ships the
@@ -109,15 +99,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             VerifyRequestCount(handler, 0);
         }
 
-        // Since ADR-118 D5 the probe is the first question validation asks rather than the only one:
-        // a capability read follows it. The SPIKE's ~600ms per call still governs the sync path.
+        // A connection has one thing to prove and one place to prove it: the work hierarchy every
+        // read is rooted at. There is nothing to configure and nothing to get wrong (ADR-116
+        // decision 1, withdrawn 2026-07-31).
         [Test]
-        public async Task ValidatingAConnection_AsksTheConfiguredTableForASingleRecord()
+        public async Task ValidatingAConnection_AsksTheWorkHierarchyForASingleRecord()
         {
             var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
             var subject = CreateSubject(handler);
 
-            await subject.ValidateConnection(CreateConnection(table: "change_request"));
+            await subject.ValidateConnection(CreateConnection());
 
             var probe = CapturedRequests(handler)[0];
             var probeUri = probe.RequestUri?.ToString() ?? string.Empty;
@@ -125,25 +116,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(probe.Method, Is.EqualTo(HttpMethod.Get));
-                Assert.That(probeUri, Does.Contain("/api/now/table/change_request"));
+                Assert.That(probeUri, Does.Contain($"/api/now/table/{ServiceNowReadScope.RootTable}"));
                 Assert.That(probeUri, Does.Contain("sysparm_limit=1"));
                 Assert.That(probeUri, Does.Not.Contain("sysparm_fields"),
                     "Field projection was never measured against ACL filtering, so a validation probe must " +
                     "not rely on it. Slice 02 may add it once it has evidence.");
             }
-        }
-
-        [Test]
-        public async Task AConnectionWithNoTableChosen_IsProbedAgainstTheIncidentTable()
-        {
-            var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
-            var subject = CreateSubject(handler);
-
-            await subject.ValidateConnection(CreateConnection(table: null));
-
-            var probeUri = CapturedRequests(handler)[0].RequestUri?.ToString() ?? string.Empty;
-
-            Assert.That(probeUri, Does.Contain($"/api/now/table/{ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable}"));
         }
 
         // AC5. The connector never touches the stored password itself: decryption and the Basic
@@ -360,50 +338,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             factory.Verify(f => f.Resolve("servicenow.oauth"), Times.AtLeastOnce);
         }
 
-        // Story #5577, ADR-118 D5. The advisory is decided by a pure function tested next door; what
-        // is only testable here is whether ValidateConnection asks the capability question at all,
-        // and hangs the answer on the verdict the administrator is shown.
+        // Story #5577, ADR-118 D5, as re-decided by ADR-123 decision 10. Connection validation no
+        // longer reads metric_definition at all: it would ask about `task`, which carries none
+        // (measured 0 rows), and answer with advice to activate a definition there — unfollowable,
+        // and contradicted by what the connection's teams actually get. So the connection says the
+        // one true thing instead, in one request rather than two.
         [Test]
-        public async Task AnInstanceThatRefusesTheMetricTables_IsAWorkingConnectionThatSaysWhatToGrant()
+        public async Task AWorkingConnection_SaysHistoryIsDecidedPerTeamRatherThanClaimingWhatItCannotKnow()
         {
-            var subject = CreateSubject(AnInstanceWhoseMetricTablesAnswer(
-                HttpStatusCode.Forbidden, """{"error":{"message":"Insufficient rights"}}""", rowCount: "0"));
-
-            var result = await subject.ValidateConnection(CreateConnection());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.True, "A capability the instance withholds is not a broken connection.");
-                Assert.That(result.AdvisoryCode, Is.EqualTo("history_requires_itil"));
-                Assert.That(result.Advisory, Is.Not.Null.And.Not.Empty,
-                    "Reading the capability and then not saying what it found would be the silent no-op DoD 5 forbids.");
-            }
-        }
-
-        // The other half of the same seam: an instance that measures state spans is told nothing,
-        // so the advisory cannot be something the connector attaches to every validation alike.
-        [Test]
-        public async Task AnInstanceThatMeasuresStateSpans_IsAWorkingConnectionWithNothingToWarnAbout()
-        {
-            var subject = CreateSubject(AnInstanceWhoseMetricTablesAnswer(
-                HttpStatusCode.OK, DefinitionResponseWithOneStateMetric, rowCount: "1"));
+            var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
+            var subject = CreateSubject(handler);
 
             var result = await subject.ValidateConnection(CreateConnection());
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.True);
-                Assert.That(result.Code, Is.EqualTo("valid"));
-                Assert.That(result.Advisory, Is.Null);
-                Assert.That(result.AdvisoryCode, Is.Null);
+                Assert.That(result.AdvisoryCode, Is.EqualTo("history_determined_per_team"));
+                Assert.That(result.Advisory, Is.Not.Null.And.Not.Empty,
+                    "Declining to answer and then saying nothing about it would be the silent no-op DoD 5 forbids.");
             }
+
+            VerifyRequestCount(handler, 1);
         }
 
-        // The capability question is only worth asking of a connection that already works. Asking it
-        // of one that does not would overwrite the rung the administrator needs — a rejected
-        // credential would come back as advice about metric definitions they cannot reach anyway.
+        // The capability question is only worth answering for a connection that already works.
+        // Answering it for one that does not would overwrite the rung the administrator needs — a
+        // rejected credential would come back as advice about metric definitions instead.
         [Test]
-        public async Task AConnectionThatFailsTheLadder_KeepsItsOwnVerdictAndIsNotAskedAboutHistory()
+        public async Task AConnectionThatFailsTheLadder_KeepsItsOwnVerdictAndSaysNothingAboutHistory()
         {
             var handler = RespondingWith(HttpStatusCode.Unauthorized, string.Empty);
             var subject = CreateSubject(handler);
@@ -419,25 +382,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
 
             VerifyRequestCount(handler, 1);
-        }
-
-        // The rule the whole advisory rides on: it may never cost the administrator the validation.
-        // The second round trip is the one most likely to be cut short — a proxy that allows the
-        // work item table and not the metric tables, or an instance slow enough to time out on it.
-        [TestCaseSource(nameof(TransportFailures))]
-        public async Task ACapabilityReadThatNeverCompletes_LeavesTheWorkingConnectionStanding(Exception transportFailure)
-        {
-            var subject = CreateSubject(AnInstanceWhoseMetricTablesFail(transportFailure));
-
-            var result = await subject.ValidateConnection(CreateConnection());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(result.IsValid, Is.True, "The connection the administrator was testing works. Only the extra question failed.");
-                Assert.That(result.Code, Is.EqualTo("valid"));
-                Assert.That(result.Advisory, Is.Null, "Nothing was learned, so nothing is claimed.");
-                Assert.That(result.AdvisoryCode, Is.Null);
-            }
         }
 
         private static ServiceNowWorkTrackingConnector CreateSubject(
@@ -464,7 +408,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static WorkTrackingSystemConnection CreateConnection(
             string instanceUrl = InstanceUrl,
-            string? table = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
             string authenticationMethodKey = AuthenticationMethodKeys.ServiceNowBasic)
         {
             var connection = new WorkTrackingSystemConnection
@@ -478,7 +421,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = instanceUrl },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Username, Value = "lighthouse.integration" },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Password, Value = "encrypted-secret", IsSecret = true },
-                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = table ?? string.Empty, IsOptional = true },
             ]);
 
             return connection;
@@ -517,70 +459,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .ThrowsAsync(exception);
 
             return handler;
-        }
-
-        // The probe and the capability read are two round trips to two different tables. A stub that
-        // says the same thing to both cannot drive one without the other, which is why the advisory
-        // tests need their own instance rather than RespondingWith.
-        private static Mock<HttpMessageHandler> AnInstanceWhoseMetricTablesAnswer(
-            HttpStatusCode statusCode, string body, string rowCount)
-        {
-            var handler = AnInstanceShowingOneRecord();
-            MetricTableReads(handler).ReturnsAsync(() => JsonAnswer(statusCode, body, rowCount));
-
-            return handler;
-        }
-
-        private static Mock<HttpMessageHandler> AnInstanceWhoseMetricTablesFail(Exception transportFailure)
-        {
-            var handler = AnInstanceShowingOneRecord();
-            MetricTableReads(handler).ThrowsAsync(transportFailure);
-
-            return handler;
-        }
-
-        private static Mock<HttpMessageHandler> AnInstanceShowingOneRecord()
-        {
-            var handler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-            handler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
-            handler
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(request => AsksFor(request, "/incident")),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(() => JsonAnswer(HttpStatusCode.OK, ProbeResponseWithOneRecord, rowCount: "1"));
-
-            return handler;
-        }
-
-        private static ISetup<HttpMessageHandler, Task<HttpResponseMessage>> MetricTableReads(Mock<HttpMessageHandler> handler)
-        {
-            return handler
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(request => AsksFor(request, "/metric_")),
-                    ItExpr.IsAny<CancellationToken>());
-        }
-
-        private static bool AsksFor(HttpRequestMessage request, string table)
-        {
-            return request.RequestUri?.AbsolutePath.Contains(table, StringComparison.Ordinal) is true;
-        }
-
-        // X-Total-Count is what tells the pager the result set is exhausted; without it the metric
-        // read asks for a second page and the repeated-records guard fires instead of the verdict.
-        private static HttpResponseMessage JsonAnswer(HttpStatusCode statusCode, string body, string rowCount)
-        {
-            var response = new HttpResponseMessage(statusCode)
-            {
-                Content = new StringContent(body, Encoding.UTF8, "application/json"),
-            };
-
-            response.Headers.TryAddWithoutValidation("X-Total-Count", rowCount);
-
-            return response;
         }
 
         private static List<HttpRequestMessage> CapturedRequests(Mock<HttpMessageHandler> handler)

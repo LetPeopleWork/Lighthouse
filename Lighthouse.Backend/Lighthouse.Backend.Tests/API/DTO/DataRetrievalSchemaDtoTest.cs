@@ -81,38 +81,20 @@ namespace Lighthouse.Backend.Tests.API.DTO
         // ServiceNow team was ever shipped for it to protect. Neither component changes: they
         // already gate on this flag; what changes is what the schema says.
         //
-        // The table is said out loud rather than parametrised over. ForTeam takes the system and
-        // nothing else, so a case per table would run one case three times while reading as a
-        // table-independence claim; the connection with no options at all is the case that actually
-        // states it.
+        // Stated on the connection that carries no options at all, which is the shape every
+        // ServiceNow connection now has: the table is gone from the option set entirely, so there is
+        // nothing left for the schema to be a function of.
         [Test]
-        public void AServiceNowTeam_IsAskedWhichKindsOfWorkAreItsOwn_WhateverTableItsConnectionReads()
+        public void AServiceNowTeam_IsAskedWhichKindsOfWorkAreItsOwn()
         {
-            var rootedAtAHierarchy = new TeamSettingDto(ATeamReading(TheWholeHierarchy), Today).DataRetrievalSchema;
-            var onAConnectionThatNamedNoTable = new TeamSettingDto(ATeamOnAConnectionWithNoOptions(), Today).DataRetrievalSchema;
+            var schema = new TeamSettingDto(ATeamOnAConnectionWithNoOptions(), Today).DataRetrievalSchema;
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(rootedAtAHierarchy.IsWorkItemTypesRequired, Is.True);
-                Assert.That(rootedAtAHierarchy.Key, Is.EqualTo("servicenow.query"),
+                Assert.That(schema.IsWorkItemTypesRequired, Is.True);
+                Assert.That(schema.Key, Is.EqualTo("servicenow.query"),
                     "Still the ServiceNow arm — a fallback that happens to require the field would pass this for the wrong reason.");
-                Assert.That(onAConnectionThatNamedNoTable.IsWorkItemTypesRequired, Is.True,
-                    "The connection's options are not an input to the schema at all any more, and this says so rather than leaving it to be inferred.");
             }
-        }
-
-        private static Team ATeamReading(string table)
-        {
-            var team = ATeamOnAConnectionWithNoOptions();
-
-            team.WorkTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption
-            {
-                Key = ServiceNowWorkTrackingOptionNames.WorkItemTable,
-                Value = table,
-                IsOptional = true,
-            });
-
-            return team;
         }
 
         private static Team ATeamOnAConnectionWithNoOptions()

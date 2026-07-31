@@ -6,6 +6,12 @@
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 - **Builds on**: [ADR-123](./adr-123-servicenow-record-classes-as-work-item-types.md),
   [ADR-114](./adr-114-servicenow-connection-validation-verdict-ladder.md)
+- **Decision 2 RE-ORDERED 2026-07-31 (maintainer, same story)**, after
+  [ADR-116](./adr-116-servicenow-table-at-connection-scope.md) decision 1 was withdrawn and every
+  read became rooted at `task`. The probe that runs **first** is now the one that asks about the
+  read Lighthouse actually performs; the class's own table is a lazy explanation of a nil result.
+  One request per kind of work when the configuration is right, two only for the one that is wrong.
+  Everything decisions 1, 3, 4 and 5 say is unchanged.
 
 ## Context
 
@@ -69,7 +75,53 @@ cover the one case this does not: rights revoked *after* setup. That case is acc
 the connection-level ladder reports it a rung earlier, and a per-sync check would make every team's
 refresh cost proportional to how many kinds of work it does.
 
-### 2. Two probes per class: the class's own table, then that class under the connection's table
+### 2. Ask about the read, then — only if it found nothing — ask the class's own table why
+
+> **RE-ORDERED 2026-07-31 (maintainer).** The DELIVER-review amendment below added the second probe
+> in the right place but kept it second, so a correct configuration paid two requests per kind of
+> work and the *first* question asked was a proxy: *"is this name a readable table somewhere on this
+> instance?"* With the root now a constant, that is not a question the sync depends on. The order is
+> inverted:
+>
+> | # | probe | when |
+> |---|---|---|
+> | 1 | `/api/now/table/task?sysparm_limit=1&sysparm_query=sys_class_name={class}` | always |
+> | 2 | `/api/now/table/{class}?sysparm_limit=1` | only when probe 1 reported `header = 0` |
+>
+> Probe 1's ladder: `header > 0` with a row — **pass, done, one request**; `header > 0` with an
+> empty body — `class_records_not_visible`, the ACL denial the whole AC rests on; `header = 0` —
+> inconclusive, and the only case that pays for probe 2.
+>
+> Probe 2's ladder, reached only for a class the hierarchy holds none of: `400` — the name is not a
+> table, say so and give the name-versus-label correction; `403` — `insufficient_permissions`;
+> `200` with `header > 0` — a real, populated table that is not work: **`class_is_not_a_kind_of_work`**;
+> `200` with `header = 0` — a kind of work the instance holds none of anywhere, **accepted** (OQ-8).
+>
+> **Measured on the PDI, 2026-07-31, one row per rung** — the ordering was verified before it was
+> written, not after:
+>
+> | case | probe 1 (`/task?sys_class_name=X`) | probe 2 (`/X`) | verdict |
+> |---|---|---|---|
+> | `incident`, admin | 200, header 103, 1 row | *not run* | pass |
+> | `problem`, `lh_probe_snc_read` | 200, header 32, **0 rows** | *not run* | `class_records_not_visible` |
+> | `not_a_real_class`, admin | 200, header 0 | **400** | `unknown_table` |
+> | `sys_user` / `cmdb_ci` / `kb_knowledge`, admin | 200, header 0 | 200, header 641 / 2784 / 53 | `class_is_not_a_kind_of_work` |
+> | `incident_task`, admin | 200, header 0 | 200, header 0 | **accepted** |
+> | `metric_definition`, `lh_probe_none` | 200, header 0 | **403** | `insufficient_permissions` |
+>
+> **Nothing the previous ordering caught is lost**, and the cost of a right configuration halves.
+> The verdict code changed with it: `class_not_under_configured_table` named a relation to a
+> configured table that no longer exists. `class_is_not_a_kind_of_work` says what the two probes
+> jointly established — a real table whose records are not work — keeps the `class_*` prefix
+> `class_records_not_visible` set, and reads the same as its message.
+>
+> One thing this ordering gives up, stated: probe 2's own ACL rung. An account shown no rows of a
+> table that is not work now hears "that is not a kind of work" rather than "you cannot read it".
+> That is the more useful of the two answers, and probe 1 already ruled on visibility for every
+> class that is work.
+
+**What follows is the 2026-07-31 DELIVER-review amendment that introduced the second probe. Its
+reasoning about *why both probes are needed* stands verbatim; only their order changed.**
 
 > **Amended 2026-07-31 (DELIVER review, finding 1). The original single probe validated the wrong
 > fact.** `/api/now/table/{class}` establishes *"this name is a readable table on this instance"*.
@@ -295,14 +347,15 @@ that cannot say a true thing is worse than no detector, because it looks like on
 - Rights revoked after setup are not detected until someone re-validates. Accepted.
 - Rung 4 names two causes because it cannot separate them. A coach with a genuinely empty-for-them class
   is told something ambiguous. The alternative is asserting a denial that may not exist.
-- Saving a team with many classes costs **two** round trips per class (amended 2026-07-31), ~600 ms
-  each, serially — ten classes is roughly twelve seconds of Save. DELIVER implemented it sequentially,
-  as the connector is everywhere else; consistency is worth more here than latency, and a fan-out
-  would be this adapter's only concurrent call path against an instance whose rate-limiting behaviour
-  is measured at exactly one request rate.
-- A class the instance holds nothing of anywhere is accepted whatever table the connection reads,
-  because the second probe cannot distinguish "not under this table" from "empty everywhere". Named
-  rather than hidden; OQ-8 already chose the charitable reading for an empty class.
+- Saving a team costs **one** round trip per class that is genuinely a kind of work, and two for one
+  that is not (re-ordered 2026-07-31; it was two for every class between the DELIVER review and
+  this). At ~600 ms each, ten correct classes is roughly six seconds of Save. Sequential, as the
+  connector is everywhere else; a fan-out would be this adapter's only concurrent call path against
+  an instance whose rate-limiting behaviour is measured at exactly one request rate.
+- A class the instance holds nothing of **anywhere** is accepted, because at that point the two
+  probes have said the same thing and neither can distinguish "a kind of work with nothing in it"
+  from "a table that is not work and happens to be empty". Named rather than hidden; OQ-8 already
+  chose the charitable reading for an empty class.
 - Rung 2 (`403`) is retained without a measurement that reaches it — no ITSM class produced a `403` at
   any privilege level. Correct where it fires, likely dead for the inputs coaches supply.
 

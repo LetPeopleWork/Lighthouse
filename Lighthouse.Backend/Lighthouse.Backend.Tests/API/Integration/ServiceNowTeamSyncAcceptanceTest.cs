@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(verdict.Code, Is.EqualTo("query_matches_whole_table"));
-                Assert.That(verdict.Message, Does.Contain("incident"));
+                Assert.That(verdict.Message, Does.Contain(ServiceNowReadScope.RootTable));
             }
         }
 
@@ -246,7 +246,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.InstanceUrl, Value = instance.BaseAddress },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Username, Value = "lighthouse.integration" },
                 new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.Password, Value = "the-platform-teams-password", IsSecret = true },
-                new WorkTrackingSystemConnectionOption { Key = ServiceNowWorkTrackingOptionNames.WorkItemTable, Value = "incident", IsOptional = true },
             ]);
 
             return connection;

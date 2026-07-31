@@ -6,8 +6,8 @@ import {
 } from "./DataRetrievalSchemaDefaults";
 
 // No options: the schema factories are a lookup by system type and read nothing else off the
-// connection (ADR-123 decision 6 as amended 2026-07-31). A `Work Item Table` option here would be
-// an input nothing can reach, which reads as coverage of a dependency that no longer exists.
+// connection (ADR-123 decision 6 as amended 2026-07-31). A ServiceNow connection now carries no
+// table option at all — every read is rooted at `task` (ADR-116 decision 1, withdrawn 2026-07-31).
 const aServiceNowConnection = () => ({
 	workTrackingSystem: "ServiceNow" as WorkTrackingSystemType,
 });

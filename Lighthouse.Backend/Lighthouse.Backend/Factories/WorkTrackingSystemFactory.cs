@@ -264,16 +264,6 @@ namespace Lighthouse.Backend.Factories
                     Value = string.Empty,
                     IsSecret = true,
                     IsOptional = false,
-                },
-
-                // Typed freetext rather than a picker: table discovery is unavailable to a
-                // least-privilege account (SPIKE Q8), so a wizard would show an empty list.
-                new WorkTrackingSystemConnectionOption
-                {
-                    Key = ServiceNowWorkTrackingOptionNames.WorkItemTable,
-                    Value = ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable,
-                    IsSecret = false,
-                    IsOptional = true,
                 }
             ];
         }
