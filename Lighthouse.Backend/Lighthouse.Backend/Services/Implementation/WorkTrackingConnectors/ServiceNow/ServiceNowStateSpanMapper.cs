@@ -3,13 +3,9 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
-    // SCAFFOLD (DISTILL slice 04, Story #5577)
-    //
     // The pure core of slice 04 (ADR-118, ADR-114's shape): spans in, transitions out, no HTTP.
     public static class ServiceNowStateSpanMapper
     {
-        private const string ScaffoldSentinel = "__scaffold__";
-
         /// <summary>
         /// Pairs a record's consecutive spans into the transitions Lighthouse models, mapped through
         /// the same <see cref="WorkItemStateTransitionMapper"/> every other connector uses (US-04 AC2).
@@ -24,15 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public static IReadOnlyList<WorkItemStateTransition> ToTransitions(
             IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            return
-            [
-                new WorkItemStateTransition
-                {
-                    FromState = ScaffoldSentinel,
-                    ToState = ScaffoldSentinel,
-                    TransitionedAt = DateTime.UnixEpoch,
-                },
-            ];
+            return WorkItemStateTransitionMapper.MapToMappedStates(PairConsecutive(InStartOrder(spans)), owner);
         }
 
         /// <summary>
@@ -42,7 +30,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public static DateTime? WhenWorkStarted(IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            return DateTime.UnixEpoch;
+            var arrivalInDoing = InStartOrder(spans)
+                .Find(span => owner.MapStateToStateCategory(span.Label) == StateCategories.Doing);
+
+            return arrivalInDoing?.Start;
+        }
+
+        private static List<ServiceNowStateSpan> InStartOrder(IReadOnlyList<ServiceNowStateSpan> spans)
+        {
+            return [.. spans.OrderBy(span => span.Start)];
+        }
+
+        private static List<WorkItemStateTransition> PairConsecutive(List<ServiceNowStateSpan> spansInStartOrder)
+        {
+            var transitions = new List<WorkItemStateTransition>();
+
+            for (var arrival = 1; arrival < spansInStartOrder.Count; arrival++)
+            {
+                transitions.Add(new WorkItemStateTransition
+                {
+                    FromState = spansInStartOrder[arrival - 1].Label,
+                    ToState = spansInStartOrder[arrival].Label,
+
+                    // ADR-118 decision 1: dated by the arrival, never the departure.
+                    TransitionedAt = spansInStartOrder[arrival].Start,
+                });
+            }
+
+            return transitions;
         }
     }
 }
