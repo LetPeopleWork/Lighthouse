@@ -1,0 +1,641 @@
+# Feature Delta — epic-size-and-count-over-time
+
+**ADO**: Epic [#5585 "Track Epic Size and Epic Count Over Time in Delivery Metrics"](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5585) (Planned, reported by Chris, forecast 2026-09-06)
+**Repos under change**: `Lighthouse` — `Lighthouse.Backend` (snapshot recorder + DTO) and `Lighthouse.Frontend` (Metrics tab, one new chart, one burnup fix) · `lighthouse-clients` — client + CLI + MCP (slice 06 only)
+**Density**: lean (`~/.nwave/global-config.json` → `documentation.density = "lean"`, `expansion_prompt = "ask-intelligent"`)
+**Builds on**: Epic 3993 delivery-metrics (`docs/product/journeys/delivery-metrics.yaml`) — this feature is a fourth chart on the store that epic shipped.
+
+---
+
+## Wave: DISCUSS / [REF] Prior-Wave Reading Confirmation
+
+- ✓ ADO 5585 (`az boards work-item show --id 5585`) — description, state, no children yet, no acceptance criteria field
+- ✓ `docs/product/journeys/delivery-metrics.yaml` — the parent journey; D1/D6/D11 (forward-only, one store, no backfill) are inherited verbatim
+- ✓ `docs/product/jobs.yaml` (3983 lines) — `job-forecast-delivery-trend-over-time`, `job-po-scope-cut-from-delivery-trend`, `job-honest-delivery-trend-when-target-moves` read; two new jobs added by this wave
+- ✓ `docs/product/personas/delivery-forecaster.yaml`, `docs/product/personas/product-owner.yaml` — reused unchanged
+- ✓ Code reality check (see Current-State Surface Inventory below): `DeliveryMetricSnapshot.cs`, `DeliveryMetricsHistoryDto.cs`, `DeliveryMetricSnapshotRecordingHandler.cs`, `Delivery.cs`, `Feature.cs`, `WorkItemService.cs`, `DeliveriesController.cs`, `DeliverySection.tsx`, `DeliveryBurnupChart.tsx`, `DeliveryMetricsHistory.ts`
+- ✓ `lighthouse-clients` — `packages/client/src/index.ts`, `packages/cli/src/index.ts`, `packages/mcp-core/src/index.ts` (slice 06 scope)
+- ⊘ `docs/product/vision.md` (not found)
+- ⊘ `docs/project-brief.md` (not found)
+- ⊘ `docs/stakeholders.yaml` (not found)
+- ⊘ `docs/feature/epic-size-and-count-over-time/discover/` (not found — DISCUSS is the entry wave)
+- ⊘ `docs/feature/epic-size-and-count-over-time/diverge/` (not found)
+
+No DISCOVER evidence exists to contradict, so no `## Changed Assumptions` section is required. The one
+assumption this wave *revises* against the parent journey is recorded under D3 (epic-count history is
+**not** forward-only — it is already recorded).
+
+---
+
+## Wave: DISCUSS / [REF] Persona IDs
+
+| Persona | Role in this feature |
+|---|---|
+| `delivery-forecaster` | Opens the delivery's Metrics tab before a status report. Must answer "did scope grow, or did the epics we already had get bigger?" and "how much of this number is still a guess?" |
+| `product-owner` | Secondary. Uses the same chart to chase the epics that are still un-broken-down and to pick which epic to cut. |
+| `flow-coach` | Slice 06 only. Reads the same delivery trend through an AI assistant (MCP) or the CLI rather than the UI. |
+
+---
+
+## Wave: DISCUSS / [REF] JTBD One-Liners
+
+- **`job-forecaster-attribute-scope-change-to-an-epic`** (`delivery-forecaster`) — When the delivery's
+  backlog line steps up and leadership asks why, I want to see how many epics were in the delivery each
+  day and how big each one was, so I can name the epic and the day instead of saying "scope grew".
+- **`job-forecaster-know-how-much-of-the-size-is-guessed`** (`product-owner`, forecaster secondary) —
+  When part of a delivery's total is default sizes for epics nobody has broken down yet, I want to see
+  which epics are still estimates and the day each one flipped to a real breakdown, so I can say how
+  much of the number is real and chase the ones that aren't.
+
+Both are written in full (three dimensions, four forces, opportunity score) into `docs/product/jobs.yaml`.
+Slice 06 serves the first job through a different port (CLI/MCP) rather than introducing a third job.
+
+### Opportunity Scores
+
+| Job | Importance | Current satisfaction | Gap | Note |
+|---|---|---|---|---|
+| `job-forecaster-attribute-scope-change-to-an-epic` | 4 | 1 | **3** | The burnup already shows *that* the backlog stepped up (`DeliveryBurnupChart.tsx` Backlog series) but attributes it to nothing. Attribution today means diffing the Work Items tab by hand or a spreadsheet. |
+| `job-forecaster-know-how-much-of-the-size-is-guessed` | 4 | 2 | **2** | Partially served: the burnup's dashed "Estimated (not broken down)" line gives the *aggregate* estimated portion — but only as a total, never per epic, and it is invisible whenever it falls inside the filled Done area (US-05). Nothing shows *which* epic is a guess or *when* it stopped being one. |
+
+Highest leverage first: attribution (Job 1) — it is the chart's spine (count line + size bars) and every
+later slice hangs off it.
+
+---
+
+## Wave: DISCUSS / [REF] Current-State Surface Inventory
+
+Grepped, not recalled.
+
+| # | Surface | File:line | State today |
+|---|---|---|---|
+| S1 | Daily snapshot row | `Lighthouse.Backend/Models/DeliveryMetricSnapshot.cs:5-42` | One row per `(DeliveryId, RecordedDay)`. Scalars: `TotalWork`, `DoneWork`, `RemainingWork`, `EstimatedItemCount`, `ForecastHowMany`, `LikelihoodPercentage`, plus `WhenDistributionJson` and `FeatureBreakdownJson`. |
+| S2 | Per-epic breakdown, persisted | `DeliveryMetricSnapshot.cs:41` (`FeatureBreakdownJson`) ← `DeliveryMetricsHistoryDto.cs:8` | `DeliveryFeatureMetricDto(ReferenceId, Name, Completion, Likelihood)` — **already one entry per epic per day**. Carries no size and no estimate flag. |
+| S3 | Breakdown producer | `Models/Delivery.cs:144-159` | `CalculateFeatureBreakdown` filters `feature.FeatureWork.Sum(TotalWorkItems) > 0`; `ToFeatureMetric` computes `totalItems` and `remainingItems` locally and then **throws the totals away**. |
+| S4 | Recorder | `DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs:22-70` | Reacts to `PortfolioForecastsUpdated`, idempotent on `(deliveryId, RecordedDay)`, serialises `metrics.FeatureBreakdown` when non-empty. Already reads `feature.IsUsingDefaultFeatureSize` (line 42) for the aggregate `EstimatedItemCount`. |
+| S5 | Estimate flag, source | `Models/Feature.cs:45`, `WorkItemService.cs:336` / `:379` | `IsUsingDefaultFeatureSize` is set false on every refresh, then true for every feature `ExtrapolateNotBrokenDownFeatures` fills with the portfolio default size. Persisted on `Feature`, never on a snapshot. |
+| S6 | Read API | `API/DeliveriesController.cs:53-73` | `GET .../deliveries/{deliveryId}/metrics-history` — `GetMetricsHistory(int deliveryId)`, **no query parameters**: it returns the entire recorded series in one response, behind `RbacGuardRequirement.PortfolioRead`. |
+| S7 | Wire model (FE) | `Lighthouse.Frontend/src/models/Delivery/DeliveryMetricsHistory.ts:6-11, 93-110` | `FeatureMetric` + a strict `parseFeatureBreakdown` boundary parser that throws `BoundaryError` on shape drift. |
+| S8 | Metrics tab layout | `DeliverySection.tsx:589-620` | Already a 2-column grid (`lg: "1fr 1fr"`). Burnup + Predictability on row 1; fever chart forced full width by `gridColumn: { lg: "1 / -1" }`. |
+| S9 | Burnup estimated line | `DeliveryBurnupChart.tsx:16-27, 62-79` | Done series is `area: true` (filled). The estimated series is `theme.palette.warning.main` with `strokeDasharray "2 4"` and is drawn **under** that fill whenever `estimatedItemCount < doneWork` → the invisible-line defect Chris flagged. |
+| S10 | Terminology | `DeliverySection.tsx:150` | `getTerm(TERMINOLOGY_KEYS.FEATURES)` — the instance decides whether these are called Epics, Features, Initiatives. The existing charts ignore it. |
+| S11 | Clients — delivery surface | `lighthouse-clients/packages/client/src/index.ts:1310-1324`, `packages/cli/src/index.ts` (`runDeliveryGroup`, `lh delivery list --portfolio-id`), `packages/mcp-core/src/index.ts:1549, 2201-2217` (`lighthouse_delivery_list`) | Delivery **CRUD** exists on the client; the CLI and MCP expose **list only**. |
+| S12 | Clients — metrics-history | — | **Absent everywhere.** No client method, no CLI command, no MCP tool for `metrics-history`. The whole delivery over-time story is invisible outside the browser. This is the slice-06 gap. |
+
+**The load-bearing find**: S2 means epic *count* per day is already in the database for every instance
+that has been recording since Epic 3993 shipped — no new column, no waiting. Epic *size* and the
+*estimate flag* are not, and are forward-only like everything else in this store (D11 of the parent
+journey).
+
+---
+
+## Wave: DISCUSS / [REF] Locked Decisions
+
+| ID | Decision | Rationale |
+|---|---|---|
+| **D1** | One new chart — "Epic Size & Count", a composed bar+line chart — placed directly under the burnup; the fever chart loses its `gridColumn: "1 / -1"` span and becomes a half-width cell. Final layout is 2×2: Burnup / Predictability / **Epic Size & Count** / Fever. | Exactly what ADO 5585 asks for. `DeliverySection.tsx:612` already isolates the span in one `Box`, so the regrid is a two-line change. |
+| **D2** | The count line counts **all** epics in the delivery that day, regardless of state (done epics included). One line, no done-split. | User decision, 2026-07-31. Mirrors the burnup's "Backlog" line: a step in the line = an epic joined or left. A done-split would duplicate the burnup's Done story on a different unit. |
+| **D3** | The count line is **derived from `featureBreakdown.length`** on each existing history point — not a new column. It therefore has **real history from the day Epic 3993's recorder started**, unlike every other series in this store. | S2. Revises the parent journey's blanket forward-only framing (D6/D11) for this one series only. **Caveat, stated in the chart's help text**: epics whose total item count was 0 on a given day are absent from `featureBreakdown` (S3 filter) and so are not counted. In practice `ExtrapolateNotBrokenDownFeatures` (S5) gives un-broken-down epics the portfolio default size, so a 0-size epic is the rare case, not the norm. |
+| **D4** | Epic **size** = that epic's total child work items on that day, regardless of state — the `totalItems` `ToFeatureMetric` already computes (S3) and discards. For an un-broken-down epic that is the extrapolated default size. | ADO 5585: "the size is depending on how many child items are in there (total, independent of state)". |
+| **D5** | Size + estimate flag ship as **two new fields on the existing `FeatureBreakdownJson` payload** (`TotalItems`, `IsUsingDefaultSize`) — no new table, no EF migration. Forward-only: days already recorded keep the 4-field shape and render no bars. | The column is already a JSON blob; adding fields to it is expand-only by construction. Matches the expand-only migration rule. Both FE and BE parsers must tolerate the old 4-field shape (S7 `parseFeatureBreakdown` throws on missing keys → the two new fields parse as *optional*). |
+| **D6** | An estimated (default-size) segment renders **hatched**, plus a tooltip line saying the size is a default. | User decision, 2026-07-31. The whole point is pinpointing the day an epic flips estimate → actual; a shade-only encoding reads as "a different epic", and tooltip-only means hovering 30 bars to find the flip. Cost accepted: MUI-X bar charts have no native pattern fill, so this needs an SVG `<pattern>` def + per-item fill — carried as its own slice with a spike-if-needed note. |
+| **D7** | An epic that leaves the delivery **keeps its history**: its segments stay on the days it was a member and simply stop. The legend lists it for the whole window. | User decision, 2026-07-31. Free by construction — each day's breakdown is that day's membership — and it is exactly how a scope *cut* becomes visible. Dropping it would hide the cut. |
+| **D8** | Legend entries are **click-to-toggle, multi-select**. Clicking an epic isolates it; clicking more adds them; a "show all" reset clears the filter. Filtering affects the bars only — the count line stays whole. | ADO 5585 "on click, we should only show the bar for the selected epic(s)". The count line is a delivery-level fact; filtering it to a subset would make it read as a different number for the same day. |
+| **D9** | The burnup estimated-line visibility fix (S9) is **in scope** for 5585 as its own slice and its own ADO Story, not a separate Bug. | User decision, 2026-07-31. Chris flagged it as "not strictly part of this epic"; it lands in the same file family and the same review, so carrying it here is cheaper than a detached bug. |
+| **D10** | Chart title and legend header use the instance's configured term via `getTerm(TERMINOLOGY_KEYS.FEATURES)` (S10) — "Epic Size & Count" only when the instance calls them Epics. | Every other delivery surface already respects it; a chart hardcoding "Epic" would be the odd one out on a Jira instance that calls them Initiatives. |
+| **D11** | Premium gating and RBAC are **inherited, not invented**: the chart lives inside the delivery surface, which is already premium-gated and already behind the portfolio's RBAC read check (`DeliveriesController.cs:57-70`, `RbacGuardRequirement.PortfolioRead`). No new permission, no new gate — the CLI/MCP port in slice 06 hits the same guarded endpoint. | Parent journey D4. Verified: nothing in `DeliverySection.tsx`'s Metrics tab adds its own gate. |
+| **D12** | The delivery trend gets a **CLI/MCP port** (slice 06): a `getDeliveryMetricsHistory` client method, an `lh delivery metrics` command, and a read-only `lighthouse_delivery_metrics` MCP tool — shipped **after slice 02**, so the client is written once against the final payload shape. | User decision, 2026-07-31. S11/S12: deliveries are already a client concept (CRUD + list tool), so this is completing a surface, not opening one. Sequencing after slice 02 avoids publishing a client version that knows a payload shape we are about to widen. |
+| **D13** | The CLI/MCP port defaults to a **summarised** series (one row per day: date, total, done, remaining, epic count, estimated portion, likelihood) with per-epic detail behind an explicit opt-in flag/argument. | S6: the endpoint takes no range or projection parameters and returns the entire history in one response — for a 90-day delivery with 15 epics that is ~1350 breakdown objects plus a `whenDistribution` array per day. Dumping that verbatim into an LLM context is the failure mode; summarise at the client, opt into detail. A server-side range parameter is a **separate backend story**, not smuggled into this feature. |
+
+---
+
+## Wave: DISCUSS / [REF] User Stories
+
+### US-01 — See how many epics were in the delivery each day
+
+As a **delivery forecaster**, I want the delivery's Metrics tab to show a chart of how many epics were
+in the delivery on each recorded day, so that a scope step in the burnup has a companion number I can
+point at.
+`job_id: job-forecaster-attribute-scope-change-to-an-epic`
+
+#### Elevator Pitch
+Before: the forecaster can see the backlog line step up in the burnup but nothing tells them whether an epic joined or an existing epic grew.
+After: open Portfolio → a delivery → **Metrics** tab → sees a fourth card, "Epic Size & Count", whose line reads e.g. `7 → 7 → 9` across the recorded days, in a 2×2 grid with the fever chart now half-width.
+Decision enabled: whether to investigate a scope *addition* (line stepped) or an epic *re-estimate* (line flat while the burnup backlog rose).
+
+**Acceptance criteria**
+- **AC-1.1** With a history whose points carry `featureBreakdown` of lengths `[7, 7, 9]`, the chart's line series has values `[7, 7, 9]` against those dates.
+- **AC-1.2** With a history of zero points, the card renders the same forward-only empty state wording the other three charts use (`"builds forward from today — no snapshots recorded yet"`) and does not throw.
+- **AC-1.3** On a `lg` viewport the Metrics tab renders four cards in a 2×2 grid: Burnup, Predictability, Epic Size & Count, Fever — in that DOM order — and no card carries a full-width `gridColumn` span.
+- **AC-1.4** On an `xs` viewport all four cards stack in one column (existing `xs: "1fr"` behaviour is unchanged).
+- **AC-1.5** The card title uses the configured features term: with the term set to "Initiatives" the title contains "Initiative", not "Epic".
+- **AC-1.6** The chart renders a line for history recorded **before** this feature shipped — i.e. points whose `featureBreakdown` entries have only the four original fields — proving the count is derived, not newly recorded (D3).
+
+---
+
+### US-02 — See how big each epic was, stacked, on each day
+
+As a **delivery forecaster**, I want each day to show a stacked bar where every stack is one epic sized
+by its child item count, so that I can see which epic carries the weight and which one grew.
+`job_id: job-forecaster-attribute-scope-change-to-an-epic`
+
+#### Elevator Pitch
+Before: a backlog jump is anonymous — the forecaster cannot tell whether it came from one epic doubling or three small epics joining.
+After: on the same **Epic Size & Count** card, sees a stacked bar per day, one segment per epic, segment height = that epic's total child items that day; hovering a segment shows `{epic name} — {n} items`.
+Decision enabled: which epic to open in the Work Items tab and challenge, rather than reviewing the whole delivery.
+
+**Acceptance criteria**
+- **AC-2.1** The recorder writes `totalItems` for every epic in `FeatureBreakdownJson`: after a recorder run for a delivery with epics of 8 and 3 items, the persisted JSON contains those two totals.
+- **AC-2.2** `GET .../deliveries/{id}/metrics-history` returns `featureBreakdown[].totalItems` for snapshots written after this slice.
+- **AC-2.3** A snapshot persisted **before** this slice (4-field entries) still deserialises: the endpoint returns it with `totalItems` absent/null and the API does not 500.
+- **AC-2.4** The FE boundary parser accepts both shapes — a 4-field entry parses with `totalItems: null` and does **not** raise `BoundaryError` (`DeliveryMetricsHistory.ts` `parseFeatureBreakdown`).
+- **AC-2.5** For a day with epics `[A: 8, B: 3]` the chart renders two stacked segments on that day's bar totalling 11; days whose entries carry no `totalItems` render no bar (the line still renders).
+- **AC-2.6** An epic present on days 1-3 and absent from day 4 has segments on days 1-3 only, and remains listed in the legend (D7).
+- **AC-2.7** Bar segment heights ignore state: an epic with 8 total items of which 8 are done still renders height 8.
+
+---
+
+### US-03 — Tell a real breakdown apart from a default-size guess
+
+As a **product owner**, I want an epic whose size is the portfolio default to be drawn hatched, so that
+I can see how much of the delivery is still guessed and exactly when an epic stopped being one.
+`job_id: job-forecaster-know-how-much-of-the-size-is-guessed`
+
+#### Elevator Pitch
+Before: an epic sized by the portfolio default looks identical to one someone actually broke down — the burnup only gives an aggregate estimated total, and even that disappears under the filled Done area.
+After: on the **Epic Size & Count** card, sees estimated segments rendered with a diagonal hatch and a tooltip line reading `size is the portfolio default (not broken down)`; the day a hatched segment turns solid is the day that epic got broken down.
+Decision enabled: which epics to chase for breakdown before quoting the delivery's total to leadership.
+
+**Acceptance criteria**
+- **AC-3.1** The recorder writes `isUsingDefaultSize` per epic in `FeatureBreakdownJson`, matching `Feature.IsUsingDefaultFeatureSize` at record time (same source the aggregate `EstimatedItemCount` already uses).
+- **AC-3.2** A segment with `isUsingDefaultSize: true` renders with the hatch pattern fill; one with `false` renders solid — asserted on the rendered fill reference, not a snapshot image.
+- **AC-3.3** The tooltip for a hatched segment contains the default-size wording; the tooltip for a solid segment does not.
+- **AC-3.4** An epic hatched on days 1-2 and solid from day 3 renders exactly that transition — the flip day is visually locatable.
+- **AC-3.5** Entries missing `isUsingDefaultSize` (pre-slice snapshots, or `null`) render solid and never hatched — absence is not treated as `true`.
+- **AC-3.6** The hatch pattern is defined once per chart instance and does not leak into the other three charts on the tab (no duplicate SVG `<pattern>` id collisions when two deliveries are expanded at once).
+
+---
+
+### US-04 — Focus the chart on the epics I care about
+
+As a **delivery forecaster**, I want to click epics in the legend to show only their bars, so that a
+delivery with fifteen epics is still readable when I am chasing two of them.
+`job_id: job-forecaster-attribute-scope-change-to-an-epic`
+
+#### Elevator Pitch
+Before: a delivery with a dozen epics renders a dozen-segment stack per day — legible as a total, useless for following one epic's trajectory.
+After: on the **Epic Size & Count** card, clicks an epic in the legend → only that epic's segments remain; clicks a second → both show; clicks **Show all** → the full stack returns.
+Decision enabled: whether the specific epic they are chasing is growing or holding, without re-reading the whole delivery.
+
+**Acceptance criteria**
+- **AC-4.1** The legend lists every epic that appears on any day in the window, once, including epics that later left the delivery (D7).
+- **AC-4.2** Clicking one legend entry leaves only that epic's segments rendered; clicking a second adds it (multi-select, D8).
+- **AC-4.3** Clicking an already-selected entry deselects it; deselecting the last one returns to showing all.
+- **AC-4.4** A "Show all" / reset control clears the selection in one action.
+- **AC-4.5** The count line is unchanged by any selection (D8) and the y-axis rescales to the selected subset.
+- **AC-4.6** The selection is local to the chart instance: filtering one expanded delivery's chart does not filter another's.
+
+---
+
+### US-05 — Read the estimated line in the burnup even when it is low
+
+As a **delivery forecaster**, I want the burnup's "Estimated (not broken down)" line to stay visible
+when it crosses into the filled Done area, so that I do not misread a hidden line as "no estimate".
+`job_id: job-forecaster-know-how-much-of-the-size-is-guessed`
+
+#### Elevator Pitch
+Before: once the estimated total drops below the done count, the dashed warning-coloured line is drawn beneath the filled Done area and simply disappears — indistinguishable from "there is no estimated work".
+After: opens the **Burnup** card on the Metrics tab with a history where `estimatedItemCount < doneWork` → the estimated line is still legible against the Done fill.
+Decision enabled: whether the remaining unbroken-down scope is still material, at a glance, instead of concluding there is none.
+
+**Acceptance criteria**
+- **AC-5.1** With a history where `estimatedItemCount` is strictly below `doneWork` on every point, the estimated series is rendered and visually distinguishable from the Done area (asserted on the series' render order / fill-opacity contract, whichever the fix uses).
+- **AC-5.2** The Done series still reads as a filled area — the fix does not remove `area: true`.
+- **AC-5.3** The estimated series keeps its dashed identity (`data-series="estimated"` + `strokeDasharray`), so the existing burnup tests and the MUI-X dashed-series selector convention still hold.
+- **AC-5.4** Existing `DeliveryBurnupChart.test.tsx` assertions all still pass unchanged.
+
+---
+
+### US-06 — Read a delivery's trend from the CLI and from an AI assistant
+
+As a **flow coach**, I want the delivery's over-time metrics available through the CLI and the MCP
+server, so that I can ask an assistant how a delivery's scope has moved without opening the browser and
+describing the chart to it.
+`job_id: job-forecaster-attribute-scope-change-to-an-epic`
+
+#### Elevator Pitch
+Before: the clients can list, create, update and delete deliveries (`client/src/index.ts:1310-1324`, `lh delivery list`, `lighthouse_delivery_list`) but expose **nothing** from `metrics-history` — every delivery trend, including this feature's chart, stops at the browser.
+After: run `lh delivery metrics --delivery-id 12` → prints one row per recorded day (date, total, done, remaining, epic count, estimated portion, likelihood); an assistant calls `lighthouse_delivery_metrics` and gets the same series.
+Decision enabled: the same attribution call as the chart — "scope stepped on the 14th, epic count was flat, so an existing epic grew" — reachable from a terminal or a coaching conversation.
+
+**Acceptance criteria**
+- **AC-6.1** `getDeliveryMetricsHistory(deliveryId)` on `packages/client` calls `GET /api/v1/deliveries/{deliveryId}/metrics-history` and returns the parsed series through the existing `LighthouseApiResult` contract.
+- **AC-6.2** Failure paths behave like every other client read: a 403 maps to the standard error category (the endpoint is behind `PortfolioRead`, D11), a 404 to not-found — asserted, not assumed.
+- **AC-6.3** `lh delivery metrics --delivery-id <id>` prints one row per recorded day with the summary columns; a missing `--delivery-id` produces the same style of usage error `lh delivery list` produces for a missing `--portfolio-id`.
+- **AC-6.4** By default neither the CLI nor the MCP tool emits per-epic rows or the `whenDistribution` array; per-epic detail requires an explicit opt-in (`--detail epics` / a `detail` argument) (D13).
+- **AC-6.5** A new read-only MCP tool `lighthouse_delivery_metrics` is registered, takes a delivery id, appears in the tool list, and is classified read-only by `isReadOnlyTool`.
+- **AC-6.6** Against a server whose snapshots predate slice 02 (no `totalItems` / `isUsingDefaultSize`), the client parses the response and reports the per-epic size as unknown rather than erroring — same tolerance the frontend parser gets in AC-2.4.
+- **AC-6.7** A changeset is committed and `pnpm release:version` is run before the clients release gate — the version bump is manual in this repo and is not performed by the release workflow.
+
+---
+
+## Wave: DISCUSS / [REF] Story Map & Slices
+
+**Backbone**: *open the delivery's Metrics tab* → *see the shape of scope over time* → *attribute a change to one epic* → *judge how much of it is guessed* → *focus on the epics that matter* → *reach the same trend from a terminal or an assistant*.
+
+**Walking skeleton**: none separate. Slice 01 is the thinnest end-to-end slice — the parent epic's store,
+recorder, endpoint and tab already exist (Type-A additive), so there is nothing to stand up.
+
+| Slice | Ships | Story | Est. | Learning hypothesis |
+|---|---|---|---|---|
+| **01** | Count line + 2×2 regrid | US-01 | ~4h | Disproves "epic-count history is already in the database" if `featureBreakdown` turns out to be empty/absent on most real recorded days. |
+| **02** | Per-epic size, recorded + stacked bars | US-02 | ~6h | Disproves "the breakdown JSON can be extended in place" if the old 4-field rows break either parser. |
+| **03** | Hatched estimate encoding + tooltip | US-03 | ~4h | Disproves "MUI-X bar segments can carry a per-item pattern fill" — if they cannot, D6 falls back to shade+tooltip and the slice is re-scoped, not abandoned. |
+| **04** | Legend click-to-filter | US-04 | ~3h | Disproves "the stacked chart is readable for a real 12-epic delivery" if filtering still leaves it unreadable — signals the chart needs a different form, not more controls. |
+| **05** | Burnup estimated-line visibility | US-05 | ~2h | Disproves "the line is hidden purely by paint order" if raising it still reads badly against the fill — then it needs a different encoding. |
+| **06** | Clients: metrics-history on client + CLI + MCP | US-06 | ~4h | Disproves "the whole series is usable through an assistant as-is" if a real delivery's response blows the tool-result budget even summarised — then the backend needs a range/projection parameter before the port is worth shipping. |
+
+Full briefs: `docs/feature/epic-size-and-count-over-time/slices/slice-0{1..6}-*.md`.
+
+**Prioritisation rationale** — 01 first because it is the only slice with *retroactive* data (D3): it is
+the fastest real-value ship and it validates the derived-count premise every later slice sits on. 02
+next because 03, 04 and 06 all consume its data, and the recorder change must start accruing days as
+early as possible (forward-only). 03 before 04 because it carries the only genuine rendering unknown
+(pattern fill). 06 must come after 02 so the client is written once against the final payload shape —
+publishing a client version against the pre-slice-02 shape would mean two npm releases for one feature.
+05 last — independent, tiny, and the only slice touching a chart users already rely on, so it lands when
+review attention is cheapest.
+
+### Slice taste tests
+
+| Test | Verdict |
+|---|---|
+| Any slice shipping 4+ new components? | Pass — 01 adds one component, 02-04 modify it, 05 modifies an existing one, 06 adds one client method + one command + one tool. |
+| Every slice depending on a new abstraction? | Pass — no new abstraction. The chart component itself is shipped in slice 01 and consumed thereafter. |
+| Does any slice disprove a pre-commitment? | Pass — 01 disproves the retroactive-history premise; 03 the hatch feasibility; 06 the payload-size premise. Each would change the plan if it failed. |
+| Synthetic-data-only slices? | Pass — every slice is acceptance-tested against demo data seeded by `DemoDataService.SeedBurnupSnapshots` plus a real recorded delivery in the dogfood instance; 06 is smoke-tested against the live dogfood server. |
+| Two slices identical except for scale? | Pass — none. |
+
+---
+
+## Wave: DISCUSS / [REF] Scope Assessment
+
+**PASS — right-sized.** 6 stories (≤10), 1 bounded context (delivery metrics), 3 technologies (C#
+recorder/DTO, React chart, TS client/CLI/MCP), ~23h total (<2 weeks), 0 new integration points — slice 06
+consumes an endpoint that already exists. No split proposed. Note: adding slice 06 tips the
+cross-context trigger to the edge (3 technologies); it is a port of the same context, not a third
+context, so no `alternatives-considered` expansion is warranted.
+
+---
+
+## Wave: DISCUSS / [REF] Outcome KPIs
+
+| # | KPI | Target | Measurement |
+|---|---|---|---|
+| K1 | Scope-change attribution during a delivery review names a specific epic and day | ≥2 of the next 3 dogfood delivery reviews | Dogfood observation + Chris interview (the epic's reporter) |
+| K2 | Un-broken-down epics identified from the chart rather than by opening the Work Items tab | ≥1 named epic chased per review where estimates exist | Same interviews |
+| K3 | Recorder writes `totalItems` + `isUsingDefaultSize` for 100% of epics in every snapshot after slice 02, with no duplicate day rows | 100% / 0 duplicates | Backend integration assertion on `FeatureBreakdownJson` (extends the existing recorder tests) |
+| K4 | Old 4-field snapshots keep rendering the count line after every slice | 0 regressions | AC-1.6 + AC-2.3/2.4 + AC-6.6 held green in CI |
+| K5 | Metrics tab render time on a 90-day, 15-epic delivery | no worse than +20% vs today's three charts | Vitest/manual profile on the dogfood instance before/after slice 02 |
+| K6 | Summarised MCP tool result for a 90-day, 15-epic delivery stays within a sane tool-result budget | ≤ ~2k tokens without `detail` opt-in | Measured against the dogfood delivery during slice 06; a miss triggers the slice-06 hypothesis (backend range parameter first) |
+
+**Measurement caveat** — unchanged from Epic 3993: cross-instance behavioural telemetry is blocked on
+Epic 5015 (opt-in telemetry, no timeline). K1/K2 are dogfood + interview until then; K3-K6 are
+assertable/measurable today.
+
+---
+
+## Wave: DISCUSS / [REF] Out of Scope
+
+- **No backfill of size or estimate flag.** Days recorded before slice 02 keep the 4-field shape forever (D5). No reconstruction from current `Feature` rows — that would attribute today's size to a past day.
+- **No new table and no EF migration.** If a slice discovers it needs one, that is a DESIGN escalation, not a silent addition.
+- **No server-side range or projection parameter on `metrics-history`.** Slice 06 summarises client-side (D13); adding `from`/`to` to the endpoint is a separate backend story, raised only if K6 fails.
+- **No delivery write tools in MCP.** The client already has create/update/delete; exposing them as tools is a separate decision about write surface, not part of this feature.
+- **No change to the burnup's, predictability's or fever chart's data.** US-05 is a rendering fix only.
+- **No epic-level drill-through** to the Work Items tab from a bar segment (the drill-through pattern exists in Epic 5074's blocked-items work; wiring it here is a follow-up).
+- **No done/remaining split inside a bar segment** (D2/D4 — segments are total size).
+- **No CSV/PNG export** of the new chart.
+- **No API versioning event.** The `featureBreakdown` entry gains two optional fields; nothing is removed or renamed (`docs/concepts/api-versioning.md` additive rule).
+
+---
+
+## Wave: DISCUSS / [REF] WS Strategy
+
+**Type A — additive.** The store, recorder, endpoint, tab and grid all exist. Every change is a new
+optional field, a new card, or a new client method over an existing route; a partially-shipped feature
+degrades to "the chart renders a line and no bars", never to a broken tab. No env-switch, no parallel
+implementation (not Type D — no `alternatives-considered` trigger).
+
+---
+
+## Wave: DISCUSS / [REF] Driving Ports
+
+| Port | Surface | Change |
+|---|---|---|
+| HTTP (inbound) | `GET /api/.../portfolios/{portfolioId}/deliveries/{deliveryId}/metrics-history` | Response gains two optional fields inside `featureBreakdown[]`. No new route, no new parameters. |
+| UI | Portfolio → delivery accordion → **Metrics** tab | One new card; fever chart loses its full-width span. |
+| CLI | `lh delivery metrics --delivery-id <id>` (slice 06) | New action inside the existing `runDeliveryGroup`. |
+| MCP | `lighthouse_delivery_metrics` (slice 06) | New read-only tool alongside `lighthouse_delivery_list`. |
+| Domain event (internal, not a driving port) | `PortfolioForecastsUpdated` → `DeliveryMetricSnapshotRecordingHandler` | Writes two more fields per epic. No new event. |
+
+---
+
+## Wave: DISCUSS / [REF] Pre-requisites
+
+- Epic 3993 delivery-metrics shipped and recording — **met** (store, recorder, endpoint, Metrics tab all in `main`).
+- An instance with recorded snapshots to dogfood against — **met** for the count line (S2 history exists today); slice 02+ needs days to accrue after its own deploy before the bars are interesting.
+- Premium licence on the dogfood/E2E instance — **met** (`reference_premium_license_dev_seed`).
+- Slice 06 only: a running dogfood server to smoke the CLI and MCP tool against, and npm publish rights for the clients release.
+- No dependency on Epic 5015 telemetry (K1/K2 measured by interview).
+
+---
+
+## Wave: DISCUSS / [REF] DISCUSS Checklist (project standing rules)
+
+**No silent N/A** — every item answered.
+
+| Item | Answer |
+|---|---|
+| **RBAC impact** | **None new.** The chart is inside the delivery surface, which already sits behind the portfolio read check and the premium gate (D11). No component fetches `/authorization/my-summary`; nothing bypasses `useRbac()`. Slice 06 calls the same endpoint, which enforces `RbacGuardRequirement.PortfolioRead` server-side (`DeliveriesController.cs:57-70`), so the CLI/MCP port inherits the guard rather than routing around it. |
+| **Lighthouse-Clients CLI/MCP versioning** | **Not owed by slices 01-05; owed by slice 06.** The clients already carry a delivery surface — `packages/client/src/index.ts:1310-1324` (CRUD), `lh delivery list --portfolio-id`, and the `lighthouse_delivery_list` MCP tool (S11) — but expose **nothing** from `metrics-history` (S12). Slices 01-05 only add two optional fields to an endpoint the clients never call, so they break nothing and need no bump. Slice 06 adds the missing surface and **does** need a changeset plus a manual `pnpm release:version` + commit + push **before** the clients release gate (AC-6.7). |
+| **Website marketing surface** | **N/A for the website repo, in scope for product docs.** No `letpeople.work` page describes individual delivery charts (verified: no burnup/fever mention outside `Lighthouse/docs`). `docs/portfolios/detail.md` **is** in scope: it documents Burnup (§196), Predictability and Fever Chart (§224) with screenshots from `docs/assets/features/`. A new "Epic Size & Count" section plus a `@screenshot` test lands at DELIVER, per-feature, not batched into `/release`. Slice 06 additionally owes a line in the clients' `skill/SKILL.md` / CLI README so the new command and tool are discoverable. |
+| **Per-feature docs + screenshots** | Owed at DELIVER: one new docs section, one new screenshot asset, one `@screenshot` E2E in the delivery-metrics theme. Note the pixel-threshold trap — `rm` the old PNG before regenerating if an existing asset is touched. |
+| **Demo data** | `DemoDataService.SeedBurnupSnapshots` / `BuildFeatureBreakdownJson` (`:168-195`) must seed the two new fields, including at least one epic that flips `isUsingDefaultSize` mid-window — otherwise the hatch (US-03) has nothing to show in the demo instance or in the screenshot E2E. Owed in slice 02/03. |
+| **EF migrations** | **N/A, because** both new fields live inside the existing `FeatureBreakdownJson` string column (D5). No `CreateMigration` run. If DESIGN overturns D5, expand-only rules apply. |
+
+---
+
+## Wave: DISCUSS / [REF] Definition of Done (feature level)
+
+1. All six stories' ACs green in CI (backend NUnit + frontend Vitest + clients Vitest).
+2. `pnpm test`, `pnpm build` (zero warnings), `dotnet build` (zero warnings), `dotnet test` all green locally before push; clients repo lint + tests green for slice 06.
+3. SonarQube Cloud: no new issues of any severity.
+4. Mutation testing per feature: backend ≥80% kill on the recorder/DTO change, frontend ≥80% on the new chart component.
+5. One Playwright walking-skeleton assertion that the Metrics tab shows four cards — no team↔portfolio twin, no re-seed (thin sanity check only), and run locally before commit.
+6. `docs/portfolios/detail.md` gains the new chart section + regenerated screenshot asset; clients docs mention the new command and tool.
+7. Demo data seeds the new fields, including an estimate→actual flip.
+8. Slice 06: changeset committed, `pnpm release:version` run manually, clients published.
+9. ADO: Epic 5585 carries one Story per slice, states transitioned, "Release Notes" tag confirmed with the user before it is applied.
+10. Evolution doc written and the feature workspace archived at finalize.
+
+---
+
+## Wave: DISCUSS / [REF] DoR Validation
+
+| # | DoR item | Evidence |
+|---|---|---|
+| 1 | Business value articulated | Two JTBD jobs with opportunity scores 3 and 2; reported by a real user (Chris) via ADO 5585. |
+| 2 | User stories in LeanUX form with elevator pitches | US-01…US-06, each with Before/After/Decision-enabled. Zero `@infrastructure`-only slices — slice 06 included, since `lh delivery metrics` is a user-invocable entry point with observable output. |
+| 3 | Acceptance criteria testable | 33 ACs, each asserting an observable output (rendered series values, persisted JSON, HTTP response shape, CLI stdout, MCP tool result). |
+| 4 | Dependencies identified | Pre-requisites section — all met except natural data accrual for slice 02+ and npm publish rights for slice 06. |
+| 5 | Job traceability | Every story carries a `job_id` present in `docs/product/jobs.yaml`. |
+| 6 | Sized / sliceable | 6 slices, each ≤6h, each with a learning hypothesis; taste tests all pass. |
+| 7 | Technical feasibility grounded | Surface inventory S1-S12 read from code, not recalled. Two genuine unknowns (D6 pattern fill, D13 payload size) isolated into slices 03 and 06 with documented fallbacks. |
+| 8 | Outcome KPIs measurable | K1-K6 with targets and measurement methods; telemetry caveat stated. |
+| 9 | Out-of-scope explicit | 9 named non-goals. |
+
+**Requirements completeness: 0.96** — the residual gaps are the exact hatch implementation for MUI-X bar
+segments (D6) and the real-world size of a summarised metrics-history payload (D13/K6), both deliberately
+deferred to their slices' spikes rather than guessed here.
+
+---
+
+## Wave: DISCUSS / [REF] Expansion Menu Evaluation
+
+`expansion_prompt = "ask-intelligent"` → all five triggers evaluated:
+
+| Trigger | Fires? |
+|---|---|
+| AC ambiguity (≥2 stories with a contestable AC) | No — every AC names a concrete observable. |
+| Cross-context complexity (≥3 bounded contexts or technologies) | Borderline after slice 06 (3 technologies, 1 bounded context) — judged **not** fired: the CLI/MCP port consumes the same context through an existing endpoint, adding no new domain surface. |
+| Multi-stakeholder (≥3 personas) | Borderline (3 personas, but `flow-coach` appears in one slice as a port consumer, not as a distinct set of requirements) — judged **not** fired. |
+| Compliance / regulatory terms in ACs | No. |
+| WS strategy = D (configurable) | No — Type A. |
+
+No trigger fired → strict lean output, no expansion menu. Telemetry: one skip event
+(`expansion_id = "*"`, `wave = "DISCUSS"`) is owed; the nWave `scripts/shared/telemetry.py` helper is not
+present in this repo's install (`~/.claude/skills/nw-discuss/` ships `SKILL.md` only), so no JSONL was
+written — recorded here instead rather than hand-rolling the event file.
+
+---
+
+## Wave: DISCUSS / [REF] Handoff
+
+**To**: `nw-solution-architect` (DESIGN) — full artifact set. **And**: `nw-platform-architect` (DEVOPS) —
+KPI section only (K3/K5/K6 are the instrumentable ones; no new infrastructure).
+
+**Open questions for DESIGN**:
+1. Composed bar+line in one MUI-X chart vs. two overlaid charts sharing an x-axis — MUI-X `<BarChart>` and `<LineChart>` compose via `<ChartContainer>`; confirm the axis/legend story before slice 01 fixes the component shape.
+2. Hatch implementation (D6) — SVG `<pattern>` + per-item `fill` on MUI-X bar rects, and how to keep pattern ids unique across simultaneously-expanded deliveries (AC-3.6).
+3. Colour assignment per epic must be stable across days *and* across a legend filter — decide the mapping key (`referenceId`) and the palette source at DESIGN, not per-slice.
+4. Slice 06 summary shape (D13) — exactly which columns the default CLI/MCP projection carries, and whether the detail opt-in returns per-epic rows, the `whenDistribution`, or both independently.
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `docs/product/architecture/brief.md` (3794 lines) — `## Application Architecture — delivery-metrics` (from :885) read; ports-and-adapters, OOP backend + functional-leaning React frontend, ADR-048/049/050 inherited
+- ✓ `docs/product/architecture/adr-*.md` — index scanned; highest existing number is **117**, so this wave writes ADR-118…121
+- ✓ `docs/product/journeys/epic-size-and-count-over-time.yaml` — D1-D13 (this feature) and the inherited delivery-metrics D4/D6/D11
+- ✓ DISCUSS output — this same `feature-delta.md` (US-01…US-06, 33 ACs, story map, KPIs) and `slices/slice-01..06-*.md`
+- ⊘ `docs/feature/epic-size-and-count-over-time/spike/findings.md` (not found — no spike was run; the two unknowns were resolved in this wave against the installed packages)
+- ⊘ `docs/product/outcomes/registry.yaml` (not found — the outcomes registry does not exist in this repo, so the Outcome Collision Check has no registry to check against; recorded, not silently skipped)
+
+**Contradictions against DISCUSS: none.** One DISCUSS expectation is *retired early* rather than
+contradicted — D6 budgeted a 1h spike for the hatch because MUI-X "has no native pattern fill". That is
+half right: there is no pattern-fill *prop*, but `slots.bar` + `BarElementOwnerState.seriesId` gives the
+same result, verified against the installed package. The spike is closed before slice 03 starts and the
+documented shade+tooltip fallback is no longer expected to be needed. See ADR-119.
+
+**Scope**: Application / components (@nw-solution-architect). **Mode**: propose.
+
+---
+
+## Wave: DESIGN / [REF] DDD List
+
+| ID | Decision | Verdict |
+|---|---|---|
+| **DDD-1** | Composed `ChartsContainer` + `<BarPlot />` + `<LinePlot />`, dual y-axis (items left, epic count right), one band x-axis of recorded days | Accepted — ADR-118. Precedent in-repo: `RefreshHistoryChart.tsx:31-63` does this on the same `@mui/x-charts@9.0.1`. |
+| **DDD-2** | Estimated sizes hatch via a custom `slots.bar` renderer keyed on `ownerState.seriesId`, over a per-epic `::actual` / `::estimated` series split; `<pattern>` id from `useId()` | Accepted — ADR-119. The burnup's `data-series` CSS trick does **not** transfer: `BarElement` renders no such attribute (verified in `barClasses.d.ts`). |
+| **DDD-3** | Per-epic colour from `getColorMapForKeys(referenceIds)` (`utils/theme/colors.ts:303`), default sorted mode | Accepted — EXTEND. Already the convention in 4 charts; sorted mode keeps colour stable across days and across a legend filter. |
+| **DDD-4** | Legend filter uses MUI-X's native `ChartsLegend.onItemClick(event, legendItem, index)` with `legendItem.seriesId`, plus component-local selection state | Accepted — verified in `ChartsLegend.d.ts:13`. No custom legend component. |
+| **DDD-5** | Extend `DeliveryFeatureMetric` (+`int TotalItems`, +`bool IsUsingDefaultSize`) and `DeliveryFeatureMetricDto` (+`int? TotalItems`, +`bool? IsUsingDefaultSize`) in place — no new table, no EF migration | Accepted — ADR-120. 3 production + 3 test call sites; extend the test factory first. |
+| **DDD-6** | Repair the pre-existing nullable-likelihood mismatch in the same change: DTO `Likelihood` → `double?`, FE `likelihood` → `number \| null` | Accepted — ADR-120. See the finding below; it sits in the exact lines slice 02 rewrites. |
+| **DDD-7** | Slice 06 summarises client-side; no backend range/projection parameter | Accepted — ADR-121. |
+| **DDD-8** | Slice 01 ships the composed container with the line series only; slice 02 adds bar series to the *same* container | Accepted — keeps slice 02 additive and avoids re-shaping the component mid-feature. |
+
+### Finding — pre-existing 500 in the endpoint this feature widens
+
+`DeliveryFeatureMetric.Likelihood` is `double?` (ADR-112: an un-forecastable feature reports *unknown*;
+`Feature.GetLikelhoodForDate` returns `null` at `Feature.cs:114-122`). The recorder serialises the domain
+record verbatim (`DeliveryMetricSnapshotRecordingHandler.cs:61-63`), so `"Likelihood": null` reaches
+`FeatureBreakdownJson`. `DeliveryFeatureMetricDto.Likelihood` is **non-nullable** `double` and
+`ParseFeatureBreakdown` deserialises straight into it (`DeliveryMetricsHistoryDto.cs:67-75`) — STJ throws
+`JsonException` on `null` → `double`, which surfaces as a **500 on the whole delivery's metrics-history**.
+The frontend mirrors it: `likelihood: asNumber(...)` → `BoundaryError` (`DeliveryMetricsHistory.ts:93-110`).
+
+Reachable when a delivery contains a feature with remaining work whose contributing team has no
+throughput. Not covered by tests — `DeliveryMetricsHistoryDtoTest:45` covers a null *snapshot-level*
+`LikelihoodPercentage` only. **Not introduced by 5585.** Inferred from the type signatures and the
+serialisation path, not observed at runtime: slice 02's first test is the round-trip that confirms it.
+Fixed under DDD-6; a Bug work item is filed for traceability.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `DeliveryEpicSizeChart` | `Lighthouse.Frontend/src/components/Common/Charts/DeliveryEpicSizeChart.tsx` | **NEW** — composed bar+line chart (slice 01 line, slice 02 bars, slice 03 hatch, slice 04 filter) |
+| `MetricsTab` | `…/DeliveryGrid/DeliverySection.tsx:580-622` | MODIFY — insert the new card third; drop `gridColumn: { lg: "1 / -1" }` from the fever chart's `Box` |
+| `DeliveryBurnupChart` | `…/Charts/DeliveryBurnupChart.tsx:62-79` | MODIFY (slice 05) — estimated series must survive the filled Done area |
+| `DeliveryMetricsHistory` model | `…/models/Delivery/DeliveryMetricsHistory.ts:6-11, 93-110` | MODIFY — `FeatureMetric` gains `totalItems: number \| null`, `isUsingDefaultSize: boolean \| null`; `likelihood` widens to `number \| null` (DDD-6) |
+| `DeliveryFeatureMetric` | `Lighthouse.Backend/Models/DeliveryMetricsProjection.cs:10` | MODIFY — +`TotalItems`, +`IsUsingDefaultSize` |
+| `Delivery.ToFeatureMetric` | `Lighthouse.Backend/Models/Delivery.cs:152-159` | MODIFY — stop discarding `totalItems`; pass `feature.IsUsingDefaultFeatureSize` |
+| `DeliveryFeatureMetricDto` | `Lighthouse.Backend/API/DTO/DeliveryMetricsHistoryDto.cs:8` | MODIFY — +2 nullable fields; `Likelihood` → `double?` |
+| `DeliveryMetricSnapshotRecordingHandler` | `…/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs:61-63` | UNCHANGED logic — it serialises the widened record wholesale |
+| `DemoDataService` | `…/Services/Implementation/DemoDataService.cs:168-195` | MODIFY — seed both fields incl. an estimate→actual flip |
+| `LighthouseClient` | `lighthouse-clients/packages/client/src/index.ts` | MODIFY — +`getDeliveryMetricsHistory` (slice 06) |
+| CLI delivery group | `lighthouse-clients/packages/cli/src/index.ts` | MODIFY — +`lh delivery metrics` action |
+| MCP core | `lighthouse-clients/packages/mcp-core/src/index.ts` | MODIFY — +`lighthouse_delivery_metrics` read-only tool |
+
+**No change**: `DeliveryMetricSnapshot` entity, EF configuration, migrations, `DeliveriesController`,
+`PortfolioForecastsUpdated`, `IDeliveryMetricSnapshotRepository`, RBAC, licensing.
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Surface | Slice |
+|---|---|---|
+| UI | Portfolio → delivery accordion → Metrics tab → "Epic Size & Count" card | 01-04 |
+| UI | Same tab → Burnup card | 05 |
+| HTTP | `GET /api/v1/deliveries/{deliveryId}/metrics-history` — **unchanged route and parameters**; response gains optional fields | 02 |
+| CLI | `lh delivery metrics --delivery-id <id>` | 06 |
+| MCP | `lighthouse_delivery_metrics` (read-only) | 06 |
+
+## Wave: DESIGN / [REF] Driven Ports + Adapters
+
+| Driven port | Adapter | Change |
+|---|---|---|
+| `IDeliveryMetricSnapshotRepository` | `DeliveryMetricSnapshotRepository` (EF) | None — the widened payload rides inside the existing `FeatureBreakdownJson` string column |
+| Clock | `ILighthouseClock` | None |
+| Blackout calendar | `IBlackoutPeriodService` | None |
+| HTTP (outbound, clients) | `fetch` via `LighthouseClientDependencies` | Reused as-is for slice 06 |
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+| Choice | Pin | Rationale |
+|---|---|---|
+| `@mui/x-charts` | `9.0.1` (exact, already pinned) | `ChartsContainer` composition, `slots.bar`, `ChartsLegend.onItemClick` all verified present at this version. No upgrade, no new charting dependency. |
+| React | `^19.2.8` | `useId()` for the per-instance `<pattern>` id |
+| Backend | .NET 10 / C# records + System.Text.Json | Existing serialisation path; no new library |
+| Clients | TypeScript, existing `LighthouseApiResult` contract | Reference class `getPortfolioBlockedCountHistory` |
+| Paradigm | OOP backend, functional-leaning React | Unchanged — inherited from `CLAUDE.md`, not re-decided |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `RefreshHistoryChart` | `…/Charts/RefreshHistoryChart.tsx:31-63` | Composed bar+line, dual y-axis | **REUSE PATTERN, new component** | The pattern is copied; the component itself is bound to `RefreshLog` and lives in a settings page. Extending it to serve delivery metrics would couple two unrelated screens through one prop-polymorphic chart. |
+| `CumulativeStateTimeChart` | `…/Charts/CumulativeStateTimeChart.tsx:485-544` | Stacked bars, many series, custom tooltip slot | **CREATE NEW** | Different domain (state-time per item vs epic size per day), different x-grain, and it carries an item-picker + adaptive-unit machinery (ADR-028) that has no meaning here. Its *slot* and *stacking* techniques are reused; its component is not. |
+| `getColorMapForKeys` | `utils/theme/colors.ts:303` | Deterministic key→colour map | **EXTEND (use as-is)** | Exactly the need; already used by `CycleTimeScatterPlotChart:231`, `FeatureSizeScatterPlotChart:396`, `WorkDistributionChart:130`, `WorkItemAgingChart:391`. Inventing a second palette rule would drift. |
+| `EnlargeableChart` | `…/Charts/EnlargeableChart.tsx` | Card + enlarge affordance around a chart | **EXTEND (wrap as-is)** | The new card goes inside it like the other three. |
+| `DeliveryFeatureMetric` / `…Dto` | `DeliveryMetricsProjection.cs:10`, `DeliveryMetricsHistoryDto.cs:8` | Per-epic-per-day payload | **EXTEND** | Same grain, same lifecycle. A parallel record would duplicate ADR-048's single source of truth and cost a migration. |
+| `DeliveryMetricSnapshotRecordingHandler` | `…/DomainEvents/…Handler.cs` | Forward recording of every series | **EXTEND (no code change)** | It serialises the projection wholesale, so widening the record is enough. |
+| `getPortfolioBlockedCountHistory` | `lighthouse-clients/packages/client/src/index.ts` | Typed read-only time series through client→CLI→MCP | **REUSE PATTERN, new method** | Same shape, different resource. |
+| `DeliveryBurnupChart` estimated-series styling | `DeliveryBurnupChart.tsx:20-27` | `data-series` CSS selector for a dashed line | **REJECTED for bars** | Verified unavailable: `BarElement` renders no `data-series` attribute (`barClasses.d.ts`). Superseded by ADR-119's slot approach. |
+
+Zero unjustified CREATE NEW decisions.
+
+---
+
+## Wave: DESIGN / [REF] C4 — Container
+
+```mermaid
+C4Container
+  title Epic Size & Count — container view (additive to delivery-metrics)
+  Person(forecaster, "Delivery Forecaster / PO", "Reads the delivery trend before a status report")
+  Person(coach, "Flow Coach", "Reads the same trend via CLI or an AI assistant")
+
+  Container_Boundary(lh, "Lighthouse") {
+    Container(spa, "React SPA", "React 19 + MUI-X 9.0.1", "Metrics tab: Burnup, Predictability, Epic Size & Count, Fever")
+    Container(api, "ASP.NET Core API", ".NET 10", "GET /deliveries/{id}/metrics-history — unchanged route")
+    Container(recorder, "Snapshot recorder", "Domain-event handler", "PortfolioForecastsUpdated -> one row per delivery per day")
+    ContainerDb(db, "Lighthouse DB", "SQLite / Postgres", "DeliveryMetricSnapshot.FeatureBreakdownJson gains 2 optional fields")
+  }
+
+  Container_Boundary(clients, "lighthouse-clients") {
+    Container(cli, "lh CLI", "TypeScript", "lh delivery metrics --delivery-id")
+    Container(mcp, "MCP server", "TypeScript", "lighthouse_delivery_metrics (read-only)")
+  }
+
+  Rel(forecaster, spa, "Opens the Metrics tab")
+  Rel(coach, cli, "Runs")
+  Rel(coach, mcp, "Asks an assistant")
+  Rel(spa, api, "GET metrics-history", "HTTPS")
+  Rel(cli, api, "GET metrics-history", "HTTPS")
+  Rel(mcp, api, "GET metrics-history", "HTTPS")
+  Rel(recorder, db, "Upserts (deliveryId, recordedDay)")
+  Rel(api, db, "Reads snapshots")
+```
+
+## Wave: DESIGN / [REF] C4 — Component (the new chart)
+
+```mermaid
+flowchart TD
+  MT["MetricsTab (DeliverySection.tsx)"] -->|history prop| EC["EnlargeableChart"]
+  EC --> DESC["DeliveryEpicSizeChart"]
+  DESC --> CC["ChartsContainer (dual y-axis)"]
+  CC --> BP["BarPlot"]
+  CC --> LP["LinePlot"]
+  CC --> LEG["ChartsLegend (onItemClick)"]
+  BP --> SLOT["slots.bar: HatchAwareBar"]
+  SLOT --> PAT["svg pattern id=hatch-{useId}"]
+  DESC --> SER["buildSeries()"]
+  SER -->|"count = featureBreakdown.length"| LP
+  SER -->|"per epic: ::actual / ::estimated"| BP
+  SER --> CM["getColorMapForKeys(referenceIds)"]
+  LEG -->|"seriesId"| SEL["selection state (Set)"]
+  SEL --> SER
+```
+
+---
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| ADR | Title | Slice |
+|---|---|---|
+| ADR-118 | Composed `ChartsContainer` bar+line with dual y-axis, not two charts | 01-02 |
+| ADR-119 | Hatch via `slots.bar` renderer over a per-epic actual/estimated series split | 03 |
+| ADR-120 | Breakdown payload extended in place + nullable-likelihood repair | 02 |
+| ADR-121 | CLI/MCP delivery-trend surface summarises client-side | 06 |
+
+---
+
+## Wave: DESIGN / [REF] Open Questions (deferred to DISTILL/DELIVER)
+
+1. **Legend de-duplication** — the `::actual` / `::estimated` split must yield **one** legend entry per epic. Plan: leave the `::estimated` twin unlabelled so MUI-X omits it. DISTILL asserts the legend item count equals the epic count, rather than trusting the behaviour.
+2. **Tooltip on a null twin** — a day where an epic's `::estimated` series is null must not produce an empty tooltip row. Assert, don't assume.
+3. **Right-axis label wording** — "Epics" vs the configured term (D10) on the axis itself, not just the title.
+4. **Stack ordering stability** — with 2n series, the stack order must be pinned by the sorted `referenceId` so bars do not reshuffle between days as membership changes.
+5. **KPI 6 measurement point** — the summarised MCP payload is measured during slice 06 against the longest dogfood delivery; a miss re-sequences ADR-121 behind a backend parameter story.
+
+---
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+**Skipped — no registry.** `docs/product/outcomes/registry.yaml` does not exist in this repository, so
+`nwave-ai outcomes check-delta` has nothing to check against. Recorded here rather than passed over
+silently; the Reuse Analysis table above is the deduplication gate that did run.
+
+---
+
+## Wave: DESIGN / [REF] Handoff
+
+**To**: `nw-platform-architect` (DEVOPS) — KPI section only; no new infrastructure, no new deployment
+surface, no new secret, no new external dependency. Slice 06 adds an npm release to an existing pipeline.
+**Then**: DISTILL, with the five open questions above as explicit assertion targets.

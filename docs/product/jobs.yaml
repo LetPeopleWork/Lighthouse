@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-07-28
+updated: 2026-07-31
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -31,6 +31,7 @@ feature_context:
   - epic-5459-multi-team-forecasts
   - epic-5513-servicenow-integration
   - delivery-joint-likelihood
+  - pricing-adjustment-2026-08
 
 jobs:
   - id: job-rbac-bootstrap
@@ -3883,3 +3884,205 @@ jobs:
         forecasting domain after Epic 5459, served by one read-side seam with no schema change, no new
         endpoint and no clients release. Kept below the "unclosable" tier only because the intra-team
         correlation is approximated (comonotonic min) rather than simulated exactly.
+
+  - id: job-price-cutover-unattended
+    title: Change the list price on a calendar date without being awake for it
+    persona: lighthouse-maintainer
+    feature_context: pricing-adjustment-2026-08
+    job_story: >
+      When our list price changes on a calendar date, I want the website and the Stripe checkout to
+      switch by themselves at that exact moment, so I can ship the change the day before in daylight
+      and not perform a manual cutover at midnight.
+    dimensions:
+      functional: >
+        Move Self-Service from CHF 999 to CHF 2,000/year across nine price statements in six files plus
+        one hardcoded Stripe price id, with the change deployed on 2026-07-31 and taking effect at
+        2026-07-31T22:00:00Z (Swiss midnight) with no deploy at that instant.
+      emotional: >
+        Stop treating a price change as an event to be staffed. Ship it, verify the future by faking the
+        clock, and go to bed knowing the site changes itself.
+      social: >
+        Be the maintainer whose price rise nobody had to coordinate — no "are we live yet?" thread, no
+        window where the site and the invoice disagreed.
+    forces:
+      push: >
+        Every price on letpeople.work is a hardcoded literal — CHF 999 appears in the tier card, the
+        checkout block, the pre-launch banner, the comparison table, llms.txt and the crawler noscript
+        block, and the Stripe price id is inlined in create-payment. There is no cutover mechanism at
+        all: today, a price change on a date means editing all of it and deploying at the moment the
+        date turns.
+      pull: >
+        One pinned instant in one module drives every surface and the server-side Stripe decision. Ship
+        on the 31st, flip at midnight, delete the gate on the 1st. Future price changes become a
+        one-constant edit.
+      anxiety: >
+        The instant lives in TWO places that cannot share a module — src/lib/pricing.ts and the Supabase
+        edge function — so a drift silently makes the page and the checkout disagree. Mitigated by a
+        test asserting the two constants are byte-identical. Second anxiety: three static surfaces
+        (llms.txt, /compare/, the root noscript block) genuinely cannot auto-flip, so the "it flips
+        itself" promise is partial and needs an explicit next-day cleanup slice rather than a claim
+        that everything is automatic.
+      habit: >
+        The reflex is to edit-and-deploy at the moment of the change. The new ritual — deploy early,
+        verify by faking the clock, let the constant fire — only feels safe after the first time it
+        works, which is why the fake-clock run before the deploy is the sign-off, not a nicety.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — a price change is infrequent but it is public, dated, and already
+        pre-announced on the live site, so getting the moment wrong is visible to prospects. Not 5:
+        it moves no product capability. Current satisfaction: 1 — no cutover mechanism exists in any
+        form. Gap: 3 — closed by one module and one server-side resolver, with the residual being three
+        static files that need a human next-day pass.
+
+  - id: job-price-shown-is-price-charged
+    title: Trust that the price on the page is the price on the invoice
+    persona: forecasting-prospect
+    feature_context: pricing-adjustment-2026-08
+    job_story: >
+      When I decide to buy Lighthouse, I want the price on the pricing page to be the amount Stripe
+      actually charges me, so I can put a defensible number in a budget request without fearing a
+      surprise at checkout.
+    dimensions:
+      functional: >
+        The visible tier card, the checkout block, the JSON-LD offer a search engine reads, and the
+        Stripe line item all state one number at any given moment — before and after the cutover.
+      emotional: >
+        Not be ambushed. A price rise announced in advance is fine; a price that changes between the
+        page and the payment step is not.
+      social: >
+        Not be the person who took CHF 999 to their finance lead and came back needing CHF 2,000.
+    forces:
+      push: >
+        The inconsistency is LIVE today, before any of this work: the JSON-LD offers on
+        src/pages/Lighthouse.tsx:534 and src/pages/Index.tsx:86 already publish "price": "2000" while
+        every visible surface says CHF 999. Search engines and AI assistants may already be quoting a
+        price the page contradicts, and there is no mechanism binding the two together.
+      pull: >
+        One resolved value feeds the visible copy, the structured data and the Stripe line item, so the
+        three cannot disagree by construction.
+      anxiety: >
+        A visitor who loads the page minutes before the cutover and clicks buy minutes after it sees one
+        number and is charged another. Accepted rather than solved — the edge function must stay
+        authoritative on price, and the exposure is a few minutes on a single night.
+      habit: >
+        Buyers screenshot a price for a budget request and return days later. That habit is why the
+        transitional "lock CHF 999 for your full term" copy must disappear cleanly at the cutover rather
+        than linger as a half-true promise.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 2
+      gap: 3
+      rationale: >
+        Importance: 5 — this is the money path; a page/invoice mismatch is trust-ending at exactly the
+        moment of purchase. Current satisfaction: 2 — the visible checkout flow is internally consistent
+        today, but the structured data already contradicts it, so machine-mediated answers about price
+        are already wrong. Gap: 3 — closed entirely by binding display and Stripe to one resolved
+        value, with no schema, no new endpoint and no second payment path.
+
+  - id: job-forecaster-attribute-scope-change-to-an-epic
+    title: Name the epic and the day behind a delivery's scope change
+    persona: delivery-forecaster
+    feature_context: epic-size-and-count-over-time
+    created: 2026-07-31
+    note: >
+      Epic 5585, reported by Chris. Extends the Epic 3993 delivery-metrics charts. The burnup already
+      shows THAT the backlog stepped up (DeliveryBurnupChart.tsx Backlog series) but attributes the step
+      to nothing. Load-bearing code fact: DeliveryMetricSnapshot.FeatureBreakdownJson already holds one
+      entry per epic per day (ReferenceId, Name, Completion, Likelihood), so epic COUNT over time is
+      already recorded and needs no new column — unlike epic SIZE, which Delivery.ToFeatureMetric
+      computes and discards, and which is forward-only per the parent journey's D11.
+    job_story: >
+      When a delivery's backlog line steps up and leadership asks why,
+      I want to see how many epics were in the delivery each day and how big each one was,
+      so I can name the epic and the day instead of saying "scope grew" and being asked to prove it.
+    dimensions:
+      functional: >
+        Read an epic-count line and a per-day stacked bar (one segment per epic, height = that epic's
+        total child items regardless of state) alongside the existing burnup; isolate one or more epics
+        via the legend to follow a single trajectory; see epics that left the delivery stop rather than
+        vanish, so a scope cut is as visible as a scope addition.
+      emotional: >
+        Move from the defensiveness of an unattributable number ("scope grew, I don't know where") to
+        the calm of a specific answer ("epic X doubled on the 14th") — without rebuilding it by hand.
+      social: >
+        Be the forecaster who answers the follow-up question in the room rather than promising to dig
+        into it and come back next week.
+    forces:
+      push: >
+        Attribution today means diffing the Work Items tab against memory, or a spreadsheet — the same
+        workaround Epic 3993 set out to kill for the burnup, still alive one level down.
+      pull: >
+        The count line separates "an epic joined" from "an existing epic grew" at a glance, and the
+        stacked bars name which one.
+      anxiety: >
+        A delivery with a dozen epics could render an unreadable stack. Mitigated by the legend
+        click-to-filter (multi-select) and treated as the slice-04 learning hypothesis — if filtering
+        still leaves it unreadable, the chart's form is wrong, not its controls.
+      habit: >
+        Forecasters read the burnup first and stop there. The new chart sits directly under it, in the
+        same tab, so the second look costs no navigation.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — attribution is the immediate follow-up question to every scope step the burnup
+        shows; it recurs in every leadership review. Current satisfaction: 1 — nothing in the product
+        attributes a backlog change to an epic over time. Gap: 3 — the spine of Epic 5585, and the
+        cheapest of the two jobs to serve because the count series is already in the database.
+
+  - id: job-forecaster-know-how-much-of-the-size-is-guessed
+    title: Know how much of a delivery's size is a default guess, and when each epic stopped being one
+    persona: product-owner
+    feature_context: epic-size-and-count-over-time
+    created: 2026-07-31
+    note: >
+      Epic 5585 secondary job; the delivery-forecaster is the secondary persona on it (same chart, no
+      bespoke view). Partially served today: the burnup's dashed "Estimated (not broken down)" line
+      gives the AGGREGATE estimated portion from DeliveryMetricSnapshot.EstimatedItemCount, but never
+      per epic — and it is invisible whenever it falls inside the filled Done area (DeliveryBurnupChart
+      paints the Done series with area: true), which is exactly late in a delivery. Source of truth for
+      the per-epic flag is Feature.IsUsingDefaultFeatureSize, set by
+      WorkItemService.ExtrapolateNotBrokenDownFeatures.
+    job_story: >
+      When part of a delivery's total is the portfolio default size for epics nobody has broken down yet,
+      I want to see which epics are still estimates and the day each one flipped to a real breakdown,
+      so I can say how much of the number is real and chase the epics that aren't.
+    dimensions:
+      functional: >
+        Distinguish a default-sized epic from a broken-down one at segment level (hatched fill plus a
+        tooltip), locate the flip day, and read the aggregate estimated line in the burnup even when it
+        sits below the done count.
+      emotional: >
+        Stop quoting a total that quietly contains guesses — replace the unease of an unqualified number
+        with a qualified one you can defend.
+      social: >
+        Chase the right people for the right breakdown, with the chart rather than authority as the
+        prompt.
+    forces:
+      push: >
+        A delivery total silently mixes real breakdowns with portfolio default sizes; the only signal is
+        an aggregate dashed line that disappears under the Done area exactly when the remaining guessed
+        scope becomes the interesting number.
+      pull: >
+        Hatched segments make the guessed portion per-epic and the estimate-to-actual flip a visible
+        event on a specific day.
+      anxiety: >
+        Hatching could read as a different epic rather than a different confidence. Mitigated by keeping
+        the epic's colour and varying only the fill pattern, plus a tooltip line stating the default.
+      habit: >
+        POs judge breakdown status from the Work Items tab per epic; this asks them to read it off a
+        trend chart instead — eased because it is the same tab they already open for the burnup.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 — an un-qualified delivery total is how forecasts lose credibility, and default
+        sizing is the common early-stage case. Current satisfaction: 2 — an aggregate estimated line
+        exists but is per-delivery, not per-epic, and is invisible under the Done area. Gap: 2 — smaller
+        than the attribution job because it is a refinement of a signal that partly exists, and it rides
+        on the same chart the attribution job pays for.

@@ -1,0 +1,141 @@
+schema_version: 1
+feature_id: pricing-adjustment-2026-08
+updated: 2026-07-31
+
+# ADO #5563 "Adjust Pricing". Self-Service CHF 999 -> CHF 2,000/year, plus the services ladder
+# (pilot 2,000 -> 3,000; Flow Clarity Assessment 3,500 -> 4,500). LIGHTWEIGHT depth (D3 = lightweight):
+# the buyer arc is deliberately uneventful, so the interesting arc is the maintainer's.
+#
+# The whole feature lives in the letpeople.work website repo + Stripe. The Lighthouse product repo
+# holds no price string at all (grep-verified during DISCUSS) and is not touched.
+#
+# The defining constraint (locked D4): the change is DEPLOYED on 2026-07-31 in daylight and TAKES
+# EFFECT by itself at 2026-07-31T22:00:00Z (= 2026-08-01 00:00 Europe/Zurich) with no deploy at the
+# instant. Everything below hangs off that one pinned constant.
+
+shared_artifacts:
+  PRICE_CUTOVER_INSTANT:
+    source_of_truth: "src/lib/pricing.ts (website repo) — the literal string 2026-07-31T22:00:00Z"
+    consumers:
+      - "every price surface in the React app (tier card, banner, rate chip, checkout block, JSON-LD offers)"
+      - "supabase/functions/create-payment/index.ts — DUPLICATED as a local const, because Supabase edge functions cannot import from src/"
+    owner: "pricing-adjustment-2026-08 (website repo)"
+    integration_risk: >
+      HIGH — the instant exists in TWO places that cannot share a module. If they drift, the page and the
+      Stripe checkout disagree for the length of the drift, and a buyer is charged something other than
+      what they read.
+    validation: "AC-1.5 — a test asserts the two constants are byte-identical strings"
+  STRIPE_PRICE_ID_2000:
+    source_of_truth: "Stripe dashboard — price object created by Benjamin (locked D5); the agent never touches live billing config"
+    consumers: ["supabase/functions/create-payment/index.ts line-items, post-cutover branch only"]
+    owner: "Benjamin (Stripe account owner)"
+    integration_risk: >
+      HIGH — a test-mode id pasted into the live path breaks every checkout after the instant, and the
+      failure is invisible until a real buyer hits it. Also BLOCKING: slice 01 cannot ship without it.
+    validation: "AC-2.3 — a real Stripe test-mode session created at a post-cutover clock shows CHF 2,000.00"
+  STRIPE_PRICE_ID_999:
+    source_of_truth: "Stripe — the existing price_1RrMcgKzDcGH6xxwg9ABCbwz"
+    consumers: ["create-payment, pre-cutover branch only"]
+    owner: "Benjamin"
+    integration_risk: "MEDIUM — archiving it before slice 03 ships would break the pre-cutover branch while it is still reachable"
+    validation: "AC-2.4 forbids archival on 31 Jul; AC-4.5 sequences it after the gate is deleted"
+  selfServicePrice:
+    source_of_truth: "src/lib/pricing.ts, resolved from PRICE_CUTOVER_INSTANT"
+    consumers: ["tier card", "checkout block", "pre-launch banner", "JSON-LD Offer on /lighthouse and on /"]
+    owner: "pricing-adjustment-2026-08"
+    integration_risk: >
+      MEDIUM — display only, BUT the JSON-LD offers already publish "2000" today while the visible page
+      says CHF 999. That live inconsistency is what binding both to one source closes.
+    validation: "AC-1.4 — visible card and JSON-LD Offer carry the same number at both clocks"
+  pilotPrice:
+    source_of_truth: "src/lib/pricing.ts"
+    consumers: ["src/components/EngagementPath.tsx — Implement/BYOD step"]
+    owner: "pricing-adjustment-2026-08"
+    integration_risk: "LOW — copy only, mailto CTA, no payment path"
+    validation: "AC-3.1 — CHF 2,000 pre-cutover, CHF 3,000 post-cutover"
+  assessmentPrice:
+    source_of_truth: "src/lib/pricing.ts"
+    consumers: ["src/components/ExpertiseAndServices.tsx — Flow Clarity Assessment"]
+    owner: "pricing-adjustment-2026-08"
+    integration_risk: >
+      LOW mechanically, but it BUNDLES a licence: left at CHF 3,500 its service portion would fall from
+      CHF 2,501 to CHF 1,500 once the licence reaches CHF 2,000. CHF 4,500 restores ~CHF 2,500.
+    validation: "AC-3.2 — CHF 3,500 pre-cutover, CHF 4,500 post-cutover, bundling wording retained"
+
+arcs:
+  - id: maintainer-unattended-cutover
+    persona: lighthouse-maintainer
+    job_id: job-price-cutover-unattended
+    mental_model: >
+      "A price change is a copy edit plus a deploy, and it has to happen at the moment the date turns."
+      The feature exists to break that belief: the deploy and the effect are separated in time. The
+      maintainer's vocabulary is "flip", "cutover", "go live" — the code should use the same words.
+    steps:
+      - step: "Create the CHF 2,000 price object in Stripe, copy the price_... id"
+        output: "a live price id, handed over"
+        emotion: "confident — a dashboard action he has done before"
+      - step: "Hand the id over; it is wired into pricing.ts and create-payment"
+        output: "one constant, one resolver, one duplicated instant"
+        emotion: "confident"
+      - step: "Run the suite with the clock faked past the instant"
+        output: "the same code renders CHF 2,000 and resolves the new Stripe price"
+        emotion: "reassured — the future was observed before it happened"
+      - step: "Deploy once, in daylight, on 31 July"
+        output: "gate live, site still showing CHF 999"
+        emotion: "done, not on standby"
+      - step: "22:00:00Z — nothing happens, by design"
+        output: "page and checkout both read CHF 2,000 on the next request"
+        emotion: "unattended — the peak of this arc is the ABSENCE of an action"
+      - step: "1 August, at leisure: delete the gate and the now-dead transitional JSX"
+        output: "one flat price everywhere, no unreachable branch"
+        emotion: "tidy"
+    # Revised D9 (2026-07-31, user): the three static crawler surfaces (llms.txt, /compare/, the root
+    # noscript block) are set to CHF 2,000 FLAT on the 31 Jul deploy, not on the 1st. They cannot gate,
+    # so the choice is which side of the instant they are wrong on — and a crawler caching the durable
+    # number early beats one caching the dead number for a week. The human path stays gated and correct.
+    emotional_arc: "confident -> confident -> reassured -> done -> unattended -> tidy (rising; the summit is a night with no work in it)"
+
+  - id: buyer-price-shown-is-price-charged
+    persona: forecasting-prospect
+    job_id: job-price-shown-is-price-charged
+    mental_model: >
+      "The number on the pricing page is the number my finance person will see on the invoice." The
+      buyer does not know a cutover exists and must never need to.
+    steps:
+      - step: "Read the Self-Service card"
+        output: "CHF 999 before the instant, CHF 2,000 at-or-after it — and no stale 'from August 2026' chip once it has passed"
+        emotion: "oriented"
+      - step: "Fill the licence form and click through"
+        output: "Stripe checkout opens at the SAME amount the card showed"
+        emotion: "unsurprised — the whole point"
+      - step: "Pay; the existing webhook issues the licence"
+        output: "licence mail, unchanged by this feature"
+        emotion: "done"
+    emotional_arc: "oriented -> unsurprised -> done (deliberately FLAT — a price change should not feel eventful to someone mid-evaluation)"
+
+error_paths:
+  - trigger: "Stripe price id not handed over before the 31 Jul deploy window closes"
+    detection: "slice 01 cannot satisfy AC-2.3"
+    recovery: >
+      Ship slice 02 (services, no Stripe dependency) and STOP. Do NOT deploy a half-gated licence path.
+      Escalate immediately — the fallback is a manual midnight cutover, which is the outcome this
+      feature exists to avoid.
+  - trigger: "The two cutover constants drift (src/lib/pricing.ts vs create-payment)"
+    detection: "AC-1.5 identity test fails in CI"
+    recovery: "Hard-block the deploy. A drift means page and checkout disagree in production."
+  - trigger: "Deploy lands AFTER 22:00:00Z on 31 July"
+    detection: "deploy timestamp vs the constant"
+    recovery: >
+      The gate is then already in its post-cutover branch — outcome is correct, but the 'zero deploys at
+      the instant' KPI is missed. Ship anyway; record the miss.
+  - trigger: "Visitor loads the page at 23:58 and buys at 00:01"
+    detection: "not detectable; the page render and the checkout call are minutes apart"
+    recovery: >
+      ACCEPTED, not mitigated (risk R2). The edge function stays authoritative on price. Exposure is a
+      few minutes on one night.
+  - trigger: "CHF 999 price object archived too early"
+    detection: "pre-cutover checkout returns a Stripe error on an inactive price"
+    recovery: "Un-archive in Stripe. AC-2.4 forbids archival until slice 03 has removed the branch."
+  - trigger: "A price surface was missed in the DISCUSS inventory"
+    detection: "slice 03's AC-4.2 grep finds a literal outside src/lib/pricing.ts"
+    recovery: "Fix in slice 03 and record it — the miss means visitors read a wrong price overnight."

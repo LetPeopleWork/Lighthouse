@@ -3870,3 +3870,70 @@ to ADR-117's `opened_at` where it is not (ADR-118 decision 7, ratified 2026-07-3
 not switch. **No upgrade consequence** — no ServiceNow code has ever been released, so slices 01, 02
 and 04 ship together. The residual is **mixed provenance within one sync**: records predating the
 metric definition fall back to `opened_at` alongside teammates using span starts. Accepted for v1.
+
+---
+
+## Application Architecture — epic-size-and-count-over-time
+
+Feature: epic-size-and-count-over-time (Epic 5585 — a fourth chart on the per-delivery Metrics tab:
+epic count over time as a line, per-epic size as a stacked bar, estimated sizes hatched, legend
+click-to-filter; plus the burnup's estimated-line visibility repair and a CLI/MCP port for the whole
+delivery trend)
+Wave: DESIGN
+Date: 2026-07-31
+Architect: Morgan (Solution Architect), scope = application/components, mode = propose
+Status: Accepted — ADR-118, ADR-119, ADR-120, ADR-121
+
+This section is **additive** to `## Application Architecture — delivery-metrics`. Pattern
+(ports-and-adapters), paradigm (OOP backend, functional-leaning React), the single `DeliveryMetricSnapshot`
+store (ADR-048), its date-keyed idempotent forward recorder (ADR-049) and the single `metrics-history`
+endpoint (ADR-050) are all unchanged and re-used as-is. **No new table, no EF migration, no new route, no
+new domain event, no new external dependency, no new RBAC or licensing surface.**
+
+Three things are new:
+
+1. **A composed chart.** `DeliveryEpicSizeChart` is the first Lighthouse chart to compose a bar plot and
+   a line plot on two y-axes (`ChartsContainer` + `<BarPlot />` + `<LinePlot />`, items left, epic count
+   right). The technique already existed in `RefreshHistoryChart.tsx` on the same pinned `@mui/x-charts@9.0.1`;
+   this promotes it to the delivery surface. See ADR-118.
+2. **Per-item bar styling.** Estimated (portfolio-default) epic sizes render hatched through a custom
+   `slots.bar` renderer keyed on `BarElementOwnerState.seriesId`, over a per-epic `::actual` / `::estimated`
+   series split, with the SVG `<pattern>` id derived from `useId()` so simultaneously expanded deliveries
+   cannot collide. The burnup's `data-series` CSS-selector technique does **not** transfer — `BarElement`
+   renders no such attribute. See ADR-119.
+3. **A per-epic payload widening, plus a repair.** `DeliveryFeatureMetric` gains `TotalItems` and
+   `IsUsingDefaultSize`; the DTO gains them as nullable so pre-existing snapshots still parse. In the same
+   change, `DeliveryFeatureMetricDto.Likelihood` widens to `double?`: the domain has produced a nullable
+   per-feature likelihood since ADR-112, the recorder serialises it verbatim, and the non-nullable DTO
+   would throw `JsonException` on deserialisation — a 500 for the whole delivery's metrics-history,
+   pre-existing and untested. See ADR-120.
+
+**Invariants preserved.** Row identity stays `(deliveryId, RecordedDay)` with upsert-on-key (ADR-049) —
+the widened payload changes what a row carries, never how many rows exist. Forward-only remains the rule
+for the two new fields. The one series that is *not* forward-only is the epic **count**, which is derived
+from the length of the already-recorded `featureBreakdown` array and therefore has real retroactive
+history; that divergence is deliberate and documented in the feature's journey (D3).
+
+**Client port.** `lighthouse-clients` gains `getDeliveryMetricsHistory`, an `lh delivery metrics` command
+and a read-only `lighthouse_delivery_metrics` MCP tool, all against the unchanged endpoint. The payload is
+summarised **client-side** (one row per day, per-epic detail behind an opt-in) rather than by adding a
+backend range/projection parameter — the endpoint takes no parameters today and returns the entire series.
+See ADR-121.
+
+### C4
+
+Container (L2) and Component (L3) in Mermaid:
+`docs/feature/epic-size-and-count-over-time/feature-delta.md` → "Wave: DESIGN / [REF] C4". L1 omitted —
+the system context is unchanged from delivery-metrics.
+
+### ADRs
+
+- [ADR-118](./adr-118-epic-size-count-composed-bar-line-chart.md) — one composed `ChartsContainer`
+  (bar stack + line, dual y-axis), not two charts.
+- [ADR-119](./adr-119-estimated-epic-size-hatch-via-bar-slot-and-series-split.md) — hatch via a
+  `slots.bar` renderer over a per-epic actual/estimated series split; the burnup's `data-series` CSS
+  trick is verified unavailable for bars.
+- [ADR-120](./adr-120-feature-breakdown-payload-extension-and-nullable-likelihood-repair.md) — extend the
+  breakdown payload in place; repair the nullable-likelihood mismatch in the same change.
+- [ADR-121](./adr-121-delivery-metrics-history-client-projection.md) — the CLI/MCP delivery-trend surface
+  summarises client-side; no backend projection parameter.
