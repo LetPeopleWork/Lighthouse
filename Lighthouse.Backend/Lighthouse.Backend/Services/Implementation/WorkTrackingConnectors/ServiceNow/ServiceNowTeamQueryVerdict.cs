@@ -25,8 +25,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// </remarks>
     public static class ServiceNowTeamQueryVerdict
     {
-        /// <summary>The settings field every one of these verdicts sends the flow coach back to.</summary>
+        /// <summary>The settings field the query verdicts send the flow coach back to.</summary>
         private const string QueryFieldName = "DataRetrievalValue";
+
+        /// <summary>The settings field the kind-of-work verdicts send them to instead.</summary>
+        private const string KindsOfWorkFieldName = "WorkItemTypes";
+
+        /// <summary>
+        /// Rung 0c — the team reads a table that holds several kinds of record and has not said which
+        /// of them are its own. Pre-flight, no IO.
+        /// </summary>
+        /// <remarks>
+        /// ADR-123 decision 4. This is the missing-query rule on the kind-of-work dimension, and it
+        /// lives here as well as in the schema flag because <c>isWorkItemTypesRequired</c> is a hint
+        /// to the web UI while <c>PUT /api/teams/{id}</c> also serves the CLI and the MCP server,
+        /// neither of which reads the schema.
+        /// </remarks>
+        public static ConnectionValidationResult FromMissingWorkItemTypes(string table)
+        {
+            return ConnectionValidationResult.Failure(
+                "missing_work_item_types",
+                $"The ServiceNow table '{table}' holds several kinds of record, so this team has to say which kinds are its own. Enter them as work item types, using the system names ServiceNow stores — 'change_request', not 'Change Request'. Reading '{table}' without them would return every kind of work in the instance.",
+                // Stryker disable once String: a support-log restatement of the message above, which is
+                // what the flow coach acts on. Nothing branches on this line.
+                $"The team reads '{table}', which has descendants, and named no work item types.",
+                KindsOfWorkFieldName);
+        }
 
         /// <summary>
         /// Rung 0 — the team carries no ServiceNow query. Pre-flight, no IO.

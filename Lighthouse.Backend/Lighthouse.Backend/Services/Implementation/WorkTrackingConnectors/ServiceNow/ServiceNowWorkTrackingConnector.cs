@@ -536,25 +536,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             var connection = team.WorkTrackingSystemConnection;
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
-            var table = ResolveWorkItemTable(connection);
+            var scope = ReadScopeFor(connection, team);
+
+            if (scope.ReadsAWholeHierarchy)
+            {
+                return ServiceNowTeamQueryVerdict.FromMissingWorkItemTypes(scope.Table);
+            }
 
             try
             {
-                var matched = await CountRows(connection, instanceUrl, table, teamsOwnQuery);
+                // ADR-124 decision 3: both counts are scoped to the kinds of work the team named, so
+                // the ratio keeps meaning "how much of your work did this query select" rather than
+                // "how much of the instance". For a team that named none the two are the shipped pair.
+                var matched = await CountRows(connection, instanceUrl, scope.Table, scope.ScopedQuery(teamsOwnQuery));
 
                 if (matched.Problem is not null)
                 {
                     return matched.Problem;
                 }
 
-                var everything = await CountRows(connection, instanceUrl, table, query: null);
+                var everything = await CountRows(connection, instanceUrl, scope.Table, scope.BaselineQuery());
 
                 if (everything.Problem is not null)
                 {
                     return everything.Problem;
                 }
 
-                return ServiceNowTeamQueryVerdict.FromTeamProbe(table, matched.Count, everything.Count);
+                return ServiceNowTeamQueryVerdict.FromTeamProbe(scope.Table, matched.Count, everything.Count);
             }
             catch (HttpRequestException exception)
             {

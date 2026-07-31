@@ -205,6 +205,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Name = "Service Desk",
                 DataRetrievalValue = TeamsOwnQuery,
+                // A shipped ServiceNow team names no kinds of work; Team's own default is the
+                // Jira-shaped list, which this connector never sees (#5611).
+                WorkItemTypes = [],
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],

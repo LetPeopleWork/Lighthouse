@@ -699,6 +699,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Name = "Service Desk",
                 DataRetrievalValue = query,
+                // What a shipped ServiceNow team actually holds. Team's own default is the
+                // Jira-shaped ["User Story", "Bug"], which no ServiceNow team ever persists: the
+                // field is hidden for this connector and every save path writes the DTO's empty
+                // list. Leaving the default here would model a team that cannot exist (#5611).
+                WorkItemTypes = [],
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Resolved", "Closed"],

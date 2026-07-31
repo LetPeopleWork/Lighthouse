@@ -149,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // and PUT /api/teams/{id} also serves the CLI and the MCP server. A gate that lives only in
         // the schema flag is a gate the API does not have.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_IsAskedWhichKindsWithoutContactingTheInstance()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
@@ -299,7 +298,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // much of YOUR kind of work did this query select, rather than how much of the instance.
         // Left alone, a hierarchy-rooted team compares a correct answer against the whole hierarchy.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamThatHandlesSeveralKindsOfWork_MeasuresItsQueryAgainstItsOwnKindsOfWork()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
