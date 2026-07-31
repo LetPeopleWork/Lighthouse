@@ -134,7 +134,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             try
             {
-                var definitions = await ReadStateSpanDefinitions(connection, table);
+                var definitions = await ReadStateSpanDefinitions(connection, [table]);
 
                 return ServiceNowHistoryVerdict.ToValidationResult(definitions.Availability, table);
             }
@@ -169,19 +169,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             }
 
             var connection = team.WorkTrackingSystemConnection;
-            var table = ResolveWorkItemTable(connection);
-            var records = (await ReadEveryPage(connection, table, teamsOwnQuery, WhenRefused.Fail)).Records;
+            var scope = ReadScopeFor(connection, team);
+
+            // ADR-123 decision 4: the missing-query rule above, on the kind-of-work dimension.
+            // Unfiltered, the same team read 579 records of 13 kinds where it wanted 159 of 2.
+            if (scope.ReadsAWholeHierarchy)
+            {
+                logger.LogWarning(
+                    "Team {TeamName} reads the ServiceNow table {Table}, which holds several kinds of work, but has not said which kinds are its own, so no work was read. Asking that table without naming them would return every kind in it.",
+                    team.Name, scope.Table);
+
+                return [];
+            }
+
+            var records = (await ReadEveryPage(connection, scope.Table, scope.ScopedQuery(teamsOwnQuery), WhenRefused.Fail)).Records;
 
             var mapped = records
                 .Select(record => new MappedRecord(
                     ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
-                    ServiceNowWorkItemMapper.MapRecord(record, team, table)))
+                    ServiceNowWorkItemMapper.MapRecord(record, team, scope.Table)))
                 .ToList();
 
             ReportStatesTheTeamNeverMapped(mapped, team);
 
-            var history = await ReadHistory(connection, table, mapped, team);
+            var history = await ReadHistory(connection, scope, mapped, team);
 
             // Linear's precedent: a team only sees work in the states it has mapped. An unmapped
             // label is work the flow coach never told Lighthouse how to interpret.
@@ -227,7 +239,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // into state transitions. What the instance answers here is also the only evidence
         // SupportsTransitionHistory ever answers from.
         private async Task<Dictionary<string, List<ServiceNowStateSpan>>> ReadHistory(
-            WorkTrackingSystemConnection connection, string table, List<MappedRecord> mapped, Team team)
+            WorkTrackingSystemConnection connection, ServiceNowReadScope scope, List<MappedRecord> mapped, Team team)
         {
             var recordIds = mapped
                 .Select(entry => entry.RecordId)
@@ -240,7 +252,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return [];
             }
 
-            var definitions = await ReadStateSpanDefinitions(connection, table);
+            var definitions = await ReadStateSpanDefinitions(connection, scope.DefinitionTables());
             observedAvailability = definitions.Availability;
 
             if (definitions.Availability != ServiceNowHistoryAvailability.Available)
@@ -301,10 +313,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // ADR-118 D5: capability is read from the instance, never inferred — the administrator's
         // validation and the sync ask this same question of the same table.
         private async Task<StateSpanDefinitions> ReadStateSpanDefinitions(
-            WorkTrackingSystemConnection connection, string table)
+            WorkTrackingSystemConnection connection, List<string> definitionTables)
         {
             var read = await ReadEveryPage(
-                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(table), WhenRefused.Downgrade);
+                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(definitionTables), WhenRefused.Downgrade);
 
             var definitionIds = read.Records
                 .Select(ServiceNowWorkItemMapper.ReadRecordId)
@@ -833,6 +845,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 $"{instanceUrl.TrimEnd('/')}/api/now/table/{Uri.EscapeDataString(table)}?{parameters}",
                 UriKind.Absolute,
                 out tableUri);
+        }
+
+        private static ServiceNowReadScope ReadScopeFor(WorkTrackingSystemConnection connection, Team team)
+        {
+            return ServiceNowReadScope.For(ResolveWorkItemTable(connection), team.WorkItemTypes);
         }
 
         private static string ResolveWorkItemTable(WorkTrackingSystemConnection connection)

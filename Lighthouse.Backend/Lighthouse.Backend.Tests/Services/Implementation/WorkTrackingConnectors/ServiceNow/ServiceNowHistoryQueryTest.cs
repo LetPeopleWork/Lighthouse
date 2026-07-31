@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void TheDefinitionQuery_AsksForTheTypeByTheValueTheInstanceStores()
         {
-            var query = ServiceNowHistoryQuery.DefinitionQueryFor(Table);
+            var query = ServiceNowHistoryQuery.DefinitionQueryFor([Table]);
 
             using (Assert.EnterMultipleScope())
             {

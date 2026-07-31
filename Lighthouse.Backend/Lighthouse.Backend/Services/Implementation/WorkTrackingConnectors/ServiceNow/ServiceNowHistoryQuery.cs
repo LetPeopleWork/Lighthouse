@@ -48,11 +48,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// The query that finds the definitions measuring state spans on the configured table.
+        /// The query that finds the definitions measuring state spans on the tables a team's work
+        /// can sit on.
         /// </summary>
-        public static string DefinitionQueryFor(string table)
+        /// <remarks>
+        /// ADR-123 decision 9. Definitions attach to concrete record classes and never to a base
+        /// table — measured 0 for <c>table=task</c> against 6 for
+        /// <c>tableINincident,change_request</c> — so a team covering several kinds of work looks on
+        /// each of them. Same two-form rule as the class clause, for the same reason.
+        /// </remarks>
+        public static string DefinitionQueryFor(List<string> tables)
         {
-            return $"{DefinitionTableField}={table}^{DefinitionTypeField}={StateSpanDefinitionType}";
+            return $"{ServiceNowReadScope.Matching(DefinitionTableField, tables)}^{DefinitionTypeField}={StateSpanDefinitionType}";
         }
 
         /// <summary>

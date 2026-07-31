@@ -44,7 +44,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // Lighthouse team at both and sees both, each labelled with the kind of work it actually is —
         // and sees nothing of the third kind sitting in the same hierarchy.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ATeamThatHandlesIncidentsAndChanges_SeesBothKindsOfWorkAsOneTeam()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
@@ -65,7 +64,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC-B1. One read, one paging walk, one repeat guard — the whole reason the model is a class
         // filter rather than a read per kind of work (D2).
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ATeamThatHandlesSeveralKindsOfWork_AsksForThemInOneRead()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
@@ -91,7 +89,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // ADR-123 decision 2's other half. A one-element IN was never measured and the equals form
         // was, so a team on a single kind of work asks the shape that is on record.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ATeamThatHandlesOneKindOfWork_AsksForItByName()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
@@ -129,7 +126,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // rather than everything") applied to the kind-of-work dimension. Unfiltered, the same team
         // reads the whole instance's work: 579 records of 13 kinds where it wanted 159 of 2.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ATeamOnTheWholeHierarchyThatNamedNoKindsOfWork_ReadsNothingRatherThanEverything()
         {
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
@@ -327,7 +323,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // a team on the whole hierarchy finds zero definitions and silently loses every started date
         // and state span slice 04 shipped — via the very feature that recommends rooting there.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ATeamThatHandlesSeveralKindsOfWork_LooksForStateHistoryOnEachOfThoseKinds()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
@@ -570,7 +565,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             private static List<string> NamedIn(string query)
             {
-                foreach (var condition in query.Split('^', StringSplitOptions.RemoveEmptyEntries))
+                // The encoded query is one parameter among several, and the clause is prepended
+                // inside it — so the first condition carries "…&sysparm_query=" ahead of it.
+                foreach (var condition in EncodedQueryIn(query).Split('^', StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (condition.StartsWith("sys_class_nameIN", StringComparison.Ordinal))
                     {
@@ -584,6 +581,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 }
 
                 return [];
+            }
+
+            private static string EncodedQueryIn(string query)
+            {
+                const string parameter = "sysparm_query=";
+
+                var start = query.IndexOf(parameter, StringComparison.Ordinal);
+
+                return start < 0 ? string.Empty : query[(start + parameter.Length)..];
             }
 
             private static HttpResponseMessage Rows(List<string> rows, int holds)

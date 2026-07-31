@@ -4,17 +4,27 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
-    // Story #5574 / ADR-114. The verdict ladder is the only interesting logic in the connection
-    // slice and the only place the "denial wearing a success costume" bug can be caught. Keeping
-    // it a pure function is what makes all seven rungs reachable without an HttpMessageHandler
-    // mock — which is in turn what makes the Stryker density of the DoD affordable. The moment it
-    // acquires a client, a logger or a DbContext, the rungs stop being unit-testable and the
-    // ladder rots.
+    // Story #5574 / ADR-114, widened by #5611. The verdict ladders are the only interesting logic in
+    // the connection and team-settings slices and the only place the "denial wearing a success
+    // costume" bug can be caught. Keeping them pure functions is what makes every rung reachable
+    // without an HttpMessageHandler mock — which is in turn what makes the Stryker density of the
+    // DoD affordable. The moment one acquires a client, a logger or a DbContext, the rungs stop
+    // being unit-testable and the ladder rots.
     [TestFixture]
     public class ServiceNowValidationVerdictPurityArchUnitTest
     {
-        private const string Verdict =
-            "Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowValidationVerdict";
+        private const string Namespace = "Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow";
+
+        private const string Verdict = Namespace + ".ServiceNowValidationVerdict";
+
+        // Story #5611 / ADR-124 decision 4. The team-settings ladder answers the same question in the
+        // same vocabulary and was never covered here; the class rungs are what make that a gap worth
+        // closing. ServiceNowReadScope and ServiceNowTableHierarchy join it as the slice's new cores.
+        private const string TeamQueryVerdict = Namespace + ".ServiceNowTeamQueryVerdict";
+
+        private const string ReadScope = Namespace + ".ServiceNowReadScope";
+
+        private const string TableHierarchy = Namespace + ".ServiceNowTableHierarchy";
 
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
         private const string LoggingPattern = @"^Microsoft\.Extensions\.Logging($|\..*)";
@@ -25,6 +35,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheVerdictLadder_DoesNotSpeakHttp()
         {
             Types().That().HaveFullName(Verdict)
+                .Or().HaveFullName(TeamQueryVerdict)
+                .Or().HaveFullName(ReadScope)
+                .Or().HaveFullName(TableHierarchy)
                 .Should().NotDependOnAny(Types().That().HaveFullName("System.Net.Http.HttpClient")
                     .Or().HaveFullName("System.Net.Http.HttpMessageHandler")
                     .Or().HaveFullName("System.Net.Http.HttpResponseMessage")
@@ -40,6 +53,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheVerdictLadder_DoesNotLog()
         {
             Types().That().HaveFullName(Verdict)
+                .Or().HaveFullName(TeamQueryVerdict)
+                .Or().HaveFullName(ReadScope)
+                .Or().HaveFullName(TableHierarchy)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(LoggingPattern))
                 .Because(
                     "ADR-114: the verdict is return-only. Anything worth saying about a rung belongs in the " +
@@ -51,6 +67,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheVerdictLadder_DoesNotReachForThePersistenceLayer()
         {
             Types().That().HaveFullName(Verdict)
+                .Or().HaveFullName(TeamQueryVerdict)
+                .Or().HaveFullName(ReadScope)
+                .Or().HaveFullName(TableHierarchy)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(PersistencePattern))
                 .Because(
                     "ADR-114: the verdict is a pure function of what the instance answered. A lookup against " +
