@@ -25,6 +25,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string InstanceUrl = "https://dev12345.service-now.com/";
         private const string TeamsOwnQuery = "assignment_group.name=Service Desk^active=true";
         private const string RecordId = "7f10b53a83da4310ad56c670ceaad387";
+
+        // A record the team calls finished, whose closed_at and whose Resolved span name different
+        // instants — which is what lets one assertion tell the two sources apart (ADR-117 amended).
+        private const string FinishedRecordId = "bbbb222283da4310ad56c670ceaad311";
+
         private const string StateSpanDefinition = "35f2b283c0a808ae000b7132cd0a4f55";
 
         // AC1. The whole point of the slice: the connector stops answering from a constant and starts
@@ -133,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(spanReads, Has.Count.EqualTo(1), "Two records fit in one batch of 200.");
+                Assert.That(spanReads, Has.Count.EqualTo(1), "Three records fit in one batch of 200.");
                 Assert.That(spanReads[0], Does.Contain("idIN"), "The batch is an IN list of sys_ids, which is what makes one call enough.");
             }
         }
@@ -182,6 +187,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 20, 6, 0, 0, DateTimeKind.Utc)),
                 "ADR-117's fallback. Inflated by queue time, and the only thing the record itself supports.");
+        }
+
+        // ADR-117 decision 1 as amended 2026-07-31, the counterpart of decision 7. Where the spans
+        // exist they say when the work reached Done, and they outrank closed_at — which is what makes
+        // a shop that never moves a record past Resolved measurable at all.
+        [Test]
+        public async Task WhenHistoryIsAvailable_WorkFinishedWhenItReachedDone()
+        {
+            var instance = AnInstanceThatMeasuresStateSpans();
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc)),
+                "Not closed_at, which this record puts a day later. The span is when the work actually stopped.");
+        }
+
+        [Test]
+        public async Task WhenHistoryIsUnavailable_WorkFinishedWhenTheRecordSaysItClosed()
+        {
+            var instance = AnInstanceRefusing(HttpStatusCode.Forbidden);
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 31, 15, 0, 0, DateTimeKind.Utc)),
+                "ADR-117's fallback. closed_at is the only instant on the record that means the work is over.");
         }
 
         // A team whose query matched nothing must not ask for the history of every record in the
@@ -251,17 +283,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static StubbedInstance AnInstanceThatMeasuresStateSpans()
         {
-            return AnInstanceHolding(TwoRecords(), measuresStateSpans: true);
+            return AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
         }
 
         private static StubbedInstance AnInstanceThatMeasuresNothing()
         {
-            return AnInstanceHolding(TwoRecords(), measuresStateSpans: false);
+            return AnInstanceHolding(ThreeRecords(), measuresStateSpans: false);
         }
 
         private static StubbedInstance AnInstanceRefusing(HttpStatusCode statusCode)
         {
-            return AnInstanceHolding(TwoRecords(), measuresStateSpans: false, metricStatusCode: statusCode);
+            return AnInstanceHolding(ThreeRecords(), measuresStateSpans: false, metricStatusCode: statusCode);
         }
 
         private static StubbedInstance AnInstanceHolding(
@@ -270,14 +302,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return new StubbedInstance(records, measuresStateSpans, metricStatusCode);
         }
 
-        private static List<string> TwoRecords()
+        private static List<string> ThreeRecords()
         {
-            return [ARecord("INC0000001", RecordId, "In Progress"), ARecord("INC0000002", "aaaa1111", "New")];
+            return
+            [
+                ARecord("INC0000001", RecordId, "In Progress"),
+                ARecord("INC0000002", "aaaa1111", "New"),
+                ARecord("INC0000003", FinishedRecordId, "Resolved", closedAt: "2026-07-31 15:00:00"),
+            ];
         }
 
         // opened_at is deliberately nine days before the In Progress span: that gap is the queue time
         // ADR-117 has been counting as work, and the thing this slice removes.
-        private static string ARecord(string number, string sysId, string state)
+        private static string ARecord(string number, string sysId, string state, string closedAt = "")
         {
             return $$"""
                 {
@@ -287,8 +324,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                   "state": { "display_value": "{{state}}", "value": "2" },
                   "sys_created_on": { "display_value": "2026-07-19 23:00:00", "value": "2026-07-20 06:00:00" },
                   "opened_at": { "display_value": "2026-07-19 23:00:00", "value": "2026-07-20 06:00:00" },
-                  "resolved_at": { "display_value": "", "value": "" },
-                  "closed_at": { "display_value": "", "value": "" }
+                  "closed_at": { "display_value": "{{closedAt}}", "value": "{{closedAt}}" }
                 }
                 """;
         }
@@ -361,6 +397,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     [
                         ASpan(RecordId, "New", "2026-07-20 06:00:00"),
                         ASpan(RecordId, "In Progress", "2026-07-29 09:00:00"),
+                        ASpan(FinishedRecordId, "In Progress", "2026-07-29 09:00:00"),
+                        ASpan(FinishedRecordId, "Resolved", "2026-07-30 10:00:00"),
                     ]);
             }
 

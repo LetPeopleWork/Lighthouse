@@ -214,21 +214,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC2 end to end through the connector, because the mapper being right is worth nothing if
         // the connector reads the wrong form of the response.
         [Test]
-        public async Task WorkThatWasResolvedButNeverClosed_ArrivesWithTheDayItFinished()
+        public async Task WorkThatWasClosed_ArrivesWithTheDayItFinished()
         {
             var instance = AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10);
             var subject = CreateSubject(instance);
 
             var workItems = await subject.GetWorkItemsForTeam(ATeam());
-            var resolvedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
+            var finishedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(resolvedItem, Is.Not.Null);
-                Assert.That(resolvedItem?.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 0, 25, 29, DateTimeKind.Utc)),
-                    "resolved_at is set and closed_at is empty, and the universal form of resolved_at falls on the 30th.");
-                Assert.That(resolvedItem?.State, Is.EqualTo("Resolved"),
+                Assert.That(finishedItem, Is.Not.Null);
+                Assert.That(finishedItem?.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 0, 25, 29, DateTimeKind.Utc)),
+                    "The universal form of closed_at falls on the 30th and the instance-local form on the 29th.");
+                Assert.That(finishedItem?.State, Is.EqualTo("Resolved"),
                     "The label the service desk uses, not the choice value 6.");
+            }
+        }
+
+        // ADR-117 decision 1's accepted cost, amended 2026-07-31, end to end. resolved_at is not read
+        // at all, so a team that calls Resolved finished on an instance Lighthouse cannot read state
+        // spans from gets the item with no day on it — out of Throughput, and finished everywhere
+        // else. The way out is the instance's own history, not a second-choice field on the record.
+        [Test]
+        public async Task WorkTheTeamCallsFinishedThatTheRecordDoesNotSayItFinished_ArrivesWithNoDay()
+        {
+            var instance = AnInstanceHolding([ARecord("INC0000009", "Resolved", "6")], pageSize: 10);
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.StateCategory, Is.EqualTo(StateCategories.Done));
+                Assert.That(workItem.ClosedDate, Is.Null);
             }
         }
 
@@ -768,8 +787,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return connection;
         }
 
-        // INC0000001 is the record ADR-117 is about: resolved, never closed, and its resolution
-        // instant falls on a different day in the instance's own timezone than in universal time.
+        // INC0000001 is the record ADR-117 is about: closed, with a closure instant that falls on a
+        // different day in the instance's own timezone than in universal time.
         // INC0000005 sits in a label the team has not mapped.
         private static List<string> FiveRecordsOfMixedState()
         {
@@ -807,8 +826,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             string number,
             string stateLabel,
             string stateValue,
-            string resolvedDisplay = "",
-            string resolvedValue = "",
+            string closedDisplay = "",
+            string closedValue = "",
             string sysId = "")
         {
             return $$"""
@@ -819,8 +838,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                   "state": { "display_value": "{{stateLabel}}", "value": "{{stateValue}}" },
                   "sys_created_on": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                   "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
-                  "resolved_at": { "display_value": "{{resolvedDisplay}}", "value": "{{resolvedValue}}" },
-                  "closed_at": { "display_value": "", "value": "" }
+                  "closed_at": { "display_value": "{{closedDisplay}}", "value": "{{closedValue}}" }
                 }
                 """;
         }
@@ -835,7 +853,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                   "state": { "display_value": "New", "value": "1" },
                   "sys_created_on": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                   "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
-                  "resolved_at": { "display_value": "", "value": "" },
                   "closed_at": { "display_value": "", "value": "" }
                 }
                 """;

@@ -8,7 +8,11 @@
 - **Supersedes nothing. Constrains**: slice 02 scope, slice 04 scope.
 - **Amended 2026-07-30 by [ADR-118](./adr-118-servicenow-transition-history-from-metric-instance-spans.md)**:
   decision 2 below now describes only the **no-history** path. Where `metric_instance` is readable,
-  `StartedDate` is the first Doing span's `start`. Decisions 1 and 3 stand unchanged.
+  `StartedDate` is the first Doing span's `start`.
+- **Amended 2026-07-31 (maintainer ruling, Story 5611)**: decision 1 is **reversed and rewritten**
+  below — `ClosedDate` comes from the transition history where there is one and from `closed_at`
+  where there is not, and `resolved_at` is not read at all. Decision 3 stands, with
+  "request-to-resolution" now reading **request-to-closure**.
 
 ## Context
 
@@ -48,18 +52,44 @@ only state 7 (Closed) populates it.
 
 ## Decision
 
-**1. `ClosedDate` = `resolved_at`, falling back to `closed_at`.**
+**1. `ClosedDate` = the arrival in Done from the record's transition history, falling back to
+`closed_at`. `resolved_at` is not read.** *(Rewritten 2026-07-31; the original text is quoted and
+answered below.)*
 
-Keying on `closed_at` alone would silently drop every resolved-but-not-closed incident from Throughput
-— the same denial-in-a-success-costume shape as the epic's headline bug, and just as invisible. Many
-ITSM shops never move records past Resolved.
+Where the instance measures state spans, the finish instant is the start of the **latest** span whose
+label the team maps to Done — the same source `StartedDate` already uses (ADR-118 decision 7), and
+latest rather than earliest because a record resolved, reopened and resolved again finished on the
+second arrival. Where there are no spans, `closed_at` stands. Either way only work the team maps to
+Done carries a finish date at all.
+
+The original decision read `ClosedDate = resolved_at, falling back to closed_at`, and its stated
+reason was:
+
+> Keying on `closed_at` alone would silently drop every resolved-but-not-closed incident from
+> Throughput — the same denial-in-a-success-costume shape as the epic's headline bug, and just as
+> invisible. Many ITSM shops never move records past Resolved.
+
+**That reasoning is deliberately reversed.** Maintainer, 2026-07-31: *"if we don't have transitions,
+we assume closed is closed, resolved is a doing state. That is fair. If you want proper metrics, set
+up your SNOW instance."* A resolved-but-not-closed record is not finished work being dropped — it is
+work in a Doing state, and counting it in Throughput was the overstatement, not the omission.
+Lighthouse's own out-of-the-box mapping already files Resolved under Doing.
+
+Three things measured on the PDI, 2026-07-31, that make this affordable rather than a loss:
+
+| | |
+|---|---|
+| `closed_at`, `opened_at`, `sys_created_on` and `state` are declared on **`task`** | so they survive a read rooted at the base table |
+| `resolved_at` is declared on `incident` and `problem` only | a `task`-rooted read cannot project it at all, with or without `sysparm_fields` |
+| 19 seeded incidents are Resolved-or-Closed; `closed_at` is set on the 12 Closed and empty on the 7 Resolved — and all 7 carry a `Resolved` state span | so on an instance that measures spans, the finish date is present anyway, and it is the *measured* one rather than a field the reopen path does not reliably clear |
 
 **2. `StartedDate` = `opened_at`, falling back to `sys_created_on`.**
 
-**3. The resulting metric is request-to-resolution, and Lighthouse says so.** For ServiceNow without
-`itil`, the span Lighthouse reports is when the request arrived until it was resolved — MTTR-shaped,
+**3. The resulting metric is request-to-closure, and Lighthouse says so.** For ServiceNow without
+`itil`, the span Lighthouse reports is when the request arrived until it was closed — MTTR-shaped,
 which is the measure ITSM organisations already run their service desks on. It is **not** time-in-progress
-and must not be presented as though it were.
+and must not be presented as though it were. *(Read "resolution" for "closure" in the pre-2026-07-31
+form of this ADR; decision 1's amendment moved the endpoint.)*
 
 **4. True time-in-Doing is slice 04's**, derived from `metric_instance`, and carries a documented
 role-escalation cost.
@@ -80,6 +110,15 @@ per-connector wording is part of this decision, not a docs afterthought.
 **Also.** Two ServiceNow deployments can produce different numbers for the same work depending on
 whether their records are opened at request time or at triage time. That is inherent to the field and
 worth stating in the docs.
+
+**The accepted flaw of the 2026-07-31 amendment, stated rather than guarded.** A team that maps
+`Resolved` to Done, on an instance whose transition history Lighthouse cannot read, gets records
+categorised **Done with no finish date**: absent from Throughput while reading as finished
+everywhere else. Nothing warns about it, and nothing is built to — a guard would have to distinguish
+"this shop's Done state genuinely has no instant" from "this record is simply still open", which the
+record does not support. The two ways out are both the customer's: measure state spans on the
+instance, or map `Resolved` to Doing, which is what it is. **This belongs in the user-facing docs
+(Story 5578)** and is the one place this decision is knowingly less forgiving than its predecessor.
 
 ## Alternatives considered
 

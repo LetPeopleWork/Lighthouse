@@ -20,10 +20,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// come from <c>.display_value</c>.
     /// </para>
     /// <para>
-    /// <b>ADR-117.</b> <c>StartedDate</c> is <c>opened_at</c> falling back to <c>sys_created_on</c>;
-    /// <c>ClosedDate</c> is <c>resolved_at</c> falling back to <c>closed_at</c>. <c>closed_at</c> is
-    /// EMPTY on Resolved (state 6), so keying on it alone silently drops every resolved-but-not-closed
-    /// record from Throughput. The resulting span is request-to-resolution, not time-in-progress.
+    /// <b>ADR-117, amended 2026-07-31.</b> These are the answers for a record whose transition
+    /// history the instance cannot supply; where it can, the connector overrides both from the
+    /// record's spans. <c>StartedDate</c> is <c>opened_at</c> falling back to <c>sys_created_on</c>,
+    /// and <c>ClosedDate</c> is <c>closed_at</c> — nothing else. <c>resolved_at</c> is deliberately
+    /// not read: Resolved is a Doing state, so a record that never reached Closed has not finished.
+    /// The resulting span is request-to-closure, not time-in-progress.
     /// </para>
     /// </remarks>
     public static class ServiceNowWorkItemMapper
@@ -46,8 +48,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public const string CreatedField = "sys_created_on";
 
         public const string OpenedField = "opened_at";
-
-        public const string ResolvedField = "resolved_at";
 
         public const string ClosedField = "closed_at";
 
@@ -126,10 +126,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         /// <summary>
         /// Only finished work carries a finish date, the way every other connector already couples
-        /// the two. ServiceNow's reopen path does not reliably clear <c>resolved_at</c>, so a
-        /// reopened incident arrives with a resolution instant and a state the team maps to Doing.
-        /// Carrying both would hide it from every chart at once: Throughput counts Done only, and
-        /// the WIP series drops anything closed on or before the day being drawn.
+        /// the two. ServiceNow's reopen path does not reliably clear a closure instant, so a reopened
+        /// record can arrive with one and a state the team maps to Doing. Carrying both would hide it
+        /// from every chart at once: Throughput counts Done only, and the WIP series drops anything
+        /// closed on or before the day being drawn.
         /// </summary>
         private static DateTime? WhenWorkFinished(JsonElement record, StateCategories stateCategory)
         {
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return null;
             }
 
-            return ReadInstant(record, ResolvedField) ?? ReadInstant(record, ClosedField);
+            return ReadInstant(record, ClosedField);
         }
 
         /// <summary>
@@ -166,10 +166,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return instant;
         }
 
-        // A field can be absent, an explicit JSON null (which is the shape change_request.resolved_at
-        // returns), a bare scalar rather than the two-form object, or a number where a string was
-        // expected. GetString() throws on anything that is neither string nor null, and that
-        // exception would take the whole team sync down with a stack trace no rung explains.
+        // A field can be absent, an explicit JSON null (measured: the shape an unset date takes on a
+        // class that declares the column but never fills it), a bare scalar rather than the two-form
+        // object, or a number where a string was expected. GetString() throws on anything that is
+        // neither string nor null, and that exception would take the whole team sync down with a
+        // stack trace no rung explains.
         internal static string ReadForm(JsonElement record, string field, string form)
         {
             if (record.ValueKind != JsonValueKind.Object || !record.TryGetProperty(field, out var bothForms))

@@ -1066,3 +1066,73 @@ forward, in the order they were judged:
 
 Not a crafter decision. ADR-116 decision 1, ADR-123 decisions 3/5/10 and ADR-124 decision 2 are left
 **unamended** until it is made.
+
+---
+
+## Wave: DELIVER / [REF] `ClosedDate` comes from transitions, else `closed_at` (shipped 2026-07-31)
+
+Maintainer's ruling, 2026-07-31: *"if we don't have transitions, we assume closed is closed, resolved
+is a doing state. That is fair. If you want proper metrics, set up your SNOW instance."*
+
+**This resolves defect 1 of the two that halted the `task`-rooting change** — not by working around
+the projection loss, but by removing the field that was lost. Every field the mapper still reads
+(`closed_at`, `opened_at`, `sys_created_on`, `state`, `number`, `sys_id`, `short_description`,
+`sys_class_name`) is declared on `task`, so a base-table read projects all of them.
+
+### What changed
+
+| | Before | After |
+|---|---|---|
+| `ServiceNowWorkItemMapper.ClosedField` path | `resolved_at ?? closed_at`, gated on Done | `closed_at`, gated on Done |
+| `ServiceNowWorkItemMapper.ResolvedField` | a public const the fixtures fed | **deleted** — `resolved_at` is not read anywhere |
+| `ServiceNowStateSpanMapper` | `WhenWorkStarted` only | `+ WhenWorkFinished` — the start of the **latest** Done-mapped span |
+| `ServiceNowWorkTrackingConnector` | `StartedDate = WorkStartedFor(...)` | `+ ClosedDate = WorkFinishedFor(...)`, the same shape one line down |
+
+`WhenWorkFinished` takes the **latest** Done arrival where `WhenWorkStarted` takes the **earliest**
+Doing arrival, and that asymmetry is the whole of the thinking: rework must not restart the start
+clock, and an undone resolution must not end the item before its second attempt began. ADR-118's
+decision-7 paragraph had already named the several-Done-spans case as a reason *not* to switch; it is
+answered rather than deleted, in a table there.
+
+The Done-category gate stays where the old rule had it — only work the team maps to Done carries a
+finish date — but it had to move up into the connector, because the spans do not know what the record's
+current state is: a reopened record still has a Done span in its history.
+
+### Measured on the PDI, 2026-07-31, so it is not re-derived
+
+- 7 incidents are Resolved-but-not-Closed. All 7 have `closed_at = ""`, **and all 7 carry a `Resolved`
+  state span**, whose start equals `resolved_at` to the second. So on an instance that measures state
+  spans nothing is lost at all — the finish date is present and is now the measured one.
+- `resolved_at` is declared on `incident` and `problem`; `closed_at` on `task`.
+
+### Accepted flaw, recorded rather than guarded
+
+A team that maps `Resolved` to Done on an instance with **no** transition history gets records
+categorised Done with no finish date: missing from Throughput while reading as finished everywhere
+else. No guard is built — the record cannot distinguish "this shop's Done state has no instant" from
+"still open". Belongs in the docs (Story 5578). Recorded in ADR-117's consequences and pinned by
+`WorkTheTeamCallsFinishedThatTheRecordDoesNotSayItFinished_CarriesNoDay` (unit) and its connector-level
+twin, so it is a decision rather than a surprise.
+
+### Tests
+
+Deliberately re-pinned, because the behaviour deliberately changed: ADR-117's three-rung ladder in
+`ServiceNowWorkItemMapperTest` collapsed to one rule plus the accepted-flaw pin; the `resolved_at`
+field disappeared from four fixtures; `ServiceNowTeamSyncTest`'s and the acceptance test's
+resolved-but-not-closed record became a closed one, with the same cross-midnight instants that make
+the universal-form rule load-bearing.
+
+Added: four `WhenWorkFinished` cases in `ServiceNowStateSpanMapperTest` (including the reopen case,
+which is the one that distinguishes latest from earliest), and
+`WhenHistoryIsAvailable_WorkFinishedWhenItReachedDone` / `WhenHistoryIsUnavailable_WorkFinishedWhenTheRecordSaysItClosed`
+in `ServiceNowTransitionHistoryTest`, whose fixture record's span and `closed_at` name **different**
+days so one assertion tells the two sources apart.
+
+The live assertion was strengthened rather than kept: `WorkThatWasResolvedButNeverClosed_ArrivesWithTheDayItsHistorySaysItFinished`
+no longer asserts "a date arrived" (which a record field would satisfy) but that the date **is** the
+arrival in Done, read back off the work item's own synced transitions.
+
+**ADRs amended**: [ADR-117](../../product/architecture/adr-117-servicenow-started-and-closed-dates-without-itil.md)
+decision 1 (rewritten, with the reversed reasoning quoted and answered) and 3 (request-to-**closure**),
+plus a new accepted-flaw consequence; [ADR-118](../../product/architecture/adr-118-servicenow-transition-history-from-metric-instance-spans.md)
+decision 7's "`ClosedDate` is deliberately NOT switched" paragraph.

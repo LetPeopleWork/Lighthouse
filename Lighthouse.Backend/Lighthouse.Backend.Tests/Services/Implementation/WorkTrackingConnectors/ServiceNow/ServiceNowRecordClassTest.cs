@@ -652,7 +652,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                       "state": { "display_value": "In Progress", "value": "2" },
                       "sys_created_on": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                       "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
-                      "resolved_at": { "display_value": "", "value": "" },
                       "closed_at": { "display_value": "", "value": "" }
                     }
                     """;

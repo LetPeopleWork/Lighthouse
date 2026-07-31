@@ -37,6 +37,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return arrivalInDoing?.Start;
         }
 
+        /// <summary>
+        /// When work finished: the start of the latest span whose label the team maps to Done
+        /// (ADR-117 decision 1, amended 2026-07-31). Null when no such span exists.
+        /// </summary>
+        /// <remarks>
+        /// The latest arrival, where <see cref="WhenWorkStarted"/> takes the earliest. A record
+        /// resolved, reopened and resolved again finished on the second arrival — the first one was
+        /// undone — while the work itself began the first time it reached Doing, and rework must not
+        /// restart that clock.
+        /// </remarks>
+        public static DateTime? WhenWorkFinished(IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
+        {
+            var arrivalInDone = InStartOrder(spans)
+                .FindLast(span => owner.MapStateToStateCategory(span.Label) == StateCategories.Done);
+
+            return arrivalInDone?.Start;
+        }
+
         // A `field_value_duration` definition is not necessarily a definition on the state field:
         // the stock incident table also measures `active` and `assignment_group` that way, which
         // would pair `true` against a group name and report it as a move. A label the team never

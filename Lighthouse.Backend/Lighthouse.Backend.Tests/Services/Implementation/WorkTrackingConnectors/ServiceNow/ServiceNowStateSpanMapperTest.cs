@@ -248,5 +248,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(startedAt, Is.Null);
         }
+
+        // ADR-117 decision 1 as amended 2026-07-31. The record's own closed_at is empty on Resolved,
+        // and a shop that never moves work past Resolved has no instant on the record at all — the
+        // spans are the only place the day it finished exists.
+        [Test]
+        public void WorkFinished_WhenTheRecordReachedAStateTheTeamCallsDone()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-20 06:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+            ];
+
+            var finishedAt = ServiceNowStateSpanMapper.WhenWorkFinished(spans, AServiceDesk());
+
+            Assert.That(finishedAt, Is.EqualTo(new DateTime(2026, 7, 29, 17, 0, 0, DateTimeKind.Utc)));
+        }
+
+        // Where this parts company with WhenWorkStarted, and why it is not the same function with a
+        // different category. Rework must not restart the clock, so work started the FIRST time it
+        // reached Doing — but it finished the LAST time it reached Done, because the earlier arrival
+        // was undone and reporting it would end the item's life before its second attempt began.
+        [Test]
+        public void WorkThatWasReopenedAndFinishedAgain_FinishedTheLastTimeItGotThere()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+                ASpan("Resolved", "2026-07-29 17:00:00"),
+                ASpan("In Progress", "2026-07-30 08:00:00"),
+                ASpan("Closed", "2026-07-31 12:00:00"),
+            ];
+
+            var finishedAt = ServiceNowStateSpanMapper.WhenWorkFinished(spans, AServiceDesk());
+
+            Assert.That(finishedAt, Is.EqualTo(new DateTime(2026, 7, 31, 12, 0, 0, DateTimeKind.Utc)),
+                "The first resolution was undone, so dating the finish by it would close the item before the second attempt even started.");
+        }
+
+        [Test]
+        public void WorkThatNeverReachedDone_HasNotFinished()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-29 06:00:00"),
+                ASpan("In Progress", "2026-07-29 09:00:00"),
+            ];
+
+            var finishedAt = ServiceNowStateSpanMapper.WhenWorkFinished(spans, AServiceDesk());
+
+            Assert.That(finishedAt, Is.Null);
+        }
+
+        [Test]
+        public void NoSpansAtAll_ReportNoFinish()
+        {
+            var finishedAt = ServiceNowStateSpanMapper.WhenWorkFinished([], AServiceDesk());
+
+            Assert.That(finishedAt, Is.Null);
+        }
     }
 }

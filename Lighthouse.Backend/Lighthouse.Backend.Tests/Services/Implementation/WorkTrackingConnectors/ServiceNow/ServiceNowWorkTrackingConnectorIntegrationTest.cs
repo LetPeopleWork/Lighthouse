@@ -210,15 +210,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// ADR-117's headline, live. State 6 (Resolved) leaves <c>closed_at</c> empty — measured, and
-        /// re-measured here on every run — so a mapper keying on it alone drops every
-        /// resolved-but-not-closed record out of Throughput. Many ITSM shops never move a record past
-        /// Resolved, so for them that is the whole chart.
+        /// ADR-117 decision 1 as amended 2026-07-31, live. State 6 (Resolved) leaves <c>closed_at</c>
+        /// empty — measured, and re-measured here on every run — and <c>resolved_at</c> is no longer
+        /// read at all, so the ONLY thing that can date this work is the instance's own transition
+        /// history. The assertion is therefore not "a date arrived" but "the date is the arrival in
+        /// Done": a connector that fell back to a record field would satisfy the first and fail this.
         /// </summary>
         [Test]
-        public async Task WorkThatWasResolvedButNeverClosed_ArrivesWithTheDayItFinished()
+        public async Task WorkThatWasResolvedButNeverClosed_ArrivesWithTheDayItsHistorySaysItFinished()
         {
-            var team = ATeamReading("state=6", ServiceNowWorkTrackingOptionNames.DefaultWorkItemTable, [], [], ["Resolved"]);
+            var team = ATeamReadingIncidents("state=6");
 
             var workItems = (await CreateSubject().GetWorkItemsForTeam(team)).ToList();
 
@@ -226,9 +227,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(workItems, Is.Not.Empty,
                     "This instance holds no resolved-but-not-closed incident any more, so it can no longer prove the rule ADR-117 exists for.");
-                Assert.That(workItems.Select(item => item.ClosedDate), Is.All.Not.Null);
+                Assert.That(workItems.Select(item => item.ClosedDate), Is.All.Not.Null,
+                    "closed_at is empty on every one of these, so a null here means the state spans were not consulted.");
                 Assert.That(workItems.Select(item => item.ClosedDate?.Kind), Is.All.EqualTo(DateTimeKind.Utc));
+                Assert.That(
+                    workItems.Select(item => item.ClosedDate),
+                    Is.EqualTo(workItems.Select(ArrivalInDone)),
+                    "The finish date has to be the moment the record entered the state this team calls Done.");
             }
+        }
+
+        // The last transition into a state the team maps to Done, read back off the work item the
+        // connector produced rather than off a second request.
+        private static DateTime? ArrivalInDone(WorkItem workItem)
+        {
+            return workItem.SyncedTransitions
+                .LastOrDefault(transition => transition.ToState == "Resolved")?.TransitionedAt;
         }
 
         /// <summary>

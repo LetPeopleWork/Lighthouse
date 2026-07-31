@@ -16,6 +16,10 @@
   connection scope a hierarchy-root table claims nothing about history rather than reporting
   `NoStateMetric` with unfollowable advice. D2's filter-by-definition rule, D3's label source, D4's
   span-start pairing and D5's read-don't-infer stance are untouched.
+- **Amended 2026-07-31 (maintainer ruling, Story 5611)**: decision 7's closing paragraphs are
+  reversed — `ClosedDate` now comes from the **latest Done span's `start`** where history is
+  readable, and from `closed_at` where it is not. See [ADR-117](./adr-117-servicenow-started-and-closed-dates-without-itil.md)
+  decision 1 as rewritten.
 
 ## Context
 
@@ -104,19 +108,18 @@ not a more conservative outcome than one number changing.
 The fallback is the existing per-instance capability branch, not new machinery: the same verdict that
 drives `SupportsTransitionHistory` and the runtime downgrade selects the `StartedDate` source.
 
-**`ClosedDate` is deliberately NOT switched** and stays `resolved_at ?? closed_at` from ADR-117
-decision 1. The asymmetry is justified rather than an oversight: `resolved_at` is a genuine recorded
-resolution instant, measured present on the record, whereas `work_start` is empty (SPIKE Q4) — which
-is the entire reason `StartedDate` needed a substitute in the first place. Deriving a close instant
-from history would add a dependency without adding accuracy.
+~~**`ClosedDate` is deliberately NOT switched** and stays `resolved_at ?? closed_at` from ADR-117
+decision 1.~~ **Reversed 2026-07-31 (maintainer ruling, Story 5611): `ClosedDate` switches too.** It
+is the **latest** Done span's `start` where history is available, and ADR-117's `closed_at` — never
+`resolved_at` — where it is not. The two dates now come from one source and the asymmetry is gone.
 
-The question that gets asked next is why the first Done span's start is not used, given a Done span
-exists and is equally measured. Three reasons, recorded so this is not re-derived: `resolved_at` is
-available to a **read-only** account while spans are not, so keying on it keeps Throughput working
-for every customer rather than only the escalated ones; spans lag the record by ~30 s, so a
-span-derived close would report a finish instant later than the platform's own; and a reopened
-record has *several* Done spans, which makes "the first Done span" the wrong answer for exactly the
-rework case the transitions are there to expose.
+The three reasons this paragraph originally gave, each answered rather than deleted:
+
+| Reason given 2026-07-30 | What happened to it |
+|---|---|
+| `resolved_at` is readable by a read-only account while spans are not, so keying on it keeps Throughput working for every customer | **Accepted as a cost, not as an argument.** A resolved-but-not-closed record is in a Doing state; "keeping Throughput working" meant counting unfinished work. ADR-117's amended consequences record what the read-only customer now loses. |
+| Spans lag the record by ~30 s, so a span-derived close reports a finish instant later than the platform's own | **Still true, and now paid.** 30 s never crosses the day boundary Throughput buckets by except by coincidence, and the same lag was already accepted for `StartedDate`. |
+| A reopened record has *several* Done spans, which makes "the first Done span" the wrong answer | **Correct, and the reason the rule says LAST.** The first arrival was undone; the last is when the work actually stopped. This is the one place the finish rule is not a mirror of decision 7's start rule, which takes the first Doing arrival so rework does not restart the clock. |
 
 **There is no upgrade consequence** (checked 2026-07-30: zero ServiceNow commits are reachable from
 `v26.7.26.8`, the latest tag). Slices 01, 02 and 04 all ship in the same release, so no customer ever

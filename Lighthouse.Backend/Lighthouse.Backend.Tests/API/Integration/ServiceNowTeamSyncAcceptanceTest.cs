@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         // AC1, AC2, AC7 together over real HTTP. The day assertion is the load-bearing one: this
-        // record's resolution instant falls on the 29th in the instance's own timezone and on the
+        // record's closure instant falls on the 29th in the instance's own timezone and on the
         // 30th in universal time, and Throughput buckets by day.
         [Test]
         public async Task ATeamsServiceNowWork_ArrivesAsWorkItemsOnTheDaysThroughputCountsBy()
@@ -103,16 +103,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var connector = ConnectorFor(team);
 
             var workItems = (await connector.GetWorkItemsForTeam(team)).ToList();
-            var resolvedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
+            var finishedItem = workItems.SingleOrDefault(item => item.ReferenceId == "INC0000001");
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems, Has.Count.EqualTo(4),
                     "Five records exist over three pages; the fifth sits in a label this team never mapped.");
-                Assert.That(resolvedItem, Is.Not.Null);
-                Assert.That(resolvedItem?.ClosedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 30, 0, 0, 0, DateTimeKind.Utc)),
-                    "The record was resolved and never closed, and its universal-time resolution falls on the 30th.");
-                Assert.That(resolvedItem?.State, Is.EqualTo("Resolved"),
+                Assert.That(finishedItem, Is.Not.Null);
+                Assert.That(finishedItem?.ClosedDate?.Date, Is.EqualTo(new DateTime(2026, 7, 30, 0, 0, 0, DateTimeKind.Utc)),
+                    "The record's universal-time closure falls on the 30th and its instance-local closure on the 29th.");
+                Assert.That(finishedItem?.State, Is.EqualTo("Resolved"),
                     "The label the service desk uses, not the choice value.");
             }
         }
@@ -473,7 +473,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 return
                 [
                     ARecord("INC0000001", StateOfTheFirstRecord.Label, StateOfTheFirstRecord.Value,
-                        resolvedDisplay: "2026-07-29 17:25:29", resolvedValue: "2026-07-30 00:25:29"),
+                        closedDisplay: "2026-07-29 17:25:29", closedValue: "2026-07-30 00:25:29"),
                     ARecord("INC0000002", "Resolved", "6", "2026-07-28 09:00:00", "2026-07-28 16:00:00"),
                     ARecord("INC0000003", "In Progress", "2"),
                     ARecord("INC0000004", "New", "1"),
@@ -482,7 +482,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
 
             private static string ARecord(
-                string number, string stateLabel, string stateValue, string resolvedDisplay = "", string resolvedValue = "")
+                string number, string stateLabel, string stateValue, string closedDisplay = "", string closedValue = "")
             {
                 return $$"""
                     {
@@ -492,8 +492,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                       "state": { "display_value": "{{stateLabel}}", "value": "{{stateValue}}" },
                       "sys_created_on": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
                       "opened_at": { "display_value": "2026-07-01 00:00:00", "value": "2026-07-01 07:00:00" },
-                      "resolved_at": { "display_value": "{{resolvedDisplay}}", "value": "{{resolvedValue}}" },
-                      "closed_at": { "display_value": "", "value": "" }
+                      "closed_at": { "display_value": "{{closedDisplay}}", "value": "{{closedValue}}" }
                     }
                     """;
             }

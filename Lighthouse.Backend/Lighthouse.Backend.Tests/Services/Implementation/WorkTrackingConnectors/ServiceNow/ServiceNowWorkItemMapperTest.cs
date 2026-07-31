@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     // Layer 1 (pure, no IO): the two rules that decide whether a flow coach's numbers are right or
     // merely plausible both live here, and both fail invisibly when broken —
     //
-    //   * a record that was resolved but never closed still has to reach Throughput (ADR-117), and
+    //   * a record that was closed has to reach Throughput on the day it closed (ADR-117), and
     //   * a date has to be read from the universal-time form, never from the instance-local one.
     //
     // Every fixture below is shaped the way a real sysparm_display_value=all response is shaped:
@@ -21,8 +21,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string Table = "incident";
 
         // A service desk that has told Lighthouse which of its labels mean what. "Resolved" is
-        // deliberately mapped to Done: an ITSM shop treats a resolved incident as finished work,
-        // and Lighthouse's out-of-the-box mapping files it under Doing.
+        // mapped to Done because that is the mapping ADR-117's accepted cost is about: the team
+        // calls the work finished, and without transition history the record carries no instant
+        // saying when.
         private static Team ATeamThatCalls(string todo = "New", string doing = "In Progress", string done = "Resolved")
         {
             return new Team
@@ -34,78 +35,60 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
         }
 
-        // AC2, and the headline defect ADR-117 exists to prevent. closed_at is empty on Resolved
-        // (state 6) — measured on the live instance. A mapper that keys on closed_at alone drops
-        // every resolved-but-not-closed record out of Throughput, and nothing anywhere reports a
-        // failure: the chart simply reads lower than the work the team actually finished.
+        // AC2. Without transition history the record itself is the only source, and closed_at is the
+        // only instant on it that means "this work is over".
         [Test]
-        public void WorkThatWasResolvedButNeverFormallyClosed_StillCountsAsFinished()
+        public void WhenTheRecordWasClosed_IsWhenWorkFinished()
         {
-            var record = ARecordWith(
-                AResolvedState,
-                (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 17:25:29", "2026-07-30 00:25:29"),
-                (ServiceNowWorkItemMapper.ClosedField, "", ""));
-
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
-
-            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 0, 25, 29, DateTimeKind.Utc)),
-                "closed_at is empty on Resolved, so a mapper that keys on it alone silently drops this item from Throughput.");
-        }
-
-        // ADR-117's ladder, one case per rung. Resolution outranks closure, and closure is only a
-        // fallback for the shops that do move records all the way to Closed.
-        [Test]
-        public void WhenBothAreRecorded_TheResolutionIsWhenWorkFinished()
-        {
-            var record = AFinishedRecordWith(resolved: "2026-07-29 07:25:29", closed: "2026-07-30 08:00:00");
-
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
-
-            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 29, 7, 25, 29, DateTimeKind.Utc)));
-        }
-
-        [Test]
-        public void WhenOnlyTheClosureIsRecorded_TheClosureIsWhenWorkFinished()
-        {
-            var record = AFinishedRecordWith(resolved: "", closed: "2026-07-30 08:00:00");
+            var record = AFinishedRecordWith(closed: "2026-07-30 08:00:00");
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
             Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 8, 0, 0, DateTimeKind.Utc)));
         }
 
+        // ADR-117 decision 1's accepted cost, amended 2026-07-31 and pinned here so it is a decision
+        // rather than a surprise. closed_at is EMPTY on Resolved (state 6) — measured on the live
+        // instance — and resolved_at is deliberately not read, because Resolved is a Doing state. A
+        // team that nonetheless maps Resolved to Done, on an instance whose transition history
+        // Lighthouse cannot read, gets work categorised Done with no day attached: it is missing from
+        // Throughput while reading as finished everywhere else. The way out is the instance's own
+        // transition history, which the connector prefers wherever it exists.
         [Test]
-        public void WhenOnlyTheResolutionIsRecorded_TheResolutionIsWhenWorkFinished()
+        public void WorkTheTeamCallsFinishedThatTheRecordDoesNotSayItFinished_CarriesNoDay()
         {
-            var record = AFinishedRecordWith(resolved: "2026-07-29 07:25:29", closed: "");
+            var record = AFinishedRecordWith(closed: "");
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 29, 7, 25, 29, DateTimeKind.Utc)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.StateCategory, Is.EqualTo(StateCategories.Done));
+                Assert.That(workItem.ClosedDate, Is.Null,
+                    "Set up your instance to measure state spans, or map Resolved to Doing — which is what it is.");
+            }
         }
 
         [Test]
         public void WorkThatIsStillUnderway_HasNotFinished()
         {
-            var record = ARecordWith(
-                (ServiceNowWorkItemMapper.ResolvedField, "", ""),
-                (ServiceNowWorkItemMapper.ClosedField, "", ""));
+            var record = ARecordWith((ServiceNowWorkItemMapper.ClosedField, "", ""));
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
             Assert.That(workItem.ClosedDate, Is.Null);
         }
 
-        // H2. ServiceNow's reopen path does not reliably clear resolved_at, so a reopened incident
-        // arrives carrying a resolution instant and a state the team maps to Doing. Setting both
-        // hides it from every chart at once: Throughput counts Done only, and the WIP series drops
-        // anything closed on or before the day being drawn. Actively-worked item, invisible.
+        // H2. ServiceNow's reopen path does not reliably clear a closure instant, so a reopened
+        // record arrives carrying one and a state the team maps to Doing. Setting both hides it from
+        // every chart at once: Throughput counts Done only, and the WIP series drops anything closed
+        // on or before the day being drawn. Actively-worked item, invisible.
         [Test]
         public void WorkThatWasReopened_IsNotCountedAsFinishedWhileItIsBeingWorkedOn()
         {
             var record = ARecordWith(
                 (ServiceNowWorkItemMapper.StateField, "In Progress", "2"),
-                (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 17:25:29", "2026-07-30 00:25:29"));
+                (ServiceNowWorkItemMapper.ClosedField, "2026-07-29 17:25:29", "2026-07-30 00:25:29"));
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
@@ -156,9 +139,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void TheDayWorkFinished_IsTheDayTheInstanceRecordedInUniversalTime()
         {
             var record = ARecordWith(
-                AResolvedState,
-                (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 21:25:29", "2026-07-30 04:25:29"),
-                (ServiceNowWorkItemMapper.ClosedField, "", ""));
+                AFinishedState,
+                (ServiceNowWorkItemMapper.ClosedField, "2026-07-29 21:25:29", "2026-07-30 04:25:29"));
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
@@ -200,8 +182,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void AnInstantTheInstanceReported_IsTheInstantLighthouseStores(string universalForm)
         {
             var record = ARecordWith(
-                AResolvedState,
-                (ServiceNowWorkItemMapper.ResolvedField, "2026-07-29 17:25:29", universalForm));
+                AFinishedState,
+                (ServiceNowWorkItemMapper.ClosedField, "2026-07-29 17:25:29", universalForm));
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
@@ -363,15 +345,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheWholeHierarchy = "task";
 
         // The team above files "Resolved" under Done, and only finished work carries a finish date.
-        private static (string Field, string DisplayValue, string Value) AResolvedState =>
+        private static (string Field, string DisplayValue, string Value) AFinishedState =>
             (ServiceNowWorkItemMapper.StateField, "Resolved", "6");
 
-        private static JsonElement AFinishedRecordWith(string resolved, string closed)
+        private static JsonElement AFinishedRecordWith(string closed)
         {
-            return ARecordWith(
-                AResolvedState,
-                (ServiceNowWorkItemMapper.ResolvedField, resolved, resolved),
-                (ServiceNowWorkItemMapper.ClosedField, closed, closed));
+            return ARecordWith(AFinishedState, (ServiceNowWorkItemMapper.ClosedField, closed, closed));
         }
 
         // Shapes a record the way sysparm_display_value=all shapes one. Unnamed fields get a
@@ -385,7 +364,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 [ServiceNowWorkItemMapper.StateField] = ("New", "1"),
                 [ServiceNowWorkItemMapper.CreatedField] = ("2026-07-01 00:00:00", "2026-07-01 07:00:00"),
                 [ServiceNowWorkItemMapper.OpenedField] = ("2026-07-01 00:00:00", "2026-07-01 07:00:00"),
-                [ServiceNowWorkItemMapper.ResolvedField] = ("", ""),
                 [ServiceNowWorkItemMapper.ClosedField] = ("", ""),
             };
 

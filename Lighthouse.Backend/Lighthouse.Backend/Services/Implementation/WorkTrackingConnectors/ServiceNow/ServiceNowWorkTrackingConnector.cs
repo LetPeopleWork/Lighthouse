@@ -209,6 +209,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 {
                     SyncedTransitions = MovesMadeBy(entry, history, team),
                     StartedDate = WorkStartedFor(entry, history, team),
+                    ClosedDate = WorkFinishedFor(entry, history, team),
                 })
                 .ToList();
         }
@@ -354,6 +355,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return history.TryGetValue(entry.RecordId, out var spans)
                 ? ServiceNowStateSpanMapper.WhenWorkStarted(spans, team)
                 : entry.Item.StartedDate;
+        }
+
+        // ADR-117 decision 1, amended 2026-07-31. Where the record's spans were measured, work
+        // finished when it reached the state the team calls Done; where none were, `closed_at`
+        // stands, and a shop that stops at Resolved gets no finish date rather than a resolution
+        // instant standing in for one. Only work the team maps to Done carries a finish date at all,
+        // which MapRecord already applied to the fallback and the spans do not know about.
+        private static DateTime? WorkFinishedFor(
+            MappedRecord entry, Dictionary<string, List<ServiceNowStateSpan>> history, Team team)
+        {
+            if (entry.Item.StateCategory != StateCategories.Done)
+            {
+                return null;
+            }
+
+            return history.TryGetValue(entry.RecordId, out var spans)
+                ? ServiceNowStateSpanMapper.WhenWorkFinished(spans, team)
+                : entry.Item.ClosedDate;
         }
 
         // DoD 5 forbids the silent no-op: a team quietly losing time-in-state reads as a team whose
