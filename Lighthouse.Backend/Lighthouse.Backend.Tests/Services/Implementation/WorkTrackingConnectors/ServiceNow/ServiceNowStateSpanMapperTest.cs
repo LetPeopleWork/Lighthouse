@@ -96,9 +96,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var transitions = ServiceNowStateSpanMapper.ToTransitions(spans, AServiceDesk());
 
+            string[] expectedMoves = ["New->In Progress", "In Progress->Resolved"];
+
             Assert.That(
                 transitions.Select(transition => $"{transition.FromState}->{transition.ToState}"),
-                Is.EqualTo(new[] { "New->In Progress", "In Progress->Resolved" }));
+                Is.EqualTo(expectedMoves));
         }
 
         // The second DISTILL question, answered. A reopened incident produces a later span carrying
