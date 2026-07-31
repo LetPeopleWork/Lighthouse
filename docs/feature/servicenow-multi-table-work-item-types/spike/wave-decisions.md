@@ -61,6 +61,18 @@ than duplicated), not throwaway scripts:
   match is not hierarchy-inclusive.
 - Class **names** (`change_request`), not labels (`Change Request`).
 
+## Settled at the SPIKE→DESIGN handoff — maintainer, 2026-07-31
+
+Four calls the findings raised, answered before DESIGN started so the architect designs rather than
+re-opens them.
+
+| # | Call | Decision |
+|---|---|---|
+| **S1** | What the widening probe's "everything" counts for a hierarchy-rooted team | **Classes-only baseline**: `everything` = the class filter with no team query (208 on the PDI), `matched` = class filter + team query (159). The ratio keeps meaning "how much of your kind of work did this query select" instead of "how much of the instance". Leaf-rooted teams are unchanged, because for them the two definitions coincide. |
+| **S2** | Where the per-class ACL / unknown-class verdict runs | **`ValidateTeamSettings` only** — one `sysparm_limit=1` probe per named class when the coach saves. n requests at save time, zero per sync. Rights revoked after setup are not caught; accepted, because the alternative pays n requests on every refresh forever to cover a case the connection-level ladder already reports. |
+| **S3** | How "the configured table has descendants" is decided | **A static known-hierarchy set**, in the C# switch and the TS `Record` alike. Not a `sys_db_object` lookup: the SPIKE measured it 403 for a no-roles account, so a runtime answer would flip the field's visibility based on the customer's credentials — and it cannot back a schema DTO that has to be the same for everyone. AC-B5 holds: an `incident`-rooted team keeps hiding the field. Cost: a new hierarchy root is a code change in both twins, which is what the #5613 guard exists to police. |
+| **S4** | Whether the history repair rides in slice 01 | **Yes, inside slice 01.** Shipping the `task`-root recipe without it would regress slice 04 — every started date and state span gone — via the very feature that recommends the recipe. |
+
 ## Next Wave
 
 DESIGN (`nw-solution-architect`), reading `findings.md`. OC-1, OC-2 and OC-3 are closed, so slice 01

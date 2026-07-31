@@ -268,3 +268,419 @@ One pre-existing defect recorded so it is not re-derived: `ValidateTeamSettings`
 ACL-blind `X-Total-Count` values, so a no-roles account passes the widening comparison while reading
 nothing. Connection validation catches that account a rung earlier; this feature changes only the
 denominator (`everything` becomes the whole hierarchy), which DESIGN must rule on.
+
+---
+
+## Wave: DESIGN / [REF] Inputs read
+
+Application/component scope, **propose** mode, standard rigor (no `.nwave/des-config.json` present).
+Per-wave peer review skipped by instruction — the consolidated review fires at the end of DISTILL.
+Scope of this wave: **slice 01 only**. Slice 02 is designed when it is scheduled.
+
+| Artifact | |
+|---|---|
+| `docs/feature/servicenow-multi-table-work-item-types/feature-delta.md` (DISCUSS + SPIKE handoff) | ✓ |
+| `docs/feature/servicenow-multi-table-work-item-types/spike/findings.md` | ✓ read in full |
+| `docs/feature/servicenow-multi-table-work-item-types/spike/wave-decisions.md` (S1–S4) | ✓ |
+| `docs/feature/servicenow-multi-table-work-item-types/slices/slice-01-work-item-types-as-record-classes.md` | ✓ |
+| `docs/feature/servicenow-multi-table-work-item-types/slices/slice-02-per-team-table-override.md` | ✓ |
+| `docs/product/architecture/brief.md` | ✓ structure + the two ServiceNow sections |
+| `docs/product/architecture/adr-114-…-verdict-ladder.md` · `adr-116-…-table-at-connection-scope.md` · `adr-118-…-metric-instance-spans.md` | ✓ all three in full |
+| `docs/product/architecture/adr-115-…-basic-auth-prerequisite-not-detected.md` | ⊘ not read in full — referenced through ADR-114/116; nothing in this slice touches auth |
+| `docs/feature/epic-5513-servicenow-integration/spike/findings.md` (Q8 role matrix, 200/EMPTY trap) | ✓ read selectively, as instructed |
+| `docs/feature/epic-5513-servicenow-integration/feature-delta.md` | ✓ read selectively (D-numbers, C-3, the 200/EMPTY rungs) |
+| `docs/evolution/2026-07-30-bug-5613-schema-twin-drift.md` | ✓ read in full — it changes the design, see D-D6 |
+| `docs/ci-learnings.md` | ✓ index + the rules that bind this slice (S107, S3776, CA1859, NUnit2045/4002, S2325) |
+| Production code: `ServiceNowWorkTrackingConnector.cs` · `ServiceNowWorkItemMapper.cs` · `ServiceNowHistoryQuery.cs` · `ServiceNowHistoryVerdict.cs` · `ServiceNowTeamQueryVerdict.cs` · `ServiceNowValidationVerdict.cs` · `ServiceNowWorkTrackingOptionNames.cs` · `DataRetrievalSchemaDto.cs` · `DataRetrievalSchemaDefaults.ts` · `ModifyTeamSettings.tsx` · `useModifySettings.ts` · `useCreateWizard.ts` · `WorkTrackingSystemFactory.cs` · `WorkTrackingSystemConnection.ts` | ✓ |
+| `~/.claude/skills/nw-architecture-patterns/SKILL.md` · `nw-sa-critique-dimensions/SKILL.md` | ⊘ **not loadable** — outside the lean-ctx project root and no shell tool was granted. Recorded rather than skipped silently |
+
+---
+
+## Wave: DESIGN / [REF] DDD decisions
+
+**No new bounded context, no new aggregate, no new entity, no migration.** The work-tracking-connector
+context already owns everything this slice needs, and the ubiquitous language gains exactly one term.
+
+**The one language decision, and it is the whole feature.** A ServiceNow **record class** *is* a
+Lighthouse **work item type**. Not "maps to", not "is analogous to" — is. `incident` and
+`change_request` are to a ServiceNow team what `Story` and `Bug` are to a Jira team: the kinds of work
+the team does. Once that is said out loud, `Team.WorkItemTypes` is not a field being repurposed, it is
+the field finally being *used* for ServiceNow, and D4 (`Type` = the record's own `sys_class_name`)
+stops being a design choice and becomes the only self-consistent answer.
+
+Consequences of taking that seriously rather than treating it as a convenient reuse:
+
+- **`Team.WorkItemTypes` needs no new invariant.** Every other connector already reads it as "the kinds
+  of work this team does" and filters its own query with it. ServiceNow joins them.
+- **The team aggregate does not change.** No new persisted column, no `Team` option bag (which is why
+  slice 01 goes first, D7), no concurrency-token surface change.
+- **`Type` becomes honest for the first time.** Today a ServiceNow item's `Type` is the configured
+  table, which for a leaf-rooted team is accidentally correct and for a `task`-rooted team would be a
+  lie repeated on every row.
+- **What does *not* transfer is the vocabulary of the UI.** The coach reads "Change Request" on their
+  ServiceNow screen and must type `change_request`. That gap is a documentation and error-message
+  obligation ([ADR-124](../../product/architecture/adr-124-servicenow-record-class-readability-ladder.md)
+  rung 1), not a modelling one.
+
+**Not a subdomain worth its own model.** The ServiceNow connector is a supporting-subdomain adapter in
+an anti-corruption position: ServiceNow's per-class ACL model, choice-value collisions and
+`sysparm_query` grammar all stop at the connector boundary, and what crosses is `WorkItemBase` with a
+label-mapped state. Slice 01 does not move that boundary — it moves one more piece of ServiceNow's
+model (`sys_class_name`) *up to* it and translates it into an existing Lighthouse term.
+
+---
+
+## Wave: DESIGN / [REF] Decisions
+
+D-numbers continue this feature's local sequence. DISCUSS holds D1–D7; the SPIKE→DESIGN handoff holds
+S1–S4 (locked, designed to, not re-opened). DESIGN adds **D-D1 … D-D10**.
+
+| ID | Decision | Rationale |
+|---|---|---|
+| **D-D1** | A new pure value object, **`ServiceNowReadScope`** (table + classes + is-hierarchy-root), is the single answer to "what is this team reading". | `ResolveWorkItemTable` is used today for four different jobs — the URL path, the item `Type`, the metric-definition scope and the message subject — and S4 + D4 split three of them apart. Without one object, the split becomes four independent string parameters threaded through the shell, and DELIVER gets to pick the wrong one somewhere. It is also where slice 02's per-team table plugs in with a one-line change: the scope factory becomes the single resolution point the slice-02 brief already names. |
+| **D-D2** | The class clause is **`IN` for ≥2 classes, `=` for exactly one**, prepended to the team's query. | SPIKE: both `IN` and `^OR` measured identical; `IN` wins on URL budget (one condition vs 2n−1 against the 8192-byte cliff) and on not resting on a grouping rule seen on one instance. The `=` form for a single class is the only *measured* single-class shape and keeps every shipped leaf-rooted read byte-identical. One branch in a pure function, deletable when a one-element `IN` is measured. |
+| **D-D3** | The clause is emitted **whenever classes are named**, not when the table is a hierarchy root. | Keeps hierarchy-root knowledge out of the read path entirely — it survives in exactly two places, the AC-B3 refusal and the schema flag. A leaf-rooted team that names classes gets them honoured instead of silently discarded. |
+| **D-D4** | AC-B3's refusal fires in **two** places: `GetWorkItemsForTeam` returns nothing with a reason, **and** `ValidateTeamSettings` refuses the save with a new `missing_work_item_types` rung. | `isWorkItemTypesRequired` is a hint to the web UI. `PUT /api/teams/{id}` also serves the CLI and the MCP server, neither of which reads the schema. A gate that lives only in the flag is a gate the API does not have. |
+| **D-D5** | `MapRecord` reads `sys_class_name` from the record's **universal** form, falling back to the configured table when the field is absent or empty. | D4 + OC-3. Zero extra requests — the field already rides in the `sysparm_display_value=all` read. The fallback is not padding: `ReadForm` returns `string.Empty` for a missing field, and an empty `Type` on every row would be a worse silent data change than the one being fixed. |
+| **D-D6** | **Both** schema factories take the **connection**, not the system type: `ForTeam(WorkTrackingSystems, string workItemTable)` with **no default value**, and `getDefaultTeamSchema(connection)`. | No default → the compiler forces every call site to answer, so "forgot to pass the table" cannot compile into `incident` semantics. Taking the connection on the frontend keeps the `Work Item Table` option-key string in exactly one file, next to the hierarchy set, mirroring the backend. Both call sites already hold the connection (`useModifySettings.ts:332`, `useCreateWizard.ts:87`) — nothing new is fetched and **no component changes**. |
+| **D-D7** | The hierarchy-root set is duplicated per S3 and policed by a **source-text enforcement test** on the frontend that `readFileSync`s the C# and asserts set equality. | Precedent already in the repo: `formatLikelihood.enforcement.test.ts`, `deliveryJointLikelihoodDocs.enforcement.test.ts`. Runs under `pnpm test`, already a mandatory gate. One-way read, both-way drift caught, because the assertion is set equality. Bug #5613 ruled that collapsing the twins is "a design change, not a fix" — so the answer is to make the drift loud, which is exactly what that bug asked for and never got for this dimension. |
+| **D-D8** | AC-B6 probes **the class's own table** (`/api/now/table/{class}?sysparm_limit=1`), giving a four-rung ladder that separates "does not exist" (`400`) from "empty" (`200`, header 0). | Strictly more informative than the SPIKE's three-way ladder, at the identical cost of one request per class. The SPIKE's "header = 0 is indistinguishable" describes probing `sys_class_name=<class>` on the *rooted* table; addressing the class table turns that case into a `400`. See [ADR-124](../../product/architecture/adr-124-servicenow-record-class-readability-ladder.md) decision 2 — the `400` rung is the one **inferred** link and is carried into DELIVER as a live assertion. |
+| **D-D9** | The new verdict rungs **extend `ServiceNowTeamQueryVerdict`**; no new verdict type. | Every rung answers the same question in the same vocabulary — *why can this team's settings not be saved* — pointing at a settings field by name. Extracting a `ServiceNowRecordClassVerdict` would be the second instance, not the third. The purity ArchUnit fixture is widened to cover `ServiceNowTeamQueryVerdict`, which it does not cover today. |
+| **D-D10** | At connection scope, a **hierarchy-root table claims nothing about transition history** — `CapabilityOf` skips the `metric_definition` read and returns a success carrying a `history_determined_per_team` advisory. | Left alone, a `task`-rooted connection is told "activate a Field value duration metric definition on the state field of task" — advice that cannot be followed and that contradicts what its teams will actually get, printed by the very feature that recommends the recipe. One request saved, one false statement not made, one new message and **no** `ServiceNowHistoryAvailability` member (the enum is what `SupportsTransitionHistory` branches on, and connection validation deliberately does not write it). |
+
+---
+
+## Wave: DESIGN / [REF] Component decomposition
+
+**Architectural pattern: unchanged.** Modular monolith, ports-and-adapters, object-oriented backend
+(`CLAUDE.md`). Inside the ServiceNow adapter, ADR-114's functional-core / imperative-shell split is the
+house style and every new type in this slice lands on the pure side of it.
+
+```
+                       imperative shell (IO, one class)
+                       ServiceNowWorkTrackingConnector
+                                    │
+        ┌───────────────┬───────────┼───────────────┬──────────────────┐
+        ▼               ▼           ▼               ▼                  ▼
+ ServiceNowReadScope  WorkItem   HistoryQuery  TeamQueryVerdict  HistoryVerdict
+   (+TableHierarchy)   Mapper                  ValidationVerdict
+        └─────────────────────── all pure: scalars in, values out ─────┘
+```
+
+The shell gains no new responsibility. It gains one new *question* it asks at the top of two methods
+("what is this team's read scope?") and one new loop it runs at validation time.
+
+### New (2)
+
+| Component | Path | Shape |
+|---|---|---|
+| **`ServiceNowReadScope`** | `…/WorkTrackingConnectors/ServiceNow/` | Pure record: `Table`, `Classes`, `IsHierarchyRoot`. Answers `ScopedQuery(teamsOwnQuery)`, `BaselineQuery()` (S1's denominator), `DefinitionTables()`. Built once per method entry from `(connection, team)`. |
+| **`ServiceNowTableHierarchy`** | same | Pure static: `RootTables` = `{ "task" }`, `HasDescendants(table)`. The S3 known-hierarchy set, backend half. |
+
+### Extended (11 backend, 6 frontend)
+
+Backend — `ServiceNowWorkTrackingConnector` (shell: build the scope, refuse an empty hierarchy-rooted
+read, run the per-class probes, pass the scope to the history read, skip the capability read for a
+hierarchy root) · `ServiceNowWorkItemMapper` (`RecordClassField` + the `Type` fallback) ·
+`ServiceNowHistoryQuery` (`DefinitionQueryFor` takes a table list) · `ServiceNowTeamQueryVerdict`
+(two new rungs) · `ServiceNowHistoryVerdict` (`ForHierarchyRoot`) · `DataRetrievalSchemaDto` (signature
++ the ServiceNow arm) · `TeamSettingDto` (pass the connection's table).
+
+Frontend — `DataRetrievalSchemaDefaults.ts` (the hierarchy set, the option-key constant, the two
+`getDefault*Schema` signatures) · `useModifySettings.ts` and `useCreateWizard.ts` (one option type each)
+· `ModifyTeamSettings.tsx`, `CreateTeamWizard.tsx`, `ModifyProjectSettings.tsx`,
+`CreatePortfolioWizard.tsx` (one adapter line each — **no gating logic changes**).
+
+### Deliberately unchanged
+
+`ValidateConnection`'s probe target (D5 / ADR-116 · AC-A3 belongs to slice 02) ·
+`ServiceNowValidationVerdict` (its `400`/`403` rungs are *reused* by the class probe, not edited) ·
+`WorkItemTypesComponent` · `ServiceNowStateSpanMapper` · `WorkItemStateTransitionMapper` ·
+`ConnectionValidationResult` · every EF model · every other connector.
+
+**No L3 component diagram.** The subsystem is nine classes in one folder with one IO boundary; an L3
+would restate the container diagram at a smaller font. The ASCII sketch above carries the one thing a
+reader needs — which side of the purity line each type sits on.
+
+---
+
+## Wave: DESIGN / [REF] Driving ports
+
+No new route, no new controller, no new DTO type.
+
+| Port | Change | AC |
+|---|---|---|
+| `PUT /api/teams/{id}` | Shape unchanged. `workItemTypes` now carries ServiceNow **class names**. Validation gains `missing_work_item_types` and the four class-probe outcomes; **`fieldName` on those verdicts is `WorkItemTypes`**, where every existing ServiceNow rung says `DataRetrievalValue` — the settings UI routes the message to the field the coach must fix. | B3 · B4 · B6 |
+| `GET` team settings (`TeamSettingDto.DataRetrievalSchema`) | Same DTO. `isWorkItemTypesRequired` stops being a constant per system and becomes a function of the connection's `Work Item Table`. | B4 · B5 |
+| Team settings screen · Create Team wizard | **No component change.** `ModifyTeamSettings.tsx:76,190`, `CreateTeamWizard.tsx:74` and `useCreateWizard.ts:128` keep gating on `isWorkItemTypesRequired !== false`; only what the schema *says* changes. | B4 · B5 |
+| Validate-connection surface | Unchanged for a leaf-rooted connection. A hierarchy-rooted one stops asserting a history capability it cannot know (D-D10). | — |
+
+**Read/write port split — a named deviation.** Principle: a driving port that only reads must not
+expose write methods. `IServiceNowWorkTrackingConnector` inherits `WriteFieldsToWorkItems` from the
+shared `IWorkTrackingConnector` and throws `NotSupportedException` on it (epic D8, permanent). Splitting
+read and write into separate ports is a five-connector refactor and belongs to the ADO 5612
+rule-of-three review, not to a one-day slice. Recorded so it is a decision rather than an oversight.
+
+---
+
+## Wave: DESIGN / [REF] Driven ports and adapters
+
+One driven port, one adapter, one external system. No new dependency of any kind.
+
+| Driven port | Adapter | Calls |
+|---|---|---|
+| ServiceNow Table API (outbound HTTPS, read-only) | `ServiceNowWorkTrackingConnector` | **Existing:** paged record read · `sysparm_limit=1` count probe ×2 · `metric_definition` read · `metric_instance` batched read. **New in this slice:** one `sysparm_limit=1` read per named class, at team-settings validation only. |
+| Credential application | `IWorkTrackingAuthStrategyFactory` → `ServiceNowBasicAuthStrategy` | **Reused unchanged.** |
+| Persistence | `Team` / `WorkTrackingSystemConnection` via EF | **Read only, unchanged.** No new column, no migration, no `CreateMigration` run. |
+
+### Request budget (measured baseline ~600 ms/call, no rate limiting observed at 1.6 req/s)
+
+| Operation | Before | After | Note |
+|---|---|---|---|
+| Team sync | 1 + pages + definitions + span batches | **identical** | The class clause rides inside an existing query string |
+| Validate connection, leaf root | 2 | **2** | unchanged |
+| Validate connection, hierarchy root | 2 | **1** | D-D10 drops the meaningless definition read |
+| Validate team settings | 2 | **2 + n** | n = named classes. S2's accepted cost, paid where a human is already waiting on a Save |
+
+Ten classes is ~6 s of Save if the probes run serially. **They should run serially**, matching every
+other read in this connector — a fan-out here would be the only concurrent call path in the adapter,
+for a saving nobody asked for, against an instance whose rate-limiting behaviour is measured at exactly
+one request rate.
+
+### External integration — contract testing
+
+The ServiceNow Table API remains the highest-risk boundary in this feature, and slice 01 adds two new
+*behavioural* assumptions about it on top of the response-shape catalogue ADR-114 established. Both are
+instance behaviour a ServiceNow release could change underneath Lighthouse, and neither is provable from
+a fixture. **Consumer-driven contract tests remain the recommendation for the response-shape catalogue**
+(`200`+empty · `401` · `403` · `400` · `200`+non-JSON · `200`+rows), extended with:
+
+- `sys_class_nameIN…` selects the union of the named classes and nothing else;
+- `X-Total-Count` remains ACL-blind (header counts what the instance holds, body what the account may
+  read) — **the single mechanism AC-B6 rests on**;
+- `metric_definition` rows exist only on concrete classes, never on the base table;
+- `GET /api/now/table/{unknown_class}` answers `400`.
+
+Carried into the platform-architect (DEVOPS) handoff, and into DELIVER as standing assertions in
+`ServiceNowWorkTrackingConnectorIntegrationTest` — the fixture slice 02 extended rather than duplicated.
+This adopts the SPIKE's own closing recommendation.
+
+---
+
+## Wave: DESIGN / [REF] Earned Trust — what this slice probes, and what it refuses to claim
+
+The feature is *about* a substrate that lies: ServiceNow answers a denial with a success, filters rows
+by class without saying so, and reports counts that ignore the ACLs it just applied. Every probe below
+exists because something was measured lying.
+
+| Dependency | The lie | The probe | Where it runs |
+|---|---|---|---|
+| Class readability | ACL-filtered rows vanish from a `200` (measured: 85 rows → 70, no marker) | Per-class `sysparm_limit=1`; header > 0 with an empty body is the denial | `ValidateTeamSettings`, per named class |
+| Class existence | A bogus class narrows silently to zero (measured) | The class table answers `400` for a name that is not a table | same |
+| Query widening | A bogus *field* returns the whole table (measured, slice 01) | `matched` vs `everything`, both now class-scoped (S1) | same |
+| Metric definitions | The base table has none; a `task`-rooted team gets 0 (measured) | Definitions read scoped to the classes | every sync |
+| History at connection scope | Nothing meaningful to read for a hierarchy root | **Refuse to claim** rather than probe a question with no answer (D-D10) | `ValidateConnection` |
+| Paging | An instance that ignores `sysparm_offset` repeats pages forever | Existing repeat guard + page ceiling | every read |
+
+**Three claims this slice deliberately does not make**, each because the evidence is not there:
+
+1. That a class returning header = 0 is *empty rather than misspelt* — resolved by D-D8's `400` rung
+   for a misspelt name, but a class the account can address and that holds nothing is reported as
+   nothing, not as an error.
+2. That rung 4 (`header > 0`, empty body) is a *class-level* denial rather than row-level ACL
+   filtering. Both produce the identical answer, so the message names both causes — the same house
+   style as `no_records_visible` and `query_matches_whole_table`.
+3. That rights are still granted *after* the coach saved. S2 accepted this: an n-request-per-sync check
+   forever, to catch a configuration change an administrator made, is the wrong trade.
+
+**The probe of the probe.** One link in D-D8's ladder is inferred rather than measured — that
+`/api/now/table/{unknown_class}` answers `400`, derived from ADR-114's measured `400`-for-an-unknown-
+*table* plus the fact that a class is a table. It ships with a live assertion in the integration
+fixture rather than with hedged wording, and ADR-124 alternative B is the drop-in fallback if it fails.
+
+---
+
+## Wave: DESIGN / [REF] Technology choices
+
+**No new technology.** No package, no library, no service, no configuration key, no infrastructure.
+
+| Concern | Choice | Why not something new |
+|---|---|---|
+| Class filtering | ServiceNow encoded-query `IN` / `=` operators | Native to the Table API already in use. Measured. Free. |
+| Hierarchy knowledge | A static set in source | ADR-116 decision 4 / S3: the runtime alternative (`sys_db_object`) is `403` for the accounts that matter, and cannot back a DTO that must be identical for every caller. |
+| Cross-stack twin guard | `readFileSync` + regex enforcement test under Vitest | Already the repo's mechanism for exactly this (two existing enforcement tests). No new runner, no new dependency, runs in a gate that already blocks. |
+| Structural enforcement | ArchUnitNET 0.13.3 | Already present, already 24 fixtures, already the ServiceNow purity convention (ADR-114). |
+| Backend tests | NUnit 4.6 + Moq + EF InMemory | Project standard. The pure cores need no `HttpMessageHandler` at all — which is what makes the ≥80 % mutation gate affordable here, per ADR-114's own reasoning. |
+| Frontend tests | Vitest + React Testing Library | Project standard. |
+
+All open source, all already licensed and shipped. The one proprietary system in the picture —
+ServiceNow — is the customer's, not Lighthouse's, and is spoken to over its documented REST API with a
+customer-supplied credential.
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis (HARD GATE)
+
+**Verdict counts: 2 CREATE NEW · 18 EXTEND · 6 REUSE UNCHANGED.** Contract shapes per the
+effect-isolation classification: *pure* = return-only, no mutation, no IO · *bounded* = a declared,
+enumerable mutation set · *shell* = the one class permitted IO.
+
+| # | Component | Path | Verdict | Contract shape | Justification / declared universe |
+|---|---|---|---|---|---|
+| 1 | `ServiceNowReadScope` | `…/ServiceNow/` | **CREATE NEW** | **pure** | No existing type answers "what is this team reading" once table, `Type`, definition scope and message subject stop being the same string. Nearest alternative — four parameters threaded through the shell — was rejected in D-D1. Universe: none; every method returns a string or a list. |
+| 2 | `ServiceNowTableHierarchy` | `…/ServiceNow/` | **CREATE NEW** | **pure** | S3's static set needs a home the schema DTO and the connector can both reach. Putting it on `ServiceNowWorkTrackingOptionNames` (the nearest existing type) would mix option *keys* with instance *taxonomy*. Universe: none; a readonly set and a predicate. |
+| 3 | `ServiceNowWorkTrackingConnector` | `…/ServiceNow/` | **EXTEND** | **shell / bounded** | Every change is composition of the pure parts. Declared mutation set: `{ observedAvailability }` — one private field, unchanged in kind by this slice. External-effect universe is **empty by construction**: the adapter issues only `GET`s and `WriteFieldsToWorkItems` throws (epic D8). |
+| 4 | `ServiceNowWorkItemMapper` | `…/ServiceNow/` | **EXTEND** | **pure** | `MapRecord` is already the single place a record becomes a `WorkItemBase`; D4 is one field's source changing. A separate "class reader" would split one record-mapping rule across two files. |
+| 5 | `ServiceNowHistoryQuery` | `…/ServiceNow/` | **EXTEND** | **pure** | `DefinitionQueryFor` already owns this query string; S4 changes its scope, not its ownership. Widening the parameter from `string` to a list is the whole change. |
+| 6 | `ServiceNowTeamQueryVerdict` | `…/ServiceNow/` | **EXTEND** | **pure** | D-D9. Same question, same vocabulary, same field-name convention. A new verdict type would be the second instance, not the third. |
+| 7 | `ServiceNowHistoryVerdict` | `…/ServiceNow/` | **EXTEND** | **pure** | D-D10 adds one message. Deliberately **not** an enum member: `ServiceNowHistoryAvailability` is what `SupportsTransitionHistory` branches on and connection validation must not write it. |
+| 8 | `ServiceNowValidationVerdict` | `…/ServiceNow/` | **REUSE UNCHANGED** | **pure** | Its `unknown_table` (400) and `insufficient_permissions` (403) rungs are exactly rungs 1 and 2 of the class ladder. Reused by call, not by copy — the class name goes in where the table name went. |
+| 9 | `ServiceNowWorkTrackingOptionNames` | `…/ServiceNow/` | **REUSE UNCHANGED** | **pure** | `WorkItemTable` is already the key; nothing new is configured. Also the anchor for the frontend guard's second assertion (D-D7). |
+| 10 | `ServiceNowStateSpanMapper` | `…/ServiceNow/` | **REUSE UNCHANGED** | **pure** | Spans → transitions is class-agnostic. Multi-class teams work *because* mapping is by label (ADR-118 D3), which is already true. |
+| 11 | `DataRetrievalSchemaDto` | `API/DTO/` | **EXTEND** | **pure** | The schema table for all five systems already lives here; this is one arm becoming conditional. It already carries connector knowledge by design. |
+| 12 | `TeamSettingDto` | `API/DTO/` | **EXTEND** | **pure** | One call site passes one more value it already holds. |
+| 13 | `PortfolioSettingDto` | `API/DTO/` | **REUSE UNCHANGED** | **pure** | ADR-116 decision 5 declines ServiceNow portfolios unconditionally; nothing here varies by table. |
+| 14 | `ConnectionValidationResult` | `Models/Validation/` | **REUSE UNCHANGED** | **pure** | `Failure(code, message, technical, fieldName)` and `SuccessWith(code, message)` already carry every new rung. No shared-contract change, so no grep-and-extend-the-factory ritual. |
+| 15 | `Team` / `WorkTrackingSystemConnection` | `Models/` | **REUSE UNCHANGED** | — | `WorkItemTypes` is already persisted, already on the DTO, already rendered. **This is what makes slice 01 migration-free and is the whole of D7.** |
+| 16 | FE `DataRetrievalSchemaDefaults.ts` | `models/Common/` | **EXTEND** | **pure** | The frontend twin. Gains the hierarchy set, the option-key constant and the connection-shaped signatures. |
+| 17 | FE `useModifySettings.ts` | `hooks/` | **EXTEND** | bounded (React state) | One option type widens. The connection is already in scope at `:332`. |
+| 18 | FE `useCreateWizard.ts` | `hooks/` | **EXTEND** | bounded (React state) | One option type widens. `selectedConnection` is already in scope at `:87`. `:128`'s gate is untouched. |
+| 19 | FE `ModifyTeamSettings.tsx` · `CreateTeamWizard.tsx` · `ModifyProjectSettings.tsx` · `CreatePortfolioWizard.tsx` | `components/Common/` | **EXTEND** | pure render | One adapter line each. **No gating logic changes** — the `!== false` predicates stay exactly as written. |
+| 20 | FE `WorkItemTypesComponent` | `components/Common/WorkItemTypes/` | **REUSE UNCHANGED** | pure render | A hand-typed string list is a hand-typed string list. A ServiceNow-only picker is explicitly out of scope (DISCUSS). |
+| 21 | `DataRetrievalSchemaDtoTest` (#5613 guard) | `Tests/API/DTO/` | **EXTEND** | pure | Gains the new parameter plus a second enum pass with a hierarchy-root table, so both branches of the ServiceNow arm are under the exhaustiveness guard. |
+| 22 | `ServiceNowValidationVerdictPurityArchUnitTest` | `Tests/Architecture/` | **EXTEND** | pure | Widen from one pinned type to the pure set: `+ServiceNowTeamQueryVerdict` (**not covered today** — a gap this slice closes for one string constant), `+ServiceNowReadScope`, `+ServiceNowTableHierarchy`. |
+| 23 | `ServiceNowHistoryPurityArchUnitTest` | `Tests/Architecture/` | **EXTEND** | pure | `ServiceNowHistoryQuery` keeps its purity as its parameter widens. |
+| 24 | `ServiceNowWorkTrackingConnectorIntegrationTest` | `Tests/…/ServiceNow/` | **EXTEND** | shell | The four standing substrate assertions. The fixture slice 02 extended rather than duplicated — extend it again, do not fork it. |
+| 25 | `serviceNowSchemaTwin.enforcement.test.ts` | `Lighthouse.Frontend/src/models/Common/` | **CREATE NEW** | pure | D-D7. Nothing existing crosses the stack boundary for *this* pair; `formatLikelihood.enforcement.test.ts` is the pattern, not a host — its subject is a different invariant and merging them would make one failure read as the other. |
+| 26 | ServiceNow docs page | `docs/` | **EXTEND** | — | The `task`-root recipe, names-not-labels, `sys_class_name=task` is 30 records not 725, and the state-mapping warning. Extend the existing page; the connector already has one. |
+
+**Nothing was created that an existing component could have carried.** The two CREATE NEW entries were
+each tested against the nearest incumbent and the rejection is recorded in the row.
+
+---
+
+## Wave: DESIGN / [REF] Quality attributes
+
+| Attribute | How this slice serves it | Sensitivity point |
+|---|---|---|
+| **Correctness of reported flow** | The KPI the feature exists for: one Lighthouse team per real team, so throughput is the team's. | A coach who maps one class's state labels and stops loses the rest **silently** — 61 of 88 change requests on the PDI. `ReportStatesTheTeamNeverMapped` is a log line, not a screen. **This, not the class list, is the feature's real usability risk.** |
+| **No silent no-op (DoD 5 / KPI-3)** | Four refusals with named causes: empty classes at sync and at save, unknown class, unreadable class. D-D10 removes a *false* claim as well. | Rung 4 of the class ladder cannot separate class-level denial from row-level filtering; it names both. |
+| **Backward compatibility** | Every shipped leaf-rooted team is byte-identical on the wire: same URL, same query, same `Type`, same definition scope. AC-B5 and AC-B2 are structural, not asserted by inspection. | Guarded by D-D2's `=`-for-one rule; a one-element `IN` would have changed every shipped read. |
+| **Testability** | Everything interesting is a pure function of scalars. No new `HttpMessageHandler` shape is needed for the class filter, the `Type` change, the definition scope or the verdict rungs. | Makes the ≥80 % mutation gate affordable — ADR-114's original reasoning, applied again. |
+| **Performance** | Sync cost unchanged. Validation cost +n at Save, −1 at connection validation for a hierarchy root. | n is unbounded — a coach can type 30 classes. See OQ-5. |
+| **Security / least privilege** | Unchanged. No new right required; the whole slice is designed around what a `sn_*_read` account can see. | The per-class probe reads more *tables* than before, all of them ones the team already reads through. |
+| **Maintainability** | One new concept (`ServiceNowReadScope`), two new pure types, no new route, no migration, no dependency. Slice 02's per-team table gets a single plug-in point instead of three. | One more piece of ServiceNow knowledge duplicated across the stacks — guarded, not eliminated. |
+
+---
+
+## Wave: DESIGN / [REF] Architectural enforcement
+
+| Rule | Mechanism | Layer |
+|---|---|---|
+| The new types stay pure — no `HttpClient`, no `ILogger`, no `Lighthouse.Backend.Data` | ArchUnitNET, extending `ServiceNowValidationVerdictPurityArchUnitTest` and `ServiceNowHistoryPurityArchUnitTest` | structural |
+| The two hierarchy-root sets and the option key agree across the stacks | `serviceNowSchemaTwin.enforcement.test.ts` — `readFileSync` + set equality, under `pnpm test` | structural / source-text |
+| Every declared `WorkTrackingSystems` member answers both schema factories, on **both** branches of the ServiceNow arm | `SchemaFactories_EveryDeclaredWorkTrackingSystem_DoesNotUseTheQueryFallback`, extended | behavioural |
+| ServiceNow's substrate still behaves as measured | Four standing assertions in `ServiceNowWorkTrackingConnectorIntegrationTest` | behavioural / live |
+| Every verdict rung is reachable and distinct | Table-driven NUnit over `ServiceNowTeamQueryVerdict` | behavioural |
+
+Three semantically orthogonal layers, per the project's established pattern: a source-text bypass is
+caught by the behavioural guard, a behavioural bypass by the structural one, and a substrate change by
+the live one.
+
+### CI rules pre-applied (from `docs/ci-learnings.md`)
+
+- **S3776** — `ValidateTeamSettings` must not grow the per-class loop inline; extract a probe helper.
+  The same rule already bit `useEffect` resume flows and the aging-pace batch.
+- **S107** — no method here approaches seven parameters; `CountRows` stays at four (the scope object
+  replaces what would otherwise have been two more).
+- **CA1859** — private helpers return the concrete type, and take it too (recurrence 3 in the ledger).
+- **S2325 / S1144** — every new private member justifies both its existence and its instance-state use.
+- **NUnit2045 / NUnit2056 / NUnit4002** — `Assert.EnterMultipleScope`, `Is.Zero`, no `Assert.Multiple`.
+- **CS9236** — no repeated lambda binding in the new probe loop.
+- **Comments** — sparse: one line pointing at ADR-123 / ADR-124 / Bug #5613, never narration.
+
+---
+
+## Wave: DESIGN / [REF] C4
+
+### System Context (L1)
+
+```mermaid
+C4Context
+  title System Context - a ServiceNow team covering several kinds of work
+  Person(coach, "Flow coach", "Owns the team and names the kinds of work it does")
+  Person(admin, "Configuration administrator", "Owns the connection and the table it is rooted at")
+  System(lighthouse, "Lighthouse", "Reads work, computes flow metrics and forecasts")
+  System_Ext(snow, "ServiceNow instance", "ITSM records in one task hierarchy, read through the Table API under per-class ACLs")
+  Rel(admin, lighthouse, "Roots the connection at a table and validates it")
+  Rel(coach, lighthouse, "Names the record classes the team works on")
+  Rel(lighthouse, snow, "Reads records, counts and state spans from", "HTTPS / Table API, read-only")
+  Rel(snow, lighthouse, "Returns ACL-filtered rows and ACL-blind counts to")
+  UpdateRelStyle(lighthouse, snow, $offsetY="-20")
+```
+
+### Container (L2)
+
+```mermaid
+C4Container
+  title Container Diagram - slice 01, one class-filtered read
+  Person(coach, "Flow coach")
+  Container(spa, "Lighthouse Frontend", "React + TypeScript", "Shows Work Item Types when the schema says the table has descendants")
+  Container(api, "Lighthouse Backend", "ASP.NET Core", "Team settings, validation and the sync")
+  Container(conn, "ServiceNow connector", "C# adapter, ports-and-adapters", "Imperative shell over pure cores")
+  ContainerDb(db, "Lighthouse database", "SQLite or PostgreSQL", "Stores teams, connections and work items")
+  System_Ext(snow, "ServiceNow Table API", "task hierarchy, metric_definition, metric_instance")
+  Rel(coach, spa, "Types record class names into")
+  Rel(spa, api, "Saves and validates team settings through", "PUT /api/teams/{id}")
+  Rel(api, spa, "Returns the connection-shaped data retrieval schema to")
+  Rel(api, conn, "Asks for this team's work and this team's verdict")
+  Rel(conn, snow, "Reads sys_class_name-filtered records from")
+  Rel(conn, snow, "Probes each named class once at save time")
+  Rel(conn, snow, "Reads class-scoped metric definitions and spans from")
+  Rel(api, db, "Persists teams, connections and synced work items in")
+```
+
+**No L3.** Nine classes, one IO boundary, one purity line — the decomposition sketch above says
+everything a component diagram would, without pretending the subsystem is larger than it is.
+
+---
+
+## Wave: DESIGN / [REF] Open questions
+
+Deliberately deferred rather than guessed. None of them blocks DISTILL from writing AC-B1…AC-B6.
+
+| ID | Question | Recommendation | Owner / when |
+|---|---|---|---|
+| **OQ-1** | Should the schema twins be de-duplicated for real — a per-connection schema served by the backend, with the frontend `Record` demoted to an offline fallback? | **Defer.** It removes D-D7's guard by removing the duplication, and a failed fetch degrades safely to today's `false` (AC-B5-safe). But it adds a driving port and touches both wizards and both settings screens, and Bug #5613 explicitly ruled that collapsing the tables is "a design change, not a fix". Revisit the moment a *second* conditional flag appears. ADR-123 alternative F. | Maintainer, post-slice |
+| **OQ-2** | Should `isWorkItemTypesRequired` split into separate "shown" and "required" flags? | **Defer, but it is the real fix for D-D5's residual risk.** Visible-but-optional would let a customer on an unlisted hierarchy root type classes and recover without a Lighthouse release. Cost: a shared contract change across five systems and two entity types, and it weakens AC-B5's promise not to make the shipped configuration harder. ADR-123 alternative G. | Maintainer, post-slice |
+| **OQ-3** | Does `GET /api/now/table/{unknown_class}` actually answer `400`? | **Ship the ladder, assert it live.** It is the one inferred link (ADR-114 measured `400` for an unknown *table*; a class is a table). ADR-124 alternative B is the drop-in fallback if it fails — at the cost of the ambiguous rung. | DELIVER, integration fixture |
+| **OQ-4** | Is `{ "task" }` the whole hierarchy-root set? | **Ship `task` alone.** It is the ITSM work hierarchy and the only root the SPIKE observed. The docs must say what a customer does whose root is not listed — today the answer is "open an issue", which OQ-2 would turn into "type the classes anyway". | DISTILL / docs |
+| **OQ-5** | Should the number of named classes be capped, and should the probes fan out? | **Serial, uncapped, for now.** Serial matches every other read in this adapter and the instance's rate-limiting behaviour is measured at exactly one request rate. A cap invents a limit nobody has hit. Revisit if a real team names more than a handful. | DISTILL |
+| **OQ-6** | State mapping is this feature's real usability risk — does slice 01 do anything about it beyond docs? | **Docs only in slice 01, and say so out loud.** Surfacing `ReportStatesTheTeamNeverMapped` in the UI is a genuinely valuable, genuinely separate story: it is not ServiceNow-specific, and every connector would benefit. Filing it is worth more than half-building it here. | Maintainer — candidate follow-up story |
+| **OQ-7** | Now that a hierarchy-rooted **connection** says nothing about history (D-D10), should `ValidateTeamSettings` report history availability instead? | **Not in slice 01.** It would need a definition read per team save — the cost S2 just declined for the class probes — and the sync already reports it through `ReportHistoryUnavailable`. But it leaves a `task`-rooted administrator with no screen that answers "will I get time-in-state?". Worth a maintainer call. | Maintainer |
+| **OQ-8** | AC-B6 says "produces a specific message naming the class". Which of the four rungs are in scope for the acceptance tests, and does a class that is merely *empty* count as a pass or a failure? | **Empty is a pass, not a failure** — a class with no records is a legitimate configuration, and refusing the save would block a team on a quiet quarter. DISTILL should pin all four rungs as distinct observable outcomes regardless. | DISTILL |
+
+---
+
+## Wave: DESIGN / [REF] Handoff to DISTILL
+
+**Buildable.** OC-1, OC-2 and OC-3 are closed; S1–S4 are designed to; the slice's IN-scope list is
+covered plus the two additions this wave found (D-D4's validation rung and D-D10's connection-scope
+silence). No open question blocks an acceptance test.
+
+What DISTILL should know before writing:
+
+- **Six ACs, and every one of them has a byte-identical-to-today counterpart.** AC-B2 and AC-B5 are
+  claims about the *absence* of change; the design makes them structural (D-D2, D-D3), so the tests
+  should assert the wire form, not just the outcome.
+- **Four distinct verdict codes** are new and observable: `missing_work_item_types`, plus the class
+  ladder's reuse of `unknown_table` / `insufficient_permissions` and its own denial rung. Plus one
+  advisory, `history_determined_per_team`.
+- **The pure cores need no transport mock.** `ServiceNowReadScope`, the mapper's `Type` rule, the
+  definition scope and every verdict rung are table-driven unit tests. That is where the mutation
+  budget should go.
+- **Two things are asserted across the stacks**, not within one: the schema twin agreement
+  (`pnpm test`) and the substrate assumptions (integration fixture, live instance).
+- **DoD item 5 stands unchanged and is not negotiable**: verified against a real instance with a
+  `task`-rooted team returning at least two classes. The epic's own lesson is that 164 tests did not
+  find what one manual run did.

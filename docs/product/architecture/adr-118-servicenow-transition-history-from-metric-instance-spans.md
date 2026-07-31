@@ -8,6 +8,14 @@
   `StartedDate` is the first Doing span's `start` where history is readable, and ADR-117's
   `opened_at` only where it is not. **Cancels**: the
   `ServiceNowChoiceLabelResolver` seam named in slice 01's DESIGN.
+- **Amended 2026-07-31 by [ADR-123](./adr-123-servicenow-record-classes-as-work-item-types.md)**
+  (Story 5611 slice 01), in two narrow places and nowhere else. **(a)** The metric-definition read is
+  scoped to the team's record *classes*, not to the configured table: measured, a `task`-rooted team
+  finds **0** definitions where `tableINincident,change_request` finds 6, so without this amendment
+  the recipe Story 5611 recommends would silently take this ADR's capability away. **(b)** At
+  connection scope a hierarchy-root table claims nothing about history rather than reporting
+  `NoStateMetric` with unfollowable advice. D2's filter-by-definition rule, D3's label source, D4's
+  span-start pairing and D5's read-don't-infer stance are untouched.
 
 ## Context
 

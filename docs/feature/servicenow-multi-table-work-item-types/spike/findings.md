@@ -99,8 +99,23 @@ needs** — one cheap request per named class yields a three-way verdict:
 | > 0 | 0 | **ACL denial** — name the class in the message |
 | 0 | 0 | class is empty *or* the name does not exist — indistinguishable at the Table API |
 
-Verified across all four accounts and five class names, including `not_a_real_class`. `sys_db_object`
-separates "empty" from "misspelt" and answered 200 for three of the four accounts (403 only for
+Verified across all four accounts and five class names, including `not_a_real_class`.
+
+**Post-DESIGN addendum, same day.** DESIGN (ADR-124 decision 2) proposed a strictly better probe:
+address the class's **own table** (`/api/now/table/{class}`) rather than filtering the rooted table.
+Measured afterwards, all four accounts: an unknown class answers **`400`
+`{"error":{"message":"Invalid table not_a_real_class"},"status":"failure"}`** — including the no-roles
+account, so the verdict is credential-independent. That splits the `header = 0` ambiguity this section
+called unresolvable: *misspelt* is a `400`, *empty* is a `200` with `header = 0`. The finding above is
+not wrong — it describes the rooted-table probe, where a bogus class genuinely is indistinguishable —
+DESIGN simply chose a different probe at the same cost of one request.
+
+Same measurement narrowed the `403` rung: **no ITSM task-descendant returned `403` at any privilege
+level.** A class the account may not read answers `200`/0; `403` appeared only for platform tables
+(`sys_db_object` to a no-roles account, `metric_definition` below `itil`). The `403` rung is correct
+where it fires and probably unreachable for the class names a coach types.
+
+`sys_db_object` also separates "empty" from "misspelt", and answered 200 for three of the four accounts (403 only for
 `lh_probe_none`) — but an account that cannot read `sys_db_object` also cannot read any class, so the
 first rung fires first and the ambiguity never reaches a user who could act on it. **Do not build on
 `sys_db_object`.** (Noted as drift: the epic SPIKE matrix recorded `sys_db_object` as 403 below

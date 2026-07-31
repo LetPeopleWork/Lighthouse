@@ -89,6 +89,12 @@ read scopes by `sys_class_name` inside the query instead. This is decided on thi
 rest of this ADR and is recorded as **C-3** in the feature delta for deliberate revisit at slice 02, where
 the type-vs-`sys_class_name` mapping is first exercised. Cost of being wrong: one boolean and one test.
 
+> **Amended 2026-07-31 by [ADR-123](./adr-123-servicenow-record-classes-as-work-item-types.md)** (Story
+> 5611 slice 01) — this is the revisit C-3 asked for, and the cost estimate was wrong twice over. The
+> flag does not merely skip validation, it also *hides* the field (Bug #5613), and the two stacks
+> disagreed about it. `isWorkItemTypesRequired` is now conditional on the configured table: `true` for a
+> known hierarchy root, `false` for a leaf. Decisions 1-5 and 7 of this ADR stand unchanged.
+
 **7. `Password` is marked secret**, so AC5 (never returned in plaintext) is satisfied by the existing
 `EncryptSecrets` change-tracker hook and existing DTO redaction. No new mechanism, no schema change, no
 EF migration — the enum member is appended after `Csv` and the options are rows, not columns.
@@ -150,5 +156,8 @@ but stay quiet about portfolios" unrepresentable.
   as its probe target.
 - [ADR-115](./adr-115-servicenow-basic-auth-prerequisite-not-detected.md) — the same
   measured-invisible-to-the-customer pattern applied to auth.
+- [ADR-123](./adr-123-servicenow-record-classes-as-work-item-types.md) — amends decision 6; keeps
+  decision 4 (no runtime discovery) by deciding hierarchy membership from a static set rather than
+  from `sys_db_object`.
 - SPIKE evidence: `docs/feature/epic-5513-servicenow-integration/spike/findings.md` (Q5, Q8).
 - DISCUSS D4 / D5 / US-03 AC5: `docs/feature/epic-5513-servicenow-integration/feature-delta.md`.
