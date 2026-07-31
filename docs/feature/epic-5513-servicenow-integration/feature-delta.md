@@ -2260,3 +2260,188 @@ its model in `src/models/WorkTracking/`. No new directories.
 - **Dogfood**: move records through states on the PDI as `lh_probe_itil`, refresh, confirm Cumulative
   State Time shows real durations and Cycle Time drops — then **revoke the role** and confirm the
   runtime downgrade rather than an error.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary (slice 04)
+
+A ServiceNow team whose integration account holds `itil` now gets true time-in-progress instead of
+request-to-resolution. The connector resolves the instance's state-span metric definitions once per
+sync, reads `metric_instance` in batches of 200 record handles, pairs each record's spans into
+transitions at the span's `start`, and dates the start of work at the first span the team maps to
+Doing. Where the instance cannot supply that — the account is refused the metric tables, or nothing
+measures state spans — the connector downgrades at runtime, the existing sync-delta derivation takes
+over, and `ValidateConnection` tells the administrator which of the two causes fired, what to change,
+and which number their team is reading until they do.
+
+Shape is ADR-114's: three pure static cores (`ServiceNowHistoryQuery`, `ServiceNowStateSpanMapper`,
+`ServiceNowHistoryVerdict`) composed by the connector, which owns all HTTP. No new library, no EF
+migration, no new HTTP route. One shared contract changed additively —
+`ConnectionValidationResult` gained `Advisory` + `AdvisoryCode` and a `SuccessWith(...)` factory.
+
+**14 code commits** plus the roadmap and a merge. All 43 pre-authored RED tests are green; 12 further
+tests were authored afterwards, driven by mutation testing rather than by the plan.
+
+## Wave: DELIVER / [REF] Files modified (slice 04)
+
+Production — backend:
+
+| File | Change |
+|---|---|
+| `…/ServiceNow/ServiceNowHistoryQuery.cs` | Batching at 200, the definition and span queries, rows → spans filtered by definition |
+| `…/ServiceNow/ServiceNowStateSpanMapper.cs` | Sort by start, pair consecutive spans, map through the shared mapper; `WhenWorkStarted`; the label filter added by the dogfood fix |
+| `…/ServiceNow/ServiceNowHistoryVerdict.cs` | The three-way capability verdict and both advisory texts |
+| `…/ServiceNow/ServiceNowWorkTrackingConnector.cs` | Composes the three cores; `ReadStateSpanDefinitions` shared by the sync and validation paths; the pager widened to `PagedRead(HttpStatusCode, List<JsonElement>)` with a `WhenRefused` policy; `StartedDate` from history; the advisory on `ValidateConnection` |
+| `…/ServiceNow/ServiceNowWorkItemMapper.cs` | `ReadForm`, `ReadInstant` and the two form constants widened `private` → `internal` so one tolerant reader serves the whole connector |
+
+Production — frontend:
+
+| File | Change |
+|---|---|
+| `src/models/WorkTracking/ConnectionValidationResult.ts` | `readConnectionValidation` — a total pure reader over boolean / object / nullish payloads |
+| `src/services/Api/WorkTrackingSystemService.ts` | `validateWorkTrackingSystemConnection` widened `Promise<boolean>` → `Promise<IConnectionValidationResult>` |
+| `src/components/Common/Connections/ValidationAdvisory.tsx` | **NEW** — the info Alert an administrator reads; renders nothing when there is no advisory |
+| `src/components/Common/Connection/CreateConnectionWizard.tsx` | Advisory state, cleared on the four edits that already clear the validation error; rendered outside `renderStepContent()` |
+| `src/components/Common/Connection/ModifyConnectionSettings.tsx` | The same, cleared on five edits plus at the top of `handleSave` |
+| `src/tests/MockApiServiceProvider.ts` | The shared double answers in the new shape |
+
+Tests: six backend fixtures and five frontend files. 21 files, +784 / −167 across both stacks.
+
+## Wave: DELIVER / [REF] Scenarios green (slice 04)
+
+**43 of 43** pre-authored RED tests green (38 backend + 5 frontend), verified 2026-07-31.
+
+| Fixture | Result |
+|---|---|
+| `ServiceNowHistoryQueryTest` | 12 / 12 |
+| `ServiceNowStateSpanMapperTest` | 10 / 10 (+1 authored later) |
+| `ServiceNowHistoryVerdictTest` | 11 / 11 (+3 authored later) |
+| `ServiceNowTransitionHistoryTest` | 10 / 10 |
+| `ServiceNowHistoryPurityArchUnitTest` | 3 / 3, green throughout |
+| `ServiceNowTeamSyncAcceptanceTest` | walking skeleton + 4 pre-existing scenarios |
+| `ConnectionValidationResult.test.ts` | 6 / 6 (+1 authored later) |
+
+Full suites: backend **4202 passed / 0 failed**, frontend **3820 passed**. The two `LicenseServiceTest`
+failures the roadmap listed as a pre-existing baseline **did not reproduce** — the suite is entirely
+green, so that carried assumption is retired rather than inherited again.
+
+## Wave: DELIVER / [REF] DoD check (slice 04)
+
+| Item | Verdict |
+|---|---|
+| AC1 — history read from the instance | ✅ `metric_definition` resolved once per sync, `metric_instance` read in one batch per 200 records |
+| AC2 — mapped through the shared `WorkItemStateTransitionMapper` | ✅ reused unchanged |
+| AC3 — time-in-state works on a ServiceNow team | ✅ walking skeleton through the real host, sync service, connector, mapper and repository |
+| AC4 — runtime downgrade, not an error | ✅ two regression guards, plus the advisory naming which cause fired |
+| AC5 — opt-in team setting | ⊘ **not built, per ADR-118 D6** — measured cost ~2.4 s per 500 items is not material |
+| DoD 5 — zero silent no-ops | ✅ downgrade logs one warning naming the team and the reason. **One deliberate exception**: spans whose label the team never mapped are dropped silently, because an unmapped state is treated as non-existent everywhere in Lighthouse and warning about it would fire on correct configurations |
+| ADR-117's honesty obligation | ✅ the advisory reaches the administrator's screen — the declared exit gate, and it is wired, not merely produced |
+
+## Wave: DELIVER / [REF] Quality gates (slice 04)
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors (`TreatWarningsAsErrors`) |
+| `dotnet test` | 4202 passed / 0 failed |
+| `pnpm test` | 3820 passed, 286 files |
+| `pnpm build` + Biome | 0 errors, 0 warnings |
+| L1-L6 refactor | applied on both stacks, as separate `refactor(servicenow):` commits |
+| Adversarial review | `nw-software-crafter-reviewer`, verdict APPROVED / zero defects — **treated with suspicion, and rightly**: it cited a commit hash absent from the history and a stale test count, and it missed both gaps mutation later found |
+| Backend mutation | **90.34 %** over the ServiceNow directory. `ServiceNowHistoryQuery`, `ServiceNowStateSpanMapper` and `ServiceNowWorkItemMapper` at 100 % |
+| Frontend mutation | **100 %** (89.66 % before the survivors were killed) |
+
+### What mutation caught that review did not
+
+Two survivors were judged rather than counted, and both were real:
+
+- **`ServiceNowHistoryVerdict` scored 60 %.** The advisory copy could be blanked to `""` with no test
+  failing. The roadmap had asserted the opposite — that the literals `itil`, `Field value duration`,
+  the table name and `resolution` were pinned. The diagnosis is worth keeping: each advisory is one
+  sentence concatenated from four fragments, every claimed literal lived on exactly one fragment, and
+  two of the assertions were the ledger's named trap in disguise — `Does.Contain(Table)` compared the
+  advisory against the constant the test had just passed in, and `Does.Contain("resolution")` was
+  satisfied by a shared fragment the mutants never touch.
+- **`ValidateConnection`'s capability read could be deleted entirely** (`verdict.IsValid ? … : verdict`
+  mutated to never call it) and the suite stayed green. That is the backend half of the exit gate,
+  and it was unverified because DISTILL authored a pure function at each end of the advisory path and
+  nothing over the wiring.
+
+Both were closed by 8 backend and 4 frontend tests, each mutant applied by hand and observed to fail.
+
+## Wave: DELIVER / [REF] Dogfood findings (slice 04, 2026-07-31)
+
+The maintainer dogfooded against PDI dev191338 and the slice did not work. Two defects, both measured:
+
+1. **The definition query matched nothing.** `sysparm_query` matches a field's **stored value**, not
+   its display label. `type=Field value duration` returned `{"result":[]}`; `type=field_value_duration`
+   returned 4 rows. This was flagged as a live-instance risk in 04-01's commit body and the dogfood is
+   what proved it.
+2. **Fixing the first alone would have shipped fabricated transitions.** `type=field_value_duration`
+   on a stock incident table selects **four** definitions — `Incident State Duration`, but also `Open`
+   (field `active`, values `true`/`false`), `Assignment Group` and `Assigned to Duration`. Paired,
+   those produce "state changes" like `true → false`. **This amends ADR-118 D2**: the goal was right,
+   the mechanism was not, and the design's own reasoning had noticed those definitions exist without
+   noticing they share the type. The discriminator that survives measurement is the team's own state
+   mapping — a label no team mapped is not a state span. It needs no field-name knowledge, which is
+   what D2 wanted, and note a field-name filter would have found nothing anyway: the connector reads
+   state from `state` while the PDI's definition sits on `incident_state`.
+
+A slice-02 live integration test asserted `SyncedTransitions` is empty "because ServiceNow supplies no
+history to a read-only account" — while connecting as `admin`. It passed only because of defect 1. It
+was turned around to assert history arrives with every label mapped, and verified against the instance:
+transitions come back exclusively `New` / `In Progress` / `Resolved`.
+
+A third dogfood observation was **not** a defect: `Correlation ID=LIGHTHOUSE_DEMO` selected all 103
+incidents because ServiceNow silently drops a query term naming an unknown field, and slice 01's guard
+caught it and said so. The column name is `correlation_id`, which returns the 36 demo records. Filed as
+a usability item on ADO 5612.
+
+## Wave: DELIVER / [REF] Open items carried out of slice 04
+
+- **ADR-118 D2's amendment is unratified.** The code implements the label-based discriminator; the ADR
+  text still describes the definition-type-only rule. The maintainer ratifies.
+- **Unmapped states diverge across connectors, deliberately.** Jira / ADO / Linear / CSV keep an
+  unmapped state as a transition endpoint carrying its raw label, so its time is dropped from the
+  totals; ServiceNow drops the span before pairing, so its time is absorbed into the preceding mapped
+  state. Both were kept — ServiceNow needs the filter because `metric_instance` mixes non-state
+  measurements into the same table. Recorded on ADO 5612.
+- **ADR-114/115/116 are still Proposed**, unchanged since slice 01.
+- **No DEVOPS wave has ever run for this epic**, so DESIGN's Pact / contract-test recommendation for
+  the Table API response shapes is still unrouted. Cheapest alongside slice 05.
+- **US-06 (5578) must carry the negative result**: history is NOT affordable on a least-privilege
+  account. The slice's own learning hypothesis is formally disproven and the `itil` cost was accepted
+  as an adoption cost rather than treated as a stop signal. Easy to lose now that slice 04 ships and
+  looks like a win.
+- **Ten mutation survivors remain in the connector's paging, `Link`-header parsing and URI-building
+  helpers**, plus `ServiceNowTeamQueryVerdict` at 86.67 %. All slice-01/02 code this slice did not
+  touch; left deliberately rather than widening the blast radius.
+
+## Wave: DELIVER / [REF] Per-feature finalization checklist (slice 04)
+
+No silent N/A — every item answered.
+
+| Item | Answer |
+|---|---|
+| Public docs prose | **N/A, because** ServiceNow documentation is slice 05's declared scope (ADO 5578, "ServiceNow docs, demo-data generator, and the viability verdict"). Nothing ServiceNow has ever been released, so there is no live page going stale in the meantime |
+| Per-feature screenshots | **N/A, same reason.** The advisory Alert carries `data-testid` values (`create-wizard-validation-advisory`, `connection-settings-validation-advisory`) specifically so slice 05's screenshot pass has stable anchors |
+| Demo data | **N/A** — `Scripts/DemoEnv/ServiceNowSystemUpdater.py` parity is slice 05's, and the PDI's out-of-box `Incident State Duration` definition already exercises this slice |
+| Website marketing surface | **N/A** — unreleased connector, nothing on letpeople.work refers to it |
+| Lighthouse-Clients CLI / MCP versioning | **N/A** — slice 04 adds no client-facing surface. The advisory rides `ValidateConnection`, which the clients do not expose |
+| RBAC impact | **None.** No new endpoint, no new permission. The advisory travels on an existing validation response already gated as it was |
+| EF migration | **None**, by design — the advisory is not persisted (ADR-118 D5) and `StartedDate` is an existing column |
+| Root `ARCHITECTURE.md` / `brief.md` | ✅ `docs/product/architecture/brief.md` carries the slice-04 application-architecture section |
+
+## Wave: DELIVER / [REF] Pre-requisites (slice 04)
+
+Consumed: the DISTILL scenario list and its 43 pre-authored RED tests, the DESIGN component
+decomposition and Reuse Analysis above, ADR-114 (pure core / imperative shell), ADR-117 (as amended)
+and ADR-118 (7 decisions, D2 now amended by measurement).
+
+One note for whoever reconstructs the mutation runs: **no Stryker config is committed in this repo**
+(`.gitignore` excludes `**/stryker-config*.json`, `**/stryker.config*.mjs` and `**/vitest.stryker*.ts`
+as policy). The backend config is the one recorded under "Mutation testing setup" above, with `mutate`
+pointed at `**/Services/Implementation/WorkTrackingConnectors/ServiceNow/*.cs`. The frontend run needs
+`stryker.config.epic-5513-servicenow-slice04.mjs` plus a matching `vitest.stryker.*.config.ts` whose
+`include` list names **every** test file that covers the mutated code — a test file missing from that
+list makes its mutants survive for want of a test run, which reads identically to a real gap. That
+happened once during this slice and cost a full re-run.
