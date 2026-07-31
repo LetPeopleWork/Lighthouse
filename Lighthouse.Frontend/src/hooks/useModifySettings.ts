@@ -39,8 +39,6 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 		selectedSystem: IWorkTrackingSystemConnection | null,
 		modifyDefaultSettings: boolean,
 	) => string[];
-	// The connection rather than its system type: what a ServiceNow team is asked for depends on
-	// the table the connection reads (ADR-123 decision 6).
 	getSchemaForSystem: (
 		connection: IWorkTrackingSystemConnection,
 	) => TSettings["dataRetrievalSchema"];

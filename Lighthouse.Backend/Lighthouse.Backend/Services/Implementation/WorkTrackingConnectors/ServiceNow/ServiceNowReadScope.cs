@@ -5,10 +5,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// named. Pure (ADR-114).
     /// </summary>
     /// <remarks>
-    /// ADR-123 decision 1. One string used to answer four questions at once — the URL path, the work
-    /// item type, the metric-definition scope and the subject of every validation message — and
-    /// decisions 8 and 9 split three of them apart. This is also the single point slice 02's per-team
-    /// table plugs into.
+    /// ADR-123 decisions 1, 8 and 9 — one string used to answer the URL path, the work item type and
+    /// the metric-definition scope at once, split apart here.
     /// <para>
     /// Everything below <see cref="NamesNoKindsOfWork"/> assumes the team named at least one kind of
     /// work. Both call sites refuse before asking (ADR-123 decision 6, amended 2026-07-31).

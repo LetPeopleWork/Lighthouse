@@ -23,7 +23,6 @@ interface UseCreateWizardOptions<TDto> {
 	entityType: WizardEntityType;
 	defaultName: string;
 	getConnections: () => Promise<IWorkTrackingSystemConnection[]>;
-	// The connection rather than its system type (ADR-123 decision 6).
 	getSchema: (
 		connection: IWorkTrackingSystemConnection,
 	) => IDataRetrievalSchema | null;
