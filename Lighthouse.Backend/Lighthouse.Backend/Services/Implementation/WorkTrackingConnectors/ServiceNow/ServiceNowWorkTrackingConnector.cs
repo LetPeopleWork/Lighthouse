@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// Row creation is monotonic and never rewritten, so ordering by it keeps the rows already
         /// read at the front of the result set even while the table is being written to.
         /// </summary>
-        private const string StableOrderField = "sys_created_on";
+        private const string StableOrderField = ServiceNowWorkItemMapper.CreatedField;
 
         /// <summary>
         /// The last brake, for an instance that reports no result-set size at all. At the requested
