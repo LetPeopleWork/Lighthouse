@@ -1966,6 +1966,24 @@ sight, which is `sysparm_display_value=all` earning its place and the reason R-4
 | Work items have no click-through to the record. The connector maps `number`, not `sys_id`, so it needs one more field. Bucket for small polish, to be picked up at the end of the epic. | **#5612** |
 | A blocked-item rule was created and silently not saved. Not reproduced yet, and probably not ServiceNow-specific — blocked rules are generic team settings. | **#5613** |
 
+**Added to #5612's polish bucket, 2026-07-31 (from #5611 dogfood):**
+
+- **A static class-name → label map, so Work Item Types can be read in plain English.** `sys_class_name`
+  filtering matches the *stored* value, so the field holds `sc_req_item` while the user thinks
+  "Requested Item" — and ServiceNow's own pickers show the label. Resolving it properly means reading
+  `sys_db_object`, which the SPIKE measured as `403` for a least-privilege integration account: it
+  would work for the maintainer and show a customer an empty list, which is why ADR-124 says not to
+  build on it. **Maintainer's call: ship a static map of the standard ITSM classes** — they are the
+  same on every stock instance, it needs no new grant, and it is good enough for the MVP. Silently
+  incomplete for custom classes, which is the accepted cost. The richer options (echoing the label
+  back from the validation probe, which already reads each class; or a real `sys_db_object` dropdown
+  that degrades to free text) stay available if the static map proves too thin.
+- **`GuardAgainstRepeatedRecords` keys identity on `number`, which is not unique.** `sys_id` is, and
+  `ReadRecordId` already reads it two lines away. Reached for real on the PDI on 2026-07-31: five
+  change requests sharing a number aborted an entire team sync with `paging_repeated_records` — so a
+  customer whose instance contains one number collision loses every work item on the team, not just
+  the duplicates. Found while fixing #5611's review findings; out of scope there.
+
 **Noted, deliberately not filed — parent items and portfolios.** Slice 03 was cancelled, so there is
 no plan for reading ServiceNow parents, and `GetFeaturesForProject` refuses permanently. Revisit once
 the remaining slices are done, when there is more evidence to decide with. The open question is what
