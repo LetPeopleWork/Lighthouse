@@ -380,6 +380,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Name = "ServiceNow Integration Test Team",
                 DataRetrievalValue = query,
+                // A team on a single kind of work names none. Team's own default is the Jira-shaped
+                // ["User Story", "Bug"], which no ServiceNow team ever persists (#5611).
+                WorkItemTypes = [],
                 ToDoStates = toDoStates,
                 DoingStates = doingStates,
                 DoneStates = doneStates,
