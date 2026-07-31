@@ -50,6 +50,25 @@ const buildOAuthCallbackUrl = (baseUrl: string | null): string => {
 
 const STEPS = ["Choose Type", "Configuration", "Name & Create"];
 
+// ADR-118 D5: a working connection can still have something worth saying, and the backend owns the copy.
+const ValidationAdvisory: React.FC<{ advisory: string | null }> = ({
+	advisory,
+}) => {
+	if (advisory === null) {
+		return null;
+	}
+
+	return (
+		<Alert
+			severity="info"
+			sx={{ width: "100%", mt: 2 }}
+			data-testid="create-wizard-validation-advisory"
+		>
+			<Typography variant="body2">{advisory}</Typography>
+		</Alert>
+	);
+};
+
 interface CreateConnectionWizardProps {
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
 	validateConnection: (
@@ -100,6 +119,9 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const [inlineMessage, setInlineMessage] = useState<InlineMessage | null>(
 		null,
 	);
+	const [validationAdvisory, setValidationAdvisory] = useState<string | null>(
+		null,
+	);
 
 	const { oauthService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
@@ -145,6 +167,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		setConnectionName(system.name);
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 
 		const availableMethods = system.availableAuthenticationMethods ?? [];
 		const defaultMethod = availableMethods[0] ?? null;
@@ -246,13 +269,13 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 			draftConnectionId,
 		]);
 
-	const runValidation = useCallback(async (): Promise<boolean> => {
-		const dto = buildConnectionDto();
-		if (!dto) return false;
+	const runValidation =
+		useCallback(async (): Promise<IConnectionValidationResult> => {
+			const dto = buildConnectionDto();
+			if (!dto) return { isValid: false };
 
-		const validation = await validateConnection(dto);
-		return validation.isValid;
-	}, [buildConnectionDto, validateConnection]);
+			return validateConnection(dto);
+		}, [buildConnectionDto, validateConnection]);
 
 	const handleCreate = async () => {
 		const dto = buildConnectionDto();
@@ -298,6 +321,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const startOAuthHandshake = async () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		setInlineMessage(null);
 		setValidating(true);
 		try {
@@ -366,9 +390,11 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		setValidating(true);
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		try {
-			const isValid = await runValidation();
-			if (isValid) {
+			const validation = await runValidation();
+			setValidationAdvisory(validation.advisory ?? null);
+			if (validation.isValid) {
 				setActiveStep(2);
 			} else {
 				setValidationError(
@@ -405,6 +431,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const handleBack = () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		setActiveStep((prev) => prev - 1);
 	};
 
@@ -573,6 +600,8 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 				</Stepper>
 
 				{renderStepContent()}
+
+				<ValidationAdvisory advisory={validationAdvisory} />
 
 				<Box
 					sx={{

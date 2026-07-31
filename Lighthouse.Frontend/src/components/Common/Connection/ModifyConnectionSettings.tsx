@@ -67,6 +67,26 @@ function resolveValidationErrorMessage(
 	};
 }
 
+// ADR-118 D5: a working connection can still have something worth saying, and the backend owns the copy.
+const ValidationAdvisory: React.FC<{ advisory: string | null }> = ({
+	advisory,
+}) => {
+	if (advisory === null) {
+		return null;
+	}
+
+	return (
+		<Grid size={{ xs: 12 }}>
+			<Alert
+				severity="info"
+				data-testid="connection-settings-validation-advisory"
+			>
+				<Typography variant="body2">{advisory}</Typography>
+			</Alert>
+		</Grid>
+	);
+};
+
 interface ModifyConnectionSettingsProps {
 	title: string;
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
@@ -123,6 +143,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
 		string | null
 	>(null);
+	const [validationAdvisory, setValidationAdvisory] = useState<string | null>(
+		null,
+	);
 
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
@@ -311,6 +334,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		const system = supportedSystems.find(
 			(s) => s.workTrackingSystem === event.target.value,
 		);
@@ -342,6 +366,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const handleAuthMethodKeyChange = (key: string) => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		const availableMethods =
 			selectedWorkTrackingSystem?.availableAuthenticationMethods ?? [];
 		const method = availableMethods.find((m) => m.key === key);
@@ -357,6 +382,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	) => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		setAuthOptions((prev) =>
 			prev.map((option) =>
 				option.key === changedOption.key
@@ -372,6 +398,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	) => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		setOtherOptions((prev) =>
 			prev.map((option) =>
 				option.key === changedOption.key
@@ -384,6 +411,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
+		setValidationAdvisory(null);
 		setName(event.target.value);
 	};
 
@@ -391,6 +419,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		if (selectedWorkTrackingSystem && selectedAuthMethod) {
 			setValidationErrorMessage(null);
 			setValidationTechnicalDetails(null);
+			setValidationAdvisory(null);
 
 			const connection: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
@@ -405,7 +434,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			};
 
 			try {
-				const { isValid } = await validateConnectionSettings(connection);
+				const { isValid, advisory } =
+					await validateConnectionSettings(connection);
+				setValidationAdvisory(advisory ?? null);
 				if (!isValid) {
 					setValidationErrorMessage(
 						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
@@ -688,6 +719,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							</Alert>
 						</Grid>
 					)}
+
+					<ValidationAdvisory advisory={validationAdvisory} />
+
 					<Grid
 						size={{ xs: 12 }}
 						sx={{
