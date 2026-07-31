@@ -49,10 +49,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public const string ClosedField = "closed_at";
 
         /// <summary>The universal-time half of a <c>sysparm_display_value=all</c> field.</summary>
-        private const string UniversalForm = "value";
+        internal const string UniversalForm = "value";
 
         /// <summary>The instance-local, human-readable half of the same field.</summary>
-        private const string ReadableForm = "display_value";
+        internal const string ReadableForm = "display_value";
 
         /// <summary>
         /// Reads the state label a flow coach recognises ("In Progress"), never the raw choice
@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// as universal rather than as local. Bug #5567 is the ledger entry for what relabelling
         /// costs.
         /// </remarks>
-        private static DateTime? ReadInstant(JsonElement record, string field)
+        internal static DateTime? ReadInstant(JsonElement record, string field)
         {
             const DateTimeStyles asUniversalTime = DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal;
 
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // returns), a bare scalar rather than the two-form object, or a number where a string was
         // expected. GetString() throws on anything that is neither string nor null, and that
         // exception would take the whole team sync down with a stack trace no rung explains.
-        private static string ReadForm(JsonElement record, string field, string form)
+        internal static string ReadForm(JsonElement record, string field, string form)
         {
             if (record.ValueKind != JsonValueKind.Object || !record.TryGetProperty(field, out var bothForms))
             {
