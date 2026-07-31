@@ -960,3 +960,109 @@ cannot see. `getDefaultTeamSchema(connection)` was left taking a connection: `Sc
 already `Pick<..., "workTrackingSystem">`, so the parameter is one field wide, and narrowing it to a
 system type would make both wizards synthesise objects to call it — the earlier pass's judgement,
 re-confirmed.
+
+---
+
+## Wave: DELIVER / [REF] Paging identity is `sys_id`, not `number` (shipped 2026-07-31)
+
+`GuardAgainstRepeatedRecords` identified a record by `ServiceNowWorkItemMapper.ReadRecordNumber` —
+the `number` field. **`number` is not unique on a real instance.** `sys_id` is, and `ReadRecordId`
+already read it off the same record.
+
+The blast radius was the whole team: tripping the guard throws
+`ServiceNowReadException.RepeatedAPage`, which aborts the entire sync, so one collision anywhere in
+the result set cost the customer every work item on that team rather than the colliding pair.
+
+**Reproduced on the PDI, 2026-07-31.** The demo seeder minted `CHG0030004`–`CHG0030008` over stock
+sample changes shipped in 2025-11 — the `change_request` number counter sat behind the seeded data.
+`change_request` then held 118 rows with 113 distinct numbers, and
+`WorkSpreadAcrossMorePagesThanOne_ComesBackWhole` failed with `paging_repeated_records`. Deleting the
+five duplicates restored 15/15; keying the guard on `sys_id` removes the class of failure.
+
+**What changed**: one line in the guard, plus the two doc comments on the mapper that claimed
+`number` "tells one record from another across pages".
+
+**What was added**: `RecordsThatShareANumber_AreBothReadRatherThanFailingTheWholeTeam` (two records,
+one number, two `sys_id`s, both read). `ARecordSentAgainAfterItWasEdited_IsStillRecognisedAsOneAlreadyRead`
+and `AnInstanceThatIgnoresTheOffsetItWasGiven_IsCaughtRatherThanCountedTwice` were re-fixtured onto
+records that carry a `sys_id`, so the protection the guard exists for is still proven against the
+field it now keys on rather than against raw bytes. `RecordsThatCarryNoNumber_…` became
+`RecordsThatCarryNoIdentity_…`: with neither field present the guard still falls back to the raw
+text, and two such records are still two records.
+
+The fixture keeps `sys_id` empty by default. A record with an identity also triggers the history
+read, and the paging tests count requests — so the identity-carrying five are a separate fixture
+rather than a change to the shared one.
+
+---
+
+## Wave: DELIVER / [REF] Rooting every read at `task` — HALTED on two measured defects
+
+The maintainer's decision of 2026-07-31 — withdraw the `Work Item Table` connection option and root
+every ServiceNow read at `task` — was implemented in full and then **reverted before commit**, because
+verifying it against the PDI surfaced two defects that the decision's premise ("we anyway query the
+API with the filters for the types we configure") does not survive. Neither is a test artefact and
+neither is caused by the change; the change promotes both from latent to certain.
+
+### Defect 1 — a `task`-rooted read cannot see `resolved_at`
+
+The Table API projects an extended record onto **the columns of the table that was addressed**.
+`resolved_at` is an `incident` column, not a `task` column, so it is simply absent from a
+`task`-rooted read. Measured, `admin`, 2026-07-31:
+
+| read | `resolved_at` |
+|---|---|
+| `/incident?sysparm_display_value=all&sysparm_query=state=6` | `2026-07-31 17:03:20` |
+| `/task?sysparm_display_value=all&sysparm_query=sys_class_name=incident^state=6` | **field absent** |
+| `/task?…&sysparm_fields=number,resolved_at,closed_at,state` | **silently dropped from the projection** |
+
+`ClosedDate` is `resolved_at ?? closed_at` (ADR-117), and `closed_at` is empty on state 6 (Resolved) —
+re-measured here: all 7 resolved-but-not-closed incidents came back with `closed_at = ""`. So a
+`task`-rooted incident team gets `ClosedDate = null` for **every resolved-but-not-closed record**, which
+drops them out of Throughput. ADR-117 exists for exactly this case and says "many ITSM shops never move
+a record past Resolved, so for them that is the whole chart". Asking for the field explicitly does not
+help: `sysparm_fields` on the base table drops it without an error.
+
+This is already latent in slice 01 — `ATeamCovering` is `task`-rooted — but no assertion covered
+`ClosedDate` for a `task`-rooted team, so it was invisible. `WorkThatWasResolvedButNeverClosed_ArrivesWithTheDayItFinished`
+caught it the moment the option was removed and that team lost its `incident` root.
+
+`change_request` has no `resolved_at` column at all, so changes were always on the `closed_at`
+fallback; this is an incident-shaped loss.
+
+### Defect 2 — `ORDERBYsys_created_on` is not a unique sort key
+
+`InAStableOrder` appends `^ORDERBYsys_created_on`, and offset paging is only safe over a *total*
+order. Measured on the PDI, `sys_class_nameINincident,change_request^active=true`: 159 rows over 98
+distinct `sys_created_on` values, up to **10 records sharing one second** (the demo seeder writes in
+bulk). Page 1 (offset 0, limit 100) and page 2 (offset 100) **overlapped by one `sys_id`** — meaning
+one unread row was pushed past the offset and lost, which is precisely what the ORDERBY was added to
+prevent. Appending a unique tiebreaker fixes it: with
+`^ORDERBYsys_created_on^ORDERBYsys_id` the same two pages overlap by 0 and their union is all 159 rows.
+
+Per class this never fires on the PDI — `incident?active=true` is 64 rows and
+`change_request?active=true` is 95, both inside one page. Merging the classes under `task` is what
+takes the result set past the page boundary and makes the tie density bite. The fix is two characters
+of encoded query and is **not** shipped here: it is a wire-format change to every read, it was not
+part of the requested scope, and the live suite is green without it. It is recorded because it is a
+hard prerequisite for adopting `task`-rooting, not an independent nicety.
+
+### What this means for the decision
+
+The option-removal itself is sound and the implementation is straightforward (it is preserved as a
+patch, see the DELIVER report). What is not sound is **hardcoding the root to `task`**. Three ways
+forward, in the order they were judged:
+
+1. **Root at the lowest table that covers the named classes** — one class reads its own table (so
+   `resolved_at` survives and a single-class team is byte-identical to what slice 02 shipped), two or
+   more read `task`. Removes the option, answers the dogfood, and pays the projection cost only where
+   the coach genuinely mixes classes. Still needs defect 2 fixed, and still loses `resolved_at` for a
+   mixed incident+change team — which must then be stated in the docs rather than discovered.
+2. **Root at `task` unconditionally and repair `ClosedDate`** — there is no repair available through
+   one read; the field does not exist on the addressed table. This is D2's one-read model meeting its
+   first hard limit.
+3. **Root at `task` and accept the loss** — rejected: it is the silent-wrongness this epic exists to
+   prevent, and it would land on the flagship ITSM configuration.
+
+Not a crafter decision. ADR-116 decision 1, ADR-123 decisions 3/5/10 and ADR-124 decision 2 are left
+**unamended** until it is made.
