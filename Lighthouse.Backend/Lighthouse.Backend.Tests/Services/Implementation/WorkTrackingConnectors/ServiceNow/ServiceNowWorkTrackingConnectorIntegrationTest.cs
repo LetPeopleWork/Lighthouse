@@ -210,6 +210,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
+        /// The tie-breaker, live, and the only place it can be proved. <c>sys_created_on</c> has
+        /// one-second resolution and the seeder writes in bulk — measured, 159 rows over 98 distinct
+        /// values with up to 10 sharing one second — so ordering by it alone leaves ties in an
+        /// arbitrary order and offset paging silently drops whatever the second page shuffled past
+        /// the boundary. Measured before the fix: pages 1 and 2 overlapped by one <c>sys_id</c> and
+        /// their union was 158 of 159.
+        ///
+        /// The invariant asserted is the one that breaks: each class on its own fits inside a single
+        /// page, so those two reads cannot lose anything; the merged read has to page, and has to
+        /// come back with exactly their sum.
+        /// </summary>
+        [Test]
+        public async Task WorkOfSeveralKindsSpreadAcrossPages_ComesBackWholeAndWithoutRepeats()
+        {
+            var subject = CreateSubject();
+
+            var incidents = await subject.GetWorkItemsForTeam(ATeamCovering(["incident"], "active=true", AdminUser));
+            var changes = await subject.GetWorkItemsForTeam(ATeamCovering([ChangeTable], "active=true", AdminUser));
+            var both = (await subject.GetWorkItemsForTeam(ATeamCovering(["incident", ChangeTable], "active=true", AdminUser))).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(both, Has.Count.GreaterThan(SinglePageSize),
+                    "If the two kinds together now fit in one page, this instance can no longer prove the tie-breaker and the fixture needs more data rather than a smaller assertion.");
+                Assert.That(both, Has.Count.EqualTo(incidents.Count() + changes.Count()),
+                    "A row lost at the page boundary shows up here and nowhere else: no error, no gap, just a total one short.");
+            }
+        }
+
+        /// <summary>
         /// ADR-117 decision 1 as amended 2026-07-31, live. State 6 (Resolved) leaves <c>closed_at</c>
         /// empty — measured, and re-measured here on every run — and <c>resolved_at</c> is no longer
         /// read at all, so the ONLY thing that can date this work is the instance's own transition

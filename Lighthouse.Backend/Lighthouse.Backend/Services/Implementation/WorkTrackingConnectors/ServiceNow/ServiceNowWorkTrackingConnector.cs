@@ -64,6 +64,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         private const string StableOrderField = ServiceNowWorkItemMapper.CreatedField;
 
         /// <summary>
+        /// The tie-breaker that makes the sort total. <c>sys_created_on</c> has one-second resolution
+        /// and a bulk write lands many rows on the same second, so on its own it orders ties
+        /// arbitrarily and offset paging drops whatever the next page shuffled past the boundary.
+        /// </summary>
+        private const string TieBreakerField = ServiceNowWorkItemMapper.RecordIdField;
+
+        /// <summary>
         /// The last brake, for an instance that reports no result-set size at all. At the requested
         /// page size this is a hundred thousand records — far past any ITSM table Lighthouse is
         /// pointed at, and still finite.
@@ -535,11 +542,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // is neither ordered nor still: a record created between two pages shifts the window and the
         // rows it pushed past the boundary are never read. RefreshWorkItems then deletes them and
         // re-creates them on a later sync without their history.
+        //
+        // The order has to be TOTAL, not merely stable. Measured on the PDI: 159 records over 98
+        // distinct sys_created_on values, up to 10 sharing one second, and pages 1 and 2 overlapped
+        // by one sys_id — one row unread, and the repeat of the other one trips the guard below and
+        // fails the whole team's sync. With sys_id appended the two pages overlap by none.
         private static string InAStableOrder(string query)
         {
             return query.Contains(OrderByClause, StringComparison.OrdinalIgnoreCase)
                 ? query
-                : $"{query}{OrderByClause}{StableOrderField}";
+                : $"{query}{OrderByClause}{StableOrderField}{OrderByClause}{TieBreakerField}";
         }
 
         public Task<List<Feature>> GetFeaturesForProject(Portfolio project)

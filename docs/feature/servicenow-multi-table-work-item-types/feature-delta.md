@@ -1136,3 +1136,45 @@ arrival in Done, read back off the work item's own synced transitions.
 decision 1 (rewritten, with the reversed reasoning quoted and answered) and 3 (request-to-**closure**),
 plus a new accepted-flaw consequence; [ADR-118](../../product/architecture/adr-118-servicenow-transition-history-from-metric-instance-spans.md)
 decision 7's "`ClosedDate` is deliberately NOT switched" paragraph.
+
+---
+
+## Wave: DELIVER / [REF] `sys_id` is the sort tie-breaker (shipped 2026-07-31)
+
+**This resolves defect 2 of the two that halted the `task`-rooting change.** `InAStableOrder` appended
+`^ORDERBYsys_created_on` and nothing else. That field has **one-second resolution** and the seeder
+writes in bulk, so the order was stable but not *total*, and offset paging is only safe over a total
+order. It now appends `^ORDERBYsys_created_on^ORDERBYsys_id`.
+
+### Re-measured on the PDI, 2026-07-31 (`sys_class_nameINincident,change_request^active=true`)
+
+| order | page 1 | page 2 | overlap | union |
+|---|---|---|---|---|
+| `^ORDERBYsys_created_on` | 100 | 59 | **1** | **158** of 159 |
+| `^ORDERBYsys_created_on^ORDERBYsys_id` | 100 | 59 | 0 | 159 |
+
+159 rows over 98 distinct `sys_created_on` values, up to 10 sharing one second.
+
+### One thing the earlier account had wrong, and it is worse than recorded
+
+The halt note called this "a row pushed past the offset and never read". It is that — **and** the
+overlapping row on page 2 is a `sys_id` already read, which trips `GuardAgainstRepeatedRecords` and
+throws `paging_repeated_records`. Observed by sabotage, not reasoned about: with the tie-breaker
+removed, the new live test fails with
+
+> ServiceNow returned records from 'task' that it had already returned on an earlier page.
+
+So the blast radius is the **whole team's sync**, not one row. It became visible only after
+`d5e5cb3d7` keyed that guard on `sys_id`; keyed on `number` it would have gone on losing the row
+quietly. Two fixes shipped a day apart turn out to be one failure seen twice.
+
+### The live assertion, and why it is shaped the way it is
+
+`WorkOfSeveralKindsSpreadAcrossPages_ComesBackWholeAndWithoutRepeats` reads `incident` alone,
+`change_request` alone, and the two together, and asserts the merged count equals the sum. Each class
+on its own fits inside one page (64 and 95), so those two reads cannot lose anything; the merged read
+must page. A unit fixture cannot prove this at all — the loss depends on how a real instance orders
+ties — which is exactly ADR-124 decision 5's rule about what belongs in the live fixture.
+
+`SyncingATeam_AsksForTheRecordsInAStableOrder` now pins the full two-term clause rather than the
+prefix, so dropping the tie-breaker fails on the wire form as well as on the instance.

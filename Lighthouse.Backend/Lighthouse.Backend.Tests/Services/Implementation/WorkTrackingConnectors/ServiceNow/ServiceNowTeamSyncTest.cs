@@ -137,8 +137,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.Query)).ToList();
 
-            Assert.That(asked, Has.All.Contains("^ORDERBYsys_created_on"),
-                "Offset paging over an unordered result set skips rows the moment the table changes between pages.");
+            Assert.That(asked, Has.All.Contains("^ORDERBYsys_created_on^ORDERBYsys_id"),
+                "Offset paging needs a TOTAL order: sys_created_on has one-second resolution and a bulk write puts up to ten rows on the same second, so without the tie-breaker the pages overlap and a row goes unread.");
         }
 
         // Linear's precedent: a team only sees work in the states it has mapped. An unmapped label
