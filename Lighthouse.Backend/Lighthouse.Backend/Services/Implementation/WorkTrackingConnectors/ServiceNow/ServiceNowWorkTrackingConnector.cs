@@ -528,8 +528,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
-        // AC6. Two probes, because one cannot tell a silently-widened query from a correct one —
-        // both answer 200 with rows. The comparison IS the detection.
+        // Two pre-flight rules the instance is never asked about, then everything that needs it.
         public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)
         {
             var teamsOwnQuery = team.DataRetrievalValue;
@@ -550,31 +549,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             try
             {
-                var unreadable = await FirstUnreadableKindOfWork(connection, instanceUrl, scope);
-
-                if (unreadable is not null)
-                {
-                    return unreadable;
-                }
-
-                // ADR-124 decision 3: both counts are scoped to the kinds of work the team named, so
-                // the ratio keeps meaning "how much of your work did this query select" rather than
-                // "how much of the instance".
-                var matched = await CountRows(connection, instanceUrl, scope.Table, scope.ScopedQuery(teamsOwnQuery));
-
-                if (matched.Problem is not null)
-                {
-                    return matched.Problem;
-                }
-
-                var everything = await CountRows(connection, instanceUrl, scope.Table, scope.BaselineQuery());
-
-                if (everything.Problem is not null)
-                {
-                    return everything.Problem;
-                }
-
-                return ServiceNowTeamQueryVerdict.FromTeamProbe(scope.Table, matched.Count, everything.Count);
+                return await AskTheInstanceAboutTheTeam(connection, instanceUrl, scope, teamsOwnQuery);
             }
             catch (HttpRequestException exception)
             {
@@ -584,6 +559,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             {
                 return UnreachableInstance(exception, instanceUrl);
             }
+        }
+
+        // AC6. Two probes, because one cannot tell a silently-widened query from a correct one —
+        // both answer 200 with rows. The comparison IS the detection.
+        private async Task<ConnectionValidationResult> AskTheInstanceAboutTheTeam(
+            WorkTrackingSystemConnection connection, string instanceUrl, ServiceNowReadScope scope, string teamsOwnQuery)
+        {
+            var unreadable = await FirstUnreadableKindOfWork(connection, instanceUrl, scope);
+
+            if (unreadable is not null)
+            {
+                return unreadable;
+            }
+
+            // ADR-124 decision 3: both counts are scoped to the kinds of work the team named, so
+            // the ratio keeps meaning "how much of your work did this query select" rather than
+            // "how much of the instance".
+            var matched = await CountRows(connection, instanceUrl, scope.Table, scope.ScopedQuery(teamsOwnQuery));
+
+            if (matched.Problem is not null)
+            {
+                return matched.Problem;
+            }
+
+            var everything = await CountRows(connection, instanceUrl, scope.Table, scope.BaselineQuery());
+
+            if (everything.Problem is not null)
+            {
+                return everything.Problem;
+            }
+
+            return ServiceNowTeamQueryVerdict.FromTeamProbe(scope.Table, matched.Count, everything.Count);
         }
 
         // ADR-124 decision 1. One cheap probe per named kind of work, at the one moment a human is
