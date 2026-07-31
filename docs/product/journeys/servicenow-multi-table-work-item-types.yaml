@@ -1,0 +1,105 @@
+schema_version: 1
+feature_id: servicenow-multi-table-work-item-types
+updated: 2026-07-31
+note: >
+  ADO User Story #5611 under Epic 5513, filed out of the slice-02 dogfood on 2026-07-29. Kept separate
+  from journeys/epic-5513-servicenow-integration.yaml because 5611 is a post-DESIGN story rather than
+  one of the epic's slices 01-05, and because Story 5577 was finalizing against the epic's artifacts
+  in parallel. The model: root the read at a hierarchy table (`task`) and use the team's EXISTING Work
+  Item Types field as a `sys_class_name` filter. A ServiceNow class name is a work item type rather
+  than an analogy for one, so nothing new has to be explained to the coach. The rule that keeps it
+  safe: once the configured table has descendants, Work Item Types stops being optional — an empty
+  list would otherwise read the whole task hierarchy, which is the same failure the connector already
+  refuses for a missing query. Open until proved on a real instance: whether the `^OR` class filter
+  binds as intended alongside the team's own encoded query, and what a restricted account silently
+  loses when it reads through `task` (ServiceNow ACLs are per record class). See
+  docs/feature/servicenow-multi-table-work-item-types/feature-delta.md.
+
+journeys:
+
+  - name: cover-every-kind-of-work-on-one-team
+    goal: >
+      A flow coach whose team handles incidents and changes gets one Lighthouse team covering both,
+      with each item labelled with the kind it actually is, instead of splitting the team in two and
+      forecasting each half from half the evidence.
+    persona: "flow-coach"
+
+    emotional_arc:
+      start: Resigned — "we do incidents and changes, but the tool made me pick one, so I picked the loud one."
+      middle: Wary — "if I point it at the parent table, am I about to read the entire instance?"
+      end: Trusted — "one team, both kinds, and the numbers are the team's own."
+
+    steps:
+      - id: step-root-the-connection-at-the-hierarchy
+        action: >
+          Admin sets the connection's Work Item Table to a table with descendants (`task`) instead of
+          a single leaf table
+        expected_output: >
+          The connection still validates against that table, unchanged — validation runs before any
+          team exists, so the connection-scope table stays the probe target (ADR-116, epic Open Call 3).
+        emotional_state: Cautious — "this is a bigger door than the one I opened before"
+        shared_artifacts:
+          - connection-scope work item table (existing; ServiceNowWorkTrackingOptionNames.WorkItemTable, default `incident`)
+
+      - id: step-name-the-kinds-of-work
+        action: Coach opens Team Settings and types the record classes the team works on into Work Item Types
+        expected_output: >
+          The field is VISIBLE and REQUIRED for a hierarchy-rooted ServiceNow team — where the shipped
+          leaf-rooted default hides it — and the save is refused with the blocking field named if the
+          list is empty. Backend and frontend agree about that; they are two copies of one schema and
+          they drifted once already (Bug #5613).
+        emotional_state: Reassured — "it will not let me leave this blank"
+        shared_artifacts:
+          - Team.WorkItemTypes (existing; repurposed as the `sys_class_name` filter — persisted, in the DTO and rendered already, hidden rather than absent)
+          - isWorkItemTypesRequired (existing; becomes conditional on the configured table, in BOTH schema twins)
+
+      - id: step-read-both-kinds-as-one-team
+        action: The team syncs
+        expected_output: >
+          Records of every named class and of no other class in the hierarchy. Each item's Type is its
+          own `sys_class_name` rather than the configured table — which for a leaf-rooted team is the
+          same string it saw before, so nothing existing changes and no data migration is needed.
+        emotional_state: Included — "this is my team's workload, all of it"
+        shared_artifacts:
+          - synced ServiceNow work items (existing pipeline, unchanged downstream)
+
+      - id: step-meet-the-guard-rather-than-the-instance
+        action: A coach clears Work Item Types on a hierarchy-rooted team, or names a class that does not exist
+        expected_output: >
+          Nothing is read and the reason is stated — the same shape the connector already uses for a
+          missing query, where a team reads nothing rather than everything. A class the account cannot
+          read is named, not silently dropped.
+        emotional_state: Protected — "it failed loudly instead of quietly reading the world"
+        shared_artifacts:
+          - team validation verdict (existing ConnectionValidationResult contract, reused)
+
+  - name: two-teams-two-tables-one-credential
+    goal: >
+      A configuration administrator serves an incident team and a change team from one ServiceNow
+      connection, without going back to the platform team for a second approved credential.
+    persona: "config-admin"
+
+    emotional_arc:
+      start: Blocked — "a second kind of work means a second connection, which means asking for another account."
+      middle: Working — "each team names its own table."
+      end: Unblocked — "one credential covers the department."
+
+    steps:
+      - id: step-give-a-team-its-own-table
+        action: Admin sets a work-item table on the team, overriding the connection's default
+        expected_output: >
+          That team reads its own table when it syncs and when its settings are validated; every other
+          team on the connection is untouched; and a team that sets nothing keeps reading the
+          connection's table.
+        emotional_state: Relieved — "no second approval to chase"
+        shared_artifacts:
+          - team-scope work item table (NEW; a persisted field on Team — Team has no option bag today, so this needs an expand-only EF migration across every supported provider)
+
+      - id: step-keep-the-connection-honest
+        action: Admin re-validates the connection after a team override exists
+        expected_output: >
+          The connection still probes the CONNECTION table. A team-scope-only table would leave
+          validation with nothing to read before any team exists, which is why ADR-116 rejected it.
+        emotional_state: Steady — "the connection still means what it meant"
+        shared_artifacts:
+          - ConnectionValidationResult (existing contract, unchanged)

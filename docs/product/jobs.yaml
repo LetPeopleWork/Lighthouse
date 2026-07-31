@@ -32,6 +32,8 @@ feature_context:
   - epic-5513-servicenow-integration
   - delivery-joint-likelihood
   - pricing-adjustment-2026-08
+  - epic-size-and-count-over-time
+  - servicenow-multi-table-work-item-types
 
 jobs:
   - id: job-rbac-bootstrap
@@ -4086,3 +4088,66 @@ jobs:
         exists but is per-delivery, not per-epic, and is invisible under the Done area. Gap: 2 — smaller
         than the attribution job because it is a refinement of a signal that partly exists, and it rides
         on the same chart the attribution job pays for.
+
+  - id: job-snow-flow-coach-one-team-several-kinds-of-work
+    title: Cover every kind of ServiceNow work my team does with one Lighthouse team
+    persona: flow-coach
+    feature_context: servicenow-multi-table-work-item-types
+    created: 2026-07-31
+    note: >
+      ADO #5611, filed out of the slice-02 dogfood of Epic 5513 on 2026-07-29. Refines
+      [[job-snow-flow-coach-see-flow-metrics]], which is served: a ServiceNow team does get throughput,
+      cycle time and forecasts. What is not served is a team whose workload is not one table. The
+      ServiceNow mental model is that the TABLE is the kind of work (Incident / Request / Change) and
+      the QUERY is the sub-filter; Lighthouse models kind-of-work as Work Item Types on a team, and a
+      ServiceNow team could read exactly one table, so the two models never met. The chosen model is
+      to root the read at a hierarchy table (`task`, whose descendants include incident,
+      change_request, problem, sc_request) and use the team's existing Work Item Types field as a
+      `sys_class_name` filter — a ServiceNow class name IS a work item type rather than an analogy for
+      one. That makes `isWorkItemTypesRequired` conditional on the configured table, which after Bug
+      #5613 must change in BOTH schema twins.
+    job_story: >
+      When my team handles more than one kind of ServiceNow record — incidents and changes, the way a
+      Jira team has stories and bugs,
+      I want one Lighthouse team to cover all of them,
+      so my flow metrics describe my team's actual workload instead of the one record type Lighthouse
+      let me pick.
+    dimensions:
+      functional: >
+        Name the record classes the team works on and get every one of them in a single team's
+        throughput, cycle time, age and forecast — with each item labelled with the kind it actually
+        is, and with no possibility of accidentally reading the whole task hierarchy.
+      emotional: >
+        Stop apologising for a number. A throughput computed from half a team's work is worse than no
+        throughput, because it is quoted in reviews as if it were whole.
+      social: >
+        Present one team's flow the way the team is actually organised, rather than defending an
+        artificial split into an "incident team" and a "change team" that exists only because the tool
+        required it.
+    forces:
+      push: >
+        A coach whose team does incidents and changes must either create two Lighthouse teams — each
+        forecasting from half the work, both wrong — or measure one kind of work and ignore the rest.
+      pull: >
+        The team already has a Work Item Types field, already persisted and already rendered; it is
+        hidden for ServiceNow rather than absent. The class filter is a use of what exists, not a new
+        concept for the coach to learn.
+      anxiety: >
+        Rooting at `task` to reach several classes could read the entire instance if the class filter
+        is empty or binds wider than intended. Mitigated by making Work Item Types REQUIRED once the
+        table has descendants — the same rule the connector already applies to a missing query, where
+        a team reads nothing rather than everything.
+      habit: >
+        ServiceNow users reach for the table to say what kind of work something is. This asks them to
+        say it in a field named Work Item Types instead — eased because the value they type is the
+        class name they already know.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — mixed-class teams are the ITSM norm rather than an edge case, and the failure
+        mode is a plausible-looking wrong number rather than a visible gap. Not 5, because the epic's
+        core value (any ServiceNow flow metrics at all) is already delivered. Current satisfaction: 1
+        — there is a workaround (one team per class) and it produces numbers, but they are the wrong
+        numbers. Gap: 3, and it is served by a field that already exists on the team.
