@@ -25,6 +25,7 @@ import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
+import ValidationAdvisory from "../Connections/ValidationAdvisory";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
@@ -49,25 +50,6 @@ const buildOAuthCallbackUrl = (baseUrl: string | null): string => {
 };
 
 const STEPS = ["Choose Type", "Configuration", "Name & Create"];
-
-// ADR-118 D5: a working connection can still have something worth saying, and the backend owns the copy.
-const ValidationAdvisory: React.FC<{ advisory: string | null }> = ({
-	advisory,
-}) => {
-	if (advisory === null) {
-		return null;
-	}
-
-	return (
-		<Alert
-			severity="info"
-			sx={{ width: "100%", mt: 2 }}
-			data-testid="create-wizard-validation-advisory"
-		>
-			<Typography variant="body2">{advisory}</Typography>
-		</Alert>
-	);
-};
 
 interface CreateConnectionWizardProps {
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
@@ -162,12 +144,16 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		fetchSystems();
 	}, []);
 
-	const selectSystem = (system: IWorkTrackingSystemConnection) => {
-		setSelectedSystem(system);
-		setConnectionName(system.name);
+	const clearValidationFeedback = () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
 		setValidationAdvisory(null);
+	};
+
+	const selectSystem = (system: IWorkTrackingSystemConnection) => {
+		setSelectedSystem(system);
+		setConnectionName(system.name);
+		clearValidationFeedback();
 
 		const availableMethods = system.availableAuthenticationMethods ?? [];
 		const defaultMethod = availableMethods[0] ?? null;
@@ -319,9 +305,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	};
 
 	const startOAuthHandshake = async () => {
-		setValidationError(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		setInlineMessage(null);
 		setValidating(true);
 		try {
@@ -388,9 +372,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		}
 
 		setValidating(true);
-		setValidationError(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		try {
 			const validation = await runValidation();
 			setValidationAdvisory(validation.advisory ?? null);
@@ -429,9 +411,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	};
 
 	const handleBack = () => {
-		setValidationError(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		setActiveStep((prev) => prev - 1);
 	};
 
@@ -601,7 +581,11 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 
 				{renderStepContent()}
 
-				<ValidationAdvisory advisory={validationAdvisory} />
+				<ValidationAdvisory
+					advisory={validationAdvisory}
+					testId="create-wizard-validation-advisory"
+					sx={{ width: "100%", mt: 2 }}
+				/>
 
 				<Box
 					sx={{

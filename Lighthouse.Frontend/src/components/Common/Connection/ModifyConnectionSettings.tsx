@@ -32,6 +32,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
+import ValidationAdvisory from "../Connections/ValidationAdvisory";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
 
@@ -66,26 +67,6 @@ function resolveValidationErrorMessage(
 		details: null,
 	};
 }
-
-// ADR-118 D5: a working connection can still have something worth saying, and the backend owns the copy.
-const ValidationAdvisory: React.FC<{ advisory: string | null }> = ({
-	advisory,
-}) => {
-	if (advisory === null) {
-		return null;
-	}
-
-	return (
-		<Grid size={{ xs: 12 }}>
-			<Alert
-				severity="info"
-				data-testid="connection-settings-validation-advisory"
-			>
-				<Typography variant="body2">{advisory}</Typography>
-			</Alert>
-		</Grid>
-	);
-};
 
 interface ModifyConnectionSettingsProps {
 	title: string;
@@ -331,10 +312,14 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		setInputsValid(optionsValid && nameValid);
 	}, [name, allOptions, isEditMode, originalAuthMethodKey, selectedAuthMethod]);
 
-	const handleSystemChange = (event: SelectChangeEvent<string>) => {
+	const clearValidationFeedback = () => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
 		setValidationAdvisory(null);
+	};
+
+	const handleSystemChange = (event: SelectChangeEvent<string>) => {
+		clearValidationFeedback();
 		const system = supportedSystems.find(
 			(s) => s.workTrackingSystem === event.target.value,
 		);
@@ -364,9 +349,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	};
 
 	const handleAuthMethodKeyChange = (key: string) => {
-		setValidationErrorMessage(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		const availableMethods =
 			selectedWorkTrackingSystem?.availableAuthenticationMethods ?? [];
 		const method = availableMethods.find((m) => m.key === key);
@@ -380,9 +363,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		changedOption: IWorkTrackingSystemOption,
 		newValue: string,
 	) => {
-		setValidationErrorMessage(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		setAuthOptions((prev) =>
 			prev.map((option) =>
 				option.key === changedOption.key
@@ -396,9 +377,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		changedOption: IWorkTrackingSystemOption,
 		newValue: string,
 	) => {
-		setValidationErrorMessage(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		setOtherOptions((prev) =>
 			prev.map((option) =>
 				option.key === changedOption.key
@@ -409,17 +388,13 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	};
 
 	const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setValidationErrorMessage(null);
-		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
+		clearValidationFeedback();
 		setName(event.target.value);
 	};
 
 	const handleSave = async () => {
 		if (selectedWorkTrackingSystem && selectedAuthMethod) {
-			setValidationErrorMessage(null);
-			setValidationTechnicalDetails(null);
-			setValidationAdvisory(null);
+			clearValidationFeedback();
 
 			const connection: IWorkTrackingSystemConnection = {
 				id: selectedWorkTrackingSystem.id,
@@ -720,7 +695,14 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						</Grid>
 					)}
 
-					<ValidationAdvisory advisory={validationAdvisory} />
+					{validationAdvisory !== null && (
+						<Grid size={{ xs: 12 }}>
+							<ValidationAdvisory
+								advisory={validationAdvisory}
+								testId="connection-settings-validation-advisory"
+							/>
+						</Grid>
+					)}
 
 					<Grid
 						size={{ xs: 12 }}
