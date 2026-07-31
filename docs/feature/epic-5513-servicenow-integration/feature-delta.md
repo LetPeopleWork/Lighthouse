@@ -2431,6 +2431,24 @@ No silent N/A — every item answered.
 | EF migration | **None**, by design — the advisory is not persisted (ADR-118 D5) and `StartedDate` is an existing column |
 | Root `ARCHITECTURE.md` / `brief.md` | ✅ `docs/product/architecture/brief.md` carries the slice-04 application-architecture section |
 
+## Wave: DELIVER / [REF] Execution-log caveats (slice 04)
+
+`des-verify-integrity` passes — all 10 steps carry complete traces. Two entries nonetheless
+misdescribe what happened, and are left uncorrected rather than rewritten, because DES permits only
+the agent that performed a phase to log it:
+
+- **04-06's COMMIT reads `SKIPPED / BLOCKED_BY_DEPENDENCY`.** The commit did happen. The crafter was
+  blocked by a permission classifier mid-step, logged the block, and later committed only its test
+  file; the orchestrator finished the commit during a history repair. Writing an `EXECUTED` entry for
+  work the crafter did not do would be exactly the fraud the integrity check exists to catch, so the
+  stale entry stands and this note carries the truth.
+- **04-10 is a verification step with no production change**, as the roadmap specified. Its RED and
+  COMMIT phases are legitimately `SKIPPED`; only GREEN was executed.
+
+Related: 04-06's commit was briefly folded into 04-09's by an orchestrator `--amend` that landed in
+the window between the crafter's own `git reset` and its retry. Recovered from the reflog; the final
+history has both commits correct, and `git log` for this slice is trustworthy.
+
 ## Wave: DELIVER / [REF] Pre-requisites (slice 04)
 
 Consumed: the DISTILL scenario list and its 43 pre-authored RED tests, the DESIGN component
