@@ -58,3 +58,16 @@ AC-B1..AC-B6 in `../feature-delta.md`.
 combine correctly with a team's own encoded query on `task`?) and OC-2 (what does a restricted account
 see through `task`, and does the widening probe still mean anything?). Both are one-request
 experiments; neither needs a build.
+
+Three reads settle OC-1, all against `/api/now/table/task` with `sysparm_fields=sys_id,number,sys_class_name`:
+
+| | `sysparm_query` |
+|---|---|
+| A | `sys_class_name=incident^ORsys_class_name=change_request^<team query>` |
+| B | `sys_class_nameINincident,change_request^<team query>` |
+| C | each class read from its own table with `<team query>` — the reference answer |
+
+B is a single condition and therefore has no `^OR` precedence to get wrong. If B agrees with C and A
+does not, the generator must emit `IN` and OC-1 dissolves rather than gets settled. Also read `task`
+with the team query and NO class filter, and record the row count and the number of distinct
+`sys_class_name` values — that is the number D3 exists to prevent.
