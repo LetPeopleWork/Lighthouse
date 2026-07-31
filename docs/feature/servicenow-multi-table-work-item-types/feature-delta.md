@@ -1257,3 +1257,31 @@ written to delete a value nothing consults.
   decision 2 **re-ordered**, with the measured per-rung table; the DELIVER-review amendment that
   introduced the second probe is kept verbatim below it, because its reasoning about *why* both
   probes are needed is unchanged. Consequences re-costed: one round trip per correct class, not two.
+
+---
+
+## Wave: DELIVER / [REF] Second review — three defects filed as Bug #5621, not fixed here
+
+Reviewed at `67637ce76` (read-only). Verdict **NEEDS_REVISION**. Maintainer's call, 2026-07-31: file
+them and fix tomorrow rather than extend the session. Full analysis, failure scenarios and suggested
+fixes are on the work item.
+
+| # | Severity | Defect | Introduced by |
+|---|---|---|---|
+| F1 | **Blocker** | `WorkStartedFor` / `WorkFinishedFor` test presence of *any* span while the span mappers filter to *state* spans, so a record carrying only non-state spans gets `null` for both dates instead of falling back. `DefinitionQueryFor` has no `field` filter — the PDI returns four `field_value_duration` definitions for `incident`, three of which do not measure state. A customer who deactivates the state definition but leaves the others gets `Available`, no warning, and a team whose every item has no dates and no transitions. | The `StartedDate` half predates this story (slice 04); #5611 extended the pattern to `ClosedDate` |
+| F2 | High | `WhenWorkFinished` uses `FindLast(Done)` — right for a reopen, wrong for *contiguous* Done spans. A team mapping both `Resolved` and `Closed` to Done dates the finish at the close-out job rather than the resolution, inflating Cycle Time for every incident. | #5611 |
+| F3 | Medium-high | `InAStableOrder` early-returns when the team's own query already contains `ORDERBY`, so `95e8a9d39`'s `sys_id` tie-breaker never reaches those teams — the page-overlap sync abort, reintroduced through a side door. | The early return predates this story; the incomplete fix is #5611's |
+
+F4 (a `200` carrying no record set throws instead of downgrading) and F5 (the paging slack is frozen
+from page 1) are on the work item and parked.
+
+**Why it was pushed anyway.** Nothing ServiceNow has ever been released, so `main` is not a shipping
+path — the release is a separate tagged step and #5621 lands before it. Two of the three are
+pre-existing patterns this story extended rather than new breakage. Pushing buys the SonarCloud
+verdict, the one Definition-of-Done item local gates cannot answer.
+
+**Reviewed clean**, recorded because each was a specific worry: the inverted class ladder (every rung
+exhaustive, none reachable by a state it does not describe), the reopen gate's placement in the
+connector rather than the mapper, the `resolved_at` removal, every field the mapper reads being
+declared on `task`, both schema twins, the paging guard against an offset-ignoring instance, and the
+re-pinned tests encoding new intent rather than being relaxed to pass.
