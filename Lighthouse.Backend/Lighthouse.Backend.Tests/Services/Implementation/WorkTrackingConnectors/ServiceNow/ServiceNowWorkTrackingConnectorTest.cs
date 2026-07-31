@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceN
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Language.Flow;
 using Moq.Protected;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.ServiceNow
@@ -21,6 +22,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string InstanceUrl = "https://dev12345.service-now.com/";
         private const string ProbeResponseWithOneRecord = """{"result":[{"sys_id":"abc","number":"INC0010001"}]}""";
         private const string ProbeResponseWithNothingVisible = """{"result":[]}""";
+        private const string DefinitionResponseWithOneStateMetric =
+            """{"result":[{"sys_id":{"display_value":"35f2b283c0a808ae","value":"35f2b283c0a808ae"}}]}""";
+
+        // The two ways the second round trip can end without an answer, and both have to leave the
+        // administrator's verdict alone. Hoisted rather than inline per CA1861.
+        private static readonly Exception[] TransportFailures =
+        [
+            new HttpRequestException("The SSL connection could not be established."),
+            new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout elapsing."),
+        ];
 
         // The headline assertion. A permitted-but-unauthorised read and a genuinely empty table
         // are byte-identical, so a connector that infers success from the status code ships the
@@ -349,6 +360,86 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             factory.Verify(f => f.Resolve("servicenow.oauth"), Times.AtLeastOnce);
         }
 
+        // Story #5577, ADR-118 D5. The advisory is decided by a pure function tested next door; what
+        // is only testable here is whether ValidateConnection asks the capability question at all,
+        // and hangs the answer on the verdict the administrator is shown.
+        [Test]
+        public async Task AnInstanceThatRefusesTheMetricTables_IsAWorkingConnectionThatSaysWhatToGrant()
+        {
+            var subject = CreateSubject(AnInstanceWhoseMetricTablesAnswer(
+                HttpStatusCode.Forbidden, """{"error":{"message":"Insufficient rights"}}""", rowCount: "0"));
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True, "A capability the instance withholds is not a broken connection.");
+                Assert.That(result.AdvisoryCode, Is.EqualTo("history_requires_itil"));
+                Assert.That(result.Advisory, Is.Not.Null.And.Not.Empty,
+                    "Reading the capability and then not saying what it found would be the silent no-op DoD 5 forbids.");
+            }
+        }
+
+        // The other half of the same seam: an instance that measures state spans is told nothing,
+        // so the advisory cannot be something the connector attaches to every validation alike.
+        [Test]
+        public async Task AnInstanceThatMeasuresStateSpans_IsAWorkingConnectionWithNothingToWarnAbout()
+        {
+            var subject = CreateSubject(AnInstanceWhoseMetricTablesAnswer(
+                HttpStatusCode.OK, DefinitionResponseWithOneStateMetric, rowCount: "1"));
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Advisory, Is.Null);
+                Assert.That(result.AdvisoryCode, Is.Null);
+            }
+        }
+
+        // The capability question is only worth asking of a connection that already works. Asking it
+        // of one that does not would overwrite the rung the administrator needs — a rejected
+        // credential would come back as advice about metric definitions they cannot reach anyway.
+        [Test]
+        public async Task AConnectionThatFailsTheLadder_KeepsItsOwnVerdictAndIsNotAskedAboutHistory()
+        {
+            var handler = RespondingWith(HttpStatusCode.Unauthorized, string.Empty);
+            var subject = CreateSubject(handler);
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("authentication_failed"));
+                Assert.That(result.Advisory, Is.Null);
+                Assert.That(result.AdvisoryCode, Is.Null);
+            }
+
+            VerifyRequestCount(handler, 1);
+        }
+
+        // The rule the whole advisory rides on: it may never cost the administrator the validation.
+        // The second round trip is the one most likely to be cut short — a proxy that allows the
+        // work item table and not the metric tables, or an instance slow enough to time out on it.
+        [TestCaseSource(nameof(TransportFailures))]
+        public async Task ACapabilityReadThatNeverCompletes_LeavesTheWorkingConnectionStanding(Exception transportFailure)
+        {
+            var subject = CreateSubject(AnInstanceWhoseMetricTablesFail(transportFailure));
+
+            var result = await subject.ValidateConnection(CreateConnection());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True, "The connection the administrator was testing works. Only the extra question failed.");
+                Assert.That(result.Code, Is.EqualTo("valid"));
+                Assert.That(result.Advisory, Is.Null, "Nothing was learned, so nothing is claimed.");
+                Assert.That(result.AdvisoryCode, Is.Null);
+            }
+        }
+
         private static ServiceNowWorkTrackingConnector CreateSubject(
             Mock<HttpMessageHandler> handler, IWorkTrackingAuthStrategyFactory? authStrategyFactory = null)
         {
@@ -426,6 +517,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .ThrowsAsync(exception);
 
             return handler;
+        }
+
+        // The probe and the capability read are two round trips to two different tables. A stub that
+        // says the same thing to both cannot drive one without the other, which is why the advisory
+        // tests need their own instance rather than RespondingWith.
+        private static Mock<HttpMessageHandler> AnInstanceWhoseMetricTablesAnswer(
+            HttpStatusCode statusCode, string body, string rowCount)
+        {
+            var handler = AnInstanceShowingOneRecord();
+            MetricTableReads(handler).ReturnsAsync(() => JsonAnswer(statusCode, body, rowCount));
+
+            return handler;
+        }
+
+        private static Mock<HttpMessageHandler> AnInstanceWhoseMetricTablesFail(Exception transportFailure)
+        {
+            var handler = AnInstanceShowingOneRecord();
+            MetricTableReads(handler).ThrowsAsync(transportFailure);
+
+            return handler;
+        }
+
+        private static Mock<HttpMessageHandler> AnInstanceShowingOneRecord()
+        {
+            var handler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            handler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
+            handler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(request => AsksFor(request, "/incident")),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() => JsonAnswer(HttpStatusCode.OK, ProbeResponseWithOneRecord, rowCount: "1"));
+
+            return handler;
+        }
+
+        private static ISetup<HttpMessageHandler, Task<HttpResponseMessage>> MetricTableReads(Mock<HttpMessageHandler> handler)
+        {
+            return handler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(request => AsksFor(request, "/metric_")),
+                    ItExpr.IsAny<CancellationToken>());
+        }
+
+        private static bool AsksFor(HttpRequestMessage request, string table)
+        {
+            return request.RequestUri?.AbsolutePath.Contains(table, StringComparison.Ordinal) is true;
+        }
+
+        // X-Total-Count is what tells the pager the result set is exhausted; without it the metric
+        // read asks for a second page and the repeated-records guard fires instead of the verdict.
+        private static HttpResponseMessage JsonAnswer(HttpStatusCode statusCode, string body, string rowCount)
+        {
+            var response = new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            };
+
+            response.Headers.TryAddWithoutValidation("X-Total-Count", rowCount);
+
+            return response;
         }
 
         private static List<HttpRequestMessage> CapturedRequests(Mock<HttpMessageHandler> handler)

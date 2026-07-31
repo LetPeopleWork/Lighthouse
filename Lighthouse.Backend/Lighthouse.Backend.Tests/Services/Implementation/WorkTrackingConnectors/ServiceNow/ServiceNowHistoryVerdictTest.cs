@@ -68,6 +68,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(availability, Is.Not.EqualTo(ServiceNowHistoryAvailability.Available));
         }
 
+        // The same answer with definitions in it is where it gets decided. A status nobody expected
+        // and a count that says history works disagree, and the status has to win: an instance that
+        // echoed rows alongside a 500 would otherwise be read as a capability Lighthouse can rely on.
+        [Test]
+        public void AnAnswerNobodyExpected_IsNotTreatedAsWorkingEvenWhenItCarriesDefinitions()
+        {
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, stateSpanDefinitions: 1);
+
+            Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
+        }
+
         // A missing capability is not a broken connection. Failing validation over it would stop an
         // administrator finishing a setup that works perfectly well for throughput and forecasting.
         [Test]
@@ -102,8 +113,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.NoRightsCode));
-                Assert.That(verdict.Advisory, Does.Contain("itil"),
+                Assert.That(verdict.Advisory, Does.Contain("grant the integration account the itil role"),
                     "An administrator cannot act on 'history unavailable'. They can act on the name of a role.");
+                Assert.That(verdict.Advisory, Does.Contain("ServiceNow refuses this account the metric tables"),
+                    "And they can only judge whether that role is the right remedy if they are told what was refused.");
             }
         }
 
@@ -115,9 +128,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.NoStateMetricCode));
-                Assert.That(verdict.Advisory, Does.Contain(Table));
-                Assert.That(verdict.Advisory, Does.Contain("Field value duration"),
-                    "Naming the metric type is what turns this from a complaint into an instruction.");
+                Assert.That(verdict.Advisory, Does.Contain("nothing on the incident table measures how long a record spends in each state"));
+                Assert.That(verdict.Advisory, Does.Contain("Activate a Field value duration metric definition on the state field of incident"),
+                    "Naming the metric type, and the field of the table it has to go on, is what turns this from a complaint into an instruction.");
             }
         }
 
@@ -132,6 +145,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(verdict.Advisory, Does.Contain("resolution").IgnoreCase,
                 "ADR-117's honesty obligation: shipping the inflated number unqualified is what this slice exists to stop.");
+        }
+
+        // Each advisory is one sentence concatenated out of several fragments, so losing any one of
+        // them still leaves a message that reads like a message. What the administrator has to be
+        // told does not vary with the cause: that the connection itself is fine, what Lighthouse
+        // cannot see, what to do about it, and what to do afterwards.
+        [TestCase(ServiceNowHistoryAvailability.NoRights)]
+        [TestCase(ServiceNowHistoryAvailability.NoStateMetric)]
+        public void WhateverTheCause_TheAdvisorySaysWhatIsWrongAndWhatToDoAboutIt(ServiceNowHistoryAvailability availability)
+        {
+            var verdict = ServiceNowHistoryVerdict.ToValidationResult(availability, Table);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Advisory, Is.Not.Null.And.Not.Empty, "An advisory nobody can read is the silent no-op DoD 5 forbids.");
+                Assert.That(verdict.Advisory, Does.Contain("The connection works, but"),
+                    "Leading with the reassurance is what stops an administrator undoing a connection that is fine.");
+                Assert.That(verdict.Advisory, Does.Contain("Lighthouse cannot see when work started or stopped"),
+                    "The consequence, in the flow coach's words rather than ServiceNow's.");
+                Assert.That(verdict.Advisory, Does.Contain("then validate the connection again to pick up true time in progress"),
+                    "A remedy with no way to check it worked leaves the administrator guessing.");
+            }
         }
     }
 }
