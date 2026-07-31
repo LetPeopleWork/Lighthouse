@@ -1,3 +1,4 @@
+using System.Net;
 using Lighthouse.Backend.Models.Validation;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
@@ -50,6 +51,64 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 // what the flow coach acts on. Nothing branches on this line.
                 $"The team reads '{table}', which has descendants, and named no work item types.",
                 KindsOfWorkFieldName);
+        }
+
+        /// <summary>
+        /// The four-rung readability ladder for one named kind of work, read off its own table
+        /// (ADR-124 decision 2). A verdict that is valid means the class is readable, or exists and
+        /// holds nothing — which is a legitimate configuration, not a failure.
+        /// </summary>
+        /// <param name="recordClass">The class name the flow coach typed.</param>
+        /// <param name="statusCode">What <c>/api/now/table/{recordClass}?sysparm_limit=1</c> answered.</param>
+        /// <param name="responseIsJson">Whether the body parsed at all.</param>
+        /// <param name="recordsTheInstanceHolds">
+        /// <c>X-Total-Count</c>, which ServiceNow reports without consulting the ACLs it just applied.
+        /// </param>
+        /// <param name="visibleRowCount">Rows the account actually got back.</param>
+        public static ConnectionValidationResult FromClassProbe(
+            string recordClass, HttpStatusCode statusCode, bool responseIsJson, int recordsTheInstanceHolds, int visibleRowCount)
+        {
+            if (statusCode != HttpStatusCode.OK || !responseIsJson)
+            {
+                // Rungs 1 and 2 are the connection ladder's 400 and 403 with a class name where the
+                // table name went — a class IS a table, so the messages are already right.
+                return AboutTheKindOfWork(
+                    ServiceNowValidationVerdict.FromResponse(statusCode, responseIsJson, visibleRowCount, recordClass));
+            }
+
+            // Rung 4. The gap between what the instance holds and what the account can see is the
+            // only signal there is: an ACL-filtered read and a correct one are otherwise the same
+            // response with fewer rows in it. Header = 0 is rung 5 — the class is simply empty.
+            if (recordsTheInstanceHolds > 0 && visibleRowCount < 1)
+            {
+                return RecordsNotVisible(recordClass);
+            }
+
+            return ConnectionValidationResult.Success();
+        }
+
+        // Suspicion, not proof: rows all filtered out by row-level ACLs for legitimate reasons read
+        // identically to a class-level denial, so the message names both causes rather than asserting
+        // a certainty the platform cannot supply. Same house style as no_records_visible.
+        private static ConnectionValidationResult RecordsNotVisible(string recordClass)
+        {
+            return ConnectionValidationResult.Failure(
+                "class_records_not_visible",
+                $"ServiceNow says it holds records of the kind '{recordClass}', but this account was shown none of them. Either it lacks read access to '{recordClass}' — grant the matching per-table role — or every one of those records is hidden from it by a record-level rule. Until one of those changes, this team would sync as though that kind of work did not exist.",
+                // Stryker disable once String: both causes and the role to grant are named in the
+                // message above, which is the half a flow coach acts on. This repeats the two counts
+                // for a support log.
+                $"ServiceNow reported records of '{recordClass}' in X-Total-Count and returned none of them.",
+                KindsOfWorkFieldName);
+        }
+
+        // The connection ladder points at the connection's own field. A rung reached through a class
+        // the flow coach typed has to send them back to the field they typed it in.
+        private static ConnectionValidationResult AboutTheKindOfWork(ConnectionValidationResult verdict)
+        {
+            verdict.FieldName = KindsOfWorkFieldName;
+
+            return verdict;
         }
 
         /// <summary>

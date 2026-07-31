@@ -182,7 +182,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // "Change Request" on their own screen and has to type change_request. A wrong name narrows
         // the read to nothing in silence, so it has to be caught at the moment it is typed.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamThatNamesAKindOfWorkTheInstanceDoesNotHave_IsToldWhichNameIsWrong()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
@@ -206,7 +205,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // differently can reach it, even though no ITSM class produced a 403 at any privilege level
         // on the instance this was measured against.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamThatNamesAKindOfWorkTheInstanceRefuses_IsToldItIsAPermissionsProblem()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
@@ -230,7 +228,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // empty body is the one signal there is that a kind of work is being hidden rather than
         // being empty.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamThatNamesAKindOfWorkTheAccountCannotSee_IsToldWhichKindIsHidden()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
@@ -246,7 +243,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(result.Message, Does.Contain(Problems),
                     "The kind of work that cannot be read has to be named, or the team is quietly two thirds of itself.");
                 Assert.That(result.FieldName, Is.EqualTo("WorkItemTypes"));
-                Assert.That(result.Code, Is.Not.EqualTo("valid"));
+                Assert.That(result.Code, Is.EqualTo("class_records_not_visible"),
+                    "T-1, settled by the maintainer: it parallels no_records_visible at connection scope and states what was seen without asserting a cause the platform cannot supply.");
             }
         }
 
@@ -254,7 +252,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // configuration, and refusing the save would block a team on a quiet quarter. The probe still
         // has to happen — otherwise this passes for the reason that nothing was checked.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamThatNamesAKindOfWorkWithNothingInItYet_IsAccepted()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork())
@@ -276,7 +273,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // waiting on a Save, and never on a refresh. Serial and uncapped, matching every other read
         // in this connector.
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task SavingATeamThatNamesThreeKindsOfWork_AsksTheInstanceAboutEachOfThemOnce()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());

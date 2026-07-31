@@ -545,6 +545,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             try
             {
+                var unreadable = await FirstUnreadableKindOfWork(connection, instanceUrl, scope);
+
+                if (unreadable is not null)
+                {
+                    return unreadable;
+                }
+
                 // ADR-124 decision 3: both counts are scoped to the kinds of work the team named, so
                 // the ratio keeps meaning "how much of your work did this query select" rather than
                 // "how much of the instance". For a team that named none the two are the shipped pair.
@@ -572,6 +579,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             {
                 return UnreachableInstance(exception, instanceUrl);
             }
+        }
+
+        // ADR-124 decision 1. One cheap probe per named kind of work, at the one moment a human is
+        // already waiting on a Save, and never on a refresh. Serial and uncapped (OQ-5): a fan-out
+        // here would be the only concurrent call path in this adapter, against an instance whose
+        // rate-limiting behaviour is measured at exactly one request rate.
+        private async Task<ConnectionValidationResult?> FirstUnreadableKindOfWork(
+            WorkTrackingSystemConnection connection, string instanceUrl, ServiceNowReadScope scope)
+        {
+            foreach (var recordClass in scope.KindsOfWork)
+            {
+                if (!TryCreateProbeUri(instanceUrl, recordClass, out var probeUri))
+                {
+                    return ServiceNowValidationVerdict.FromInvalidInstanceAddress(instanceUrl);
+                }
+
+                var answer = await Read(probeUri, connection);
+                var (responseIsJson, rowCount) = ReadRows(answer.Body);
+
+                var verdict = ServiceNowTeamQueryVerdict.FromClassProbe(
+                    recordClass, answer.StatusCode, responseIsJson, answer.TotalCount ?? 0, rowCount);
+
+                if (!verdict.IsValid)
+                {
+                    return verdict;
+                }
+            }
+
+            return null;
         }
 
         // One row is asked for and the size of the whole result set is read from the header, so a

@@ -273,7 +273,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// turn it into a 200.
         /// </summary>
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task AKindOfWorkTheInstanceDoesNotHave_IsRefusedBySaveAndNamed()
         {
             var team = ATeamCovering(["not_a_real_class"], "active=true", AdminUser);
@@ -297,7 +296,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// has lost its only signal.
         /// </summary>
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task AKindOfWorkTheAccountMayNotRead_IsToldApartFromOneItCan()
         {
             var subject = CreateSubject();
@@ -323,7 +321,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// exactly the configuration this feature recommends.
         /// </summary>
         [Test]
-        [Ignore("DISTILL scaffold for #5611 slice 01 — un-skip in DELIVER (ADR-025).")]
         public async Task ATeamCoveringSeveralKindsOfWork_StillLearnsWhenItsWorkChangedState()
         {
             var team = ATeamCovering(["incident"], "active=true", AdminUser);
