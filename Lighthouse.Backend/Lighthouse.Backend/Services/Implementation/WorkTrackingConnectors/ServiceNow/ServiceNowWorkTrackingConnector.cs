@@ -70,22 +70,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         private const int PageCeiling = 1000;
 
-        // SCAFFOLD (DISTILL slice 04, Story #5577)
-        //
-        // Per-instance, and only ever on evidence (ADR-118). Slice 02 answered a flat no because the
-        // metric tables are itil-gated; slice 04 asks, and reports what the instance actually said.
-        //
-        // Unlike Linear's optimistic default, this starts as "not observed" and turns true only after
-        // a definition read succeeded. Linear can afford to assume history and downgrade on rejection;
-        // here the assumption would be that a customer paid for a role, and claiming a capability
-        // nobody has checked is the shape of failure this epic exists to prevent.
+        /// <summary>The table that says what an instance measures.</summary>
+        private const string MetricDefinitionTable = "metric_definition";
+
+        /// <summary>The table the measured spans themselves live in.</summary>
+        private const string MetricInstanceTable = "metric_instance";
+
+        // Per instance, and only ever on evidence (ADR-118): "not observed" until a definition read
+        // actually succeeded. Linear can afford an optimistic default and downgrade on rejection;
+        // here the optimistic assumption would be that a customer paid for a role nobody checked.
         private ServiceNowHistoryAvailability? observedAvailability;
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
         {
-            // Nothing sets the field yet, so this answers exactly what slice 02 answered. That is the
-            // safe direction to be wrong in: the test that history is declared once the instance
-            // supplies it stays red, and only the downgrade case — already shipped behaviour — passes.
             return observedAvailability == ServiceNowHistoryAvailability.Available;
         }
 
@@ -139,24 +136,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             var connection = team.WorkTrackingSystemConnection;
             var table = ResolveWorkItemTable(connection);
-            var records = await ReadEveryPage(connection, table, teamsOwnQuery);
-
-            // SCAFFOLD (DISTILL slice 04, Story #5577). The seam where the history read belongs.
-            // Until it exists nothing has been observed, so the conservative answer stands and
-            // WorkItemService keeps deriving transitions from the sync delta exactly as it does today.
-            observedAvailability = ServiceNowHistoryAvailability.NoStateMetric;
+            var records = (await ReadEveryPage(connection, table, teamsOwnQuery, WhenRefused.Fail)).Records;
 
             var mapped = records
-                .Select(record => (Label: ServiceNowWorkItemMapper.ReadStateLabel(record), Item: ServiceNowWorkItemMapper.MapRecord(record, team, table)))
+                .Select(record => new MappedRecord(
+                    ServiceNowWorkItemMapper.ReadStateLabel(record),
+                    ServiceNowWorkItemMapper.ReadRecordId(record),
+                    ServiceNowWorkItemMapper.MapRecord(record, team, table)))
                 .ToList();
 
             ReportStatesTheTeamNeverMapped(mapped, team);
+
+            var history = await ReadHistory(connection, table, mapped, team);
 
             // Linear's precedent: a team only sees work in the states it has mapped. An unmapped
             // label is work the flow coach never told Lighthouse how to interpret.
             return mapped
                 .Where(entry => entry.Item.StateCategory != StateCategories.Unknown)
-                .Select(entry => new WorkItem(entry.Item, team))
+                .Select(entry => new WorkItem(entry.Item, team) { SyncedTransitions = MovesMadeBy(entry, history, team) })
                 .ToList();
         }
 
@@ -164,7 +161,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // list a read-only account cannot query, so a near-miss is the likely case — and dropping
         // those records without a word reads as low Throughput with the settings page still saying
         // the team is valid.
-        private void ReportStatesTheTeamNeverMapped(List<(string Label, WorkItemBase Item)> mapped, Team team)
+        private void ReportStatesTheTeamNeverMapped(List<MappedRecord> mapped, Team team)
         {
             var leftOut = mapped
                 .Where(entry => entry.Item.StateCategory == StateCategories.Unknown)
@@ -187,6 +184,112 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 leftOut.Count, team.Name, string.Join(", ", labels));
         }
 
+        // ADR-118 D2. The measurement is resolved before any span is asked for: without it there is
+        // nothing to restrict the span read to, and an unrestricted read turns assignment changes
+        // into state transitions. What the instance answers here is also the only evidence
+        // SupportsTransitionHistory ever answers from.
+        private async Task<Dictionary<string, List<ServiceNowStateSpan>>> ReadHistory(
+            WorkTrackingSystemConnection connection, string table, List<MappedRecord> mapped, Team team)
+        {
+            var recordIds = mapped
+                .Select(entry => entry.RecordId)
+                .Where(recordId => !string.IsNullOrWhiteSpace(recordId))
+                .ToList();
+
+            if (recordIds.Count < 1)
+            {
+                // An idIN list with no ids is an unfiltered read of every span in the instance.
+                return [];
+            }
+
+            var definitions = await ReadEveryPage(
+                connection, MetricDefinitionTable, ServiceNowHistoryQuery.DefinitionQueryFor(table), WhenRefused.Downgrade);
+
+            var stateSpanDefinitions = DefinitionIdsIn(definitions.Records);
+            observedAvailability = ServiceNowHistoryVerdict.From(definitions.StatusCode, stateSpanDefinitions.Count);
+
+            if (observedAvailability != ServiceNowHistoryAvailability.Available)
+            {
+                ReportHistoryUnavailable(team, observedAvailability.Value);
+
+                return [];
+            }
+
+            return await ReadSpans(connection, recordIds, stateSpanDefinitions, team);
+        }
+
+        // One request per batch of records rather than one per record: at ~600ms per call with no
+        // rate limiting (SPIKE Q7) the constraint is wall clock, and one call per work item would
+        // turn a 500-item sync into five minutes.
+        private async Task<Dictionary<string, List<ServiceNowStateSpan>>> ReadSpans(
+            WorkTrackingSystemConnection connection, List<string> recordIds, List<string> stateSpanDefinitions, Team team)
+        {
+            var spansByRecord = new Dictionary<string, List<ServiceNowStateSpan>>(StringComparer.Ordinal);
+
+            foreach (var batch in ServiceNowHistoryQuery.IntoBatches(recordIds))
+            {
+                var read = await ReadEveryPage(
+                    connection,
+                    MetricInstanceTable,
+                    ServiceNowHistoryQuery.SpanQueryFor(batch, stateSpanDefinitions),
+                    WhenRefused.Downgrade);
+
+                if (read.StatusCode != HttpStatusCode.OK)
+                {
+                    observedAvailability = ServiceNowHistoryVerdict.From(read.StatusCode, stateSpanDefinitions.Count);
+                    ReportHistoryUnavailable(team, observedAvailability.Value);
+
+                    return [];
+                }
+
+                foreach (var span in ServiceNowHistoryQuery.SpansFrom(read.Records, stateSpanDefinitions))
+                {
+                    KeepAgainstItsRecord(spansByRecord, span);
+                }
+            }
+
+            return spansByRecord;
+        }
+
+        private static void KeepAgainstItsRecord(
+            Dictionary<string, List<ServiceNowStateSpan>> spansByRecord, ServiceNowStateSpan span)
+        {
+            if (!spansByRecord.TryGetValue(span.RecordId, out var recordsSpans))
+            {
+                recordsSpans = [];
+                spansByRecord[span.RecordId] = recordsSpans;
+            }
+
+            recordsSpans.Add(span);
+        }
+
+        private static List<string> DefinitionIdsIn(List<JsonElement> definitions)
+        {
+            return definitions
+                .Select(ServiceNowWorkItemMapper.ReadRecordId)
+                .Where(definitionId => !string.IsNullOrWhiteSpace(definitionId))
+                .ToList();
+        }
+
+        // The moves a record made, or none where the instance measured none. Set as the WorkItem is
+        // constructed because SyncedTransitions is init-only.
+        private static IReadOnlyList<WorkItemStateTransition> MovesMadeBy(
+            MappedRecord entry, Dictionary<string, List<ServiceNowStateSpan>> history, Team team)
+        {
+            return history.TryGetValue(entry.RecordId, out var spans)
+                ? ServiceNowStateSpanMapper.ToTransitions(spans, team)
+                : [];
+        }
+
+        // DoD 5 forbids the silent no-op: a team quietly losing time-in-state reads as a team whose
+        // work never moves, and nothing else would tell the administrator why.
+        private void ReportHistoryUnavailable(Team team, ServiceNowHistoryAvailability availability)
+        {
+            logger.LogWarning(
+                "ServiceNow supplied no transition history for team {TeamName} ({Reason}), so its state changes are derived from Lighthouse's own sync interval rather than from the instance. Validate the connection to see what to change.",
+                team.Name, availability);
+        }
+
         // Offset paging over disjoint pages, at ~600ms per call with no rate limiting (SPIKE Q7) —
         // so the cost is wall-clock and the read is batched. Where the instance sends paging links
         // they decide the next address and the last page; otherwise the offset advances by the rows
@@ -195,7 +298,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // The two guards below exist because the failure they catch is silent. An instance that
         // ignores sysparm_offset answers every page with the same rows: with X-Total-Count present
         // that duplicates the team's work, and without it the loop never ends.
-        private async Task<List<JsonElement>> ReadEveryPage(WorkTrackingSystemConnection connection, string table, string query)
+        private async Task<PagedRead> ReadEveryPage(
+            WorkTrackingSystemConnection connection, string table, string query, WhenRefused whenRefused)
         {
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
             var records = new List<JsonElement>();
@@ -208,6 +312,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             while (pageUri is not null)
             {
                 var answer = await Read(pageUri, connection);
+
+                // A history read carries the refusal home instead of throwing on it: a role revoked
+                // after the connection validated must downgrade the sync, not fail it (ADR-118 D5).
+                if (whenRefused == WhenRefused.Downgrade && answer.StatusCode != HttpStatusCode.OK)
+                {
+                    return new PagedRead(answer.StatusCode, records);
+                }
+
                 var page = RecordsFrom(answer, table);
 
                 if (page.Count < 1)
@@ -232,7 +344,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 }
             }
 
-            return records;
+            return new PagedRead(HttpStatusCode.OK, records);
         }
 
         // One error policy for the whole read: anything other than a 200 carrying a record set
@@ -582,6 +694,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         private sealed record ServiceNowAnswer(
             HttpStatusCode StatusCode, string Body, int? TotalCount, PagingSignal Paging, Uri? NextPage);
+
+        /// <summary>What a read does with an answer that is not a readable 200.</summary>
+        private enum WhenRefused
+        {
+            /// <summary>Throw. A partial team sync deletes the work the failed pages would have carried.</summary>
+            Fail,
+
+            /// <summary>Carry the status back, so the caller downgrades instead of failing (ADR-118 D5).</summary>
+            Downgrade,
+        }
+
+        /// <summary>Every page of a read, and the status the read ended on.</summary>
+        private sealed record PagedRead(HttpStatusCode StatusCode, List<JsonElement> Records);
+
+        /// <summary>One record as mapped, kept alongside the handle its history is fetched by.</summary>
+        private sealed record MappedRecord(string Label, string RecordId, WorkItemBase Item);
 
         private sealed record ServiceNowBody(bool ResponseIsJson, bool CarriesRecords, List<JsonElement> Records);
 
