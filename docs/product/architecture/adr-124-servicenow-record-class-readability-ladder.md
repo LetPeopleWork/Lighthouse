@@ -81,7 +81,7 @@ addressable this way. The ladder:
 | `400` | **the class does not exist** — name it, and say Lighthouse expects the system name (`change_request`), not the label (`Change Request`) |
 | `403` | **explicitly refused** — name the class and the role shape to grant |
 | `200`, header > 0, body ≥ 1 | readable |
-| `200`, header > 0, body = 0 | **denied or invisible** — name the class; say both causes |
+| `200`, header > 0, body = 0 | **denied or invisible** — verdict code **`class_records_not_visible`** (maintainer, 2026-07-31); name the class; say both causes |
 | `200`, header = 0 | the class exists and holds nothing. Not an error |
 
 Rungs 3 and 4 are directly measured (the `/incident` and `/problem` rows above). **Rung 1 was measured
