@@ -16,6 +16,10 @@ describe("readConnectionValidation", () => {
 		expect(readConnectionValidation({ isValid: true }).isValid).toBe(true);
 	});
 
+	it("reads a refusal out of the full result object", () => {
+		expect(readConnectionValidation({ isValid: false }).isValid).toBe(false);
+	});
+
 	it("says nothing when there is nothing to say", () => {
 		const result = readConnectionValidation({ isValid: true });
 
