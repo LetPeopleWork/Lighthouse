@@ -67,11 +67,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// misspelt name reaches a team that then syncs a subset in silence.
         /// </param>
         /// <param name="recordsTheInstanceHolds">
-        /// <c>X-Total-Count</c>, which ServiceNow reports without consulting the ACLs it just applied.
+        /// <c>X-Total-Count</c>, which ServiceNow reports without consulting the ACLs it just applied,
+        /// or <c>null</c> where the header was absent. The gap between this number and
+        /// <paramref name="visibleRowCount"/> is the single mechanism AC-B6 rests on, so a probe
+        /// without it has measured nothing and must say so rather than pass.
         /// </param>
         /// <param name="visibleRowCount">Rows the account actually got back.</param>
         public static ConnectionValidationResult FromClassProbe(
-            string recordClass, HttpStatusCode statusCode, bool carriesRecords, int recordsTheInstanceHolds, int visibleRowCount)
+            string recordClass, HttpStatusCode statusCode, bool carriesRecords, int? recordsTheInstanceHolds, int visibleRowCount)
         {
             if (statusCode != HttpStatusCode.OK || !carriesRecords)
             {
@@ -79,6 +82,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 // table name went — a class IS a table, so the messages are already right.
                 return AboutTheKindOfWork(
                     ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, visibleRowCount, recordClass));
+            }
+
+            if (recordsTheInstanceHolds is null)
+            {
+                return AboutTheKindOfWork(FromUncountableResultSet(recordClass));
             }
 
             // Rung 4. The gap between what the instance holds and what the account can see is the

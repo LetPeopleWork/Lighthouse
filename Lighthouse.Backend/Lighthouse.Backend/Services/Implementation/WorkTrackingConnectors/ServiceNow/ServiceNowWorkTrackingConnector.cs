@@ -612,7 +612,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 var body = ParseRecords(answer.Body);
 
                 var verdict = ServiceNowTeamQueryVerdict.FromClassProbe(
-                    recordClass, answer.StatusCode, body.CarriesRecords, answer.TotalCount ?? 0, body.Records.Count);
+                    recordClass, answer.StatusCode, body.CarriesRecords, answer.TotalCount, body.Records.Count);
 
                 if (!verdict.IsValid)
                 {

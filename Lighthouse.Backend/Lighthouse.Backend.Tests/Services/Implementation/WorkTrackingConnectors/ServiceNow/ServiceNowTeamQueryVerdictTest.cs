@@ -118,6 +118,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // X-Total-Count against the row count is the ONLY signal that separates a class this account
+        // may not read from one that is genuinely empty, so a probe that did not get the header has
+        // measured nothing. Collapsing the absent header into 0 disables rung 4 silently and reports
+        // a pass -- the same proxy CountRows already refuses over, one rung earlier and about the
+        // same instance.
+        [Test]
+        public void AKindOfWorkTheInstanceWouldNotSizeAtAll_IsRefusedRatherThanPassed()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassProbe(
+                "problem", HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: null, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("result_size_unknown"));
+                Assert.That(result.Message, Does.Contain("problem"));
+                Assert.That(result.FieldName, Is.EqualTo("WorkItemTypes"));
+            }
+        }
+
         // Slice 01 established this shape: a settings problem is never dressed up as a transport
         // problem, because the two send an administrator to entirely different people.
         [TestCase(0, 96)]
