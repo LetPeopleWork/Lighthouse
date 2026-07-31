@@ -1,4 +1,4 @@
-# ADR-118: The epic size & count chart is one composed `ChartsContainer` (bar stack + line, dual y-axis), not two charts
+# ADR-122: The epic size & count chart is one composed `ChartsContainer` (bar stack + line, dual y-axis), not two charts
 
 - **Status**: Accepted (2026-07-31, DESIGN wave for ADO #5585 / Story #5614). Interaction mode = **propose**.
 - **Date**: 2026-07-31

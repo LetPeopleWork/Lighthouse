@@ -3882,7 +3882,7 @@ delivery trend)
 Wave: DESIGN
 Date: 2026-07-31
 Architect: Morgan (Solution Architect), scope = application/components, mode = propose
-Status: Accepted — ADR-118, ADR-119, ADR-120, ADR-121
+Status: Accepted — ADR-122, ADR-119, ADR-120, ADR-121
 
 This section is **additive** to `## Application Architecture — delivery-metrics`. Pattern
 (ports-and-adapters), paradigm (OOP backend, functional-leaning React), the single `DeliveryMetricSnapshot`
@@ -3895,7 +3895,7 @@ Three things are new:
 1. **A composed chart.** `DeliveryEpicSizeChart` is the first Lighthouse chart to compose a bar plot and
    a line plot on two y-axes (`ChartsContainer` + `<BarPlot />` + `<LinePlot />`, items left, epic count
    right). The technique already existed in `RefreshHistoryChart.tsx` on the same pinned `@mui/x-charts@9.0.1`;
-   this promotes it to the delivery surface. See ADR-118.
+   this promotes it to the delivery surface. See ADR-122.
 2. **Per-item bar styling.** Estimated (portfolio-default) epic sizes render hatched through a custom
    `slots.bar` renderer keyed on `BarElementOwnerState.seriesId`, over a per-epic `::actual` / `::estimated`
    series split, with the SVG `<pattern>` id derived from `useId()` so simultaneously expanded deliveries
@@ -3928,7 +3928,7 @@ the system context is unchanged from delivery-metrics.
 
 ### ADRs
 
-- [ADR-118](./adr-118-epic-size-count-composed-bar-line-chart.md) — one composed `ChartsContainer`
+- [ADR-122](./adr-122-epic-size-count-composed-bar-line-chart.md) — one composed `ChartsContainer`
   (bar stack + line, dual y-axis), not two charts.
 - [ADR-119](./adr-119-estimated-epic-size-hatch-via-bar-slot-and-series-split.md) — hatch via a
   `slots.bar` renderer over a per-epic actual/estimated series split; the burnup's `data-series` CSS

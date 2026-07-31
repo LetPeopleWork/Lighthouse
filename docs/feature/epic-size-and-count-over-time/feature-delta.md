@@ -434,7 +434,7 @@ KPI section only (K3/K5/K6 are the instrumentable ones; no new infrastructure).
 ## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
 
 - ✓ `docs/product/architecture/brief.md` (3794 lines) — `## Application Architecture — delivery-metrics` (from :885) read; ports-and-adapters, OOP backend + functional-leaning React frontend, ADR-048/049/050 inherited
-- ✓ `docs/product/architecture/adr-*.md` — index scanned; highest existing number is **117**, so this wave writes ADR-118…121
+- ✓ `docs/product/architecture/adr-*.md` — index scanned; highest number visible on `origin/main` at the time was **117**, so this wave wrote ADR-118…121. **Corrected 2026-07-31**: epic 5513's ADR-118 (ServiceNow transition history) already existed on an unpushed local branch and landed first, so this wave's ADR-118 was renumbered to **ADR-122**. 119–121 are unaffected.
 - ✓ `docs/product/journeys/epic-size-and-count-over-time.yaml` — D1-D13 (this feature) and the inherited delivery-metrics D4/D6/D11
 - ✓ DISCUSS output — this same `feature-delta.md` (US-01…US-06, 33 ACs, story map, KPIs) and `slices/slice-01..06-*.md`
 - ⊘ `docs/feature/epic-size-and-count-over-time/spike/findings.md` (not found — no spike was run; the two unknowns were resolved in this wave against the installed packages)
@@ -454,7 +454,7 @@ documented shade+tooltip fallback is no longer expected to be needed. See ADR-11
 
 | ID | Decision | Verdict |
 |---|---|---|
-| **DDD-1** | Composed `ChartsContainer` + `<BarPlot />` + `<LinePlot />`, dual y-axis (items left, epic count right), one band x-axis of recorded days | Accepted — ADR-118. Precedent in-repo: `RefreshHistoryChart.tsx:31-63` does this on the same `@mui/x-charts@9.0.1`. |
+| **DDD-1** | Composed `ChartsContainer` + `<BarPlot />` + `<LinePlot />`, dual y-axis (items left, epic count right), one band x-axis of recorded days | Accepted — ADR-122. Precedent in-repo: `RefreshHistoryChart.tsx:31-63` does this on the same `@mui/x-charts@9.0.1`. |
 | **DDD-2** | Estimated sizes hatch via a custom `slots.bar` renderer keyed on `ownerState.seriesId`, over a per-epic `::actual` / `::estimated` series split; `<pattern>` id from `useId()` | Accepted — ADR-119. The burnup's `data-series` CSS trick does **not** transfer: `BarElement` renders no such attribute (verified in `barClasses.d.ts`). |
 | **DDD-3** | Per-epic colour from `getColorMapForKeys(referenceIds)` (`utils/theme/colors.ts:303`), default sorted mode | Accepted — EXTEND. Already the convention in 4 charts; sorted mode keeps colour stable across days and across a legend filter. |
 | **DDD-4** | Legend filter uses MUI-X's native `ChartsLegend.onItemClick(event, legendItem, index)` with `legendItem.seriesId`, plus component-local selection state | Accepted — verified in `ChartsLegend.d.ts:13`. No custom legend component. |
@@ -609,7 +609,7 @@ flowchart TD
 
 | ADR | Title | Slice |
 |---|---|---|
-| ADR-118 | Composed `ChartsContainer` bar+line with dual y-axis, not two charts | 01-02 |
+| ADR-122 | Composed `ChartsContainer` bar+line with dual y-axis, not two charts | 01-02 |
 | ADR-119 | Hatch via `slots.bar` renderer over a per-epic actual/estimated series split | 03 |
 | ADR-120 | Breakdown payload extended in place + nullable-likelihood repair | 02 |
 | ADR-121 | CLI/MCP delivery-trend surface summarises client-side | 06 |
