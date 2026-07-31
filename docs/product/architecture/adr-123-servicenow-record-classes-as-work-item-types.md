@@ -94,18 +94,22 @@ SPIKE recommends and the one whose result set is on record.
 
 ### 3. The clause is emitted whenever classes are named — not when the table is a hierarchy root
 
-The two conditions are deliberately not the same test.
+> **Amended 2026-07-31 with decision 6, and again by the DELIVER review.** The "none" column has no
+> surviving cell: with the field always required, a ServiceNow team with no classes reads nothing
+> whatever its table, so the two rows below that described it are gone. The read rule itself is
+> unchanged — the clause is emitted because classes were named, never because the table has
+> descendants — and it is now uniform rather than a deliberate non-coincidence with the refusal.
 
 | configured table | classes | behaviour |
 |---|---|---|
-| leaf (`incident`), shipped default | none | no clause. **Byte-identical to today** (AC-B5, AC-B2) |
 | hierarchy root (`task`) | named | clause emitted (AC-B1) |
-| hierarchy root (`task`) | none | **reads nothing and says why** (AC-B3, decision 4) |
-| leaf (`incident`) | `["incident"]` | clause emitted; redundant, correct, and honours what the coach typed |
+| leaf (`incident`) | `["incident"]` | clause emitted; the shipped shape, and the one whose `=` form is measured |
+| leaf (`incident`) | `["change_request"]` | clause emitted and honoured — and the save is **refused**, because the records are not under `incident` ([ADR-124](./adr-124-servicenow-record-class-readability-ladder.md) decision 2b). Emitting it anyway is what makes the read match what validation measured |
+| any | none | **reads nothing and says why** (AC-B3, decision 4) |
 
-Hierarchy-root knowledge is therefore load-bearing in exactly **two** places — the refusal in decision
-4, and the schema flag in decision 6 — and nowhere in the read path. That is what keeps the static set
-of decision 5 small enough to be safe.
+Hierarchy-root knowledge is therefore load-bearing in exactly **one** place — decision 10's
+connection-scope history verdict — and nowhere in the read path or the schema. That is what keeps the
+static set of decision 5 small enough to be safe.
 
 ### 4. A hierarchy-rooted team with no classes reads nothing, and is refused at save time
 

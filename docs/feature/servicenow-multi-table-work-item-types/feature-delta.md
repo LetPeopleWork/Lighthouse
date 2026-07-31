@@ -859,8 +859,17 @@ migrated from Jira to a ServiceNow connection keeps its Jira-shaped `["User Stor
 those values were still emitted as a `sys_class_name` filter. For a leaf-rooted team the field was
 hidden while the read obeyed it. Through the UI that surfaces as a save refused naming a field the
 screen does not show, which is an unrecoverable dead end. Through the API, the CLI, the MCP server or
-the default-settings path it is silent: the team reads nothing. Making the field always required
-kills the whole class of problem at the source rather than papering over one route into it.
+the default-settings path it is silent: the team reads nothing.
+
+*Trimmed 2026-07-31 by the DELIVER review, which is owed an accurate claim rather than a confident
+one.* The first draft of this paragraph said the amendment "kills the whole class of problem at the
+source". It does not. What it delivers is narrower and still worth having: **the field is now visible
+wherever it is honoured, and the UI path is gated on it.** The API, CLI and MCP path is *not* gated —
+`POST /api/v1/teams` never calls `ValidateTeamSettings`; validation is a separate
+`POST teams/validate` that only the web UI invokes. A ServiceNow team saved through those clients
+with a stale non-empty class list is still accepted and still reads nothing with nothing logged.
+That is a scope decision about the save endpoint, deliberately left alone here and recorded so it is
+not mistaken for covered.
 
 **2. The conditional protected a configuration that was never shipped.** Nothing ServiceNow has ever
 been released. There are no `incident`-rooted teams in the wild, so there was no migration to protect
@@ -924,3 +933,30 @@ when deciding, which is what a real instance does implicitly.
 
 Mutation testing, adversarial review, finalize, user-facing docs, screenshots and ADO were all left
 for the maintainer, per the instruction that ends at the four local gates.
+
+---
+
+## Wave: DELIVER / [REF] Review fixes
+
+Three findings from the adversarial review, fixed 2026-07-31, each verified against the live PDI
+rather than reasoned about.
+
+| # | Finding | Fix |
+|---|---|---|
+| **1** | **The class ladder validated the wrong fact.** It proved "this name is a readable table on this instance"; the read needs "records of this class are readable **under the connection's table**". Measured: a connection rooted at `incident` whose team names `change_request` passes the ladder (105 rows on `/change_request`), passes the widening comparison, saves — and syncs incidents only, silently. Reachable *by construction* now that every coach must name kinds of work. | A second probe per class, `sys_class_name=<class>` against the configured table. `header = 0` → new verdict **`class_not_under_configured_table`**, naming both the class and the table and explicitly not claiming the class does not exist. Skipped for a class the instance holds nothing of anywhere, where the two answers are indistinguishable and OQ-8 already chose to accept. [ADR-124](../../product/architecture/adr-124-servicenow-record-class-readability-ladder.md) decision 2 amended; alternative B's rejection corrected — both probes run, each doing what it is good at. |
+| **2** | A `200` whose JSON body carries no `result` array was reported as a readable class. `ParseRecords` knew; `ReadRows` discarded `CarriesRecords`. | `ReadRows` deleted; each call site names the question it asks. The class probe asks `CarriesRecords`, as the sync's `RecordsFrom` already did. `ValidateConnection` and `CountRows` keep `ResponseIsJson`, because at connection scope "no visible rows, check rights" is the deliberate reading (ADR-114 decision 4). |
+| **3** | `answer.TotalCount ?? 0` collapsed "the instance said 0" into "the instance said nothing", silently disabling the one mechanism AC-B6 rests on — and reporting a pass. Correct today only because `CountRows` refuses later, on ordering nothing states. | The nullable reaches the ladder, which returns `result_size_unknown` itself. |
+
+**Test gap closed.** `ServiceNowTeamQueryVerdictTest` had no test of `FromClassProbe` or
+`FromMissingWorkItemTypes` — both new rungs were reached only through the connector fixture, one
+example each, which is exactly where findings 2 and 3 lived. Every rung of both class functions now
+has a direct test, including the OK-non-JSON cell and the absent-header cell. One standing live
+assertion added, because the two probes diverge only against a real instance and a fixture can be
+made to say either.
+
+**Amendment leftovers cleared**: the duplicate `TheKindOfWork_IsTheTableItWasReadFrom`, ADR-123
+decision 3's stale "none" column, and the two schema parametrisations over a table the factories
+cannot see. `getDefaultTeamSchema(connection)` was left taking a connection: `SchemaConnection` is
+already `Pick<..., "workTrackingSystem">`, so the parameter is one field wide, and narrowing it to a
+system type would make both wizards synthesise objects to call it — the earlier pass's judgement,
+re-confirmed.
