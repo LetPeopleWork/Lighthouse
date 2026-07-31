@@ -237,3 +237,34 @@ already spoken. Under every oversized heuristic.
 
 **Handoff**: DESIGN (`nw-solution-architect`), whose first job is OC-1 and OC-2 against a live
 instance. DEVOPS takes the KPI section only; no infrastructure change is implied by either slice.
+
+---
+
+## Wave: SPIKE / [REF] Open calls settled — 2026-07-31
+
+Run against the epic's PDI. Evidence and measurements: `spike/findings.md`; promotion decision
+(DISCARD — the findings are the deliverable, slice 01 goes through DISTILL as planned):
+`spike/wave-decisions.md`.
+
+| ID | Verdict |
+|---|---|
+| **OC-1** | **Settled, both ways.** `^OR` chain and `IN` both return the reference answer exactly — identical `sys_id` sets across four team queries, including one carrying its own `^OR` and one carrying the connector's `ORDERBY`. The tie breaks on URL budget and on not depending on a grouping rule seen on one instance: **generate `sys_class_nameIN…`**. D3 confirmed — unfiltered, the same team reads 579 records of 13 classes instead of 159 of 2. |
+| **OC-2** | **Settled, and the answer is "no, not without help".** An account that may read `incident` but not `problem` gets 200 with the `problem` rows simply absent. But `X-Total-Count` is **ACL-blind**, so header > 0 with an empty body is a denial Lighthouse *can* name: AC-B6 becomes one `sysparm_limit=1` probe per named class at validation time. Header = 0 stays ambiguous (empty class vs misspelt name) and cannot be resolved for the accounts that matter. |
+| **OC-3** | **Settled early, at zero cost.** Class **names** (`change_request`), never labels — `sysparm_query` matches the stored value, and `sys_class_name` already rides in the connector's `display_value=all` read, so D4 costs no extra request. |
+
+Two things the open calls did not ask, found anyway, both binding on DESIGN:
+
+- **A `task`-rooted team loses transition history entirely.** `metric_definition` has 0 rows for
+  `table=task` — definitions attach to concrete classes only. Slice 01 must scope
+  `ServiceNowHistoryQuery.DefinitionQueryFor` to the classes (`tableIN…`); added to slice 01's IN
+  scope. Separately, `change_request` on a stock PDI has no state-tracking definition at all, which
+  is an instance fact for the docs.
+- **State mapping, not the class list, is this feature's usability risk.** Four classes carry 14
+  distinct labels, and the same label has different choice values per class (`Closed` = 3 / 7 / 107).
+  Lighthouse maps by label, which is what makes that survivable — but a coach who maps one class's
+  labels and stops loses the rest silently (61 change requests in `Authorize`, on the PDI).
+
+One pre-existing defect recorded so it is not re-derived: `ValidateTeamSettings` compares two
+ACL-blind `X-Total-Count` values, so a no-roles account passes the widening comparison while reading
+nothing. Connection validation catches that account a rung earlier; this feature changes only the
+denominator (`everything` becomes the whole hierarchy), which DESIGN must rule on.

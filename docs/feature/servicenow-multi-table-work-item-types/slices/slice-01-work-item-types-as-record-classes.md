@@ -23,6 +23,10 @@ case the model falls back to per-team (table, query) pairs and the whole feature
   encoded query, for a ServiceNow team rooted at a table with descendants.
 - `Type` on a mapped item becomes `sys_class_name` (D4) — `ServiceNowWorkItemMapper.MapRecord`.
 - Empty types on a hierarchy-rooted team reads nothing and says why (D3, AC-B3).
+- Metric definitions scoped to the classes (`tableIN…`) rather than to the configured table —
+  `ServiceNowHistoryQuery.DefinitionQueryFor`. Added after the SPIKE measured **0** definitions for
+  `table=task`, i.e. a task-rooted team silently losing slice 04's transition history
+  (`../spike/findings.md`).
 - `isWorkItemTypesRequired` becomes conditional on the configured table, in **both** schema twins
   (D6) — `DataRetrievalSchemaDto.cs` and `DataRetrievalSchemaDefaults.ts`, with the #5613
   exhaustiveness guard still passing.
@@ -42,7 +46,7 @@ AC-B1..AC-B6 in `../feature-delta.md`.
 
 - Story 5577 landed and pushed.
 - Bug #5613's schema-twin guard in place (shipped, `cb5f0efb0`).
-- **OC-1 and OC-2 closed against a live instance.** This slice is not buildable until they are.
+- **OC-1 and OC-2 closed against a live instance.** ✓ SPIKE, 2026-07-31 — `../spike/findings.md`.
 
 ## Reference class
 
@@ -52,7 +56,11 @@ AC-B1..AC-B6 in `../feature-delta.md`.
 - `useCreateWizard.ts:128`, `ModifyTeamSettings.tsx:76` — the existing
   `isWorkItemTypesRequired === false` gates; the components do not change, only what the schema says.
 
-## Pre-slice SPIKE
+## Pre-slice SPIKE — DONE, 2026-07-31
+
+**Verdict: WORKS.** Both filter forms bind correctly; emit `IN`. ACL omission is silent and needs a
+per-class probe. See `../spike/findings.md` and `../spike/wave-decisions.md` — the plan below is what
+was run.
 
 **Yes — timeboxed, against the PDI or the on-prem instance.** Close OC-1 (does the `^OR` class filter
 combine correctly with a team's own encoded query on `task`?) and OC-2 (what does a restricted account
