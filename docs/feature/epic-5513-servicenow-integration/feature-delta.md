@@ -2501,3 +2501,23 @@ pointed at `**/Services/Implementation/WorkTrackingConnectors/ServiceNow/*.cs`. 
 `include` list names **every** test file that covers the mutated code — a test file missing from that
 list makes its mutants survive for want of a test run, which reads identically to a real gap. That
 happened once during this slice and cost a full re-run.
+
+---
+
+## Wave: DELIVER / [REF] Story 5611 — several kinds of work on one team (shipped 2026-07-31)
+
+Filed out of the slice-02 dogfood, so it is not one of slices 01–05 and keeps its own workspace:
+`docs/feature/servicenow-multi-table-work-item-types/`. Summary in
+`docs/evolution/2026-08-01-story-5611-servicenow-record-classes.md`.
+
+What it changes for this epic's record: the **`Work Item Table` connection option no longer exists**.
+Every read is rooted at the constant `task` and narrowed by `sys_class_name` from the team's own
+`WorkItemTypes`, which is now **required** for every ServiceNow team. A work item's `Type` is its own
+class rather than the configured table. ADR-116 decision 1, ADR-123 decision 5 and ADR-124 decision 2
+were amended accordingly. Slice 02 of 5611 (per-team table override) is **cancelled** — the class
+filter subsumes it.
+
+One correction to the mutation note above: per-feature Stryker configs **are** committed now, under
+`docs/feature/{feature}/mutation/`, following the convention bug-5586 established. The `.gitignore`
+exclusions still apply to the working copies at the project roots, so a committed copy under `docs/`
+needs `git add -f` for the `vitest.stryker*.ts` file.
