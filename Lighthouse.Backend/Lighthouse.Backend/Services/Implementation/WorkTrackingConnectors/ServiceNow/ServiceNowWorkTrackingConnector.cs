@@ -165,12 +165,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var records = (await ReadEveryPage(
                 connection, ServiceNowReadScope.RootTable, scope.ScopedQuery(teamsOwnQuery), WhenRefused.Fail)).Records;
 
+            var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
+
             var mapped = records
                 .Select(record => new MappedRecord(
                     ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
-                    ServiceNowWorkItemMapper.MapRecord(
-                        record, team, scope, GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl))))
+                    ServiceNowWorkItemMapper.MapRecord(record, team, scope, instanceUrl)))
                 .ToList();
 
             ReportStatesTheTeamNeverMapped(mapped, team);

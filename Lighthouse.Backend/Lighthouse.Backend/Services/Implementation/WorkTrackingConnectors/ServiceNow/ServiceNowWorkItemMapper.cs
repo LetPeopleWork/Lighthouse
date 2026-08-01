@@ -101,13 +101,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var stateLabel = ReadStateLabel(record);
             var recordNumber = ReadRecordNumber(record);
             var stateCategory = owner.MapStateToStateCategory(stateLabel);
+            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
 
             return new WorkItemBase
             {
                 ReferenceId = recordNumber,
                 Name = ReadForm(record, TitleField, UniversalForm),
-                Type = KindOfWork(record, scope),
-                Url = RecordAddress(record, instanceUrl),
+                Type = KindOfWork(recordClass, scope),
+                Url = RecordAddress(record, recordClass, instanceUrl),
                 State = owner.MapRawStateToMappedName(stateLabel),
                 StateCategory = stateCategory,
                 Order = recordNumber,
@@ -131,9 +132,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// one, and <c>WorkItemsDialog</c> already renders the id as plain text when the url is null.
         /// </para>
         /// </remarks>
-        private static string? RecordAddress(JsonElement record, string instanceUrl)
+        private static string? RecordAddress(JsonElement record, string recordClass, string instanceUrl)
         {
-            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
             var recordId = ReadRecordId(record);
 
             if (string.IsNullOrWhiteSpace(instanceUrl)
@@ -152,10 +152,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // the task hierarchy says change_request. The fallback is not padding: ReadForm answers
         // string.Empty for a field that is not there, and an empty Type on every row of a table that
         // does not carry sys_class_name would be a worse silent data change than the one being fixed.
-        private static string KindOfWork(JsonElement record, ServiceNowReadScope scope)
+        private static string KindOfWork(string recordClass, ServiceNowReadScope scope)
         {
-            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
-
             // ADR-128, amended: the words THIS TEAM used for that class, not a globally-chosen label.
             // A team configured with `change_request` stores change_request; one configured with
             // `Change Request` stores Change Request. Config and work items therefore agree by

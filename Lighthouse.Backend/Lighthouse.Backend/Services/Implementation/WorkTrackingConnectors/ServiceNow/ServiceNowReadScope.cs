@@ -26,13 +26,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         private readonly List<NamedKindOfWork> kindsOfWork;
 
+        private readonly List<string> recordClasses;
+
         private ServiceNowReadScope(List<NamedKindOfWork> kindsOfWork)
         {
             this.kindsOfWork = kindsOfWork;
+            recordClasses = [.. kindsOfWork.Select(kind => kind.RecordClass)];
         }
 
         /// <summary>The record classes the team named, in the order it named them.</summary>
-        public IReadOnlyList<string> KindsOfWork => [.. kindsOfWork.Select(kind => kind.RecordClass)];
+        public IReadOnlyList<string> KindsOfWork => recordClasses;
 
         /// <summary>
         /// The words the flow coach actually typed for a record class — <c>Change Request</c> where
@@ -104,12 +107,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         public List<string> DefinitionTables()
         {
-            return [.. KindsOfWork];
+            return [.. recordClasses];
         }
 
         private string ClassClause()
         {
-            return Matching(ServiceNowWorkItemMapper.RecordClassField, [.. KindsOfWork]);
+            return Matching(ServiceNowWorkItemMapper.RecordClassField, recordClasses);
         }
 
         /// <summary>
