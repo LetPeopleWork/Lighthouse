@@ -17,31 +17,45 @@ namespace Lighthouse.Backend.API
         IJiraWorkTrackingConnector jiraWorkTrackingConnector,
         IAzureDevOpsWorkTrackingConnector azureDevOpsWorkTrackingConnector,
         ILinearWorkTrackingConnector linearWorkTrackingConnector,
+        IServiceNowWorkTrackingConnector serviceNowWorkTrackingConnector,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemRepo)
     : ControllerBase
     {
         [HttpGet("{workTrackingSystemConnectionId:int}/boards")]
-        public async Task<ActionResult<IEnumerable<Board>>> GetBoards(int workTrackingSystemConnectionId)
+        public Task<ActionResult<IEnumerable<Board>>> GetBoards(int workTrackingSystemConnectionId)
         {
-            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemRepo, workTrackingSystemConnectionId, async workTrackingSystemConnection =>
-            {
-                var boardInformationProvider =
-                    GetBoardInformationProviderForWorkTrackingSystem(workTrackingSystemConnection);
-                return await boardInformationProvider.GetBoards(workTrackingSystemConnection);
-            });
+            return AnsweringARefusalWithItsReason<IEnumerable<Board>>(
+                workTrackingSystemConnectionId,
+                (boardInformationProvider, connection) => boardInformationProvider.GetBoards(connection));
         }
 
         [HttpGet("{workTrackingSystemConnectionId:int}/boards/{boardId}")]
-        public async Task<ActionResult<BoardInformation>> GetBoardInformation(int workTrackingSystemConnectionId,
+        public Task<ActionResult<BoardInformation>> GetBoardInformation(int workTrackingSystemConnectionId,
             string boardId)
         {
-            return await this.GetEntityByIdAnExecuteAction(workTrackingSystemRepo, workTrackingSystemConnectionId,
-                async workTrackingSystemConnection =>
-                {
-                    var boardInformationProvider =
-                        GetBoardInformationProviderForWorkTrackingSystem(workTrackingSystemConnection);
-                    return await boardInformationProvider.GetBoardInformation(workTrackingSystemConnection, boardId);
-                });
+            return AnsweringARefusalWithItsReason(
+                workTrackingSystemConnectionId,
+                (boardInformationProvider, connection) => boardInformationProvider.GetBoardInformation(connection, boardId));
+        }
+
+        // ADR-126 decision 1. A connector that refused a read already said why, so the reason travels
+        // to the administrator instead of being replaced by "Failed to load boards. Please try again."
+        // Catching the abstract type is what keeps the driving side from naming any one connector.
+        private async Task<ActionResult<TResult>> AnsweringARefusalWithItsReason<TResult>(
+            int workTrackingSystemConnectionId,
+            Func<IBoardInformationProvider, WorkTrackingSystemConnection, Task<TResult>> read)
+        {
+            try
+            {
+                return await this.GetEntityByIdAnExecuteAction(workTrackingSystemRepo, workTrackingSystemConnectionId,
+                    workTrackingSystemConnection => read(
+                        GetBoardInformationProviderForWorkTrackingSystem(workTrackingSystemConnection),
+                        workTrackingSystemConnection));
+            }
+            catch (WorkTrackingReadException refusal)
+            {
+                return BadRequest(refusal.Verdict);
+            }
         }
 
         private IBoardInformationProvider GetBoardInformationProviderForWorkTrackingSystem(
@@ -52,6 +66,7 @@ namespace Lighthouse.Backend.API
                 WorkTrackingSystems.AzureDevOps => azureDevOpsWorkTrackingConnector,
                 WorkTrackingSystems.Jira => jiraWorkTrackingConnector,
                 WorkTrackingSystems.Linear => linearWorkTrackingConnector,
+                WorkTrackingSystems.ServiceNow => serviceNowWorkTrackingConnector,
                 _ => throw new NotImplementedException(
                     "Work Tracking System Type {Type} does not support Board Information!")
             };

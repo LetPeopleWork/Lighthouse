@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IAzureDevOpsWorkTrackingConnector> azureDevOpsWorkTrackingConnectorMock;
 
         private Mock<ILinearWorkTrackingConnector> linearWorkTrackingConnectorMock;
+
+        private Mock<IServiceNowWorkTrackingConnector> serviceNowWorkTrackingConnectorMock;
         
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
 
@@ -27,6 +29,7 @@ namespace Lighthouse.Backend.Tests.API
             jiraWorkTrackingConnectorMock = new Mock<IJiraWorkTrackingConnector>();
             azureDevOpsWorkTrackingConnectorMock = new Mock<IAzureDevOpsWorkTrackingConnector>();
             linearWorkTrackingConnectorMock = new Mock<ILinearWorkTrackingConnector>();
+            serviceNowWorkTrackingConnectorMock = new Mock<IServiceNowWorkTrackingConnector>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
         }
         
@@ -170,7 +173,7 @@ namespace Lighthouse.Backend.Tests.API
         
         private WizardsController CreateSubject()
         {
-            return new WizardsController(jiraWorkTrackingConnectorMock.Object, azureDevOpsWorkTrackingConnectorMock.Object, linearWorkTrackingConnectorMock.Object, workTrackingSystemConnectionRepoMock.Object);
+            return new WizardsController(jiraWorkTrackingConnectorMock.Object, azureDevOpsWorkTrackingConnectorMock.Object, linearWorkTrackingConnectorMock.Object, serviceNowWorkTrackingConnectorMock.Object, workTrackingSystemConnectionRepoMock.Object);
         }
     }
 }

@@ -160,7 +160,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         // an answer: the instance here is a closed local port, which is a real unreachable host, and
         // the administrator is told that rather than told Lighthouse broke.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task AnAdministratorAskingAServiceNowConnectionForItsBoards_IsToldWhyRatherThanShownAFault()
         {
             var connectionId = await AServiceNowConnectionIsConfigured();
@@ -184,7 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         // The dialog's fallback used to turn one into an all-empty board that could still be
         // confirmed — Confirm succeeded and silently wrote nothing.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task AnAdministratorAskingForOneBoardOfAnUnreachableInstance_IsToldWhyRatherThanOfferedABlankPreFill()
         {
             var connectionId = await AServiceNowConnectionIsConfigured();

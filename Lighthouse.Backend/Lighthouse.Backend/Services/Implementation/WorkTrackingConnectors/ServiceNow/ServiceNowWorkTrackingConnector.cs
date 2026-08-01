@@ -161,10 +161,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // on it, which is the one place an answer of zero rows stops being a failure. The list is
         // the body — X-Total-Count is ACL-blind here and would keep the read going for boards that
         // are never coming.
-        private Task<PagedRead> ReadBoards(WorkTrackingSystemConnection connection, string query)
+        //
+        // A closed port or a timeout never reaches the ladder at all, so it is carried home too
+        // (ADR-126 D1): the picker is a place an administrator is waiting, and an unreachable
+        // instance there has to read as the same refusal the settings page already gives it.
+        private async Task<PagedRead> ReadBoards(WorkTrackingSystemConnection connection, string query)
         {
-            return ReadEveryPage(
-                connection, BoardTable, query, WhenRefused.Downgrade, HowTheResultSetIsSized.OnlyTheRowsCount);
+            try
+            {
+                return await ReadEveryPage(
+                    connection, BoardTable, query, WhenRefused.Downgrade, HowTheResultSetIsSized.OnlyTheRowsCount);
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+            {
+                throw new ServiceNowReadException(
+                    ServiceNowValidationVerdict.FromUnreachableInstance(exception.Message));
+            }
         }
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)

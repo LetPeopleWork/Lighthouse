@@ -144,6 +144,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // ADR-125 decision 3. The single-board read re-applies the same scoping rather than trusting
         // the list it served a moment ago: a board that lost its filter in between is refused, not
         // handed over as an empty query.
+        //
+        // AC-B4. The refusal has to be this refusal. Delegating the empty rung to the connection
+        // ladder answers no_records_visible, which advises granting sn_incident_read or reports the
+        // table as empty -- literally true of the read and useless as advice, because nothing about
+        // permissions or emptiness is what happened.
         [Test]
         public void PickingABoardThatNoLongerQualifies_IsRefusedRatherThanHandedOverAsAnEmptyQuery()
         {
@@ -152,7 +157,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
                 () => ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheIncidentBoardId));
 
-            Assert.That(refusal, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.Code, Is.EqualTo("board_cannot_become_a_query"));
+                Assert.That(refusal?.Message, Does.Contain("filter"),
+                    "The reason a board cannot become a query is the missing filter or table, which is what the administrator can go and set.");
+            }
         }
 
         // AC-B4 / DD-4, and OC-5's answer. A board can be built on anything — one on cmdb_ci was
