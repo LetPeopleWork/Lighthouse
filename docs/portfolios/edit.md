@@ -11,14 +11,15 @@ Whether you want to create a new portfolio or edit an existing one, you can use 
 {:toc}
 
 # Validation and Save
-Before you can save a new or modified portfolio, you'll have to *Validate* the changes. Lighthouse will run a query against your specified work tracking system and make sure that the query is successfully executing. Only after this you will be able to save.
+Lighthouse validates your settings against your work tracking system — it runs a query and makes sure it executes and selects the work you meant. The validation checks the following things:
 
-The validation checks the following things:
 - The connection to the work tracking system is valid (the connection settings are ok)
 - The query can be executed (the query is having a correct syntax)
 - The query returns at least one feature
 
-If the validation is ok, you are good to save the changes.
+**When you create a portfolio**, validation is a gate: you *Validate* first, and only a portfolio that passes can be created.
+
+**When you edit an existing portfolio**, there is no Save button — every valid change is saved automatically, and the *All changes saved* indicator tells you it was persisted. Lighthouse then validates the saved settings in the background and shows a warning if they don't hold up, for example if a Work Item Type is misspelled and now matches nothing. Your edit is still saved; the warning tells you it won't bring in the work you expect. Correct the setting and the warning disappears.
 
 # General Configuration
 The general information contains the name of your portfolio. This can be anything that helps you identify it, for example the name of a specific release, customer project, or iteration you want to track.
