@@ -459,7 +459,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
         }
 
-        private static IBoardInformationProvider ABoardPickerFor(StubbedInstance instance)
+        private static ServiceNowWorkTrackingConnector ABoardPickerFor(StubbedInstance instance)
         {
             return CreateSubject(instance);
         }

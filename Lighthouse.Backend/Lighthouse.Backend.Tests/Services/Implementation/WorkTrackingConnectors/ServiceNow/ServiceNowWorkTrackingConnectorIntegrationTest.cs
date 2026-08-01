@@ -503,7 +503,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ABoardPickedOnTheInstance_PreFillsTheWorkItsOwnFilterSelects()
         {
-            IBoardInformationProvider picker = CreateSubject();
+            var picker = CreateSubject();
             var connection = CreateConnection(AdminUser);
 
             var boards = (await picker.GetBoards(connection)).ToList();
