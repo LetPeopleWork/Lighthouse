@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowReadScope.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowTeamQueryVerdict.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryQuery.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowHistoryVerdict.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkItemMapper.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingOptionNames.cs",
+      "**/API/DTO/DataRetrievalSchemaDto.cs",
+      "**/API/DTO/TeamSettingDto.cs",
+      "**/Factories/WorkTrackingSystemFactory.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~ServiceNow|FullyQualifiedName~DataRetrievalSchema|FullyQualifiedName~WorkTrackingSystemFactory|FullyQualifiedName~TeamSetting)&FullyQualifiedName!~IntegrationTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
