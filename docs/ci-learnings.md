@@ -245,6 +245,30 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-01 — a test asserted on a mock that a fire-and-forget `Task.Run` calls, and never waited for it
+
+- **Symptom**: `Verify Backend` red with **exactly one** failure out of 4377 —
+  `LighthouseReleaseServiceIntegrationTest.InstallUpdate_SupportedPlatform_StartsUpdateProcess(Windows)`.
+  Green locally on the identical commit, green running the class alone. Build clean, 0 warnings. The
+  `(Linux)` case of the same test passed in the same run.
+- **Root cause**: `LighthouseReleaseService.InstallUpdate` runs `ExecuteUpdateScript` — which calls
+  `processService.Start(...)` then `Exit(0)` — inside `_ = Task.Run(async () => …)` and returns
+  immediately. The test called `processServiceMock.Verify(x => x.Start(…), Times.Once)` straight after
+  `await subject.InstallUpdate()` with no synchronisation, so it raced the thread pool. Its two
+  siblings hid the same race behind `await Task.Delay(150)`. It only surfaced now because the merge
+  commit's diff span tripped `connector_shared` → `force_full`, which pulls the
+  `Category("GithubIntegration")` class into the run, at `RunConfiguration.MaxCpuCount=0`.
+- **Fix**: `LighthouseReleaseServiceIntegrationTest.cs` — one `TaskCompletionSource` per observable
+  (`processStarted`, `processExited`), signalled from the mock `.Callback(...)` wired in `[SetUp]`, and
+  awaited through a `Signalled` helper with a 10 s timeout. Both `Task.Delay(150)` sleeps deleted; the
+  class got faster (~450 ms) as well as deterministic.
+- **Rule going forward**: never assert on a mock call that a fire-and-forget `Task.Run` will make —
+  signal a `TaskCompletionSource` from the mock's `.Callback(...)` and await it with a timeout. A
+  `Task.Delay` sleep is the same race with a wider window and fails first on a saturated CI runner.
+- **Corollary**: a *single* failure in a live-integration class you did not touch usually means
+  `force_full` widened the filter, not that your change broke it — check `force_full=` in the
+  `Compute Test Backend filter` step before hunting a regression.
+
 ### 2026-07-27 — the backend computed calendar days in UTC and CI could not see it, because the backend test run was the one suite not pinned off UTC (Bug #5567)
 - **Symptom**: no CI failure — that is the point of the entry. 49 production sites anchored "today" on the ambient `DateTime.UtcNow.Date` (37) or `DateTime.Today` (12), two spellings that disagree the moment the process is not on UTC; `ForecastController` used both **in the same request**. The whole suite was green, and stayed green while the frontend half of the same date contract was fixed in the opposite direction (Bug #5566, commit `b956a8857`), which made the asymmetry sharper rather than milder.
 - **Root cause**: the codebase had a first-class, enforced, tested abstraction for *storing instants in UTC* (`UtcDateTimeConverter` ×2, a global EF convention, seven `Kind == Utc` assertions) and **none at all** for *computing a calendar day*. With no named seam every author reached for the ambient clock. Two things made it invisible: (a) the tests recomputed the production oracle — `private static DateTime Today => DateTime.UtcNow.Date;` appeared verbatim in three test files, and a test that recomputes the expression under test passes for every possible value including a wrong one; (b) `playwright.config.ts` and the frontend `test` script were pinned to `Europe/Zurich` but the backend `dotnet test` run was not, so the backend ran on the UTC CI runner — **UTC is the one offset at which a UTC/local day mismatch cancels out**.

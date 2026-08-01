@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IPlatformService> platformServiceMock;
         private Mock<IAssemblyService> assemblyServiceMock;
         private Mock<IProcessService> processServiceMock;
+        private TaskCompletionSource<ProcessStartInfo> processStarted;
+        private TaskCompletionSource<int> processExited;
 
         [SetUp]
         public void Setup()
@@ -31,6 +33,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Default: not standalone, not dev, update-capable platform
             platformServiceMock.SetupGet(x => x.IsDevEnvironment).Returns(false);
             platformServiceMock.SetupGet(x => x.IsStandalone).Returns(false);
+
+            processStarted = new TaskCompletionSource<ProcessStartInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+            processExited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            processServiceMock.Setup(x => x.Start(It.IsAny<ProcessStartInfo>()))
+                .Callback<ProcessStartInfo>(startInfo => processStarted.TrySetResult(startInfo));
+            processServiceMock.Setup(x => x.Exit(It.IsAny<int>()))
+                .Callback<int>(exitCode => processExited.TrySetResult(exitCode));
         }
 
         [Test]
@@ -60,6 +70,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.InstallUpdate();
 
+            await Signalled(processStarted, "start");
+
             processServiceMock.Verify(x => x.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
         }
 
@@ -74,8 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await subject.InstallUpdate();
             
-            // Need to wait a bit for the script to be executed
-            await Task.Delay(150);
+            await Signalled(processExited, "exit");
 
             processServiceMock.Verify(x => x.Exit(0), Times.Once);
         }
@@ -87,26 +98,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             platformServiceMock.SetupGet(x => x.Platform).Returns(platform);
 
-            ProcessStartInfo? capturedStartInfo = null;
-            processServiceMock
-                .Setup(x => x.Start(It.IsAny<ProcessStartInfo>()))
-                .Callback<ProcessStartInfo>(si => capturedStartInfo = si);
-
             var subject = CreateSubject();
 
             await subject.InstallUpdate();
             
-            // Need to wait a bit for the script to be executed
-            await Task.Delay(150);
-
-            Assert.That(capturedStartInfo, Is.Not.Null);
+            var capturedStartInfo = await Signalled(processStarted, "start");
 
             var scriptFile = platform == SupportedPlatform.Windows
-                ? capturedStartInfo!.FileName
-                : capturedStartInfo!.Arguments.Trim('"');
+                ? capturedStartInfo.FileName
+                : capturedStartInfo.Arguments.Trim('"');
 
             Assert.That(scriptFile, Does.EndWith(expectedScriptExtension),
                 $"Expected update script to have extension '{expectedScriptExtension}' on {platform}");
+        }
+
+        // InstallUpdate runs the update script on a fire-and-forget Task, so asserting straight after
+        // it awaits races the thread pool rather than the code under test.
+        private static async Task<T> Signalled<T>(TaskCompletionSource<T> signal, string what)
+        {
+            var finished = await Task.WhenAny(signal.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+
+            Assert.That(finished, Is.SameAs(signal.Task), $"The update process never reached {what} within 10 s.");
+
+            return await signal.Task;
         }
 
         private LighthouseReleaseService CreateSubject()
