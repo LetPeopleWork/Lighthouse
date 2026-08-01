@@ -1,0 +1,30 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/models/Common/DataRetrievalSchema.ts",
+    "src/models/Common/DataRetrievalSchemaDefaults.ts:56-72",
+    "src/components/DataRetrievalWizards/DataRetrievalWizardRegistry.ts:36-48",
+    "src/components/DataRetrievalWizards/BoardWizard.tsx:14-92",
+    "src/components/Common/BaseSettings/GeneralSettingsComponent.tsx:48-62",
+    "src/components/Common/BaseSettings/GeneralSettingsComponent.tsx:170-176",
+    "src/components/Common/CreateWizards/CreateWizardShell.tsx:42-48",
+    "src/components/Common/CreateWizards/CreateWizardShell.tsx:94-99",
+    "src/components/Common/CreateWizards/CreateWizardShell.tsx:211-216",
+    "src/components/Common/CreateWizards/CreateTeamWizard.tsx:71-76",
+    "src/hooks/useCreateWizard.ts:41-88",
+    "src/hooks/useCreateWizard.ts:155-240"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-5610-frontend.json" },
+  "tempDirName": ".stryker-tmp-5610"
+}
