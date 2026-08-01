@@ -25,34 +25,78 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// When work actually began: the start of the earliest span whose label the team maps to Doing
-        /// (ADR-118 decision 7). Null when no such span exists — a record that never reached Doing has
-        /// not started, and saying otherwise would put unstarted work into Cycle Time.
+        /// When work actually began: the last time the record crossed into Doing from outside it,
+        /// ignoring arrivals from Done (ADR-118 decision 7). Null when it never crossed — a record
+        /// that never reached Doing has not started, and saying otherwise would put unstarted work
+        /// into Cycle Time.
         /// </summary>
+        /// <remarks>
+        /// Ignoring arrivals from Done is what stops a reopen from restarting the clock on work that
+        /// had already begun. A return to the QUEUE is the opposite case and deliberately does
+        /// re-date: that work was un-started, so the attempt that counts is the one that stuck.
+        /// </remarks>
         public static DateTime? WhenWorkStarted(IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            var arrivalInDoing = InStartOrder(spans)
-                .Find(span => owner.MapStateToStateCategory(span.Label) == StateCategories.Doing);
-
-            return arrivalInDoing?.Start;
+            return LastCrossingInto(spans, owner, owner.DoingStates, owner.DoneStates);
         }
 
         /// <summary>
-        /// When work finished: the start of the latest span whose label the team maps to Done
-        /// (ADR-117 decision 1, amended 2026-07-31). Null when no such span exists.
+        /// When work finished: the last time the record crossed into Done from outside it (ADR-117
+        /// decision 1, amended 2026-07-31). Null when it never crossed.
         /// </summary>
         /// <remarks>
-        /// The latest arrival, where <see cref="WhenWorkStarted"/> takes the earliest. A record
-        /// resolved, reopened and resolved again finished on the second arrival — the first one was
-        /// undone — while the work itself began the first time it reached Doing, and rework must not
-        /// restart that clock.
+        /// From <em>outside</em> Done, which is the whole of Bug #5621 F2. A desk mapping both
+        /// Resolved and Closed to Done finishes the work when someone resolves it; the instance's own
+        /// close-resolved job moving it a week later crossed no boundary and undid nothing. Where a
+        /// reopen genuinely did undo it, the return trip through Doing puts a real crossing after it.
         /// </remarks>
         public static DateTime? WhenWorkFinished(IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            var arrivalInDone = InStartOrder(spans)
-                .FindLast(span => owner.MapStateToStateCategory(span.Label) == StateCategories.Done);
+            return LastCrossingInto(spans, owner, owner.DoneStates, []);
+        }
 
-            return arrivalInDone?.Start;
+        /// <summary>
+        /// When the record was last pushed back into the queue, ignoring arrivals from Done. Null
+        /// where it never was.
+        /// </summary>
+        /// <remarks>
+        /// The caller compares this against <see cref="WhenWorkStarted"/>: work returned to the queue
+        /// after it started has not started, and a start date older than the return would report
+        /// queue time as work. A reopen passes back through Doing on its way and is rework rather
+        /// than a return, which is why arrivals from Done are ignored here too.
+        /// </remarks>
+        public static DateTime? WhenWorkWasQueued(IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
+        {
+            return LastCrossingInto(spans, owner, owner.ToDoStates, owner.DoneStates);
+        }
+
+        private static DateTime? LastCrossingInto(
+            IReadOnlyList<ServiceNowStateSpan> spans,
+            IWorkItemQueryOwner owner,
+            List<string> category,
+            List<string> categoryToIgnoreArrivalsFrom)
+        {
+            return WorkItemCategoryCrossing.LastEntryInto(
+                ArrivalsIn(InStartOrder(TheTeamRecognisesAsState(spans, owner))),
+                owner.GetRawStatesForCategory(category),
+                owner.GetRawStatesForCategory(categoryToIgnoreArrivalsFrom));
+        }
+
+        // Every arrival the spans record, the earliest one coming from nowhere. Deliberately not
+        // PairConsecutive: that drops the first span, because reporting a transition into it would
+        // assert a predecessor state the record may never have held. For dating, the arrival itself
+        // was witnessed even where what preceded it was not — a record whose spans begin after the
+        // metric definition was activated would otherwise lose every date it has. The same shape
+        // Azure DevOps' revision walk produces, and WorkItemCategoryCrossing reads an empty
+        // predecessor as being outside every category.
+        private static List<WorkItemStateTransition> ArrivalsIn(List<ServiceNowStateSpan> spansInStartOrder)
+        {
+            return [.. spansInStartOrder.Select((span, arrival) => new WorkItemStateTransition
+            {
+                FromState = arrival == 0 ? string.Empty : spansInStartOrder[arrival - 1].Label,
+                ToState = span.Label,
+                TransitionedAt = span.Start,
+            })];
         }
 
         // A `field_value_duration` definition is not necessarily a definition on the state field:

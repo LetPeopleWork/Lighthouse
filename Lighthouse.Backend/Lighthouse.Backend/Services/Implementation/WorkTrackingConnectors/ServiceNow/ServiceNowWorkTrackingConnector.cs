@@ -180,12 +180,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // label is work the flow coach never told Lighthouse how to interpret.
             return mapped
                 .Where(entry => entry.Item.StateCategory != StateCategories.Unknown)
-                .Select(entry => new WorkItem(entry.Item, team)
-                {
-                    SyncedTransitions = MovesMadeBy(entry, history, team),
-                    StartedDate = WorkStartedFor(entry, history, team),
-                    ClosedDate = WorkFinishedFor(entry, history, team),
-                })
+                .Select(entry => AsWorkItem(entry, history, team))
                 .ToList();
         }
 
@@ -320,35 +315,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 : [];
         }
 
-        // ADR-118 decision 7. Where the record's spans were measured, work started when it reached
-        // Doing — and nowhere, where it never did: a record that has not started must not carry a
-        // start date into Cycle Time and Work Item Age. Where no span was measured for it, ADR-117's
-        // request-logged instant stands, inflated by queue time and still the only thing a read-only
-        // account can support.
-        private static DateTime? WorkStartedFor(
+        private static WorkItem AsWorkItem(
             MappedRecord entry, Dictionary<string, List<ServiceNowStateSpan>> history, Team team)
         {
-            return history.TryGetValue(entry.RecordId, out var spans)
-                ? ServiceNowStateSpanMapper.WhenWorkStarted(spans, team)
-                : entry.Item.StartedDate;
+            var (startedDate, closedDate) = DatesFor(entry, history, team);
+
+            return new WorkItem(entry.Item, team)
+            {
+                SyncedTransitions = MovesMadeBy(entry, history, team),
+                StartedDate = startedDate,
+                ClosedDate = closedDate,
+            };
         }
 
-        // ADR-117 decision 1, amended 2026-07-31. Where the record's spans were measured, work
-        // finished when it reached the state the team calls Done; where none were, `closed_at`
-        // stands, and a shop that stops at Resolved gets no finish date rather than a resolution
-        // instant standing in for one. Only work the team maps to Done carries a finish date at all,
-        // which MapRecord already applied to the fallback and the spans do not know about.
-        private static DateTime? WorkFinishedFor(
+        // ADR-118 decision 7 and ADR-117 decision 1 (amended 2026-07-31), through the same rules Jira
+        // and Azure DevOps date work by (Bug #5621 F2). Where the record's state spans were measured
+        // they decide; where none were, ADR-117's request-logged instant and `closed_at` stand,
+        // inflated by queue time and still the only thing a read-only account can support.
+        private static (DateTime? startedDate, DateTime? closedDate) DatesFor(
             MappedRecord entry, Dictionary<string, List<ServiceNowStateSpan>> history, Team team)
         {
-            if (entry.Item.StateCategory != StateCategories.Done)
+            if (!history.TryGetValue(entry.RecordId, out var spans))
             {
-                return null;
+                return (entry.Item.StartedDate, entry.Item.ClosedDate);
             }
 
-            return history.TryGetValue(entry.RecordId, out var spans)
+            // Only work the team maps to Done carries a finish date at all, which MapRecord already
+            // applied to the fallback and the spans do not know about.
+            var closedDate = entry.Item.StateCategory == StateCategories.Done
                 ? ServiceNowStateSpanMapper.WhenWorkFinished(spans, team)
-                : entry.Item.ClosedDate;
+                : null;
+
+            var startedDate = ServiceNowStateSpanMapper.WhenWorkStarted(spans, team);
+            var returnedToTheQueue = ServiceNowStateSpanMapper.WhenWorkWasQueued(spans, team);
+
+            if (returnedToTheQueue.HasValue && startedDate.HasValue && returnedToTheQueue > startedDate)
+            {
+                startedDate = null;
+            }
+
+            // Finished without ever being observed in Doing -- a desk that resolves straight out of
+            // the queue. The cycle is zero rather than absent, because a null start drops the item
+            // out of Cycle Time altogether and work that demonstrably finished belongs in it.
+            return (startedDate ?? closedDate, closedDate);
         }
 
         // DoD 5 forbids the silent no-op: a team quietly losing time-in-state reads as a team whose

@@ -228,6 +228,60 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(startedAt, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)));
         }
 
+        // Bug #5621 F2, and the point where returning to the QUEUE parts company with returning from
+        // Done. A reopen leaves work that was genuinely begun, so its clock must not restart -- but
+        // work pushed back to New was un-started, and the attempt that counts is the one that stuck.
+        // This is what Jira and Azure DevOps have always reported.
+        [Test]
+        public void WorkThatWentBackToTheQueueAndStartedAgain_StartedTheSecondTime()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("New", "2026-07-01 06:00:00"),
+                ASpan("In Progress", "2026-07-02 09:00:00"),
+                ASpan("New", "2026-07-04 11:00:00"),
+                ASpan("In Progress", "2026-07-06 08:00:00"),
+            ];
+
+            var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted(spans, AServiceDesk());
+
+            Assert.That(startedAt, Is.EqualTo(new DateTime(2026, 7, 6, 8, 0, 0, DateTimeKind.Utc)),
+                "The first attempt was returned to the queue rather than reworked, so counting from it would report two days of queue time as work.");
+        }
+
+        // The caller needs this to tell work that was pushed back and left there from work that was
+        // pushed back and picked up again.
+        [Test]
+        public void WorkReturnedToTheQueue_ReportsWhenItGotThere()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-02 09:00:00"),
+                ASpan("New", "2026-07-04 11:00:00"),
+            ];
+
+            var queuedAt = ServiceNowStateSpanMapper.WhenWorkWasQueued(spans, AServiceDesk());
+
+            Assert.That(queuedAt, Is.EqualTo(new DateTime(2026, 7, 4, 11, 0, 0, DateTimeKind.Utc)));
+        }
+
+        // A reopen passes back through the team's Doing states on its way, and that is rework rather
+        // than a return to the queue -- so it must not read as one.
+        [Test]
+        public void WorkComingBackFromDone_IsNotAReturnToTheQueue()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-02 09:00:00"),
+                ASpan("Resolved", "2026-07-03 09:00:00"),
+                ASpan("New", "2026-07-04 11:00:00"),
+            ];
+
+            var queuedAt = ServiceNowStateSpanMapper.WhenWorkWasQueued(spans, AServiceDesk());
+
+            Assert.That(queuedAt, Is.Null);
+        }
+
         // Work sitting in the queue has not started, and saying it has would put every untouched
         // ticket into Cycle Time and Work Item Age with a start date it never earned.
         [Test]
@@ -238,6 +292,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted(spans, AServiceDesk());
 
             Assert.That(startedAt, Is.Null);
+        }
+
+        // A record whose spans begin after the metric definition was activated has no span for the
+        // state it was created in. The earliest span it does have is still an arrival Lighthouse
+        // witnessed, even though nothing can say what preceded it -- which is why the dates cannot be
+        // read off ToTransitions, whose first span deliberately yields no transition.
+        [Test]
+        public void WorkWhoseSpansBeginAlreadyInProgress_StartedAtTheEarliestSpan()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-02 09:00:00"),
+                ASpan("Resolved", "2026-07-03 09:00:00"),
+            ];
+
+            var startedAt = ServiceNowStateSpanMapper.WhenWorkStarted(spans, AServiceDesk());
+
+            Assert.That(startedAt, Is.EqualTo(new DateTime(2026, 7, 2, 9, 0, 0, DateTimeKind.Utc)));
         }
 
         // A record whose history is unreadable is a different question from a record that has not
@@ -288,6 +360,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(finishedAt, Is.EqualTo(new DateTime(2026, 7, 31, 12, 0, 0, DateTimeKind.Utc)),
                 "The first resolution was undone, so dating the finish by it would close the item before the second attempt even started.");
+        }
+
+        // Bug #5621 F2. A desk that maps BOTH Resolved and Closed to Done finishes the work when
+        // somebody resolves it; the instance's own close-resolved job moving it a week later has
+        // undone nothing. Dating the finish by the later arrival inflates Cycle Time by the whole
+        // close-out window and lands the item in Throughput a week late -- for every incident on the
+        // instance, since the job runs on all of them.
+        [Test]
+        public void WorkThatPassedThroughTwoDoneStatesInARow_FinishedAtTheFirstOfThem()
+        {
+            IReadOnlyList<ServiceNowStateSpan> spans =
+            [
+                ASpan("In Progress", "2026-07-08 09:00:00"),
+                ASpan("Resolved", "2026-07-10 14:00:00"),
+                ASpan("Closed", "2026-07-17 03:00:00"),
+            ];
+
+            var finishedAt = ServiceNowStateSpanMapper.WhenWorkFinished(spans, AServiceDesk());
+
+            Assert.That(finishedAt, Is.EqualTo(new DateTime(2026, 7, 10, 14, 0, 0, DateTimeKind.Utc)),
+                "Resolved and Closed are both Done to this team, so moving between them crossed no boundary and finished nothing that was not already finished.");
         }
 
         [Test]

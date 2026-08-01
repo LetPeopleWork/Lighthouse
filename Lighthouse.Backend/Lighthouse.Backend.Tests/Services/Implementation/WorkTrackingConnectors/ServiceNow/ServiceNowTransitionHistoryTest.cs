@@ -127,6 +127,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Times.AtLeastOnce);
         }
 
+        // Bug #5621 F2. A desk that resolves an incident straight out of the queue never puts it in a
+        // Doing state, so the spans support no start. Jira and Azure DevOps answer that with a
+        // zero-length cycle rather than a null, because a null drops the item out of Cycle Time
+        // altogether -- and an item that demonstrably finished belongs in the metric.
+        [Test]
+        public async Task WorkFinishedWithoutEverBeingObservedInDoing_StartsWhenItFinished()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansSkipDoing: true);
+            var subject = CreateSubject(instance);
+
+            var finished = (await subject.GetWorkItemsForTeam(ATeam()))
+                .Single(item => item.ReferenceId == "INC0000003");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(finished.ClosedDate, Is.Not.Null);
+                Assert.That(finished.StartedDate, Is.EqualTo(finished.ClosedDate),
+                    "The spans say it finished and never say it started, so the cycle is zero -- not absent.");
+            }
+        }
+
         // DoD 5 forbids the silent no-op. A team quietly losing time-in-state reads as a team whose
         // work never moves, and the administrator has no way to discover why.
         [Test]
@@ -355,9 +376,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         private static StubbedInstance AnInstanceHolding(
-            List<string> records, bool measuresStateSpans, HttpStatusCode metricStatusCode = HttpStatusCode.OK)
+            List<string> records,
+            bool measuresStateSpans,
+            HttpStatusCode metricStatusCode = HttpStatusCode.OK,
+            bool spansSkipDoing = false)
         {
-            return new StubbedInstance(records, measuresStateSpans, metricStatusCode);
+            return new StubbedInstance(records, measuresStateSpans, metricStatusCode, spansSkipDoing: spansSkipDoing);
         }
 
         // What a reverse proxy in front of an SSO-protected instance hands back on a 200: the
@@ -402,14 +426,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly HttpStatusCode metricStatusCode;
             private readonly string? metricBody;
             private readonly bool metricBodyOnTheSpanReadOnly;
+            private readonly bool spansSkipDoing;
 
             public StubbedInstance(
                 List<string> records,
                 bool measuresStateSpans,
                 HttpStatusCode metricStatusCode,
                 string? metricBody = null,
-                bool metricBodyOnTheSpanReadOnly = false)
+                bool metricBodyOnTheSpanReadOnly = false,
+                bool spansSkipDoing = false)
             {
+                this.spansSkipDoing = spansSkipDoing;
                 this.records = records;
                 this.measuresStateSpans = measuresStateSpans;
                 this.metricStatusCode = metricStatusCode;
@@ -474,9 +501,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Rows([]);
                 }
 
-                return path.Contains("metric_definition", StringComparison.Ordinal)
-                    ? Rows([ADefinition()])
-                    : Rows(
+                if (path.Contains("metric_definition", StringComparison.Ordinal))
+                {
+                    return Rows([ADefinition()]);
+                }
+
+                if (spansSkipDoing)
+                {
+                    return Rows(
+                    [
+                        ASpan(FinishedRecordId, "New", "2026-07-20 06:00:00"),
+                        ASpan(FinishedRecordId, "Resolved", "2026-07-30 10:00:00"),
+                    ]);
+                }
+
+                return Rows(
                     [
                         ASpan(RecordId, "New", "2026-07-20 06:00:00"),
                         ASpan(RecordId, "In Progress", "2026-07-29 09:00:00"),
