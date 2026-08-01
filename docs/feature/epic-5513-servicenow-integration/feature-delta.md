@@ -2570,8 +2570,13 @@ back (probed with a temporary definition on `problem.state`, deleted again).
    convention: `rm` the old PNG first, a <0.5 % diff silently keeps the stale image.
 2. **Verify the Board Wizard section against shipped code.** It is written from #5610's DESIGN, not
    from the implementation — #5610 was unpushed and in another worktree when the page was written.
-3. **Bug #5630** should land before the page's "Known limitation" note in the time-in-state section
-   is removed. The note is the interim mitigation ADR-127 named.
+3. ~~**Bug #5630** should land first.~~ **Landed** on `main` as `c966aed95` while this slice was being
+   written. The verdict is now per class and evidence-based, and the connector logs a warning naming
+   the unmeasured kinds of work. The fix is deliberately a **warning, not a downgrade**: reporting
+   the class as unavailable would date a sync-delta transition at sync time on the classes that DO
+   work, because `SupportsTransitionHistory` is answered per connection. So there is still **no
+   in-app signal** — that stays deferred to the ServiceNow Extensions epic (#5629 item 5). The docs
+   note was rewritten to describe where Lighthouse does and does not tell you, rather than deleted.
 4. **Post-release**: collect the ≥3 users' feedback and record the go / narrow / stop verdict on
    ADO 5513 (US-06 AC4/AC5).
 

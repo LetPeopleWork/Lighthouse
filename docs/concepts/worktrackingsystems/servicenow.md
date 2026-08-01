@@ -255,7 +255,7 @@ The state field is **not** called `state` on every class, which is why it has to
 - **A record's first span yields no transition.** A record needs to move **twice** after activation before any duration appears for it. A brand-new definition therefore looks broken for a while, and is not.
 
 {: .important}
-**Known limitation.** Lighthouse currently decides that a class is measured if *any* Field value duration definition came back for it, whatever field that definition sits on. On a stock instance, `change_request`'s definitions on `approval` and `type` are enough to make Lighthouse believe time in state is available for change requests when it is not — the column simply stays empty, with no explanation. Until this is fixed, use the check above rather than relying on Lighthouse to tell you.
+**Where Lighthouse tells you, and where it does not.** Lighthouse detects a record class whose spans are not states your team mapped — the stock `change_request` case above — and writes a warning naming those kinds of work to the **Logs** in System Info: *"ServiceNow supplied no transition history for … because the spans it measures on those records are not states the team mapped."* The rest of the team's work keeps its history. **There is no in-app signal yet**, so on the team's own pages the Time in State column simply stays empty for that class, the same as for work that genuinely moved fast. If a class shows no time in state, check the logs and the metric definition rather than assuming the data is fine.
 
 # Portfolios
 
