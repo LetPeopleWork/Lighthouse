@@ -54,6 +54,29 @@ carries the words the team itself used. Nothing outside the connector knows a ma
    form, so a coach who typed `Change Request` is never answered about `change_request`.
 5. `sys_class_name.display_value` is **not** read, even though it is free.
 
+### Amendment, 2026-08-01 — a class name is recognised in any case
+
+Dogfooding measured something decision 2 had assumed away. `sysparm_query`'s `IN` matches a value
+**case-insensitively**: on the PDI, `sys_class_nameINChange_Request` and
+`sys_class_nameINchange_request` return the identical two rows, and both rows say `change_request`.
+
+So a team configured with `Change_Request` — a class name in the wrong case, which is not a label and
+so fell straight through `ClassFor` — queried *successfully*, received rows, and then failed to
+recognise them: `AsTyped` compares ordinally, so it stored `change_request` while the config kept
+`Change_Request`. Sync looks healthy and `GetCreatedItemsForTeam` returns zero, with no error. That is
+precisely the silent divergence this ADR exists to prevent, reached by a plausible typo rather than an
+exotic one.
+
+`ClassFor` therefore recognises a record class in **any** case and answers with the form ServiceNow
+stores. This needs a dictionary rather than the set the first implementation used: a set can say the
+name is known but not what its canonical form is, and returning the input unchanged is the bug.
+Class-first ordering stays safe because no label resolves to a different class than the class lookup
+would pick — four labels equal their own class name ignoring case (Task, Incident, Problem, Ticket)
+and both paths agree on those, which is now asserted per entry rather than reasoned about once.
+
+**Residual, and inherent to passthrough**: a *custom* class typed in the wrong case still diverges,
+because nothing can canonicalise a name the map has never seen.
+
 ### Amendment, 2026-08-01 — point 3 replaces a normalisation step
 
 This ADR first said `KindOfWork` returns `LabelFor(...)` (a global label) and added a fifth decision:
