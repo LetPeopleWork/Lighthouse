@@ -1,0 +1,128 @@
+{
+  "roadmap": {
+    "project_id": "servicenow-board-picker-and-query-guidance",
+    "slice_id": "slice-01-query-authoring-guidance",
+    "created_at": "2026-08-01",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Slice 01: the ServiceNow query field says what to put in it. Two nullable schema fields (placeholder + helpText) carried by the data-retrieval schema in BOTH twins, rendered on the TextField that already exists, so a flow coach facing a blank 'ServiceNow Query (Encoded Query)' box is told what a query looks like, where to get one, and which two silent-failure modes to avoid — instead of hitting the query_matches_whole_table block with no instruction.",
+    "overview": "Two steps, backend twin then frontend twin. 01-01 adds Placeholder + HelpText to DataRetrievalSchemaDto and populates them for the ServiceNow TEAM row only. 01-02 mirrors the pair in the TypeScript twin, renders them on the existing TextField, and closes the cross-stack enforcement test that asserts the two twins say the same thing. RED-by-skip is the project convention: DISTILL authored the scenarios and marked them [Ignore]/.skip so main stays green; each step un-skips its own scenarios and implements to GREEN."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (main instance)",
+    "reviewed_at": "2026-08-01",
+    "notes": "Authored by the orchestrator rather than dispatched to nw-solution-architect: DD-5 in the DESIGN sections already specifies the two fields, their nullability, both twins, and the AC-A1/AC-A2 rendering contract, so re-deriving a plan would restate a design that was written and reviewed hours earlier. Scope is 4 production files. Slice 02 (the board picker) is a SEPARATE roadmap and is NOT in scope here."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/servicenow-board-picker-and-query-guidance/feature-delta.md",
+    "slice_brief": "docs/feature/servicenow-board-picker-and-query-guidance/slices/slice-01-query-authoring-guidance.md",
+    "spike_findings": "docs/feature/servicenow-board-picker-and-query-guidance/spike/findings.md",
+    "red_classification": "docs/feature/servicenow-board-picker-and-query-guidance/distill/red-classification.md",
+    "architecture": [
+      "docs/product/architecture/brief.md",
+      "docs/product/architecture/adr-125-servicenow-visual-task-board-picker.md",
+      "docs/product/architecture/adr-126-board-picker-refusal-channel-and-wizard-reach.md"
+    ],
+    "siblings_to_mirror": {
+      "dto": "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DataRetrievalSchemaDto.cs",
+      "ts_twin_interface": "Lighthouse.Frontend/src/models/Common/DataRetrievalSchema.ts",
+      "ts_twin_defaults": "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts",
+      "renderer": "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.tsx",
+      "twin_drift_precedent": "docs/evolution/2026-07-30-bug-5613-schema-twin-drift.md"
+    }
+  },
+  "open_questions_resolved": {
+    "copy_is_unwritten": "U-2 in the DISTILL upstream issues: the guidance prose does not exist yet. The tests pin three load-bearing tokens rather than a sentence — 'whole table' (an unknown FIELD NAME is dropped and the query returns everything, which ValidateTeamSettings then blocks), 'nothing' (a bad VALUE silently returns no rows), and 'Copy query' (ServiceNow's own right-click breadcrumb path). The crafter DRAFTS the copy against those constraints; the maintainer reviews the wording at the slice-01 dogfood. Do not invent a fourth failure mode, and do not name a ServiceNow UI element the SPIKE did not observe.",
+    "why_two_fields_not_one": "DD-5. AC-A1 asks for a worked example visible when the field is EMPTY and guidance legible when it is FILLED. Those are two MUI props with two lifetimes — placeholder disappears on input, helperText does not. One field cannot satisfy both halves.",
+    "portfolio_untouched": "AC-A6. The ServiceNow PORTFOLIO schema is inputKind 'none' and its field is never rendered, so it gets null for both new fields. A portfolio row carrying guidance for a field that does not exist would be dead data."
+  },
+  "out_of_scope": [
+    "The board picker, IBoardInformationProvider, WizardsController's ServiceNow arm, DataRetrievalWizardRegistry (slice 02 — separate roadmap)",
+    "The RBAC gate on wizard buttons (DD-8, slice 02)",
+    "The advisory channel / ValidateTeamSettings returning a verdict (ADR-127, split to story #5627)",
+    "Deleting the dead wizardHint field (recorded in D5, belongs in a cleanup)",
+    "The ServiceNow docs page (#5578)",
+    "Any change to inputKind — it stays 'freetext' (D8)"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Query-authoring guidance on the field that already exists",
+      "description": "Two nullable schema fields carried by both twins and rendered on the existing TextField.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "DataRetrievalSchemaDto carries Placeholder + HelpText, populated for the ServiceNow team row",
+          "criteria": [
+            "DataRetrievalSchemaDto gains two nullable string properties, Placeholder and HelpText, defaulting to null for every connector",
+            "The ServiceNow TEAM row populates both: Placeholder is a real encoded query in COLUMN form (the SPIKE measured that the label form matches the whole table), HelpText names where to get one and the two silent-failure modes (AC-A4)",
+            "The ServiceNow PORTFOLIO row leaves both null (AC-A6) — inputKind is 'none' there and the field is never rendered",
+            "Every other connector leaves both null; no WorkTrackingSystemType switch arm is added or removed, so the Bug #5613 exhaustiveness guard is unaffected (AC-A3, backend half)",
+            "The two [Ignore]d scenarios in DataRetrievalSchemaDtoTest are un-skipped and GREEN",
+            "dotnet build zero warnings, dotnet test green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DataRetrievalSchemaDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs",
+          "scenario_name": "The ServiceNow team query field carries a worked example and guidance; every other connector and the ServiceNow portfolio row carry neither",
+          "dependencies": [],
+          "implementation_notes": "The DTO already carries DisplayLabel, InputKind, IsRequired, IsWorkItemTypesRequired and the dead WizardHint — add the pair beside them and follow the existing null-by-default idiom exactly. Do NOT overload WizardHint (D5): it is a wizard id, it is read by nothing in the frontend, and giving it a second meaning makes it harder to either use or delete. Copy is drafted here, reviewed at dogfood — see open_questions_resolved.copy_is_unwritten for the three tokens the tests pin and why.",
+          "estimated_hours": 1
+        },
+        {
+          "id": "01-02",
+          "name": "TypeScript twin carries the same pair, and the field renders it",
+          "criteria": [
+            "IDataRetrievalSchema gains placeholder and helpText as nullable strings; DataRetrievalSchemaDefaults populates the ServiceNow TEAM row and leaves every other row — including the ServiceNow portfolio row — null",
+            "GeneralSettingsComponent renders placeholder and helperText on the TextField it already renders for every connector; a connector with no guidance renders exactly what it renders today, with no layout shift and no empty helper row (AC-A2)",
+            "The guidance is legible when the field is empty AND when it is filled (AC-A1) — placeholder covers the first, helperText the second",
+            "Both surfaces carry it: ModifyTeamSettings and CreateTeamWizard, which render through the same component (AC-A5)",
+            "The cross-stack enforcement test is un-skipped and GREEN: the two twins say the same thing (AC-A3, the half that actually catches drift)",
+            "The skipped scenarios in DataRetrievalSchemaDefaults.serviceNow.test.ts and GeneralSettingsComponent.test.tsx line 1040 are un-skipped and GREEN",
+            "pnpm test green, pnpm build clean with zero warnings, Biome clean"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchema.ts",
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.tsx",
+            "Lighthouse.Frontend/src/models/Common/serviceNowQueryGuidance.enforcement.test.ts",
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/models/Common/serviceNowQueryGuidance.enforcement.test.ts",
+          "scenario_name": "the ServiceNow query guidance says the same thing on both stacks",
+          "dependencies": ["01-01"],
+          "implementation_notes": "MUI renders no helper <p> element at all for a falsy helperText, so AC-A2's no-empty-helper-row requirement is satisfied structurally rather than by a conditional — do not add one. The enforcement test compares SOURCE TEXT across the two twins (the formatLikelihood.enforcement.test.ts pattern), so the C# and TS strings must match exactly, not merely agree in spirit. Do NOT branch on systemType inside the component (D3): the schema is where connector knowledge already lives, and branching there is the twin-drift anti-pattern pointing the other way. GeneralSettingsComponent.test.tsx line 1100 ('does not offer it to someone who cannot open it') is the DD-8 RBAC gate and belongs to SLICE 02 — leave it skipped.",
+          "estimated_hours": 2
+        },
+        {
+          "id": "01-03",
+          "name": "Replace the worked example, which selects nothing",
+          "criteria": [
+            "The placeholder becomes active=true^priority=1 — measured at 19 of 105 incidents on PDI dev191338, 2026-08-01",
+            "The literal is byte-identical across both twins and every test constant that pins it; the cross-stack enforcement test stays GREEN",
+            "The help text is unchanged; inputKind and wizardHint are untouched",
+            "Both suites green, both builds warning-free"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DataRetrievalSchemaDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs",
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts",
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts",
+            "Lighthouse.Frontend/src/models/Common/serviceNowQueryGuidance.enforcement.test.ts",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs",
+          "scenario_name": "A ServiceNow team's query field shows a worked example of the query it wants",
+          "dependencies": ["01-01", "01-02"],
+          "implementation_notes": "Added at the orchestrator's review of 01-02, not planned up front. The example shipped by 01-01/01-02 was `active=true^assignment_group=Service Desk`, which selects ZERO rows: `assignment_group` is a reference field storing a sys_id, so matching it against a display label matches nothing. That is the exact second failure mode the help text beside it warns about, so the product would have handed a coach a broken example and then implied the mistake was theirs. Inherited from DD-5's illustration and carried through DISTILL and both twins without anyone running it — the same not-re-measured pattern that produced the three SPIKE corrections. Replacement uses non-reference fields only, so it cannot hit the label-vs-sys_id trap on any instance.",
+          "estimated_hours": 1
+        }
+      ]
+    }
+  ]
+}
