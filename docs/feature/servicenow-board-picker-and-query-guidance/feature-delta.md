@@ -203,12 +203,22 @@ shift, no empty helper row.
 **AC-A3** — The new schema field is present and consistent in **both** twins
 (`DataRetrievalSchemaDto.cs`, `DataRetrievalSchemaDefaults.ts`), asserted on both stacks, and the
 #5613 enum-exhaustiveness guard still passes (D4).
-**AC-A4** — The help names the two silent-failure modes the SPIKE measured, in the coach's language:
-an unknown **field name** is dropped and the query returns the whole table (which `ValidateTeamSettings`
-then blocks with `query_matches_whole_table`), and a bad **value** silently returns nothing. This is
-the one place a user can be warned before they hit either.
-**AC-A5** — Both surfaces carry it: `ModifyTeamSettings` and `CreateTeamWizard`, which render through
-the same `GeneralSettingsComponent`.
+**AC-A4** — ~~The help names the two silent-failure modes the SPIKE measured~~ — **WITHDRAWN by the
+maintainer at the slice-01 dogfood, 2026-08-01.** The field-level copy is one actionable instruction
+(*"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose
+Copy query"*) and nothing else; the two failure-mode clauses were cut. **Consequence, stated rather
+than discovered later**: the unknown-field-name widening and the bad-value-returns-nothing modes now
+have **no in-product home at all** — the R-2 shape this epic keeps hitting. They belong in #5578's
+ServiceNow docs page; that is the handoff, and if #5578 does not carry them they are lost.
+**AC-A5** — Both surfaces carry it: `ModifyTeamSettings` and `CreateTeamWizard`. ~~which render through
+the same `GeneralSettingsComponent`~~ — **that premise is FALSE and was never checked** (corrected
+2026-08-01 after the maintainer dogfooded slice 01 and found the create wizard bare).
+`GeneralSettingsComponent` is imported by exactly two files, `ModifyTeamSettings.tsx` and
+`ModifyProjectSettings.tsx`; the create wizard renders its own `TextField` in `CreateWizardShell.tsx`.
+The guidance is now plumbed to it explicitly as `dataRetrievalPlaceholder` / `dataRetrievalHelpText`
+props. **Why this shipped broken**: the test asserted against the component the create wizard does not
+use, so it passed while the surface that matters showed nothing — tested-but-unwired, in the one place
+this slice exists to fix. The regression pin now renders the create-wizard path itself.
 **AC-A6** — ServiceNow **portfolio** settings are unchanged. `inputKind` is `"none"` there and the
 field is not rendered at all; no help appears for a surface that does not exist.
 

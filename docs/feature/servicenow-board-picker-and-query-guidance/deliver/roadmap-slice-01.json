@@ -3,7 +3,7 @@
     "project_id": "servicenow-board-picker-and-query-guidance",
     "slice_id": "slice-01-query-authoring-guidance",
     "created_at": "2026-08-01",
-    "total_steps": 3,
+    "total_steps": 4,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Slice 01: the ServiceNow query field says what to put in it. Two nullable schema fields (placeholder + helpText) carried by the data-retrieval schema in BOTH twins, rendered on the TextField that already exists, so a flow coach facing a blank 'ServiceNow Query (Encoded Query)' box is told what a query looks like, where to get one, and which two silent-failure modes to avoid — instead of hitting the query_matches_whole_table block with no instruction.",
@@ -120,6 +120,32 @@
           "scenario_name": "A ServiceNow team's query field shows a worked example of the query it wants",
           "dependencies": ["01-01", "01-02"],
           "implementation_notes": "Added at the orchestrator's review of 01-02, not planned up front. The example shipped by 01-01/01-02 was `active=true^assignment_group=Service Desk`, which selects ZERO rows: `assignment_group` is a reference field storing a sys_id, so matching it against a display label matches nothing. That is the exact second failure mode the help text beside it warns about, so the product would have handed a coach a broken example and then implied the mistake was theirs. Inherited from DD-5's illustration and carried through DISTILL and both twins without anyone running it — the same not-re-measured pattern that produced the three SPIKE corrections. Replacement uses non-reference fields only, so it cannot hit the label-vs-sys_id trap on any instance.",
+          "estimated_hours": 1
+        },
+        {
+          "id": "01-04",
+          "name": "Show the guidance where the team is created, and say less",
+          "criteria": [
+            "The Create Team wizard renders the placeholder and help text — the real AC-A5, which shipped broken",
+            "The help text is one instruction and nothing else: 'To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query' (AC-A4 withdrawn)",
+            "A regression pin renders the CREATE-wizard path, not GeneralSettingsComponent",
+            "Both suites green, both builds warning-free, both twins byte-identical"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DataRetrievalSchemaDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/DataRetrievalSchemaDtoTest.cs",
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.ts",
+            "Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts",
+            "Lighthouse.Frontend/src/models/Common/serviceNowQueryGuidance.enforcement.test.ts",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateWizardShell.tsx",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.tsx",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.test.tsx",
+          "scenario_name": "shows a worked example in the empty field and the guidance beneath it",
+          "dependencies": ["01-01", "01-02", "01-03"],
+          "implementation_notes": "Both fixes came from the maintainer dogfooding slice 01, not from any gate. (a) AC-A5's premise that ModifyTeamSettings and CreateTeamWizard 'render through the same GeneralSettingsComponent' is FALSE — that component is imported by two files and the create wizard is not one of them. The test asserted against the component the wizard does not use, so it passed while the surface the whole slice exists to fix showed nothing. Fixed by plumbing dataRetrievalPlaceholder / dataRetrievalHelpText props to CreateWizardShell; CreatePortfolioWizard shares the shell but stays blank on its own because its inputKind is 'none'. (b) The help text was cut to a single actionable instruction at the maintainer's call, withdrawing AC-A4; the two silent-failure modes it used to name now have no in-product home and are handed to #5578's docs.",
           "estimated_hours": 1
         }
       ]
