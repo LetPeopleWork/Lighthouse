@@ -2526,8 +2526,8 @@ needs `git add -f` for the `vitest.stryker*.ts` file.
 
 ## Wave: DELIVER / Slice 05 (#5578) — progress and resume state (2026-08-01)
 
-**Status: US-05 shipped except its screenshots. US-06 closed on evidence, not on the deliverable
-it originally named.** Pick this up with `/nw-continue`; everything still owed is listed under
+**Status: US-05 shipped, screenshots included. US-06 closed on evidence, not on the deliverable
+it originally named.** The only thing still owed is the post-release feedback loop — see
 "What is left" below.
 
 ### What shipped
@@ -2557,7 +2557,7 @@ back (probed with a temporary definition on `problem.state`, deleted again).
 | AC | Disposition |
 |---|---|
 | US-05 AC1, AC2, AC4, AC5 | **Met.** AC2's role set is documented; see AC2 caveat below. |
-| US-05 AC3 (screenshots per theme) | **Open** — blocked on #5610, see below. |
+| US-05 AC3 (screenshots per theme) | **Met.** Two assets, one per theme of the page: `worktrackingsystem_ServiceNow.png` (connection creation, demo-data driven) and `servicenow_wizard.png` (board picker, live PDI). |
 | US-06 AC1 (standalone build-free validation script) | **Superseded, deliberately not built.** Its premise was D10's assumption that Lighthouse could not be built or run on the customer's on-prem side. The maintainer ran Lighthouse itself against that instance and it worked, so the constraint did not bind. Building a standalone reimplementation of a path that already succeeded would be ceremony. |
 | US-06 AC2 (minimum-role claim confirmed) | **Partly.** The role set is measured on cloud, one role at a time. The on-prem run predates time-in-state and its account's roles were not recorded, so the claim is *not* yet proved against a customer instance. The docs carry this provenance and invite a correction rather than claiming proof. Closes if the account is ever identified. |
 | US-06 AC3 (cloud-vs-on-prem divergences) | **Met, and the list is empty.** Basic auth was accepted; everything the maintainer could observe matched the PDI. An empty list is the finding the AC asks for. |
@@ -2565,11 +2565,20 @@ back (probed with a temporary definition on `problem.state`, deleted again).
 
 ### What is left
 
-1. **Screenshots** — `@screenshot` E2E per theme. No asset exists under `docs/assets/concepts/` for
-   ServiceNow yet, so every image slot on the page is currently absent rather than broken. Project
-   convention: `rm` the old PNG first, a <0.5 % diff silently keeps the stale image.
-2. **Verify the Board Wizard section against shipped code.** It is written from #5610's DESIGN, not
-   from the implementation — #5610 was unpushed and in another worktree when the page was written.
+1. ~~**Screenshots**~~ **Done, 2026-08-01.** A ServiceNow E2E now exists —
+   `Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts`, the Linear spec's shape:
+   connection against the PDI, team from a Visual Task Board, board pre-fill asserted, team created
+   and found on the overview. It carries the board-picker `@screenshot`. The connection-creation
+   shot went into the demo-data-driven `Screenshots.spec.ts` table instead, so that file stays
+   live-independent. Both ran green against `dev191338` on 2026-08-01.
+2. ~~**Verify the Board Wizard section against shipped code.**~~ **Done.** The section was written
+   from DESIGN and understated the implementation. Corrected against `ServiceNowBoardMapper` and
+   `ServiceNowWorkTrackingConnector.UsableBoardQuery`: the pre-fill is now a table naming what each
+   value comes from, including that the work item type arrives in **label** form (#5610 OC-4), the
+   first/last/middle lane split, that *Canceled*/*Cancelled* lanes drop wherever they sit, that a
+   board with fewer than three usable lanes leaves the state lists empty rather than inventing a
+   split, and that **inactive** boards are filtered alongside those missing a table or a filter.
+   The wizard is also team-only, which the section did not say.
 3. ~~**Bug #5630** should land first.~~ **Landed** on `main` as `c966aed95` while this slice was being
    written. The verdict is now per class and evidence-based, and the connector logs a warning naming
    the unmeasured kinds of work. The fix is deliberately a **warning, not a downgrade**: reporting
@@ -2580,7 +2589,21 @@ back (probed with a temporary definition on `problem.state`, deleted again).
 4. **Post-release**: collect the ≥3 users' feedback and record the go / narrow / stop verdict on
    ADO 5513 (US-06 AC4/AC5).
 
-Items 1 and 2 both wait on **#5610 reaching `main`**. Nothing else blocks.
+Only item 4 is still open, and it is calendar-bound rather than blocked.
+
+### The ServiceNow E2E runs on every verify
+
+`ci_verifysqlite` / `ci_verifypostgres` run `pnpm run test` with no grep filter, so this spec hits
+the PDI on every one. Accepted by the maintainer on 2026-08-01: the instance is exercised
+continuously enough that PDI hibernation is not a realistic source of red builds. If that ever
+changes, the spec is the thing to gate, not the secrets.
+
+`TestConfig` reads `ServiceNowLighthouseIntegrationTestInstance` /
+`ServiceNowLighthouseIntegrationTestUser` / `ServiceNowLighthouseIntegrationTestToken`, falling back
+to `https://dev191338.service-now.com` and `admin` — the same instance and account
+`ServiceNowWorkTrackingConnectorIntegrationTest` defaults to. The user variable is deliberately not
+configured anywhere; `admin` is good enough while the probe accounts share a password. The first two
+secrets were already mapped in both verify workflows, so no workflow change was needed.
 
 ### Evidence links added to the page
 
