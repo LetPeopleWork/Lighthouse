@@ -5,8 +5,8 @@ import {
 	getDefaultTeamSchema,
 } from "./DataRetrievalSchemaDefaults";
 
-// The example DD-5 names: a real encoded query in column form, narrow enough to be one team's.
-const WORKED_EXAMPLE = "active=true^assignment_group=Service Desk";
+// The example DD-5 names: non-reference fields only, so it cannot select nothing (#5610).
+const WORKED_EXAMPLE = "active=true^priority=1";
 
 // No options: the schema factories are a lookup by system type and read nothing else off the
 // connection (ADR-123 decision 6 as amended 2026-07-31). A ServiceNow connection now carries no

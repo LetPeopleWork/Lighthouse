@@ -1005,7 +1005,7 @@ describe("GeneralSettingsComponent", () => {
 	// that do not. Both surfaces the coach can reach — team settings and the create-team wizard —
 	// render through this component.
 	describe("telling a flow coach what the query field wants", () => {
-		const WORKED_EXAMPLE = "active=true^assignment_group=Service Desk";
+		const WORKED_EXAMPLE = "active=true^priority=1";
 
 		const GUIDANCE =
 			"A ServiceNow encoded query. In ServiceNow, filter a list, right-click the breadcrumb and choose Copy query. A field name ServiceNow does not know is dropped and the query widens to the whole table; a wrong value on a real field matches nothing.";

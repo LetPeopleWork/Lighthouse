@@ -7,8 +7,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
 {
     public class DataRetrievalSchemaDtoTest
     {
-        // The example DD-5 names: a real encoded query in column form, narrow enough to be one team's.
-        private const string WorkedExample = "active=true^assignment_group=Service Desk";
+        // The example DD-5 names: non-reference fields only, so it cannot select nothing (#5610).
+        private const string WorkedExample = "active=true^priority=1";
 
         private static readonly DateOnly Today = new(2026, 7, 31);
 

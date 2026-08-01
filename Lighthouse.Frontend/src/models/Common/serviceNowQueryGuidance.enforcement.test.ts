@@ -17,7 +17,7 @@ const twins = {
 	frontend: resolve(here, "./DataRetrievalSchemaDefaults.ts"),
 } as const;
 
-const WORKED_EXAMPLE = "active=true^assignment_group=Service Desk";
+const WORKED_EXAMPLE = "active=true^priority=1";
 
 describe("the ServiceNow query guidance says the same thing on both stacks", () => {
 	it.each(Object.entries(twins))(
