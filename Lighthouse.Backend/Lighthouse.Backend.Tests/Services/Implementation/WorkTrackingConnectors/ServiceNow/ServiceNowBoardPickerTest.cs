@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string InstanceUrl = "https://dev12345.service-now.com/";
 
         private const string TheBoardTable = "vtb_board";
+        private const string TheLaneTable = "vtb_lane";
         private const string TheWholeHierarchy = "task";
 
         private const string Incidents = "incident";
@@ -42,9 +43,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string TheIncidentBoardId = "b1";
         private const string TheChangeBoardId = "b2";
+        private const string TheTwoLaneBoardId = "b6";
+        private const string TheBoardThatParksCancelledWorkInTheMiddleId = "b7";
 
         private static readonly string[] TheBoardsThisConnectionCanUse = ["Incidents Kanban", "Change Requests by State"];
         private static readonly string[] TheKindOfWorkTheBoardHolds = [Incidents];
+
+        // The stock boards' lanes as measured on the PDI 2026-08-01, split by ADR-125's rule: the
+        // first lane is where work starts, the last is where it ends, everything between is under way.
+        private static readonly string[] WhereWorkStarts = ["New"];
+        private static readonly string[] WhereWorkEnds = ["Closed"];
+        private static readonly string[] WhereIncidentWorkIsUnderWay = ["In Progress", "On Hold", "Resolved"];
+        private static readonly string[] WhereChangeWorkIsUnderWay = ["Assess", "Authorize", "Scheduled", "Implement", "Review"];
+        private static readonly string[] TheOneLaneLeftInTheMiddle = ["In Progress"];
 
         // DD-1 / ADR-125 decision 1. ServiceNow joins the board port three other connectors already
         // use: no new endpoint, no new dialog, no contract change. The claim it reverses is written
@@ -138,6 +149,106 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(preFill.DataRetrievalValue, Is.EqualTo(TheBoardsFilter));
                 Assert.That(preFill.DataRetrievalValue, Does.Not.Contain("Correlation ID"),
                     "The legible form of the filter matches every record in the table. A team pre-filled with it forecasts the whole instance.");
+            }
+        }
+
+        // ADR-125. A board already says which states its work moves through and in what order — its
+        // lanes are its columns — and a pre-fill that leaves all three state lists empty sends the
+        // administrator back to typing labels against a choice list a read-only account cannot query.
+        // First lane starts the work, last lane ends it, everything between is under way.
+        //
+        // That the stock incident board's Resolved lane lands in Doing is ADR-117's own convention
+        // arrived at independently, not a special case written for it.
+        [Test]
+        public async Task PickingABoard_HandsTheTeamItsColumnsAsTheStatesItsWorkMovesThrough()
+        {
+            var instance = AnInstanceWith(TheIncidentBoard());
+
+            var preFill = await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheIncidentBoardId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preFill.ToDoStates, Is.EqualTo(WhereWorkStarts));
+                Assert.That(preFill.DoingStates, Is.EqualTo(WhereIncidentWorkIsUnderWay),
+                    "ADR-117 reads Resolved as work still under way, and the board's own column order says the same thing.");
+                Assert.That(preFill.DoneStates, Is.EqualTo(WhereWorkEnds));
+            }
+        }
+
+        // The rule is the board's, not the incident table's. change_request has eight lanes and a
+        // different vocabulary between its ends, and the same split has to hold there — otherwise
+        // what shipped is a mapping for one stock board rather than a rule.
+        [Test]
+        public async Task PickingABoardOverAnotherKindOfWork_IsSplitByTheSameRule()
+        {
+            var instance = AnInstanceWith(TheChangeBoard());
+
+            var preFill = await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preFill.ToDoStates, Is.EqualTo(WhereWorkStarts));
+                Assert.That(preFill.DoingStates, Is.EqualTo(WhereChangeWorkIsUnderWay));
+                Assert.That(preFill.DoneStates, Is.EqualTo(WhereWorkEnds));
+            }
+        }
+
+        // Cancelled work never completed, so a lane holding it is not the end of the flow — and on the
+        // stock boards it is the last lane, which is exactly where "last lane is Done" would put it.
+        // The exclusion is by name and applies wherever the lane sits, so a board that parks it in the
+        // middle does not silently donate it to Doing either.
+        [Test]
+        public async Task ALaneForCancelledWork_IsNoPartOfTheFlowWhereverTheBoardPutsIt()
+        {
+            var instance = AnInstanceWith(TheBoardThatParksCancelledWorkInTheMiddle());
+
+            var preFill = await ABoardPickerFor(instance)
+                .GetBoardInformation(AConnection(), TheBoardThatParksCancelledWorkInTheMiddleId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preFill.ToDoStates, Is.EqualTo(WhereWorkStarts));
+                Assert.That(preFill.DoingStates, Is.EqualTo(TheOneLaneLeftInTheMiddle));
+                Assert.That(preFill.DoneStates, Is.EqualTo(WhereWorkEnds));
+            }
+        }
+
+        // Two lanes cannot be a start, an end and a middle at once. Inventing a split there would hand
+        // a team a Doing list of nothing, which reads as work that is never in progress; mapping
+        // nothing instead leaves the administrator on Configure with the fields the board did fill in.
+        [Test]
+        public async Task ABoardWithTooFewLanesToSplit_MapsNoStatesRatherThanInventingASplit()
+        {
+            var instance = AnInstanceWith(ABoardWithTwoLanes());
+
+            var preFill = await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheTwoLaneBoardId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preFill.ToDoStates, Is.Empty);
+                Assert.That(preFill.DoingStates, Is.Empty);
+                Assert.That(preFill.DoneStates, Is.Empty);
+                Assert.That(preFill.DataRetrievalValue, Is.Not.Empty,
+                    "What the board could say is still said; only the split it cannot support is left out.");
+            }
+        }
+
+        // The whole split is positional, so the order is the data. `order` is an integer the instance
+        // sorts on server-side, and a lane read that does not ask for it gets the rows in whatever
+        // order the table hands them over.
+        [Test]
+        public async Task TheLanesAreReadInTheOrderTheBoardArrangedThem()
+        {
+            var instance = AnInstanceWith(TheIncidentBoard());
+
+            await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheIncidentBoardId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheLaneReadOf(instance), Does.Contain("ORDERBYorder"),
+                    "The lane's position is what says whether it starts the flow or ends it.");
+                Assert.That(TheLaneReadOf(instance), Does.Contain($"board={TheIncidentBoardId}"),
+                    "Every lane on the instance is not this board's flow.");
             }
         }
 
@@ -271,7 +382,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static string TheBoardListReadOf(StubbedInstance instance)
         {
-            var read = instance.Requests.FirstOrDefault(uri => uri.AbsolutePath.EndsWith(TheBoardTable, StringComparison.Ordinal));
+            return TheReadOf(instance, TheBoardTable);
+        }
+
+        private static string TheLaneReadOf(StubbedInstance instance)
+        {
+            return TheReadOf(instance, TheLaneTable);
+        }
+
+        private static string TheReadOf(StubbedInstance instance, string table)
+        {
+            var read = instance.Requests.FirstOrDefault(uri => uri.AbsolutePath.EndsWith(table, StringComparison.Ordinal));
 
             return read is null ? string.Empty : Uri.UnescapeDataString(read.Query);
         }
@@ -309,12 +430,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static BoardRow TheIncidentBoard()
         {
-            return new BoardRow(TheIncidentBoardId, "Incidents Kanban", Incidents, TheBoardsFilter, TheFilterAsItReadsOnScreen);
+            return new BoardRow(TheIncidentBoardId, "Incidents Kanban", Incidents, TheBoardsFilter, TheFilterAsItReadsOnScreen)
+            {
+                Lanes = InThisOrder("New", "In Progress", "On Hold", "Resolved", "Closed", "Canceled"),
+            };
         }
 
         private static BoardRow TheChangeBoard()
         {
-            return new BoardRow(TheChangeBoardId, "Change Requests by State", "change_request", "state!=3", "State is not Closed");
+            return new BoardRow(TheChangeBoardId, "Change Requests by State", "change_request", "state!=3", "State is not Closed")
+            {
+                Lanes = InThisOrder("New", "Assess", "Authorize", "Scheduled", "Implement", "Review", "Closed", "Canceled"),
+            };
+        }
+
+        // Spelled the British way, and not last, so neither the spelling nor the position can be the
+        // thing that makes the exclusion work.
+        private static BoardRow TheBoardThatParksCancelledWorkInTheMiddle()
+        {
+            return new BoardRow(
+                TheBoardThatParksCancelledWorkInTheMiddleId, "Triage", Incidents, "state=1", "State is New")
+            {
+                Lanes = InThisOrder("New", "Cancelled", "In Progress", "Closed"),
+            };
+        }
+
+        private static BoardRow ABoardWithTwoLanes()
+        {
+            return new BoardRow(TheTwoLaneBoardId, "Open or Not", Incidents, "active=true", "Active is true")
+            {
+                Lanes = InThisOrder("New", "Closed"),
+            };
+        }
+
+        private static List<LaneRow> InThisOrder(params string[] names)
+        {
+            return [.. names.Select((name, position) => new LaneRow(name, position))];
         }
 
         // Hand-placed cards, no table and no filter — nothing a query can describe.
@@ -344,7 +495,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return new StubbedInstance([.. boards]);
         }
 
-        internal sealed record BoardRow(string Id, string Name, string Table, string Filter, string ReadableFilter, bool IsActive = true);
+        internal sealed record BoardRow(string Id, string Name, string Table, string Filter, string ReadableFilter, bool IsActive = true)
+        {
+            /// <summary>The board's columns, in the order the board arranged them.</summary>
+            public List<LaneRow> Lanes { get; init; } = [];
+        }
+
+        internal sealed record LaneRow(string Name, int Order);
 
         internal sealed record TableAnswer(HttpStatusCode Status, int Holds, int Visible);
 
@@ -423,6 +580,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return AnswerAboutBoards(query);
                 }
 
+                if (table == TheLaneTable)
+                {
+                    return AnswerAboutLanes(query);
+                }
+
                 if (tableAnswers.TryGetValue(table, out var answer))
                 {
                     return AnswerWith(answer);
@@ -453,6 +615,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 var visible = sharedWithThisAccount ? SelectedBy(query) : [];
 
                 return Rows([.. visible.Select(AsJson)], everyBoard);
+            }
+
+            // The lane table is unordered unless the read says otherwise, so this one hands the rows
+            // back reversed: a split that reads them in arrival order gets the flow backwards.
+            private HttpResponseMessage AnswerAboutLanes(string query)
+            {
+                var conditions = EncodedQueryIn(query).Split('^', StringSplitOptions.RemoveEmptyEntries);
+                var owner = Array.Find(conditions, condition => condition.StartsWith("board=", StringComparison.Ordinal));
+
+                if (owner is null)
+                {
+                    return Rows([], holds: 0);
+                }
+
+                var wanted = owner["board=".Length..];
+                var board = boards.Find(candidate => candidate.Id == wanted);
+
+                if (board is null)
+                {
+                    return Rows([], holds: 0);
+                }
+
+                var lanes = Array.Exists(conditions, condition => condition == "ORDERBYorder")
+                    ? board.Lanes.OrderBy(lane => lane.Order).ToList()
+                    : Enumerable.Reverse(board.Lanes).ToList();
+
+                return Rows([.. lanes.Select(lane => AsLaneJson(board.Id, lane))], lanes.Count);
             }
 
             private List<BoardRow> SelectedBy(string query)
@@ -555,6 +744,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                       "filter": { "display_value": "{{board.ReadableFilter}}", "value": "{{board.Filter}}" },
                       "readable_filter": { "display_value": "{{board.ReadableFilter}}", "value": "{{board.ReadableFilter}}" },
                       "active": { "display_value": "true", "value": "true" }
+                    }
+                    """;
+            }
+
+            // A vtb_lane row as the PDI returns it. `value` is the compound <table>:<n> form, and on
+            // change_request it lists several classes at once — which is why nothing reads it.
+            private static string AsLaneJson(string boardId, LaneRow lane)
+            {
+                var position = lane.Order.ToString(CultureInfo.InvariantCulture);
+
+                return $$"""
+                    {
+                      "sys_id": { "display_value": "{{boardId}}-{{position}}", "value": "{{boardId}}-{{position}}" },
+                      "board": { "display_value": "{{boardId}}", "value": "{{boardId}}" },
+                      "order": { "display_value": "{{position}}", "value": "{{position}}" },
+                      "name": { "display_value": "{{lane.Name}}", "value": "{{lane.Name}}" },
+                      "value": { "display_value": "{{lane.Name}}", "value": "incident:{{position}}" },
+                      "field": { "display_value": "State", "value": "state" },
+                      "is_swim_lane": { "display_value": "false", "value": "false" }
                     }
                     """;
             }

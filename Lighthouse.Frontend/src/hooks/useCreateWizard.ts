@@ -40,6 +40,49 @@ export interface WizardDtoBase {
 	workTrackingSystemConnectionId: number;
 }
 
+// The one definition of "Configure has everything it needs". It takes the values rather than reading
+// state so the post-wizard jump can ask it about what the wizard just merged, which the state has not
+// caught up with yet (#5610).
+const hasEveryConfigInput = (
+	base: WizardDtoBase,
+	schema: IDataRetrievalSchema | null,
+): boolean => {
+	if (!schema) return false;
+	const hasValidDataRetrieval =
+		schema.isRequired === false || base.dataRetrievalValue.trim() !== "";
+	const hasValidWorkItemTypes =
+		schema.isWorkItemTypesRequired === false || base.workItemTypes.length > 0;
+	const hasAllStates =
+		base.toDoStates.length > 0 &&
+		base.doingStates.length > 0 &&
+		base.doneStates.length > 0;
+	return hasValidDataRetrieval && hasValidWorkItemTypes && hasAllStates;
+};
+
+// A wizard fills in what it could work out and leaves the rest to whatever the user already typed.
+const mergedWith = (
+	boardInfo: IBoardInformation,
+	current: WizardDtoBase,
+): WizardDtoBase => ({
+	...current,
+	dataRetrievalValue:
+		boardInfo.dataRetrievalValue.trim() === ""
+			? current.dataRetrievalValue
+			: boardInfo.dataRetrievalValue,
+	workItemTypes:
+		boardInfo.workItemTypes.length > 0
+			? boardInfo.workItemTypes
+			: current.workItemTypes,
+	toDoStates:
+		boardInfo.toDoStates.length > 0 ? boardInfo.toDoStates : current.toDoStates,
+	doingStates:
+		boardInfo.doingStates.length > 0
+			? boardInfo.doingStates
+			: current.doingStates,
+	doneStates:
+		boardInfo.doneStates.length > 0 ? boardInfo.doneStates : current.doneStates,
+});
+
 export function useCreateWizard<TDto>({
 	entityType,
 	defaultName,
@@ -114,25 +157,6 @@ export function useCreateWizard<TDto>({
 		setActiveStep(wizards.length > 0 ? STEP_LOAD_DATA : STEP_CONFIGURE);
 	};
 
-	const configInputsValid = useMemo(() => {
-		if (!selectedConnection || !schema) return false;
-		const hasValidDataRetrieval =
-			schema.isRequired === false || dataRetrievalValue.trim() !== "";
-		const hasValidWorkItemTypes =
-			schema.isWorkItemTypesRequired === false || workItemTypes.length > 0;
-		const hasAllStates =
-			toDoStates.length > 0 && doingStates.length > 0 && doneStates.length > 0;
-		return hasValidDataRetrieval && hasValidWorkItemTypes && hasAllStates;
-	}, [
-		selectedConnection,
-		schema,
-		dataRetrievalValue,
-		workItemTypes,
-		toDoStates,
-		doingStates,
-		doneStates,
-	]);
-
 	const currentBase = useCallback(
 		(): WizardDtoBase => ({
 			dataRetrievalValue,
@@ -150,6 +174,12 @@ export function useCreateWizard<TDto>({
 			doneStates,
 			selectedConnection,
 		],
+	);
+
+	const configInputsValid = useMemo(
+		() =>
+			selectedConnection != null && hasEveryConfigInput(currentBase(), schema),
+		[selectedConnection, schema, currentBase],
 	);
 
 	const runValidation = async (): Promise<boolean> => {
@@ -183,31 +213,13 @@ export function useCreateWizard<TDto>({
 	};
 
 	const handleWizardComplete = async (boardInfo: IBoardInformation) => {
-		const merged: WizardDtoBase = {
-			dataRetrievalValue:
-				boardInfo.dataRetrievalValue.trim() === ""
-					? dataRetrievalValue
-					: boardInfo.dataRetrievalValue,
-			workItemTypes:
-				boardInfo.workItemTypes.length > 0
-					? boardInfo.workItemTypes
-					: workItemTypes,
-			toDoStates:
-				boardInfo.toDoStates.length > 0 ? boardInfo.toDoStates : toDoStates,
-			doingStates:
-				boardInfo.doingStates.length > 0 ? boardInfo.doingStates : doingStates,
-			doneStates:
-				boardInfo.doneStates.length > 0 ? boardInfo.doneStates : doneStates,
-			workTrackingSystemConnectionId: selectedConnection?.id ?? 0,
-		};
+		const merged = mergedWith(boardInfo, currentBase());
 
-		if (boardInfo.dataRetrievalValue.trim())
-			setDataRetrievalValue(boardInfo.dataRetrievalValue);
-		if (boardInfo.workItemTypes.length > 0)
-			setWorkItemTypes(boardInfo.workItemTypes);
-		if (boardInfo.toDoStates.length > 0) setToDoStates(boardInfo.toDoStates);
-		if (boardInfo.doingStates.length > 0) setDoingStates(boardInfo.doingStates);
-		if (boardInfo.doneStates.length > 0) setDoneStates(boardInfo.doneStates);
+		setDataRetrievalValue(merged.dataRetrievalValue);
+		setWorkItemTypes(merged.workItemTypes);
+		setToDoStates(merged.toDoStates);
+		setDoingStates(merged.doingStates);
+		setDoneStates(merged.doneStates);
 		setActiveWizard(null);
 
 		setValidating(true);
@@ -215,7 +227,12 @@ export function useCreateWizard<TDto>({
 		setValidationTechnicalDetails(null);
 		try {
 			const isValid = await validateSettings(buildDto(merged, name));
-			setActiveStep(isValid ? STEP_NAME_CREATE : STEP_CONFIGURE);
+
+			// #5610. The Next button on Configure is gated on the config inputs and this path was not,
+			// so a wizard that could not fill everything in landed the user on Name & Create with the
+			// gap intact — ValidateTeamSettings does not look at state mappings, so it says valid.
+			const complete = hasEveryConfigInput(merged, schema);
+			setActiveStep(isValid && complete ? STEP_NAME_CREATE : STEP_CONFIGURE);
 		} catch (error) {
 			if (error instanceof ApiError) {
 				setValidationError(error.message);

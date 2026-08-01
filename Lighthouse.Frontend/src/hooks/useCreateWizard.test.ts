@@ -65,6 +65,15 @@ const fullBoardInfo: IBoardInformation = {
 	doneStates: ["Closed"],
 };
 
+// A ServiceNow board whose lanes could not be split: query and kind of work filled in, no states.
+const boardInfoWithNoStates: IBoardInformation = {
+	dataRetrievalValue: "correlation_id=LIGHTHOUSE_DEMO",
+	workItemTypes: ["incident"],
+	toDoStates: [],
+	doingStates: [],
+	doneStates: [],
+};
+
 const emptyBoardInfo: IBoardInformation = {
 	dataRetrievalValue: "",
 	workItemTypes: [],
@@ -441,6 +450,31 @@ describe("useCreateWizard", () => {
 			await act(() => result.current.handleWizardComplete(fullBoardInfo));
 
 			expect(result.current.activeStep).toBe(STEP_NAME_CREATE);
+		});
+
+		// #5610. The Next button on Configure is gated on configInputsValid; this path was not, so a
+		// wizard that could not fill in every field landed the user on Name & Create with nothing
+		// mapped — and the backend's ValidateTeamSettings does not look at state mappings, so it said
+		// valid. Pre-existing and not ServiceNow's: it is only the first board that returned no states.
+		it("stays on STEP_CONFIGURE when the wizard could not fill in every config input", async () => {
+			const validateSettings = vi.fn().mockResolvedValue(true);
+			const args = makeHookArgs({ validateSettings });
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+			await act(() =>
+				result.current.handleWizardComplete(boardInfoWithNoStates),
+			);
+
+			expect(result.current.activeStep).toBe(STEP_CONFIGURE);
+			expect(result.current.configInputsValid).toBe(false);
+			expect(result.current.dataRetrievalValue).toBe(
+				boardInfoWithNoStates.dataRetrievalValue,
+			);
+			expect(result.current.workItemTypes).toEqual(
+				boardInfoWithNoStates.workItemTypes,
+			);
 		});
 
 		it("falls back to STEP_CONFIGURE when validation fails", async () => {

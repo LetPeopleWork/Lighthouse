@@ -89,6 +89,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         private const string UsableBoardQuery = "active=true^tableISNOTEMPTY^filterISNOTEMPTY";
 
+        /// <summary>A board's columns, which is where the states its work moves through are written.</summary>
+        private const string LaneTable = "vtb_lane";
+
+        private const string LaneBoardField = "board";
+
+        /// <summary>The lane's position on the board. An integer the instance sorts on server-side.</summary>
+        private const string LaneOrderField = "order";
+
         /// <summary>The table that says what an instance measures.</summary>
         private const string MetricDefinitionTable = "metric_definition";
 
@@ -109,7 +117,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // team needs — the table its work sits in and the filter that scopes it to this team.
         public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            var read = await ReadBoards(workTrackingSystemConnection, UsableBoardQuery);
+            var read = await ReadSharedTable(workTrackingSystemConnection, BoardTable, UsableBoardQuery);
 
             // The list is the body. X-Total-Count is ACL-blind on vtb_board — header 2 against body 0,
             // measured 2026-08-01 — so counting from it offers boards that are not there.
@@ -128,8 +136,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             // ADR-125 decision 3: the same scoping again, rather than trusting the list served a
             // moment ago. A board that lost its filter in between is refused, not pre-filled blank.
-            var read = await ReadBoards(
+            var read = await ReadSharedTable(
                 workTrackingSystemConnection,
+                BoardTable,
                 $"{ServiceNowWorkItemMapper.RecordIdField}={boardId}^{UsableBoardQuery}");
 
             var refusal = ServiceNowBoardVerdict.FromBoardRead(
@@ -154,7 +163,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 throw new ServiceNowReadException(unreadable);
             }
 
-            return ServiceNowBoardMapper.ToBoardInformation(board);
+            // The lanes are read only once the board itself has been judged, so a board that is about
+            // to be refused never costs a second request. A lane read the instance will not answer
+            // downgrades to no states rather than failing the pick: the query and the kind of work are
+            // still worth having, and the wizard leaves the administrator on Configure to map the rest.
+            var lanes = await ReadSharedTable(workTrackingSystemConnection, LaneTable, LanesOf(boardId));
+
+            return ServiceNowBoardMapper.ToBoardInformation(
+                board, lanes.CarriesRecords ? lanes.Records : []);
+        }
+
+        // Ordered server-side, because the split is positional: first lane starts the flow, last ends
+        // it. PageUriFor appends its own tie-breakers after this one, so the board's order stays primary.
+        private static string LanesOf(string boardId)
+        {
+            return $"{LaneBoardField}={boardId}{OrderByClause}{LaneOrderField}";
         }
 
         // Downgrade rather than Fail: the refusal is carried home so ServiceNowBoardVerdict can rule
@@ -165,12 +188,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // A closed port or a timeout never reaches the ladder at all, so it is carried home too
         // (ADR-126 D1): the picker is a place an administrator is waiting, and an unreachable
         // instance there has to read as the same refusal the settings page already gives it.
-        private async Task<PagedRead> ReadBoards(WorkTrackingSystemConnection connection, string query)
+        private async Task<PagedRead> ReadSharedTable(WorkTrackingSystemConnection connection, string table, string query)
         {
             try
             {
                 return await ReadEveryPage(
-                    connection, BoardTable, query, WhenRefused.Downgrade, HowTheResultSetIsSized.OnlyTheRowsCount);
+                    connection, table, query, WhenRefused.Downgrade, HowTheResultSetIsSized.OnlyTheRowsCount);
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
