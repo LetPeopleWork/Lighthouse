@@ -65,8 +65,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(workItems.Select(item => item.ReferenceId), Is.EquivalentTo(BothKindsOfWork),
                     "One team, both kinds of work — and the problem record is a kind this team never named.");
-                Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(IncidentsAndChanges),
-                    "Each row is labelled with the kind of work it is, not with the hierarchy the team is rooted at.");
+                Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(new[] { "Incident", "Change Request" }),
+                    "Each row is labelled with the kind of work it is, not with the hierarchy the team is rooted at — and since ADR-128 (#5612) in the words ServiceNow uses for it, not the column value.");
             }
         }
 

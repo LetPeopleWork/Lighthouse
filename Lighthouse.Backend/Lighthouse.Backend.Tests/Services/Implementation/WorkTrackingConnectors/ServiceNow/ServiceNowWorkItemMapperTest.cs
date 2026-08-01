@@ -301,20 +301,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), TheWholeHierarchy);
 
-            Assert.That(workItem.Type, Is.EqualTo("change_request"),
-                "The system name the query matches on, never the label the coach reads on their own screen.");
+            // Flipped by ADR-128 (#5612). #5611 asserted the system name here on the grounds that the
+            // query matches on it; the connector now translates in BOTH directions at its own
+            // boundary, so the query still matches on change_request while everything above the port
+            // reads the label. Recorded rather than quietly rewritten — the old expectation was
+            // correct for the design it was written against.
+            Assert.That(workItem.Type, Is.EqualTo("Change Request"),
+                "The label the coach reads on their own screen. ServiceNowReadScope maps it back before any query is built.");
         }
 
-        // AC-B2's other half, and the reason no shipped team's data moves: for a team reading a single
-        // kind of work the record's own kind and the configured table are the same string.
+        // Was "IsLabelledExactlyAsItWasBefore" under #5611, whose point was that a single-kind team's
+        // data did not move. ADR-128 (#5612) moves it deliberately: the kind of work is now named the
+        // way ServiceNow names it. The team's configured entry is normalised to the same form, so the
+        // two still agree — which is the property that actually mattered, and it is asserted end to
+        // end in ServiceNowRecordClassTest rather than here.
         [Test]
-        public void WorkOnATeamReadingOneKindOfWork_IsLabelledExactlyAsItWasBefore()
+        public void WorkOnATeamReadingOneKindOfWork_IsLabelledTheWayServiceNowNamesIt()
         {
             var record = ARecordWith((RecordClassField, "Incident", Table));
 
             var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
 
-            Assert.That(workItem.Type, Is.EqualTo(Table));
+            Assert.That(workItem.Type, Is.EqualTo(ServiceNowClassLabels.LabelFor(Table)));
         }
 
         // Not defensive padding: ReadForm answers string.Empty for a field that is not there, and an

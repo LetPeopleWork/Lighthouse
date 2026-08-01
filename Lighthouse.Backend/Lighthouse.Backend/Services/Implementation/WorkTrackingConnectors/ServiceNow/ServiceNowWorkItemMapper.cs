@@ -121,7 +121,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             var recordClass = ReadForm(record, RecordClassField, UniversalForm);
 
-            return string.IsNullOrWhiteSpace(recordClass) ? table : recordClass;
+            // ADR-128: the label, from the map, never from sys_class_name.display_value. The
+            // display_value arrives free on this very record and is deliberately not read — it would
+            // give a class the map does not know a pretty label here while the team's config kept the
+            // class name, and GetCreatedItemsForTeam compares the two. The map passes an unknown class
+            // through unchanged, which keeps both sides saying the same thing.
+            return string.IsNullOrWhiteSpace(recordClass)
+                ? table
+                : ServiceNowClassLabels.LabelFor(recordClass);
         }
 
         /// <summary>

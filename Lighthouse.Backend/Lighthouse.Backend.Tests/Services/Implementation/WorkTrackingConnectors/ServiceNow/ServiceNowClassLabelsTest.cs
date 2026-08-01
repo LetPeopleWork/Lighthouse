@@ -92,6 +92,64 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(ServiceNowClassLabels.ClassFor("not_a_real_class"), Is.EqualTo("not_a_real_class"));
         }
 
+        // Every class under `task` on a stock instance, read from sys_db_object on dev191338,
+        // 2026-08-01. Guards the map's completeness against a future edit that drops a row — not
+        // against ServiceNow adding a class, which is passthrough and costs nothing.
+        [Test]
+        public void TheMap_CarriesEveryStockKindOfWorkUnderTask()
+        {
+            Assert.That(KnownKindsOfWork.Select(kind => ServiceNowClassLabels.LabelFor(kind.RecordClass)),
+                Has.None.EqualTo(null).And.None.Empty);
+        }
+
+        // Two classes sharing a label would make ClassFor ambiguous, and the winner would be decided
+        // by dictionary ordering rather than by anything meaningful. The map's own construction throws
+        // on a duplicate; this asserts it at test time instead of at first use.
+        [Test]
+        public void NoTwoKindsOfWork_ShareALabel()
+        {
+            var everyClass = new[]
+            {
+                "task", "incident", "problem", "change_request", "change_task", "incident_task",
+                "problem_task", "sc_task", "sc_req_item", "sc_request", "release_task", "ticket",
+            };
+
+            var labels = everyClass.Select(ServiceNowClassLabels.LabelFor).ToList();
+
+            Assert.That(labels.Distinct(StringComparer.OrdinalIgnoreCase).Count(), Is.EqualTo(everyClass.Length),
+                "An ambiguous label has no correct answer, so the map must not contain one.");
+        }
+
+        // The case that nearly shipped broken: LabelByClass is case-insensitive, so asking it whether
+        // "Incident" is a record class answers yes -- it matches the key `incident` -- and a
+        // class-name-first check written against it would hand the label straight back untranslated.
+        [Test]
+        public void ALabelWhoseClassDiffersOnlyByCase_IsStillResolvedToTheClass()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ServiceNowClassLabels.ClassFor("Incident"), Is.EqualTo("incident"));
+                Assert.That(ServiceNowClassLabels.ClassFor("Problem"), Is.EqualTo("problem"));
+                Assert.That(ServiceNowClassLabels.ClassFor("Task"), Is.EqualTo("task"));
+                Assert.That(ServiceNowClassLabels.ClassFor("Ticket"), Is.EqualTo("ticket"));
+            }
+        }
+
+        // sc_task is Catalog Task and release_task is Feature Task. Neither is reachable by rewriting
+        // the class name, which is the entire argument for a map over a transform (ADR-128 / D5).
+        [TestCase("sc_task", "Catalog Task")]
+        [TestCase("release_task", "Feature Task")]
+        [TestCase("change_request_imac", "IMAC")]
+        [TestCase("sysapproval_group", "Group approval")]
+        public void AKindOfWorkWhoseLabelNoTransformProduces_IsStillCorrect(string recordClass, string label)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ServiceNowClassLabels.LabelFor(recordClass), Is.EqualTo(label));
+                Assert.That(ServiceNowClassLabels.ClassFor(label), Is.EqualTo(recordClass));
+            }
+        }
+
         [TestCase("")]
         [TestCase("   ")]
         public void AnEmptyName_IsReturnedUnchangedRatherThanMappedToAnything(string empty)
