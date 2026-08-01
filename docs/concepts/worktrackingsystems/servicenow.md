@@ -25,7 +25,7 @@ To create a connection to a ServiceNow instance, you need three things:
 | **Password** | | See [Authentication](#authentication) below |
 
 {: .important}
-The password shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+The password shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 
 # Authentication
 

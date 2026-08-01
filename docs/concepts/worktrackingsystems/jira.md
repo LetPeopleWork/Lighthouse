@@ -96,7 +96,7 @@ Instead of an *API Token*, you have to provide a *Personal Access Token*. See th
 A *Personal Access Token* will not require you to specify a username, as it's part of the token itself.
 
 {: .important}
-The API/Access Tokens shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+The API/Access Tokens shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 # Additional Fields
 
 Lighthouse allows you to configure **Additional Fields** for Jira connections. These fields let you retrieve and display extra information from your Jira issues, including custom fields and built-in properties.

@@ -19,7 +19,7 @@ To create a connection to a Linear Workspace, you need a single thing: A Linear 
 You can find more information on how to create an API Key in the [Linear Documentation](https://linear.app/docs/api-and-webhooks#create-an-api-key)
 
 {: .important}
-The API Key shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+The API Key shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 
 # Team Backlog
 When you create a new team in Lighthouse that uses a Linear connection, you can select a Linear team from a wizard that lists all teams available in the connected workspace.
