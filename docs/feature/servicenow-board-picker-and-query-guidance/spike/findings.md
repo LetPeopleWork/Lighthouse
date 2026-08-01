@@ -151,13 +151,14 @@ task?sysparm_query=sys_class_name=incident  -> X-Total-Count: 105
 So a `cmdb_ci` board pre-filled into Work Item Types produces a team that syncs zero items — the quiet
 wrong number this epic exists to prevent. The picker must refuse it by name.
 
-**Unresolved constraint for DESIGN**: verifying that a board's table *is* a task descendant needs the
-class hierarchy, and 5611 measured `sys_db_object` as **403 below `itil`**. So the check that would
-make the refusal precise is unavailable to the very accounts the refusal protects. Two candidate ways
-out, both DESIGN's call: refuse on the *evidence* instead (run the board's filter against `task` scoped
-by `sys_class_name` and refuse on an empty result — cheap, one read, but cannot distinguish "wrong
-hierarchy" from "empty board"), or carry a static list of known ITSM task descendants and treat
-anything else as unknown-but-allowed with a warning.
+**Constraint for DESIGN** — *corrected 2026-08-01, see the correction note at the end of this file*:
+verifying that a board's table is a task descendant needs the class hierarchy. This section originally
+said `sys_db_object` is **403 below `itil`**; that is **stale** — 5611's own findings measured 200 for
+three of four probe accounts, 403 only for `lh_probe_none`. The conclusion survives for a better
+reason: an account that cannot read `sys_db_object` cannot read any class either, so the readability
+ladder's first rung fires first and the ambiguity never reaches a user who could act on it. **Do not
+build on `sys_db_object`.** DESIGN settled this by reuse instead — see ADR-125 and the DESIGN sections
+of `../feature-delta.md`.
 
 ---
 
@@ -175,11 +176,20 @@ anything else as unknown-but-allowed with a warning.
    design choice.
 5. **Refusals are cheap and total**: empty `table` or empty `filter` ⇒ freeform ⇒ refuse. Non-task
    `table` ⇒ refuse. Both decidable from the board row alone, except the hierarchy check above.
-6. **D9's empty-fallback fix is load-bearing here**, not merely tidy. Every failure mode this probe
-   found (not a member, freeform, wrong hierarchy) currently arrives at `BoardWizard.tsx:71-82` as an
-   all-empty `IBoardInformation` that is truthy and enables Confirm — which would blank a query the
-   user already typed. Fixing it lands for Jira, ADO and Linear too.
-7. **OC-6 is untouched by this probe** and still has no channel. D13's warning has nowhere to render.
+6. **D9's empty-fallback fix is load-bearing here**, not merely tidy — though *not* for the reason D9
+   gives. Every failure mode this probe found (not a member, freeform, wrong hierarchy) arrives at
+   `BoardWizard.tsx:71-82` as an all-empty `IBoardInformation` that is truthy and enables Confirm.
+   **Corrected 2026-08-01**: it does not blank a typed query.
+   `GeneralSettingsComponent.tsx:59-95` guards every assignment on non-emptiness, so an all-empty
+   payload writes nothing at all. The defect is a refusal wearing a success costume — Confirm succeeds
+   and silently does nothing — which is the same family, one rung less severe. Fixing it lands for
+   Jira, ADO and Linear too.
+7. **OC-6 is untouched by this probe.** **Corrected 2026-08-01**: it is not true that no channel
+   exists. `ConnectionValidationResult.Advisory`/`AdvisoryCode` ship (ADR-118 D5) and
+   `ValidationAdvisory.tsx` renders them on both connection surfaces. What is missing is the *team*
+   leg: `TeamService.ts:97-109` collapses the validate response to `isValid === true`, so an advisory
+   riding a successful team validation is dropped before it can be shown. DESIGN settled this in
+   ADR-127.
 
 ## Constraints discovered
 
@@ -190,8 +200,9 @@ anything else as unknown-but-allowed with a warning.
 - `X-Total-Count` is ACL-blind on `vtb_board`/`vtb_card`/`vtb_lane`, confirming the defect generalises.
 - A filtered board's `vtb_card` set drifts behind its filter. Never treat cards as membership.
 - `sys_class_name` is empty on every `vtb_board` row — one table, no subclasses, no type column.
-- `sys_db_object` remains 403 below `itil` (5611), so task-descendance cannot be verified by the
-  accounts that most need the refusal.
+- Do not build task-descendance on `sys_db_object`. **Not** because it is 403 below `itil` — that was
+  stale, corrected 2026-08-01 — but because an account that cannot read it cannot read any class
+  either, so the readability ladder answers first and better (5611 findings, `:110-122`).
 
 ## Reproducing
 
@@ -208,3 +219,22 @@ both boards it creates. Verified at the end of each run — `vtb_board_member` e
 standing guard in `ServiceNowWorkTrackingConnectorIntegrationTest`, alongside 5611's OC-2 ladder. It
 asserts instance behaviour that a future ServiceNow release could change underneath us, and getting it
 wrong ships the exact bug the epic's validation exists to catch.
+
+---
+
+## Corrections (2026-08-01, from DESIGN)
+
+DESIGN checked three claims in this file against the codebase and disproved all three. Corrected in
+place above; recorded here so the record shows what was believed and why it was wrong. **None of them
+changes a measurement this probe took** — all three were inherited assertions restated from upstream,
+not things the probe observed.
+
+| Claim as written | What is actually true | Where |
+|---|---|---|
+| `sys_db_object` is **403 below `itil`** (OC-5, Constraints) | Stale — it answers **200 for three of the four probe accounts**, 403 only for `lh_probe_none`. Inherited from the *epic* SPIKE matrix; 5611's own findings already flagged it as drift and the reason: `lh_probe_snc_read` has since acquired `cmdb_query_builder_read`. The "don't build on it" conclusion stands for a different reason. | `servicenow-multi-table-work-item-types/spike/findings.md:110-122` |
+| D9's all-empty pre-fill **blanks a typed query** | It writes **nothing**. `handleWizardComplete` guards every assignment on non-emptiness (`if (boardInfo.dataRetrievalValue.trim() !== "")` and four siblings). Confirm succeeds and silently no-ops. Still worth fixing — a refusal wearing a success costume — but one rung less severe than data loss. | `GeneralSettingsComponent.tsx:59-95` |
+| OC-6 has **no channel at all** | The channel exists and ships: `ConnectionValidationResult.Advisory`/`AdvisoryCode` (ADR-118 D5) rendered by `ValidationAdvisory.tsx` on both connection surfaces. What is missing is the *team* leg — `validateTeamSettings` collapses the body to `isValid === true`, dropping an advisory that rides a success. | `ConnectionValidationResult.cs:35-39`, `TeamService.ts:97-109` |
+
+The lesson worth keeping: a probe's own measurements were sound, and every claim that turned out wrong
+was one it repeated from an upstream document without re-checking. Re-measure inherited constraints,
+or cite them as inherited.

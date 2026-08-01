@@ -28,7 +28,9 @@ Full evidence in `findings.md`.
   7 cards, 13 matches). Freeform boards store empty `table` and empty `filter`, so D10's refusal is
   decidable from the board row alone.
 - **OC-5 (narrowed)**: a `cmdb_ci` board is creatable and yields nothing from a task-rooted read.
-  Refusal is required; verifying task-descendance is blocked by `sys_db_object` 403 below `itil`.
+  Refusal is required. (The `sys_db_object` 403-below-`itil` constraint originally written here was
+  **stale** — corrected 2026-08-01, see the Corrections table in `findings.md`. DESIGN settled OC-5 by
+  reusing ADR-124's readability ladder instead: ADR-125.)
 
 ## Promotion decision
 
@@ -64,8 +66,10 @@ against the board's **table**. That is the invariant the probe verified on both 
    drifting card set. A board whose `table` is not a task descendant is still a *refusal*, not an
    exclusion, and needs a detection strategy that survives `sys_db_object` 403 — open for DESIGN, two
    candidates in `findings.md`.
-5. D9's empty-fallback fix in `BoardWizard.tsx` is load-bearing: every failure mode found here
-   currently arrives as a truthy all-empty `IBoardInformation` that enables Confirm.
+5. D9's empty-fallback fix in `BoardWizard.tsx` is load-bearing: every failure mode found here arrives
+   as a truthy all-empty `IBoardInformation` that enables Confirm. **Corrected 2026-08-01**: that
+   payload does not blank a typed query — `GeneralSettingsComponent.tsx:59-95` guards every assignment
+   on non-emptiness, so Confirm succeeds and silently writes nothing. Same fix, one rung less severe.
 6. The stale comments in `IServiceNowWorkTrackingConnector.cs:3-5` and
    `DataRetrievalSchemaDefaults.ts:64` assert ServiceNow has no board concept. Slice 02 must amend both.
 
@@ -75,11 +79,15 @@ against the board's **table**. That is the invariant the probe verified on both 
 - `vtb_board_member` is admin-write; Lighthouse cannot grant itself access.
 - `X-Total-Count` is ACL-blind on the board tables.
 - `sys_class_name` is empty on every `vtb_board` row: one table, no subclasses, no type column.
-- `sys_db_object` stays 403 below `itil` (5611), so task-descendance cannot be verified by the accounts
-  that most need the refusal.
+- Do not build task-descendance on `sys_db_object` — **not** because it is 403 below `itil` (stale,
+  corrected 2026-08-01) but because an account that cannot read it cannot read any class either, so the
+  readability ladder answers first.
 
 ## Still open after this run
 
 - **OC-4** (the `/wizards/*` SystemAdmin guard vs `CanCreateTeam`) — maintainer call, untouched by a
   probe.
-- **OC-6** (where a user learns a picked class yields no time-in-state) — no channel exists; unchanged.
+- **OC-6** (where a user learns a picked class yields no time-in-state) — **corrected 2026-08-01**: a
+  channel does exist (`ConnectionValidationResult.Advisory` + `ValidationAdvisory.tsx`); what is missing
+  is the team leg, where `validateTeamSettings` collapses the body to `isValid === true`. Settled in
+  DESIGN as ADR-127.

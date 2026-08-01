@@ -4119,3 +4119,137 @@ a live assertion and a drop-in fallback rather than with hedged wording; and whe
 `ValidateTeamSettings` should report history availability now that a hierarchy-rooted connection
 deliberately says nothing about it, which would otherwise leave a `task`-rooted administrator with no
 screen that answers "will I get time-in-state?".
+
+> **Closed 2026-08-01 by Story 5610 DESIGN.** The second open item is answered:
+> [ADR-127](./adr-127-team-settings-advisory-channel.md) puts the history verdict on
+> `ValidateTeamSettings` as an advisory riding a success, and wires the team surfaces to the
+> `ValidationAdvisory` component the connection surfaces already use. Two claims in the section above
+> are also stale and are corrected there: `ServiceNowTableHierarchy` and `CapabilityOf` no longer
+> exist in the backend at all — the hierarchy-root set was deleted outright with the connection-scope
+> table, not reduced to one reader.
+
+---
+
+## Application Architecture — servicenow-board-picker-and-query-guidance (ADO Story #5610, Epic #5513)
+
+**DESIGN, 2026-08-01, propose mode.** Feature workspace:
+`docs/feature/servicenow-board-picker-and-query-guidance/`. Two slices — in-product query guidance
+first, the Visual Task Board picker second. Follows #5611, which is Closed.
+
+### The one hard problem
+
+The connector's first real user stopped at a blank query field, and ruling R-2 makes a missing query
+a blocking verdict. So epic 5513's first impression is a refusal with no instruction. The shop's team
+boundary usually already exists as a ServiceNow Visual Task Board — table plus filter — and the
+2026-08-01 SPIKE measured that a board carries exactly the two things a Lighthouse team needs, in a
+form safe to copy verbatim. The hard part is not reading it. It is that **the board table lies in
+three separate ways**: a denial is a `200` with zero rows because access is *shared membership*, not
+roles; `X-Total-Count` is ACL-blind on a second surface; and the human-readable filter column — the
+one ServiceNow's own UI displays, and therefore the one a careless implementation reaches for — runs
+as a query that matches the **whole table** (105/105 and 118/118 measured).
+
+### Shape
+
+One provider implementation, one `switch` arm, one registry row. `Board` and `BoardInformation` are
+**unchanged** — `DataRetrievalValue` takes the board's filter and `WorkItemTypes` takes its table as
+the `sys_class_name` value ADR-123 shipped, so the pre-fill needs no contract change across four
+connectors and no migration.
+
+### Key invariants introduced
+
+- **`filter`, never `readable_filter`.** The poisoned column is not carried onto the contract at all —
+  not as a value, not as a caption, not as a field the mapper reads and discards. The whole-table bug
+  is made non-representable rather than tested around.
+- **Boards are never counted from `X-Total-Count`.** The list is the body. The header is ACL-blind on
+  `vtb_board`/`vtb_card`/`vtb_lane` alike (measured: header 2, body 0).
+- **The single-board read re-applies the list's own scoping** rather than trusting the list it served
+  a moment ago. A board that stopped qualifying in between is refused, not pre-filled with blanks.
+- **A board's `table` is a candidate record class**, so it is validated by the two-probe ladder
+  ADR-124 already shipped. A `cmdb_ci` board is refused as `class_is_not_a_kind_of_work` — a message
+  written for a class a coach typed, exactly as true for a class a board named. No new mechanism and
+  no static hierarchy list: the one 5611 built was deliberately deleted, and re-introducing it would
+  add a twinned constant pair under the #5613 guard for a question the instance answers directly.
+- **An empty board list is a `200`, not a failure.** It has two indistinguishable causes — this
+  account is a member of no board, and none of its boards carries both a table and a filter — and
+  nothing can separate them. The copy names both and asserts neither, the house style
+  `no_records_visible` established.
+- **A refusal keeps its name all the way to the dialog.** A new abstract `WorkTrackingReadException`
+  carries a `ConnectionValidationResult`; `WizardsController` answers `BadRequest(verdict)`;
+  `BaseApiService` already parses that body into an `ApiError`. `BoardWizard`'s empty-fallback is
+  deleted, so a failed read cannot be confirmed. **This lands for Jira, ADO and Linear too.**
+- **Wizard buttons are gated on `useRbac().isSystemAdmin`.** `/wizards/*` stays `SystemAdmin`;
+  widening it is a security decision for its own story. What changes is that three shipped connectors
+  stop showing a button whose only outcome for a `CanCreateTeam` user is a mistranslated 403.
+- **The advisory channel reaches team settings** (ADR-127, the feature's only scope addition and
+  separable): `ValidateTeamSettings` reports history availability as an advisory on a *success*, so a
+  user learns their change-request team will never produce time-in-state — on the picker path and the
+  manual path alike.
+
+### Component decomposition
+
+Full 28-row Reuse Analysis in the feature workspace →
+"Wave: DESIGN / [REF] Reuse Analysis". Net: **3 CREATE NEW · 13 EXTEND · 12 REUSE UNCHANGED.**
+
+| Component | Path | Change |
+|---|---|---|
+| `IServiceNowWorkTrackingConnector` | `Services/Interfaces/…` | **EXTEND** — `: IBoardInformationProvider`; the xmldoc at `:3-5` asserting ServiceNow "has no board concept" is amended |
+| `ServiceNowWorkTrackingConnector` | `…/ServiceNow/` | **EXTEND** — shell only. `GetBoards`/`GetBoardInformation` composed from `ReadEveryPage` and `WhyThisKindOfWorkCannotBeRead`, both reused unchanged |
+| `ServiceNowBoardVerdict` | `…/ServiceNow/` | **CREATE NEW** — pure. The one rung the board list must not inherit (`no_records_visible` as a Failure) is a decision, and decisions live in a pure core with a purity fixture |
+| `ServiceNowBoardMapper` | `…/ServiceNow/` | **CREATE NEW** — pure. Row → `Board`/`BoardInformation` via `ServiceNowWorkItemMapper.ReadForm`. Does not know `readable_filter` exists |
+| `WorkTrackingReadException` | `…/WorkTrackingConnectors/` | **CREATE NEW** — ~12 lines. The controller sits on the driving side of the port and must not name a ServiceNow type to catch a refusal |
+| `WizardsController` | `API/` | **EXTEND** — one `switch` arm, one `catch` |
+| `DataRetrievalSchemaDto` + `DataRetrievalSchemaDefaults.ts` | `API/DTO/`, `models/Common/` | **EXTEND** — two nullable fields, `Placeholder` and `HelpText`, in both twins. No enum arm added or removed, so the #5613 guard is unaffected |
+| `BoardWizard.tsx` · `GeneralSettingsComponent.tsx` | `components/` | **EXTEND** — the empty-fallback deletion, the refusal message, the empty-list copy, the schema-driven placeholder/helper, the RBAC gate |
+| `ValidationAdvisory.tsx` · `ConnectionValidationResult` | `components/`, `Models/Validation/` | **REUSE UNCHANGED** — ADR-127 adds a second mounting point and a caller, not a component or a field |
+
+### External integration — contract testing
+
+`vtb_board` is a new surface on the epic's highest-risk boundary, and it has already been measured
+lying in three ways. Four standing assertions join 5611's class ladder in
+`ServiceNowWorkTrackingConnectorIntegrationTest`, each exercising a specific lie rather than a happy
+path: `filter` selects a proper subset; `readable_filter` selects the whole table; `X-Total-Count`
+reports rows the account cannot see; a non-member's read is `200`-with-zero-rows and never `403`.
+Consumer-driven contract tests remain the standing recommendation for the response-shape catalogue.
+Carried into the platform-architect (DEVOPS) handoff.
+
+### Architectural enforcement
+
+Three orthogonal layers, the project's existing convention. **Structural** — the ArchUnitNET purity
+fixture widened to `ServiceNowBoardVerdict` and `ServiceNowBoardMapper`, plus a new rule that no
+board method leaks a connector-specific exception past `IBoardInformationProvider`. **Behavioural** —
+the #5613 enum-exhaustiveness guard (unaffected but re-run), and the four live substrate assertions.
+**Source-text** — none needed: unlike 5611, this feature introduces no duplicated constant pair, so
+there is nothing for a `readFileSync` guard to police.
+
+### Three upstream claims this DESIGN corrects
+
+Each is recorded in the ADR that depends on it, so a reviewer does not have to rediscover it:
+`sys_db_object` is **not** 403 below `itil` (5611's own addendum measured 200 for three of four
+accounts) — the conclusion survives for a different reason; D9's failed-read fallback is a **silent
+no-op, not a data loss**, because `GeneralSettingsComponent.tsx:59-95` already guards every
+assignment on non-emptiness; and OC-6's "there is no channel at all" is wrong — the channel and its
+component ship, and only `TeamService.validateTeamSettings`' collapse to `boolean` stands between
+them.
+
+### ADRs
+
+- [ADR-125](./adr-125-servicenow-visual-task-board-picker.md) — Visual Task Boards are boards: the
+  existing wizard port, the live filter, and the shipped class ladder. **Reverses** the
+  "ServiceNow has no board concept" claim carried since `4b55362be`.
+- [ADR-126](./adr-126-board-picker-refusal-channel-and-wizard-reach.md) — a wizard refusal keeps its
+  name: the error channel, the empty list, and who can open a picker at all. Blast radius covers all
+  four connectors.
+- [ADR-127](./adr-127-team-settings-advisory-channel.md) — the advisory channel reaches team settings.
+  Answers the open item 5611 left above. **Separable**: declining it costs the picker nothing.
+
+### C4
+
+System Context (L1) and Container (L2) in Mermaid in the feature workspace →
+"Wave: DESIGN / [REF] C4". **L3 omitted, deliberately** — two new read methods, one IO boundary and
+one purity line; a component diagram would restate the container diagram at a smaller font.
+
+### Open items carried into DISTILL
+
+Six, none blocking; DQ-1..DQ-6 in the feature workspace. The one worth naming here is **DQ-1**:
+whether the maintainer takes ADR-127 or its named fallback (#5578's docs carry the time-in-state
+caveat instead). Declining it removes four rows from the Reuse Analysis and moves nothing else.
