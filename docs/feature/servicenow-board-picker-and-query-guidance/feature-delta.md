@@ -2,7 +2,8 @@
 
 **ADO**: User Story [#5610](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5610), parent Epic
 [#5513](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5513) (ServiceNow Integration).
-**Waves recorded here**: DISCUSS (2026-07-31).
+**Waves recorded here**: DISCUSS (2026-07-31), SPIKE (2026-08-01 — `spike/findings.md`,
+`spike/wave-decisions.md`).
 
 **Why this file and not the epic's.** Same reason 5611 got its own workspace: epic 5513's
 `feature-delta.md` is the record for slices 01–05 and is still being appended to (5578 is open, 5577
@@ -96,6 +97,36 @@ less. Removing the table option removes the last place a user could say "my work
 `change_request`" outside of Work Item Types — so the picker, which derives exactly that from a board
 the user already maintains, becomes the shortest path to a correctly-scoped team rather than a
 convenience on top of one.
+
+---
+
+## Wave: SPIKE / [REF] Amendment — what the board probe overturned (2026-08-01)
+
+Evidence in `spike/findings.md`; promotion decision (**DISCARD**, per WS strategy C) in
+`spike/wave-decisions.md`. Recorded as an amendment for the same reason as the one above: the
+reasoning that produced D9, D10 and OC-1 should stay legible next to what replaced it.
+
+**The gate lifted first.** #5611 is Closed, the connection-scope table is gone, `resolved_at` is
+deliberately not read, and the paging guard now keys `sys_id` rather than `number`. The three things
+the 2026-07-31 amendment said to *assume* all landed, so **D12 is discharged** and D6 stands as
+strengthened.
+
+| | What the probe measured | Effect |
+|---|---|---|
+| **OC-1** | **Settled — and the first answer was wrong.** `vtb_board` reads 200/0-rows for `itil`, `snc_read` and no-roles, which reads as the epic's third role wall. It is not one: the read ACL carries **no role** and runs `VTBBoardSecurity().canAccess(current)`. Adding `lh_probe_itil` to `vtb_board_member` turned 0 boards into the board, its 38 cards and its 6 lanes; deleting the row turned it back. Boards are **shared, not roled**. | **Slice 02 survives.** But the list is scoped to the connection's service account, so "no boards" must be worded as "this account is not a member of any board" — R-2's lesson on a new surface — and *share the board with the Lighthouse account* becomes an onboarding step for #5578 that Lighthouse cannot perform for itself. |
+| **OC-2** | **Settled — no.** A board's cards are a snapshot behind its filter (`incident` 38/38, but `change_request` **7 cards against 13 matches**). Freeform boards store empty `table` **and** empty `filter`; `sys_class_name` is empty on every board row, so emptiness *is* the type discriminator. | **D10 gets cheaper and AC-B6 gets corrected.** Refusal is decidable from the board row alone — no card-set inspection. AC-B6's "synced items are the board's items" was unsatisfiable and has been restated against the filter. |
+| **OC-3** | **Settled, and the trap is sharper than assumed.** `filter` is a verbatim encoded query in **column** form (`correlation_id=LIGHTHOUSE_DEMO`). `readable_filter` is the label form and matches the **whole table** — 105/105 and 118/118. | Pre-fill `filter`, never `readable_filter`. The poisonous string is the one ServiceNow's own UI displays, so it is the one a careless implementation would reach for. Worth a named test. |
+| **OC-7** | **Settled — yes.** Every 0-row board read returned `X-Total-Count: 2`. | ACL-blindness generalises beyond `incident` (ADR-124). The picker must never count boards from the header. |
+| **OC-5** | A `cmdb_ci` board is creatable and returns nothing from a task-rooted read (`task?sys_class_name=cmdb_ci` → 0). | Refusal is required. **New constraint**: verifying task-descendance needs `sys_db_object`, which 5611 measured **403 below `itil`** — so the check that would make the refusal precise is unavailable to exactly the accounts it protects. Two candidate ways out in `findings.md`; DESIGN picks one. |
+| **D9** | Unchanged, and **promoted from tidy to load-bearing.** Every failure mode the probe found — not a member, freeform, wrong hierarchy — arrives at `BoardWizard.tsx:71-82` as a truthy all-empty `IBoardInformation` that enables Confirm. | The empty-fallback fix is now the difference between a refusal and a blanked query, for all four connectors. |
+| **OC-4, OC-6** | Untouched by a probe. | Both still open, unchanged. |
+
+**The claim this probe was called to disprove is disproven.**
+`IServiceNowWorkTrackingConnector.cs:3-5` has asserted since `4b55362be` that ServiceNow *"has no
+board concept"*. It has two, on a stock PDI, carrying a table and a verbatim encoded query. The
+comment's second half (`sys_db_object` discovery is unavailable below `itil`, ADR-116) remains true and
+does not support the first. Slice 02 must amend that xmldoc **and** the matching claim at
+`DataRetrievalSchemaDefaults.ts:64`, or review will read them as authority against the slice.
 
 ---
 
@@ -210,8 +241,10 @@ filter alone: it is either absent from the list or refused by name, with the rea
 **AC-B5** — The picker does not change the manual path. A team created by typing a query, with no
 board involved, behaves exactly as it does today — including `ValidateTeamSettings`' blocking verdicts.
 **AC-B6** — The pre-filled configuration is verified end-to-end against a real instance, not only
-fixtures: pick a board on the PDI, save the team, and confirm the synced items are the board's items.
-The epic's standing rule — 164 tests did not find what one manual run did.
+fixtures: pick a board on the PDI, save the team, and confirm the synced set equals **the board's
+filter run against the board's table** — *not* the board's card set, which drifts behind its own
+filter (SPIKE 2026-08-01: 7 cards against 13 matches on `change_request`). The epic's standing rule —
+164 tests did not find what one manual run did.
 
 ---
 
@@ -233,6 +266,10 @@ The epic's standing rule — 164 tests did not find what one manual run did.
 ---
 
 ## Wave: DISCUSS / [REF] Open calls
+
+**Status after the SPIKE (2026-08-01)**: OC-1, OC-2, OC-3 and OC-7 are **settled** — see the SPIKE
+amendment above and `spike/findings.md`. The rows below are left as written so the questions stay
+legible next to their answers. **OC-4, OC-5 and OC-6 remain open**; OC-5 acquired a new constraint.
 
 | ID | Question | Why it is open | Settle by |
 |---|---|---|---|

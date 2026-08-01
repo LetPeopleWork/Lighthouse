@@ -1,7 +1,9 @@
 # Slice 02 — pick a Visual Task Board to pre-fill the query and the kind of work
 
 **Story**: B (`../feature-delta.md`) · **ADO**: #5610 · **Effort**: ~1 day, no new port
-**Order**: second (D1). Hard-blocked twice: by the SPIKE (D11) and by #5611's delivery (D6, D12).
+**Order**: second (D1). Was hard-blocked twice — by the SPIKE (D11) and by #5611's delivery (D6, D12).
+**Both blocks are now clear** (2026-08-01): #5611 is Closed, and the SPIKE ran and confirmed the slice.
+See `../spike/findings.md`.
 
 ## Goal
 
@@ -18,6 +20,12 @@ expressible as a query) fails against the PDI. Either result **cancels this slic
 SPIKE Q5 cancelled slice 03 — recorded as "the mechanism exists and is unusable for a real customer",
 not quietly deferred. Slice 01 then stands as the whole answer to the dogfood finding, which is exactly
 why it ships first.
+
+**Result (SPIKE, 2026-08-01): confirmed, slice not cancelled.** OC-1's 200/EMPTY turned out to be a
+*sharing* model, not a role wall — board access is granted by `vtb_board_member`, not by `itil`. What
+the slice must absorb instead: the list is scoped to the connection's service account, `filter` is the
+column-form query to copy while `readable_filter` matches the whole table, and a board's card set
+drifts behind its own filter so the filter — not the cards — is the thing being pre-filled.
 
 ## IN scope
 
@@ -76,34 +84,32 @@ AC-B1..AC-B6 in `../feature-delta.md`.
 - `WizardsController` — the whole file is ~60 lines; the change is one `switch` arm.
 - `DataRetrievalWizardRegistry.ts` — four rows, all pointing at one component.
 
-## Pre-slice SPIKE
+## Pre-slice SPIKE — **DONE** (2026-08-01)
 
-**Mandatory**, against PDI `dev191338`. The maintainer's call was to combine it with #5611's
-OC-1/OC-2/OC-3, but 5611's SPIKE landed first (`1c3cbf58c`) and settled all three, so this is now a
-short standalone run on scaffolding that is already up: probe accounts `lh_probe_none`,
-`lh_probe_snc_read` (`sn_incident/change/request_read`, deliberately no `sn_problem_read`) and
-`lh_probe_itil`, sharing the admin password in `$ServiceNowLighthouseIntegrationTestToken`.
+Ran against PDI `dev191338` on 5611's probe accounts. Full evidence in `../spike/findings.md`; the
+four questions and what they returned:
 
-Four things to measure, all one-request experiments:
+1. **Readability** — `vtb_board` is 200/0-rows for `itil`, `snc_read` and no-roles, but the read ACL
+   carries **no role**: it runs `VTBBoardSecurity().canAccess(current)`. Adding `lh_probe_itil` to
+   `vtb_board_member` produced the board plus its 38 cards and 6 lanes; deleting the row took them
+   away again. **Sharing, not roles.** The 200/EMPTY trap held — it just wasn't a role wall this time.
+2. **Cards vs filter** — a filtered board's cards are a snapshot *behind* its filter
+   (`incident` 38/38, `change_request` **7 cards / 13 matches**). Copy the filter, never the cards.
+   Freeform boards store empty `table` and empty `filter`, so D10's refusal needs no heuristic.
+3. **What `filter` stores** — the **column** form (`correlation_id=LIGHTHOUSE_DEMO`), safe to copy
+   verbatim. `readable_filter` holds the label form and matches the **whole table** (105/105, 118/118),
+   which is exactly the widening slice 01's guard exists to catch. Never pre-fill it.
+4. **ACL-blind list** — yes. Every 0-row board read returned `X-Total-Count: 2`. Never count boards
+   from the header.
 
-1. **Readability, as a role matrix** — read the Visual Task Board table as no-roles / `snc_read_only` /
-   `sn_*_read` / `itil` / `admin`, exactly as `spike/findings.md` did for `sys_choice` and
-   `metric_instance`. **Treat `200/EMPTY` as a denial, not an empty instance** — that trap is already
-   documented and already cost this epic once.
-2. **Board membership vs stored filter** — for a filtered/guided board and a freeform board, compare
-   the board's card set against the result of running its stored filter. Divergence on the freeform
-   board is the expected answer and triggers D10; divergence on the *filtered* board would sink the
-   whole slice.
-3. **What the filter column actually stores** — the label form (`Correlation ID=…`) or the column form
-   (`correlation_id=…`). If it is the label form, pre-filling it verbatim ships the exact query slice
-   01's widening guard exists to catch, and the provider has to translate before it hands anything over.
-4. **Whether the board list is ACL-blind** (OC-7). 5611's SPIKE found `X-Total-Count` reports 103 rows
-   to an account whose body comes back empty. One read as `lh_probe_none` says whether the picker can
-   list a board it cannot actually read — the same denial-wearing-a-success-costume trap the epic has
-   now hit at three different layers.
+Two things this slice now owns that it did not before: the empty-list wording must say *this account
+is not a member of any board*, and the stale claims at `IServiceNowWorkTrackingConnector.cs:3-5` and
+`DataRetrievalSchemaDefaults.ts:64` ("ServiceNow has no board concept") must be amended here.
 
 ## Dogfood moment
 
-Same day: on the PDI, pick the demo board, save the team, and confirm the synced items are the board's
-items — not the whole table, not a subset. Then repeat the pick as a least-privilege account and
-confirm the failure is legible (AC-B3), because that is the account a customer will actually use.
+Same day: on the PDI, pick the demo board, save the team, and confirm the synced items are **the
+board's filter run against the board's table** — not the whole table, and not the board's card set,
+which the SPIKE measured drifting behind its own filter. Then repeat the pick as an account that is
+not a member of the board and confirm the failure is legible (AC-B3) and names membership rather than
+"no boards found", because that is the account a customer will actually use.
