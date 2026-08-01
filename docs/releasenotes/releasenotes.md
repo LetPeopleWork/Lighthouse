@@ -6,6 +6,23 @@ nav_order: 95
 
 # Lighthouse vNext
 
+## ServiceNow
+
+Lighthouse now connects to ServiceNow. If your work lives in incidents, change requests, problems or catalog tasks, you get the same throughput, WIP, work item age, cycle time and forecasts your Jira and Azure DevOps teams have always had — no export, no spreadsheet in between.
+
+A team is defined by an [encoded query](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/servicenow.html#query) and the record classes it works. If your instance uses **Visual Task Boards**, you can skip writing the query: pick a board and Lighthouse fills in the query, the record class and the state mapping from the board's own lanes, then lets you adjust anything you don't like.
+
+Two ServiceNow behaviours cost other integrations a lot of debugging time, so Lighthouse checks for both when you save rather than letting you discover them weeks later:
+
+- **A permitted-but-unauthorised read answers `200 OK` with zero rows**, not an error — "connected successfully, 0 work items" is what a missing role looks like. Lighthouse tells you the account cannot read that kind of work instead of reporting an empty backlog.
+- **A query term naming a field's *label* instead of its column name is silently dropped**, and ServiceNow returns the table unfiltered. Lighthouse refuses a query that selects every record rather than pulling thousands of unrelated records into your team.
+
+{: .important}
+**ServiceNow support is team level only.** Portfolios are not supported and are not planned — ITSM tables carry no parent record a portfolio could be forecast over. Pointing a portfolio at a ServiceNow connection is refused with an explanation rather than silently producing an empty forecast.
+
+{: .note}
+**Time in state is the one thing that needs more than read-only access.** Throughput, WIP, work item age and forecasts work with genuinely read-only roles (`sn_incident_read` and friends). Time in state, and cycle time broken down by state, come from ServiceNow's metric tables, which open up only at `itil` — and they need a *Field value duration* metric definition on each record class's state field, which stock ServiceNow ships inconsistently. The [ServiceNow page](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/servicenow.html) has a section written to hand straight to your ServiceNow administrator, with the exact click-by-click steps.
+
 ## Your Calendar Day, Not UTC's — and You Need to Switch It On
 
 If your team isn't on UTC, Lighthouse has been quietly answering the wrong question. "Today", the first and last day of a metrics window, the day a daily reading was filed under — all of them were UTC days, not *your* days. Late in the afternoon in Sydney, or early in the morning in California, the day Lighthouse thought it was and the day you were actually in were different, and forecasts, throughput windows and the daily trend charts all inherited the mismatch.
@@ -16,6 +33,20 @@ Lighthouse now computes calendar days in a configurable **instance time zone**, 
 **This does not switch itself on.** The setting ships absent so that upgrading changes nothing for anyone: if you do nothing, your instance behaves exactly as it did before — a Docker instance stays on UTC. To get the fix, set the `Lighthouse__TimeZone` environment variable to your zone, for example `Europe/Zurich`. A standalone install picks up the machine's own time zone automatically. See [Instance Time Zone](https://docs.lighthouse.letpeople.work/Installation/configuration.html#instance-time-zone).
 
 Once it's set, forecasts, metrics windows, work item age, licence expiry, delivery date validation and every recorded daily snapshot all agree on the same calendar day. Timestamps are unaffected — they're points in time and stay UTC, as they always have been.
+
+## A Feature Worked by Several Teams Is Now Forecast as One Question
+
+When two teams share a Feature, it is done when **both** are done. Lighthouse reported the number for the team least likely to make the date, which is the answer to an easier question — the chance that the *worst* team makes it, not the chance that *everyone* does. The gap is not small: on real data, a Feature reading **85%** was, once every contributing team was accounted for, somewhere between **54% and 80%**.
+
+Lighthouse now combines every contributing team's simulation into a single joint probability. A Feature with one team is unaffected. A Feature with several teams will read lower, and the more teams it has, the further it moves.
+
+Two related corrections ship with it:
+
+- **A Feature that cannot be forecast now says so.** A team with no throughput history has nothing to simulate. That used to surface as **100%** — the most confident number on the page attached to the least evidence. It now reads *Cannot forecast*, on the Feature views and in everything that aggregates them.
+- **The likelihood is read off the simulation, not off the next outcome above it.** Asking for a date that fell between two simulated outcomes reported the higher of the two, so targets consistently read better than the simulation supported. And a forecast with no evidence at all reported 100% rather than nothing.
+
+{: .important}
+**Expect your percentages to drop after upgrading, and expect the multi-team ones to drop most.** Nothing about your teams changed; the question being answered did. The old number was the best-case reading.
 
 ## Your Delivery Likelihood Now Answers the Question You Were Asking
 
@@ -36,6 +67,16 @@ The Feature rows inside a Delivery are unchanged: each still shows that Feature 
 - **The "not enough data" warning on a Delivery now covers every Feature in it** — it used to be read off the single least likely Feature, so a Delivery whose least likely Feature had solid history reported nothing even when another Feature it depends on rested on almost none. It is now an AND across all of them, with finished Features exempt. Some Deliveries will show the indicator for the first time; it can only appear where it was previously hidden, never disappear.
 - **Delivery target dates are judged as dates now, not as timestamps** — setting a delivery's target date to tomorrow could be refused as "not in the future", while a date of today sometimes slipped through depending on the time of day it carried. The target date is now compared as a calendar day: tomorrow is always accepted, today is always refused. This one applies to every instance, including those staying on UTC.
 - **One day's readings move when you switch time zone** — the first time you set a non-UTC zone, an evening reading that had been filed under the UTC day is filed under the day your instance is actually on, so the delivery and snapshot trend charts show a one-day shift at that point. Nothing is skipped, lost or overwritten — existing history stays exactly as recorded.
+- **Metrics pages only load the tab you are looking at** — every widget on a metrics page fetched its data whether or not its category was selected, so opening a page paid for charts you never looked at. Widgets now fetch when their category is first visited and keep what they loaded, so switching back and forth costs nothing.
+- **A shared or bookmarked dashboard link keeps the range you picked** — the date range in the URL was written and read back through UTC while the requests behind it used your own day, so a link could come back a day off from the range that produced it. Both ends now agree.
+- **Saving a team's settings validates them first** — auto-save could store a work item query the connector would reject, leaving a team quietly configured against something that cannot be read. Settings are now validated before they are saved, and the field blocking the save is named.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Nick Brown](https://www.linkedin.com/in/nicolasjmbrown/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.7.26.8...HEAD)
 
 # Lighthouse v26.7.26.8
 
