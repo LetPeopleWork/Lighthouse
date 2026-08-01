@@ -20,6 +20,27 @@
   reversed — `ClosedDate` now comes from the **latest Done span's `start`** where history is
   readable, and from `closed_at` where it is not. See [ADR-117](./adr-117-servicenow-started-and-closed-dates-without-itil.md)
   decision 1 as rewritten.
+- **Amended 2026-08-01 (Bug #5621)**, in three places. **(a) Decisions 1 and 7 no longer date work
+  from individual spans.** Both dates now come from a **crossing between state categories** — the
+  rule Jira and Azure DevOps have always used, extracted to `WorkItemCategoryCrossing` and shared by
+  all three connectors. "First Doing span" became *the last arrival in Doing from outside Doing,
+  ignoring arrivals from Done*; "latest Done span" became *the last arrival in Done from outside
+  Done*. The old wording was not a paraphrase of the new one: a desk mapping both `Resolved` and
+  `Closed` to Done had every Cycle Time inflated by its close-out window, because moving between two
+  Done states re-dated the finish. **(b) D2's filter is applied per span, not only per definition.**
+  A `field_value_duration` definition need not measure state — the stock `incident` table answers
+  with four, of which three measure `assigned_to`, `assignment_group` and `active` — and the
+  definition row cannot say which, because the state field is named differently on each record class.
+  Spans whose label the team never mapped are therefore discarded where they enter the by-record
+  dictionary, so a record left with none is *absent* and reaches the `opened_at` / `closed_at`
+  fallback instead of silently reporting no dates at all. **(c) D5's availability verdict is decided
+  per record class and on evidence.** A count above zero across all of a team's classes reported
+  `Available` for a team where only one class was configured; and definitions that do not measure
+  state kept that count above zero even when nothing measurable existed. Coverage replaces the count,
+  and a span read that succeeds while returning nothing the team recognises downgrades after the
+  fact. The verdict now governs only what the administrator is told and whether `WorkItemService`
+  adds sync-delta transitions — **never whether the spans are read**, since suppressing the read cost
+  the measured class its true dates.
 
 ## Context
 
@@ -119,7 +140,7 @@ The three reasons this paragraph originally gave, each answered rather than dele
 |---|---|
 | `resolved_at` is readable by a read-only account while spans are not, so keying on it keeps Throughput working for every customer | **Accepted as a cost, not as an argument.** A resolved-but-not-closed record is in a Doing state; "keeping Throughput working" meant counting unfinished work. ADR-117's amended consequences record what the read-only customer now loses. |
 | Spans lag the record by ~30 s, so a span-derived close reports a finish instant later than the platform's own | **Still true, and now paid.** 30 s never crosses the day boundary Throughput buckets by except by coincidence, and the same lag was already accepted for `StartedDate`. |
-| A reopened record has *several* Done spans, which makes "the first Done span" the wrong answer | **Correct, and the reason the rule says LAST.** The first arrival was undone; the last is when the work actually stopped. This is the one place the finish rule is not a mirror of decision 7's start rule, which takes the first Doing arrival so rework does not restart the clock. |
+| A reopened record has *several* Done spans, which makes "the first Done span" the wrong answer | **Correct, and the reason the rule says LAST.** The first arrival was undone; the last is when the work actually stopped. This is the one place the finish rule is not a mirror of decision 7's start rule, which takes the first Doing arrival so rework does not restart the clock. **Superseded 2026-08-01 (Bug #5621)**: "last Done *span*" was too weak — it could not tell a reopen from two Done states in a row. The rule is the last **crossing into** Done from outside it, which answers the reopen identically and stops a close-out job from re-dating a finish. The asymmetry described here is also gone: start and finish are now the same rule applied to different categories, with the start additionally ignoring arrivals from Done so rework does not restart the clock. |
 
 **There is no upgrade consequence** (checked 2026-07-30: zero ServiceNow commits are reachable from
 `v26.7.26.8`, the latest tag). Slices 01, 02 and 04 all ship in the same release, so no customer ever

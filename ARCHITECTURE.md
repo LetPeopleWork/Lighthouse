@@ -71,7 +71,7 @@ The codebase is one assembly organised into **seven logical modules** (namespace
 
 | # | Module | Responsibility | Anchor namespaces |
 |---|---|---|---|
-| 1 | **WorkTracking-Integration** | Connectors (Jira / ADO / Linear / CSV), auth & OAuth strategies, issue hydration | `Services.*.WorkTrackingConnectors`, `Factories` |
+| 1 | **WorkTracking-Integration** | Connectors (Jira / ADO / Linear / CSV / ServiceNow), auth & OAuth strategies, issue hydration. Every connector dates started/finished work through the one shared `WorkItemCategoryCrossing` rule — an arrival counts only when it enters a state category from *outside* it, latest crossing wins — so `Resolved → Closed` re-dates nothing while `Done → Doing → Done` does (Bug #5621) | `Services.*.WorkTrackingConnectors`, `Factories` |
 | 2 | **WorkItems / Sync** | `WorkItemService`, sync delta, state-transition capture, team-data service | `Services.*.WorkItems`, `.TeamData`, `.WorkItemRules` |
 | 3 | **Forecasting** | Monte-Carlo simulation, forecast services, forecast-filter rule engine | `Services.*.Forecast` |
 | 4 | **Portfolio / Delivery** | The `*Updater` pipelines, the update queue, delivery rules, write-back | `Services.Implementation.BackgroundServices`, `Services.Interfaces.Update` |
