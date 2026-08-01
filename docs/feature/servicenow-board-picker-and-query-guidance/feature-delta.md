@@ -534,6 +534,18 @@ Both new operations are **reads**. `IBoardInformationProvider` exposes only `Get
 `^ORDERBYsys_created_on^ORDERBYsys_id` total order, its repeated-record guard and its
 `WhenRefused.Fail` policy all apply to `vtb_board` as written.
 
+> **Corrected at DELIVER 02-01, 2026-08-01 — "reused unchanged" and "count from the body" could not
+> both hold.** `ReadEveryPage`'s `FollowingPage` falls back to `X-Total-Count` to decide whether
+> another page exists, and on `vtb_board` that header is **ACL-blind** — the very fact recorded two
+> tables above. Body 1 of header 4 makes it request `offset=1`, the repeated-record guard trips, and
+> `paging_repeated_records` refuses **the whole picker**. On the live PDI that is the normal shape of
+> every board read, not an edge case. Resolved additively: a private `HowTheResultSetIsSized` enum with
+> a defaulted parameter, so all three existing callers are byte-identical, and the board read passes
+> `OnlyTheRowsCount` to suppress the header-driven continuation while leaving Link-relation paging —
+> ServiceNow's actual mechanism — fully in effect. `ReadEveryPage` is still reused; only its
+> *termination* rule is selectable per table. This is the third time the ACL-blind counter has cost
+> this epic something, after `ValidateTeamSettings`' widening detector and the board-list count itself.
+
 ### Earned Trust — what the picker proves rather than assumes
 
 `vtb_board` is a substrate that has already been measured lying twice (ACL-blind counter; denial as
