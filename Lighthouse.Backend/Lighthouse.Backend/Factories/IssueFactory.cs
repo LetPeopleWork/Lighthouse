@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Factories
             return StatusTransitionsIn(json);
         }
 
-        private static IReadOnlyList<WorkItemStateTransition> StatusTransitionsIn(JsonElement json)
+        private static List<WorkItemStateTransition> StatusTransitionsIn(JsonElement json)
         {
             if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
             {
