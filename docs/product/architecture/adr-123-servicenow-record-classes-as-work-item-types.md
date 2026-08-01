@@ -269,12 +269,19 @@ actively wrong: `NoStateMetric`, whose message tells the administrator to "activ
 duration metric definition on the state field of task" — advice that cannot be followed and that
 contradicts what their teams will actually get.
 
-So `ValidateConnection` skips the definition read entirely and returns a success carrying the
-advisory `history_determined_per_team`: Lighthouse reads through a table holding every kind of record
-a team might work on, and whether it can see when work started is decided by the classes each team
-names. One request saved, one false statement not made.
+So `ValidateConnection` skips the definition read entirely. One request saved, one false statement
+not made.
 
-This is a new *message*, not a new `ServiceNowHistoryAvailability` member. The enum is what
+It briefly returned a success carrying an advisory, `history_determined_per_team`, saying that
+Lighthouse reads through a table holding every kind of record and that whether it can see when work
+started is decided per team. **Withdrawn by US 5612 on 2026-08-01, after dogfooding.** Every word of
+it was true and none of it was actionable at connection scope: a coach configuring a connection has
+no team yet, so the advisory named something that did not exist and could not be acted on until
+later. It was added here to avoid a silent no-op, but the no-op was never silent — the team-scope
+readability probes (ADR-124) say the same thing at the moment the coach is choosing kinds of work,
+which is where the advice can be followed. A working connection now says it works and stops.
+
+Either way this was never a new `ServiceNowHistoryAvailability` member. The enum is what
 `observedAvailability` and `SupportsTransitionHistory` branch on, and connection validation
 deliberately does not write it.
 

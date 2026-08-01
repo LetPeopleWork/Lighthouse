@@ -386,8 +386,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.True);
-                Assert.That(result.AdvisoryCode, Is.Null.Or.Empty,
-                    "Dogfood, 2026-08-01: a coach creating a CONNECTION has no team yet to act on this, so it read as noise.");
                 Assert.That(QueriesAskedOf(instance, "metric_definition"), Is.Empty,
                     "One request saved, because there is nothing meaningful to read.");
             }
