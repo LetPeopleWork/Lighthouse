@@ -112,15 +112,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 var answer = await Read(probeUri, connection);
                 var body = ParseRecords(answer.Body);
 
-                var verdict = ServiceNowValidationVerdict.FromResponse(
+                // A working connection says so and stops. It used to carry an advisory about where
+                // Field value duration definitions have to go (#5621); a coach reads that while
+                // creating a CONNECTION, before any team exists to which it could apply, so it landed
+                // as noise at the one moment there was nothing to do about it. The team-scope probes
+                // still say it, where it is actionable.
+                return ServiceNowValidationVerdict.FromResponse(
                     answer.StatusCode, body.ResponseIsJson, body.Records.Count, ServiceNowReadScope.RootTable);
-
-                // The capability question is only worth answering for a connection that already works
-                // — every failure rung above returns before it, so a closed port stays
-                // connection_failed.
-                return verdict.IsValid
-                    ? ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam()
-                    : verdict;
             }
             catch (HttpRequestException exception)
             {

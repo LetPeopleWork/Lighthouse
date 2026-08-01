@@ -148,43 +148,5 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
 
-        // ADR-123 decision 10. Connection validation reads no metric definitions at all now that
-        // every connection is rooted at the work hierarchy: `metric_definition` holds 0 rows for
-        // `table=task` (measured), so the only answer available at that scope would be "activate a
-        // definition on the state field of task" — advice nobody can follow, printed by the very
-        // feature that recommends the recipe. The remaining verdict says the one true thing.
-        [Test]
-        public void AConnection_SaysWhoDecidesWhetherHistoryIsAvailableRatherThanDecidingItself()
-        {
-            var verdict = ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(verdict.IsValid, Is.True,
-                    "ADR-118 D5: the advisory rides a success. ServiceNow without itil still gives throughput and a forecast.");
-                Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.PerTeamCode));
-            }
-        }
-
-        // An advisory nobody can act on is the silent no-op DoD 5 forbids. What the administrator
-        // has to be told is that the connection is fine, who decides the thing it declined to
-        // decide, and where the metric definition actually has to go.
-        [Test]
-        public void TheAdvisory_SaysTheConnectionWorksAndWhereTheMetricDefinitionHasToGo()
-        {
-            var advisory = ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam().Advisory;
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(advisory, Does.Contain("The connection works"),
-                    "Leading with the reassurance is what stops an administrator undoing a connection that is fine.");
-                Assert.That(advisory, Does.Contain("decided by the kinds of work each team names"),
-                    "The question was declined, not answered, and the administrator has to know who answers it.");
-                Assert.That(advisory, Does.Contain("activate a Field value duration metric definition on the state field of each of those"),
-                    "Naming the metric type and where it goes is what turns this from a complaint into an instruction.");
-                Assert.That(advisory, Does.Contain(ServiceNowReadScope.RootTable),
-                    "The table that carries none of them has to be named, or the instruction reads as 'somewhere else'.");
-            }
-        }
     }
 }

@@ -376,7 +376,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // actively wrong: it told the administrator to activate a definition on the state field of
         // task, advice that cannot be followed and that contradicts what their teams will get.
         [Test]
-        public async Task ValidatingAConnection_SaysStateHistoryIsDecidedPerTeam()
+        public async Task ValidatingAConnection_SaysNothingAboutStateHistory()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
@@ -386,7 +386,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.True);
-                Assert.That(result.AdvisoryCode, Is.EqualTo("history_determined_per_team"));
+                Assert.That(result.AdvisoryCode, Is.Null.Or.Empty,
+                    "Dogfood, 2026-08-01: a coach creating a CONNECTION has no team yet to act on this, so it read as noise.");
                 Assert.That(QueriesAskedOf(instance, "metric_definition"), Is.Empty,
                     "One request saved, because there is nothing meaningful to read.");
             }

@@ -344,7 +344,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // and contradicted by what the connection's teams actually get. So the connection says the
         // one true thing instead, in one request rather than two.
         [Test]
-        public async Task AWorkingConnection_SaysHistoryIsDecidedPerTeamRatherThanClaimingWhatItCannotKnow()
+        public async Task AWorkingConnection_SaysItWorksAndNothingElse()
         {
             var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
             var subject = CreateSubject(handler);
@@ -354,9 +354,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.True);
-                Assert.That(result.AdvisoryCode, Is.EqualTo("history_determined_per_team"));
-                Assert.That(result.Advisory, Is.Not.Null.And.Not.Empty,
-                    "Declining to answer and then saying nothing about it would be the silent no-op DoD 5 forbids.");
+                Assert.That(result.AdvisoryCode, Is.Null.Or.Empty);
+                Assert.That(result.Advisory, Is.Null.Or.Empty,
+                    "Not a silent no-op: the metric-definition advice is still said at team scope, where a coach can act on it.");
             }
 
             VerifyRequestCount(handler, 1);
