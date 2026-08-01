@@ -3697,15 +3697,19 @@ jobs:
       column value `change_request` rather than the label ServiceNow itself shows. Both fixes are free
       of extra requests: `sys_id` is already carried (#5577 needed it for the metric_instance batch)
       and `sys_class_name` already arrives as {display_value, value} on every row (5611 SPIKE).
-      CONSTRAINT that shapes the job: `Type` is matched post-sync at `TeamMetricsService.cs:243-252`
-      and exposed as the rule engine's type field, so the label must be a SEPARATE carried field, not
-      a substitution. The configuration half — typing `Change Request` instead of `change_request` —
-      is a STATIC label→class map in source, normalised in ServiceNowReadScope.For. No runtime lookup:
-      the only class→label table (`sys_db_object`) is measured unreadable below `itil` and 5611's
-      verdict is verbatim "Do not build on sys_db_object", which is an argument for having no lookup
-      at all rather than for finding another one — the same exit 5611 took for hierarchy knowledge
-      (ADR-116 D4). The map is an accepted input ALIAS only; class names keep working, so a renamed or
-      non-English instance loses nothing, and display stays on the record's own display_value.
+      SETTLED AT DESIGN (ADR-128): the connector owns a hardcoded BIDIRECTIONAL class<->label map and
+      applies it at its own boundary — class->label when mapping a record, label->class when building
+      the query, and normalisation to the label form when a team is saved. `Type` therefore CARRIES
+      THE LABEL and nothing outside the connector knows a mapping happened: no new field, no DTO
+      change, no EF migration, no frontend change. An unknown class passes through unchanged in both
+      directions, which keeps config and data consistent rather than merely unimproved. No runtime
+      lookup: the only class->label table (`sys_db_object`) is measured unreadable below `itil` and
+      5611's verdict is verbatim "Do not build on sys_db_object" — an argument for having no lookup at
+      all, the same exit 5611 took for hierarchy knowledge (ADR-116 D4). `sys_class_name.display_value`
+      is free and deliberately IGNORED: reading it would give an unknown class a pretty label while
+      its config entry kept the class name, and `GetCreatedItemsForTeam` compares the two.
+      An earlier DISCUSS draft required a separate carried field on the grounds that changing `Type`
+      breaks that comparison — true only if `Type` changes while the config vocabulary does not.
     job_story: >
       When Lighthouse shows me a ServiceNow item that looks wrong,
       I want to recognise what kind of work it is and open the actual record,

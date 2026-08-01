@@ -303,3 +303,92 @@ unreadability is an argument for having **no** runtime lookup, not for probing f
 and OC-1 dissolves into a content question. Recorded rather than quietly rewritten, because the
 reasoning error — treating a measured "no" as a research question instead of a design constraint — is
 the kind worth being able to find again.
+
+---
+---
+
+# Wave: DESIGN (2026-08-01)
+
+Scope: **application / components** — one connector's mapper, one pure helper, one save path. No new
+bounded context, no infrastructure, no new driving port. Mode: propose.
+
+## Wave: DESIGN / [REF] Changed assumptions (back-propagation)
+
+DESIGN overturns four DISCUSS decisions. The maintainer's correction, verbatim: *"it should just be
+stored in the bloody type and the connector should have a hardcoded map of all known types and map it
+in either direction when needed. if a type is not known, just use what the user entered … beyond the
+snow connector, nobody even knows we mapped this."*
+
+| DISCUSS said | DESIGN says | Why the original was wrong |
+|---|---|---|
+| **D4** — `Type` stays the class name; the label is a separate nullable field | `Type` **carries the label**. No second field. | D4's premise was that changing `Type` breaks `TeamMetricsService`'s Created Items comparison. True only if `Type` changes while the *config vocabulary* does not. Change both and they match by construction. The mismatch I guarded against was one I was creating. |
+| **D5** — the label is read from the instance (`sys_class_name.display_value`), never derived | The label comes from the **map**. `display_value` is deliberately **not read**, though it is free. | Reading it gives an unknown class a pretty label on the item while its config entry keeps the class name — the two then stop matching and the run chart silently returns zero. A free field that desynchronises is worse than no field. Map-in-both-directions is symmetric by construction; `display_value` is not. |
+| **D6** — new nullable field, DTO falls back to `Type` | No new field, no DTO change, no EF migration, no `Update()` line. | Follows from D4 being wrong. |
+| **D8a** — the map is input-only and never a display source | The map is **both** directions. That is the whole mechanism. | D8a existed to protect against a renamed stock class displaying the wrong label. Real, but small — a different English label, never a wrong number — and it is not worth a second field plus two migrations. |
+
+**What survives unchanged**: D1, D2, D3 (deep link from the record's own class), D7 (label input is
+wanted), D8 (static map in source, no runtime lookup), D8b (collision rule), D9–D12 (the verdicts).
+
+**Consequence for the story**: slices 01 and 02 **merge**. The same map that renders `Change Request`
+is the map that accepts it as input, so there is no second increment to ship. See the revised slice
+table below.
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision | Rationale |
+|---|---|---|
+| **DD-1** | `ServiceNowRecordClasses` — new pure class, `LabelFor(class)` / `ClassFor(label)`, case-insensitive, **passthrough on miss**. | ADR-128. Passthrough is the load-bearing part: an unknown class flows through unchanged in *both* directions, so config and data stay consistent even where Lighthouse adds no value. |
+| **DD-2** | Inbound: `ServiceNowWorkItemMapper.KindOfWork` returns `LabelFor(sys_class_name)`. | One call added to an existing pure method. The `sys_class_name`-absent fallback to `table` stays as it is. |
+| **DD-3** | Outbound: `ServiceNowReadScope.For` maps each entry through `ClassFor` before the `sys_class_nameIN…` clause is built. | `For` already normalises (`Where(not blank).Select(Trim)`, `ServiceNowReadScope.cs:45-52`). This is one more `Select` in a class that is already pure and fully unit-tested. |
+| **DD-4** | On save, a ServiceNow team's `WorkItemTypes` are **normalised to the label form**. | Without it, a coach who types `change_request` gets a working sync (passthrough → correct query) but a **broken Created Items forecast**: `SuggestionsController` offers `change_request` from config, `ForecastController` passes it to `GetCreatedItemsForTeam`, and it is compared against `Type` = `Change Request`. Zero rows, no error. This is the one place the two vocabularies could still diverge, and normalising on save is where they converge. |
+| **DD-5** | The deep link is `{instanceUrl.TrimEnd('/')}/{sys_class_name}.do?sys_id={sys_id}`, built from the **raw class**, not from `Type`. | Settles **OC-3** — Jira already does exactly this trim at `JiraWorkTrackingConnector.cs:1297` and `InstanceUrl` is user-entered. And it is the one place the class name is still needed *after* mapping, so the mapper reads `sys_class_name` once and uses it for both the link and `LabelFor`. |
+| **DD-6** | No frontend change. At all. | Consequence of DD-2. All five FE type sites (`WorkItemsDialog.tsx:153`, the two chart legends, `scatterMarkerUtils.tsx:94`, and the rule engine's `"workitem.type"` at `evaluateCondition.ts:23`) read `item.type` and now receive a label. The BE rule engine's `WorkItemFieldProvider.cs:56` likewise. A user-authored rule now matches on `Change Request`, which is the same string they see and configure. |
+| **DD-7** | The map covers the stock ITSM task hierarchy only. | Settles **OC-1**. Confirmed present on the PDI across the SPIKEs: `incident`, `problem`, `change_request`, `sc_task`, `task`. Adding `sc_req_item`, `change_task`, `incident_task`, `problem_task` is free and being wrong about one costs nothing — passthrough. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| # | Component | Path | Change |
+|---|---|---|---|
+| 1 | `ServiceNowRecordClasses` | `…/WorkTrackingConnectors/ServiceNow/` | **CREATE NEW** |
+| 2 | `ServiceNowWorkItemMapper` | same | **EXTEND** — `KindOfWork` maps; `MapRecord` sets `Url` |
+| 3 | `ServiceNowReadScope` | same | **EXTEND** — `For` maps entries through `ClassFor` |
+| 4 | ServiceNow team save path | `ServiceNowWorkTrackingConnector` / team settings | **EXTEND** — DD-4 normalisation |
+| 5 | `WorkItemBase` / `WorkItemDto` / `IWorkItem` | Models, API/DTO, frontend | **UNCHANGED** |
+
+## Wave: DESIGN / [REF] Reuse analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `ServiceNowWorkItemMapper` | `…/ServiceNow/ServiceNowWorkItemMapper.cs` | Maps a record field to a Lighthouse value | **EXTEND** | `KindOfWork` already resolves the class; adding one lookup is ~2 LOC. |
+| `ServiceNowReadScope` | `…/ServiceNow/ServiceNowReadScope.cs` | Normalises configured entries before query construction | **EXTEND** | `For` is already the normalisation choke point. One more `Select`. |
+| `ServiceNowValidationVerdict` / `ServiceNowTeamQueryVerdict` | `…/ServiceNow/` | Pure verdicts over team settings | **REUSE UNCHANGED** | DD-4 normalises; it does not add a refusal. An entry that is neither a class nor a label still reaches the existing zero-rows guard. |
+| `WorkItemBase.Url` | `Models/WorkItemBase.cs:34` | Carries a record's source URL | **REUSE UNCHANGED** | Ships and is rendered. ServiceNow simply starts populating it. |
+| `WorkItemsDialog` link rendering | `WorkItemsDialog.tsx:142-144` | Renders a non-null `url` as a link | **REUSE UNCHANGED** | No new component. |
+| `ServiceNowChoiceLabelResolver` | *deleted* | Resolved choice labels at runtime | **DO NOT RESURRECT** | Killed by R-4 when `sys_choice` measured admin-only. DD-1 is the static answer to the same shape of problem. |
+
+## Wave: DESIGN / [REF] Ports
+
+**Driving**: none new. No endpoint, no schema field, no UI surface.
+**Driven**: ServiceNow Table API — **no new request and no new field**. `sys_id` and `sys_class_name`
+already arrive on every row; `display_value` arrives too and is deliberately ignored (ADR-128).
+
+## Wave: DESIGN / [REF] Open questions
+
+| ID | Question | Status |
+|---|---|---|
+| **OC-1** | Which classes does the map carry? | **SETTLED** — DD-7. |
+| **OC-2** | Is `{class}.do` universal across ITSM classes? | **Open, self-resolving.** Measured for `incident` only. Cheap to be wrong: one string in one place, and the slice's dogfood clicks through a record of each class the team reads, so a bad assumption surfaces the same day. No SPIKE. |
+| **OC-3** | Does `InstanceUrl` need trimming? | **SETTLED** — DD-5, yes, per Jira's precedent. |
+| **OC-4** | Does #5610's picker pre-fill the label or the class name? | **Open, and now has a right answer**: the label. DD-4 normalises it on save either way, but the coach should see the label in the field. Conversation with #5610, which is mid-DELIVER on `main`. |
+| **OC-5** | Does a user-authored *rule* matching `change_request` break? | **New.** `WorkItemFieldProvider.cs:56` and `evaluateCondition.ts:23` both expose type to rule engines, and existing ServiceNow rules would have been written against class names. Nothing has shipped for ServiceNow, so there are no such rules in the wild — but confirm with the maintainer before assuming zero blast radius. |
+
+## Wave: DESIGN / [REF] Revised slices
+
+Slices 01 and 02 **merge** — the map serves both directions, so there is no second increment.
+
+| # | Slice | Ships |
+|---|---|---|
+| 01 | A ServiceNow row reads like a ServiceNow record | Clickable ID, `Type` reads `Change Request` everywhere, and `Change Request` is accepted in team config |
+
+Effort: ≤1 day, and smaller than either original slice — one new pure class, three ~2-line call sites,
+and their tests. Learning hypothesis unchanged from slice 01's brief.

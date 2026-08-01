@@ -61,11 +61,13 @@ journeys:
           transform produces).
         emotional_state: Recognition — "these are our words"
         shared_artifacts:
-          - sys_class_name display_value (EXISTING in the payload; measured present on every row of the
-            connector-shaped read without sysparm_fields — 5611 SPIKE findings.md:142,146-147)
-          - a NEW nullable type-label field on WorkItemBase → WorkItemDto → IWorkItem, with the DTO
-            falling back to Type when absent, so the other four connectors' rows are byte-identical
-          - WorkItemBase.Type (EXISTING and DELIBERATELY UNCHANGED — it is the query key, not a label)
+          - ServiceNowRecordClasses (NEW at DESIGN; a connector-local bidirectional class<->label map,
+            case-insensitive, passthrough on miss — ADR-128)
+          - WorkItemBase.Type (EXISTING; now CARRIES THE LABEL. No new field, no DTO change, no EF
+            migration, no frontend change — the mapping happens entirely inside the connector)
+          - sys_class_name display_value (present in the payload and DELIBERATELY IGNORED — reading it
+            would give an unknown class a pretty label on the item while its config entry kept the
+            class name, and the two would stop matching)
 
       - id: step-name-the-work-in-the-team-config
         action: >
@@ -80,22 +82,27 @@ journeys:
         shared_artifacts:
           - team.WorkItemTypes (EXISTING; shipped by #5611 as isWorkItemTypesRequired for every
             ServiceNow team, and pre-filled by #5610's picker as a class name — hence OC-4)
-          - a NEW static case-insensitive label→class map in source, normalised in
-            ServiceNowReadScope.For (which today only trims). No request, no runtime lookup, so it
-            behaves identically for a no-roles account and for admin. Input-only: display stays on
-            sys_class_name.display_value, so a renamed class still shows its own name.
+          - ServiceNowRecordClasses, the SAME map read in the other direction (ADR-128). No request,
+            no runtime lookup, so it behaves identically for a no-roles account and for admin.
+          - normalisation on save: a team's WorkItemTypes are stored in the label form, so a coach who
+            typed change_request and one who typed Change Request converge. Without it the Created
+            Items forecast compares config against Type and silently returns zero.
 
     error_paths_summary:
-      - The naive type fix returns an empty chart. WorkItemBase.Type is matched post-sync at
-        TeamMetricsService.cs:243-252 — GetCreatedItemsForTeam filters on
-        item.Type.ToLowerInvariant() against the team's configured work-item types — and exposed as
-        the rule engine's type field at WorkItemFieldProvider.cs:56. Substituting the label for the
-        class name makes the Created Items run chart return zero for every ServiceNow team, with no
-        error. This is why the label is a separate nullable field and why an explicit regression test
-        guards Type's meaning.
-      - A label derived by transforming the class name is wrong for exactly the ITSM classes the epic
-        optimises for: sc_task is "Catalog Task", not "Sc Task". The label is read from the instance
-        or not shown.
+      - Changing Type WITHOUT changing the config vocabulary returns an empty chart.
+        GetCreatedItemsForTeam filters on item.Type.ToLowerInvariant() against the team's configured
+        types (TeamMetricsService.cs:243-252), and both rule engines expose the same string
+        (WorkItemFieldProvider.cs:56, evaluateCondition.ts:23). DESIGN's answer is to change BOTH so
+        they match by construction, plus normalisation on save so a class-name-typed config converges
+        too. AC-D1 is the guard: a non-zero run chart for a team configured with labels AND for one
+        configured with class names.
+      - A label derived by TRANSFORMING the class name is wrong for exactly the ITSM classes the epic
+        optimises for: sc_task is "Catalog Task", not "Sc Task". A map is not a transform — it carries
+        the real label — which is why ADR-128 chose one.
+      - The map leaking past the connector boundary. If a DTO field, a frontend format call or a
+        second vocabulary anywhere turns out to be needed, the design is wrong and ADR-128 re-opens:
+        it would mean Type's double duty as query key and display string is a defect in the shared
+        model, not a ServiceNow quirk.
       - The .do path is class-specific. Building the deep link from a configured table would be
         impossible anyway (5611 removed the connection-scope table; every read is task-rooted), and
         building it from one class for a multi-class team would 404 for the others.
@@ -111,12 +118,14 @@ journeys:
         04 an itil escalation, and OC-1's warning on vtb_board). The exit is a STATIC MAP IN SOURCE,
         which is the same exit 5611 took for hierarchy knowledge (ADR-116 D4) — not a search for a
         different table to read.
-      - Using the static map for DISPLAY would be wrong on an instance that renamed a class. The map
-        is an accepted input alias; the rendered label comes from the record's own
-        sys_class_name.display_value. Two directions, two sources, deliberately.
-      - A static map cannot be exhaustive — ServiceNow labels are renameable and localised. That is
-        acceptable ONLY because class names keep working: the map is pure upside, never the sole
-        accepted form. If it ever becomes the only accepted form, a non-English instance breaks.
+      - An instance that RENAMED a stock class still reads Lighthouse's label — a shop calling
+        change_request "RFC" sees Change Request. Accepted at DESIGN: the worst case is a different
+        English label, never a wrong number, and it is not worth a second field plus two migrations.
+        Revisit only if a customer reports it.
+      - A static map cannot be exhaustive — ServiceNow labels are renameable and localised. Acceptable
+        because PASSTHROUGH keeps unknown classes CONSISTENT rather than merely unimproved: a custom
+        u_maintenance_task stores as u_maintenance_task and its config entry stays u_maintenance_task,
+        so every comparison still holds. Consistency, not prettiness, is what passthrough buys.
       - The label input and #5610's board picker land opposite answers about what gets pre-filled.
         Twin drift, the shape Bug #5613 already cost a release. Settled by conversation before slice
         02 ships, not by code.
@@ -124,8 +133,10 @@ journeys:
     success_signal:
       - A coach clicks an id in the Work Items dialog on a two-class ServiceNow team and lands on the
         correct record for BOTH classes.
-      - Type reads "Change Request" while WorkItemBase.Type still reads change_request, proved by a
-        GetCreatedItemsForTeam test returning a non-zero run chart.
+      - Type reads "Change Request" everywhere it is shown — column, both chart legends, marker
+        colours — with no frontend change at all, because the connector mapped it before it left.
+      - GetCreatedItemsForTeam returns a non-zero run chart for a team configured with labels AND for
+        one configured with class names (AC-D1).
       - A coach creates a ServiceNow team typing "Incident" and "Change Request", never the class
         names, and both sync.
       - Honest-limit caveat: the label map is an alias, not a promise. A customised or non-English
