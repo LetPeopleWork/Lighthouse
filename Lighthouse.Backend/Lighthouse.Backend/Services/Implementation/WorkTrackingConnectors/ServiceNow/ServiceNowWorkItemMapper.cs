@@ -95,7 +95,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// record's class is reported back in the words THIS team used, so a team's config and its
         /// work items always agree — whichever form was typed. Also the fallback kind of work where
         /// the record does not say its own (ADR-123 decision 8).</param>
-        public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, ServiceNowReadScope scope)
+        public static WorkItemBase MapRecord(
+            JsonElement record, IWorkItemQueryOwner owner, ServiceNowReadScope scope, string instanceUrl)
         {
             var stateLabel = ReadStateLabel(record);
             var recordNumber = ReadRecordNumber(record);
@@ -106,6 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 ReferenceId = recordNumber,
                 Name = ReadForm(record, TitleField, UniversalForm),
                 Type = KindOfWork(record, scope),
+                Url = RecordAddress(record, instanceUrl),
                 State = owner.MapRawStateToMappedName(stateLabel),
                 StateCategory = stateCategory,
                 Order = recordNumber,
@@ -113,6 +115,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 StartedDate = ReadInstant(record, OpenedField) ?? ReadInstant(record, CreatedField),
                 ClosedDate = WhenWorkFinished(record, stateCategory),
             };
+        }
+
+        /// <summary>
+        /// Where the record lives in ServiceNow, so a coach can open it from a Lighthouse chart the
+        /// way they already can on every other connector.
+        /// </summary>
+        /// <remarks>
+        /// Story #5612 item 1. Built from the record's OWN class rather than from the team's kinds of
+        /// work: the <c>.do</c> path is class-specific, so a team reading incidents and change
+        /// requests needs a different path per row. Both parts are already in the payload — nothing
+        /// here costs a request.
+        /// <para>
+        /// No address at all when either part is missing. A link that 404s is worse than an absent
+        /// one, and <c>WorkItemsDialog</c> already renders the id as plain text when the url is null.
+        /// </para>
+        /// </remarks>
+        private static string? RecordAddress(JsonElement record, string instanceUrl)
+        {
+            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
+            var recordId = ReadRecordId(record);
+
+            if (string.IsNullOrWhiteSpace(instanceUrl)
+                || string.IsNullOrWhiteSpace(recordClass)
+                || string.IsNullOrWhiteSpace(recordId))
+            {
+                return null;
+            }
+
+            // The same trim Jira's connector already does on its user-entered base url
+            // (JiraWorkTrackingConnector.cs:1297); ServiceNow's Instance Url is just as user-entered.
+            return $"{instanceUrl.TrimEnd('/')}/{recordClass}.do?sys_id={recordId}";
         }
 
         // ADR-123 decision 8. A record class IS a work item type, so a change request read through

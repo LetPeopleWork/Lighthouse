@@ -169,7 +169,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .Select(record => new MappedRecord(
                     ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
-                    ServiceNowWorkItemMapper.MapRecord(record, team, scope)))
+                    ServiceNowWorkItemMapper.MapRecord(
+                        record, team, scope, GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl))))
                 .ToList();
 
             ReportStatesTheTeamNeverMapped(mapped, team);
