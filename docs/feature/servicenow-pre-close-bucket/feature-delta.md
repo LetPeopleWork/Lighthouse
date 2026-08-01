@@ -73,7 +73,7 @@ referenced by name.
 
 | ID | Decision | Rationale |
 |---|---|---|
-| **D1** | 5612 ships **items 1 and 7a only**. Every other item is a recorded verdict with a named owner, not a slice. | Maintainer, 2026-08-01. The bucket's purpose was to hold findings until the picture settled. It has settled, and most items now belong to stories that already exist. A bucket that ships one thing and hands the rest to their real owners is finished; one that keeps everything is a backlog. |
+| **D1** | 5612 ships **items 1, 7a and 7b**. Every other item is a recorded verdict with a named owner, not a slice. *(Amended twice: 7b was added when the maintainer asked for label input, and DESIGN then merged it into the same slice.)* | Maintainer, 2026-08-01. The bucket's purpose was to hold findings until the picture settled. It has settled, and most items now belong to stories that already exist. A bucket that ships one thing and hands the rest to their real owners is finished; one that keeps everything is a backlog. |
 | **D2** | Item 1 (deep link) is **cheap**, not "not quite free" as the ADO body assumes. | Measured, not estimated. `WorkItemBase.Url` exists (`Models/WorkItemBase.cs:34`), flows to `WorkItemDto.cs:70`, and `WorkItemsDialog.tsx:142-144` **already renders it as a `<Link target="_blank">` when non-null**. `sys_id` is already read (`ServiceNowWorkItemMapper.RecordIdField`) and `sys_class_name` is already mapped as `Type`. ServiceNow is the only connector of five that leaves `Url` unset. The work is one string built in `MapRecord` — no contract change, no new UI, no new request. |
 | **D3** | The deep-link URL is built from **the record's own class**, never from a configured table. | `{instanceUrl}/{sys_class_name}.do?sys_id={sys_id}`. The `.do` path is class-specific, and since 5611 removed the connection-scope table there is no configured table to build from. `KindOfWork` already resolves the class per record, so a team reading incident + change_request gets correct links for both. |
 | **D4** | `WorkItemBase.Type` **stays the class name**. The human label is carried as a **separate nullable field**. | Not cosmetic caution — `Type` is matched post-sync in two places. `TeamMetricsService.cs:243-252` filters synced items with `includedWorkItems.Contains(item.Type.ToLowerInvariant())` against the team's work-item-type list, so switching `Type` to `"Change Request"` makes the Created Items run chart return **zero** for every ServiceNow team. `WorkItemFieldProvider.cs:56` exposes the same string as the rule engine's type field. |
@@ -254,6 +254,12 @@ to zero and never widens (5611 SPIKE `findings.md:235`), so this is the one plac
   no UI can read it. This is a real defect independent of D9's NOT-NOW, and it is the *actual* cost of
   item 5 options (b) and (c). It becomes load-bearing the moment #5627 reports per-class availability
   for more than one team — flagged to #5627 rather than fixed here.
+- **The label map is backend-only, and that is a deferral rather than a solution.** ADR-128 rejects a
+  frontend map because it would duplicate across stacks (the Bug #5613 shape). But the map now lives
+  only in the backend, so the *first* frontend feature that needs it — #5610's picker offering labels,
+  an autocomplete, anything — recreates that exact problem. Raised by the DESIGN reviewer, 2026-08-01.
+  Not solved here because nothing needs it yet; the pre-agreed answer, if it ever does, is to serve the
+  map from the existing schema endpoint rather than to copy it.
 - **`ServiceNowHistoryVerdict.From`'s contract is misdescribed by its consumer.** Its own remark is
   honest — *"Whether a definition measures state is a question this cannot answer"* — but #5627's body
   reads it as authoritative. The docstring is right; the ADR that cites it is wrong. Fixed in #5627.
@@ -285,6 +291,11 @@ verdict table above, which moved five of the seven out.
 ## Wave: DISCUSS / [REF] Slices and prioritization
 
 Briefs in `slices/`. Order: the one that ships without a SPIKE goes first.
+
+> **Superseded at DESIGN.** The two slices below **merged into one** — the same map serves display and
+> input, so there is no second increment and `slice-02-name-work-by-its-label.md` was deleted. The
+> table is kept because its learning hypotheses are still the ones being tested. The live slice list
+> is under *Wave: DESIGN / [REF] Revised slices*.
 
 | # | Slice | Ships | Learning hypothesis |
 |---|---|---|---|
@@ -384,6 +395,8 @@ already arrive on every row; `display_value` arrives too and is deliberately ign
 | **OC-3** | Does `InstanceUrl` need trimming? | **SETTLED** — DD-5, yes, per Jira's precedent. |
 | **OC-4** | Does #5610's picker pre-fill the label or the class name? | **Open, and now has a right answer**: the label. DD-4 normalises it on save either way, but the coach should see the label in the field. Conversation with #5610, which is mid-DELIVER on `main`. |
 | **OC-5** | Does a user-authored *rule* matching `change_request` break? | **New.** `WorkItemFieldProvider.cs:56` and `evaluateCondition.ts:23` both expose type to rule engines, and existing ServiceNow rules would have been written against class names. Nothing has shipped for ServiceNow, so there are no such rules in the wild — but confirm with the maintainer before assuming zero blast radius. |
+| **OC-6** | What happens to **rows already synced** before this ships? | **Found by the DEVOPS reviewer, 2026-08-01, and it is the sharpest finding of the review round.** A team synced today holds `change_request` in `WorkItemBase.Type`. After this ships its config normalises to `Change Request`, but **those rows keep the class name until they are next synced** — and `GetCreatedItemsForTeam` compares the two, so the Created Items chart shows the silent zero this design exists to prevent, for exactly as long as the window lasts. Production blast radius is nil (nothing ServiceNow has ever been released), but **`dev191338`'s dogfood teams have precisely those rows**, so the dogfood hits it. Decide in DELIVER: rely on the next sync overwriting `Type` (it does — `Update()` copies it), and if so, state the window in the slice brief and force a sync during the dogfood. |
+| **OC-7** | Rollback: rows written as labels while live, then a revert? | Same reviewer, same shape. The table would hold both forms. Cheap because `ClassFor`/`LabelFor` round-trip losslessly for known classes and pass unknowns through, so a re-sync heals it either way. Recorded so the answer is not re-derived under pressure. |
 
 ## Wave: DESIGN / [REF] Revised slices
 

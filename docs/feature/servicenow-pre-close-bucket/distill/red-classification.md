@@ -14,6 +14,13 @@ Build: **0 errors**. No test is BROKEN — every failure reaches its assertion.
 | `ATeamNamingItsWorkByLabel_StillLooksForStateHistoryOnTheRecordClasses` | AC-D5 | `metric_definition` is asked about `Incident`, not `incident`. |
 | `ATeamNamingAKindOfWorkItCannotSee_IsRefusedInTheWordsTheCoachTyped` | AC-D4 | No refusal at all — the label matches nothing, so nothing is hidden to report. |
 
+**AC-D4's assertion was hardened after review (2026-08-01).** It originally used `problem` /
+`Problem` and asserted `Does.Not.Contain("problem")` — brittle, because "problem" is an ordinary
+English word a correct message may legitimately contain ("there is a problem with…"), which would fail
+a working implementation. Switched to `change_request` / `Change Request`: the underscore means the
+class name cannot appear in prose by accident, so its absence is a real signal rather than a
+coincidence.
+
 ## Green at DISTILL — regression guards, NOT red
 
 Two tests pass today. Recorded explicitly so DELIVER does not read them as coverage of new behaviour.
@@ -30,6 +37,18 @@ Two tests pass today. Recorded explicitly so DELIVER does not read them as cover
 **The deep-link ATs (AC-A1–AC-A3, AC-A7).** `ServiceNowWorkItemMapper.MapRecord(record, owner, table)` has no instance URL, and DD-5 needs one. A test written against the new signature does not compile, which fails the *whole* test project — every test BROKEN, not one test RED. That blocks the gate rather than driving it.
 
 Authored in DELIVER's RED phase together with the signature change, in `ServiceNowWorkItemMapperTest`. Deliberate deviation from ADR-025's "DISTILL authors all ATs", recorded rather than silently skipped.
+
+## AC coverage map (raised by the DISTILL reviewer, 2026-08-01)
+
+| AC | Covered by |
+|---|---|
+| AC-A1–A3, A7 | **Deferred to DELIVER** — see "would be BROKEN" above. |
+| AC-A4 | `WorkItemsOfAKnownKindOfWork_ReportTheKindTheCoachNamedRatherThanTheColumnValue` |
+| AC-B1 | `ATeamThatNamesItsWorkTheWayServiceNowDoes_ReadsTheSameWorkAsOneNamingTheRecordClass` |
+| AC-B2 (class names keep working) | `ATeamNamingItsWorkByRecordClass_…`, the green regression guard — that is precisely what it exists for. |
+| AC-B3 (no request, privilege-independent) | The whole of `ServiceNowClassLabelsTest`: a pure static map cannot make a request. |
+| **AC-B4** (unresolvable entry refused by name) | **`SavingATeamThatNamesAKindOfWorkTheInstanceDoesNotHave_IsToldWhichNameIsWrong`** — #5611's existing test, which still passes. An unresolvable entry passes through the map untouched and reaches the same refusal, so the behaviour is inherited rather than re-tested. No new test; deliberately not a gap. |
+| AC-D1–D5 | The five new tests, per the table above. |
 
 ## Zero pre-existing tests broken
 

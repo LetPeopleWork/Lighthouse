@@ -473,17 +473,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ATeamNamingAKindOfWorkItCannotSee_IsRefusedInTheWordsTheCoachTyped()
         {
+            // change_request rather than problem, deliberately. "problem" is an ordinary English word
+            // that a well-written message may legitimately contain ("there is a problem with..."),
+            // so asserting its absence would fail on a correct message. "change_request" carries an
+            // underscore and cannot appear in prose by accident, which makes its absence a real signal.
             var instance = AnInstanceHolding(ThreeKindsOfWork())
-                .WhereTheHierarchy(Problems, HttpStatusCode.OK, holds: 24, visible: 0);
+                .WhereTheHierarchy(Changes, HttpStatusCode.OK, holds: 24, visible: 0);
             var subject = CreateSubject(instance);
 
-            var result = await subject.ValidateTeamSettings(ATeamWorkingOn(["Incident", "Problem"]));
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn(["Incident", "Change Request"]));
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.False);
-                Assert.That(result.Message, Does.Contain("Problem"));
-                Assert.That(result.Message, Does.Not.Contain("problem"),
+                Assert.That(result.Message, Does.Contain("Change Request"));
+                Assert.That(result.Message, Does.Not.Contain(Changes),
                     "The mapped class name is an implementation detail. Echoing it sends the coach looking for a value they never typed.");
             }
         }
