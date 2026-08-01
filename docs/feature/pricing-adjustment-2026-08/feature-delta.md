@@ -391,3 +391,103 @@ DESIGN's open questions, in order: where `pricing.ts` sits relative to the exist
 conventions; how the two cutover constants are kept identical (test-asserted duplication vs. a generated
 file vs. a Supabase secret); and whether the fake-clock tests inject `now` as a parameter or use
 `vi.setSystemTime`.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary — slice 03 (US-04)
+
+**Shipped**: 2026-08-01, after the cutover instant passed. **Commit**: `62d67b0` in
+`/storage/repos/website` (**not pushed** — awaiting Benjamin's go, since pushing deploys).
+
+The date gate is gone. `src/lib/pricing.ts` no longer exports `PRICE_CUTOVER_INSTANT`,
+`isAfterPriceCutover`, or the two price tables; it exports one flat `prices` object. With no clock to
+read, `EngagementPath` and `ExpertiseAndServices` went back to module-scope data instead of rebuilding
+their arrays per render. `supabase/functions/create-payment/priceCutover.ts` is deleted entirely and the
+CHF 2,000 Stripe price id is named inline in `index.ts` — the duplicated instant that R1 guarded against
+no longer exists, so page and checkout cannot drift.
+
+The transitional copy slice 01 had gated off is deleted rather than left behind a `false`: the
+pre-launch banner, the "Current rate · CHF 2,000 from August 2026" chip, and the lock-in note in the
+checkout block. **Zero prices changed** — this slice only removed the machinery that changed them.
+
+## Wave: DELIVER / [REF] Files Modified
+
+| File | Change |
+|---|---|
+| `src/lib/pricing.ts` | −30 lines. Gate, both price tables and the clock predicate deleted; flat `prices` const. |
+| `supabase/functions/create-payment/priceCutover.ts` | **Deleted** (18 lines) — `resolvePriceId`, the duplicated instant, the CHF 999 id. |
+| `supabase/functions/create-payment/index.ts` | `SELF_SERVICE_PRICE_ID` named inline; import dropped. |
+| `src/pages/Lighthouse.tsx` | −32 lines. Banner (S2), rate chip (S4), lock-in note (S5) removed; `prices.*` read directly. |
+| `src/pages/Index.tsx` | `prices()` → `prices`. |
+| `src/components/EngagementPath.tsx` | `buildTiers()` → module-scope `tiers`. |
+| `src/components/ExpertiseAndServices.tsx` | `buildCategories()` → module-scope `categories`. |
+| `src/lib/pricing.test.ts` | −105/+24. Clock cases and the constant-identity test (AC-1.5) gone; invariants kept. |
+| `src/components/PricingSurfaces.cutover.test.tsx` → `PricingSurfaces.test.tsx` | Fake clocks removed. |
+| `src/pages/LighthousePricing.cutover.test.tsx` → `LighthousePricing.test.tsx` | Fake clocks removed; JSON-LD binding test (ex AC-1.4) kept. |
+
+Net: **10 files, +28 / −310**.
+
+Invariants deliberately retained rather than deleted with the clock: the licence and the pilot never
+quote the same figure (AC-3.4), the assessment stays ≥ CHF 2,500 above the licence it bundles, and
+neither page's JSON-LD offer may carry its own price literal.
+
+## Wave: DELIVER / [REF] DoD Check
+
+| AC | Verdict | Evidence |
+|---|---|---|
+| **AC-4.1** re-verify static surfaces state CHF 2,000 flat | ✅ PASS | Live: `curl -s https://letpeople.work/llms.txt \| grep -i self-service` → `- Self-Service: CHF 2,000/year. …` with no qualifier; `/compare/` → `Self-Service CHF 2,000`. Root `index.html` `<noscript>` matches in-repo. |
+| **AC-4.2** no surviving `999` price hits | ✅ PASS | `grep -rn "999" src public index.html supabase \| grep -v 999999` → 3 hits in `LighthousePricing.test.tsx` (the regression guards asserting CHF 999 is *absent*) + one `border-radius: 999px` in `compare/index.html`. **Zero** price literals in production copy. |
+| **AC-4.3** gate, pre-cutover branch and CHF 999 id deleted from both modules; clock tests flattened | ✅ PASS | `grep -rn "currentPrices\|afterPriceCutover\|PRICE_CUTOVER\|resolvePriceId" src supabase` → empty. |
+| **AC-4.4** `pnpm test` + `pnpm build` pass | ✅ PASS | 184 passed / 17 skipped, 35 files, 7.3s. Build ✓ in 6.31s + prerender-meta clean. Only pre-existing chunk-size advisory. |
+| **AC-4.5** CHF 999 Stripe price object archived | ⏳ **OPEN — Benjamin, manual** | Correctly sequenced *after* AC-4.3 ships. Not an agent action (D5: no Stripe credential is used from this session). |
+
+## Wave: DELIVER / [REF] Demo Evidence
+
+Elevator-pitch command from US-04, run against production 2026-08-01 07:11 UTC:
+
+```
+$ curl -s https://letpeople.work/llms.txt | grep -i self-service
+- Self-Service: CHF 2,000/year. Unlimited teams, portfolios, and deliveries, all paid features, community Slack support. One flat rate, no per-seat pricing.
+- Enterprise: CHF 10,000/year. Everything in Self-Service plus prioritised support, …
+- Lighthouse has a free-forever Community edition and flat per-organisation pricing (Self-Service CHF 2,000/year; Enterprise CHF 10,000/year). …
+
+$ curl -s https://letpeople.work/compare/ | grep -o "Self-Service CHF [0-9,]*"
+Self-Service CHF 2,000
+```
+
+Exit 0, non-empty, no transitional qualifier. This surface was already live from slice 02 (revised D9),
+which is why it is a re-verification rather than a deploy gate.
+
+## Wave: DELIVER / [REF] Quality Gates
+
+| Gate | Outcome |
+|---|---|
+| Acceptance suite | ✅ 184 passed / 17 skipped (the 17 are `real-io` tests, skipped without live credentials — pre-existing). |
+| Build | ✅ `tsc` + `vite build` clean. |
+| Refactor pass (L1–L6) | ✅ Folded into the slice — it *is* a deletion slice. `buildTiers`/`buildCategories` collapsed back to module scope; three stale comments trimmed. |
+| Adversarial review | ⊘ Not dispatched. Scope is a bounded deletion against code written the previous day; `git diff` is the review surface and the retained invariants are the guard. |
+| Mutation testing | **N/A** — the website repo carries no Stryker config, and the slice adds no branching logic to mutate (it removes the only branch). The Lighthouse `per-feature` policy applies to the Lighthouse repo, which this feature does not touch. |
+| DES integrity | **N/A** — no `.nwave/des-config.json` in either repo for this feature and no roadmap/execution-log was ever created; slices 01–03 ran as direct waves off DISCUSS, with no DESIGN or DISTILL wave. Recorded so the absence is a known fact, not an unmonitored-step violation. |
+
+## Wave: DELIVER / [WHY] Learning Hypothesis — Resolved
+
+Slice 03 set out to disprove *"the gate was the only thing holding the old price alive"* if the AC-4.2
+grep found a surviving price literal.
+
+**It did not.** After deleting the gate, no production surface states CHF 999. The DISCUSS
+Current-State Surface Inventory (S1–S12) was complete — including S5, whose lock-in note sat in the
+checkout block ~60 lines below where the inventory placed it and was still caught. **Confirmed**: the
+next price change is a one-constant edit in `src/lib/pricing.ts` plus the three static crawler files.
+
+One process note worth carrying forward: an early `grep` for the gate symbols under-reported its hits,
+and the missing S5 occurrence surfaced only when `pnpm test` failed with `currentPrices is not defined`.
+The test suite, not the grep, is what closed the inventory.
+
+## Wave: DELIVER / [REF] Follow-ups
+
+1. **AC-4.5** — archive the CHF 999 Stripe price object in the live dashboard (Benjamin, manual).
+2. **Push + deploy** — `62d67b0` is committed and unpushed in `/storage/repos/website`.
+3. **Redeploy the edge function** — `create-payment` changed; a website deploy does not redeploy
+   Supabase functions. Until it is deployed, checkout still runs the old (correct-by-clock) resolver,
+   so there is no wrong-price window either way.
+4. **ADO #5563** — still Active; ready to move once (1)–(3) land.
