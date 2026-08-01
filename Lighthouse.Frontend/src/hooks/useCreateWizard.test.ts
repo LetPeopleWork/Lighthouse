@@ -8,6 +8,7 @@ import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../services/Api/ApiError";
 import {
 	STEP_CHOOSE_CONNECTION,
 	STEP_CONFIGURE,
@@ -103,6 +104,49 @@ const makeHookArgs = (
 	saveSettings: vi.fn().mockResolvedValue(undefined),
 	...overrides,
 });
+
+type WizardHook = ReturnType<typeof useCreateWizard<SimpleDto>>;
+
+type ConfigInputs = Pick<
+	WizardDtoBase,
+	| "dataRetrievalValue"
+	| "workItemTypes"
+	| "toDoStates"
+	| "doingStates"
+	| "doneStates"
+>;
+
+const everyConfigInputFilled: ConfigInputs = {
+	dataRetrievalValue: "query",
+	workItemTypes: ["Story"],
+	toDoStates: ["New"],
+	doingStates: ["Active"],
+	doneStates: ["Done"],
+};
+
+const fillConfig = (
+	result: { current: WizardHook },
+	values: ConfigInputs,
+): void => {
+	act(() => result.current.setDataRetrievalValue(values.dataRetrievalValue));
+	act(() => result.current.setWorkItemTypes(values.workItemTypes));
+	act(() => result.current.setToDoStates(values.toDoStates));
+	act(() => result.current.setDoingStates(values.doingStates));
+	act(() => result.current.setDoneStates(values.doneStates));
+};
+
+// A validateSettings the test holds open, so the flag raised around it can be observed.
+const aValidationHeldOpen = () => {
+	let settle: (isValid: boolean) => void = () => {};
+	const validateSettings = vi.fn(
+		() =>
+			new Promise<boolean>((resolve) => {
+				settle = resolve;
+			}),
+	);
+
+	return { validateSettings, answer: (isValid: boolean) => settle(isValid) };
+};
 
 // ---------- tests ----------
 
@@ -232,13 +276,43 @@ describe("useCreateWizard", () => {
 			await waitFor(() => expect(result.current.loading).toBe(false));
 
 			act(() => result.current.selectConnection(makeConnection(1)));
-			act(() => result.current.setDataRetrievalValue("query"));
-			act(() => result.current.setWorkItemTypes(["Story"]));
-			act(() => result.current.setToDoStates(["New"]));
-			act(() => result.current.setDoingStates(["Active"]));
-			act(() => result.current.setDoneStates(["Done"]));
+			fillConfig(result, everyConfigInputFilled);
 
 			expect(result.current.configInputsValid).toBe(true);
+		});
+
+		// The only false case this suite had was "nothing filled in at all", under which no single
+		// clause of the gate can be shown to carry its weight. Each row satisfies every other clause
+		// and breaks exactly one.
+		it.each<[string, Partial<ConfigInputs>]>([
+			["the query is empty", { dataRetrievalValue: "" }],
+			["the query is nothing but whitespace", { dataRetrievalValue: "   " }],
+			["no kind of work is chosen", { workItemTypes: [] }],
+			["nothing says where work starts", { toDoStates: [] }],
+			["nothing says work is under way", { doingStates: [] }],
+			["nothing says where work ends", { doneStates: [] }],
+		])("is false when %s", async (_label, broken) => {
+			const args = makeHookArgs();
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+			fillConfig(result, { ...everyConfigInputFilled, ...broken });
+
+			expect(result.current.configInputsValid).toBe(false);
+		});
+
+		// A connection Lighthouse has no schema for cannot be judged complete, and the guard that says
+		// so is also what stands between the gate and a read of `isRequired` on nothing.
+		it("is false when the connection has no data retrieval schema", async () => {
+			const args = makeHookArgs({ getSchema: vi.fn().mockReturnValue(null) });
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+			fillConfig(result, everyConfigInputFilled);
+
+			expect(result.current.configInputsValid).toBe(false);
 		});
 
 		it("treats dataRetrievalValue as optional when schema.isRequired=false", async () => {
@@ -321,6 +395,29 @@ describe("useCreateWizard", () => {
 
 			expect(result.current.validationError).toMatch(/validation failed/i);
 			expect(result.current.activeStep).toBe(STEP_CONFIGURE);
+		});
+
+		// Next is disabled and a spinner shown while the instance is being asked, and neither survives
+		// the answer.
+		it("marks itself validating for as long as the instance is being asked", async () => {
+			const { validateSettings, answer } = aValidationHeldOpen();
+			const args = makeHookArgs({ validateSettings });
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+
+			let finished: Promise<void> = Promise.resolve();
+			act(() => {
+				finished = result.current.handleNext();
+			});
+			expect(result.current.validating).toBe(true);
+
+			await act(async () => {
+				answer(true);
+				await finished;
+			});
+			expect(result.current.validating).toBe(false);
 		});
 	});
 
@@ -499,6 +596,31 @@ describe("useCreateWizard", () => {
 			await act(() => result.current.handleWizardComplete(fullBoardInfo));
 
 			expect(result.current.activeStep).toBe(STEP_CONFIGURE);
+			expect(result.current.validationError).toBeNull();
+		});
+
+		// ADR-126 decision 1. A refusal the backend worded reaches the browser as an ApiError, and its
+		// words are the only ones that name what an administrator has to go and fix.
+		it("shows the reason when the instance refuses what the wizard filled in", async () => {
+			const refusal = new ApiError(
+				403,
+				"ServiceNow refused to read the table 'incident' with this account.",
+				"ServiceNow returned 403 for the table 'incident'.",
+			);
+			const args = makeHookArgs({
+				validateSettings: vi.fn().mockRejectedValue(refusal),
+			});
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+			await act(() => result.current.handleWizardComplete(fullBoardInfo));
+
+			expect(result.current.validationError).toBe(refusal.message);
+			expect(result.current.validationTechnicalDetails).toBe(
+				refusal.technicalDetails,
+			);
+			expect(result.current.activeStep).toBe(STEP_CONFIGURE);
 		});
 
 		it("preserves existing state for empty board info fields", async () => {
@@ -508,14 +630,68 @@ describe("useCreateWizard", () => {
 			await waitFor(() => expect(result.current.loading).toBe(false));
 
 			act(() => result.current.selectConnection(makeConnection(1)));
-			act(() => result.current.setDataRetrievalValue("existing-query"));
-			act(() => result.current.setWorkItemTypes(["ExistingType"]));
+			fillConfig(result, {
+				...everyConfigInputFilled,
+				dataRetrievalValue: "existing-query",
+				workItemTypes: ["ExistingType"],
+			});
 
 			// Board info with empty fields — existing state should be kept
 			await act(() => result.current.handleWizardComplete(emptyBoardInfo));
 
 			expect(result.current.dataRetrievalValue).toBe("existing-query");
 			expect(result.current.workItemTypes).toEqual(["ExistingType"]);
+			expect(result.current.toDoStates).toEqual(
+				everyConfigInputFilled.toDoStates,
+			);
+			expect(result.current.doingStates).toEqual(
+				everyConfigInputFilled.doingStates,
+			);
+			expect(result.current.doneStates).toEqual(
+				everyConfigInputFilled.doneStates,
+			);
+		});
+
+		// A board whose filter is nothing but whitespace has no query to hand over, so it must not
+		// overwrite the one the administrator typed.
+		it("keeps the typed query when the board's own filter is only whitespace", async () => {
+			const args = makeHookArgs();
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+			act(() => result.current.setDataRetrievalValue("existing-query"));
+
+			await act(() =>
+				result.current.handleWizardComplete({
+					...emptyBoardInfo,
+					dataRetrievalValue: "   ",
+				}),
+			);
+
+			expect(result.current.dataRetrievalValue).toBe("existing-query");
+		});
+
+		// The spinner the administrator watches while the instance is asked.
+		it("marks itself validating for as long as the instance is being asked", async () => {
+			const { validateSettings, answer } = aValidationHeldOpen();
+			const args = makeHookArgs({ validateSettings });
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+
+			let finished: Promise<void> = Promise.resolve();
+			act(() => {
+				finished = result.current.handleWizardComplete(fullBoardInfo);
+			});
+			expect(result.current.validating).toBe(true);
+
+			await act(async () => {
+				answer(true);
+				await finished;
+			});
+			expect(result.current.validating).toBe(false);
 		});
 
 		it("clears activeWizard after completion", async () => {

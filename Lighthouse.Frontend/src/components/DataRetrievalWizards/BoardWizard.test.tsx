@@ -88,6 +88,7 @@ describe("BoardWizard", () => {
 		);
 
 		expect(screen.queryByText("Select Board")).not.toBeInTheDocument();
+		expect(mockGetBoards).not.toHaveBeenCalled();
 	});
 
 	it("shows loading state while fetching boards", () => {
@@ -155,6 +156,10 @@ describe("BoardWizard", () => {
 			expect(screen.getByText("Kanban Board")).toBeInTheDocument();
 			expect(screen.getByText("Project X Board")).toBeInTheDocument();
 		});
+
+		expect(
+			screen.queryByText(/not a member of any Visual Task Board/i),
+		).not.toBeInTheDocument();
 	});
 
 	it("disables Confirm button when no board is selected", async () => {
@@ -341,6 +346,103 @@ describe("BoardWizard", () => {
 
 		expect(screen.getByRole("dialog")).toHaveTextContent(
 			/both a table and a filter/i,
+		);
+	});
+
+	// ADR-126 decision 1 again, from the other side: only a failure that never reached the backend
+	// has no words of its own, and that is the one case this component may word itself. A plain
+	// Error is not a refusal and its message is not for an administrator.
+	it("words a failure that never reached the backend itself", async () => {
+		mockGetBoards.mockRejectedValue(new Error("socket hang up"));
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<BoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Failed to load boards. Please try again."),
+			).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("socket hang up")).not.toBeInTheDocument();
+	});
+
+	it("words a board read that never reached the backend itself", async () => {
+		mockGetBoards.mockResolvedValue(mockBoards);
+		mockGetBoardInformation.mockRejectedValue(new Error("socket hang up"));
+
+		render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<BoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Board")).toBeInTheDocument();
+		});
+
+		await userEvent.click(screen.getByLabelText("Board"));
+		await userEvent.click(await screen.findByText("Sprint Board"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Failed to read the board. Please try again."),
+			).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("socket hang up")).not.toBeInTheDocument();
+	});
+
+	// The boards on offer belong to a connection, so a wizard pointed at another one must ask again
+	// — and read the board it is then given against that connection, not the one it opened on.
+	it("asks the connection it is now pointed at", async () => {
+		mockGetBoards.mockResolvedValue(mockBoards);
+		mockGetBoardInformation.mockResolvedValue(mockBoardInformation);
+
+		const { rerender } = render(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<BoardWizard
+					open={true}
+					workTrackingSystemConnectionId={1}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => expect(mockGetBoards).toHaveBeenCalledWith(1));
+
+		rerender(
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<BoardWizard
+					open={true}
+					workTrackingSystemConnectionId={42}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => expect(mockGetBoards).toHaveBeenCalledWith(42));
+
+		await userEvent.click(screen.getByLabelText("Board"));
+		await userEvent.click(await screen.findByText("Sprint Board"));
+
+		await waitFor(() =>
+			expect(mockGetBoardInformation).toHaveBeenCalledWith(42, "1"),
 		);
 	});
 

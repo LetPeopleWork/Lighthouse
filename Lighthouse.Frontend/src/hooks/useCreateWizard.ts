@@ -178,6 +178,8 @@ export function useCreateWizard<TDto>({
 
 	const configInputsValid = useMemo(
 		() =>
+			// Stryker disable next-line ConditionalExpression: schema is null exactly when there is no
+			// connection, and hasEveryConfigInput already answers false for a null schema.
 			selectedConnection != null && hasEveryConfigInput(currentBase(), schema),
 		[selectedConnection, schema, currentBase],
 	);
