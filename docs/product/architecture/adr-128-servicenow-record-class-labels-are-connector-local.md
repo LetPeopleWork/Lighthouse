@@ -36,9 +36,10 @@ directions at its own boundary, and passes through anything it does not know. `W
 carries the words the team itself used. Nothing outside the connector knows a mapping happened.**
 
 1. `ServiceNowClassLabels` — a new pure class beside `ServiceNowReadScope` — holds the map for the
-   stock `task` hierarchy and exposes `LabelFor(class)` and `ClassFor(label)`. Both
-   **return their input unchanged when it is not in the map**. `ClassFor` recognises a canonical
-   class name before a label, and matches labels case-insensitively.
+   stock `task` hierarchy and exposes `ClassFor(label)`, which **returns its input unchanged when it
+   is not in the map**. It recognises a canonical class name before a label, and matches labels
+   case-insensitively. The map is stored class→label and inverted internally; only the label→class
+   direction is public, because after the amendment below nothing reads the other one.
 2. **Outbound (config → query)**: `ServiceNowReadScope.For` maps each configured entry through
    `ClassFor` before building `sys_class_nameIN…`, so a team configured with `Change Request` reads
    change requests. `For` is the only construction point, so every downstream consumer —
@@ -47,7 +48,8 @@ carries the words the team itself used. Nothing outside the connector knows a ma
 3. **Inbound (record → Lighthouse)**: `ServiceNowWorkItemMapper.KindOfWork` returns
    `scope.AsTyped(sys_class_name)` — **the words this team used**, not a globally-chosen label. A
    team configured with `change_request` stores `change_request`; one configured with
-   `Change Request` stores `Change Request`.
+   `Change Request` stores `Change Request`. The fallback for a record that declares no class goes
+   through `AsTyped` too — it is the same rule, so the invariant has no hole in it.
 4. **Messages**: the readability probes ask about the record class; every refusal names the typed
    form, so a coach who typed `Change Request` is never answered about `change_request`.
 5. `sys_class_name.display_value` is **not** read, even though it is free.
@@ -100,6 +102,12 @@ worse than no field.
 `change_request` "RFC" still reads *Change Request*. Accepted: the map is a convenience over a value
 that was previously shown raw, so the worst case is a different English label rather than a wrong
 number. Revisit only if a customer reports it.
+
+**Only one direction is public, and that is a review outcome.** The class→label accessor shipped
+with the map and became unreachable the moment the amendment above replaced `KindOfWork`'s
+`LabelFor` call with `AsTyped`. It was removed rather than kept "for when the picker needs it": a
+public method whose only callers are its own tests earns nothing and flatters the mutation score.
+The map data still holds both directions, so OC-4 can restore the accessor in a few lines.
 
 **The map is a maintenance surface.** It is a static set in source for the same measured reason
 ADR-116 decision 4 gives: `sys_db_object` carries class labels and is unreadable below `itil`, and
