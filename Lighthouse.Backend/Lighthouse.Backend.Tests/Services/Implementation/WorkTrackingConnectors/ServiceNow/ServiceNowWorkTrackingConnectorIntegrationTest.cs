@@ -444,7 +444,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // The board's stored filter is a verbatim encoded query in COLUMN form. If it ever stops
         // being one, pre-filling it verbatim stops being safe.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
         public async Task ABoardsOwnFilter_SelectsLessWorkThanTheWholeTableItRunsAgainst()
         {
             var board = await ABoardThisAccountCanUse();
@@ -464,7 +463,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // measured 2026-08-01). It is the legible string, which is why it is the one a careless
         // implementation reaches for.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
         public async Task TheFilterAsItReadsOnScreen_SelectsTheWholeTable()
         {
             var board = await ABoardThisAccountCanUse();
@@ -481,7 +479,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // than as a broken connection. And the instance still counts the boards it is hiding, which
         // is why the list is never counted from the header.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
         public async Task AnAccountThatSharesNoBoard_IsAnsweredWithAnEmptySuccessWhoseCountStillNamesEveryBoard()
         {
             var answer = await AskTheInstance(NoRolesUser, BoardTable, string.Empty);
@@ -498,7 +495,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // reads is the work the board's own filter selects — not the whole table, and not the board's
         // card set, which the SPIKE measured drifting behind its own filter (7 cards, 13 matches).
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
         public async Task ABoardPickedOnTheInstance_PreFillsTheWorkItsOwnFilterSelects()
         {
             IBoardInformationProvider picker = CreateSubject();
