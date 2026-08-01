@@ -780,21 +780,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             if (!workItemId.HasValue) return null;
 
             var revisions = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(), () => witClient.GetRevisionsAsync(workItemId.Value));
-            var movedToStateCategory = new List<DateTime>();
+
+            return WorkItemCategoryCrossing.LastEntryInto(StateChangesIn(revisions), targetStates, statesToIgnore);
+        }
+
+        // Every revision that changed the state, paired with the state it came from. The earliest one
+        // comes from nothing, which is how an item created straight into a category is still dated.
+        private static IEnumerable<WorkItemStateTransition> StateChangesIn(IEnumerable<AdoWorkItem> revisions)
+        {
             var previousState = string.Empty;
 
             foreach (var revision in revisions)
             {
-                if (RevisionWasChangingState(revision, out var result))
+                if (!RevisionWasChangingState(revision, out var result))
                 {
-                    var isRelevantCategory = targetStates.IsItemInList(result.state) && !targetStates.IsItemInList(previousState) && !statesToIgnore.IsItemInList(previousState);
-                    if (isRelevantCategory) movedToStateCategory.Add(result.changedDate);
-                    previousState = result.state;
+                    continue;
                 }
-            }
 
-            var last = movedToStateCategory.OrderByDescending(d => d).FirstOrDefault();
-            return last == default ? null : DateTime.SpecifyKind(last, DateTimeKind.Utc);
+                yield return new WorkItemStateTransition
+                {
+                    FromState = previousState,
+                    ToState = result.state,
+                    TransitionedAt = result.changedDate,
+                };
+
+                previousState = result.state;
+            }
         }
 
         internal static async Task<IReadOnlyList<WorkItemStateTransition>> GetAllStateTransitionsThrottled(WorkItemTrackingHttpClient witClient, int workItemId)

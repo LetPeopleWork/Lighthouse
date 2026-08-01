@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using System.Globalization;
 using System.Text.Json;
@@ -50,6 +51,11 @@ namespace Lighthouse.Backend.Factories
         }
 
         public IReadOnlyList<WorkItemStateTransition> GetAllStateTransitions(JsonElement json)
+        {
+            return StatusTransitionsIn(json);
+        }
+
+        private static IReadOnlyList<WorkItemStateTransition> StatusTransitionsIn(JsonElement json)
         {
             if (!json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out var changelog))
             {
@@ -194,56 +200,8 @@ namespace Lighthouse.Backend.Factories
 
         private static DateTime? GetTransitionDate(JsonElement json, IEnumerable<string> targetStates, IEnumerable<string> statesToIgnoreTransition)
         {
-            var movedToStateCategory = new List<DateTime>();
-
-            if (json.TryGetProperty(JiraFieldNames.ChangelogFieldName, out JsonElement changelog))
-            {
-                var histories = changelog.GetProperty(JiraFieldNames.HistoriesFieldName);
-                foreach (var history in histories.EnumerateArray())
-                {
-                    var extractedDate = ExtractDateOfStateTransitionFromHistory(targetStates, statesToIgnoreTransition, history);
-
-                    if (extractedDate.HasValue)
-                    {
-                        movedToStateCategory.Add(extractedDate.Value);
-                    }
-                }
-            }
-
-            var lastTransitionDate = movedToStateCategory.OrderByDescending(date => date).FirstOrDefault();
-            if (lastTransitionDate == default)
-            {
-                return null;
-            }
-
-            return DateTime.SpecifyKind(lastTransitionDate, DateTimeKind.Utc);
-        }
-
-        private static DateTime? ExtractDateOfStateTransitionFromHistory(IEnumerable<string> targetStates, IEnumerable<string> statesToIgnoreTransitions, JsonElement history)
-        {
-            var historyEntryCreationDateAsString = history.GetProperty(JiraFieldNames.CreatedDateFieldName).GetString() ?? string.Empty;
-            var historyEntryCreationDate = DateTime.Parse(historyEntryCreationDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-
-            DateTime? transitionDate = null;
-
-            foreach (var item in history.GetProperty(JiraFieldNames.ItemsFieldName).EnumerateArray())
-            {
-                var changedField = item.GetProperty(JiraFieldNames.FieldFieldName).GetString();
-                var newStatus = item.GetProperty(JiraFieldNames.ToStringPropertyName).GetString();
-                var oldStatus = item.GetProperty(JiraFieldNames.FromStringPropertyName).GetString();
-
-                if (changedField == JiraFieldNames.StatusFieldName && targetStates.IsItemInList(newStatus) && !targetStates.IsItemInList(oldStatus) && !statesToIgnoreTransitions.IsItemInList(oldStatus))
-                {
-                    transitionDate = historyEntryCreationDate;
-                }
-            }
-
-            if (transitionDate == null)
-            {
-                return null;
-            }
-
-            return DateTime.SpecifyKind(transitionDate.Value, DateTimeKind.Utc);
+            return WorkItemCategoryCrossing.LastEntryInto(
+                StatusTransitionsIn(json), targetStates, statesToIgnoreTransition);
         }
 
         private static DateTime? GetCreatedDateFromFields(JsonElement fields)
