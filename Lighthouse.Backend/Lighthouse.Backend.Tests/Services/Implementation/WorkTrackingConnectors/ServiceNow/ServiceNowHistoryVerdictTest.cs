@@ -22,6 +22,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] MeasuredOnNothing = [];
 
+        private static readonly string[] OnlyTheChangeRequests = ["change_request"];
+
+        private static readonly string[] MeasuredOnItInUpperCase = ["INCIDENT"];
+
+        private static readonly string[] MeasuredOnItInTitleCase = ["Incident"];
+
         // A team that named no kinds of work cannot have every one of them measured. Vacuous truth
         // would otherwise report Available off an empty definition read.
         [Test]
@@ -159,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
                 TwoKindsOfWork, TwoKindsOfWork, MeasuredOnIt);
 
-            Assert.That(unmeasured, Is.EqualTo(new[] { "change_request" }));
+            Assert.That(unmeasured, Is.EqualTo(OnlyTheChangeRequests));
         }
 
         // The per-class reading of the rule the whole-team guard already followed: an instance whose
@@ -200,7 +206,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void TheClassNamesAreComparedWithoutRegardToCase()
         {
             var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
-                OneKindOfWork, ["INCIDENT"], ["Incident"]);
+                OneKindOfWork, MeasuredOnItInUpperCase, MeasuredOnItInTitleCase);
 
             Assert.That(unmeasured, Is.Empty);
         }
