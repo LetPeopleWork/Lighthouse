@@ -14,6 +14,29 @@ This page will give you an overview of the specifics to ServiceNow when using Li
 {: .important}
 ServiceNow support is **team level only**. Portfolios are not supported and are not planned — see [Portfolios](#portfolios) for the reason. Read that section before you plan a rollout.
 
+# What to ask your ServiceNow administrator for
+
+Most of what Lighthouse needs is granted inside ServiceNow, by someone who is usually not the person setting up Lighthouse. This section is written to be handed over as-is: everything below is a yes/no your administrator can answer, with the detail behind each item linked.
+
+**1. A dedicated integration user, with a password.** Lighthouse authenticates with basic authentication — see [Authentication](#basic-authentication). A service account is strongly preferred over a personal one.
+
+**2. That user on the basic-auth allow list, if the instance enforces one.** Recent releases block basic authentication for users without the `snc_basic_auth_api_access` role. Your administrator can check whether the restriction is active and, if so, grant that role — [details and the exact properties to check](#the-snc_basic_auth_api_access-prerequisite). Lighthouse cannot see this setting and cannot warn you about it.
+
+**3. Read access to the kinds of work your teams track.** `sn_incident_read`, `sn_change_read`, `sn_request_read` — grant the ones matching the record classes you will use. These are genuinely read-only roles. See [Permissions and the minimum role set](#permissions-and-the-minimum-role-set).
+
+{: .note}
+Do **not** ask for `snc_read_only`. Despite the name it grants no read access at all — an account holding only that role behaves exactly like one holding no roles.
+
+**4. Only if you want time in state or cycle time broken down by state — two more things:**
+
+- the `itil` role on the integration user, because ServiceNow's metric tables are closed to every read-only role, and
+- a **Field value duration** metric definition on the **state field of each record class** your teams read.
+
+Item 4 is the one that most often needs work, because stock ServiceNow does not ship those definitions consistently — `incident` and `problem` have one, `change_request` does not. [How to check what exists](#how-your-administrator-checks-what-exists) and [how to create a missing one](#how-your-administrator-creates-a-missing-one) are written as click-by-click steps.
+
+{: .important}
+**Everything except item 4 is optional to get value.** Without `itil` and the metric definitions, Lighthouse still gives you throughput, WIP, work item age and forecasts. You lose time in state and cycle time by state, and nothing else.
+
 # Work Tracking System Connection
 
 To create a connection to a ServiceNow instance, you need three things:
@@ -62,6 +85,9 @@ Lighthouse needs read access to the work tables you point it at, and — only if
 | `metric_definition`, `metric_instance` | Time in state, cycle time by state | `itil` |
 
 The good news: **everything except time in state works with genuinely read-only roles.** A platform team can grant `sn_*_read` and nothing else.
+
+{: .note}
+These roles were measured on a ServiceNow cloud instance by connecting with accounts holding exactly one role at a time. If your instance is customised, or on-premises with a different ACL set, and you find you need more or less than the above, please tell us — the list is meant to be the minimum, not a safe over-ask.
 
 {: .important}
 **Time in state costs more.** `metric_definition` and `metric_instance` answer `403` for every read-only role and only open up at `itil` or above, which is a fulfiller-grade role. If your security posture will not allow that, Lighthouse still gives you throughput, WIP, age and forecasts — you lose time in state and cycle time broken down by state.
@@ -187,12 +213,37 @@ Stock ServiceNow is inconsistent about this. Measured on a current demo instance
 
 A team reading change requests on a stock instance therefore gets **no time in state for them**, however Lighthouse is configured.
 
-## How to check, and how to fix
+## How your administrator checks what exists
 
-1. In ServiceNow, open **Metric Definition**.
-2. Filter `Type = Field value duration`.
-3. Check that a definition exists for each class your team reads, sitting on **that class's state field** — `incident_state`, `problem_state`, `state`, depending on the class.
-4. If one is missing, create it: table = the class, field = its state field, type = *Field value duration*.
+1. In the navigator, go to **Metrics → Definitions** (or type `metric_definition.list`).
+2. Filter on **Type** `is` **Field value duration**.
+3. Read the **Table** and **Field** columns. A class is covered only when a row names that class **and its state field**.
+
+{: .important}
+**A row for the right table is not enough — the Field column decides.** Stock `change_request` has two Field value duration definitions, on `approval` and on `type`. Neither measures state, so change requests produce no time in state even though the filtered list shows rows for them. Check the Field, not just the Table.
+
+## How your administrator creates a missing one
+
+1. **Metrics → Definitions → New**.
+2. Fill in exactly four things:
+
+| Field on the form | Value |
+|---|---|
+| **Name** | Anything descriptive, e.g. `Incident State Duration` |
+| **Table** | The record class — `incident`, `change_request`, `problem` |
+| **Field** | That class's **state** field — see the table below |
+| **Type** | **Field value duration** |
+
+3. Leave **Active** ticked and submit.
+
+| Record class | State field to use |
+|---|---|
+| `incident` | `incident_state` |
+| `problem` | `problem_state` |
+| `change_request` | `state` |
+
+{: .note}
+The state field is **not** called `state` on every class, which is why it has to be picked per class rather than set once. Other classes follow the same pattern — check the class's own form for which field holds its lifecycle state.
 
 ## Two behaviours that surprise people
 
