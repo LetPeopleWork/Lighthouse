@@ -67,9 +67,10 @@ const fullBoardInfo: IBoardInformation = {
 };
 
 // A ServiceNow board whose lanes could not be split: query and kind of work filled in, no states.
+// The kind of work arrives as the label the coach reads, not the record class (#5610 OC-4).
 const boardInfoWithNoStates: IBoardInformation = {
 	dataRetrievalValue: "correlation_id=LIGHTHOUSE_DEMO",
-	workItemTypes: ["incident"],
+	workItemTypes: ["Incident"],
 	toDoStates: [],
 	doingStates: [],
 	doneStates: [],

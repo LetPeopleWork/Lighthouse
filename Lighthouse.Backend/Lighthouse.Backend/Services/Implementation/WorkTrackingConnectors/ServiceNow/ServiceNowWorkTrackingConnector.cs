@@ -155,8 +155,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // ADR-125 decision 4. A board's table is a candidate kind of work, so it is judged by the
             // ladder ADR-124 already shipped: a cmdb_ci board is real and creatable, and a team
             // pre-filled from one syncs nothing while saying nothing about it.
+            // The ladder is asked about the record class, because that is what sys_class_name holds;
+            // it answers in the label, because that is what the picker is about to put in the field
+            // (ADR-128).
+            var recordClass = ServiceNowBoardMapper.KindOfWorkOn(board);
+
             var unreadable = await WhyThisKindOfWorkCannotBeRead(
-                workTrackingSystemConnection, instanceUrl, ServiceNowBoardMapper.KindOfWorkOn(board));
+                workTrackingSystemConnection, instanceUrl, recordClass, ServiceNowClassLabels.LabelFor(recordClass));
 
             if (unreadable is not null)
             {

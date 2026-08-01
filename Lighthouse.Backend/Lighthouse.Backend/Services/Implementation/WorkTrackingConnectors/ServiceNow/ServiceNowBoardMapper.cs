@@ -59,6 +59,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// (ADR-125 decision 1). All of it stays editable — the board is a starting point, not a
         /// binding. The lanes arrive in the order the board arranged them.
         /// </summary>
+        /// <remarks>
+        /// Every value handed over is in the words the coach reads: the lane names already are, and
+        /// the table is labelled through <see cref="ServiceNowClassLabels.LabelFor"/> (#5610 OC-4).
+        /// #5612 deleted the save-time normalisation, so a class name pre-filled here would stay a
+        /// class name while that team's work items report the words it was configured with — a team
+        /// that syncs and forecasts nothing. <see cref="KindOfWorkOn"/> stays raw for the ladder.
+        /// </remarks>
         public static BoardInformation ToBoardInformation(JsonElement row, List<JsonElement> lanes)
         {
             var flow = TheFlowAcross(lanes);
@@ -67,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             {
                 DataRetrievalValue = ServiceNowWorkItemMapper.ReadForm(
                     row, BoardFilterField, ServiceNowWorkItemMapper.UniversalForm),
-                WorkItemTypes = [KindOfWorkOn(row)],
+                WorkItemTypes = [ServiceNowClassLabels.LabelFor(KindOfWorkOn(row))],
                 ToDoStates = flow.WorkStartsIn,
                 DoingStates = flow.WorkIsUnderWayIn,
                 DoneStates = flow.WorkEndsIn,

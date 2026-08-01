@@ -32,6 +32,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string Incidents = "incident";
 
+        // What that same kind of work is called on the coach's own ServiceNow screen. #5612 made a
+        // team's configured entries the words the coach typed, and deleted the save-time
+        // normalisation that used to catch a class name afterwards, so the picker has to hand over
+        // this form (OC-4).
+        private const string IncidentsAsItReads = "Incident";
+
+        private const string Changes = "change_request";
+        private const string ChangesAsItReads = "Change Request";
+
+        // A class this shop invented. It has no label to give, which is the shape passthrough exists
+        // for.
+        private const string AClassOfThisShopsOwn = "u_maintenance_task";
+
         // Measured on the PDI: the column form, which selects 38 of 105 incidents.
         private const string TheBoardsFilter = "correlation_id=LIGHTHOUSE_DEMO";
 
@@ -47,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheBoardThatParksCancelledWorkInTheMiddleId = "b7";
 
         private static readonly string[] TheBoardsThisConnectionCanUse = ["Incidents Kanban", "Change Requests by State"];
-        private static readonly string[] TheKindOfWorkTheBoardHolds = [Incidents];
+        private static readonly string[] TheKindOfWorkTheBoardHolds = [IncidentsAsItReads];
 
         // The stock boards' lanes as measured on the PDI 2026-08-01, split by ADR-125's rule: the
         // first lane is where work starts, the last is where it ends, everything between is under way.
@@ -120,16 +133,87 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(preFill.DataRetrievalValue, Is.EqualTo(TheBoardsFilter));
         }
 
-        // AC-B2 / D6. The board's table is the kind of work the team handles, which is the field
-        // #5611 made every ServiceNow team fill in.
+        // AC-B2 / D6, amended for OC-4. The board's table is the kind of work the team handles, which
+        // is the field #5611 made every ServiceNow team fill in — handed over in the words the coach
+        // reads rather than the class name the Table API filters on.
+        //
+        // The class name would work as a query and still be wrong: #5612 deleted DD-4, so nothing
+        // normalises it afterwards, and `GetCreatedItemsForTeam` compares a team's configured entries
+        // against `WorkItemBase.Type`, which now holds the words that team used. A picker-filled team
+        // would sync happily and forecast nothing.
         [Test]
-        public async Task PickingABoard_HandsTheTeamTheBoardsTableAsTheKindOfWorkItHandles()
+        public async Task PickingABoard_HandsTheTeamItsTableInTheWordsTheCoachReads()
         {
             var instance = AnInstanceWith(TheIncidentBoard());
 
             var preFill = await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheIncidentBoardId);
 
-            Assert.That(preFill.WorkItemTypes, Is.EqualTo(TheKindOfWorkTheBoardHolds));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preFill.WorkItemTypes, Is.EqualTo(TheKindOfWorkTheBoardHolds));
+                Assert.That(preFill.WorkItemTypes, Has.None.EqualTo(Incidents),
+                    "The raw class name is what the API filters on, not what the team calls its work.");
+            }
+        }
+
+        // The one whose two names differ by more than case, so a passthrough would be visible.
+        [Test]
+        public async Task PickingABoardWhoseClassNameIsNotItsLabel_StillHandsOverTheLabel()
+        {
+            var instance = AnInstanceWith(TheChangeBoard());
+
+            var preFill = await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId);
+
+            Assert.That(preFill.WorkItemTypes, Is.EqualTo(new[] { ChangesAsItReads }));
+        }
+
+        // AC-D2's passthrough, reached through the picker. A shop's own class has no label to give,
+        // and pre-filling nothing would be worse than pre-filling a name that at least queries.
+        [Test]
+        public async Task PickingABoardBuiltOnAClassLighthouseHasNeverHeardOf_HandsOverThatClassUnchanged()
+        {
+            var instance = AnInstanceWith(ABoardOnAClassOfThisShopsOwn());
+
+            var preFill = await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId);
+
+            Assert.That(preFill.WorkItemTypes, Is.EqualTo(new[] { AClassOfThisShopsOwn }));
+        }
+
+        // ADR-125 decision 4 meets ADR-128. The pre-fill is the label; the ladder that judges whether
+        // the board is work at all still has to be asked about the RECORD CLASS, because that is what
+        // `sys_class_name` holds. Probing for `Change Request` finds nothing and would refuse every
+        // change board on the instance.
+        [Test]
+        public async Task TheLadderThatJudgesTheBoard_IsAskedAboutTheRecordClassRatherThanItsLabel()
+        {
+            var instance = AnInstanceWith(TheChangeBoard());
+
+            await ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId);
+
+            var probes = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.Query)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(probes, Has.Some.Contains($"sys_class_name={Changes}"),
+                    "The instance filters on the class name, so that is what the probe has to name.");
+                Assert.That(probes, Has.None.Contains($"sys_class_name={ChangesAsItReads}"));
+            }
+        }
+
+        // And the refusal goes the other way: a class that holds no work is named back to the coach in
+        // the words the picker just put in their field (ADR-128).
+        [Test]
+        public void ABoardWhoseClassHoldsNoWork_IsRefusedInTheWordsThePickerHandedOver()
+        {
+            var instance = AnInstanceWith(TheChangeBoard())
+                .WhereTheHierarchyHoldsNothingOf(Changes)
+                .WhereTheTableItself(Changes, HttpStatusCode.OK, holds: 118, visible: 0);
+
+            var refusal = Assert.ThrowsAsync<ServiceNowReadException>(
+                () => ABoardPickerFor(instance).GetBoardInformation(AConnection(), TheChangeBoardId));
+
+            Assert.That(refusal?.Message, Does.Contain(ChangesAsItReads),
+                "A coach sent to look for `change_request` is being sent to look for a value the picker never showed them.");
         }
 
         // DD-2 / ADR-125 decision 2. The board holds its filter twice: once in column form and once
@@ -483,6 +567,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static BoardRow ABoardNobodyUsesAnyMore()
         {
             return new BoardRow("b5", "Last Year's Board", Incidents, "state=1", "State is New", IsActive: false);
+        }
+
+        private static BoardRow ABoardOnAClassOfThisShopsOwn()
+        {
+            return new BoardRow(TheChangeBoardId, "Maintenance", AClassOfThisShopsOwn, "active=true", "Active is true")
+            {
+                Lanes = InThisOrder("New", "In Progress", "Closed"),
+            };
         }
 
         private static BoardRow ABoardOnSomethingThatIsNotWork()

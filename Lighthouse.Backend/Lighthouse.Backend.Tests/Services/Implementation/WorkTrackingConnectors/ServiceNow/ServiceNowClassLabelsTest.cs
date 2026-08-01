@@ -166,5 +166,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             Assert.That(ServiceNowClassLabels.ClassFor(empty), Is.EqualTo(empty));
         }
+
+        // Story #5610, OC-4. The direction ADR-128 held back until something needed it: the board
+        // picker reads `change_request` off a vtb_board row and has to hand the flow coach the words
+        // their own screen shows. Nothing normalises a class name after save — #5612 deleted DD-4 —
+        // so a picker that pre-filled the class name would leave that team reading `change_request`
+        // in its Type column forever.
+        [TestCaseSource(nameof(EveryKnownKindOfWork))]
+        public void LabelFor_AKnownRecordClass_IsWhatTheCoachReadsOnTheirOwnScreen(
+            (string RecordClass, string Label) kindOfWork)
+        {
+            Assert.That(ServiceNowClassLabels.LabelFor(kindOfWork.RecordClass), Is.EqualTo(kindOfWork.Label));
+        }
+
+        // The two directions have to compose, or the picker hands over a label that the very next
+        // save resolves to a different class than the board was read from.
+        [TestCaseSource(nameof(EveryKnownKindOfWork))]
+        public void ALabelledRecordClass_ResolvesBackToTheClassItCameFrom(
+            (string RecordClass, string Label) kindOfWork)
+        {
+            var label = ServiceNowClassLabels.LabelFor(kindOfWork.RecordClass);
+
+            Assert.That(ServiceNowClassLabels.ClassFor(label), Is.EqualTo(kindOfWork.RecordClass));
+        }
+
+        // Passthrough is load-bearing in this direction too: a shop's own class has no label to give,
+        // and a board built on one must still pre-fill something that queries.
+        [Test]
+        public void LabelFor_AClassWithNoLabel_IsThatClassUnchanged()
+        {
+            Assert.That(ServiceNowClassLabels.LabelFor("u_maintenance_task"), Is.EqualTo("u_maintenance_task"));
+        }
+
+        // A board's `table` column is whatever the instance stores, and this map is keyed
+        // case-insensitively everywhere else.
+        [TestCase("CHANGE_REQUEST")]
+        [TestCase("Change_Request")]
+        public void LabelFor_ARecordClassInAnyCase_IsStillItsLabel(string recordClass)
+        {
+            Assert.That(ServiceNowClassLabels.LabelFor(recordClass), Is.EqualTo("Change Request"));
+        }
+
+        // The map-over-transform argument, read the other way round.
+        [TestCase("sc_task", "Catalog Task")]
+        [TestCase("release_task", "Feature Task")]
+        public void LabelFor_AClassWhoseLabelNoTransformProduces_IsStillCorrect(string recordClass, string label)
+        {
+            Assert.That(ServiceNowClassLabels.LabelFor(recordClass), Is.EqualTo(label));
+        }
+
+        // A freeform board stores an empty `table`, so this is a shape the picker really meets.
+        [TestCase("")]
+        [TestCase("   ")]
+        public void LabelFor_AnEmptyClass_IsReturnedUnchanged(string empty)
+        {
+            Assert.That(ServiceNowClassLabels.LabelFor(empty), Is.EqualTo(empty));
+        }
     }
 }

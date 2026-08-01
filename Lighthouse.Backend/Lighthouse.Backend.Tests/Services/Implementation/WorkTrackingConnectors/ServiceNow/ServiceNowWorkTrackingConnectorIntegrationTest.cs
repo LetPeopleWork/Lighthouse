@@ -494,6 +494,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC-B6. The whole promise of the picker, against a real instance: the work a pre-filled team
         // reads is the work the board's own filter selects — not the whole table, and not the board's
         // card set, which the SPIKE measured drifting behind its own filter (7 cards, 13 matches).
+        //
+        // Since #5610 OC-4 the pre-fill is the LABEL, so the round trip is part of the promise: the
+        // words handed to the coach have to resolve back through ClassFor to the class the board was
+        // read from, or a team saved straight off the picker reads nothing. Going through ClassFor
+        // here is not the test working around the change — it is the test taking the same path the
+        // save does (ServiceNowReadScope.For).
         [Test]
         public async Task ABoardPickedOnTheInstance_PreFillsTheWorkItsOwnFilterSelects()
         {
@@ -506,12 +512,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var preFill = await picker.GetBoardInformation(connection, boards[0].Id);
             var kindOfWork = preFill.WorkItemTypes.Single();
+            var recordClass = ServiceNowClassLabels.ClassFor(kindOfWork);
 
-            var selected = await AskTheInstance(AdminUser, kindOfWork, preFill.DataRetrievalValue);
-            var wholeTable = await AskTheInstance(AdminUser, kindOfWork, string.Empty);
+            var selected = await AskTheInstance(AdminUser, recordClass, preFill.DataRetrievalValue);
+            var wholeTable = await AskTheInstance(AdminUser, recordClass, string.Empty);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(kindOfWork, Is.Not.EqualTo(recordClass),
+                    "This instance's first shared board is an incident board, whose label and class differ by case at least — if they ever match, the round trip below stops proving anything.");
                 Assert.That(selected.Holds, Is.GreaterThan(0));
                 Assert.That(selected.Holds, Is.LessThan(wholeTable.Holds));
             }

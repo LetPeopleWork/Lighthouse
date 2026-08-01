@@ -135,5 +135,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             return ClassByLabel.TryGetValue(kindOfWork, out var recordClass) ? recordClass : kindOfWork;
         }
+
+        /// <summary>
+        /// What a record class is called on the coach's own screen — <c>change_request</c> becomes
+        /// <c>Change Request</c>. Case-insensitive. A class with no entry is returned unchanged.
+        /// </summary>
+        /// <remarks>
+        /// Story #5610, OC-4 — the direction this class deliberately withheld until something needed
+        /// it. The board picker reads a raw class off a <c>vtb_board</c> row and has to pre-fill the
+        /// words the coach reads, because #5612 deleted the save-time normalisation that would
+        /// otherwise have caught a class name afterwards.
+        /// <para>
+        /// Only a pre-fill may use this. A record's own class is reported through
+        /// <see cref="ServiceNowReadScope.AsTyped"/> instead, which answers in the words THAT team
+        /// used; this method answers in one globally-chosen word, so using it on the inbound path
+        /// would relabel a team that deliberately typed the class name.
+        /// </para>
+        /// </remarks>
+        public static string LabelFor(string recordClass)
+        {
+            return LabelByClass.TryGetValue(recordClass, out var label) ? label : recordClass;
+        }
     }
 }
