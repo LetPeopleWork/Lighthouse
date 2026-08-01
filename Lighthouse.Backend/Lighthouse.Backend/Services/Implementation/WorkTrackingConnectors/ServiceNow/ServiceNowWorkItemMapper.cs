@@ -91,9 +91,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         /// <param name="record">A record from a <c>sysparm_display_value=all</c> response.</param>
         /// <param name="owner">The team whose state mapping decides category and mapped name.</param>
-        /// <param name="table">The table the team reads through, used as the kind of work only where
+        /// <param name="scope">What this team named its work, under both names (ADR-128). The
+        /// record's class is reported back in the words THIS team used, so a team's config and its
+        /// work items always agree — whichever form was typed. Also the fallback kind of work where
         /// the record does not say its own (ADR-123 decision 8).</param>
-        public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, string table)
+        public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, ServiceNowReadScope scope)
         {
             var stateLabel = ReadStateLabel(record);
             var recordNumber = ReadRecordNumber(record);
@@ -103,7 +105,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             {
                 ReferenceId = recordNumber,
                 Name = ReadForm(record, TitleField, UniversalForm),
-                Type = KindOfWork(record, table),
+                Type = KindOfWork(record, scope),
                 State = owner.MapRawStateToMappedName(stateLabel),
                 StateCategory = stateCategory,
                 Order = recordNumber,
@@ -117,18 +119,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // the task hierarchy says change_request. The fallback is not padding: ReadForm answers
         // string.Empty for a field that is not there, and an empty Type on every row of a table that
         // does not carry sys_class_name would be a worse silent data change than the one being fixed.
-        private static string KindOfWork(JsonElement record, string table)
+        private static string KindOfWork(JsonElement record, ServiceNowReadScope scope)
         {
             var recordClass = ReadForm(record, RecordClassField, UniversalForm);
 
-            // ADR-128: the label, from the map, never from sys_class_name.display_value. The
-            // display_value arrives free on this very record and is deliberately not read — it would
-            // give a class the map does not know a pretty label here while the team's config kept the
-            // class name, and GetCreatedItemsForTeam compares the two. The map passes an unknown class
-            // through unchanged, which keeps both sides saying the same thing.
+            // ADR-128, amended: the words THIS TEAM used for that class, not a globally-chosen label.
+            // A team configured with `change_request` stores change_request; one configured with
+            // `Change Request` stores Change Request. Config and work items therefore agree by
+            // CONSTRUCTION, for every team and every form, with nothing to normalise on save and no
+            // path -- API, CLI or MCP -- that can route around it.
+            //
+            // sys_class_name.display_value arrives free on this very record and is still deliberately
+            // not read: it answers what the INSTANCE calls the class, which is a third vocabulary, and
+            // GetCreatedItemsForTeam compares Type against the team's own configured entries.
             return string.IsNullOrWhiteSpace(recordClass)
-                ? table
-                : ServiceNowClassLabels.LabelFor(recordClass);
+                ? ServiceNowReadScope.RootTable
+                : scope.AsTyped(recordClass);
         }
 
         /// <summary>

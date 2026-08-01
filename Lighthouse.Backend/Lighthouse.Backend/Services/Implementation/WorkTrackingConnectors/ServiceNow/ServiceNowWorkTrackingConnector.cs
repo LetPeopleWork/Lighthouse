@@ -169,7 +169,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .Select(record => new MappedRecord(
                     ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
-                    ServiceNowWorkItemMapper.MapRecord(record, team, ServiceNowReadScope.RootTable)))
+                    ServiceNowWorkItemMapper.MapRecord(record, team, scope)))
                 .ToList();
 
             ReportStatesTheTeamNeverMapped(mapped, team);
@@ -678,7 +678,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             foreach (var recordClass in scope.KindsOfWork)
             {
-                var unreadable = await WhyThisKindOfWorkCannotBeRead(connection, instanceUrl, recordClass);
+                var unreadable = await WhyThisKindOfWorkCannotBeRead(
+                    connection, instanceUrl, recordClass, scope.AsTyped(recordClass));
 
                 if (unreadable is not null)
                 {
@@ -695,8 +696,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // configuration therefore costs ONE request per kind of work, and only a class the hierarchy
         // holds none of pays for a second to explain why: misspelt, not work at all, or genuinely
         // empty everywhere, which is accepted (OQ-8).
+        // ADR-128: the probes ask about the RECORD CLASS, because that is what the instance filters
+        // on; every message names ASTYPED, because that is what the flow coach put in the field. A
+        // coach who typed `Change Request` and is answered about `change_request` is being sent to
+        // look for a value they never entered.
         private async Task<ConnectionValidationResult?> WhyThisKindOfWorkCannotBeRead(
-            WorkTrackingSystemConnection connection, string instanceUrl, string recordClass)
+            WorkTrackingSystemConnection connection, string instanceUrl, string recordClass, string asTyped)
         {
             if (!TryCreateClassInTheHierarchyProbeUri(instanceUrl, recordClass, out var inTheHierarchyUri)
                 || !TryCreateProbeUri(instanceUrl, recordClass, out var ownTableUri))
@@ -707,7 +712,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var inTheHierarchy = await Probe(connection, inTheHierarchyUri);
 
             var contributes = ServiceNowTeamQueryVerdict.FromWorkHierarchyProbe(
-                recordClass,
+                asTyped,
                 ServiceNowReadScope.RootTable,
                 inTheHierarchy.StatusCode,
                 inTheHierarchy.CarriesRecords,
@@ -727,7 +732,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var onItsOwnTable = await Probe(connection, ownTableUri);
 
             var kindOfWork = ServiceNowTeamQueryVerdict.FromClassTableProbe(
-                recordClass,
+                asTyped,
                 ServiceNowReadScope.RootTable,
                 onItsOwnTable.StatusCode,
                 onItsOwnTable.CarriesRecords,

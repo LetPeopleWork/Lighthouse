@@ -65,8 +65,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(workItems.Select(item => item.ReferenceId), Is.EquivalentTo(BothKindsOfWork),
                     "One team, both kinds of work — and the problem record is a kind this team never named.");
-                Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(new[] { "Incident", "Change Request" }),
-                    "Each row is labelled with the kind of work it is, not with the hierarchy the team is rooted at — and since ADR-128 (#5612) in the words ServiceNow uses for it, not the column value.");
+                Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(IncidentsAndChanges),
+                    "Each row is labelled with the kind of work it is, not with the hierarchy the team is rooted at — in the words THIS team named it with (ADR-128), which here are the class names.");
             }
         }
 
@@ -425,7 +425,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]))).ToList();
 
-            Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(new[] { "Incident", "Change Request" }));
+            Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(new[] { "Incident", "Change Request" }),
+                "The team named its work the way ServiceNow does, so that is what its rows say.");
         }
 
         // AC-D1, the single most important test in the slice. The vocabularies have to converge, or
