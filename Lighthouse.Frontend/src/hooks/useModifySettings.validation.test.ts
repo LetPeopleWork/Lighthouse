@@ -243,4 +243,110 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(result.current.validationError).toBeNull();
 		expect(result.current.validationTechnicalDetails).toBeNull();
 	});
+
+	it("@BUG-5628 re-probes when a later save changes the query", async () => {
+		const validateSettings = vi.fn().mockResolvedValue(true);
+		const args = makeArgs({ validateSettings });
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "query-one"));
+		await settleDebounce();
+		await waitFor(() => expect(validateSettings).toHaveBeenCalledTimes(1));
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "query-two"));
+		await settleDebounce();
+		await waitFor(() => expect(validateSettings).toHaveBeenCalledTimes(2));
+
+		expect(validateSettings).toHaveBeenLastCalledWith(
+			expect.objectContaining({ dataRetrievalValue: "query-two" }),
+		);
+	});
+
+	it("@BUG-5628 re-probes when a later save changes the work item types", async () => {
+		const validateSettings = vi.fn().mockResolvedValue(true);
+		const args = makeArgs({ validateSettings });
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.workItemTypeHandlers.onAdd("Task"));
+		await settleDebounce();
+		await waitFor(() => expect(validateSettings).toHaveBeenCalledTimes(1));
+
+		act(() => result.current.workItemTypeHandlers.onAdd("Epic"));
+		await settleDebounce();
+		await waitFor(() => expect(validateSettings).toHaveBeenCalledTimes(2));
+
+		expect(validateSettings).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				workItemTypes: ["Story", "Bug", "Task", "Epic"],
+			}),
+		);
+	});
+
+	it("@BUG-5628 probes the payload that supersedes the one queued behind an in-flight save", async () => {
+		let releaseFirstSave: () => void = () => undefined;
+		const firstSaveInFlight = new Promise<undefined>((resolve) => {
+			releaseFirstSave = () => resolve(undefined);
+		});
+		const saveSettings = vi
+			.fn()
+			.mockReturnValueOnce(firstSaveInFlight)
+			.mockResolvedValue(undefined);
+		const validateSettings = vi.fn().mockResolvedValue(true);
+		const args = makeArgs({ saveSettings, validateSettings });
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() =>
+			result.current.updateSettings("dataRetrievalValue", "superseded-query"),
+		);
+		await settleDebounce();
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+
+		act(() =>
+			result.current.updateSettings("dataRetrievalValue", "final-query"),
+		);
+		await settleDebounce();
+
+		await act(async () => {
+			releaseFirstSave();
+			await firstSaveInFlight;
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+		await waitFor(() =>
+			expect(validateSettings).toHaveBeenCalledWith(
+				expect.objectContaining({ dataRetrievalValue: "final-query" }),
+			),
+		);
+		await act(async () => {});
+
+		expect(validateSettings).toHaveBeenCalledTimes(1);
+	});
+
+	it("@BUG-5628 @error swallows a probe failure the connector did not report as an ApiError", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		try {
+			const validateSettings = vi.fn().mockRejectedValue(new Error("boom"));
+			const args = makeArgs({ validateSettings });
+			const { result } = renderHook(() => useModifySettings(args));
+			await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+			act(() =>
+				result.current.updateSettings("dataRetrievalValue", "exploding-query"),
+			);
+			await settleDebounce();
+			await waitFor(() => expect(result.current.saveState).toBe("saved"));
+			await waitFor(() => expect(validateSettings).toHaveBeenCalledTimes(1));
+			await act(async () => {});
+
+			expect(result.current.validationError).toBeNull();
+			expect(result.current.validationTechnicalDetails).toBeNull();
+			expect(consoleError).toHaveBeenCalled();
+		} finally {
+			consoleError.mockRestore();
+		}
+	});
 });
