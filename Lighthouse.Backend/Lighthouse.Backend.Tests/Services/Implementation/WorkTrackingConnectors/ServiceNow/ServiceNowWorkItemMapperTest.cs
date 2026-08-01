@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = AFinishedRecordWith(closed: "2026-07-30 08:00:00");
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 8, 0, 0, DateTimeKind.Utc)));
         }
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = AFinishedRecordWith(closed: "");
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             using (Assert.EnterMultipleScope())
             {
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordWith((ServiceNowWorkItemMapper.ClosedField, "", ""));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.ClosedDate, Is.Null);
         }
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 (ServiceNowWorkItemMapper.StateField, "In Progress", "2"),
                 (ServiceNowWorkItemMapper.ClosedField, "2026-07-29 17:25:29", "2026-07-30 00:25:29"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             using (Assert.EnterMultipleScope())
             {
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 (ServiceNowWorkItemMapper.OpenedField, "2026-07-09 02:46:49", "2026-07-09 09:46:49"),
                 (ServiceNowWorkItemMapper.CreatedField, "2026-07-29 06:46:49", "2026-07-29 13:46:49"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 9, 9, 46, 49, DateTimeKind.Utc)));
         }
@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 (ServiceNowWorkItemMapper.OpenedField, "", ""),
                 (ServiceNowWorkItemMapper.CreatedField, "2026-07-29 06:46:49", "2026-07-29 13:46:49"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 29, 13, 46, 49, DateTimeKind.Utc)));
         }
@@ -142,7 +142,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 AFinishedState,
                 (ServiceNowWorkItemMapper.ClosedField, "2026-07-29 21:25:29", "2026-07-30 04:25:29"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 4, 25, 29, DateTimeKind.Utc)),
                 "The instance-local form of this timestamp falls on the 29th and the universal form on the 30th. Throughput buckets by day, so reading the wrong form moves finished work to the wrong day.");
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var record = ARecordWith(
                 (ServiceNowWorkItemMapper.OpenedField, "2026-07-09 21:46:49", "2026-07-10 04:46:49"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 10, 4, 46, 49, DateTimeKind.Utc)));
         }
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var record = ARecordWith(
                 (ServiceNowWorkItemMapper.CreatedField, "2026-07-28 23:46:48", "2026-07-29 06:46:48"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.CreatedDate, Is.EqualTo(new DateTime(2026, 7, 29, 6, 46, 48, DateTimeKind.Utc)));
         }
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 AFinishedState,
                 (ServiceNowWorkItemMapper.ClosedField, "2026-07-29 17:25:29", universalForm));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 0, 25, 29, DateTimeKind.Utc)),
                 "All three forms name the same instant, so all three have to map onto it whatever the host machine's own timezone is.");
@@ -213,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var record = ARecordWith((ServiceNowWorkItemMapper.StateField, "In Progress", "2"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, team, Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, team, ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.State, Is.EqualTo("Doing"));
         }
@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordWith((ServiceNowWorkItemMapper.StateField, label, "99"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.StateCategory, Is.EqualTo(expected));
         }
@@ -236,7 +236,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordWith((ServiceNowWorkItemMapper.RecordNumberField, "INC0010029", "INC0010029"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.ReferenceId, Is.EqualTo("INC0010029"));
         }
@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordWith((ServiceNowWorkItemMapper.TitleField, "Printer on 3rd floor is offline", "Printer on 3rd floor is offline"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.Name, Is.EqualTo("Printer on 3rd floor is offline"));
         }
@@ -266,7 +266,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordFrom(json);
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem, Is.Not.Null,
                 "A record Lighthouse cannot read a field off is one unmapped record, not a failed sync for the whole team.");
@@ -299,23 +299,131 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordWith((RecordClassField, "Change Request", "change_request"));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), TheWholeHierarchy);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading("change_request"), InstanceUrl);
 
+            // Still the system name — because that is what THIS team named (ADR-128, amended). The
+            // same record on a team that named `Change Request` reports Change Request. The rule is
+            // not "class name" nor "label" but "the words this team used", which is what makes a
+            // team's config and its work items agree by construction.
             Assert.That(workItem.Type, Is.EqualTo("change_request"),
-                "The system name the query matches on, never the label the coach reads on their own screen.");
+                "The words this team named its work with. ServiceNowReadScope carries both forms and reports back the one that was typed.");
         }
 
         // AC-B2's other half, and the reason no shipped team's data moves: for a team reading a single
-        // kind of work the record's own kind and the configured table are the same string.
+        // kind of work the record's own kind and the configured entry are the same string. ADR-128 did
+        // not change that — it changed WHICH string, per team, and this team named the class.
         [Test]
         public void WorkOnATeamReadingOneKindOfWork_IsLabelledExactlyAsItWasBefore()
         {
             var record = ARecordWith((RecordClassField, "Incident", Table));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
             Assert.That(workItem.Type, Is.EqualTo(Table));
         }
+
+        // The other half of the amended ADR-128: the SAME record, on a team that named its work the
+        // way ServiceNow does, reports back in those words. One record, two teams, two vocabularies —
+        // and each team's config agrees with its own data, which is the property that matters.
+        [Test]
+        public void WorkOnATeamThatNamedItsWorkByLabel_IsLabelledThatWay()
+        {
+            var record = ARecordWith((RecordClassField, "Incident", Table));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading("Incident"), InstanceUrl);
+
+            Assert.That(workItem.Type, Is.EqualTo("Incident"));
+        }
+
+        // A kind of work the team never named cannot reach here from a sync — the query filters to the
+        // named ones — but AsTyped still has to answer sensibly rather than throw.
+        [Test]
+        public void WorkOfAKindTheTeamNeverNamed_KeepsTheClassTheRecordReports()
+        {
+            var record = ARecordWith((RecordClassField, "Problem", "problem"));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
+
+            Assert.That(workItem.Type, Is.EqualTo("problem"));
+        }
+
+        private static ServiceNowReadScope ATeamReading(params string[] kindsOfWork)
+        {
+            return ServiceNowReadScope.For([.. kindsOfWork]);
+        }
+
+        // ---- Story #5612 item 1: the record is reachable from the chart. ----
+
+        // The whole of the bucket's first item. Every other connector populates WorkItemBase.Url and
+        // WorkItemsDialog already renders it as a link; ServiceNow was the only one of five leaving a
+        // work item's id inert.
+        [Test]
+        public void AWorkItem_CarriesTheAddressOfItsRecordInServiceNow()
+        {
+            var record = ARecordWith(
+                (RecordClassField, "Incident", "incident"),
+                (ServiceNowWorkItemMapper.RecordIdField, "1234", "a1b2c3"));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
+
+            Assert.That(workItem.Url, Is.EqualTo($"{InstanceUrl.TrimEnd('/')}/incident.do?sys_id=a1b2c3"));
+        }
+
+        // The reason the address is built from the RECORD's class and not from the team's: the .do
+        // path is class-specific, so a team reading two kinds of work needs a different path per row.
+        // Building it from the team's first kind, or from the hierarchy, 404s for every other row.
+        [Test]
+        public void WorkOfEachKindOnATeam_AddressesItsOwnKindsPage()
+        {
+            var change = ARecordWith(
+                (RecordClassField, "Change Request", "change_request"),
+                (ServiceNowWorkItemMapper.RecordIdField, "CHG1", "deadbeef"));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(
+                change, ATeamThatCalls(), ATeamReading("incident", "change_request"), InstanceUrl);
+
+            Assert.That(workItem.Url, Does.Contain("/change_request.do?").And.Not.Contain("/incident.do?"));
+        }
+
+        // OC-3, settled the way Jira already settles it at JiraWorkTrackingConnector.cs:1297. The
+        // Instance Url is user-entered and a trailing slash is the likeliest thing they leave on it.
+        [TestCase("https://dev191338.service-now.com")]
+        [TestCase("https://dev191338.service-now.com/")]
+        public void AnInstanceAddressWithOrWithoutATrailingSlash_ProducesTheSameLink(string instanceUrl)
+        {
+            var record = ARecordWith(
+                (RecordClassField, "Incident", "incident"),
+                (ServiceNowWorkItemMapper.RecordIdField, "INC1", "abc"));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), instanceUrl);
+
+            Assert.That(workItem.Url, Is.EqualTo("https://dev191338.service-now.com/incident.do?sys_id=abc"));
+        }
+
+        // A link that 404s is worse than an absent one, and the dialog already renders a null url as
+        // plain text. Both halves are required because a record missing either cannot be addressed.
+        [Test]
+        public void ARecordMissingEitherHalfOfItsAddress_GetsNoLinkRatherThanABrokenOne()
+        {
+            var noRecordId = ARecordWith((RecordClassField, "Incident", "incident"));
+            var noClass = ARecordWith((ServiceNowWorkItemMapper.RecordIdField, "INC1", "abc"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    ServiceNowWorkItemMapper.MapRecord(noRecordId, ATeamThatCalls(), ATeamReading(Table), InstanceUrl).Url,
+                    Is.Null);
+                Assert.That(
+                    ServiceNowWorkItemMapper.MapRecord(noClass, ATeamThatCalls(), ATeamReading(Table), InstanceUrl).Url,
+                    Is.Null);
+                Assert.That(
+                    ServiceNowWorkItemMapper.MapRecord(noClass, ATeamThatCalls(), ATeamReading(Table), string.Empty).Url,
+                    Is.Null,
+                    "An unset instance address cannot produce one either.");
+            }
+        }
+
+        private const string InstanceUrl = "https://dev191338.service-now.com/";
 
         // Not defensive padding: ReadForm answers string.Empty for a field that is not there, and an
         // empty Type on every row of a custom table would be a worse silent data change than the one
@@ -325,17 +433,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var record = ARecordWith((RecordClassField, "", ""));
 
-            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
-            Assert.That(workItem.Type, Is.EqualTo(Table));
+            // The hierarchy every ServiceNow read is rooted at, since #5611 removed the
+            // connection-scope table. A record that does not say its own kind cannot be attributed to
+            // one of the team's named kinds without guessing which.
+            Assert.That(workItem.Type, Is.EqualTo(ServiceNowReadScope.RootTable));
+        }
+
+        // The blank-kind fallback obeys ADR-128 like every other row. A team that typed the label
+        // would otherwise get `task` on exactly these rows while its config said `Task`, which is the
+        // config-versus-data divergence the whole design exists to make impossible.
+        [Test]
+        public void WorkThatLeavesItsKindBlank_OnATeamThatNamedItsKindByLabel_IsStillLabelled()
+        {
+            var record = ARecordWith((RecordClassField, "", ""));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading("Task"), InstanceUrl);
+
+            Assert.That(workItem.Type, Is.EqualTo("Task"));
         }
 
         [Test]
         public void WorkFromATableThatDoesNotRecordItsKind_KeepsTheKindTheTeamReadsThrough()
         {
-            var workItem = ServiceNowWorkItemMapper.MapRecord(ARecordWith(), ATeamThatCalls(), Table);
+            var workItem = ServiceNowWorkItemMapper.MapRecord(ARecordWith(), ATeamThatCalls(), ATeamReading(Table), InstanceUrl);
 
-            Assert.That(workItem.Type, Is.EqualTo(Table));
+            // The hierarchy Lighthouse reads through, not the team's first named kind of work. Since
+            // #5611 removed the connection-scope table every read is task-rooted, so this is the only
+            // value the old `table` parameter could ever have carried at the real call site.
+            Assert.That(workItem.Type, Is.EqualTo(ServiceNowReadScope.RootTable));
         }
 
         // The field is already in every record of the connector's sysparm_display_value=all read, so

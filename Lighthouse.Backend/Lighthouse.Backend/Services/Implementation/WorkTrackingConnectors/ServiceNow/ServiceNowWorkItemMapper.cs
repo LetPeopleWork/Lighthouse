@@ -87,23 +87,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
+        /// The record's own class, which is its kind of work (ADR-123 decision 8). Never the
+        /// display value, for the reason <see cref="ServiceNowClassLabels"/> gives.
+        /// </summary>
+        public static string ReadRecordClass(JsonElement record)
+        {
+            return ReadForm(record, RecordClassField, UniversalForm);
+        }
+
+        /// <summary>
         /// Maps one ServiceNow record onto a Lighthouse work item. US-02 AC2.
         /// </summary>
         /// <param name="record">A record from a <c>sysparm_display_value=all</c> response.</param>
         /// <param name="owner">The team whose state mapping decides category and mapped name.</param>
-        /// <param name="table">The table the team reads through, used as the kind of work only where
+        /// <param name="scope">What this team named its work, under both names (ADR-128). The
+        /// record's class is reported back in the words THIS team used, so a team's config and its
+        /// work items always agree — whichever form was typed. Also the fallback kind of work where
         /// the record does not say its own (ADR-123 decision 8).</param>
-        public static WorkItemBase MapRecord(JsonElement record, IWorkItemQueryOwner owner, string table)
+        public static WorkItemBase MapRecord(
+            JsonElement record, IWorkItemQueryOwner owner, ServiceNowReadScope scope, string instanceUrl)
         {
             var stateLabel = ReadStateLabel(record);
             var recordNumber = ReadRecordNumber(record);
             var stateCategory = owner.MapStateToStateCategory(stateLabel);
+            var recordClass = ReadRecordClass(record);
 
             return new WorkItemBase
             {
                 ReferenceId = recordNumber,
                 Name = ReadForm(record, TitleField, UniversalForm),
-                Type = KindOfWork(record, table),
+                Type = KindOfWork(recordClass, scope),
+                Url = RecordAddress(record, recordClass, instanceUrl),
                 State = owner.MapRawStateToMappedName(stateLabel),
                 StateCategory = stateCategory,
                 Order = recordNumber,
@@ -113,15 +127,56 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             };
         }
 
+        /// <summary>
+        /// Where the record lives in ServiceNow, so a coach can open it from a Lighthouse chart the
+        /// way they already can on every other connector.
+        /// </summary>
+        /// <remarks>
+        /// Story #5612 item 1. Built from the record's OWN class rather than from the team's kinds of
+        /// work: the <c>.do</c> path is class-specific, so a team reading incidents and change
+        /// requests needs a different path per row. Both parts are already in the payload — nothing
+        /// here costs a request.
+        /// <para>
+        /// No address at all when either part is missing. A link that 404s is worse than an absent
+        /// one, and <c>WorkItemsDialog</c> already renders the id as plain text when the url is null.
+        /// </para>
+        /// </remarks>
+        private static string? RecordAddress(JsonElement record, string recordClass, string instanceUrl)
+        {
+            var recordId = ReadRecordId(record);
+
+            if (string.IsNullOrWhiteSpace(instanceUrl)
+                || string.IsNullOrWhiteSpace(recordClass)
+                || string.IsNullOrWhiteSpace(recordId))
+            {
+                return null;
+            }
+
+            // The same trim Jira's connector already does on its user-entered base url
+            // (JiraWorkTrackingConnector.cs:1297); ServiceNow's Instance Url is just as user-entered.
+            return $"{instanceUrl.TrimEnd('/')}/{recordClass}.do?sys_id={recordId}";
+        }
+
         // ADR-123 decision 8. A record class IS a work item type, so a change request read through
         // the task hierarchy says change_request. The fallback is not padding: ReadForm answers
         // string.Empty for a field that is not there, and an empty Type on every row of a table that
         // does not carry sys_class_name would be a worse silent data change than the one being fixed.
-        private static string KindOfWork(JsonElement record, string table)
+        private static string KindOfWork(string recordClass, ServiceNowReadScope scope)
         {
-            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
-
-            return string.IsNullOrWhiteSpace(recordClass) ? table : recordClass;
+            // ADR-128, amended: the words THIS TEAM used for that class, not a globally-chosen label.
+            // A team configured with `change_request` stores change_request; one configured with
+            // `Change Request` stores Change Request. Config and work items therefore agree by
+            // CONSTRUCTION, for every team and every form, with nothing to normalise on save and no
+            // path -- API, CLI or MCP -- that can route around it.
+            //
+            // sys_class_name.display_value arrives free on this very record and is still deliberately
+            // not read: it answers what the INSTANCE calls the class, which is a third vocabulary, and
+            // GetCreatedItemsForTeam compares Type against the team's own configured entries.
+            // The fallback goes through AsTyped too. It is the same rule, not a separate one: a team
+            // that typed `Task` must not have a row silently stored as `task` just because that row
+            // declined to say its own class.
+            return scope.AsTyped(
+                string.IsNullOrWhiteSpace(recordClass) ? ServiceNowReadScope.RootTable : recordClass);
         }
 
         /// <summary>

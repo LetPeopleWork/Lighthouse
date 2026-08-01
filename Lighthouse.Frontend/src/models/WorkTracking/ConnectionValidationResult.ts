@@ -1,9 +1,5 @@
 export interface IConnectionValidationResult {
 	isValid: boolean;
-	/** Present only when a working connection still has something worth saying (ADR-118 D5). */
-	advisory?: string;
-	/** Machine-readable half of {@link advisory}, free-form per connector. */
-	advisoryCode?: string;
 }
 
 /**
@@ -21,9 +17,5 @@ export function readConnectionValidation(
 		return { isValid: payload };
 	}
 
-	return {
-		isValid: payload.isValid === true,
-		advisory: payload.advisory,
-		advisoryCode: payload.advisoryCode,
-	};
+	return { isValid: payload.isValid === true };
 }

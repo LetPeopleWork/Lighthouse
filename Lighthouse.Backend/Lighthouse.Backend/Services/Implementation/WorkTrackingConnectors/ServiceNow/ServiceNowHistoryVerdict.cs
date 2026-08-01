@@ -9,9 +9,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// </summary>
     public static class ServiceNowHistoryVerdict
     {
-        /// <summary>Every connection reads the whole work hierarchy, so its teams decide.</summary>
-        public const string PerTeamCode = "history_determined_per_team";
-
         /// <summary>
         /// Decides whether this instance can supply transition history, from the answer to the
         /// metric-definition read: the status it returned, and which of the team's kinds of work a
@@ -79,23 +76,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// What connection validation can say about transition history: nothing, because the question
-        /// has no answer at that scope (ADR-123 decision 10).
+        /// Which of the team's kinds of work returned span rows that were none of them states.
         /// </summary>
         /// <remarks>
-        /// <c>metric_definition</c> holds 0 rows for <c>table=task</c> — definitions attach to
-        /// concrete classes only — so a definition read here would report a missing state metric and
-        /// tell the administrator to activate one on the state field of <c>task</c>. That is advice
-        /// which cannot be followed, and it contradicts what their teams will actually get. One
-        /// request saved, one false statement not made. Deliberately not a new
-        /// <see cref="ServiceNowHistoryAvailability"/> member: the enum is what
-        /// <c>SupportsTransitionHistory</c> branches on, and connection validation does not write it.
+        /// Bug #5630. <see cref="From"/> asks whether a <c>field_value_duration</c> definition came
+        /// back per class; this asks whether one of them measures <em>state</em>, which is a question
+        /// only the spans can answer — stock <c>change_request</c> carries those definitions on
+        /// <c>approval</c> and <c>type</c> and none on <c>state</c>, and the definition read cannot
+        /// tell the two apart. Rows that arrived and were all discarded are the evidence; no rows are
+        /// not, for the reason the whole-team guard already gives — a class whose records have not
+        /// moved since the definition was activated is a quiet class, not a broken one.
         /// </remarks>
-        public static ConnectionValidationResult HistoryIsDecidedPerTeam()
+        public static IReadOnlyList<string> KindsOfWorkMeasuredByNothingOnState(
+            IEnumerable<string> kindsOfWorkTheTeamNamed,
+            IReadOnlyCollection<string> kindsOfWorkThatReturnedSpans,
+            IReadOnlyCollection<string> kindsOfWorkWhoseSpansTheTeamRecognises)
         {
-            return ConnectionValidationResult.SuccessWith(
-                PerTeamCode,
-                $"The connection works. Lighthouse reads ServiceNow through '{ServiceNowReadScope.RootTable}', which holds every kind of record a team might work on, so whether Lighthouse can see when work started is decided by the kinds of work each team names rather than by this connection — activate a Field value duration metric definition on the state field of each of those, not on '{ServiceNowReadScope.RootTable}', which carries none.");
+            return
+            [
+                .. kindsOfWorkTheTeamNamed.Where(kindOfWork =>
+                    kindsOfWorkThatReturnedSpans.Contains(kindOfWork, StringComparer.OrdinalIgnoreCase)
+                    && !kindsOfWorkWhoseSpansTheTeamRecognises.Contains(kindOfWork, StringComparer.OrdinalIgnoreCase)),
+            ];
         }
     }
 

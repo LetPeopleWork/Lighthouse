@@ -32,7 +32,6 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
-import ValidationAdvisory from "../Connections/ValidationAdvisory";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
 
@@ -124,10 +123,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
 		string | null
 	>(null);
-	const [validationAdvisory, setValidationAdvisory] = useState<string | null>(
-		null,
-	);
-
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 	const { licenseStatus } = useLicenseRestrictions();
@@ -315,7 +310,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const clearValidationFeedback = () => {
 		setValidationErrorMessage(null);
 		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
 	};
 
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
@@ -409,9 +403,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			};
 
 			try {
-				const { isValid, advisory } =
-					await validateConnectionSettings(connection);
-				setValidationAdvisory(advisory ?? null);
+				const { isValid } = await validateConnectionSettings(connection);
 				if (!isValid) {
 					setValidationErrorMessage(
 						`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`,
@@ -692,15 +684,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 									</Typography>
 								)}
 							</Alert>
-						</Grid>
-					)}
-
-					{validationAdvisory !== null && (
-						<Grid size={{ xs: 12 }}>
-							<ValidationAdvisory
-								advisory={validationAdvisory}
-								testId="connection-settings-validation-advisory"
-							/>
 						</Grid>
 					)}
 

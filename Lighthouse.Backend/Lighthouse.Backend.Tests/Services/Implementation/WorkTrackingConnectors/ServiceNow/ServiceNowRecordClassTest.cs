@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItems.Select(item => item.ReferenceId), Is.EquivalentTo(BothKindsOfWork),
                     "One team, both kinds of work — and the problem record is a kind this team never named.");
                 Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(IncidentsAndChanges),
-                    "Each row is labelled with the kind of work it is, not with the hierarchy the team is rooted at.");
+                    "Each row is labelled with the kind of work it is, not with the hierarchy the team is rooted at — in the words THIS team named it with (ADR-128), which here are the class names.");
             }
         }
 
@@ -376,7 +376,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // actively wrong: it told the administrator to activate a definition on the state field of
         // task, advice that cannot be followed and that contradicts what their teams will get.
         [Test]
-        public async Task ValidatingAConnection_SaysStateHistoryIsDecidedPerTeam()
+        public async Task ValidatingAConnection_SaysNothingAboutStateHistory()
         {
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
@@ -386,10 +386,130 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.True);
-                Assert.That(result.AdvisoryCode, Is.EqualTo("history_determined_per_team"));
                 Assert.That(QueriesAskedOf(instance, "metric_definition"), Is.Empty,
                     "One request saved, because there is nothing meaningful to read.");
             }
+        }
+
+        // ---- Story #5612, ADR-128: a team names its work the way ServiceNow names it. ----
+        //
+        // NOTE on the comment at NoSuchKindOfWork above and on the rung-1 test below: #5611 recorded
+        // "the flow coach reads Change Request on their own screen and has to type change_request"
+        // as the canonical user error, and refused it. ADR-128 inverts that — the label is now an
+        // accepted form. The refusal survives unchanged for names that are genuinely wrong, because
+        // an unknown name passes through the map untouched and still reaches the same probe.
+
+        // The point of the whole story, at the connector boundary. What a coach reads on their own
+        // ServiceNow screen is what they may type, and it selects the same work as the class name.
+        [Test]
+        public async Task ATeamThatNamesItsWorkTheWayServiceNowDoes_ReadsTheSameWorkAsOneNamingTheRecordClass()
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]));
+
+            Assert.That(QueriesAskedOf(instance, TheWholeHierarchy)[0],
+                Does.Contain("sys_class_nameINincident,change_request"),
+                "The label is mapped before the clause is built. ServiceNow never sees the label.");
+        }
+
+        // Hoisted rather than inline: CA1861 fires on an array literal handed to a repeatedly-called
+        // method, and an NUnit constraint is one. Silent in the local build, fails the Sonar gate.
+        private static readonly string[] TheKindsThisTeamNamed = ["Incident", "Change Request"];
+
+        // AC-D3's backend half. The kind of work a row reports is the one the coach configured and
+        // reads in the Type column, the chart legends and the rule engine — not the column value.
+        [Test]
+        public async Task WorkItemsOfAKnownKindOfWork_ReportTheKindTheCoachNamedRatherThanTheColumnValue()
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var subject = CreateSubject(instance);
+
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(TheKindsThisTeamNamed))).ToList();
+
+            Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(TheKindsThisTeamNamed),
+                "The team named its work the way ServiceNow does, so that is what its rows say.");
+        }
+
+        // AC-D1, the single most important test in the slice. The vocabularies have to converge, or
+        // the Created Items run chart compares the coach's config against WorkItemBase.Type, matches
+        // nothing, and draws an empty chart with no error anywhere.
+        [TestCase("incident", "change_request", TestName = "ATeamNamingItsWorkByRecordClass_EndsUpWithConfigAndWorkItemsSpeakingTheSameVocabulary")]
+        [TestCase("Incident", "Change Request", TestName = "ATeamNamingItsWorkByLabel_EndsUpWithConfigAndWorkItemsSpeakingTheSameVocabulary")]
+        public async Task ATeamNamingItsWorkEitherWay_EndsUpWithConfigAndWorkItemsSpeakingTheSameVocabulary(
+            string firstKindOfWork, string secondKindOfWork)
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var subject = CreateSubject(instance);
+            var team = ATeamWorkingOn([firstKindOfWork, secondKindOfWork]);
+
+            await subject.ValidateTeamSettings(team);
+            var workItems = (await subject.GetWorkItemsForTeam(team)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Not.Empty, "A team that read nothing proves nothing about vocabulary.");
+                Assert.That(workItems.Select(item => item.Type), Is.SubsetOf(team.WorkItemTypes),
+                    "DD-4: saving normalises the config, so every synced row's Type is a value the team is configured for. Without this the Created Items forecast compares the two, matches nothing, and draws an empty chart with no error.");
+            }
+        }
+
+        // AC-D2. Passthrough at the connector, not just in the map: a class Lighthouse has never
+        // heard of is asked for verbatim and reported verbatim, so config and data still agree.
+        [Test]
+        public async Task ATeamNamingAKindOfWorkLighthouseDoesNotKnow_AsksForItAndReportsItUnchanged()
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork())
+                .Where("u_maintenance_task", HttpStatusCode.OK, holds: 3, visible: 3);
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["u_maintenance_task"]));
+
+            Assert.That(QueriesAskedOf(instance, TheWholeHierarchy)[0],
+                Does.Contain("sys_class_name=u_maintenance_task"),
+                "No entry in the map means no translation. A custom class must not be mangled on its way out.");
+        }
+
+        // AC-D4, DD-8. The last place this design could still speak the platform's vocabulary at the
+        // user. A coach who typed a label and hit a rights failure must not be answered about a
+        // string they never entered.
+        [Test]
+        public async Task ATeamNamingAKindOfWorkItCannotSee_IsRefusedInTheWordsTheCoachTyped()
+        {
+            // change_request rather than problem, deliberately. "problem" is an ordinary English word
+            // that a well-written message may legitimately contain ("there is a problem with..."),
+            // so asserting its absence would fail on a correct message. "change_request" carries an
+            // underscore and cannot appear in prose by accident, which makes its absence a real signal.
+            var instance = AnInstanceHolding(ThreeKindsOfWork())
+                .WhereTheHierarchy(Changes, HttpStatusCode.OK, holds: 24, visible: 0);
+            var subject = CreateSubject(instance);
+
+            var result = await subject.ValidateTeamSettings(ATeamWorkingOn(["Incident", "Change Request"]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Message, Does.Contain("Change Request"));
+                Assert.That(result.Message, Does.Not.Contain(Changes),
+                    "The mapped class name is an implementation detail. Echoing it sends the coach looking for a value they never typed.");
+            }
+        }
+
+        // AC-D5. The mapping lives in ServiceNowReadScope.For, the single construction point, so
+        // every consumer downstream of it keeps receiving record classes — including the read that
+        // looks for state history, which attaches to concrete classes only (ADR-123 decision 9).
+        [Test]
+        public async Task ATeamNamingItsWorkByLabel_StillLooksForStateHistoryOnTheRecordClasses()
+        {
+            var instance = AnInstanceHolding(ThreeKindsOfWork());
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]));
+
+            Assert.That(QueriesAskedOf(instance, "metric_definition")[0],
+                Does.Contain("incident").And.Contain("change_request"),
+                "metric_definition rows attach to classes. A label here finds nothing and loses every started date.");
         }
 
         private static List<string> QueriesAskedOf(StubbedInstance instance, string table)

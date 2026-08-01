@@ -2,6 +2,40 @@
 
 Durable rules derived from CI / SonarCloud failures on `Build And Deploy Lighthouse`. Append a new entry every time `/clean-ci` resolves a failure. Read this file before touching code in the related area.
 
+---
+
+## RUN THIS BEFORE EVERY BACKEND PUSH — it is not optional
+
+```bash
+cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore
+```
+
+**This surfaces locally the exact INFO-severity diagnostics that fail the Sonar `new_violations = 0`
+gate and are invisible to `dotnet build`.** `dotnet build` reports 0 warnings on code that fails the
+gate, because CA1859 / CA1861 / NUnit1028 / S6561 and friends are INFO, not warning. That gap is what
+most of this ledger is made of.
+
+Exit code `2` means findings. Filter to the files your change touched — the repo carries ~35
+pre-existing hits, almost all CA1861 in generated EF migration files, which are noise:
+
+```bash
+git diff --name-only <base>..HEAD > /tmp/touched.txt
+while read f; do grep -F "$(basename "$f")(" /tmp/analyzers.log; done < /tmp/touched.txt
+```
+
+**Why this is mandatory rather than advisory** (2026-08-01, US 5612): three consecutive `sonar-gates`
+failures on `main`, each found by CI one rule at a time — CA1861, then NUnit1028, then a CA1859 that
+*the NUnit1028 fix itself created* (going `public` → `private` is what brings CA1859 into scope, since
+it only judges non-public members). Every one of those was a rule already written down in this file.
+One local run of the command above lists them all at once, before the first push. The per-pattern
+`Scripts/ledger_check.py` grep hook is **not** a substitute: it is pattern-matching, it has been
+observed to miss CA1861 twice, and it cannot see a rule that a *different* fix arms.
+
+Frontend equivalent is already enforced: `pnpm build` runs Biome via `prebuild`, so a clean build
+implies a clean lint.
+
+---
+
 Each entry follows:
 
 ```
@@ -36,6 +70,7 @@ deterministic, low-false-positive line pattern. Format (4 fields, ` ::: ` delimi
 typescript:S7735 ::: ts,tsx ::: (!==|!=)\s*(undefined|null)\s*\? ::: Negated condition in a ternary — flip to `X === undefined ? falsy : truthy` (no `!==`/`!=` in a ternary condition). See the 2026-05-16 S7735 entry.
 dotnet-nunit:NUnit4002 ::: cs ::: Is\.EqualTo\(0\) ::: Use `Is.Zero`, never `Is.EqualTo(0)` (NUnit4002).
 external_roslyn:CA1861 ::: cs ::: (Is|Does|Has)\.\w+\(new\[\] ::: CA1861 — extract the inline `new[] {...}` assertion array to a `private static readonly` field; Roslyn flags constant array args passed to repeatedly-called methods.
+external_roslyn:NUnit1028 ::: cs ::: ^\s*public\s+static\s+IEnumerable ::: NUnit1028 — a TestCaseSource provider (or any non-[Test] member of a fixture) must be `private static`, not public. Re-run the fixture afterwards: an unresolved source drops tests silently instead of failing.
 external_roslyn:NUnit2046 ::: cs ::: Assert\.That\(\w+\.(Count|Length)\b ::: NUnit2046 — Use `Assert.That(collection, Has.Count.EqualTo(N))` / `Has.Length.EqualTo(N)` instead of raw `.Count`/`.Length` on the collection.
 dotnet-nunit:NUnit4002-default ::: cs ::: Is\.EqualTo\(default\( ::: Use `Is.Default`, never `Is.EqualTo(default(X))` (NUnit4002).
 dotnet-nunit:NUnit2056 ::: cs ::: Assert\.Multiple\( ::: Use `using (Assert.EnterMultipleScope()) { ... }`, not `Assert.Multiple(() => { ... })` / `Assert.MultipleAsync` (NUnit2056).
@@ -54,13 +89,15 @@ get re-applied.
 **Backend / Sonar (silent in the local `dotnet build` — only the Sonar `new_violations=0` gate fails):**
 - **CA1859** — a NEW non-public method/parameter that only builds or consumes `List<T>` / `.ToList()` must be typed as the CONCRETE `List<T>`/`T[]`, never `IReadOnlyList<T>`, an interface, or an abstract base. Applies to **parameters** as well as return types. (6x recurrence — see 2026-06-09.)
 - **CA1869** — cache `JsonSerializerOptions` in a `static readonly` field; never `new` one per call.
-- **CA1861** — never pass an inline `new[] {...}` to a repeatedly-called method (NUnit assertions); hoist to a `static readonly` field. *Editing* a line that already has one pulls it into new-code — hoist opportunistically. (7x recurrence. Greppable, but the pre-commit hook has been observed NOT to block it — re-grep `Is\.\w*\(new\[\]` over every backend test file you create or touch, by hand, before committing.)
+- **CA1861** — never pass an inline `new[] {...}` to a repeatedly-called method (NUnit assertions); hoist to a `static readonly` field. *Editing* a line that already has one pulls it into new-code — hoist opportunistically. (**8x recurrence.** Greppable — there is even a machine-readable rule for it at the top of this file — and the pre-commit hook has now been observed NOT to block it **twice**. Treat the hook as absent: re-grep `Is\.\w*\(new\[\]` over every backend test file you create or touch, by hand, before committing. On 2026-08-01 that hand-grep was the only thing that caught it.)
 - **S6964** — value-type properties on `[FromBody]` DTOs must be nullable / opt-in, or binding silently defaults them. (3x recurrence.)
 - **S107** — keep ctor/method params <= 7; a new field that pushes a 6-param signature to 7 trips it — group related params into a record/DTO. A `#pragma warning disable S107` only works wrapping the declaration that triggers it.
 - **S2139** — don't log-and-rethrow when a higher layer (or the event dispatcher, which already logs-and-swallows) logs.
 - **S8733** — an EF query with two or more collection `Include`s is flagged as a Cartesian explosion. It is a false positive in this repo (global `QuerySplittingBehavior.SplitQuery`): suppress with `#pragma warning disable S8733` naming `DatabaseConfigurator`, never add `.AsSplitQuery()`. (2026-07-30.)
 - **S3776 / S2004** — keep useEffect/resume flows and ternary-heavy functions under cognitive-complexity 15; extract helpers before adding a third branch / axis-mode.
 - **SYSLIB1045** — no `new Regex(...)`; use `[GeneratedRegex]` or avoid regex.
+- **NUnit1028** — in a `[TestFixture]`, only `[Test]`/`[TestCase]` methods may be `public`. A `TestCaseSource` provider, a helper or a factory must be `private static`; NUnit resolves the source by name through reflection and does not need it public. INFO severity, so `dotnet build` stays clean and only the Sonar gate fails.
+- **NUnit1028 arms CA1859.** Making a member non-public to satisfy NUnit1028 brings it into CA1859's scope, which judges non-public members only — so the *same edit* that fixes one rule can introduce the other. Give the now-private member its concrete return type in the same change (`(string, string)[]`, `List<T>`), never `IEnumerable<T>`. Generalise the habit: after fixing any visibility-related diagnostic, re-run the analyzer sweep rather than assuming the fix was net-negative.
 
 **Calendar days vs instants (backend + frontend + E2E — Bug #5567 / Bug #5566):**
 - **An instant has no time zone; a calendar day is *defined* by one. Anything that reduces an instant to a day must name the zone it reduces in.** Backend: take the day from `ILighthouseClock` (`clock.Today` / `clock.TodayAsUtcMidnight` / `clock.ToInstanceDay(instant)`) — never `DateTime.UtcNow.Date`, `DateTime.Today` or `DateOnly.FromDateTime(DateTime.…)`. Frontend: `src/utils/date/localDate.ts` — never `toISOString().split("T")[0]` or `new Date("YYYY-MM-DD")`. "Store instants in UTC" is a different, already-solved problem; conflating the two is the whole bug.
@@ -97,7 +134,7 @@ get re-applied.
 - `IntegrationTestBase` is `[NonParallelizable]`; EF InMemory does not enforce FKs — FK-dependent tests must run on SQLite.
 
 **Process / when violations surface:**
-- Sonar only re-scans **PRs + the Nightly**, NOT pushes to `main`. A green `main` push can carry new-code violations that only fire on the next PR's diff — including unpushed feature commits that entered "new code".
+- ~~Sonar only re-scans **PRs + the Nightly**, NOT pushes to `main`.~~ **WRONG — corrected 2026-08-01.** The `sonar-gates` job runs on pushes to `main` too, and failed one (run `30701901338`). Do not push a batch of feature commits to `main` assuming the gate will not judge them; it will, at the moment they land. What remains true is the second half: unpushed feature commits enter "new code" the moment they land, so a batch push is judged as one diff.
 - Mutation-driven test-strengthening is exactly when inline expected-arrays (CA1861) and assert-pairs (NUnit2045/2046) sneak in — re-grep every touched test file before committing.
 
 **Mutation testing (Stryker) — re-anchor the config BEFORE trusting the score:**
@@ -460,6 +497,15 @@ get re-applied.
 - **Rule going forward**: In TypeScript predicates that read like `x !== null && x.method(...)` or `x !== undefined && x.prop`, collapse to `x?.method(...)` or `x?.prop`. If the surrounding context expects a strict `boolean` (e.g. a `() => boolean` predicate or a JSX `&&` short-circuit where `undefined` would render `undefined` text), append `?? false`. Sonar runs S6582 at MAJOR severity and the project's gate is `new_violations = 0` on new code — any new violation fails the build immediately, even a single one.
 
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
+
+### 2026-08-01 — NUnit1028 (`Only test methods should be public`) fails the gate from a `TestCaseSource` provider, and `sonar-gates` DOES run on pushes to `main`
+- **Symptom**: run `30701901338` (push `ce5b959`, 19 commits of US 5612) — every job green except `sonar-gates`. Backend gate `new_violations = 2`, frontend gate OK. Both issues INFO severity, both in new test code: `external_roslyn:NUnit1028` at `ServiceNowClassLabelsTest.cs:26` (*"Only test methods should be public"*) and `external_roslyn:CA1861` at `ServiceNowRecordClassTest.cs:427`.
+- **Root cause**: (1) **NUnit1028** — a `[TestCaseSource]` provider was written `public static`, copying the shape most NUnit documentation shows. The analyzer wants every non-`[Test]` member of a fixture non-public. Invisible locally: INFO severity keeps `dotnet build` at 0 warnings. (2) **CA1861** — `Is.EquivalentTo(new[] { "Incident", "Change Request" })`, the eighth recurrence of a rule already in this ledger *and* already encoded as a machine-readable pre-commit pattern (`(Is|Does|Has)\.\w+\(new\[\]`) — which did not fire, for the second recorded time. (3) The ledger's own process rule said Sonar does not scan pushes to `main`, which made a 19-commit batch push look gate-free. It is not.
+- **Fix**: `EveryKnownKindOfWork` → `private static` (`ServiceNowClassLabelsTest.cs:26`); expected array hoisted to `private static readonly string[] TheKindsThisTeamNamed` (`ServiceNowRecordClassTest.cs`). **Verify the source is still discovered after making it private** — NUnit resolves `TestCaseSource` by reflection and does not need public, but a silently-unresolved source drops tests rather than failing: the fixture's count must be unchanged (32 before, 32 after; full ServiceNow filter 328/328).
+- **Round 3 — the fix armed another rule.** Making `EveryKnownKindOfWork` private to satisfy NUnit1028 immediately produced `external_roslyn:CA1859` on the same line: *"Change return type … from `IEnumerable<(string, string)>` to `(string RecordClass, string Label)[]`"*. CA1859 judges **non-public members only**, so it was dormant while the method was public and the visibility fix is what brought it into scope. Fixed by returning the concrete array type.
+- **Rule going forward**: (a) In a `[TestFixture]`, only `[Test]`/`[TestCase]`/`[TestCaseSource]`-attributed methods may be `public` — write every source provider, helper and factory `private static` **with a concrete return type**, and confirm the fixture's test count is unchanged afterwards. (b) `sonar-gates` runs on **pushes to `main`**, not only PRs — a batch push is judged as one new-code diff the moment it lands. (c) **Stop hand-grepping and stop learning this from CI one rule per push: run the analyzer sweep at the top of this file before every backend push.** Three pushes were burned here discovering, one at a time, three rules that a single local command lists together — including the third, which no grep could have predicted because a *fix* created it.
+- **Tooling note**: the `sonar` CLI is still not installed (`command not found`), as the 2026-07-30 entry records — fall back to `curl` against `https://sonarcloud.io/api/…` with the `SONARQUBE_CLI_TOKEN` env var as the basic-auth username, shaping the JSON with `jq`. Two endpoints do the whole job: `/api/qualitygates/project_status?projectKey=…&branch=main` names the failing condition, and `/api/issues/search?projects=…&branch=main&inNewCodePeriod=true&resolved=false` lists the offending rule, file and line. `gh run view --log-failed` is useless here — it refuses while the run is still in progress, and the Sonar job's log does not name the issues anyway.
+- **Do not paste a literal basic-auth `curl` flag into this file.** Writing the command out with the token variable inline trips the gitleaks pre-commit hook (`leaks found: 1`) even though the value is only an env-var reference. It is a false positive, but the fix is to describe the call in prose as above — not to allowlist the rule in `.gitleaks.toml` and not to bypass the hook. Note `gitleaks` itself is not in the lean-ctx shell allowlist, so its own `--verbose` report is unavailable; diff the staged hunks and look for the credential-shaped line instead.
 
 ### 2026-07-30 — SonarAnalyzer.CSharp 10.30 also adds S8733 (EF Cartesian explosion), which retro-flags UNTOUCHED 2024-era repository code and fails the gate on an unrelated push
 - **Symptom**: run `30534820547` (push `6f9164e7`, "fix(workitems): keep one row per ReferenceId…") — every job green except `sonar-gates`. Backend gate: `new_violations = 7` **and** `new_reliability_rating = 3` (the first reliability-rating failure in this ledger — S8733 is typed BUG, not code smell, so it moves the rating, not just the violation count). All 8 issues were `csharpsquid:S8733` — *"Call 'AsSplitQuery' to avoid multiplying rows by including 'X' and 'Y' in the same query (a Cartesian explosion)"* — in `DeliveryRepository.cs:59,60`, `PortfolioRepository.cs:59 (×2),61`, `FeatureRepository.cs:41`, `TeamRepository.cs:20`, `WorkTrackingSystemConnectionRepository.cs:16`.

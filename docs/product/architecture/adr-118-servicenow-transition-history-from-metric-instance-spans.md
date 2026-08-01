@@ -177,6 +177,22 @@ runtime downgrade, not by a fresh notice.
 `IsValid = true`. Today the frontend surfaces `message` / `technicalDetails` only through the error
 path. This is a shared contract: grep every usage and extend the test factory before touching it.
 
+> **Withdrawn 2026-08-01 by US 5612 — the channel is removed from both stacks.**
+> ADR-123 decision 10 withdrew the last advisory a ServiceNow connection returned (noise a coach read
+> while creating a connection, before any team existed to act on it). That left `SuccessWith` with no
+> production caller and the whole rendering chain dead: `ConnectionValidationResult.Advisory` and
+> `.AdvisoryCode`, their JSON properties, the TypeScript fields, `ValidationAdvisory.tsx`, and its two
+> call sites in `CreateConnectionWizard` and `ModifyConnectionSettings`, which rendered null on every
+> connector.
+>
+> Keeping it was considered on the grounds that alternative C below parks a cross-connector capability
+> surface "for evaluation at the end of the MVP", and an advisory riding a success is the channel such
+> a surface would want. **Rejected by the maintainer: zero callers means delete it.** The parked
+> evaluation is speculative and undated, the shape it would need is unknown, and re-adding two
+> nullable fields and a presentational component is a smaller cost than carrying a dead cross-stack
+> contract until then. `readConnectionValidation` still tolerates a payload that carries the old keys,
+> so an older backend talking to a newer frontend degrades to a plain verdict rather than breaking.
+
 ## Alternatives considered
 
 **A. Filter spans client-side on the `field` name.** Avoids the `metric_definition` call. Rejected:

@@ -20,38 +20,22 @@ describe("readConnectionValidation", () => {
 		expect(readConnectionValidation({ isValid: false }).isValid).toBe(false);
 	});
 
-	it("says nothing when there is nothing to say", () => {
-		const result = readConnectionValidation({ isValid: true });
-
-		// A connector with no capability gap must not put an empty banner in front of an
-		// administrator who has nothing to act on.
-		expect(result.advisory).toBeUndefined();
-		expect(result.advisoryCode).toBeUndefined();
-	});
-
-	it("carries an advisory that arrived alongside a valid connection", () => {
-		const result = readConnectionValidation({
+	// US 5612 removed the advisory channel: the only advisory any connector ever returned was
+	// withdrawn as unactionable at connection scope, so a field nothing writes was deleted rather
+	// than kept for a caller that might one day appear. A payload that still carries the old keys
+	// must be read as a plain verdict rather than tripping over them.
+	it("ignores keys the backend no longer sends", () => {
+		// A variable rather than an inline literal, so excess-property checking does not reject the
+		// very shape this test exists to feed in.
+		const payloadFromAnOlderBackend = {
 			isValid: true,
-			advisory:
-				"Cycle time measures request-to-resolution. Grant the integration account the itil role for time in progress.",
+			advisory: "Something a previous version would have said.",
 			advisoryCode: "history_requires_itil",
-		});
+		};
 
-		expect(result.isValid).toBe(true);
-		expect(result.advisoryCode).toBe("history_requires_itil");
-		expect(result.advisory).toContain("itil");
-	});
-
-	// The advisory is not an error. Treating it as one would block a setup that works perfectly
-	// well for throughput and forecasting, which is most of what the connector is for.
-	it("an advisory does not make the connection invalid", () => {
-		const result = readConnectionValidation({
+		expect(readConnectionValidation(payloadFromAnOlderBackend)).toEqual({
 			isValid: true,
-			advisory: "Something worth knowing.",
-			advisoryCode: "history_requires_state_metric",
 		});
-
-		expect(result.isValid).toBe(true);
 	});
 
 	it("treats a missing answer as not valid rather than as valid", () => {

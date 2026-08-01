@@ -25,7 +25,6 @@ import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
-import ValidationAdvisory from "../Connections/ValidationAdvisory";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
@@ -101,10 +100,6 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const [inlineMessage, setInlineMessage] = useState<InlineMessage | null>(
 		null,
 	);
-	const [validationAdvisory, setValidationAdvisory] = useState<string | null>(
-		null,
-	);
-
 	const { oauthService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 	const { openOAuthPopup } = useOAuthPopup();
@@ -147,7 +142,6 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const clearValidationFeedback = () => {
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
-		setValidationAdvisory(null);
 	};
 
 	const selectSystem = (system: IWorkTrackingSystemConnection) => {
@@ -375,7 +369,6 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		clearValidationFeedback();
 		try {
 			const validation = await runValidation();
-			setValidationAdvisory(validation.advisory ?? null);
 			if (validation.isValid) {
 				setActiveStep(2);
 			} else {
@@ -580,12 +573,6 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 				</Stepper>
 
 				{renderStepContent()}
-
-				<ValidationAdvisory
-					advisory={validationAdvisory}
-					testId="create-wizard-validation-advisory"
-					sx={{ width: "100%", mt: 2 }}
-				/>
 
 				<Box
 					sx={{

@@ -338,13 +338,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             factory.Verify(f => f.Resolve("servicenow.oauth"), Times.AtLeastOnce);
         }
 
-        // Story #5577, ADR-118 D5, as re-decided by ADR-123 decision 10. Connection validation no
-        // longer reads metric_definition at all: it would ask about `task`, which carries none
-        // (measured 0 rows), and answer with advice to activate a definition there — unfollowable,
-        // and contradicted by what the connection's teams actually get. So the connection says the
-        // one true thing instead, in one request rather than two.
+        // Story #5577, ADR-118 D5, re-decided by ADR-123 decision 10 and finally settled by US 5612.
+        // Connection validation does not read metric_definition: it would ask about `task`, which
+        // carries none (measured 0 rows). It briefly reported that in an advisory; the dogfood found
+        // that unactionable at a scope where no team exists yet, so the connection now says it works
+        // and stops. One request, one verdict, nothing else.
         [Test]
-        public async Task AWorkingConnection_SaysHistoryIsDecidedPerTeamRatherThanClaimingWhatItCannotKnow()
+        public async Task AWorkingConnection_SaysItWorksAndNothingElse()
         {
             var handler = RespondingWith(HttpStatusCode.OK, ProbeResponseWithOneRecord);
             var subject = CreateSubject(handler);
@@ -354,9 +354,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.IsValid, Is.True);
-                Assert.That(result.AdvisoryCode, Is.EqualTo("history_determined_per_team"));
-                Assert.That(result.Advisory, Is.Not.Null.And.Not.Empty,
-                    "Declining to answer and then saying nothing about it would be the silent no-op DoD 5 forbids.");
+                Assert.That(result.Code, Is.EqualTo("valid"));
             }
 
             VerifyRequestCount(handler, 1);
@@ -364,7 +362,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         // The capability question is only worth answering for a connection that already works.
         // Answering it for one that does not would overwrite the rung the administrator needs — a
-        // rejected credential would come back as advice about metric definitions instead.
+        // rejected credential would come back as advice about metric definitions instead. Still true
+        // with the advisory gone: the ladder's own verdict has to survive to the user.
         [Test]
         public async Task AConnectionThatFailsTheLadder_KeepsItsOwnVerdictAndSaysNothingAboutHistory()
         {
@@ -377,8 +376,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Code, Is.EqualTo("authentication_failed"));
-                Assert.That(result.Advisory, Is.Null);
-                Assert.That(result.AdvisoryCode, Is.Null);
             }
 
             VerifyRequestCount(handler, 1);

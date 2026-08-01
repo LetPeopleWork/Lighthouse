@@ -148,43 +148,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
 
-        // ADR-123 decision 10. Connection validation reads no metric definitions at all now that
-        // every connection is rooted at the work hierarchy: `metric_definition` holds 0 rows for
-        // `table=task` (measured), so the only answer available at that scope would be "activate a
-        // definition on the state field of task" — advice nobody can follow, printed by the very
-        // feature that recommends the recipe. The remaining verdict says the one true thing.
+        // Bug #5630. `field_value_duration` is not the same thing as a definition on the STATE field,
+        // and F6's per-class coverage is satisfied by either. Stock change_request carries those
+        // definitions on `approval` and `type` and none on `state`, so a class nothing measures state
+        // on still answers the definition read -- and every check above reports it measured. The spans
+        // it returns carry labels the team never mapped, which is the only evidence there is.
         [Test]
-        public void AConnection_SaysWhoDecidesWhetherHistoryIsAvailableRatherThanDecidingItself()
+        public void AKindOfWorkWhoseSpansTheTeamRecognisesNoneOf_IsMeasuredByNothingOnState()
         {
-            var verdict = ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam();
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                TwoKindsOfWork, TwoKindsOfWork, MeasuredOnIt);
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(verdict.IsValid, Is.True,
-                    "ADR-118 D5: the advisory rides a success. ServiceNow without itil still gives throughput and a forecast.");
-                Assert.That(verdict.AdvisoryCode, Is.EqualTo(ServiceNowHistoryVerdict.PerTeamCode));
-            }
+            Assert.That(unmeasured, Is.EqualTo(new[] { "change_request" }));
         }
 
-        // An advisory nobody can act on is the silent no-op DoD 5 forbids. What the administrator
-        // has to be told is that the connection is fine, who decides the thing it declined to
-        // decide, and where the metric definition actually has to go.
+        // The per-class reading of the rule the whole-team guard already followed: an instance whose
+        // records of one class simply have not moved since the definition was activated returns no
+        // rows for it, and that is absence of evidence rather than evidence of absence.
         [Test]
-        public void TheAdvisory_SaysTheConnectionWorksAndWhereTheMetricDefinitionHasToGo()
+        public void AKindOfWorkThatReturnedNoSpansAtAll_IsNotReportedAsUnmeasured()
         {
-            var advisory = ServiceNowHistoryVerdict.HistoryIsDecidedPerTeam().Advisory;
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                TwoKindsOfWork, MeasuredOnIt, MeasuredOnIt);
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(advisory, Does.Contain("The connection works"),
-                    "Leading with the reassurance is what stops an administrator undoing a connection that is fine.");
-                Assert.That(advisory, Does.Contain("decided by the kinds of work each team names"),
-                    "The question was declined, not answered, and the administrator has to know who answers it.");
-                Assert.That(advisory, Does.Contain("activate a Field value duration metric definition on the state field of each of those"),
-                    "Naming the metric type and where it goes is what turns this from a complaint into an instruction.");
-                Assert.That(advisory, Does.Contain(ServiceNowReadScope.RootTable),
-                    "The table that carries none of them has to be named, or the instruction reads as 'somewhere else'.");
-            }
+            Assert.That(unmeasured, Is.Empty);
+        }
+
+        [Test]
+        public void ATeamWhoseEveryKindOfWorkKeptSpans_HasNothingToReport()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                TwoKindsOfWork, TwoKindsOfWork, TwoKindsOfWork);
+
+            Assert.That(unmeasured, Is.Empty);
+        }
+
+        // A class the team never named is not its problem to hear about. Records of it can reach the
+        // span read through a class the team DID name -- the read is keyed on record ids, not classes.
+        [Test]
+        public void AKindOfWorkTheTeamNeverNamed_IsNotReported()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                OneKindOfWork, TwoKindsOfWork, MeasuredOnIt);
+
+            Assert.That(unmeasured, Is.Empty);
+        }
+
+        // The class names come off `sys_class_name` on one side and off the team's config on the
+        // other. Comparing them case-sensitively would report a measured class as unmeasured.
+        [Test]
+        public void TheClassNamesAreComparedWithoutRegardToCase()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                OneKindOfWork, ["INCIDENT"], ["Incident"]);
+
+            Assert.That(unmeasured, Is.Empty);
         }
     }
 }

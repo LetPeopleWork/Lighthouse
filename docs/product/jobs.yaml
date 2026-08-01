@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-07-31
+updated: 2026-08-01
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -35,6 +35,7 @@ feature_context:
   - epic-size-and-count-over-time
   - servicenow-multi-table-work-item-types
   - servicenow-board-picker-and-query-guidance
+  - servicenow-pre-close-bucket
 
 jobs:
   - id: job-rbac-bootstrap
@@ -3681,6 +3682,77 @@ jobs:
         explicitly sanctions shipping team-scope alone if nothing else is reachable. Current
         satisfaction: 0 — no ServiceNow data reaches Lighthouse at all. Gap: 5, with the same caveat
         as the connect job: it measures absence, not demonstrated demand.
+
+  - id: job-snow-coach-recognise-and-reach-the-record
+    title: Recognise what a ServiceNow item is, and open the record behind it
+    persona: flow-coach
+    feature_context: servicenow-pre-close-bucket
+    created: 2026-08-01
+    note: >
+      ADO #5612, the epic's pre-close bucket. Sits BEHIND [[job-snow-flow-coach-see-flow-metrics]]
+      rather than refining it: that job is delivered and the numbers are right, but its output is not
+      yet actionable. A ServiceNow row is the only one of five connectors whose id is inert
+      (`WorkItemBase.Url` is left unset — every other connector populates it, and
+      `WorkItemsDialog.tsx:142-144` already renders it as a link), and its type reads as the raw
+      column value `change_request` rather than the label ServiceNow itself shows. Both fixes are free
+      of extra requests: `sys_id` is already carried (#5577 needed it for the metric_instance batch)
+      and `sys_class_name` already arrives as {display_value, value} on every row (5611 SPIKE).
+      SETTLED AT DESIGN (ADR-128): the connector owns a hardcoded BIDIRECTIONAL class<->label map and
+      applies it at its own boundary — class->label when mapping a record, label->class when building
+      the query, and normalisation to the label form when a team is saved. `Type` therefore CARRIES
+      THE LABEL and nothing outside the connector knows a mapping happened: no new field, no DTO
+      change, no EF migration, no frontend change. An unknown class passes through unchanged in both
+      directions, which keeps config and data consistent rather than merely unimproved. No runtime
+      lookup: the only class->label table (`sys_db_object`) is measured unreadable below `itil` and
+      5611's verdict is verbatim "Do not build on sys_db_object" — an argument for having no lookup at
+      all, the same exit 5611 took for hierarchy knowledge (ADR-116 D4). `sys_class_name.display_value`
+      is free and deliberately IGNORED: reading it would give an unknown class a pretty label while
+      its config entry kept the class name, and `GetCreatedItemsForTeam` compares the two.
+      An earlier DISCUSS draft required a separate carried field on the grounds that changing `Type`
+      breaks that comparison — true only if `Type` changes while the config vocabulary does not.
+    job_story: >
+      When Lighthouse shows me a ServiceNow item that looks wrong,
+      I want to recognise what kind of work it is and open the actual record,
+      so I can find out why instead of transcribing an id into a ServiceNow search box.
+    dimensions:
+      functional: >
+        Click an item's id in the Work Items dialog and land on the record in ServiceNow; read its
+        type as "Change Request" or "Catalog Task"; and name the kinds of work a team tracks using
+        those same labels rather than the underlying class names.
+      emotional: >
+        Move from friction ("answering this question costs more than the question is worth, so I will
+        let it go") to fluency — the chart and the system of record are one surface, and the words on
+        both match.
+      social: >
+        Bring an aging item to a stand-up and open it in front of the team, rather than reading out an
+        id and waiting while somebody searches for it.
+    forces:
+      push: >
+        An aging or blocked item raises a question Lighthouse cannot answer — only the record can. The
+        round trip today is manual transcription, so the question is often abandoned instead.
+      pull: >
+        The affordance already exists and is proven on four connectors: the link component, the DTO
+        field and the model field all ship. ServiceNow is the only one not participating.
+      anxiety: >
+        That making the type read nicely quietly breaks something that matches on it. Justified —
+        `GetCreatedItemsForTeam` filters synced items on `item.Type.ToLowerInvariant()` against the
+        team's configured work-item types, so a naive substitution returns an empty run chart with no
+        error. This is why the label is a separate field and why an explicit test guards it.
+      habit: >
+        Coaches read type names as English ("Bug", "User Story") because every other connector supplies
+        them that way. A snake_case column value reads as a leaked implementation detail, and worse,
+        teaches the coach that Lighthouse expects them to speak the platform's vocabulary.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — nothing is wrong or missing, so this cannot block adoption the way
+        [[job-snow-admin-connect-servicenow]] can. It is what separates a connector that works from
+        one that feels finished, which is the stated purpose of the pre-close bucket. Current
+        satisfaction: 1 rather than 0 — the data is all present and correct, it is only unreachable
+        and mis-labelled. Gap: 2, the smallest in the epic, and deliberately so: this job is scheduled
+        at the end because it is the least urgent, not because it is the least clear.
 
   - id: job-snow-delivery-lead-portfolio-over-servicenow
     title: Forecast a delivery over ServiceNow parent records, not just one team's throughput

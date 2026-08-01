@@ -1,0 +1,144 @@
+schema_version: 1
+feature_id: servicenow-pre-close-bucket
+updated: 2026-08-01
+note: >
+  ADO User Story 5612, "pre-close bucket", child of Epic 5513 (ServiceNow Integration). A bucket of
+  findings from dogfooding the connector, held until the structural slices settled. DISCUSS on
+  2026-08-01 produced VERDICTS rather than a plan: seven items entered, two ship here (deep link,
+  type label), three moved to owners that already exist (#5627 twice, #5610 once), one is a decided
+  no-op, and one is NOT-NOW with a named trigger. See
+  docs/feature/servicenow-pre-close-bucket/feature-delta.md.
+
+  The wave's most valuable output was not a slice. #5627 ("tell a team when its kinds of work yield
+  no time-in-state", ADR-127, split out of #5610) states that ServiceNowHistoryVerdict.From already
+  computes its answer. It does not: DefinitionQueryFor filters on class and
+  type=field_value_duration only, and the code's own comment explains why it cannot filter on the
+  state field ("the state field is named differently on each record class"). Stock change_request
+  carries definitions on approval and type, so it counts as covered, From returns Available, and
+  #5627's advisory would never fire on the exact class it was created to warn about. Folded into
+  #5627 as a scope addition; ADR-127 needs an amendment.
+
+journeys:
+
+  - name: reach-and-recognise-a-servicenow-record
+    goal: >
+      A flow coach who spots a suspicious ServiceNow item in a Lighthouse chart can tell what kind of
+      work it is from its type, and open the actual record in one click — closing the loop between
+      the measurement and the system of record, which is the last thing separating the ServiceNow
+      connector from the four that shipped before it.
+    persona: "flow-coach"
+
+    emotional_arc:
+      start: Friction — "I can see it is stuck, but finding out why costs a copy-paste and a search,
+        so I usually let it go."
+      middle: Recognition — "this row says Change Request, not change_request; it reads like the rest
+        of the product."
+      end: Fluent — "the chart and ServiceNow are one surface; I ask the question instead of dropping it."
+
+    steps:
+      - id: step-open-the-record-from-a-chart
+        action: >
+          Coach opens Work Items in Progress on a ServiceNow team and clicks an item's id
+        expected_output: >
+          The record opens in ServiceNow in a new tab, at
+          {instanceUrl}/{sys_class_name}.do?sys_id={sys_id}, built from the RECORD'S OWN class so a
+          team reading two classes gets correct links for both. A record missing sys_class_name or
+          sys_id gets no link at all rather than a malformed one.
+        emotional_state: Relieved — "one click, not a transcription"
+        shared_artifacts:
+          - WorkItemBase.Url (EXISTING field, Models/WorkItemBase.cs:34 — populated for ServiceNow for
+            the first time; ADO, Jira, Linear and Csv already set it)
+          - the rendered link (EXISTING; WorkItemsDialog.tsx:142-144 already renders a non-null url as
+            a Link target=_blank — no new component)
+          - sys_id (EXISTING; already carried by ServiceNowWorkItemMapper.RecordIdField because #5577
+            needed it to key the metric_instance batch)
+
+      - id: step-read-the-kind-of-work-as-a-name
+        action: Coach reads the Type column
+        expected_output: >
+          The type reads as ServiceNow's own label — "Change Request", "Catalog Task" — never the raw
+          column value and never a string transform of it (sc_task's label is Catalog Task, which no
+          transform produces).
+        emotional_state: Recognition — "these are our words"
+        shared_artifacts:
+          - ServiceNowRecordClasses (NEW at DESIGN; a connector-local bidirectional class<->label map,
+            case-insensitive, passthrough on miss — ADR-128)
+          - WorkItemBase.Type (EXISTING; now CARRIES THE LABEL. No new field, no DTO change, no EF
+            migration, no frontend change — the mapping happens entirely inside the connector)
+          - sys_class_name display_value (present in the payload and DELIBERATELY IGNORED — reading it
+            would give an unknown class a pretty label on the item while its config entry kept the
+            class name, and the two would stop matching)
+
+      - id: step-name-the-work-in-the-team-config
+        action: >
+          Coach types "Change Request" into a team's Work Item Types instead of change_request
+        expected_output: >
+          Validation resolves the label to the class name used to build sys_class_nameIN…, and the
+          team syncs change requests. Class names keep working unchanged, including entries pre-filled
+          by #5610's board picker. An entry that is neither a known class name nor a map key is
+          refused BY NAME at validation rather than accepted into a query that silently returns
+          nothing.
+        emotional_state: Included — "I describe our work in our vocabulary, not the platform's"
+        shared_artifacts:
+          - team.WorkItemTypes (EXISTING; shipped by #5611 as isWorkItemTypesRequired for every
+            ServiceNow team, and pre-filled by #5610's picker as a class name — hence OC-4)
+          - ServiceNowRecordClasses, the SAME map read in the other direction (ADR-128). No request,
+            no runtime lookup, so it behaves identically for a no-roles account and for admin.
+          - normalisation on save: a team's WorkItemTypes are stored in the label form, so a coach who
+            typed change_request and one who typed Change Request converge. Without it the Created
+            Items forecast compares config against Type and silently returns zero.
+
+    error_paths_summary:
+      - Changing Type WITHOUT changing the config vocabulary returns an empty chart.
+        GetCreatedItemsForTeam filters on item.Type.ToLowerInvariant() against the team's configured
+        types (TeamMetricsService.cs:243-252), and both rule engines expose the same string
+        (WorkItemFieldProvider.cs:56, evaluateCondition.ts:23). DESIGN's answer is to change BOTH so
+        they match by construction, plus normalisation on save so a class-name-typed config converges
+        too. AC-D1 is the guard: a non-zero run chart for a team configured with labels AND for one
+        configured with class names.
+      - A label derived by TRANSFORMING the class name is wrong for exactly the ITSM classes the epic
+        optimises for: sc_task is "Catalog Task", not "Sc Task". A map is not a transform — it carries
+        the real label — which is why ADR-128 chose one.
+      - The map leaking past the connector boundary. If a DTO field, a frontend format call or a
+        second vocabulary anywhere turns out to be needed, the design is wrong and ADR-128 re-opens:
+        it would mean Type's double duty as query key and display string is a defect in the shared
+        model, not a ServiceNow quirk.
+      - The .do path is class-specific. Building the deep link from a configured table would be
+        impossible anyway (5611 removed the connection-scope table; every read is task-rooted), and
+        building it from one class for a multi-class team would 404 for the others.
+      - The instance URL is user-entered and is not trimmed on this path. Jira's connector already
+        does .TrimEnd('/') at JiraWorkTrackingConnector.cs:1297; ServiceNow has no equivalent, so a
+        trailing slash would produce a double-slash URL.
+      - Label resolution built on ANY runtime lookup works for the maintainer and 403s for the
+        customer. sys_db_object was measured twice with contradictory results — 403 below itil in the
+        epic SPIKE, 200 for three of four accounts in 5611's — and the drift has a known cause: the
+        probe account had acquired cmdb_query_builder_read between runs. 5611's verdict is verbatim
+        "Do not build on sys_db_object". This is the epic's signature failure and it has already fired
+        three times (sys_choice killing ServiceNowChoiceLabelResolver, metric_instance costing slice
+        04 an itil escalation, and OC-1's warning on vtb_board). The exit is a STATIC MAP IN SOURCE,
+        which is the same exit 5611 took for hierarchy knowledge (ADR-116 D4) — not a search for a
+        different table to read.
+      - An instance that RENAMED a stock class still reads Lighthouse's label — a shop calling
+        change_request "RFC" sees Change Request. Accepted at DESIGN: the worst case is a different
+        English label, never a wrong number, and it is not worth a second field plus two migrations.
+        Revisit only if a customer reports it.
+      - A static map cannot be exhaustive — ServiceNow labels are renameable and localised. Acceptable
+        because PASSTHROUGH keeps unknown classes CONSISTENT rather than merely unimproved: a custom
+        u_maintenance_task stores as u_maintenance_task and its config entry stays u_maintenance_task,
+        so every comparison still holds. Consistency, not prettiness, is what passthrough buys.
+      - The label input and #5610's board picker land opposite answers about what gets pre-filled.
+        Twin drift, the shape Bug #5613 already cost a release. Settled by conversation before slice
+        02 ships, not by code.
+
+    success_signal:
+      - A coach clicks an id in the Work Items dialog on a two-class ServiceNow team and lands on the
+        correct record for BOTH classes.
+      - Type reads "Change Request" everywhere it is shown — column, both chart legends, marker
+        colours — with no frontend change at all, because the connector mapped it before it left.
+      - GetCreatedItemsForTeam returns a non-zero run chart for a team configured with labels AND for
+        one configured with class names (AC-D1).
+      - A coach creates a ServiceNow team typing "Incident" and "Change Request", never the class
+        names, and both sync.
+      - Honest-limit caveat: the label map is an alias, not a promise. A customised or non-English
+        instance falls back to class names and is no worse off than today — which is what makes it
+        safe to ship a static map rather than chase a lookup no customer account can perform.
