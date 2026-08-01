@@ -226,9 +226,15 @@ to zero and never widens (5611 SPIKE `findings.md:235`), so this is the one plac
 6. Verified against the PDI (AC-A7), and slice 02 dogfooded by creating a team typing `Incident` and
    `Change Request` rather than the class names. No privilege dimension to test — D8's map makes the
    behaviour identical at every rung, which is why it was chosen.
-7. Docs: #5578's ServiceNow page states the deep-link behaviour and, once slice 02 lands, that either
-   form is accepted. 5611's *"Docs: class names not labels"* guidance is updated rather than left to
-   contradict the product. Screenshot only if the dialog visibly changes — it does, so the
+7. **Docs — #5578's ServiceNow page.** Three things, and the third is the one that will be missed:
+   (a) the deep link exists and what it addresses; (b) **either form is accepted** in Work Item Types;
+   (c) **5611's standing guidance now contradicts the product.** Its SPIKE recommendation reads
+   *"Docs: class **names** not labels"* and its test file still calls typing `Change Request` the
+   canonical user error — both were correct for the design they were written against and are now
+   wrong. Update that guidance rather than adding a second, contradicting sentence elsewhere.
+   Worth stating alongside (b): a team configured with class names keeps showing `change_request`,
+   because nothing rewrites it (ADR-128 amendment) — so the docs should tell a coach to type the label
+   if they want to read the label. Screenshot only if the dialog visibly changes — it does, so the
    `@screenshot` E2E is re-run and the PNG **deleted first** (the <0.5 % diff trap).
 8. A dogfood moment on the same day each slice lands.
 9. **ADR-127 amended** to record that its "5611 already computes the answer" premise was false, and
@@ -351,9 +357,9 @@ table below.
 | ID | Decision | Rationale |
 |---|---|---|
 | **DD-1** | `ServiceNowRecordClasses` — new pure class, `LabelFor(class)` / `ClassFor(label)`, case-insensitive, **passthrough on miss**. | ADR-128. Passthrough is the load-bearing part: an unknown class flows through unchanged in *both* directions, so config and data stay consistent even where Lighthouse adds no value. |
-| **DD-2** | Inbound: `ServiceNowWorkItemMapper.KindOfWork` returns `LabelFor(sys_class_name)`. | One call added to an existing pure method. The `sys_class_name`-absent fallback to `table` stays as it is. |
+| **DD-2** | ~~Inbound: `KindOfWork` returns `LabelFor(sys_class_name)`.~~ **Superseded at DELIVER — it returns `scope.AsTyped(sys_class_name)`**, the words *this team* used. | Not a global label but a per-team one, which makes config and data agree by construction and deletes DD-4 entirely. Full reasoning in ADR-128's amendment. The `sys_class_name`-absent fallback is now `ServiceNowReadScope.RootTable`, the only value the old `table` parameter could carry since #5611 made every read task-rooted. |
 | **DD-3** | Outbound: `ServiceNowReadScope.For` maps each entry through `ClassFor` before the `sys_class_nameIN…` clause is built. | `For` already normalises (`Where(not blank).Select(Trim)`, `ServiceNowReadScope.cs:45-52`). This is one more `Select` in a class that is already pure and fully unit-tested. |
-| **DD-4** | On save, a ServiceNow team's `WorkItemTypes` are **normalised to the label form**. | Without it, a coach who types `change_request` gets a working sync (passthrough → correct query) but a **broken Created Items forecast**: `SuggestionsController` offers `change_request` from config, `ForecastController` passes it to `GetCreatedItemsForTeam`, and it is compared against `Type` = `Change Request`. Zero rows, no error. This is the one place the two vocabularies could still diverge, and normalising on save is where they converge. |
+| **DD-4** | ~~On save, a ServiceNow team's `WorkItemTypes` are **normalised to the label form**.~~ **DELETED at DELIVER** — DD-2's `AsTyped` removes the divergence at source, so there is nothing to normalise. It had no home (`SyncTeamWithTeamSettings` is connector-agnostic), was bypassable by the API/CLI/MCP, and mutated what the coach typed. | Without it, a coach who types `change_request` gets a working sync (passthrough → correct query) but a **broken Created Items forecast**: `SuggestionsController` offers `change_request` from config, `ForecastController` passes it to `GetCreatedItemsForTeam`, and it is compared against `Type` = `Change Request`. Zero rows, no error. This is the one place the two vocabularies could still diverge, and normalising on save is where they converge. |
 | **DD-5** | The deep link is `{instanceUrl.TrimEnd('/')}/{sys_class_name}.do?sys_id={sys_id}`, built from the **raw class**, not from `Type`. | Settles **OC-3** — Jira already does exactly this trim at `JiraWorkTrackingConnector.cs:1297` and `InstanceUrl` is user-entered. And it is the one place the class name is still needed *after* mapping, so the mapper reads `sys_class_name` once and uses it for both the link and `LabelFor`. |
 | **DD-6** | No frontend change. At all. | Consequence of DD-2. All five FE type sites (`WorkItemsDialog.tsx:153`, the two chart legends, `scatterMarkerUtils.tsx:94`, and the rule engine's `"workitem.type"` at `evaluateCondition.ts:23`) read `item.type` and now receive a label. The BE rule engine's `WorkItemFieldProvider.cs:56` likewise. A user-authored rule now matches on `Change Request`, which is the same string they see and configure. |
 | **DD-8** | `ServiceNowReadScope` keeps **both forms** of each entry: the record class for every query, and the string the coach actually typed for every message. | Found while tracing DD-3, and it is the one place this design could still speak the platform's vocabulary at the user. `FirstUnreadableKindOfWork` (`ServiceNowWorkTrackingConnector.cs:676-690`) iterates `scope.KindsOfWork` and `WhyThisKindOfWorkCannotBeRead` names `recordClass` in its refusal (ADR-124 D2). After DD-3 that is the *mapped* value, so a coach who typed `Change Request` and hits a rights failure reads a message about `change_request` — a string they never entered. `KindsOfWork` keeps returning classes so every query path is unchanged; a companion lookup returns the typed form for the message. |
@@ -367,7 +373,7 @@ table below.
 | 2 | `ServiceNowWorkItemMapper` | same | **EXTEND** — `KindOfWork` maps; `MapRecord` sets `Url` |
 | 3 | `ServiceNowReadScope` | same | **EXTEND** — `For` maps entries through `ClassFor`, and keeps the typed form for messages (DD-8) |
 | 3b | `ServiceNowTeamQueryVerdict` | same | **EXTEND** — refusals name the typed form (DD-8) |
-| 4 | ServiceNow team save path | `ServiceNowWorkTrackingConnector` / team settings | **EXTEND** — DD-4 normalisation |
+| 4 | ~~ServiceNow team save path~~ | — | **NOT TOUCHED** — DD-4 deleted |
 | 5 | `WorkItemBase` / `WorkItemDto` / `IWorkItem` | Models, API/DTO, frontend | **UNCHANGED** |
 
 ## Wave: DESIGN / [REF] Reuse analysis

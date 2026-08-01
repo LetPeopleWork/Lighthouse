@@ -33,26 +33,61 @@ The obvious repairs both fail:
 
 **The ServiceNow connector owns a hardcoded bidirectional class↔label map, applies it in both
 directions at its own boundary, and passes through anything it does not know. `WorkItemBase.Type`
-carries the label. Nothing outside the connector knows a mapping happened.**
+carries the words the team itself used. Nothing outside the connector knows a mapping happened.**
 
-1. `ServiceNowRecordClasses` — a new pure class beside `ServiceNowReadScope` — holds the map for the
-   stock ITSM task hierarchy and exposes `LabelFor(class)` and `ClassFor(label)`. Both are
-   case-insensitive and both **return their input unchanged when it is not in the map**.
-2. **Inbound (record → Lighthouse)**: `ServiceNowWorkItemMapper.KindOfWork` returns
-   `LabelFor(sys_class_name)`, so `Type` is `Change Request`.
-3. **Outbound (config → query)**: `ServiceNowReadScope.For` maps each configured entry through
+1. `ServiceNowClassLabels` — a new pure class beside `ServiceNowReadScope` — holds the map for the
+   stock `task` hierarchy and exposes `LabelFor(class)` and `ClassFor(label)`. Both
+   **return their input unchanged when it is not in the map**. `ClassFor` recognises a canonical
+   class name before a label, and matches labels case-insensitively.
+2. **Outbound (config → query)**: `ServiceNowReadScope.For` maps each configured entry through
    `ClassFor` before building `sys_class_nameIN…`, so a team configured with `Change Request` reads
-   change requests.
-4. **On save**: a ServiceNow team's `WorkItemTypes` are normalised to the label form, so a coach who
-   typed `change_request` and a coach who typed `Change Request` end up with the same stored value.
+   change requests. `For` is the only construction point, so every downstream consumer —
+   `ScopedQuery`, `BaselineQuery`, `DefinitionTables` and the per-class readability probe — receives
+   record classes without knowing a translation happened.
+3. **Inbound (record → Lighthouse)**: `ServiceNowWorkItemMapper.KindOfWork` returns
+   `scope.AsTyped(sys_class_name)` — **the words this team used**, not a globally-chosen label. A
+   team configured with `change_request` stores `change_request`; one configured with
+   `Change Request` stores `Change Request`.
+4. **Messages**: the readability probes ask about the record class; every refusal names the typed
+   form, so a coach who typed `Change Request` is never answered about `change_request`.
 5. `sys_class_name.display_value` is **not** read, even though it is free.
+
+### Amendment, 2026-08-01 — point 3 replaces a normalisation step
+
+This ADR first said `KindOfWork` returns `LabelFor(...)` (a global label) and added a fifth decision:
+*on save, a team's `WorkItemTypes` are normalised to the label form*. Both are withdrawn in favour of
+`AsTyped`, which makes config and data agree **by construction** instead of by a save-time step.
+
+The prompt was a question during DELIVER — *if existing teams are disposable, is the divergence still
+a problem?* It is: class names remain a legal input by design, and #5610's board picker actively
+produces them, so a brand-new team hits it. That ruled out solving it by deleting data and forced a
+better answer. Three reasons it is better:
+
+- **The normalisation had no home.** `SyncTeamWithTeamSettings` is connector-agnostic and has no
+  work-tracking system type at hand, so the step could only land by widening a shared save path or by
+  putting a write inside `ValidateTeamSettings`.
+- **It could be bypassed.** A settings-save hook is routed around by the API, the CLI and the MCP
+  server — the hole #5611 named when it observed that `isWorkItemTypesRequired` is *"a hint to the web
+  UI, and PUT /api/teams/{id} also serves the CLI and the MCP server"*. Mapping at sync time has no
+  such path.
+- **It stopped mutating what the coach typed**, a cost this ADR had merely accepted.
+
+**Consequence.** Two teams reading the same class store different `Type` strings if they were
+configured differently. Invisible per team — work items, charts and rules are all team-scoped — and
+visible only in `SuggestionsController.GetWorkItemTypesForTeams`, which aggregates across teams and
+lists both forms. Accepted.
+
+**It also weakens the display win**, which is worth saying plainly: a team configured with class names
+still reads `change_request` in its Type column. Labels come from typing a label, or from the picker
+pre-filling one — which makes OC-4's answer (*the picker should pre-fill the label*) load-bearing
+rather than cosmetic.
 
 ## Consequences
 
-**The two vocabularies converge instead of coexisting.** Config holds labels, `Type` holds labels,
-`SuggestionsController` offers labels, and the Created Items run chart compares label to label. There
-is no second field, no DTO change, no frontend change, no migration, and no new concept for the four
-connectors that never had this problem.
+**Config and data cannot diverge.** Whatever a team typed is what its work items say, so
+`SuggestionsController` offers it and the Created Items run chart compares like with like. There is no
+second field, no DTO change, no frontend change, no migration, and no new concept for the four
+connectors that never had this problem — and, after the amendment, nothing to normalise either.
 
 **Passthrough keeps unknown classes coherent.** A shop's custom `u_maintenance_task` is not in the
 map, so it stores as `u_maintenance_task` and its config entry stays `u_maintenance_task` — unimproved,
@@ -72,20 +107,21 @@ ADR-116 decision 4 gives: `sys_db_object` carries class labels and is unreadable
 return nothing for the customer. Being wrong about an entry costs nothing — an absent alias just means
 the class name flows through as it does today.
 
-**Normalisation on save mutates what the coach typed.** Typing `change_request` and getting
-`Change Request` back is a visible change. Accepted, and arguably the point: it is the product
-teaching its own vocabulary, and without it a class-name-typed config silently breaks the Created
-Items forecast.
+~~**Normalisation on save mutates what the coach typed.**~~ **Withdrawn by the amendment above** —
+nothing is normalised, so nothing is mutated. What a coach typed is what they get back, and what their
+work items say.
 
-**#5610's board picker must pre-fill the label.** It currently pre-fills a class name into Work Item
-Types. Under this ADR that value would be normalised on save anyway, but pre-filling the label is what
-the coach should see in the field. Carried as OC-4 against #5610.
+**#5610's board picker must pre-fill the label**, and after the amendment this matters more than it
+did. It currently pre-fills a class name; nothing normalises that afterwards, so such a team reads
+`change_request` in its Type column forever. The picker is the main route by which a coach acquires
+the label without typing it. Carried as OC-4 against #5610.
 
 ## Alternatives considered
 
 | Alternative | Rejected because |
 |---|---|
 | Read `sys_class_name.display_value` into `Type` | Desynchronises config from data for any class not in a map — the exact silent-zero the epic exists to prevent. |
+| Normalise `WorkItemTypes` to one form on save | Was this ADR's own first answer. No home in connector-agnostic save code, bypassable by the API / CLI / MCP, and it mutated what the coach typed. See the amendment. |
 | Separate `TypeLabel` field | EF column, two migrations, `Update()` copy line, and a second vocabulary imposed on four connectors that do not need it. |
 | Frontend-only label formatting | The map would then exist on both stacks while the input direction stays in the backend — the twin-drift shape Bug #5613 already cost a release. |
 | Runtime lookup against `sys_db_object` | Measured unreadable below `itil`; works for the maintainer, 403 for the customer. ADR-116 decision 4 already took this exit. |
