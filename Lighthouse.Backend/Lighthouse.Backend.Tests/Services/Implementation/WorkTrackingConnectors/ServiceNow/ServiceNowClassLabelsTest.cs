@@ -6,9 +6,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     // of the connector boundary. Layer 1 (pure), so this is the one file that can enumerate the map
     // cheaply — the behaviour that DEPENDS on it lives in ServiceNowRecordClassTest.
     //
-    // The round-trip and passthrough tests are the load-bearing ones. Everything else in this
-    // feature rests on the two directions agreeing, and on an unknown name surviving both of them
-    // unchanged.
+    // The resolution and passthrough tests are the load-bearing ones. Everything else in this
+    // feature rests on a kind of work's two names agreeing on one class, and on an unknown name
+    // surviving unchanged.
     [TestFixture]
     public class ServiceNowClassLabelsTest
     {
@@ -26,29 +26,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public static IEnumerable<(string RecordClass, string Label)> EveryKnownKindOfWork() => KnownKindsOfWork;
 
         [TestCaseSource(nameof(EveryKnownKindOfWork))]
-        public void LabelFor_AKnownRecordClass_IsTheLabelTheInstanceShows((string RecordClass, string Label) kindOfWork)
-        {
-            Assert.That(ServiceNowClassLabels.LabelFor(kindOfWork.RecordClass), Is.EqualTo(kindOfWork.Label));
-        }
-
-        [TestCaseSource(nameof(EveryKnownKindOfWork))]
         public void ClassFor_AKnownLabel_IsTheClassTheTableApiFiltersOn((string RecordClass, string Label) kindOfWork)
         {
             Assert.That(ServiceNowClassLabels.ClassFor(kindOfWork.Label), Is.EqualTo(kindOfWork.RecordClass));
         }
 
-        // The invariant the whole design rests on: whichever way a name goes in, it comes back the
-        // same. A one-way map would let config and data drift apart, which is the silent zero
-        // AC-D1 exists to catch.
+        // The invariant the whole design rests on: a kind of work resolves to the same record class
+        // whichever of its two names the coach typed. If the two names disagreed, config and data
+        // would drift apart, which is the silent zero AC-D1 exists to catch.
         [TestCaseSource(nameof(EveryKnownKindOfWork))]
-        public void EveryKnownKindOfWork_RoundTripsInBothDirections((string RecordClass, string Label) kindOfWork)
+        public void EveryKnownKindOfWork_ResolvesToOneClassFromEitherOfItsNames(
+            (string RecordClass, string Label) kindOfWork)
         {
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ServiceNowClassLabels.ClassFor(ServiceNowClassLabels.LabelFor(kindOfWork.RecordClass)),
-                    Is.EqualTo(kindOfWork.RecordClass));
-                Assert.That(ServiceNowClassLabels.LabelFor(ServiceNowClassLabels.ClassFor(kindOfWork.Label)),
-                    Is.EqualTo(kindOfWork.Label));
+                Assert.That(ServiceNowClassLabels.ClassFor(kindOfWork.Label), Is.EqualTo(kindOfWork.RecordClass));
+                Assert.That(ServiceNowClassLabels.ClassFor(kindOfWork.RecordClass), Is.EqualTo(kindOfWork.RecordClass));
             }
         }
 
@@ -77,7 +70,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ServiceNowClassLabels.LabelFor("u_maintenance_task"), Is.EqualTo("u_maintenance_task"));
                 Assert.That(ServiceNowClassLabels.ClassFor("u_maintenance_task"), Is.EqualTo("u_maintenance_task"));
                 Assert.That(ServiceNowClassLabels.ClassFor("Maintenance Task"), Is.EqualTo("Maintenance Task"),
                     "An unknown LABEL passes through too — the map never invents a class name.");
@@ -92,32 +84,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(ServiceNowClassLabels.ClassFor("not_a_real_class"), Is.EqualTo("not_a_real_class"));
         }
 
-        // Every class under `task` on a stock instance, read from sys_db_object on dev191338,
-        // 2026-08-01. Guards the map's completeness against a future edit that drops a row — not
-        // against ServiceNow adding a class, which is passthrough and costs nothing.
+        // Two labels collapsing onto one class would silently merge two kinds of work into one
+        // query. Its mirror image — two classes sharing a label — is caught structurally instead:
+        // the reverse map is built with ToDictionary, which throws on the duplicate key the moment
+        // the type initialises, so every test in this file would fail at once.
         [Test]
-        public void TheMap_CarriesEveryStockKindOfWorkUnderTask()
+        public void NoTwoLabels_ResolveToTheSameKindOfWork()
         {
-            Assert.That(KnownKindsOfWork.Select(kind => ServiceNowClassLabels.LabelFor(kind.RecordClass)),
-                Has.None.EqualTo(null).And.None.Empty);
-        }
-
-        // Two classes sharing a label would make ClassFor ambiguous, and the winner would be decided
-        // by dictionary ordering rather than by anything meaningful. The map's own construction throws
-        // on a duplicate; this asserts it at test time instead of at first use.
-        [Test]
-        public void NoTwoKindsOfWork_ShareALabel()
-        {
-            var everyClass = new[]
+            var everyLabel = new[]
             {
-                "task", "incident", "problem", "change_request", "change_task", "incident_task",
-                "problem_task", "sc_task", "sc_req_item", "sc_request", "release_task", "ticket",
+                "Task", "Incident", "Problem", "Change Request", "Change Task", "Incident Task",
+                "Problem Task", "Catalog Task", "Requested Item", "Request", "Feature Task", "Ticket",
             };
 
-            var labels = everyClass.Select(ServiceNowClassLabels.LabelFor).ToList();
+            var classes = everyLabel.Select(ServiceNowClassLabels.ClassFor).ToList();
 
-            Assert.That(labels.Distinct(StringComparer.OrdinalIgnoreCase).Count(), Is.EqualTo(everyClass.Length),
-                "An ambiguous label has no correct answer, so the map must not contain one.");
+            Assert.That(classes.Distinct(StringComparer.Ordinal).Count(), Is.EqualTo(everyLabel.Length),
+                "Two labels meaning the same class would merge two kinds of work into one query.");
         }
 
         // The case that nearly shipped broken: LabelByClass is case-insensitive, so asking it whether
@@ -143,22 +126,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("sysapproval_group", "Group approval")]
         public void AKindOfWorkWhoseLabelNoTransformProduces_IsStillCorrect(string recordClass, string label)
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ServiceNowClassLabels.LabelFor(recordClass), Is.EqualTo(label));
-                Assert.That(ServiceNowClassLabels.ClassFor(label), Is.EqualTo(recordClass));
-            }
+            Assert.That(ServiceNowClassLabels.ClassFor(label), Is.EqualTo(recordClass));
         }
 
         [TestCase("")]
         [TestCase("   ")]
         public void AnEmptyName_IsReturnedUnchangedRatherThanMappedToAnything(string empty)
         {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(ServiceNowClassLabels.ClassFor(empty), Is.EqualTo(empty));
-                Assert.That(ServiceNowClassLabels.LabelFor(empty), Is.EqualTo(empty));
-            }
+            Assert.That(ServiceNowClassLabels.ClassFor(empty), Is.EqualTo(empty));
         }
     }
 }

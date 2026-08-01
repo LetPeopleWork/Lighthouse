@@ -441,6 +441,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(workItem.Type, Is.EqualTo(ServiceNowReadScope.RootTable));
         }
 
+        // The blank-kind fallback obeys ADR-128 like every other row. A team that typed the label
+        // would otherwise get `task` on exactly these rows while its config said `Task`, which is the
+        // config-versus-data divergence the whole design exists to make impossible.
+        [Test]
+        public void WorkThatLeavesItsKindBlank_OnATeamThatNamedItsKindByLabel_IsStillLabelled()
+        {
+            var record = ARecordWith((RecordClassField, "", ""));
+
+            var workItem = ServiceNowWorkItemMapper.MapRecord(record, ATeamThatCalls(), ATeamReading("Task"), InstanceUrl);
+
+            Assert.That(workItem.Type, Is.EqualTo("Task"));
+        }
+
         [Test]
         public void WorkFromATableThatDoesNotRecordItsKind_KeepsTheKindTheTeamReadsThrough()
         {

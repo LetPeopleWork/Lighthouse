@@ -3,8 +3,8 @@ using System.Collections.Frozen;
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
     /// <summary>
-    /// What each kind of work is called, in both directions: the record class the Table API filters
-    /// on, and the label a flow coach reads on their own ServiceNow screen. Pure (ADR-114).
+    /// What each kind of work is called: the label a flow coach reads on their own ServiceNow
+    /// screen, resolved to the record class the Table API filters on. Pure (ADR-114).
     /// </summary>
     /// <remarks>
     /// ADR-128. A static set in source for the same measured reason ADR-116 decision 4 gives:
@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// maintainer and return nothing for the customer.
     /// <para>
     /// <b>Passthrough is the load-bearing behaviour, not the edge case.</b> A name that is not in
-    /// the map comes back unchanged in BOTH directions, so a shop's own <c>u_maintenance_task</c>
+    /// the map comes back unchanged, so a shop's own <c>u_maintenance_task</c>
     /// stores as <c>u_maintenance_task</c> and its team config stays <c>u_maintenance_task</c> —
     /// unimproved, but consistent, and therefore still correct in every comparison. This is why
     /// <c>sys_class_name.display_value</c> is deliberately not read even though it arrives free on
@@ -26,6 +26,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// this is a map rather than a transform: <c>sc_task</c> is <em>Catalog Task</em> and
     /// <c>release_task</c> is <em>Feature Task</em>, neither of which any rewriting of the class
     /// name produces. Being wrong about an entry costs nothing — it simply passes through.
+    /// </para>
+    /// <para>
+    /// The class-to-label direction is deliberately NOT exposed. Once the ADR-128 amendment made
+    /// <see cref="ServiceNowReadScope.AsTyped"/> report a record in the words its own team used,
+    /// nothing needed it. If #5610's board picker comes to pre-fill labels (OC-4), that is the
+    /// moment to add it back.
     /// </para>
     /// </remarks>
     public static class ServiceNowClassLabels
@@ -99,15 +105,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // lowercase form is what counts as "already a class name".
         private static readonly FrozenSet<string> RecordClasses =
             LabelByClass.Keys.ToFrozenSet(StringComparer.Ordinal);
-
-        /// <summary>
-        /// The label for a record class — <c>change_request</c> becomes <c>Change Request</c>. A
-        /// class with no entry is returned unchanged.
-        /// </summary>
-        public static string LabelFor(string recordClass)
-        {
-            return LabelByClass.TryGetValue(recordClass, out var label) ? label : recordClass;
-        }
 
         /// <summary>
         /// The record class for a label — <c>Change Request</c> becomes <c>change_request</c>.

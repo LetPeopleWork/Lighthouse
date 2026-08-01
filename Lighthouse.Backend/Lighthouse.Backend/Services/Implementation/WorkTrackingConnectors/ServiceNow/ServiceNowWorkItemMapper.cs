@@ -163,9 +163,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // sys_class_name.display_value arrives free on this very record and is still deliberately
             // not read: it answers what the INSTANCE calls the class, which is a third vocabulary, and
             // GetCreatedItemsForTeam compares Type against the team's own configured entries.
-            return string.IsNullOrWhiteSpace(recordClass)
-                ? ServiceNowReadScope.RootTable
-                : scope.AsTyped(recordClass);
+            // The fallback goes through AsTyped too. It is the same rule, not a separate one: a team
+            // that typed `Task` must not have a row silently stored as `task` just because that row
+            // declined to say its own class.
+            return scope.AsTyped(
+                string.IsNullOrWhiteSpace(recordClass) ? ServiceNowReadScope.RootTable : recordClass);
         }
 
         /// <summary>
