@@ -4,6 +4,13 @@ import { BoardWizard } from "./BoardWizard";
 import { CsvUploadWizard } from "./CsvUploadWizard";
 
 export abstract class BaseSettingsPage<T> {
+	// Most wizards are named "Select <system> <what>", so the button follows from the two arguments.
+	// ServiceNow's is named after the ServiceNow feature it reads instead — see the
+	// `servicenow.board` entry in DataRetrievalWizardRegistry.
+	private static readonly wizardButtonNames: Record<string, string> = {
+		ServiceNow: "Select Visual Task Board",
+	};
+
 	page: Page;
 	createPageHandler: (page: Page) => T;
 
@@ -26,11 +33,11 @@ export abstract class BaseSettingsPage<T> {
 		workTrackingSystemType: string,
 		wizardType: "Board" | "Team" | "File" = "Board",
 	): Promise<BaseWizard<T>> {
-		await this.page
-			.getByRole("button", {
-				name: `Select ${workTrackingSystemType} ${wizardType}`,
-			})
-			.click();
+		const buttonName =
+			BaseSettingsPage.wizardButtonNames[workTrackingSystemType] ??
+			`Select ${workTrackingSystemType} ${wizardType}`;
+
+		await this.page.getByRole("button", { name: buttonName }).click();
 
 		if (wizardType === "File") {
 			return new CsvUploadWizard(this.page, this.createPageHandler);

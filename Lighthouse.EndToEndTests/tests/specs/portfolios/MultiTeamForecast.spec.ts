@@ -23,7 +23,9 @@ testWithDependencies(
 			throw new Error(`Demo scenario did not seed ${PORTFOLIO_NAME}`);
 		}
 
-		const portfolioDetailPage = await overviewPage.goToPortfolio(portfolio.name);
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			portfolio.name,
+		);
 
 		await test.step("Feature whose team has no throughput cannot be forecast", async () => {
 			// Team Meridian contributes to this Epic and has closed nothing, so no honest

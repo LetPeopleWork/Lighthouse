@@ -47,6 +47,8 @@ To create a connection to a ServiceNow instance, you need three things:
 | **Username** | `lighthouse_integration` | A dedicated integration user is strongly recommended over a personal account |
 | **Password** | | See [Authentication](#authentication) below |
 
+![Create ServiceNow Connection](../../assets/concepts/worktrackingsystem_ServiceNow.png)
+
 {: .important}
 The password shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
 
@@ -165,15 +167,24 @@ Class names are matched case-insensitively, so `Incident` and `incident` both wo
 
 # Board Wizard
 
-If your instance uses **Visual Task Boards**, you can pre-fill a team's configuration from one instead of writing the query by hand. The wizard will:
+If your instance uses **Visual Task Boards**, you can pre-fill a team's configuration from one instead of writing the query by hand. The wizard is offered when creating or editing a **team** — there is no portfolio equivalent, for the reason in [Portfolios](#portfolios).
 
-- Show you the boards available on the connected instance
-- Upon selection, fill in the query, the work item types, and the state configuration derived from the board's lanes
+![Select ServiceNow Visual Task Board](../../assets/concepts/servicenow_wizard.png)
 
-You can adjust every value afterwards — for example if the lane-to-state mapping is not the one you want.
+Pick a board and Lighthouse fills in three things from it:
+
+| What it fills | Where it comes from |
+|---|---|
+| **Query** | The board's own filter, verbatim |
+| **Work item type** | The board's table, in the label form you would read on a ServiceNow screen — `Change Request`, not `change_request` |
+| **States** | The board's lanes, in the order the board arranged them: the first lane becomes *To Do*, the last becomes *Done*, and everything between becomes *Doing* |
+
+Lanes named *Canceled* or *Cancelled* are left out wherever they sit, because that work never completed. A board with fewer than three usable lanes leaves the state lists **empty** rather than inventing a split — map those states by hand.
+
+You can adjust every value afterwards — for example if the lane-to-state mapping is not the one you want. The board is a starting point, not a binding.
 
 {: .note}
-Visual Task Boards are **shared**, not role-scoped: which boards you see depends on what has been shared with the connecting account, not on its roles. If a board you expect is missing, check its sharing settings in ServiceNow. Boards that cannot produce a usable query are not offered.
+Visual Task Boards are **shared**, not role-scoped: which boards you see depends on what has been shared with the connecting account, not on its roles. If a board you expect is missing, check its sharing settings in ServiceNow. Boards that are inactive, or that carry no table or no filter, cannot produce a usable query and are not offered.
 
 # States
 

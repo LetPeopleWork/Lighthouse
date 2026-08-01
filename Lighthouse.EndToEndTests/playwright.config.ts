@@ -7,6 +7,18 @@ export class TestConfig {
 	static readonly LIGHTHOUSEURLNAME: string = "LIGHTHOUSEURL";
 	static readonly LINEARAPITOKENNAME: string = "LinearAPIKey";
 	static readonly BACKUPPASSWORDNAME: string = "LighthouseBackupPassword";
+	static readonly SERVICENOWINSTANCENAME: string =
+		"ServiceNowLighthouseIntegrationTestInstance";
+	static readonly SERVICENOWUSERNAME: string =
+		"ServiceNowLighthouseIntegrationTestUser";
+	static readonly SERVICENOWTOKENNAME: string =
+		"ServiceNowLighthouseIntegrationTestToken";
+
+	// Instance and account the backend integration tests default to as well
+	// (ServiceNowWorkTrackingConnectorIntegrationTest.DefaultInstanceUrl / AdminUser).
+	static readonly SERVICENOWDEFAULTINSTANCE: string =
+		"https://dev191338.service-now.com";
+	static readonly SERVICENOWDEFAULTUSER: string = "admin";
 
 	static readonly AUTH_TEST_USER_USERNAME: string = "test@user.com";
 	static readonly AUTH_TEST_USER_PASSWORD: string = "Test123!!?lsdkaflaskdf";
@@ -51,6 +63,24 @@ export class TestConfig {
 
 	public static get LinearApiKey(): string {
 		return TestConfig.getEnvVariable(TestConfig.LINEARAPITOKENNAME, "");
+	}
+
+	public static get ServiceNowInstanceUrl(): string {
+		return TestConfig.getEnvVariable(
+			TestConfig.SERVICENOWINSTANCENAME,
+			TestConfig.SERVICENOWDEFAULTINSTANCE,
+		);
+	}
+
+	public static get ServiceNowUsername(): string {
+		return TestConfig.getEnvVariable(
+			TestConfig.SERVICENOWUSERNAME,
+			TestConfig.SERVICENOWDEFAULTUSER,
+		);
+	}
+
+	public static get ServiceNowPassword(): string {
+		return TestConfig.getEnvVariable(TestConfig.SERVICENOWTOKENNAME, "");
 	}
 
 	public static get BackupPassword(): string {
