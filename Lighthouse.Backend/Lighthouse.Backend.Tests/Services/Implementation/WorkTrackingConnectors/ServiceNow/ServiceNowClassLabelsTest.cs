@@ -23,7 +23,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ("task", "Task"),
         ];
 
-        public static IEnumerable<(string RecordClass, string Label)> EveryKnownKindOfWork() => KnownKindsOfWork;
+        // Private on purpose: NUnit resolves a TestCaseSource by name through reflection and does not
+        // need it public, while NUnit1028 fails the Sonar gate if a non-test method is.
+        private static IEnumerable<(string RecordClass, string Label)> EveryKnownKindOfWork() => KnownKindsOfWork;
 
         [TestCaseSource(nameof(EveryKnownKindOfWork))]
         public void ClassFor_AKnownLabel_IsTheClassTheTableApiFiltersOn((string RecordClass, string Label) kindOfWork)
