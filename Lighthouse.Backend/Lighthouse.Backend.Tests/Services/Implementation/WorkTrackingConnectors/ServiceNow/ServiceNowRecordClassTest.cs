@@ -414,6 +414,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "The label is mapped before the clause is built. ServiceNow never sees the label.");
         }
 
+        // Hoisted rather than inline: CA1861 fires on an array literal handed to a repeatedly-called
+        // method, and an NUnit constraint is one. Silent in the local build, fails the Sonar gate.
+        private static readonly string[] TheKindsThisTeamNamed = ["Incident", "Change Request"];
+
         // AC-D3's backend half. The kind of work a row reports is the one the coach configured and
         // reads in the Type column, the chart legends and the rule engine — not the column value.
         [Test]
@@ -422,9 +426,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var instance = AnInstanceHolding(ThreeKindsOfWork());
             var subject = CreateSubject(instance);
 
-            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(["Incident", "Change Request"]))).ToList();
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamWorkingOn(TheKindsThisTeamNamed))).ToList();
 
-            Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(new[] { "Incident", "Change Request" }),
+            Assert.That(workItems.Select(item => item.Type), Is.EquivalentTo(TheKindsThisTeamNamed),
                 "The team named its work the way ServiceNow does, so that is what its rows say.");
         }
 
