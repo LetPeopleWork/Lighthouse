@@ -296,7 +296,7 @@ describe("BoardWizard", () => {
 	// table the account may not read and a board nobody shared, and advice that fixes none of them.
 	// The backend already wrote the words that name the table and the role to grant.
 	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
-	it.skip("shows the reason the board list was refused", async () => {
+	it("shows the reason the board list was refused", async () => {
 		mockGetBoards.mockRejectedValue(new ApiError(403, REFUSAL));
 
 		render(
@@ -319,7 +319,7 @@ describe("BoardWizard", () => {
 	// on the instance can tell apart — the account is a member of no board, or none of its boards
 	// carries both a table and a filter. The copy names both and asserts neither.
 	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
-	it.skip("names both reasons a connection may have no board to offer", async () => {
+	it("names both reasons a connection may have no board to offer", async () => {
 		mockGetBoards.mockResolvedValue([]);
 
 		render(
@@ -701,7 +701,7 @@ describe("BoardWizard", () => {
 	// when the incoming value is non-empty — so the dialog reported success and silently did
 	// nothing. A refusal wearing a success costume, for all four connectors.
 	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
-	it.skip("cannot be confirmed when the board could not be read", async () => {
+	it("cannot be confirmed when the board could not be read", async () => {
 		mockGetBoards.mockResolvedValue(mockBoards);
 		mockGetBoardInformation.mockRejectedValue(new ApiError(403, REFUSAL));
 
@@ -742,7 +742,9 @@ describe("BoardWizard", () => {
 
 		expect(confirmButton).toBeDisabled();
 
-		await userEvent.click(confirmButton);
+		// A disabled MUI button carries pointer-events: none, which user-event refuses to click
+		// unless told to; the point here is that clicking it anyway still completes nothing.
+		await userEvent.click(confirmButton, { pointerEventsCheck: 0 });
 
 		expect(mockOnComplete).not.toHaveBeenCalled();
 	});

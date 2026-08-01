@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { useState } from "react";
+import { useRbac } from "../../../hooks/useRbac";
 import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type {
@@ -46,15 +47,18 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 		null,
 	);
 	const { getTerm } = useTerminology();
+	const { isSystemAdmin } = useRbac();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 
-	// Get available wizards for the selected work tracking system
-	const availableWizards = selectedWorkTrackingSystem
-		? getWizardsForSystem(
-				selectedWorkTrackingSystem.workTrackingSystem,
-				settingsContext,
-			)
-		: [];
+	// Every wizard reads through /wizards/*, which is System Admin only (ADR-126) — offering the
+	// button to anyone else only buys them a 403.
+	const availableWizards =
+		selectedWorkTrackingSystem && isSystemAdmin
+			? getWizardsForSystem(
+					selectedWorkTrackingSystem.workTrackingSystem,
+					settingsContext,
+				)
+			: [];
 
 	const handleWizardComplete = (boardInfo: IBoardInformation) => {
 		// Only update fields that have non-empty values to preserve existing data

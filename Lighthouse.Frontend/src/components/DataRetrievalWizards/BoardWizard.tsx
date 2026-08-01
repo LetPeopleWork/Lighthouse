@@ -13,8 +13,18 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import type { IBoard } from "../../models/Boards/Board";
 import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import type { DataRetrievalWizardProps } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
+import { ApiError } from "../../services/Api/ApiError";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import BoardInformationDisplay from "../DataRetrieval/BoardInformationDisplay";
+
+// Boards are shared, not roled, so an empty list has two causes nothing on the instance can tell
+// apart (ADR-126). Name both, assert neither.
+const NO_BOARDS =
+	"No boards to offer. Either this account is not a member of any Visual Task Board, or none of the boards it can see carries both a table and a filter.";
+
+// The backend words its own refusals (ADR-126); only a failure that never reached it needs copy here.
+const refusalOr = (err: unknown, fallback: string): string =>
+	err instanceof ApiError && err.message ? err.message : fallback;
 
 const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	open,
@@ -43,10 +53,10 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 			setBoards(fetchedBoards);
 
 			if (fetchedBoards.length === 0) {
-				setError("No boards available for this connection.");
+				setError(NO_BOARDS);
 			}
 		} catch (err) {
-			setError("Failed to load boards. Please try again.");
+			setError(refusalOr(err, "Failed to load boards. Please try again."));
 			console.error("Error loading boards:", err);
 		} finally {
 			setLoading(false);
@@ -72,15 +82,8 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 				setBoardInformation(info);
 			} catch (err) {
 				console.error("Error fetching board information:", err);
-				// Fallback to empty board information
-				const emptyBoardInfo: IBoardInformation = {
-					dataRetrievalValue: "",
-					workItemTypes: [],
-					toDoStates: [],
-					doingStates: [],
-					doneStates: [],
-				};
-				setBoardInformation(emptyBoardInfo);
+				setBoardInformation(null);
+				setError(refusalOr(err, "Failed to read the board. Please try again."));
 			} finally {
 				setFetchingBoardInfo(false);
 			}

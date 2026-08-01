@@ -9,7 +9,7 @@ import dataRetrievalWizards, {
 describe("DataRetrievalWizardRegistry", () => {
 	describe("dataRetrievalWizards array", () => {
 		it("should contain the CSV upload wizard, Jira, ADO, Linear team, and Linear states wizards", () => {
-			expect(dataRetrievalWizards).toHaveLength(4);
+			expect(dataRetrievalWizards).toHaveLength(5);
 
 			const csvWizard = dataRetrievalWizards.find((w) => w.id === "csv.upload");
 			expect(csvWizard).toBeDefined();
@@ -186,7 +186,7 @@ describe("DataRetrievalWizardRegistry", () => {
 	// same dialog Jira, Azure DevOps and Linear already use.
 	describe("picking a ServiceNow board", () => {
 		// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
-		it.skip("is offered to a team", () => {
+		it("is offered to a team", () => {
 			const wizards = getWizardsForSystem("ServiceNow", "team");
 
 			expect(wizards.map((wizard) => wizard.id)).toContain("servicenow.board");

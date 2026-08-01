@@ -61,7 +61,8 @@ const teamSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
 		// Always, whatever table the connection reads (ADR-123 decision 6, amended 2026-07-31):
 		// a field hidden here is still honoured by the read.
 		isWorkItemTypesRequired: true,
-		// No wizard: SPIKE Q8 measured table/field discovery unavailable below itil (ADR-116).
+		// The Visual Task Board picker is registered in DataRetrievalWizardRegistry, not here:
+		// wizardHint is read by nothing (ADR-125, #5610).
 		wizardHint: null,
 		// Non-reference fields only: a reference field stores a sys_id, so matching it against a
 		// display label selects nothing (#5610).

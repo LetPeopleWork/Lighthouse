@@ -35,6 +35,14 @@ const dataRetrievalWizards: IDataRetrievalWizard[] = [
 		applicableSettingsContexts: ["team"],
 		component: BoardWizard,
 	},
+	{
+		id: "servicenow.board",
+		name: "Select Visual Task Board",
+		applicableSystemTypes: ["ServiceNow"],
+		// Team only: a ServiceNow portfolio renders no query field for a board to fill in (ADR-125).
+		applicableSettingsContexts: ["team"],
+		component: BoardWizard,
+	},
 ];
 
 export function getWizardsForSystem(
