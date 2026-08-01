@@ -57,9 +57,13 @@ against the board's **table**. That is the invariant the probe verified on both 
    board", not "no boards found" — R-2's lesson on a new surface.
 3. Sharing the board with the Lighthouse account is an onboarding step Lighthouse cannot perform
    (`vtb_board_member` is admin-write). It belongs in #5578's docs.
-4. Refuse a board with empty `table` or empty `filter` (freeform), and a board whose `table` is not a
-   task descendant. The second needs a detection strategy that survives `sys_db_object` 403 — open for
-   DESIGN, two candidates in `findings.md`.
+4. **Settled as D14** (maintainer, 2026-08-01): exclude at query time — list boards as
+   `active=true^tableISNOTEMPTY^filterISNOTEMPTY`. Both fields, not just `table`: a board with a table
+   and no filter pre-fills an empty query. "Only data-driven boards" is not expressible — there is no
+   board-type column — and does not need to be, since Lighthouse copies the live filter rather than the
+   drifting card set. A board whose `table` is not a task descendant is still a *refusal*, not an
+   exclusion, and needs a detection strategy that survives `sys_db_object` 403 — open for DESIGN, two
+   candidates in `findings.md`.
 5. D9's empty-fallback fix in `BoardWizard.tsx` is load-bearing: every failure mode found here
    currently arrives as a truthy all-empty `IBoardInformation` that enables Confirm.
 6. The stale comments in `IServiceNowWorkTrackingConnector.cs:3-5` and

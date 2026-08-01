@@ -39,6 +39,10 @@ drifts behind its own filter so the filter — not the cards — is the thing be
   four, though nothing reads it (D5).
 - Mapping the board to `BoardInformation`: filter → `DataRetrievalValue`, table → a `sys_class_name`
   value in `WorkItemTypes` (D6). Both fields already exist on the contract.
+- **Listing only boards that can become a query**, scoped server-side:
+  `active=true^tableISNOTEMPTY^filterISNOTEMPTY` (D14). Excludes freeform boards (both empty) and
+  table-without-filter boards, whose pre-fill would be an empty query. There is no board-type column to
+  ask for instead — no `type` field, `sys_class_name` empty on every row.
 - **D9's fix in the shared `BoardWizard`**: a failed board read cannot be confirmed and never
   substitutes an empty pre-fill over a typed query. This changes behaviour for Jira, ADO and Linear
   too — named here so the blast radius is not a review surprise.
@@ -102,9 +106,12 @@ four questions and what they returned:
 4. **ACL-blind list** — yes. Every 0-row board read returned `X-Total-Count: 2`. Never count boards
    from the header.
 
-Two things this slice now owns that it did not before: the empty-list wording must say *this account
-is not a member of any board*, and the stale claims at `IServiceNowWorkTrackingConnector.cs:3-5` and
-`DataRetrievalSchemaDefaults.ts:64` ("ServiceNow has no board concept") must be amended here.
+Two things this slice now owns that it did not before: the stale claims at
+`IServiceNowWorkTrackingConnector.cs:3-5` and `DataRetrievalSchemaDefaults.ts:64` ("ServiceNow has no
+board concept") must be amended here, and the **empty-list wording has two indistinguishable causes**
+to cover — this account is a member of no board, *and* none of its boards carries both a table and a
+filter (D14's scoping). `X-Total-Count` cannot tell them apart; it is ACL-blind. Say both, claim
+neither.
 
 ## Dogfood moment
 
