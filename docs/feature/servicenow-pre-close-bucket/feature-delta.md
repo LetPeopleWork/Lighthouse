@@ -112,6 +112,8 @@ referenced by name.
 - **A declared capability set across connectors** — D9, NOT-NOW.
 - **Persisting per-class history availability** — the real cost of item 5 options (b) and (c). Blocked
   behind D9 by design, so ServiceNow does not invent the parallel mechanism item 2 exists to prevent.
+- **Any data migration, backfill or re-sync for existing ServiceNow work items** — OC-6. Nothing
+  ServiceNow has shipped, so every such team is disposable by explicit maintainer decision.
 - **Restoring a connection-scope advisory about history** — ADR-123 D10 withdrew it for a measured
   reason that still holds (`metric_definition` has 0 rows for `table=task`).
 - **Changing Jira / ADO / Linear unmapped-state handling** — D11.
@@ -395,8 +397,8 @@ already arrive on every row; `display_value` arrives too and is deliberately ign
 | **OC-3** | Does `InstanceUrl` need trimming? | **SETTLED** — DD-5, yes, per Jira's precedent. |
 | **OC-4** | Does #5610's picker pre-fill the label or the class name? | **Open, and now has a right answer**: the label. DD-4 normalises it on save either way, but the coach should see the label in the field. Conversation with #5610, which is mid-DELIVER on `main`. |
 | **OC-5** | Does a user-authored *rule* matching `change_request` break? | **New.** `WorkItemFieldProvider.cs:56` and `evaluateCondition.ts:23` both expose type to rule engines, and existing ServiceNow rules would have been written against class names. Nothing has shipped for ServiceNow, so there are no such rules in the wild — but confirm with the maintainer before assuming zero blast radius. |
-| **OC-6** | What happens to **rows already synced** before this ships? | **Found by the DEVOPS reviewer, 2026-08-01, and it is the sharpest finding of the review round.** A team synced today holds `change_request` in `WorkItemBase.Type`. After this ships its config normalises to `Change Request`, but **those rows keep the class name until they are next synced** — and `GetCreatedItemsForTeam` compares the two, so the Created Items chart shows the silent zero this design exists to prevent, for exactly as long as the window lasts. Production blast radius is nil (nothing ServiceNow has ever been released), but **`dev191338`'s dogfood teams have precisely those rows**, so the dogfood hits it. Decide in DELIVER: rely on the next sync overwriting `Type` (it does — `Update()` copies it), and if so, state the window in the slice brief and force a sync during the dogfood. |
-| **OC-7** | Rollback: rows written as labels while live, then a revert? | Same reviewer, same shape. The table would hold both forms. Cheap because `ClassFor`/`LabelFor` round-trip losslessly for known classes and pass unknowns through, so a re-sync heals it either way. Recorded so the answer is not re-derived under pressure. |
+| **OC-6** | ~~What happens to rows already synced before this ships?~~ | **SETTLED, maintainer, 2026-08-01: "we can throw every existing snow team away, I wouldn't mind."** The DEVOPS reviewer was right about the mechanism — a team synced today holds `change_request` in `WorkItemBase.Type`, its config normalises to `Change Request`, and `GetCreatedItemsForTeam` compares the two — but wrong about the cost. **Nothing ServiceNow has ever been released**, so every ServiceNow team that exists is a dogfood team on `dev191338` and is disposable. No backfill, no migration, no re-sync ceremony, no window to document. Delete and recreate the teams if a stale row is ever confusing. This is the one moment in the epic's life when that answer is available; it will not be after the first release. |
+| **OC-7** | ~~Rollback: rows written as labels while live, then a revert?~~ | **SETTLED by the same call.** Same disposability, and `ClassFor`/`LabelFor` round-trip losslessly anyway, so a re-sync heals a mixed table without help. |
 
 ## Wave: DESIGN / [REF] Revised slices
 
