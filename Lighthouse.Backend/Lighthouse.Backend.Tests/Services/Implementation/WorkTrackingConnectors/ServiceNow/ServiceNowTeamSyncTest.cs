@@ -143,6 +143,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "Offset paging needs a TOTAL order: sys_created_on has one-second resolution and a bulk write puts up to ten rows on the same second, so without the tie-breaker the pages overlap and a row goes unread.");
         }
 
+        // Bug #5621 F3. ServiceNow's own *Copy query* emits the list's current sort, so a team query
+        // carrying an ORDERBY is the documented path rather than an unusual one.
+        [Test]
+        public async Task SyncingATeamWhoseQueryCarriesItsOwnOrder_StillAsksForTheTieBreaker()
+        {
+            var instance = AnInstanceHolding(FiveRecordsOfMixedState());
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeam(query: "active=true^ORDERBYDESCopened_at"));
+
+            var asked = instance.Requests.Select(uri => Uri.UnescapeDataString(uri.Query)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(asked, Has.All.Contains("^ORDERBYsys_id"),
+                    "opened_at has one-second resolution and bulk-imported records tie on it heavily, so without the tie-breaker the sort is not total, the pages overlap, and the repeated-record guard aborts the whole team's sync once the team outgrows one page.");
+                Assert.That(asked, Has.All.Contains("ORDERBYDESCopened_at"),
+                    "Encoded queries chain ORDERBY terms, so the team's own order stays primary rather than being replaced.");
+            }
+        }
+
         // Linear's precedent: a team only sees work in the states it has mapped. An unmapped label
         // is work the flow coach never told Lighthouse how to interpret.
         [Test]

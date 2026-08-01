@@ -515,11 +515,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // distinct sys_created_on values, up to 10 sharing one second, and pages 1 and 2 overlapped
         // by one sys_id — one row unread, and the repeat of the other one trips the guard below and
         // fails the whole team's sync. With sys_id appended the two pages overlap by none.
+        //
+        // Appended unconditionally, including over a team's own ORDERBY (Bug #5621): encoded queries
+        // chain ORDERBY terms, so the team's order stays primary and only gains a tie-breaker. Skipping
+        // it there left the sort non-total for exactly the queries ServiceNow's own *Copy query* hands
+        // a coach, since a list's current sort travels with the query it copies.
         private static string InAStableOrder(string query)
         {
-            return query.Contains(OrderByClause, StringComparison.OrdinalIgnoreCase)
-                ? query
-                : $"{query}{OrderByClause}{StableOrderField}{OrderByClause}{TieBreakerField}";
+            return $"{query}{OrderByClause}{StableOrderField}{OrderByClause}{TieBreakerField}";
         }
 
         public Task<List<Feature>> GetFeaturesForProject(Portfolio project)
