@@ -7,8 +7,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
 {
     public class DataRetrievalSchemaDtoTest
     {
-        private const string TheWholeHierarchy = "task";
-
         // The example DD-5 names: a real encoded query in column form, narrow enough to be one team's.
         private const string WorkedExample = "active=true^assignment_group=Service Desk";
 
@@ -119,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         // against the literal because a test that compares the value to the constant it came from
         // survives blanking the constant.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void AServiceNowTeamsQueryField_ShowsAWorkedExampleOfTheQueryItWants()
         {
             var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow);
@@ -133,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         // nothing. This is the last surface before either one costs a user their afternoon, so the
         // help has to name both — and say where ServiceNow will hand them a correct query.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void AServiceNowTeamsQueryField_NamesBothWaysAQueryFailsQuietlyAndWhereToGetAGoodOne()
         {
             var help = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow).HelpText;

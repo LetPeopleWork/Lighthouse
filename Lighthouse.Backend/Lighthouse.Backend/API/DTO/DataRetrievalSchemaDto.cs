@@ -18,7 +18,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public string? WizardHint { get; set; }
 
-        // DISTILL scaffold for #5610 slice 01 — DELIVER fills these on the ServiceNow team row (DD-5 / ADR-125).
+        // Rendered on the query field as its placeholder and helper text. Null for a connector with
+        // nothing to explain, which then renders exactly what it renders today (#5610, DD-5).
         public string? Placeholder { get; set; }
 
         public string? HelpText { get; set; }
@@ -76,6 +77,9 @@ namespace Lighthouse.Backend.API.DTO
                     // Always, whatever table the connection reads (ADR-123 decision 6, amended
                     // 2026-07-31): a field hidden here is still honoured by the read.
                     IsWorkItemTypesRequired = true,
+                    // Column form, not the label form the SPIKE measured matching the whole table.
+                    Placeholder = "active=true^assignment_group=Service Desk",
+                    HelpText = "To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query. Both ways this goes wrong are silent: a field name your instance does not know is dropped and the query then matches the whole table, which Lighthouse will not save; a value it does not know matches nothing, so the team looks empty.",
                 },
                 _ => new DataRetrievalSchemaDto
                 {
