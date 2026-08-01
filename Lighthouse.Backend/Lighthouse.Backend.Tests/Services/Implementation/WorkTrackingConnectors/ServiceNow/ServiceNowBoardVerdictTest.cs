@@ -7,9 +7,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     //
     // The board ladder is a pure core that intercepts exactly two rungs of the connection ladder and
     // calls the rest through. ServiceNowBoardPickerTest exercises it through the connector, where an
-    // empty list and a list of boards both leave the picker open — the interception carries an
-    // advisory, not a refusal, and GetBoards only asks whether the verdict is valid. So the rung
-    // itself is only observable here, at the core.
+    // empty list and a list of boards both leave the picker open — the interception carries a reason
+    // on a valid verdict, not a refusal, and GetBoards only asks whether the verdict is valid. So the
+    // rung itself is only observable here, at the core.
     [TestFixture]
     public class ServiceNowBoardVerdictTest
     {
@@ -28,8 +28,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(verdict.IsValid, Is.True, "An account with no board shared with it has a picker to open, not a connection to fix.");
-                Assert.That(verdict.AdvisoryCode, Is.EqualTo(NoBoardsAvailable));
-                Assert.That(verdict.Advisory, Does.Contain("Visual Task Board").And.Contain("table and a filter"),
+                Assert.That(verdict.Code, Is.EqualTo(NoBoardsAvailable));
+                Assert.That(verdict.Message, Does.Contain("Visual Task Board").And.Contain("table and a filter"),
                     "Nothing on the instance can separate the two causes, so the copy names both and asserts neither.");
             }
         }
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(verdict.IsValid, Is.True);
-                Assert.That(verdict.AdvisoryCode, Is.Null,
+                Assert.That(verdict.Code, Is.Not.EqualTo(NoBoardsAvailable),
                     "A connection with exactly one usable board would otherwise be told it has none.");
             }
         }
@@ -60,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(list.Code, Is.EqualTo("unexpected_response"));
-                Assert.That(list.AdvisoryCode, Is.Null);
                 Assert.That(read.Code, Is.EqualTo("unexpected_response"));
             }
         }

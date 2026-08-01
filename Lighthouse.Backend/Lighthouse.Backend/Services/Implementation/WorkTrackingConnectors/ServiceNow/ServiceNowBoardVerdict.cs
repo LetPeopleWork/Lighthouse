@@ -8,9 +8,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     // Exactly one rung is intercepted, and only for the list.
     public static class ServiceNowBoardVerdict
     {
+        private const string NoBoardsAvailableCode = "no_boards_available";
+
         // Both causes named, neither asserted — the house style no_records_visible established.
         // X-Total-Count is ACL-blind on vtb_board (header 2, body 0, measured 2026-08-01), so
-        // nothing on the platform can separate them.
+        // nothing can separate them.
         private const string NoBoardsAvailableMessage =
             "No ServiceNow boards are available to this connection. Either the account this connection signs in " +
             "with is not a member of any Visual Task Board, or none of its boards has both a table and a filter " +
@@ -32,12 +34,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// rows, and <c>no_records_visible</c> would report an action the customer can take as a
         /// fault they cannot. It is an empty list carrying the reason, not a failure.
         /// </summary>
+        /// <remarks>
+        /// The reason rides <c>Code</c>/<c>Message</c> on a valid verdict, which is where every other
+        /// rung already puts it. #5612 deleted <c>SuccessWith</c> and the Advisory pair it wrote to
+        /// once they had no producer left; this rung is built here rather than reviving them.
+        /// </remarks>
         public static ConnectionValidationResult FromBoardList(
             HttpStatusCode statusCode, bool carriesRecords, int boardCount, string table)
         {
             if (statusCode == HttpStatusCode.OK && carriesRecords && boardCount < 1)
             {
-                return ConnectionValidationResult.SuccessWith("no_boards_available", NoBoardsAvailableMessage);
+                return new ConnectionValidationResult
+                {
+                    IsValid = true,
+                    Code = NoBoardsAvailableCode,
+                    Message = NoBoardsAvailableMessage,
+                };
             }
 
             return ServiceNowValidationVerdict.FromResponse(statusCode, carriesRecords, boardCount, table);
