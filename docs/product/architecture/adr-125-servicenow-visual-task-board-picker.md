@@ -61,6 +61,13 @@ are `inputKind: "none"` (ADR-116).
 for the query and `WorkItemTypes` already exists for the classes ADR-123 shipped, so the pre-fill
 needs zero contract change across four connectors.
 
+**Amended 2026-08-01 (#5612's OC-4).** `WorkItemTypes` is pre-filled with the board table's **label**
+— `Change Request`, not `change_request` — through `ServiceNowClassLabels.LabelFor`. ADR-128 made a
+team's work items report the kind of work in the words that team was configured with, and deleted the
+save-time normalisation that would otherwise have caught a class name later; a class-name pre-fill
+would therefore leave the team syncing correctly and forecasting nothing. Still zero contract change:
+the field is the same field, carrying a different string. An unmapped class passes through unchanged.
+
 `inputKind` stays **`freetext`**. Linear's `wizard-select` makes the field read-only
 (`GeneralSettingsComponent.tsx:126`), and manual entry stays the primary path.
 
@@ -185,6 +192,9 @@ board read is `200`-with-zero-rows and never `403`.
   reuses, and the one rung it deliberately does not (ADR-126 decision 3).
 - [ADR-123](./adr-123-servicenow-record-classes-as-work-item-types.md) — the `task`-rooted read and
   `Team.WorkItemTypes` as record classes, which is what the board's `table` pre-fills.
+- [ADR-128](./adr-128-servicenow-record-class-labels-are-connector-local.md) — the label map. Decision
+  1's amendment above is that ADR's OC-4, answered: the picker pre-fills the label, while decision 4's
+  ladder still probes the record class.
 - [ADR-124](./adr-124-servicenow-record-class-readability-ladder.md) — the two-probe ladder decision 4
   reuses unchanged. Its applicability widens from "a class a coach typed" to "a class anything
   proposed"; no rung changes.

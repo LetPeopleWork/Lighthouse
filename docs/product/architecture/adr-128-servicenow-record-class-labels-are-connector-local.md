@@ -126,11 +126,17 @@ worse than no field.
 that was previously shown raw, so the worst case is a different English label rather than a wrong
 number. Revisit only if a customer reports it.
 
-**Only one direction is public, and that is a review outcome.** The class→label accessor shipped
-with the map and became unreachable the moment the amendment above replaced `KindOfWork`'s
-`LabelFor` call with `AsTyped`. It was removed rather than kept "for when the picker needs it": a
-public method whose only callers are its own tests earns nothing and flatters the mutation score.
-The map data still holds both directions, so OC-4 can restore the accessor in a few lines.
+**Only one direction was public, and that was a review outcome — now both are.** The class→label
+accessor shipped with the map and became unreachable the moment the amendment above replaced
+`KindOfWork`'s `LabelFor` call with `AsTyped`. It was removed rather than kept "for when the picker
+needs it": a public method whose only callers are its own tests earns nothing and flatters the
+mutation score. **Restored 2026-08-01 by #5610**, at the moment predicted and for the predicted
+reason — the board picker had a real caller for it. Five lines, as forecast.
+
+The two directions are not interchangeable and the code says so: `LabelFor` answers in one
+globally-chosen word and may only be used to **pre-fill**, while a record's own class is reported
+through `AsTyped`, in the words *that team* used. Using `LabelFor` inbound would relabel a team that
+deliberately typed the class name, which is the divergence the amendment exists to remove.
 
 **The map is a maintenance surface.** It is a static set in source for the same measured reason
 ADR-116 decision 4 gives: `sys_db_object` carries class labels and is unreadable below `itil`, and
@@ -142,10 +148,16 @@ the class name flows through as it does today.
 nothing is normalised, so nothing is mutated. What a coach typed is what they get back, and what their
 work items say.
 
-**#5610's board picker must pre-fill the label**, and after the amendment this matters more than it
-did. It currently pre-fills a class name; nothing normalises that afterwards, so such a team reads
-`change_request` in its Type column forever. The picker is the main route by which a coach acquires
-the label without typing it. Carried as OC-4 against #5610.
+~~**#5610's board picker must pre-fill the label**~~ — **done, 2026-08-01.** It pre-filled a class
+name, and nothing normalises that afterwards, so such a team would have read `change_request` in its
+Type column forever. `ServiceNowBoardMapper.ToBoardInformation` now labels the board's `table`; the
+board's lanes needed nothing, because `vtb_lane.name` is already the display label. The picker was
+the main route by which a coach acquires the label without typing it, and now it is one that works.
+
+ADR-124's readability ladder still receives the **record class**: it probes `sys_class_name`, and
+probing for `Change Request` finds nothing and would refuse every change board on the instance. It
+is the ladder's *message* that names the label, per this ADR's rule that every refusal is worded in
+what the coach typed.
 
 ## Alternatives considered
 
