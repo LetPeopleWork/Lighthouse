@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Validation;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
@@ -9,22 +10,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
     /// an empty list destroys the team's SyncedTransitions and CurrentStateEnteredAt, and restoring
     /// the credential does not restore that history.
     /// </summary>
-    public class ServiceNowReadException : Exception
+    public class ServiceNowReadException : WorkTrackingReadException
     {
         private ServiceNowReadException(string code, string message)
-            : base(message)
+            : this(ConnectionValidationResult.Failure(code, message))
         {
-            Code = code;
         }
 
         /// <summary>Wraps a rung of the slice-01 verdict ladder, so a refused read keeps its name.</summary>
         public ServiceNowReadException(ConnectionValidationResult verdict)
-            : this(verdict.Code, verdict.Message)
+            : base(verdict)
         {
         }
 
         /// <summary>The verdict code, so a caller can tell a denial from a paging fault.</summary>
-        public string Code { get; }
+        public string Code => Verdict.Code;
 
         /// <summary>
         /// The instance answered a page with rows it had already sent. That is what an instance

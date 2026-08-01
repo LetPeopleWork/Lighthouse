@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The three rules below are stated by full name, so a core that does not exist yet passes
         // them by being absent rather than by being pure. This is the rung that says it has to exist.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void TheBoardPickersDecisions_LiveInPureCoresOfTheirOwn()
         {
             var production = typeof(Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowValidationVerdict).Assembly;

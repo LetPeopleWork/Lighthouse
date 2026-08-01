@@ -78,6 +78,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// </summary>
         private const int PageCeiling = 1000;
 
+        /// <summary>The Visual Task Boards a connection's service account has been shared (ADR-125).</summary>
+        private const string BoardTable = "vtb_board";
+
+        /// <summary>
+        /// ADR-125 decision 3. Both fields, not just the table: a board with a table and no filter
+        /// pre-fills an empty query that Save then blocks, and a board with neither is freeform —
+        /// its cards are placed by hand and no query describes them. The instance can exclude both
+        /// itself, and asking for every board reads boards this account has no business seeing.
+        /// </summary>
+        private const string UsableBoardQuery = "active=true^tableISNOTEMPTY^filterISNOTEMPTY";
+
         /// <summary>The table that says what an instance measures.</summary>
         private const string MetricDefinitionTable = "metric_definition";
 
@@ -94,15 +105,66 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return observedAvailability == ServiceNowHistoryAvailability.Available;
         }
 
-        // DISTILL scaffold for #5610 slice 02 — DELIVER implements both reads (ADR-125).
-        public Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        // ADR-125. A stock instance's Visual Task Boards already carry the two things a Lighthouse
+        // team needs — the table its work sits in and the filter that scopes it to this team.
+        public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
-            return Task.FromResult(Enumerable.Empty<Board>());
+            var read = await ReadBoards(workTrackingSystemConnection, UsableBoardQuery);
+
+            // The list is the body. X-Total-Count is ACL-blind on vtb_board — header 2 against body 0,
+            // measured 2026-08-01 — so counting from it offers boards that are not there.
+            var refusal = ServiceNowBoardVerdict.FromBoardList(
+                read.StatusCode, read.CarriesRecords, read.Records.Count, BoardTable);
+
+            if (!refusal.IsValid)
+            {
+                throw new ServiceNowReadException(refusal);
+            }
+
+            return read.Records.Select(ServiceNowBoardMapper.ToBoard).ToList();
         }
 
-        public Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
+        public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
         {
-            return Task.FromResult(new BoardInformation());
+            // ADR-125 decision 3: the same scoping again, rather than trusting the list served a
+            // moment ago. A board that lost its filter in between is refused, not pre-filled blank.
+            var read = await ReadBoards(
+                workTrackingSystemConnection,
+                $"{ServiceNowWorkItemMapper.RecordIdField}={boardId}^{UsableBoardQuery}");
+
+            var refusal = ServiceNowBoardVerdict.FromBoardRead(
+                read.StatusCode, read.CarriesRecords, read.Records.Count, BoardTable);
+
+            if (!refusal.IsValid)
+            {
+                throw new ServiceNowReadException(refusal);
+            }
+
+            var board = read.Records[0];
+            var instanceUrl = GetOptionValue(workTrackingSystemConnection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
+
+            // ADR-125 decision 4. A board's table is a candidate kind of work, so it is judged by the
+            // ladder ADR-124 already shipped: a cmdb_ci board is real and creatable, and a team
+            // pre-filled from one syncs nothing while saying nothing about it.
+            var unreadable = await WhyThisKindOfWorkCannotBeRead(
+                workTrackingSystemConnection, instanceUrl, ServiceNowBoardMapper.KindOfWorkOn(board));
+
+            if (unreadable is not null)
+            {
+                throw new ServiceNowReadException(unreadable);
+            }
+
+            return ServiceNowBoardMapper.ToBoardInformation(board);
+        }
+
+        // Downgrade rather than Fail: the refusal is carried home so ServiceNowBoardVerdict can rule
+        // on it, which is the one place an answer of zero rows stops being a failure. The list is
+        // the body — X-Total-Count is ACL-blind here and would keep the read going for boards that
+        // are never coming.
+        private Task<PagedRead> ReadBoards(WorkTrackingSystemConnection connection, string query)
+        {
+            return ReadEveryPage(
+                connection, BoardTable, query, WhenRefused.Downgrade, HowTheResultSetIsSized.OnlyTheRowsCount);
         }
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)
@@ -436,7 +498,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // ignores sysparm_offset answers every page with the same rows: with X-Total-Count present
         // that duplicates the team's work, and without it the loop never ends.
         private async Task<PagedRead> ReadEveryPage(
-            WorkTrackingSystemConnection connection, string table, string query, WhenRefused whenRefused)
+            WorkTrackingSystemConnection connection,
+            string table,
+            string query,
+            WhenRefused whenRefused,
+            HowTheResultSetIsSized sizing = HowTheResultSetIsSized.TheInstanceCounts)
         {
             var instanceUrl = GetOptionValue(connection, ServiceNowWorkTrackingOptionNames.InstanceUrl);
             var records = new List<JsonElement>();
@@ -478,7 +544,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     pagesAllowed = PagesAllowed(answer.TotalCount, page.Count);
                 }
 
-                pageUri = FollowingPage(answer, instanceUrl, table, query, records.Count);
+                pageUri = FollowingPage(answer, instanceUrl, table, query, records.Count, sizing);
 
                 if (pageUri is not null && pagesRead >= pagesAllowed)
                 {
@@ -551,7 +617,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         private static Uri? FollowingPage(
-            ServiceNowAnswer answer, string instanceUrl, string table, string query, int recordsSoFar)
+            ServiceNowAnswer answer,
+            string instanceUrl,
+            string table,
+            string query,
+            int recordsSoFar,
+            HowTheResultSetIsSized sizing)
         {
             if (answer.Paging == PagingSignal.NextPage)
             {
@@ -559,6 +630,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             }
 
             if (answer.Paging == PagingSignal.LastPage)
+            {
+                return null;
+            }
+
+            // Everything below this line is the header deciding. On a table whose counter is
+            // ACL-blind the instance's own paging links are the only honest signal, and they were
+            // asked first.
+            if (sizing == HowTheResultSetIsSized.OnlyTheRowsCount)
             {
                 return null;
             }
@@ -962,6 +1041,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             /// <summary>Carry the status back, so the caller downgrades instead of failing (ADR-118 D5).</summary>
             Downgrade,
+        }
+
+        /// <summary>What may say a read has reached the end of its result set.</summary>
+        private enum HowTheResultSetIsSized
+        {
+            /// <summary><c>X-Total-Count</c> is trusted, as it is on the work tables.</summary>
+            TheInstanceCounts,
+
+            /// <summary>
+            /// The counter lies about this table, so only the rows that came back and the instance's
+            /// own paging links may end the read. Measured on <c>vtb_board</c> 2026-08-01: header 2,
+            /// body 0. The count is computed before the ACLs run, so on a table that is shared rather
+            /// than roled it over-counts every time — and reading on to reach a total that will never
+            /// arrive trips the repeated-record guard and refuses the whole picker.
+            /// </summary>
+            OnlyTheRowsCount,
         }
 
         /// <summary>Every page of a read, and the status the read ended on.</summary>

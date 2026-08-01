@@ -60,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         // AC-B1. The administrator sees the boards this connection can actually turn into a team.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task AnAdministratorOpeningThePicker_SeesTheBoardsThisConnectionCanTurnIntoATeam()
         {
             var instance = AnInstanceWith(TheIncidentBoard(), TheChangeBoard());
@@ -79,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // filter would pre-fill an empty query, which Save then blocks. Neither is worth rendering
         // and refusing, so both are excluded where the instance can do it — in the read.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task ABoardThatCannotBecomeAQuery_NeverReachesTheAdministrator()
         {
             var instance = AnInstanceWith(
@@ -102,7 +100,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC-B2 / DD-2. The board's filter is a verbatim encoded query in column form, so it becomes
         // the team's query unchanged — no translation, no parsing.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task PickingABoard_HandsTheTeamTheBoardsOwnFilterAsItsQuery()
         {
             var instance = AnInstanceWith(TheIncidentBoard());
@@ -115,7 +112,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC-B2 / D6. The board's table is the kind of work the team handles, which is the field
         // #5611 made every ServiceNow team fill in.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task PickingABoard_HandsTheTeamTheBoardsTableAsTheKindOfWorkItHandles()
         {
             var instance = AnInstanceWith(TheIncidentBoard());
@@ -131,7 +127,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // measured 2026-08-01. That is precisely the widening Save exists to block, so the readable
         // form is never read, never carried and never shown.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task PickingABoard_NeverHandsOverTheFilterAsItReadsOnTheServiceNowScreen()
         {
             var instance = AnInstanceWith(TheIncidentBoard());
@@ -150,7 +145,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // the list it served a moment ago: a board that lost its filter in between is refused, not
         // handed over as an empty query.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void PickingABoardThatNoLongerQualifies_IsRefusedRatherThanHandedOverAsAnEmptyQuery()
         {
             var instance = AnInstanceWith(AFreeformBoard());
@@ -165,7 +159,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // created on the PDI without complaint — and a team pre-filled from it syncs nothing at all.
         // The class ladder ADR-124 already shipped names that case, in words already written.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void PickingABoardWhoseWorkIsNotAKindOfWork_IsRefusedByName()
         {
             var instance = AnInstanceWith(ABoardOnSomethingThatIsNotWork())
@@ -182,7 +175,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // the same "Failed to load boards. Please try again." — advice that fixes none of them. A
         // refusal keeps the name the backend already gave it, and names the table it was refused on.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void AnAccountThatMayNotReadBoards_IsToldSoRatherThanShownAnEmptyPicker()
         {
             var instance = AnInstanceWith(TheIncidentBoard()).WhereTheBoardTableAnswers(HttpStatusCode.Forbidden);
@@ -201,7 +193,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // AC-B3 / ADR-126 decision 3, the first rung. A rejected credential is a credential problem
         // wherever it is met.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public void ACredentialTheInstanceRejects_IsToldSoWhenThePickerOpens()
         {
             var instance = AnInstanceWith(TheIncidentBoard()).WhereTheBoardTableAnswers(HttpStatusCode.Unauthorized);
@@ -221,7 +212,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // The instance still reports two boards in its own count while returning none of them, so a
         // list counted from the header would offer an administrator boards that are not there.
         [Test]
-        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
         public async Task AnAccountThatSharesNoBoard_IsOfferedAnEmptyListRatherThanToldTheConnectionIsBroken()
         {
             var instance = AnInstanceWith(TheIncidentBoard(), TheChangeBoard()).WhereTheAccountIsAMemberOfNoBoard();
