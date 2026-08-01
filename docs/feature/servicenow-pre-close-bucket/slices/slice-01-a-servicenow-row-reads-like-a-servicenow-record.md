@@ -16,6 +16,8 @@ merged into this one: the same map serves display and input, so there is no seco
 - `ServiceNowReadScope.For` maps each configured entry through `ClassFor` before the
   `sys_class_nameIN…` clause (DD-3).
 - A ServiceNow team's `WorkItemTypes` normalised to the label form on save (DD-4).
+- `ServiceNowReadScope` keeps the **typed form** beside the record class, and
+  `ServiceNowTeamQueryVerdict`'s per-class refusals name the typed form (DD-8).
 
 ## OUT of scope
 - **Any change outside the ServiceNow connector.** No `WorkItemBase` field, no DTO, no EF migration,
@@ -56,6 +58,16 @@ New, from DESIGN:
 - **AC-D3** — every consumer of `Type` sees the label with no code change: Type column, both chart
   legends, marker colours, and both rule engines (`WorkItemFieldProvider.cs:56`,
   `evaluateCondition.ts:23`). Verified by reading, not by editing.
+- **AC-D4** — **a refusal names what the coach typed.** A team configured with `Change Request` whose
+  probe fails is refused with a message naming `Change Request`, never `change_request`. Same for the
+  reverse: a coach who typed `change_request` is answered with `change_request`. Covers every rung
+  `WhyThisKindOfWorkCannotBeRead` can return (DD-8, ADR-124 D2). This is the last place the design
+  could still speak the platform's vocabulary at the user, which is the thing the whole item exists
+  to stop.
+- **AC-D5** — the query paths are unaffected by DD-8: `ScopedQuery`, `BaselineQuery`,
+  `DefinitionTables()` and `FirstUnreadableKindOfWork`'s probe all still receive **record classes**.
+  `ServiceNowReadScope.For` is the only construction point (`ServiceNowWorkTrackingConnector.cs:152`
+  and `:616`), which is what makes one change cover all four.
 
 ## Dependencies
 - **None blocking.** #5611 and #5577 shipped; nothing here needs the PDI to be answered first.
@@ -81,3 +93,5 @@ Same day, by the person who filed the finding, on `dev191338`:
 3. Read the Type column and both chart legends. All should say *Incident* / *Change Request*.
 4. Re-open team settings and confirm the stored values round-trip without surprising the coach.
 5. Run a Created Items forecast for one of those types and confirm it is not empty (AC-D1, live).
+6. Then break it on purpose: configure a class the account cannot read, typed as a **label**, and read
+   the refusal. It must name the label (AC-D4).

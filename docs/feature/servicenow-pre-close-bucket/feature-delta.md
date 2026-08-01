@@ -343,6 +343,7 @@ table below.
 | **DD-4** | On save, a ServiceNow team's `WorkItemTypes` are **normalised to the label form**. | Without it, a coach who types `change_request` gets a working sync (passthrough → correct query) but a **broken Created Items forecast**: `SuggestionsController` offers `change_request` from config, `ForecastController` passes it to `GetCreatedItemsForTeam`, and it is compared against `Type` = `Change Request`. Zero rows, no error. This is the one place the two vocabularies could still diverge, and normalising on save is where they converge. |
 | **DD-5** | The deep link is `{instanceUrl.TrimEnd('/')}/{sys_class_name}.do?sys_id={sys_id}`, built from the **raw class**, not from `Type`. | Settles **OC-3** — Jira already does exactly this trim at `JiraWorkTrackingConnector.cs:1297` and `InstanceUrl` is user-entered. And it is the one place the class name is still needed *after* mapping, so the mapper reads `sys_class_name` once and uses it for both the link and `LabelFor`. |
 | **DD-6** | No frontend change. At all. | Consequence of DD-2. All five FE type sites (`WorkItemsDialog.tsx:153`, the two chart legends, `scatterMarkerUtils.tsx:94`, and the rule engine's `"workitem.type"` at `evaluateCondition.ts:23`) read `item.type` and now receive a label. The BE rule engine's `WorkItemFieldProvider.cs:56` likewise. A user-authored rule now matches on `Change Request`, which is the same string they see and configure. |
+| **DD-8** | `ServiceNowReadScope` keeps **both forms** of each entry: the record class for every query, and the string the coach actually typed for every message. | Found while tracing DD-3, and it is the one place this design could still speak the platform's vocabulary at the user. `FirstUnreadableKindOfWork` (`ServiceNowWorkTrackingConnector.cs:676-690`) iterates `scope.KindsOfWork` and `WhyThisKindOfWorkCannotBeRead` names `recordClass` in its refusal (ADR-124 D2). After DD-3 that is the *mapped* value, so a coach who typed `Change Request` and hits a rights failure reads a message about `change_request` — a string they never entered. `KindsOfWork` keeps returning classes so every query path is unchanged; a companion lookup returns the typed form for the message. |
 | **DD-7** | The map covers the stock ITSM task hierarchy only. | Settles **OC-1**. Confirmed present on the PDI across the SPIKEs: `incident`, `problem`, `change_request`, `sc_task`, `task`. Adding `sc_req_item`, `change_task`, `incident_task`, `problem_task` is free and being wrong about one costs nothing — passthrough. |
 
 ## Wave: DESIGN / [REF] Component decomposition
@@ -351,7 +352,8 @@ table below.
 |---|---|---|---|
 | 1 | `ServiceNowRecordClasses` | `…/WorkTrackingConnectors/ServiceNow/` | **CREATE NEW** |
 | 2 | `ServiceNowWorkItemMapper` | same | **EXTEND** — `KindOfWork` maps; `MapRecord` sets `Url` |
-| 3 | `ServiceNowReadScope` | same | **EXTEND** — `For` maps entries through `ClassFor` |
+| 3 | `ServiceNowReadScope` | same | **EXTEND** — `For` maps entries through `ClassFor`, and keeps the typed form for messages (DD-8) |
+| 3b | `ServiceNowTeamQueryVerdict` | same | **EXTEND** — refusals name the typed form (DD-8) |
 | 4 | ServiceNow team save path | `ServiceNowWorkTrackingConnector` / team settings | **EXTEND** — DD-4 normalisation |
 | 5 | `WorkItemBase` / `WorkItemDto` / `IWorkItem` | Models, API/DTO, frontend | **UNCHANGED** |
 
@@ -361,7 +363,8 @@ table below.
 |---|---|---|---|---|
 | `ServiceNowWorkItemMapper` | `…/ServiceNow/ServiceNowWorkItemMapper.cs` | Maps a record field to a Lighthouse value | **EXTEND** | `KindOfWork` already resolves the class; adding one lookup is ~2 LOC. |
 | `ServiceNowReadScope` | `…/ServiceNow/ServiceNowReadScope.cs` | Normalises configured entries before query construction | **EXTEND** | `For` is already the normalisation choke point. One more `Select`. |
-| `ServiceNowValidationVerdict` / `ServiceNowTeamQueryVerdict` | `…/ServiceNow/` | Pure verdicts over team settings | **REUSE UNCHANGED** | DD-4 normalises; it does not add a refusal. An entry that is neither a class nor a label still reaches the existing zero-rows guard. |
+| `ServiceNowTeamQueryVerdict` | `…/ServiceNow/ServiceNowTeamQueryVerdict.cs` | Pure per-class refusal messages | **EXTEND** | DD-8 only: the same rungs, naming the typed form instead of the mapped class. No new rung, no new verdict. |
+| `ServiceNowValidationVerdict` | `…/ServiceNow/` | Pure connection-scope verdicts | **REUSE UNCHANGED** | DD-4 normalises; it does not add a refusal. An entry that is neither a class nor a label still reaches the existing zero-rows guard. |
 | `WorkItemBase.Url` | `Models/WorkItemBase.cs:34` | Carries a record's source URL | **REUSE UNCHANGED** | Ships and is rendered. ServiceNow simply starts populating it. |
 | `WorkItemsDialog` link rendering | `WorkItemsDialog.tsx:142-144` | Renders a non-null `url` as a link | **REUSE UNCHANGED** | No new component. |
 | `ServiceNowChoiceLabelResolver` | *deleted* | Resolved choice labels at runtime | **DO NOT RESURRECT** | Killed by R-4 when `sys_choice` measured admin-only. DD-1 is the static answer to the same shape of problem. |
