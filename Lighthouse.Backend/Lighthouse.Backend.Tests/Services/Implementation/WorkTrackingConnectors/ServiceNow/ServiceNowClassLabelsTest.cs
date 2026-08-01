@@ -103,9 +103,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "Two labels meaning the same class would merge two kinds of work into one query.");
         }
 
-        // The case that nearly shipped broken: LabelByClass is case-insensitive, so asking it whether
-        // "Incident" is a record class answers yes -- it matches the key `incident` -- and a
-        // class-name-first check written against it would hand the label straight back untranslated.
+        // Measured on the PDI, 2026-08-01, with the two curls in this story's dogfood: sysparm_query's
+        // IN matches a VALUE case-insensitively, so sys_class_nameINChange_Request returns exactly the
+        // rows the lowercase form does -- and every one of them says `change_request`. A team left
+        // holding the typed casing would sync happily and then disagree with its own work items,
+        // because AsTyped compares ordinally. That is the silent zero the epic exists to prevent, so
+        // the case is folded away here rather than being allowed to reach the query.
+        [TestCase("Change_Request")]
+        [TestCase("CHANGE_REQUEST")]
+        [TestCase("change_Request")]
+        public void ARecordClassInTheWrongCase_IsAnsweredWithTheCaseServiceNowStores(string typed)
+        {
+            Assert.That(ServiceNowClassLabels.ClassFor(typed), Is.EqualTo("change_request"));
+        }
+
+        // Recognising a class name in any case is only safe while no LABEL resolves to a different
+        // class than the class-first step would pick. Four labels equal their own class name ignoring
+        // case -- Task, Incident, Problem, Ticket -- and on those both paths agree. A future entry
+        // whose label collided with some OTHER class's name would silently reroute it, so the
+        // invariant is asserted rather than assumed.
+        [TestCaseSource(nameof(EveryKnownKindOfWork))]
+        public void NoLabel_IsAlsoSomeOtherKindOfWorksClassName((string RecordClass, string Label) kindOfWork)
+        {
+            Assert.That(ServiceNowClassLabels.ClassFor(kindOfWork.Label), Is.EqualTo(kindOfWork.RecordClass),
+                "A label that reads as another class's name would be resolved to that class instead.");
+        }
+
+        // The case that nearly shipped broken, kept as a regression guard: LabelByClass is
+        // case-insensitive, so asking it whether "Incident" is a record class answers yes -- it matches
+        // the key `incident`. Handing back the INPUT there returns the label untranslated; handing back
+        // the canonical KEY, which is what ClassFor now does, is the fix.
         [Test]
         public void ALabelWhoseClassDiffersOnlyByCase_IsStillResolvedToTheClass()
         {

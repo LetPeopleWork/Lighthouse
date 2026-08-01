@@ -99,12 +99,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             .ToDictionary(entry => entry.Value, entry => entry.Key, StringComparer.OrdinalIgnoreCase)
             .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
-        // Ordinal, deliberately, and the reason is subtle enough to be worth a line: LabelByClass is
-        // case-INSENSITIVE, so asking it whether "Incident" is a record class answers yes — it matches
-        // the key `incident` — and ClassFor would hand back the label untranslated. The canonical
-        // lowercase form is what counts as "already a class name".
-        private static readonly FrozenSet<string> RecordClasses =
-            LabelByClass.Keys.ToFrozenSet(StringComparer.Ordinal);
+        // Any case of a class name to the one case ServiceNow stores. Recognising the name is not
+        // enough: the canonical KEY has to come back, or `Change_Request` flows through unchanged and
+        // the divergence below happens. A dictionary rather than a set because a set can only answer
+        // whether the name is known, not what its stored form is.
+        private static readonly FrozenDictionary<string, string> CanonicalClassByAnyCase = LabelByClass
+            .Keys
+            .ToDictionary(recordClass => recordClass, recordClass => recordClass, StringComparer.OrdinalIgnoreCase)
+            .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// The record class for a label — <c>Change Request</c> becomes <c>change_request</c>.
@@ -112,15 +114,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// typed directly, and a custom class, both keep working.
         /// </summary>
         /// <remarks>
-        /// A record class is recognised before a label (ADR-128 decision b). The stock labels and
-        /// class names do not collide, so this is a guard rather than a live case — but it makes the
-        /// answer deterministic rather than dependent on dictionary ordering.
+        /// A record class is recognised before a label (ADR-128 decision b), in ANY case, and is
+        /// answered with the form ServiceNow stores. Measured on the PDI 2026-08-01: `sysparm_query`'s
+        /// <c>IN</c> matches a value case-insensitively, so <c>sys_class_nameINChange_Request</c>
+        /// returns the same rows as the lowercase form — and those rows say <c>change_request</c>. A
+        /// team left holding <c>Change_Request</c> would therefore sync fine and then disagree with its
+        /// own work items, which is the silent zero this whole design exists to prevent.
+        /// <para>
+        /// Four labels equal their own class name ignoring case (Task, Incident, Problem, Ticket) and
+        /// both lookups agree on those; no label resolves to a different class than this step would
+        /// (asserted in <c>ServiceNowClassLabelsTest</c>), which is what makes class-first safe.
+        /// </para>
         /// </remarks>
         public static string ClassFor(string kindOfWork)
         {
-            if (RecordClasses.Contains(kindOfWork))
+            if (CanonicalClassByAnyCase.TryGetValue(kindOfWork, out var canonical))
             {
-                return kindOfWork;
+                return canonical;
             }
 
             return ClassByLabel.TryGetValue(kindOfWork, out var recordClass) ? recordClass : kindOfWork;
