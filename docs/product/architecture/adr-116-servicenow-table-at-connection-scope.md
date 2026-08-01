@@ -1,6 +1,7 @@
 # ADR-116: The ServiceNow work-item table is typed at connection scope; discovery is not offered, and portfolio support is declined in the schema
 
-- **Status**: **Proposed** (2026-07-29, Epic 5513 slice 01 DESIGN) — pending maintainer ratification.
+- **Status**: **Accepted** (ratified 2026-08-01 by the maintainer, at Epic 5513's close), as amended
+  by ADR-123 — the `Work Item Table` connection option no longer exists.
 - **Date**: 2026-07-29
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5574)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

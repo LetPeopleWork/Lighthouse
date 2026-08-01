@@ -1,6 +1,8 @@
 # ADR-118: ServiceNow transition history is derived from `metric_instance` span starts, filtered by metric definition, and its absence is disclosed at connection validation
 
-- **Status**: **Proposed** (2026-07-30, Epic 5513 slice 04 DESIGN) — pending maintainer ratification.
+- **Status**: **Accepted** (ratified 2026-08-01 by the maintainer, at Epic 5513's close), **as
+  amended three times below**. Decision 2's body has been rewritten in place to the rule the code
+  implements; the original wording is quoted there so the change is readable rather than erased.
 - **Date**: 2026-07-30
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5577)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
@@ -85,9 +87,28 @@ outgoing transition yet. The ~30 s asynchronous metric lag stops mattering, beca
 entirely: `duration` renders as an epoch offset (`1970-01-01 21:09:13` = 21 h 9 min), and nothing
 reads it, so nothing has to parse it.
 
-**2. Spans are filtered by metric definition, resolved once per sync.** Query `metric_definition`
-for the configured table with `type = Field value duration`, keep the definitions whose `field` is
-the state field, and accept only spans whose `definition` is in that set.
+**2. Spans are filtered by the team's own state mapping, per span.** Query `metric_definition` for
+the team's record **classes** with `type = field_value_duration` — the *stored* value, not the
+`Field value duration` label the form shows — resolved once per sync, then discard every span whose
+label is not a state the team mapped, at the point spans enter the by-record dictionary.
+
+The definition row cannot narrow this on its own. A `field_value_duration` definition need not
+measure state, and nothing on the row says whether it does: the stock `incident` table answers with
+four, of which three measure `assigned_to`, `assignment_group` and `active`. Filtering on the
+definition's `field` instead fails in the other direction — the state field is named differently on
+every class (`incident_state`, `problem_state`, `state`), so a single field name matches nothing.
+The team's state mapping is the only discriminator that needs no per-class field knowledge and still
+works against a customer's own definitions.
+
+A record left with no surviving spans is *absent* rather than empty, so it reaches the `opened_at` /
+`closed_at` fallback instead of silently reporting no dates at all.
+
+> **Original wording (2026-07-30), withdrawn 2026-08-01 by Bug #5621 and ADR-123**: "Query
+> `metric_definition` for the configured table with `type = Field value duration`, keep the
+> definitions whose `field` is the state field, and accept only spans whose `definition` is in that
+> set." Both halves were measured wrong — `type = Field value duration` matches zero rows because
+> `sysparm_query` compares stored values, and a `task`-rooted team finds 0 definitions where
+> `tableINincident,change_request` finds 6.
 
 **3. `sysparm_display_value=all`, and `value` is read as the state label.** No choice-label
 resolution is needed anywhere. The seam slice 01's DESIGN named for

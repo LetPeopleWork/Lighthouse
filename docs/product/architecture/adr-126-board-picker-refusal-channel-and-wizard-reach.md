@@ -1,6 +1,6 @@
 # ADR-126: A wizard refusal keeps its name — the board-picker error channel, the empty list, and who can open a picker at all
 
-- **Status**: **Proposed** (2026-08-01, Story 5610 DESIGN) — pending maintainer ratification.
+- **Status**: **Accepted** (ratified 2026-08-01 by the maintainer, at Epic 5513's close).
 - **Date**: 2026-08-01
 - **Feature**: servicenow-board-picker-and-query-guidance (ADO Story 5610, parent Epic 5513)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

@@ -1,6 +1,6 @@
 # ADR-124: ServiceNow record-class readability — what an ACL-blind count can and cannot prove
 
-- **Status**: **Proposed** (2026-07-31, Story 5611 slice 01 DESIGN) — pending maintainer ratification.
+- **Status**: **Accepted** (ratified 2026-08-01 by the maintainer, at Epic 5513's close).
 - **Date**: 2026-07-31
 - **Feature**: servicenow-multi-table-work-item-types (ADO Story 5611, parent Epic 5513)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

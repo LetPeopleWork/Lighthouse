@@ -1,8 +1,9 @@
 # ADR-114: ServiceNow connection validation returns a coded verdict ladder, and a permitted-but-unauthorised read is a failure — never a success
 
-- **Status**: **Proposed** (2026-07-29, Epic 5513 slice 01 DESIGN) — **pending maintainer ratification**,
-  jointly with the US-01 AC4 amendment this ADR forces (recorded as contradiction **C-1** in
-  `docs/feature/epic-5513-servicenow-integration/feature-delta.md`).
+- **Status**: **Accepted** (ratified 2026-08-01 by the maintainer, at Epic 5513's close). The US-01
+  AC4 amendment this ADR forces — contradiction **C-1** in
+  `docs/feature/epic-5513-servicenow-integration/feature-delta.md` — was accepted 2026-07-29, and the
+  acceptance tests are written against the amended wording, so the joint condition is satisfied.
 - **Date**: 2026-07-29
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5574 — walking skeleton)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

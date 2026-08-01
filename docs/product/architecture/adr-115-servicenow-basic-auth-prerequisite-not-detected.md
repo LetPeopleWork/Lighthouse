@@ -1,6 +1,6 @@
 # ADR-115: The ServiceNow basic-auth restriction is a documented prerequisite and a failure-message hint — Lighthouse must never claim to detect it
 
-- **Status**: **Proposed** (2026-07-29, Epic 5513 slice 01 DESIGN) — pending maintainer ratification.
+- **Status**: **Accepted** (ratified 2026-08-01 by the maintainer, at Epic 5513's close).
 - **Date**: 2026-07-29
 - **Feature**: epic-5513-servicenow-integration (ADO Epic 5513, Story 5574)
 - **Deciders**: Benjamin Huser-Berta (maintainer)
