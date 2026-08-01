@@ -245,6 +245,22 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-01 — a red backend job HIDES Sonar violations, so the next green push inherits them
+
+- **Symptom**: push A's `Verify Backend` failed on a test; `sonar-gates` reported `neutral`/skipped. Push B
+  (the fix) made the backend green — and `sonar-gates` then failed with `new_violations=2` pointing at
+  **files push B never touched**, both from an earlier story.
+- **Root cause**: `Verify Backend` runs `Begin SonarCloud analysis` → `Build` → `Test` → `End SonarCloud
+  analysis`. When the test step fails, `End SonarCloud analysis` and `Upload Sonar report metadata` are
+  **skipped**, so no scan is submitted at all. The violations introduced by the earlier commits were
+  never analysed. They surface against whoever next turns the backend green.
+- **Fix**: fix the inherited violations — they are real, just not yours.
+- **Rule going forward**: a green backend after a red one inherits every unscanned Sonar violation since
+  the last successful analysis. Do NOT assume a `new_violations` hit belongs to the diff you just
+  pushed — check `git log` for the files named, and expect to clean up a predecessor's INFO-severity
+  debt. Corollary: a failing backend test means the Sonar gate told you **nothing** that run; it is not
+  evidence of a clean scan.
+
 ### 2026-08-01 — a test asserted on a mock that a fire-and-forget `Task.Run` calls, and never waited for it
 
 - **Symptom**: `Verify Backend` red with **exactly one** failure out of 4377 —
