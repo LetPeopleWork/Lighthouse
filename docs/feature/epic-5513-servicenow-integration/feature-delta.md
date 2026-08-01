@@ -2528,7 +2528,8 @@ needs `git add -f` for the `vitest.stryker*.ts` file.
 
 **Status: US-05 shipped, screenshots included. US-06 closed on evidence, not on the deliverable
 it originally named.** The only thing still owed is the post-release feedback loop — see
-"What is left" below.
+"What is left" below. Summary in
+`docs/evolution/2026-08-01-epic-5513-servicenow-slice-05-docs-and-verdict.md`.
 
 ### What shipped
 

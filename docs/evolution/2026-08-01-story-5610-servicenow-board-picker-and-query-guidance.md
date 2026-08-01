@@ -7,8 +7,9 @@ parent Epic [#5513](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/ed
 the summary, that directory is the history.
 
 > **This story is archived with work still open.** See *Open at close* — the mutation numbers are
-> stale, two ADRs are unratified, screenshots and the ADO transition are undone, and `main` was red on
-> a backend test when this was written. Read that section before treating the story as done.
+> stale and three ADRs are unratified. Screenshots, the epic back-reference and the ADO transition
+> closed later the same day under #5578, and `main`'s backend failure was fixed by `5fad1b84b`; both
+> rows are updated in place. Read that section before treating the story as done.
 
 ## What it was for
 
@@ -123,10 +124,10 @@ rather than dressed up as equivalent.
 | Item | State |
 |---|---|
 | Mutation re-run on the shipped tree | **Open by decision** (maintainer, 2026-08-01). Measured numbers predate `f83cbbae6` + `cfda81ea1`, and the verdict core was rewritten under them |
-| `main` backend test failure | **Red** at time of writing — run [30705170589](https://github.com/LetPeopleWork/Lighthouse/actions/runs/30705170589), step `Test Backend (with Coverage)`, filter `Category!=Integration\|Category=ServiceNowIntegration` |
+| `main` backend test failure | **Red** at time of writing — run [30705170589](https://github.com/LetPeopleWork/Lighthouse/actions/runs/30705170589), step `Test Backend (with Coverage)`, filter `Category!=Integration\|Category=ServiceNowIntegration`. Fixed the same day by `5fad1b84b` (the release service raced the update process it should have waited for) |
 | ADR-124, ADR-125, ADR-126 | **Proposed** — pending maintainer ratification |
 | ADR-127 / #5627 | Needs a **new** channel; the one it was designed against was deleted by #5612 |
-| DoD 6 — screenshots per theme | **Open**. No ServiceNow assets in `docs/assets`; epic 5513 tracks this as blocked on #5610, which has now landed |
-| DoD 8 — epic back-reference | **Open**. Epic 5513's delta still lists two items waiting on "#5610 reaching `main`", including verifying its Board Wizard section against shipped code rather than against DESIGN |
-| DoD 9 — ADO transition + Release Notes tag | **Open** |
+| DoD 6 — screenshots per theme | **Closed** by #5578 on 2026-08-01. `worktrackingsystem_ServiceNow.png` and `servicenow_wizard.png`; the board-picker shot is taken by the new ServiceNow E2E against the live PDI |
+| DoD 8 — epic back-reference | **Closed** by #5578. Both waiting items are done, and the Board Wizard section was re-read against `ServiceNowBoardMapper` and corrected |
+| DoD 9 — ADO transition + Release Notes tag | ADO **Closed**. The Release Notes tag sits on Epic 5513 rather than on this story |
 | AC-A4's two silent-failure modes | Handed to #5578's docs. No in-product home |
