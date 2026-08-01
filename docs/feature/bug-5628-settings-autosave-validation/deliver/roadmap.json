@@ -1,0 +1,108 @@
+{
+  "roadmap": {
+    "project_id": "bug-5628-settings-autosave-validation",
+    "created_at": "2026-08-01",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Fix ADO Bug 5628 — editing an existing team or portfolio saves through the auto-save path in useModifySettings, which never calls validateSettings. The validating path (handleSave, useModifySettings.ts:336) still exists but neither ModifyTeamSettings.tsx nor ModifyProjectSettings.tsx destructures it and neither renders a Save button, so it is dead code in production and connector validation only ever runs in the create wizards (useCreateWizard.ts:193, :231). A mistyped work item type therefore reports 'saved', passes no check, and the next sync selects zero rows with nothing explaining why — for ServiceNow this bypasses the whole ADR-124 probe ladder. The maintainer chose fix direction A on 2026-08-01: keep the auto-save write unconditional, and once a save SETTLES run validateSettings ONCE against the payload that was just persisted, surfacing failure through the validationError / validationTechnicalDetails alert that both pages ALREADY render (ModifyTeamSettings.tsx:316-322, ModifyProjectSettings.tsx:348-354) but that can never fire today. Acceptance: a settled auto-save with a failing validateSettings surfaces a non-blocking warning while the save still persists; validation never fires per debounce tick, never fires for modifyDefaultSettings pages, and never re-fires when nothing connector-relevant changed; the existing auto-save and conflict suites stay green; pnpm test, pnpm build (zero warnings) and Biome all clean.",
+    "rca_source": "docs/feature/bug-5628-settings-autosave-validation/deliver/rca-context.md (orchestrator-verified inline, /nw-bugfix Phase 1, 2026-08-01 — every claim in the ADO bug body re-checked against the code, plus one finding the bug body missed: the alert surface already exists and is dead)"
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, per the /nw-bugfix minimal-roadmap path and the bug-5586 / bug-5064 precedent)",
+    "reviewed_at": "2026-08-01",
+    "notes": "No architect dispatch. The RCA context carries the full evidence chain, the maintainer's chosen fix direction with its cost budget, the complete file list, and the scope guards. Two steps, the /nw-bugfix default: every test edit is in 01-01 so the RED output is real and capturable; no production line moves until 01-02. There is no DISTILL wave and no .feature file for this bug — the hook-level Vitest suite IS the regression net, consistent with how bug-5613 and the auto-save story itself were tested. No E2E: per the maintainer's standing rule, E2E is a thin walking-skeleton sanity check and this defect is a hook-internal control-flow gap with no new page or flow."
+  },
+  "ssot_inputs": {
+    "rca_context": "docs/feature/bug-5628-settings-autosave-validation/deliver/rca-context.md",
+    "ado_bug": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5628",
+    "adr": "ADR-124 (ServiceNow probe ladder — the validation this bug bypasses; not modified here)"
+  },
+  "maintainer_decisions": [
+    "Fix direction A: validate AFTER the save settles and warn non-blockingly. Rejected B (validate on work-item-types blur — guards one field only) and C (explicit Validate button — nothing forces a coach to press it).",
+    "The auto-save write is NEVER blocked. Validation is a report on what was already persisted, not a gate in front of it. The 'your edits are saved' contract stays true.",
+    "Cost budget: at most one connector probe per settled save, never one per debounce tick. Dedupe so an unchanged connector-relevant payload does not re-probe.",
+    "Continue as /nw-bugfix rather than escalating to DISCUSS — the direction was decided, so no ADR is produced by this work."
+  ],
+  "out_of_scope": [
+    "Deleting handleSave. After 01-02 it stays unreferenced by both pages, but it is the hook's public contract and removing it is a refactor, not this fix. If the reviewer wants it gone, that is a separate /nw-refactor commit.",
+    "Adding a Save button to either settings page. That is fix direction C, explicitly rejected.",
+    "Any backend change. POST /teams/validate and POST /portfolios/validate are correct and untouched; the defect is that the frontend never calls them from this page.",
+    "Unmapped states. A state that is not mapped legitimately means 'this item does not exist for Lighthouse' — Canceled is the canonical case. Do NOT add a warning for unmapped states and do NOT treat their silence as a defect.",
+    "The create wizards (useCreateWizard.ts). They already validate correctly at :193 and :231.",
+    "Refactoring the auto-save state machine (dispatchSave, pendingPayloadRef, the seq/isLatest guard). Keep the fix minimal and additive."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "A settled auto-save reports what the connector thinks of the settings it just persisted",
+      "description": "RED (01-01, tests only) -> GREEN (01-02, the hook fix). Every test edit is in 01-01 so the RED output is real and capturable; no production line moves until 01-02.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Author RED regression tests for the unvalidated auto-save path",
+          "description": "Tests only — do NOT touch any production file in this step. Create Lighthouse.Frontend/src/hooks/useModifySettings.validation.test.ts, a NEW sibling of the existing useModifySettings.autosave.test.ts and useModifySettings.conflict.test.ts (the suite is split by concern, one file per concern — follow that convention). Copy the fixture scaffolding from useModifySettings.autosave.test.ts:1-104 verbatim in spirit: the SimpleSettings alias, makeConnection, atlasSettings, makeArgs, and the fake-timer beforeEach/afterEach pair at :107-114. Do NOT export those helpers from the autosave file to share them — duplicating a fixture across two test files is cheaper than coupling two suites, and the existing conflict file already duplicates them. Write these cases, all against the auto-save path (never calling result.current.handleSave): (a) THE BUG: a settled auto-save whose validateSettings resolves false surfaces result.current.validationError as a non-empty string. Today validateSettings is never called at all, so this fails on the call-count assertion or on validationError being null — capture which. (b) The save still happened: in that same failing-validation scenario, saveSettings was called and saveState settled to 'saved'. This is the guard against a future 'fix' that turns the warning into a gate; if it ever starts failing, someone blocked the write. (c) A passing validateSettings leaves validationError null. (d) Cost: typing several characters into dataRetrievalValue inside one debounce window produces exactly ONE validateSettings call, not one per keystroke — assert toHaveBeenCalledTimes(1) after advancing the timers once. (e) Cost: a SECOND settled save whose connector-relevant fields (workTrackingSystemConnectionId, dataRetrievalValue, workItemTypes) are unchanged from the first does NOT re-probe — editing a state list (toDoStates / doingStates / doneStates) or the name saves again but leaves validateSettings at its previous call count. Connector validation reads only the query, the work item types and the connection (verified: ServiceNowWorkTrackingConnector.cs:785-799 uses DataRetrievalValue + WorkItemTypes + the connection, nothing else), so a state edit has nothing new to ask about. (f) modifyDefaultSettings: true never calls validateSettings on the auto-save path — the default-settings pages have no connector, mirroring the guard handleSave already has at useModifySettings.ts:341. (g) An ApiError thrown by validateSettings surfaces error.message as validationError and error.technicalDetails as validationTechnicalDetails, matching what handleSave does at :353-358 — this is what carries the ServiceNow verdict text to the user. Import ApiError from ../services/Api/ApiError. (h) The warning clears when the user starts fixing it: after a failed validation, calling updateSettings resets validationError to null (updateSettings already does this at :319-320 — this test pins that the new path does not break it). Then run `pnpm vitest run src/hooks/useModifySettings.validation.test.ts` and CAPTURE the RED output. (a), (d), (e), (g) must fail against today's hook. (b), (c), (f), (h) are expected to PASS on today's code — they are invariants the fix must not break, not defect reproductions; say so in the step's log entry rather than treating their green as a problem. If (a) PASSES on today's code, STOP and report — that would mean validation already runs and the RCA is wrong.",
+          "criteria": [
+            "useModifySettings.validation.test.ts exists and every case runs (no .skip, no .todo)",
+            "Case (a) fails on current main: a settled auto-save with validateSettings -> false leaves validationError null",
+            "Case (d) fails on current main: validateSettings call count is 0, not 1",
+            "Case (e) fails on current main for the same reason",
+            "Case (g) fails on current main: an ApiError from validateSettings surfaces nothing",
+            "Cases (b), (c), (f), (h) pass on current main and are documented as invariant guards, not reproductions",
+            "No production file modified in this step — git diff --name-only shows only the new test file"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.validation.test.ts",
+          "scenario_name": "A settled auto-save reports connector validation failure without blocking the write",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.validation.test.ts (create)"
+          ],
+          "dependencies": [],
+          "implementation_notes": "Fake timers are mandatory — the auto-save effect debounces 300ms and the suite already uses vi.useFakeTimers({ shouldAdvanceTime: true }). Follow the existing await act(async () => { vi.advanceTimersByTime(DEBOUNCE_MS); }) then await waitFor(...) shape; the validation probe resolves a tick AFTER the save resolves, so waitFor is required rather than a bare assertion. makeArgs already seeds validateSettings: vi.fn().mockResolvedValue(true) at :59, so override it per case."
+        },
+        {
+          "id": "01-02",
+          "name": "Validate once after a save settles and surface the verdict through the existing alert",
+          "description": "Production fix, in Lighthouse.Frontend/src/hooks/useModifySettings.ts only. Add a validateSettingsRef mirroring the existing saveSettingsRef / getSettingsRef pattern at :137-146 — validateSettings changes identity every render and dispatchSave is a useCallback, so it MUST be read through a ref or the callback's dep list becomes a lie. In dispatchSave's success handler, AFTER applyIfLatest('saved') and alongside the existing autoRefreshOnSave block (:180-190), fire a single post-save validation when ALL of these hold: modifyDefaultSettings is false; isLatest() is still true; there is no pendingPayloadRef.current queued (a queued payload means another save is coming — validate that one instead, not this stale one); and the payload's connector-relevant fingerprint differs from the last one validated. Fingerprint = JSON.stringify of exactly { workTrackingSystemConnectionId, dataRetrievalValue, workItemTypes } from the payload — the three inputs connector validation actually reads (ServiceNowWorkTrackingConnector.cs:785-799; the other connectors' ValidateTeamSettings/ValidatePortfolioSettings read the same shape). Hold it in a ref, e.g. lastValidatedFingerprintRef, and set it BEFORE awaiting so a concurrent second save cannot double-probe. On resolve false: setValidationError with a message that says the settings WERE saved and that Lighthouse may find nothing with this configuration — do not phrase it as a refused save, because the save succeeded; setValidationTechnicalDetails(null). On resolve true: clear both to null. On a thrown ApiError: setValidationError(error.message) and setValidationTechnicalDetails(error.technicalDetails ?? null), same as handleSave at :353-358. On any other throw: console.error and leave the alert untouched — do NOT rethrow, this runs inside a .then handler and an unhandled rejection here would be a new defect. Guard every setState behind isLatest() so a stale probe cannot overwrite a newer verdict. Both pages already render the alert (ModifyTeamSettings.tsx:316-322, ModifyProjectSettings.tsx:348-354) and already destructure validationError + validationTechnicalDetails, so NO page file should need to change — if you find yourself editing a .tsx, stop and re-read those lines first. Do not delete handleSave (out of scope). Do not change the auto-save effect at :249-264. Then run the full frontend gate.",
+          "criteria": [
+            "Every case in useModifySettings.validation.test.ts passes",
+            "useModifySettings.autosave.test.ts and useModifySettings.conflict.test.ts stay green with no edits",
+            "pnpm test passes in full",
+            "pnpm build completes with zero errors and zero warnings (implies a clean Biome check via the prebuild hook)",
+            "No .tsx file modified — the fix is confined to the hook",
+            "handleSave is left in place, unmodified"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.validation.test.ts",
+          "scenario_name": "A settled auto-save reports connector validation failure without blocking the write",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts (edit)"
+          ],
+          "dependencies": ["01-01"],
+          "implementation_notes": "Watch the conflict path: dispatchSave's error handler already claims hasConflictRef and returns before any success work — post-save validation must not run on that branch. Watch the retry path: retry() re-dispatches the last payload, and because the fingerprint is unchanged it will NOT re-probe. That is correct — a retry of the same payload has nothing new to ask the connector. CI learnings apply: no new Sonar issues, and keep the added state as refs rather than useState where the value is not rendered, so no extra render is triggered."
+        },
+        {
+          "id": "01-03",
+          "name": "Close the mutation survivors the 01-01 suite left open",
+          "description": "Tests only — do NOT touch any production file. The StrykerJS run over the changed scope (docs/feature/bug-5628-settings-autosave-validation/mutation/stryker.5628.frontend.json) scored 67.86 % (19 killed / 7 survived / 2 no-coverage of 28), under the project's 80 % per-feature gate. Four survivors are genuine test gaps and this step kills them; the rest are accepted in results.md. GAP 1 — connectorFingerprint is not pinned. Both `JSON.stringify({...}) -> JSON.stringify({})` (useModifySettings.ts:103) and the whole-body `{}` mutant (:102) survive, because every existing case probes at most once: with a constant fingerprint the first save still probes and no later save ever does, which is exactly what cases (d) and (e) already assert. Add a case: after a first settled save, change dataRetrievalValue to a DIFFERENT value, let it settle, and assert validateSettings was called TWICE. Then add its sibling for workItemTypes (use the workItemTypeHandlers.onAdd handler) so the field-level content of the fingerprint is pinned, not just its existence. GAP 2 — the queued-payload guard `if (pendingPayloadRef.current) return;` (:179) survives as `if (false)`. Add a case that starts a save, queues a second edit while the first is still in flight (hold saveSettings open with a deferred promise, mutate a connector-relevant field, then resolve), and asserts validateSettings ran exactly once and was called with the FINAL payload — not the superseded one. Assert on the argument, not just the count; a count-only assertion leaves the mutant alive. GAP 3 — the non-ApiError branch `if (!(error instanceof ApiError))` (:194) survives as `if (false)`, and its block plus the console.error string are reported NoCoverage. Add a case where validateSettings rejects with a plain `new Error(\"boom\")`: validationError and validationTechnicalDetails must both stay null (under the mutant they would be set to undefined), and the rejection must not surface as an unhandled rejection. Spy on console.error with vi.spyOn so the expected log does not pollute the run. Re-run the Stryker config afterwards and confirm the score is at or above 80 %.",
+          "criteria": [
+            "New cases added to useModifySettings.validation.test.ts only — no production file touched",
+            "A second settled save with a CHANGED dataRetrievalValue probes again (validateSettings called twice)",
+            "A second settled save with a CHANGED workItemTypes list probes again",
+            "A payload queued mid-flight results in exactly one probe, carrying the final payload (asserted on the argument)",
+            "A non-ApiError rejection leaves validationError and validationTechnicalDetails null and does not throw",
+            "pnpm test green in full; pnpm build zero errors and zero warnings",
+            "StrykerJS re-run scores >= 80 % on the same config",
+            "git status shows no stray in-place mutants after the Stryker re-run"
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useModifySettings.validation.test.ts",
+          "scenario_name": "The regression suite pins the fingerprint, the queue guard and the non-ApiError branch",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.validation.test.ts (edit)"
+          ],
+          "dependencies": ["01-02"],
+          "implementation_notes": "Accepted survivors — do NOT write tests for these, they are recorded as accepted in results.md: the two `if (!isLatest()) return;` guards at :189 and :198 (killing them needs a superseded request whose validation resolves after a newer one, a race the fake-timer harness can only fake by reaching into the hook's internals — the guards are cheap insurance against a race the tests cannot stage); the console.error message StringLiteral at :195 (a log-message mutation, explicitly listed as an acceptable survivor in the mutation-testing skill); and the `[modifyDefaultSettings]` dep array at :205 (modifyDefaultSettings is a prop fixed for the lifetime of a settings page, so an empty dep list is behaviourally equivalent). Run Stryker from Lighthouse.Frontend/ with `pnpm exec stryker run ../docs/feature/bug-5628-settings-autosave-validation/mutation/stryker.5628.frontend.json`; it needs the narrowed vitest config already copied to Lighthouse.Frontend/vitest.stryker.mutation.ts (gitignored). inPlace is true — always `git status` after a run and revert stray mutants before committing."
+        }
+      ]
+    }
+  ]
+}
