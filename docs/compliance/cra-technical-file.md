@@ -57,7 +57,7 @@ Lighthouse is a self-hosted application that provides:
 - Flow metrics tracking (WIP, Cycle Time, Throughput, Work Item Age)
 - Monte Carlo simulation-based delivery forecasts
 - Portfolio and team management
-- Integration with work tracking systems (Jira, Azure DevOps, Linear, CSV)
+- Integration with work tracking systems (Jira, Azure DevOps, Linear, ServiceNow, CSV)
 
 ### 1.3 Supported Platforms
 
@@ -141,7 +141,7 @@ Lighthouse is **not** intended for:
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 External Work Tracking Systems              │
-│         (Jira, Azure DevOps, Linear, CSV Import)            │
+│    (Jira, Azure DevOps, Linear, ServiceNow, CSV Import)     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -162,6 +162,7 @@ Lighthouse is **not** intended for:
 | Jira | REST API (HTTPS) | Work item synchronization |
 | Azure DevOps | REST API (HTTPS) | Work item synchronization |
 | Linear | GraphQL API (HTTPS) | Work item synchronization |
+| ServiceNow | Table API (REST over HTTPS) | Work item synchronization (read-only) |
 | CSV | File import | Work item import |
 | GitHub | REST API (HTTPS) | Update checking |
 
