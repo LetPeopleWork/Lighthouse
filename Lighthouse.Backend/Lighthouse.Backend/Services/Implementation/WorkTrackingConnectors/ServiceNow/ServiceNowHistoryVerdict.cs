@@ -64,6 +64,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
+        /// The verdict for an answer that could not be read at all — a refusal, or a 200 whose body
+        /// carried no record set (the sign-in page ADR-114 exists for).
+        /// </summary>
+        /// <remarks>
+        /// Separate from <see cref="From"/> because coverage is not the question here and answering
+        /// it would mean passing empty collections that read as "the team named no kinds of work".
+        /// </remarks>
+        public static ServiceNowHistoryAvailability FromAnUnreadableAnswer(HttpStatusCode statusCode)
+        {
+            return statusCode == HttpStatusCode.Forbidden
+                ? ServiceNowHistoryAvailability.NoRights
+                : ServiceNowHistoryAvailability.NoStateMetric;
+        }
+
+        /// <summary>
         /// What connection validation can say about transition history: nothing, because the question
         /// has no answer at that scope (ADR-123 decision 10).
         /// </summary>

@@ -82,13 +82,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 owner.GetRawStatesForCategory(categoryToIgnoreArrivalsFrom));
         }
 
-        // Every arrival the spans record, the earliest one coming from nowhere. Deliberately not
-        // PairConsecutive: that drops the first span, because reporting a transition into it would
-        // assert a predecessor state the record may never have held. For dating, the arrival itself
-        // was witnessed even where what preceded it was not — a record whose spans begin after the
-        // metric definition was activated would otherwise lose every date it has. The same shape
-        // Azure DevOps' revision walk produces, and WorkItemCategoryCrossing reads an empty
-        // predecessor as being outside every category.
+        // Every arrival the spans record, the earliest coming from nowhere — the same shape Azure
+        // DevOps' revision walk produces. Not PairConsecutive, which drops the first span rather than
+        // assert a predecessor the record may never have held; for dating, that arrival was still
+        // witnessed, and a record whose spans begin after the definition was activated would
+        // otherwise lose every date it has.
+        //
+        // Unmapped spans are dropped BEFORE pairing, so a detour through a state the team never
+        // mapped joins the spans either side of it and re-dates nothing. Deliberate: an unmapped
+        // state does not exist to Lighthouse, so the occupancy either side reads as continuous.
         private static List<WorkItemStateTransition> ArrivalsIn(List<ServiceNowStateSpan> spansInStartOrder)
         {
             return [.. spansInStartOrder.Select((span, arrival) => new WorkItemStateTransition

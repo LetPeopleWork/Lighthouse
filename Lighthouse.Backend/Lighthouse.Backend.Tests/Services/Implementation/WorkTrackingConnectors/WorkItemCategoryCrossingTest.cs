@@ -7,6 +7,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// The rule Jira and Azure DevOps have always applied, pinned in one place so a third connector
     /// cannot quietly diverge from it again (Bug #5621 F2).
     /// </summary>
+    [TestFixture]
     public class WorkItemCategoryCrossingTest
     {
         private static readonly string[] DoneStates = ["Resolved", "Closed"];
@@ -14,6 +15,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] DoingStates = ["In Progress"];
 
         private static readonly string[] NothingToIgnore = [];
+
+        private static readonly DateTime OnTheFirst = new(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime OnTheTenth = new(2026, 7, 10, 8, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime OnTheSeventeenth = new(2026, 7, 17, 8, 0, 0, DateTimeKind.Utc);
 
         [Test]
         public void WorkThatNeverReachedTheCategory_HasNoEntry()
@@ -26,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void TheFirstArrivalFromOutside_IsTheEntry()
+        public void AnArrivalFromOutsideTheCategory_IsTheEntry()
         {
             var moves = new[]
             {
@@ -123,12 +130,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(entry?.Kind, Is.EqualTo(DateTimeKind.Utc));
         }
-
-        private static readonly DateTime OnTheFirst = new(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc);
-
-        private static readonly DateTime OnTheTenth = new(2026, 7, 10, 8, 0, 0, DateTimeKind.Utc);
-
-        private static readonly DateTime OnTheSeventeenth = new(2026, 7, 17, 8, 0, 0, DateTimeKind.Utc);
 
         private static WorkItemStateTransition AMove(string from, string to, DateTime at)
         {

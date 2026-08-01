@@ -120,14 +120,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False);
             }
 
-            logger.Verify(
-                call => call.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce);
+            VerifyWarnsThatHistoryIsUnavailable(logger);
         }
 
         // Bug #5621 F2. A desk that resolves an incident straight out of the queue never puts it in a
@@ -161,14 +154,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.GetWorkItemsForTeam(ATeam());
 
-            logger.Verify(
-                call => call.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce);
+            VerifyWarnsThatHistoryIsUnavailable(logger);
         }
 
         // ADR-118 D2. The definitions have to be resolved before the spans are asked for, or the
@@ -310,14 +296,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "Nothing the team recognises was measured, so WorkItemService has to derive transitions from its own sync interval instead.");
             }
 
-            logger.Verify(
-                call => call.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.IsAny<It.IsAnyType>(),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.AtLeastOnce);
+            VerifyWarnsThatHistoryIsUnavailable(logger);
+        }
+
+        // Bug #5621, from the review of the first fix. An instance whose records simply have not
+        // moved since the definition was activated answers the span read with an empty result. That
+        // is absence of evidence, not evidence that nothing measures state -- and it is exactly the
+        // state an administrator is in on the sync right after they act on Lighthouse's own warning,
+        // so reporting it would tell them to activate a definition they just activated.
+        [Test]
+        public async Task AnInstanceThatMeasuresStateButHasRecordedNoSpansYet_KeepsReportingHistoryAsAvailable()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spanReadIsEmpty: true);
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeam());
+
+            Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.True,
+                "The definition is there and readable. Nothing has crossed it yet, which is a quiet team rather than a broken one.");
         }
 
         // Bug #5621 F6. Definitions attach to concrete record classes and never to a base table
@@ -335,6 +331,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False,
                 "The stub measures incident only. change_request would sync with no dates and no transitions, and saying history is available would hide that.");
+        }
+
+        // ...but the class that IS measured keeps its real dates. The verdict decides what the
+        // administrator is told, not whether measurements already in hand are thrown away.
+        [Test]
+        public async Task AnInstanceMeasuringOnlySomeOfTheTeamsRecordClasses_StillDatesTheClassItMeasures()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeamWorkingOnTwoKindsOfRecord()))
+                .First(item => item.ReferenceId == "INC0000003");
+
+            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc)),
+                "The span, not closed_at a day later. Suppressing the whole span read over an unmeasured sibling class would have cost this incident its true finish date.");
         }
 
         // Bug #5621 F1, the per-record half, on a correctly configured instance. metric_definition
@@ -380,6 +391,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         // Definitions attach per class, so a team spanning two of them is the case the aggregate
         // count could not answer (Bug #5621 F6).
+        // Any warning would satisfy these otherwise, and the sync emits several -- the
+        // unmapped-states one in particular would let them pass while the history warning never fired.
+        private static void VerifyWarnsThatHistoryIsUnavailable(Mock<ILogger<ServiceNowWorkTrackingConnector>> logger)
+        {
+            logger.Verify(
+                call => call.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((message, _) =>
+                        message.ToString()!.Contains("no transition history", StringComparison.Ordinal)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
+        }
+
         private static Team ATeamWorkingOnTwoKindsOfRecord()
         {
             var team = ATeam();
@@ -469,14 +495,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             bool measuresStateSpans,
             HttpStatusCode metricStatusCode = HttpStatusCode.OK,
             bool spansSkipDoing = false,
-            bool spansMeasureSomethingElse = false)
+            bool spansMeasureSomethingElse = false,
+            bool spanReadIsEmpty = false)
         {
             return new StubbedInstance(
                 records,
                 measuresStateSpans,
                 metricStatusCode,
                 spansSkipDoing: spansSkipDoing,
-                spansMeasureSomethingElse: spansMeasureSomethingElse);
+                spansMeasureSomethingElse: spansMeasureSomethingElse,
+                spanReadIsEmpty: spanReadIsEmpty);
         }
 
         // What a reverse proxy in front of an SSO-protected instance hands back on a 200: the
@@ -523,6 +551,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly bool metricBodyOnTheSpanReadOnly;
             private readonly bool spansSkipDoing;
             private readonly bool spansMeasureSomethingElse;
+            private readonly bool spanReadIsEmpty;
 
             public StubbedInstance(
                 List<string> records,
@@ -531,10 +560,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 string? metricBody = null,
                 bool metricBodyOnTheSpanReadOnly = false,
                 bool spansSkipDoing = false,
-                bool spansMeasureSomethingElse = false)
+                bool spansMeasureSomethingElse = false,
+                bool spanReadIsEmpty = false)
             {
                 this.spansSkipDoing = spansSkipDoing;
                 this.spansMeasureSomethingElse = spansMeasureSomethingElse;
+                this.spanReadIsEmpty = spanReadIsEmpty;
                 this.records = records;
                 this.measuresStateSpans = measuresStateSpans;
                 this.metricStatusCode = metricStatusCode;
@@ -607,6 +638,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return spansMeasureSomethingElse
                         ? Rows([ADefinition(), AGroupDurationDefinition()])
                         : Rows([ADefinition()]);
+                }
+
+                if (spanReadIsEmpty)
+                {
+                    return Rows([]);
                 }
 
                 if (spansMeasureSomethingElse)

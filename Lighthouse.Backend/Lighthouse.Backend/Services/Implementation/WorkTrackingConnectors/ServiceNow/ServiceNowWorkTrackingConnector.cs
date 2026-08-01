@@ -235,36 +235,47 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             if (definitions.Availability != ServiceNowHistoryAvailability.Available)
             {
                 ReportHistoryUnavailable(team, definitions.Availability);
+            }
 
+            // Read the spans even where the verdict is not Available. What the verdict answers is what
+            // the administrator is told and whether WorkItemService adds its own sync-delta
+            // transitions -- not whether the measurements that DO exist are worth having. A team
+            // covering incident and change_request with a definition on incident only would otherwise
+            // lose the incidents' true dates too, and those were correct before this bug was touched.
+            // Records of the unmeasured class carry no state span, so they are absent from the
+            // dictionary and reach the opened_at / closed_at fallback on their own.
+            if (definitions.Ids.Count < 1)
+            {
                 return [];
             }
 
             var spans = await ReadSpans(connection, recordIds, definitions.Ids, team);
 
-            // Bug #5621 F1, the whole-team half. A `field_value_duration` definition does not have to
-            // measure state, and the definition row cannot say whether it does -- the state field is
-            // named differently on every record class. So a customer who deactivates the state
-            // definition and leaves the stock assignment_group, assigned_to and active ones keeps the
-            // read succeeding while nothing it returns is a state the team named. Every record then
-            // has spans and no state span, which the fallback now handles per record; what would
-            // still be missing is the administrator being told, and SupportsTransitionHistory telling
-            // WorkItemService to derive transitions itself.
-            if (observedAvailability == ServiceNowHistoryAvailability.Available && spans.Count < 1)
+            // Bug #5621 F1, the whole-team half: a definition that came back need not measure state,
+            // and the definition row cannot say whether it does. Rows that arrived and were ALL
+            // discarded are that evidence; no rows at all are not. An instance whose records simply
+            // have not moved since the definition was activated answers with an empty result, and
+            // reporting that as a missing metric would tell an administrator to activate one they
+            // just activated.
+            if (observedAvailability == ServiceNowHistoryAvailability.Available
+                && spans.RowsRead > 0
+                && spans.ByRecord.Count < 1)
             {
                 observedAvailability = ServiceNowHistoryAvailability.NoStateMetric;
                 ReportHistoryUnavailable(team, ServiceNowHistoryAvailability.NoStateMetric);
             }
 
-            return spans;
+            return spans.ByRecord;
         }
 
         // One request per batch of records rather than one per record: at ~600ms per call with no
         // rate limiting (SPIKE Q7) the constraint is wall clock, and one call per work item would
         // turn a 500-item sync into five minutes.
-        private async Task<Dictionary<string, List<ServiceNowStateSpan>>> ReadSpans(
+        private async Task<SpanRead> ReadSpans(
             WorkTrackingSystemConnection connection, List<string> recordIds, List<string> stateSpanDefinitions, Team team)
         {
             var spansByRecord = new Dictionary<string, List<ServiceNowStateSpan>>(StringComparer.Ordinal);
+            var rowsRead = 0;
 
             foreach (var batch in ServiceNowHistoryQuery.IntoBatches(recordIds))
             {
@@ -276,20 +287,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
                 if (!read.CarriesRecords)
                 {
-                    observedAvailability = ServiceNowHistoryVerdict.From(
-                        read.StatusCode, read.CarriesRecords, [], []);
+                    observedAvailability = ServiceNowHistoryVerdict.FromAnUnreadableAnswer(read.StatusCode);
                     ReportHistoryUnavailable(team, observedAvailability.Value);
 
-                    return [];
+                    return new SpanRead([], 0);
                 }
 
                 foreach (var span in ServiceNowHistoryQuery.SpansFrom(read.Records, stateSpanDefinitions))
                 {
+                    rowsRead++;
                     KeepAgainstItsRecord(spansByRecord, span, team);
                 }
             }
 
-            return spansByRecord;
+            return new SpanRead(spansByRecord, rowsRead);
         }
 
         // Bug #5621 F1. A field_value_duration definition does not have to be one on the state
@@ -432,12 +443,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 // The refusal is any answer that is not a readable record set, not merely a bad status
                 // (Bug #5621) -- the sign-in page ADR-114 exists for arrives as a 200 and used to
                 // reach RecordsFrom, which throws, taking the whole team's sync with it.
-                if (whenRefused == WhenRefused.Downgrade && !CarriesAReadableRecordSet(answer))
+                var body = ParseRecords(answer.Body);
+
+                if (whenRefused == WhenRefused.Downgrade && !CarriesAReadableRecordSet(answer, body))
                 {
                     return new PagedRead(answer.StatusCode, records, CarriesRecords: false);
                 }
 
-                var page = RecordsFrom(answer, table);
+                var page = RecordsFrom(answer, body, table);
 
                 if (page.Count < 1)
                 {
@@ -464,22 +477,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return new PagedRead(HttpStatusCode.OK, records);
         }
 
+        // The same two conditions RecordsFrom throws on, asked instead of thrown, so a read that was
+        // told to downgrade can act on them.
+        private static bool CarriesAReadableRecordSet(ServiceNowAnswer answer, ServiceNowBody body)
+        {
+            return answer.StatusCode == HttpStatusCode.OK && body.CarriesRecords;
+        }
+
         // One error policy for the whole read: anything other than a 200 carrying a record set
         // throws. Returning the pages that happened to succeed is indistinguishable from a team
         // whose query matched less work than before, and RefreshWorkItems deletes every stored item
         // the sync did not bring back — so a 403 halfway through would destroy the team's history
         // and restoring the credential would not bring it back.
-        // The same two conditions RecordsFrom throws on, asked instead of thrown, so a read that
-        // was told to downgrade can act on them.
-        private static bool CarriesAReadableRecordSet(ServiceNowAnswer answer)
+        private static List<JsonElement> RecordsFrom(ServiceNowAnswer answer, ServiceNowBody body, string table)
         {
-            return answer.StatusCode == HttpStatusCode.OK && ParseRecords(answer.Body).CarriesRecords;
-        }
-
-        private static List<JsonElement> RecordsFrom(ServiceNowAnswer answer, string table)
-        {
-            var body = ParseRecords(answer.Body);
-
             if (answer.StatusCode != HttpStatusCode.OK)
             {
                 throw new ServiceNowReadException(
@@ -960,6 +971,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         /// <summary>The definitions measuring state on a table, and what their read says the instance can supply.</summary>
         private sealed record StateSpanDefinitions(ServiceNowHistoryAvailability Availability, List<string> Ids);
+
+        // RowsRead counts spans the definition filter let through, before the team's state mapping
+        // discarded any: telling "nothing was measured" from "nothing measures state" needs both.
+        private sealed record SpanRead(Dictionary<string, List<ServiceNowStateSpan>> ByRecord, int RowsRead);
 
         /// <summary>
         /// What a body turned out to be. The two booleans are not the same question and every caller
