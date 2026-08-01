@@ -27,6 +27,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         private const string DefinitionTableField = "table";
 
+        /// <summary>The record class a definition is attached to. Never a base table (ADR-123 D9).</summary>
+        public static string ReadDefinitionTable(JsonElement definition)
+        {
+            return ServiceNowWorkItemMapper.ReadForm(
+                definition, DefinitionTableField, ServiceNowWorkItemMapper.UniversalForm);
+        }
+
         private const string DefinitionTypeField = "type";
 
         private const string SpanRecordField = "id";

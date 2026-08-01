@@ -239,7 +239,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return [];
             }
 
-            return await ReadSpans(connection, recordIds, definitions.Ids, team);
+            var spans = await ReadSpans(connection, recordIds, definitions.Ids, team);
+
+            // Bug #5621 F1, the whole-team half. A `field_value_duration` definition does not have to
+            // measure state, and the definition row cannot say whether it does -- the state field is
+            // named differently on every record class. So a customer who deactivates the state
+            // definition and leaves the stock assignment_group, assigned_to and active ones keeps the
+            // read succeeding while nothing it returns is a state the team named. Every record then
+            // has spans and no state span, which the fallback now handles per record; what would
+            // still be missing is the administrator being told, and SupportsTransitionHistory telling
+            // WorkItemService to derive transitions itself.
+            if (observedAvailability == ServiceNowHistoryAvailability.Available && spans.Count < 1)
+            {
+                observedAvailability = ServiceNowHistoryAvailability.NoStateMetric;
+                ReportHistoryUnavailable(team, ServiceNowHistoryAvailability.NoStateMetric);
+            }
+
+            return spans;
         }
 
         // One request per batch of records rather than one per record: at ~600ms per call with no
@@ -261,7 +277,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 if (!read.CarriesRecords)
                 {
                     observedAvailability = ServiceNowHistoryVerdict.From(
-                        read.StatusCode, read.CarriesRecords, stateSpanDefinitions.Count);
+                        read.StatusCode, read.CarriesRecords, [], []);
                     ReportHistoryUnavailable(team, observedAvailability.Value);
 
                     return [];
@@ -314,8 +330,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .Where(definitionId => !string.IsNullOrWhiteSpace(definitionId))
                 .ToList();
 
+            var kindsOfWorkMeasured = read.Records
+                .Select(ServiceNowHistoryQuery.ReadDefinitionTable)
+                .Where(kindOfWork => !string.IsNullOrWhiteSpace(kindOfWork))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             return new StateSpanDefinitions(
-                ServiceNowHistoryVerdict.From(read.StatusCode, read.CarriesRecords, definitionIds.Count), definitionIds);
+                ServiceNowHistoryVerdict.From(read.StatusCode, read.CarriesRecords, definitionTables, kindsOfWorkMeasured),
+                definitionIds);
         }
 
         // The moves a record made, or none where the instance measured none. Set as the WorkItem is

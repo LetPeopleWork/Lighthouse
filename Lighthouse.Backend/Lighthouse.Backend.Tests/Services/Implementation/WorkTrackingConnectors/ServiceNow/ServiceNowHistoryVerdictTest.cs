@@ -14,6 +14,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [TestFixture]
     public class ServiceNowHistoryVerdictTest
     {
+        private static readonly string[] OneKindOfWork = ["incident"];
+
+        private static readonly string[] TwoKindsOfWork = ["incident", "change_request"];
+
+        private static readonly string[] MeasuredOnIt = ["incident"];
+
+        private static readonly string[] MeasuredOnNothing = [];
+
+        // Bug #5621 F6. Definitions attach per record class, so measuring one of a team's two kinds
+        // of work leaves the other with no dates and no transitions -- which an aggregate count
+        // reported as Available.
+        [Test]
+        public void ADefinitionOnOnlySomeOfTheTeamsKindsOfWork_ReportsNoStateMetric()
+        {
+            var availability = ServiceNowHistoryVerdict.From(
+                HttpStatusCode.OK, carriesRecords: true, TwoKindsOfWork, MeasuredOnIt);
+
+            Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
+        }
+
+        [Test]
+        public void ADefinitionOnEveryKindOfWorkTheTeamNamed_ReportsAvailable()
+        {
+            var availability = ServiceNowHistoryVerdict.From(
+                HttpStatusCode.OK, carriesRecords: true, TwoKindsOfWork, TwoKindsOfWork);
+
+            Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.Available));
+        }
+
         private const string Table = "incident";
 
         // Bug #5621. A body that is not a record set cannot be counted, so the count it produced is
@@ -22,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void AnAnswerCarryingNoRecordSet_ReportsNoStateMetricRegardlessOfTheCount()
         {
             var availability = ServiceNowHistoryVerdict.From(
-                HttpStatusCode.OK, carriesRecords: false, stateSpanDefinitions: 4);
+                HttpStatusCode.OK, carriesRecords: false, OneKindOfWork, MeasuredOnIt);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
@@ -30,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnInstanceMeasuringStateSpans_CanSupplyHistory()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, stateSpanDefinitions: 1);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, OneKindOfWork, MeasuredOnIt);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.Available));
         }
@@ -40,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnAccountRefusedTheMetricTables_LacksTheRights()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, carriesRecords: true, stateSpanDefinitions: 0);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, carriesRecords: true, OneKindOfWork, MeasuredOnNothing);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoRights));
         }
@@ -50,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnInstanceMeasuringNothing_HasNoStateMetric()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, stateSpanDefinitions: 0);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, OneKindOfWork, MeasuredOnNothing);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
@@ -61,8 +90,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void ARefusedReadReturningNothing_IsAboutRightsRatherThanConfiguration()
         {
-            var refused = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, carriesRecords: true, stateSpanDefinitions: 0);
-            var readable = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, stateSpanDefinitions: 0);
+            var refused = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, carriesRecords: true, OneKindOfWork, MeasuredOnNothing);
+            var readable = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, OneKindOfWork, MeasuredOnNothing);
 
             Assert.That(refused, Is.Not.EqualTo(readable),
                 "Both saw zero definitions. Only one of them is a permissions problem, and the remedies are different.");
@@ -74,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnAnswerNobodyExpected_IsNotTreatedAsWorking()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, carriesRecords: true, stateSpanDefinitions: 0);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, carriesRecords: true, OneKindOfWork, MeasuredOnNothing);
 
             Assert.That(availability, Is.Not.EqualTo(ServiceNowHistoryAvailability.Available));
         }
@@ -85,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnAnswerNobodyExpected_IsNotTreatedAsWorkingEvenWhenItCarriesDefinitions()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, carriesRecords: true, stateSpanDefinitions: 1);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, carriesRecords: true, OneKindOfWork, MeasuredOnIt);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }

@@ -287,6 +287,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "ADR-117's fallback. closed_at is the only instant on the record that means the work is over.");
         }
 
+        // Bug #5621 F1, the whole-team half. A customer deactivates "Incident State Duration" and
+        // leaves the other stock definitions -- assignment_group, assigned_to, active -- active. The
+        // definition count stays above zero, so the read reported Available, SupportsTransitionHistory
+        // stayed true, WorkItemService skipped its synthetic-transition fallback, and every item on
+        // the team got no dates and no transitions with no warning anywhere. Which definition measures
+        // state cannot be read off the definition row -- the state field is named differently on every
+        // record class -- so it is answered by what came back.
+        [Test]
+        public async Task AnInstanceWhoseDefinitionsMeasureSomethingOtherThanState_DowngradesRatherThanGoingQuiet()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansMeasureSomethingElse: true);
+            var subject = CreateSubject(instance, logger);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Not.Empty, "The team's work still syncs. Only the history is missing.");
+                Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False,
+                    "Nothing the team recognises was measured, so WorkItemService has to derive transitions from its own sync interval instead.");
+            }
+
+            logger.Verify(
+                call => call.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
+        }
+
+        // Bug #5621 F6. Definitions attach to concrete record classes and never to a base table
+        // (ADR-123 D9), so a team naming two kinds of work needs one on each. The verdict asked only
+        // whether the total was above zero, so a team covering incident and change_request where only
+        // incident is configured reported Available -- and every change_request silently lost its
+        // dates. This needs no misconfiguration at all, only an instance where one class was set up.
+        [Test]
+        public async Task AnInstanceMeasuringOnlySomeOfTheTeamsRecordClasses_DowngradesRatherThanClaimingHistory()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeamWorkingOnTwoKindsOfRecord());
+
+            Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False,
+                "The stub measures incident only. change_request would sync with no dates and no transitions, and saying history is available would hide that.");
+        }
+
         // Bug #5621 F1, the per-record half, on a correctly configured instance. metric_definition
         // answers with four field_value_duration definitions for incident on a stock PDI, and only
         // one of them measures state -- the others measure assignment_group, assigned_to and active.
@@ -326,6 +376,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(
                 instance.Requests.Where(uri => uri.AbsoluteUri.Contains("metric_instance", StringComparison.Ordinal)),
                 Is.Empty);
+        }
+
+        // Definitions attach per class, so a team spanning two of them is the case the aggregate
+        // count could not answer (Bug #5621 F6).
+        private static Team ATeamWorkingOnTwoKindsOfRecord()
+        {
+            var team = ATeam();
+            team.WorkItemTypes = ["incident", "change_request"];
+
+            return team;
         }
 
         private static Team ATeam()
