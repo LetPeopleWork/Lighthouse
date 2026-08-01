@@ -71,6 +71,8 @@ ServiceNow has been tightening inbound basic authentication platform-wide. On cu
 
 If the restriction is active on your instance, grant `snc_basic_auth_api_access` to the integration user, or add that user to `glide.authenticate.basic_auth.allowed_users`. It is a small grant, but it is an **instance-side setup step** — plan for it rather than discovering it when your integration stops working.
 
+ServiceNow's community guide [Understanding ServiceNow's New Basic Authentication Restrictions](https://www.servicenow.com/community/platform-privacy-security-forum/understanding-servicenow-s-new-basic-authentication-restrictions/m-p/3554746) walks an administrator through the tracking and enforcement phases, the full list of allowed access paths, and the Web Service Access Only option.
+
 {: .important}
 **Lighthouse cannot warn you about this.** Reading those properties requires elevated rights. To the least-privilege account you will give Lighthouse, `sys_properties` answers `200 OK` with zero rows — indistinguishable from "the restriction is not configured". A privileged human can check; the product cannot. Do the check yourself.
 
@@ -215,16 +217,18 @@ A team reading change requests on a stock instance therefore gets **no time in s
 
 ## How your administrator checks what exists
 
-1. In the navigator, go to **Metrics → Definitions** (or type `metric_definition.list`).
+1. In the application navigator's filter box, type `metric_definition.list` and press enter. (The menu entry is **Metrics → Definition**, but where that sits moves between releases — the list name always works.)
 2. Filter on **Type** `is` **Field value duration**.
 3. Read the **Table** and **Field** columns. A class is covered only when a row names that class **and its state field**.
+
+ServiceNow's own reference for this feature is [Metric definition support](https://www.servicenow.com/docs/csh?topicname=c_MetricDefinitionSupport.html&version=latest).
 
 {: .important}
 **A row for the right table is not enough — the Field column decides.** Stock `change_request` has two Field value duration definitions, on `approval` and on `type`. Neither measures state, so change requests produce no time in state even though the filtered list shows rows for them. Check the Field, not just the Table.
 
 ## How your administrator creates a missing one
 
-1. **Metrics → Definitions → New**.
+1. From the same `metric_definition.list` view, click **New**.
 2. Fill in exactly four things:
 
 | Field on the form | Value |

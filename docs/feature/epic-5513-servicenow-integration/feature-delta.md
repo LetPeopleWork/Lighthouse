@@ -2521,3 +2521,70 @@ One correction to the mutation note above: per-feature Stryker configs **are** c
 `docs/feature/{feature}/mutation/`, following the convention bug-5586 established. The `.gitignore`
 exclusions still apply to the working copies at the project roots, so a committed copy under `docs/`
 needs `git add -f` for the `vitest.stryker*.ts` file.
+
+---
+
+## Wave: DELIVER / Slice 05 (#5578) — progress and resume state (2026-08-01)
+
+**Status: US-05 shipped except its screenshots. US-06 closed on evidence, not on the deliverable
+it originally named.** Pick this up with `/nw-continue`; everything still owed is listed under
+"What is left" below.
+
+### What shipped
+
+| Item | Where |
+|---|---|
+| ServiceNow docs page | `docs/concepts/worktrackingsystems/servicenow.md` |
+| "What to ask your ServiceNow administrator for" handover section | same page, top |
+| Click-by-click metric-definition check + create, per-class state field table | same page |
+| Supported-system lists updated | `docs/concepts/concepts.md` (both places) |
+| CRA technical file + compliance index | `docs/compliance/` — four enumerations of the external systems |
+| Demo seeder brought to parity | `Scripts/DemoEnv/ServiceNowSystemUpdater.py` |
+
+The seeder gained a branching `flow` (In Progress → On Hold 25% / Resolved 75%, On Hold → back or
+forward) so **On Hold happens to a subset**, which is what a blocked-rule demo needs; `state_extras`
+generalising the close-fields mechanism to any state that has mandatory fields; and
+`ensure_state_metric_definition`, which creates a missing Field value duration definition so a
+rebuilt or different PDI does not silently lose time in state. `report_timestamp_evidence` was
+deleted — it answered SPIKE Q4/Q6, both closed. `seed()` (cc=18) split into `top_up` + `walk`.
+
+Verified against dev191338 on 2026-08-01: the On Hold transition lands in both directions with
+`hold_reason` resolved from the instance, and the metric-definition create path returns 201 and reads
+back (probed with a temporary definition on `problem.state`, deleted again).
+
+### Acceptance-criteria dispositions — no silent N/A
+
+| AC | Disposition |
+|---|---|
+| US-05 AC1, AC2, AC4, AC5 | **Met.** AC2's role set is documented; see AC2 caveat below. |
+| US-05 AC3 (screenshots per theme) | **Open** — blocked on #5610, see below. |
+| US-06 AC1 (standalone build-free validation script) | **Superseded, deliberately not built.** Its premise was D10's assumption that Lighthouse could not be built or run on the customer's on-prem side. The maintainer ran Lighthouse itself against that instance and it worked, so the constraint did not bind. Building a standalone reimplementation of a path that already succeeded would be ceremony. |
+| US-06 AC2 (minimum-role claim confirmed) | **Partly.** The role set is measured on cloud, one role at a time. The on-prem run predates time-in-state and its account's roles were not recorded, so the claim is *not* yet proved against a customer instance. The docs carry this provenance and invite a correction rather than claiming proof. Closes if the account is ever identified. |
+| US-06 AC3 (cloud-vs-on-prem divergences) | **Met, and the list is empty.** Basic auth was accepted; everything the maintainer could observe matched the PDI. An empty list is the finding the AC asks for. |
+| US-06 AC4/AC5 (≥3 users' feedback, go/narrow/stop) | **Deferred to post-release** by maintainer decision, 2026-08-01. There is nothing for a user to react to until ServiceNow ships, and the KPI's window is calendar time. Slice 05's own effort note anticipated this: ship US-05, open the loop, do not hold the slice open blocking the board. |
+
+### What is left
+
+1. **Screenshots** — `@screenshot` E2E per theme. No asset exists under `docs/assets/concepts/` for
+   ServiceNow yet, so every image slot on the page is currently absent rather than broken. Project
+   convention: `rm` the old PNG first, a <0.5 % diff silently keeps the stale image.
+2. **Verify the Board Wizard section against shipped code.** It is written from #5610's DESIGN, not
+   from the implementation — #5610 was unpushed and in another worktree when the page was written.
+3. **Bug #5630** should land before the page's "Known limitation" note in the time-in-state section
+   is removed. The note is the interim mitigation ADR-127 named.
+4. **Post-release**: collect the ≥3 users' feedback and record the go / narrow / stop verdict on
+   ADO 5513 (US-06 AC4/AC5).
+
+Items 1 and 2 both wait on **#5610 reaching `main`**. Nothing else blocks.
+
+### Evidence links added to the page
+
+Both were fetched and confirmed to resolve on 2026-08-01 rather than written from memory:
+[Encoded query strings](https://www.servicenow.com/docs/bundle/zurich-platform-user-interface/page/use/using-lists/concept/c_EncodedQueryStrings.html),
+[Metric definition support](https://www.servicenow.com/docs/csh?topicname=c_MetricDefinitionSupport.html&version=latest)
+(the `csh?topicname=` form is ServiceNow's own release-stable link — `docs.servicenow.com` 301s to it),
+and the community admin guide for the basic-auth restriction.
+
+The navigation path in the page leads with `metric_definition.list` rather than a menu path on
+purpose: sources disagree between **Metrics → Definition** and **System Definition → Metrics**, and
+the list name works regardless of where the menu entry sits in a given release.
