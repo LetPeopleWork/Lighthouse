@@ -32,6 +32,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string StateSpanDefinition = "35f2b283c0a808ae000b7132cd0a4f55";
 
+        // The same table, the same type, and it does not measure state (Bug #5621 F1).
+        private const string GroupSpanDefinition = "cccc333383da4310ad56c670ceaad399";
+
         // AC1. The whole point of the slice: the connector stops answering from a constant and starts
         // answering from what the instance said.
         [Test]
@@ -284,6 +287,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "ADR-117's fallback. closed_at is the only instant on the record that means the work is over.");
         }
 
+        // Bug #5621 F1, the per-record half, on a correctly configured instance. metric_definition
+        // answers with four field_value_duration definitions for incident on a stock PDI, and only
+        // one of them measures state -- the others measure assignment_group, assigned_to and active.
+        // A record closed before the state definition was activated, whose group was changed
+        // afterwards, therefore HAS spans and has no STATE span. The connector asked "has spans" and
+        // the mapper asked "has a state span", so it took the span branch and returned null for both
+        // dates on a record whose opened_at and closed_at were sitting in the answer it already had.
+        [Test]
+        public async Task WorkWhoseOnlySpansMeasureSomethingOtherThanState_KeepsTheRecordsOwnDates()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansMeasureSomethingElse: true);
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 31, 15, 0, 0, DateTimeKind.Utc)),
+                    "No state span was measured for this record, so ADR-117's closed_at is the honest answer -- exactly as if no span had come back at all.");
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 20, 6, 0, 0, DateTimeKind.Utc)),
+                    "And opened_at for the start, for the same reason.");
+                Assert.That(workItem.SyncedTransitions, Is.Empty,
+                    "A group change is not a state change, and pairing those labels would report moves the record never made.");
+            }
+        }
+
         // A team whose query matched nothing must not ask for the history of every record in the
         // instance — an unfiltered idIN is an unfiltered read.
         [Test]
@@ -379,9 +408,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             List<string> records,
             bool measuresStateSpans,
             HttpStatusCode metricStatusCode = HttpStatusCode.OK,
-            bool spansSkipDoing = false)
+            bool spansSkipDoing = false,
+            bool spansMeasureSomethingElse = false)
         {
-            return new StubbedInstance(records, measuresStateSpans, metricStatusCode, spansSkipDoing: spansSkipDoing);
+            return new StubbedInstance(
+                records,
+                measuresStateSpans,
+                metricStatusCode,
+                spansSkipDoing: spansSkipDoing,
+                spansMeasureSomethingElse: spansMeasureSomethingElse);
         }
 
         // What a reverse proxy in front of an SSO-protected instance hands back on a 200: the
@@ -427,6 +462,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly string? metricBody;
             private readonly bool metricBodyOnTheSpanReadOnly;
             private readonly bool spansSkipDoing;
+            private readonly bool spansMeasureSomethingElse;
 
             public StubbedInstance(
                 List<string> records,
@@ -434,9 +470,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 HttpStatusCode metricStatusCode,
                 string? metricBody = null,
                 bool metricBodyOnTheSpanReadOnly = false,
-                bool spansSkipDoing = false)
+                bool spansSkipDoing = false,
+                bool spansMeasureSomethingElse = false)
             {
                 this.spansSkipDoing = spansSkipDoing;
+                this.spansMeasureSomethingElse = spansMeasureSomethingElse;
                 this.records = records;
                 this.measuresStateSpans = measuresStateSpans;
                 this.metricStatusCode = metricStatusCode;
@@ -503,7 +541,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.Contains("metric_definition", StringComparison.Ordinal))
                 {
-                    return Rows([ADefinition()]);
+                    // The stock incident table answers with four of these, and DefinitionQueryFor
+                    // filters on table and type only -- so the ones measuring something other than
+                    // state come back too, and their spans are asked for alongside the real ones.
+                    return spansMeasureSomethingElse
+                        ? Rows([ADefinition(), AGroupDurationDefinition()])
+                        : Rows([ADefinition()]);
+                }
+
+                if (spansMeasureSomethingElse)
+                {
+                    // The record was closed before the state definition existed. All it has is the
+                    // group change somebody made during a later queue cleanup.
+                    return Rows([AGroupSpan(FinishedRecordId, "Service Desk", "2026-07-31 16:00:00")]);
                 }
 
                 if (spansSkipDoing)
@@ -533,6 +583,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                       "type": { "display_value": "Field value duration", "value": "field_value_duration" },
                       "field": { "display_value": "incident_state", "value": "incident_state" },
                       "table": { "display_value": "incident", "value": "incident" }
+                    }
+                    """;
+            }
+
+            // Stock, active, and not a state metric: assignment_group is a reference field, so its
+            // spans carry group names where the state definition's carry state labels.
+            private static string AGroupDurationDefinition()
+            {
+                return $$"""
+                    {
+                      "sys_id": { "display_value": "{{GroupSpanDefinition}}", "value": "{{GroupSpanDefinition}}" },
+                      "name": { "display_value": "Assignment Group Duration", "value": "Assignment Group Duration" },
+                      "type": { "display_value": "Field value duration", "value": "field_value_duration" },
+                      "field": { "display_value": "assignment_group", "value": "assignment_group" },
+                      "table": { "display_value": "incident", "value": "incident" }
+                    }
+                    """;
+            }
+
+            private static string AGroupSpan(string record, string group, string start)
+            {
+                return $$"""
+                    {
+                      "id": { "display_value": "Incident", "value": "{{record}}" },
+                      "definition": { "display_value": "Assignment Group Duration", "value": "{{GroupSpanDefinition}}" },
+                      "field": { "display_value": "assignment_group", "value": "assignment_group" },
+                      "value": { "display_value": "{{group}}", "value": "{{group}}" },
+                      "field_value": { "display_value": "1", "value": "1" },
+                      "start": { "display_value": "{{start}}", "value": "{{start}}" },
+                      "end": { "display_value": "", "value": "" }
                     }
                     """;
             }

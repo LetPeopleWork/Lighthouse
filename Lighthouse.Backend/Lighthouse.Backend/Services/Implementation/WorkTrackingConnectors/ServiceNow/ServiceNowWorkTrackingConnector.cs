@@ -269,16 +269,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
                 foreach (var span in ServiceNowHistoryQuery.SpansFrom(read.Records, stateSpanDefinitions))
                 {
-                    KeepAgainstItsRecord(spansByRecord, span);
+                    KeepAgainstItsRecord(spansByRecord, span, team);
                 }
             }
 
             return spansByRecord;
         }
 
+        // Bug #5621 F1. A field_value_duration definition does not have to be one on the state
+        // field: the stock incident table measures assignment_group, assigned_to and active the same
+        // way, and DefinitionQueryFor cannot exclude them, because the state field is named
+        // differently on each record class. So the span read brings back spans that are not state
+        // spans, and a record that has only those must be ABSENT here rather than present and
+        // unreadable -- absence is what the date lookups answer with the record's own opened_at and
+        // closed_at, while presence made them report null for a record whose dates were sitting in
+        // the answer the connector already held.
         private static void KeepAgainstItsRecord(
-            Dictionary<string, List<ServiceNowStateSpan>> spansByRecord, ServiceNowStateSpan span)
+            Dictionary<string, List<ServiceNowStateSpan>> spansByRecord, ServiceNowStateSpan span, Team team)
         {
+            if (team.MapStateToStateCategory(span.Label) == StateCategories.Unknown)
+            {
+                return;
+            }
+
             if (!spansByRecord.TryGetValue(span.RecordId, out var recordsSpans))
             {
                 recordsSpans = [];
