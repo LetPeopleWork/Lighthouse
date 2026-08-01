@@ -770,6 +770,16 @@ const workTrackingSystemConfiguration = [
 		],
 	},
 	{
+		workTrackingSystemName: "ServiceNow",
+		workTrackingSystemOptions: [
+			{
+				field: "ServiceNow Instance URL",
+				value: "https://dev12345.service-now.com",
+			},
+			{ field: "Username", value: "lighthouse_integration" },
+		],
+	},
+	{
 		workTrackingSystemName: "CSV",
 		workTrackingSystemOptions: [
 			{ field: "Delimiter", value: "," },
