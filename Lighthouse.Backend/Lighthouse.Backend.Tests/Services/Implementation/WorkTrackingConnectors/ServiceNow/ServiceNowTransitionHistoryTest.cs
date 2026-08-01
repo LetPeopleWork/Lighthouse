@@ -80,6 +80,53 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // Bug #5621 F4. ADR-114's sign-in page: the instance answers 200 and hands back a login
+        // document rather than a record set. WhenRefused.Downgrade exists so a degraded instance
+        // degrades the sync instead of failing it, and it discriminated on the status code alone --
+        // so this arrived as a thrown read and took the team's whole sync with it.
+        [Test]
+        public async Task AnInstanceAnsweringTheMetricTablesWithNoRecordSet_DowngradesRatherThanFailing()
+        {
+            var instance = AnInstanceAnsweringMetricsWith(ASignInPage);
+            var subject = CreateSubject(instance);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Not.Empty, "The team's work still syncs. Only the history is missing.");
+                Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False);
+            }
+        }
+
+        // The same answer arriving on the span read rather than the definition read. Reported through
+        // the warning rather than absorbed: an empty span set and an unreadable one are the same
+        // history to the metrics and different problems to the administrator.
+        [Test]
+        public async Task AnInstanceAnsweringTheSpanReadWithNoRecordSet_SaysSoRatherThanGoingQuiet()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var instance = AnInstanceAnsweringMetricsWith(ASignInPage, onlyTheSpanRead: true);
+            var subject = CreateSubject(instance, logger);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeam());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Not.Empty);
+                Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.False);
+            }
+
+            logger.Verify(
+                call => call.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
+        }
+
         // DoD 5 forbids the silent no-op. A team quietly losing time-in-state reads as a team whose
         // work never moves, and the administrator has no way to discover why.
         [Test]
@@ -295,11 +342,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return AnInstanceHolding(ThreeRecords(), measuresStateSpans: false, metricStatusCode: statusCode);
         }
 
+        // A 200 whose body is not a record set at all. The team's own table still answers normally,
+        // so the sync itself is healthy and only the history read is degraded.
+        private static StubbedInstance AnInstanceAnsweringMetricsWith(string body, bool onlyTheSpanRead = false)
+        {
+            return new StubbedInstance(
+                ThreeRecords(),
+                measuresStateSpans: true,
+                HttpStatusCode.OK,
+                metricBody: body,
+                metricBodyOnTheSpanReadOnly: onlyTheSpanRead);
+        }
+
         private static StubbedInstance AnInstanceHolding(
             List<string> records, bool measuresStateSpans, HttpStatusCode metricStatusCode = HttpStatusCode.OK)
         {
             return new StubbedInstance(records, measuresStateSpans, metricStatusCode);
         }
+
+        // What a reverse proxy in front of an SSO-protected instance hands back on a 200: the
+        // instance said yes, and returned a page instead of data (ADR-114).
+        private const string ASignInPage =
+            "<!DOCTYPE html><html><head><title>Sign in</title></head><body><form action=\"/login\"></form></body></html>";
 
         private static List<string> ThreeRecords()
         {
@@ -336,12 +400,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly List<string> records;
             private readonly bool measuresStateSpans;
             private readonly HttpStatusCode metricStatusCode;
+            private readonly string? metricBody;
+            private readonly bool metricBodyOnTheSpanReadOnly;
 
-            public StubbedInstance(List<string> records, bool measuresStateSpans, HttpStatusCode metricStatusCode)
+            public StubbedInstance(
+                List<string> records,
+                bool measuresStateSpans,
+                HttpStatusCode metricStatusCode,
+                string? metricBody = null,
+                bool metricBodyOnTheSpanReadOnly = false)
             {
                 this.records = records;
                 this.measuresStateSpans = measuresStateSpans;
                 this.metricStatusCode = metricStatusCode;
+                this.metricBody = metricBody;
+                this.metricBodyOnTheSpanReadOnly = metricBodyOnTheSpanReadOnly;
 
                 Requests = [];
 
@@ -377,6 +450,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             private HttpResponseMessage MetricAnswer(string path)
             {
+                var readIsTheOneSubstituted =
+                    !metricBodyOnTheSpanReadOnly || path.Contains("metric_instance", StringComparison.Ordinal);
+
+                if (metricBody is not null && readIsTheOneSubstituted)
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(metricBody, Encoding.UTF8, "text/html"),
+                    };
+                }
+
                 if (metricStatusCode != HttpStatusCode.OK)
                 {
                     return new HttpResponseMessage(metricStatusCode)

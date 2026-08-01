@@ -263,9 +263,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     ServiceNowHistoryQuery.SpanQueryFor(batch, stateSpanDefinitions),
                     WhenRefused.Downgrade);
 
-                if (read.StatusCode != HttpStatusCode.OK)
+                if (!read.CarriesRecords)
                 {
-                    observedAvailability = ServiceNowHistoryVerdict.From(read.StatusCode, stateSpanDefinitions.Count);
+                    observedAvailability = ServiceNowHistoryVerdict.From(
+                        read.StatusCode, read.CarriesRecords, stateSpanDefinitions.Count);
                     ReportHistoryUnavailable(team, observedAvailability.Value);
 
                     return [];
@@ -306,7 +307,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .ToList();
 
             return new StateSpanDefinitions(
-                ServiceNowHistoryVerdict.From(read.StatusCode, definitionIds.Count), definitionIds);
+                ServiceNowHistoryVerdict.From(read.StatusCode, read.CarriesRecords, definitionIds.Count), definitionIds);
         }
 
         // The moves a record made, or none where the instance measured none. Set as the WorkItem is
@@ -384,9 +385,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
                 // A history read carries the refusal home instead of throwing on it: a role revoked
                 // after the connection validated must downgrade the sync, not fail it (ADR-118 D5).
-                if (whenRefused == WhenRefused.Downgrade && answer.StatusCode != HttpStatusCode.OK)
+                // The refusal is any answer that is not a readable record set, not merely a bad status
+                // (Bug #5621) -- the sign-in page ADR-114 exists for arrives as a 200 and used to
+                // reach RecordsFrom, which throws, taking the whole team's sync with it.
+                if (whenRefused == WhenRefused.Downgrade && !CarriesAReadableRecordSet(answer))
                 {
-                    return new PagedRead(answer.StatusCode, records);
+                    return new PagedRead(answer.StatusCode, records, CarriesRecords: false);
                 }
 
                 var page = RecordsFrom(answer, table);
@@ -421,6 +425,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // whose query matched less work than before, and RefreshWorkItems deletes every stored item
         // the sync did not bring back — so a 403 halfway through would destroy the team's history
         // and restoring the credential would not bring it back.
+        // The same two conditions RecordsFrom throws on, asked instead of thrown, so a read that
+        // was told to downgrade can act on them.
+        private static bool CarriesAReadableRecordSet(ServiceNowAnswer answer)
+        {
+            return answer.StatusCode == HttpStatusCode.OK && ParseRecords(answer.Body).CarriesRecords;
+        }
+
         private static List<JsonElement> RecordsFrom(ServiceNowAnswer answer, string table)
         {
             var body = ParseRecords(answer.Body);
@@ -887,7 +898,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>Every page of a read, and the status the read ended on.</summary>
-        private sealed record PagedRead(HttpStatusCode StatusCode, List<JsonElement> Records);
+        // CarriesRecords is false only where a downgrading read gave up on the answer: it is the
+        // difference between "the instance holds no rows" and "the instance did not answer with rows".
+        private sealed record PagedRead(
+            HttpStatusCode StatusCode, List<JsonElement> Records, bool CarriesRecords = true);
 
         /// <summary>
         /// One <c>sysparm_limit=1</c> probe, reduced to the four scalars a verdict is read from. The

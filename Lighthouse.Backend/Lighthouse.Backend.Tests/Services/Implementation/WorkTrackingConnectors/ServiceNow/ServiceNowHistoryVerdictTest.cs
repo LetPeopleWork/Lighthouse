@@ -16,10 +16,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         private const string Table = "incident";
 
+        // Bug #5621. A body that is not a record set cannot be counted, so the count it produced is
+        // not evidence of a state metric -- the remedy is the one an administrator can act on.
+        [Test]
+        public void AnAnswerCarryingNoRecordSet_ReportsNoStateMetricRegardlessOfTheCount()
+        {
+            var availability = ServiceNowHistoryVerdict.From(
+                HttpStatusCode.OK, carriesRecords: false, stateSpanDefinitions: 4);
+
+            Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
+        }
+
         [Test]
         public void AnInstanceMeasuringStateSpans_CanSupplyHistory()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, stateSpanDefinitions: 1);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, stateSpanDefinitions: 1);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.Available));
         }
@@ -29,7 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnAccountRefusedTheMetricTables_LacksTheRights()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, stateSpanDefinitions: 0);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, carriesRecords: true, stateSpanDefinitions: 0);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoRights));
         }
@@ -39,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnInstanceMeasuringNothing_HasNoStateMetric()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, stateSpanDefinitions: 0);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, stateSpanDefinitions: 0);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
@@ -50,8 +61,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void ARefusedReadReturningNothing_IsAboutRightsRatherThanConfiguration()
         {
-            var refused = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, stateSpanDefinitions: 0);
-            var readable = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, stateSpanDefinitions: 0);
+            var refused = ServiceNowHistoryVerdict.From(HttpStatusCode.Forbidden, carriesRecords: true, stateSpanDefinitions: 0);
+            var readable = ServiceNowHistoryVerdict.From(HttpStatusCode.OK, carriesRecords: true, stateSpanDefinitions: 0);
 
             Assert.That(refused, Is.Not.EqualTo(readable),
                 "Both saw zero definitions. Only one of them is a permissions problem, and the remedies are different.");
@@ -63,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnAnswerNobodyExpected_IsNotTreatedAsWorking()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, stateSpanDefinitions: 0);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, carriesRecords: true, stateSpanDefinitions: 0);
 
             Assert.That(availability, Is.Not.EqualTo(ServiceNowHistoryAvailability.Available));
         }
@@ -74,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void AnAnswerNobodyExpected_IsNotTreatedAsWorkingEvenWhenItCarriesDefinitions()
         {
-            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, stateSpanDefinitions: 1);
+            var availability = ServiceNowHistoryVerdict.From(HttpStatusCode.InternalServerError, carriesRecords: true, stateSpanDefinitions: 1);
 
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }

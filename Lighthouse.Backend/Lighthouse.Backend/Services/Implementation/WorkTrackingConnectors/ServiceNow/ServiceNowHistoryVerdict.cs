@@ -17,7 +17,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         /// metric-definition read: the status it returned, and how many <c>Field value duration</c>
         /// definitions on the team's kinds of work came back.
         /// </summary>
-        public static ServiceNowHistoryAvailability From(HttpStatusCode statusCode, int stateSpanDefinitions)
+        public static ServiceNowHistoryAvailability From(
+            HttpStatusCode statusCode, bool carriesRecords, int stateSpanDefinitions)
         {
             // A refusal outranks the count: zero definitions came back because the read was refused,
             // not because none exist, and the two remedies are different (ADR-118 D5).
@@ -29,6 +30,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // An unrecognised answer is not evidence that history works. It resolves to the remedy an
             // administrator can verify before acting on it — rationale in the commit for step 04-03.
             if (statusCode != HttpStatusCode.OK)
+            {
+                return ServiceNowHistoryAvailability.NoStateMetric;
+            }
+
+            // A 200 that carried no record set at all is not evidence either (Bug #5621). The
+            // instance said yes and returned a sign-in page, so nothing was counted -- and reporting
+            // Available off a count taken from a body that holds no records would declare history
+            // supported on the strength of an answer nobody could read.
+            if (!carriesRecords)
             {
                 return ServiceNowHistoryAvailability.NoStateMetric;
             }
