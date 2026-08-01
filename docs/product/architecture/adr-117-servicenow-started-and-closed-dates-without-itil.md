@@ -13,6 +13,14 @@
   below — `ClosedDate` comes from the transition history where there is one and from `closed_at`
   where there is not, and `resolved_at` is not read at all. Decision 3 stands, with
   "request-to-resolution" now reading **request-to-closure**.
+- **Amended 2026-08-01 (Bug #5621)**: "where there is one" is now decided per record rather than per
+  team, and both dates come from category crossings rather than from individual spans — see
+  [ADR-118](./adr-118-servicenow-transition-history-from-metric-instance-spans.md)'s 2026-08-01
+  amendment. The fallback this ADR defines is unchanged and is now reached in the case it was always
+  meant for: a record carrying spans that do not measure state used to take the history path and
+  report no dates at all. A Done record with no observed Doing crossing also now takes `closed_at`
+  for **both** dates — a zero-length cycle, matching Jira and Azure DevOps — rather than dropping out
+  of Cycle Time on a null start.
 
 ## Context
 
