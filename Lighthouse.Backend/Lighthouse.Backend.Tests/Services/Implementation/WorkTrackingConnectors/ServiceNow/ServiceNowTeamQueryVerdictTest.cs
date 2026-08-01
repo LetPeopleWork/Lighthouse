@@ -233,12 +233,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // Rungs 1 and 2 of ADR-124 decision 2. A class IS a table, so these are the connection
         // ladder's own verdicts with a class name where the table name went -- but pointing at the
         // field the flow coach typed it in, not at the connection's.
-        [TestCase(HttpStatusCode.BadRequest, "unknown_table", TestName = "AKindOfWorkTheInstanceDoesNotHave_IsNamedBackAsAnUnknownTable")]
-        [TestCase(HttpStatusCode.Forbidden, "insufficient_permissions", TestName = "AKindOfWorkTheInstanceRefuses_IsNamedBackAsAPermissionsProblem")]
-        public void AKindOfWorkTheInstanceWillNotAnswerFor_KeepsTheConnectionLaddersName(HttpStatusCode status, string expectedCode)
+        [TestCase(HttpStatusCode.BadRequest, false, "unknown_table", TestName = "AKindOfWorkTheInstanceDoesNotHave_IsNamedBackAsAnUnknownTable")]
+        [TestCase(HttpStatusCode.Forbidden, false, "insufficient_permissions", TestName = "AKindOfWorkTheInstanceRefuses_IsNamedBackAsAPermissionsProblem")]
+        [TestCase(HttpStatusCode.BadRequest, true, "unknown_table", TestName = "AKindOfWorkRefusedWithAnErrorBodyThatParses_IsStillNamedBackAsAnUnknownTable")]
+        public void AKindOfWorkTheInstanceWillNotAnswerFor_KeepsTheConnectionLaddersName(HttpStatusCode status, bool carriesRecords, string expectedCode)
         {
             var result = ServiceNowTeamQueryVerdict.FromClassTableProbe(
-                Changes, TheWholeHierarchy, status, carriesRecords: false, recordsTheInstanceHolds: null, visibleRowCount: 0);
+                Changes, TheWholeHierarchy, status, carriesRecords, recordsTheInstanceHolds: null, visibleRowCount: 0);
 
             using (Assert.EnterMultipleScope())
             {
@@ -278,6 +279,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: true, recordsTheInstanceHolds: 0, visibleRowCount: 0);
 
             Assert.That(result.Code, Is.EqualTo("valid"));
+        }
+
+        // The two halves of the refusal are independent. A 200 whose body is a sign-in page carries
+        // no result set to count, so it has to reach the connection ladder rather than fall through
+        // to a count that would then be read off a body that was never data.
+        [Test]
+        public void AKindOfWorkWhoseOwnTableAnsweredWithSomethingOtherThanData_IsRefusedBeforeTheCountIsRead()
+        {
+            var result = ServiceNowTeamQueryVerdict.FromClassTableProbe(
+                Changes, TheWholeHierarchy, HttpStatusCode.OK, carriesRecords: false, recordsTheInstanceHolds: 641, visibleRowCount: 0);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo("unexpected_response"));
+                Assert.That(result.Code, Is.Not.EqualTo("class_is_not_a_kind_of_work"),
+                    "X-Total-Count arrived beside a body that is not data, and a header alone cannot say the class is not work.");
+                Assert.That(result.FieldName, Is.EqualTo(KindsOfWorkField));
+            }
         }
 
         [Test]

@@ -626,6 +626,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // RFC 8288 allows a Link target to be a relative reference, and a rewriting proxy emits one.
+        // What refuses it is the scheme check rather than the parse: on Unix .NET reads a rooted path
+        // as an absolute file:// URI, so Uri.TryCreate SUCCEEDS here and a guard that only asked
+        // whether the address parsed would hand the credential to a file path.
+        [Test]
+        public async Task ANextPageThatIsNotAnAbsoluteAddress_IsNotFollowedAndTheReadCarriesOnByOffset()
+        {
+            var instance = AnInstanceHolding(
+                FiveRecordsOfMixedState(),
+                new InstanceBehaviour { PageSize = 2, PagingLinksAreNotAbsolute = true });
+            var subject = CreateSubject(instance);
+
+            var workItems = await subject.GetWorkItemsForTeam(ATeamThatMapsEveryState());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems.ToList(), Has.Count.EqualTo(5),
+                    "An address Lighthouse cannot resolve is not evidence that this was the last page.");
+                Assert.That(instance.Requests.Select(uri => uri.Authority), Has.All.EqualTo(new Uri(InstanceUrl).Authority));
+            }
+        }
+
         // AC7. The instance already said how big the result set is, so asking for one more page is a
         // wasted round trip on every sync of every team.
         [Test]
@@ -980,6 +1002,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             /// <summary>The Link header names a next page on a host other than the one asked.</summary>
             public bool PagingLinksPointElsewhere { get; init; }
 
+            /// <summary>
+            /// The Link header names the next page as a relative reference, which RFC 8288 allows
+            /// and a rewriting proxy in front of the instance emits.
+            /// </summary>
+            public bool PagingLinksAreNotAbsolute { get; init; }
+
             /// <summary>A record already sent comes back on a later page with its text changed.</summary>
             public bool ResendsTheFirstRecordAmended { get; init; }
 
@@ -1176,9 +1204,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (next < total)
                 {
-                    var address = behaviour.PagingLinksPointElsewhere
-                        ? PageAddress(uri, next).Replace(new Uri(InstanceUrl).Authority, "someone-elses-instance.example.com", StringComparison.Ordinal)
-                        : PageAddress(uri, next);
+                    var address = behaviour switch
+                    {
+                        { PagingLinksPointElsewhere: true } => PageAddress(uri, next).Replace(new Uri(InstanceUrl).Authority, "someone-elses-instance.example.com", StringComparison.Ordinal),
+                        { PagingLinksAreNotAbsolute: true } => new Uri(PageAddress(uri, next)).PathAndQuery,
+                        _ => PageAddress(uri, next),
+                    };
 
                     links.Add($"<{address}>;rel=\"next\"");
                 }
