@@ -169,6 +169,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .Select(record => new MappedRecord(
                     ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
+                    ServiceNowWorkItemMapper.ReadRecordClass(record),
                     ServiceNowWorkItemMapper.MapRecord(record, team, scope, instanceUrl)))
                 .ToList();
 
@@ -251,18 +252,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             var spans = await ReadSpans(connection, recordIds, definitions.Ids, team);
 
-            // Bug #5621 F1, the whole-team half: a definition that came back need not measure state,
-            // and the definition row cannot say whether it does. Rows that arrived and were ALL
-            // discarded are that evidence; no rows at all are not. An instance whose records simply
-            // have not moved since the definition was activated answers with an empty result, and
-            // reporting that as a missing metric would tell an administrator to activate one they
-            // just activated.
-            if (observedAvailability == ServiceNowHistoryAvailability.Available
-                && spans.RowsRead > 0
-                && spans.ByRecord.Count < 1)
+            if (observedAvailability == ServiceNowHistoryAvailability.Available)
             {
-                observedAvailability = ServiceNowHistoryAvailability.NoStateMetric;
-                ReportHistoryUnavailable(team, ServiceNowHistoryAvailability.NoStateMetric);
+                // Bug #5621 F1, the whole-team half: a definition that came back need not measure
+                // state, and the definition row cannot say whether it does. Rows that arrived and were
+                // ALL discarded are that evidence; no rows at all are not. An instance whose records
+                // simply have not moved since the definition was activated answers with an empty
+                // result, and reporting that as a missing metric would tell an administrator to
+                // activate one they just activated.
+                if (spans.RowsRead > 0 && spans.ByRecord.Count < 1)
+                {
+                    observedAvailability = ServiceNowHistoryAvailability.NoStateMetric;
+                    ReportHistoryUnavailable(team, ServiceNowHistoryAvailability.NoStateMetric);
+                }
+                else
+                {
+                    ReportKindsOfWorkNothingMeasuresStateOn(spans, mapped, scope, team);
+                }
             }
 
             return spans.ByRecord;
@@ -275,6 +281,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             WorkTrackingSystemConnection connection, List<string> recordIds, List<string> stateSpanDefinitions, Team team)
         {
             var spansByRecord = new Dictionary<string, List<ServiceNowStateSpan>>(StringComparer.Ordinal);
+            var recordsThatReturnedRows = new HashSet<string>(StringComparer.Ordinal);
             var rowsRead = 0;
 
             foreach (var batch in ServiceNowHistoryQuery.IntoBatches(recordIds))
@@ -290,17 +297,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     observedAvailability = ServiceNowHistoryVerdict.FromAnUnreadableAnswer(read.StatusCode);
                     ReportHistoryUnavailable(team, observedAvailability.Value);
 
-                    return new SpanRead([], 0);
+                    return new SpanRead([], 0, new HashSet<string>(StringComparer.Ordinal));
                 }
 
                 foreach (var span in ServiceNowHistoryQuery.SpansFrom(read.Records, stateSpanDefinitions))
                 {
                     rowsRead++;
+                    recordsThatReturnedRows.Add(span.RecordId);
                     KeepAgainstItsRecord(spansByRecord, span, team);
                 }
             }
 
-            return new SpanRead(spansByRecord, rowsRead);
+            return new SpanRead(spansByRecord, rowsRead, recordsThatReturnedRows);
         }
 
         // Bug #5621 F1. A field_value_duration definition does not have to be one on the state
@@ -404,6 +412,45 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             // the queue. The cycle is zero rather than absent, because a null start drops the item
             // out of Cycle Time altogether and work that demonstrably finished belongs in it.
             return (startedDate ?? closedDate, closedDate);
+        }
+
+        // Bug #5630, the per-class reading of the guard above: the whole-team one cannot fire while
+        // one of the team's classes is measured, and this failure is per class.
+        //
+        // A warning rather than a downgrade, deliberately. SupportsTransitionHistory is answered per
+        // connection, so reporting this as unavailable would put a sync-delta transition dated at sync
+        // time on the classes that ARE measured -- and WorkItemService.DeriveCurrentStateEnteredAt
+        // takes the latest arrival, so the class that works today would start reporting its time in
+        // state from the sync rather than from the move. Filling the unmeasured class's gap instead of
+        // only naming it needs a per-class capability the port does not carry.
+        private void ReportKindsOfWorkNothingMeasuresStateOn(
+            SpanRead spans, List<MappedRecord> mapped, ServiceNowReadScope scope, Team team)
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                scope.KindsOfWork,
+                KindsOfWorkAmong(mapped, spans.RecordsThatReturnedRows),
+                KindsOfWorkAmong(mapped, spans.ByRecord.Keys.ToHashSet(StringComparer.Ordinal)));
+
+            if (unmeasured.Count < 1)
+            {
+                return;
+            }
+
+            // Named in the words the flow coach typed, never the record class (ADR-128).
+            logger.LogWarning(
+                "ServiceNow supplied no transition history for {KindsOfWork} on team {TeamName}, because the spans it measures on those records are not states the team mapped. The rest of the team's work keeps its history. Check that a Field value duration metric is active on the state field of those record classes.",
+                string.Join(", ", unmeasured.Select(scope.AsTyped)), team.Name);
+        }
+
+        private static HashSet<string> KindsOfWorkAmong(List<MappedRecord> mapped, IReadOnlySet<string> recordIds)
+        {
+            return
+            [
+                .. mapped
+                    .Where(entry => recordIds.Contains(entry.RecordId))
+                    .Select(entry => entry.RecordClass)
+                    .Where(recordClass => !string.IsNullOrWhiteSpace(recordClass)),
+            ];
         }
 
         // DoD 5 forbids the silent no-op: a team quietly losing time-in-state reads as a team whose
@@ -972,14 +1019,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             HttpStatusCode StatusCode, bool CarriesRecords, int? RecordsTheInstanceHolds, int VisibleRowCount);
 
         /// <summary>One record as mapped, kept alongside the handle its history is fetched by.</summary>
-        private sealed record MappedRecord(string Label, string RecordId, WorkItemBase Item);
+        private sealed record MappedRecord(string Label, string RecordId, string RecordClass, WorkItemBase Item);
 
         /// <summary>The definitions measuring state on a table, and what their read says the instance can supply.</summary>
         private sealed record StateSpanDefinitions(ServiceNowHistoryAvailability Availability, List<string> Ids);
 
         // RowsRead counts spans the definition filter let through, before the team's state mapping
         // discarded any: telling "nothing was measured" from "nothing measures state" needs both.
-        private sealed record SpanRead(Dictionary<string, List<ServiceNowStateSpan>> ByRecord, int RowsRead);
+        // RecordsThatReturnedRows is the per-class half of RowsRead (Bug #5630): the same evidence,
+        // kept against the record it arrived for so it can be read one kind of work at a time.
+        private sealed record SpanRead(
+            Dictionary<string, List<ServiceNowStateSpan>> ByRecord,
+            int RowsRead,
+            IReadOnlySet<string> RecordsThatReturnedRows);
 
         /// <summary>
         /// What a body turned out to be. The two booleans are not the same question and every caller

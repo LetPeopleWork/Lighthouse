@@ -87,6 +87,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
+        /// The record's own class, which is its kind of work (ADR-123 decision 8). Never the
+        /// display value, for the reason <see cref="ServiceNowClassLabels"/> gives.
+        /// </summary>
+        public static string ReadRecordClass(JsonElement record)
+        {
+            return ReadForm(record, RecordClassField, UniversalForm);
+        }
+
+        /// <summary>
         /// Maps one ServiceNow record onto a Lighthouse work item. US-02 AC2.
         /// </summary>
         /// <param name="record">A record from a <c>sysparm_display_value=all</c> response.</param>
@@ -101,7 +110,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             var stateLabel = ReadStateLabel(record);
             var recordNumber = ReadRecordNumber(record);
             var stateCategory = owner.MapStateToStateCategory(stateLabel);
-            var recordClass = ReadForm(record, RecordClassField, UniversalForm);
+            var recordClass = ReadRecordClass(record);
 
             return new WorkItemBase
             {

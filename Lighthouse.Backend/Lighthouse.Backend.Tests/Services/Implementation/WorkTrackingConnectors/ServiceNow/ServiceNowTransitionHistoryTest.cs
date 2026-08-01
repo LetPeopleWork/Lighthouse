@@ -35,6 +35,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // The same table, the same type, and it does not measure state (Bug #5621 F1).
         private const string GroupSpanDefinition = "cccc333383da4310ad56c670ceaad399";
 
+        // A change request, on a stock instance where nothing measures state on its class (Bug #5630).
+        private const string ChangeRecordId = "dddd444483da4310ad56c670ceaad422";
+
+        private const string ChangeTypeDefinition = "eeee555583da4310ad56c670ceaad433";
+
         // AC1. The whole point of the slice: the connector stops answering from a constant and starts
         // answering from what the instance said.
         [Test]
@@ -388,6 +393,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "The span, not closed_at a day later. Suppressing the whole span read over an unmeasured sibling class would have cost this incident its true finish date.");
         }
 
+        // Bug #5630, one level finer than F6. Stock change_request carries `field_value_duration`
+        // definitions on `approval` and `type` and none on `state`, so per-class coverage is satisfied
+        // by a definition that measures nothing anyone maps: the verdict read Available, every Change
+        // Request synced with no time in state, and nothing said so. The definition row cannot declare
+        // what it measures -- the state field is named differently on each class -- so the evidence is
+        // which classes' spans survived the team's own state mapping, per class rather than per team.
+        [Test]
+        public async Task AKindOfWorkMeasuredOnlyOnSomethingOtherThanState_IsNamedInAWarning()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var instance = AnInstanceHolding(
+                RecordsOfTwoClasses(), measuresStateSpans: true, changeRequestsAreMeasuredOnTypeOnly: true);
+            var subject = CreateSubject(instance, logger);
+
+            await subject.GetWorkItemsForTeam(ATeamThatTypedItsKindsOfWorkAsLabels());
+
+            VerifyWarnsThatNothingMeasuresStateOn(logger, "Change Request");
+        }
+
+        // What the corrected verdict changes is what the administrator is TOLD. Downgrading the whole
+        // team would hand the measured class a synthetic transition dated at sync time, and
+        // DeriveCurrentStateEnteredAt takes the latest arrival -- so the class that works today would
+        // start reporting its time in state from the sync rather than from the move. Filling the
+        // unmeasured class's gap needs per-class capability, which the port does not carry.
+        [Test]
+        public async Task AKindOfWorkMeasuredOnlyOnSomethingOtherThanState_LeavesTheMeasuredClassAlone()
+        {
+            var instance = AnInstanceHolding(
+                RecordsOfTwoClasses(), measuresStateSpans: true, changeRequestsAreMeasuredOnTypeOnly: true);
+            var subject = CreateSubject(instance);
+
+            var workItems = (await subject.GetWorkItemsForTeam(ATeamThatTypedItsKindsOfWorkAsLabels())).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.SupportsTransitionHistory(AConnection()), Is.True,
+                    "The incident's spans are real and WorkItemService must not start deriving over them.");
+                Assert.That(workItems.First(item => item.ReferenceId == "INC0000001").SyncedTransitions, Is.Not.Empty,
+                    "The measured class keeps the moves the instance recorded.");
+                Assert.That(workItems.First(item => item.ReferenceId == "CHG0000001").SyncedTransitions, Is.Empty,
+                    "A change type is not a state, and pairing those labels would report moves the record never made.");
+            }
+        }
+
         // Bug #5621 F1, the per-record half, on a correctly configured instance. metric_definition
         // answers with four field_value_duration definitions for incident on a stock PDI, and only
         // one of them measures state -- the others measure assignment_group, assigned_to and active.
@@ -463,6 +512,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.AtLeastOnce);
+        }
+
+        // Bug #5630. Distinct from the history warning above, which is per team and says nothing
+        // about which class lost its dates -- and which does not fire at all in this case.
+        private static void VerifyWarnsThatNothingMeasuresStateOn(
+            Mock<ILogger<ServiceNowWorkTrackingConnector>> logger, string kindOfWork)
+        {
+            logger.Verify(
+                call => call.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((message, _) =>
+                        message.ToString()!.Contains("no transition history", StringComparison.Ordinal)
+                        && message.ToString()!.Contains(kindOfWork, StringComparison.Ordinal)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        // ADR-128: a coach types the label they read on their own ServiceNow screen, and the warning
+        // has to come back in those words rather than in the class the Table API filters on.
+        private static Team ATeamThatTypedItsKindsOfWorkAsLabels()
+        {
+            var team = ATeam();
+            team.WorkItemTypes = ["Incident", "Change Request"];
+
+            return team;
         }
 
         private static Team ATeamWorkingOnTwoKindsOfRecord()
@@ -557,7 +633,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             bool spansMeasureSomethingElse = false,
             bool spanReadIsEmpty = false,
             bool spansReturnToTheQueue = false,
-            bool spansShowAReopen = false)
+            bool spansShowAReopen = false,
+            bool changeRequestsAreMeasuredOnTypeOnly = false)
         {
             return new StubbedInstance(
                 records,
@@ -567,7 +644,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 spansMeasureSomethingElse: spansMeasureSomethingElse,
                 spanReadIsEmpty: spanReadIsEmpty,
                 spansReturnToTheQueue: spansReturnToTheQueue,
-                spansShowAReopen: spansShowAReopen);
+                spansShowAReopen: spansShowAReopen,
+                changeRequestsAreMeasuredOnTypeOnly: changeRequestsAreMeasuredOnTypeOnly);
         }
 
         // What a reverse proxy in front of an SSO-protected instance hands back on a 200: the
@@ -585,13 +663,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ];
         }
 
+        // The two classes of Bug #5630: one the instance measures state on, one it does not.
+        private static List<string> RecordsOfTwoClasses()
+        {
+            return
+            [
+                ARecord("INC0000001", RecordId, "In Progress"),
+                ARecord("CHG0000001", ChangeRecordId, "In Progress", recordClass: "change_request"),
+            ];
+        }
+
         // opened_at is deliberately nine days before the In Progress span: that gap is the queue time
         // ADR-117 has been counting as work, and the thing this slice removes.
-        private static string ARecord(string number, string sysId, string state, string closedAt = "")
+        private static string ARecord(
+            string number, string sysId, string state, string closedAt = "", string recordClass = "incident")
         {
             return $$"""
                 {
                   "sys_id": { "display_value": "{{sysId}}", "value": "{{sysId}}" },
+                  "sys_class_name": { "display_value": "{{recordClass}}", "value": "{{recordClass}}" },
                   "number": { "display_value": "{{number}}", "value": "{{number}}" },
                   "short_description": { "display_value": "Request {{number}}", "value": "Request {{number}}" },
                   "state": { "display_value": "{{state}}", "value": "2" },
@@ -617,6 +707,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly bool spanReadIsEmpty;
             private readonly bool spansReturnToTheQueue;
             private readonly bool spansShowAReopen;
+            private readonly bool changeRequestsAreMeasuredOnTypeOnly;
 
             public StubbedInstance(
                 List<string> records,
@@ -628,8 +719,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 bool spansMeasureSomethingElse = false,
                 bool spanReadIsEmpty = false,
                 bool spansReturnToTheQueue = false,
-                bool spansShowAReopen = false)
+                bool spansShowAReopen = false,
+                bool changeRequestsAreMeasuredOnTypeOnly = false)
             {
+                this.changeRequestsAreMeasuredOnTypeOnly = changeRequestsAreMeasuredOnTypeOnly;
                 this.spansSkipDoing = spansSkipDoing;
                 this.spansMeasureSomethingElse = spansMeasureSomethingElse;
                 this.spanReadIsEmpty = spanReadIsEmpty;
@@ -704,9 +797,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     // The stock incident table answers with four of these, and DefinitionQueryFor
                     // filters on table and type only -- so the ones measuring something other than
                     // state come back too, and their spans are asked for alongside the real ones.
+                    if (changeRequestsAreMeasuredOnTypeOnly)
+                    {
+                        return Rows([ADefinition(), AChangeTypeDefinition()]);
+                    }
+
                     return spansMeasureSomethingElse
                         ? Rows([ADefinition(), AGroupDurationDefinition()])
                         : Rows([ADefinition()]);
+                }
+
+                if (changeRequestsAreMeasuredOnTypeOnly)
+                {
+                    return Rows(
+                    [
+                        ASpan(RecordId, "New", "2026-07-20 06:00:00"),
+                        ASpan(RecordId, "In Progress", "2026-07-29 09:00:00"),
+                        AChangeTypeSpan(ChangeRecordId, "Normal", "2026-07-28 09:00:00"),
+                    ]);
                 }
 
                 if (spanReadIsEmpty)
@@ -783,6 +891,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                       "type": { "display_value": "Field value duration", "value": "field_value_duration" },
                       "field": { "display_value": "assignment_group", "value": "assignment_group" },
                       "table": { "display_value": "incident", "value": "incident" }
+                    }
+                    """;
+            }
+
+            // Stock change_request ships `field_value_duration` on `approval` and `type` and none on
+            // `state` (dev191338, 2026-08-01). The definition read cannot tell this from a state one.
+            private static string AChangeTypeDefinition()
+            {
+                return $$"""
+                    {
+                      "sys_id": { "display_value": "{{ChangeTypeDefinition}}", "value": "{{ChangeTypeDefinition}}" },
+                      "name": { "display_value": "Change Type Duration", "value": "Change Type Duration" },
+                      "type": { "display_value": "Field value duration", "value": "field_value_duration" },
+                      "field": { "display_value": "type", "value": "type" },
+                      "table": { "display_value": "change_request", "value": "change_request" }
+                    }
+                    """;
+            }
+
+            private static string AChangeTypeSpan(string record, string changeType, string start)
+            {
+                return $$"""
+                    {
+                      "id": { "display_value": "Change Request", "value": "{{record}}" },
+                      "definition": { "display_value": "Change Type Duration", "value": "{{ChangeTypeDefinition}}" },
+                      "field": { "display_value": "type", "value": "type" },
+                      "value": { "display_value": "{{changeType}}", "value": "{{changeType}}" },
+                      "field_value": { "display_value": "1", "value": "1" },
+                      "start": { "display_value": "{{start}}", "value": "{{start}}" },
+                      "end": { "display_value": "", "value": "" }
                     }
                     """;
             }

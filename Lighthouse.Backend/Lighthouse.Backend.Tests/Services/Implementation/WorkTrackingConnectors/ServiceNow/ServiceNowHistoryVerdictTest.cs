@@ -148,5 +148,61 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
         }
 
+        // Bug #5630. `field_value_duration` is not the same thing as a definition on the STATE field,
+        // and F6's per-class coverage is satisfied by either. Stock change_request carries those
+        // definitions on `approval` and `type` and none on `state`, so a class nothing measures state
+        // on still answers the definition read -- and every check above reports it measured. The spans
+        // it returns carry labels the team never mapped, which is the only evidence there is.
+        [Test]
+        public void AKindOfWorkWhoseSpansTheTeamRecognisesNoneOf_IsMeasuredByNothingOnState()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                TwoKindsOfWork, TwoKindsOfWork, MeasuredOnIt);
+
+            Assert.That(unmeasured, Is.EqualTo(new[] { "change_request" }));
+        }
+
+        // The per-class reading of the rule the whole-team guard already followed: an instance whose
+        // records of one class simply have not moved since the definition was activated returns no
+        // rows for it, and that is absence of evidence rather than evidence of absence.
+        [Test]
+        public void AKindOfWorkThatReturnedNoSpansAtAll_IsNotReportedAsUnmeasured()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                TwoKindsOfWork, MeasuredOnIt, MeasuredOnIt);
+
+            Assert.That(unmeasured, Is.Empty);
+        }
+
+        [Test]
+        public void ATeamWhoseEveryKindOfWorkKeptSpans_HasNothingToReport()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                TwoKindsOfWork, TwoKindsOfWork, TwoKindsOfWork);
+
+            Assert.That(unmeasured, Is.Empty);
+        }
+
+        // A class the team never named is not its problem to hear about. Records of it can reach the
+        // span read through a class the team DID name -- the read is keyed on record ids, not classes.
+        [Test]
+        public void AKindOfWorkTheTeamNeverNamed_IsNotReported()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                OneKindOfWork, TwoKindsOfWork, MeasuredOnIt);
+
+            Assert.That(unmeasured, Is.Empty);
+        }
+
+        // The class names come off `sys_class_name` on one side and off the team's config on the
+        // other. Comparing them case-sensitively would report a measured class as unmeasured.
+        [Test]
+        public void TheClassNamesAreComparedWithoutRegardToCase()
+        {
+            var unmeasured = ServiceNowHistoryVerdict.KindsOfWorkMeasuredByNothingOnState(
+                OneKindOfWork, ["INCIDENT"], ["Incident"]);
+
+            Assert.That(unmeasured, Is.Empty);
+        }
     }
 }

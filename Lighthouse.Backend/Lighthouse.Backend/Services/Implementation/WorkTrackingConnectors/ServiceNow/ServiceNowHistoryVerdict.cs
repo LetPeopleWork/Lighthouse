@@ -75,6 +75,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 : ServiceNowHistoryAvailability.NoStateMetric;
         }
 
+        /// <summary>
+        /// Which of the team's kinds of work returned span rows that were none of them states.
+        /// </summary>
+        /// <remarks>
+        /// Bug #5630. <see cref="From"/> asks whether a <c>field_value_duration</c> definition came
+        /// back per class; this asks whether one of them measures <em>state</em>, which is a question
+        /// only the spans can answer — stock <c>change_request</c> carries those definitions on
+        /// <c>approval</c> and <c>type</c> and none on <c>state</c>, and the definition read cannot
+        /// tell the two apart. Rows that arrived and were all discarded are the evidence; no rows are
+        /// not, for the reason the whole-team guard already gives — a class whose records have not
+        /// moved since the definition was activated is a quiet class, not a broken one.
+        /// </remarks>
+        public static IReadOnlyList<string> KindsOfWorkMeasuredByNothingOnState(
+            IEnumerable<string> kindsOfWorkTheTeamNamed,
+            IReadOnlyCollection<string> kindsOfWorkThatReturnedSpans,
+            IReadOnlyCollection<string> kindsOfWorkWhoseSpansTheTeamRecognises)
+        {
+            return
+            [
+                .. kindsOfWorkTheTeamNamed.Where(kindOfWork =>
+                    kindsOfWorkThatReturnedSpans.Contains(kindOfWork, StringComparer.OrdinalIgnoreCase)
+                    && !kindsOfWorkWhoseSpansTheTeamRecognises.Contains(kindOfWork, StringComparer.OrdinalIgnoreCase)),
+            ];
+        }
     }
 
     /// <summary>Whether this instance can supply transition history, and if not, why not.</summary>
