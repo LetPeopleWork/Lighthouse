@@ -123,6 +123,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             VerifyWarnsThatHistoryIsUnavailable(logger);
         }
 
+        // Bug #5621 F2, the queue-return guard. Work pushed back to New after it started has not
+        // started: the start it had was for an attempt that was abandoned, and counting from it would
+        // report the days it sat back in the queue as work. Jira and Azure DevOps drop the start date
+        // in exactly this shape, and the zero-length-cycle rule then supplies the finish instant.
+        [Test]
+        public async Task WorkPushedBackToTheQueueAfterStarting_DoesNotKeepTheStartItHad()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansReturnToTheQueue: true);
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc)));
+                Assert.That(workItem.StartedDate, Is.EqualTo(workItem.ClosedDate),
+                    "The 07-28 arrival in Doing was undone by the return to New on 07-29, so nothing supports a start before the finish.");
+            }
+        }
+
+        // Bug #5621 F2. A record the team currently calls Doing carries no finish date even though its
+        // spans hold a Done arrival -- it was reopened, and the current state is what decides whether
+        // the work is over. Without the category gate the spans alone would close it.
+        [Test]
+        public async Task WorkThatWasReopened_CarriesNoFinishDateWhileItIsBeingWorkedAgain()
+        {
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true, spansShowAReopen: true);
+            var subject = CreateSubject(instance);
+
+            var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000001");
+
+            Assert.That(workItem.ClosedDate, Is.Null,
+                "It is In Progress again. A Done span in its history is where it has been, not where it is.");
+        }
+
         // Bug #5621 F2. A desk that resolves an incident straight out of the queue never puts it in a
         // Doing state, so the spans support no start. Jira and Azure DevOps answer that with a
         // zero-length cycle rather than a null, because a null drops the item out of Cycle Time
@@ -257,8 +292,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var workItem = (await subject.GetWorkItemsForTeam(ATeam())).First(item => item.ReferenceId == "INC0000003");
 
-            Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc)),
-                "Not closed_at, which this record puts a day later. The span is when the work actually stopped.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItem.ClosedDate, Is.EqualTo(new DateTime(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc)),
+                    "Not closed_at, which this record puts a day later. The span is when the work actually stopped.");
+                Assert.That(workItem.StartedDate, Is.EqualTo(new DateTime(2026, 7, 29, 9, 0, 0, DateTimeKind.Utc)),
+                    "And its own arrival in Doing, a day earlier -- the two dates are not interchangeable.");
+            }
         }
 
         [Test]
@@ -372,6 +412,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(workItem.SyncedTransitions, Is.Empty,
                     "A group change is not a state change, and pairing those labels would report moves the record never made.");
             }
+        }
+
+        // The companion to that guard on the other axis: with no definitions to restrict it to, a span
+        // read would carry an empty `definitionIN` and match every span in the instance.
+        [Test]
+        public async Task AnInstanceMeasuringNothing_AsksForNoSpansAtAll()
+        {
+            var instance = AnInstanceThatMeasuresNothing();
+            var subject = CreateSubject(instance);
+
+            await subject.GetWorkItemsForTeam(ATeam());
+
+            var spanReads = instance.Requests
+                .Select(uri => Uri.UnescapeDataString(uri.AbsoluteUri))
+                .Where(uri => uri.Contains("/api/now/table/metric_instance", StringComparison.Ordinal))
+                .ToList();
+
+            Assert.That(spanReads, Is.Empty,
+                "An empty definitionIN list is an unfiltered read of every span the instance holds.");
         }
 
         // A team whose query matched nothing must not ask for the history of every record in the
@@ -496,7 +555,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             HttpStatusCode metricStatusCode = HttpStatusCode.OK,
             bool spansSkipDoing = false,
             bool spansMeasureSomethingElse = false,
-            bool spanReadIsEmpty = false)
+            bool spanReadIsEmpty = false,
+            bool spansReturnToTheQueue = false,
+            bool spansShowAReopen = false)
         {
             return new StubbedInstance(
                 records,
@@ -504,7 +565,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 metricStatusCode,
                 spansSkipDoing: spansSkipDoing,
                 spansMeasureSomethingElse: spansMeasureSomethingElse,
-                spanReadIsEmpty: spanReadIsEmpty);
+                spanReadIsEmpty: spanReadIsEmpty,
+                spansReturnToTheQueue: spansReturnToTheQueue,
+                spansShowAReopen: spansShowAReopen);
         }
 
         // What a reverse proxy in front of an SSO-protected instance hands back on a 200: the
@@ -552,6 +615,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly bool spansSkipDoing;
             private readonly bool spansMeasureSomethingElse;
             private readonly bool spanReadIsEmpty;
+            private readonly bool spansReturnToTheQueue;
+            private readonly bool spansShowAReopen;
 
             public StubbedInstance(
                 List<string> records,
@@ -561,11 +626,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 bool metricBodyOnTheSpanReadOnly = false,
                 bool spansSkipDoing = false,
                 bool spansMeasureSomethingElse = false,
-                bool spanReadIsEmpty = false)
+                bool spanReadIsEmpty = false,
+                bool spansReturnToTheQueue = false,
+                bool spansShowAReopen = false)
             {
                 this.spansSkipDoing = spansSkipDoing;
                 this.spansMeasureSomethingElse = spansMeasureSomethingElse;
                 this.spanReadIsEmpty = spanReadIsEmpty;
+                this.spansReturnToTheQueue = spansReturnToTheQueue;
+                this.spansShowAReopen = spansShowAReopen;
                 this.records = records;
                 this.measuresStateSpans = measuresStateSpans;
                 this.metricStatusCode = metricStatusCode;
@@ -643,6 +712,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 if (spanReadIsEmpty)
                 {
                     return Rows([]);
+                }
+
+                if (spansReturnToTheQueue)
+                {
+                    return Rows(
+                    [
+                        ASpan(FinishedRecordId, "In Progress", "2026-07-28 09:00:00"),
+                        ASpan(FinishedRecordId, "New", "2026-07-29 09:00:00"),
+                        ASpan(FinishedRecordId, "Resolved", "2026-07-30 10:00:00"),
+                    ]);
+                }
+
+                if (spansShowAReopen)
+                {
+                    return Rows(
+                    [
+                        ASpan(RecordId, "In Progress", "2026-07-20 06:00:00"),
+                        ASpan(RecordId, "Resolved", "2026-07-25 10:00:00"),
+                        ASpan(RecordId, "In Progress", "2026-07-29 09:00:00"),
+                    ]);
                 }
 
                 if (spansMeasureSomethingElse)

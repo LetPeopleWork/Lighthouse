@@ -22,6 +22,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] MeasuredOnNothing = [];
 
+        // A team that named no kinds of work cannot have every one of them measured. Vacuous truth
+        // would otherwise report Available off an empty definition read.
+        [Test]
+        public void ATeamThatNamedNoKindsOfWork_ReportsNoStateMetric()
+        {
+            var availability = ServiceNowHistoryVerdict.From(
+                HttpStatusCode.OK, carriesRecords: true, MeasuredOnNothing, MeasuredOnNothing);
+
+            Assert.That(availability, Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
+        }
+
+        // The unreadable-answer ladder keeps the two remedies apart: a refusal needs a role, and a
+        // body that was not a record set needs the instance looked at. Neither is "activate a metric".
+        [Test]
+        public void ARefusedAnswer_ReportsNoRightsRatherThanAMissingMetric()
+        {
+            Assert.That(
+                ServiceNowHistoryVerdict.FromAnUnreadableAnswer(HttpStatusCode.Forbidden),
+                Is.EqualTo(ServiceNowHistoryAvailability.NoRights));
+        }
+
+        [Test]
+        public void AnUnreadableButUnrefusedAnswer_ReportsNoStateMetric()
+        {
+            Assert.That(
+                ServiceNowHistoryVerdict.FromAnUnreadableAnswer(HttpStatusCode.OK),
+                Is.EqualTo(ServiceNowHistoryAvailability.NoStateMetric));
+        }
+
         // Bug #5621 F6. Definitions attach per record class, so measuring one of a team's two kinds
         // of work leaves the other with no dates and no transitions -- which an aggregate count
         // reported as Available.
