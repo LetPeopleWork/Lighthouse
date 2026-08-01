@@ -181,6 +181,27 @@ describe("DataRetrievalWizardRegistry", () => {
 		});
 	});
 
+	// Story #5610 slice 02, AC-B1 / DD-1 / ADR-125 decision 1. A ServiceNow shop's team boundary
+	// already exists as a Visual Task Board, and the picker for it is one row here pointing at the
+	// same dialog Jira, Azure DevOps and Linear already use.
+	describe("picking a ServiceNow board", () => {
+		// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
+		it.skip("is offered to a team", () => {
+			const wizards = getWizardsForSystem("ServiceNow", "team");
+
+			expect(wizards.map((wizard) => wizard.id)).toContain("servicenow.board");
+			expect(
+				wizards.find((wizard) => wizard.id === "servicenow.board")?.component,
+			).toBe(BoardWizard);
+		});
+
+		// ServiceNow portfolios render no query field at all, so a picker there would fill in
+		// something nobody can see.
+		it("is not offered to a portfolio", () => {
+			expect(getWizardsForSystem("ServiceNow", "portfolio")).toHaveLength(0);
+		});
+	});
+
 	describe("Registry extensibility", () => {
 		it("should allow for future wizard additions", () => {
 			// The structure supports adding more wizards

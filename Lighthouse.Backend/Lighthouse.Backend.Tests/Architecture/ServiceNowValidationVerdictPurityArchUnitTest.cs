@@ -24,10 +24,34 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ReadScope = Namespace + ".ServiceNowReadScope";
 
+        // Story #5610 / ADR-125, ADR-126 decision 3. The board picker's two new cores: the one rung a
+        // board list must NOT inherit (an empty list is not a failure) and the board-row-to-Board
+        // translation. Both are decisions, so both stay reachable without a transport mock.
+        private const string BoardVerdict = Namespace + ".ServiceNowBoardVerdict";
+
+        private const string BoardMapper = Namespace + ".ServiceNowBoardMapper";
+
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
         private const string LoggingPattern = @"^Microsoft\.Extensions\.Logging($|\..*)";
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
+
+        // The three rules below are stated by full name, so a core that does not exist yet passes
+        // them by being absent rather than by being pure. This is the rung that says it has to exist.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
+        public void TheBoardPickersDecisions_LiveInPureCoresOfTheirOwn()
+        {
+            var production = typeof(Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow.ServiceNowValidationVerdict).Assembly;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(production.GetType(BoardVerdict), Is.Not.Null,
+                    "An empty board list is a decision — ADR-114's no_records_visible rung is intercepted rather than inherited — and decisions live in a pure core.");
+                Assert.That(production.GetType(BoardMapper), Is.Not.Null,
+                    "A board row becoming a Board is a translation with its own vocabulary, and it is the one class that must never learn readable_filter exists.");
+            }
+        }
 
         [Test]
         public void TheVerdictLadder_DoesNotSpeakHttp()
@@ -35,6 +59,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(Verdict)
                 .Or().HaveFullName(TeamQueryVerdict)
                 .Or().HaveFullName(ReadScope)
+                .Or().HaveFullName(BoardVerdict)
+                .Or().HaveFullName(BoardMapper)
                 .Should().NotDependOnAny(Types().That().HaveFullName("System.Net.Http.HttpClient")
                     .Or().HaveFullName("System.Net.Http.HttpMessageHandler")
                     .Or().HaveFullName("System.Net.Http.HttpResponseMessage")
@@ -52,6 +78,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(Verdict)
                 .Or().HaveFullName(TeamQueryVerdict)
                 .Or().HaveFullName(ReadScope)
+                .Or().HaveFullName(BoardVerdict)
+                .Or().HaveFullName(BoardMapper)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(LoggingPattern))
                 .Because(
                     "ADR-114: the verdict is return-only. Anything worth saying about a rung belongs in the " +
@@ -65,6 +93,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(Verdict)
                 .Or().HaveFullName(TeamQueryVerdict)
                 .Or().HaveFullName(ReadScope)
+                .Or().HaveFullName(BoardVerdict)
+                .Or().HaveFullName(BoardMapper)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(PersistencePattern))
                 .Because(
                     "ADR-114: the verdict is a pure function of what the instance answered. A lookup against " +

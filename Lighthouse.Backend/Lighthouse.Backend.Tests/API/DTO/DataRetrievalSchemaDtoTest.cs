@@ -9,6 +9,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
     {
         private const string TheWholeHierarchy = "task";
 
+        // The example DD-5 names: a real encoded query in column form, narrow enough to be one team's.
+        private const string WorkedExample = "active=true^assignment_group=Service Desk";
+
         private static readonly DateOnly Today = new(2026, 7, 31);
 
         [Test]
@@ -108,6 +111,77 @@ namespace Lighthouse.Backend.Tests.API.DTO
                     WorkTrackingSystem = WorkTrackingSystems.ServiceNow,
                 },
             };
+        }
+
+        // Story #5610 slice 01, AC-A1 / AC-A4 / DD-5. The first real user of the connector stopped at
+        // an empty box labelled "ServiceNow Query (Encoded Query)" with nothing anywhere in the
+        // product saying what an encoded query is. The example is the one DD-5 names; it is pinned
+        // against the literal because a test that compares the value to the constant it came from
+        // survives blanking the constant.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
+        public void AServiceNowTeamsQueryField_ShowsAWorkedExampleOfTheQueryItWants()
+        {
+            var schema = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow);
+
+            Assert.That(schema.Placeholder, Is.EqualTo(WorkedExample));
+        }
+
+        // AC-A4. The two ways a ServiceNow query fails without saying so, measured in the epic SPIKE
+        // (Q3) and hit again in the slice-04 dogfood: a field name the instance does not know is
+        // dropped and the query widens to the whole table, and a bad value on a real field matches
+        // nothing. This is the last surface before either one costs a user their afternoon, so the
+        // help has to name both — and say where ServiceNow will hand them a correct query.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
+        public void AServiceNowTeamsQueryField_NamesBothWaysAQueryFailsQuietlyAndWhereToGetAGoodOne()
+        {
+            var help = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow).HelpText;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(help, Is.Not.Null.And.Not.Empty);
+                Assert.That(help, Does.Contain("whole table").IgnoreCase,
+                    "An unknown field name is dropped and the query widens to everything — the refusal ValidateTeamSettings then raises.");
+                Assert.That(help, Does.Contain("nothing").IgnoreCase,
+                    "A bad value on a real field matches nothing at all, which reads as an empty team rather than a typo.");
+                Assert.That(help, Does.Contain("Copy query"),
+                    "ServiceNow itself hands out a correct encoded query from a filter breadcrumb. Naming that path is the whole point of the guidance.");
+            }
+        }
+
+        // AC-A2. The guidance is carried by the schema, so a connector that has nothing to explain
+        // renders exactly what it renders today. Stated as an absence claim, which is why it is a pin
+        // rather than a red test: it exists to fail the day somebody adds copy to a shared arm.
+        [Test]
+        [TestCase(WorkTrackingSystems.Jira)]
+        [TestCase(WorkTrackingSystems.AzureDevOps)]
+        [TestCase(WorkTrackingSystems.Linear)]
+        [TestCase(WorkTrackingSystems.Csv)]
+        public void AConnectorWithNothingToExplain_LeavesItsQueryFieldExactlyAsItWas(WorkTrackingSystems system)
+        {
+            var schema = DataRetrievalSchemaDto.ForTeam(system);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(schema.Placeholder, Is.Null);
+                Assert.That(schema.HelpText, Is.Null);
+            }
+        }
+
+        // AC-A6. ServiceNow portfolios render no query field at all, so guidance there would be help
+        // for a surface that does not exist.
+        [Test]
+        public void AServiceNowPortfolio_IsOfferedNoGuidanceForAFieldItNeverRenders()
+        {
+            var schema = DataRetrievalSchemaDto.ForPortfolio(WorkTrackingSystems.ServiceNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(schema.InputKind, Is.EqualTo("none"));
+                Assert.That(schema.Placeholder, Is.Null);
+                Assert.That(schema.HelpText, Is.Null);
+            }
         }
 
         // Gives the switch the exhaustiveness the frontend Record gets from its type system (Bug #5613).

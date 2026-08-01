@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IDataRetrievalSchema } from "../../../models/Common/DataRetrievalSchema";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
@@ -12,6 +13,30 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import GeneralSettingsComponent from "./GeneralSettingsComponent";
+
+// Story #5610 slice 02, DD-8 / ADR-126 decision 4. Opening a picker needs a system administrator,
+// and the button that leads to one has been rendered to everybody since the wizard shipped.
+const rbac = vi.hoisted(() => ({ isSystemAdmin: true }));
+
+vi.mock("../../../hooks/useRbac", () => ({
+	useRbac: () => ({
+		isLoading: false,
+		isRbacEnabled: true,
+		isSystemAdmin: rbac.isSystemAdmin,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+		isTeamAdmin: () => true,
+		isPortfolioAdmin: () => true,
+		summary: {
+			isRbacEnabled: true,
+			isSystemAdmin: rbac.isSystemAdmin,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+			adminTeamIds: [],
+			adminPortfolioIds: [],
+		},
+	}),
+}));
 
 // Polyfill File.prototype.text() for tests
 if (typeof File !== "undefined" && !File.prototype.text) {
@@ -972,6 +997,122 @@ describe("GeneralSettingsComponent", () => {
 			);
 
 			expect(screen.getByLabelText("Linear Team")).toBeInTheDocument();
+		});
+	});
+
+	// Story #5610 slice 01, AC-A1 / AC-A2 / AC-A5. The guidance rides on the schema, so one shared
+	// field renders it for whichever connector has something to say and nothing changes for the ones
+	// that do not. Both surfaces the coach can reach — team settings and the create-team wizard —
+	// render through this component.
+	describe("telling a flow coach what the query field wants", () => {
+		const WORKED_EXAMPLE = "active=true^assignment_group=Service Desk";
+
+		const GUIDANCE =
+			"A ServiceNow encoded query. In ServiceNow, filter a list, right-click the breadcrumb and choose Copy query. A field name ServiceNow does not know is dropped and the query widens to the whole table; a wrong value on a real field matches nothing.";
+
+		const serviceNowSystem: IWorkTrackingSystemConnection = {
+			id: 5,
+			name: "Acme ServiceNow",
+			workTrackingSystem: "ServiceNow",
+			options: [],
+			writeBackMappingDefinitions: [],
+			authenticationMethodKey: "servicenow.basic",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "ServiceNow Query",
+			additionalFieldDefinitions: [],
+		};
+
+		const aServiceNowTeam = () => ({
+			...createMockTeamSettings(),
+			dataRetrievalValue: "",
+			dataRetrievalSchema: {
+				key: "servicenow.query",
+				displayLabel: "ServiceNow Query (Encoded Query)",
+				inputKind: "freetext",
+				isRequired: true,
+				isWorkItemTypesRequired: true,
+				wizardHint: null,
+				placeholder: WORKED_EXAMPLE,
+				helpText: GUIDANCE,
+			} as unknown as IDataRetrievalSchema,
+		});
+
+		// DISTILL scaffold for #5610 slice 01 - un-skip in DELIVER (ADR-025).
+		it.skip("shows a worked example in the empty field and the guidance beneath it", () => {
+			render(
+				<GeneralSettingsComponent
+					settings={aServiceNowTeam()}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={[serviceNowSystem]}
+					selectedWorkTrackingSystem={serviceNowSystem}
+				/>,
+			);
+
+			expect(
+				screen.getByLabelText("ServiceNow Query (Encoded Query)"),
+			).toHaveAttribute("placeholder", WORKED_EXAMPLE);
+			expect(screen.getByText(GUIDANCE)).toBeInTheDocument();
+		});
+
+		// AC-A2. No layout shift and no empty helper row for a connector that has nothing to explain.
+		it("leaves a connector with nothing to explain exactly as it was", () => {
+			const { container } = render(
+				<GeneralSettingsComponent
+					settings={testSettings}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={mockWorkTrackingSystems}
+					selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+				/>,
+			);
+
+			expect(screen.getByLabelText("JQL Query")).not.toHaveAttribute(
+				"placeholder",
+			);
+			expect(container.querySelector(".MuiFormHelperText-root")).toBeNull();
+		});
+	});
+
+	// Story #5610 slice 02, DD-8 / ADR-126 decision 4. Opening a picker is a system-administrator
+	// action, and it always has been — the button simply never said so, and a user who could create
+	// a team got a 403 rendered as "Failed to load boards. Please try again." Stated on Jira because
+	// the constraint has been lying to Jira, Azure DevOps and Linear users since the wizard shipped.
+	describe("who is offered a board picker", () => {
+		beforeEach(() => {
+			rbac.isSystemAdmin = true;
+		});
+
+		it("offers it to a system administrator", () => {
+			render(
+				<GeneralSettingsComponent
+					settings={testSettings}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={mockWorkTrackingSystems}
+					selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+					settingsContext="team"
+				/>,
+			);
+
+			expect(
+				screen.getByRole("button", { name: "Select Jira Board" }),
+			).toBeInTheDocument();
+		});
+
+		// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
+		it.skip("does not offer it to someone who cannot open it", () => {
+			rbac.isSystemAdmin = false;
+
+			render(
+				<GeneralSettingsComponent
+					settings={testSettings}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={mockWorkTrackingSystems}
+					selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+					settingsContext="team"
+				/>,
+			);
+
+			expect(
+				screen.queryByRole("button", { name: "Select Jira Board" }),
+			).not.toBeInTheDocument();
 		});
 	});
 });

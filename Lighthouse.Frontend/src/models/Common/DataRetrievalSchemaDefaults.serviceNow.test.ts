@@ -1,9 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { WorkTrackingSystemType } from "../WorkTracking/WorkTrackingSystemConnection";
+import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
 import {
 	getDefaultPortfolioSchema,
 	getDefaultTeamSchema,
 } from "./DataRetrievalSchemaDefaults";
+
+// The example DD-5 names: a real encoded query in column form, narrow enough to be one team's.
+const WORKED_EXAMPLE = "active=true^assignment_group=Service Desk";
+
+// The two fields the schema gains in slice 01. Read through a cast because the interface does not
+// declare them yet; DELIVER deletes the cast in the commit that adds them.
+type QueryGuidance = { placeholder: string | null; helpText: string | null };
+
+const guidanceOn = (schema: IDataRetrievalSchema) =>
+	schema as unknown as QueryGuidance;
 
 // No options: the schema factories are a lookup by system type and read nothing else off the
 // connection (ADR-123 decision 6 as amended 2026-07-31). A ServiceNow connection now carries no
@@ -52,6 +63,34 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 		});
 	});
 
+	// Story #5610 slice 01, AC-A1 / AC-A3 / AC-A4. The first real user of the connector stopped at
+	// an empty four-line box with nothing in the product saying what an encoded query is. The
+	// guidance is carried by the schema so one shared field renders it for every connector.
+	// DISTILL scaffold for #5610 slice 01 - un-skip in DELIVER (ADR-025).
+	describe.skip("when a flow coach is staring at the blank query field", () => {
+		it("shows a worked example of the query it wants", () => {
+			const guidance = guidanceOn(
+				getDefaultTeamSchema(aServiceNowConnection()),
+			);
+
+			expect(guidance.placeholder).toBe(WORKED_EXAMPLE);
+		});
+
+		// An unknown field name is dropped and the query widens to the whole table; a bad value on a
+		// real field matches nothing. Both were measured, and this is the last surface before either
+		// one costs someone their afternoon.
+		it("names both ways a query fails quietly, and where ServiceNow will hand you a good one", () => {
+			const help = guidanceOn(
+				getDefaultTeamSchema(aServiceNowConnection()),
+			).helpText;
+
+			expect(help).toBeTruthy();
+			expect(help?.toLowerCase()).toContain("whole table");
+			expect(help?.toLowerCase()).toContain("nothing");
+			expect(help).toContain("Copy query");
+		});
+	});
+
 	describe("when someone tries to build a portfolio over ServiceNow", () => {
 		// The limitation lives in the configuration surface rather than only in the docs, so
 		// there is no half-working portfolio path to stumble into.
@@ -62,6 +101,16 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 			expect(schema.inputKind).toBe("none");
 			expect(schema.isRequired).toBe(false);
 			expect(schema.wizardHint).toBeNull();
+		});
+
+		// AC-A6. Guidance for a field that is never rendered would be help nobody can reach.
+		it("offers no query guidance for a field it never renders", () => {
+			const guidance = guidanceOn(
+				getDefaultPortfolioSchema(aServiceNowConnection()),
+			);
+
+			expect(guidance.placeholder ?? null).toBeNull();
+			expect(guidance.helpText ?? null).toBeNull();
 		});
 	});
 });

@@ -18,6 +18,11 @@ namespace Lighthouse.Backend.API.DTO
 
         public string? WizardHint { get; set; }
 
+        // DISTILL scaffold for #5610 slice 01 — DELIVER fills these on the ServiceNow team row (DD-5 / ADR-125).
+        public string? Placeholder { get; set; }
+
+        public string? HelpText { get; set; }
+
         /// <summary>
         /// What a team's settings screen asks for, and what it refuses to save without. Twinned in
         /// <c>DataRetrievalSchemaDefaults.ts</c>; the two disagreeing is Bug #5613.

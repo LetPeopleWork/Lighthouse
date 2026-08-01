@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -91,6 +92,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
         {
             return observedAvailability == ServiceNowHistoryAvailability.Available;
+        }
+
+        // DISTILL scaffold for #5610 slice 02 — DELIVER implements both reads (ADR-125).
+        public Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
+        {
+            return Task.FromResult(Enumerable.Empty<Board>());
+        }
+
+        public Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
+        {
+            return Task.FromResult(new BoardInformation());
         }
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)

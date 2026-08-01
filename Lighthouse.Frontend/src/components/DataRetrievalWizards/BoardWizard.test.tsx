@@ -3,9 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBoard } from "../../models/Boards/Board";
 import type { IBoardInformation } from "../../models/Boards/BoardInformation";
+import { ApiError } from "../../services/Api/ApiError";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import type { IWizardService } from "../../services/Api/WizardService";
 import BoardWizard from "./BoardWizard";
+
+// What the backend already says when a board read is refused, carried to the browser as an ApiError
+// by BaseApiService.parseApiErrorPayload. Retrying fixes none of the failures this replaces.
+const REFUSAL =
+	"ServiceNow refused to read the table 'vtb_board' with this account. Grant the account a role that can read that table.";
 
 describe("BoardWizard", () => {
 	const mockOnComplete = vi.fn();
@@ -285,8 +291,13 @@ describe("BoardWizard", () => {
 		expect(mockOnComplete).not.toHaveBeenCalled();
 	});
 
-	it("shows error message when board fetch fails", async () => {
-		mockGetBoards.mockRejectedValue(new Error("Network error"));
+	// Story #5610 slice 02, AC-B3 / ADR-126 decision 2. Every refusal used to arrive here as
+	// "Failed to load boards. Please try again." — the same sentence for a rejected credential, a
+	// table the account may not read and a board nobody shared, and advice that fixes none of them.
+	// The backend already wrote the words that name the table and the role to grant.
+	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
+	it.skip("shows the reason the board list was refused", async () => {
+		mockGetBoards.mockRejectedValue(new ApiError(403, REFUSAL));
 
 		render(
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
@@ -300,13 +311,15 @@ describe("BoardWizard", () => {
 		);
 
 		await waitFor(() => {
-			expect(
-				screen.getByText("Failed to load boards. Please try again."),
-			).toBeInTheDocument();
+			expect(screen.getByText(REFUSAL)).toBeInTheDocument();
 		});
 	});
 
-	it("shows error message when no boards are available", async () => {
+	// ADR-126 decision 3. Boards are shared, not roled, so an empty list has two causes that nothing
+	// on the instance can tell apart — the account is a member of no board, or none of its boards
+	// carries both a table and a filter. The copy names both and asserts neither.
+	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
+	it.skip("names both reasons a connection may have no board to offer", async () => {
 		mockGetBoards.mockResolvedValue([]);
 
 		render(
@@ -321,10 +334,14 @@ describe("BoardWizard", () => {
 		);
 
 		await waitFor(() => {
-			expect(
-				screen.getByText("No boards available for this connection."),
-			).toBeInTheDocument();
+			expect(screen.getByRole("dialog")).toHaveTextContent(
+				/not a member of any Visual Task Board/i,
+			);
 		});
+
+		expect(screen.getByRole("dialog")).toHaveTextContent(
+			/both a table and a filter/i,
+		);
 	});
 
 	it("disables autocomplete when no boards are available", async () => {
@@ -678,11 +695,15 @@ describe("BoardWizard", () => {
 		expect(mockOnCancel).not.toHaveBeenCalled();
 	});
 
-	it("calls onComplete with empty board information when fetch fails", async () => {
+	// Story #5610 slice 02, AC-B3 / D9 / ADR-126 decision 2. This replaces the assertion that pinned
+	// the defect: a failed board read used to be substituted by an all-empty board, which is truthy,
+	// which enabled Confirm. Nothing was overwritten — the settings screen writes each field only
+	// when the incoming value is non-empty — so the dialog reported success and silently did
+	// nothing. A refusal wearing a success costume, for all four connectors.
+	// DISTILL scaffold for #5610 slice 02 - un-skip in DELIVER (ADR-025).
+	it.skip("cannot be confirmed when the board could not be read", async () => {
 		mockGetBoards.mockResolvedValue(mockBoards);
-		mockGetBoardInformation.mockRejectedValue(
-			new Error("Failed to fetch board info"),
-		);
+		mockGetBoardInformation.mockRejectedValue(new ApiError(403, REFUSAL));
 
 		render(
 			<ApiServiceContext.Provider value={mockApiServiceContext}>
@@ -713,20 +734,17 @@ describe("BoardWizard", () => {
 			expect(mockGetBoardInformation).toHaveBeenCalled();
 		});
 
-		const selectButton = screen.getByRole("button", {
-			name: "Confirm",
+		await waitFor(() => {
+			expect(screen.getByText(REFUSAL)).toBeInTheDocument();
 		});
-		await userEvent.click(selectButton);
 
-		const emptyBoardInfo: IBoardInformation = {
-			dataRetrievalValue: "",
-			workItemTypes: [],
-			toDoStates: [],
-			doingStates: [],
-			doneStates: [],
-		};
+		const confirmButton = screen.getByRole("button", { name: "Confirm" });
 
-		expect(mockOnComplete).toHaveBeenCalledWith(emptyBoardInfo);
+		expect(confirmButton).toBeDisabled();
+
+		await userEvent.click(confirmButton);
+
+		expect(mockOnComplete).not.toHaveBeenCalled();
 	});
 
 	it("displays 'Loading Board Information' when fetching board information", async () => {

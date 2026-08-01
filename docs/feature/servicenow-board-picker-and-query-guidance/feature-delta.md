@@ -53,12 +53,12 @@ D-numbers are local to this feature. Epic 5513's own D1–D11 and 5611's D1–D7
 | **D6** | The board pre-fill rides **5611 slice 01** (class filter): the board's **table** becomes a `sys_class_name` value in **Work Item Types**, the board's **filter** becomes the **query**. | The ADO body says "pre-fill the team's table and query", and there is no team table to fill. Originally because ADR-116 put `Work Item Table` at *connection* scope and `Team` has no option bag (5611 D7); **now because the option is being removed altogether** — see the amendment below. Either way `BoardInformation` already carries `DataRetrievalValue` **and** `WorkItemTypes`, so the pre-fill needs zero contract change. Maintainer, 2026-07-31. |
 | **D7** | ServiceNow implements the **existing** `IBoardInformationProvider` and joins the existing `WizardsController` switch. No new port, no new endpoint, no new dialog. | `GET /api/latest/wizards/{connId}/boards` and `/boards/{boardId}` already exist and are already generic; `BoardWizard.tsx` already serves Jira, ADO and Linear from one component through `DataRetrievalWizardRegistry.ts`. A ServiceNow picker is one provider implementation, one `switch` arm and one registry row. |
 | **D8** | ServiceNow's `inputKind` stays **`freetext`**. Only `wizardHint` is set. | `GeneralSettingsComponent.tsx:126` computes `isDataRetrievalReadOnly = schema?.inputKind !== "freetext"`, so Linear's `wizard-select` makes the field read-only. The ADO body is explicit that manual entry stays the primary path and the pre-filled query must remain fully editable. Copying Linear's shape would silently contradict that. |
-| **D9** | A board read that fails must **not** offer a pre-fill. | `BoardWizard.tsx:71-82` catches a failed `getBoardInformation` and substitutes an all-empty `IBoardInformation`, which is truthy, which enables **Confirm**, which overwrites whatever the user typed with blanks. Given OC-1's live risk that `vtb_board` is 403 for a least-privilege account, this is the epic's signature failure — quietly wrong beating visibly missing — wired up and waiting. Fixing it in the shared component fixes it for Jira, ADO and Linear too. |
+| **D9** | A board read that fails must **not** offer a pre-fill. | `BoardWizard.tsx:71-82` catches a failed `getBoardInformation` and substitutes an all-empty `IBoardInformation`, which is truthy, which enables **Confirm**, which overwrites whatever the user typed with blanks. Given OC-1's live risk that `vtb_board` is 403 for a least-privilege account, this is the epic's signature failure — quietly wrong beating visibly missing — wired up and waiting. Fixing it in the shared component fixes it for Jira, ADO and Linear too. **⚠ The sentence "overwrites whatever the user typed with blanks" is FALSE — corrected 2026-08-01, see the SPIKE amendment row for D9.** `GeneralSettingsComponent.tsx:59-95` guards every assignment on non-emptiness, so an all-empty payload writes **nothing**: Confirm succeeds and silently no-ops. Implement against the no-op, not against data loss. The decision itself is unchanged. |
 | **D10** | A board whose membership cannot be expressed as a query is **excluded or refused by name**, never silently pre-filled with a partial query. | Freeform boards hold hand-placed `vtb_card` rows that no filter describes. Syncing "the filtered part of a freeform board" is a wrong number that looks right, which is the one outcome this epic exists to prevent. Which of exclude-from-list vs list-and-refuse is a DESIGN call, gated on OC-2. **Settled 2026-08-01 — see D14.** |
 | **D14** | **Exclude at query time.** The board list is read as `active=true^tableISNOTEMPTY^filterISNOTEMPTY`; a board missing either is never listed. Maintainer, 2026-08-01, settling D10's open half. | The SPIKE measured that a freeform board stores empty `table` **and** empty `filter`, and that **no board-type column exists** — no `type` field on the record, `sys_class_name` empty on every row, one table with no subclasses. So "only data-driven boards" is not directly expressible; emptiness is the whole discriminator, and it is exactly the right one. **Both** fields must be non-empty, not just `table`: a board with a table and no filter is a real configuration ("all incidents") whose pre-fill is an empty query that `ValidateTeamSettings` then blocks with `query_matches_whole_table` — cheaper to exclude than to render and refuse. Guided vs data-driven is not separable on the record and does not need to be: Lighthouse copies the **filter**, which is live, not the card set, which drifts. |
 | **D11** | **SPIKE first**, against PDI `dev191338`, **reusing 5611's probe accounts**. | The maintainer's call was "one combined probe run with 5611's OC-1/2/3". **Superseded within the hour: 5611's SPIKE landed first (`1c3cbf58c`) and settled all three of its open calls.** The intent survives the change — 5610's two board questions run on the same instance with the same scaffolding, against the accounts 5611 already created: `lh_probe_none` (no roles), `lh_probe_snc_read` (`sn_incident/change/request_read`, deliberately no `sn_problem_read`), `lh_probe_itil`, all sharing the admin password in `$ServiceNowLighthouseIntegrationTestToken`. So this is now a small standalone probe rather than a combined one, and it is cheaper than when the call was made. |
 | **D12** | **No DESIGN wave for 5610 starts until #5611 is delivered.** Not merely slice 02 — the whole feature waits. | Maintainer, 2026-07-31. D6 makes the picker's entire pre-fill model a consumer of 5611's class filter, so designing against it while it is in flight designs against a moving target. 5611's SPIKE has since confirmed the model holds (`IN` over `^OR`, class names not labels), which removes the re-scope risk but not the gate: the field the picker fills does not exist until 5611 ships it. Slice 01's *content* does not depend on 5611, but it is held by the same gate for sequencing simplicity; it is small enough that waiting costs little. |
-| **D13** | A board pick must not silently hand a team a **class that yields no time-in-state**. | 5611's SPIKE measured that stock `change_request` has **no state-tracking metric definition at all** — its two definitions sit on `approval` and `type` — so a change-request board can never produce state spans, whatever Lighthouse does. (The related `metric_definition`-is-empty-for-`table=task` finding is 5611's to carry: its class-scoped definition read is the repair, and it is no longer a *choice* a user makes now that every read is task-rooted.) A picker is the one moment the user is choosing a class, so it is the moment to say the choice costs time-in-state. Where it surfaces is a DESIGN call (OC-6); that it must surface is not. |
+| **D13** | A board pick must not silently hand a team a **class that yields no time-in-state**. | 5611's SPIKE measured that stock `change_request` has **no state-tracking metric definition at all** — its two definitions sit on `approval` and `type` — so a change-request board can never produce state spans, whatever Lighthouse does. (The related `metric_definition`-is-empty-for-`table=task` finding is 5611's to carry: its class-scoped definition read is the repair, and it is no longer a *choice* a user makes now that every read is task-rooted.) A picker is the one moment the user is choosing a class, so it is the moment to say the choice costs time-in-state. Where it surfaces is a DESIGN call (OC-6); that it must surface is not. **Settled in DESIGN, and against this row's instinct**: the picker says **nothing** (ADR-127 decision 3 — it reaches only SystemAdmins, needs a `BoardInformation` contract change across four connectors, and is evaluated on a class list the user can still edit after Confirm). The screen the pick *lands on* says it instead, and that ships under **[#5627](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5627)**, not here. So this feature ships a picker that is silent about time-in-state, with #5578's docs carrying the caveat until #5627 lands — named plainly because it is a real gap between what D13 promised and what #5610 delivers. |
 
 ---
 
@@ -647,4 +647,257 @@ decision (DD-10), not as an oversight.
 | **DQ-4** | Does hiding the wizard buttons from `CanCreateTeam` users need release-note wording? | ADR-126 says yes; the wording is a DELIVER concern. Three connectors' users lose a button that never worked for them. |
 | **DQ-5** | Does the ADR-124 ladder's `class_records_not_visible` rung read well when the subject is a board rather than a typed class? | The message says "this account was shown none of them", which is true either way. If it reads oddly at dogfood, it is one string, in a pure function, with a table-driven test. |
 | **DQ-6** | Is one extra ServiceNow request per Save (ADR-127) acceptable on a slow instance? | Measured at ~600 ms per call with no rate limiting (epic SPIKE Q7). Save already costs 1–2 probes per class plus 2 counts; this is +1 on a path where a human is waiting. **Now #5627's question, not this feature's.** |
+
+---
+
+## Wave: DISTILL / [REF] Inputs read
+
+Scope: **both slices**. Density lean, Tier-1 only. Consolidated four-reviewer gate **not run** —
+deferred by instruction; the maintainer reviews before reviewers are dispatched.
+
+| Artifact | |
+|---|---|
+| `feature-delta.md` — DISCUSS (D1–D14, AC-A1…A6, AC-B1…B6, DoD, KPIs, OC-1…OC-7), the two amendments, DESIGN (DD-1…DD-10, component decomposition, ports, Reuse Analysis, C4, DQ-1…DQ-6) | ✓ read in full |
+| `spike/findings.md` — including the **Corrections** table, which is authoritative over the body | ✓ |
+| `spike/wave-decisions.md` — promotion decision **DISCARD** | ✓ |
+| `slices/slice-01-query-authoring-guidance.md` · `slices/slice-02-visual-task-board-picker.md` | ✓ |
+| `docs/product/architecture/adr-125` · `adr-126` | ✓ both in full |
+| `docs/product/architecture/adr-114` · `adr-118` · `adr-123` · `adr-124` (constraints reused) | ✓ targeted reads |
+| `docs/architecture/atdd-infrastructure-policy.md` — the Project Infrastructure Policy, already populated, `--policy=inherit` | ✓ |
+| `docs/ci-learnings.md` — ledger patterns + the preflight rules that bind test code (CA1859, CA1861, NUnit2045/2046/2056/4002, S107, S927, S1944, S3776) | ✓ |
+| `docs/product/journeys/servicenow-board-picker-and-query-guidance.yaml` | ✓ — **exists**; both journeys and every step map onto the scenarios below |
+| `docs/product/kpi-contracts.yaml` | ✓ — no ServiceNow entry. This feature's KPIs are dogfood measurements recorded in DISCUSS, not emittable metrics, so no `@kpi` scenario is authored |
+| Production: `WizardsController.cs` · `IBoardInformationProvider.cs` · `Board.cs` · `BoardInformation.cs` · `ServiceNowWorkTrackingConnector.cs` · `ServiceNowValidationVerdict.cs` · `ServiceNowTeamQueryVerdict.cs` · `ServiceNowReadException.cs` · `DataRetrievalSchemaDto.cs` · `GeneralSettingsComponent.tsx` · `BoardWizard.tsx` · `DataRetrievalWizardRegistry.ts` · `DataRetrievalSchema.ts` · `DataRetrievalSchemaDefaults.ts` · `useRbac.ts` · `ApiError.ts` | ✓ |
+| Neighbouring tests: `ServiceNowRecordClassTest.cs` · `ServiceNowWorkTrackingConnectorIntegrationTest.cs` · `ServiceNowConnectionAcceptanceTest.cs` · `DataRetrievalSchemaDtoTest.cs` · `WizardsControllerTest.cs` · `ServiceNowValidationVerdictPurityArchUnitTest.cs` · `BoardWizard.test.tsx` · `DataRetrievalWizardRegistry.test.ts` · `GeneralSettingsComponent.test.tsx` · `DataRetrievalSchemaDefaults.serviceNow.test.ts` · `formatLikelihood.enforcement.test.ts` | ✓ |
+| `docs/product/outcomes/registry.yaml` | ⊘ **does not exist in this repo** (`docs/product/outcomes/` is absent entirely). Outcome registration is **skipped, explicitly** — the same call DESIGN recorded |
+| `docs/feature/{...}/{discuss,design,devops}/` subdirectories | ⊘ **do not exist for this feature** — single-narrative layout; the whole chain lives in `feature-delta.md` plus `slices/` and `spike/`. DEVOPS was never run, and neither slice implies an infrastructure change |
+| `.nwave/des-config.json` | ✓ — no `deliverable_type` key, so it resolves to **`application`**: no plugin validator, no skill reviewer, standard verification |
+
+### Wave-decision reconciliation: 0 contradictions
+
+There are no per-wave `wave-decisions.md` files, so the gate was run against the actual decision sets:
+DISCUSS **D1–D14**, the SPIKE **Corrections** table, and DESIGN **DD-1…DD-10**. Every DISCUSS decision
+was checked against DESIGN and against the SPIKE.
+
+Three apparent conflicts were checked and are **resolutions, not contradictions** — each is dated,
+each says what it replaces, and the later statement is the one the tests are written against:
+
+| Looks like a conflict | Why it is not |
+|---|---|
+| D9 says a failed board read *"overwrites whatever the user typed with blanks"*; the SPIKE Corrections table and ADR-126's Context say it writes **nothing** | Corrected upstream, in place, with the evidence (`GeneralSettingsComponent.tsx:59-95` guards every assignment on non-emptiness). The fix is unchanged; the justification changed. Scenarios assert the **silent no-op** — a refusal wearing a success costume — never data loss |
+| D10 leaves *"excluded or refused by name"* open; D14 settles it as exclude-at-query-time | D14 explicitly settles D10's open half and is dated later |
+| OC-6 says *"there is no channel at all"*; DESIGN finds the channel ships, and DD-9 splits its delivery to **#5627** | Recorded as a DESIGN finding against the upstream record, then scoped out. No scenario in this run touches `TeamService.validateTeamSettings`, `ValidationAdvisory`, or Reuse rows 15, 16, 24 and 25 |
+
+One decision could **not** be turned into a test and is recorded under Upstream issues below rather
+than guessed at: the `wizardHint` value slice 02 is to set.
+
+---
+
+## Wave: DISTILL / [REF] WS strategy
+
+**C — no walking skeleton**, inherited unchanged from DISCUSS and reinforced by the SPIKE's
+**DISCARD** promotion decision. Provenance: `## Wave: DISCUSS / [REF] WS strategy` (brownfield; both
+driving ports already run end to end for three other connectors) and `spike/wave-decisions.md`
+(*"the reason not to skeleton is stronger after the run than before it"*). No scenario is tagged
+`@walking_skeleton`, and none was authored to satisfy a checklist.
+
+What stands in its place: scenarios 24 and 25 exercise the real HTTP driving adapter through the
+production DI container against a deterministically unreachable instance — the layer-5 device the
+epic's slice 01 already established. That is driving-adapter coverage, and it is labelled as such
+rather than dressed up as a skeleton.
+
+---
+
+## Wave: DISTILL / [REF] Scenario list
+
+**37 scenarios.** Language: **C# / NUnit 4.6 + Moq** (backend) and **Vitest + React Testing Library**
+(frontend) — this repo's conventions per `CLAUDE.md` and the ATDD Infrastructure Policy. **No Gherkin
+feature files**: the repo ships no BDD runner, and the ServiceNow suites carry the domain language in
+the test name and the comment above it. That is the convention #5611 and the epic's slices follow,
+and this run follows it rather than introducing a second one. Python-pilot machinery is **N/A** — see
+the last section.
+
+### Slice 01 — the query field says what to put in it
+
+| # | Scenario | AC / decision | Layer | Tags |
+|---|---|---|---|---|
+| 1 | A ServiceNow team's query field shows a worked example of the query it wants | AC-A1 / DD-5 | 1 | `@driving_port` |
+| 2 | …and names both ways a query fails quietly, and where to get a good one | AC-A4 | 1 | `@driving_port` `@error` |
+| 3 | A connector with nothing to explain leaves its query field exactly as it was (×4 connectors) | AC-A2 | 1 | `@driving_port` `@backward-compat` |
+| 4 | A ServiceNow portfolio is offered no guidance for a field it never renders | AC-A6 | 1 | `@driving_port` `@boundary` `@backward-compat` |
+| 5 | The settings screen's schema shows a worked example of the query it wants | AC-A1 / AC-A3 | 1 | `@frontend` |
+| 6 | …and names both silent failures, and where ServiceNow hands you a good query | AC-A4 | 1 | `@frontend` `@error` |
+| 7 | …and offers no guidance for a portfolio field it never renders | AC-A6 | 1 | `@frontend` `@boundary` `@backward-compat` |
+| 8 | Both stacks show the same worked example (×2 stacks) | AC-A3 / D4 | structural | `@enforcement` `@cross-stack` |
+| 9 | Both stacks carry the help text beside it (×2 stacks) | AC-A3 / AC-A4 / D4 | structural | `@enforcement` `@cross-stack` |
+| 10 | The query field shows the example in the empty box and the guidance beneath it | AC-A1 / AC-A5 | 1 | `@frontend` |
+| 11 | A connector with nothing to explain renders exactly the markup it renders today | AC-A2 | 1 | `@frontend` `@backward-compat` |
+
+### Slice 02 — pick a Visual Task Board
+
+| # | Scenario | AC / decision | Layer | Tags |
+|---|---|---|---|---|
+| 12 | A ServiceNow connection can be asked for the boards it already maintains | DD-1 / ADR-125 §1 | 3 | `@driving_port` |
+| 13 | An administrator opening the picker sees the boards this connection can turn into a team | AC-B1 | 3 | `@driving_port` |
+| 14 | A board that cannot become a query never reaches the administrator | AC-B4 / D14 / ADR-125 §3 | 3 | `@driving_port` `@boundary` |
+| 15 | Picking a board hands the team the board's own filter as its query | AC-B2 / DD-2 | 3 | `@driving_port` |
+| 16 | Picking a board hands the team the board's table as the kind of work it handles | AC-B2 / D6 | 3 | `@driving_port` |
+| 17 | Picking a board never hands over the filter as it reads on the ServiceNow screen | DD-2 / ADR-125 §2 | 3 | `@driving_port` `@boundary` |
+| 18 | Picking a board that no longer qualifies is refused rather than handed over as an empty query | ADR-125 §3 | 3 | `@driving_port` `@error` |
+| 19 | Picking a board whose work is not a kind of work is refused by name | AC-B4 / DD-4 / ADR-124 | 3 | `@driving_port` `@error` |
+| 20 | An account that may not read boards is told so rather than shown an empty picker | AC-B3 / ADR-126 §1 | 3 | `@driving_port` `@error` |
+| 21 | A credential the instance rejects is told so when the picker opens | AC-B3 / ADR-126 §3 | 3 | `@driving_port` `@error` |
+| 22 | An account that shares no board is offered an empty list rather than told the connection is broken | DD-7 / ADR-126 §3 | 3 | `@driving_port` `@boundary` |
+| 23 | A team whose query was typed by hand is saved without the instance being asked about boards | AC-B5 | 3 | `@driving_port` `@backward-compat` |
+| 24 | An administrator asking a ServiceNow connection for its boards is told why, rather than shown a fault | AC-B1 / AC-B3 / DD-1 / DD-6 | 5 | `@driving_adapter` `@real-stack` `@error` |
+| 25 | …and asking for one board of an unreachable instance is told why rather than offered a blank pre-fill | AC-B3 / DD-6 | 5 | `@driving_adapter` `@real-stack` `@error` |
+| 26 | The board picker's decisions live in pure cores of their own | ADR-125 / ADR-126 §3 / ADR-114 | structural | `@architecture` |
+| 27 | Picking a ServiceNow board is offered to a team | AC-B1 / DD-1 | 1 | `@frontend` |
+| 28 | …and is not offered to a portfolio | AC-B1 | 1 | `@frontend` `@boundary` |
+| 29 | The dialog shows the reason the board list was refused | AC-B3 / ADR-126 §2 | 1 | `@frontend` `@error` |
+| 30 | …and names both reasons a connection may have no board to offer | DD-7 / ADR-126 §3 | 1 | `@frontend` `@boundary` |
+| 31 | …and cannot be confirmed when the board could not be read | AC-B3 / D9 / ADR-126 §2 | 1 | `@frontend` `@error` |
+| 32 | A board picker is offered to a system administrator | DD-8 / ADR-126 §4 | 1 | `@frontend` |
+| 33 | …and not to someone who cannot open it | DD-8 / ADR-126 §4 | 1 | `@frontend` `@error` |
+| 34 | A board's own filter selects less work than the whole table it runs against | Earned Trust 1 / AC-B6 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+| 35 | The filter as it reads on screen selects the whole table | Earned Trust 2 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+| 36 | An account that shares no board is answered with an empty success whose count still names every board | Earned Trust 3 + 4 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+| 37 | A board picked on the instance pre-fills the work its own filter selects | AC-B6 | 4 | `@real-io` `@adapter-integration` `@requires_external` |
+
+**Error / edge share: 18 of 37 (49 %)**, plus 6 backward-compatibility pins.
+
+**Every AC is covered.** AC-A1 → 1, 5, 10. AC-A2 → 3, 11. AC-A3 → 5, 6, 8, 9. AC-A4 → 2, 6, 9.
+AC-A5 → 10. AC-A6 → 4, 7. AC-B1 → 13, 24, 27, 28. AC-B2 → 15, 16, 17. AC-B3 → 20, 21, 24, 25, 29, 31.
+AC-B4 → 14, 19. AC-B5 → 23. AC-B6 → 34, 37. Plus DD-1 → 12, 24, 27; DD-7 → 22, 30; DD-8 → 32, 33;
+Earned Trust → 34–36; the ADR-114 purity convention → 26.
+
+**Both journey arcs are covered end to end.** `fill-in-the-query-field-without-leaving-the-product`:
+step-meet-the-field → 1, 5, 10; step-be-warned-before-the-guard → 2, 6; step-save-past-the-guard → 23.
+`lift-the-configuration-out-of-a-board-you-already-maintain`: step-open-the-picker → 13, 24, 27, 32;
+step-see-what-was-found-before-committing → 29, 31; step-pre-fill-two-fields-that-already-exist →
+15, 16, 37; step-meet-an-honest-refusal → 14, 17, 18, 19, 20, 21, 22, 30.
+
+**No new E2E spec.** Playwright here is a thin sanity check driven from seeded demo data; there is no
+demo ServiceNow instance, the picker needs a live `vtb_board`, and both driving ports are already
+covered at layers 3–5. A spec would mean re-seeding to reach a page that is already reachable. The
+`@screenshot` team-settings specs **will** need re-running at DELIVER, because the query field gains a
+placeholder and a helper row — DoD item 6, and delete the PNG first (the <0.5 % diff trap).
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+| Where | Why |
+|---|---|
+| `Lighthouse.Backend.Tests/…/ServiceNow/ServiceNowBoardPickerTest.cs` — **new fixture** | One file per concern is this folder's convention: `ServiceNowTeamSyncTest` (paging + the query verdict), `ServiceNowTransitionHistoryTest` (slice 04's reads), `ServiceNowRecordClassTest` (#5611's classes). Boards are a fifth concern with their own stub shape. The stub honours the board scoping the instance applies, so a connector that asks for every board gets every board back rather than a passing test |
+| `ServiceNowConnectionAcceptanceTest.cs` — **extended** | The layer-5 fixture the epic already uses for "driven the way the administrator drives it", and it already owns the unreachable-instance device. A second acceptance fixture would split one driving adapter across two files |
+| `DataRetrievalSchemaDtoTest.cs` — **extended** | The C# half of the twin story, and the home of the #5613 exhaustiveness guard. Keeping both in one file is what makes a future reader see them together — the reason #5611 gave |
+| `ServiceNowWorkTrackingConnectorIntegrationTest.cs` — **extended, not forked** | DESIGN Reuse row 26 says so explicitly, and ADR-125's Earned Trust section names the fixture. The live-PDI fixture #5611 established |
+| `ServiceNowValidationVerdictPurityArchUnitTest.cs` — **extended** | DESIGN Reuse row 27. The two new pure cores join the three the ladder already covers |
+| `WizardsControllerTest.cs` — **deliberately not extended** | The controller-level claims (the switch arm, `BadRequest(verdict)`) cannot be stated there without naming `WorkTrackingReadException`, which does not exist, or a constructor parameter that does not exist — either is a compile error, which is BROKEN rather than RED. Scenarios 24 and 25 make the same claims one layer out, through the real route, where they compile against today's code |
+| `Lighthouse.Frontend/src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts` — **extended** | Already "the ServiceNow settings screen expressed as data" |
+| `Lighthouse.Frontend/src/models/Common/serviceNowQueryGuidance.enforcement.test.ts` — **new** | AC-A3 / D4. `formatLikelihood.enforcement.test.ts` is the *pattern*, not a host: merging them would make one invariant's failure read as the other's. It reads both twins as **source text** rather than importing either, which is what turns "the field does not exist yet" into a named containment failure instead of a module-resolution error |
+| `BoardWizard.test.tsx` · `DataRetrievalWizardRegistry.test.ts` · `GeneralSettingsComponent.test.tsx` — **extended** | All three are shared by four connectors, and DD-6 / DD-7 / DD-8 change all four. The tests belong beside the existing ones so the blast radius is visible in one place |
+
+---
+
+## Wave: DISTILL / [REF] Adapter and driving-port coverage
+
+| Driven adapter | Real-I/O scenario | Covered by |
+|---|---|---|
+| ServiceNow Table API — `vtb_board` list | YES | 36 (live), 13/14/20/21/22 (stubbed transport over the real adapter code path) |
+| ServiceNow Table API — `vtb_board` single row | YES | 37 (live), 15/16/17/18 (stubbed) |
+| ServiceNow Table API — the ADR-124 class ladder probes | YES | 34/37 (live), 19 (stubbed), plus #5611's existing live ladder |
+| ServiceNow Table API — a board's filter run as a query | YES | 34, 35, 37 (live) — the pair ADR-125 asks to be kept as a standing guard |
+| Credential application | reused unchanged | existing live fixture |
+| Persistence (EF) | not touched — both new operations are reads, no migration | — |
+
+| Driving port | Scenarios |
+|---|---|
+| `GET /api/latest/wizards/{connId}/boards` | 24 (real route), 13, 14, 20, 21, 22 (through `IBoardInformationProvider`) |
+| `GET /api/latest/wizards/{connId}/boards/{boardId}` | 25 (real route), 15–19, 37 |
+| `ValidateTeamSettings` (`PUT /api/teams/{id}`) | 23 |
+| `DataRetrievalSchemaDto.ForTeam` / `ForPortfolio` (`GET .../dataretrievalschema`) | 1–4 |
+| `getDefaultTeamSchema` / `getDefaultPortfolioSchema` (settings screen + create wizard) | 5–7 |
+| `GeneralSettingsComponent` (both surfaces render through it) | 10, 11, 32, 33 |
+| `BoardWizard` (the dialog itself) | 29, 30, 31 |
+
+No CLI and no hook in either slice. Both HTTP routes already exist and are exercised through the real
+ASP.NET host in 24 and 25 — the driving-adapter requirement is met without a walking skeleton.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds and skip markers
+
+Three scaffold edits, all inert, all forced by the compiler rather than chosen. The first attempt
+reached the board port through a cast so that no production code would move; `TreatWarningsAsErrors`
+turned Sonar **S1944** (*"no type that extends `ServiceNowWorkTrackingConnector` and implements
+`IBoardInformationProvider`"*) into a build failure. Full reasoning in `distill/red-classification.md`.
+
+| Scaffold | Inert because |
+|---|---|
+| `DataRetrievalSchemaDto.Placeholder` / `.HelpText` — two nullable properties, default `null` | `null` is today's behaviour exactly: MUI renders no placeholder attribute and no helper row for an absent value. The payload gains two nulls the frontend interface does not declare |
+| `IServiceNowWorkTrackingConnector : …, IBoardInformationProvider`, plus the amended xmldoc | The xmldoc asserted *"ServiceNow has no board concept"* and became false with the interface, so ADR-125's required amendment lands in the same edit rather than as deferred work |
+| `ServiceNowWorkTrackingConnector.GetBoards` / `.GetBoardInformation` returning empty | **Unreachable from the API** — `WizardsController`'s switch still has no ServiceNow arm, which is what scenarios 24 and 25 observe as a `500`. The commit that makes the scaffold reachable is the commit that un-skips the tests |
+
+31 tests carry a skip marker and un-skip in DELIVER:
+
+- **C#** — `[Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]` × 15, plus a longer
+  reason on the 4 live-PDI tests that were compiled but never executed against the instance.
+- **TypeScript** — `describe.skip` × 2 blocks and `it.skip` × 6, 12 tests in all.
+
+`grep -rn "DISTILL scaffold for #5610"` finds every skip marker and the two stub scaffolds — 29
+occurrences; zero should remain at the end of DELIVER. The interface amendment is deliberately
+**unmarked**: it is the permanent change ADR-125 requires, not a stub to be removed.
+
+Eight test methods (eleven cases) are **not** skipped. They are absence claims — AC-A2 and AC-A6 on
+both stacks, AC-B1's portfolio half, AC-B5, DD-8's administrator half, DD-1's port membership — that
+pass on `main` today and exist to fail the moment the behaviour they pin changes.
+
+Gate state: `dotnet build` 0 warnings / 0 errors · `dotnet test` (ServiceNow + schema + wizards
+filter) 309 passed, 19 skipped, 0 failed · `pnpm test` 3 821 passed, 12 skipped, 0 failed ·
+`pnpm exec tsc -b` exit 0 · `pnpm biome check ./src` clean.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites and upstream issues
+
+### Pre-requisites carried into DELIVER
+
+1. **The PDI must be reachable and its boards intact.** Scenarios 34–37 need `dev191338` (or the
+   override in `$ServiceNowLighthouseIntegrationTestInstance`), the shared password in
+   `$ServiceNowLighthouseIntegrationTestToken`, and at least one board carrying **both** a table and a
+   filter that the `admin` account can see. The SPIKE left the instance as it found it, so the two
+   demo boards should still be there — but `vtb_board_member` is empty, which means the picker shows
+   the admin account its own boards and nobody else's.
+2. **Three existing assertions become false when DELIVER lands the changes**, named here so nobody
+   treats them as regressions: `DataRetrievalWizardRegistry.test.ts` asserts `dataRetrievalWizards`
+   has length **4** (becomes 5); `DataRetrievalSchemaDtoTest.ForTeam_ServiceNow_HasNoWizardHint` and
+   the frontend `offers no discovery wizard…` both assert `wizardHint` is null (see U-1 below).
+3. **DEVOPS was never run for this feature**, and neither slice implies an infrastructure change. The
+   default environment matrix applies unchanged.
+
+### Upstream issues — things DESIGN or DISCUSS left untestable as written
+
+| # | Issue | What DISTILL did |
+|---|---|---|
+| **U-1** | **The `wizardHint` value for ServiceNow is unspecified.** The slice-02 brief and Reuse row 28 say it is *"set for consistency with the other four, though nothing reads it"*; DD-1 and ADR-125 §1 do not mention it at all; and the four existing values follow no derivable pattern (`jira-team-wizard` against the registry id `jira.board`). A stray mock at `ModifyTeamSettings.test.tsx:510` already uses `servicenow-team-wizard`, which is a fixture, not a decision | **No scenario pins a literal** — guessing one would ship a value nobody chose. Two shipped assertions say it is `null` and will need replacing. **Maintainer call before DELIVER**: set it (and to what), or leave it null and delete the line from the slice brief |
+| **U-2** | **The guidance copy itself is unwritten.** DD-5 names the worked example verbatim, but the help text is described only by what it must contain | Scenarios 2, 6 and 9 assert the three load-bearing tokens (`whole table`, `nothing`, `Copy query`) rather than a sentence. DoD item 6 already requires the wording be reviewed against #5578's page. **DELIVER writes the sentence; the tests already say what it must say** |
+| **U-3** | **The journey SSOT still carries the disproven D9 claim.** `docs/product/journeys/servicenow-board-picker-and-query-guidance.yaml`, step `step-see-what-was-found-before-committing`, says the all-empty pre-fill *"would overwrite a typed query with blanks"*. The SPIKE Corrections table and ADR-126 disproved that on 2026-08-01; the journey was not updated with them | Scenario 31 and the replaced `BoardWizard` test assert the **silent no-op**. One line to fix in the SSOT — recorded rather than edited here, because a DISTILL run amending a DISCUSS-owned SSOT file without the maintainer is how records drift |
+| **U-4** | **ADR-126 §3's empty-list copy is a paragraph, and paragraphs get edited.** | Scenario 30 asserts two phrases from it — *"not a member of any Visual Task Board"* and *"both a table and a filter"* — rather than the whole string, so a wording pass does not red the test while a dropped cause does. If the maintainer changes either phrase, the test is the thing to update, not the copy |
+| **U-5** | **DQ-3's third cause is still unnamed.** `active=true` is part of the list scoping, so an administrator who deactivates a board and then cannot find it in the picker gets no explanation — the empty-list copy names two causes, and inactivity is a third | Scenario 14 pins the exclusion; nothing pins the explanation, because DESIGN chose not to give one. Cheapest repair if it bites at dogfood is one clause in the copy |
+
+### Python-pilot machinery declared N/A
+
+The ATDD Infrastructure Policy already records that this is a C#/.NET + React/TypeScript project and
+not the Python/Hypothesis pilot. Per item, for the record:
+
+| Instrument | Status |
+|---|---|
+| `tests/common/state_delta.*` and `assert_state_delta(before, after, universe, expected)` (Mandate 8) | **N/A** — no Python port exists or is wanted; the C#/TS matrix rows govern. Backend ATs are black-box example-based through `WebApplicationFactory<Program>` or a stubbed transport, and the universe guard has no host-language equivalent in this repo |
+| Hypothesis / PBT `@given`, `RuleBasedStateMachine`, Tier B (Mandates 9, 10) | **N/A** — no PBT library is in either stack. Every scenario here is example-based, which is what Mandates 9 and 11 would require at layers 3–5 anyway. Neither journey is ≥3 chained scenarios over a domain-rich input space, so Tier B would not apply even with the machinery |
+| `__SCAFFOLD__` Python stubs (Mandate 7) | **N/A in form, honoured in substance** — the three scaffolds carry `// DISTILL scaffold for #5610`, the greppable marker this repo already uses (`grep -rn "DISTILL scaffold for #5611"` is the precedent) |
+| `domain_types.py` and the step-reuse ratio (Mandate 12, all four criteria) | **N/A** — there is no step-definition layer to measure. The repo has no BDD runner; the "DSL" is the test method name, and both type systems already carry the domain nouns (`WorkTrackingSystems`, `WorkTrackingSystemType`, `ConnectionValidationResult`). No ratio is fabricated |
+| `docs/product/outcomes/registry.yaml` (`nwave-ai outcomes register`) | **Skipped explicitly** — neither the file nor its directory exists in this repo. No OUT-N row was invented |
+| Final Wave Review Gate (four parallel reviewers) | **Not run — pending**, by instruction. The maintainer reviews before reviewers are dispatched |
 

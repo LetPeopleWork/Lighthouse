@@ -154,6 +154,69 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        // Story #5610 slice 02, AC-B1 / AC-B3 / DD-1 / DD-6, driven the way the administrator drives
+        // it. Today ServiceNow falls through the wizard's switch to a NotImplementedException, so
+        // asking a ServiceNow connection for its boards is a fault rather than an answer. It must be
+        // an answer: the instance here is a closed local port, which is a real unreachable host, and
+        // the administrator is told that rather than told Lighthouse broke.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
+        public async Task AnAdministratorAskingAServiceNowConnectionForItsBoards_IsToldWhyRatherThanShownAFault()
+        {
+            var connectionId = await AServiceNowConnectionIsConfigured();
+
+            var response = await client.GetAsync($"/api/latest/wizards/{connectionId}/boards");
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                "An instance that cannot be reached is a refusal the administrator can act on, not a fault and not an empty picker.");
+
+            var verdict = await ReadVerdict(response);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False);
+                Assert.That(verdict.Message, Is.Not.Empty,
+                    "The reason travels with the refusal — this is the whole difference between a picker that can be acted on and 'Failed to load boards. Please try again.'");
+            }
+        }
+
+        // AC-B3 / ADR-126 decision 2. A board that could not be read is a refusal, not a pre-fill.
+        // The dialog's fallback used to turn one into an all-empty board that could still be
+        // confirmed — Confirm succeeded and silently wrote nothing.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - un-skip in DELIVER (ADR-025).")]
+        public async Task AnAdministratorAskingForOneBoardOfAnUnreachableInstance_IsToldWhyRatherThanOfferedABlankPreFill()
+        {
+            var connectionId = await AServiceNowConnectionIsConfigured();
+
+            var response = await client.GetAsync($"/api/latest/wizards/{connectionId}/boards/any-board");
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                "A board that could not be read is a refusal. Handing back an all-empty board is what let Confirm succeed and write nothing.");
+
+            var verdict = await ReadVerdict(response);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.IsValid, Is.False);
+                Assert.That(verdict.Message, Is.Not.Empty);
+            }
+        }
+
+        private async Task<int> AServiceNowConnectionIsConfigured()
+        {
+            client.AsSystemAdmin();
+
+            var created = await PostConnectionTo(
+                "/api/latest/worktrackingsystemconnections", NewServiceNowConnection());
+
+            Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            var body = await created.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<WorkTrackingSystemConnectionDto>(body, JsonOptions)?.Id ?? 0;
+        }
+
         private static WorkTrackingSystemConnectionDto NewServiceNowConnection()
         {
             var connection = new WorkTrackingSystemConnectionDto

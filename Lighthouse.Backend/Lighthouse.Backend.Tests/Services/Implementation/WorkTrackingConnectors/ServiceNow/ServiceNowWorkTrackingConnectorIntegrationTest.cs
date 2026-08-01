@@ -1,7 +1,12 @@
 using System.Globalization;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -41,6 +46,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string HierarchyRootTable = "task";
 
         private const string MetricsTable = "metric_definition";
+
+        // Visual Task Boards. Read-guarded by a script rather than a role: a board is shared through
+        // vtb_board_member, so roles predict nothing about who can see one (SPIKE, 2026-08-01).
+        private const string BoardTable = "vtb_board";
+
+        // The only boards Lighthouse can turn into a team: a freeform board stores neither a table
+        // nor a filter, and a board with a table but no filter pre-fills an empty query.
+        private const string UsableBoards = "active=true^tableISNOTEMPTY^filterISNOTEMPTY";
 
         // Held 105 records when slice 02 was written, which is what makes it the table that can
         // prove paging on an instance whose incident table fits in a single page.
@@ -421,6 +434,158 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "Read through the whole hierarchy, the definitions have to be looked for on the kinds of work the team named.");
             }
         }
+
+        // Story #5610 slice 02 — the Earned Trust assertions ADR-125 asks for. vtb_board is a
+        // substrate that has already been measured lying twice (an ACL-blind counter, and a denial
+        // dressed as a 200), so each of the four below exercises one specific lie. They are
+        // instance behaviour a ServiceNow release can change underneath us, and getting any of them
+        // wrong ships the exact bug this epic's validation exists to catch.
+
+        // The board's stored filter is a verbatim encoded query in COLUMN form. If it ever stops
+        // being one, pre-filling it verbatim stops being safe.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
+        public async Task ABoardsOwnFilter_SelectsLessWorkThanTheWholeTableItRunsAgainst()
+        {
+            var board = await ABoardThisAccountCanUse();
+
+            var selected = await AskTheInstance(AdminUser, TableOf(board), FilterOf(board));
+            var wholeTable = await AskTheInstance(AdminUser, TableOf(board), string.Empty);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(selected.Holds, Is.GreaterThan(0), "A board whose filter selects nothing is not a board anyone runs a stand-up from.");
+                Assert.That(selected.Holds, Is.LessThan(wholeTable.Holds), "The filter is what makes the board a team rather than the whole table.");
+            }
+        }
+
+        // The trap, kept as a standing guard: the filter as it reads on ServiceNow's own screen is
+        // the label form, and running it matches every record in the table (105/105 and 118/118,
+        // measured 2026-08-01). It is the legible string, which is why it is the one a careless
+        // implementation reaches for.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
+        public async Task TheFilterAsItReadsOnScreen_SelectsTheWholeTable()
+        {
+            var board = await ABoardThisAccountCanUse();
+
+            var selected = await AskTheInstance(AdminUser, TableOf(board), ReadableFilterOf(board));
+            var wholeTable = await AskTheInstance(AdminUser, TableOf(board), string.Empty);
+
+            Assert.That(selected.Holds, Is.EqualTo(wholeTable.Holds),
+                "Still the whole-table widening. If this ever stops being true, the reason not to read readable_filter has changed and the decision deserves re-arguing rather than quiet inheritance.");
+        }
+
+        // Boards are shared, not roled: an account nobody has shared a board with is answered with
+        // an empty success, never a refusal — so an empty picker must be worded as membership rather
+        // than as a broken connection. And the instance still counts the boards it is hiding, which
+        // is why the list is never counted from the header.
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
+        public async Task AnAccountThatSharesNoBoard_IsAnsweredWithAnEmptySuccessWhoseCountStillNamesEveryBoard()
+        {
+            var answer = await AskTheInstance(NoRolesUser, BoardTable, string.Empty);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), "A denial here would be an honest one, and would move the empty-list copy from honest to false.");
+                Assert.That(answer.Visible, Is.Zero);
+                Assert.That(answer.Holds, Is.GreaterThan(0), "The counter is computed before the ACLs run. Counting boards from it offers an administrator boards that are not there.");
+            }
+        }
+
+        // AC-B6. The whole promise of the picker, against a real instance: the work a pre-filled team
+        // reads is the work the board's own filter selects — not the whole table, and not the board's
+        // card set, which the SPIKE measured drifting behind its own filter (7 cards, 13 matches).
+        [Test]
+        [Ignore("DISTILL scaffold for #5610 - never run against the PDI in this session; un-skip in DELIVER (ADR-025).")]
+        public async Task ABoardPickedOnTheInstance_PreFillsTheWorkItsOwnFilterSelects()
+        {
+            IBoardInformationProvider picker = CreateSubject();
+            var connection = CreateConnection(AdminUser);
+
+            var boards = (await picker.GetBoards(connection)).ToList();
+
+            Assert.That(boards, Is.Not.Empty, "The Lighthouse account has to be a member of at least one board for this to measure anything.");
+
+            var preFill = await picker.GetBoardInformation(connection, boards[0].Id);
+            var kindOfWork = preFill.WorkItemTypes.Single();
+
+            var selected = await AskTheInstance(AdminUser, kindOfWork, preFill.DataRetrievalValue);
+            var wholeTable = await AskTheInstance(AdminUser, kindOfWork, string.Empty);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(selected.Holds, Is.GreaterThan(0));
+                Assert.That(selected.Holds, Is.LessThan(wholeTable.Holds));
+            }
+        }
+
+        private static async Task<JsonElement> ABoardThisAccountCanUse()
+        {
+            var boards = await AskTheInstance(AdminUser, BoardTable, UsableBoards);
+
+            Assert.That(boards.Records, Is.Not.Empty, "No board on this instance carries both a table and a filter, so there is nothing to measure.");
+
+            return boards.Records[0];
+        }
+
+        private static string TableOf(JsonElement board)
+        {
+            return board.GetProperty("table").GetString() ?? string.Empty;
+        }
+
+        private static string FilterOf(JsonElement board)
+        {
+            return board.GetProperty("filter").GetString() ?? string.Empty;
+        }
+
+        private static string ReadableFilterOf(JsonElement board)
+        {
+            return board.GetProperty("readable_filter").GetString() ?? string.Empty;
+        }
+
+        // A raw Table API read. The four assertions above are about the instance rather than about
+        // Lighthouse, so they ask it directly instead of through a connector method that would
+        // decide something on the way.
+        private static async Task<InstanceAnswer> AskTheInstance(string username, string table, string query)
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                "Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{Password()}")));
+
+            var uri = $"{InstanceUrl().TrimEnd('/')}/api/now/table/{table}?sysparm_limit=1&sysparm_query={Uri.EscapeDataString(query)}";
+
+            using var response = await client.GetAsync(new Uri(uri));
+            var body = await response.Content.ReadAsStringAsync();
+
+            var records = new List<JsonElement>();
+            var holds = ReportedCount(response);
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var parsed = JsonDocument.Parse(body);
+
+                if (parsed.RootElement.TryGetProperty("result", out var result) && result.ValueKind == JsonValueKind.Array)
+                {
+                    records.AddRange(result.EnumerateArray().Select(record => record.Clone()));
+                }
+            }
+
+            return new InstanceAnswer(response.StatusCode, records.Count, holds, records);
+        }
+
+        private static int ReportedCount(HttpResponseMessage response)
+        {
+            if (!response.Headers.TryGetValues("X-Total-Count", out var values))
+            {
+                return 0;
+            }
+
+            return int.TryParse(values.FirstOrDefault(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var count) ? count : 0;
+        }
+
+        private sealed record InstanceAnswer(HttpStatusCode Status, int Visible, int Holds, List<JsonElement> Records);
 
         // A team naming the kinds of work that are its own. Every read is rooted at the hierarchy,
         // so the classes are the only thing that varies.
