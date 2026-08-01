@@ -19,8 +19,7 @@ const twins = {
 
 const WORKED_EXAMPLE = "active=true^assignment_group=Service Desk";
 
-// DISTILL scaffold for #5610 slice 01 - un-skip in DELIVER (ADR-025).
-describe.skip("the ServiceNow query guidance says the same thing on both stacks", () => {
+describe("the ServiceNow query guidance says the same thing on both stacks", () => {
 	it.each(Object.entries(twins))(
 		"%s shows the same worked example",
 		(_stack, path) => {

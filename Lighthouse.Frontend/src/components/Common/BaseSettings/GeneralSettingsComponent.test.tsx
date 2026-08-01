@@ -1036,8 +1036,7 @@ describe("GeneralSettingsComponent", () => {
 			} as unknown as IDataRetrievalSchema,
 		});
 
-		// DISTILL scaffold for #5610 slice 01 - un-skip in DELIVER (ADR-025).
-		it.skip("shows a worked example in the empty field and the guidance beneath it", () => {
+		it("shows a worked example in the empty field and the guidance beneath it", () => {
 			render(
 				<GeneralSettingsComponent
 					settings={aServiceNowTeam()}

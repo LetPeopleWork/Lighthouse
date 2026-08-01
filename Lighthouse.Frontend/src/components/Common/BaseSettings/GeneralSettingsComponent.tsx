@@ -165,6 +165,8 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 						rows={4}
 						fullWidth
 						margin="normal"
+						placeholder={schema?.placeholder ?? undefined}
+						helperText={schema?.helpText ?? undefined}
 						value={settings?.dataRetrievalValue ?? ""}
 						onChange={(e) =>
 							onSettingsChange(
