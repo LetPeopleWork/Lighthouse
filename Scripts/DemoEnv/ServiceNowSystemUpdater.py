@@ -29,26 +29,47 @@ TRANSITION_PROBABILITY = 0.3
 # and on problem a bare 200 that silently changes nothing). Creating in-state does not work
 # either — "Change Model: Apply Initial State" rewrites it back to New.
 #
-# change_request IS drivable and this script does not do it yet: set `assignment_group` and
+# change_request IS drivable and this script does not do it: set `assignment_group` and
 # New -> Assess succeeds, then Assess -> Authorize -> Scheduled happen BY THEMSELVES as each
 # round of sysapproval_approver records is approved — they cannot be PATCHed directly. So a
 # walk means: assign, PATCH to Assess, approve, re-read, repeat, then Implement/Review/Closed.
-# problem's Assess -> Root Cause Analysis is still refused and unexplained.
+# problem's Assess -> Root Cause Analysis is refused and unexplained.
 #
-# Until that lands, both are seeded for class coverage and left where the instance parks them.
+# Both are seeded for class coverage and left where the instance parks them — decided
+# 2026-08-01, incident alone carries the flow demo. Revisit only if the demo needs more than
+# one kind of work in motion.
+#
+# `flow` is a branching walk rather than a chain, so On Hold happens to some incidents and not
+# to all of them, which is what lets a demo team define a blocked rule matching a real subset.
+# `state_extras` are the fields a state will not be entered without.
 RECORD_TYPES = [
     {
         "table": "incident",
         "target_open": 25,
         "walks": True,
-        "states": ["1", "2", "6", "7"],
+        "states": ["1", "2", "3", "6", "7"],
         "labels": {"1": "New", "2": "In Progress", "3": "On Hold", "6": "Resolved", "7": "Closed"},
-        # Resolving needs close info, or the "Make close info mandatory" data policy rejects
-        # the write. The code has to come from the instance: an invalid choice is dropped
-        # silently and the policy then refuses the now-empty field.
-        "closes_at": "6",
-        "close_fields": {"close_code": None, "close_notes": "Seeded resolution."},
-        "close_choice_element": "close_code",
+        "state_metric_field": "incident_state",
+        "flow": {
+            "1": [("2", 1.0)],
+            "2": [("6", 0.75), ("3", 0.25)],
+            "3": [("2", 0.6), ("6", 0.4)],
+            "6": [("7", 1.0)],
+        },
+        # The codes have to come from the instance: an invalid choice is dropped silently and
+        # the mandatory-field policy then refuses the now-empty field.
+        "state_extras": {
+            "3": {
+                "fields": {"hold_reason": None},
+                "choice_element": "hold_reason",
+                "fallback": "1",
+            },
+            "6": {
+                "fields": {"close_code": None, "close_notes": "Seeded resolution."},
+                "choice_element": "close_code",
+                "fallback": "Solution provided",
+            },
+        },
         "creates": {
             "impact": lambda: str(random.randint(1, 3)),
             "urgency": lambda: str(random.randint(1, 3)),
@@ -79,9 +100,15 @@ RECORD_TYPES = [
             "3": "Closed",
             "4": "Canceled",
         },
-        "closes_at": "3",
-        "close_fields": {"close_code": "successful", "close_notes": "Seeded change closure."},
-        "close_choice_element": None,
+        "state_metric_field": "state",
+        "flow": {},
+        "state_extras": {
+            "3": {
+                "fields": {"close_code": "successful", "close_notes": "Seeded change closure."},
+                "choice_element": None,
+                "fallback": None,
+            },
+        },
         "creates": {"type": lambda: random.choice(["normal", "standard", "emergency"])},
         "summaries": [
             "Patch the payroll database",
@@ -105,9 +132,15 @@ RECORD_TYPES = [
             "106": "Resolved",
             "107": "Closed",
         },
-        "closes_at": "106",
-        "close_fields": {"resolution_code": "fix_applied", "cause_notes": "Seeded root cause."},
-        "close_choice_element": None,
+        "state_metric_field": "problem_state",
+        "flow": {},
+        "state_extras": {
+            "106": {
+                "fields": {"resolution_code": "fix_applied", "cause_notes": "Seeded root cause."},
+                "choice_element": None,
+                "fallback": None,
+            },
+        },
         "creates": {},
         "summaries": [
             "Recurring VPN disconnects across the Zurich office",
@@ -196,32 +229,79 @@ def choice_from_instance(table, element, fallback):
     return _choice_cache[key]
 
 
-def close_payload(spec):
+def extra_fields(spec, target):
+    """The fields the instance will not let a record enter `target` without."""
+    extra = spec["state_extras"].get(target)
+    if not extra:
+        return {}
+
     return {
         field: (
-            choice_from_instance(spec["table"], spec["close_choice_element"], "Solution provided")
+            choice_from_instance(spec["table"], extra["choice_element"], extra["fallback"])
             if value is None
             else value
         )
-        for field, value in spec["close_fields"].items()
+        for field, value in extra["fields"].items()
     }
 
 
-def seed(spec):
+def next_state(spec, current):
+    candidates = spec["flow"].get(current)
+    if not candidates:
+        return None
+
+    targets, weights = zip(*candidates)
+    return random.choices(targets, weights=weights, k=1)[0]
+
+
+def ensure_state_metric_definition(spec):
+    """A class records state spans only where a Field value duration definition sits on its
+    state field, and definitions never attach to `task` (ADR-123 D9). Stock ships one on
+    incident and one on problem and NONE on change_request, so a fresh PDI silently shows no
+    time in state for changes. Definitions record forward only — creating one here buys
+    history from this moment, not backwards."""
+    table, field = spec["table"], spec["state_metric_field"]
+
+    if query(
+        "metric_definition",
+        f"table={table}^field={field}^type=field_value_duration",
+        "sys_id,name",
+        limit=1,
+    ):
+        print(f"  📏 {table}.{field} already carries a state duration definition")
+        return
+
+    created = create(
+        "metric_definition",
+        {
+            "name": f"{table} State Duration (Lighthouse demo)",
+            "table": table,
+            "field": field,
+            "type": "field_value_duration",
+            "active": "true",
+        },
+    )
+
+    if created:
+        print(f"  📏 created the missing state duration definition on {table}.{field} — it")
+        print("      records forward only, and a record has to move twice before a duration")
+        print("      appears, so expect an empty column for a while")
+    else:
+        print(f"  ⚠️  {table}.{field} has no state duration definition and creating one failed")
+        print("      — time in state stays empty for this kind of work")
+
+
+def top_up(spec):
+    """Bring the open population back to target. Closed records are left alone, so throughput
+    accumulates instead of being reset every night."""
     table = spec["table"]
-    states, labels = spec["states"], spec["labels"]
-    next_state = dict(zip(states, states[1:]))
-    open_states = ",".join(states[:-1])
+    open_states = ",".join(spec["states"][:-1])
 
-    print(f"\n=== {table} ===")
-
-    # --- Step 1: Get Environment State ---
     unfinished = query(
         table, f"correlation_id={MARKER}^stateIN{open_states}", "sys_id,number,state,opened_at"
     )
     print(f"📦 Open seeded {table}: {len(unfinished)}/{spec['target_open']}")
 
-    # --- Step 2: Top Up To Target ---
     created = 0
     for _ in range(spec["target_open"] - len(unfinished)):
         # opened_at is settable on insert, sys_created_on is not — backdating spreads arrivals
@@ -233,7 +313,7 @@ def seed(spec):
             "short_description": f"{random.choice(spec['summaries'])} ({random.randint(100, 999)})",
             "description": "Seeded by ServiceNowSystemUpdater for the Lighthouse demo environment.",
             "correlation_id": MARKER,
-            "state": states[0],
+            "state": spec["states"][0],
             "opened_at": opened_at.strftime("%Y-%m-%d %H:%M:%S"),
         }
         payload.update({field: make() for field, make in spec["creates"].items()})
@@ -245,83 +325,58 @@ def seed(spec):
 
     print(f"📊 Created {created} {table}" if created else "🚦 At capacity — skipping creation")
 
-    # --- Step 3: Daily Transitions (Flow) ---
-    if not spec["walks"]:
-        print(f"⏭️  {table} states are driven by an ITIL state model the Table API cannot move")
-        return None
+
+def walk(spec):
+    """Move a share of the open population one step along the flow."""
+    table, labels = spec["table"], spec["labels"]
+    open_states = ",".join(spec["states"][:-1])
 
     in_flight = query(table, f"correlation_id={MARKER}^stateIN{open_states}", "sys_id,number,state")
     print(f"📋 {len(in_flight)} seeded {table} eligible to transition")
 
     transitioned = 0
-    witness = None
     for item in in_flight:
         if random.random() >= TRANSITION_PROBABILITY:
             continue
 
         current = value_of(item.get("state"))
-        target = next_state.get(current)
+        target = next_state(spec, current)
         if not target:
             continue
 
         payload = {"state": target}
-        if target == spec["closes_at"]:
-            payload.update(close_payload(spec))
+        payload.update(extra_fields(spec, target))
 
         moved, detail = move_state(table, value_of(item.get("sys_id")), payload, target)
         number = value_of(item.get("number"))
         if moved:
             transitioned += 1
             print(f"  ✅ {number} '{labels[current]}' → '{labels[target]}'")
-            if witness is None and target == states[1]:
-                witness = value_of(item.get("sys_id"))
         else:
             print(f"  ❌ {number} '{labels[current]}' → '{labels[target]}' refused: {detail}")
 
     print(f"📊 Transitioned {transitioned} {table}")
-    return witness
 
 
-def report_timestamp_evidence(table, witness):
-    # A record that just left New is the honest test of whether ServiceNow records a
-    # started-time we can trust, or whether the connector has to derive one (SPIKE Q4/Q6).
-    fields = "number,state,opened_at,sys_created_on,work_start,work_end,resolved_at,closed_at,sys_updated_on"
-    observed = query(table, f"sys_id={witness}", fields, limit=1)
-    if observed:
-        row = observed[0]
-        populated = {k: value_of(v) for k, v in row.items() if value_of(v)}
-        empty = sorted(set(fields.split(",")) - set(populated))
-        print(f"\n🔬 After its first transition, {table} {value_of(row.get('number'))}:")
-        for key in sorted(populated):
-            print(f"     set   {key} = {populated[key]}")
-        for key in empty:
-            print(f"     EMPTY {key}")
+def seed(spec):
+    print(f"\n=== {spec['table']} ===")
 
-    metrics = query(
-        "metric_instance",
-        f"id={witness}",
-        "field,value,start,end,duration,calculation_complete",
-        limit=20,
-    )
-    print(f"🔬 metric_instance rows for that record: {len(metrics)}")
-    for metric in metrics:
-        print(
-            f"     {value_of(metric.get('field'))}={value_of(metric.get('value'))} "
-            f"start={value_of(metric.get('start'))} duration={value_of(metric.get('duration'))}"
-        )
+    ensure_state_metric_definition(spec)
+    top_up(spec)
+
+    if not spec["walks"]:
+        print(f"⏭️  {spec['table']} states are driven by an ITIL state model the Table API cannot move")
+        return
+
+    walk(spec)
 
 
 selected = [spec for spec in RECORD_TYPES if args.only in (None, spec["table"])]
 if not selected:
     raise SystemExit(f"--only must name one of: {', '.join(s['table'] for s in RECORD_TYPES)}")
 
-witnesses = {spec["table"]: seed(spec) for spec in selected}
-
-reported = next(((table, w) for table, w in witnesses.items() if w), None)
-if reported:
-    report_timestamp_evidence(*reported)
-else:
-    print("\n🔬 Nothing transitioned out of New this run — no timestamp evidence to report")
+for spec in selected:
+    seed(spec)
 
 # What a task-rooted team filtered to these classes reads, and the labels it has to map.
 # Anything left unmapped is work Lighthouse silently drops (#5611).

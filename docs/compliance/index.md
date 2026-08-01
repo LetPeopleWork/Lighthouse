@@ -30,7 +30,7 @@ Lighthouse is classified as a **standard product with digital elements** under t
 
 - The product does not fall under CRA Annex III (critical products) or Annex IV (highly critical products)
 - Lighthouse is a self-hosted forecasting and flow metrics tool
-- It integrates with external work tracking systems (Jira, Azure DevOps, Linear) but does not provide security-critical infrastructure functions
+- It integrates with external work tracking systems (Jira, Azure DevOps, Linear, ServiceNow) but does not provide security-critical infrastructure functions
 
 ## Document Maintenance
 

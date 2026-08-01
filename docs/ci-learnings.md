@@ -66,6 +66,17 @@ deterministic, low-false-positive line pattern. Format (4 fields, ` ::: ` delimi
 > becomes the default way commands are run, add it to that matcher** — a ledger pattern that never
 > executes is worse than no pattern, because it reads as covered.
 
+> **2026-08-01 — the hook is structurally blind inside a git worktree.** Run 30704138535 shipped a
+> CA1861 whose pattern has been in the list since 2026-07-06 and whose matcher was correct. Cause:
+> `ledger_check.sh` resolves `root="${CLAUDE_PROJECT_DIR:-…}"` and `ledger_check.py:94-95` then runs
+> `git -C <root> diff --cached`. In a worktree under `.claude/worktrees/<name>/`,
+> `CLAUDE_PROJECT_DIR` is the **main checkout**, whose index is empty — so the hook diffs the wrong
+> repository, finds no added lines, and allows every commit. It does not fail; it passes vacuously.
+> **Working in a worktree means the pre-commit ledger hook does not exist.** Run the mandatory
+> `dotnet format analyzers` sweep at the top of this file by hand before pushing from one, and treat
+> a silent hook there as no evidence at all. (The secret scan still runs — it reads the tool command,
+> not the index — so seeing "No secrets detected" is NOT proof the ledger check ran.)
+
 <!-- LEDGER-CHECKS:START -->
 typescript:S7735 ::: ts,tsx ::: (!==|!=)\s*(undefined|null)\s*\? ::: Negated condition in a ternary — flip to `X === undefined ? falsy : truthy` (no `!==`/`!=` in a ternary condition). See the 2026-05-16 S7735 entry.
 dotnet-nunit:NUnit4002 ::: cs ::: Is\.EqualTo\(0\) ::: Use `Is.Zero`, never `Is.EqualTo(0)` (NUnit4002).
@@ -89,7 +100,7 @@ get re-applied.
 **Backend / Sonar (silent in the local `dotnet build` — only the Sonar `new_violations=0` gate fails):**
 - **CA1859** — a NEW non-public method/parameter that only builds or consumes `List<T>` / `.ToList()` must be typed as the CONCRETE `List<T>`/`T[]`, never `IReadOnlyList<T>`, an interface, or an abstract base. Applies to **parameters** as well as return types. (6x recurrence — see 2026-06-09.)
 - **CA1869** — cache `JsonSerializerOptions` in a `static readonly` field; never `new` one per call.
-- **CA1861** — never pass an inline `new[] {...}` to a repeatedly-called method (NUnit assertions); hoist to a `static readonly` field. *Editing* a line that already has one pulls it into new-code — hoist opportunistically. (**8x recurrence.** Greppable — there is even a machine-readable rule for it at the top of this file — and the pre-commit hook has now been observed NOT to block it **twice**. Treat the hook as absent: re-grep `Is\.\w*\(new\[\]` over every backend test file you create or touch, by hand, before committing. On 2026-08-01 that hand-grep was the only thing that caught it.)
+- **CA1861** — never pass an inline `new[] {...}` to a repeatedly-called method (NUnit assertions); hoist to a `static readonly` field. *Editing* a line that already has one pulls it into new-code — hoist opportunistically. (**9x recurrence.** Greppable — there is even a machine-readable rule for it at the top of this file — and the pre-commit hook has now been observed NOT to block it **three times**; the third, 2026-08-01, because the commit was made from a git worktree, where the hook diffs the main checkout's empty index. Treat the hook as absent: re-grep `Is\.\w*\(new\[\]` over every backend test file you create or touch, by hand, before committing.)
 - **S6964** — value-type properties on `[FromBody]` DTOs must be nullable / opt-in, or binding silently defaults them. (3x recurrence.)
 - **S107** — keep ctor/method params <= 7; a new field that pushes a 6-param signature to 7 trips it — group related params into a record/DTO. A `#pragma warning disable S107` only works wrapping the declaration that triggers it.
 - **S2139** — don't log-and-rethrow when a higher layer (or the event dispatcher, which already logs-and-swallows) logs.

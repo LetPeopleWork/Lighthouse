@@ -7,7 +7,7 @@ has_children: true
 
 This section will give you a brief overview over how to set up Lighthouse with connections to your work tracking system, add teams and create portfolios.
 
-Lighthouse currently works with [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [CSV](./worktrackingsystems/csv.html), and [Linear](./worktrackingsystems/linear.html). Check out the dedicated subpages for details on how to configure it Lighthouse for the respective systems.
+Lighthouse currently works with [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [CSV](./worktrackingsystems/csv.html), [Linear](./worktrackingsystems/linear.html), and [ServiceNow](./worktrackingsystems/servicenow.html). Check out the dedicated subpages for details on how to configure it Lighthouse for the respective systems.
 
 For external automation clients and integrations, use the [API Versioning](./api-versioning.html) contract as the source of truth.
 
@@ -42,7 +42,10 @@ flowchart TD
 # Work Tracking System
 The Work Tracking System is the place where your backlog lives. Lighthouse is designed to onboard more systems as needed, join our Slack or reach out via email if you'd like to see a new system supported.
 
-Currently supported are [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [Linear](./worktrackingsystems/linear.html) and [CSV](./worktrackingsystems/csv.html).
+Currently supported are [Jira](./worktrackingsystems/jira.html), [Azure DevOps](./worktrackingsystems/azuredevops.html), [Linear](./worktrackingsystems/linear.html), [ServiceNow](./worktrackingsystems/servicenow.html) and [CSV](./worktrackingsystems/csv.html).
+
+{: .note}
+ServiceNow is supported at **team level only** — portfolios are not available for it. See the [ServiceNow page](./worktrackingsystems/servicenow.html#portfolios) for the reason.
 
 The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
 
