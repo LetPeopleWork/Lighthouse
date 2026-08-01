@@ -19,6 +19,9 @@ const twins = {
 
 const WORKED_EXAMPLE = "active=true^priority=1";
 
+const HELP_TEXT =
+	"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query";
+
 describe("the ServiceNow query guidance says the same thing on both stacks", () => {
 	it.each(Object.entries(twins))(
 		"%s shows the same worked example",
@@ -27,16 +30,13 @@ describe("the ServiceNow query guidance says the same thing on both stacks", () 
 		},
 	);
 
-	// The example alone is not the guidance: the help text is what names the two silent failures and
-	// the path ServiceNow itself offers. A stack that carries one and not the other renders half a
-	// sentence.
+	// The example alone is not the guidance: the help text is the path ServiceNow itself offers. A
+	// stack that carries one and not the other renders half a sentence, so this pins the whole
+	// sentence rather than a token out of it.
 	it.each(Object.entries(twins))(
-		"%s carries the help text beside it",
+		"%s carries the same help text beside it",
 		(_stack, path) => {
-			const source = readFileSync(path, "utf8");
-
-			expect(source.toLowerCase()).toContain("whole table");
-			expect(source).toContain("Copy query");
+			expect(readFileSync(path, "utf8")).toContain(HELP_TEXT);
 		},
 	);
 });

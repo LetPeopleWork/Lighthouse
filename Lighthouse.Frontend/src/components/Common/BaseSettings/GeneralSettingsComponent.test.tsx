@@ -1000,15 +1000,15 @@ describe("GeneralSettingsComponent", () => {
 		});
 	});
 
-	// Story #5610 slice 01, AC-A1 / AC-A2 / AC-A5. The guidance rides on the schema, so one shared
-	// field renders it for whichever connector has something to say and nothing changes for the ones
-	// that do not. Both surfaces the coach can reach — team settings and the create-team wizard —
-	// render through this component.
+	// Story #5610 slice 01, AC-A1 / AC-A2. The guidance rides on the schema, so one shared field
+	// renders it for whichever connector has something to say and nothing changes for the ones that
+	// do not. This covers the EDIT surface only — the create wizard renders its own field and is
+	// covered in CreateTeamWizard.test.tsx (AC-A5, dogfood 2026-08-01).
 	describe("telling a flow coach what the query field wants", () => {
 		const WORKED_EXAMPLE = "active=true^priority=1";
 
 		const GUIDANCE =
-			"A ServiceNow encoded query. In ServiceNow, filter a list, right-click the breadcrumb and choose Copy query. A field name ServiceNow does not know is dropped and the query widens to the whole table; a wrong value on a real field matches nothing.";
+			"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query";
 
 		const serviceNowSystem: IWorkTrackingSystemConnection = {
 			id: 5,

@@ -67,7 +67,7 @@ const teamSchemas: Record<WorkTrackingSystemType, IDataRetrievalSchema> = {
 		// display label selects nothing (#5610).
 		placeholder: "active=true^priority=1",
 		helpText:
-			"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query. Both ways this goes wrong are silent: a field name your instance does not know is dropped and the query then matches the whole table, which Lighthouse will not save; a value it does not know matches nothing, so the team looks empty.",
+			"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query",
 	},
 };
 

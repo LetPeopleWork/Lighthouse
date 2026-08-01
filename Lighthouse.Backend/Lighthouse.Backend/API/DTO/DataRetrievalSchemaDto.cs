@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.API.DTO
                     // Non-reference fields only: a reference field stores a sys_id, so matching it
                     // against a display label selects nothing (#5610).
                     Placeholder = "active=true^priority=1",
-                    HelpText = "To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query. Both ways this goes wrong are silent: a field name your instance does not know is dropped and the query then matches the whole table, which Lighthouse will not save; a value it does not know matches nothing, so the team looks empty.",
+                    HelpText = "To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query",
                 },
                 _ => new DataRetrievalSchemaDto
                 {

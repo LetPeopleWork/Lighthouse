@@ -124,26 +124,16 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(schema.Placeholder, Is.EqualTo(WorkedExample));
         }
 
-        // AC-A4. The two ways a ServiceNow query fails without saying so, measured in the epic SPIKE
-        // (Q3) and hit again in the slice-04 dogfood: a field name the instance does not know is
-        // dropped and the query widens to the whole table, and a bad value on a real field matches
-        // nothing. This is the last surface before either one costs a user their afternoon, so the
-        // help has to name both — and say where ServiceNow will hand them a correct query.
+        // One instruction, not a catalogue of failure modes (AC-A4 withdrawn 2026-08-01). ServiceNow
+        // itself hands out a correct encoded query from a filter breadcrumb; naming that path is the
+        // whole point of the guidance. Pinned against the literal — the frontend twin has to say this
+        // byte for byte.
         [Test]
-        public void AServiceNowTeamsQueryField_NamesBothWaysAQueryFailsQuietlyAndWhereToGetAGoodOne()
+        public void AServiceNowTeamsQueryField_PointsAtWhereServiceNowWillHandYouAGoodQuery()
         {
             var help = DataRetrievalSchemaDto.ForTeam(WorkTrackingSystems.ServiceNow).HelpText;
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(help, Is.Not.Null.And.Not.Empty);
-                Assert.That(help, Does.Contain("whole table").IgnoreCase,
-                    "An unknown field name is dropped and the query widens to everything — the refusal ValidateTeamSettings then raises.");
-                Assert.That(help, Does.Contain("nothing").IgnoreCase,
-                    "A bad value on a real field matches nothing at all, which reads as an empty team rather than a typo.");
-                Assert.That(help, Does.Contain("Copy query"),
-                    "ServiceNow itself hands out a correct encoded query from a filter breadcrumb. Naming that path is the whole point of the guidance.");
-            }
+            Assert.That(help, Is.EqualTo("To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query"));
         }
 
         // AC-A2. The guidance is carried by the schema, so a connector that has nothing to explain

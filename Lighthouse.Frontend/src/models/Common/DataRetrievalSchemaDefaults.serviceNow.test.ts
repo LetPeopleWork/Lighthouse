@@ -55,7 +55,7 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 		});
 	});
 
-	// Story #5610 slice 01, AC-A1 / AC-A3 / AC-A4. The first real user of the connector stopped at
+	// Story #5610 slice 01, AC-A1 / AC-A3. The first real user of the connector stopped at
 	// an empty four-line box with nothing in the product saying what an encoded query is. The
 	// guidance is carried by the schema so one shared field renders it for every connector.
 	describe("when a flow coach is staring at the blank query field", () => {
@@ -65,16 +65,12 @@ describe("What Lighthouse asks a ServiceNow shop for", () => {
 			expect(schema.placeholder).toBe(WORKED_EXAMPLE);
 		});
 
-		// An unknown field name is dropped and the query widens to the whole table; a bad value on a
-		// real field matches nothing. Both were measured, and this is the last surface before either
-		// one costs someone their afternoon.
-		it("names both ways a query fails quietly, and where ServiceNow will hand you a good one", () => {
-			const help = getDefaultTeamSchema(aServiceNowConnection()).helpText;
-
-			expect(help).toBeTruthy();
-			expect(help?.toLowerCase()).toContain("whole table");
-			expect(help?.toLowerCase()).toContain("nothing");
-			expect(help).toContain("Copy query");
+		// One instruction, not a catalogue of failure modes (AC-A4 withdrawn 2026-08-01). Pinned
+		// against the literal: the backend twin has to say this byte for byte.
+		it("points at where ServiceNow itself will hand you a good query", () => {
+			expect(getDefaultTeamSchema(aServiceNowConnection()).helpText).toBe(
+				"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query",
+			);
 		});
 	});
 

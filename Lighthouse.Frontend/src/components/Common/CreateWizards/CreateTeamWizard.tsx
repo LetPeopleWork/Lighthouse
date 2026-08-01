@@ -70,6 +70,8 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 			onSetActiveStep={wizard.setActiveStep}
 			selectedConnectionId={wizard.selectedConnection?.id ?? null}
 			dataRetrievalLabel={wizard.getDataRetrievalLabel()}
+			dataRetrievalPlaceholder={wizard.schema?.placeholder ?? undefined}
+			dataRetrievalHelpText={wizard.schema?.helpText ?? undefined}
 			onDataRetrievalChange={wizard.setDataRetrievalValue}
 			showWorkItemTypes={wizard.schema?.isWorkItemTypesRequired !== false}
 			onAddWorkItemType={(t) =>

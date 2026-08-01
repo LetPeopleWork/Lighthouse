@@ -705,6 +705,65 @@ describe("CreateTeamWizard", () => {
 		});
 	});
 
+	// Story #5610 slice 01, AC-A5. The coach meets the blank query field while CREATING a team, not
+	// while editing one — and this wizard renders its own field rather than GeneralSettingsComponent,
+	// so guidance that only reaches the settings screen never reaches them (dogfood, 2026-08-01).
+	describe("telling a flow coach what the query field wants", () => {
+		const WORKED_EXAMPLE = "active=true^priority=1";
+
+		const GUIDANCE =
+			"To get an encoded query, filter a list in ServiceNow, right-click the filter breadcrumb, and choose Copy query";
+
+		const serviceNowConnection: IWorkTrackingSystemConnection = {
+			id: 4,
+			name: "My ServiceNow Connection",
+			workTrackingSystem: "ServiceNow",
+			options: [],
+			availableAuthenticationMethods: [],
+			authenticationMethodKey: "servicenow.basic",
+			workTrackingSystemGetDataRetrievalDisplayName: () => "ServiceNow Query",
+			additionalFieldDefinitions: [],
+			writeBackMappingDefinitions: [],
+		};
+
+		const goToConfigureOn = async (
+			connection: IWorkTrackingSystemConnection,
+		) => {
+			const user = userEvent.setup();
+			mockGetWizardsForSystem.mockReturnValue([]);
+			renderWizard({ connections: [connection] });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: connection.name }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: connection.name }));
+			await waitFor(() => {
+				expect(screen.getByText("StatesListComponent")).toBeInTheDocument();
+			});
+		};
+
+		it("shows a worked example in the empty field and the guidance beneath it", async () => {
+			await goToConfigureOn(serviceNowConnection);
+
+			expect(
+				screen.getByLabelText("ServiceNow Query (Encoded Query)"),
+			).toHaveAttribute("placeholder", WORKED_EXAMPLE);
+			expect(screen.getByText(GUIDANCE)).toBeInTheDocument();
+		});
+
+		// AC-A2. The guidance rides on the schema, so a connector with nothing to explain gets no
+		// placeholder and no empty helper row.
+		it("leaves a connector with nothing to explain exactly as it was", async () => {
+			await goToConfigureOn(mockConnections[1]);
+
+			expect(screen.getByLabelText("JQL Query")).not.toHaveAttribute(
+				"placeholder",
+			);
+			expect(screen.queryByText(/Copy query/)).not.toBeInTheDocument();
+		});
+	});
+
 	describe("Cancel", () => {
 		it("calls onCancel when Cancel button is clicked", async () => {
 			const onCancel = vi.fn();

@@ -41,6 +41,8 @@ export interface CreateWizardShellProps {
 	// configure step
 	showDataRetrievalField: boolean;
 	dataRetrievalLabel: string;
+	dataRetrievalPlaceholder?: string;
+	dataRetrievalHelpText?: string;
 	dataRetrievalValue: string;
 	onDataRetrievalChange: (v: string) => void;
 	showWorkItemTypes: boolean;
@@ -91,6 +93,8 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 	selectedConnectionId,
 	showDataRetrievalField,
 	dataRetrievalLabel,
+	dataRetrievalPlaceholder,
+	dataRetrievalHelpText,
 	dataRetrievalValue,
 	onDataRetrievalChange,
 	showWorkItemTypes,
@@ -206,6 +210,8 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 						{showDataRetrievalField && (
 							<TextField
 								label={dataRetrievalLabel}
+								placeholder={dataRetrievalPlaceholder}
+								helperText={dataRetrievalHelpText}
 								multiline
 								rows={4}
 								fullWidth
