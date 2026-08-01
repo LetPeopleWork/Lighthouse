@@ -395,3 +395,88 @@ Slices 01 and 02 **merge** — the map serves both directions, so there is no se
 
 Effort: ≤1 day, and smaller than either original slice — one new pure class, three ~2-line call sites,
 and their tests. Learning hypothesis unchanged from slice 01's brief.
+
+---
+---
+
+# Wave: DISTILL (2026-08-01)
+
+**Vehicle: NUnit, not Gherkin.** The repo has no `.feature` file for any backend behaviour — the three
+that exist are Playwright/Helm. Backend acceptance tests are NUnit classes named
+`*AcceptanceTest`/`*Test` with prose comments carrying the AC reference. Project convention wins over
+the skill's pytest-bdd examples.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+**Passed — 0 unresolved contradictions.** DESIGN overturns DISCUSS D4/D5/D6/D8a, but they are recorded
+in the "Changed assumptions" table with the maintainer's decision, so they are resolved, not
+contradictory. Scenarios are written against the DESIGN vocabulary.
+
+**One upstream conflict found, and it is with a *shipped* story, not with this feature's own waves.**
+#5611 recorded typing the label as the canonical user error and shipped a refusal for it —
+`ServiceNowRecordClassTest.cs` says so verbatim: *"What a flow coach typing the label 'Change Request'
+instead of the system name reaches"* and *"the flow coach reads 'Change Request' on their own screen
+and has to type change_request"*. ADR-128 inverts that intent. The **test still passes** — it uses
+`not_a_real_class`, which passes through the map unchanged and reaches the same refusal — so nothing
+breaks, but ADR-124 rung 1's rationale is now half-obsolete and the comment is stale. A note is added
+in place rather than deleting the history.
+
+## Wave: DISTILL / [REF] Test placement
+
+| File | Change | Why here |
+|---|---|---|
+| `…/ServiceNow/ServiceNowClassLabels.cs` | **NEW scaffold** | Production. Both methods throw with `__SCAFFOLD__` in the message. |
+| `…Tests/…/ServiceNow/ServiceNowClassLabelsTest.cs` | **NEW** | Layer 1 (pure). The one place the map can be enumerated cheaply. |
+| `…Tests/…/ServiceNow/ServiceNowRecordClassTest.cs` | **EXTEND** | Layer 3 (real adapter, stubbed transport). Its private helpers (`AnInstanceHolding`, `CreateSubject`, `ATeamWorkingOn`, `QueriesAskedOf`) are exactly what these scenarios need; a new file would duplicate them. Its stated subject — *"which kinds of work reach a team, and what the team is told"* — is this story. |
+
+**Naming**: the class is `ServiceNowClassLabels`, not `ServiceNowRecordClasses`, because the latter sits
+one letter from the existing `ServiceNowRecordClassTest` and would read as its subject.
+
+**No collision with `main`**: neither file is among main's five dirty ServiceNow test files.
+
+## Wave: DISTILL / [REF] Scenarios
+
+| Scenario | AC | Status |
+|---|---|---|
+| `ServiceNowClassLabelsTest` — 23 cases: both directions per known class, round-trip, case-insensitivity, passthrough, misspelling, empty | AC-D2, ADR-128 | **RED** |
+| `ATeamThatNamesItsWorkTheWayServiceNowDoes_ReadsTheSameWorkAsOneNamingTheRecordClass` | AC-B1 | **RED** |
+| `WorkItemsOfAKnownKindOfWork_ReportTheKindTheCoachNamedRatherThanTheColumnValue` | AC-D3 | **RED** |
+| `ATeamNamingItsWorkByLabel_EndsUpWithConfigAndWorkItemsSpeakingTheSameVocabulary` | **AC-D1** | **RED** |
+| `ATeamNamingItsWorkByRecordClass_…` (same method, other case) | AC-D1 | **green — regression guard** |
+| `ATeamNamingItsWorkByLabel_StillLooksForStateHistoryOnTheRecordClasses` | AC-D5 | **RED** |
+| `ATeamNamingAKindOfWorkItCannotSee_IsRefusedInTheWordsTheCoachTyped` | AC-D4 | **RED** |
+| `ATeamNamingAKindOfWorkLighthouseDoesNotKnow_AsksForItAndReportsItUnchanged` | AC-D2 | **green — regression guard** |
+
+## Wave: DISTILL / [REF] Fail-for-the-right-reason gate
+
+**PASSED.** Build 0 errors; no BROKEN. Full classification in `distill/red-classification.md`.
+
+Two findings the gate produced, both worth more than the tests:
+
+1. **AC-D1's test was authored vacuous.** As a single `[Test]` it exercised only the class-name
+   configuration, which holds trivially today — green, and blind to the whole feature. Split into two
+   cases so the label half is genuinely RED.
+2. **The deep-link ATs are deliberately NOT authored here.** `MapRecord(record, owner, table)` has no
+   instance URL and DD-5 needs one; a test against the new signature does not compile, which makes the
+   *entire* test project BROKEN rather than making one test RED. They land in DELIVER's RED phase with
+   the signature change. Deviation from ADR-025 recorded, not skipped.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+One driven adapter: the ServiceNow Table API. Covered at layer 3 by the stubbed-transport instance in
+`ServiceNowRecordClassTest`, which routes by table and honours the class filter — a connector that
+emits no filter gets everything back rather than a passing test. Real-I/O coverage over loopback
+already exists in `ServiceNowTeamSyncAcceptanceTest` and needs no new scenario: this story changes the
+*vocabulary* of a query, not the transport. The live proof is the dogfood, which is where OC-2 is
+settled anyway.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+1. `ServiceNowClassLabels` scaffold replaced with the real map — this greens 23 of the 29 RED cases on
+   its own.
+2. `ServiceNowReadScope.For` mapping + typed-form retention (DD-3, DD-8).
+3. `ServiceNowWorkItemMapper.KindOfWork` mapping (DD-2).
+4. Save-path normalisation (DD-4).
+5. `ServiceNowTeamQueryVerdict` messages naming the typed form (DD-8).
+6. **In DELIVER's RED phase**: the deep-link ATs plus `MapRecord`'s signature change (DD-5).
+7. Zero `__SCAFFOLD__` markers left under `Lighthouse.Backend/`.
