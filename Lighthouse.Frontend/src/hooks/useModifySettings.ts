@@ -98,6 +98,18 @@ function updateListField<T extends ModifySettingsBase>(
 	}
 }
 
+// Bug #5628: the only three inputs connector validation actually reads.
+function connectorFingerprint(payload: ModifySettingsBase): string {
+	return JSON.stringify({
+		workTrackingSystemConnectionId: payload.workTrackingSystemConnectionId,
+		dataRetrievalValue: payload.dataRetrievalValue,
+		workItemTypes: payload.workItemTypes,
+	});
+}
+
+const POST_SAVE_VALIDATION_FAILED =
+	"Your settings were saved, but they did not validate against the work tracking system. Lighthouse may not find any work items with this configuration.";
+
 export function useModifySettings<TSettings extends ModifySettingsBase>({
 	getWorkTrackingSystems,
 	getSettings,
@@ -119,6 +131,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const hasConflictRef = useRef(false);
 	const isSavingRef = useRef(false);
 	const pendingPayloadRef = useRef<TSettings | null>(null);
+	const lastValidatedFingerprintRef = useRef<string | null>(null);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -135,12 +148,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const additionalFetchRef = useRef(additionalFetch);
 	const initialFetchRef = useRef(initialFetch);
 	const saveSettingsRef = useRef(saveSettings);
+	const validateSettingsRef = useRef(validateSettings);
 	const tokenRef = useRef<string | undefined>(undefined);
 	getSettingsRef.current = getSettings;
 	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
 	additionalFetchRef.current = additionalFetch;
 	initialFetchRef.current = initialFetch;
 	saveSettingsRef.current = saveSettings;
+	validateSettingsRef.current = validateSettings;
 	tokenRef.current = settings?.concurrencyToken;
 
 	const formInvalidReasons = settings
@@ -155,6 +170,40 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const selectedConnectionId = selectedWorkTrackingSystem?.id ?? 0;
 
 	const dispatchSaveRef = useRef<(payload: TSettings) => void>(() => {});
+
+	// Bug #5628: auto-save never blocks the write, so validation reports on what was persisted.
+	const maybeValidateAfterSave = useCallback(
+		(payload: TSettings, isLatest: () => boolean) => {
+			if (modifyDefaultSettings || !isLatest()) return;
+			// A queued payload means a newer save is coming — validate that one instead.
+			if (pendingPayloadRef.current) return;
+
+			const fingerprint = connectorFingerprint(payload);
+			if (fingerprint === lastValidatedFingerprintRef.current) return;
+			lastValidatedFingerprintRef.current = fingerprint;
+
+			validateSettingsRef
+				.current(payload)
+				.then(
+					(isValid) => {
+						if (!isLatest()) return;
+						setValidationError(isValid ? null : POST_SAVE_VALIDATION_FAILED);
+						setValidationTechnicalDetails(null);
+					},
+					(error: unknown) => {
+						if (!(error instanceof ApiError)) {
+							console.error("Error validating settings after save", error);
+							return;
+						}
+						if (!isLatest()) return;
+						setValidationError(error.message);
+						setValidationTechnicalDetails(error.technicalDetails ?? null);
+					},
+				)
+				.catch(() => undefined);
+		},
+		[modifyDefaultSettings],
+	);
 
 	const dispatchSave = useCallback(
 		(payload: TSettings) => {
@@ -199,6 +248,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 								if (isLatest()) setRefreshFailed(true);
 							});
 						}
+						maybeValidateAfterSave(payload, isLatest);
 						flushPending();
 					},
 					(error: unknown) => {
@@ -214,7 +264,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				)
 				.catch(() => undefined);
 		},
-		[autoRefreshOnSave],
+		[autoRefreshOnSave, maybeValidateAfterSave],
 	);
 
 	dispatchSaveRef.current = dispatchSave;
