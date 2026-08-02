@@ -331,6 +331,17 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		expect(getCountSeries()).toBeDefined();
 	});
 
+	it("declares no items scale when there is nothing to size against it", () => {
+		// DISTILL's resolved open question from slice 01: an axis with no series is a rendering risk for
+		// no gain, and a history recorded entirely before slice 02 has no bars at all.
+		render(<DeliveryEpicSizeChart history={getMockHistory([7])} />);
+
+		expect(
+			getLatestChartProps()?.yAxis?.some((axis) => axis.id === ITEMS_AXIS_ID),
+		).toBe(false);
+		expect(screen.queryByTestId(`mock-y-axis-${ITEMS_AXIS_ID}`)).toBeNull();
+	});
+
 	it("keeps an epic that left the delivery on the days it was there (AC-2.6)", () => {
 		// D7: the segments stop, they do not disappear retroactively — that is how a scope cut stays
 		// visible. The epic keeps its series, so it keeps its legend entry.
@@ -461,14 +472,25 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		expect(fillOf("EPIC-A", 0)).toMatch(/^url\(#/);
 	});
 
-	it("leaves a broken-down epic solid (AC-3.2)", () => {
+	it("leaves a broken-down epic solid, in its own colour (AC-3.2)", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[flaggedEpic("EPIC-A", 8, false)]])}
 			/>,
 		);
 
-		expect(fillOf("EPIC-A", 0)).not.toMatch(/^url\(#/);
+		// Asserting the colour, not merely "not a pattern": a renderer that dropped the fill entirely
+		// would satisfy the weaker check while drawing an invisible bar.
+		const slot = getBarSlot();
+		const { container } = render(
+			<svg aria-hidden="true">
+				{slot?.({ seriesId: "EPIC-A", dataIndex: 0, color: "#123456" })}
+			</svg>,
+		);
+
+		expect(container.querySelector("rect, path")?.getAttribute("fill")).toBe(
+			"#123456",
+		);
 	});
 
 	it("treats an epic with no flag as broken down, never as a guess (AC-3.5)", () => {

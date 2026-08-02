@@ -1051,3 +1051,57 @@ chase it.
 | **No `<ChartsLegend />` in this slice** | The roadmap called for one. Benjamin's slice-01 review found the Metrics cards already run tall because the fever chart's legend wraps to eight lines, and asked for legends collapsed by default across the tab. Shipping an expanded per-epic legend here would ship exactly that complaint. Segments stay identifiable via the tooltip and each series' `label`; AC-2.6's legend half moves to slice 04 with the collapse work. |
 | Stack order pinned by sorted `referenceId` | DESIGN OQ-4. Membership changes daily; without it the same epic lands in a different band on consecutive days and the chart reads as noise. `localeCompare` matches `getColorMapForKeys`'s own ordering so stack position and colour index agree. |
 | The `items` axis is declared only when a bar series exists | Same reasoning as slice 01's resolved OQ-1 — an axis with no series is a rendering risk for no gain, and a history recorded entirely before this slice has no bars. |
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary (slice 03)
+
+An epic whose size is the portfolio default now renders **hatched**, so the day it stopped being a guess
+is locatable without hovering. One production file; the flag was already recorded and parsed by slice 02,
+and the demo seed already flips Heat Shield Testing on day 9.
+
+**Commits**: `44a1b7c4c` (the hatch) · `9e4301fd4` (test-seam fix + ADR-119 revision).
+
+| Gate | Outcome |
+|---|---|
+| Scenarios | 27 of 27 in the file; full suite 3894 passed, 0 skipped |
+| `pnpm build` | exit 0, read bare |
+| Mutation | **83.33%** (90/108) — `mutation/results-slice-03.md` |
+| Dogfood visual check | **NOT DONE** — owed on the demo instance, both themes |
+
+---
+
+## Wave: DELIVER / [REF] ADR-119 Revised, and a Test That Pointed at the Wrong Seam
+
+**ADR-119's series split is withdrawn** (decided with Benjamin, 2026-08-02; the ADR carries a dated
+Revision section). One bar series per epic; the `slots.bar` renderer keys on `seriesId` **and**
+`dataIndex`. This is the option the ADR's own *Alternatives considered* had rejected — reopened not on
+argument but on evidence from shipping slices 01-02: the null-twin tooltip problem the ADR listed as a
+consequence turned up for real in slice 02 review, and under the split it would have been the steady
+state rather than an edge case; the split also rewrote slice 02's green series assertions and doubled
+what slice 04's legend filter must de-duplicate.
+
+**The crafter then found a defect in the acceptance test itself.** DISTILL asserted `slots.bar` on
+`ChartsContainer` — but the container's `slots` is typed material-only and MUI ignores a `bar` key there;
+it is `BarPlot` that routes slots down to `BarElement`. The test pinned a prop with **no runtime effect**
+and would have passed against a chart that never wired the renderer at all. The first fix carried the
+slot on both the container (behind a cast, purely to satisfy the assertion) and `BarPlot` (where it
+works). That cast is now gone and the scenarios read the slot off `BarPlot`. A test that forces
+production to carry a decoration is the test's bug, not the code's.
+
+---
+
+## Wave: DELIVER / [REF] Slice 03 Mutation Findings
+
+79.63% first pass, under the floor — and the six mutants that closed the gap were both real, not
+cosmetic padding to reach a number:
+
+- **The items axis was never asserted absent.** `hasSizes` could be forced true and the axis guard
+  inverted without a scenario noticing (5 mutants) — even though "declare it only when a bar series
+  exists" is DISTILL's own resolved open question from slice 01.
+- **"Solid" was only asserted as "not hatched."** Dropping the fill attribute entirely satisfied
+  `not.toMatch(/^url\(#/)` while drawing an invisible bar. The scenario now asserts the fill *equals* the
+  segment's colour.
+
+83.33% after. The 16 survivors are `sx`/geometry literals, two internal identifier strings, and two
+genuinely equivalent guards — enumerated in the results file.
