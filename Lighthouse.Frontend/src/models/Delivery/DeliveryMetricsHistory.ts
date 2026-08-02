@@ -7,7 +7,11 @@ export interface FeatureMetric {
 	referenceId: string;
 	name: string;
 	completion: number;
-	likelihood: number;
+	// null when no contributing team has throughput to forecast from (ADR-120).
+	likelihood: number | null;
+	// Optional: snapshots recorded before Epic #5585 slice 02 carry neither (D5, no backfill).
+	totalItems: number | null;
+	isUsingDefaultSize: boolean | null;
 }
 
 export interface DeliveryMetricsHistoryPoint {
@@ -50,6 +54,16 @@ function asNullableNumber(value: unknown, context: string): number | null {
 		return null;
 	}
 	return asNumber(value, context);
+}
+
+function asNullableBoolean(value: unknown, context: string): boolean | null {
+	if (value === null || value === undefined) {
+		return null;
+	}
+	if (typeof value !== "boolean") {
+		throw new BoundaryError(`Expected a boolean for ${context}`);
+	}
+	return value;
 }
 
 function asString(value: unknown, context: string): string {
@@ -106,7 +120,18 @@ function parseFeatureBreakdown(value: unknown): FeatureMetric[] {
 			referenceId: asString(metric.referenceId, "featureBreakdown.referenceId"),
 			name: asString(metric.name, "featureBreakdown.name"),
 			completion: asNumber(metric.completion, "featureBreakdown.completion"),
-			likelihood: asNumber(metric.likelihood, "featureBreakdown.likelihood"),
+			likelihood: asNullableNumber(
+				metric.likelihood,
+				"featureBreakdown.likelihood",
+			),
+			totalItems: asNullableNumber(
+				metric.totalItems,
+				"featureBreakdown.totalItems",
+			),
+			isUsingDefaultSize: asNullableBoolean(
+				metric.isUsingDefaultSize,
+				"featureBreakdown.isUsingDefaultSize",
+			),
 		};
 	});
 }

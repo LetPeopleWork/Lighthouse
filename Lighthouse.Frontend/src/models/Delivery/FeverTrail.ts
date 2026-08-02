@@ -1,4 +1,7 @@
-import type { DeliveryMetricsHistory } from "./DeliveryMetricsHistory";
+import type {
+	DeliveryMetricsHistory,
+	FeatureMetric,
+} from "./DeliveryMetricsHistory";
 
 export type FeverZone = "green" | "amber" | "red";
 
@@ -33,11 +36,18 @@ const greenAmberBoundary = (completion: number): number =>
 const amberRedBoundary = (completion: number): number =>
 	AMBER_RED_INTERCEPT + BAND_SLOPE * completion;
 
+type ForecastableMetric = FeatureMetric & { likelihood: number };
+
+const isForecastable = (metric: FeatureMetric): metric is ForecastableMetric =>
+	metric.likelihood !== null;
+
 export function deriveFeatureFeverChart(
 	history: DeliveryMetricsHistory,
 ): FeatureFeverChart {
 	const dated = history.points.flatMap((point) =>
-		point.featureBreakdown.map((metric) => ({ metric, date: point.date })),
+		point.featureBreakdown
+			.filter(isForecastable)
+			.map((metric) => ({ metric, date: point.date })),
 	);
 	const referenceIds = [
 		...new Set(dated.map((entry) => entry.metric.referenceId)),

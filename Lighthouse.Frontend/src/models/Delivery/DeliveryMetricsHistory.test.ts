@@ -251,3 +251,56 @@ describe("parseDeliveryMetricsHistory", () => {
 		);
 	});
 });
+
+// Epic #5585 slice 02 (US-02, AC-2.4). The breakdown payload gains two optional fields. Every
+// snapshot recorded before this slice keeps the original four, and must keep parsing — there is no
+// backfill (D5), so both shapes arrive on the same wire for as long as the old days are retained.
+describe("parseDeliveryMetricsHistory feature breakdown", () => {
+	const legacyEntry = {
+		referenceId: "EPIC-1",
+		name: "Checkout",
+		completion: 40,
+		likelihood: 80,
+	};
+
+	const breakdownOf = (...entries: Record<string, unknown>[]) =>
+		parseDeliveryMetricsHistory(
+			responseWithPoint({ featureBreakdown: entries }),
+		).points[0].featureBreakdown;
+
+	it("reads the size and estimate flag an epic was recorded with", () => {
+		const [entry] = breakdownOf({
+			...legacyEntry,
+			totalItems: 8,
+			isUsingDefaultSize: true,
+		});
+
+		expect(entry.totalItems).toBe(8);
+		expect(entry.isUsingDefaultSize).toBe(true);
+	});
+
+	it("still reads an epic recorded before sizes were ever written", () => {
+		const [entry] = breakdownOf(legacyEntry);
+
+		expect(entry.referenceId).toBe("EPIC-1");
+		expect(entry.totalItems).toBeNull();
+		expect(entry.isUsingDefaultSize).toBeNull();
+	});
+
+	it("still reads an epic that could not be forecast", () => {
+		// ADR-120 / DDD-6, the frontend half: the backend records a null likelihood for a feature whose
+		// contributing team has no throughput (ADR-112), and asNumber throws BoundaryError on it —
+		// which takes down the whole tab, not just that epic.
+		const [entry] = breakdownOf({ ...legacyEntry, likelihood: null });
+
+		expect(entry.likelihood).toBeNull();
+	});
+
+	it("treats a missing estimate flag as unknown rather than as a guess", () => {
+		// AC-3.5: absence must never be read as true, or every pre-slice epic renders hatched once
+		// slice 03 lands.
+		const [entry] = breakdownOf({ ...legacyEntry, totalItems: 8 });
+
+		expect(entry.isUsingDefaultSize).toBeNull();
+	});
+});
