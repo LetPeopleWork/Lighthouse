@@ -1,6 +1,8 @@
 # ADR-119: An estimated epic size is hatched via a `slots.bar` renderer over a per-epic actual/estimated series split
 
-- **Status**: Accepted (2026-07-31, DESIGN wave for ADO #5585 / Story #5616). Interaction mode = **propose**.
+- **Status**: Accepted (2026-07-31), **revised 2026-08-02** — the series split is withdrawn, the bar slot
+  stands. See *Revision* at the end. The filename keeps its original slug so existing links resolve.
+- **Interaction mode**: propose (DESIGN wave for ADO #5585 / Story #5616)
 - **Date**: 2026-07-31
 - **Feature**: `epic-size-and-count-over-time` (Epic 5585, slice 03)
 
@@ -18,9 +20,9 @@ The obvious move was to copy that for bars.
 
 ## Decision
 
-**Two parts.**
+**Two parts.** Part 1 was withdrawn on 2026-08-02 — see *Revision*. Part 2 shipped as written.
 
-1. **Series split.** Each epic contributes **two** bar series to the same stack, same colour:
+1. ~~**Series split.**~~ **(WITHDRAWN)** Each epic contributes **two** bar series to the same stack, same colour:
    `size::{referenceId}::actual` and `size::{referenceId}::estimated`. On any given day exactly one of
    the pair carries that epic's `totalItems` and the other is `null`, chosen by the day's
    `isUsingDefaultSize` flag. A `null`/absent flag routes to the **actual** series — absence is never
@@ -65,3 +67,49 @@ the hatch reads badly against the palette in practice.
 - Tooltips must not show the `null` twin for a day. MUI-X's null handling is assumed to skip it; DISTILL
   asserts it rather than trusting it.
 - Hatch state is assertable in tests by series id — no pixel snapshots (DISCUSS AC-3.2).
+
+---
+
+## Revision (2026-08-02, during DELIVER of slice 02)
+
+**The series split (Decision part 1) is withdrawn. One bar series per epic, keyed on `referenceId`.**
+The `slots.bar` renderer (part 2), the `useId()`-scoped `<pattern>`, and the AC-3.5 rule that an absent
+flag means *actual* are all unchanged.
+
+The renderer now reads **`ownerState.dataIndex` as well as `ownerState.seriesId`**, looking the day's
+flag up in a per-epic-per-day map the component already builds:
+
+```ts
+slots.bar = ({ seriesId, dataIndex, color }) =>
+  estimatedByEpicDay[seriesId]?.[dataIndex]
+    ? <rect fill={`url(#hatch-${patternId})`} />
+    : <rect fill={color} />
+```
+
+This is precisely the option the *Alternatives considered* section rejected. It is reopened because
+shipping slices 01 and 02 produced evidence the DESIGN wave did not have:
+
+1. **The null-twin tooltip problem stopped being hypothetical.** This ADR listed it as a consequence to
+   "assert rather than trust". Slice 02 hit the same class of bug without any split at all — every epic
+   drew a blank tooltip row on days before it joined the delivery, which Benjamin caught on review. The
+   fix was a `valueFormatter` returning `null` (MUI's `ChartsAxisTooltipContent` drops such a row). Under
+   the split, **every** epic would carry a permanently-null twin on **every** day, making that the
+   steady state rather than an edge case.
+2. **Slice 02 shipped `series.id === referenceId`** with green acceptance tests asserting it
+   (`barSeries().map(e => e.id)` ordering, `valuesFor(referenceId)`). The split renames every series and
+   rewrites working assertions for no user-visible gain.
+3. **Slice 04's legend filter reasons over series.** 2n series doubles what it must de-duplicate — and
+   the "leave the `::estimated` twin unlabelled" trick this ADR proposed is itself an open question it
+   raised against itself.
+4. **The original objection weakened.** "The renderer closes over the day array and becomes a function of
+   chart state" — the component already builds that map to produce the dataset, and the renderer stays a
+   pure function of `(seriesId, dataIndex)` given it. DISTILL's scenarios call the slot directly with a
+   synthetic `ownerState`, so it is no harder to test than the `seriesId`-only form.
+
+**What this costs**: the renderer needs a second lookup key, and it is no longer decidable from
+`seriesId` alone. Accepted as the smaller price.
+
+**Unchanged consequences**: stacking still needs an explicit `stack` id and explicit per-series `color`;
+hatch state is still assertable without pixel snapshots. **Withdrawn consequences**: the legend
+de-duplication requirement and the null-twin tooltip requirement disappear with the split that caused
+them.

@@ -1,0 +1,65 @@
+{
+  "roadmap": {
+    "project_id": "epic-size-and-count-over-time",
+    "slice_id": "slice-03-hatched-estimate-encoding",
+    "created_at": "2026-08-02",
+    "total_steps": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Slice 03 of Epic #5585 (US-03, ADO Story #5616): a bar segment whose size is the portfolio default renders HATCHED, so the day an epic stopped being a guess is locatable at a glance rather than by hovering every bar. The flag is already recorded and already parsed — slice 02 shipped `isUsingDefaultSize` end to end — so this slice is pure rendering in one component. DISTILL has already authored all 7 acceptance scenarios and run the fail-for-the-right-reason gate; all 7 are RED on missing functionality. DELIVER authors NO tests.",
+    "distill_source": "docs/feature/epic-size-and-count-over-time/feature-delta.md — the slice-03 DISTILL sections; and the `DeliveryEpicSizeChart estimate hatching` describe in DeliveryEpicSizeChart.test.tsx (7 scenarios, currently red).",
+    "architecture_source": "ADR-119, AS REVISED 2026-08-02. The series split (Decision part 1) is WITHDRAWN; the `slots.bar` renderer, the useId()-scoped <pattern>, and the AC-3.5 absent-means-actual rule stand. Read the Revision section before writing code."
+  },
+  "ssot_inputs": {
+    "acceptance_criteria": "AC-3.1 (recorded — already green from slice 02), AC-3.2, AC-3.3, AC-3.4, AC-3.5, AC-3.6",
+    "decisions": "DISCUSS D6 (hatch, not shade-only). ADR-119 revised. AC-3.5: absence is never read as 'estimated'."
+  },
+  "phases": [
+    {
+      "id": "03",
+      "name": "Hatch the guesses",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "An epic sized by the portfolio default renders hatched",
+          "description": "One production file: `Lighthouse.Frontend/src/components/Common/Charts/DeliveryEpicSizeChart.tsx`. Everything else in the slice already exists — slice 02 records and parses `isUsingDefaultSize`, and the demo seed already flips Heat Shield Testing from true to false on elapsed day 9.\n\nFOLLOW ADR-119 AS REVISED (2026-08-02), NOT AS ORIGINALLY WRITTEN. The series split is withdrawn: keep ONE bar series per epic, keyed on `referenceId`, exactly as slice 02 ships it. Slice 02's scenarios assert those ids and their ordering and must stay green.\n\nFour changes:\n\n(1) Build a per-epic-per-day estimate lookup beside the existing size lookup. `sizesOn(point)` already walks a day's `featureBreakdown`; add the parallel map from `referenceId` to that day's `isUsingDefaultSize`. AC-3.5 is load-bearing: `null` and absent BOTH mean actual. Only an explicit `true` is a guess. Every snapshot recorded before slice 02 has no flag at all, so reading absence as `true` would render the entire back-history hatched.\n\n(2) Emit an SVG `<pattern>` definition once per chart instance, with an id derived from React's `useId()`. AC-3.6: two deliveries can be expanded on the same page at once, and a hardcoded id would make the second chart reuse the first's def. Put the `<defs>` inside the ChartsContainer children so it lands in the same SVG as the bars that reference it.\n\n(3) Pass `slots={{ bar: ... }}` to `ChartsContainer`. The renderer takes `ownerState` and returns the bar element, filling with `url(#hatch-{instanceId})` when `estimatedByEpicDay[seriesId]?.[dataIndex]` is true and with `ownerState.color` otherwise. `BarElementOwnerState` is `{ seriesId, dataIndex, color, isFaded, isHighlighted, isFocused }` — verified against @mui/x-charts@9.0.1 in ADR-119. The DISTILL scenarios call this slot DIRECTLY with a synthetic `{ seriesId, dataIndex }`, render whatever it returns inside an `<svg>`, and read the `fill` attribute off the first `rect` or `path`, so the returned element must carry `fill` as an attribute rather than only as a CSS class.\n\n(4) Extend each bar series' `valueFormatter` so a hatched day's tooltip says the size is a default. It currently formats null as null (which is what keeps an absent epic out of the day's tooltip — do not break that) and a number as a plain string. Add the default-size wording for a day whose flag is true. AC-3.3: the solid segment's tooltip must NOT carry that wording. The scenario matches /default/i, so the exact phrasing is yours — DISCUSS suggested 'size is the portfolio default (not broken down)'.\n\nThen run the full frontend gate and report the dogfood state; the maintainer runs the visual check.",
+          "criteria": [
+            "All 7 scenarios in the `DeliveryEpicSizeChart estimate hatching` describe pass, with no edit to DeliveryEpicSizeChart.test.tsx (`git diff --name-only` must not list it)",
+            "AC-3.2 — a segment with `isUsingDefaultSize: true` fills with `url(#...)`; one with `false` does not",
+            "AC-3.5 — an entry with NO flag fills solid, never hatched; absence is not a guess",
+            "AC-3.4 — an epic flagged on days 1-2 and unflagged on day 3 renders hatched, hatched, solid across those dataIndexes",
+            "AC-3.6 — two chart instances rendered on the same page emit two `<pattern>` elements with DISTINCT ids",
+            "AC-3.3 — the hatched epic's `valueFormatter` output matches /default/i and the solid epic's does not",
+            "All 23 slice-01 and slice-02 scenarios stay green — series ids, stack, ordering, axes, the count line's colour and zero baseline, the empty state, the terminology title, and the null-formats-to-null tooltip rule",
+            "ONE bar series per epic — the ADR-119 series split stays withdrawn and no `::actual` / `::estimated` ids appear",
+            "`pnpm test` passes in full and `pnpm build` exits 0 with zero errors and zero warnings. Run `pnpm build` BARE and read its WHOLE output — tsc prints after the line announcing vite, and filtering the tail or the prebuild range has hidden a real failure twice in this feature",
+            "No new SonarQube issue of any severity",
+            "No legend, no onItemClick — slice 04. No backend, DTO or recorder change — the flag already flows"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Charts/DeliveryEpicSizeChart.test.tsx",
+          "scenario_name": "hands MUI-X its own bar renderer so a segment can carry a pattern (ADR-119) | hatches a segment whose size is the portfolio default (AC-3.2) | leaves a broken-down epic solid (AC-3.2) | treats an epic with no flag as broken down, never as a guess (AC-3.5) | shows the day an epic stopped being a guess (AC-3.4) | says in the tooltip that a hatched size is a default (AC-3.3) | gives each chart on the page its own pattern so two deliveries do not collide (AC-3.6)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Charts/DeliveryEpicSizeChart.tsx (estimate lookup, pattern def, slots.bar renderer, tooltip wording)"
+          ],
+          "dependencies": [],
+          "implementation_notes": "MOCK-SURFACE COUPLING, the trap this feature has already paid for twice. The test mocks `@mui/x-charts` with exactly EIGHT named exports: ChartsContainer, BarPlot, LinePlot, MarkPlot, ChartsXAxis, ChartsYAxis, ChartsTooltip, ChartsLegend. Importing a ninth name from that barrel resolves to `undefined` and React throws on render, breaking every scenario in the file at once; a deep-path import bypasses the mock entirely. The pattern def needs no import — `<defs>` and `<pattern>` are plain SVG elements.\n\nThe hatch must read against EVERY epic colour, since `getColorMapForKeys` spreads epics across a green-teal ramp. Diagonal strokes in a colour derived from the segment's own fill (a lighter or darker variant) survive that better than a fixed white or black, which disappears on one end of the ramp. The maintainer checks this on the demo instance in both light and dark mode — the count line needed exactly this treatment one review ago.\n\nThe demo seed needs NO change. `DemoDataService` already carries `HeatShieldBreakdownElapsedDay = 9` with `HeatShieldSizeByElapsedDay` flat at 30 through day 8 then 18 from day 9, and the flag flips with it. That is the flip the screenshot for the docs page will be taken from.\n\nCI learnings apply (docs/ci-learnings.md — read before writing). Frontend-side, `typescript:S7735` (negated condition in a ternary) is what this kind of flag handling invites most; `S3776` if the renderer grows branches."
+        }
+      ]
+    }
+  ],
+  "maintainer_decisions": [
+    "ADR-119's series split is withdrawn (2026-08-02, Benjamin). One series per epic; the renderer keys on seriesId AND dataIndex. Rationale is in the ADR's Revision section — chiefly that the split makes the null-twin tooltip bug the steady state, rewrites slice 02's green assertions, and doubles what slice 04's legend filter must de-duplicate.",
+    "No legend in this slice either. It lands in slice 04, collapsed by default, together with the fever chart's."
+  ],
+  "out_of_scope": [
+    "Any recorder, DTO or parser change — the flag already flows end to end from slice 02",
+    "Legend and legend filtering (slice 04)",
+    "The burnup estimated-line visibility fix (slice 05)",
+    "The docs page and its @screenshot — owed at feature finalization, taken from the seeded flip",
+    "Mutation testing — run after the slice is green, per the per-feature strategy"
+  ],
+  "validation": {
+    "status": "draft",
+    "notes": "Single-step slice: one production file, seven already-red scenarios, no backend surface. Written by the orchestrator rather than dispatched to the solution architect because the design work was already done — ADR-119 as revised specifies the mechanism, and DISTILL's scenarios pin the contract."
+  }
+}

@@ -1,5 +1,4 @@
 import { Card, CardContent, Typography } from "@mui/material";
-import type { ChartsContainerProps } from "@mui/x-charts";
 import {
 	BarPlot,
 	ChartsContainer,
@@ -239,8 +238,8 @@ const DeliveryEpicSizeChart = ({
 		);
 	};
 
-	// BarPlot is what actually routes the slot down to each bar; the container carries it too so the
-	// whole chart is configured from one place, and its `slots` type only knows the material slots.
+	// BarPlot routes the slot down to each bar. ChartsContainer's own `slots` knows only the material
+	// slots and ignores a `bar` key, so it must NOT be configured there.
 	const barSlots = { bar: renderEpicBar };
 
 	const dataset = history.points.map((point) => {
@@ -298,7 +297,6 @@ const DeliveryEpicSizeChart = ({
 				]}
 				height={height}
 				margin={{ left: 60, right: 60, top: 20, bottom: 80 }}
-				slots={barSlots as ChartsContainerProps["slots"]}
 			>
 				<EpicHatchDefs hatches={hatches} />
 				<BarPlot slots={barSlots} />

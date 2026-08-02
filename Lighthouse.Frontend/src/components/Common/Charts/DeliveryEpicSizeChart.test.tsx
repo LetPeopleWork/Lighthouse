@@ -14,6 +14,15 @@ const chartsContainerMock = vi.hoisted(() =>
 	)),
 );
 
+// BarPlot, not ChartsContainer, is what routes slots down to BarElement — the container's `slots` is
+// material-only and MUI ignores a `bar` key on it. Asserting the hatch on the container would pass
+// against a chart that never wires the renderer at all.
+const barPlotMock = vi.hoisted(() =>
+	vi.fn((_props: { slots?: { bar?: unknown } }) => (
+		<g data-testid="mock-bar-plot" />
+	)),
+);
+
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
 	return {
@@ -24,7 +33,7 @@ vi.mock("@mui/material", async () => {
 
 vi.mock("@mui/x-charts", () => ({
 	ChartsContainer: chartsContainerMock,
-	BarPlot: () => <g data-testid="mock-bar-plot" />,
+	BarPlot: barPlotMock,
 	LinePlot: () => <g data-testid="mock-line-plot" />,
 	MarkPlot: () => <g data-testid="mock-mark-plot" />,
 	ChartsXAxis: () => <g data-testid="mock-x-axis" />,
@@ -82,9 +91,6 @@ const getLatestChartProps = () => {
 				series?: SeriesEntry[];
 				xAxis?: AxisEntry[];
 				yAxis?: AxisEntry[];
-				slots?: {
-					bar?: (ownerState: BarOwnerState) => ReactElement | null;
-				};
 		  }
 		| undefined;
 };
@@ -396,13 +402,9 @@ describe("DeliveryEpicSizeChart size bars", () => {
 // epic stopped being a guess is visible without hovering anything.
 //
 // These assert the SLOT CONTRACT — the renderer the chart hands to MUI-X, exercised directly with an
-// ownerState — rather than the series topology. ADR-119 proposed splitting each epic into
-// `::actual` / `::estimated` twins; `BarElementOwnerState` carries `dataIndex` as well as `seriesId`,
-// so a single series per epic can decide the fill just as well, and it avoids both the legend
-// de-duplication problem ADR-119 raised against itself and a rewrite of slice 02's series assertions.
-// Written this way, either mechanism satisfies them. See the DISTILL notes in feature-delta.md.
-// SKIPPED until slice 03 (ADO #5616) implements the hatch — un-skip to resume.
-describe.skip("DeliveryEpicSizeChart estimate hatching", () => {
+// ownerState — rather than the series topology, so they hold under ADR-119 as originally written and
+// under its 2026-08-02 revision (one series per epic, renderer keyed on seriesId + dataIndex).
+describe("DeliveryEpicSizeChart estimate hatching", () => {
 	beforeEach(() => {
 		chartsContainerMock.mockClear();
 	});
@@ -417,9 +419,17 @@ describe.skip("DeliveryEpicSizeChart estimate hatching", () => {
 			})),
 		});
 
+	const getBarSlot = () => {
+		const calls = barPlotMock.mock.calls;
+		const props = calls[calls.length - 1]?.[0];
+		return props?.slots?.bar as
+			| ((ownerState: BarOwnerState) => ReactElement | null)
+			| undefined;
+	};
+
 	const renderBar = (seriesId: string, dataIndex: number) => {
-		const slot = getLatestChartProps()?.slots?.bar;
-		expect(slot, "the chart provides no bar slot renderer").toBeTypeOf(
+		const slot = getBarSlot();
+		expect(slot, "BarPlot was given no bar slot renderer").toBeTypeOf(
 			"function",
 		);
 		const { container } = render(
@@ -431,14 +441,14 @@ describe.skip("DeliveryEpicSizeChart estimate hatching", () => {
 	const fillOf = (seriesId: string, dataIndex: number) =>
 		renderBar(seriesId, dataIndex)?.getAttribute("fill") ?? "";
 
-	it("hands MUI-X its own bar renderer so a segment can carry a pattern (ADR-119)", () => {
+	it("hands BarPlot its own bar renderer so a segment can carry a pattern (ADR-119)", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
 			/>,
 		);
 
-		expect(getLatestChartProps()?.slots?.bar).toBeTypeOf("function");
+		expect(getBarSlot()).toBeTypeOf("function");
 	});
 
 	it("hatches a segment whose size is the portfolio default (AC-3.2)", () => {
