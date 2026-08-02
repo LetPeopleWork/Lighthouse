@@ -1,7 +1,9 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseDeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
 import { testTheme } from "../../../tests/testTheme";
+import { appColors } from "../../../utils/theme/colors";
 
 const chartsContainerMock = vi.hoisted(() =>
 	vi.fn(({ children }) => (
@@ -48,6 +50,10 @@ interface SeriesEntry {
 	yAxisId?: string;
 	color?: string;
 	stack?: string;
+	valueFormatter?: (
+		value: number | null,
+		context: { dataIndex: number },
+	) => string | null;
 }
 
 interface AxisEntry {
@@ -60,6 +66,12 @@ interface AxisEntry {
 
 type DatasetRow = Record<string, string | number>;
 
+interface BarOwnerState {
+	seriesId: string;
+	dataIndex: number;
+	color?: string;
+}
+
 const getLatestChartProps = () => {
 	const lastCall =
 		chartsContainerMock.mock.calls[chartsContainerMock.mock.calls.length - 1];
@@ -69,6 +81,9 @@ const getLatestChartProps = () => {
 				series?: SeriesEntry[];
 				xAxis?: AxisEntry[];
 				yAxis?: AxisEntry[];
+				slots?: {
+					bar?: (ownerState: BarOwnerState) => ReactElement | null;
+				};
 		  }
 		| undefined;
 };
@@ -97,6 +112,16 @@ const sizedEpic = (referenceId: string, totalItems: number) => ({
 	completion: 0,
 	likelihood: 50,
 	totalItems,
+});
+
+/** Same, plus the estimate flag slice 03 draws. */
+const flaggedEpic = (
+	referenceId: string,
+	totalItems: number,
+	isUsingDefaultSize: boolean,
+) => ({
+	...sizedEpic(referenceId, totalItems),
+	isUsingDefaultSize,
 });
 
 const point = (date: string, epicCount: number) => ({
@@ -181,6 +206,25 @@ describe("DeliveryEpicSizeChart count line", () => {
 
 		expect(getCountSeries()?.type).toBe("line");
 		expect(getCountSeries()?.label).toBeTruthy();
+	});
+
+	it("picks the count line out against the bars behind it", () => {
+		// Review 2026-08-02: the line was theme.palette.primary.main and vanished into the stack, whose
+		// segments come from the same green-teal ramp. Orange is the one hue the epic palette never uses.
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(getCountSeries()?.color).toBe(appColors.status.warning);
+	});
+
+	it("scales the count from zero so a flat line is not read as a cliff", () => {
+		// Review 2026-08-02: the axis started at the lowest count in the window (3), so a delivery that
+		// went 3 -> 6 looked like it had started from nothing.
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(
+			getLatestChartProps()?.yAxis?.find((axis) => axis.id === COUNT_AXIS_ID)
+				?.min,
+		).toBe(0);
 	});
 
 	it("tells the forecaster the chart builds forward when nothing is recorded yet (AC-1.2)", () => {
@@ -313,6 +357,24 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		);
 	});
 
+	it("leaves an epic out of the day's tooltip when it was not in the delivery yet", () => {
+		// Review 2026-08-02: every epic in the window got a tooltip row on every day, most of them blank.
+		// MUI's ChartsAxisTooltipContent drops a row whose formattedValue is null, so the formatter has to
+		// return null rather than the default empty string.
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([
+					[sizedEpic("EPIC-A", 8)],
+					[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)],
+				])}
+			/>,
+		);
+
+		const absentEpic = barSeries().find((entry) => entry.id === "EPIC-B");
+		expect(absentEpic?.valueFormatter?.(null, { dataIndex: 0 })).toBeNull();
+		expect(absentEpic?.valueFormatter?.(3, { dataIndex: 1 })).toContain("3");
+	});
+
 	it("orders the stack by epic so the bars do not reshuffle between days", () => {
 		// Membership changes daily; without a pinned order the same epic lands in a different band on
 		// consecutive days and the chart reads as noise.
@@ -326,5 +388,138 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		);
 
 		expect(barSeries().map((entry) => entry.id)).toEqual(["EPIC-A", "EPIC-B"]);
+	});
+});
+
+// Epic #5585 slice 03 (US-03). A segment sized by the portfolio default renders hatched, so the day an
+// epic stopped being a guess is visible without hovering anything.
+//
+// These assert the SLOT CONTRACT — the renderer the chart hands to MUI-X, exercised directly with an
+// ownerState — rather than the series topology. ADR-119 proposed splitting each epic into
+// `::actual` / `::estimated` twins; `BarElementOwnerState` carries `dataIndex` as well as `seriesId`,
+// so a single series per epic can decide the fill just as well, and it avoids both the legend
+// de-duplication problem ADR-119 raised against itself and a rewrite of slice 02's series assertions.
+// Written this way, either mechanism satisfies them. See the DISTILL notes in feature-delta.md.
+// SKIPPED until slice 03 (ADO #5616) implements the hatch — un-skip to resume.
+describe.skip("DeliveryEpicSizeChart estimate hatching", () => {
+	beforeEach(() => {
+		chartsContainerMock.mockClear();
+	});
+
+	const historyOf = (days: Record<string, unknown>[][]) =>
+		parseDeliveryMetricsHistory({
+			deliveryDate: "2026-06-10T00:00:00Z",
+			firstSnapshotDate: DATES[0],
+			points: days.map((entries, index) => ({
+				...point(DATES[index], 0),
+				featureBreakdown: entries,
+			})),
+		});
+
+	const renderBar = (seriesId: string, dataIndex: number) => {
+		const slot = getLatestChartProps()?.slots?.bar;
+		expect(slot, "the chart provides no bar slot renderer").toBeTypeOf(
+			"function",
+		);
+		const { container } = render(
+			<svg aria-hidden="true">{slot?.({ seriesId, dataIndex })}</svg>,
+		);
+		return container.querySelector("rect, path");
+	};
+
+	const fillOf = (seriesId: string, dataIndex: number) =>
+		renderBar(seriesId, dataIndex)?.getAttribute("fill") ?? "";
+
+	it("hands MUI-X its own bar renderer so a segment can carry a pattern (ADR-119)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
+			/>,
+		);
+
+		expect(getLatestChartProps()?.slots?.bar).toBeTypeOf("function");
+	});
+
+	it("hatches a segment whose size is the portfolio default (AC-3.2)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
+			/>,
+		);
+
+		expect(fillOf("EPIC-A", 0)).toMatch(/^url\(#/);
+	});
+
+	it("leaves a broken-down epic solid (AC-3.2)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[flaggedEpic("EPIC-A", 8, false)]])}
+			/>,
+		);
+
+		expect(fillOf("EPIC-A", 0)).not.toMatch(/^url\(#/);
+	});
+
+	it("treats an epic with no flag as broken down, never as a guess (AC-3.5)", () => {
+		// Absence is not truth. Every snapshot recorded before slice 02 has no flag at all, and if
+		// absence read as "estimated" the whole of that history would render hatched.
+		render(
+			<DeliveryEpicSizeChart history={historyOf([[sizedEpic("EPIC-A", 8)]])} />,
+		);
+
+		expect(fillOf("EPIC-A", 0)).not.toMatch(/^url\(#/);
+	});
+
+	it("shows the day an epic stopped being a guess (AC-3.4)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([
+					[flaggedEpic("EPIC-A", 8, true)],
+					[flaggedEpic("EPIC-A", 8, true)],
+					[flaggedEpic("EPIC-A", 6, false)],
+				])}
+			/>,
+		);
+
+		expect(fillOf("EPIC-A", 0)).toMatch(/^url\(#/);
+		expect(fillOf("EPIC-A", 1)).toMatch(/^url\(#/);
+		expect(fillOf("EPIC-A", 2)).not.toMatch(/^url\(#/);
+	});
+
+	it("says in the tooltip that a hatched size is a default (AC-3.3)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([
+					[flaggedEpic("EPIC-A", 8, true), flaggedEpic("EPIC-B", 3, false)],
+				])}
+			/>,
+		);
+
+		const seriesFor = (id: string) =>
+			getLatestChartProps()?.series?.find((entry) => entry.id === id);
+
+		expect(seriesFor("EPIC-A")?.valueFormatter?.(8, { dataIndex: 0 })).toMatch(
+			/default/i,
+		);
+		expect(
+			seriesFor("EPIC-B")?.valueFormatter?.(3, { dataIndex: 0 }),
+		).not.toMatch(/default/i);
+	});
+
+	it("gives each chart on the page its own pattern so two deliveries do not collide (AC-3.6)", () => {
+		const history = historyOf([[flaggedEpic("EPIC-A", 8, true)]]);
+
+		const { container } = render(
+			<>
+				<DeliveryEpicSizeChart history={history} />
+				<DeliveryEpicSizeChart history={history} />
+			</>,
+		);
+
+		const ids = [...container.querySelectorAll("pattern")].map((node) =>
+			node.getAttribute("id"),
+		);
+		expect(ids).toHaveLength(2);
+		expect(new Set(ids).size).toBe(2);
 	});
 });

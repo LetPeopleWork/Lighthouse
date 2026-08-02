@@ -16,7 +16,7 @@ const renderCell = (row: IFeature) => {
 	const column = createForecastsColumn();
 	const cell = column.renderCell?.({ row, value: undefined });
 
-	render(<>{cell}</>);
+	render(cell);
 };
 
 describe("createForecastsColumn", () => {

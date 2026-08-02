@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography, useTheme } from "@mui/material";
+import { Card, CardContent, Typography } from "@mui/material";
 import {
 	BarPlot,
 	ChartsContainer,
@@ -13,7 +13,7 @@ import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
-import { getColorMapForKeys } from "../../../utils/theme/colors";
+import { appColors, getColorMapForKeys } from "../../../utils/theme/colors";
 
 export interface DeliveryEpicSizeChartProps {
 	history: DeliveryMetricsHistory;
@@ -40,6 +40,11 @@ interface EpicSeriesDescriptor {
 }
 
 const sizeDataKey = (referenceId: string): string => `items:${referenceId}`;
+
+// Null, not "": ChartsAxisTooltipContent drops a row whose formattedValue is null, which is how an
+// epic that was not in the delivery that day stays out of the day's tooltip.
+const formatSize = (value: number | null): string | null =>
+	value === null ? null : `${value}`;
 
 const sizesOn = (point: DeliveryMetricsHistoryPoint): Map<string, number> => {
 	const sizes = new Map<string, number>();
@@ -98,7 +103,6 @@ const DeliveryEpicSizeChart = ({
 	featuresTerm = "Epics",
 	height = 320,
 }: DeliveryEpicSizeChartProps): ReactElement => {
-	const theme = useTheme();
 	const title = `${featuresTerm} over Time`;
 
 	if (history.points.length === 0) {
@@ -140,6 +144,7 @@ const DeliveryEpicSizeChart = ({
 		yAxisId: ITEMS_AXIS_ID,
 		stack: ITEMS_STACK_ID,
 		color: colorByReferenceId[epic.referenceId],
+		valueFormatter: formatSize,
 	}));
 
 	const itemsAxis = hasSizes
@@ -151,7 +156,11 @@ const DeliveryEpicSizeChart = ({
 			<ChartsContainer
 				dataset={dataset}
 				xAxis={[{ scaleType: "band", dataKey: LABEL_DATA_KEY }]}
-				yAxis={[...itemsAxis, { id: COUNT_AXIS_ID, position: "right" }]}
+				yAxis={[
+					...itemsAxis,
+					// From zero always: an axis starting at the window's lowest count reads as a cliff.
+					{ id: COUNT_AXIS_ID, position: "right", min: 0 },
+				]}
 				series={[
 					...sizeSeries,
 					{
@@ -160,7 +169,8 @@ const DeliveryEpicSizeChart = ({
 						dataKey: COUNT_DATA_KEY,
 						label: COUNT_AXIS_LABEL,
 						yAxisId: COUNT_AXIS_ID,
-						color: theme.palette.primary.main,
+						// Orange: the epic palette is a green-teal ramp, so the line needs a hue it never uses.
+						color: appColors.status.warning,
 					},
 				]}
 				height={height}
