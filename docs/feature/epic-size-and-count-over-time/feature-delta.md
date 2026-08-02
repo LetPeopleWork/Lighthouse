@@ -1067,7 +1067,7 @@ and the demo seed already flips Heat Shield Testing on day 9.
 | Scenarios | 27 of 27 in the file; full suite 3894 passed, 0 skipped |
 | `pnpm build` | exit 0, read bare |
 | Mutation | **83.33%** (90/108) — `mutation/results-slice-03.md` |
-| Dogfood visual check | **NOT DONE** — owed on the demo instance, both themes |
+| Dogfood visual check | Done — confirmed on the demo instance by Benjamin, 2026-08-02 |
 
 ---
 
@@ -1105,3 +1105,51 @@ cosmetic padding to reach a number:
 
 83.33% after. The 16 survivors are `sx`/geometry literals, two internal identifier strings, and two
 genuinely equivalent guards — enumerated in the results file.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary (slice 04)
+
+One collapsible `ChartLegend` now serves both delivery charts, and clicking an entry isolates that epic's
+bars. Collapsed by default because the Metrics card already ran tall — the fever chart's legend wrapped to
+eight lines on every visit, while filtering is a special-case action worth one click.
+
+**Commits**: `86d211e8e` (the shared legend) · `f4c41ea8c` + `2c5d7dd81` (isolation semantics) ·
+`ffa7ee877` (one colour per epic across both charts) · `d527f6ae3` (a test that could not fail) ·
+this section's test additions.
+
+| Gate | Outcome |
+|---|---|
+| Scenarios | full suite 3925 passed, 0 skipped |
+| `pnpm build` | exit 0, zero warnings (Biome clean via `prebuild`) |
+| Mutation | **80.75%** (172/213) — `mutation/results-slice-04.md` |
+| Dogfood visual check | Done — confirmed on the demo instance by Benjamin, 2026-08-02 |
+
+### The colour follow-up, and the one that was dropped
+
+Slice 04's review raised two. **One colour per epic across both charts** is done: the fever chart coloured
+by position in its own feature list while the size chart used a sorted map over its own, so the same epic
+was two colours on one tab and the fever chart's colours moved whenever its list reordered. Both now read
+`deliveryEpicColors(history)`, keyed on **every** epic in the recorded breakdown rather than either chart's
+subset — the fever chart drops un-forecastable epics and the size chart drops sizeless ones, so a per-chart
+map cannot agree even when both use the same palette function. `featureColor`/`FEATURE_COLORS` had no other
+caller and are gone.
+
+**The 9-entries-against-3-bars observation is closed as a demo artefact** (Benjamin, 2026-08-02) rather
+than investigated. It was the stated premise for the colour work, so the colour fix does not depend on it:
+keying the map on the union makes the two charts agree whether or not their membership matches.
+
+### Two reviews, and what they were worth
+
+The acceptance reviewer earned its keep: the fever chart's new colour scenario **could not fail**. Its
+fixture held only forecastable epics, so the delivery-wide map and a per-chart map produced identical
+colours and reverting that one chart still passed. Rewritten with an un-forecastable epic sorting ahead of
+both plotted ones, then verified by reverting the production line and watching it go red.
+
+The full-slice code review returned thirteen findings including four "blockers" and a REJECTED verdict.
+**All of them were false**, and the cause is worth recording: it read the working tree while StrykerJS was
+running with `inPlace: true`, so it was reviewing instrumented copies — it cited
+`DeliveryEpicSizeChart.tsx:619` in a 300-line file. It reported AC-4.5 and AC-4.6 as untested when both
+scenarios exist, claimed `getColorMapForKeys` does not de-duplicate when it does, and proposed a comment
+fix identical to the comment already there. **Do not dispatch a reviewer against a tree with a mutation
+run in flight.**

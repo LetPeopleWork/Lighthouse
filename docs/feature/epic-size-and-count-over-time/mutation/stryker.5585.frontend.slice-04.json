@@ -1,0 +1,23 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/components/Common/Charts/ChartLegend.tsx",
+    "src/components/Common/Charts/useLegendFilter.ts",
+    "src/components/Common/Charts/deliveryEpicColors.ts",
+    "src/components/Common/Charts/DeliveryFeverChart.tsx",
+    "src/components/Common/Charts/DeliveryEpicSizeChart.tsx"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-5585-frontend.json" },
+  "tempDirName": ".stryker-tmp-5585"
+}

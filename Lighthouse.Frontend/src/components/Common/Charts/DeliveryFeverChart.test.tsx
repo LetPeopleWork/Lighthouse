@@ -14,10 +14,13 @@ import { testTheme } from "../../../tests/testTheme";
 import { deliveryEpicColors } from "./deliveryEpicColors";
 import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
 
+// Children are rendered: the zone bands are passed as children and paint through the chart's scales,
+// so a mock that drops them would leave the bands untested.
 const scatterChartMock = vi.hoisted(() =>
-	vi.fn((_props: { series?: unknown }) => (
+	vi.fn((props: { series?: unknown; children?: React.ReactNode }) => (
 		<svg data-testid="mock-scatter-chart">
 			<title>Test</title>
+			{props.children}
 		</svg>
 	)),
 );
@@ -245,6 +248,52 @@ describe("DeliveryFeverChart", () => {
 			screen.getByText(/no feature snapshots recorded yet/i),
 		).toBeInTheDocument();
 		expect(scatterChartMock).not.toHaveBeenCalled();
+	});
+
+	it("paints the three fever zones behind the bubbles", () => {
+		const { container } = render(
+			<DeliveryFeverChart history={twoFeatureHistory} />,
+		);
+
+		// Scoped to the chart: the legend's expand icon is a path too.
+		const bands =
+			container.querySelectorAll('[data-testid="mock-scatter-chart"] path') ??
+			[];
+		const fills = [...bands].map((band) => band.getAttribute("fill"));
+		expect(fills).toEqual([
+			testTheme.palette.success.main,
+			testTheme.palette.warning.main,
+			testTheme.palette.error.main,
+		]);
+	});
+
+	it("names itself Delivery Progress when the caller passes no title", () => {
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+
+		expect(
+			screen.getByRole("heading", { name: "Delivery Progress" }),
+		).toBeInTheDocument();
+	});
+
+	it("offers no run control when a single snapshot leaves nothing to animate", () => {
+		const oneSnapshot = parseDeliveryMetricsHistory({
+			deliveryDate: "2026-06-21T00:00:00Z",
+			firstSnapshotDate: "2026-06-01T00:00:00Z",
+			points: [
+				getMockPoint("2026-06-01T00:00:00Z", [
+					{
+						referenceId: "F-1",
+						name: "Checkout",
+						completion: 20,
+						likelihood: 90,
+					},
+				]),
+			],
+		});
+		render(<DeliveryFeverChart history={oneSnapshot} />);
+
+		expect(screen.queryByRole("button", { name: /^Run$/ })).toBeNull();
+		expect(screen.getByTestId("delivery-fever-chart")).toBeInTheDocument();
 	});
 
 	it("carries the delivery-fever-chart test id on its root", () => {

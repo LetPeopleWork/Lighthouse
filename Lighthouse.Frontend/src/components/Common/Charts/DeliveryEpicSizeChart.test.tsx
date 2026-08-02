@@ -38,8 +38,8 @@ vi.mock("@mui/x-charts", () => ({
 	LinePlot: () => <g data-testid="mock-line-plot" />,
 	MarkPlot: () => <g data-testid="mock-mark-plot" />,
 	ChartsXAxis: () => <g data-testid="mock-x-axis" />,
-	ChartsYAxis: ({ axisId }: { axisId?: string }) => (
-		<g data-testid={`mock-y-axis-${axisId ?? "default"}`} />
+	ChartsYAxis: ({ axisId, label }: { axisId?: string; label?: string }) => (
+		<g data-testid={`mock-y-axis-${axisId ?? "default"}`} data-label={label} />
 	),
 	ChartsTooltip: () => <g data-testid="mock-tooltip" />,
 	ChartsLegend: () => <g data-testid="mock-legend" />,
@@ -343,6 +343,27 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		expect(screen.queryByTestId(`mock-y-axis-${ITEMS_AXIS_ID}`)).toBeNull();
 	});
 
+	it("scales and labels the bars on an items axis of their own", () => {
+		render(
+			<DeliveryEpicSizeChart history={historyOf([[sizedEpic("EPIC-A", 8)]])} />,
+		);
+
+		expect(screen.getByTestId(`mock-y-axis-${ITEMS_AXIS_ID}`)).toHaveAttribute(
+			"data-label",
+			"Items",
+		);
+	});
+
+	it("declares the count scale alone when no day carries a size", () => {
+		// Paired with the assertion above that no items axis is declared: without a count of the axes, an
+		// items entry could be replaced by any other and still read as absent.
+		render(<DeliveryEpicSizeChart history={getMockHistory([7])} />);
+
+		const axes = getLatestChartProps()?.yAxis ?? [];
+		expect(axes).toHaveLength(1);
+		expect(axes[0]?.id).toBe(COUNT_AXIS_ID);
+	});
+
 	it("keeps an epic that left the delivery on the days it was there (AC-2.6)", () => {
 		// D7: the segments stop, they do not disappear retroactively — that is how a scope cut stays
 		// visible. The epic keeps its series, so it keeps its legend entry.
@@ -569,6 +590,34 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		);
 	});
 
+	it("reads an epic as broken down on a day the window never recorded", () => {
+		// The estimate flag is looked up by day index; a formatter called for a day outside the recorded
+		// window must fall back to "not a guess" rather than hatch or throw.
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
+			/>,
+		);
+
+		const formatter = getLatestChartProps()?.series?.find(
+			(entry) => entry.id === "EPIC-A",
+		)?.valueFormatter;
+		expect(formatter?.(8, { dataIndex: 99 })).toBe("8");
+	});
+
+	it("builds a pattern id that is safe inside url(#...)", () => {
+		// React 19's useId returns guillemets, which are not valid in a url(#...) reference — the id is
+		// stripped to alphanumerics for that reason, so the stripping is the assertion.
+		const { container } = render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
+			/>,
+		);
+
+		const id = container.querySelector("pattern")?.getAttribute("id") ?? "";
+		expect(id).toMatch(/^hatch-[a-zA-Z0-9]+-\d+$/);
+	});
+
 	it("gives each chart on the page its own pattern so two deliveries do not collide (AC-3.6)", () => {
 		const history = historyOf([[flaggedEpic("EPIC-A", 8, true)]]);
 
@@ -624,6 +673,13 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		expect(screen.queryByRole("button", { name: "Epic EPIC-A" })).toBeNull();
+	});
+
+	it("offers no legend at all when there is nothing to filter", () => {
+		// A history recorded before sizes were written has no bars, so a legend would be an empty control.
+		render(<DeliveryEpicSizeChart history={getMockHistory([7])} />);
+
+		expect(screen.queryByRole("button", { name: /legend/i })).toBeNull();
 	});
 
 	it("lists every epic in the window once, including one that has left (AC-4.1)", () => {
