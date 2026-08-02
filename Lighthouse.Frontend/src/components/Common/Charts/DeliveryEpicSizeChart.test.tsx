@@ -261,7 +261,9 @@ describe("DeliveryEpicSizeChart count line", () => {
 	it("still names itself when the caller supplies no term", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
-		expect(screen.getByRole("heading")).toHaveTextContent(/Epics over Time/);
+		// The configured term is what the app always passes; the fallback matches its default rather
+		// than naming one tracker's vocabulary.
+		expect(screen.getByRole("heading")).toHaveTextContent(/Features over Time/);
 	});
 
 	it("offers the forecaster the detail behind a day on hover", () => {

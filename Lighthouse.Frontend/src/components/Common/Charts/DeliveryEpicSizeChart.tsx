@@ -176,7 +176,7 @@ const ChartCard = ({
 
 const DeliveryEpicSizeChart = ({
 	history,
-	featuresTerm = "Epics",
+	featuresTerm = "Features",
 	height = 320,
 }: DeliveryEpicSizeChartProps): ReactElement => {
 	const title = `${featuresTerm} over Time`;
