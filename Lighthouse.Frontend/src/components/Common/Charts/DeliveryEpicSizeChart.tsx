@@ -41,7 +41,8 @@ const ITEMS_STACK_ID = "epic-size";
 const HATCH_TILE = 8;
 const HATCH_STROKE_WIDTH = 3;
 const HATCH_STROKE_OPACITY = 0.6;
-const DEFAULT_SIZE_NOTE = "size is the portfolio default (not broken down)";
+// Terse on purpose: the sentence DISCUSS AC-3.3 suggested overran the tooltip row (review 2026-08-02).
+const DEFAULT_SIZE_NOTE = "(estimated)";
 
 interface EpicSeriesDescriptor {
 	referenceId: string;
@@ -60,7 +61,7 @@ const formatSize = (
 		return null;
 	}
 
-	return usesDefaultSize ? `${value} — ${DEFAULT_SIZE_NOTE}` : `${value}`;
+	return usesDefaultSize ? `${value} ${DEFAULT_SIZE_NOTE}` : `${value}`;
 };
 
 const sizesOn = (point: DeliveryMetricsHistoryPoint): Map<string, number> => {

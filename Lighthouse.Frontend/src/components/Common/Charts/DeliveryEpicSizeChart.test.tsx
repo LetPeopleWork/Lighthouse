@@ -531,12 +531,13 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		const seriesFor = (id: string) =>
 			getLatestChartProps()?.series?.find((entry) => entry.id === id);
 
+		// Wording shortened on review 2026-08-02 — AC-3.3's suggested sentence overran the tooltip row.
 		expect(seriesFor("EPIC-A")?.valueFormatter?.(8, { dataIndex: 0 })).toMatch(
-			/default/i,
+			/^8 \(estimated\)$/,
 		);
-		expect(
-			seriesFor("EPIC-B")?.valueFormatter?.(3, { dataIndex: 0 }),
-		).not.toMatch(/default/i);
+		expect(seriesFor("EPIC-B")?.valueFormatter?.(3, { dataIndex: 0 })).toBe(
+			"3",
+		);
 	});
 
 	it("gives each chart on the page its own pattern so two deliveries do not collide (AC-3.6)", () => {
