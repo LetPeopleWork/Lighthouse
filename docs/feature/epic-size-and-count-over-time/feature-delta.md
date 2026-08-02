@@ -1153,3 +1153,55 @@ running with `inPlace: true`, so it was reviewing instrumented copies — it cit
 scenarios exist, claimed `getColorMapForKeys` does not de-duplicate when it does, and proposed a comment
 fix identical to the comment already there. **Do not dispatch a reviewer against a tree with a mutation
 run in flight.**
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary (slice 05)
+
+**Commits**: `541137e41` (the fix) · `1264393f4` (mutation gaps) · `52c9f9ee1` (a band, not a bound).
+
+| Gate | Outcome |
+|---|---|
+| Scenarios | full suite 3933 passed, 0 skipped |
+| `pnpm build` | exit 0, zero warnings |
+| Mutation | **86.76%** (59/68) — `mutation/results-slice-05.md` |
+| Dogfood visual check | **OWED — and load-bearing here.** See below. |
+
+### DESIGN's root cause was wrong, and no amount of the prescribed fix would have worked
+
+DESIGN held that the estimated series is painted *underneath* the Done area's fill because Done carries
+`area: true` and the estimated series is pushed last. That is not how MUI-X draws: `LineChart` composes
+`AreaPlot` **then** `LinePlot`, so **every** area paints before **every** line regardless of series
+order. Confirmed twice — in `@mui/x-charts@9.0.1`'s own `LineChart.js`, and by a probe against the real
+chart, where `data-series="estimated"` is the last `<path>` emitted. The line was already on top the
+whole time. Re-ordering the series, which is what the slice brief asked for, would have changed nothing.
+
+The actual cause is that the Done area fills at **`opacity: 1`** — a solid block of `#30574e` with a 2px
+dashed line inside it. The fix thins that fill to `0.3`, targeted at `.MuiLineChart-area[data-series="done"]`
+via an explicit `id` on the Done series, mirroring how the estimated line's dash is already selected.
+
+This is the branch the slice's own learning hypothesis named in advance: *"disproves 'the line is hidden
+purely by paint order' if raising it above the fill still reads badly."* It did, so the slice re-scoped
+to the encoding rather than declaring the z-order tweak done. The brief already put fill opacity in
+scope, so this is the slice as written, not a widening of it.
+
+### What the reviews changed, and what they got wrong
+
+Both reviewers independently found the same real hole: AC-5.1 was carried by `0 < fillOpacity < 1`, which
+`0.9` satisfies while swallowing the line exactly as before. It is now a band — 0.15 to 0.5 — and that was
+verified by setting `0.9` and watching it fail. The complement case (estimate *above* the Done curve,
+nothing overlapping) was added for the same reason.
+
+Two of the code reviewer's findings were false and both were asserted confidently:
+`getComputedStyle(...).fillOpacity` was called an unreliable jsdom oracle that "might pass vacuously" —
+reverting the constant to `1` makes the test fail, so it reads the real applied value; and `0.3` was said
+to have been "lifted from `theme.opacity.high`", a token that does not exist in this codebase. The number
+was picked freehand, which is the criticism that actually lands.
+
+### The open question only a human can close
+
+`0.3` has no derivation. `appColors.primary.main` is `#30574e`, a dark teal: at 30% over the light
+theme's `#f5f5f5` it becomes a pale wash, and over the dark theme's near-black it goes very dark. There
+is a real risk the fix trades an unreadable line for an unreadable *area* (AC-5.2), and the direction of
+that risk differs by theme. No unit test can settle it — the dogfood check on a delivery well into its
+Done curve, **in both themes**, is the acceptance evidence for this slice.
