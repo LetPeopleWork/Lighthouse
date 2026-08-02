@@ -903,3 +903,151 @@ default, on this chart and the fever chart, accepting one extra click to reach t
 
 Axis-label crowding, the risk flagged before the review, did not materialise: 26 band labels render
 legibly at card width and full width.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (slice 02)
+
+Scope: **slice 02 only** (US-02, ADO #5615). Backend + frontend; the estimate flag is *recorded* here
+and *rendered* in slice 03.
+
+| # | Scenario | AC | File |
+|---|---|---|---|
+| 1 | reports each feature's total child items | AC-2.1 | `DeliveryFeatureSizeTest.cs` |
+| 2 | counts every child item even when the feature is finished | AC-2.7 | same |
+| 3 | marks a feature whose size is the portfolio default | AC-3.1 | same |
+| 4 | reads the size and estimate flag recorded for each feature | AC-2.2 | `DeliveryMetricsHistoryDtoTest.cs` |
+| 5 | still reads a snapshot recorded before sizes were written | AC-2.3 | same |
+| 6 | still reads a snapshot whose feature could not be forecast | ADR-120 | same |
+| 7 | reads the size and estimate flag an epic was recorded with | AC-2.4 | `DeliveryMetricsHistory.test.ts` |
+| 8 | still reads an epic recorded before sizes were written | AC-2.4 | same |
+| 9 | still reads an epic that could not be forecast | ADR-120 | same |
+| 10 | treats a missing estimate flag as unknown, not as a guess | AC-3.5 | same |
+| 11 | gives every epic on a day its own segment, sized by its items | AC-2.5 | `DeliveryEpicSizeChart.test.tsx` |
+| 12 | stacks the day's epics into one bar | AC-2.5 | same |
+| 13 | draws no bar for a day recorded before sizes were written | AC-2.5 | same |
+| 14 | keeps an epic that left the delivery on the days it was there | AC-2.6 / D7 | same |
+| 15 | sizes the bars on their own left-hand scale | ADR-122 | same |
+| 16 | orders the stack by epic so bars do not reshuffle | DESIGN OQ-4 | same |
+
+Scenario 2 covers AC-2.7 at the backend grain rather than re-asserting it in the chart: the chart draws
+whatever `totalItems` says, so state-independence is a recorder property, not a rendering one.
+
+**Retired**: slice 01's "renders the count as a line and nothing else until sizes ship (DDD-8)" — its
+whole purpose was to pin the slice boundary, and slice 02 is the boundary moving. Replaced by "draws the
+count as a line, not as another bar", which is the durable half of that claim.
+
+---
+
+## Wave: DISTILL / [REF] Fail-for-the-Right-Reason Gate (slice 02)
+
+**Backend** — 4 failed / 7 passed. **Frontend** — 7 failed / 36 passed. Every failure is missing
+functionality; no import, fixture or setup errors.
+
+**The ADR-120 defect is now OBSERVED, not inferred.** DESIGN flagged it from the type signatures and
+deferred proof to this slice's first test. Both halves fire:
+
+```
+System.Text.Json.JsonException: The JSON value could not be converted to
+DeliveryFeatureMetricDto. Path: $[0].likelihood
+```
+```
+BoundaryError: Expected a number for featureBreakdown.likelihood
+```
+
+A single un-forecastable feature takes down the whole delivery's metrics-history — a 500 on the backend,
+a dead tab on the frontend. Not introduced by 5585; repaired here.
+
+**Already answered by the scaffold** — the slice's own learning hypothesis, half settled before a line of
+GREEN: scenarios 5, 8 and 10 pass the moment the two optional fields exist on the records. The JSON
+column *does* extend in place, and both parsers *do* tolerate the four-field shape. D5 holds; no
+migration, no new column.
+
+One NUnit trap worth recording: scenario 6 was first written as `Assert.That(dto…Likelihood, Is.Null)`
+and would not COMPILE — `NUnit2023: the type of the actual argument 'double' can never be null`. The
+analyzer proves the mismatch statically, but a compile error is BROKEN, not RED, so the scenario asserts
+`Throws.Nothing` instead. That is also the truer statement of the acceptance criterion: reading the
+delivery's history must not blow up.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds (slice 02)
+
+| File | Scaffold |
+|---|---|
+| `Models/DeliveryMetricsProjection.cs` | `DeliveryFeatureMetric` gains `int? TotalItems` / `bool? IsUsingDefaultSize` as init-only properties — additive, so no call site churns |
+| `API/DTO/DeliveryMetricsHistoryDto.cs` | `DeliveryFeatureMetricDto` gains the same two. `Likelihood` deliberately left `double` so scenario 6 stays red and proves the defect |
+| `models/Delivery/DeliveryMetricsHistory.ts` | `FeatureMetric` gains both fields; the parser returns `null` for each behind a `__SCAFFOLD__` marker |
+
+Positional record parameters were rejected in favour of init-only properties precisely because adding
+two positional params would have rippled through every construction site — a production change wearing a
+scaffold's clothes.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary (slice 02)
+
+Each recorded day now carries one bar segment per epic, sized by that epic's total child items, stacked
+under the count line from slice 01. A backlog jump has a name. The estimate flag is recorded alongside
+the size but not yet drawn — that is slice 03.
+
+Four steps, four commits, both stacks. Backend suite 4383 green; frontend 3884 green.
+
+| Step | Commit | What |
+|---|---|---|
+| 02-01 | `8e69df229` | `Delivery.ToFeatureMetric` stops discarding the total it already computes; demo seed carries both fields |
+| 02-02 | `36b939b9e` | `DeliveryFeatureMetricDto.Likelihood` widened to `double?` — the ADR-120 repair, backend half |
+| 02-03 | `2a15884c4` | The FE boundary reads both new fields and tolerates an unknown likelihood |
+| 02-04 | `6ddc067a4` | Per-epic stacked bar series on a left `items` axis |
+
+---
+
+## Wave: DELIVER / [REF] The ADR-120 Repair, Closed
+
+DESIGN inferred a 500 from the type signatures and deferred the proof. DISTILL observed it on both
+stacks. DELIVER closed it in 02-02 and 02-03, in that order — and the ORDER was load-bearing: between
+those two commits the backend emits `"likelihood": null` where it used to 500, and the frontend still
+threw `BoundaryError` on it. `main` was never in that state; the pair was written back to back and
+pushed together.
+
+**A Bug work item is still owed.** The defect predates Epic 5585 and was fixed inside a feature story, so
+it currently has no ADO traceability of its own. Creating one needs Benjamin's confirmation.
+
+**One behaviour decision with no covering scenario**: widening `likelihood` forced a choice in
+`FeverTrail.ts`, its only frontend consumer. An un-forecastable feature is now **left off the fever chart
+entirely** rather than plotted at maximum risk. Filtering downstream instead would leave an empty
+`points` array and an `undefined` `latest` that `DeliveryFeverChart` dereferences — a crash, not a
+degradation — and a guessed 100 % chance-of-late is indistinguishable from a measured one, the same
+confusion AC-3.5 exists to prevent in the sibling case. Unreachable before this slice, because a null
+likelihood killed the whole tab at the boundary. If it should be pinned, that is a DISTILL round-trip.
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates (slice 02)
+
+| Gate | Outcome |
+|---|---|
+| Backend suite | 4383 passed, 0 failed |
+| Frontend suite | 3884 passed, 0 failed (289 files) |
+| `dotnet build` / `pnpm build` | zero warnings both |
+| `dotnet format analyzers --severity info` | no finding on any touched file |
+| Mutation | **80.95%** (170/210) — over the floor. `mutation/results-slice-02.md` |
+| EF migration | none, and none needed — D5 held |
+| Dogfood visual check | **NOT DONE** — dev instance not running |
+
+**Mutation caveat, stated because it cuts the other way for once**: four reported survivors are
+`ConditionalExpression → false` on the parser's null-guards. Applying one by hand kills three scenarios,
+so StrykerJS's verdict there is wrong and the true rate is higher than 80.95 %. Recorded in the results
+file; the practical rule is to hand-check a StrykerJS survivor on this project before writing a test to
+chase it.
+
+---
+
+## Wave: DELIVER / [REF] Decisions Taken During Slice 02
+
+| Decision | Why |
+|---|---|
+| The `DeliveryMetricSnapshotRecordingHandlerTest` fixture expectation was UPDATED | `DeliveryFeatureMetric` is a record; compiler-generated equality covers the new init-only fields, and `Is.EquivalentTo` compares all six members. Populating the fields legitimately superseded the old expectation. Nothing loosened, no field excluded, no test skipped — this is the shared-contract discipline CLAUDE.md asks for. Worth carrying forward: **any** future field on that record re-arms the same trap. |
+| **No `<ChartsLegend />` in this slice** | The roadmap called for one. Benjamin's slice-01 review found the Metrics cards already run tall because the fever chart's legend wraps to eight lines, and asked for legends collapsed by default across the tab. Shipping an expanded per-epic legend here would ship exactly that complaint. Segments stay identifiable via the tooltip and each series' `label`; AC-2.6's legend half moves to slice 04 with the collapse work. |
+| Stack order pinned by sorted `referenceId` | DESIGN OQ-4. Membership changes daily; without it the same epic lands in a different band on consecutive days and the chart reads as noise. `localeCompare` matches `getColorMapForKeys`'s own ordering so stack position and colour index agree. |
+| The `items` axis is declared only when a bar series exists | Same reasoning as slice 01's resolved OQ-1 — an axis with no series is a rendering risk for no gain, and a history recorded entirely before this slice has no bars. |
