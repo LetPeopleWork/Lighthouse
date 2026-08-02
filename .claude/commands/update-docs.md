@@ -96,6 +96,15 @@ Apply edits in this order, one approved item at a time:
 
 **Prose-only doc edits**: straightforward `Edit` / `Write`. Match the existing tone (terse, present tense, no marketing fluff). If the change references a screenshot path that doesn't exist yet, keep the link — Phase 4 will create it.
 
+**Write the configurable term, never one tracker's word for it.** Anything a user can rename under
+**Settings → Terminology** — feature, work item, team, portfolio, delivery, cycle time, throughput, WIP,
+blocked, service level expectation — appears in the UI as *their* word, not ours. Docs that say "Epics"
+or "Initiatives" or "Stories" describe a heading a Jira, Azure DevOps or Linear reader will never see.
+Use the default from `TerminologySeeder.cs` (`Feature`/`Features`, `Work Item`/`Work Items`, …), and where
+a screenshot shows a renamed term, say the title follows the configured one. The exception is a genuine
+work-tracking-system **value** — a filter matching type `Epic` in Azure DevOps is that system's literal
+string and stays as-is.
+
 **Extend an existing screenshot test**: add a `takePageScreenshot` / `takeDialogScreenshot` call inside the relevant `test(...)` block. Choose the target path under the right `docs/assets/<topic>/` subfolder using `kebab-or-camelCase.png` matching local conventions (look at sibling filenames). Don't bundle unrelated screenshots into one test — if the new shot needs its own page-state setup, it gets its own test.
 
 **Write a new screenshot test**: place it in `Screenshots.spec.ts`, mirroring the existing tests' style. Default skeleton:
@@ -211,3 +220,6 @@ Do NOT commit or push. The user reviews the diff.
 - If `pwsh` is available and the user prefers using `Remove-LighthouseDb.ps1`, that's fine — but pipe `'y'` to it (`echo 'y' | pwsh -File Lighthouse.Backend/Remove-LighthouseDb.ps1`) so it doesn't block on `Read-Host`.
 - If Phase 4 surfaces unrelated failing E2E tests (not in the @screenshot grep), do not chase them — note them and move on. This command is scoped to docs/screenshots.
 - Don't write CSS-/style-only tests or "assert renders" placeholder tests. Every new `@screenshot` test must end in at least one `takePageScreenshot` / `takeDialogScreenshot` call against a deterministic page state.
+- Never hard-code a renameable term in docs prose or in a component's fallback default. Check
+  `Lighthouse.Backend/.../Seeding/TerminologySeeder.cs` for the default wording before writing the
+  heading. A default that contradicts the app's own is a bug, not a nicety (Epic #5585, 2026-08-02).

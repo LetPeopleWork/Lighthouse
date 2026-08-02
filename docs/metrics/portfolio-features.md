@@ -42,7 +42,7 @@ Click on any segment of the pie chart to open a detailed dialog showing:
 - Additional work item details (title, ID, state)
 
 This visualization helps you:
-- Identify which features or epics are consuming the most team capacity
+- Identify which features are consuming the most team capacity
 - Spot imbalances in work distribution across different initiatives
 - Understand the relationship between parent initiatives and actual work being done
 - Find work items that may not be properly linked to parent items

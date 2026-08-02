@@ -166,6 +166,7 @@ Drafting rules:
 - Compare link target: `v<old>...<new>` if a real version was given, else `v<old>...HEAD`.
 - Don't fabricate image links. Reuse images already in `docs/releasenotes/` only when the ADO description or commit clearly references that asset; otherwise leave images out and let the user add them.
 - Tone matches prior releases: pragmatic, mildly enthusiastic, no marketing fluff.
+- Use the configurable terminology, not one tracker's word for it. The ADO item will say "Epic" because that is *our* board's vocabulary; the reader's Lighthouse says whatever they configured under Settings → Terminology. Write the seeded default (`Feature`/`Features`, `Work Item`/`Work Items`, …) from `TerminologySeeder.cs`. Naming a work-tracking-system value literally (a filter matching type `Epic`) is the exception.
 
 ## Step 7 — update docs/contributions/contributions.md for first-timers
 

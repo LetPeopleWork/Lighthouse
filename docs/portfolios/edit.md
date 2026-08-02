@@ -142,7 +142,7 @@ In order to achieve this, you can define which states should ignore the real chi
 
 Concretely, Lighthouse applies the following logic for features in a state override:
 
-- If the actual child item count is **greater than** the default/estimated size, the actual count is used. This prevents larger-than-expected epics from being underestimated.
+- If the actual child item count is **greater than** the default/estimated size, the actual count is used. This prevents larger-than-expected features from being underestimated.
 - If the actual child item count is **less than or equal to** the default/estimated size, the real child items are ignored and the estimate or default size is used instead.
 
 **Example:** Your default feature size is 7. A feature in "Analysis in Progress" already has 11 child stories. Because 11 > 7, Lighthouse uses 11 — not 7 — to ensure the forecast reflects the real scope discovered so far.

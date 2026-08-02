@@ -45,6 +45,7 @@ Two standing principles worth keeping visible here because they're easy to skip 
 
 - **No silent N/A.** Every checklist item gets an explicit answer, including "N/A, because …" — never an implicit skip.
 - **Per-feature, not batched.** Docs/screenshots/client updates happen at feature finalization, not deferred to `/release`. If `/release`'s `update-docs` pass finds a lot of drift, that's a signal the per-feature discipline was skipped — fix it at the feature level.
+- **Write the configurable term, not one tracker's word for it.** Everything a user can rename under Settings → Terminology (feature, work item, team, portfolio, delivery, cycle time, throughput, WIP, blocked, SLE) renders as *their* word. Docs, release notes and UI fallback defaults use the seeded default from `TerminologySeeder.cs` — `Feature`/`Features`, `Work Item`/`Work Items`, … — never "Epic", "Initiative" or "Story", which name a heading a Jira or Linear reader never sees. A literal work-tracking-system **value** (a filter matching type `Epic` in ADO) is the exception and stays as written.
 
 ### Commits & Shared Contracts
 
