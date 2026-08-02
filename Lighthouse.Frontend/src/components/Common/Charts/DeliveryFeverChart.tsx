@@ -17,6 +17,7 @@ import {
 	type FeverZone,
 	feverZonePolygons,
 } from "../../../models/Delivery/FeverTrail";
+import ChartLegend, { type ChartLegendItem } from "./ChartLegend";
 import {
 	featureColor,
 	likelihoodTooltip,
@@ -61,54 +62,6 @@ const FeverZoneBands: React.FC<{ colors: Record<FeverZone, string> }> = ({
 	);
 };
 
-interface FeatureLegendProps {
-	features: ColouredFeature[];
-	hidden: ReadonlySet<string>;
-	onToggle: (referenceId: string) => void;
-}
-
-const FeatureLegend: React.FC<FeatureLegendProps> = ({
-	features,
-	hidden,
-	onToggle,
-}) => (
-	<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mt: 1 }}>
-		{features.map((feature) => {
-			const isHidden = hidden.has(feature.referenceId);
-			return (
-				<Box
-					key={feature.referenceId}
-					component="button"
-					type="button"
-					onClick={() => onToggle(feature.referenceId)}
-					aria-pressed={!isHidden}
-					sx={{
-						display: "flex",
-						alignItems: "center",
-						gap: 0.75,
-						border: "none",
-						background: "none",
-						cursor: "pointer",
-						p: 0,
-						color: "text.primary",
-						opacity: isHidden ? 0.4 : 1,
-					}}
-				>
-					<Box
-						sx={{
-							width: 12,
-							height: 12,
-							borderRadius: "50%",
-							backgroundColor: feature.color,
-						}}
-					/>
-					<Typography variant="body2">{feature.name}</Typography>
-				</Box>
-			);
-		})}
-	</Box>
-);
-
 const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	history,
 	title = "Delivery Progress",
@@ -135,6 +88,8 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 		});
 	}, []);
 
+	const showAll = useCallback(() => setHidden(new Set()), []);
+
 	if (chart.empty) {
 		return (
 			<Card sx={{ p: 2, borderRadius: 2 }}>
@@ -154,6 +109,12 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 			color: featureColor(index),
 		}),
 	);
+
+	const legendItems: ChartLegendItem[] = colouredFeatures.map((feature) => ({
+		id: feature.referenceId,
+		label: feature.name,
+		color: feature.color,
+	}));
 
 	const series = colouredFeatures
 		.filter((feature) => !hidden.has(feature.referenceId))
@@ -204,10 +165,11 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 				>
 					<FeverZoneBands colors={zoneColors(theme)} />
 				</ScatterChart>
-				<FeatureLegend
-					features={colouredFeatures}
+				<ChartLegend
+					items={legendItems}
 					hidden={hidden}
 					onToggle={toggle}
+					onShowAll={showAll}
 				/>
 			</CardContent>
 		</Card>

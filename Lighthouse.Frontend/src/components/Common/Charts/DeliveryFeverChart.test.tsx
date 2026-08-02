@@ -166,6 +166,10 @@ describe("DeliveryFeverChart", () => {
 		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
 		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: /legend/i }));
+		});
+
+		act(() => {
 			fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
 		});
 		expect(seriesById("F-1")).toBeUndefined();

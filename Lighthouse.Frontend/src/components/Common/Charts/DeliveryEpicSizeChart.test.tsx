@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseDeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
@@ -555,5 +555,122 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		);
 		expect(ids).toHaveLength(2);
 		expect(new Set(ids).size).toBe(2);
+	});
+});
+
+// Epic #5585 slice 04 (US-04). A fifteen-epic delivery renders a fifteen-segment stack per day —
+// legible as a total, useless for following one epic. The legend filters the bars, and it is collapsed
+// by default because filtering is a special-case action and the card already runs tall.
+describe("DeliveryEpicSizeChart legend filtering", () => {
+	beforeEach(() => {
+		chartsContainerMock.mockClear();
+		barPlotMock.mockClear();
+	});
+
+	const historyOf = (days: Record<string, unknown>[][]) =>
+		parseDeliveryMetricsHistory({
+			deliveryDate: "2026-06-10T00:00:00Z",
+			firstSnapshotDate: DATES[0],
+			points: days.map((entries, index) => ({
+				...point(DATES[index], 0),
+				featureBreakdown: entries,
+			})),
+		});
+
+	const twoEpics = () =>
+		historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]]);
+
+	const barSeriesIds = () =>
+		(getLatestChartProps()?.series ?? [])
+			.filter((entry) => entry.type === "bar")
+			.map((entry) => entry.id);
+
+	const openLegend = () =>
+		fireEvent.click(screen.getByRole("button", { name: /legend/i }));
+
+	const clickEntry = (label: string) =>
+		fireEvent.click(screen.getByRole("button", { name: label }));
+
+	it("keeps the legend out of the way until the forecaster wants it", () => {
+		render(<DeliveryEpicSizeChart history={twoEpics()} />);
+
+		expect(screen.queryByRole("button", { name: "Epic EPIC-A" })).toBeNull();
+	});
+
+	it("lists every epic in the window once, including one that has left (AC-4.1)", () => {
+		// D7: an epic that left the delivery still had days in the window, so it stays selectable.
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([
+					[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)],
+					[sizedEpic("EPIC-A", 9)],
+				])}
+			/>,
+		);
+
+		openLegend();
+
+		expect(screen.getByRole("button", { name: "Epic EPIC-A" })).toBeVisible();
+		expect(screen.getByRole("button", { name: "Epic EPIC-B" })).toBeVisible();
+	});
+
+	it("leaves only the chosen epic's bars when one is picked (AC-4.2)", () => {
+		render(<DeliveryEpicSizeChart history={twoEpics()} />);
+
+		openLegend();
+		clickEntry("Epic EPIC-B");
+
+		expect(barSeriesIds()).toEqual(["EPIC-A"]);
+	});
+
+	it("brings a deselected epic back on a second click (AC-4.3)", () => {
+		render(<DeliveryEpicSizeChart history={twoEpics()} />);
+
+		openLegend();
+		clickEntry("Epic EPIC-B");
+		clickEntry("Epic EPIC-B");
+
+		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
+	});
+
+	it("clears the whole filter in one action (AC-4.4)", () => {
+		render(<DeliveryEpicSizeChart history={twoEpics()} />);
+
+		openLegend();
+		clickEntry("Epic EPIC-A");
+		clickEntry("Epic EPIC-B");
+		fireEvent.click(screen.getByRole("button", { name: /show all/i }));
+
+		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
+	});
+
+	it("never filters the count line, which is a delivery-level fact (AC-4.5)", () => {
+		// D8: the count answers "how many epics were in the delivery that day". Filtering it to a
+		// subset would make it read as a different number for the same day.
+		render(<DeliveryEpicSizeChart history={twoEpics()} />);
+
+		const before = getCountSeries()?.dataKey;
+		openLegend();
+		clickEntry("Epic EPIC-B");
+
+		expect(getCountSeries()?.dataKey).toBe(before);
+		expect(getCountSeries()).toBeDefined();
+	});
+
+	it("filters one delivery's chart without touching another's (AC-4.6)", () => {
+		const history = twoEpics();
+		render(
+			<>
+				<DeliveryEpicSizeChart history={history} featuresTerm="Alpha" />
+				<DeliveryEpicSizeChart history={history} featuresTerm="Beta" />
+			</>,
+		);
+
+		const [firstLegend] = screen.getAllByRole("button", { name: /legend/i });
+		fireEvent.click(firstLegend);
+		fireEvent.click(screen.getByRole("button", { name: "Epic EPIC-B" }));
+
+		// The second chart re-rendered from its own untouched state, so it still carries both bars.
+		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
 	});
 });

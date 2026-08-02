@@ -8,7 +8,14 @@ import {
 	LinePlot,
 	MarkPlot,
 } from "@mui/x-charts";
-import { type ReactElement, type ReactNode, type SVGProps, useId } from "react";
+import {
+	type ReactElement,
+	type ReactNode,
+	type SVGProps,
+	useCallback,
+	useId,
+	useState,
+} from "react";
 import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
@@ -18,6 +25,7 @@ import {
 	getColorMapForKeys,
 	getContrastText,
 } from "../../../utils/theme/colors";
+import ChartLegend from "./ChartLegend";
 
 export interface DeliveryEpicSizeChartProps {
 	history: DeliveryMetricsHistory;
@@ -184,6 +192,22 @@ const DeliveryEpicSizeChart = ({
 	// Scopes this chart's pattern defs; the guillemets React 19 puts in a generated id are not safe
 	// inside url(#...).
 	const instanceId = useId().replace(/[^a-zA-Z0-9]/g, "");
+	// AC-4.6: per-instance, so two expanded deliveries filter independently.
+	const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
+
+	const toggle = useCallback((referenceId: string) => {
+		setHidden((previous) => {
+			const next = new Set(previous);
+			if (next.has(referenceId)) {
+				next.delete(referenceId);
+			} else {
+				next.add(referenceId);
+			}
+			return next;
+		});
+	}, []);
+
+	const showAll = useCallback(() => setHidden(new Set()), []);
 
 	if (history.points.length === 0) {
 		return (
@@ -199,7 +223,8 @@ const DeliveryEpicSizeChart = ({
 	const colorByReferenceId = getColorMapForKeys(
 		epics.map((epic) => epic.referenceId),
 	);
-	const hasSizes = epics.length > 0;
+	const visibleEpics = epics.filter((epic) => !hidden.has(epic.referenceId));
+	const hasSizes = visibleEpics.length > 0;
 
 	const estimatedByDay = history.points.map(defaultSizedOn);
 	const usesDefaultSize = (referenceId: string, dataIndex: number): boolean =>
@@ -258,7 +283,7 @@ const DeliveryEpicSizeChart = ({
 		return row;
 	});
 
-	const sizeSeries = epics.map((epic) => ({
+	const sizeSeries = visibleEpics.map((epic) => ({
 		id: epic.referenceId,
 		type: "bar" as const,
 		dataKey: sizeDataKey(epic.referenceId),
@@ -310,6 +335,18 @@ const DeliveryEpicSizeChart = ({
 				<ChartsYAxis axisId={COUNT_AXIS_ID} label={COUNT_AXIS_LABEL} />
 				<ChartsTooltip />
 			</ChartsContainer>
+			{epics.length > 0 && (
+				<ChartLegend
+					items={epics.map((epic) => ({
+						id: epic.referenceId,
+						label: epic.name,
+						color: colorByReferenceId[epic.referenceId],
+					}))}
+					hidden={hidden}
+					onToggle={toggle}
+					onShowAll={showAll}
+				/>
+			)}
 		</ChartCard>
 	);
 };
