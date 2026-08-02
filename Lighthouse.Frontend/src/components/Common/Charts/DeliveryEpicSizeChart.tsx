@@ -18,7 +18,7 @@ export interface DeliveryEpicSizeChartProps {
 const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no snapshots recorded yet.";
 
-// D3: a day's breakdown only lists what had items, so anything with none is invisible to the count.
+// Epic 5585 D3: a day's breakdown only lists what had items, so anything with none is uncounted.
 const NOT_COUNTED_CAVEAT =
 	"Each day counts only what had items recorded — anything with no items that day is left out.";
 
