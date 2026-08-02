@@ -38,6 +38,17 @@ AC-4.1 … AC-4.6 verbatim from `feature-delta.md`. Load-bearing pair:
 - Clicking one legend entry isolates it; clicking a second shows both (AC-4.2).
 - The count line is unaffected by any selection (AC-4.5).
 
+## Added on review of slice 01 (Benjamin, 2026-08-02)
+
+**Collapse the legend by default.** Slice 01's card already runs tall on the dogfood instance, and the
+cause is the neighbouring fever chart's legend — one entry per epic, wrapping to eight lines. Slice 02's
+per-epic bars will produce exactly the same legend on this chart. Filtering by legend is a special-case
+action, so paying one extra click to open the legend is the right trade against every user carrying
+eight lines of chrome on every visit.
+
+Applies to **both** charts — the new one and `DeliveryFeverChart` — so the two behave the same way on
+the same tab. Treat the fever chart's legend as in scope for this slice rather than filing it separately.
+
 ## Dependencies
 
 Slice 02 (bars must exist to filter). Independent of slice 03 — hatching and filtering do not interact

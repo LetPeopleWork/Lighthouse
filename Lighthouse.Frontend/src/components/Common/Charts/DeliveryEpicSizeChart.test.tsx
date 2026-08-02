@@ -135,10 +135,17 @@ describe("DeliveryEpicSizeChart count line", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory([7, 7, 9])} />);
 
 		const props = getLatestChartProps();
-		const labelKey = props?.xAxis?.[0]?.dataKey ?? "label";
-		expect((props?.dataset ?? []).map((row) => row[labelKey])).toEqual(
-			DATES.map((date) => new Date(date).toLocaleDateString()),
-		);
+		const labelKey = props?.xAxis?.[0]?.dataKey;
+		expect(labelKey).toBeTruthy();
+		expect(
+			(props?.dataset ?? []).map((row) => row[labelKey as string]),
+		).toEqual(DATES.map((date) => new Date(date).toLocaleDateString()));
+	});
+
+	it("spaces the days evenly rather than by calendar distance (ADR-122)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(getLatestChartProps()?.xAxis?.[0]?.scaleType).toBe("band");
 	});
 
 	it("counts a day's epics from the breakdown recorded on that day (AC-1.6)", () => {
@@ -163,6 +170,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 
 		expect(getLatestChartProps()?.series).toHaveLength(1);
 		expect(getCountSeries()?.type).toBe("line");
+		expect(getCountSeries()?.label).toBeTruthy();
 		expect(screen.queryByTestId("mock-bar-plot")).not.toBeInTheDocument();
 	});
 
@@ -187,6 +195,12 @@ describe("DeliveryEpicSizeChart count line", () => {
 
 		expect(screen.getByRole("heading")).toHaveTextContent(/Initiative/);
 		expect(screen.getByRole("heading")).not.toHaveTextContent(/Epic/);
+	});
+
+	it("still names itself when the caller supplies no term", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(screen.getByRole("heading")).toHaveTextContent(/Epics over Time/);
 	});
 
 	it("offers the forecaster the detail behind a day on hover", () => {

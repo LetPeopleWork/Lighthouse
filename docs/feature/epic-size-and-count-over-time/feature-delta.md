@@ -639,3 +639,267 @@ silently; the Reuse Analysis table above is the deduplication gate that did run.
 **To**: `nw-platform-architect` (DEVOPS) — KPI section only; no new infrastructure, no new deployment
 surface, no new secret, no new external dependency. Slice 06 adds an npm release to an existing pipeline.
 **Then**: DISTILL, with the five open questions above as explicit assertion targets.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation (slice 01)
+
+Scope of this DISTILL run: **slice 01 only** (US-01, ADO #5614). Slices 02–06 are not distilled yet.
+
+- ✓ `docs/feature/epic-size-and-count-over-time/feature-delta.md` — DISCUSS (D1–D13, US-01 AC-1.1…AC-1.6) and DESIGN (DDD-1…DDD-8, ADR-119/120/121/122)
+- ✓ `docs/feature/epic-size-and-count-over-time/slices/slice-01-epic-count-line-and-regrid.md`
+- ✓ Reference classes read in full: `DeliveryPredictabilityChart.tsx` + `.test.tsx`, `DeliveryBurnupChart.tsx`, `RefreshHistoryChart.tsx` (ADR-122 precedent), `DeliverySection.tsx` (MetricsTab), `DeliverySection.metrics.test.tsx`, `DeliveryMetricsHistory.ts`, `FeatureSizeScatterPlotChart.terminology.test.tsx` (terminology-mock convention), `models/TerminologyKeys.ts:9`
+- ⊘ `docs/feature/epic-size-and-count-over-time/devops/` (not found — DEVOPS was scoped to the KPI section and not run; default project infra applies, no infrastructure surface in this slice)
+- ⊘ `docs/feature/epic-size-and-count-over-time/spike/` (not found — no spike; ADR-119 closed the hatch unknown at DESIGN)
+- ⊘ `docs/architecture/atdd-infrastructure-policy.md` (not found — this repo's equivalent is `CLAUDE.md` Quality Gates + the per-stack test conventions; not bootstrapped, because slice 01 introduces no port whose mechanism is undecided)
+- ⊘ `docs/product/outcomes/registry.yaml` (not found — no registry, so no OUT-N row registered; slice 01 introduces no new typed contract, only a React component)
+
+**Wave-decision reconciliation: passed — 0 contradictions.** DISCUSS D1/D3/D10 and DESIGN DDD-1/DDD-8
+agree on scope for this slice: one composed chart, count derived from `featureBreakdown.length`, title
+from the configured term.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (slice 01)
+
+Vitest is the acceptance layer for this slice — the driving port is the UI, the chart is a pure
+presentation component, and there is no backend, adapter or network surface to cross (D1: frontend-only).
+
+| # | Scenario | AC | File | Tags |
+|---|---|---|---|---|
+| 1 | plots one point per recorded day whose value is that day's epic count | AC-1.1 | `DeliveryEpicSizeChart.test.tsx` | `@US-01` `@in-memory` |
+| 2 | labels each plotted point with the day it was recorded | AC-1.1 | same | `@US-01` `@in-memory` |
+| 3 | counts a day's epics from the breakdown recorded on that day | AC-1.6 | same | `@US-01` `@retroactive` |
+| 4 | draws the count against its own right-hand scale so sizes can share the chart | ADR-122 | same | `@design-contract` |
+| 5 | renders the count as a line and nothing else until sizes ship | DDD-8 | same | `@slice-boundary` |
+| 6 | tells the forecaster the chart builds forward when nothing is recorded yet | AC-1.2 | same | `@US-01` `@error` |
+| 7 | names the chart after whatever this instance calls its epics | AC-1.5 | same | `@US-01` `@terminology` |
+| 8 | says the count leaves out epics that had no items that day | D3 caveat | same | `@US-01` |
+| 9 | shows the epic size and count card built from the same fetched history | AC-1.3 | `DeliverySection.metrics.test.tsx` | `@US-01` `@driving_port` |
+| 10 | reads the four cards burnup, predictability, epic size and count, fever | AC-1.3 | same | `@US-01` `@driving_port` |
+| 11 | gives each of the four cards its own cell so none spans the whole row | AC-1.3 | same | `@US-01` `@driving_port` |
+| 12 | pairs the cards on a wide screen and stacks them on a narrow one | AC-1.4 | same | `@regression-guard` |
+| 13 | hands the chart this instance's word for epics | AC-1.5 | same | `@US-01` `@driving_port` |
+
+**AC coverage**: AC-1.1 (1,2) · AC-1.2 (6) · AC-1.3 (9,10,11) · AC-1.4 (12) · AC-1.5 (7,13) · AC-1.6 (3).
+Zero uncovered ACs.
+
+**Error/edge share**: 2 of 13 (empty history; pre-feature 4-field breakdown). Below the 40% guideline and
+deliberately so — a presentation component fed by a boundary parser that already throws `BoundaryError`
+on shape drift (S7) has exactly two failure modes at this layer; the rest live in
+`DeliveryMetricsHistory.ts`'s own tests. Recorded, not silently skipped.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Chart acceptance tests | `Lighthouse.Frontend/src/components/Common/Charts/DeliveryEpicSizeChart.test.tsx` | Co-located `*.test.tsx` — the convention for all 30+ charts in that directory |
+| Tab-layout acceptance tests | `…/DeliveryGrid/DeliverySection.metrics.test.tsx` (appended `describe`) | The Metrics tab's existing acceptance file; a second file would split one surface across two |
+| RED scaffold | `…/Charts/DeliveryEpicSizeChart.tsx` | Mandate 7 — marker `// __SCAFFOLD__` (comment form, not an exported const, so Biome's naming rules stay clean) |
+
+**No new E2E spec.** Per the project's E2E minimalism rule the Metrics tab already has a walking
+skeleton; a fourth card on an already-covered tab does not earn a second one. The `@screenshot` test and
+the docs page are owed at DELIVER **after slice 02**, when the chart has its bars (slice-01 brief, OUT of
+scope).
+
+---
+
+## Wave: DISTILL / [REF] Adapter & Driving-Port Coverage
+
+| Port | Class | Treatment | Covered by |
+|---|---|---|---|
+| UI — Portfolio → delivery → Metrics tab | Driving | Real component tree via `render(<DeliverySection …/>)`, real tab click | Scenarios 9–13 |
+| `deliveryService.getMetricsHistory` | Driven internal (HTTP) | Existing mock in `DeliverySection.metrics.test.tsx` | Scenarios 9–13 |
+| `parseDeliveryMetricsHistory` boundary parser | Driven internal (pure) | **Real**, not stubbed — chart fixtures are built through the production parser so a shape mismatch fails the test | Scenarios 1–8 |
+| `@mui/x-charts` `ChartsContainer` | Third-party render surface | Mocked, props captured (repo-wide convention for every chart test) | Scenarios 1–5 |
+| `useTerminology` | Driven internal | Mocked with a term table | Scenarios 7, 13 |
+
+Zero driven adapters are uncovered. No CLI, HTTP or hook entry point changes in this slice (slice 06 owns
+the CLI/MCP ports), so the driving-adapter scan yields one surface — the UI — and it is exercised.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds (Mandate 7)
+
+| File | Marker | Shape |
+|---|---|---|
+| `DeliveryEpicSizeChart.tsx` | `// __SCAFFOLD__` | Exports `DeliveryEpicSizeChartProps { history, featuresTerm?, height? }`; body throws `Not yet implemented — RED scaffold` |
+| `DeliverySection.tsx` | none — real change | `export const METRICS_GRID_COLUMNS = { xs: "1fr", lg: "1fr 1fr" }`, now consumed by the grid `sx`. Extracted so AC-1.4 is assertable; behaviour unchanged. |
+
+The `METRICS_GRID_COLUMNS` extraction is the only production edit DISTILL made. Without it the AC-1.4
+import would fail at module load and the whole file would classify BROKEN rather than RED.
+
+---
+
+## Wave: DISTILL / [REF] Fail-for-the-Right-Reason Gate
+
+Run: `pnpm vitest run src/components/Common/Charts/DeliveryEpicSizeChart.test.tsx src/pages/…/DeliverySection.metrics.test.tsx`
+Result: **27 tests — 12 failed, 15 passed.**
+
+| Scenarios | Failure | Classification |
+|---|---|---|
+| 1–8 | `Error: Not yet implemented — RED scaffold` at `DeliveryEpicSizeChart.tsx:16` | MISSING_FUNCTIONALITY ✅ |
+| 9, 13 | `epic-size-chart` testid absent / mock never called — the tab renders three cards | MISSING_FUNCTIONALITY ✅ |
+| 10, 11 | `Unable to find an element by: [data-testid="delivery-metrics-grid"]` | MISSING_FUNCTIONALITY ✅ |
+| 12 | passes — regression guard on behaviour that must not change | GREEN by design |
+| 15 pre-existing metrics-tab tests | pass | no collateral damage |
+
+Zero IMPORT_ERROR, zero FIXTURE_BROKEN, zero SETUP_FAILURE. **Gate passed — RED is genuine.**
+`pnpm exec tsc -b` clean; Biome clean on all four touched files.
+
+---
+
+## Wave: DISTILL / [REF] Contracts DELIVER Must Honour
+
+Derived while writing the scenarios; these are the names the tests assert, not new decisions.
+
+| Contract | Value | Source |
+|---|---|---|
+| Component props | `{ history, featuresTerm?, height? }` | Slice-01 brief — the term is a **prop**, not a `useTerminology()` call inside the chart |
+| Series id / dataset key | `epic-count` / `epicCount` | Scenario 1, 4, 5 |
+| Count y-axis | id `count`, `position: "right"` | ADR-122 dual-axis |
+| x-axis | band scale over `toLocaleDateString()` day labels, via `dataset` + `dataKey` | ADR-122 precedent `RefreshHistoryChart.tsx:31-63` |
+| Empty-state copy | `"This chart builds forward from today — no snapshots recorded yet."` | Copied verbatim from `DeliveryBurnupChart.tsx:15-16` |
+| Grid testid | `data-testid="delivery-metrics-grid"` on the MetricsTab grid `Box` | Scenarios 10, 11 |
+| Card order | burnup, predictability, epic size & count, fever — as **four direct grid children** | AC-1.3; the fever chart's wrapper `Box` with `gridColumn: { lg: "1 / -1" }` is deleted, not re-styled |
+
+---
+
+## Wave: DISTILL / [REF] Open Questions Resolved / Carried
+
+**Resolved in this wave**
+
+1. **Left/items axis in slice 01** — DDD-8 says slice 01 ships the composed container with the line only.
+   It does **not** declare the left `items` axis: an axis with no series is a rendering risk for no gain.
+   Slice 02 adds it together with the bar series. Scenario 4 pins only the `count`/right axis.
+2. **Where the terminology lands** — the chart takes `featuresTerm` as a prop (slice-01 brief) rather
+   than calling `useTerminology()` itself. Consequence DELIVER must handle: `MetricsTab` is a sibling
+   component in `DeliverySection.tsx` and does **not** currently receive the resolved term from
+   `DeliverySection.tsx:150` — it needs the prop threaded, or its own `useTerminology()` call.
+
+**Carried into slice 02+** (untouched by this wave): legend de-duplication of the `::estimated` twin,
+tooltip on a null twin, right-axis label wording, stack ordering, KPI-6 payload budget.
+
+**Known limit, stated not hidden**: AC-1.4's responsive behaviour cannot be observed in jsdom — emotion
+breakpoints never resolve. Scenario 12 asserts the *configuration value* instead, which catches a
+regression in the column definition but not a broken rendering. The real check is the DELIVER dogfood
+moment on a narrow viewport.
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To**: `nw-software-crafter` (DELIVER) — GREEN scenarios 1–11 and 13 against the contracts table above.
+**Prerequisite before writing the component** (slice-01 brief, 10 min): hit
+`GET .../deliveries/{id}/metrics-history` on the dogfood instance and confirm `points[].featureBreakdown`
+is non-empty on the great majority of days. If it is mostly empty, D3 collapses and slice 01 re-plans
+into slice 02 — do not start by writing the chart.
+**Not delivered by this wave**: slices 02–06 scenarios, the `@screenshot` test, the docs page.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary (slice 01)
+
+A delivery's Metrics tab now carries a fourth card, "Epics Size & Count", whose line reads how many
+epics were in the delivery on each recorded day — derived from `featureBreakdown.length` on history the
+recorder has been writing since Epic 3993, so the chart has real data on day one. The fever chart loses
+its full-width span and the tab becomes the 2×2 grid ADO 5585 asks for. Frontend only: two production
+files, no backend change, no migration, no new dependency.
+
+Scope of this DELIVER run: **slice 01 only** (US-01, ADO #5614). Slices 02–06 are not implemented.
+
+---
+
+## Wave: DELIVER / [REF] Premise Check (the slice's learning hypothesis)
+
+Run before any code was written, per the slice-01 brief. Local dev instance (`http://localhost:5169`,
+no auth), portfolio 34, delivery 2 "Next Release":
+
+| | |
+|---|---|
+| Recorded days | 26, spanning 2026-06-02 → 2026-08-01 |
+| Days with a non-empty `featureBreakdown` | **25 of 26 (96%)** — threshold was 80% |
+| Epic count per day | `[0,8,8,9,4,5,4,5,5,5,3,3,3,3,3,7,7,7,7,8,8,12,11,13,2,2]` |
+| Breakdown entries | 152, every one on the four pre-feature fields; zero null likelihoods |
+
+**D3 holds.** The count line ships with two months of genuine retroactive history and real steps in it.
+The single empty day is the first ever recorded. Two side observations: the 152 entries are production
+evidence for AC-1.6 (the pre-feature 4-field shape), and the zero null likelihoods mean ADR-120's
+inferred 500 is not firing on this data — it neither confirms nor refutes the defect, so slice 02's
+round-trip test remains the proof.
+
+---
+
+## Wave: DELIVER / [REF] Files Modified
+
+| File | Change |
+|---|---|
+| `Lighthouse.Frontend/src/components/Common/Charts/DeliveryEpicSizeChart.tsx` | NEW — composed `ChartsContainer` + `LinePlot`/`MarkPlot`, count series on a right-hand axis, card shell, forward-only empty state, D3 caveat line |
+| `…/DeliveryGrid/DeliverySection.tsx` | MODIFIED — `data-testid="delivery-metrics-grid"`; new card inserted third inside `EnlargeableChart`; the fever chart's `gridColumn: { lg: "1 / -1" }` wrapper Box DELETED; `featuresTerm` threaded through `MetricsTabProps` |
+| `…/Charts/DeliveryEpicSizeChart.test.tsx` | DISTILL's 8 scenarios (committed in 01-02 — 01-01's `--owned-paths` had scoped them out) |
+| `…/DeliveryGrid/DeliverySection.metrics.test.tsx` | DISTILL's 5 layout scenarios appended |
+
+Design compliance: exactly the two production files the DESIGN Component Decomposition table names. No
+unauthorised new file.
+
+**Commits** (on `main`, **unpushed**): `f8de5008b` (01-01, chart) · `5c997fedd` (01-02, tab wiring) ·
+`1d1db6ce8` (review fix: comment attribution).
+
+---
+
+## Wave: DELIVER / [REF] Scenarios Green
+
+**27 of 27**, 2026-08-02. Full frontend suite: 3868 passed, 289 files. The only red is two pre-existing
+failures in `src/utils/forecast/deliveryJointLikelihoodDocs.enforcement.test.ts` ("release notes have no
+vNext section") — Story #5587's docs enforcement, unrelated to this slice, red on `main` because the last
+release consumed the `vNext` section. Flagged, not fixed here.
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates
+
+| Gate | Outcome |
+|---|---|
+| DES integrity (`des-verify-integrity`) | PASS — "All 2 steps have complete DES traces", exit 0 |
+| 3-phase TDD (RED → GREEN → COMMIT) | Both steps, all phases logged by the executing crafter |
+| Test-file immutability | Held — `git diff` shows both test files added whole, no assertion loosened to fit the code |
+| `pnpm build` | Zero errors, zero warnings (implies clean Biome on ./src) |
+| Adversarial review | APPROVED, 0 blockers |
+| Refactor L1-L6 | 01-01: one L1 (`ReactElement[]` → `ReactNode`). 01-02: empty batch — the change mirrors three existing sibling cards |
+| Mutation testing | **82.35%** (42/51) — over the 80% floor. First run was 60.78%; the gap was real test gaps, not noise. `mutation/results.md` |
+| Dogfood visual check | PASS — Benjamin reviewed the running instance 2026-08-02; three changes came out of it |
+
+Review findings triaged: the "comment says D3 without saying which D3" finding was fixed (`1d1db6ce8`).
+Two were noted and not acted on — the chart tests assert on the props handed to a mocked
+`ChartsContainer` rather than on rendered output (the repo-wide convention for all 30+ chart tests, and
+DISTILL's deliberate choice), and the `Card` shell styling duplicates `DeliveryBurnupChart`'s (true of
+every chart in that directory; extracting it is a directory-wide refactor, not this slice's business).
+
+---
+
+## Wave: DELIVER / [REF] Deliberately Not Done
+
+- **Docs page and `@screenshot`.** Owed after slice 02, when the chart has its bars (slice-01 brief).
+- **Finalize / evolution archive.** Held until the slice is confirmed green in CI.
+
+---
+
+## Wave: DELIVER / [REF] Review Outcomes (Benjamin, 2026-08-02)
+
+The dogfood visual pass happened on the running instance and produced three changes, all shipped in
+`35a582665`:
+
+| Observation | Action |
+|---|---|
+| "Each day counts only what had items recorded — anything with no items that day is left out" read as noise on the card | Caveat line REMOVED. **This retracts the help-text half of D3** — the caveat itself still holds (0-item epics go uncounted), it just no longer earns space on the card. Acceptance scenario 8 was replaced. |
+| No tooltip on hover — expected per-day detail | `<ChartsTooltip />` added. The composed `ChartsContainer` renders no tooltip by default, unlike the pre-built `<LineChart>` the other cards use; nothing in DISTILL covered hover, so nothing caught it. Precedent: `ProcessBehaviourChart.tsx:511`. |
+| Title "Features Size & Count" reads awkwardly | Retitled **`<Features> over Time`**, Benjamin's wording. The enlarge control's aria-label follows it. |
+
+Also observed, no action this slice: the card is tall because the fever chart's legend is long, and
+slice 02's per-epic legend will do the same. Carried as a note on slice 04 — collapse the legend by
+default, on this chart and the fever chart, accepting one extra click to reach the filter.
+
+Axis-label crowding, the risk flagged before the review, did not materialise: 26 band labels render
+legibly at card width and full width.

@@ -406,6 +406,7 @@ describe("DeliverySection Metrics tab layout", () => {
 
 		const grid = screen.getByTestId("delivery-metrics-grid");
 		expect(grid.children).toHaveLength(CARD_ORDER.length);
+		expect(window.getComputedStyle(grid).display).toBe("grid");
 	});
 
 	it("pairs the cards on a wide screen and stacks them on a narrow one (AC-1.4)", () => {
@@ -419,5 +420,27 @@ describe("DeliverySection Metrics tab layout", () => {
 		expect(mockEpicSizeChart).toHaveBeenCalledWith(
 			expect.objectContaining({ featuresTerm: "Epics" }),
 		);
+	});
+
+	it("names the card's enlarge control after the same term", async () => {
+		renderSection();
+		await openMetricsTab();
+
+		expect(
+			screen.getByRole("button", { name: "Enlarge Epics over Time" }),
+		).toBeInTheDocument();
+	});
+
+	it("keeps the placeholder up when the delivery has no metrics to show", async () => {
+		mockGetMetricsHistory.mockResolvedValue(null);
+		renderSection();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Metrics" }));
+
+		await waitFor(() => {
+			expect(mockGetMetricsHistory).toHaveBeenCalled();
+		});
+		expect(screen.getByText("Loading metrics...")).toBeInTheDocument();
+		expect(screen.queryByTestId("epic-size-chart")).not.toBeInTheDocument();
 	});
 });
