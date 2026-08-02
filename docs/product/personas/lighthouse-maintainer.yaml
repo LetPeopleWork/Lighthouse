@@ -21,6 +21,7 @@ primary_jobs:
   - job-maintainer-keep-website-current
   - job-maintainer-publish-versioned-chart  # epic-5306: publish the public Helm chart with near-zero ceremony
   - job-maintainer-learn-servicenow-viability  # epic-5513-servicenow-integration (2026-07-27, #5513): decide go/narrow/stop on the ServiceNow market with evidence
+  - job-qualify-jira-native-demand  # epic-5146-jira-forge-app (2026-08-02, #5146): find out whether Jira-nativeness is a real buying trigger before funding a marketplace-grade Forge app
 
 goals:
   - Keep public screenshots accurate with near-zero per-release effort

@@ -1,0 +1,148 @@
+schema_version: 1
+feature_id: epic-5146-jira-forge-app
+updated: 2026-08-02
+note: >
+  ADO Epic 5146, "Lightweight Jira App". A manually-installed Jira Cloud Forge app that renders a
+  running Lighthouse instance inside a Jira global page. DISCUSS on 2026-08-02.
+
+  Two things make this epic unlike every other feature in this SSOT. First, it ships NO code into
+  the Lighthouse repository — the app lives in a new separate repo (D7), and "zero Lighthouse files
+  changed" is an outcome KPI (K4), not an incidental property. Both endpoints it depends on already
+  exist and are already [AllowAnonymous]: GET /api/v1/version/current (VersionController.cs:12, the
+  handshake) and GET /api/latest/auth/mode (AuthController.cs:26-33, the pre-warning). Second, its
+  exit criterion is a WRITTEN VERDICT, not working software — the epic body is explicit that the
+  goal is "not a production ready thing" but something to evaluate whether the avenue is worth
+  taking.
+
+  The epic's stated precondition (#5306, l8e productization) is Closed, but DISCUSS WEAKENED it: the
+  app points at any user-entered URL, so a hosted tenant is a convenient demo target rather than a
+  dependency. See docs/feature/epic-5146-jira-forge-app/feature-delta.md.
+
+  Deferred with a live trigger, not dropped: scoped views that map a Jira project or board to one
+  Lighthouse Team or Portfolio (D2). The maintainer wants them; the iframe goes first for
+  simplicity. Revisit when the first prospect comments unprompted on the double navigation.
+
+journeys:
+
+  - name: see-lighthouse-inside-jira
+    goal: >
+      A Jira-resident prospect evaluating Lighthouse opens their own Jira site's Apps menu, points
+      the app at a Lighthouse instance, and reads forecasts without leaving Jira — so the maintainer
+      can watch a real reaction and decide whether a marketplace-grade Forge app is worth building.
+    persona: "forecasting-prospect"
+    secondary_persona: "lighthouse-maintainer"
+
+    emotional_arc:
+      start: Sceptical — "another tool, another tab; I already know how this proposal dies."
+      middle: Surprised — "it is under our own Apps menu, against our own instance, and it took
+        minutes to install."
+      end: Deciding — "now the question is whether this belongs in our week, not whether it exists."
+
+    steps:
+      - id: step-install-the-app
+        action: >
+          Maintainer (or prospect, following the README) runs forge deploy and forge install against
+          a Jira Cloud site, then opens Apps -> Lighthouse
+        expected_output: >
+          The Lighthouse SPA renders inside the Jira page, with its own navigation usable — a Teams
+          list reachable, one team detail page opening. If Forge or the browser blocks the frame, the
+          page shows the blocked origin and the reason rather than an empty rectangle: a blocked
+          frame is a VALID outcome of the walking skeleton, but it must be legible.
+        emotional_state: Curious, then either impressed or informed — both are useful
+        shared_artifacts:
+          - the Forge manifest's external framing/egress permission (NEW, and the epic's central
+            risk R1 — Forge derives its CSP from STATICALLY declared manifest permissions, so
+            whether a runtime-supplied origin can be framed at all is unverified)
+          - the Lighthouse SPA itself (EXISTING and UNCHANGED — Lighthouse sends no
+            X-Frame-Options and no frame-ancestors anywhere, which is what makes it frameable; that
+            is an ABSENCE nothing in the codebase guards, R3)
+
+      - id: step-point-it-at-my-instance
+        action: >
+          Prospect opens the app's settings, pastes their own https Lighthouse URL and presses
+          Connect
+        expected_output: >
+          The app calls GET {url}/api/v1/version/current from the FORGE BACKEND — so browser CORS
+          never applies and Lighthouse's fail-closed AllowedOrigins is never involved — and shows
+          "Connected — Lighthouse v{version}", persisting the URL for the whole Jira site. A URL that
+          responds but is not a Lighthouse, one that does not resolve, and an http:// URL are each
+          refused BY REASON and not persisted.
+        emotional_state: Reassured — "it told me it found a Lighthouse, not just that it saved a string"
+        shared_artifacts:
+          - GET /api/v1/version/current (EXISTING, [AllowAnonymous] at class level,
+            VersionController.cs:12 — chosen over a new endpoint precisely BECAUSE it already exists
+            on instances predating this epic, which is the population a prospect demo does not
+            control; D4)
+          - the stored base URL (NEW; site-scoped Forge storage, one instance per Jira site, shared
+            across users of that site — deliberately not per-user)
+
+      - id: step-be-warned-before-the-demo-breaks
+        action: >
+          The configured instance has authentication enabled
+        expected_output: >
+          Settings show a warning that a login inside the embedded frame is expected to fail, and
+          that demos should target an auth-disabled instance. Read from GET /api/latest/auth/mode in
+          the same probe round-trip.
+        emotional_state: Forewarned rather than embarrassed — the failure is named before it happens
+        shared_artifacts:
+          - GET /api/latest/auth/mode (EXISTING, [AllowAnonymous], AuthController.cs:26-33 —
+            returns RuntimeAuthStatus.Mode; D8)
+          - the framed SPA's session cookie (EXISTING, and now THIRD-PARTY — this is the whole
+            reason for the warning, R2)
+
+      - id: step-decide
+        action: >
+          Maintainer shows the app in three or more conversations and writes docs/verdict.md
+        expected_output: >
+          An explicit go or no-go, the unprompted reactions behind it, the platform limits found
+          (Cloud-only, https-only, embedded login, framing constraints), and either a named
+          follow-up epic or an explicit decision to stop. Includes a direct answer to D2: did the
+          double navigation come up, and does scoped-view work move to the follow-up?
+        emotional_state: Settled — the avenue is chosen on evidence rather than on enthusiasm
+        shared_artifacts:
+          - docs/verdict.md in the new repo (NEW; this is the epic's actual product)
+          - the KPIs K1-K4, fixed at DISCUSS so the verdict is written against pre-stated criteria
+            rather than becoming a summary of what happened
+
+    error_paths_summary:
+      - Forge refuses to frame an arbitrary external origin (R1). This kills the epic AS DESIGNED,
+        which is exactly why it is bought first, in slice 01, before any settings UI or storage
+        exists. D1 and D3 would both have to be re-decided.
+      - The frame loads but the SPA misbehaves — routing, partitioned storage, navigation (R2).
+        Framing works; the wrapper needs conditions attached, and those conditions belong in the
+        verdict.
+      - A domain unknown at manifest-build time cannot be declared (slice 02's hypothesis). Forge
+        declares egress and framing STATICALLY, so a user-entered URL needs a wildcard — which
+        Atlassian discourages and marketplace review rejects. Survivable: D3 degrades to a small
+        allow-list or a single hardcoded demo instance, and the constraint becomes a finding ("a
+        real Forge app needs per-customer manifests, or a Lighthouse-hosted proxy origin") that is
+        worth knowing BEFORE anyone scopes a marketplace app.
+      - An OIDC login inside the frame fails because the IdP sends X-Frame-Options DENY, and the
+        Lighthouse session cookie is third-party. NOT fixed here — that is step 2 (D5). The app
+        warns and demos run against auth-disabled instances.
+      - Forge is Jira CLOUD ONLY. A Data Center prospect cannot be demoed this way at all. This is a
+        finding for the verdict, not a gap to close.
+      - localhost and self-signed origins cannot be framed by an Atlassian-hosted page. The demo
+        target must be https with a public certificate.
+      - Anything later adding a security-headers middleware to Lighthouse breaks this app SILENTLY,
+        because the app depends on the current ABSENCE of X-Frame-Options and frame-ancestors (R3).
+      - Scope absorption in the demo slice. Every good demo generates a feature request, and
+        honouring them turns a qualification exercise into an unplanned product. Feedback lands in
+        the verdict; acting on it is the follow-up epic's job.
+      - The verdict written after the demos instead of against criteria fixed before them. This is
+        how a decision degrades into a summary — the precedent is 5513's slice-05 verdict, and the
+        fix carried forward is K1-K4 being set now.
+
+    success_signal:
+      - A prospect opens Apps -> Lighthouse on their OWN Jira Cloud site and sees THEIR OWN
+        Lighthouse instance, having followed the README without asking its author a question, in
+        ten minutes or less.
+      - Three or more dated conversation notes exist, each capturing what the person said
+        UNPROMPTED — "do you like it?" produces agreement, not signal.
+      - docs/verdict.md states go or no-go and names either the next epic or the stop.
+      - Zero files changed in the Lighthouse repository across the entire epic (K4). If this goes
+        non-zero the epic has quietly stopped being a lightweight wrapper, and D1/D7 need
+        re-deciding rather than amending.
+      - Honest-limit caveat: a shrug is a SUCCESSFUL outcome. If prospects who asked "is there a
+        Jira app?" see one and the conversation does not change, the honest reading is that the
+        question was a checkbox — and the epic has saved the cost of a marketplace-grade app.

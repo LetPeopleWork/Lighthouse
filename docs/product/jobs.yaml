@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-01
+updated: 2026-08-02
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -36,6 +36,7 @@ feature_context:
   - servicenow-multi-table-work-item-types
   - servicenow-board-picker-and-query-guidance
   - servicenow-pre-close-bucket
+  - epic-5146-jira-forge-app
 
 jobs:
   - id: job-rbac-bootstrap
@@ -4297,3 +4298,97 @@ jobs:
         already know ServiceNow's encoded-query syntax. Gap: 5, and unusually cheap to close: half of
         it is help text on a field that already renders, and the other half is one provider
         implementation behind a port that already exists.
+
+  - id: job-qualify-jira-native-demand
+    title: Find out whether a Jira-native Lighthouse is a real buying trigger
+    persona: lighthouse-maintainer
+    created_in_feature: epic-5146-jira-forge-app
+    job_story: >
+      When a Jira-shop prospect asks "does this live in Jira?" and the honest answer is no,
+      I want to show a real, installable Jira-native Lighthouse inside the call,
+      so I can find out whether Jira-nativeness is an actual buying trigger before I invest in a
+      marketplace-grade app.
+    dimensions:
+      functional: >
+        Install a manually-distributed Forge app onto a Jira Cloud site and render a running
+        Lighthouse instance under Jira's own Apps menu, with no change to Lighthouse itself.
+      emotional: >
+        Stop arguing from conviction. Replace "we could build a Jira app" — a claim that is equally
+        easy to make and to doubt — with a screen the other person reacts to in front of me.
+      social: >
+        Answer the integration question with a demo rather than a roadmap promise, which is the
+        difference between a vendor who has thought about it and one who is deflecting.
+    forces:
+      push: >
+        Prospects ask the Jira question and the conversation moves on, so the question's weight is
+        never measured. A wrong guess is expensive in both directions: building a marketplace app
+        nobody wanted, or dismissing the avenue and losing Jira-resident buyers silently.
+      pull: >
+        A wrapper is nearly free — the Lighthouse SPA is already frameable (no X-Frame-Options
+        anywhere in the codebase) and the handshake endpoint already exists and is anonymous. An
+        installable app converts a hypothesis into an observable reaction across several calls.
+      anxiety: >
+        Two ways to be wrong. Over-sell it and a visibly-iframed app reads as a mock-up, damaging
+        trust more than having no app at all. Under-scope the question and the demos produce polite
+        interest that gets misread as demand. Mitigated by fixing the success criteria before the
+        first demo and by recording only unprompted reactions.
+      habit: >
+        Demoing Lighthouse standalone in a browser tab and talking about integration in the
+        abstract, which lets both sides leave the question unresolved.
+    opportunity_score:
+      importance: 8
+      current_satisfaction: 1
+      gap: 7
+      rationale: >
+        Importance: 8 — this decides whether an entire product direction gets funded, and the
+        decision is currently made on instinct. Current satisfaction: 1 — nothing exists; the only
+        available evidence is that prospects ask the question, which says nothing about how much
+        the answer weighs. Gap: 7, and cheap to close because the wrapper requires zero Lighthouse
+        changes. Note: importance and satisfaction here are the maintainer's judgement, not
+        interview data — no customer research backs this epic, which is itself the reason it exists.
+
+  - id: job-evaluate-lighthouse-without-leaving-jira
+    title: Evaluate Lighthouse from inside the tool my team already lives in
+    persona: forecasting-prospect
+    created_in_feature: epic-5146-jira-forge-app
+    job_story: >
+      When I am sizing up Lighthouse but my team's whole working day happens inside Jira,
+      I want to see its forecasts from inside Jira and against my own instance,
+      so I can judge whether adopting it adds a tab to my team's day or fits into the one they
+      already have.
+    dimensions:
+      functional: >
+        Point the app at my own Lighthouse URL, confirm it connected, and reach team and portfolio
+        forecasts without leaving the Jira window.
+      emotional: >
+        Move from "here comes another tool" to "this sits where we already are". The tab-count
+        objection is the one that kills tool proposals before their merits are discussed.
+      social: >
+        Bring a proposal to the team that survives the first question anyone asks about new
+        software, rather than one I have to defend before anyone looks at the data.
+    forces:
+      push: >
+        Every new tool proposal dies on "another tool, another tab", and today Lighthouse genuinely
+        is another tab, so the objection is correct and unanswerable.
+      pull: >
+        Seeing forecasts appear under Jira's own Apps menu makes the adoption story concrete in one
+        screen, with no story about future integration work that may or may not arrive.
+      anxiety: >
+        Is this a real integration or a picture frame? An embedded view that is transparently an
+        iframe — Jira chrome wrapped around Lighthouse chrome — may reduce credibility if it is
+        presented as more than a preview. Also: whether it will still work once our Lighthouse has
+        SSO turned on, which in the MVP it will not.
+      habit: >
+        Bookmarking a separate forecasting tool and opening it once a sprint, which turns forecast
+        review into a ceremony rather than a glance — the habit the embedded view is trying to break.
+    opportunity_score:
+      importance: 6
+      current_satisfaction: 2
+      gap: 4
+      rationale: >
+        Importance: 6 — real, and the objection it answers is genuinely the first one raised, but it
+        is a convenience rather than a capability: the same forecasts are already reachable in a
+        browser tab. Current satisfaction: 2 — a bookmark works; it just loses every argument about
+        adoption friction. Gap: 4. Ranked below the maintainer's job deliberately: this epic is
+        funded to answer a business question, not to serve prospects at scale, which is why it exits
+        on a written verdict rather than on an adoption number.

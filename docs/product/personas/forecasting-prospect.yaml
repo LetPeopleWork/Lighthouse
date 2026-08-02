@@ -9,6 +9,7 @@ aliases:
   - engineering-manager-prospect
   - coach-evaluating-maturity
   - website-visitor-prospect
+  - jira-native-prospect  # epic-5146: same pre-adoption evaluator, encountered inside their Jira site rather than on the website
 
 short_description: >
   A delivery lead, engineering manager, or agile/flow coach who lands on the LetPeopleWork
@@ -21,6 +22,7 @@ short_description: >
 
 primary_jobs:
   - job-assess-forecasting-flow-maturity
+  - job-evaluate-lighthouse-without-leaving-jira  # epic-5146-jira-forge-app (2026-08-02, #5146): judge whether Lighthouse adds a tab to the team's day or fits into the one they already have
 
 goals:
   - Get a defensible, framework-grounded read on delivery maturity without booking a call or installing anything
