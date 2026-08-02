@@ -49,6 +49,21 @@ eight lines of chrome on every visit.
 Applies to **both** charts — the new one and `DeliveryFeverChart` — so the two behave the same way on
 the same tab. Treat the fever chart's legend as in scope for this slice rather than filing it separately.
 
+## Follow-ups raised on review of slice 04 (Benjamin, 2026-08-02) — NOT yet done
+
+**1. One colour per epic across both charts.** The two cards colour by different mechanisms today:
+`DeliveryFeverChart` uses `featureColor(index)` — position in its own feature list — while
+`DeliveryEpicSizeChart` uses `getColorMapForKeys(referenceIds)`, a sorted map. So the same epic is a
+different colour in the two cards on the same tab, and the fever chart's colours shift if its feature
+list reorders. Both should derive from `getColorMapForKeys` over the same key set. Benjamin: *"It will
+always show the same items, and it would be nice to have them matching in both charts."*
+
+**2. Observed while checking that, unexplained**: the size chart's legend listed **9** entries on the
+demo instance while only **3** epics had bars. `collectSizedEpics` filters on `totalItems !== null`, so
+either the recorder is writing sizes for all nine (and six render zero-height), or something else pads
+the list. Settle this BEFORE the colour work — "the two charts always show the same items" is the
+premise the colour fix rests on, and it may not hold.
+
 ## Dependencies
 
 Slice 02 (bars must exist to filter). Independent of slice 03 — hatching and filtering do not interact
