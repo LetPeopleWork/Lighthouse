@@ -1,6 +1,7 @@
 import { Card, CardContent, Typography, useTheme } from "@mui/material";
 import {
 	ChartsContainer,
+	ChartsTooltip,
 	ChartsXAxis,
 	ChartsYAxis,
 	LinePlot,
@@ -17,10 +18,6 @@ export interface DeliveryEpicSizeChartProps {
 
 const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no snapshots recorded yet.";
-
-// Epic 5585 D3: a day's breakdown only lists what had items, so anything with none is uncounted.
-const NOT_COUNTED_CAVEAT =
-	"Each day counts only what had items recorded — anything with no items that day is left out.";
 
 const COUNT_AXIS_ID = "count";
 const COUNT_AXIS_LABEL = "Count";
@@ -54,7 +51,7 @@ const DeliveryEpicSizeChart = ({
 	height = 320,
 }: DeliveryEpicSizeChartProps): ReactElement => {
 	const theme = useTheme();
-	const title = `${featuresTerm} Size & Count`;
+	const title = `${featuresTerm} over Time`;
 
 	if (history.points.length === 0) {
 		return (
@@ -94,10 +91,8 @@ const DeliveryEpicSizeChart = ({
 				<MarkPlot />
 				<ChartsXAxis />
 				<ChartsYAxis axisId={COUNT_AXIS_ID} label={COUNT_AXIS_LABEL} />
+				<ChartsTooltip />
 			</ChartsContainer>
-			<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-				{NOT_COUNTED_CAVEAT}
-			</Typography>
 		</ChartCard>
 	);
 };

@@ -620,7 +620,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({
 				)}
 			/>
 			<EnlargeableChart
-				ariaLabel={`Delivery ${featuresTerm} Size & Count`}
+				ariaLabel={`${featuresTerm} over Time`}
 				render={(height) => (
 					<DeliveryEpicSizeChart
 						history={history}

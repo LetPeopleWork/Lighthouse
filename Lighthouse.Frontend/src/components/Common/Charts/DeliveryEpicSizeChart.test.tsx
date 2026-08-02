@@ -189,9 +189,9 @@ describe("DeliveryEpicSizeChart count line", () => {
 		expect(screen.getByRole("heading")).not.toHaveTextContent(/Epic/);
 	});
 
-	it("says the count leaves out epics that had no items that day (D3 caveat)", () => {
+	it("offers the forecaster the detail behind a day on hover", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
-		expect(screen.getByText(/no items/i)).toBeInTheDocument();
+		expect(screen.getByTestId("mock-tooltip")).toBeInTheDocument();
 	});
 });
