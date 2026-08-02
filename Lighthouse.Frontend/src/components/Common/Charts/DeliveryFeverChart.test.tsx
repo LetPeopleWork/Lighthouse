@@ -140,9 +140,44 @@ describe("DeliveryFeverChart", () => {
 	it("colours each feature from the delivery-wide epic palette", () => {
 		// Review 2026-08-02: the size chart on the same tab colours the same epics. Both read this map,
 		// so an epic keeps one colour across the tab instead of one per chart.
-		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+		//
+		// F-0 is un-forecastable and so never plotted here — and sorts ahead of the two that are. A map
+		// built from this chart's own features would skip it and shift F-1 and F-2 a slot, which is the
+		// drift being fixed; the fixture fails against that map rather than agreeing with it by accident.
+		const historyWithAnUnforecastableEpic: DeliveryMetricsHistory =
+			parseDeliveryMetricsHistory({
+				deliveryDate: "2026-06-21T00:00:00Z",
+				firstSnapshotDate: "2026-06-01T00:00:00Z",
+				points: [
+					{
+						...getMockPoint("2026-06-01T00:00:00Z", []),
+						featureBreakdown: [
+							{
+								referenceId: "F-0",
+								name: "Migration",
+								completion: 5,
+								likelihood: null,
+							},
+							{
+								referenceId: "F-1",
+								name: "Checkout",
+								completion: 20,
+								likelihood: 90,
+							},
+							{
+								referenceId: "F-2",
+								name: "Search",
+								completion: 10,
+								likelihood: 50,
+							},
+						],
+					},
+				],
+			});
+		render(<DeliveryFeverChart history={historyWithAnUnforecastableEpic} />);
 
-		const colors = deliveryEpicColors(twoFeatureHistory);
+		const colors = deliveryEpicColors(historyWithAnUnforecastableEpic);
+		expect(colors["F-0"]).toBeDefined();
 		expect(seriesById("F-1")?.color).toBe(colors["F-1"]);
 		expect(seriesById("F-2")?.color).toBe(colors["F-2"]);
 	});
