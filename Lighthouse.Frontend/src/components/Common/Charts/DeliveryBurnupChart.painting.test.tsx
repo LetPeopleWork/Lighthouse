@@ -64,11 +64,43 @@ describe("DeliveryBurnupChart painting", () => {
 			(node) => node.getAttribute("data-series") === "done",
 		);
 		const fillOpacity = Number(
-			getComputedStyle(doneArea as Element).fillOpacity,
+			getComputedStyle(doneArea as Element).getPropertyValue("fill-opacity"),
 		);
 
-		expect(fillOpacity).toBeGreaterThan(0);
-		expect(fillOpacity).toBeLessThan(1);
+		// A band, not a bound: anything up to half-opaque still swallows a 2px dashed line, and anything
+		// under a sixth stops reading as a filled area at all (AC-5.2). Review 2026-08-02.
+		expect(fillOpacity).toBeGreaterThanOrEqual(0.15);
+		expect(fillOpacity).toBeLessThanOrEqual(0.5);
+	});
+
+	it("leaves the fill rule alone when the estimate runs above the Done curve", () => {
+		// The complement of the defect: nothing overlaps, so the line was always readable here. The rule
+		// still has to apply, or fixing one case would have broken the other.
+		const estimatedAboveDone = parseDeliveryMetricsHistory({
+			deliveryDate: "2026-06-10T00:00:00Z",
+			firstSnapshotDate: "2026-06-01T00:00:00Z",
+			points: [
+				point("2026-06-01T00:00:00Z", 10, 80),
+				point("2026-06-02T00:00:00Z", 20, 85),
+			],
+		});
+
+		const { container } = render(
+			<DeliveryBurnupChart history={estimatedAboveDone} />,
+		);
+
+		const paths = pathsOf(container);
+		expect(
+			paths.some((node) => node.getAttribute("data-series") === "estimated"),
+		).toBe(true);
+		const doneArea = paths.find(
+			(node) => node.getAttribute("data-series") === "done",
+		);
+		expect(
+			Number(
+				getComputedStyle(doneArea as Element).getPropertyValue("fill-opacity"),
+			),
+		).toBeLessThanOrEqual(0.5);
 	});
 
 	it("keeps the estimated line dashed where it crosses the fill (AC-5.3)", () => {
