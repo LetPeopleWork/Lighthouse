@@ -45,16 +45,18 @@ function read(path: string): string {
 	return readFileSync(path, "utf8");
 }
 
-/** The unreleased section of the notes — everything above the first shipped version heading. */
-function vNextSection(): string {
+/**
+ * The release notes, whole file.
+ *
+ * This was scoped to the `# Lighthouse vNext` section until 2026-08-02, which made the guard
+ * self-destructing: vNext becomes `# Lighthouse v<version>` the moment a release is cut, so the
+ * section it asserted against ceased to exist and every check went red on an unrelated push. The
+ * shipped wording is what has to survive, and it survives wherever in the notes it ends up.
+ */
+function releaseNotesText(): string {
 	const notes = read(releaseNotes);
-	const start = notes.indexOf("# Lighthouse vNext");
-	expect(start, "release notes have no vNext section").toBeGreaterThanOrEqual(
-		0,
-	);
-
-	const next = notes.indexOf("\n# Lighthouse v", start + 1);
-	return next === -1 ? notes.slice(start) : notes.slice(start, next);
+	expect(notes, "release notes are empty").not.toHaveLength(0);
+	return notes;
 }
 
 /**
@@ -83,21 +85,24 @@ function deliveryGrainSection(): string {
 
 describe("delivery joint likelihood is explained in the docs (Story #5587 slice-04)", () => {
 	it("names all three visible consequences in the release notes (AC-04.1)", () => {
-		const section = vNextSection();
+		const notes = releaseNotesText();
 
-		// 1. The number drops, because it used to reflect only the governing feature.
-		expect(section).toMatch(/governing/i);
+		// 1. The number drops, because it used to reflect only the governing feature. Shipped as
+		//    "one Feature governs it entirely", so match the stem rather than the DISTILL-era keyword.
+		expect(notes).toMatch(/govern/i);
 		// 2. The percentile dates move outward — the most under-communicated consequence.
-		expect(section).toMatch(/percentile|forecast date/i);
+		expect(notes).toMatch(/percentile|forecast date/i);
 		// 3. The recorded trend steps once and CANNOT be backfilled (forward-only, ADR-048/049).
-		expect(section).toMatch(/backfill/i);
+		//    Shipped as "past points cannot be recomputed".
+		expect(notes).toMatch(/backfill|cannot be recomputed/i);
 	});
 
 	it("calls the sufficiency change out separately (AC-04.2)", () => {
-		const section = vNextSection();
+		const notes = releaseNotesText();
 
-		expect(section).toMatch(/not enough data/i);
-		expect(section).toMatch(/every|all/i);
+		// The indicator shipped reading "Cannot forecast", not the DISTILL-era "not enough data".
+		expect(notes).toMatch(/not enough data|cannot forecast/i);
+		expect(notes).toMatch(/every|all/i);
 	});
 
 	it("adds a delivery-level worked example to the concept page (AC-04.3)", () => {

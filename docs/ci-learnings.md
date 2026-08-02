@@ -245,6 +245,26 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-02 — a docs-enforcement test scoped to the `vNext` release-notes section self-destructs at release
+
+- **Symptom**: `Verify Frontend` red on an unrelated frontend push (Epic #5585 slice 01). Two failures in
+  `src/utils/forecast/deliveryJointLikelihoodDocs.enforcement.test.ts`:
+  `AssertionError: release notes have no vNext section: expected -1 to be greater than or equal to 0`.
+  Nothing in the push touched docs or forecasting.
+- **Root cause**: the guard sliced `docs/releasenotes/releasenotes.md` from `# Lighthouse vNext` to the next
+  version heading. `/release` renames that heading to `# Lighthouse v<version>` when it cuts a release, so
+  the section the test asserts against stops existing the moment the release ships — the test was
+  guaranteed to go red on whichever push happened to run CI next. Its keywords had also drifted from the
+  prose that actually shipped (`governing` vs "governs", `not enough data` vs "Cannot forecast").
+- **Fix**: `deliveryJointLikelihoodDocs.enforcement.test.ts` — assert against the whole release-notes file
+  instead of the vNext slice, and match the shipped wording (`/govern/i`,
+  `/backfill|cannot be recomputed/i`, `/not enough data|cannot forecast/i`). The docs were NOT changed; the
+  explanation is present and good, only the guard was stale.
+- **Rule going forward**: never scope a docs-enforcement test to the `vNext` release-notes section — scope
+  it to the whole `releasenotes.md`, because `vNext` is renamed at every release and any section-scoped
+  assertion becomes a time bomb that fires on an unrelated push. The same applies to any assertion keyed
+  on an "unreleased"/"pending" heading.
+
 ### 2026-08-01 — a red backend job HIDES Sonar violations, so the next green push inherits them
 
 - **Symptom**: push A's `Verify Backend` failed on a test; `sonar-gates` reported `neutral`/skipped. Push B
