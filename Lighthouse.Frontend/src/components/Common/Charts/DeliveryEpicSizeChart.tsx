@@ -1,4 +1,5 @@
 import { Card, CardContent, Typography } from "@mui/material";
+import type { ChartsContainerProps } from "@mui/x-charts";
 import {
 	BarPlot,
 	ChartsContainer,
@@ -8,12 +9,16 @@ import {
 	LinePlot,
 	MarkPlot,
 } from "@mui/x-charts";
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, type SVGProps, useId } from "react";
 import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
-import { appColors, getColorMapForKeys } from "../../../utils/theme/colors";
+import {
+	appColors,
+	getColorMapForKeys,
+	getContrastText,
+} from "../../../utils/theme/colors";
 
 export interface DeliveryEpicSizeChartProps {
 	history: DeliveryMetricsHistory;
@@ -34,6 +39,11 @@ const ITEMS_AXIS_ID = "items";
 const ITEMS_AXIS_LABEL = "Items";
 const ITEMS_STACK_ID = "epic-size";
 
+const HATCH_TILE = 8;
+const HATCH_STROKE_WIDTH = 3;
+const HATCH_STROKE_OPACITY = 0.6;
+const DEFAULT_SIZE_NOTE = "size is the portfolio default (not broken down)";
+
 interface EpicSeriesDescriptor {
 	referenceId: string;
 	name: string;
@@ -43,8 +53,16 @@ const sizeDataKey = (referenceId: string): string => `items:${referenceId}`;
 
 // Null, not "": ChartsAxisTooltipContent drops a row whose formattedValue is null, which is how an
 // epic that was not in the delivery that day stays out of the day's tooltip.
-const formatSize = (value: number | null): string | null =>
-	value === null ? null : `${value}`;
+const formatSize = (
+	value: number | null,
+	usesDefaultSize: boolean,
+): string | null => {
+	if (value === null) {
+		return null;
+	}
+
+	return usesDefaultSize ? `${value} — ${DEFAULT_SIZE_NOTE}` : `${value}`;
+};
 
 const sizesOn = (point: DeliveryMetricsHistoryPoint): Map<string, number> => {
 	const sizes = new Map<string, number>();
@@ -54,6 +72,31 @@ const sizesOn = (point: DeliveryMetricsHistoryPoint): Map<string, number> => {
 		}
 	}
 	return sizes;
+};
+
+// AC-3.5: only a recorded flag makes an epic a guess. Every snapshot taken before slice 02 carries no
+// flag at all, so reading absence as "estimated" would hatch the whole back-history.
+const defaultSizedOn = (point: DeliveryMetricsHistoryPoint): Set<string> => {
+	const estimated = new Set<string>();
+	for (const metric of point.featureBreakdown) {
+		if (metric.isUsingDefaultSize) {
+			estimated.add(metric.referenceId);
+		}
+	}
+	return estimated;
+};
+
+// The props MUI-X hands a bar slot (ADR-119). Declared here rather than imported: the acceptance test
+// mocks the @mui/x-charts barrel, and a ninth named import from it would resolve to undefined.
+type EpicBarProps = Omit<SVGProps<SVGRectElement>, "color"> & {
+	seriesId: string | number;
+	dataIndex: number;
+	color?: string;
+	ownerState?: { isFaded?: boolean; isHighlighted?: boolean };
+	xOrigin?: number;
+	yOrigin?: number;
+	layout?: "vertical" | "horizontal";
+	skipAnimation?: boolean;
 };
 
 // Sorted so an epic keeps its band and its colour from day to day (DESIGN OQ-4).
@@ -77,6 +120,40 @@ const collectSizedEpics = (
 			}),
 		);
 };
+
+interface EpicHatch {
+	referenceId: string;
+	id: string;
+	color: string;
+}
+
+// The stroke is derived from the segment's own colour: the epic ramp runs green to teal and a fixed
+// white or black hatch vanishes at one end of it.
+const EpicHatchDefs = ({ hatches }: { hatches: EpicHatch[] }): ReactElement => (
+	<defs>
+		{hatches.map((hatch) => (
+			<pattern
+				key={hatch.referenceId}
+				id={hatch.id}
+				patternUnits="userSpaceOnUse"
+				patternTransform="rotate(45)"
+				width={HATCH_TILE}
+				height={HATCH_TILE}
+			>
+				<rect width={HATCH_TILE} height={HATCH_TILE} fill={hatch.color} />
+				<line
+					x1={0}
+					y1={0}
+					x2={0}
+					y2={HATCH_TILE}
+					stroke={getContrastText(hatch.color)}
+					strokeOpacity={HATCH_STROKE_OPACITY}
+					strokeWidth={HATCH_STROKE_WIDTH}
+				/>
+			</pattern>
+		))}
+	</defs>
+);
 
 const ChartCard = ({
 	title,
@@ -104,6 +181,9 @@ const DeliveryEpicSizeChart = ({
 	height = 320,
 }: DeliveryEpicSizeChartProps): ReactElement => {
 	const title = `${featuresTerm} over Time`;
+	// Scopes this chart's pattern defs; the guillemets React 19 puts in a generated id are not safe
+	// inside url(#...).
+	const instanceId = useId().replace(/[^a-zA-Z0-9]/g, "");
 
 	if (history.points.length === 0) {
 		return (
@@ -120,6 +200,48 @@ const DeliveryEpicSizeChart = ({
 		epics.map((epic) => epic.referenceId),
 	);
 	const hasSizes = epics.length > 0;
+
+	const estimatedByDay = history.points.map(defaultSizedOn);
+	const usesDefaultSize = (referenceId: string, dataIndex: number): boolean =>
+		estimatedByDay[dataIndex]?.has(referenceId) ?? false;
+
+	// Ids are instance-scoped so two deliveries expanded on the same page cannot reuse each other's
+	// pattern def (AC-3.6).
+	const hatches: EpicHatch[] = epics.map((epic, index) => ({
+		referenceId: epic.referenceId,
+		id: `hatch-${instanceId}-${index}`,
+		color: colorByReferenceId[epic.referenceId],
+	}));
+	const hatchIdByReferenceId: Record<string, string> = Object.fromEntries(
+		hatches.map((hatch) => [hatch.referenceId, hatch.id]),
+	);
+
+	const renderEpicBar = (props: EpicBarProps): ReactElement => {
+		const referenceId = `${props.seriesId}`;
+		const hatch = usesDefaultSize(referenceId, props.dataIndex)
+			? hatchIdByReferenceId[referenceId]
+			: undefined;
+
+		return (
+			<rect
+				x={props.x}
+				y={props.y}
+				width={props.width}
+				height={props.height}
+				className={props.className}
+				style={props.style}
+				opacity={props.ownerState?.isFaded ? 0.3 : 1}
+				filter={
+					props.ownerState?.isHighlighted ? "brightness(120%)" : undefined
+				}
+				fill={hatch ? `url(#${hatch})` : (props.fill ?? props.color)}
+			/>
+		);
+	};
+
+	// BarPlot is what actually routes the slot down to each bar; the container carries it too so the
+	// whole chart is configured from one place, and its `slots` type only knows the material slots.
+	const barSlots = { bar: renderEpicBar };
 
 	const dataset = history.points.map((point) => {
 		const sizes = sizesOn(point);
@@ -144,7 +266,8 @@ const DeliveryEpicSizeChart = ({
 		yAxisId: ITEMS_AXIS_ID,
 		stack: ITEMS_STACK_ID,
 		color: colorByReferenceId[epic.referenceId],
-		valueFormatter: formatSize,
+		valueFormatter: (value: number | null, context: { dataIndex: number }) =>
+			formatSize(value, usesDefaultSize(epic.referenceId, context.dataIndex)),
 	}));
 
 	const itemsAxis = hasSizes
@@ -175,8 +298,10 @@ const DeliveryEpicSizeChart = ({
 				]}
 				height={height}
 				margin={{ left: 60, right: 60, top: 20, bottom: 80 }}
+				slots={barSlots as ChartsContainerProps["slots"]}
 			>
-				<BarPlot />
+				<EpicHatchDefs hatches={hatches} />
+				<BarPlot slots={barSlots} />
 				<LinePlot />
 				<MarkPlot />
 				<ChartsXAxis />
