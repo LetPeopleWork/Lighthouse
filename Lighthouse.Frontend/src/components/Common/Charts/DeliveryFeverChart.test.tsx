@@ -11,6 +11,7 @@ import {
 	parseDeliveryMetricsHistory,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
 import { testTheme } from "../../../tests/testTheme";
+import { deliveryEpicColors } from "./deliveryEpicColors";
 import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
 
 const scatterChartMock = vi.hoisted(() =>
@@ -134,6 +135,16 @@ describe("DeliveryFeverChart", () => {
 		expect(seriesById("F-1")?.label).toBe("Checkout");
 		expect(seriesById("F-2")?.label).toBe("Search");
 		expect(seriesById("F-1")?.color).not.toBe(seriesById("F-2")?.color);
+	});
+
+	it("colours each feature from the delivery-wide epic palette", () => {
+		// Review 2026-08-02: the size chart on the same tab colours the same epics. Both read this map,
+		// so an epic keeps one colour across the tab instead of one per chart.
+		render(<DeliveryFeverChart history={twoFeatureHistory} />);
+
+		const colors = deliveryEpicColors(twoFeatureHistory);
+		expect(seriesById("F-1")?.color).toBe(colors["F-1"]);
+		expect(seriesById("F-2")?.color).toBe(colors["F-2"]);
 	});
 
 	it("moves a single bubble per feature during the animation, never a growing trail", () => {

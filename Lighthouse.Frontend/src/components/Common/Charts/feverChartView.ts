@@ -12,17 +12,6 @@ interface ZonePalette {
 	};
 }
 
-export const FEATURE_COLORS = [
-	"#1f77b4",
-	"#9467bd",
-	"#17becf",
-	"#8c564b",
-	"#e377c2",
-	"#2c3e50",
-	"#393b79",
-	"#637939",
-];
-
 export interface ScatterDatum {
 	x: number;
 	y: number;
@@ -30,9 +19,6 @@ export interface ScatterDatum {
 }
 
 export type AxisScale = (value: number) => number | undefined;
-
-export const featureColor = (index: number): string =>
-	FEATURE_COLORS[index % FEATURE_COLORS.length];
 
 export const zoneColors = (theme: ZonePalette): Record<FeverZone, string> => ({
 	green: theme.palette.success.main,

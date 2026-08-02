@@ -6,8 +6,6 @@ import type {
 import { testTheme } from "../../../tests/testTheme";
 import {
 	currentPoint,
-	FEATURE_COLORS,
-	featureColor,
 	likelihoodTooltip,
 	runButtonLabel,
 	visiblePoints,
@@ -77,24 +75,6 @@ describe("runButtonLabel", () => {
 			expect(runButtonLabel(isRunning, frame)).toBe(label);
 		},
 	);
-});
-
-describe("featureColor", () => {
-	it("assigns distinct colours to the first two features", () => {
-		expect(featureColor(0)).not.toBe(featureColor(1));
-	});
-
-	it("wraps around the palette modulo its length", () => {
-		expect(featureColor(FEATURE_COLORS.length)).toBe(featureColor(0));
-		expect(featureColor(FEATURE_COLORS.length + 1)).toBe(featureColor(1));
-	});
-
-	it("draws every feature from a non-empty, mutually distinct palette", () => {
-		for (const color of FEATURE_COLORS) {
-			expect(color).toMatch(/^#[0-9a-f]{6}$/i);
-		}
-		expect(new Set(FEATURE_COLORS).size).toBe(FEATURE_COLORS.length);
-	});
 });
 
 describe("zoneColors", () => {

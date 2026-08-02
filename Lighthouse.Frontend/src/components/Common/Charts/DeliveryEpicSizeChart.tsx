@@ -13,12 +13,9 @@ import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
-import {
-	appColors,
-	getColorMapForKeys,
-	getContrastText,
-} from "../../../utils/theme/colors";
+import { appColors, getContrastText } from "../../../utils/theme/colors";
 import ChartLegend from "./ChartLegend";
+import { deliveryEpicColors } from "./deliveryEpicColors";
 import { useLegendFilter } from "./useLegendFilter";
 
 export interface DeliveryEpicSizeChartProps {
@@ -199,9 +196,8 @@ const DeliveryEpicSizeChart = ({
 	}
 
 	const epics = collectSizedEpics(history);
-	const colorByReferenceId = getColorMapForKeys(
-		epics.map((epic) => epic.referenceId),
-	);
+	// Every recorded epic, not just the sized ones: the fever chart beside this one shares the map.
+	const colorByReferenceId = deliveryEpicColors(history);
 	// AC-4.5 / D8: only the stacked sizes are filtered — the count line below is a delivery-level fact.
 	const visibleEpics = epics.filter((epic) => isVisible(epic.referenceId));
 	const hasSizes = visibleEpics.length > 0;

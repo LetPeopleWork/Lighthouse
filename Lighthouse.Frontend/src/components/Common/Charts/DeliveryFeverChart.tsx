@@ -17,8 +17,8 @@ import {
 	feverZonePolygons,
 } from "../../../models/Delivery/FeverTrail";
 import ChartLegend, { type ChartLegendItem } from "./ChartLegend";
+import { deliveryEpicColors } from "./deliveryEpicColors";
 import {
-	featureColor,
 	likelihoodTooltip,
 	runButtonLabel,
 	visiblePoints,
@@ -89,12 +89,12 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 		);
 	}
 
-	const colouredFeatures: ColouredFeature[] = chart.features.map(
-		(feature, index) => ({
-			...feature,
-			color: featureColor(index),
-		}),
-	);
+	// Shared with the size chart on the same tab, so an epic is one colour across the tab.
+	const colorByReferenceId = deliveryEpicColors(history);
+	const colouredFeatures: ColouredFeature[] = chart.features.map((feature) => ({
+		...feature,
+		color: colorByReferenceId[feature.referenceId],
+	}));
 
 	const legendItems: ChartLegendItem[] = colouredFeatures.map((feature) => ({
 		id: feature.referenceId,

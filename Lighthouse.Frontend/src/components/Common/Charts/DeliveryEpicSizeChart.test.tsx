@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseDeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
 import { testTheme } from "../../../tests/testTheme";
 import { appColors } from "../../../utils/theme/colors";
+import { deliveryEpicColors } from "./deliveryEpicColors";
 
 const chartsContainerMock = vi.hoisted(() =>
 	vi.fn(({ children }) => (
@@ -391,6 +392,34 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		const absentEpic = barSeries().find((entry) => entry.id === "EPIC-B");
 		expect(absentEpic?.valueFormatter?.(null, { dataIndex: 0 })).toBeNull();
 		expect(absentEpic?.valueFormatter?.(3, { dataIndex: 1 })).toContain("3");
+	});
+
+	it("colours each segment from the delivery-wide epic palette", () => {
+		// Review 2026-08-02: the fever chart beside this one colours the same epics, and the two only
+		// agree if both read the same map — one keyed on every recorded epic, not on this chart's subset.
+		const history = historyOf([
+			[
+				sizedEpic("EPIC-A", 8),
+				sizedEpic("EPIC-B", 3),
+				// Sorts ahead of both sized epics on purpose: a map built from this chart's own subset
+				// would skip it and hand EPIC-A the first colour, which is the drift being fixed.
+				{
+					referenceId: "EPIC-0",
+					name: "Epic 0",
+					completion: 0,
+					likelihood: 50,
+				},
+			],
+		]);
+		render(<DeliveryEpicSizeChart history={history} />);
+
+		const colors = deliveryEpicColors(history);
+		expect(colors["EPIC-0"]).toBeDefined();
+		for (const epic of ["EPIC-A", "EPIC-B"]) {
+			expect(barSeries().find((entry) => entry.id === epic)?.color).toBe(
+				colors[epic],
+			);
+		}
 	});
 
 	it("orders the stack by epic so the bars do not reshuffle between days", () => {
