@@ -38,6 +38,7 @@ import DeliveryEpicSizeChart from "./DeliveryEpicSizeChart";
 const EPIC_COUNT_SERIES_ID = "epic-count";
 const EPIC_COUNT_DATA_KEY = "epicCount";
 const COUNT_AXIS_ID = "count";
+const ITEMS_AXIS_ID = "items";
 
 interface SeriesEntry {
 	id?: string;
@@ -46,6 +47,7 @@ interface SeriesEntry {
 	label?: string;
 	yAxisId?: string;
 	color?: string;
+	stack?: string;
 }
 
 interface AxisEntry {
@@ -87,6 +89,15 @@ const legacyBreakdown = (count: number) =>
 		completion: 0,
 		likelihood: 50,
 	}));
+
+/** One breakdown entry carrying the size Epic #5585 slice 02 records. */
+const sizedEpic = (referenceId: string, totalItems: number) => ({
+	referenceId,
+	name: `Epic ${referenceId}`,
+	completion: 0,
+	likelihood: 50,
+	totalItems,
+});
 
 const point = (date: string, epicCount: number) => ({
 	date,
@@ -165,13 +176,11 @@ describe("DeliveryEpicSizeChart count line", () => {
 		expect(getCountSeries()?.yAxisId).toBe(COUNT_AXIS_ID);
 	});
 
-	it("renders the count as a line and nothing else until sizes ship (DDD-8)", () => {
+	it("draws the count as a line, not as another bar (ADR-122)", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
-		expect(getLatestChartProps()?.series).toHaveLength(1);
 		expect(getCountSeries()?.type).toBe("line");
 		expect(getCountSeries()?.label).toBeTruthy();
-		expect(screen.queryByTestId("mock-bar-plot")).not.toBeInTheDocument();
 	});
 
 	it("tells the forecaster the chart builds forward when nothing is recorded yet (AC-1.2)", () => {
@@ -207,5 +216,115 @@ describe("DeliveryEpicSizeChart count line", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
 		expect(screen.getByTestId("mock-tooltip")).toBeInTheDocument();
+	});
+});
+
+// Epic #5585 slice 02 (US-02). Each day's bar carries one segment per epic, sized by that epic's
+// total child items, so a backlog jump is attributable to a named epic instead of to "scope".
+describe("DeliveryEpicSizeChart size bars", () => {
+	beforeEach(() => {
+		chartsContainerMock.mockClear();
+	});
+
+	const historyOf = (days: Record<string, unknown>[][]) =>
+		parseDeliveryMetricsHistory({
+			deliveryDate: "2026-06-10T00:00:00Z",
+			firstSnapshotDate: DATES[0],
+			points: days.map((entries, index) => ({
+				...point(DATES[index], 0),
+				featureBreakdown: entries,
+			})),
+		});
+
+	const barSeries = () =>
+		(getLatestChartProps()?.series ?? []).filter(
+			(entry) => entry.type === "bar",
+		);
+
+	const valuesFor = (referenceId: string) => {
+		const series = barSeries().find((entry) => entry.id === referenceId);
+		const key = series?.dataKey;
+		return (getLatestChartProps()?.dataset ?? []).map((row) =>
+			key === undefined ? undefined : row[key],
+		);
+	};
+
+	it("gives every epic on a day its own segment, sized by its items (AC-2.5)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]])}
+			/>,
+		);
+
+		expect(barSeries()).toHaveLength(2);
+		expect(valuesFor("EPIC-A")).toEqual([8]);
+		expect(valuesFor("EPIC-B")).toEqual([3]);
+	});
+
+	it("stacks the day's epics into one bar rather than standing them side by side (AC-2.5)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]])}
+			/>,
+		);
+
+		const stacks = new Set(barSeries().map((entry) => entry.stack));
+		expect(stacks.size).toBe(1);
+		expect([...stacks][0]).toBeTruthy();
+	});
+
+	it("draws no bar for a day recorded before sizes were written (AC-2.5)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory([7])} />);
+
+		expect(barSeries()).toHaveLength(0);
+		expect(getCountSeries()).toBeDefined();
+	});
+
+	it("keeps an epic that left the delivery on the days it was there (AC-2.6)", () => {
+		// D7: the segments stop, they do not disappear retroactively — that is how a scope cut stays
+		// visible. The epic keeps its series, so it keeps its legend entry.
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([
+					[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)],
+					[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)],
+					[sizedEpic("EPIC-A", 9)],
+				])}
+			/>,
+		);
+
+		expect(valuesFor("EPIC-A")).toEqual([8, 8, 9]);
+		expect(valuesFor("EPIC-B")).toEqual([3, 3, null]);
+	});
+
+	it("sizes the bars on their own left-hand scale, apart from the count (ADR-122)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]])}
+			/>,
+		);
+
+		const itemsAxis = getLatestChartProps()?.yAxis?.find(
+			(axis) => axis.id === ITEMS_AXIS_ID,
+		);
+		expect(itemsAxis?.position).toBe("left");
+		expect(barSeries().every((entry) => entry.yAxisId === ITEMS_AXIS_ID)).toBe(
+			true,
+		);
+	});
+
+	it("orders the stack by epic so the bars do not reshuffle between days", () => {
+		// Membership changes daily; without a pinned order the same epic lands in a different band on
+		// consecutive days and the chart reads as noise.
+		render(
+			<DeliveryEpicSizeChart
+				history={historyOf([
+					[sizedEpic("EPIC-B", 3), sizedEpic("EPIC-A", 8)],
+					[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)],
+				])}
+			/>,
+		);
+
+		expect(barSeries().map((entry) => entry.id)).toEqual(["EPIC-A", "EPIC-B"]);
 	});
 });

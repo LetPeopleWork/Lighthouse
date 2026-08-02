@@ -7,5 +7,12 @@ namespace Lighthouse.Backend.Models
 
     public sealed record DeliveryWhenPercentile(int Percentile, DateTime ExpectedDate, bool FilterApplied, string? ExcludedSummary);
 
-    public sealed record DeliveryFeatureMetric(string ReferenceId, string Name, double Completion, double? Likelihood);
+    // TotalItems / IsUsingDefaultSize are optional so snapshots recorded before Epic #5585 slice 02
+    // keep deserialising (D5 — expand in place, no backfill).
+    public sealed record DeliveryFeatureMetric(string ReferenceId, string Name, double Completion, double? Likelihood)
+    {
+        public int? TotalItems { get; init; }
+
+        public bool? IsUsingDefaultSize { get; init; }
+    }
 }
