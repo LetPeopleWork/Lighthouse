@@ -666,11 +666,16 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 			</>,
 		);
 
-		const [firstLegend] = screen.getAllByRole("button", { name: /legend/i });
-		fireEvent.click(firstLegend);
+		const legends = screen.getAllByRole("button", { name: /legend/i });
+		fireEvent.click(legends[0]);
 		fireEvent.click(screen.getByRole("button", { name: "Epic EPIC-B" }));
+		fireEvent.click(legends[1]);
 
-		// The second chart re-rendered from its own untouched state, so it still carries both bars.
-		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
+		// Asserted on each legend's own pressed state rather than on container props: filtering the
+		// first chart does not re-render the second, so the last ChartsContainer call is always the
+		// filtered one — reading it here would contradict AC-4.2 rather than test isolation.
+		const entries = screen.getAllByRole("button", { name: "Epic EPIC-B" });
+		expect(entries[0]).toHaveAttribute("aria-pressed", "false");
+		expect(entries[1]).toHaveAttribute("aria-pressed", "true");
 	});
 });
