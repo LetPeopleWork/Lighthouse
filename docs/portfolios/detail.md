@@ -229,6 +229,23 @@ The fever chart places each feature in the delivery on a schedule-versus-confide
 
 Use the **Run** control to replay the trail over time. A feature drifting up into the red zone is consuming its buffer faster than it is making progress — an early-warning signal long before the target date arrives.
 
+### Epics over Time
+
+The burnup tells you the delivery grew. This chart tells you *which* epic grew, and *when*.
+
+![Epics over Time](../assets/features/deliveryEpicSize.png)
+
+- Each day is one stacked bar, with a band per epic sized by the number of items it holds. A band that suddenly gets taller is scope discovered inside that epic; a band that ends is an epic that left the delivery.
+- The orange **Count** line, on its own right-hand scale, is how many epics were in the delivery that day. It answers a different question from the bars: three epics of ten items and ten epics of three items both total thirty, but they are not the same delivery to run.
+- A **hatched** band means the epic's size is still the portfolio's default estimate rather than counted items. Watching a band switch from hatched to solid is watching an epic actually get broken down.
+
+Epics keep the same colour here as on the fever chart above, and hold their position in the stack from day to day, so following one epic across the window is a matter of following one colour.
+
+Click **Legend** to open it, then click epics to show only those bars — useful once a delivery carries more than a handful. The Count line is a delivery-level fact and is never filtered.
+
+{: .note}
+> The epic **count** is drawn from the same daily snapshots the other charts use, so it goes back as far as this delivery's history. Epic **sizes** and the estimated/counted distinction were added later and are recorded from that point forward, so bars begin on the first day Lighthouse recorded them — earlier days show the count line alone. Epics with no items at all are not counted.
+
 {: .note}
 These charts accrue from the day a delivery is created. A newly added delivery shows an empty state until the first snapshots are recorded — give it a day or two of background updates to populate.
 

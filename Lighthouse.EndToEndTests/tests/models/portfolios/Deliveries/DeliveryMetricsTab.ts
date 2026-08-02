@@ -4,6 +4,10 @@ import type { DeliveryItem } from "./DeliveryItem";
 const BURNUP_CHART_TEST_ID = "delivery-burnup-chart";
 const PREDICTABILITY_CHART_TEST_ID = "delivery-predictability-chart";
 const FEVER_CHART_TEST_ID = "delivery-fever-chart";
+const EPIC_SIZE_CHART_TEST_ID = "delivery-epic-size-chart";
+// MuiBarChart-element, not MuiBarElement-*: the bar utility classes are generated from "MuiBarChart"
+// (@mui/x-charts barClasses). Bars also carry no data-series attribute, unlike lines (ADR-119).
+const BAR_ELEMENT_SELECTOR = ".MuiBarChart-element";
 const LINE_ELEMENT_SELECTOR = "path.MuiLineChart-line";
 const FEVER_BUBBLE_SELECTOR = "circle.MuiScatterChart-marker";
 
@@ -46,6 +50,16 @@ export class DeliveryMetricsTab {
 
 	async countFeverBubbles(): Promise<number> {
 		return this.feverChart.locator(FEVER_BUBBLE_SELECTOR).count();
+	}
+
+	get epicSizeChart(): Locator {
+		return this.container
+			.page()
+			.locator(`[data-testid="${EPIC_SIZE_CHART_TEST_ID}"]`);
+	}
+
+	async countEpicSizeBars(): Promise<number> {
+		return this.epicSizeChart.locator(BAR_ELEMENT_SELECTOR).count();
 	}
 
 	get feverRunButton(): Locator {

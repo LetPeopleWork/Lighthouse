@@ -962,6 +962,13 @@ testWithDemo(
 			metricsTab.feverChart,
 			"features/deliveryFever.png",
 		);
+
+		await expect(metricsTab.epicSizeChart).toBeVisible();
+		await expect.poll(() => metricsTab.countEpicSizeBars()).toBeGreaterThan(0);
+		await takeElementScreenshot(
+			metricsTab.epicSizeChart,
+			"features/deliveryEpicSize.png",
+		);
 	},
 );
 
