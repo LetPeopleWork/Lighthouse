@@ -62,6 +62,7 @@ interface AxisEntry {
 	scaleType?: string;
 	position?: string;
 	label?: string;
+	min?: number;
 }
 
 type DatasetRow = Record<string, string | number>;
