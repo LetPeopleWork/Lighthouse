@@ -155,7 +155,11 @@ namespace Lighthouse.Backend.Models
             var remainingItems = feature.FeatureWork.Sum(work => work.RemainingWorkItems);
             var completion = Math.Clamp((double)(totalItems - remainingItems) / totalItems * 100.0, 0.0, 100.0);
 
-            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date, today, blackoutPeriods));
+            return new DeliveryFeatureMetric(feature.ReferenceId, feature.Name, completion, feature.GetLikelhoodForDate(Date, today, blackoutPeriods))
+            {
+                TotalItems = totalItems,
+                IsUsingDefaultSize = feature.IsUsingDefaultFeatureSize,
+            };
         }
 
         private static DeliveryWhenPercentile ToWhenPercentile(WhenForecast forecast, int percentile, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)

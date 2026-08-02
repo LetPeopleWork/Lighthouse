@@ -27,6 +27,15 @@ namespace Lighthouse.Backend.Services.Implementation
         private static readonly int[] BurnupDoneWorkByElapsedDay = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 32, 34, 36, 37];
         private static readonly int[] BurnupEstimatedItemCountByElapsedDay = [22, 21, 20, 19, 18, 28, 27, 26, 25, 16, 18, 20, 22, 24, 25];
 
+        // Epic #5585: the three epics' sizes add up to BurnupTotalWorkByElapsedDay for the same day, so the
+        // stacked bars top out where the burnup's total line sits. Heat Shield Testing carries the portfolio
+        // default size until it is broken down on day 9 and turns out smaller - that is the day-9 dip.
+        private const int HeatShieldBreakdownElapsedDay = 9;
+
+        private static readonly int[] CrewLifeSupportSizeByElapsedDay = [20, 21, 22, 23, 24, 40, 41, 42, 43, 43, 45, 47, 49, 50, 51];
+        private static readonly int[] OrbitalDockingSizeByElapsedDay = [10, 11, 12, 13, 14, 22, 23, 24, 25, 25, 27, 29, 31, 32, 33];
+        private static readonly int[] HeatShieldSizeByElapsedDay = [30, 30, 30, 30, 30, 30, 30, 30, 30, 18, 18, 18, 18, 18, 18];
+
         private static readonly JsonSerializerOptions WhenDistributionJsonOptions = new();
 
         private readonly List<DemoDataScenario> scenarios = [];
@@ -197,20 +206,22 @@ namespace Lighthouse.Backend.Services.Implementation
             var progress = (double)elapsedDays / DemoBurnupDays;
             var features = new[]
             {
-                BuildFeatureMetric("DEMO-FEAT-1", "Crew Life Support", progress * 130, 65 + (elapsedDays * 2.5)),
-                BuildFeatureMetric("DEMO-FEAT-2", "Orbital Docking", progress * 50, 45 - (elapsedDays * 2.5)),
-                BuildFeatureMetric("DEMO-FEAT-3", "Heat Shield Testing", progress * 60, 50),
+                BuildFeatureMetric("DEMO-FEAT-1", "Crew Life Support", progress * 130, 65 + (elapsedDays * 2.5), CrewLifeSupportSizeByElapsedDay[elapsedDays], isUsingDefaultSize: false),
+                BuildFeatureMetric("DEMO-FEAT-2", "Orbital Docking", progress * 50, 45 - (elapsedDays * 2.5), OrbitalDockingSizeByElapsedDay[elapsedDays], isUsingDefaultSize: false),
+                BuildFeatureMetric("DEMO-FEAT-3", "Heat Shield Testing", progress * 60, 50, HeatShieldSizeByElapsedDay[elapsedDays], isUsingDefaultSize: elapsedDays < HeatShieldBreakdownElapsedDay),
             };
 
             return JsonSerializer.Serialize(features, WhenDistributionJsonOptions);
         }
 
-        private static object BuildFeatureMetric(string referenceId, string name, double completion, double likelihood) => new
+        private static object BuildFeatureMetric(string referenceId, string name, double completion, double likelihood, int totalItems, bool isUsingDefaultSize) => new
         {
             ReferenceId = referenceId,
             Name = name,
             Completion = Math.Round(Math.Clamp(completion, 0, 100), 1),
             Likelihood = Math.Round(Math.Clamp(likelihood, 0, 100), 1),
+            TotalItems = totalItems,
+            IsUsingDefaultSize = isUsingDefaultSize,
         };
 
         private static double LikelihoodForElapsedDays(int elapsedDays)

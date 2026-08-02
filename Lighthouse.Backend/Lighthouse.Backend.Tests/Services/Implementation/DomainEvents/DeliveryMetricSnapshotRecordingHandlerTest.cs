@@ -628,8 +628,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 EmptyFeatureReferenceId = "FEAT-3",
                 ExpectedBreakdown =
                 [
-                    new DeliveryFeatureMetric("FEAT-1", "In Progress Feature", 40.0, CertainSingleBucketLikelihood),
-                    new DeliveryFeatureMetric("FEAT-2", "Completed Feature", 100.0, CertainSingleBucketLikelihood),
+                    new DeliveryFeatureMetric("FEAT-1", "In Progress Feature", 40.0, CertainSingleBucketLikelihood) { TotalItems = 10, IsUsingDefaultSize = false },
+                    new DeliveryFeatureMetric("FEAT-2", "Completed Feature", 100.0, CertainSingleBucketLikelihood) { TotalItems = 5, IsUsingDefaultSize = false },
                 ],
             };
         }
