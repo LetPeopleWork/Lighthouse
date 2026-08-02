@@ -162,7 +162,7 @@ describe("DeliveryFeverChart", () => {
 		);
 	});
 
-	it("hides a feature from the chart when its legend entry is clicked, and restores it on a second click", () => {
+	it("leaves only the picked feature on the chart, and restores the rest when it is unpicked", () => {
 		render(<DeliveryFeverChart history={twoFeatureHistory} />);
 
 		act(() => {
@@ -172,13 +172,14 @@ describe("DeliveryFeverChart", () => {
 		act(() => {
 			fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
 		});
-		expect(seriesById("F-1")).toBeUndefined();
-		expect(seriesById("F-2")).toBeDefined();
+		expect(seriesById("F-1")).toBeDefined();
+		expect(seriesById("F-2")).toBeUndefined();
 
 		act(() => {
 			fireEvent.click(screen.getByRole("button", { name: "Checkout" }));
 		});
 		expect(seriesById("F-1")).toBeDefined();
+		expect(seriesById("F-2")).toBeDefined();
 	});
 
 	it("labels the axes as completion rate and chance of being late on a 0-100 scale", () => {

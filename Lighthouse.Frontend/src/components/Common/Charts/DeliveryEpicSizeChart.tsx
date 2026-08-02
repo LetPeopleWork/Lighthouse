@@ -8,14 +8,7 @@ import {
 	LinePlot,
 	MarkPlot,
 } from "@mui/x-charts";
-import {
-	type ReactElement,
-	type ReactNode,
-	type SVGProps,
-	useCallback,
-	useId,
-	useState,
-} from "react";
+import { type ReactElement, type ReactNode, type SVGProps, useId } from "react";
 import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
@@ -26,6 +19,7 @@ import {
 	getContrastText,
 } from "../../../utils/theme/colors";
 import ChartLegend from "./ChartLegend";
+import { useLegendFilter } from "./useLegendFilter";
 
 export interface DeliveryEpicSizeChartProps {
 	history: DeliveryMetricsHistory;
@@ -192,22 +186,7 @@ const DeliveryEpicSizeChart = ({
 	// Scopes this chart's pattern defs; the guillemets React 19 puts in a generated id are not safe
 	// inside url(#...).
 	const instanceId = useId().replace(/[^a-zA-Z0-9]/g, "");
-	// AC-4.6: per-instance, so two expanded deliveries filter independently.
-	const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
-
-	const toggle = useCallback((referenceId: string) => {
-		setHidden((previous) => {
-			const next = new Set(previous);
-			if (next.has(referenceId)) {
-				next.delete(referenceId);
-			} else {
-				next.add(referenceId);
-			}
-			return next;
-		});
-	}, []);
-
-	const showAll = useCallback(() => setHidden(new Set()), []);
+	const { selected, isVisible, toggle, showAll } = useLegendFilter();
 
 	if (history.points.length === 0) {
 		return (
@@ -223,7 +202,8 @@ const DeliveryEpicSizeChart = ({
 	const colorByReferenceId = getColorMapForKeys(
 		epics.map((epic) => epic.referenceId),
 	);
-	const visibleEpics = epics.filter((epic) => !hidden.has(epic.referenceId));
+	// AC-4.5 / D8: only the stacked sizes are filtered — the count line below is a delivery-level fact.
+	const visibleEpics = epics.filter((epic) => isVisible(epic.referenceId));
 	const hasSizes = visibleEpics.length > 0;
 
 	const estimatedByDay = history.points.map(defaultSizedOn);
@@ -342,7 +322,7 @@ const DeliveryEpicSizeChart = ({
 						label: epic.name,
 						color: colorByReferenceId[epic.referenceId],
 					}))}
-					hidden={hidden}
+					selected={selected}
 					onToggle={toggle}
 					onShowAll={showAll}
 				/>

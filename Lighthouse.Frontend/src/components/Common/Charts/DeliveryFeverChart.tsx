@@ -9,7 +9,6 @@ import {
 import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import { ScatterChart } from "@mui/x-charts/ScatterChart";
 import type React from "react";
-import { useCallback, useState } from "react";
 import type { DeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
 import {
 	deriveFeatureFeverChart,
@@ -27,6 +26,7 @@ import {
 	zoneColors,
 } from "./feverChartView";
 import { useFeatureFeverReveal } from "./useFeatureFeverReveal";
+import { useLegendFilter } from "./useLegendFilter";
 
 interface DeliveryFeverChartProps {
 	history: DeliveryMetricsHistory;
@@ -68,27 +68,13 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	height = 320,
 }) => {
 	const theme = useTheme();
-	const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
+	const { selected, isVisible, toggle, showAll } = useLegendFilter();
 	const chart = deriveFeatureFeverChart(history);
 	const maxLength = chart.features.reduce(
 		(longest, feature) => Math.max(longest, feature.points.length),
 		0,
 	);
 	const { frame, isRunning, run } = useFeatureFeverReveal(maxLength);
-
-	const toggle = useCallback((referenceId: string) => {
-		setHidden((previous) => {
-			const next = new Set(previous);
-			if (next.has(referenceId)) {
-				next.delete(referenceId);
-			} else {
-				next.add(referenceId);
-			}
-			return next;
-		});
-	}, []);
-
-	const showAll = useCallback(() => setHidden(new Set()), []);
 
 	if (chart.empty) {
 		return (
@@ -117,7 +103,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	}));
 
 	const series = colouredFeatures
-		.filter((feature) => !hidden.has(feature.referenceId))
+		.filter((feature) => isVisible(feature.referenceId))
 		.map((feature) => ({
 			id: feature.referenceId,
 			label: feature.name,
@@ -167,7 +153,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 				</ScatterChart>
 				<ChartLegend
 					items={legendItems}
-					hidden={hidden}
+					selected={selected}
 					onToggle={toggle}
 					onShowAll={showAll}
 				/>

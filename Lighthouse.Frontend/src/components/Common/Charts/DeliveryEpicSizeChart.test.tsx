@@ -615,15 +615,26 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 	});
 
 	it("leaves only the chosen epic's bars when one is picked (AC-4.2)", () => {
+		// Picking isolates. Chasing one epic out of fifteen must cost one click, not fourteen.
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		openLegend();
 		clickEntry("Epic EPIC-B");
 
-		expect(barSeriesIds()).toEqual(["EPIC-A"]);
+		expect(barSeriesIds()).toEqual(["EPIC-B"]);
 	});
 
-	it("brings a deselected epic back on a second click (AC-4.3)", () => {
+	it("adds a second epic to the selection rather than replacing it (AC-4.2)", () => {
+		render(<DeliveryEpicSizeChart history={twoEpics()} />);
+
+		openLegend();
+		clickEntry("Epic EPIC-B");
+		clickEntry("Epic EPIC-A");
+
+		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
+	});
+
+	it("returns to showing everything when the last pick is undone (AC-4.3)", () => {
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		openLegend();
@@ -637,7 +648,6 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		openLegend();
-		clickEntry("Epic EPIC-A");
 		clickEntry("Epic EPIC-B");
 		fireEvent.click(screen.getByRole("button", { name: /show all/i }));
 
@@ -674,7 +684,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		// Asserted on each legend's own pressed state rather than on container props: filtering the
 		// first chart does not re-render the second, so the last ChartsContainer call is always the
 		// filtered one — reading it here would contradict AC-4.2 rather than test isolation.
-		const entries = screen.getAllByRole("button", { name: "Epic EPIC-B" });
+		const entries = screen.getAllByRole("button", { name: "Epic EPIC-A" });
 		expect(entries[0]).toHaveAttribute("aria-pressed", "false");
 		expect(entries[1]).toHaveAttribute("aria-pressed", "true");
 	});

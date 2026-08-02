@@ -1,5 +1,8 @@
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Box, Button, Typography } from "@mui/material";
 import { type ReactElement, useState } from "react";
+import { isShown } from "./useLegendFilter";
 
 export interface ChartLegendItem {
 	id: string;
@@ -9,13 +12,13 @@ export interface ChartLegendItem {
 
 export interface ChartLegendProps {
 	items: ChartLegendItem[];
-	hidden: ReadonlySet<string>;
+	selected: ReadonlySet<string>;
 	onToggle: (id: string) => void;
 	onShowAll: () => void;
 }
 
 const DOT_SIZE = 12;
-const HIDDEN_OPACITY = 0.4;
+const DIMMED_OPACITY = 0.4;
 
 interface ChartLegendEntryProps {
 	item: ChartLegendItem;
@@ -42,7 +45,7 @@ const ChartLegendEntry = ({
 			cursor: "pointer",
 			p: 0,
 			color: "text.primary",
-			opacity: visible ? 1 : HIDDEN_OPACITY,
+			opacity: visible ? 1 : DIMMED_OPACITY,
 		}}
 	>
 		<Box
@@ -59,9 +62,11 @@ const ChartLegendEntry = ({
 
 // Collapsed by default: on a real delivery the entries wrap to eight lines and the Metrics card
 // already runs tall, while filtering is a special-case action worth one click (Epic #5585 US-04).
+// Clicking an entry picks it — picking isolates rather than hides, so chasing one epic out of
+// fifteen costs one click (AC-4.2, review 2026-08-02).
 const ChartLegend = ({
 	items,
-	hidden,
+	selected,
 	onToggle,
 	onShowAll,
 }: ChartLegendProps): ReactElement => {
@@ -74,11 +79,12 @@ const ChartLegend = ({
 					size="small"
 					variant="text"
 					aria-expanded={expanded}
+					endIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
 					onClick={() => setExpanded((previous) => !previous)}
 				>
 					{`Legend (${items.length})`}
 				</Button>
-				{hidden.size > 0 && (
+				{selected.size > 0 && (
 					<Button size="small" variant="text" onClick={onShowAll}>
 						Show all
 					</Button>
@@ -90,7 +96,7 @@ const ChartLegend = ({
 						<ChartLegendEntry
 							key={item.id}
 							item={item}
-							visible={!hidden.has(item.id)}
+							visible={isShown(selected, item.id)}
 							onToggle={onToggle}
 						/>
 					))}

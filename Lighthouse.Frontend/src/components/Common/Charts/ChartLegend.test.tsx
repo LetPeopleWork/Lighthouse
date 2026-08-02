@@ -17,7 +17,7 @@ const renderLegend = (overrides: Record<string, unknown> = {}) =>
 	render(
 		<ChartLegend
 			items={items}
-			hidden={new Set<string>()}
+			selected={new Set<string>()}
 			onToggle={vi.fn()}
 			onShowAll={vi.fn()}
 			{...overrides}
@@ -64,26 +64,41 @@ describe("ChartLegend", () => {
 		expect(onToggle).toHaveBeenCalledWith("EPIC-B");
 	});
 
-	it("shows a hidden entry as switched off rather than dropping it", () => {
-		// A filtered-out epic must stay listed — it is how the forecaster switches it back on, and for
-		// the size chart it is also how a departed epic stays visible in the window (D7).
-		renderLegend({ hidden: new Set(["EPIC-B"]) });
+	it("marks every entry as showing while nothing is picked", () => {
+		// An empty selection means "show everything", not "show nothing" — the forecaster has not
+		// filtered yet, so no entry should look switched off.
+		renderLegend();
+
+		expand();
+
+		for (const item of items) {
+			expect(screen.getByRole("button", { name: item.label })).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			);
+		}
+	});
+
+	it("switches off the entries that were not picked (AC-4.2)", () => {
+		// Picking one entry isolates it. Every entry stays listed — that is how the forecaster adds a
+		// second one, and for the size chart it is how a departed epic stays reachable (D7).
+		renderLegend({ selected: new Set(["EPIC-B"]) });
 
 		expand();
 
 		expect(screen.getByRole("button", { name: "Search" })).toHaveAttribute(
 			"aria-pressed",
-			"false",
+			"true",
 		);
 		expect(screen.getByRole("button", { name: "Checkout" })).toHaveAttribute(
 			"aria-pressed",
-			"true",
+			"false",
 		);
 	});
 
 	it("clears the whole selection in one action (AC-4.4)", () => {
 		const onShowAll = vi.fn();
-		renderLegend({ hidden: new Set(["EPIC-B", "EPIC-C"]), onShowAll });
+		renderLegend({ selected: new Set(["EPIC-B"]), onShowAll });
 
 		expand();
 		fireEvent.click(screen.getByRole("button", { name: /show all/i }));
@@ -97,5 +112,28 @@ describe("ChartLegend", () => {
 		expand();
 
 		expect(screen.queryByRole("button", { name: /show all/i })).toBeNull();
+	});
+
+	it("says which way clicking it will go", () => {
+		// Review 2026-08-02: the toggle read as a label, not a control.
+		renderLegend();
+
+		const toggle = screen.getByRole("button", { name: /legend/i });
+		expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+		fireEvent.click(toggle);
+
+		expect(toggle).toHaveAttribute("aria-expanded", "true");
+	});
+
+	it("turns its arrow round when it opens", () => {
+		const { container } = renderLegend();
+
+		const closed = container.querySelector("svg")?.getAttribute("data-testid");
+		expand();
+		const open = container.querySelector("svg")?.getAttribute("data-testid");
+
+		expect(closed).toBeTruthy();
+		expect(open).not.toBe(closed);
 	});
 });
