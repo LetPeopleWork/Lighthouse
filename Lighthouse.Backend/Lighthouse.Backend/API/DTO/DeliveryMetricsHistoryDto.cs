@@ -5,7 +5,13 @@ namespace Lighthouse.Backend.API.DTO
 {
     public sealed record WhenDistributionPointDto(double Probability, DateTime ExpectedDate);
 
-    public sealed record DeliveryFeatureMetricDto(string ReferenceId, string Name, double Completion, double Likelihood);
+    // Likelihood is nullable: an un-forecastable feature reports UNKNOWN (ADR-112), recorded as null (ADR-120).
+    public sealed record DeliveryFeatureMetricDto(string ReferenceId, string Name, double Completion, double? Likelihood)
+    {
+        public int? TotalItems { get; init; }
+
+        public bool? IsUsingDefaultSize { get; init; }
+    }
 
     public sealed record DeliveryMetricsHistoryPointDto(
         DateTime Date,

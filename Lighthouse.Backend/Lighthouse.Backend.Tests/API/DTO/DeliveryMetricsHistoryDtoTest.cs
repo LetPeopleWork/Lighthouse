@@ -107,6 +107,73 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
+        public void From_ReadsTheSizeAndEstimateFlagRecordedForEachFeature()
+        {
+            var dto = DeliveryMetricsHistoryDto.From(
+                DeliveryDate,
+                [SnapshotWithBreakdown(
+                    "[{\"referenceId\":\"EPIC-1\",\"name\":\"Checkout\",\"completion\":40,\"likelihood\":80,\"totalItems\":8,\"isUsingDefaultSize\":true}]")]);
+
+            var entry = dto.Points[0].FeatureBreakdown[0];
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entry.TotalItems, Is.EqualTo(8));
+                Assert.That(entry.IsUsingDefaultSize, Is.True);
+            }
+        }
+
+        [Test]
+        public void From_StillReadsASnapshotRecordedBeforeSizesWereEverWritten()
+        {
+            // The four-field shape every row carried before Epic #5585 slice 02. It must keep loading,
+            // with the two new fields simply absent - there is no backfill (D5).
+            var dto = DeliveryMetricsHistoryDto.From(
+                DeliveryDate,
+                [SnapshotWithBreakdown(
+                    "[{\"referenceId\":\"EPIC-1\",\"name\":\"Checkout\",\"completion\":40,\"likelihood\":80}]")]);
+
+            var entry = dto.Points[0].FeatureBreakdown[0];
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(entry.ReferenceId, Is.EqualTo("EPIC-1"));
+                Assert.That(entry.TotalItems, Is.Null);
+                Assert.That(entry.IsUsingDefaultSize, Is.Null);
+            }
+        }
+
+        [Test]
+        public void From_StillReadsASnapshotWhoseFeatureCouldNotBeForecast()
+        {
+            // ADR-120 / DDD-6. The recorder serialises DeliveryFeatureMetric verbatim and its Likelihood
+            // is double? (ADR-112: a feature whose contributing team has no throughput reports unknown),
+            // so "likelihood": null reaches the column - but the DTO declared it non-nullable, and
+            // System.Text.Json throws on null -> double, 500-ing the whole delivery's metrics-history.
+            // Predates #5585; repaired here because this is the read path slice 02 widens.
+            // Asserted as "does not throw" rather than "Likelihood is null" on purpose: while the DTO
+            // declares double, NUnit2023 rejects an Is.Null assertion at COMPILE time, which would make
+            // this test un-runnable instead of red. Reading the whole delivery's history is the
+            // behaviour that matters.
+            var snapshot = SnapshotWithBreakdown(
+                "[{\"referenceId\":\"EPIC-1\",\"name\":\"Checkout\",\"completion\":40,\"likelihood\":null}]");
+
+            Assert.That(
+                () => DeliveryMetricsHistoryDto.From(DeliveryDate, [snapshot]),
+                Throws.Nothing);
+        }
+
+        private static readonly DateTime DeliveryDate = new(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private static DeliveryMetricSnapshot SnapshotWithBreakdown(string featureBreakdownJson)
+        {
+            return new DeliveryMetricSnapshot
+            {
+                RecordedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                RecordedDay = new DateOnly(2026, 2, 1),
+                FeatureBreakdownJson = featureBreakdownJson,
+            };
+        }
+
+        [Test]
         public void From_LeavesFirstSnapshotDateNull_AndPointsEmpty_WhenNoSnapshotsRecorded()
         {
             var deliveryDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
