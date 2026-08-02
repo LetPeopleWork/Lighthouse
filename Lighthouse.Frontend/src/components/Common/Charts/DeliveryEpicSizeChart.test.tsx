@@ -1,0 +1,197 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseDeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
+import { testTheme } from "../../../tests/testTheme";
+
+const chartsContainerMock = vi.hoisted(() =>
+	vi.fn(({ children }) => (
+		<svg data-testid="mock-charts-container">
+			<title>Test</title>
+			{children}
+		</svg>
+	)),
+);
+
+vi.mock("@mui/material", async () => {
+	const actual = await vi.importActual("@mui/material");
+	return {
+		...actual,
+		useTheme: () => testTheme,
+	};
+});
+
+vi.mock("@mui/x-charts", () => ({
+	ChartsContainer: chartsContainerMock,
+	BarPlot: () => <g data-testid="mock-bar-plot" />,
+	LinePlot: () => <g data-testid="mock-line-plot" />,
+	MarkPlot: () => <g data-testid="mock-mark-plot" />,
+	ChartsXAxis: () => <g data-testid="mock-x-axis" />,
+	ChartsYAxis: ({ axisId }: { axisId?: string }) => (
+		<g data-testid={`mock-y-axis-${axisId ?? "default"}`} />
+	),
+	ChartsTooltip: () => <g data-testid="mock-tooltip" />,
+	ChartsLegend: () => <g data-testid="mock-legend" />,
+}));
+
+import DeliveryEpicSizeChart from "./DeliveryEpicSizeChart";
+
+const EPIC_COUNT_SERIES_ID = "epic-count";
+const EPIC_COUNT_DATA_KEY = "epicCount";
+const COUNT_AXIS_ID = "count";
+
+interface SeriesEntry {
+	id?: string;
+	type?: string;
+	dataKey?: string;
+	label?: string;
+	yAxisId?: string;
+	color?: string;
+}
+
+interface AxisEntry {
+	id?: string;
+	dataKey?: string;
+	scaleType?: string;
+	position?: string;
+	label?: string;
+}
+
+type DatasetRow = Record<string, string | number>;
+
+const getLatestChartProps = () => {
+	const lastCall =
+		chartsContainerMock.mock.calls[chartsContainerMock.mock.calls.length - 1];
+	return lastCall?.[0] as
+		| {
+				dataset?: DatasetRow[];
+				series?: SeriesEntry[];
+				xAxis?: AxisEntry[];
+				yAxis?: AxisEntry[];
+		  }
+		| undefined;
+};
+
+const getCountSeries = (): SeriesEntry | undefined =>
+	getLatestChartProps()?.series?.find(
+		(entry) => entry.id === EPIC_COUNT_SERIES_ID,
+	);
+
+const getCountValues = (): Array<string | number | undefined> =>
+	(getLatestChartProps()?.dataset ?? []).map((row) => row[EPIC_COUNT_DATA_KEY]);
+
+/** Breakdown entries in the shape recorded BEFORE this feature — the four original fields only. */
+const legacyBreakdown = (count: number) =>
+	Array.from({ length: count }, (_, index) => ({
+		referenceId: `EPIC-${index + 1}`,
+		name: `Epic ${index + 1}`,
+		completion: 0,
+		likelihood: 50,
+	}));
+
+const point = (date: string, epicCount: number) => ({
+	date,
+	totalWork: 20,
+	doneWork: 4,
+	remainingWork: 16,
+	estimatedItemCount: null,
+	forecastHowMany: null,
+	likelihoodPercentage: 70,
+	whenDistribution: null,
+	featureBreakdown: legacyBreakdown(epicCount),
+});
+
+const DATES = [
+	"2026-06-01T00:00:00Z",
+	"2026-06-02T00:00:00Z",
+	"2026-06-03T00:00:00Z",
+];
+
+const getMockHistory = (counts: number[] = [7, 7, 9]) =>
+	parseDeliveryMetricsHistory({
+		deliveryDate: "2026-06-10T00:00:00Z",
+		firstSnapshotDate: DATES[0],
+		points: counts.map((count, index) => point(DATES[index], count)),
+	});
+
+const getEmptyHistory = () =>
+	parseDeliveryMetricsHistory({
+		deliveryDate: "2026-06-10T00:00:00Z",
+		firstSnapshotDate: null,
+		points: [],
+	});
+
+describe("DeliveryEpicSizeChart count line", () => {
+	beforeEach(() => {
+		chartsContainerMock.mockClear();
+	});
+
+	it("plots one point per recorded day whose value is that day's epic count (AC-1.1)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory([7, 7, 9])} />);
+
+		expect(getCountValues()).toEqual([7, 7, 9]);
+	});
+
+	it("labels each plotted point with the day it was recorded (AC-1.1)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory([7, 7, 9])} />);
+
+		const props = getLatestChartProps();
+		const labelKey = props?.xAxis?.[0]?.dataKey ?? "label";
+		expect((props?.dataset ?? []).map((row) => row[labelKey])).toEqual(
+			DATES.map((date) => new Date(date).toLocaleDateString()),
+		);
+	});
+
+	it("counts a day's epics from the breakdown recorded on that day (AC-1.6)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory([4])} />);
+
+		expect(getCountValues()).toEqual([4]);
+		expect(chartsContainerMock).toHaveBeenCalled();
+	});
+
+	it("draws the count against its own right-hand scale so sizes can share the chart (ADR-122)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		const countAxis = getLatestChartProps()?.yAxis?.find(
+			(axis) => axis.id === COUNT_AXIS_ID,
+		);
+		expect(countAxis?.position).toBe("right");
+		expect(getCountSeries()?.yAxisId).toBe(COUNT_AXIS_ID);
+	});
+
+	it("renders the count as a line and nothing else until sizes ship (DDD-8)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(getLatestChartProps()?.series).toHaveLength(1);
+		expect(getCountSeries()?.type).toBe("line");
+		expect(screen.queryByTestId("mock-bar-plot")).not.toBeInTheDocument();
+	});
+
+	it("tells the forecaster the chart builds forward when nothing is recorded yet (AC-1.2)", () => {
+		render(<DeliveryEpicSizeChart history={getEmptyHistory()} />);
+
+		expect(
+			screen.getByText(
+				/builds forward from today — no snapshots recorded yet/i,
+			),
+		).toBeInTheDocument();
+		expect(chartsContainerMock).not.toHaveBeenCalled();
+	});
+
+	it("names the chart after whatever this instance calls its epics (AC-1.5)", () => {
+		render(
+			<DeliveryEpicSizeChart
+				history={getMockHistory()}
+				featuresTerm="Initiatives"
+			/>,
+		);
+
+		expect(screen.getByRole("heading")).toHaveTextContent(/Initiative/);
+		expect(screen.getByRole("heading")).not.toHaveTextContent(/Epic/);
+	});
+
+	it("says the count leaves out epics that had no items that day (D3 caveat)", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(screen.getByText(/no items/i)).toBeInTheDocument();
+	});
+});

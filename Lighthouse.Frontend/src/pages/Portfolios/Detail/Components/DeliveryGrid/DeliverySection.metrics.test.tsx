@@ -5,7 +5,7 @@ import { Delivery } from "../../../../../models/Delivery";
 import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
-import DeliverySection from "./DeliverySection";
+import DeliverySection, { METRICS_GRID_COLUMNS } from "./DeliverySection";
 
 const {
 	mockGetMetricsHistory,
@@ -13,6 +13,7 @@ const {
 	mockBurnupChart,
 	mockPredictabilityChart,
 	mockFeverChart,
+	mockEpicSizeChart,
 } = vi.hoisted(() => ({
 	mockGetMetricsHistory: vi.fn(),
 	mockUseLicenseRestrictions: vi.fn(),
@@ -25,11 +26,21 @@ const {
 	mockFeverChart: vi.fn((_props: { history: unknown }) => (
 		<div data-testid="fever-chart" />
 	)),
+	mockEpicSizeChart: vi.fn(
+		(_props: { history: unknown; featuresTerm?: string }) => (
+			<div data-testid="epic-size-chart" />
+		),
+	),
 }));
+
+const TERMS: Record<string, string> = {
+	workItems: "Work Items",
+	features: "Epics",
+};
 
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => (key === "workItems" ? "Work Items" : key),
+		getTerm: (key: string) => TERMS[key] ?? key,
 	}),
 }));
 
@@ -63,6 +74,16 @@ vi.mock("../../../../../components/Common/Charts/DeliveryFeverChart", () => ({
 	default: (props: { history: DeliveryMetricsHistory }) =>
 		mockFeverChart(props),
 }));
+
+vi.mock(
+	"../../../../../components/Common/Charts/DeliveryEpicSizeChart",
+	() => ({
+		default: (props: {
+			history: DeliveryMetricsHistory;
+			featuresTerm?: string;
+		}) => mockEpicSizeChart(props),
+	}),
+);
 
 const getHistory = (): DeliveryMetricsHistory => ({
 	deliveryDate: new Date("2026-06-10T00:00:00Z"),
@@ -330,5 +351,73 @@ describe("DeliverySection Metrics tab snapshot gating", () => {
 		);
 		expect(mockGetMetricsHistory).not.toHaveBeenCalled();
 		expect(screen.queryByTestId("burnup-chart")).not.toBeInTheDocument();
+	});
+});
+
+const CARD_ORDER = [
+	"burnup-chart",
+	"predictability-chart",
+	"epic-size-chart",
+	"fever-chart",
+];
+
+const openMetricsTab = async (): Promise<void> => {
+	fireEvent.click(screen.getByRole("tab", { name: "Metrics" }));
+	await waitFor(() => {
+		expect(screen.getByTestId("burnup-chart")).toBeInTheDocument();
+	});
+};
+
+describe("DeliverySection Metrics tab layout", () => {
+	beforeEach(() => {
+		mockGetMetricsHistory.mockReset();
+		mockEpicSizeChart.mockClear();
+		mockGetMetricsHistory.mockResolvedValue(getHistory());
+		setPremium(true);
+	});
+
+	it("shows the epic size and count card built from the same fetched history (AC-1.3)", async () => {
+		renderSection();
+		await openMetricsTab();
+
+		expect(screen.getByTestId("epic-size-chart")).toBeInTheDocument();
+		expect(mockEpicSizeChart).toHaveBeenCalledWith(
+			expect.objectContaining({ history: getHistory() }),
+		);
+	});
+
+	it("reads the four cards burnup, predictability, epic size and count, fever (AC-1.3)", async () => {
+		renderSection();
+		await openMetricsTab();
+
+		const grid = screen.getByTestId("delivery-metrics-grid");
+		const order = Array.from(grid.children).map((child) =>
+			CARD_ORDER.find(
+				(testId) => child.querySelector(`[data-testid="${testId}"]`) !== null,
+			),
+		);
+
+		expect(order).toEqual(CARD_ORDER);
+	});
+
+	it("gives each of the four cards its own cell so none spans the whole row (AC-1.3)", async () => {
+		renderSection();
+		await openMetricsTab();
+
+		const grid = screen.getByTestId("delivery-metrics-grid");
+		expect(grid.children).toHaveLength(CARD_ORDER.length);
+	});
+
+	it("pairs the cards on a wide screen and stacks them on a narrow one (AC-1.4)", () => {
+		expect(METRICS_GRID_COLUMNS).toEqual({ xs: "1fr", lg: "1fr 1fr" });
+	});
+
+	it("hands the chart this instance's word for epics (AC-1.5)", async () => {
+		renderSection();
+		await openMetricsTab();
+
+		expect(mockEpicSizeChart).toHaveBeenCalledWith(
+			expect.objectContaining({ featuresTerm: "Epics" }),
+		);
 	});
 });

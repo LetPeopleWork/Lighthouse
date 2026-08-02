@@ -20,6 +20,7 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
 import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
+import DeliveryEpicSizeChart from "../../../../../components/Common/Charts/DeliveryEpicSizeChart";
 import DeliveryFeverChart from "../../../../../components/Common/Charts/DeliveryFeverChart";
 import DeliveryPredictabilityChart from "../../../../../components/Common/Charts/DeliveryPredictabilityChart";
 import EnlargeableChart from "../../../../../components/Common/Charts/EnlargeableChart";
@@ -508,6 +509,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							<MetricsTab
 								isLoading={isLoadingMetrics}
 								history={metricsHistory}
+								featuresTerm={featuresTerm}
 							/>
 						)}
 					</AccordionDetails>
@@ -572,12 +574,19 @@ const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
 	);
 };
 
+export const METRICS_GRID_COLUMNS = { xs: "1fr", lg: "1fr 1fr" };
+
 interface MetricsTabProps {
 	isLoading: boolean;
 	history: DeliveryMetricsHistory | null;
+	featuresTerm: string;
 }
 
-const MetricsTab: React.FC<MetricsTabProps> = ({ isLoading, history }) => {
+const MetricsTab: React.FC<MetricsTabProps> = ({
+	isLoading,
+	history,
+	featuresTerm,
+}) => {
 	if (isLoading || history === null) {
 		return (
 			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
@@ -588,13 +597,14 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ isLoading, history }) => {
 
 	return (
 		<Box
+			data-testid="delivery-metrics-grid"
 			sx={{
 				mx: 2,
 				mb: 2,
 				mt: 2,
 				display: "grid",
 				gap: 2,
-				gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+				gridTemplateColumns: METRICS_GRID_COLUMNS,
 			}}
 		>
 			<EnlargeableChart
@@ -609,14 +619,22 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ isLoading, history }) => {
 					<DeliveryPredictabilityChart history={history} height={height} />
 				)}
 			/>
-			<Box sx={{ gridColumn: { lg: "1 / -1" } }}>
-				<EnlargeableChart
-					ariaLabel="Delivery Progress"
-					render={(height) => (
-						<DeliveryFeverChart history={history} height={height} />
-					)}
-				/>
-			</Box>
+			<EnlargeableChart
+				ariaLabel={`Delivery ${featuresTerm} Size & Count`}
+				render={(height) => (
+					<DeliveryEpicSizeChart
+						history={history}
+						featuresTerm={featuresTerm}
+						height={height}
+					/>
+				)}
+			/>
+			<EnlargeableChart
+				ariaLabel="Delivery Progress"
+				render={(height) => (
+					<DeliveryFeverChart history={history} height={height} />
+				)}
+			/>
 		</Box>
 	);
 };
