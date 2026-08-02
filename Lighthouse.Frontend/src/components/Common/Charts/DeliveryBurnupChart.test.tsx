@@ -50,6 +50,13 @@ const ESTIMATED_LINE_SELECTOR = '& .MuiLineChart-line[data-series="estimated"]';
 interface AxisEntry {
 	data?: Date[];
 	scaleType?: string;
+	label?: string;
+	valueFormatter?: (date: Date) => string;
+}
+
+interface LegendSlotProps {
+	direction?: string;
+	position?: { vertical?: string; horizontal?: string };
 }
 
 const getLatestChartProps = () => {
@@ -60,6 +67,7 @@ const getLatestChartProps = () => {
 				series?: SeriesEntry[];
 				xAxis?: AxisEntry[];
 				sx?: Record<string, { strokeDasharray?: string }>;
+				slotProps?: { legend?: LegendSlotProps };
 				children?: unknown;
 		  }
 		| undefined;
@@ -195,6 +203,37 @@ describe("DeliveryBurnupChart", () => {
 			(entry) => entry.label === ESTIMATED_SERIES_LABEL,
 		);
 		expect(estimated?.data).toEqual([9, null]);
+	});
+
+	it("leaves the estimated line unmarked, like the other two", () => {
+		const history = getMockHistory();
+		history.points[0].estimatedItemCount = 12;
+
+		render(<DeliveryBurnupChart history={history} />);
+
+		expect(
+			getLatestChartProps()?.series?.find(
+				(entry) => entry.label === ESTIMATED_SERIES_LABEL,
+			)?.showMark,
+		).toBe(false);
+	});
+
+	it("labels the x-axis and prints its dates the way the reader's locale does", () => {
+		render(<DeliveryBurnupChart history={getMockHistory()} />);
+
+		const axis = getLatestChartProps()?.xAxis?.[0];
+		const date = new Date("2026-06-01T00:00:00Z");
+		expect(axis?.label).toBe("Date");
+		expect(axis?.valueFormatter?.(date)).toBe(date.toLocaleDateString());
+	});
+
+	it("lays the legend out along the top so it does not eat the plot", () => {
+		render(<DeliveryBurnupChart history={getMockHistory()} />);
+
+		expect(getLatestChartProps()?.slotProps?.legend).toEqual({
+			direction: "horizontal",
+			position: { vertical: "top", horizontal: "end" },
+		});
 	});
 
 	it("renders no estimated series when no point carries an estimated count", () => {

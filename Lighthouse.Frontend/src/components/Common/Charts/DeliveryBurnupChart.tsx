@@ -36,7 +36,7 @@ const BURNUP_SX = {
 const formatDate = (date: Date): string => date.toLocaleDateString();
 
 const estimatedValue = (point: DeliveryMetricsHistoryPoint): number | null =>
-	point.estimatedItemCount && point.estimatedItemCount > 0
+	point.estimatedItemCount !== null && point.estimatedItemCount > 0
 		? point.estimatedItemCount
 		: null;
 
