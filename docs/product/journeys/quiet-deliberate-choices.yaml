@@ -1,0 +1,144 @@
+schema_version: 1
+feature_id: quiet-deliberate-choices
+created: 2026-08-03
+research_depth: lightweight
+ado: not yet created — two Stories proposed, pending confirmation
+note: >
+  Lightweight journey for two unrelated-looking changes that share one job: Lighthouse keeps telling the
+  administrator about a choice they already made on purpose. Only ONE persona acts (config-admin), and
+  both surfaces are ones only they see — the Overview onboarding panel renders behind
+  rbac.isSystemAdmin (OverviewDashboard.tsx:359), and the backend log is read by whoever runs the
+  instance.
+
+  Both journeys end in an ABSENCE, not a presence: a panel that is gone, and a log line that is not
+  written. That is why this journey is short — there is almost no new surface. The only thing added
+  anywhere in the feature is one close button.
+
+  Anchors to verified code reality: OnboardingStepper.tsx renders null only at activeStep === 3 (all of
+  connection + team + portfolio present) and has no close affordance;
+  ServiceNowWorkTrackingConnector.cs:306-327 logs a warning naming every unmapped label on every sync,
+  while docs/concepts/worktrackingsystems/servicenow.md:206 already instructs administrators to leave
+  states such as Canceled unmapped. The log contradicts the shipped guidance.
+
+journeys:
+
+  - name: dismiss-onboarding-guidance
+    goal: >
+      A Configuration Administrator whose installation deliberately runs Teams without a Portfolio
+      closes the "Get Started" panel once and never sees it again, so the Overview opens on their own
+      data.
+    persona: "config-admin (owns the Lighthouse setup; system admin)"
+    jobs:
+      - job-config-admin-dismiss-onboarding-guidance
+    emotional_arc:
+      start: Irritated — "I know. I don't want a Portfolio. Stop asking."
+      middle: Relieved — "there's an X. So it was meant to be closeable."
+      end: Settled — "the Overview opens on my teams now, and it stayed that way after a reload."
+
+    steps:
+
+      - id: step-open-overview-and-be-nagged
+        action: >
+          The administrator opens the Overview on an installation with a connection and Teams, but no
+          Portfolio — a deliberate configuration, because this instance tracks team-level flow only.
+        expected_output: >
+          Today: the "Get Started" panel renders at the top on every visit, stuck on step 3 ("Add
+          Portfolio"), because activeStep only reaches 3 (and the panel only self-hides) once a
+          Portfolio exists. There is no way to close it.
+        emotional_state: Irritated — "this is not guidance, it's a permanent banner"
+        shared_artifacts:
+          - hasConnections / hasTeams / hasPortfolios (existing — computed in OverviewDashboard.tsx)
+          - rbac.isSystemAdmin (existing — the gate that decides who sees the panel at all)
+
+      - id: step-close-it
+        action: >
+          The administrator clicks the ✕ in the panel's top-right corner.
+        expected_output: >
+          The panel disappears from the Overview immediately, in the same render — no reload, no
+          refetch, no confirmation dialog. localStorage["lighthouse-hide-onboarding-stepper"] is set to
+          "true".
+        emotional_state: Relieved — "one click, gone"
+        shared_artifacts:
+          - localStorage["lighthouse-hide-onboarding-stepper"] (NEW — single source of truth for the
+            dismissal; browser-local, never sent to the server, never read by anything else)
+
+      - id: step-confirm-it-stays-gone
+        action: >
+          The administrator reloads the Overview, and comes back to it later from another page.
+        expected_output: >
+          The panel does not render — and does not flash before disappearing, because the flag is read
+          in the same pass that computes activeStep rather than in an effect. It stays gone regardless
+          of onboarding progress; adding a Team later does not bring it back.
+        emotional_state: Settled — "it meant it"
+        shared_artifacts:
+          - localStorage["lighthouse-hide-onboarding-stepper"] (read)
+
+    error_paths:
+      - trigger: localStorage is unavailable or throws (private browsing, storage disabled by policy)
+        recovery: >
+          The Overview renders exactly as it does today, panel included, and does not crash. The
+          dismissal simply does not persist. Accepted: the panel is guidance, not a control.
+      - trigger: The key holds an unexpected value (hand-edited, or left by a future version)
+        recovery: >
+          Anything that is not the literal "true" is treated as not dismissed. The panel renders.
+      - trigger: The administrator dismisses it and later wants the guidance back
+        recovery: >
+          No UI path, by decision (D3). Clearing site data restores it, and the same steps are in the
+          documentation. Stated here so no future reader files it as an oversight.
+
+  - name: quiet-unmapped-state-omission
+    goal: >
+      A Configuration Administrator running a ServiceNow connection reads their log and finds only
+      entries that need action, because the states they deliberately left unmapped are dropped without
+      comment.
+    persona: "config-admin (ServiceNow connection owner)"
+    jobs:
+      - job-config-admin-quiet-deliberate-state-omission
+    emotional_arc:
+      start: Distrustful — "there's a WARNING on every sync, and I've already decided to ignore it."
+      middle: Reassured — "the omission is documented behaviour; the log was the thing that was wrong."
+      end: Confident — "if there's a WARNING in there now, I need to go look at it."
+
+    steps:
+
+      - id: step-map-the-states-deliberately
+        action: >
+          The administrator maps the Team's ServiceNow states and deliberately leaves Canceled out,
+          exactly as docs/concepts/worktrackingsystems/servicenow.md:206 tells them to: "States you do
+          not need (for example Canceled) can be left out."
+        expected_output: >
+          Unchanged in this feature. Records in unmapped states are excluded from the Team's work items
+          (ServiceNowWorkTrackingConnector.cs:296-299) and therefore from its metrics. This is the
+          intended outcome, not a side effect.
+        emotional_state: Deliberate — "cancelled work never completed; it should not count"
+        shared_artifacts:
+          - team state mapping (existing — the only place the decision is recorded, and the only place
+            to look if a state was left out by mistake)
+
+      - id: step-read-the-log
+        action: >
+          The administrator opens the backend log, either routinely or while chasing an unrelated
+          problem.
+        expected_output: >
+          Today: a WARNING per sync per team, naming the left-out count and every unmapped label. After
+          this feature: nothing at all about it, at any level — not Warning, not Information, not Debug,
+          not Trace. The four other ServiceNow warnings still fire, and each of them still means
+          something is misconfigured or unreachable.
+        emotional_state: Confident — "everything left in here is actionable"
+        shared_artifacts:
+          - ILogger<ServiceNowWorkTrackingConnector> warning channel (existing — one message removed,
+            four kept)
+
+    error_paths:
+      - trigger: >
+          The administrator left a state unmapped by MISTAKE — a typo against a choice list a read-only
+          account cannot query — and their Throughput reads low.
+        recovery: >
+          The Team's state mapping is where they look, and it is where the answer is. Accepted cost,
+          eyes open: this is the case the removed warning was written for
+          (ServiceNowWorkTrackingConnector.cs:302-305), but it is rare next to the deliberate case,
+          and paying for it with a warning on every sync forever trains the reader to ignore the
+          channel. See feature-delta.md "Changed assumptions".
+      - trigger: A future reader assumes the silence is a bug and re-adds the warning.
+        recovery: >
+          feature-delta.md D5/D8 and this journey are the record. The silence is the decision.

@@ -28,6 +28,8 @@ primary_jobs:
   - job-config-admin-define-blocked-rules  # epic-5074-blocked-items (2026-06-11, #5074): define "blocked" as a flexible rule set (FOUNDATION)
   - job-config-admin-quiet-jira-writeback  # quiet-jira-writeback (2026-07-16, #5500): keep Jira write-back on without emailing every watcher
   - job-config-admin-know-writeback-is-quiet  # quiet-jira-writeback (2026-07-16, #5500): see upfront whether the credential can actually suppress notifications
+  - job-config-admin-dismiss-onboarding-guidance  # quiet-deliberate-choices (2026-08-03): close the Get Started panel for good
+  - job-config-admin-quiet-deliberate-state-omission  # quiet-deliberate-choices (2026-08-03): leave Canceled unmapped without a warning every sync
   - job-snow-admin-connect-servicenow  # epic-5513-servicenow-integration (2026-07-27, #5513): connect a ServiceNow instance with the rights the platform team will actually grant
 
 goals:

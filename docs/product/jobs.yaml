@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-02
+updated: 2026-08-03
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -37,6 +37,7 @@ feature_context:
   - servicenow-board-picker-and-query-guidance
   - servicenow-pre-close-bucket
   - epic-5146-jira-forge-app
+  - quiet-deliberate-choices
 
 jobs:
   - id: job-rbac-bootstrap
@@ -4392,3 +4393,126 @@ jobs:
         adoption friction. Gap: 4. Ranked below the maintainer's job deliberately: this epic is
         funded to answer a business question, not to serve prospects at scale, which is why it exits
         on a written verdict rather than on an adoption number.
+
+  - id: job-config-admin-dismiss-onboarding-guidance
+    title: Close the setup guidance for good once the setup is the way I want it
+    persona: config-admin
+    feature_context: quiet-deliberate-choices
+    created: 2026-08-03
+    note: >
+      NEW in quiet-deliberate-choices (reported by Benjamin on his own instance, 2026-08-03). The
+      Overview's "Get Started" panel (OnboardingStepper.tsx) renders whenever onboarding is incomplete
+      and there is no way to close it. It only self-hides at activeStep === 3, which requires a
+      connection AND a Team AND a Portfolio. Installations that deliberately track team-level flow only
+      and never create a Portfolio can therefore NEVER complete it, so the panel is a permanent banner
+      rather than guidance. Fix is one close control writing
+      localStorage["lighthouse-hide-onboarding-stepper"] (D1/D2), mirroring the dismissal already
+      shipped in LighthouseVersion.tsx:45-84. Deliberately NOT solved by making the Portfolio step
+      optional (D4): that would change what the product tells a genuinely new admin the happy path is.
+      Browser-local, not per-user: a second browser shows the panel again, accepted.
+    job_story: >
+      When my Lighthouse is set up the way I intend it — including deliberately having no Portfolio,
+      because this instance tracks team-level flow only — I want the setup guidance to go away for good,
+      so I can open the Overview and see my own Teams instead of being told to finish something I
+      already decided not to do.
+    dimensions:
+      functional: >
+        A close control on the "Get Started" panel that hides it permanently for that browser. The flag
+        is read in the same pass that computes the active step, so a dismissed panel never flashes
+        before it disappears. Storage failure (private browsing, storage disabled by policy) degrades to
+        today's behaviour rather than breaking the Overview. No server call, no per-user record, no
+        change to the rbac.isSystemAdmin gate that already decides who sees the panel.
+      emotional: >
+        Move from "this banner is arguing with a decision I already made" to "the Overview opens on my
+        data". Small, but it is the first screen of every session.
+      social: >
+        Show a colleague the Overview without first explaining why the tool still thinks the setup is
+        unfinished.
+    forces:
+      push: >
+        The panel occupies the top of the Overview on every single visit, and on a portfolio-less
+        installation there is no action that will ever satisfy it. The only lever today is creating a
+        Portfolio nobody wants, purely to silence the UI.
+      pull: >
+        One click and the Overview is the administrator's own data from then on.
+      anxiety: >
+        "If I close it, do I lose the setup guidance permanently?" — yes, in that browser, by decision
+        (D3): the same steps live in the documentation, and clearing site data brings it back. The
+        alternative — a restore control in Settings — is one more setting to find and forget.
+      habit: >
+        Administrators already dismiss things and expect them to stay dismissed; Lighthouse's own
+        update notification behaves exactly this way, so the expectation is set inside the product.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — nothing is broken and no decision is blocked; it costs screen space and
+        patience on the first screen of every session. Current satisfaction: 1 — there is no workaround
+        short of creating an unwanted Portfolio. Gap: 3. Ranked low deliberately: this is a two-hour
+        annoyance fix, and framing it as more would be dishonest.
+
+  - id: job-config-admin-quiet-deliberate-state-omission
+    title: Leave Canceled unmapped without being warned about it on every sync
+    persona: config-admin
+    feature_context: quiet-deliberate-choices
+    created: 2026-08-03
+    note: >
+      NEW in quiet-deliberate-choices (reported by Benjamin while connecting a ServiceNow instance,
+      2026-08-03). ServiceNowWorkTrackingConnector.ReportStatesTheTeamNeverMapped (:306-327) logs a
+      WARNING on every team sync naming the left-out count and every unmapped label. The dominant field
+      case is an administrator deliberately not mapping Canceled — which is exactly what
+      docs/concepts/worktrackingsystems/servicenow.md:206 instructs: "States you do not need (for
+      example Canceled) can be left out." So the log reports intended configuration as a problem,
+      contradicting the shipped guidance, forever, on every sync. Decision: DELETE the message, not
+      downgrade it to Debug (D5) — a Debug line surfaces precisely when someone raises the log level to
+      chase a real problem. Only this one warning goes; the other four ServiceNow warnings (no query
+      written, no kinds of work named, no transition history, instance unreachable) all name real
+      misconfigurations and stay (D6). The drop behaviour itself is unchanged (D7). The Linear connector
+      drops unmapped states without logging already, so this closes a connector parity gap.
+    job_story: >
+      When I have deliberately left states like Canceled out of a Team's state mapping, because that
+      work never completed and should not count, I want Lighthouse to drop those records silently, so
+      every WARNING left in my log is something I actually have to fix.
+    dimensions:
+      functional: >
+        Records in unmapped states are excluded from the Team's work items exactly as they are today,
+        and nothing is written about it at any log level — not Warning, not Information, not Debug, not
+        Trace. No replacement surface appears in its place: no UI banner, no validation message, no API
+        field. The four other ServiceNow warnings continue to fire, each still proven by its own test.
+      emotional: >
+        Move from "there is a WARNING on every sync that I have already decided to ignore" to "if
+        there is a WARNING in here, I need to go look at it". The value is trust in the channel, not
+        the absence of one line.
+      social: >
+        Hand the log to a colleague, or paste it into a support thread, without prefacing it with
+        "ignore that one, it's expected".
+    forces:
+      push: >
+        The warning fires on every sync, for every team with any unmapped state, and names a
+        configuration the documentation told the administrator to create. Nobody reads it; worse, its
+        presence teaches the reader that ServiceNow warnings are background noise, which is exactly the
+        habit that makes the other four warnings useless when they matter.
+      pull: >
+        A log where every remaining entry is actionable.
+      anxiety: >
+        "If Lighthouse says nothing, how would I ever catch a state I left unmapped by MISTAKE — a typo
+        against a choice list my read-only account cannot query?" Accepted cost, eyes open: the Team's
+        state mapping is where an administrator looks when Throughput reads low, and it is where the
+        answer is. The near-miss case is real but rare next to the deliberate one, and paying for it
+        with a permanent warning trains the reader to ignore the channel. See
+        docs/feature/quiet-deliberate-choices/feature-delta.md "Changed assumptions" — this supersedes
+        the "DoD 5 forbids the silent no-op" reasoning written into the connector for this path only.
+      habit: >
+        Administrators already expect a tool to be quiet about configuration they chose; they scan logs
+        for exceptions, not for confirmations. Lighthouse's Linear connector already behaves this way.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — no metric is wrong and no decision is blocked, but the cost compounds: a
+        channel with a known-ignorable entry in it is a channel nobody reads, which degrades the four
+        warnings that do matter. Current satisfaction: 1 — there is no way to silence it short of
+        raising the whole log level, which hides the useful warnings too. Gap: 4, ranked above the
+        onboarding job because it damages a diagnostic surface rather than costing screen space.
