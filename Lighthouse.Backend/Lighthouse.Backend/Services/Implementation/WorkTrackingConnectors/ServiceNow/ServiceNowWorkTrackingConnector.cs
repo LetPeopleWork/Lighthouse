@@ -281,13 +281,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
             var mapped = records
                 .Select(record => new MappedRecord(
-                    ServiceNowWorkItemMapper.ReadStateLabel(record),
                     ServiceNowWorkItemMapper.ReadRecordId(record),
                     ServiceNowWorkItemMapper.ReadRecordClass(record),
                     ServiceNowWorkItemMapper.MapRecord(record, team, scope, instanceUrl)))
                 .ToList();
-
-            ReportStatesTheTeamNeverMapped(mapped, team);
 
             var history = await ReadHistory(connection, scope, mapped, team);
 
@@ -297,33 +294,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 .Where(entry => entry.Item.StateCategory != StateCategories.Unknown)
                 .Select(entry => AsWorkItem(entry, history, team))
                 .ToList();
-        }
-
-        // DoD 5 forbids the silent no-op. A flow coach types state labels by hand against a choice
-        // list a read-only account cannot query, so a near-miss is the likely case — and dropping
-        // those records without a word reads as low Throughput with the settings page still saying
-        // the team is valid.
-        private void ReportStatesTheTeamNeverMapped(List<MappedRecord> mapped, Team team)
-        {
-            var leftOut = mapped
-                .Where(entry => entry.Item.StateCategory == StateCategories.Unknown)
-                .ToList();
-
-            if (leftOut.Count < 1)
-            {
-                return;
-            }
-
-            // Stryker disable once Linq: the order only exists so a support log reads the same twice;
-            // descending is equally canonical and names the same labels.
-            var labels = leftOut
-                .Select(entry => string.IsNullOrWhiteSpace(entry.Label) ? "(no state)" : entry.Label)
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal);
-
-            logger.LogWarning(
-                "Left {LeftOutCount} ServiceNow records out of team {TeamName} because their states are not mapped on the team: {UnmappedStates}. Add these labels to the team's state mapping, or its metrics will read low.",
-                leftOut.Count, team.Name, string.Join(", ", labels));
         }
 
         // ADR-118 D2. The measurement is resolved before any span is asked for: without it there is
@@ -1166,7 +1136,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             HttpStatusCode StatusCode, bool CarriesRecords, int? RecordsTheInstanceHolds, int VisibleRowCount);
 
         /// <summary>One record as mapped, kept alongside the handle its history is fetched by.</summary>
-        private sealed record MappedRecord(string Label, string RecordId, string RecordClass, WorkItemBase Item);
+        private sealed record MappedRecord(string RecordId, string RecordClass, WorkItemBase Item);
 
         /// <summary>The definitions measuring state on a table, and what their read says the instance can supply.</summary>
         private sealed record StateSpanDefinitions(ServiceNowHistoryAvailability Availability, List<string> Ids);

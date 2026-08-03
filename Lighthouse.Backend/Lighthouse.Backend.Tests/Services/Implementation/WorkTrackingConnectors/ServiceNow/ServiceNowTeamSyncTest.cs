@@ -183,20 +183,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        // DoD 5. Dropping records without a word reads as low Throughput with the settings page
-        // still saying the team is valid. The flow coach types these labels by hand against a
-        // choice list a read-only account cannot query, so the label has to be in the log to be
-        // correctable.
+        // Leaving states like Canceled unmapped is what the ServiceNow docs page tells administrators
+        // to do, so reporting it is reporting intended configuration as a fault — on every sync,
+        // forever, until the reader stops reading the channel.
         [Test]
-        public async Task WorkInAStateTheTeamNeverMapped_IsNamedInTheLogRatherThanDroppedInSilence()
+        public async Task WorkInAStateTheTeamNeverMapped_IsLeftOutWithoutASound()
         {
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var subject = CreateSubject(AnInstanceHolding(FiveRecordsOfMixedState(), pageSize: 10), logger.Object);
 
             await subject.GetWorkItemsForTeam(ATeam());
 
-            logger.Verify(AWarningContaining("Awaiting Vendor"), Times.Once,
-                "The label that was left out has to be named, or there is nothing for the flow coach to correct.");
+            logger.Verify(ALogEntryContaining("Awaiting Vendor"), Times.Never,
+                "The label the team deliberately left out is named nowhere, at no level.");
         }
 
         // The silent-filter trap's sibling. An unconfigured team must not degrade into an
@@ -727,17 +726,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task WorkCarryingNoStateAtAll_IsNamedInTheLogAsHavingNone()
+        public async Task WorkCarryingNoStateAtAll_IsLeftOutWithoutASound()
         {
             var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
             var subject = CreateSubject(
                 AnInstanceHolding([ARecord("INC0000009", string.Empty, string.Empty)], pageSize: 10),
                 logger.Object);
 
-            await subject.GetWorkItemsForTeam(ATeam());
+            var workItems = await subject.GetWorkItemsForTeam(ATeam());
 
-            logger.Verify(AWarningContaining("(no state)"), Times.Once,
-                "A record with no state at all still has to be countable in the log, or the number left out cannot be reconciled.");
+            Assert.That(workItems, Is.Empty,
+                "A record carrying no state at all is in no state the team mapped, so it is left out like any other.");
+            logger.Verify(ALogEntryContaining("(no state)"), Times.Never,
+                "The stateless record is left out on the same terms as an unmapped one: without a word.");
         }
 
         private static Expression<Action<ILogger<ServiceNowWorkTrackingConnector>>> AWarning()
@@ -750,10 +751,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>());
         }
 
-        private static Expression<Action<ILogger<ServiceNowWorkTrackingConnector>>> AWarningContaining(string text)
+        // Any level, not just Warning: dropping a deliberately unmapped state is silent all the way
+        // down, so a Debug line would surface exactly when someone raises the level to chase a real
+        // problem.
+        private static Expression<Action<ILogger<ServiceNowWorkTrackingConnector>>> ALogEntryContaining(string text)
         {
             return log => log.Log(
-                LogLevel.Warning,
+                It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((state, _) => $"{state}".Contains(text, StringComparison.Ordinal)),
                 It.IsAny<Exception?>(),
