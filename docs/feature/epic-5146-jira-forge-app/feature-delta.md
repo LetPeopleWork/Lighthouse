@@ -598,3 +598,103 @@ warrant one, authored in the new repo, not under `docs/product/architecture/`) �
 `contract-testing-detail` (deferred by D22) · `dev-loop-design` (`forge tunnel` vs
 `forge deploy -e development`) · `readme-information-architecture` (K2's ≤10-minute path) ·
 `demo-script` (including D18's routing around Work Item links).
+
+## Wave: DESIGN / [REF] Slice 01 results — run live 2026-08-03
+
+Slice 01 was built and run against a real Jira Cloud site on the day DESIGN closed, before slice 02
+was designed. It answers R1 and invalidates part of the DESIGN record above. **Nothing above has been
+rewritten**: the value of this record is that it shows an egress problem was predicted and an
+authentication problem was found. Where this section and an earlier one disagree, this one wins.
+
+**What was built.** A `jira:globalPage` with `layout: blank` rendering one `<iframe>`, and a footer
+stating what is framed and what a blank area means. No resolver, no npm dependencies, no framework —
+one `manifest.yml` and one `index.html`, because the slice hardcodes its target and anything more
+would build on the assumption under test. Repository `LetPeopleWork/lighthouse-jira-app`, commits
+`690cc0d` and `0c63b42`. App id `ari:cloud:ecosystem::app/85b44adf-8453-46ab-ac44-cdb467899b1a`,
+deployed to `development`, installed on and since uninstalled from `letpeoplework.atlassian.net`.
+
+**The target was changed from the design's.** DESIGN specified an authentication-disabled instance
+(P3, AC-01.2). The maintainer rejected that premise before the slice ran: *"every instance will have
+auth enabled, otherwise folks wouldn't put it in the internet"*. The slice therefore ran against
+`https://lpw.lighthouse.letpeople.work` — the real, authenticated LetPeopleWork tenant. This was the
+right call and it is why the slice returned a useful answer: against an auth-disabled instance it
+would have gone green and taught us nothing about the world prospects live in.
+
+### What is now proven rather than assumed
+
+| # | Finding | Evidence |
+|---|---|---|
+| **F1** | **Forge frames an arbitrary declared external HTTPS origin.** A single static `permissions.external.frames` entry places the origin directly into Forge's `frame-src`. No wildcard, no customer-managed egress needed for the framing itself. | The blocked-resource console message lists `frame-src 'self' … https://lpw.lighthouse.letpeople.work …` — our origin is present and permitted. |
+| **F2** | **Lighthouse renders inside Jira.** Its own sign-in screen appeared in the page. R3 held in the field: nothing on our side blocks framing. | Screenshot, Jira **Apps → Lighthouse**. |
+| **F3** | **The login redirect is where it stops.** With only the instance origin declared, Forge's `frame-src` refused the hop to the identity provider. Declaring the Auth0 origin as well moved the failure exactly one step later: **Auth0 itself refuses with `X-Frame-Options`**. | Two console messages, in that order. |
+| **F4** | **F3 is a category result, not a misconfiguration.** Auth0 Universal Login is deliberately un-framable — embedded login was deprecated because entering credentials inside another site's iframe is the attack that describes. Entra, Okta and Keycloak default the same way. **No number of declared origins reaches past this**, and it applies to every customer's identity provider, not just ours. | Auth0 platform behaviour; no tenant setting exists to permit framing. |
+| **F5** | A second wall sits behind F4: `Lighthouse.Backend/Program.cs:643` sets `options.Cookie.SameSite = SameSiteMode.Lax` unconditionally on `.Lighthouse.Session`. A login that somehow completed would still produce a cookie the browser declines to send from inside a cross-site frame. | Source, verified. |
+
+### What this does to the design above
+
+- **R1 is retired.** The existential risk is answered *yes*. D9's egress ladder, the
+  customer-managed-egress branch and open question Q2 are all moot for the framing problem — they
+  were built to solve a problem that turned out not to exist. Customer-managed egress may return if
+  the app ever needs many per-customer origins, but it is no longer on the critical path.
+- **D1 holds only for authentication-disabled instances.** The whole-UI iframe cannot serve an
+  authenticated instance by framing the normal login flow. Since authenticated is what everybody runs,
+  the design's central mechanism does not reach its own audience.
+- **K4 is spent.** Reaching authenticated instances requires a change to Lighthouse. The epic's
+  defining constraint — zero product-code changes — is incompatible with its purpose, and that is a
+  finding rather than a failure: it was worth knowing for the price of one afternoon.
+- **D20's dual demo path loses its cheap half.** The canned demo needed an authentication-disabled
+  instance, and the l8e platform forbids one: `oidcEnabled: true` is mandatory per RD-2 (#5387) and
+  enforced in CI by `scripts/validate-tenants.sh`. The Helm chart supports `oidc.enabled: false`; the
+  platform deliberately does not. Any demo instance would have to be hosted outside the platform.
+- **Surviving unchanged**: D10's two-module split, D11's storage choice, D12's resolver-side probing,
+  D13's predict-don't-detect diagnostic, D14's Custom UI selection, D16's no-client-dependency call,
+  and the whole Reuse Analysis.
+
+### Direction chosen
+
+**Embed token** (maintainer, 2026-08-03). The Forge backend holds a scoped Lighthouse API key,
+exchanges it for a short-lived token, and frames an entry point that establishes the session inside
+the frame — so no identity-provider hop happens there at all. Requires the cookie policy from F5 to
+become configurable (`SameSite=None; Secure; Partitioned`). Keeps the whole-UI iframe and keeps the
+Forge app nearly empty.
+
+**Its blocking question, deliberately unanswered here**: *whose* identity does an embed session carry?
+A Jira user has no Lighthouse account. A token minted from a site-wide API key would grant every
+viewer of that Jira page whatever the key's owner can see, which collides with per-Team and
+per-Portfolio RBAC. The alternatives — a read-only service principal with an explicit scope, or a
+mapping from Jira identity to Lighthouse user (which is D5's deferred step-2 authentication in a new
+costume) — produce materially different endpoints, token claims, revocation stories and review
+burdens. This is a product decision and belongs in a DISCUSS wave for a new Lighthouse feature, not
+in this epic's DESIGN.
+
+### Forge platform mechanics, learned the hard way
+
+Recorded because each cost time and none is in the getting-started documentation. The full set,
+including the toolchain traps from work item 5634, lives in the new repository's `README.md`.
+
+- Adding an egress origin is a **major version bump**: `forge deploy` refuses until
+  `--approve MAJOR_VERSION_RULE`, then `forge install --upgrade` re-prompts for consent, naming the
+  new origin. That is D21's friction, and it fires on the *first* origin change rather than at scale.
+- **Declaring even one static origin forfeits "Runs on Atlassian" eligibility.** The deploy output
+  said *eligible* before the permission existed and *not eligible* immediately after. The badge is
+  lost at one hardcoded domain, not only at a wildcard or at customer-managed egress.
+- `forge lint` warns that the plain-list `frames:` syntax is **deprecated** in favour of the
+  `address:` form — so open question Q1's wildcard uncertainty has a companion: the shorthand itself
+  is moving.
+- `forge register` cannot run in a non-TTY shell without `--developer-space-id`; `--personal` does not
+  bypass the prompt. `forge developer-spaces list` yields the id.
+- `app.runtime.name` is required in `manifest.yml` even for an app with zero functions.
+- Forge sizes a Custom UI iframe to **measured content height**, so `height: 100%` has nothing to
+  resolve against and collapses to roughly 170px. A fixed pixel height is what makes it usable.
+
+### Where to resume
+
+1. **Decide the identity question above.** Everything else in the embed-token design follows from it.
+   A DISCUSS wave for a new Lighthouse feature, not a continuation of this epic's DESIGN.
+2. **Then** the embed-token slice in Lighthouse: token issuance and validation, expiry and
+   revocation, the configurable cookie policy, and a security review — an embed token is a bearer
+   credential that grants a session, so it does not ship on a demo's timeline.
+3. **Only then** the Forge app grows a resolver, an admin page and the settings flow that slice 02
+   described. Until the token exists there is nothing for it to configure.
+4. The verdict (#5638) can be written at any point — it now has real evidence, and its answer to
+   *"do we build a marketplace-grade Forge app?"* turns on whether step 2 is worth funding.
