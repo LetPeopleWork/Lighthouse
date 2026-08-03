@@ -437,6 +437,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // The guard, not the message: with every kind of work measured there is nothing to name, and a
+        // warning naming an empty list is the same defect as the unmapped-state warning this feature
+        // deleted — noise that teaches the reader to stop reading the channel.
+        [Test]
+        public async Task AnInstanceMeasuringStateOnEveryKindOfWork_IsNotWarnedAbout()
+        {
+            var logger = new Mock<ILogger<ServiceNowWorkTrackingConnector>>();
+            var instance = AnInstanceHolding(ThreeRecords(), measuresStateSpans: true);
+            var subject = CreateSubject(instance, logger);
+
+            await subject.GetWorkItemsForTeam(ATeam());
+
+            logger.Verify(
+                call => call.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((message, _) =>
+                        message.ToString()!.Contains(
+                            "because the spans it measures on those records are not states the team mapped",
+                            StringComparison.Ordinal)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Never,
+                "No kind of work is unmeasured, so the per-class warning has nothing to name. The team-level history warning is a different message and is not asserted here.");
+        }
+
         // Bug #5621 F1, the per-record half, on a correctly configured instance. metric_definition
         // answers with four field_value_duration definitions for incident on a stock PDI, and only
         // one of them measures state -- the others measure assignment_group, assigned_to and active.
