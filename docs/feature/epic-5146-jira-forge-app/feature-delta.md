@@ -698,3 +698,88 @@ including the toolchain traps from work item 5634, lives in the new repository's
    described. Until the token exists there is nothing for it to configure.
 4. The verdict (#5638) can be written at any point — it now has real evidence, and its answer to
    *"do we build a marketplace-grade Forge app?"* turns on whether step 2 is worth funding.
+
+## Wave: DESIGN / [REF] Scope revision — the embed session belongs to this epic
+
+Decided 2026-08-03, after slice 01. Supersedes the "Direction chosen" paragraph above, which routed
+the embed token to a separate Lighthouse feature.
+
+**The Lighthouse change is in scope for epic 5146.** Maintainer: *"all should be part of this feature.
+I want it as part of this epic and this is the only reason I would change Lighthouse."* The reasoning
+holds up: a bearer-token endpoint has no independent business case, and every line of rationale for it
+lives in this epic's record. Split out, it would be an orphan nobody funds.
+
+### D23 — the embed session runs as a scoped API key's identity
+
+The blocking question from slice 01 — *whose identity does an embed session carry?* — is answered:
+**the identity of a Lighthouse API key the Jira administrator supplies.** Everyone who can open the
+Jira page sees exactly what that key can see, and nothing else. Over-sharing is bounded by how the
+administrator scopes the key, which is a decision they already understand how to make.
+
+Rejected: mapping Jira identity to a Lighthouse user. It is the correct end state and the only version
+that could ever be a marketplace product, but it is D5's deferred step-2 authentication in full — a
+trust path between Atlassian and Lighthouse that does not exist today, larger than the rest of this
+epic combined. Recorded as the follow-up the verdict should name if the answer is *go*.
+
+Also rejected: an instance-level anonymous read-only embed mode. Marginally smaller, but it puts the
+scope in Lighthouse configuration rather than in something the customer's own administrator controls
+per installation.
+
+**Why this is the small change.** The machinery already exists. `X-Api-Key` is routed to
+`ApiKeyAuthenticationHandler` (`Program.cs:613`), which resolves scopes into `RbacGuardRequirement`s
+(`ApiKeyController.cs:78`). An embed session issues a cookie carrying the principal that handler
+already produces. No new authorization model, no new permission vocabulary.
+
+### D24 — only the embed cookie relaxes `SameSite`
+
+`Program.cs:643` sets `SameSite=Lax` unconditionally today. Rather than making that instance-wide
+configuration, **only the cookie issued by the embed exchange** gets `SameSite=None; Secure;
+Partitioned`. Ordinary browser sessions keep `Lax`.
+
+This matters more than it looks. Instance-wide relaxation would weaken every session on every
+Lighthouse deployment to serve a feature most of them never enable. Confining it to deliberately
+minted embed sessions keeps the blast radius equal to the feature's own footprint, and makes the
+security review answerable: the question becomes *"is this token safe?"* rather than *"have we
+weakened everyone's cookies?"*
+
+### K4, reworded again
+
+Slice 01 falsified K4 as a zero. It is not deleted — it is what made the constraint visible early
+enough to decide deliberately rather than drift. Restated:
+
+> **K4** — the Lighthouse change stays bounded to the embed session: one token-exchange endpoint, one
+> embed entry point, and a cookie policy that applies only to sessions issued by it. Measurement: no
+> change to the existing authentication flow, the RBAC model, or the permission vocabulary;
+> `SameSite=Lax` still governs every non-embed session. Expected diff confined to the auth surface
+> plus its tests.
+
+The original spirit survives — *this must not turn into a rewrite of Lighthouse's authentication* —
+and it stays falsifiable, which the zero no longer was.
+
+### Revised slicing
+
+Slices 02 and 03 as originally written are removed (work items 5635 and 5637), along with the
+auth-disabled demo instance they depended on. What replaces them:
+
+| Slice | Story | Ships | Learning hypothesis |
+|---|---|---|---|
+| **01** | US-01 (#5636) | **Done 2026-08-03.** Framing works; the identity provider is the wall. | Answered. |
+| **02** | Lighthouse mints an embed session | Token exchange authenticated by `X-Api-Key`, an embed entry point that signs the caller in, short expiry, single use, revocation, and the embed-only cookie policy. Plus a security review. | Disproves *"a session can be established inside a third-party frame without an interactive login"* if the partitioned cookie does not survive real browsers. Testable end to end **without Forge** — curl the exchange, open the entry point in a plain page framed from another origin. |
+| **03** | The Jira app shows my data | The Forge app grows an admin page (instance URL + API key), a resolver that exchanges the key for a token, and frames the embed URL. Run against `lpw.lighthouse.letpeople.work`. | Disproves *"the whole flow survives inside Forge"* — the platform's own frame, its CSP, and a partitioned cookie in a nested context, all at once. |
+| **04** | US-03 (#5638) | README, demos, `docs/verdict.md`. | Unchanged: whether Jira-nativeness is a real buying trigger. |
+
+Slice 02 before 03 is deliberate and follows slice 01's lesson. The cookie question is the one that
+can still kill the approach, and it is answerable in a plain browser page with no Forge involvement —
+so it should not be bought bundled with Forge's own behaviour. One question at a time (D9's principle,
+which survives its own ladder).
+
+### What slice 02 must not assume
+
+- **Partitioned cookies are not universally settled.** Chrome ships CHIPS; Firefox's Total Cookie
+  Protection partitions by default; Safari's ITP is stricter still. Slice 02 verifies in each, and a
+  browser that refuses is a finding for the verdict, not a bug to chase.
+- **The token is a bearer credential that grants a session.** Short expiry, single use, and revocation
+  are part of the slice, not follow-ups. It does not ship on a demo's timeline.
+- **The API key is entered by an administrator into Forge storage.** That is a customer secret living
+  in Atlassian's infrastructure — name it in the security review, and in whatever the verdict says
+  about what a real product would need.
