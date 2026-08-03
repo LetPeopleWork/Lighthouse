@@ -20,7 +20,7 @@ Lighthouse currently offers three main automation entry points:
 | --- | --- | --- |
 | CLI | Shell scripts, CI jobs, coding agents with terminal access, quick ad-hoc inspection | [@letpeoplework/lighthouse-cli](https://www.npmjs.com/package/@letpeoplework/lighthouse-cli) |
 | MCP stdio | Local AI clients such as VS Code / GitHub Copilot, Claude Code, or other tools that can start a local process | [@letpeoplework/lighthouse-mcp-stdio](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-stdio) |
-| MCP HTTP | Shared or hosted AI setups, container deployments, remote development environments, and web-based clients that need a network endpoint | [@letpeoplework/lighthouse-mcp-http](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-http) |
+| MCP HTTP | Shared or hosted AI setups such as Microsoft Copilot Studio, container deployments, remote development environments, and web-based clients that need a network endpoint | [@letpeoplework/lighthouse-mcp-http](https://www.npmjs.com/package/@letpeoplework/lighthouse-mcp-http) |
 
 If your AI client can run terminal commands, the CLI is often the fastest way to automate Lighthouse. If your AI client supports MCP, use either the local stdio server or the shared HTTP server depending on your deployment model.
 
@@ -214,6 +214,52 @@ Point your client to `http://<host>:3000/mcp` once the container is running.
 
 {: .recommendation}
 Use MCP stdio for personal local setups and MCP HTTP for shared or hosted setups. If your workflow is mostly shell-based, prefer the CLI.
+
+## Microsoft Copilot Studio
+
+Copilot Studio calls MCP servers over the network, so it needs the MCP HTTP server. The local stdio server is not an option here, because Copilot Studio cannot start a process on your machine.
+
+Before you start, make sure you have:
+
+- A reachable `@letpeoplework/lighthouse-mcp-http` deployment served over HTTPS with a certificate Copilot Studio trusts.
+- A Lighthouse API key created under [System Settings > API Keys](./settings/apikeys.html).
+
+### Add Lighthouse as an MCP Tool
+
+1. Open your agent in Copilot Studio and go to **Tools**.
+2. Select **Add a tool**, then **New tool**, then **Model Context Protocol**.
+3. Fill in **Server name** and **Server description**. The agent orchestrator uses the description to decide when to call Lighthouse, so describe the capability rather than the product, for example "Flow metrics, forecasts, teams and portfolios from Lighthouse".
+4. Set **Server URL** to your MCP endpoint, including the `/mcp` path:
+
+    ```text
+    https://lighthouse.example.com/mcp
+    ```
+
+5. Select **API key** as the authentication type.
+6. Set **Type** to **Header**.
+7. Enter `X-Api-Key` as the header name.
+8. Select **Create**, then **Create a new connection**, paste your Lighthouse API key, and select **Add to agent**.
+
+{: .important}
+The header name must be exactly `X-Api-Key`. The MCP HTTP server reads the caller's key from that header and forwards it to Lighthouse, so each agent user drives Lighthouse under their own key and their own permissions. `Authorization` is reserved for OAuth bearer tokens and does not work with an API key.
+
+If you build a custom connector in Power Apps instead of using the wizard, the same rule applies on the **Security** tab: **Parameter label** is only the text shown when someone creates a connection, while **Parameter name** is the actual HTTP header and must be `X-Api-Key`, with **Parameter location** set to **Header**.
+
+### URL and Transport Notes
+
+- The `/mcp` suffix is required. The MCP HTTP server only serves MCP requests on that path, and a URL without it returns `404`.
+- Do not add `/mcp` twice. In a custom connector, the host, base URL and operation path are combined, so a base URL of `/mcp` together with an operation path of `/mcp` produces `/mcp/mcp` and fails.
+- Copilot Studio supports the Streamable HTTP transport only. The Lighthouse MCP HTTP server speaks Streamable HTTP, so no extra configuration is needed.
+- Tool responses are TOON-encoded rather than JSON. Copilot Studio handles this fine, but raw tool output looks different from plain JSON.
+
+### Troubleshooting
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| `404` when the connector is tested | The server URL is missing `/mcp`, or `/mcp` was set in both the base URL and the operation path | Use exactly one `/mcp` in the final URL |
+| `401` with a `WWW-Authenticate` header | No credential reached the server | Check that the header name is `X-Api-Key` and that the connection actually holds a key |
+| `406 Not Acceptable` | The request did not accept both `application/json` and `text/event-stream` | Expected when probing by hand with `curl`; Copilot Studio sends the correct `Accept` header itself |
+| Tools appear, but every call reports `unauthorized` | The API key is wrong, revoked, or lacks permission for the requested data | Re-create the key under System Settings > API Keys and update the connection |
 
 ## Lighthouse Agent Skill
 
