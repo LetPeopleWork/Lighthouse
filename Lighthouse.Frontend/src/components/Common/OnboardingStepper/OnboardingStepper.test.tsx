@@ -27,6 +27,8 @@ const defaultProps = {
 describe("OnboardingStepper", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.restoreAllMocks();
+		localStorage.clear();
 	});
 
 	describe("Visibility", () => {
@@ -231,6 +233,106 @@ describe("OnboardingStepper", () => {
 			);
 			await user.click(screen.getByTestId("onboarding-cta"));
 			expect(mockNavigate).toHaveBeenCalledWith("/portfolios/new");
+		});
+	});
+
+	describe("Dismissal", () => {
+		const renderStepper = () =>
+			render(
+				<MemoryRouter>
+					<OnboardingStepper {...defaultProps} />
+				</MemoryRouter>,
+			);
+
+		it("offers a named control to hide it", () => {
+			renderStepper();
+
+			expect(screen.getByTestId("onboarding-dismiss")).toHaveAccessibleName(
+				/don't show it again/i,
+			);
+		});
+
+		it("removes itself as soon as the control is clicked", async () => {
+			const user = userEvent.setup();
+			renderStepper();
+
+			await user.click(screen.getByTestId("onboarding-dismiss"));
+
+			expect(
+				screen.queryByTestId("onboarding-stepper"),
+			).not.toBeInTheDocument();
+		});
+
+		it("remembers the dismissal for the next visit", async () => {
+			const user = userEvent.setup();
+			renderStepper();
+
+			await user.click(screen.getByTestId("onboarding-dismiss"));
+
+			expect(localStorage.getItem("lighthouse-hide-onboarding-stepper")).toBe(
+				"true",
+			);
+		});
+
+		it("never mounts when it was already dismissed", () => {
+			localStorage.setItem("lighthouse-hide-onboarding-stepper", "true");
+
+			renderStepper();
+
+			expect(
+				screen.queryByTestId("onboarding-stepper"),
+			).not.toBeInTheDocument();
+		});
+
+		it("renders when the stored value is anything other than true", () => {
+			localStorage.setItem("lighthouse-hide-onboarding-stepper", "yes");
+
+			renderStepper();
+
+			expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
+		});
+
+		it("renders when storage cannot be read at all", () => {
+			vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+				throw new Error("storage disabled");
+			});
+
+			renderStepper();
+
+			expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
+		});
+
+		it("still hides itself when the dismissal cannot be stored", async () => {
+			vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+				throw new Error("quota exceeded");
+			});
+			const user = userEvent.setup();
+			renderStepper();
+
+			await user.click(screen.getByTestId("onboarding-dismiss"));
+
+			expect(
+				screen.queryByTestId("onboarding-stepper"),
+			).not.toBeInTheDocument();
+		});
+
+		it("stays hidden when fully onboarded regardless of the stored value", () => {
+			localStorage.setItem("lighthouse-hide-onboarding-stepper", "false");
+
+			render(
+				<MemoryRouter>
+					<OnboardingStepper
+						{...defaultProps}
+						hasConnections={true}
+						hasTeams={true}
+						hasPortfolios={true}
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(
+				screen.queryByTestId("onboarding-stepper"),
+			).not.toBeInTheDocument();
 		});
 	});
 });

@@ -1,8 +1,10 @@
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
 import {
 	Box,
 	Button,
+	IconButton,
 	Step,
 	StepLabel,
 	Stepper,
@@ -10,8 +12,28 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+
+const DISMISSED_KEY = "lighthouse-hide-onboarding-stepper";
+
+// Storage is unavailable in private browsing and can be disabled by policy. Guidance is not worth
+// taking the Overview down for, so both directions degrade to "not dismissed".
+const readDismissed = (): boolean => {
+	try {
+		return localStorage.getItem(DISMISSED_KEY) === "true";
+	} catch {
+		return false;
+	}
+};
+
+const rememberDismissed = (): void => {
+	try {
+		localStorage.setItem(DISMISSED_KEY, "true");
+	} catch {
+		// Nothing to recover: the panel is already gone for this session.
+	}
+};
 
 interface OnboardingStepperProps {
 	hasConnections: boolean;
@@ -37,6 +59,9 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 	const navigate = useNavigate();
 	const theme = useTheme();
 
+	// Read before the first paint, so a dismissed panel never flashes.
+	const [isDismissed, setIsDismissed] = useState(readDismissed);
+
 	const activeStep = useMemo(() => {
 		if (!hasConnections) return 0;
 		if (!hasTeams) return 1;
@@ -44,10 +69,15 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 		return 3;
 	}, [hasConnections, hasTeams, hasPortfolios]);
 
-	// Don't render when fully onboarded
-	if (activeStep === 3) {
+	// Don't render when fully onboarded, or once the user has closed it for good
+	if (activeStep === 3 || isDismissed) {
 		return null;
 	}
+
+	const handleDismiss = () => {
+		rememberDismissed();
+		setIsDismissed(true);
+	};
 
 	const steps = [
 		{
@@ -84,9 +114,27 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 			}}
 			data-testid="onboarding-stepper"
 		>
-			<Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-				Get Started
-			</Typography>
+			<Box
+				sx={{
+					mb: 2,
+					display: "flex",
+					alignItems: "flex-start",
+					justifyContent: "space-between",
+					gap: 1,
+				}}
+			>
+				<Typography variant="h6" sx={{ fontWeight: 600 }}>
+					Get Started
+				</Typography>
+				<IconButton
+					size="small"
+					onClick={handleDismiss}
+					aria-label="Hide Get Started and don't show it again"
+					data-testid="onboarding-dismiss"
+				>
+					<CloseIcon fontSize="small" />
+				</IconButton>
+			</Box>
 
 			<Stepper activeStep={activeStep} alternativeLabel>
 				{steps.map((step, index) => (
