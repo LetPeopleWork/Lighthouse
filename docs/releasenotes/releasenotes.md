@@ -4,6 +4,34 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.8.3.8
+
+## Features over Time
+
+A burnup tells you the delivery grew. It does not tell you *which* Feature grew, or when — so the answer tends to arrive at the retrospective instead of while there is still time to act on it.
+
+Delivery metrics now carry a fourth chart. Each day is one stacked bar with a band per Feature, sized by how many Work Items it holds, so scope discovered inside a single Feature is visible on the day it lands. A band that ends is a Feature that left the delivery.
+
+![Features over Time](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/deliveryEpicSize.png)
+
+The orange **Count** line rides its own right-hand scale and answers a different question: how many Features were in the delivery that day. Three Features of ten items and ten Features of three both total thirty, and they are not the same delivery to run.
+
+A **hatched** band means that Feature's size is still the portfolio's default estimate rather than counted items. Watching a band go from hatched to solid is watching a Feature actually get broken down.
+
+Features keep the same colour here as on the fever chart and hold their position in the stack from day to day, so following one across the window is a matter of following one colour. Open the **Legend** and click Features to show only those bars — useful once a delivery carries more than a handful.
+
+See [Features over Time](https://docs.lighthouse.letpeople.work/portfolios/detail.html#features-over-time) for the full read.
+
+## Bugfixes and Improvements
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.8.1.14...v26.8.3.8)
+
 # Lighthouse v26.8.1.14
 
 ## ServiceNow
