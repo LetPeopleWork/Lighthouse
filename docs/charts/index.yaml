@@ -2,8 +2,29 @@ apiVersion: v1
 entries:
   lighthouse:
   - apiVersion: v2
+    appVersion: 26.8.3.8
+    created: "2026-08-03T17:56:51.009879322Z"
+    description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
+      Postgres-only chart that brings the whole stack up with one command.
+    digest: 003b5540611f89752e68b2414463e8c9a37021d2746a3553eb403d23eb509fd3
+    home: https://docs.lighthouse.letpeople.work
+    keywords:
+    - flow-metrics
+    - forecasting
+    - kanban
+    maintainers:
+    - name: LetPeopleWork
+      url: https://docs.lighthouse.letpeople.work
+    name: lighthouse
+    sources:
+    - https://github.com/LetPeopleWork/Lighthouse
+    type: application
+    urls:
+    - https://docs.lighthouse.letpeople.work/charts/lighthouse-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v2
     appVersion: 26.8.1.14
-    created: "2026-08-01T18:03:47.501617168Z"
+    created: "2026-08-03T17:56:51.008890526Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: 2b4f226c71033fcc4914333fc092296ceac093eb897ca5652ea0c0780a61c2bd
@@ -24,7 +45,7 @@ entries:
     version: 0.1.8
   - apiVersion: v2
     appVersion: 26.7.26.8
-    created: "2026-08-01T18:03:47.500496327Z"
+    created: "2026-08-03T17:56:51.007096293Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: 604da6521beead0ac039cfb86a4b5953e65a6468bee813e9b2d624c433f50eff
@@ -45,7 +66,7 @@ entries:
     version: 0.1.7
   - apiVersion: v2
     appVersion: 26.7.11.4
-    created: "2026-08-01T18:03:47.49922814Z"
+    created: "2026-08-03T17:56:51.006134288Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: d58038e079d0280644c664ddde69433bc048c6d0f69683c8b50fc1671de1ad39
@@ -66,7 +87,7 @@ entries:
     version: 0.1.6
   - apiVersion: v2
     appVersion: 26.7.3.1
-    created: "2026-08-01T18:03:47.498340058Z"
+    created: "2026-08-03T17:56:51.005206773Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: 9f63873e6be36f8af5414013fad71c18b6128cd91c94b193a4a8a69c555c73c1
@@ -87,7 +108,7 @@ entries:
     version: 0.1.5
   - apiVersion: v2
     appVersion: 26.6.21.1
-    created: "2026-08-01T18:03:47.497410565Z"
+    created: "2026-08-03T17:56:51.004273671Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: 73c6d3f5e6d5d6c2a1e819e19feea78cd2f29e05050760065f72f79d92cce6b5
@@ -108,7 +129,7 @@ entries:
     version: 0.1.4
   - apiVersion: v2
     appVersion: 26.6.21.1
-    created: "2026-08-01T18:03:47.496540498Z"
+    created: "2026-08-03T17:56:51.003356442Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: 8bd0628b970451fd40a57cb1b4cf3fced43e78e13b5bebd12e272b0f6382e57c
@@ -129,7 +150,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: 26.6.21.1
-    created: "2026-08-01T18:03:47.495685221Z"
+    created: "2026-08-03T17:56:51.002471141Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: ba6f0084c70a297ef7b0b1c48b76f6617dec627e9210fde8ecb71c0e63409db8
@@ -150,7 +171,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: 26.6.21.1
-    created: "2026-08-01T18:03:47.494806407Z"
+    created: "2026-08-03T17:56:51.00157263Z"
     description: Lighthouse — flow metrics and probabilistic forecasting for Kubernetes.
       Postgres-only chart that brings the whole stack up with one command.
     digest: 445a03c44389af745f79665ba2bde17a388fe30d892ee1f61e2fa2dd0b8c7208
@@ -169,4 +190,4 @@ entries:
     urls:
     - https://docs.lighthouse.letpeople.work/charts/lighthouse-0.1.1.tgz
     version: 0.1.1
-generated: "2026-08-01T18:03:47.493967412Z"
+generated: "2026-08-03T17:56:51.000635882Z"
