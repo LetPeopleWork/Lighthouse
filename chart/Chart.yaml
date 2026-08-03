@@ -13,9 +13,10 @@ type: application
 # 0.1.6: track the v26.7.11.4 release — rule-based blocked items (Epic 5074).
 # 0.1.7: track the v26.7.26.8 release — percentiles and PBC over time (Epic 5427).
 # 0.1.8: track the v26.8.1.14 release — ServiceNow connector and joint multi-team forecasts.
-version: 0.1.8
+# 0.1.9: track the v26.8.3.8 release — feature size and count over time in delivery metrics (Epic 5585).
+version: 0.1.9
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-appVersion: "26.8.1.14"
+appVersion: "26.8.3.8"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse
