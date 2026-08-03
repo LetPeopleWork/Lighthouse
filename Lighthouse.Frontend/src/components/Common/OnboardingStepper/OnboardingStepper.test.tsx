@@ -292,28 +292,40 @@ describe("OnboardingStepper", () => {
 			expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
 		});
 
+		// The stored flag says "dismissed" and the read throws anyway: without the catch the panel
+		// would stay hidden, so the two outcomes differ and the test cannot pass vacuously.
 		it("renders when storage cannot be read at all", () => {
-			vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-				throw new Error("storage disabled");
-			});
+			localStorage.setItem("lighthouse-hide-onboarding-stepper", "true");
+			const read = vi
+				.spyOn(window.localStorage, "getItem")
+				.mockImplementation(() => {
+					throw new Error("storage disabled");
+				});
 
 			renderStepper();
+			read.mockRestore();
 
 			expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
 		});
 
 		it("still hides itself when the dismissal cannot be stored", async () => {
-			vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-				throw new Error("quota exceeded");
-			});
+			const write = vi
+				.spyOn(window.localStorage, "setItem")
+				.mockImplementation(() => {
+					throw new Error("quota exceeded");
+				});
 			const user = userEvent.setup();
 			renderStepper();
 
 			await user.click(screen.getByTestId("onboarding-dismiss"));
+			write.mockRestore();
 
 			expect(
 				screen.queryByTestId("onboarding-stepper"),
 			).not.toBeInTheDocument();
+			expect(
+				localStorage.getItem("lighthouse-hide-onboarding-stepper"),
+			).toBeNull();
 		});
 
 		it("stays hidden when fully onboarded regardless of the stored value", () => {
