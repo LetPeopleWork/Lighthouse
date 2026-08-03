@@ -1,0 +1,22 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:18-36",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:62-63",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:72-80",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:129-136"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-quiet-deliberate-choices-frontend.json" },
+  "tempDirName": ".stryker-tmp-quiet-deliberate-choices"
+}
