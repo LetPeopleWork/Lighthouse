@@ -2,15 +2,13 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
-using System.Globalization;
-using System.Security.Claims;
 using System.Text.Encodings.Web;
 
 namespace Lighthouse.Backend.Services.Implementation.Auth
 {
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
-        public const string ApiKeyIdClaimType = "api_key_id";
+        public const string ApiKeyIdClaimType = ApiKeyPrincipalFactory.ApiKeyIdClaimType;
         private const string ApiKeyHeaderName = "X-Api-Key";
         private readonly IApiKeyService apiKeyService;
 
@@ -47,29 +45,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return AuthenticateResult.Fail("Invalid or unknown API key.");
             }
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, "api-key-user"),
-                new Claim("auth_method", "api-key"),
-            };
-
-            if (validationResult.ApiKeyId.HasValue)
-            {
-                claims.Add(new Claim(
-                    ApiKeyIdClaimType,
-                    validationResult.ApiKeyId.Value.ToString(CultureInfo.InvariantCulture)));
-            }
-
             if (validationResult.OwnerResolutionState == ApiKeyOwnerResolutionState.Resolved
                 && !string.IsNullOrWhiteSpace(validationResult.OwnerSubject))
             {
-                claims.Add(new Claim("sub", validationResult.OwnerSubject));
-
-                if (!string.IsNullOrWhiteSpace(validationResult.OwnerDisplayName))
-                {
-                    claims.Add(new Claim("name", validationResult.OwnerDisplayName));
-                }
-
                 Logger.LogDebug(
                     "API key {KeyId} authenticated with resolved owner. CorrelationId={CorrelationId}",
                     validationResult.ApiKeyId,
@@ -83,8 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                     correlationId);
             }
 
-            var identity = new ClaimsIdentity(claims, Scheme.Name);
-            var principal = new ClaimsPrincipal(identity);
+            var principal = ApiKeyPrincipalFactory.Create(validationResult, Scheme.Name);
             var ticket = new AuthenticationTicket(principal, Scheme.Name);
 
             return AuthenticateResult.Success(ticket);
