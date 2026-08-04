@@ -1744,6 +1744,45 @@ and that is a decision to make deliberately rather than discover.
 They interact, and the order matters: with OAuth the session already carries the right scope, so
 views degrade from a permission mechanism to a convenience. Which argues for settling OAuth first.
 
+**Sharpened by the maintainer, 2026-08-04, into two settings-level alternatives** — an evaluation to
+run, not a decision taken:
+
+1. **"Lighthouse uses Jira auth"** — a setting that hands authentication to Forge for the signed-in
+   user. Evidence gathered the same day makes the shape precise: Atlassian *does* publish a real OIDC
+   discovery document at `auth.atlassian.com`, and Lighthouse's OIDC is generic enough to point at it —
+   but `auth.atlassian.com` answers `X-Frame-Options: DENY`, so **an OIDC redirect inside the frame
+   fails exactly as Auth0's did**. The route that works is Forge asserting the viewer's `accountId`
+   *server-side to the resolver*, with no browser hop to refuse. If Lighthouse also used Atlassian as
+   its identity provider, the OIDC `sub` would be that same account id and the mapping problem
+   disappears — which is the strongest argument for pairing the two.
+2. **"Custom views"** — named views, each bound to a differently-scoped API key, with visibility
+   managed in Jira's own admin panel.
+
+The trade between them is where authorization lives. Option 1 keeps it in Lighthouse, where the data
+is. Option 2 moves part of it into Jira, which is convenient and makes **Jira an authorization
+authority over Lighthouse data** — and this epic's own security review is the argument for caution:
+F2 and F4 were both permission decisions sitting somewhere other than the data they governed.
+
+Unresolved and worth naming before either is built: under option 1 the API key stops being a scoped
+reader and becomes a credential that can mint a session **as anybody**, which is a real escalation over
+today and needs its own scope, short expiry, and an audit trail of who was impersonated.
+
+### If the verdict is *go*, the app needs productising before it is anything but a demo
+
+Maintainer, 2026-08-04. Recorded here because the app's current quality bar is deliberately, explicitly
+low — D7 put it in a separate repository precisely so a throwaway showcase would not be held to this
+repository's CI gates. That decision expires the moment anyone decides to keep it.
+
+What "productised" means here, concretely: coding guidelines and a linter, SonarQube analysis, an
+actual test suite (there is **none** today — the Forge round trip, the resolver, `setSecret` and the
+nested frame are untested by anything), CI/CD, dependency scanning, and a release process. Also the
+things this epic already knows it is carrying: `npm audit` reports three high transitive findings via
+`@forge/bridge`, unreachable today and unaddressed; the manifest's origin list is enforced by a
+hand-rolled build script; and `forge lint --fix` silently deletes every comment in `manifest.yml`.
+
+None of that is worth doing before the verdict. All of it is required after a *go*, and the gap is
+large enough that it belongs in the estimate rather than being discovered afterwards.
+
 ### If this change becomes permanent — extend the auth E2E suite to cover API keys
 
 Maintainer, 2026-08-04. **Conditional on a *go* verdict; deliberately not done now.**
