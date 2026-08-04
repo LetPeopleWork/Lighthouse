@@ -1217,6 +1217,7 @@ without further discussion — the acceptance attaches to this database, not to 
 | **M5** | ~~A Cloudflare WAF rate-limit rule on the hostname.~~ **Not available under D43** — Tailscale Funnel has no WAF layer. The reasoning it rested on still holds for any future edge (a rate limit is not an authentication gate and triggers no redirect, so F3/F4 do not apply), so this returns if the transport ever does | N/A under D43 |
 | **M6** | Demo from a **purpose-built database snapshot** rather than the working dev database. Less load-bearing now that M1 is downgraded, but it still turns the judgement into a one-time job on a fixed file rather than a standing assumption about live state that drifts as the dev instance is used | Advisable |
 | **M7** | Cloudflare Access, Tailscale's own Funnel access controls, or any identity-provider gate | **Rejected** — it is the F3/F4 wall, reintroduced. Funnel must be plain public HTTPS |
+| **M8** | **Tear the transport out when the epic closes** (maintainer, 2026-08-04): Funnel off, Tailscale uninstalled from the machine, the node removed from the tailnet. | **Required at epic close** — the tunnel is scaffolding for a feasibility question, and scaffolding that outlives its question becomes a standing exposure nobody is deciding about any more. Recorded as a mitigation rather than a task so it travels with the risk it retires |
 
 ## Wave: DESIGN / [REF] Revised slicing
 
