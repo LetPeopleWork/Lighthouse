@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         public const string ApiKeyIdClaimType = ApiKeyPrincipalFactory.ApiKeyIdClaimType;
-        private const string ApiKeyHeaderName = "X-Api-Key";
+        public const string ApiKeyHeaderName = "X-Api-Key";
         private readonly IApiKeyService apiKeyService;
 
         public ApiKeyAuthenticationHandler(

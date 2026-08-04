@@ -24,14 +24,16 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType<EmbedSessionTokenResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public async Task<IActionResult> MintSessionToken(CancellationToken cancellationToken = default)
+        public async Task<IActionResult> MintSessionToken(
+            [FromHeader(Name = ApiKeyAuthenticationHandler.ApiKeyHeaderName)] string? presentedApiKey = null,
+            CancellationToken cancellationToken = default)
         {
             if (!IsEmbedSurfaceAvailable())
             {
                 return NotFound();
             }
 
-            if (!TryGetApiKeyId(out var apiKeyId))
+            if (!TryGetApiKeyId(presentedApiKey, out var apiKeyId))
             {
                 return Unauthorized();
             }
@@ -60,14 +62,16 @@ namespace Lighthouse.Backend.API
         [EnableRateLimiting(RateLimitingConfiguration.EmbedSessionPolicy)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RevokeAllSessionTokens(CancellationToken cancellationToken = default)
+        public async Task<IActionResult> RevokeAllSessionTokens(
+            [FromHeader(Name = ApiKeyAuthenticationHandler.ApiKeyHeaderName)] string? presentedApiKey = null,
+            CancellationToken cancellationToken = default)
         {
             if (!IsEmbedSurfaceAvailable())
             {
                 return NotFound();
             }
 
-            if (!TryGetApiKeyId(out var apiKeyId))
+            if (!TryGetApiKeyId(presentedApiKey, out var apiKeyId))
             {
                 return Unauthorized();
             }
@@ -81,9 +85,20 @@ namespace Lighthouse.Backend.API
             return authModeResolver.Resolve().Mode == AuthMode.Enabled;
         }
 
-        private bool TryGetApiKeyId(out int apiKeyId)
+        // Security review F2: an embed cookie carries api_key_id from the same claims factory, so the
+        // claim alone would let a session mint its own successor and renew past the bound ADR-130 set
+        // with SlidingExpiration=false. The credential must be presented directly on this request.
+        // Checked here rather than via [Authorize(AuthenticationSchemes = ...)], because that scheme is
+        // not registered when authentication is disabled and would pre-empt D31's 404.
+        private bool TryGetApiKeyId(string? presentedApiKey, out int apiKeyId)
         {
             apiKeyId = 0;
+
+            if (string.IsNullOrWhiteSpace(presentedApiKey))
+            {
+                return false;
+            }
+
             var claimValue = User.FindFirst(ApiKeyPrincipalFactory.ApiKeyIdClaimType)?.Value;
 
             return !string.IsNullOrWhiteSpace(claimValue)
