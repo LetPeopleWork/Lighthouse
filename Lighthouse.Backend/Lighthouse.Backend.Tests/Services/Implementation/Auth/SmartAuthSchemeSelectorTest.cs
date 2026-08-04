@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         private static DefaultHttpContext AContextCarrying(string cookieHeader)
         {
             var context = new DefaultHttpContext();
-            context.Request.Headers["Cookie"] = cookieHeader;
+            context.Request.Headers.Cookie = cookieHeader;
             return context;
         }
     }
