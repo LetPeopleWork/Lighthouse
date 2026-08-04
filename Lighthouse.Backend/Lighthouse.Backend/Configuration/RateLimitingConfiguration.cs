@@ -7,6 +7,7 @@ namespace Lighthouse.Backend.Configuration
         public const string AuthLoginPolicy = "AuthLogin";
         public const string ApiKeysPolicy = "ApiKeys";
         public const string BootstrapSystemAdminPolicy = "BootstrapSystemAdmin";
+        public const string EmbedSessionPolicy = "EmbedSession";
 
         public bool Enabled { get; set; } = true;
 

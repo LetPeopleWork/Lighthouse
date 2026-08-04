@@ -32,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_ValidToken_RedirectsToACleanUrlThatNoLongerCarriesTheToken()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -52,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_Response_SuppressesTheReferrer()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -69,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_TokenAlreadyRedeemed_RefusedLegibly()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -94,7 +91,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_UnknownToken_RefusedLegibly()
         {
             using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, "unknown.token");
@@ -109,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_MalformedToken_RefusedLegibly()
         {
             using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, "no-separator-at-all");
@@ -123,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_MissingToken_RefusedLegibly()
         {
             using var client = EmbedSessionTestHost.CreateClient(host.AuthEnabled);
@@ -138,7 +132,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_ExpiredToken_RefusedLegibly()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -160,7 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Security
 
         [Test]
         [TestCaseSource(nameof(OffHostReturnPaths))]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_ReturnPathPointsOffHost_NeverRedirectsThere(string offHostReturnPath)
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -174,7 +166,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_ReturnPathIsALocalPath_RedirectsThere()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -192,7 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_AuthenticationDisabled_Absent_WhileEnabledRedirects()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -210,7 +200,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed entry point does not exist yet")]
         public async Task S8_Enter_LicenceBlocked_Refused_WhileEnabledRedirects()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);

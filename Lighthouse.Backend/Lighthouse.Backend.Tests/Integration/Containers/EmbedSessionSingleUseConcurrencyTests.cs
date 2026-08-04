@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private const int ConcurrentRedemptions = 8;
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed session does not exist yet")]
         public async Task Redeem_ManySimultaneousRedemptionsOfOneToken_ExactlyOneEstablishesASession()
         {
             await using var postgres = await PostgresContainerFixture.StartFreshAsync();

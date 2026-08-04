@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed session does not exist yet")]
         public async Task S10_ReadScopedKey_EmbedSession_ReachesTheSameInScopeResourceAsTheHeader()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -48,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed session does not exist yet")]
         public async Task S10_ReadScopedKey_EmbedSession_IsRefusedTheSameOutOfScopeResourceAsTheHeader()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -73,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed session does not exist yet")]
         public async Task S10_ReadScopedKey_EmbedSession_IsRefusedWritesJustLikeTheHeader()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -97,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed session does not exist yet")]
         public async Task S10_ReadScopedKey_EmbedSession_ReportsTheSameEffectivePermissionsAsTheHeader()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);

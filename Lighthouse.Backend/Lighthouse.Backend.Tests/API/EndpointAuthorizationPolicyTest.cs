@@ -11,6 +11,10 @@ namespace Lighthouse.Backend.Tests.API
         [
             typeof(AuthController),
             typeof(VersionController),
+
+            // Epic 5146 D26: the embed token is the credential, and a challenge here would render a
+            // blank rectangle inside the frame instead of a legible refusal.
+            typeof(EmbedEntryController),
         ];
 
         [Test]

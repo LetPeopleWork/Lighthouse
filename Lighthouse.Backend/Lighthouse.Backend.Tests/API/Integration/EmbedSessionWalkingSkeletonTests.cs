@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed session does not exist yet")]
         public async Task EmbedSession_ApiKeyExchangedForToken_EntryPointSignsIn_FramedAppSeesAuthenticatedSession()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);

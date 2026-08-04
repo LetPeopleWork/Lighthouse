@@ -587,6 +587,9 @@ namespace Lighthouse.Backend
                 return;
             }
 
+            var embedConfig = builder.Configuration.GetSection(EmbedConfiguration.SectionName)
+                .Get<EmbedConfiguration>() ?? new EmbedConfiguration();
+
             const string smartScheme = "LighthouseSmartAuth";
 
             builder.Services.AddAuthentication(options =>
@@ -604,7 +607,7 @@ namespace Lighthouse.Backend
                 // the JWT bearer handler; everything else (browser sessions, anonymous)
                 // goes to the cookie scheme.
                 policyOptions.ForwardDefaultSelector = ctx =>
-                    SmartAuthSchemeSelector.Select(ctx.Request.Headers);
+                    SmartAuthSchemeSelector.Select(ctx.Request);
                 // Challenges (unauthenticated requests) always flow through the cookie
                 // scheme, which in turn handles the API-vs-browser split.
                 policyOptions.ForwardChallenge = Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme;
@@ -666,6 +669,34 @@ namespace Lighthouse.Backend
                     }
 
                     context.Response.Redirect(context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+            })
+            .AddCookie(SmartAuthSchemeSelector.EmbedCookieScheme, embedOptions =>
+            {
+                // ADR-130: the relaxation is confined to this cookie. The block above is untouched,
+                // and a test asserts .Lighthouse.Session still emits SameSite=Lax.
+                embedOptions.Cookie.HttpOnly = true;
+                embedOptions.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                embedOptions.Cookie.SameSite = SameSiteMode.None;
+                embedOptions.Cookie.Name = SmartAuthSchemeSelector.EmbedCookieName;
+
+                // No first-class Partitioned property exists at net10.0; CookieBuilder.Extensions
+                // appends the attribute verbatim (spike/findings.md, 2026-08-04).
+                embedOptions.Cookie.Extensions.Add("Partitioned");
+
+                embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.SessionLifetimeMinutes);
+                embedOptions.SlidingExpiration = false;
+
+                embedOptions.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                };
+
+                embedOptions.Events.OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     return Task.CompletedTask;
                 };
             })
@@ -832,6 +863,9 @@ namespace Lighthouse.Backend
             builder.Services.Configure<RateLimitingConfiguration>(
                 builder.Configuration.GetSection(RateLimitingConfiguration.SectionName));
 
+            builder.Services.Configure<EmbedConfiguration>(
+                builder.Configuration.GetSection(EmbedConfiguration.SectionName));
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -852,6 +886,7 @@ namespace Lighthouse.Backend
                     RateLimitingConfiguration.AuthLoginPolicy,
                     RateLimitingConfiguration.ApiKeysPolicy,
                     RateLimitingConfiguration.BootstrapSystemAdminPolicy,
+                    RateLimitingConfiguration.EmbedSessionPolicy,
                 })
                 {
                     var capturedPolicyName = policyName;
@@ -925,6 +960,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<RefreshLog>, RefreshLogRepository>();
             builder.Services.AddScoped<IRepository<UserProfile>, UserProfileRepository>();
             builder.Services.AddScoped<IRepository<ApiKeyPermission>, ApiKeyPermissionRepository>();
+            builder.Services.AddScoped<IEmbedSessionTokenRepository, EmbedSessionTokenRepository>();
 
             // Factories
             builder.Services.AddScoped<IWorkTrackingConnectorFactory, WorkTrackingConnectorFactory>();
@@ -935,6 +971,8 @@ namespace Lighthouse.Backend
             // Services
             builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
             builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+            builder.Services.AddScoped<IApiKeyIdentityResolver, ApiKeyIdentityResolver>();
+            builder.Services.AddScoped<IEmbedSessionTokenService, EmbedSessionTokenService>();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();
             builder.Services.AddScoped<ILighthouseReleaseService, LighthouseReleaseService>();

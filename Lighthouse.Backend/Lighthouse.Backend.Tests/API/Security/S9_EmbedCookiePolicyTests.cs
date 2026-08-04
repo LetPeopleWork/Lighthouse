@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed cookie scheme does not exist yet")]
         public async Task S9_EmbedEntryPoint_SetCookieHeader_CarriesSecureSameSiteNoneAndPartitioned()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -51,7 +50,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed cookie scheme does not exist yet")]
         public async Task S9_EmbedEntryPoint_DoesNotTouchTheOrdinarySessionCookie()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -64,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the embed cookie scheme does not exist yet")]
         public void S9_EmbedCookieScheme_ExpiresInThirtyMinutesAndNeverSlides()
         {
             using var scope = host.AuthEnabled.Services.CreateScope();

@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_ValidApiKey_MintsTokenWithExpiryAndEmbedUrl()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_WithoutApiKey_Refused()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -65,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_UnknownApiKey_Refused()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -82,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_ApiKeyOwnerUnlinked_RefusedWithStructuredReason()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -103,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_AuthenticationDisabled_Absent_WhileEnabledMints()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -121,7 +116,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_LicenceBlocked_Refused_WhileEnabledMints()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -139,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_Exchange_ExceedsRateLimit_Throttled_WithRetryAfter()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -169,7 +162,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_RevokeAll_OutstandingTokenOfCallingKey_NoLongerRedeemable()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
@@ -190,7 +182,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        [Ignore("pending: epic 5146 slice 02a step 2 — the exchange endpoint does not exist yet")]
         public async Task S7_RevokeAll_DoesNotRevokeTokensOfAnotherKey()
         {
             var revokedKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
