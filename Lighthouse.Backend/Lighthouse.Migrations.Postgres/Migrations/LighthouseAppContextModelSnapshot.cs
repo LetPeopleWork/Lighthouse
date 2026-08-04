@@ -152,6 +152,47 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("ApiKeys");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Auth.EmbedSessionToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ApiKeyId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RedeemedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TokenId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiKeyId");
+
+                    b.HasIndex("TokenId")
+                        .IsUnique();
+
+                    b.ToTable("EmbedSessionTokens");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Auth.UserProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -1502,6 +1543,15 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .WithMany()
                         .HasForeignKey("OwnerUserProfileId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.Auth.EmbedSessionToken", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Auth.ApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.ApiKeyPermission", b =>

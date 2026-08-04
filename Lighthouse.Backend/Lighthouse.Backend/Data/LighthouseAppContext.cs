@@ -61,6 +61,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<ApiKeyPermission> ApiKeyPermissions { get; set; } = null!;
 
+        public DbSet<EmbedSessionToken> EmbedSessionTokens { get; set; } = null!;
+
         public DbSet<OAuthCredential> OAuthCredentials { get; set; } = null!;
 
         public DbSet<WorkItemBlockedTransition> WorkItemBlockedTransitions { get; set; } = null!;
@@ -148,6 +150,24 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<ApiKeyPermission>()
                 .HasIndex(p => new { p.ScopeType, p.ScopeId });
+
+            modelBuilder.Entity<EmbedSessionToken>()
+                .HasIndex(t => t.TokenId)
+                .IsUnique();
+
+            modelBuilder.Entity<EmbedSessionToken>()
+                .Property(t => t.TokenId)
+                .IsRequired();
+
+            modelBuilder.Entity<EmbedSessionToken>()
+                .Property(t => t.SecretHash)
+                .IsRequired();
+
+            modelBuilder.Entity<EmbedSessionToken>()
+                .HasOne<ApiKey>()
+                .WithMany()
+                .HasForeignKey(t => t.ApiKeyId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<TerminologyEntry>().HasKey(t => t.Id);
             modelBuilder.Entity<TerminologyEntry>()
