@@ -4253,3 +4253,181 @@ one purity line; a component diagram would restate the container diagram at a sm
 Six, none blocking; DQ-1..DQ-6 in the feature workspace. The one worth naming here is **DQ-1**:
 whether the maintainer takes ADR-127 or its named fallback (#5578's docs carry the time-in-state
 caveat instead). Declining it removes four rows from the Reuse Analysis and moves nothing else.
+
+## Application Architecture — embed-session-for-third-party-frames (ADO Epic 5146, Story 5641)
+
+### Why this exists in Lighthouse at all
+
+Epic 5146 built a Jira Cloud Forge app that frames a whole Lighthouse SPA. It ran live on 2026-08-03
+and proved two things: Forge frames an arbitrary declared external HTTPS origin without difficulty,
+and the **login redirect is the wall**. The identity provider refuses to be framed with
+`X-Frame-Options`, and that is a category result — Auth0 Universal Login is deliberately un-framable
+and Entra, Okta and Keycloak default the same way. A second wall sits behind it: `.Lighthouse.Session`
+is `SameSite=Lax` (`Program.cs:643`), so a login that somehow completed would still produce a cookie
+the browser declines to send from a cross-site frame.
+
+An authenticated Lighthouse therefore cannot be usefully framed by *anything* — Jira or otherwise —
+without a way to establish a session **inside** the frame, with no identity-provider hop. That is the
+embed session, and it is the only Lighthouse product change this epic makes.
+
+Full analysis, decisions D25–D37 and the slice plan:
+`docs/feature/epic-5146-jira-forge-app/feature-delta.md`.
+
+### The one hard problem
+
+*Whose identity does a framed session carry?* A Jira user has no Lighthouse account, and mapping
+Atlassian identity to Lighthouse users is a trust path that does not exist today.
+
+**Answer (D23, maintainer 2026-08-03): the identity of a scoped Lighthouse API key that the
+administrator supplies.** Everyone who opens the framed page sees exactly what that key sees.
+Over-sharing is bounded by how the administrator scopes the key — a decision the RBAC model already
+supports and the administrator already understands.
+
+### Shape — two hops, one durable credential that never leaves the backend
+
+The Forge resolver holds the API key and calls the exchange server-side; the browser only ever sees a
+60-second single-use token.
+
+| Step | Surface | Credential in flight |
+|---|---|---|
+| 1 | `POST /api/v1/embed/session-token`, `X-Api-Key` | The API key — backend to backend, never in a browser |
+| 2 | `GET /embed/enter?token=…` | A 60-second single-use opaque token |
+| 3 | Everything after | `.Lighthouse.Embed`, a cookie scoped to the embed scheme alone |
+
+### Key invariants introduced
+
+1. **Claims parity.** The principal signed into the embed cookie is claim-for-claim the principal
+   `ApiKeyAuthenticationHandler` produces for the same key — `sub`, `name`, `auth_method=api-key` and
+   `api_key_id`. One shared pure `ApiKeyPrincipalFactory` builds both. This is the entire reason RBAC
+   needs no change: `RbacAdministrationService.GetEffectivePermissionsAsync` reads `api_key_id` off
+   the **principal** (`:968`, `:1012`), never off the scheme or the headers, so ADR-004's per-key
+   intersection applies to an embed session unmodified. **The asymmetry matters**: drop `sub` and every
+   scoped check fails closed; drop `api_key_id` and the session silently widens to the owner's full
+   scope — it fails *open*. Parity is a test, not a convention.
+2. **Only the embed cookie relaxes `SameSite`.** A second cookie scheme issues `.Lighthouse.Embed`
+   with `SameSite=None; Secure; Partitioned`, a **30-minute** lifetime, `SlidingExpiration = false`.
+   `Program.cs:639-671` is untouched and `.Lighthouse.Session` still emits `Lax` — asserted on the
+   wire, both halves.
+3. **Single use is atomic or it is nothing.** Redemption is a conditional update requiring exactly one
+   affected row. In-memory state would be redeemable once *per replica* and the second redemption would
+   silently succeed.
+4. **An unlinked API key is refused at the exchange.** Unlinked → no `sub` → `GetOrCreateFromPrincipal`
+   returns null (`CurrentUserProfileService.cs:17-22`) → every scoped RBAC check false. The session
+   would authenticate and render an empty Lighthouse. Refused with a reason instead.
+5. **The embed surface exists only under `AuthMode.Enabled`.** Both endpoints 404 under `Disabled`
+   *and* `Blocked` — deliberately narrower than `AuthController.cs:41-45`'s guard, whose shape is
+   reused with a tighter predicate. Under `Blocked`, `BlockedModeFilter` would 403 every data
+   endpoint, so a minted session would authenticate into nothing.
+
+### Component decomposition
+
+Six components, all backend, all on the authentication surface. `ApiKeyPrincipalFactory` is **pure**
+— claims in, principal out, no repository, no clock, no `HttpContext` — which is what makes invariant
+1 an assertion over a function rather than an integration test over two request pipelines.
+`EmbedSessionTokenService` exposes redemption as one atomic operation and deliberately offers no
+`Find` beside a `MarkRedeemed`, because that pair would hand callers a way to lose the race.
+
+### Driving / driven ports
+
+Three driving ports (mint, enter, revoke-all — split so a caller that only mints is not handed the
+ability to revoke) and five driven ports, each with a named Earned-Trust probe. Full tables in the
+feature workspace. Two probes are load-bearing: the single-use concurrency probe **must** run on a
+real provider, not EF InMemory; and the `Set-Cookie` wire assertion must cover the ordinary cookie's
+`Lax` as well as the embed cookie's relaxation.
+
+`returnPath` on the entry point is an **open-redirect surface** — the redirect happens after an
+authenticated cookie is set — and must be validated as a local path.
+
+### What the framed SPA does under an API-key principal
+
+`useRbac()` gating works unchanged and gates *correctly*: `authorization/my-summary` travels the same
+`GetEffectivePermissionsAsync` path, so a read-scoped key yields `isSystemAdmin: false` and empty
+admin id lists, and admin surfaces hide. The project rule — no component fetches `my-summary`
+directly, all gating derives from `useRbac()` — needs no exception. Two accepted cosmetic
+consequences, recorded rather than fixed: the header shows the **key owner's** display name to every
+viewer, and the sign-out control would strand the frame. No frontend change ships in this epic.
+
+### Reuse Analysis
+
+Fourteen rows in the feature workspace; the headline is how much is REUSE AS-IS. The RBAC guard path,
+`IApiKeyService`, `AuthModeResolver`, ADR-004's per-key intersection and the expand-only migration
+guard are all consumed unmodified. Three EXTENDs: `ApiKeyAuthenticationHandler` (extract the pure
+claims factory), `SmartAuthSchemeSelector` (one branch for the embed cookie), rate-limiting policies
+(one more named policy).
+
+Two CREATE NEWs, each justified by a contract the existing shape cannot express — not by dependency
+count. **A second cookie scheme** rather than a modified block: per-request mutation of the shared
+`CookieAuthenticationOptions` is a data race that would pass every single-threaded test. **An
+`EmbedSessionTokenRepository`** rather than `IRepository<T>`: the single-use property is a conditional
+update returning an affected-row count, and forcing it through an add/save shape yields a
+read-then-write that loses the race in production and passes every test.
+
+`DisabledAuthenticationHandler` is named as **deliberately not reused** — "just reuse the disabled
+handler for the embed" is the tempting shortcut and it would hand every anonymous caller a session.
+
+### Security review is a gate, not a note
+
+Eleven items, S1–S11, in the feature workspace. The slice does not ship until each has an answer. The
+headline four: the customer's API key living in **Atlassian's** Forge storage; the token crossing in a
+URL query string (and therefore into history, `Referer` and Atlassian's logs); the privilege-escalation
+path if `api_key_id` goes missing from the embed principal; and the fact that revoking a token does
+**not** end a session already established from it — that gap is bounded by the embed cookie's
+30-minute non-sliding lifetime and by nothing else.
+
+The query-string hand-off is **settled: accepted, with three mitigations that ship in the slice** —
+`Referrer-Policy: no-referrer` on the entry-point response, a 302 to a clean URL immediately after the
+cookie is set, and token scrubbing named in the checklist rather than left to a logging config. What
+makes acceptance defensible is the 60-second single-use window: a token in a log is a spent
+credential. The POST hand-off remains available and is a **Forge-side** change, so the decision is
+cheap to reverse.
+
+Rate limiting extends ADR-005's mechanism, with its recorded caveat carried forward: the limiter is
+per-instance and in-memory, so on multiple replicas it is defence in depth and the real control
+against token guessing is the 256-bit random secret.
+
+### Unresolved, deliberately
+
+**Does `Partitioned` reach the `Set-Cookie` header on `net10.0`?** The TFM is verified
+(`Lighthouse.Backend/Lighthouse.Backend.csproj:4`); the API surface is **not**. The DESIGN session had
+no shell and no reference-assembly access, and asserting it would be unearned. A four-rung ladder is
+recorded (first-class property → `Cookie.Extensions.Add("Partitioned")` → `OnAppendCookie` → the
+approach is dead in CHIPS-requiring browsers, which is a verdict finding rather than a bug to chase),
+and **one `WebApplicationFactory` assertion on the literal header settles all four rungs**. That
+assertion is the **first thing the implementing slice does**: it needs no hosting and no browser, and
+if no rung reaches the wire, every later step is moot.
+
+Whether a *nested* frame — Forge's own iframe containing ours — changes partitioned-cookie behaviour
+is a separate question, answered a slice later. One frame is not two, and the partition key derives
+from the top-level site, which in the Forge case is Atlassian's.
+
+### Architectural enforcement (this feature)
+
+Three orthogonal layers. **Wire** — `WebApplicationFactory` assertions on the literal `Set-Cookie`
+header, both cookies. **Behavioural** — claims-parity assertions over the pure factory and the redeem
+path, which is the control against the fail-open escalation. **Migration** — the existing
+`ExpandOnlyMigrationGuardTest` runs unmodified over the additive migration, generated with
+`Create-Migration.ps1` across both provider assemblies.
+
+No new ArchUnitNET rule is proposed, and that is a decline rather than an omission: the invariants
+here are runtime and wire-level, and an import-graph rule cannot see any of them.
+
+### ADRs (this feature)
+
+- [ADR-129](./adr-129-embed-session-token-exchange-and-identity.md) — token exchange and identity
+  model. Why the token is opaque with server-side state rather than a JWT, and why claims parity is
+  the invariant that lets RBAC stay untouched.
+- [ADR-130](./adr-130-embed-only-cookie-policy.md) — a second cookie scheme, not a relaxed global one.
+  Includes the `Partitioned` ladder and the probe that decides it.
+- [ADR-131](./adr-131-embed-token-lifecycle-and-revocation-store.md) — database-backed single use and
+  revocation. Why not memory, why not Redis, and the revocation gap stated rather than hidden.
+
+Forge-app-side ADRs stay in `LetPeopleWork/lighthouse-jira-app` — the split is by where the code
+lives.
+
+### C4
+
+System Context (L1), Container (L2) and a Component diagram (L3) for the token-exchange subsystem, in
+Mermaid in the feature workspace → "Wave: DESIGN / [REF] C4 diagrams". **L3 is included here despite
+six components** — below the usual threshold — because the two-hop credential flow is the part a
+security reviewer must be able to read at a glance, and that is the audience this feature is built
+for.
