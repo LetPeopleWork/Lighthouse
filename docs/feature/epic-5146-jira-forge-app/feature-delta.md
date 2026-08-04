@@ -808,10 +808,33 @@ a design, ADRs and an SSOT entry in this repository.
 
 | Retired | Why |
 |---|---|
-| D9's egress ladder (C → wildcard → customer-managed egress) | F1 proved one static declared `permissions.external.frames` entry is sufficient. The ladder solved a problem that turned out not to exist. |
-| The customer-managed-egress branch, and open question Q2 | Same. It returns only if the app ever needs many per-customer origins, which is a marketplace-grade concern, not this epic's. |
+| D9's egress ladder (C → wildcard → customer-managed egress) | F1 proved one static declared `permissions.external.frames` entry is sufficient. The ladder solved a problem that turned out not to exist. **UN-RETIRED 2026-08-04 — see below.** |
+| The customer-managed-egress branch, and open question Q2 | Same. It returns only if the app ever needs many per-customer origins, which is a marketplace-grade concern, not this epic's. **UN-RETIRED 2026-08-04 — see below.** |
+
 | "Runs on Atlassian" eligibility as a live constraint | Already forfeited at the first hardcoded origin, confirmed in the deploy output. Not recoverable while the app frames an external origin. It is a verdict finding, not a design input. |
 | Work items #5635 and #5637 (Removed in ADO) | Their premises are dead: an auth-disabled *hosted* instance (superseded by D33's tunnel) and "point it at my own Lighthouse" as originally written (superseded by the embed flow). Not recreated as written. |
+
+**The first two were retired one slice too early, and #5642 walked straight into it.** F1 proved a
+static declared origin is sufficient *for framing a known instance* — slice 01's question. It is not
+sufficient for **US-02's actual promise**, "point it at my own Lighthouse", because Forge frames and
+fetches only origins declared in the manifest at build time. A URL an administrator types that is not
+already on that list cannot be framed at all: it needs a redeploy, a version bump and re-consent,
+which is not something a customer can perform.
+
+So **D3's "any URL the user types" was never delivered by the static mechanism.** The admin page built
+for #5642 renders the declared list and refuses anything outside it rather than failing as a blank
+rectangle, which is honest — and a materially smaller story than US-02 describes.
+
+**D9's mechanism A is the answer, and the verdict already said so**: *"No wildcard origins. Marketplace
+review rejects them, so a shipped app needs customer-managed egress, where a site administrator
+approves each origin at install time and consent cannot be granted on their behalf."* It was retired as
+a *framing* solution once framing turned out to be easy, and nobody noticed it was still load-bearing
+as a *runtime-origin* solution.
+
+**Q2 is live again**: does the customer-managed egress request API work from a `globalPage` /
+`adminPage` resolver, or only from certain module types? Nothing has answered it, and it now decides
+whether #5642 can serve a prospect's own instance or only instances we declared in advance — the
+difference between the persuasive demo and the canned one.
 
 **Where this wave writes:** `docs/product/architecture/brief.md` (`## Application Architecture`),
 ADR-129, ADR-130, ADR-131, and this file. See CA-3.
