@@ -6,12 +6,19 @@
 | Story | Title | Maps to |
 |---|---|---|
 | [#5634](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5634) | Learn Forge and get a hello-world app onto our cloud instance | Pre-req P2 + P4, risk R4 |
-| [#5635](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5635) | Provide a publicly reachable Lighthouse instance to embed | Pre-req P3 |
+| ~~[#5635](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5635)~~ **REMOVED in ADO** | ~~Provide a publicly reachable Lighthouse instance to embed~~ — premise dead: it assumed a *hosted* auth-disabled instance, which the l8e platform forbids (`oidcEnabled: true` is mandatory, CI-enforced). **Replaced by [#5661](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5661)**, a Tailscale Funnel (D43). Do not recreate as written | Pre-req P3 |
 | [#5636](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5636) | A Lighthouse renders inside Jira | Slice 01 / US-01 |
-| [#5637](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5637) | Point it at my own Lighthouse | Slice 02 / US-02 |
+| ~~[#5637](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5637)~~ **REMOVED in ADO** | ~~Point it at my own Lighthouse~~ — premise dead: a settings flow pointing at an arbitrary instance is useless while the identity provider refuses to be framed (F3/F4). **Replaced by [#5641](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5641)** (the embed session) and **[#5642](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5642)** (the Forge settings flow on top of it). Do not recreate as written | Slice 02 / US-02 |
 | [#5638](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5638) | Reach a go/no-go verdict | Slice 03 / US-03 |
 
-**Waves recorded here**: DISCUSS (2026-08-02), DESIGN (2026-08-03).
+**Waves recorded here**: DISCUSS (2026-08-02), DESIGN (2026-08-03 + re-run 2026-08-04), SPIKE
+(2026-08-04, `spike/`), DISTILL (2026-08-04).
+
+> **Reading order matters in this document.** Later sections supersede earlier ones and say so; the
+> superseded text is left in place, struck through, with a dated amendment naming what replaced it.
+> Nothing is quietly rewritten. If a DISCUSS-era statement and a DESIGN-era one disagree, the later
+> one wins — and the earlier one is kept because *how the understanding changed* is itself the record
+> this epic exists to produce.
 
 **Precondition check.** The epic body opens with *"If we have #5306 we may be able to…"*.
 [#5306](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5306) (l8e Kubernetes
@@ -94,7 +101,7 @@ criterion is a **verdict document** (D6), not an adoption number.
 |---|---|---|---|
 | P1 | Epic #5306 (l8e productization) closed | **Met** — `Closed`. Weaker dependency than the epic body assumed, per D3. | — |
 | P2 | An Atlassian **Jira Cloud** site + Forge CLI account | **Partially met** — LetPeopleWork has its own Atlassian cloud instance for testing (maintainer, 2026-08-02), so the *site* exists. The Forge CLI account, `forge login` and the toolchain do not. Forge apps are Cloud-only: a Jira Data Center prospect cannot be demoed this way at all, and that limitation belongs in the verdict rather than in a backlog. | **#5634** |
-| P3 | A reachable demo Lighthouse instance over **HTTPS with a public certificate** | **Not verified.** An Atlassian-hosted page will not frame an `http://` or self-signed origin. `localhost` demos are out — which also rules out the usual dev instance on `:5169`. | **#5635** |
+| P3 | A reachable demo Lighthouse instance over **HTTPS with a public certificate** | **MET 2026-08-04, by a route this row did not anticipate.** `#5635` was **Removed** in ADO — it assumed a *hosted* instance. Replaced by **#5661**, a Tailscale Funnel publishing the maintainer's own machine (D43), which satisfies the HTTPS-and-real-certificate requirement while leaving `:5169` as the origin. The "`localhost` demos are out" reasoning still holds and is exactly why a tunnel was needed. | ~~#5635~~ **#5661** |
 | P4 | New GitHub repo under `LetPeopleWork` | **Not created.** | **#5634** (the Forge scaffold needs somewhere to live, so repo creation rides with it rather than becoming a story of its own) |
 | P5 | Lighthouse changes | **None required** — and required to stay none (K4). | — |
 
@@ -125,7 +132,7 @@ Decision enabled: whether the wrapper approach is viable at all — a blank or C
 **AC**
 - **AC-01.1** Given the app is deployed and installed on a Jira Cloud dev site, when the user opens **Apps → Lighthouse**, then the configured Lighthouse instance's SPA renders inside the page and its own top-level navigation is usable (at minimum: navigating to a Teams list and opening one team).
 - **AC-01.2** Given the target instance has authentication **disabled**, when the frame loads, then no login prompt appears and team/portfolio data is visible.
-- **AC-01.3** Given the frame is blocked by Forge's or the browser's CSP, when the page loads, then the app shows a readable diagnostic (the blocked origin and the reason) rather than an empty rectangle. *A blocked frame is a valid slice outcome — it is the hypothesis being tested — but it must be legible.*
+- **AC-01.3** ~~Given the frame is blocked by Forge's or the browser's CSP, when the page loads, then the app shows a readable diagnostic (the blocked origin and the reason) rather than an empty rectangle.~~ **UNIMPLEMENTABLE AS DETECTION — replaced by D13, "predict, don't detect".** A cross-origin CSP-blocked frame fires no event the parent can observe (`onload` fires for the error page), so nothing in the page can know it was refused. The replacement is a preflight that *predicts* the refusal and says so before the frame is attempted. Marked inline 2026-08-04: the Definition of Ready below scored this AC as testable, and it was not.
 - **AC-01.4** No product-code file in the Lighthouse repository is modified for this slice (K4 as reworded in CA-1).
 
 ### US-02 — Point it at my own Lighthouse
@@ -179,7 +186,7 @@ Decision enabled: whether the next epic is "marketplace-grade Forge app" or "clo
 - **Jira Data Center / Server** — Forge is Cloud-only (P2). This is a finding for the verdict, not a gap to close.
 - **Reading Jira data or writing back to Jira** — the app renders a Lighthouse; it is not a second Jira connector. Lighthouse's existing Jira work-tracking connector is untouched.
 - **Confluence, Bitbucket, or other Atlassian hosts.**
-- **Any change to the Lighthouse backend or frontend** — D7, and KPI K4 measures it.
+- ~~**Any change to the Lighthouse backend or frontend** — D7, and KPI K4 measures it.~~ **FALSE since 2026-08-03 — see CA-5 and the scope revision.** Backend changes **bounded to the embed session** (D25–D44) are in scope; the **frontend stays untouched** (D37). Amended inline 2026-08-04, because a reader who stops at this list would otherwise be misled about the epic's actual boundary.
 - **Mobile / small-viewport layout** — a full SPA in a nested frame will not fit a phone; demos are desktop.
 - **Production hardening**: automated tests beyond a smoke check, error telemetry, multi-instance switching, per-user configuration.
 
@@ -255,10 +262,10 @@ Slice briefs: `docs/feature/epic-5146-jira-forge-app/slices/slice-0{1,2,3}-*.md`
 
 | # | KPI | Target | Measurement |
 |---|---|---|---|
-| **K1** | Prospect exposure | **≥3** conversations where the app is installed and shown | Dated notes in `docs/verdict.md`; one entry per conversation with a verbatim unprompted reaction |
+| **K1** | Prospect exposure | **≥3** conversations where the app is installed and shown | Dated notes in `docs/verdict.md`; one entry per conversation with a verbatim unprompted reaction. **Stands at 0 as of 2026-08-03, and that is a finding, not a delay** — the verdict declines a go/no-go on exactly this basis. K1 could not be collected at K4's original cost: the wrapper cannot serve auth-enabled instances, which is what prospects actually run. The three ways out are in `docs/verdict.md` § "The decision that is actually live" |
 | **K2** | Time from zero to rendered Lighthouse, following the README | **≤10 minutes** | Timed once by a person who did not write the app or the README (AC-03.1) |
 | **K3** | Verdict exists and decides | **1** document with an explicit go/no-go plus a named follow-up epic or an explicit stop | Binary: `docs/verdict.md` in the new repo |
-| **K4** | Lighthouse repo untouched — the "lightweight" claim, made falsifiable | **0** files changed under `/storage/repos/Lighthouse` attributable to this epic | `git log --since=<epic start>` filtered for 5146-referencing commits; expected empty |
+| **K4** | ~~Lighthouse repo untouched — the "lightweight" claim, made falsifiable~~ **FALSIFIED TWICE, REWORDED TWICE** | ~~**0** files changed under `/storage/repos/Lighthouse`~~ | **Current wording lives in the scope revision § "K4, reworded again"**: the change stays bounded to the embed session — one token exchange, one entry point, a cookie policy applying only to sessions it issues — with no change to the existing auth flow, the RBAC model or the permission vocabulary. Falsified first by this epic's own documentation commits (CA-1), then by slice 01 proving an authenticated instance cannot be framed without a Lighthouse change. **The warning below — "if it goes non-zero, the epic has silently stopped being a lightweight wrapper" — fired exactly as written.** It was not silent, and each rewording is on the record beside the original rather than in place of it |
 
 K4 is the load-bearing one. If it goes non-zero, the epic has silently stopped being a lightweight
 wrapper and D1/D7 need to be re-decided rather than quietly amended.
@@ -893,7 +900,7 @@ slice 02's *verdict-grade* answer, not only for the demo. **Replacement — D35.
 | **D28** | **A second cookie scheme**, `LighthouseEmbedCookie`, own name `.Lighthouse.Embed`, `SameSite=None; Secure; Partitioned`, short `ExpireTimeSpan`, `SlidingExpiration = false`. `Program.cs:639-671` is not touched. | D24 confined the relaxation to embed sessions; a second scheme is how that becomes structural rather than conditional. Two cookie names also let an embed session and an ordinary session coexist in one browser — which the maintainer's own demo setup requires. ADR-130. |
 | **D29** | **Claims parity is an invariant, enforced by one shared claims factory** used by both `ApiKeyAuthenticationHandler` and the embed redemption path. | `GetEffectivePermissionsAsync` reads `api_key_id` off the **principal** (`RbacAdministrationService.cs:968`, `:1012`), not off the scheme or the headers. Parity is therefore the entire reason RBAC needs no change. Independent construction would drift *silently* — the embed session would keep authenticating while resolving different permissions. |
 | **D30** | **The exchange refuses an API key whose owner is unlinked**, with a structured reason. | Verified failure chain: unlinked → no `sub` claim (`ApiKeyAuthenticationHandler.cs`, owner-resolution branch) → `GetOrCreateFromPrincipalAsync` returns null (`CurrentUserProfileService.cs:17-22`) → every scoped RBAC check returns false (`RbacAdministrationService.cs:174-178` ×6). The session would authenticate and render an empty Lighthouse. Earned Trust: prove the key can honour the contract before issuing a credential that promises it can. |
-| **D31** | ~~Both embed endpoints return 404 unless `AuthMode` is `Enabled` or `Blocked`~~ **AMENDED 2026-08-04: both embed endpoints exist only when `AuthMode` is `Enabled`, and return 404 under both `Disabled` and `Blocked`.** Still reuses the guard shape at `AuthController.cs:41-45`, with a narrower predicate. | With authentication disabled there is no cookie scheme to sign into — `ConfigureAuthentication` returns early at `Program.cs:564-573`. **`Blocked` added by the maintainer, 2026-08-04, resolving OQ-8**: `BlockedModeFilter` (`BlockedModeFilter.cs:11-15`) permits only `/api/latest/auth`, `/license` and `/version`, so a session minted under `Blocked` would meet a 403 on every data endpoint — correct-and-useless. A legible refusal beats a session that authenticates into nothing. An endpoint that cannot work should say so in the vocabulary the surface already uses. |
+| **D31** | ~~Both embed endpoints return 404 unless `AuthMode` is `Enabled` or `Blocked`~~ **AMENDED 2026-08-04: both embed endpoints exist only when `AuthMode` is `Enabled`, and return 404 under both `Disabled` and `Blocked`.** Still reuses the guard shape at `AuthController.cs:41-45`, with a narrower predicate. | With authentication disabled there is no cookie scheme to sign into — `ConfigureAuthentication` returns early at `Program.cs:564-573`. **`Blocked` added by the maintainer, 2026-08-04, resolving OQ-8**: `BlockedModeFilter` (`BlockedModeFilter.cs:11-15`) permits only `/api/latest/auth`, `/license` and `/version`, so a session minted under `Blocked` would meet a 403 on every data endpoint — correct-and-useless. A legible refusal beats a session that authenticates into nothing. An endpoint that cannot work should say so in the vocabulary the surface already uses. **AMENDED AGAIN by D44 (2026-08-04, from DISTILL finding F-D1): under `Blocked` the refusal is a 403, not a 404** — `BlockedModeFilter` gets there first. The `Disabled` → 404 half is unchanged. |
 | **D32** | **The Lighthouse API key goes into Forge's encrypted secret storage** (`setSecret`), not the plain app-storage record. The `targetInstance` URL record stays where D11 put it. | Supersedes D11's "no credential is ever stored, so `setSecret` is inapplicable" (CA-4). A customer credential in a third party's infrastructure is the security review's headline item; storing it in the clear alongside a URL would be indefensible. |
 | **D33** | **Demo and test transport is a Cloudflare Tunnel from the maintainer's machine to a stable `letpeople.work` subdomain.** No authentication gate in front of it. | The hostname must be stable because every origin change in the Forge manifest is a MAJOR version bump — `forge deploy --approve MAJOR_VERSION_RULE`, then `forge install --upgrade`, then re-consent. A random per-session ngrok subdomain makes that a per-demo ritual. **Cloudflare Access is rejected explicitly**: it is an identity-provider redirect and would re-trigger F3/F4, the exact wall this epic is routing around. **Transport superseded by D43 (2026-08-04) — Tailscale Funnel, not Cloudflare.** Everything above about *why the hostname must be stable* and *why no gate may sit in front of it* survives unchanged; only the vendor moved. |
 | **D34** | ~~The tunnel serves two different instance configurations at different times, switched by the operator~~ **AMENDED 2026-08-04: the tunnel points at whichever of two instances that already exist locally the task needs.** Auth-**disabled** dev instance on `:5169` for the canned demo; the **existing docker-compose instance** (Postgres, different port, authentication already configured) for exercising the embed endpoints. | The underlying distinction survives and is the finding that made this decision necessary: the demo target and the embed-iteration target were **never the same configuration**, because an auth-disabled instance cannot exercise the embed path at all (D31 as amended). What changes is the *mechanism* — the maintainer confirmed on 2026-08-04 that LetPeopleWork already runs an internal auth-enabled Lighthouse in docker-compose, so there is nothing to switch. The tunnel simply changes which port it fronts. **Config-switching is removed; the distinction it existed to serve is not.** No Keycloak needs standing up — the identity provider is never framed, which was the whole point. |
@@ -1288,6 +1295,7 @@ a reader arriving there is not left with superseded text. Two more were confirme
 | **D41** | **The dev database behind the tunnel is judged not to warrant securing** (maintainer, 2026-08-04: it *"doesn't contain anything special, it's not really relevant to secure this"*). M1 drops from **required audit** to **glance before first exposure**. The *description* of the exposure is unchanged. | This converts an outstanding risk into a **deliberate, informed acceptance** — which is a different thing on a record, and the difference matters to whoever reads this next. The property itself still stands in the text above in its true form: with authentication disabled, anyone with the URL is effectively `SystemAdmin`. What the maintainer's assessment changes is the value of what sits behind that door, not the door. **The acceptance attaches to this database, not to the tunnel**: point it at anything else and M1 is required again. |
 | **D42** | **The verdict-grade browser run happens inside the Forge app, not on site B.** Site B is demoted from a required deliverable to a **bisect tool, stood up only if the Forge run fails.** Maintainer, 2026-08-04: *"why dont we bloody test it from within the atlassian app right away?"* Amends **D38**, which pinned site B as a step of its own. | The Forge run **is** the condition site B was built to approximate, so if it passes, site B would only have confirmed something already known — and it never gets built. The argument that put a plain page first was diagnostic isolation, and it is real: Forge Custom UI is itself an iframe on an Atlassian-controlled domain, so Lighthouse sits at **two** levels of nesting, under a `sandbox` attribute whose flags the inner frame inherits, under Forge's own CSP. A red result there has five candidate causes — cookie policy, Forge's sandbox, Forge's CSP, the ancestor chain, our token. **But that argument only earns its cost once the run is red.** Green needs no bisection. Costs run the same way: the Forge app already exists (`lighthouse-jira-app@0c63b42`), framing is proven (F1), and the console messages that established F1 and F3 are the same instrument that would diagnose a failure here — pointing it at the tunnel is comparable work to a Pages deploy, and it answers the question instead of standing in for it. |
 | **D43** | **The tunnel is Tailscale Funnel, not a Cloudflare Tunnel.** Supersedes D33's transport and D38's site-B host. Stable `https://<machine>.<tailnet>.ts.net`, real certificate, one command to change which local port it fronts. Site B's contingent host moves to **GitHub Pages** (`letpeoplework.github.io`). | **The Cloudflare account the earlier decision assumed does not exist** (maintainer, 2026-08-04) — it was inferred from an agreement to the *approach*, not stated, and the inference was not checked. Standing one up is free, but a *named* Cloudflare tunnel on a `letpeople.work` hostname additionally requires moving that domain's nameservers to Cloudflare: a change to the live marketing domain's DNS, in service of a feasibility spike. Tailscale Funnel gives the same three properties that mattered — stable hostname, publicly trusted certificate, no identity gate — for an SSO signup and no DNS change, and `ts.net` is on the Public Suffix List so it is genuinely cross-site from `atlassian.net`. **A Cloudflare quick tunnel was considered and rejected as the standing answer**: it needs no account at all, but the `*.trycloudflare.com` hostname rotates per start, and a changed origin is a MAJOR manifest bump plus re-consent — it is a one-shot instrument, not a demo path. **ngrok is rejected outright and the reason is recorded so it does not return**: the free tier injects a browser interstitial on HTML responses, bypassable only with a custom request header, and a framed SPA cannot set headers on its own top-level navigation — the iframe would show ngrok's warning page instead of Lighthouse. **What does not change**: the hostname must still be stable, no gate may sit in front of it, and M7 now names Funnel's own access controls alongside Cloudflare Access as the same rejected thing. |
+| **D44** | **Under `Blocked`, the embed endpoints are refused with 403 by `BlockedModeFilter`, not 404 by their own guard.** Amends D31's `Blocked` half; the `Disabled` → 404 half stands. Raised by DISTILL as finding F-D1. | `BlockedModeFilter` is registered as a **global** MVC filter (`Program.cs:268`, when `authConfig.Enabled`) and its allow-list is exactly `/api/latest/{auth,license,version}` (`BlockedModeFilter.cs:10-15`). Both embed endpoints therefore meet a 403 before their own `AuthMode` guard runs. Reaching D31's designed 404 would mean **adding the embed paths to that allow-list** — widening, by two entries, the set of endpoints reachable while an instance is in `Blocked` mode, on the exact auth surface K4 bounds, in order to return a different number for the same refusal. **D31's own stated goal argues for accepting the 403**: it asked that an endpoint which cannot work *"say so in the vocabulary the surface already uses"*, and 403-from-`BlockedModeFilter` **is** that vocabulary — it is what every other data endpoint answers in `Blocked` mode. A special-cased 404 would be the inconsistent one. The practical stakes are near zero either way: an instance in `Blocked` mode serves nothing, so a framed Lighthouse is broken regardless of which refusal the entry point gives. Cost of the alternative is real and permanent; benefit is cosmetic. Tests `S7-6` and `S8-11` assert 403. |
 
 ### Slice 02 — ordered steps and prerequisites
 
@@ -1317,3 +1325,326 @@ for the same class of reason). This is a property of every plan above equally, n
 one. It needs a Mac or a hosted browser service, and it is better known now than discovered at step 6.
 A Safari result that never arrives is itself something the verdict has to say out loud rather than
 quietly omit.
+
+---
+
+## Wave: DISTILL / [REF] Preamble
+
+**DISTILL wave, 2026-08-04** (nw-acceptance-designer). Scope: **slice 02a (#5641), step 2 of the
+ordered list above — the Lighthouse embed session — and nothing else.** Steps 3–6 (the local `mkcert`
+cross-site harness, the S1–S10 security review, the Tailscale transport #5661, the Forge run) are out
+of this wave. **No test here claims anything about whether a browser accepts the partitioned cookie**:
+no test in this repository can answer that, and a green suite must not be readable as if it had.
+
+Density `lean`. **Language: C#/.NET 10**, per `docs/architecture/atdd-infrastructure-policy.md`, which
+records explicitly that the Python-pilot artefacts (`state_delta`, Hypothesis, `__SCAFFOLD__` markers,
+`.feature` files) do not apply here. Backend ATs are black-box example-based NUnit over
+`WebApplicationFactory<Program>`; the skip marker is `[Ignore("…")]`.
+
+**Prior-wave reading**
+
+| Artefact | Read |
+|---|---|
+| `feature-delta.md` (DISCUSS + DESIGN + slice-01 F1–F5 + scope revision + D1–D43 + S1–S11 + M1–M8 + OQ-1–OQ-8) | ✓ |
+| `spike/findings.md`, `spike/wave-decisions.md` (step 1, verdict WORKS at rung 2, promotion DISCARD) | ✓ |
+| ADR-129, ADR-130, ADR-131 | ✓ |
+| `docs/architecture/atdd-infrastructure-policy.md` | ✓ |
+| `docs/ci-learnings.md` (preflight checklist pre-applied: CA1859, CA1861, NUnit1028, NUnit2046, NUnit2056, NUnit4002) | ✓ |
+| `docs/product/architecture/brief.md` § embed session | ✓ **present** at `brief.md:4257`, `## Application Architecture — embed-session-for-third-party-frames (ADO Epic 5146, Story 5641)`. Initially reported absent; see F-D2, **withdrawn** |
+| `slices/slice-02-point-it-at-my-own-lighthouse.md` | ✓ read, confirmed **stale** (describes the removed #5637 Forge settings flow), ignored |
+| `docs/product/outcomes/registry.yaml` | ⊘ **does not exist in this project** — outcome registration recorded **N/A for that reason**, not skipped |
+
+**Wave-decision reconciliation: passed — 0 contradictions.** Run against the decisions inside
+`feature-delta.md` rather than per-wave files (this feature uses the unified layout; the absence of
+`discuss/`, `design/` and `devops/` subdirectories is the layout, not a missing DESIGN). Every
+superseding decision in the record carries its own dated amendment and names what it replaces —
+D31 (`Blocked` now refused), D34 (two local instances), D33→D43 (transport), D38→D42 (site B),
+CA-3/CA-4/CA-5/CA-6. Nothing in scope for step 2 is decided twice in two directions.
+
+## Wave: DISTILL / [REF] Scenario list
+
+33 executable cases (30 test methods; the `returnPath` negative is one method over 4 cases).
+**21 of 33 are refusals — 64%**, which is what a feature made mostly of refusals should look like.
+
+| # | Scenario | Driving port | Pins | Contract shape |
+|---|---|---|---|---|
+| **WS-1** | An API key is exchanged for a token, the entry point signs the caller in, and the framed app sees an authenticated session | both | D25, D26, ADR-129 | bounded-change |
+| S7-1 | A valid key mints a token carrying its expiry and the embed URL | `POST …/embed/session-token` | D25 | bounded-change |
+| S7-2 | An anonymous caller is refused *while a keyed caller mints* | exchange | D25 | unbounded-preservation |
+| S7-3 | An unknown key is refused *while a known key mints* | exchange | D25 | unbounded-preservation |
+| S7-4 | A key whose owner is unlinked is refused with a reason | exchange | **D30** | unbounded-preservation |
+| S7-5 | With authentication disabled the surface is absent *while it mints when enabled* | exchange | **D31**, S10 | unbounded-preservation |
+| S7-6 | On an unlicensed instance the surface is absent *while it mints when licensed* | exchange | **D31**/OQ-8, S10 | unbounded-preservation |
+| S7-7 | Exceeding the rate limit is throttled with `Retry-After` | exchange | ADR-005, S7 | unbounded-preservation |
+| S7-8 | Revoking all tokens of the calling key makes an outstanding token unredeemable | revoke + entry | ADR-131 | bounded-change |
+| S7-9 | Revoke-all leaves another key's outstanding token alone | revoke + entry | ADR-131 | bounded-change |
+| S8-1 | A valid token redirects to a clean URL that no longer carries it | `GET /embed/enter` | **D39**, S3 | bounded-change |
+| S8-2 | The entry-point response suppresses the referrer | entry | **D39**, S3 | pure-function |
+| S8-3 | A replayed token is refused legibly and issues no session | entry | **D27**, S4 | unbounded-preservation |
+| S8-4 | An unknown token is refused legibly | entry | D26 | unbounded-preservation |
+| S8-5 | A malformed token is refused legibly | entry | D26 | unbounded-preservation |
+| S8-6 | A missing token is refused legibly | entry | D26 | unbounded-preservation |
+| S8-7 | An expired token is refused legibly and issues no session | entry | D27 | unbounded-preservation |
+| S8-8 ×4 | A `returnPath` pointing off-host is never redirected to (absolute, protocol-relative, backslash, plain-http) | entry | **S8** | unbounded-preservation |
+| S8-9 | A local `returnPath` is honoured | entry | D26 | bounded-change |
+| S8-10 | With authentication disabled the entry point is absent *while it redirects when enabled* | entry | D31, S10 | unbounded-preservation |
+| S8-11 | On an unlicensed instance the entry point is absent *while it redirects when licensed* | entry | D31/OQ-8, S10 | unbounded-preservation |
+| S9-1 | The embed `Set-Cookie` header carries `Secure`, `SameSite=None`, `Partitioned`, `HttpOnly` | entry | **D28**, spike rung 2b, S5 | bounded-change |
+| S9-2 | The entry point never touches `.Lighthouse.Session` | entry | D28 | unbounded-preservation |
+| S9-3 | The embed cookie expires in 30 minutes and never slides | scheme options | **D40**, S6 | pure-function |
+| S9-4 | The ordinary session cookie still emits `SameSite=Lax` and no `Partitioned` | scheme options | **D24**, K4, S5 | unbounded-preservation |
+| S10-1 | A read-scoped key's embed session reaches the same in-scope resource as the header | embed cookie | **D29** (fails *closed* if `sub` is dropped) | unbounded-preservation |
+| S10-2 | A read-scoped key's embed session is refused the same out-of-scope resource as the header | embed cookie | **D29 / S9 — the fail-*open* case** | unbounded-preservation |
+| S10-3 | A read-scoped key's embed session is refused writes exactly as the header is | embed cookie | D29, ADR-004 | unbounded-preservation |
+| S10-4 | The permission summary the SPA gates on is identical under both credentials | embed cookie | D29, `useRbac()` | unbounded-preservation |
+| C-1 | Of eight simultaneous redemptions of one token, exactly one establishes a session | entry, real Postgres | **D27 / S4**, ADR-131 | bounded-change |
+
+**Tags** are NUnit categories and attributes, not Gherkin: `[Category("requires-docker")]` on C-1,
+`[Ignore("pending: …")]` on everything not yet implementable. There is no `.feature` file and no tag
+carrier for `@contract-shape:` in this stack, so the classification lives in the column above — which
+is where a reviewer reads it and where it stays machine-greppable.
+
+**Why every refusal scenario is differential.** S7-2/3/5/6 and S8-10/11 each assert the *positive*
+control in the same test: the same request against the same host mints or redirects when it should.
+Without that, "404 when authentication is disabled" passes against a system with no endpoint at all —
+the false green this whole gate exists to prevent. Two scenarios (S7-2, S7-3) were caught passing
+vacuously during the fail-for-the-right-reason run and rewritten for exactly this reason.
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+Both driving adapters are exercised through a real HTTP request over `WebApplicationFactory`, never
+through a service call.
+
+| Driving port | Adapter under test | Exercised by |
+|---|---|---|
+| `MintEmbedSession` | `POST /api/v1/embed/session-token`, `X-Api-Key` through the production `LighthouseSmartAuth` scheme | WS-1, S7-1…S7-7 |
+| `EnterEmbedSession` | `GET /embed/enter?token=…&returnPath=…`, anonymous, no auto-redirect | WS-1, S8-1…S8-11, S9-1, S9-2, C-1 |
+| `RevokeEmbedSessions` | `POST /api/v1/embed/session-token/revoke-all`, `X-Api-Key` | S7-8, S7-9 |
+
+The test host fakes **only** the seeded administrator (so an API key can be created without an OIDC
+login) and `ILicenseService` (to reach `Blocked`). `X-Api-Key`, the embed cookie, challenge and forbid
+all stay on the production `LighthouseSmartAuth` path — deliberately, so that a missing
+`SmartAuthSchemeSelector` branch surfaces as a failing test instead of being simulated by the harness.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven port | Mechanism | Real I/O scenario |
+|---|---|---|
+| `EmbedSessionTokenStore` | Real EF over SQLite (`TestWebApplicationFactory`) for every scenario; **real Postgres via `Testcontainers.PostgreSql`** for the concurrency property | every scenario; **C-1** |
+| `EmbedCookieIssuer` | Second `CookieAuthenticationOptions` scheme, asserted on the literal `Set-Cookie` header | S9-1, S9-2 (and S9-4 for the other half) |
+| `ApiKeyIdentity` | Real `ApiKeyService` + real `ApiKeyAuthenticationHandler` | S10-1…S10-4 |
+| `RbacDecision` | Real `IRbacAdministrationService` over real permission rows | S10-1…S10-4 |
+| `BrowserPartitionedCookie` | **Not covered and cannot be** — server-side only. Steps 3 and 6 | — |
+
+All rows already existed in `docs/architecture/atdd-infrastructure-policy.md`; **no row was added.**
+
+## Wave: DISTILL / [REF] Test placement
+
+| File | Why there |
+|---|---|
+| `API/Security/S7_EmbedSessionTokenExchangeTests.cs` | Continues the folder's `S<n>_` sequence. Closest neighbour `S5_ApiKeyScopesTests` (api-key principal → scopes → RBAC) and `S6_RateLimitingTests` (429 + `Retry-After`), whose shape both are copied from |
+| `API/Security/S8_EmbedEntryPointTests.cs` | Same |
+| `API/Security/S9_EmbedCookiePolicyTests.cs` | Same |
+| `API/Security/S10_EmbedScopeEquivalenceTests.cs` | Same |
+| `API/Integration/EmbedSessionWalkingSkeletonTests.cs` | The end-to-end journey, beside `ApiKeyControllerHttpSmokeTests` and `JwtBearerAuthIntegrationTest` |
+| `Integration/Containers/EmbedSessionSingleUseConcurrencyTests.cs` | The only folder with `Testcontainers`; mirrors `ConcurrentStartupMigrationTests` |
+| `TestHelpers/EmbedSessionTestHost.cs` | Follows `JwtBearerTestHost` — one host object owning the factory, the seeding and the vocabulary |
+| `TestHelpers/UnservedSpaPageStartupFilter.cs` | Follows `ForwardedHeadersTestStartupFilter`, the folder's existing `IStartupFilter` precedent |
+
+The `S<n>_` numbers continue this folder's own sequence and are **not** this feature's S1–S11 checklist
+numbers; each file names the checklist items it covers in its one-line header comment.
+
+## Wave: DISTILL / [REF] Scaffolds — none, and why
+
+**No production scaffold types were created.** In this repository that is the correct answer rather
+than an omission:
+
+- C# is compiled. A test referencing an `EmbedSessionToken` entity or an `IEmbedSessionTokenService`
+  that does not exist breaks the **whole** test assembly's build — which is `BROKEN`, the very
+  classification the scaffold rule exists to avoid, and it would also break the zero-warning gate.
+- Every AT here is **black-box over HTTP** and references only types that already exist. The suite
+  compiles today, and each scenario fails on a status-code assertion.
+- The repository has **zero** `[Ignore(` occurrences, so there is no local precedent for pending
+  tests. Per the deliverable's own instruction the fallback is `[Ignore]`-marked tests over stub
+  production types, and that is what was chosen: 29 of 30 methods carry
+  `[Ignore("pending: epic 5146 slice 02a step 2 — …")]`.
+
+The one test that is **not** ignored is `S9_OrdinarySessionCookie_StillSameSiteLaxAndUnpartitioned`.
+It passes today and must keep passing: it is D24's blast-radius guarantee and K4's falsifier, not a
+pending scenario. DELIVER un-ignores the rest one at a time.
+
+Two pieces of harness infrastructure were needed and are recorded rather than buried:
+
+- **`UnservedSpaPageStartupFilter`.** `/embed/enter` sits outside `/api`, so an unrouted request
+  reaches `app.UseSpa`, which **throws** in a test host because `wwwroot` is a gitignored frontend
+  build output with no `index.html`. That exception masked every entry-point assertion as an
+  infrastructure error. The filter converts it to 404 — the status an unrouted request deserves — so
+  the assertion that fails is the one about the feature. Once the route exists the filter never fires.
+- **`UseSetting`, not `ConfigureAppConfiguration`.** `Program` reads `builder.Configuration` while
+  registering services, before an added configuration source is visible; the first draft silently ran
+  with authentication *disabled* and the cookie block unregistered. `JwtBearerTestHost` already knew
+  this. Worth stating: a test host that looks configured and is not produces confident wrong answers.
+
+## Wave: DISTILL / [REF] Red classification (fail-for-the-right-reason gate)
+
+Run 2026-08-04 with every `[Ignore]` temporarily removed, `dotnet test --filter FullyQualifiedName~Embed`.
+
+| Classification | Count | Evidence |
+|---|---|---|
+| `MISSING_FUNCTIONALITY` (correct RED) | 31 of 32 non-container cases | Every failure is an assertion on a status code: `Expected: OK / But was: NotFound`, `Expected: 200 / But was: 404`, or the ADR-130 options assertion `Expected ".Lighthouse.Embed" / But was ".AspNetCore.LighthouseEmbedCookie"`, `Expected 00:30:00 / But was 14.00:00:00`, `Expected False / But was True` |
+| Correctly passing regression guard | 1 | `S9_OrdinarySessionCookie_StillSameSiteLaxAndUnpartitioned` |
+| `IMPORT_ERROR` / `FIXTURE_BROKEN` / `SETUP_FAILURE` | **0** | Two rounds of harness failures (the SPA middleware exception, the two-provider EF error) were found and fixed *by running this gate*; none remain |
+| Vacuous pass (false green) | **0 remaining** | 2 found (S7-2, S7-3 returned 401 from the fallback authorization policy with no endpoint present) and rewritten as differential |
+
+C-1 was run against a real Postgres container (Docker available): the container starts, migrations
+apply, the key is created through the real `IApiKeyService`, and the test fails at the exchange with
+`Expected: 200 / But was: 404` — RED, with the whole harness proven working.
+
+`dotnet build` clean, **0 warnings**. `dotnet format analyzers Lighthouse.sln --severity info
+--verify-no-changes` reports **zero findings in any new file** (the 35 pre-existing hits are the
+generated-migration CA1861 noise the ledger already describes).
+
+Full backend suite with the scenarios ignored: **4383 passed, 32 skipped**. Two failures, both
+addressed: `BackendTestParallelizationGuardTest` rejected a `[NonParallelizable]` copied from
+`S6_RateLimitingTests` — the attribute was removed rather than allowlisted, because the limiter is
+registered per test host and the guard's own rule is to allowlist only genuinely serial fixtures. If
+S7-7 turns out to be flaky under parallel load in DELIVER, the fix is its own fixture plus an
+allowlist entry with a reason, not blanket-serializing the class. The other,
+`JiraWriteBackTest.WriteDate_DifferentDate_…`, is a live-Jira test that passes in isolation and is
+unrelated to this change.
+
+## Wave: DISTILL / [REF] Decisions DISTILL had to fix, and pre-requisites
+
+Three names the design left open had to be chosen to make an assertion possible. Each is pinned in a
+test, so changing it is a deliberate edit rather than a drift:
+
+| # | Name | Where | Note |
+|---|---|---|---|
+| N1 | Embed cookie scheme name `LighthouseEmbedCookie` | S9-3 | ADR-130 already uses this string in its table |
+| N2 | Rate-limit policy name `EmbedSession` | S7-7 | Needs a `RateLimitingConfiguration.EmbedSessionPolicy` constant beside the existing three |
+| N3 | Token lifetime config key `Embed:TokenLifetimeSeconds` | S8-7 | ADR-131 says "short and configurable" without naming the key. The test drives expiry by configuring **1 second** rather than waiting out the 60-second default |
+
+**Pre-requisites for DELIVER**
+
+- The DESIGN'd `ApiKeyPrincipalFactory` claims-parity **unit** test is not authored here. Claims parity
+  is asserted *behaviourally* at S10 (which is stronger against the fail-open case than a claim-set
+  comparison, because it exercises the real RBAC path), but the pure-function test named in the
+  "Architectural enforcement" section belongs beside the type the crafter extracts. DELIVER writes it.
+- The `EmbedSessionToken` migration is generated with `Lighthouse.Backend/Create-Migration.ps1` across
+  both provider assemblies, never `dotnet ef migrations add`; `ExpandOnlyMigrationGuardTest` runs over
+  it unmodified.
+
+## Wave: DISTILL / [REF] Findings for DESIGN
+
+Three, all discovered by reading the code the design points at.
+
+**F-D1 — `BlockedModeFilter` will pre-empt D31's 404, and it is a global MVC filter.**
+`Program.cs:268` registers `options.Filters.Add<BlockedModeFilter>()`, and the filter's allow-list is
+`/api/latest/auth`, `/api/latest/license`, `/api/latest/version` (`BlockedModeFilter.cs:10-15`). Under
+`Blocked`, `POST /api/v1/embed/session-token` and `GET /embed/enter` therefore both meet a **403** from
+the filter before the controller's own `AuthModeResolver` guard can return 404 — and `/api/v1/…` is not
+on the allow-list at all, only `/api/latest/…`. D31 says 404; S7-6 and S8-11 assert 404. Reaching it
+means the embed paths must be allow-listed in `BlockedModeFilter` so the narrower guard governs, which
+is a two-line change on the same auth surface K4 already bounds. Named here so it is a decision, not a
+surprise in the middle of DELIVER.
+
+**RESOLVED by D44, 2026-08-04**: the 403 is accepted and D31's `Blocked` half amended, rather than
+widening the allow-list. `S7-6` and `S8-11` now assert `Forbidden`. The `Disabled` → 404 half is
+untouched, and no change is made to the auth surface.
+
+**F-D2 — WITHDRAWN 2026-08-04, the finding was wrong.** It claimed the brief had no embed-session
+section and that the DESIGN re-run's promise to write one went unkept. The section **exists**, at
+`docs/product/architecture/brief.md:4257` — `## Application Architecture —
+embed-session-for-third-party-frames (ADO Epic 5146, Story 5641)`, roughly 176 lines, covering why the
+change exists in Lighthouse at all, the identity problem, and the invariants. The search that produced
+the finding missed it. Recorded rather than deleted because a withdrawn finding is itself evidence:
+CA-3's obligation was met, and the next reader should not go looking for a gap that was never there.
+
+**F-D3 — `/embed/enter` lives in the SPA fallback's territory.** Being outside `/api` buys the legible
+refusal D26 wants, and it also means that if the route is ever *absent* (a guard implemented by not
+mapping rather than by returning 404) the SPA middleware answers **200 with `index.html`** in
+production rather than 404. D31's refusal must therefore be an explicit `NotFound()` from a mapped
+action. S7-5/S7-6/S8-10/S8-11 enforce exactly that.
+
+## Wave: DISTILL / [REF] Outcomes registry
+
+**N/A — `docs/product/outcomes/registry.yaml` does not exist in this project.** Recorded for that
+reason rather than skipped, consistent with the DESIGN re-run's own check.
+
+## Wave: DISTILL / [REF] Final review gate — four reviewers, 2026-08-04
+
+| Reviewer | Scope | Verdict |
+|---|---|---|
+| Sentinel (`nw-acceptance-designer-reviewer`) | DISTILL sections + the test files | **approved** — 0 blockers, 0 high |
+| Architect (`nw-solution-architect-reviewer`) | DESIGN sections + ADR-129/130/131 | **conditionally approved** — 0 blockers, 2 high, 3 medium |
+| Eclipse (`nw-product-owner-reviewer`) | DISCUSS sections | **rejected pending revisions** — 5 sync issues, **all resolved below** |
+| Forge (`nw-platform-architect-reviewer`) | transport, mitigations, security checklist | **rejected pending revisions** — 1 blocker (**refuted**), 3 material |
+
+### The blocker was refuted, not fixed
+
+Forge's blocker: *"`EmbedSessionSingleUseConcurrencyTests` is marked `[Category("requires-docker")]` but
+the CI filter never includes that category, so the S4 security gate cannot be verified."*
+
+**This is wrong, and the test does run.** `ci_backend.yml` computes its filter as `Category!=Integration`
+plus optional connector categories. `requires-docker` is not `Integration`, so the exclusion does not
+match it and the test is **included in every backend run**. The sibling Testcontainers tests in the same
+directory — `PostgresUpdateExecutionLockTests`, `ConcurrentStartupMigrationTests`, `ScalabilityTests` —
+carry no category at all and run by exactly the same route; the runner provides Docker. Nothing needed
+wiring. Recorded because a plausible-sounding CI blocker that turns out to be false is worth being able
+to point at the next time it is raised.
+
+The one true observation underneath it: **nothing filters on `requires-docker`**, so the category is
+documentation rather than a gate. That is fine — it is what the ATDD policy uses it for locally — but it
+should not be mistaken for an exclusion mechanism.
+
+### Eclipse's five — all applied inline
+
+Every one was the same class of problem: DESIGN superseded a DISCUSS statement, the supersession was
+recorded in a `CA-N` block further down, and the *original* line was left un-marked. A reader who stopped
+at the DISCUSS section would have been misled. Fixed by striking the superseded text in place and naming
+what replaced it — the document's stated convention, now applied where it had been missed.
+
+| # | What was stale | Now |
+|---|---|---|
+| 1 | Out-of-scope: *"any change to the Lighthouse backend or frontend"* | Struck; backend bounded to the embed session, frontend still out (D37) |
+| 2 | K4's original *"0 files changed"* | Struck; points at the current wording, and notes the warning beneath it fired exactly as written |
+| 3 | K1 target `≥3` with no note that it stands at 0 | Records 0 as a **finding**, and why it could not be collected at K4's original cost |
+| 4 | AC-01.3 scored testable in the DoR | Struck; **unimplementable as detection**, replaced by D13's predict-don't-detect |
+| 5 | #5635 and #5637 listed as live stories, P3 unmet | Marked **REMOVED**, with what replaced each and *do not recreate as written* |
+
+A reading-order note was added at the top of the document, because the convention that later sections win
+was load-bearing and only stated implicitly.
+
+### Carried into DELIVER — pre-requisites, not suggestions
+
+- **The claims-parity unit test must assert `api_key_id` is _present_, not merely equal.** Architect and
+  Sentinel appeared to disagree here and do not: `S10-2` catches the fail-open case *behaviourally* (a
+  dropped claim widens the session, so the out-of-scope resource would be permitted and the test reddens),
+  while the **pure-function** test cannot exist until the crafter extracts `ApiKeyPrincipalFactory`. That
+  one must assert presence — a value comparison passes when *both* sides drop the claim.
+- **A `Set-Cookie` assertion under genuine concurrency**, covering the embed and the ordinary cookie
+  together, so `SameSite=None` cannot leak across schemes under load.
+- **Define "local path" for `returnPath` before implementing it.** DISTILL wrote four negative cases
+  against a rule stated nowhere: no scheme, no host, no protocol-relative `//`, must begin with `/`.
+- **Make K4 falsifiable mechanically**: after implementation, `git diff` must show *additions* only —
+  zero edited lines in `SmartAuthSchemeSelector`, the `Program.cs:639-671` cookie block, or
+  `RbacGuardAttribute`. An edit there is a K4 breach, not a style question.
+- **A one-line refusal comment at the embed entry point**: do not reuse `DisabledAuthenticationHandler`
+  here — it would hand anonymous callers a session.
+- Watch `S8-7` (expired token, 1-second lifetime, 2-second wait) for flake in CI; widen the margin rather
+  than absorbing a retry.
+
+### Carried into slice 03 and the verdict — not step 2's problem, and not forgotten
+
+- **Safari is still untested and is verdict-critical.** ITP is the likeliest of the three engines to
+  refuse a partitioned cookie outright, and it cannot run on the maintainer's Linux machine. Test it on a
+  Mac or a hosted browser service **before** a prospect call, or state its absence in the verdict. Do not
+  discover it live.
+- **M2 will decay.** Funnel state is persistent by default, so "lower it after the session" is a habit
+  with no mechanism behind it. Either give it one, or rewrite M2 to describe what actually happens —
+  a required mitigation nobody performs is worse than an accepted risk, because it reads as controlled.
+- **S1's questions about Forge `setSecret` are still open**: end-to-end encrypted or encrypted-at-rest,
+  whether Atlassian staff can read it, what happens on uninstall, whether it can reach a log. These are
+  answers to obtain from Atlassian's documentation, not judgements to make.
+- **M1 attaches to one database.** There is no continuous check that the dev database stays uninteresting.
+  Re-run the glance before an exposure that follows a gap in time.
