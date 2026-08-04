@@ -140,7 +140,13 @@ maintainer's own demo setup would log him out of the tab he is demoing from.
 
 - One more authentication scheme and one more branch in `SmartAuthSchemeSelector` — a small, testable
   increase in the auth surface's fan-out.
-- `Partitioned` support is genuinely unresolved at the time of writing. Slice 02 answers it
+- ~~`Partitioned` support is genuinely unresolved at the time of writing.~~ **Resolved server-side on
+  2026-08-04** (`docs/feature/epic-5146-jira-forge-app/spike/findings.md`): no first-class property
+  exists on `net10.0`, but `CookieBuilder.Extensions.Add("Partitioned")` emits the attribute verbatim,
+  and `CookieBuilder` is what a cookie scheme configures — so this scheme carries `Partitioned` by
+  configuration alone. The framework does not validate the extension string, so the guard is an
+  assertion on the literal `Set-Cookie` header, not the call site. **What remains unresolved is the
+  browser half**: slice 02 answers it
   empirically, and the verdict-grade run happens inside the Forge app rather than in a stand-in page
   (D42). Chrome and Firefox are reachable from the maintainer's Linux machine; **Safari is not**, and
   it is the strictest of the three — a Safari result needs a Mac or a hosted browser service, and its
