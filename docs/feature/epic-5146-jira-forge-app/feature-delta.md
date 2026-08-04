@@ -1648,3 +1648,74 @@ was load-bearing and only stated implicitly.
   answers to obtain from Atlassian's documentation, not judgements to make.
 - **M1 attaches to one database.** There is no continuous check that the dev database stays uninteresting.
   Re-run the glance before an exposure that follows a gap in time.
+
+## Wave: DELIVER / [REF] Slice 02a step 6 — run live in Forge, 2026-08-04
+
+**The embed session works inside Jira.** An authenticated Lighthouse rendered in a `jira:globalPage`
+on `letpeoplework.atlassian.net`, entered through a single-use token, with **no login and no identity
+provider declared in the manifest at all**. Slice 01 established that an authenticated instance could
+not be framed by any arrangement of declared origins; this is the same wall, crossed.
+
+**What was run.** App `4.1.0`, one static origin — `https://cachy-desktop.tail70a661.ts.net` — framing
+`/embed/enter?token=…` against the maintainer's own working-tree build behind the Tailscale Funnel
+(#5661), with authentication **enabled** and the Entra configuration borrowed from the docker-compose
+stack. The API key was scoped read-only by the maintainer and deleted afterwards.
+
+### Proven, not predicted
+
+| # | Finding | Evidence |
+|---|---|---|
+| **F6** | **A `SameSite=None; Secure; Partitioned` cookie survives Forge's nested frame — in Firefox.** Lighthouse is two iframes deep (Atlassian's page, Forge's own Custom UI frame, then ours) and the cookie was still sent back. **Firefox is the harder of the two engines reachable here**: Total Cookie Protection partitions third-party cookies by default, so this is not the permissive case. **Chrome is now the untested one**, along with Safari. | Rendered, authenticated Lighthouse UI in the Jira page, Firefox, 2026-08-04. |
+| **F7** | **The identity-provider wall is gone, not routed around.** The manifest declares **one** origin. Slice 01 needed two (instance + Auth0) and still failed at the IdP. Nothing redirects, so nothing can refuse to be framed. | `manifest.yml`, `permissions.external.frames`, single entry. |
+| **F8** | **The server half holds through a real proxy with a real certificate**, not just in a test host: `302` to a clean URL, `referrer-policy: no-referrer`, and `set-cookie: .Lighthouse.Embed=…; path=/; secure; samesite=none; httponly; Partitioned`. | `curl -D-` against the funnel host. |
+| **F10** | **D31 holds in a running instance, not only in tests.** With authentication `Disabled`, `GET /embed/enter` and `POST /api/v1/embed/session-token` both answer **404** — the surface genuinely does not exist rather than existing and refusing. | Live probe against the reverted dev instance, 2026-08-04. |
+| **F9** | **`embedUrl` is scheme-sensitive and silently wrong behind a TLS-terminating proxy.** It came back `http://` until `Authentication:TrustedProxies` declared the proxy, because `ForwardedHeadersConfigurator` makes forwarded-header trust strictly opt-in. An `http` embed URL cannot be framed and its `Secure` cookie cannot be delivered — the flow breaks with no error worth reading. **This is a deployment requirement, not a code defect**, and #5642's resolver consumes exactly that field. | Two mints, before and after declaring the proxy. |
+
+### What this does *not* establish
+
+- **Only one browser engine — Firefox.** Chrome was never run, and Safari cannot run on the
+  maintainer's machine at all. The verdict must say which engine was measured rather than imply
+  coverage. That Firefox passed is the more encouraging half of the unknown, since its Total Cookie
+  Protection partitions by default; but "one of three" is the honest count.
+- **The scope boundary was not visually confirmed.** The API key was scoped read-only and narrow, and
+  D23's model says every viewer of the Jira page sees exactly what that key sees — but the maintainer
+  did not sign in to compare, and the check was dropped deliberately rather than passed. `S10-2` pins
+  it at the integration layer; nothing pins it visually.
+- **Nothing about demand.** K1 still stands at zero. This removes the technical obstacle that made
+  prospect demos impossible; it does not substitute for the demos.
+- **Not a product.** The token was minted by hand and pasted into a static page. The admin page and
+  resolver that would do this properly are #5642, unbuilt.
+
+### The bind is broken
+
+The verdict's live question was *how to buy the missing evidence*, given that a demo against a
+prospect's own instance required the Lighthouse change first. That change now exists and is proven in
+the real host. Option B is no longer an investment ahead of evidence — it is spent, and the evidence it
+was blocking can now be collected against a prospect's own authenticated instance rather than a canned
+demo. `docs/verdict.md` in the app repository needs revising on exactly this point.
+
+### If this change becomes permanent — extend the auth E2E suite to cover API keys
+
+Maintainer, 2026-08-04. **Conditional on a *go* verdict; deliberately not done now.**
+
+The embed session is the first feature to depend on an API-key principal resolving RBAC the same way a
+user principal does, and slice 02a pins that at the integration layer only — `WebApplicationFactory`,
+real EF, real `IRbacAdministrationService`, but no browser. **There is no E2E coverage of the API-key
+path at all today**, for the embed session or for anything else. That gap predates this epic and is
+worth closing on its own merits: API keys are a shipped, documented surface (`ApiKeyController`,
+scopes, `RbacGuardRequirement`) that the E2E suite has never exercised.
+
+What it would cover, in the order the value falls out:
+1. **The existing API-key surface** — create a scoped key, call a scoped endpoint with `X-Api-Key`,
+   confirm an out-of-scope resource is refused. This is the general win and does not depend on the
+   verdict.
+2. **The embed flow end to end** — exchange, entry point, cookie, and a rendered SPA under the
+   embed principal. This is the part that is conditional.
+
+Why not now: E2E here is a thin sanity check by policy — one walking skeleton per flow — and adding a
+flow for a feature whose verdict is still open would spend that budget on something that may be
+deleted. The integration tests already pin the contract; what E2E would add is the browser, and the
+browser question is exactly what slice 02a step 6 answers first.
+
+**Trigger**: a *go* verdict on #5638, or any decision to ship the embed session independently of this
+epic. At that point item 1 above should be lifted out and done regardless of what happens to item 2.

@@ -49,5 +49,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             Assert.That(SmartAuthSchemeSelector.Select(headers), Is.EqualTo(SmartAuthSchemeSelector.CookieScheme));
         }
+
+        // Epic 5146 slice 02a (#5641) — ADR-130. Both directions are pinned: the two cookie names
+        // are the only thing separating a cross-site embed session from an ordinary browser one.
+        [Test]
+        public void Select_NoRequest_Refuses()
+        {
+            Assert.Throws<ArgumentNullException>(() => SmartAuthSchemeSelector.Select((HttpRequest)null!));
+        }
+
+        [Test]
+        public void Select_EmbedCookie_RoutesToTheEmbedCookieScheme()
+        {
+            var context = AContextCarrying($"{SmartAuthSchemeSelector.EmbedCookieName}=embed-value");
+
+            Assert.That(SmartAuthSchemeSelector.Select(context.Request), Is.EqualTo(SmartAuthSchemeSelector.EmbedCookieScheme));
+        }
+
+        [Test]
+        public void Select_OrdinarySessionCookie_RoutesToTheOrdinaryCookieScheme()
+        {
+            var context = AContextCarrying($"{SessionCookieName}=session-value");
+
+            Assert.That(SmartAuthSchemeSelector.Select(context.Request), Is.EqualTo(SmartAuthSchemeSelector.CookieScheme),
+                "an ordinary browser session must never be authenticated by the scheme that relaxed SameSite");
+        }
+
+        [Test]
+        public void Select_NoCookieAtAll_RoutesToTheOrdinaryCookieScheme()
+        {
+            Assert.That(SmartAuthSchemeSelector.Select(new DefaultHttpContext().Request), Is.EqualTo(SmartAuthSchemeSelector.CookieScheme));
+        }
+
+        [Test]
+        public void Select_ApiKeyHeaderAlongsideAnEmbedCookie_StillRoutesToTheApiKeyScheme()
+        {
+            var context = AContextCarrying($"{SmartAuthSchemeSelector.EmbedCookieName}=embed-value");
+            context.Request.Headers["X-Api-Key"] = "some-key";
+
+            Assert.That(SmartAuthSchemeSelector.Select(context.Request), Is.EqualTo(SmartAuthSchemeSelector.ApiKeyScheme),
+                "the header-borne schemes are decided first, so a stale embed cookie cannot hijack an explicit key");
+        }
+
+        private const string SessionCookieName = ".Lighthouse.Session";
+
+        private static DefaultHttpContext AContextCarrying(string cookieHeader)
+        {
+            var context = new DefaultHttpContext();
+            context.Request.Headers["Cookie"] = cookieHeader;
+            return context;
+        }
     }
 }

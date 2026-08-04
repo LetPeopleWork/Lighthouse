@@ -81,6 +81,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             }
         }
 
+        [Test]
+        public void Create_NoValidationResult_RefusesToBuildAPrincipal()
+        {
+            Assert.Throws<ArgumentNullException>(() => ApiKeyPrincipalFactory.Create(null!, SchemeUnderTest));
+        }
+
+        [Test]
+        public void Create_UnlinkedOwnerStillCarryingASubject_EmitsNoSubjectClaim()
+        {
+            var principal = ApiKeyPrincipalFactory.Create(
+                new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    ApiKeyId = ApiKeyId,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Unlinked,
+                    OwnerSubject = OwnerSubject,
+                },
+                SchemeUnderTest);
+
+            Assert.That(principal.FindFirst(ApiKeyPrincipalFactory.SubjectClaimType), Is.Null,
+                "the resolution state decides, not a leftover subject — an unlinked key must never authenticate as that person");
+        }
+
+        [Test]
+        public void Create_ResolvedOwnerWithoutASubject_EmitsNoSubjectClaim()
+        {
+            var principal = ApiKeyPrincipalFactory.Create(
+                new ApiKeyValidationResult
+                {
+                    IsValid = true,
+                    ApiKeyId = ApiKeyId,
+                    OwnerResolutionState = ApiKeyOwnerResolutionState.Resolved,
+                    OwnerSubject = "   ",
+                },
+                SchemeUnderTest);
+
+            Assert.That(principal.FindFirst(ApiKeyPrincipalFactory.SubjectClaimType), Is.Null,
+                "a blank sub is an identity no RBAC row can match; emitting none at all is what fails closed");
+        }
+
+        [Test]
+        public void Create_ResolvedOwner_CarriesTheOwnerDisplayNameAsTheNameClaim()
+        {
+            var principal = ApiKeyPrincipalFactory.Create(ResolvedKey(), SchemeUnderTest);
+
+            Assert.That(principal.FindFirst(ApiKeyPrincipalFactory.NameClaimType)?.Value, Is.EqualTo(OwnerDisplayName),
+                "the framed SPA renders this name; dropping it shows a working embed as an anonymous one");
+        }
+
+        [Test]
+        [TestCase((string?)null)]
+        [TestCase("")]
+        [TestCase("   ")]
+        public void Create_ResolvedOwnerWithoutADisplayName_EmitsNoNameClaim(string? blankDisplayName)
+        {
+            var validationResult = ResolvedKey();
+            validationResult.OwnerDisplayName = blankDisplayName;
+
+            var principal = ApiKeyPrincipalFactory.Create(validationResult, SchemeUnderTest);
+
+            Assert.That(principal.FindFirst(ApiKeyPrincipalFactory.NameClaimType), Is.Null,
+                "no display name is not the same as a blank one — the SPA falls back only when the claim is absent");
+        }
+
         // The factory is pure over its scheme argument, so the parity property is stated with two
         // arbitrary names rather than coupling this test to the scheme registry.
         private const string SchemeUnderTest = "AnyScheme";

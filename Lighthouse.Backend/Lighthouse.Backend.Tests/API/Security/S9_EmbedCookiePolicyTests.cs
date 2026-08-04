@@ -50,6 +50,24 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
+        public async Task S9_EmbedEntryPoint_IssuesACookieThatDiesWithTheBrowserSession()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+
+            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+            var setCookie = EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(setCookie, Is.Not.Null);
+                Assert.That(setCookie, Does.Not.Contain("expires=").IgnoreCase,
+                    "D40: a persistent cookie survives the browser closing, which puts the revocation gap far past the 30 minutes S6 settled on");
+                Assert.That(setCookie, Does.Not.Contain("max-age=").IgnoreCase);
+            }
+        }
+
+        [Test]
         public async Task S9_EmbedEntryPoint_DoesNotTouchTheOrdinarySessionCookie()
         {
             var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);

@@ -173,6 +173,24 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             dbContext.SaveChanges();
         }
 
+        public List<EmbedSessionToken> ReadEmbedSessionTokens()
+        {
+            using var scope = root.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            return dbContext.EmbedSessionTokens.AsNoTracking().ToList();
+        }
+
+        // Authenticates through TestAuthHandler instead of X-Api-Key: a principal that is signed in
+        // but carries no api_key_id, which is what the embed endpoints must refuse.
+        public static async Task<HttpResponseMessage> PostAsSignedInUserAsync(WebApplicationFactory<Program> host, string path)
+        {
+            using var client = CreateClient(host);
+            client.DefaultRequestHeaders.Add(TestAuthHandler.SubjectHeader, SystemAdminSubject);
+
+            return await client.PostAsync(path, content: null);
+        }
+
         public static async Task<HttpResponseMessage> ExchangeAsync(WebApplicationFactory<Program> host, string? apiKey)
         {
             using var client = CreateClient(host);

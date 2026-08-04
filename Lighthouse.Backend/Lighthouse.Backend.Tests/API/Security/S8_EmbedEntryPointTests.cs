@@ -7,6 +7,7 @@ namespace Lighthouse.Backend.Tests.API.Security
     public class S8_EmbedEntryPointTests
     {
         private const int ShortTokenLifetimeSeconds = 1;
+        private const string ForgedSecret = "forged-secret";
 
         private static readonly string[] OffHostReturnPaths =
         [
@@ -149,6 +150,59 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Assert.That(body, Is.Not.Empty);
                 Assert.That(EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName), Is.Null);
             }
+        }
+
+        [Test]
+        public async Task S8_Enter_GenuineTokenIdWithAWrongSecret_Refused_AndLeavesTheRealTokenSpendable()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var forgedToken = $"{token.Split('.')[0]}.{ForgedSecret}";
+
+            using var forgedResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, forgedToken);
+            using var genuineResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(forgedResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
+                    "the token id is only an identifier — all the entropy is in the secret, so half a token must never redeem");
+                Assert.That(EmbedSessionTestHost.ReadSetCookie(forgedResponse, EmbedSessionTestHost.EmbedCookieName), Is.Null);
+                Assert.That(genuineResponse.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
+                    "and the rejected attempt must not have spent the real token, or a guessed id becomes a denial of service");
+            }
+        }
+
+        [Test]
+        public async Task S8_Enter_OwnerUnlinkedAfterTheTokenWasMinted_RefusedLegibly()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            host.UnlinkEveryApiKeyOwner();
+
+            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
+                    "D30: the owner link is re-checked at redemption, not trusted from mint time — an unlinked key resolves no permissions");
+                Assert.That(EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName), Is.Null,
+                    "the guard must refuse before the cookie is written, or the frame gets a session with no identity in it");
+            }
+        }
+
+        [Test]
+        [TestCase(0)]
+        [TestCase(-30)]
+        public async Task S8_Enter_TokenLifetimeConfiguredNonPositive_FallsBackToTheDefaultWindow(int configuredLifetimeSeconds)
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            var misconfiguredHost = host.WithTokenLifetime(configuredLifetimeSeconds);
+            var token = await EmbedSessionTestHost.MintTokenAsync(misconfiguredHost, apiKey);
+
+            using var response = await EmbedSessionTestHost.EnterAsync(misconfiguredHost, token);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
+                "a non-positive lifetime is a misconfiguration, not an instruction to mint tokens that are dead on arrival");
         }
 
         [Test]

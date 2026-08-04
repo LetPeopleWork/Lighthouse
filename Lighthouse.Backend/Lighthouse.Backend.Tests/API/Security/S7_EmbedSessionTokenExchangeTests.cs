@@ -96,6 +96,87 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Assert.That(body, Is.Not.Empty,
                     "the refusal names why the key cannot honour the contract");
             }
+
+            using var document = JsonDocument.Parse(body);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(document.RootElement.GetProperty("reason").GetString(), Is.EqualTo("api_key_owner_unlinked"),
+                    "D30: the Forge resolver branches on this code, so it is a wire contract and not prose");
+                Assert.That(document.RootElement.GetProperty("message").GetString(), Does.Contain("no linked owner"),
+                    "the presenter reads this out mid-demo, so it must name the cause");
+                Assert.That(document.RootElement.GetProperty("message").GetString(), Does.Contain("Reassign the key"),
+                    "and the fix, or the demo stalls on a refusal nobody can act on");
+            }
+        }
+
+        [Test]
+        public async Task S7_Exchange_SignedInUserWithoutAnApiKey_Refused_WhileTheKeyMints()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+
+            using var keyedResponse = await EmbedSessionTestHost.ExchangeAsync(host.AuthEnabled, apiKey);
+            using var sessionResponse = await EmbedSessionTestHost.PostAsSignedInUserAsync(host.AuthEnabled, EmbedSessionTestHost.ExchangePath);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(keyedResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    "differential control: the same endpoint mints for a key-borne principal");
+                Assert.That(sessionResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
+                    "S9: without api_key_id the minted session would carry the owner's full scope instead of the key's");
+            }
+        }
+
+        [Test]
+        public async Task S7_RevokeAll_SignedInUserWithoutAnApiKey_Refused()
+        {
+            using var response = await EmbedSessionTestHost.PostAsSignedInUserAsync(host.AuthEnabled, EmbedSessionTestHost.RevokeAllPath);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
+                "revocation is scoped to the calling key, so a caller with no key has nothing to revoke and must not fall through to key 0");
+        }
+
+        [Test]
+        public async Task S7_RevokeAll_AuthenticationDisabled_Absent_WhileEnabledRevokes()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+
+            using var enabledClient = EmbedSessionTestHost.CreateClient(host.AuthEnabled);
+            enabledClient.WithApiKey(apiKey);
+            using var enabledResponse = await enabledClient.PostAsync(EmbedSessionTestHost.RevokeAllPath, content: null);
+
+            using var disabledClient = EmbedSessionTestHost.CreateClient(host.AuthDisabled);
+            disabledClient.WithApiKey(apiKey);
+            using var disabledResponse = await disabledClient.PostAsync(EmbedSessionTestHost.RevokeAllPath, content: null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(enabledResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent),
+                    "differential control: the same request revokes when authentication is enabled");
+                Assert.That(disabledResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound),
+                    "the whole embed surface is absent without authentication, revocation included");
+            }
+        }
+
+        [Test]
+        public async Task S7_Exchange_PrunesTokensThatAreAlreadySpent()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            var spentToken = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            using (var enterResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, spentToken))
+            {
+                Assert.That(enterResponse.StatusCode, Is.EqualTo(HttpStatusCode.Redirect), "precondition: the first token is spent");
+            }
+
+            var freshToken = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var storedTokenIds = host.ReadEmbedSessionTokens().Select(token => token.TokenId).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedTokenIds, Has.Count.EqualTo(1),
+                    "minting prunes what is already spent — without it the table only ever grows, one row per page open");
+                Assert.That(storedTokenIds, Does.Contain(TokenIdOf(freshToken)));
+                Assert.That(storedTokenIds, Does.Not.Contain(TokenIdOf(spentToken)));
+            }
         }
 
         [Test]
@@ -202,6 +283,11 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Assert.That(enterResponse.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
                     "revoke-all is scoped to the calling key; another key's outstanding token is untouched");
             }
+        }
+
+        private static string TokenIdOf(string token)
+        {
+            return token.Split('.')[0];
         }
     }
 }
