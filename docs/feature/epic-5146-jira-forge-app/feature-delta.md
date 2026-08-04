@@ -1694,6 +1694,33 @@ the real host. Option B is no longer an investment ahead of evidence — it is s
 was blocking can now be collected against a prospect's own authenticated instance rather than a canned
 demo. `docs/verdict.md` in the app repository needs revising on exactly this point.
 
+### Two directions the maintainer raised, 2026-08-04 — post-verdict candidates, not scope
+
+Recorded because they are better than what exists, and because the verdict should name them rather
+than leave the reader to invent them.
+
+**Atlassian OAuth instead of a shared API key.** The viewer is *already* authenticated to Jira, so
+Forge can hand us a verified Atlassian identity with no login hop — the thing the whole epic works
+around. This is D5's deferred "step 2" arriving from the other direction, and it fixes what the
+current design structurally cannot: **per-user permissions**. Today everyone opening the Jira page
+sees whatever the configured key sees, which is acceptable for a demo and disqualifying for a
+product. The hard part was never obtaining the identity; it is that a Jira user has no Lighthouse
+account, so something must map `atlassian-account-id` → Lighthouse user and something must decide
+what an unmapped viewer gets. Offered as an *option beside* the API key rather than a replacement, it
+is incrementally shippable, which is what makes it credible rather than a rewrite.
+
+**Multiple views, each bound to a differently-scoped key** — one for management, one per team.
+Genuinely clever, because it buys per-audience scoping *without* the identity mapping: the scope
+lives in the key, and Jira already knows who is looking. The catch is the last clause of the idea
+itself — "specify who gets to see what" means an authorization model inside the Forge app. The
+security review of the same day is the argument against putting it there: a permission decision that
+lives somewhere other than where the data lives is how findings F2 and F4 happened. If Jira group
+membership selects the view, then **Jira becomes an authorization authority over Lighthouse data**,
+and that is a decision to make deliberately rather than discover.
+
+They interact, and the order matters: with OAuth the session already carries the right scope, so
+views degrade from a permission mechanism to a convenience. Which argues for settling OAuth first.
+
 ### If this change becomes permanent — extend the auth E2E suite to cover API keys
 
 Maintainer, 2026-08-04. **Conditional on a *go* verdict; deliberately not done now.**

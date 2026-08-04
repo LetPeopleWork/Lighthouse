@@ -688,6 +688,27 @@ namespace Lighthouse.Backend
                 embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.SessionLifetimeMinutes);
                 embedOptions.SlidingExpiration = false;
 
+                // Security review F3: the header path re-validates the key on every request, so
+                // deleting a key ends its access at once. A cookie is believed on sight, which would
+                // leave live frames running for the rest of the window after the key is gone -
+                // making "delete the key" advice that is not true when an administrator needs it.
+                embedOptions.Events.OnValidatePrincipal = context =>
+                {
+                    var claim = context.Principal?
+                        .FindFirst(ApiKeyPrincipalFactory.ApiKeyIdClaimType)?.Value;
+
+                    var resolver = context.HttpContext.RequestServices
+                        .GetRequiredService<IApiKeyIdentityResolver>();
+
+                    if (!int.TryParse(claim, NumberStyles.Integer, CultureInfo.InvariantCulture, out var apiKeyId)
+                        || resolver.ResolveByApiKeyId(apiKeyId) is null)
+                    {
+                        context.RejectPrincipal();
+                    }
+
+                    return Task.CompletedTask;
+                };
+
                 embedOptions.Events.OnRedirectToLogin = context =>
                 {
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;

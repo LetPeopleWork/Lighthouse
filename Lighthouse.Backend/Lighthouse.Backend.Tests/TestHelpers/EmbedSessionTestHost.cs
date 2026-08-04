@@ -27,7 +27,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public const string EmbedCookieName = ".Lighthouse.Embed";
         public const string EmbedCookieScheme = "LighthouseEmbedCookie";
-        public const string SessionCookieName = ".Lighthouse.Session";
+        // Points at the selector's constant so S9's assertion that the configured cookie is named
+        // this transitively pins the selector too - F4's preference depends on that name matching.
+        public const string SessionCookieName = SmartAuthSchemeSelector.SessionCookieName;
         public const string EmbedRateLimitPolicy = "EmbedSession";
         public const string TokenLifetimeConfigurationKey = "Embed:TokenLifetimeSeconds";
 
@@ -170,6 +172,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 apiKey.CreatedByUser = string.Empty;
             }
 
+            dbContext.SaveChanges();
+        }
+
+        public void DeleteEveryApiKey()
+        {
+            using var scope = root.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            dbContext.ApiKeys.RemoveRange(dbContext.ApiKeys.ToList());
             dbContext.SaveChanges();
         }
 

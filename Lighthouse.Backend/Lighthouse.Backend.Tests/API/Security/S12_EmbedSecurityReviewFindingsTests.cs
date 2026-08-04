@@ -104,6 +104,36 @@ namespace Lighthouse.Backend.Tests.API.Security
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
         }
 
+        // F3. The header path resolves the key on every request, so deleting it ends access at once.
+        // A cookie is believed on sight unless something re-checks, which would leave live frames
+        // running for the rest of the window - and "delete the key" is the revocation advice an
+        // administrator would be given.
+        [Test]
+        public async Task DeletingTheApiKey_EndsAnAlreadyEstablishedEmbedSession()
+        {
+            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            var embedCookie = await host.EstablishEmbedCookieAsync(apiKey);
+
+            using var client = EmbedSessionTestHost.WithEmbedCookie(
+                EmbedSessionTestHost.CreateClient(host.AuthEnabled), embedCookie);
+
+            using var beforeDeletion = await client.GetAsync(InScopePortfolioPath);
+            host.DeleteEveryApiKey();
+            using var afterDeletion = await client.GetAsync(InScopePortfolioPath);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(beforeDeletion.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    "differential control: the session reads its in-scope resource while the key exists");
+                Assert.That(afterDeletion.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
+                    "deleting the key must end the session it authorised, not merely stop new ones");
+            }
+        }
+
+        // F4's scheme-selection half is a pure decision and is pinned as one in
+        // SmartAuthSchemeSelectorTest - an integration test here would route through the test
+        // authentication handler, which is header-borne and never reaches the cookie branch at all.
+
         // A directly presented key still reaches both endpoints - the guard rejects the cookie route,
         // not the header route.
         [Test]
@@ -118,5 +148,8 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         }
+
+        private static string InScopePortfolioPath =>
+            $"/api/v1/portfolios/{EmbedSessionTestHost.InScopePortfolioId}";
     }
 }

@@ -91,7 +91,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 "the header-borne schemes are decided first, so a stale embed cookie cannot hijack an explicit key");
         }
 
-        private const string SessionCookieName = ".Lighthouse.Session";
+        // Security review F4. Partitioning normally keeps these two apart, so this pairing only
+        // arises when somebody opens an embed link at the top level - and there the identity that
+        // wins must be the person's own, not the API key riding along in the other cookie.
+        [Test]
+        public void Select_BothCookies_PrefersTheOrdinarySessionOverTheEmbedCookie()
+        {
+            var context = AContextCarrying(
+                $"{SessionCookieName}=session-value; {SmartAuthSchemeSelector.EmbedCookieName}=embed-value");
+
+            Assert.That(SmartAuthSchemeSelector.Select(context.Request), Is.EqualTo(SmartAuthSchemeSelector.CookieScheme),
+                "a clicked embed link must not silently replace who the signed-in person is");
+        }
+
+        private const string SessionCookieName = SmartAuthSchemeSelector.SessionCookieName;
 
         private static DefaultHttpContext AContextCarrying(string cookieHeader)
         {
