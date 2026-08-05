@@ -1808,3 +1808,79 @@ browser question is exactly what slice 02a step 6 answers first.
 
 **Trigger**: a *go* verdict on #5638, or any decision to ship the embed session independently of this
 epic. At that point item 1 above should be lifted out and done regardless of what happens to item 2.
+
+## Wave: SPIKE / [REF] Mode A is not feasible — Atlassian is not an OIDC provider (2026-08-05)
+
+Recorded because two earlier documents in this file assert the opposite, and both are load-bearing for
+decisions that were nearly built.
+
+### What was believed
+
+DESIGN, 2026-08-04: *"Atlassian does publish real OIDC discovery, but an OIDC redirect inside the frame
+fails exactly as Auth0's did. The workable route is Forge asserting `accountId` server-side to the
+resolver. If Lighthouse also used Atlassian OIDC, `sub` would equal that accountId and the
+identity-mapping problem disappears."* On 2026-08-05 the maintainer chose that route — **mode A**, no
+API key, Atlassian OIDC as a precondition, no mapping table, no fallback — and mode B was dropped
+story-wise.
+
+### What is true
+
+The discovery document is real: `https://auth.atlassian.com/.well-known/openid-configuration` answers
+**200** with an issuer, a `userinfo_endpoint`, `openid`/`profile`/`email` in `scopes_supported`, PKCE
+`S256`, and the `code` response type. It is visibly an Auth0 tenant.
+
+**It cannot be used by a third-party app.** Bisected live against a real OAuth 2.0 (3LO) integration:
+
+| Authorize request | Result |
+|---|---|
+| `audience=api.atlassian.com` + `scope=read:me` — the console's own generated URL | consent, then Lighthouse's callback |
+| the same URL, `openid` added to the scope, nothing else changed | `Something went wrong` |
+| `audience` + `openid profile email` | `Something went wrong` |
+| no `audience`, `openid profile email` — what Lighthouse's handler sends | 302 to login, then `The authorize request was incomplete or invalid` |
+
+Adding one parameter to a known-good request is what makes this conclusive. **`openid` is refused.**
+`audience=api.atlassian.com` is required for 3LO but is not the blocker.
+
+Atlassian is an OIDC *consumer* — you sign in to Atlassian with Google, Apple, Microsoft or Slack — and
+publishes an OIDC *provider* only for Bitbucket Pipelines workload identity. There is no
+"sign in with Atlassian" for third-party web applications, and Atlassian Guard SSO is SAML-only.
+
+### Method trap, recorded because it produced two wrong calls in one session
+
+A `curl` to the authorize endpoint returning **302 to `id.atlassian.com/login` proves nothing**. Both
+failing variants produced exactly that response. Authorize-parameter validity is only observable
+*after* the login page, in a browser with a real session. Any future probe of an authorize endpoint
+must be driven interactively.
+
+### Consequence
+
+Mode A's precondition is unreachable, so the identity join it was designed to avoid comes back. Forge
+can still identify the viewer — the Forge Invocation Token carries a `principal` claim, verifiable
+against Atlassian's JWKS with `iss = forge/invocation-token` and `aud` = the app id, needing no API key
+at all. The *mechanism* is sound. What died is the free join.
+
+Closing it would need an email join through the User Identity API, or a per-user stored accountId —
+and if Atlassian identity were ever to back a Lighthouse login, an entire new authentication adapter,
+since the stack is OIDC-only and this flow has neither an `id_token` nor a discovery document to lean
+on. **Maintainer, 2026-08-05: we are not changing the whole login for this.** #5664 is Removed.
+
+**Direction**: back to the shipped API-key embed session with scoped dashboards — what this epic had
+called mode B. The API-key embed path is therefore **not** retired, and the retirement clause that
+briefly lived in #5664 is void.
+
+### Two defects found while restoring the demo, neither previously known
+
+1. **The `embed_url_insecure` guidance names an environment variable that does nothing.** The Forge
+   app tells the operator to set `LIGHTHOUSE_AUTHENTICATION__TRUSTEDPROXIES`. **No `LIGHTHOUSE_`
+   configuration prefix is registered anywhere in the backend**; ASP.NET reads unprefixed variables
+   here, so the working name is `Authentication__TrustedProxies__0`. An operator who follows the
+   instruction verbatim sees no change and no error.
+2. **A TLS-terminating reverse proxy breaks the embed flow, and nothing documents it.** Tailscale
+   Funnel terminates TLS at its edge and proxies plain HTTP inward, so `Request.Scheme` is `http`,
+   `BuildEmbedUrl` mints an `http://` embed URL, the frame blocks it as mixed content, and the embed
+   cookie is `Secure` so it would never return. The fix is to declare the proxy in
+   `Authentication:TrustedProxies` / `TrustedNetworks`. Any prospect running Lighthouse behind nginx,
+   Traefik, Caddy or a cloud load balancer meets this before seeing a single chart.
+
+The app detects and explains both situations well — the failure is legible, which is why they were
+found in minutes. The guidance text is what is wrong, not the detection.
