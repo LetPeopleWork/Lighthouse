@@ -2,10 +2,12 @@ using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 
 namespace Lighthouse.Backend.API
 {
@@ -18,6 +20,7 @@ namespace Lighthouse.Backend.API
     public class EmbedEntryController(
         IEmbedSessionTokenService embedSessionTokenService,
         IApiKeyIdentityResolver apiKeyIdentityResolver,
+        IUserProfileLookup userProfileLookup,
         IAuthModeResolver authModeResolver,
         ILogger<EmbedEntryController> logger) : ControllerBase
     {
@@ -56,16 +59,12 @@ namespace Lighthouse.Backend.API
                 return Refuse();
             }
 
-            var identity = apiKeyIdentityResolver.ResolveByApiKeyId(redemption.ApiKeyId);
-            if (identity is null || identity.OwnerResolutionState != ApiKeyOwnerResolutionState.Resolved)
+            var principal = await ResolvePrincipalAsync(redemption, cancellationToken);
+            if (principal is null)
             {
-                logger.LogWarning(
-                    "Embed session refused: API key {ApiKeyId} no longer resolves to a linked owner",
-                    redemption.ApiKeyId);
                 return Refuse();
             }
 
-            var principal = ApiKeyPrincipalFactory.Create(identity, SmartAuthSchemeSelector.EmbedCookieScheme);
             await HttpContext.SignInAsync(
                 SmartAuthSchemeSelector.EmbedCookieScheme,
                 principal,
@@ -74,6 +73,54 @@ namespace Lighthouse.Backend.API
             // The cookie is set, so the token leaves the URL immediately: history and access logs
             // hold it exactly once, already spent (D39).
             return Redirect(ResolveReturnPath(returnPath));
+        }
+
+        // ADR-132 D63: a redeemed row names either the viewer who signed in or an API key's owner.
+        private Task<ClaimsPrincipal?> ResolvePrincipalAsync(
+            EmbedSessionTokenRedemption redemption,
+            CancellationToken cancellationToken)
+        {
+            return redemption.ApiKeyId is int apiKeyId
+                ? Task.FromResult(ResolveApiKeyOwnerPrincipal(apiKeyId))
+                : ResolveViewerPrincipalAsync(redemption.Subject, cancellationToken);
+        }
+
+        private ClaimsPrincipal? ResolveApiKeyOwnerPrincipal(int apiKeyId)
+        {
+            var identity = apiKeyIdentityResolver.ResolveByApiKeyId(apiKeyId);
+            if (identity is null || identity.OwnerResolutionState != ApiKeyOwnerResolutionState.Resolved)
+            {
+                logger.LogWarning(
+                    "Embed session refused: API key {ApiKeyId} no longer resolves to a linked owner",
+                    apiKeyId);
+                return null;
+            }
+
+            return ApiKeyPrincipalFactory.Create(identity, SmartAuthSchemeSelector.EmbedCookieScheme);
+        }
+
+        private async Task<ClaimsPrincipal?> ResolveViewerPrincipalAsync(
+            string? subject,
+            CancellationToken cancellationToken)
+        {
+            // F7, defence in depth, retained deliberately: RedeemAsync already refuses a row that
+            // names nobody, and a blank subject here would sign the caller in as no-one.
+            if (string.IsNullOrWhiteSpace(subject))
+            {
+                return null;
+            }
+
+            // D57: this lookup cannot create, so a viewer deleted between the handshake and the
+            // redemption is refused rather than resurrected.
+            var profile = await userProfileLookup.FindBySubjectAsync(subject, cancellationToken);
+            if (profile is null)
+            {
+                logger.LogWarning("Embed session refused: the viewer named by this token no longer has a profile");
+                return null;
+            }
+
+            return ApiKeyPrincipalFactory.Create(
+                profile.Subject, profile.DisplayName, SmartAuthSchemeSelector.EmbedCookieScheme);
         }
 
         private string ResolveReturnPath(string? returnPath)

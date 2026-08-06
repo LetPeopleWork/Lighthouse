@@ -130,8 +130,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 
             var stored = await repository.FindByTokenIdAsync(tokenId, cancellationToken);
 
-            // A row without an API key is a viewer-path row (ADR-132 D63); this entry point only redeems the API-key path.
-            if (stored is null || stored.ApiKeyId is not int apiKeyId || !SecretMatches(secret, stored.SecretHash))
+            // ADR-132 D63: a grant row names either an API key or a viewer. One that names neither is
+            // redeemable by nobody, and letting it through would sign a caller in as no-one.
+            if (stored is null || !SecretMatches(secret, stored.SecretHash) || !NamesAnIdentity(stored))
             {
                 return EmbedSessionTokenRedemption.Refused;
             }
@@ -145,7 +146,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return EmbedSessionTokenRedemption.Refused;
             }
 
-            return new EmbedSessionTokenRedemption(true, apiKeyId);
+            return new EmbedSessionTokenRedemption(true, stored.ApiKeyId, stored.Subject);
         }
 
         public async Task RevokeAllAsync(int apiKeyId, CancellationToken cancellationToken)
@@ -232,6 +233,11 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         {
             var configured = embedConfiguration.CurrentValue.HandshakeOutcomeLifetimeSeconds;
             return configured > 0 ? configured : DefaultHandshakeOutcomeLifetimeSeconds;
+        }
+
+        private static bool NamesAnIdentity(EmbedSessionToken stored)
+        {
+            return stored.ApiKeyId is not null || !string.IsNullOrWhiteSpace(stored.Subject);
         }
 
         private static bool TrySplit(string? token, out string tokenId, out string secret)

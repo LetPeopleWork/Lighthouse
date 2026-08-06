@@ -357,23 +357,45 @@ namespace Lighthouse.Backend
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
 
-        // Security review F3: the header path resolves the key on every request, so deleting a key
-        // ends its access at once. A cookie is believed on sight, which would leave live frames
-        // running for the rest of the window after the key is gone - making "delete the key" advice
-        // that is not true at the moment an administrator reaches for it.
-        private static Task RejectEmbedPrincipalWhoseKeyIsGone(
+        // Security review F3, carried to ADR-132 D58: an embed cookie is otherwise believed on sight,
+        // leaving live frames running for the rest of the window after the key or the person behind
+        // them is gone - making "delete them" advice that is not true when an administrator reaches
+        // for it. Whoever the cookie names is re-resolved on every request instead.
+        private static async Task RejectEmbedPrincipalWhoseIdentityIsGone(
             Microsoft.AspNetCore.Authentication.Cookies.CookieValidatePrincipalContext context)
         {
-            var claim = context.Principal?.FindFirst(ApiKeyPrincipalFactory.ApiKeyIdClaimType)?.Value;
-            var resolver = context.HttpContext.RequestServices.GetRequiredService<IApiKeyIdentityResolver>();
-
-            if (!int.TryParse(claim, NumberStyles.Integer, CultureInfo.InvariantCulture, out var apiKeyId)
-                || resolver.ResolveByApiKeyId(apiKeyId) is null)
+            if (!await EmbedPrincipalStillResolvesAsync(context))
             {
                 context.RejectPrincipal();
             }
+        }
 
-            return Task.CompletedTask;
+        private static async Task<bool> EmbedPrincipalStillResolvesAsync(
+            Microsoft.AspNetCore.Authentication.Cookies.CookieValidatePrincipalContext context)
+        {
+            var principal = context.Principal;
+            var services = context.HttpContext.RequestServices;
+
+            var apiKeyClaim = principal?.FindFirst(ApiKeyPrincipalFactory.ApiKeyIdClaimType)?.Value;
+            if (apiKeyClaim is not null)
+            {
+                return int.TryParse(apiKeyClaim, NumberStyles.Integer, CultureInfo.InvariantCulture, out var apiKeyId)
+                    && services.GetRequiredService<IApiKeyIdentityResolver>().ResolveByApiKeyId(apiKeyId) is not null;
+            }
+
+            var subject = principal?.FindFirst(ApiKeyPrincipalFactory.SubjectClaimType)?.Value;
+            if (string.IsNullOrWhiteSpace(subject))
+            {
+                // A principal naming neither a key nor a person is nobody; it must not fall through open.
+                return false;
+            }
+
+            // D57: a read-only port on purpose. GetOrCreateFromPrincipalAsync would re-create the
+            // profile an administrator has just deleted, on that person's very next request.
+            var profile = await services.GetRequiredService<IUserProfileLookup>()
+                .FindBySubjectAsync(subject, context.HttpContext.RequestAborted);
+
+            return profile is not null;
         }
 
         private static void EnsureOAuthStateSecret(WebApplicationBuilder builder)
@@ -707,7 +729,7 @@ namespace Lighthouse.Backend
                 embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.SessionLifetimeMinutes);
                 embedOptions.SlidingExpiration = false;
 
-                embedOptions.Events.OnValidatePrincipal = RejectEmbedPrincipalWhoseKeyIsGone;
+                embedOptions.Events.OnValidatePrincipal = RejectEmbedPrincipalWhoseIdentityIsGone;
 
                 embedOptions.Events.OnRedirectToLogin = context =>
                 {
@@ -1153,6 +1175,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IAuthConfigurationValidator, AuthConfigurationValidator>();
             builder.Services.AddScoped<IAuthModeResolver, AuthModeResolver>();
             builder.Services.AddScoped<ICurrentUserProfileService, CurrentUserProfileService>();
+            builder.Services.AddScoped<IUserProfileLookup, UserProfileLookup>();
             builder.Services.AddScoped<IRbacAdministrationService, RbacAdministrationService>();
             builder.Services.AddScoped<IOidcGroupSnapshotWriter, OidcGroupSnapshotWriter>();
 

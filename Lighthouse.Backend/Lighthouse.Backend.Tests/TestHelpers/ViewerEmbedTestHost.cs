@@ -22,6 +22,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Moq;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -364,11 +368,17 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                         "https://example.test/oidc/.well-known/openid-configuration");
                 }
 
-                builder.ConfigureLogging(logging => logging.AddProvider(LogEvents));
-
                 builder.ConfigureServices(services =>
                 {
                     services.AddSingleton<IStartupFilter>(new UnservedSpaPageStartupFilter());
+
+                    // D72: Program.ConfigureLogging calls UseSerilog with writeToProviders left at its
+                    // default of false, so SerilogLoggerFactory drops every ILoggerProvider added
+                    // through AddProvider. Serilog is the pipeline, so the capture is a Serilog sink.
+                    services.RemoveAll<ILoggerFactory>();
+                    services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                        new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(LogEvents).CreateLogger(),
+                        dispose: true));
 
                     // The identity provider is the one external, non-deterministic port in this flow.
                     // Only its discovery document is stubbed, so the challenge itself stays production.
@@ -434,8 +444,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         /// <summary>D62: the lost race must be observable. The only server-side observable is the log.</summary>
-        public sealed class CapturedLogEvents : ILoggerProvider
+        public sealed class CapturedLogEvents : ILogEventSink
         {
+            // Serilog.Extensions.Logging projects a named EventId into this structured property.
+            private const string EventIdPropertyName = "EventId";
+            private const string EventNamePropertyName = "Name";
+
             private readonly List<string> eventNames = [];
             private readonly Lock gate = new();
 
@@ -450,40 +464,31 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 }
             }
 
-            public ILogger CreateLogger(string categoryName) => new CapturingLogger(this);
-
-            public void Dispose()
+            public void Emit(LogEvent logEvent)
             {
-                // Nothing to release; the provider owns only an in-memory list.
-            }
+                ArgumentNullException.ThrowIfNull(logEvent);
 
-            private void Record(string eventName)
-            {
-                lock (gate)
+                if (ReadEventName(logEvent) is { Length: > 0 } eventName)
                 {
-                    eventNames.Add(eventName);
-                }
-            }
-
-            private sealed class CapturingLogger(CapturedLogEvents owner) : ILogger
-            {
-                public IDisposable? BeginScope<TState>(TState state)
-                    where TState : notnull => null;
-
-                public bool IsEnabled(LogLevel logLevel) => true;
-
-                public void Log<TState>(
-                    LogLevel logLevel,
-                    EventId eventId,
-                    TState state,
-                    Exception? exception,
-                    Func<TState, Exception?, string> formatter)
-                {
-                    if (!string.IsNullOrEmpty(eventId.Name))
+                    lock (gate)
                     {
-                        owner.Record(eventId.Name);
+                        eventNames.Add(eventName);
                     }
                 }
+            }
+
+            private static string? ReadEventName(LogEvent logEvent)
+            {
+                if (!logEvent.Properties.TryGetValue(EventIdPropertyName, out var eventId)
+                    || eventId is not StructureValue structure)
+                {
+                    return null;
+                }
+
+                var name = structure.Properties
+                    .FirstOrDefault(property => property.Name == EventNamePropertyName)?.Value;
+
+                return name is ScalarValue { Value: string value } ? value : null;
             }
         }
     }
