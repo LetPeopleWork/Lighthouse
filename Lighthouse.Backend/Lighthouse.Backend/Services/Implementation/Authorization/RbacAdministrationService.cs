@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -1046,6 +1047,15 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return int.TryParse(claimValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out apiKeyId);
         }
 
+        // ADR-132 D59: principals rebuilt from a stored credential or subject carry no live group
+        // claims, so the stored snapshot is their only route to an RbacGroupMapping. An ordinary OIDC
+        // cookie principal has no auth_method claim and never reaches the fallback.
+        private static bool CannotCarryLiveGroupClaims(ClaimsPrincipal principal)
+        {
+            var authMethod = principal.FindFirst(ApiKeyPrincipalFactory.AuthMethodClaimType)?.Value;
+            return authMethod is ApiKeyPrincipalFactory.AuthMethodValue or ApiKeyPrincipalFactory.AuthMethodEmbedValue;
+        }
+
         private static Dictionary<PermissionScopeKey, UserRole> IntersectWithApiKeyScope(
             IReadOnlyDictionary<PermissionScopeKey, UserRole> ownerPermissions,
             IReadOnlyList<PermissionRule> apiKeyPermissions)
@@ -1118,7 +1128,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            if (groupValues.Count == 0 && TryGetApiKeyId(principal, out _))
+            if (groupValues.Count == 0 && CannotCarryLiveGroupClaims(principal))
             {
                 groupValues = await LoadOwnerGroupSnapshotAsync(principal, cancellationToken);
             }

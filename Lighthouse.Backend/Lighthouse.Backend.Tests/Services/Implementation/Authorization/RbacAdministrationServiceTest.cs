@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
@@ -896,6 +897,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.AtLeastOnce);
+        }
+
+        /// <summary>
+        /// ADR-132 D59, one level below the journey test: the stored-snapshot fallback is gated on
+        /// auth_method, so an ordinary cookie principal never reaches it even though the same profile
+        /// carries a snapshot that an embed principal resolves through.
+        /// </summary>
+        [Test]
+        public async Task CanReadTeamAsync_StoredGroupSnapshot_ReachesAnEmbedPrincipalButNotAnOrdinarySession()
+        {
+            const string groupMappedSubject = "auth0|group-mapped-viewer";
+
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+
+            context.UserProfiles.Add(new UserProfile { Id = 99, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 99,
+                Role = UserRole.SystemAdmin,
+                ScopeType = PermissionScopeType.System,
+                ScopeId = null,
+            });
+            context.UserProfiles.Add(new UserProfile
+            {
+                Id = 77,
+                Subject = groupMappedSubject,
+                SubjectClaimType = "sub",
+                LastKnownGroupClaimValues = "[\"team-77-viewers\"]",
+            });
+            context.RbacGroupMappings.Add(new RbacGroupMapping
+            {
+                GroupValue = "team-77-viewers",
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 77,
+            });
+            await context.SaveChangesAsync();
+
+            var ordinaryPrincipal = BuildPrincipal(new Claim("sub", groupMappedSubject));
+            var embedPrincipal = BuildPrincipal(
+                new Claim("sub", groupMappedSubject),
+                new Claim(ApiKeyPrincipalFactory.AuthMethodClaimType, ApiKeyPrincipalFactory.AuthMethodEmbedValue));
+
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(context.UserProfiles.Single(x => x.Id == 77));
+
+            var subject = CreateSubject(context, emergencySubjects: [], groupClaimName: "groups");
+
+            var ordinaryCanRead = await subject.CanReadTeamAsync(ordinaryPrincipal, 77, CancellationToken.None);
+            var embedCanRead = await subject.CanReadTeamAsync(embedPrincipal, 77, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ordinaryCanRead, Is.False,
+                    "an ordinary cookie principal carries no auth_method claim, so a live token that returned zero groups still resolves zero");
+                Assert.That(embedCanRead, Is.True,
+                    "the embed principal is rebuilt from a stored subject and reaches the mapping only through the snapshot");
+            }
         }
 
         [Test]
