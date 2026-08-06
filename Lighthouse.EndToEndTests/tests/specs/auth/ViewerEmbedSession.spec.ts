@@ -6,6 +6,7 @@ import { LighthousePage } from "../../models/app/LighthousePage";
 import { BlockedPage } from "../../models/auth/BlockedPage";
 import { EmbedEntryPage } from "../../models/auth/EmbedEntryPage";
 import type { LoginPage } from "../../models/auth/LoginPage";
+import { RbacSettingsPage } from "../../models/auth/rbac/RbacSettingsPage";
 import type { OverviewPage } from "../../models/overview/OverviewPage";
 
 const LICENSE_FILE_PATH = path.join(
@@ -50,17 +51,50 @@ async function ensurePremiumLicense(
 	return overviewPage;
 }
 
+/**
+ * ADR-137 D49/D60: `/embed/start` grants only to a viewer who holds a readable scope, and
+ * `RbacAdministrationService.IsEnforcementGateSatisfiedAsync` requires a real System Admin ROW
+ * before any scope reads as held. `Authorization__EmergencySystemAdminSubjects__0` is set in
+ * `ci_verifyauth.yml` and does not help — the gate short-circuits ahead of the emergency bypass.
+ * Bootstrapping through the UI is what every other auth spec does; doing it here too is what
+ * stops this one depending on `EmbedSessionAndApiKeys.spec.ts` sorting first.
+ */
+async function ensureFirstSystemAdmin(
+	overviewPage: OverviewPage,
+): Promise<void> {
+	const settingsPage = await overviewPage.lighthousePage.goToSettings();
+	const rbac = new RbacSettingsPage(settingsPage.page);
+	await rbac.goToAccessTab();
+
+	// Wait for the tab to settle on one of its two shapes before deciding: an unchecked
+	// isVisible() reads "no banner yet" as "already bootstrapped" and silently skips the bootstrap.
+	await rbac.bootstrapBanner
+		.or(rbac.getUserRow(TestConfig.AUTH_TEST_USER_USERNAME))
+		.first()
+		.waitFor({ state: "visible" });
+
+	if (await rbac.bootstrapBanner.isVisible()) {
+		await rbac.becomeFirstSystemAdmin();
+	}
+
+	await expect(
+		rbac.getUserRow(TestConfig.AUTH_TEST_USER_USERNAME),
+	).toBeVisible();
+}
+
 test.describe("@auth viewer-identity embed session E2E", () => {
 	// Serial: the licence upload is a precondition for the skeleton, and both halves talk to the
 	// same instance.
 	test.describe.configure({ mode: "serial" });
 
 	testWithAuth(
-		"the instance is licensed for the embed session",
+		"the instance is licensed, and someone holds a readable scope",
 		async ({ loginPage }) => {
 			const overviewPage = await ensurePremiumLicense(loginPage);
 
 			await expect(overviewPage.lighthousePage.overviewLink).toBeVisible();
+
+			await ensureFirstSystemAdmin(overviewPage);
 		},
 	);
 
