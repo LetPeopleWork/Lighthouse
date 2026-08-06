@@ -34,6 +34,11 @@ namespace Lighthouse.Backend.Models.Auth
 
         public DateTime? RedeemedAt { get; set; }
 
+        // ADR-131 revocation lever 2 wrote this, and slice 03 deleted it with the API-key path, so
+        // nothing writes it now — it survives as a read in two predicates, honouring rows written
+        // before that. Revoking a live viewer session is done by deleting the profile, which the
+        // embed cookie validator checks on every request; there is no longer any way to revoke a
+        // single unredeemed token. Column retained expand-only, like ApiKeyId.
         public DateTime? RevokedAt { get; set; }
     }
 }

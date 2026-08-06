@@ -27,13 +27,13 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private const string RefusalInsert = """
             INSERT INTO "EmbedSessionTokens"
               ("TokenId", "SecretHash", "Subject", "HandshakeNonceHash", "RefusalCode", "ApiKeyId", "CreatedAt", "ExpiresAt")
-            VALUES (NULL, NULL, 'viewer-subject', 'nonce-hash', 'no_access', NULL, '2026-08-06', '2026-08-07')
+            VALUES (NULL, NULL, 'viewer-subject', 'nonce-hash', 'no_profile', NULL, '2026-08-06', '2026-08-07')
             """;
 
         private const string IllegalInsert = """
             INSERT INTO "EmbedSessionTokens"
               ("TokenId", "SecretHash", "Subject", "HandshakeNonceHash", "RefusalCode", "ApiKeyId", "CreatedAt", "ExpiresAt")
-            VALUES ('grant-token', 'grant-hash', 'viewer-subject', 'nonce-hash', 'no_access', NULL, '2026-08-06', '2026-08-07')
+            VALUES ('grant-token', 'grant-hash', 'viewer-subject', 'nonce-hash', 'no_profile', NULL, '2026-08-06', '2026-08-07')
             """;
 
         private const string ConstraintMissingMessage =
@@ -46,8 +46,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             + "are asserted alongside it";
 
         private const string CascadeLostMessage =
-            "deleting an API key must still revoke every token it minted while the API-key path is "
-            + "reachable (slice 01 keeps it reachable on purpose)";
+            "an ApiKeyId row can no longer be written, but rows written before slice 03 are still in "
+            + "customer databases — and the column outlives them, because migrations here are "
+            + "expand-only. Deleting the key must still take them with it";
 
         [Test]
         public async Task OnSqlite_TheGrantOrRefusalConstraint_DiscriminatesRatherThanRejectsEverything()
@@ -79,10 +80,12 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
-        /// D53, raised on peer review. EF's default for an OPTIONAL relationship is ClientSetNull, so a
-        /// crafter who makes ApiKeyId nullable and moves on deletes ADR-131's revocation lever 1 during
-        /// the one slice where both paths still run — and nothing else in the suite notices. Green today
-        /// on purpose: this is the guard, authored before the change that could break it.
+        /// D53. EF's default for an OPTIONAL relationship is ClientSetNull, so a crafter who makes
+        /// ApiKeyId nullable and moves on turns the cascade into an orphan — and nothing else in the
+        /// suite notices. Slice 03 deleted the path that wrote these rows, but not the rows: the
+        /// column is expand-only until the contract-phase drop, so existing databases still hold
+        /// them and deleting the key must still remove them. The shape is hand-inserted here
+        /// precisely because production can no longer produce it.
         /// </summary>
         [Test]
         public async Task OnSqlite_DeletingAnApiKey_StillRemovesTheEmbedSessionRowsItMinted()
